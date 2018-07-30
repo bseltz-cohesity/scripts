@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Change Snapshot Expiration Using Python"""
 
-### usage: ./protectVM.sh -v bseltzve01 -u admin -vm mongodb -job 'vm backup'
+### usage: ./protectVM.sh -v mycluster -u admin -vm mongodb -job 'vm backup'
 
 ### import pyhesity wrapper module
 from pyhesity import *

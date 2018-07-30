@@ -12,7 +12,7 @@ This python script adds a VM to an existing protection job.
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./protectVM.sh -v bseltzve01 -u admin -vm mongodb -job 'vm backup'
+./protectVM.sh -v mycluster -u admin -vm mongodb -job 'vm backup'
 Connected!
 adding MongoDB to VM Backup job...
 ```
