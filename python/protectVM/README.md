@@ -16,3 +16,16 @@ Place both files in a folder together and run the main script like so:
 Connected!
 adding MongoDB to VM Backup job...
 ```
+
+## The Python Helper Module - pyhesity.py
+The helper module provides functions to simplify operations such as authentication, api calls, storing encrypted passwords, and converting date formats. The module requires the requests python module.
+
+### Installing the Prerequisits
+```bash
+sudo yum install python-requests
+```
+or
+
+```bash
+sudo easy_install requests
+```
