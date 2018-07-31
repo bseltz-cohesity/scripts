@@ -27,9 +27,6 @@ jobName = args.jobname
 ### authenticate
 apiauth(vip, username, domain)
 
-foundJob = False
-foundVM = False
-
 ### find VM
 vm = [ vm for vm in api('get','protectionSources/virtualMachines') if vm['name'].lower() == vmName.lower() ]
 if not vm:
