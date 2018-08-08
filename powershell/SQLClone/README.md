@@ -23,7 +23,8 @@ The script takes the following parameters:
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./sqlClone.ps1 -vip mycluster -username admin -sourceServer SQL2012PROD -sourceDB CohesityDB -targetServer SQL2012DEV -targetDB CohesityDB-Dev
+./sqlClone.ps1 -vip mycluster -username admin -sourceServer SQL2012PROD `
+    -sourceDB CohesityDB -targetServer SQL2012DEV -targetDB CohesityDB-Dev
 
 Connected!
 
