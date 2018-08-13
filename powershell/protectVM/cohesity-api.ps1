@@ -207,7 +207,7 @@ if ($UNIX) {
         [System.Text.Encoding]::UTF8.GetString($unencryptedData).Trim([char]0)
     }
 
-    function getpwd($vip, $username, $domain, [switch] $updatePassword) {
+    function getpwd($vip, $username, $domain, $updatePassword) {
         if ($domain -eq $null) { $domain = 'local'}
         $keyName = $vip + ':' + $domain + ':' + $username
         $keyFile = "$CONFDIR/$keyName"
@@ -218,7 +218,7 @@ if ($UNIX) {
         if ((Test-Path $keyFile) -eq $True) {
             $key, $storedPassword = get-content $keyFile
         }
-
+        
         if ($updatePassword) { $storedPassword = $null }
         If (($storedPassword -ne $null) -and ($storedPassword.Length -ne 0) -and ($key -ne $null)) {
             $encryptedPassword = $storedPassword
@@ -238,7 +238,7 @@ if ($UNIX) {
         return $clearTextPassword
     }
 }else{
-    function getpwd($vip, $username, $domain, [switch] $updatepPassword){
+    function getpwd($vip, $username, $domain, $updatepPassword){
         $keyName = $vip + ':' + $domain + ':' + $username
         $registryPath = 'HKCU:\Software\Cohesity-API'
         $encryptedPasswordText = ''
