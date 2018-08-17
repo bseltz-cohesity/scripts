@@ -35,10 +35,13 @@ Cohesity stores dates in Unix Epoch Microseconds. That's the number of microseco
 ```python
 print api('get','protectionJobs')[0]['creationTimeUsecs']
 1533978038503713
+  
 usecsToDate(1533978038503713)
 '2018-08-11 05:00:38'
+  
 dateToUsecs('2018-08-11 05:00:38')
 1533978038000000
+  
 timeAgo('24','hours')
 1534410755000000
 ```
