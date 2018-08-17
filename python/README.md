@@ -6,7 +6,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 pyhesity.py contains a set of functions that make it easy to use the Cohesity REST API, including functions for authentication, making REST calls, and managing date formats.
 
-### Installing the Prerequisits
+### Installing the Prerequisites
 
 pyhesity.py requires the requests python module. To install it, do one of the following:
 
