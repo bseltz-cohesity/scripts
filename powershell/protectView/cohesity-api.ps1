@@ -285,8 +285,8 @@ function usecsToDate($usecs){
     return $origin.AddSeconds($unixTime).ToLocalTime()
 }
 
-function msecsToDate($usecs){
-    $unixTime=$usecs/1000
+function msecsToDate($msecs){
+    $unixTime=$msecs/1000
     [datetime]$origin = '1970-01-01 00:00:00'
     return $origin.AddSeconds($unixTime).ToLocalTime()
 }
