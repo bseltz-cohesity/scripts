@@ -23,4 +23,10 @@ Place both files in a folder together and run the main script like so:
 .\instantVolumeMount.ps1 -vip mycohesity -username admin -sourceServer server1.mydomain.net -targetServer server2.mydomain.net
 Connected!
 mounting volumes to server2.mydomain.net...
+D: mounted to F:\
+lvol_2 mounted to G:\
+C: mounted to H:\
 ```
+
+## Version Update
+Added monitoring for task completion and mountPoint report
