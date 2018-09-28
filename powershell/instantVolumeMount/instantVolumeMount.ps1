@@ -1,5 +1,7 @@
 
-### usage: ./instantVolumeMount.ps1 -vip 192.168.1.198 -username admin [ -domain local ] -sourceServer 'SQL2012' [ -targetServer 'SQLDEV01' ] [ -targetUsername 'ADuser' ] [ -targetPw 'myPassword' ]
+### usage: ./instantVolumeMountV2.ps1 -vip 192.168.1.198 -username admin [ -domain local ] -sourceServer 'SQL2012' [ -targetServer 'SQLDEV01' ] [ -targetUsername 'ADuser' ] [ -targetPw 'myPassword' ]
+
+### version 2: added task monitoring and mountPoint reporting
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -72,9 +74,29 @@ $mountTask = @{
     }
 }
 
-if( $targetEntity.parentId ){
+if($targetEntity.parentId ){
     $mountTask['restoreParentSource'] = @{ 'id' = $targetEntity.parentId }
 }
 
 "mounting volumes to $targetServer..."
 $result = api post /restore $mountTask
+
+$taskid = $result.restoreTask.performRestoreTaskState.base.taskId
+
+$finishedStates =  @('kCanceled', 'kSuccess', 'kFailure') 
+
+do
+{
+    sleep 3
+    $restoreTask = api get /restoretasks/$taskid
+    $restoreTaskStatus = $restoreTask.restoreTask.performRestoreTaskState.base.publicStatus
+} until ($restoreTaskStatus -in $finishedStates)
+
+if($restoreTaskStatus -eq 'kSuccess'){
+    $mountPoints = $restoreTask.restoreTask.performRestoreTaskState.mountVolumesTaskState.mountInfo.mountVolumeResultVec
+    foreach($mountPoint in $mountPoints){
+        "{0} mounted to {1}" -f ($mountPoint.originalVolumeName, $mountPoint.mountPoint)
+    }
+}else{
+    Write-Warning "mount operation ended with: $restoreTaskStatus"
+}
