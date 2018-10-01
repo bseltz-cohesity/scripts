@@ -93,6 +93,7 @@ do
 } until ($restoreTaskStatus -in $finishedStates)
 
 if($restoreTaskStatus -eq 'kSuccess'){
+    "Task ID for tearDown is: {0}" -f $restoreTask.restoreTask.performRestoreTaskState.base.taskId
     $mountPoints = $restoreTask.restoreTask.performRestoreTaskState.mountVolumesTaskState.mountInfo.mountVolumeResultVec
     foreach($mountPoint in $mountPoints){
         "{0} mounted to {1}" -f ($mountPoint.originalVolumeName, $mountPoint.mountPoint)

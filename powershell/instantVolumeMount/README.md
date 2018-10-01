@@ -23,10 +23,25 @@ Place both files in a folder together and run the main script like so:
 .\instantVolumeMount.ps1 -vip mycohesity -username admin -sourceServer server1.mydomain.net -targetServer server2.mydomain.net
 Connected!
 mounting volumes to server2.mydomain.net...
+Task ID for tearDown is: 23404
 D: mounted to F:\
 lvol_2 mounted to G:\
 C: mounted to H:\
 ```
 
+## Tearing Down Mounts
+
+Take note of the taskId reported in the output of the mount operation. You can use that to later tear down the mount, using the tearDownVolumeMount.ps1 script like so:
+
+```powershell
+./tearDownVolumeMount.ps1 -vip mycohesity -username admin -taskId 23404
+Connected!
+Tearing down mount points...                                          
+```
+
 ## Version Update
-Added monitoring for task completion and mountPoint report
+- Added monitoring for task completion
+- Added mountPoint report
+- Added taskId report for teardown
+
+
