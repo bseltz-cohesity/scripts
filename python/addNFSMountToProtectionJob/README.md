@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This python script registers a new generic NAS (NFS) mount point and adds it to an existing generic NAS protectioon job. If the mount point is already registered or already protected by the specified job, the script will skip the unneeded operations. 
+This python script registers a new generic NAS (NFS) mount point and adds it to an existing generic NAS protection job. If the mount point is already registered or already protected by the specified job, the script will skip the unneeded operations. 
 
 ## Components
 
