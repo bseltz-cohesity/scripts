@@ -1,0 +1,33 @@
+# Archive Old Snapshots using PowerShell
+
+Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
+
+This powershell script archives local snapshots older than x days. This is useful if you have created an archive target (e.g. AWS S3) and want to programatically archive existing local snapshots.
+
+## Components
+
+* archiveOldSnapshots.ps1: the main powershell script
+* cohesity-api.ps1: the Cohesity REST API helper module
+
+Place both files in a folder together, then we can run the script.
+
+First, run the script WITHOUT the -archive switch to see what would be archived.
+
+```powershell
+./archiveOldSnapshots.ps1 -vip mycluster -username admin -vault s3 -olderThan 365 -IfExpiringAfter 30
+```
+```text
+Connected!
+Searching for old snapshots...
+found 3 snapshots to archive
+12/01/2017 01:30:00  Physical Windows Backup  (would archive for 72 days)
+12/01/2017 01:45:00  NAS Backup  (would archive for 72 days)
+12/02/2017 02:30:01  TestDB  (would archive for 71 days)
+```
+Then, if you're happy with the list of snapshots that will be archived, run the script again and include the -archive switch. This will execute the archive tasks
+
+```powershell
+./archiveOldSnapshots.ps1 -vip mycluster -username admin -vault s3 -olderThan 365 -IfExpiringAfter 30 -archive
+```
+
+To monitor the archive tasks, see the script 'monitorArchiveTasks'
