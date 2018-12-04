@@ -21,53 +21,52 @@ $olderThanUsecs = timeAgo $olderThan days
 
 ### find protectionRuns with old local snapshots that are archived and sort oldest to newest
 "searching for old snapshots..."
-$runs = api get protectionRuns?numRuns=999999 | `
+foreach ($job in (api get protectionJobs)) {
+    
+    $runs = (api get protectionRuns?jobId=$($job.id)`&numRuns=999999`&runTypes=kRegular`&excludeTasks=true`&excludeNonRestoreableRuns=true) | `
     Where-Object { $_.backupRun.snapshotsDeleted -eq $false } | `
     Where-Object { $_.copyRun[0].runStartTimeUsecs -le $olderThanUsecs } | `
     Where-Object { 'kArchival' -in $_.copyRun.target.type } | `
     Where-Object { $_.backupRun.runType -ne 'kLog' } | `
     Sort-Object -Property @{Expression={ $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
 
-"found $($runs.count) snapshots with archive tasks"
+    foreach ($run in $runs) {
 
-foreach ($run in $runs) {
+        $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
+        $jobName = $run.jobName
 
-    $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
-    $jobName = $run.jobName
-
-    ### If the Local Snapshot is not expiring soon...
-    foreach ($copyRun in $run.copyRun) {
-        if ($copyRun.target.type -eq 'kArchival') {
-            if ($copyRun.status -eq 'kSuccess') {
-                if ($expire) {
-                    ### expire the local snapshot
-                    write-host "Expiring  $runDate  $jobName  (Archive kSuccessful)" -ForegroundColor Green
-                    $expireRun = @{'jobRuns' = @(
-                            @{'expiryTimeUsecs'     = 0;
-                                'jobUid'            = $run.jobUid;
-                                'runStartTimeUsecs' = $run.copyRun[0].runStartTimeUsecs;
-                                'copyRunTargets'    = @(
-                                    @{'daysToKeep' = 0;
-                                        'type'     = 'kLocal';
-                                    }
-                                )
-                            }
-                        )
+        ### If the Local Snapshot is not expiring soon...
+        foreach ($copyRun in $run.copyRun) {
+            if ($copyRun.target.type -eq 'kArchival') {
+                if ($copyRun.status -eq 'kSuccess') {
+                    if ($expire) {
+                        ### expire the local snapshot
+                        write-host "Expiring  $runDate  $jobName  (Archive kSuccessful)" -ForegroundColor Green
+                        $expireRun = @{'jobRuns' = @(
+                                @{'expiryTimeUsecs'     = 0;
+                                    'jobUid'            = $run.jobUid;
+                                    'runStartTimeUsecs' = $run.copyRun[0].runStartTimeUsecs;
+                                    'copyRunTargets'    = @(
+                                        @{'daysToKeep' = 0;
+                                            'type'     = 'kLocal';
+                                        }
+                                    )
+                                }
+                            )
+                        }
+                        api put protectionRuns $expireRun
                     }
-                    api put protectionRuns $expireRun
+                    else {
+                        ### display that we would expire this snapshot if -expire was set
+                        write-host "To Expire $runDate  $jobName  (Archive kSuccessful)" -ForegroundColor Green
+                    }
                 }
                 else {
-                    ### display that we would expire this snapshot if -expire was set
-                    write-host "To Expire $runDate  $jobName  (Archive kSuccessful)" -ForegroundColor Green
+                    #display that we're skipping this since it hasn't completed yet
+                    Write-Host "Skipping  $runDate  $jobName  (Archive $($copyRun.status)" -ForegroundColor Yellow
                 }
-            }
-            else {
-                #display that we're skipping this since it hasn't completed yet
-                Write-Host "Skipping  $runDate  $jobName  (Archive $($copyRun.status)" -ForegroundColor Yellow
             }
         }
     }
 }
-
-
 

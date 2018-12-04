@@ -20,31 +20,31 @@ $olderThanUsecs = timeAgo $olderThan days
 
 ### find protectionRuns with old local snapshots with archive tasks and sort oldest to newest
 "searching for old snapshots..."
-$runs = api get protectionRuns?numRuns=999999 | `
-    Where-Object { $_.backupRun.snapshotsDeleted -eq $false } | `
-    Where-Object { $_.copyRun[0].runStartTimeUsecs -le $olderThanUsecs } | `
-    Where-Object { 'kArchival' -in $_.copyRun.target.type } | `
-    Sort-Object -Property @{Expression={ $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
+foreach ($job in (api get protectionJobs)) {
+    
+    $runs = (api get protectionRuns?jobId=$($job.id)`&numRuns=999999`&runTypes=kRegular`&excludeTasks=true`&excludeNonRestoreableRuns=true) | `
+        Where-Object { $_.backupRun.snapshotsDeleted -eq $false } | `
+        Where-Object { $_.copyRun[0].runStartTimeUsecs -le $olderThanUsecs } | `
+        Where-Object { 'kArchival' -in $_.copyRun.target.type } | `
+        Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
 
-"found $($runs.count) snapshots with archive tasks"
+    foreach ($run in $runs) {
 
-foreach ($run in $runs) {
+        $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
+        $jobName = $run.jobName
 
-    $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
-    $jobName = $run.jobName
-
-    ### Display Status of archive task
-    foreach ($copyRun in $run.copyRun) {
-        if ($copyRun.target.type -eq 'kArchival') {
-            if ($copyRun.status -eq 'kSuccess') {
-                write-host "$runDate  $jobName  -> Completed" -ForegroundColor Green
-            }
-            else {
-                Write-Host "$runDate  $jobName  -> $($copyRun.status)" -ForegroundColor Yellow
+        ### Display Status of archive task
+        foreach ($copyRun in $run.copyRun) {
+            if ($copyRun.target.type -eq 'kArchival') {
+                if ($copyRun.status -eq 'kSuccess') {
+                    write-host "$runDate  $jobName  -> Completed" -ForegroundColor Green
+                }
+                else {
+                    Write-Host "$runDate  $jobName  -> $($copyRun.status)" -ForegroundColor Yellow
+                }
             }
         }
     }
 }
-
 
 

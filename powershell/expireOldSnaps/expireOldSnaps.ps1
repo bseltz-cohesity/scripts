@@ -1,7 +1,6 @@
 ### usage: ./expireOldSnaps.ps1 -vip 192.168.1.198 -username admin [ -domain local ] -daysToKeep 60 [ -expire ]
 ### omitting the -expire parameter: the script will only display all the snaps older than -daysToKeep
-### including the -expire parameter: the script will actually expire all the snaps older than -daysToKeep
-### warning! There is no undelete. Once a snapshot is expired, there's no getting it back!
+### including the -expire parameter: the script will actually expire all the snaps older than -daysToKeep 
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -23,7 +22,7 @@ apiauth -vip $vip -username $username -domain $domain
 "Searching for old snapshots..."
 foreach ($job in (api get protectionJobs)) {
     $jobId = $job.id
-    foreach ($run in (api get protectionRuns?jobId=$($job.id)`&numRuns=99999)) {
+    foreach ($run in (api get protectionRuns?jobId=$($job.id)`&numRuns=99999`&excludeTasks=true`&excludeNonRestoreableRuns=true)) {
         if ($run.backupRun.snapshotsDeleted -eq $false) {
             $startdate = usecstodate $run.copyRun[0].runStartTimeUsecs
             $startdateusecs = $run.copyRun[0].runStartTimeUsecs
