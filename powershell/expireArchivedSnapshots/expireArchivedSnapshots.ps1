@@ -16,12 +16,15 @@ param (
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
 
+### cluster Id
+$clusterId = (api get cluster).id
+
 ### olderThan days in usecs
 $olderThanUsecs = timeAgo $olderThan days
 
 ### find protectionRuns with old local snapshots that are archived and sort oldest to newest
 "searching for old snapshots..."
-foreach ($job in (api get protectionJobs)) {
+foreach ($job in ((api get protectionJobs) | Where-Object{ $_.policyId.split(':')[0] -eq $clusterId })) {
     
     $runs = (api get protectionRuns?jobId=$($job.id)`&numRuns=999999`&runTypes=kRegular`&excludeTasks=true`&excludeNonRestoreableRuns=true) | `
     Where-Object { $_.backupRun.snapshotsDeleted -eq $false } | `

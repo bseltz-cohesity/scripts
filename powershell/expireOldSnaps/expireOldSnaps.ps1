@@ -18,9 +18,13 @@ param (
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
 
+### cluster Id
+$clusterId = (api get cluster).id
+
 ### find protectionRuns that are older than daysToKeep
 "Searching for old snapshots..."
-foreach ($job in (api get protectionJobs)) {
+foreach ($job in ((api get protectionJobs) | Where-Object{ $_.policyId.split(':')[0] -eq $clusterId })) {
+
     $jobId = $job.id
     foreach ($run in (api get protectionRuns?jobId=$($job.id)`&numRuns=99999`&excludeTasks=true`&excludeNonRestoreableRuns=true)) {
         if ($run.backupRun.snapshotsDeleted -eq $false) {
