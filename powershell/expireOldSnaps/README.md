@@ -63,4 +63,4 @@ Expiring CorpShare Snapshot from 11/29/2017 04:07:00
 ```
 You can run the script again you should see no results, unless the Cohesity cluster is very busy. It might take some time for the snapshots to actually be deleted.
 
-Also note that if you're waiting for capacity to be freed up, it may take hours to days for the garbage collector to actually free up the space.
+Also note that if you're waiting for capacity to be freed up, it may take hours to days for the garbage collector to actually free up the space. 

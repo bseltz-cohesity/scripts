@@ -30,4 +30,4 @@ Then, if you're happy with the list of snapshots that will be archived, run the 
 ./archiveOldSnapshots.ps1 -vip mycluster -username admin -vault s3 -olderThan 365 -IfExpiringAfter 30 -archive
 ```
 
-To monitor the archive tasks, see the script 'monitorArchiveTasks'
+To monitor the archive tasks, see the script 'monitorArchiveTasks' 

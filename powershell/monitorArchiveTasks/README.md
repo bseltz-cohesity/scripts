@@ -26,4 +26,4 @@ found 7 snapshots with archive tasks
 12/03/2018 01:00:00  VM Backup  (Archive kSuccessful)
 12/03/2018 02:10:00  CorpShare  (Archive kSuccessful)
 ```
-  
+   

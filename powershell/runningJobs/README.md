@@ -19,3 +19,4 @@ Place both files in a folder together and run the main script like so:
 ```powershell
 ./runningJobs.ps1 -vip mycluster -username admin -domain local
 ```
+ 

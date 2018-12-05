@@ -14,3 +14,4 @@ Place both files in a folder together and run the main script like so:
 ```powershell
 ./protectVM.ps1 -vip mycluster -username admin -jobName 'vm backup' -vmName mongodb
 ```
+ 

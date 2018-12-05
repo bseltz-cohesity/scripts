@@ -14,3 +14,4 @@ Place both files in a folder together and run the main script like so:
 ```powershell
 ./cloneView.ps1 -vip mycluster -username admin [ -domain local ] -viewName SMBShare -newName Cloned-SMBShare
 ```
+ 
