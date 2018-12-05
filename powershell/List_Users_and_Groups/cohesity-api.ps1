@@ -296,3 +296,4 @@ function dateToUsecs($datestring){
     $usecs =  ([Math]::Floor([decimal](Get-Date($datestring).ToUniversalTime()-uformat "%s")))*1000000
     $usecs
 }
+ 
