@@ -12,7 +12,7 @@ This script demonstrates how to tear down a cloned SQLDB, VM, or View.
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./destroy-Clone.ps1 -vip mycluster -username admin -cloneType sql -dbName cohesitydb-test -dbServer sqldev01                                                                                                    
+./destroyClone.ps1 -vip mycluster -username admin -cloneType sql -dbName cohesitydb-test -dbServer sqldev01                                                                                                    
 Connected!
 tearing down SQLDB: cohesitydb-test from sqldev01...
 ```
