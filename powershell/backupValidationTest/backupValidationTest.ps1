@@ -1,161 +1,114 @@
 
-### usage: ./backupValidationTest.ps1 -vip 192.168.1.198 -username admin [ -domain local ] -sourceServer 'SQL2012' [ -targetServer 'SQLDEV01' ] [ -targetUsername 'myDomain\ADuser' ] [ -targetPw 'myPassword' ] [-testFile C:\test.txt] [-testText 'hello world']
-
 ### process commandline arguments
 [CmdletBinding()]
 param (
     [Parameter()][string]$vip = 'mycluster', #the cluster to connect to (DNS name or IP)
     [Parameter()][string]$username = 'admin', #username (local or AD)
     [Parameter()][string]$domain = 'local', #local or AD domain
-    [Parameter()][string]$sourceServer = 'w2012b.seltzer.net', #source server that was backed up
-    [Parameter()][string]$targetServer = 'w2012a.seltzer.net', #target server to mount the volumes to
-    [Parameter()][string]$targetUsername = '', #credentials to ensure disks are online (optional, only needed if it's a VM with no agent)
-    [Parameter()][string]$targetPw = '', #credentials to ensure disks are online (optional, only needed if it's a VM with no agent)
-    [Parameter()][string]$testFile = 'C:\Users\myuser\Downloads\test.txt',
-    [Parameter()][string]$testText = 'Hello World',
-    [Parameter()][string]$smtpServer = '192.168.1.95',
-    [Parameter()][string]$smtpPort = '25',
-    [Parameter()][string]$sendTo = 'somebody@mydomain.com',
-    [Parameter()][string]$sendFrom = 'backuptest@mydomain.com'
+    [Parameter()][string]$smtpServer = '192.168.1.95', #outbound smtp server 
+    [Parameter()][string]$smtpPort = '25', #outbound smtp port
+    [Parameter()][string]$sendTo = 'myaddress@mydomain.com', #send to address
+    [Parameter()][string]$sendFrom = 'backuptest@mydomain.com' #send from address
 )
 
-### source the cohesity-api helper code
+### list of backed up files to check
+$fileChecks = @(
+    @{'server' = 'w2012b.seltzer.net'; 'fileName' = 'MobaXterm.ini'; 'expectedText' = '[Bookmarks]'};
+      @{'server' = 'w2016'; 'fileName' = 'lsasetup.log'; 'expectedText' = '[11/28 08:45:36] 508.512>  - In LsapSetupInitialize()'};
+      @{'server' = 'centos1'; 'fileName' = 'jobMonitor.sh'; 'expectedText' = '#!/usr/bin/env python'}
+)
+
+### local file paths
 $scriptLocation = split-path $SCRIPT:MyInvocation.MyCommand.Path -parent
+$outpath = Join-Path -Path $scriptLocation -ChildPath 'temp'
+New-Item -ItemType directory -Path $outpath -ErrorAction Ignore 
+
+### source the cohesity-api helper code
 $apimodule = Join-Path -Path $scriptLocation -ChildPath 'cohesity-api.ps1'
 . $($apimodule)
 
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
 
-### search for the source server
-$searchResults = api get "/searchvms?entityTypes=kVMware&entityTypes=kPhysical&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kAcropolis&entityTypes=kView&vmName=$sourceServer"
+$now = get-date
 
-### narrow the results to the correct server
-$searchResults2 = $searchresults.vms | Where-Object { $_.vmDocument.objectName -ieq $sourceServer }
+### search and download file function
+function getFile($fileName, $objectName) {
+    $encodedFileName = [System.Web.HttpUtility]::UrlEncode($fileName)
 
-### if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot 
-$latestResult = ($searchResults2 | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
-
-if($latestResult -eq $null){
-    write-host "Source Server $sourceServer Not Found" -foregroundcolor yellow
-    exit
-}
-
-### get source and target entity info
-$physicalEntities = api get "/entitiesOfType?environmentTypes=kVMware&environmentTypes=kPhysical&physicalEntityTypes=kHost&vmwareEntityTypes=kVCenter"
-$virtualEntities = api get "/entitiesOfType?environmentTypes=kVMware&environmentTypes=kPhysical&isProtected=true&physicalEntityTypes=kHost&vmwareEntityTypes=kVirtualMachine" #&vmwareEntityTypes=kVCenter
-$sourceEntity = (($physicalEntities + $virtualEntities) | Where-Object { $_.displayName -ieq $sourceServer })[0]
-$targetEntity = (($physicalEntities + $virtualEntities) | Where-Object { $_.displayName -ieq $targetServer })[0]
-
-if($sourceEntity -eq $null){
-    Write-Host "Source Server $sourceServer Not Found" -ForegroundColor Yellow
-    exit
-}
-
-if($targetEntity -eq $null){
-    Write-Host "Target Server $targetServer Not Found" -ForegroundColor Yellow
-    exit
-}
-
-### confirm age of last backup
-$mostRecentBackupUsecs = $latestResult.vmDocument.versions[0].instanceId.jobStartTimeUsecs
-$mostRecentBackup = usecsToDate $mostRecentBackupUsecs
-$24hoursAgo = timeAgo 24 hours
-if ($mostRecentBackupUsecs -lt $24hoursAgo){
-    $backupWarning = 'Warning: latest backup is more than 24 hours old'
-    Write-Host $backupWarning -ForegroundColor Yellow
-}else{
-    $backupWarning = "latest backup occurred within the last 24 hours ($mostRecentBackup)"
-    write-host $backupWarning -ForegroundColor Green
-}
-
-### mount backup to this server
-$mountTask = @{
-    'name' = 'myMountOperation';
-    'objects' = @(
-        @{
-            'jobId' = $latestResult.vmDocument.objectId.jobId;
-            'jobUid' = $latestResult.vmDocument.objectId.jobUid;
-            'entity' = $sourceEntity;
-            'jobInstanceId' = $latestResult.vmDocument.versions[0].instanceId.jobInstanceId;
-            'startTimeUsecs' = $latestResult.vmDocument.versions[0].instanceId.jobStartTimeUsecs
-        }
-    );
-    'mountVolumesParams' = @{
-        'targetEntity' = $targetEntity;
-        'vmwareParams' = @{
-            'bringDisksOnline' = $true;
-            'targetEntityCredentials' = @{
-                'username' = $targetUsername;
-                'password' = $targetPw;
-            }
-        }
+    ### find entity
+    $entities = api get '/entitiesOfType?environmentTypes=kVMware&environmentTypes=kPhysical&environmentTypes=kView&isProtected=true&physicalEntityTypes=kHost&viewEntityTypes=kView&vmwareEntityTypes=kVirtualMachine'
+    $entity = $entities | Where-Object { $_.displayName -ieq $objectName }
+    if (!$entity) {
+        Write-Host "objectName not found" -ForegroundColor Yellow
+        exit
     }
-}
 
-if($targetEntity.parentId ){
-    $mountTask['restoreParentSource'] = @{ 'id' = $targetEntity.parentId }
-}
-
-write-host "mounting volumes to $targetServer..." -ForegroundColor Green
-$result = api post /restore $mountTask
-
-$taskid = $result.restoreTask.performRestoreTaskState.base.taskId
-
-$finishedStates =  @('kCanceled', 'kSuccess', 'kFailure') 
-
-### wait for mount to complete
-do
-{
-    sleep 3
-    $restoreTask = api get /restoretasks/$taskid
-    $restoreTaskStatus = $restoreTask.restoreTask.performRestoreTaskState.base.publicStatus
-} until ($restoreTaskStatus -in $finishedStates)
-
-if($restoreTaskStatus -eq 'kSuccess'){
-
-    $mountResult = 'Success'
-    Write-Host "Volume mounted successfully" -ForegroundColor Green
-
-    ### gather mount information
-    $mountPoints = $restoreTask.restoreTask.performRestoreTaskState.mountVolumesTaskState.mountInfo.mountVolumeResultVec
-    $taskId = $restoreTask.restoreTask.performRestoreTaskState.base.taskId
-    $mounts = @{}
-    foreach($mountPoint in $mountPoints){
-        $mounts[$($mountPoint.originalVolumeName)] = $mountPoint.mountPoint
+    ### find my file
+    $files = api get "/searchfiles?entityIds=$($entity.id)&filename=$($encodedFileName)"
+    if (!$files.count) {
+        Write-Host "no files found" -ForegroundColor Yellow
+        return $null
     }
-    
-    ### check contents of test file
-    $testFile = $mounts[$testFile.split(':')[0] + ':'] + $testFile.split(':')[1]
-    
-    ### report test as successful or failed
-    $backupValidation = 'Failed'
-    if((gc $testFile)[0] -eq $testText){
-        $backupValidation = 'Success'
-        write-host "Backup Validation Successful!" -ForegroundColor Green
+    $clusterId = $files.files[0].fileDocument.objectId.jobUid.clusterId
+    $clusterIncarnationId = $files.files[0].fileDocument.objectId.jobUid.clusterIncarnationId
+    $jobId = $files.files[0].fileDocument.objectId.jobUid.objectId
+    $viewBoxId = $files.files[0].fileDocument.viewBoxId
+    $filePath = $files.files[0].fileDocument.filename
+    $shortFile = Split-Path $filePath -Leaf
+    $outFile = Join-Path $outPath $shortFile
+    $filePath = [System.Web.HttpUtility]::UrlEncode($filePath)
+    ### find most recent version
+    $versions = api get "/file/versions?clusterId=$($clusterId)&clusterIncarnationId=$($clusterIncarnationId)&entityId=$($entity.id)&filename=$($encodedFileName)&fromObjectSnapshotsOnly=false&jobId=$($jobId)"
+    $attemptNum = $versions.versions[0].instanceId.attemptNum
+    $jobInstanceId = $versions.versions[0].instanceId.jobInstanceId
+    $jobStartTimeUsecs = $versions.versions[0].instanceId.jobStartTimeUsecs
+
+    ### download the file
+    "Downloading $shortFile..."
+    fileDownload "/downloadfiles?attemptNum=$($attemptNum)&clusterId=$($clusterId)&clusterIncarnationId=$($clusterIncarnationId)&entityId=$($entity.id)&filepath=$($filePath)&jobId=$($jobId)&jobInstanceId=$($jobInstanceId)&jobStartTimeUsecs=$($jobStartTimeUsecs)&viewBoxId=$($viewBoxId)" $outFile
+    return @{ 'startTime' = $jobStartTimeUsecs; 'resultText' = $(Get-Content $outFile -TotalCount 1) }
+}
+
+$results = @()
+
+foreach ($fileCheck in $fileChecks){
+
+    write-host "getting $($fileCheck.fileName) from $($fileCheck.server)..." -NoNewline
+    $fileStatus = getFile $fileCheck.fileName $fileCheck.server
+    if($fileStatus){
+        write-host ''
+        remove-item $(Join-Path $outpath $fileCheck.fileName)
+        ### evaluate backup age
+        $lastBackup = usecsToDate $fileStatus.startTime
+        $backupAge = New-TimeSpan -Start $lastBackup.DateTime -End $now
+        $hoursOld = $backupAge.Hours
+        if($hoursOld -lt 24){
+            $meetsSLA = "Met"
+        }else{
+            $meetsSLA = "Violated"
+        }
+        ### evaluate expected text
+        if($fileStatus.resultText -eq $fileCheck.expectedText){
+            $validation = 'Successful'
+        }else{
+            $validation = 'Text Mismatch'
+        }
+        $results += @{'Server'=$fileCheck.server; 'BackupAgeHours'=$hoursOld; 'SLA'=$meetsSLA; 'Validation'=$validation}
     }else{
-        Write-Host "Warning: test file not as expected!" -ForegroundColor Yellow
+        $results += @{'Server'=$fileCheck.server; 'BackupAgeHours'='N/A'; 'SLA'='N/A'; 'Validation'='Check Failed'}
     }
-    
-    ### tear down the mount
-    $tearDownTask = api post /destroyclone/$taskId
-    write-host "Tearing down mount points..." -ForegroundColor Green
-
-}else{
-    ### report that the mount operation failed
-    $mountResult = "Warining: mount result = $restoreTaskStatus"
-    Write-Host "mount operation ended with: $restoreTaskStatus" -ForegroundColor Yellow
-    Exit
 }
 
-$body = @" 
-Backup Validation Report for $sourceServer
 
-Backup Status: $backupWarning
-Mount Operation: $mountResult
-Validation Test: $backupValidation
-"@
+### format output
+$resultTable = $results | ForEach-Object { [pscustomobject] $_ } | Format-Table | Out-String
+$resultTable
+$resultTable = $resultTable.Replace("`n","<br/>").Replace(" ","&nbsp;")
+$resultHTML='<html><div style="background:#eeeeee;border:1px solid #cccccc;padding:5px 10px;"><code>' + $resultTable + '</code></div></html>'
+$resultHTML=$resultHTML.Replace('Check&nbsp;Failed','<span style="color:#ff0000;">Check Failed</span>')
+$resultHTML=$resultHTML.Replace('Text&nbsp;Mismatch','<span style="color:#ff0000;">Text Mismatch</span>')
+$resultHTML=$resultHTML.Replace('Violated','<span style="color:#ff0000;">Violated</span>')
 
-Send-MailMessage -From $sendFrom -To $sendTo -SmtpServer $smtpServer -Port $smtpPort -Subject "backupValidationReport for $sourceServer" -Body $body 
-
-Write-Host "Process Complete`n" -ForegroundColor Green
+### send email report
+Send-MailMessage -From $sendFrom -To $sendTo -SmtpServer $smtpServer -Port $smtpPort -Subject "backupValidationReport" -BodyAsHtml $resultHTML 
