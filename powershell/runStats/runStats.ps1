@@ -21,7 +21,8 @@ foreach ($job in ((api get protectionJobs) | Where-Object{ $_.policyId.split(':'
     "Runs for $($job.name)"
     $jobId = $job.id
     $runs = api get protectionRuns?jobId=$($job.id)`&numRuns=99999`&excludeTasks=true`&excludeNonRestoreableRuns=true
-    $runs | Select-Object -Property @{Name="Run Date"; Expression={usecsToDate $_.backupRun.stats.startTimeUsecs}}, 
+    $runs | Select-Object -Property @{Name="Run Date"; Expression={usecsToDate $_.backupRun.stats.startTimeUsecs}},
+                                    @{Name="Run Seconds"; Expression={[math]::Round(($_.backupRun.stats.endTimeUsecs - $_.backupRun.stats.startTimeUsecs)/(1000*1000))}},
                                     @{Name="MB Read"; Expression={[math]::Round(($_.backupRun.stats.totalBytesReadFromSource)/(1024*1024))}},
                                     @{Name="MB Written"; Expression={[math]::Round(($_.backupRun.stats.totalPhysicalBackupSizeBytes)/(1024*1024))}} | ft 
 }                                                                                           
