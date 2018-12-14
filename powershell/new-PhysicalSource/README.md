@@ -12,13 +12,13 @@ This powershell script registers a new physical host as a Cohesity protection so
 Place both files in a folder together, then run the script like so.
 
 ```powershell
-./new-PhysicalSource.ps1 -vip bseltzve01 -username admin -server w2012c.seltzer.net
+./new-PhysicalSource.ps1 -vip mycluster -username admin -server win2016.mydomain.com
 Connected!
 New Physical Server Registered. ID: 597
 ```
 
 ```powershell
-./new-PhysicalSource.ps1 -vip bseltzve01 -username admin -server 192.168.1.10
+./new-PhysicalSource.ps1 -vip mycluster -username admin -server 192.168.1.10
 Connected!
 New Physical Server Registered. ID: 593
 ```
