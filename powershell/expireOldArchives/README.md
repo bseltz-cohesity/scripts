@@ -1,14 +1,14 @@
-# Expire Old Snapshots using PowerShell
+# Expire Old Archives using PowerShell
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This powershell script expires local snapshots older than x days. This is useful if you have reduced your on-prem retention and want to programatically expire local snapshots older than the new retention period.
+This powershell script expires archives older than x days. This is useful if you want to reduce your long term archive retention to reduce storage consumption in the cloud or other archive target.
 
 ## Warning! This script deletes backup data! Make sure you know what you are doing before you run it!  
 
 ## Components
 
-* expireOldSnaps.ps1: the main powershell script
+* expireOldArchives.ps1: the main powershell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place both files in a folder together, then we can run the script.
@@ -16,51 +16,21 @@ Place both files in a folder together, then we can run the script.
 First, run the script WITHOUT the -expire switch to see what would be deleted.
 
 ```powershell
-./expireOldSnaps.ps1 -vip bseltzve01 -username admin -daysToKeep 365
-```
-```text
+powershell> ./expireOldArchives.ps1 -vip 10.99.1.64 -username admin -olderThan 120            
 Connected!
-Searching for old snapshots...
-VM Backup 11/29/2017 01:00:01
-SQL VM Backup 11/29/2017 15:19:28
-SQL VM Backup 11/29/2017 09:19:28
-NAS Backup 11/29/2017 01:45:01
-Infrastructure 11/29/2017 02:15:00
-TestDB 11/29/2017 15:15:29
-TestDB 11/29/2017 09:15:29
-Oracle 11/28/2017 22:35:47
-Oracle 11/28/2017 16:35:47
-CorpShare 11/29/2017 04:07:00
+searching for old snapshots...
+07/01/2018 00:38:02  hdname
+08/01/2018 07:42:44  hdname
+08/03/2018 13:39:18  JZ Cloud Archive
+08/03/2018 15:51:37  JZ Cloud Archive
+08/04/2018 13:38:00  JZ Cloud Archive
 ```
-Then, if you're happy with the list of snapshots that will be deleted, run the script again and include the -expire switch. THIS WILL DELETE THE OLD SNAPSHOTS!!!
+Then, if you're happy with the list of archives that will be deleted, run the script again and include the -expire switch. THIS WILL DELETE THE OLD ARCHIVES!!!
 
 ```powershell
-./expireOldSnaps.ps1 -vip bseltzve01 -username admin -daysToKeep 365 -expire
+./expireOldArchives.ps1 -vip 10.99.1.64 -username admin -olderThan 120 -expire
 ```
-```text
-Connected!
-Searching for old snapshots...
 
-Expiring VM Backup Snapshot from 11/29/2017 01:00:01
+You can run the script again you should see no results.
 
-Expiring SQL VM Backup Snapshot from 11/29/2017 15:19:28
-
-Expiring SQL VM Backup Snapshot from 11/29/2017 09:19:28
-
-Expiring NAS Backup Snapshot from 11/29/2017 01:45:01
-
-Expiring Infrastructure Snapshot from 11/29/2017 02:15:00
-
-Expiring TestDB Snapshot from 11/29/2017 15:15:29
-
-Expiring TestDB Snapshot from 11/29/2017 09:15:29
-
-Expiring Oracle Snapshot from 11/28/2017 22:35:47
-
-Expiring Oracle Snapshot from 11/28/2017 16:35:47
-
-Expiring CorpShare Snapshot from 11/29/2017 04:07:00
-```
-You can run the script again you should see no results, unless the Cohesity cluster is very busy. It might take some time for the snapshots to actually be deleted.
-
-Also note that if you're waiting for capacity to be freed up, it may take hours to days for the garbage collector to actually free up the space. 
+Also note that data in the archive target may not be immediately deleted if a newer reference archive has not yet been created. 
