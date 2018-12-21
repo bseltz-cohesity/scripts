@@ -50,7 +50,7 @@ cluster name is: BSeltzVE01
 ### Date Conversions
 Cohesity stores dates in Unix Epoch Microseconds. That's the number of microseconds since midnight on Jan 1, 1970. Several conversion functions have been included to handle these dates.
 ```python
-print api('get','protectionJobs')[0]['creationTimeUsecs']
+print myCluster.get('protectionJobs')[0]['creationTimeUsecs']
 1533978038503713
   
 usecsToDate(1533978038503713)
