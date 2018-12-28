@@ -27,40 +27,37 @@ suffix = args.suffix
 apiauth(vip, username, domain)
 
 ### find VM
-vms = api('get','restore/objects?search=%s' % vmName)
+results = api('get','restore/objects?search=%s' % vmName)
 
-if vms['totalCount'] == 0:
-    print "VM '%s' not found" % vmName
-    exit()
+vms = []
 
-if vms['totalCount'] > 1:
-    for vm in vms['objectSnapshotInfo']:
-        if vm['snapshottedSource']['name'].lower() == vmName.lower():
-            exactvm = vm
+if results['totalCount'] > 0: # filter on exact name match then sort by newest snapshot
+    vms = filter( lambda vm: vm['objectName'].lower() == vmName.lower(), results['objectSnapshotInfo'] )
+    vms.sort( key=lambda vm: vm['versions'][0]['startedTimeUsecs'], reverse=True )
 
-if vms['totalCount'] == 1:
-    exactvm = vms['objectSnapshotInfo'][0]
+if(len(vms)):
 
-vmId = exactvm['snapshottedSource']['id']
-jobId = exactvm['jobId']
-
-if vmId:
     restoreTask = {
         'name': 'myNewVM',
         'type': 'kRecoverVMs',
         'Objects': [
             {
-                "protectionSourceId": vmId,
-                'jobId': jobId
+                "protectionSourceId": vms[0]['snapshottedSource']['id'],
+                'jobId': vms[0]['jobId']
             }
         ]
     }
 
-if suffix:
-    restoreTask['vmwareParameters'] = {'suffix': '-' + suffix}
-    print "recovering %s as %s..." % (vmName, vmName + '-' + suffix)
-else:
-    print "recovering %s" % vmName
+    if suffix:
+        restoreTask['vmwareParameters'] = {'suffix': '-' + suffix}
+        print "recovering %s as %s..." % (vmName, vmName + '-' + suffix)
+    else:
+        print "recovering %s" % vmName
 
-recoveryStatus = api('post','restore/recover', restoreTask)
-print "Status: %s" % recoveryStatus['status']
+    recoveryStatus = api('post', 'restore/recover', restoreTask)
+    print "Recovery status: %s" % recoveryStatus['status']
+
+else:
+     print "VM %s not found" % vmName
+
+
