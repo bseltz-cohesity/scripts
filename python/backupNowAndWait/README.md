@@ -11,11 +11,12 @@ This python script performs a run of a protection job and waits for it to finish
 
 Place both files in a folder together and run the main script like so:
 ```bash
-bash:~/scripts/python$ ./backupNowAndWait.py -v mycluster -u myuser -j 'VM Backup'
+bash:~/scripts/python$ ./backupNowAndWait.py -v mycluster -u myuser -j 'VM Backup' -k 30
 Connected!
 Running VM Backup...
 New Job Run ID: 6811
 Job finished with status: kSuccess
+Run URL: https://bseltzve01/protection/job/7/run/8365/1547289225383428/protection
 ```
 
 ## The Python Helper Module - pyhesity.py

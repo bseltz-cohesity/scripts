@@ -11,12 +11,13 @@ This python script performs an adHovc backup of a new VM. It refreshes a vCenter
 
 Place both files in a folder together and run the main script like so:
 ```bash
-bash:~/scripts/python$./adHocProtectVM.py -v mycluster -u myuser -vc vCenter6.mydomain.net -vm wiki -job 'vm backup'
+bash:~/scripts/python$./adHocProtectVM.py -v mycluster -u myuser -vc vCenter6.mydomain.net -vm wiki -job 'vm backup' -k 30
 Connected!
 refreshing vCenter6.mydomain.net...
 adding Wiki to VM Backup job...
 Running vm backup...
 RunID: 7474 Status: kSuccess
+Run URL: https://mycluster/protection/job/7/run/8365/1547289225383428/protection
 ```
 
 ## The Python Helper Module - pyhesity.py
