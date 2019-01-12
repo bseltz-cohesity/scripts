@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now for python"""
 
-### usage: ./backupNow.py -v mycluster -u admin -j 'VM Backup'
+### usage: ./backupNowAndWaitV2.py -v mycluster -u admin -j 'Generic NAS' -k 30 
 
 ### import pyhesity wrapper module
 from pyhesity import *
@@ -14,6 +14,7 @@ parser.add_argument('-v','--vip', type=str, required=True)
 parser.add_argument('-u','--username', type=str, required=True)
 parser.add_argument('-d','--domain',type=str,default='local')
 parser.add_argument('-j','--jobName', type=str, required=True)
+parser.add_argument('-k','--daysToKeep', type=int, required=True)
 
 args = parser.parse_args()
     
@@ -21,6 +22,7 @@ vip = args.vip
 username = args.username
 domain = args.domain
 jobName = args.jobName
+daysToKeep = args.daysToKeep
 
 ### authenticate
 apiauth(vip, username, domain)
@@ -36,9 +38,9 @@ newRunId = lastRunId = runs[0]['backupRun']['jobRunId']
 
 ### wait for existing job run to finish
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
-if (runs[0]['backupRun']['status'] not in finishedStates):
+if (runs[0]['copyRun'][0]['status'] not in finishedStates):
     print "waiting for existing job run to finish..."
-    while (runs[0]['backupRun']['status'] not in finishedStates):
+    while (runs[0]['copyRun'][0]['status'] not in finishedStates):
         sleep(5)
         runs = api('get','protectionRuns?jobId=%s' % job[0]['id'])    
 
@@ -47,7 +49,6 @@ print "Running %s..." % jobName
 api('post',"protectionJobs/run/%s" % job[0]['id'], {'runType': 'kRegular'})
 
 ### wait for new job run to appear
-#newTaskId = lastTaskId
 while(newRunId == lastRunId):
     sleep(1)
     runs = api('get','protectionRuns?jobId=%s' % job[0]['id'])
@@ -57,7 +58,34 @@ print "New Job Run ID: %s" % newRunId
 
 ### wait for job run to finish
 
-while(runs[0]['backupRun']['status'] not in finishedStates):
+while(runs[0]['copyRun'][0]['status'] not in finishedStates):
     sleep(5)
     runs = api('get','protectionRuns?jobId=%s' % job[0]['id'])
+
+### get retention from policy
+
+policy = api('get','protectionPolicies/%s' % job[0]['policyId'])
+retentionDays = policy['daysToKeep']  
+newDaysToKeep = int(daysToKeep) - int(retentionDays)
+
+### set expiration days
+
+extendRun = {
+    'jobRuns': [
+        {
+            "copyRunTargets": [
+                {
+                    "daysToKeep": newDaysToKeep,
+                    "type": "kLocal"
+                }
+            ],
+            'jobUid': runs[0]['jobUid'],
+            'runStartTimeUsecs': runs[0]['copyRun'][0]['runStartTimeUsecs']
+        }
+    ]
+}
+result = api('put','protectionRuns',extendRun)
+
+runURL = "https://%s/protection/job/%s/run/%s/%s/protection" % (vip, runs[0]['jobId'], runs[0]['backupRun']['jobRunId'], runs[0]['copyRun'][0]['runStartTimeUsecs'])
 print "Job finished with status: %s" % runs[0]['backupRun']['status']
+print "Run URL: %s" % runURL

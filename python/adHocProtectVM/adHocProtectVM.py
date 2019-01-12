@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Discover New VM And Backup Now Once"""
 
-### usage: ./adHocProtectVM.py -v mycluster -u myuser [-d mydomain.net ] -vc vCenter6.mydomain.net -vm wiki -job 'vm backup'
+### usage: ./adHocProtectVM.py -v mycluster -u myuser [-d mydomain.net ] -vc vCenter6.mydomain.net -vm wiki -job 'vm backup' -k 30
 
 ### import pyhesity wrapper module
 from pyhesity import *
@@ -16,6 +16,7 @@ parser.add_argument('-d','--domain',type=str,default='local')
 parser.add_argument('-vc','--vcenter', type=str, required=True)
 parser.add_argument('-vm','--vmname', type=str, required=True)
 parser.add_argument('-job','--jobname', type=str, required=True)
+parser.add_argument('-k','--daysToKeep', type=int, required=True)
 
 args = parser.parse_args()
     
@@ -25,6 +26,7 @@ domain = args.domain           #domain of username (e.g. local, or AD domain)
 vcenter = args.vcenter         #name of vcenter to find vm on
 vmname = args.vmname           #name of VM to add to protection job
 jobname = args.jobname         #name of protection job to add VM to
+daysToKeep = args.daysToKeep
 
 ### authenticate
 apiauth(vip, username, domain)
@@ -52,6 +54,7 @@ for job in api('get','protectionJobs'):
     if job['name'].lower() == jobname.lower():
         foundJob = True
         jobId = job['id']
+        policyId = job['policyId']
         for vm in api('get','protectionSources/virtualMachines?vCenterId=%s' % job['parentSourceId']):
             ### find VM
             if vm['name'].lower() == vmname.lower():
@@ -92,9 +95,9 @@ newRunId = lastRunId = runs[0]['backupRun']['jobRunId']
 
 ### wait for existing job run to finish
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
-if (runs[0]['backupRun']['status'] not in finishedStates):
+if (runs[0]['copyRun'][0]['status'] not in finishedStates):
     print "waiting for existing job run to finish..."
-    while (runs[0]['backupRun']['status'] not in finishedStates):
+    while (runs[0]['copyRun'][0]['status'] not in finishedStates):
         sleep(5)
         runs = api('get','protectionRuns?jobId=%s' % jobId)    
 
@@ -109,13 +112,39 @@ while(newRunId == lastRunId):
     newRunId=runs[0]['backupRun']['jobRunId']
 
 ### wait for job run to finish
-while(runs[0]['backupRun']['status'] not in finishedStates):
+while(runs[0]['copyRun'][0]['status'] not in finishedStates):
     sleep(5)
     runs = api('get','protectionRuns?jobId=%s' % jobId)
+
+### get retention from policy
+
+policy = api('get','protectionPolicies/%s' % policyId)
+retentionDays = policy['daysToKeep']  
+newDaysToKeep = int(daysToKeep) - int(retentionDays)
+
+### set expiration days
+
+extendRun = {
+    'jobRuns': [
+        {
+            "copyRunTargets": [
+                {
+                    "daysToKeep": newDaysToKeep,
+                    "type": "kLocal"
+                }
+            ],
+            'jobUid': runs[0]['jobUid'],
+            'runStartTimeUsecs': runs[0]['copyRun'][0]['runStartTimeUsecs']
+        }
+    ]
+}
+result = api('put','protectionRuns',extendRun)
 
 ### remove vm from job
 if myJob is not None:
     myJob['sourceIds'] = mySources
     updatedJob = api('put','protectionJobs/%s' % myJob['id'],myJob)
 
+runURL = "https://%s/protection/job/%s/run/%s/%s/protection" % (vip, runs[0]['jobId'], runs[0]['backupRun']['jobRunId'], runs[0]['copyRun'][0]['runStartTimeUsecs'])
 print "RunID: %s Status: %s" % (newRunId, runs[0]['backupRun']['status'])
+print "Run URL: %s" % runURL
