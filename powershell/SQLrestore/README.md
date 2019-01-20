@@ -10,7 +10,7 @@ This script can overwrite production data if you ask it to. Make sure you know w
 
 ## Components
 
-* restore-SQL60.ps1: the main powershell script
+* restore-SQL.ps1: the main powershell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
