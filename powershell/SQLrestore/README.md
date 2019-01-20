@@ -16,7 +16,7 @@ This script can overwrite production data if you ask it to. Make sure you know w
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./restore-SQL60.ps1 -vip mycluster -username admin -sourceServer sql2012 -sourceDB cohesitydb -targetServer sqldev01 -targetDB restoreTest -mdfFolder c:\sqldata -ndfFolder c:\sqldata\ndf -ldfFolder c:\sqldata\logs                                                                                                 
+./restore-SQL.ps1 -vip mycluster -username admin -sourceServer sql2012 -sourceDB cohesitydb -targetServer sqldev01 -targetDB restoreTest -mdfFolder c:\sqldata -ndfFolder c:\sqldata\ndf -ldfFolder c:\sqldata\logs                                                                                                 
 Connected!
 Restoring cohesitydb to sqldev01 as restoreTest
 ```
