@@ -26,3 +26,9 @@ Note: if you want to restore multiple ndf files to separate locations, use the f
 ```powershell
 -ndfFolders @{'*1.ndf'='E:\sqlrestore\ndf1'; '*2.ndf'='E:\sqlrestore\ndf2'}
 ```
+
+If you want to replay logs to a point in time, use this parameter:
+
+```powershell
+-logTime '2019-01-20 23:47:02'
+```
