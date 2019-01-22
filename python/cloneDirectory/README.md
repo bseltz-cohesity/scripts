@@ -36,5 +36,6 @@ Go to the folder where you want to download the files, then run the following co
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/cloneDirectory/cloneDirectory.sh
 
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/cloneDirectory/pyhesity.py
+
 chmod +x cloneDirectory.sh
 ```
