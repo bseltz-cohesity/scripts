@@ -92,9 +92,9 @@ def api(method, uri, data=''):
                         print '\033[93m' + responsejson['errorCode'][1:] + ': ' + responsejson['message'] + '\033[0m'
                     else:
                         print responsejson
-                    return ''
-                else:
-                    return responsejson
+                    #return ''
+                #else:
+                return responsejson
     else:
         print "invalid api method"
 

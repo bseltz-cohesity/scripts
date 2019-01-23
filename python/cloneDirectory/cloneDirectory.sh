@@ -6,6 +6,7 @@
  
 ### import pyhesity wrapper module
 from pyhesity import *
+import sys
 
 ### command line arguments
 import argparse
@@ -38,4 +39,7 @@ CloneDirectoryParams = {
 
 ### clone directory
 print "Cloning directory %s to %s/%s..." % (sourceDirectoryPath, destinationParentDirectoryPath, destinationDirectoryName)
-api('post','views/cloneDirectory',CloneDirectoryParams)
+result = api('post','views/cloneDirectory',CloneDirectoryParams)
+if result is not None:
+    if 'errorCode' in result:
+        sys.exit(1)
