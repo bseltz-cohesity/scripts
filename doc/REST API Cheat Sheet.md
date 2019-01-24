@@ -17,16 +17,15 @@ After installation you can launch PowerShell from a terminal session with the co
 To install the Cohesity PowerShell cmdlets, run the following command from within your new PowerShell session.
 
 Installing for the first time:
-```powershell
->  Install-Module -Name Cohesity.PowerShell.Core
-```
 
-Upgrading to the latest version:
 ```powershell
+   #first time install
+>  Install-Module -Name Cohesity.PowerShell.Core
+   #or upgrade to the latest version
 >  Update-Module -Name Cohesity.PowerShell.Core
 ```
 
-**Note**: On Windows, using full PowerShell (not Core), install the Cohesity.PowerShell module instead of Cohesity.PowerShell.Core
+**Note**: On Windows, using full PowerShell (not Core), install Cohesity.PowerShell instead of Cohesity.PowerShell.Core
 
 ## Connect to a Cohesity Cluster
 
@@ -37,7 +36,9 @@ Supply values for the following parameters:
 User: admin
 Password for user admin: *****
 ```
+
 once connected, you can run other cmdlets:
+
 ```powershell
 > Get-CohesityProtectionJob
 
