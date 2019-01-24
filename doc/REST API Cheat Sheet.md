@@ -4,7 +4,7 @@ How to enable yourself to demo the Cohesity REST API
 
 ## Install PowerShell Core on your Mac 
 
-Download the PowerShell Cofre .pkg file for MacOS here: https://github.com/PowerShell/PowerShell#get-powershell
+Download the PowerShell Core .pkg file for MacOS here: https://github.com/PowerShell/PowerShell#get-powershell
 
 After installation you can launch PowerShell from a terminal session with the command:
 
@@ -65,4 +65,6 @@ Run an on-demand backup:
 Protection job was started successfully.
 ```
 
-Find the Cohesity PowerShell Module documentation and more examples at: https://cohesity.github.io/cohesity-powershell-module/#/README
+Find the Cohesity PowerShell Module documentation and more examples here: https://cohesity.github.io/cohesity-powershell-module/#/README
+
+
