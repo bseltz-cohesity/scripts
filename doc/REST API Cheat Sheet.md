@@ -33,67 +33,44 @@ Upgrading to the latest version:
 ```powershell
 > Connect-CohesityCluster -Server mycluster              
 
-cmdlet Connect-CohesityCluster at command pipeline position 1
 Supply values for the following parameters:
-Credential
 User: admin
 Password for user admin: *****
 
 Connected to the Cohesity Cluster mycluster Successfully
 ```
-
-* expungeDataSpillage.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module
-
-Place both files in a folder together, then we can run the script.
-
+once connected, you can run other cmdlets:
 ```powershell
-### usage: ./expungeDataSpillage.ps1 -vip mycluster -username admin [ -domain local ] -search 'partial/filepath' [ -delete ]
+> Get-CohesityProtectionJob
+
+Id    Name              Environment    LastRunTime         SLA  IsPaused
+--    ----              -----------    -----------         ---  --------
+7     VM Backup         kVMware        1/23/19 11:30:00 PM Pass False
+35    Oracle            kOracle        1/24/19 12:00:00 AM Pass False
+841   Generic NAS       kGenericNas    1/24/19 12:10:00 AM Pass False
+6222  File-Based Backup kPhysicalFiles 1/24/19 12:40:01 AM Pass False
+8028  SQL Backup        kSQL           1/24/19 03:03:58 AM Pass False
+12886 Scripts           kView          1/24/19 12:30:01 AM Pass False
 ```
 
-First, run the script WITHOUT the -delete switch to see what would be deleted.
+Check out all the Cohesity cmdlets:
 
 ```powershell
-powershell> ./expungeDataSpillage.ps1 -vip mycluster -username admin [ -domain mydomain ] -search 'jobmonitor.sh'
-Connected!
-Searching for jobmonitor.sh...
-Search Results:
-----
-0: /home/seltzerb/old-jobMonitor.sh
-VM Backup::CentOS1
-----
-1: /home/seltzerb/jobMonitor.sh
-VM Backup::CentOS1
-----
-Please select ID to expunge: 
+>  Get-Command *Cohesity* | ft -Property name, version
 ```
 
-Select an item from the list by typing the ID (e.g. 0) 
+or view a synopsis of what each cmdlet does:
 
 ```powershell
-Please select ID to expunge: 0
-Searching for versions to delete...
-Deleting CentOS1 from VM Backup: 01/17/2019 23:30:01
-  Local Snapshot
-  Archive on S3
-Deleting CentOS1 from VM Backup: 01/15/2019 23:30:01
-  Local Snapshot
-  Archive on S3
-Deleting CentOS1 from VM Backup: 01/14/2019 23:30:01
-  Local Snapshot
-  Archive on S3
-Deleting CentOS1 from VM Backup: 01/13/2019 23:30:00
-  Archive on S3
-Deleting CentOS1 from VM Backup: 01/12/2019 23:30:01
-  Archive on S3
-Deleting CentOS1 from VM Backup: 01/11/2019 23:30:01
-  Archive on S3
-Deleting CentOS1 from VM Backup: 01/10/2019 23:30:00
-  Archive on S3
-Deleting CentOS1 from VM Backup: 01/09/2019 23:30:01
-  Archive on S3
+>  Get-Help *Cohesity* | ft -Property Name, Synopsis  
 ```
 
-Then, if you're happy with what would be deleted, re-run the script again and include the -delete switch. THIS WILL DELETE BACKUP DATA!!!
+Example, run an on-demand backup:
 
-Please note that there may be some delay before the deletions are reflected in file search results. 
+```powershell
+>  $job = Get-CohesityProtectionJob -Names 'VM Backup'
+>  Start-CohesityProtectionJob -Id $job.Id
+Protection job was started successfully.
+```
+
+Find the Cohesity PowerShell Module documentation and more examples at: https://cohesity.github.io/cohesity-powershell-module/#/README
