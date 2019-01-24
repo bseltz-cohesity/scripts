@@ -16,6 +16,24 @@ param (
 $scriptdir = Split-Path -parent $PSCommandPath
 $logfile = Join-Path -Path $scriptdir -ChildPath 'expungeLog.txt'
 
+### display run mode
+
+if ($delete) {
+    "----------------------------------"
+    "  *PERMANENT DELETE MODE*         "
+    "  - selection will be deleted!!!"
+    "  - logging to $logfile"
+    "  - press CTRL-C to exit"
+    "----------------------------------"
+}
+else {
+    "--------------------------"
+    "    *TEST RUN MODE*       "
+    "    - not deleting"
+    "    - not logging"
+    "--------------------------"
+}
+
 ### source the cohesity-api helper code
 . ./cohesity-api
 
