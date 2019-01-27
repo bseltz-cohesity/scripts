@@ -55,14 +55,6 @@ Id    Name              Environment    LastRunTime         SLA  IsPaused
 ...
 ```
 
-Check out all the Cohesity cmdlets:
-
-```powershell
->  Get-Command *Cohesity* | ft -Property name, version
->  #or
->  Get-Help *Cohesity* | ft -Property Name, Synopsis
-```
-
 Run an on-demand backup:
 
 ```powershell
@@ -71,15 +63,21 @@ Run an on-demand backup:
 Protection job was started successfully.
 ```
 
-Find the Cohesity PowerShell Module documentation and more examples here: https://cohesity.github.io/cohesity-powershell-module/#/README
+List all the Cohesity cmdlets:
 
+```powershell
+>  Get-Command *Cohesity* | ft -Property name, version
+>  #or
+>  Get-Help *Cohesity* | ft -Property Name, Synopsis
+```
 
-## More Resources
+The Cohesity PowerShell Module documentation and more examples are here: https://cohesity.github.io/cohesity-powershell-module/#/README
+
+## Developer Resources
 
 * Cohesity Developer Portal: https://developer.cohesity.com/#/rest/getting-started
 * REST API Browser (Swagger): https://mycluster/docs/restApiDocs/browse/
 * REST API Documentation (public): https://mycluster/docs/restApiDocs/bootprint/
 * REST API Documentation (internal): https://mycluster/docs/restApiDocs/bootprintinternal/
-* REST API Documentation PDFs: https://drive.google.com/drive/folders/1HMSNLAxIRGJ4WBXTRI07LXXSTAC1w3iB?usp=sharing
 
 * BSeltz's Favorite PowerShell Book: https://www.amazon.com/Windows-PowerShell-Action-Bruce-Payette/dp/1633430294
