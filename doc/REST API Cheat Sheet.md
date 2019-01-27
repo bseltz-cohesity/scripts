@@ -1,6 +1,6 @@
-# REST API Cheat Sheet
+# Cohesity REST API Cheat Sheet
 
-How to enable yourself to demo the Cohesity REST API
+Enable yourself to demo the Cohesity REST API
 
 ## Install PowerShell Core on your Mac 
 
@@ -16,7 +16,14 @@ After installation you can launch PowerShell from a terminal session with the co
 
 To install the Cohesity PowerShell cmdlets, run the following command from within your new PowerShell session.
 
-Installing for the first time:
+**Note**: On Windows, the Desktop edition of PowerShell (not Core) is usually installed. If so, install Cohesity.PowerShell instead of Cohesity.PowerShell.Core. You can see what edition you have by typing in PowerShell:
+
+```powershell
+>  $PSVersionTable.PSEdition
+Desktop #or Core
+```
+
+Install the Cohesity PowerShell Module:
 
 ```powershell
    #first time install
@@ -24,8 +31,6 @@ Installing for the first time:
    #or upgrade to the latest version
 >  Update-Module -Name Cohesity.PowerShell.Core
 ```
-
-**Note**: On Windows, using full PowerShell (not Core), install Cohesity.PowerShell instead of Cohesity.PowerShell.Core
 
 ## Connect to a Cohesity Cluster
 
@@ -37,7 +42,7 @@ User: admin
 Password for user admin: *****
 ```
 
-once connected, you can run other cmdlets:
+Once connected, you can run other cmdlets:
 
 ```powershell
 > Get-CohesityProtectionJob
@@ -62,10 +67,19 @@ Run an on-demand backup:
 
 ```powershell
 >  $job = Get-CohesityProtectionJob -Names 'VM Backup'
->  Start-CohesityProtectionJob -Id $job.Id
+>  $job | Start-CohesityProtectionJob
 Protection job was started successfully.
 ```
 
 Find the Cohesity PowerShell Module documentation and more examples here: https://cohesity.github.io/cohesity-powershell-module/#/README
 
 
+## More Resources
+
+* Cohesity Developer Portal: https://developer.cohesity.com/#/rest/getting-started
+* REST API Browser (Swagger): https://mycluster/docs/restApiDocs/browse/
+* REST API Documentation (public): https://mycluster/docs/restApiDocs/bootprint/
+* REST API Documentation (internal): https://mycluster/docs/restApiDocs/bootprintinternal/
+* REST API Documentation PDFs: https://drive.google.com/drive/folders/1HMSNLAxIRGJ4WBXTRI07LXXSTAC1w3iB?usp=sharing
+
+* BSeltz's Favorite PowerShell Book: https://www.amazon.com/Windows-PowerShell-Action-Bruce-Payette/dp/1633430294
