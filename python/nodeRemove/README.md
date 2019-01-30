@@ -1,4 +1,4 @@
-# Remove a Node to a Cohesity Cluster using Python
+# Remove a Node from a Cohesity Cluster using Python
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
@@ -32,6 +32,8 @@ Syntax notes:
 * domain defaults to local if not specified
 * nodeId will default to a last node added to the cluster if not specified
 * maxFull defaults to 70 (70%) if not specified
+
+Note: The script will not remove a VIP from the cluster, to avoid any connectivity issues. The extra VIP can be removed after removing its DNS entry and letting any cached DNS referrals expire.
 
 ## The Python Helper Module - pyhesity.py
 The helper module provides functions to simplify operations such as authentication, api calls, storing encrypted passwords, and converting date formats. The module requires the requests python module.
