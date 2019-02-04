@@ -1,0 +1,45 @@
+{
+    "id": 29,
+    "name": "DefaultPartition",
+    "nodeIds": [
+        215507192131296,
+        215507192131308,
+        215507192131284
+    ],
+    "hostName": "sv4-advantec02-p1-vip.eng.cohesity.com",
+    "vips": [
+        "10.1.15.223",
+        "10.1.1.219",
+        "10.1.1.220",
+        "10.1.1.221",
+        "10.1.1.222"
+    ],
+    "vlans": [
+        {
+            "id": 0,
+            "gateway": "10.1.0.1",
+            "subnet": {
+                "ip": "10.1.0.0",
+                "netmaskBits": 20,
+                "netmaskIp4": "255.255.240.0",
+                "_CIDR": "10.1.0.0/20"
+            },
+            "ips": [
+                "10.1.1.219",
+                "10.1.1.220",
+                "10.1.1.221",
+                "10.1.1.222"
+            ],
+            "hostname": "sv4-advantec02-p1-vip.eng.cohesity.com",
+            "interfaceName": "bond0",
+            "vlanName": "bond0.0",
+            "_uid": "bond0.0"
+        }
+    ],
+    "vlanIps": [
+        "10.1.1.219",
+        "10.1.1.220",
+        "10.1.1.221",
+        "10.1.1.222"
+    ]
+}

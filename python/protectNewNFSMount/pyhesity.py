@@ -12,6 +12,7 @@
 # 1.5 - added no content return - May 2018
 # 1.6 - added dayDiff function - May 2018
 # 1.7 - added password update feature - July 2018
+# 1.8 - added support for None JSON returned - Jan 2019
 #
 ##########################################################################################
 # Install Notes
@@ -63,7 +64,7 @@ def apiauth(vip, username, domain='local', updatepw=None):
             response.raise_for_status()
 
 ### api call function
-def api(method, uri, data=''):
+def api(method, uri, data=None):
     """api call function"""
     if AUTHENTICATED == False:
         return "Not Connected"
@@ -79,19 +80,24 @@ def api(method, uri, data=''):
             response = requests.put(APIROOT + uri, headers=HEADER, json=data, verify=False)
         if method == 'delete':
             response = requests.delete(APIROOT + uri, headers=HEADER, json=data, verify=False)
+        if isinstance(response, bool):
+            return ''
         if response != '':
             if response.status_code == 204:
                 return ''
             if response.status_code == 404:
                 return 'Invalid api call: ' + uri
             responsejson = response.json()
-            if 'errorCode' in responsejson:
-                if 'message' in responsejson:
-                    print '\033[93m' + responsejson['errorCode'][1:] + ': ' + responsejson['message'] + '\033[0m'
-                else:
-                    print responsejson
+            if isinstance(responsejson, bool):
                 return ''
-            else:
+            if responsejson is not None:
+                if 'errorCode' in responsejson:
+                    if 'message' in responsejson:
+                        print '\033[93m' + responsejson['errorCode'][1:] + ': ' + responsejson['message'] + '\033[0m'
+                    else:
+                        print responsejson
+                    #return ''
+                #else:
                 return responsejson
     else:
         print "invalid api method"
@@ -126,8 +132,6 @@ def timeAgo(timedelta,timeunit):
 
 def dayDiff(newdate,olddate):
     """Return number of days between usec dates"""
-    print newdate
-    print olddate
     return int(round((newdate - olddate) / float(86400000000)))
 
 ### get/store password for future runs

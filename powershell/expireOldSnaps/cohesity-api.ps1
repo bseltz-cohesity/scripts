@@ -10,7 +10,7 @@
 # platform detection and prerequisites
 if ($PSVersionTable.Platform -eq 'Unix') {
     $UNIX = $true
-    $CONFDIR = '~/.cohesity'
+    $CONFDIR = '~/.cohesity-api'
     if ($(Test-Path $CONFDIR) -eq $false) { $quiet = New-Item -Type Directory -Path $CONFDIR}
 }
 else {

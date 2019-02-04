@@ -10,7 +10,7 @@
 # platform detection and prerequisites
 if ($PSVersionTable.Platform -eq 'Unix') {
     $UNIX = $true
-    $CONFDIR = '~/.cohesity'
+    $CONFDIR = '~/.cohesity-api'
     if ($(Test-Path $CONFDIR) -eq $false) { $quiet = New-Item -Type Directory -Path $CONFDIR}
 }
 else {
@@ -285,15 +285,8 @@ function usecsToDate($usecs){
     return $origin.AddSeconds($unixTime).ToLocalTime()
 }
 
-function msecsToDate($msecs){
-    $unixTime=$msecs/1000
-    [datetime]$origin = '1970-01-01 00:00:00'
-    return $origin.AddSeconds($unixTime).ToLocalTime()
-}
-
 function dateToUsecs($datestring){
     if($datestring -isnot [datetime]){ $datestring = [datetime] $datestring }
     $usecs =  ([Math]::Floor([decimal](Get-Date($datestring).ToUniversalTime()-uformat "%s")))*1000000
     $usecs
 }
- 
