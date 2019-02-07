@@ -1,8 +1,8 @@
 ### v6.1 - added support for log replay
-### usage (Cohesity 5.0x): ./restore-SQL61.ps1 -vip mycluster -username admin -domain local -sourceServer sql2012 -sourceDB proddb -targetServer w2012a -targetDB bseltz-test-restore -overWrite -mdfFolder c:\sqldata -ldfFolder c:\sqldata\logs -ndfFolder c:\sqldata\ndf
+### usage (Cohesity 5.0x): ./restore-SQL61.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB proddb -targetServer w2012a -targetDB bseltz-test-restore -overWrite -mdfFolder c:\sqldata -ldfFolder c:\sqldata\logs -ndfFolder c:\sqldata\ndf
 
-### usage (Cohesity 6.0x): ./restore-SQL61.ps1 -vip mycluster -username admin -domain local -sourceServer sql2012 -sourceDB cohesitydb -targetDB cohesitydb-restore -overWrite -mdfFolder c:\SQLData -ldfFolder c:\SQLData\logs -ndfFolders @{'*1.ndf'='E:\sqlrestore\ndf1'; '*2.ndf'='E:\sqlrestore\ndf2'}
-###                        ./restore-SQL61.ps1 -vip mycluster -username admin -domain local -sourceServer sql2012 -sourceDB cohesitydb -targetDB cohesitydb-restore -overWrite -mdfFolder c:\SQLData -ldfFolder c:\SQLData\logs -logTime '2019-01-18 03:01:15'
+### usage (Cohesity 6.0x): ./restore-SQL61.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB cohesitydb -targetDB cohesitydb-restore -overWrite -mdfFolder c:\SQLData -ldfFolder c:\SQLData\logs -ndfFolders @{'*1.ndf'='E:\sqlrestore\ndf1'; '*2.ndf'='E:\sqlrestore\ndf2'}
+###                        ./restore-SQL61.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB cohesitydb -targetDB cohesitydb-restore -overWrite -mdfFolder c:\SQLData -ldfFolder c:\SQLData\logs -logTime '2019-01-18 03:01:15'
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -20,6 +20,7 @@ param (
     [Parameter()][hashtable]$ndfFolders,                 #paths to restore the ndfs (requires Cohesity 6.0x)
     [Parameter()][string]$ndfFolder,                     #single path to restore ndfs (Cohesity 5.0x)
     [Parameter()][string]$logTime,                       #date time to replay logs to e.g. '2019-01-20 02:01:47'
+    [Parameter()][switch]$wait,                          #wait for completion
     [Parameter()][string]$targetInstance = 'MSSQLSERVER' #SQL instance name on the targetServer
 )
 
@@ -203,4 +204,17 @@ $response = api post /recoverApplication $restoreTask
 
 if($response){
     "Restoring $sourceDB to $targetServer as $targetDB"
+}
+
+if($wait){
+    $taskId = $response.restoreTask.performRestoreTaskState.base.taskId
+    $finishedStates = @('kSuccess','kFailed','kCanceled')
+    while($True){
+        $status = (api get /restoretasks/$taskId).restoreTask.performRestoreTaskState.base.publicStatus
+        if ($status-in $finishedStates){
+            break
+        }
+        sleep 5
+    }
+    "restore ended with $status"
 }
