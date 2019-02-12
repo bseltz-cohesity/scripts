@@ -1,6 +1,6 @@
-### usage: ./deployWindowsAgent.ps1 -vip bseltzve01 -username admin -serverList ./servers.txt [ -installAgent ] [ -register ] [ -registerSQL ] [ -sqlAccount mydomain.net\myuser ]
+### usage: ./deployWindowsAgent.ps1 -vip bseltzve01 -username admin -serverList ./servers.txt [ -installAgent ] [ -register ] [ -registerSQL ] [ -serviceAccount mydomain.net\myuser ]
 ### provide a list of servers in a text file
-### specify any of -installAgent -register -registerSQL -sqlAccount
+### specify any of -installAgent -register -registerSQL -serviceAccount
 
 ### process commandline arguments
 [CmdletBinding()]
