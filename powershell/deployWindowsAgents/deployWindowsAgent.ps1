@@ -14,9 +14,18 @@ param (
     [Parameter()][switch]$register,
     [Parameter()][switch]$registerSQL,
     [Parameter()][switch]$sqlCluster,
-    [Parameter()][string]$sqlAccount = $null
+    [Parameter()][string]$serviceAccount = $null
 )
 
+if($serverList){
+    $servers = get-content $serverList
+    }elseif($server) {
+        $servers = @($server)
+    }else{
+        Write-Warning "No Servers Specified"
+        exit
+    }
+    
 ### source the cohesity-api helper code
 . ./cohesity-api
 Import-Module .\userRights.psm1
@@ -38,8 +47,8 @@ Function Set-ServiceAcctCreds([string]$strCompName,[string]$strServiceName,[stri
 apiauth -vip $vip -username $username -domain $domain
 
 ### get sqlAccount Password
-if($sqlAccount){
-    $securePassword = Read-Host -AsSecureString -Prompt "Enter password for $sqlAccount"
+if($serviceAccount){
+    $securePassword = Read-Host -AsSecureString -Prompt "Enter password for $serviceAccount"
     $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
     $sqlPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
 }
@@ -60,15 +69,6 @@ if ($installAgent) {
     $filepath = join-path -path $downloadsFolder -ChildPath $agentFile
     fileDownload 'physicalAgents/download?hostType=kWindows' $filepath
     $remoteFilePath = Join-Path -Path "C:\Windows\Temp" -ChildPath $agentFile
-}
-
-if($serverList){
-$servers = get-content $serverList
-}elseif($server) {
-    $servers = @($server)
-}else{
-    Write-Warning "No Servers Specified"
-    exit
 }
 
 foreach ($server in $servers){
@@ -128,10 +128,10 @@ foreach ($server in $servers){
     }
 
     ### set service account
-    if($sqlAccount){
+    if($serviceAccount){
         "`tSetting CohesityAgent Service Logon Account..."
-        Grant-UserRight -Computer $server -User $sqlAccount -Right SeServiceLogonRight
-        $result3 = Set-ServiceAcctCreds $server 'CohesityAgent' $sqlAccount $sqlPassword
+        Grant-UserRight -Computer $server -User $serviceAccount -Right SeServiceLogonRight
+        $result3 = Set-ServiceAcctCreds $server 'CohesityAgent' $serviceAccount $sqlPassword
     }
 
     ### register server as SQL
