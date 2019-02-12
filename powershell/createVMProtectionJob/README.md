@@ -11,7 +11,7 @@ This powershell script creates a new VM Potection Job.
 
 Place the files in a folder together, then we can run the script.
 
-If not specified, the script will attempt to store the job dat in the default storage domain, (e.g. 'DefaultStorageDomain').
+Provide a text file with a list of VM Names to add to the job (e.g. myvms.txt). If not specified, the script will attempt to store the job dat in the default storage domain, (e.g. 'DefaultStorageDomain').
 
 ```powershell
 ./createVMProtectionJob.ps1 -vip mycluster -username admin -jobName myjob -policyName mypolicy -vCenterName vcenter.mydomain.net -startTime '23:05' -vmList ./myvms.txt
