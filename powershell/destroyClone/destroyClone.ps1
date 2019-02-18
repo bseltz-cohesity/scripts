@@ -8,10 +8,10 @@ param (
     [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
     [Parameter()][string]$domain = 'local', #local or AD domain
     [Parameter(Mandatory = $True)][ValidateSet('sql','view','vm')][string]$cloneType,
-    [Parameter()][string]$viewName = '',
-    [Parameter()][string]$vmName = '',
-    [Parameter()][string]$dbName = '', #where to attach the clone DB
-    [Parameter()][string]$dbServer = '', #desired clone DB name
+    [Parameter()][string]$viewName = '', #name of clone view to tear down
+    [Parameter()][string]$vmName = '', #name of clone VM to tear down
+    [Parameter()][string]$dbName = '', #name of clone DB to tear down
+    [Parameter()][string]$dbServer = '', #name of dbServer where clone is attached
     [Parameter()][string]$instance = 'MSSQLSERVER'
 )
 
