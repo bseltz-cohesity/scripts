@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-"""Recover VM for python"""
+"""List Recovery Points for python"""
 
-### usage: ./recoverVM.sh -v mycluster -u admin -vm centos1
+### usage: ./recoveryPoints.py -v mycluster -u admin [ -d local ]
 
 ### import pyhesity wrapper module
 from pyhesity3 import *
