@@ -62,7 +62,7 @@ Infrastructure(VMware) CentOS1
 	2019-02-10 23:40:00	https://mycluster/protection/job/12/run/24500/1549860000767626/protection
 ```
 
-## The Python Helper Module - pyhesity3.py
+## The Python Helper Module - pyhesity.py
 The helper module provides functions to simplify operations such as authentication, api calls, storing encrypted passwords, and converting date formats. The module requires the requests python module.
 
 ### Installing the Prerequisites
