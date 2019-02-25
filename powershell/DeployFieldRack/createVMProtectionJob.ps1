@@ -41,6 +41,7 @@ if($job){
 
 ### get policyId
 $policyId = (api get protectionPolicies | Where-Object { $_.name -eq $policyName }).id
+
 if(! $policyId){
     Write-Warning "Policy $policyName not found"
     exit

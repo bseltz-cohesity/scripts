@@ -7,9 +7,20 @@ param (
     [Parameter(Mandatory = $True)][string]$jobName #Name of the job to pause
 )
 
-$job = api get protectionJobs | Where-Object { $_.name -ieq $jobName }
+### source the cohesity-api helper code
+. ./cohesity-api
+
+### authenticate
+apiauth -vip $vip -username $username -domain $domain
+
+### find job to pause
+$job = api get 'protectionJobs?isDeleted=False' | Where-Object { $_.name -ieq $jobName }
+
 if($job){
-    $pauseTask = @{"pause" = $true}
+    "pausing furture runs for job $jobName..."
+    $pauseTask = @{
+        "pause" = $true
+      }      
     $pause = api post protectionJobState/$($job.id) $pauseTask 
 }else{
     Write-Warning "Job $jobName not found..."

@@ -10,6 +10,13 @@ param (
     [Parameter(Mandatory = $True)][int]$daysToKeep #days to extend retention
 )
 
+### source the cohesity-api helper code
+. ./cohesity-api
+
+### authenticate
+apiauth -vip $vip -username $username -domain $domain
+
+### find run to extend
 $job = api get protectionJobs | Where-Object { $_.name -ieq $jobName }
 if($job){
     $backupInfo = api get /backupjobs/$($job.id)
