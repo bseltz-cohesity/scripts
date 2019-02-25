@@ -98,12 +98,16 @@ If you wish to run a final backup and replication on-demand, we can run the foll
 When the VM configurations have been finalized and the final backup has replicated to the rack, we can perform a curover to the rack, like so:
 
 ```powershell
-./2-GoLive.ps1 -configFile ./config-rack1.ps1 -goLive -runNow
+./2-GoLive.ps1 -configFile ./config-rack1.ps1 -recover
+```
+This will recover the VMs to the rack. After that is complete, we can perform the final GoLive steps: 
+
+```powershell
+./2-GoLive.ps1 -configFile ./config-rack1.ps1 -goLive
 ```
 
 This phase will perform the following:
 
-* Recover the VMs from  the Protection Job
 * Create a protection policy with local and remote retentions (as per $daysToKeep)
 * Create protection job to protect recovered VMs
 * Pause the source protection job
