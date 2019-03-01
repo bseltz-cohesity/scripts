@@ -33,7 +33,7 @@ You can confirm that the script has been scheduled by running the command:
 ```
 That the cron task will run every 10 minutes until the correct time is reached. The script adjusts for this such that support channel will open between 5 minutes early and five minutes late. The crontab entry will disappear after the selected time is reached and support channel has been opened.
 
-## Note about timezones
+## Note about Timezones
 Before selecting a date and time to open support channel, please note that the Cohesity cluster is set to US/Pacific time. Please adjust your times to that timezone. For example, if I am in the US/Eastern timezone, and I want support channel to open at 10PM eastern on Feb 28 2019, then I will use the date time '2019-02-28 19:00:00' (7PM pacific). 
 
 ## Stored Password
