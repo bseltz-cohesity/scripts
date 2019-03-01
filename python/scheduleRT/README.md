@@ -20,8 +20,8 @@ This python script schedules the opening of Cohesity support channel for some ti
 You can then run the script like so:
 
 ```bash
-[cohesity@bseltzve01-00505689c530-node-1]$ cd scripts
-[cohesity@bseltzve01-00505689c530-node-1 scripts]$ 
+[cohesity@mycluster-node-1]$ cd scripts
+[cohesity@mycluster-node-1 scripts]$ 
 ./scheduleRT.py -v 'mycluster' -u 'admin' -d 'local' -hr '2' -s '2019-02-28 11:07:00'
 Connected!
 Scheduled RT to open at 2019-02-28 11:07:00
@@ -36,8 +36,8 @@ That the cron task will run every 10 minutes until the correct time is reached. 
 ## Note about timezones
 Before selecting a date and time to open support channel, please note that the Cohesity cluster is set to US/Pacific time. Please adjust your times to that timezone. For example, if I am in the US/Eastern timezone, and I want support channel to open at 10PM eastern on Feb 28 2019, then I will use the date time '2019-02-28 19:00:00' (7PM pacific). 
 
-## Stores Password
-The pyhesity.py module (see below) stores your Cohesity password in an encrypted format, so that the script can run unattended. If your password changes, you can update your stored password by performing the following in an interactive python session:
+## Stored Password
+The pyhesity.py module (see below) stores your Cohesity password in encrypted format, so that the script can run unattended. If your password changes, you can update your stored password by performing the following in an interactive python session:
 ```bash
 $ python
 Python 2.7.10 (default, Oct  6 2017, 22:29:07) 
