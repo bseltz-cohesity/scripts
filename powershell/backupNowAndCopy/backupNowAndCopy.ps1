@@ -82,6 +82,6 @@ if($enable){
 $runJob = api post ('protectionJobs/run/' + $jobID) $jobdata
 if($enable){
     sleep 2
-    $disabled = api post protectionJobState/$($jobs[-2].id) @{ 'pause' = $true }
+    $disabled = api post protectionJobState/$jobID @{ 'pause' = $true }
 }
 
