@@ -40,7 +40,7 @@ Creating Job Isilon-share3...
 Run these commands from PowerShell to download the script(s) into your current directory
 
 ```powershell
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectIsilonShares/protectIsilonShares.ps1 -OutFile protectIsilonShares.ps1
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectIsilonShares/cohesity-api.ps1 -OutFile cohesity-api.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectIsilonShares/protectIsilonShares.ps1).content | Out-File protectIsilonShares.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectIsilonShares/cohesity-api.ps1).content | Out-File cohesity-api.ps1
 ```
 
