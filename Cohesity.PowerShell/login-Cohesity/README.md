@@ -37,5 +37,5 @@ If you don't have a ~/.ssh/id_rsa file, then you can run ssh-keygen and follow t
 Run these commands from PowerShell to download the script(s) into your current directory
 
 ```powershell
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/Cohesity.PowerShell/login-Cohesity/login-Cohesity.ps1).content | Out-File login-Cohesity.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/Cohesity.PowerShell/login-Cohesity/login-Cohesity.ps1).content | Out-File login-Cohesity.ps1; (Get-Content login-Cohesity.ps1) | Set-Content login-Cohesity.ps1
 ```

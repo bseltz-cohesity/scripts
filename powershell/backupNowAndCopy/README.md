@@ -31,6 +31,6 @@ Running My Job...
 Run these commands from PowerShell to download the script(s) into your current directory
 
 ```powershell
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/backupNowAndCopy/backupNowAndCopy.ps1).content | Out-File backupNowAndCopy.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/backupNowAndCopy/cohesity-api.ps1).content | Out-File cohesity-api.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/backupNowAndCopy/backupNowAndCopy.ps1).content | Out-File backupNowAndCopy.ps1; (Get-Content backupNowAndCopy.ps1) | Set-Content backupNowAndCopy.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/backupNowAndCopy/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 ```
