@@ -16,8 +16,6 @@ You can run the scipt like so:
 
 ```powershell
 ./login-Cohesity.ps1 -Server mycluster -UserName myusername -Domain mydomain.net
-```
-```text
 Connected to the Cohesity Cluster mycluster Successfully
 ```
 
