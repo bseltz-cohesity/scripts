@@ -1,0 +1,10 @@
+Description=Cohesity Job Monitor Service
+[Unit]
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/myusername/jobMonitor.sh
+
+[Install]
+WantedBy=multi-user.target
