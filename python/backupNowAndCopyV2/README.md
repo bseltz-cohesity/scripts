@@ -25,6 +25,14 @@ Running My Job...
 *  -e,  --enable: (optional) enable a paused job before running, then disable when done
 
 
+## Download Instructions
+Run the following commands to download the script(s)
+```bash
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNowAndCopyV2/backupNowAndCopy.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNowAndCopyV2/pyhesity.py
+chmod +x backupNowAndCopy.py
+```
+
 ## The Python Helper Module - pyhesity.py
 The helper module provides functions to simplify operations such as authentication, api calls, storing encrypted passwords, and converting date formats. The module requires the requests python module.
 
