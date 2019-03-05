@@ -2,7 +2,9 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This python script sets gflags in the morning and the evening to tune performance for backups (at night) and NAS (during the day). Not that this script is designed to run on a cluster node and will not run remotely.
+This python script sets gflags in the morning and the evening to tune performance for backups (at night) and NAS (during the day). 
+
+Note: this script is designed to run on a cluster node and will not run remotely.
 
 ## Components
 
@@ -38,3 +40,8 @@ Added gflags [bridge_magneto_nas_max_active_read_write_ops] to the service bridg
 ## Note about Timezones
 The Cohesity cluster is set to US/Pacific time (-8). Please set my_timezone in the script to your timezone (e.g. -5 for eastern time) so that the script will treat the morning and night hours according to your local time.
 
+## Download Instructions
+Run the following commands to download the script(s):
+```bash
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/set-gflags/set-gflags.py
+```
