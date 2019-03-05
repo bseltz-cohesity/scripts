@@ -26,7 +26,7 @@ Running My Job...
 
 
 ## Download Instructions
-Run the following commands to download the script(s)
+Run the following commands to download the script(s):
 ```bash
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNowAndCopyV2/backupNowAndCopy.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNowAndCopyV2/pyhesity.py
