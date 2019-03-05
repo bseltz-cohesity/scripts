@@ -25,6 +25,7 @@ Running My Job...
 *  -keepArchiveFor: days to keep in archive (default is 5 days)
 *  -replicateTo: (optional) name of remote cluster to replicate to
 *  -keepReplicaFor: days to keep replica for (default is 5 days)
+*  -enable: (optional) enable a paused job before running, then disable when done
 
 ## Download the script
 
