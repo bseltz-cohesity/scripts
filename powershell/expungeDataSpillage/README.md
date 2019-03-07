@@ -13,7 +13,7 @@ Deletions will be logged to scriptPath/expungeLog.txt
 ## Components
 
 * expungeDataSpillage.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* cohesityCluster.ps1: Cohesity REST API helper module
 
 Place both files in a folder together, then we can run the script.
 
@@ -67,3 +67,12 @@ Deleting CentOS1 from VM Backup: 01/09/2019 23:30:01
 Then, if you're happy with what would be deleted, re-run the script again and include the -delete switch. THIS WILL DELETE BACKUP DATA!!!
 
 Please note that there may be some delay before the deletions are reflected in file search results. 
+
+## Download the Script
+
+Run these commands from PowerShell to download the script(s) into your current directory:
+
+```powershell
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/expungeDataSpillage/expungeDataSpillage.ps1).content | Out-File expungeDataSpillage.ps1; (Get-Content expungeDataSpillage.ps1) | Set-Content expungeDataSpillage.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/expungeDataSpillage/cohesityCluster.ps1).content | Out-File cohesityCluster.ps1; (Get-Content cohesityCluster.ps1) | Set-Content cohesityCluster.ps1
+```
