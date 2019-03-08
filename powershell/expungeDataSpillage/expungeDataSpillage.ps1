@@ -92,7 +92,7 @@ foreach($cluster in $clusters){
                 $encodedFileName = [System.Web.HttpUtility]::UrlEncode($restoreFile.fileDocument.filename)
                 $origJobId = $restoreFile.fileDocument.objectId.jobUid.objectId
                 $jobId = $restoreFile.fileDocument.objectId.jobId
-                $runs = $cluster.get("protectionRuns?jobId=$jobId")
+                $runs = $cluster.get("protectionRuns?jobId=$jobId&numRuns=9999")
                 $versions = $cluster.get("/file/versions?clusterId=$clusterId&clusterIncarnationId=$clusterIncarnationId&entityId=$entityId&filename=$encodedFileName&fromObjectSnapshotsOnly=false&jobId=$origJobId")
 
                 foreach ($version in $versions.versions) {
