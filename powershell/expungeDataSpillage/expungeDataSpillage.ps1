@@ -186,7 +186,11 @@ while(!($selectedId -is [int] -and (-1 -gt $selectedId -le $instanceNum))){
     $selectedId = read-host -Prompt "Please select ID to expunge"    
     if($selectedId -ne '' -and $null -ne ($selectedId -as [int])){ 
         $selectedId = [int]$selectedId
-        log "`n$selectedId selected`n" 
+        if($selectedId -eq 0){
+            log "`n  All Items Selected for Deletion`n"
+        }else{
+            log "`n  Item $selectedId Selected for Deletion`n"
+        }
     }
 }
 
