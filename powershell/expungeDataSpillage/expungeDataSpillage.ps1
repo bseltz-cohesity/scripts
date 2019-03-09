@@ -3,6 +3,8 @@
 ### note: -delete switch actually performs the delete, otherwise just perform a test run
 ### processing is logged at <scriptpath>/expungeLog.txt
 
+# version 3
+
 ### process commandline arguments
 [CmdletBinding()]
 param (
@@ -59,6 +61,8 @@ $backupNum = 0
 ### authenticate to local and remote clusters
 log "`nConnecting to local cluster $vip..."
 $cluster = connectCohesityCluster -server $vip -username $username -domain $domain -quiet
+$clusterInfo = $cluster.get('cluster')
+$localClusterId = $clusterInfo.id
 
 $clusters += $cluster
 
@@ -76,10 +80,11 @@ log "`nSearching for $fileSearch...`n"
 
 foreach($cluster in $clusters){
     $clusterName = $cluster.get('cluster').name
+    write-host "  on $clusterName..."
     $jobs = $cluster.get('protectionJobs')
     $restoreFiles = $cluster.get("/searchfiles?filename=$fileSearch")
     $highestId = $restoreFiles.files.count - 1
-     if($highestId -ge 0){   
+    if($highestId -ge 0){   
         0..$highestId | ForEach-Object{
             $selectedId = $_
             $restoreFile = $restoreFiles.files[$selectedId]
@@ -92,63 +97,74 @@ foreach($cluster in $clusters){
                 $encodedFileName = [System.Web.HttpUtility]::UrlEncode($restoreFile.fileDocument.filename)
                 $origJobId = $restoreFile.fileDocument.objectId.jobUid.objectId
                 $jobId = $restoreFile.fileDocument.objectId.jobId
-                $runs = $cluster.get("protectionRuns?jobId=$jobId&numRuns=9999")
-                $versions = $cluster.get("/file/versions?clusterId=$clusterId&clusterIncarnationId=$clusterIncarnationId&entityId=$entityId&filename=$encodedFileName&fromObjectSnapshotsOnly=false&jobId=$origJobId")
+                $job = $jobs | Where-Object { $_.id -eq $restoreFile.fileDocument.objectId.jobId }
+                #$jobName = ($jobs | Where-Object { $_.id -eq $restoreFile.fileDocument.objectId.jobId }).name
+                $jobName = $job.name
+                $policyId = $job.policyId
+                $policyClusterId = $policyId.split(':')[0]
+                $objectName = $restoreFile.fileDocument.objectId.entity.displayName
+                if($policyClusterId -eq $localClusterId){
+                    $runs = $cluster.get("protectionRuns?jobId=$jobId&numRuns=599999&excludeNonRestoreableRuns=true")
+                    $versions = $cluster.get("/file/versions?clusterId=$clusterId&clusterIncarnationId=$clusterIncarnationId&entityId=$entityId&filename=$encodedFileName&fromObjectSnapshotsOnly=false&jobId=$origJobId")
 
-                foreach ($version in $versions.versions) {
-                    $jobName = ($jobs | Where-Object { $_.id -eq $restoreFile.fileDocument.objectId.jobId }).name
-                    $objectName = $restoreFile.fileDocument.objectId.entity.displayName
-                    $exactRun = $runs | Where-Object {$_.backupRun.jobRunId -eq $version.instanceId.jobInstanceId }
-                    ### get locations
-                    $locations = @()
-                    foreach($replica in $version.replicaInfo.replicaVec){
-                        if($replica.expiryTimeUsecs -ne 0){
-                            if ($replica.target.type -ne 2) {
-                                if($replica.target.type -eq 3){
-                                    $target = $replica.target
+                    foreach ($version in $versions.versions) {
+                        $exactRun = $runs | Where-Object {$_.backupRun.jobRunId -eq $version.instanceId.jobInstanceId }
+                        #if($exactRun){
+                            ### get locations
+                            $locations = @()
+                            foreach($replica in $version.replicaInfo.replicaVec){
+                                if($replica.expiryTimeUsecs -ne 0){
+                                    if ($replica.target.type -ne 2) {
+                                        if($replica.target.type -eq 3){
+                                            $target = $replica.target
+                                        }else{
+                                            $target = @{'type' = 1}
+                                        }
+                                        $location = @{
+                                            'cluster' = $cluster;
+                                            'clusterName' = $clusterName;
+                                            'target' = $target;
+                                            'sourceId' = $restoreFile.fileDocument.objectId.entity.id;
+                                        }
+                                        $locations += $location
+                                    }
+                                }
+                            }
+
+                            if($locations.count -gt 0){
+
+                                $instance = $instanceList | Where-Object { $_.objectName -eq $objectName -and $_.jobName -eq $jobName -and $_.fileName -eq $restoreFile.fileDocument.filename}
+                                if(! $instance){
+                                    $instance = @{
+                                        'objectName' = $objectName;
+                                        'jobName' = $jobName;
+                                        'fileName' = $restoreFile.fileDocument.filename
+                                        'instanceNum' = $instanceNum
+                                    }
+                                    $instanceNum++
+                                    $instanceList += $instance
+                                }
+                                 
+                                $backup = $backupList | Where-Object {$_.objectName -eq $objectName -and $_.jobName -eq $jobName -and $_.startTimeUsecs -eq $exactRun.copyRun[0].runStartTimeUsecs}
+                                if($backup){
+                                    $backup.locations += $locations
+                                    if($instance.instanceNum -in $backup.instanceNum -eq $false){
+                                        $backup.instanceNum = $backup.instanceNum + $instance.instanceNum
+                                    }
                                 }else{
-                                    $target = @{'type' = 1}
+                                    $backup = @{
+                                        'objectName' = $objectName;
+                                        'jobName' = $jobName;
+                                        'startTimeUsecs' = $exactRun.copyRun[0].runStartTimeUsecs;
+                                        'versionNum' = $backupNum++;
+                                        'locations' = $locations;
+                                        'instanceNum' = @($instance.instanceNum)
+                                        'jobUid' = $exactRun.jobUid
+                                    }
+                                    $backupList += $backup 
                                 }
-                                $location = @{
-                                    'cluster' = $cluster;
-                                    'clusterName' = $clusterName;
-                                    'target' = $target;
-                                    'sourceId' = $restoreFile.fileDocument.objectId.entity.id;
-                                }
-                                $locations += $location
                             }
-                        }
-                    }
-
-                    if($locations.count -gt 0){
-
-                        $instance = $instanceList | Where-Object { $_.objectName -eq $objectName -and $_.jobName -eq $jobName -and $_.fileName -eq $restoreFile.fileDocument.filename}
-                        if(! $instance){
-                            $instance = @{
-                                'objectName' = $objectName;
-                                'jobName' = $jobName;
-                                'fileName' = $restoreFile.fileDocument.filename
-                                'instanceNum' = $instanceNum
-                            }
-                            $instanceNum++
-                            $instanceList += $instance
-                        }    
-
-                        $backup = $backupList | Where-Object {$_.objectName -eq $objectName -and $_.jobName -eq $jobName -and $_.startTimeUsecs -eq $exactRun.copyRun[0].runStartTimeUsecs}
-                        if($backup){
-                            $backup.locations += $locations
-                        }else{
-                            $backup = @{
-                                'objectName' = $objectName;
-                                'jobName' = $jobName;
-                                'startTimeUsecs' = $exactRun.copyRun[0].runStartTimeUsecs;
-                                'versionNum' = $backupNum++;
-                                'locations' = $locations;
-                                'instanceNum' = $instance.instanceNum
-                                'jobUid' = $exactRun.jobUid
-                            }
-                            $backupList += $backup 
-                        }
+                        #}
                     }
                 }
             }
@@ -196,7 +212,7 @@ while(!($selectedId -is [int] -and (-1 -gt $selectedId -le $instanceNum))){
 
 function selectForDelete($instance){
     foreach ($backup in $backupList){
-        if($backup.instanceNum -eq $instance.instanceNum){
+        if($instance.instanceNum -in $backup.instanceNum){
             $backup['selected']=$True
         }
     } 
