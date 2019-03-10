@@ -54,6 +54,8 @@ $instanceList = @()
 $instanceNum = 1
 $backupList = @()
 $backupNum = 0
+$clusterNames = @{} # added
+$foreignDetections = @() # added
 
 ### source the cohesity-api helper code
 . ./cohesityCluster.ps1
@@ -65,13 +67,17 @@ $clusterInfo = $cluster.get('cluster')
 $localClusterId = $clusterInfo.id
 
 $clusters += $cluster
+$clusterNames[[string]$localClusterId] = $clusterInfo.name # added
 
 $remotes = $cluster.get('remoteClusters')
 foreach ($remote in $remotes){
     $remoteIP = $remote.remoteIps[0]
     log "Connecting to remote cluster $($remote.name)..."
     $cluster = connectCohesityCluster -server $remoteIP -username $username -domain $domain -quiet
-    $clusters += $cluster                    
+    $clusters += $cluster
+    $clusterInfo = $cluster.get('cluster') # added
+    $clusterId = $clusterInfo.id # added
+    $clusterNames[[string]$clusterId] = $clusterInfo.name # added
 }
 
 ### search for file
@@ -163,6 +169,15 @@ foreach($cluster in $clusters){
                             }
                         }
                     }
+                }else{
+                    if([string]$policyClusterId -in $clusterNames.Keys){
+                        $foreignCluster = $clusterNames[[string]$policyClusterId]
+                    }else{
+                        $foreignCluster = $policyClusterId
+                    }
+                    if ($foreignCluster -in $foreignDetections -eq $false){
+                        $foreignDetections += $foreignCluster
+                    }
                 }
             }
         }
@@ -170,9 +185,11 @@ foreach($cluster in $clusters){
 }
 
 ### display discovered runs
-log "Found the file in the following protection runs:`n"
-foreach ($backup in $backupList){
-    log ("    {0}: {1} from {2}: {3}" -f $backup.versionNum, $backup.objectName, $backup.jobName, (usecsToDate $backup.startTimeUsecs))
+if($backupList.count -gt 0){
+    log "`nFound the file in the following protection runs:`n"
+    foreach ($backup in $backupList){
+        log ("    {0}: {1} from {2}: {3}" -f $backup.versionNum, $backup.objectName, $backup.jobName, (usecsToDate $backup.startTimeUsecs))
+    }
 }
 
 ### selection menu
@@ -294,6 +311,17 @@ foreach ($backup in $backupList){
     }else{
         log ("  (Deleted)  {0}: {1} from {2}: {3}" -f $backup.versionNum, $backup.objectName, $backup.jobName, (usecsToDate $backup.startTimeUsecs))
     }
+}
+
+if($foreignDetections.count -gt 0){
+    log ("`n* Notice! ***************************************************`n*")
+    log ("* Additional Instances of {0} detected" -f $search)
+    log "* in backups originating from the following clusters"
+    log "* Please re-run the script on these clusters:`n*"
+    foreach ($clusterName in $foreignDetections){
+        log "* $clusterName"
+    }
+    log "*`n*************************************************************"
 }
 
 log "`n- Ended at $(get-date) -------`n`n"
