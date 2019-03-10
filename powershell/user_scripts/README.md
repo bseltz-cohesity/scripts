@@ -43,6 +43,7 @@ Now we can enter 'test.cmd' as the post script in another protection job. Once t
 Run these commands from PowerShell to download the script(s) into your current directory
 
 ```powershell
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/backupNowAndCopy/backupNowAndCopy.ps1).content | Out-File backupNowAndCopy.ps1; (Get-Content backupNowAndCopy.ps1) | Set-Content backupNowAndCopy.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/backupNowAndCopy/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/user_scripts/backupNowAndCopy.ps1).content | Out-File backupNowAndCopy.ps1; (Get-Content backupNowAndCopy.ps1) | Set-Content backupNowAndCopy.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/user_scripts/cohesity-api-user-scripts.ps1).content | Out-File cohesity-api-user-scripts.ps1; (Get-Content cohesity-api-user-scripts.ps1) | Set-Content cohesity-api-user-scripts.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/user_scripts/test.cmd).content | Out-File test.cmd; (Get-Content test.cmd) | Set-Content test.cmd
 ```
