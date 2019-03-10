@@ -13,8 +13,8 @@ You can download these scripts onto your PC by opening a PowerShell session and 
 ```powershell
 md cohesity-sql-scripts
 cd cohesity-sql-scripts
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/SQLrestore/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/SQLrestore/restore-SQL.ps1).content | Out-File restore-SQL.ps1; (Get-Content restore-SQL.ps1) | Set-Content restore-SQL.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/SQLClone/sqlClone.ps1).content | Out-File sqlClone.ps1; (Get-Content sqlClone.ps1) | Set-Content sqlClone.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/restoreSQL/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/restoreSQL/restore-SQL.ps1).content | Out-File restore-SQL.ps1; (Get-Content restore-SQL.ps1) | Set-Content restore-SQL.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cloneSQL/sqlClone.ps1).content | Out-File sqlClone.ps1; (Get-Content sqlClone.ps1) | Set-Content sqlClone.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/destroyClone/destroyClone.ps1).content | Out-File destroyClone.ps1; (Get-Content destroyClone.ps1) | Set-Content destroyClone.ps1
 ```
