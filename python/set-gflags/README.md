@@ -44,7 +44,7 @@ Based on the current hour of the day, the script will apply the appropriate gfla
 
 The results of the script are logged in /home/cohesity/scripts/gflags-log.txt
 ```text
-[cohesity@selab3-nm156s015791-node-1 scripts]$ cat set-gflags-log.txt
+[cohesity@selab3-nm156s015791-node-1 scripts]$ cat gflags-log.txt
 2019-03-04 03:06:36.630031
 applying nighttime flags...
 Added gflags [magneto_gatekeeper_max_tasks_per_generic_nas_entity] to the service magneto
