@@ -77,11 +77,11 @@ $jobdata = @{
 ### run protectionJob
 "Running $jobName..."
 if($enable){
-    $enabled = api post protectionJobState/$jobID @{ 'pause' = $false }
+    $enableJob = api post ('protectionJobState/' + $jobID) @{ 'pause' = $false }
 }
 $runJob = api post ('protectionJobs/run/' + $jobID) $jobdata
 if($enable){
     sleep 2
-    $disabled = api post protectionJobState/$jobID @{ 'pause' = $true }
+    $disableJob = api post ('protectionJobState/' + $jobID) @{ 'pause' = $true }
 }
 
