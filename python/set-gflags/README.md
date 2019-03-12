@@ -12,7 +12,7 @@ Note: this script is designed to run on a cluster node and will not run remotely
 
 ## Deployment
 
-Run the following commands to setup the script(s):
+SSH into a Cohesity node, and from the /home/cohesity folder, run the following commands to setup the script(s):
 ```bash
 mkdir scripts
 cd scripts
