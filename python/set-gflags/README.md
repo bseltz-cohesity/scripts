@@ -12,18 +12,37 @@ Note: this script is designed to run on a cluster node and will not run remotely
 
 ## Deployment
 
-* ssh into a node of the Cohesity cluster 
-* Create a folder such as /home/cohesity/scripts and place the script in the folder
-* Configure the settings in the script (timezone, hours to run)
-* make set-gflags.py executable (chmod +x set-gflags.py)
-* execute the command: crontab -e
-* add the following line to crontab, then save
-```text
-*/10 * * * * /home/cohesity/scripts/set-gflags.py
+Run the following commands to setup the script(s):
+```bash
+mkdir scripts
+cd scripts
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/set-gflags/set-gflags.py
+chmod +x set-gflags.py
 ```
-This will cause the script to run every 10 minutes. BAsed on the current hour of the day, the script will apply the appropriate gflags.
+Modify the settings in the script if needed:
+```python
+### settings
+morning = 7  # 7:00 AM
+night = 18  # 6:00 PM
 
-The results of the script are logged in /home/cohesity/scripts/set-gflags-log.txt
+### timezones
+my_timezone = -5  # eastern time zone
+cluster_timezone = -8  # pacific time zone
+```
+
+Then edit your crontab:
+```bash
+crontab -e
+```
+and enter the following line:
+```bash
+0 4,15 * * * /home/cohesity/scripts/set-gflags.py
+```
+and save.
+
+Based on the current hour of the day, the script will apply the appropriate gflags.
+
+The results of the script are logged in /home/cohesity/scripts/gflags-log.txt
 ```text
 [cohesity@selab3-nm156s015791-node-1 scripts]$ cat set-gflags-log.txt
 2019-03-04 03:06:36.630031
@@ -40,8 +59,7 @@ Added gflags [bridge_magneto_nas_max_active_read_write_ops] to the service bridg
 ## Note about Timezones
 The Cohesity cluster is set to US/Pacific time (-8). Please set my_timezone in the script to your timezone (e.g. -5 for eastern time) so that the script will treat the morning and night hours according to your local time.
 
-## Download Instructions
-Run the following commands to download the script(s):
-```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/set-gflags/set-gflags.py
-```
+Also, set the cron times according to pacific time. For example, if you want the script to run at 7am eastern and 6pm eastern, the cron hours should be 4,15.
+
+
+
