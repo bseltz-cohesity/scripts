@@ -74,14 +74,29 @@ $jobdata = @{
    "copyRunTargets" = $copyRunTargets
 }
 
-### run protectionJob
 "Running $jobName..."
+
+### enable job
 if($enable){
-    $enableJob = api post ('protectionJobState/' + $jobID) @{ 'pause' = $false }
+    $lastRunTime = (api get "protectionRuns?jobId=$jobId&numRuns=1").backupRun.stats.startTimeUsecs
+    while($True -eq (api get protectionJobs/$jobID).isPaused){
+        $null = api post protectionJobState/$jobID @{ 'pause'= $false }
+        sleep 2
+    }
 }
-$runJob = api post ('protectionJobs/run/' + $jobID) $jobdata
+
+### run job
+$null = api post ('protectionJobs/run/' + $jobID) $jobdata
+
+### disable job
 if($enable){
-    sleep 2
-    $disableJob = api post ('protectionJobState/' + $jobID) @{ 'pause' = $true }
+    while($False -eq (api get protectionJobs/$jobID).isPaused){
+        if($lastRunTime -lt (api get "protectionRuns?jobId=$jobId&numRuns=1").backupRun.stats.startTimeUsecs){
+            $null = api post protectionJobState/$jobID @{ 'pause'= $true }
+        }else{
+            sleep 2
+        }
+    }
 }
+
 
