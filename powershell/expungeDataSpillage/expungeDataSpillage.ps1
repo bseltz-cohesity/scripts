@@ -3,7 +3,7 @@
 ### note: -delete switch actually performs the delete, otherwise just perform a test run
 ### processing is logged at <scriptpath>/expungeLog.txt
 
-# version 3
+# version 3.2 # fixed skipping expired items
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -117,7 +117,7 @@ foreach($cluster in $clusters){
                         ### get locations
                         $locations = @()
                         foreach($replica in $version.replicaInfo.replicaVec){
-                            if($replica.expiryTimeUsecs -ne 0){
+                            if($replica.expiryTimeUsecs -ne 0 -and $replica.expiryTimeUsecs -gt (dateToUsecs (get-date))){
                                 if ($replica.target.type -ne 2) {
                                     if($replica.target.type -eq 3){
                                         $target = $replica.target
