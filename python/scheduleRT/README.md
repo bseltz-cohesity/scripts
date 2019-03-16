@@ -12,8 +12,8 @@ This python script schedules the opening of Cohesity support channel for some ti
 
 ## Deployment
 
-* ssh into a node of the Cohesity cluster 
-* Create a folder such as /home/cohesity/scripts and place all files in the folder together. 
+* ssh into a node of the Cohesity cluster
+* Create a folder such as /home/cohesity/scripts and place all files in the folder together.
 * make scheduleRT.py executable (chmod +x scheduleRT.py)
 * make enableRT.py executable (chmod +x enableRT.py)
 
@@ -21,26 +21,36 @@ You can then run the script like so:
 
 ```bash
 [cohesity@mycluster-node-1]$ cd scripts
-[cohesity@mycluster-node-1 scripts]$ 
+[cohesity@mycluster-node-1 scripts]$
 ./scheduleRT.py -v 'mycluster' -u 'admin' -d 'local' -hr '2' -s '2019-02-28 11:07:00'
 Connected!
 Scheduled RT to open at 2019-02-28 11:07:00
 ```
+
 You can confirm that the script has been scheduled by running the command:
+
 ```bash
 [cohesity@bseltzve01-00505689c530-node-1 scripts]$ crontab -l
 */10 * * * * /home/cohesity/scripts/enableRT.py -v 'mycluster' -u 'admin' -d 'local' -hr '2' -s '2019-02-28 11:07:00'
 ```
-That the cron task will run every 10 minutes until the correct time is reached. The script adjusts for this such that support channel will open between 5 minutes early and five minutes late. The crontab entry will disappear after the selected time is reached and support channel has been opened.
+
+You can also tell the script to repeat for x number of days (support channel will open at the same time each day for the specified number of days) using the -r parameter:
+
+```bash
+./scheduleRT.py -v 'mycluster' -u 'admin' -d 'local' -hr '2' -s '2019-02-28 11:07:00' -r 3
+```
 
 ## Note about Timezones
-Before selecting a date and time to open support channel, please note that the Cohesity cluster is set to US/Pacific time. Please adjust your times to that timezone. For example, if I am in the US/Eastern timezone, and I want support channel to open at 10PM eastern on Feb 28 2019, then I will use the date time '2019-02-28 19:00:00' (7PM pacific). 
+
+Before selecting a date and time to open support channel, please note that the Cohesity cluster is likely set to US/Pacific time. Please adjust your times to that timezone. For example, if I am in the US/Eastern timezone, and I want support channel to open at 10PM eastern on Feb 28 2019, then I will use the date time '2019-02-28 19:00:00' (7PM pacific).
 
 ## Stored Password
+
 The pyhesity.py module (see below) stores your Cohesity password in encrypted format, so that the script can run unattended. If your password changes, you can update your stored password by performing the following in an interactive python session:
+
 ```bash
 $ python
-Python 2.7.10 (default, Oct  6 2017, 22:29:07) 
+Python 2.7.10 (default, Oct  6 2017, 22:29:07)
 [GCC 4.2.1 Compatible Apple LLVM 9.0.0 (clang-900.0.31)] on darwin
 Type "help", "copyright", "credits" or "license" for more information.
 >>>
@@ -56,12 +66,15 @@ Connected!
 ```
 
 ## The Python Helper Module - pyhesity.py
+
 The helper module provides functions to simplify operations such as authentication, api calls, storing encrypted passwords, and converting date formats. The module requires the requests python module.
 
 ### Installing the Prerequisites
+
 ```bash
 sudo yum install python-requests
 ```
+
 or
 
 ```bash
