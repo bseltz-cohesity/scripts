@@ -44,6 +44,18 @@ You can also tell the script to repeat for x number of days (support channel wil
 
 Before selecting a date and time to open support channel, please note that the Cohesity cluster is likely set to US/Pacific time. Please adjust your times to that timezone. For example, if I am in the US/Eastern timezone, and I want support channel to open at 10PM eastern on Feb 28 2019, then I will use the date time '2019-02-28 19:00:00' (7PM pacific).
 
+## Download the Scripts
+
+Use the following commands to download the script:
+
+```bash
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/scheduleRT/enableRT.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/scheduleRT/pyhesity.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/scheduleRT/scheduleRT.py
+chmod +x scheduleRT.py
+chmod +x enableRT.py
+```
+
 ## Stored Password
 
 The pyhesity.py module (see below) stores your Cohesity password in encrypted format, so that the script can run unattended. If your password changes, you can update your stored password by performing the following in an interactive python session:
