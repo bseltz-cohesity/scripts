@@ -20,6 +20,10 @@ param (
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
 
+### start logging
+$logfile = 'c:\program files\cohesity\user_scripts\scriptlog.txt'
+"script started at $(get-date)" | out-file $logfile
+
 ### find the jobID
 $job = (api get protectionJobs | Where-Object name -ieq $jobName)
 if($job){
@@ -27,6 +31,7 @@ if($job){
 
 }else{
     Write-Warning "Job $jobName not found!"
+    "Job $jobName not found!" | Out-File $logfile -Append
     exit
 }
 
@@ -46,6 +51,7 @@ if ($replicateTo) {
     }
     else {
         Write-Warning "Remote Cluster $replicateTo not found!"
+         "Remote Cluster $replicateTo not found!" | Out-File $logfile -Append
         exit
     }
 }
@@ -64,6 +70,7 @@ if($archiveTo){
           }
     }else{
         Write-Warning "Archive target $archiveTo not found!"
+        "Archive target $archiveTo not found!" | Out-File $logfile -Append
         exit
     }
 }
@@ -81,22 +88,27 @@ if($enable){
     $lastRunTime = (api get "protectionRuns?jobId=$jobId&numRuns=1").backupRun.stats.startTimeUsecs
     while($True -eq (api get protectionJobs/$jobID).isPaused){
         $null = api post protectionJobState/$jobID @{ 'pause'= $false }
+        "enabling job" | Out-File $logfile -Append
         sleep 2
     }
+    "job enabled" | Out-File $logfile -Append
 }
 
 ### run job
+"Running $jobName..." | Out-File $logfile -Append
 $null = api post ('protectionJobs/run/' + $jobID) $jobdata
 
 ### disable job
 if($enable){
-    while($False -eq (api get protectionJobs/$jobID).isPaused){
+    while($True -ne (api get protectionJobs/$jobID).isPaused){
+        "job still enabled" | Out-File $logfile -Append
         if($lastRunTime -lt (api get "protectionRuns?jobId=$jobId&numRuns=1").backupRun.stats.startTimeUsecs){
+            "disabling job" | Out-File $logfile -Append
             $null = api post protectionJobState/$jobID @{ 'pause'= $true }
         }else{
             sleep 2
         }
     }
+    $pausedAPIresult = (api get protectionJobs/$jobID).isPaused
+    "job disabled check: $pausedAPIresult" | Out-File $logfile -Append
 }
-
-
