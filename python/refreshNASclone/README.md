@@ -9,11 +9,25 @@ This python script clones a NAS volume as a Cohesity view. IF the view already e
 * refreshNASclone.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
+## Download The Scripts
+
+Run the following commands to download the scripts:
+
+```bash
+mkdir /home/cohesity/scripts
+cd /home/cohesity/scripts
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/refreshNASclone/refreshNASclone.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/refreshNASclone/pyhesity.py
+chmod +x refreshNASclone.py
+```
+
 Place both files in a folder together and run the main script like so:
 
 ```bash
 ./refreshNASclone.py -s mycluster -u myuser -v '\\mynas.mydomain.net\myshare' -n test
 ```
+
+If this is the first time connecting with this user, you will be prompted for your password, which will be stored encrypted for later use by the script. See below for instructions on updating this stored password.
 
 The script writes no output to the screen (it is designed to run from a scheduler), but will log to a file log-refreshNASclone.txt. The log will show something like this:
 
@@ -21,6 +35,24 @@ The script writes no output to the screen (it is designed to run from a schedule
 started at 2019-03-17 18:25:10
 deleting view test
 recovering \\mynas.mydomain.net\myshare from 2019-03-17 18:24:52 to test
+```
+
+## A Note about Timezones
+
+Cohesity clusters are typically set to US/Pacific time, rgardless of their physical location. If you schedule this script to run on a Cohesity cluster, make sure to account for the difference between your time zone and the cluster's timezone. For example, if you want to run the script at 5am eastern time, then schedule it to run at 2am on the cluster.
+
+## Schedule the Script to Run Daily
+
+Assuming that you want the view refreshed daily, you can use cron to schedule the script to run. Simply type the command:
+
+```bash
+crontab -e
+```
+
+Let's say that you downloaded the scripts into /home/cohesity/scripts and you want it to run at 5am eastern time daily. Remember to adjust to pacific time. Enter the following line in crontab:
+
+```text
+0 2 * * * /home/cohesity/scripts/refreshNASclone.py -s mycluster -u myuser -v '\\mynas.mydomain.net\myshare' -n test
 ```
 
 ## The Python Helper Module - pyhesity.py
@@ -39,9 +71,9 @@ or
 sudo easy_install requests
 ```
 
-## Stored Password
+## Stored Passwords
 
-The pyhesity.py module (see below) stores your Cohesity password in encrypted format, so that the script can run unattended. If your password changes, you can update your stored password by performing the following in an interactive python session:
+The pyhesity.py module stores your Cohesity password in encrypted format, so that the script can run unattended. If your password changes, you can update your stored password by performing the following in an interactive python session:
 
 ```bash
 $ python
@@ -51,7 +83,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>>
 >>>
 >>> from pyhesity import *
->>> apiauth('mycluster','admin','local','updatepw')
+>>> apiauth('mycluster','myusername','mydomain.net',updatepw=True)
 Enter your password: *****
 Confirm your password: *****
 Connected!
