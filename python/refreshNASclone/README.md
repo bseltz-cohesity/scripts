@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This python script clones a NAS volume as a Cohesity view. IF the view already exists, it will delete it and recreate it from the newer version of the NAS volume backup.
+This python script clones a NAS volume as a Cohesity view. If the view already exists, it will delete it and recreate it from the newer version of the NAS volume backup.
 
 ## Components
 
