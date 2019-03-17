@@ -61,6 +61,8 @@ The helper module provides functions to simplify operations such as authenticati
 
 ### Installing the Prerequisites
 
+Note: a Cohesity cluster already has these prerequisites. If you're running the script on a Cohesity cluster, you can skip this step.
+
 ```bash
 sudo yum install python-requests
 ```
