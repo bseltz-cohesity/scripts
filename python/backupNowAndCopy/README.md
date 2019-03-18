@@ -2,9 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This python script performs a run of a protection job including replication and archival tasks. This script is somewhat 'hard-coded' in the sense that it expects to find at least one replication task and at least one archival task in the policy that is applied to the protection job being run.
-
-I could change the script if we want to specify the replica and archive targets and retentions rather than retrieving them from the policy.
+This python script performs a runNow on a protection job and optionally replicates and/or archives the backup to the specified targets. Also, the script will enable a disabled job to run it, and disable it when done.
 
 ## Components
 
@@ -16,6 +14,23 @@ Place both files in a folder together and run the main script like so:
 bash:~/scripts/python$ ./backupNowAndCopy.py -v mycluster -u myuser -d mydomain.net -j 'My Job'
 Connected!
 Running My Job...
+```
+
+## Optional Parameters
+
+*  -a,  --archiveTo: (optional) name of archival target to archive to
+*  -ka, --keepArchiveFor: days to keep in archive (default is 5 days)
+*  -r,  --replicateTo: (optional) name of remote cluster to replicate to
+*  -kr, --keepReplicaFor: days to keep replica for (default is 5 days)
+*  -e,  --enable: (optional) enable a paused job before running, then disable when done
+
+
+## Download Instructions
+Run the following commands to download the script(s):
+```bash
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNowAndCopyV2/backupNowAndCopy.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNowAndCopyV2/pyhesity.py
+chmod +x backupNowAndCopy.py
 ```
 
 ## The Python Helper Module - pyhesity.py
