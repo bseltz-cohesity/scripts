@@ -2,51 +2,74 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-## The API Helper Module: pyhesity.py
+## Cohesity REST API Helper Module: pyhesity.py
 
 pyhesity.py contains a set of functions that make it easy to use the Cohesity REST API, including functions for authentication, making REST calls, and managing date formats.
 
-### Installing the Prerequisites
+## Download the Module
+
+Use the following command to download the module:
+
+```bash
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+```
+
+## Installing the Prerequisites
 
 pyhesity.py requires the requests python module. To install it, do one of the following:
 
 ```bash
 sudo yum install python-requests
 ```
+
 or
 
 ```bash
 sudo easy_install requests
 ```
 
-### Basic Usage
+## Basic Usage
+
 ```python
 from pyhesity import *
-apiauth('mycluster','admin') # domain defaults to local
+apiauth('mycluster', 'admin') # domain defaults to local
 # or
-apiauth('mycluster','myuser','mydomain') # specify an Active Directory domain
+apiauth('mycluster', 'myuser', 'mydomain') # specify an Active Directory domain
 ```
 
-### Stored Passwords
-There is no parameter to provide your password! The fist time you authenticate to a cluster, you will be prompted for your password. The password will be encrypted and stored in the user's home folder. The stored password will then be used automatically so that scripts can run unattended. 
+## Stored Passwords
+
+There is no parameter to provide your password. The fist time you authenticate to a cluster, you will be prompted for your password. The password will be encrypted and stored in the user's home folder. The stored password will then be used automatically so that scripts can run unattended.
 
 If your password changes, use apiauth with updatepw to prompt for the new password.
+
 ```python
 from pyhesity import *
-apiauth('bseltzve01','admin','local','updatepw')
+apiauth('mycluster', 'myuser', 'mydomain', updatepw=True)
 ```
 
-### API Calls
-Once authenticated, you can make API calls. For example:
+If you don't want to store a password and want to be prompted to enter your password when you run your script, use prompt=True
+
 ```python
-print api('get','protectionJobs')[0]['name']
+from pyhesity import *
+apiauth('mycluster', 'myuser', 'mydomain', prompt=True)
+```
+
+## API Calls
+
+Once authenticated, you can make API calls. For example:
+
+```python
+print(api('get', 'protectionJobs')[0]['name'])
 VM Backup
 ```
 
-### Date Conversions
+## Date Conversions
+
 Cohesity stores dates in Unix Epoch Microseconds. That's the number of microseconds since midnight on Jan 1, 1970. Several conversion functions have been included to handle these dates.
+
 ```python
-print api('get','protectionJobs')[0]['creationTimeUsecs']
+api('get','protectionJobs')[0]['creationTimeUsecs']
 1533978038503713
   
 usecsToDate(1533978038503713)
