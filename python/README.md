@@ -6,7 +6,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 pyhesity.py contains a set of functions that make it easy to use the Cohesity REST API, including functions for authentication, making REST calls, and managing date formats.
 
-## Download the Module
+### Download the Module
 
 Use the following command to download the module:
 
@@ -14,7 +14,7 @@ Use the following command to download the module:
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 ```
 
-## Installing the Prerequisites
+### Installing the Prerequisites
 
 pyhesity.py requires the requests python module. To install it, do one of the following:
 
@@ -28,7 +28,7 @@ or
 sudo easy_install requests
 ```
 
-## Basic Usage
+### Basic Usage
 
 ```python
 from pyhesity import *
@@ -37,7 +37,7 @@ apiauth('mycluster', 'admin') # domain defaults to local
 apiauth('mycluster', 'myuser', 'mydomain') # specify an Active Directory domain
 ```
 
-## Stored Passwords
+### Stored Passwords
 
 There is no parameter to provide your password. The fist time you authenticate to a cluster, you will be prompted for your password. The password will be encrypted and stored in the user's home folder. The stored password will then be used automatically so that scripts can run unattended.
 
@@ -55,7 +55,7 @@ from pyhesity import *
 apiauth('mycluster', 'myuser', 'mydomain', prompt=True)
 ```
 
-## API Calls
+### API Calls
 
 Once authenticated, you can make API calls. For example:
 
@@ -64,7 +64,7 @@ print(api('get', 'protectionJobs')[0]['name'])
 VM Backup
 ```
 
-## Date Conversions
+### Date Conversions
 
 Cohesity stores dates in Unix Epoch Microseconds. That's the number of microseconds since midnight on Jan 1, 1970. Several conversion functions have been included to handle these dates.
 
