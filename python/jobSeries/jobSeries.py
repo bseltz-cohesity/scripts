@@ -7,14 +7,14 @@ from datetime import datetime
 from time import sleep
 
 ### settings
-vip = 'bseltzve01'
-username = 'admin'
-domain = 'local'
-replicateTo = 'CohesityVE'
+vip = 'mycluster'
+username = 'myusername'
+domain = 'mydomain.net'
+replicateTo = 'anothercluster'
 keepReplicaFor = 5
-archiveTo = 'S3'
+archiveTo = 'archivetarget'
 keepArchiveFor = 5
-jobs = ['Job1-w2016', 'Job2-w2012c']
+jobs = ['Job1', 'Job2', 'Job3']
 
 ### authenticate
 apiauth(vip, username, domain)
