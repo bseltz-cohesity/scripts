@@ -70,8 +70,8 @@ We can schedule the script to run using cron.
 crontab -e
 ```
 
-Let's say that you want the script to run at 9PM eastern. Remember to adjust to pacific time. Enter the following line in crontab:
+Let's say that you want the script to run at 9PM eastern. Remember to adjust to pacific time, which would be 6PM (18:00). Enter the following line in crontab:
 
 ```text
-0 21 * * * /home/cohesity/scripts/jobSeries.py
+0 18 * * * /home/cohesity/scripts/jobSeries.py
 ```
