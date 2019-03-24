@@ -12,18 +12,21 @@ This python script recovers a VM.
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./recoverVM.sh -v mycluster -u admin -vm centos1 -s test
+./recoverVM.py -v mycluster -u admin -vm centos1 -s test
 Connected!
 recovering centos1 as centos1-test...
 ```
 
 ## The Python Helper Module - pyhesity.py
+
 The helper module provides functions to simplify operations such as authentication, api calls, storing encrypted passwords, and converting date formats. The module requires the requests python module.
 
 ### Installing the Prerequisites
+
 ```bash
 sudo yum install python-requests
 ```
+
 or
 
 ```bash
