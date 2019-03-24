@@ -12,7 +12,7 @@ This python script registers a new generic NAS (NFS) mount point and adds it to 
 Place both files in a folder together and run the main script like so:
 
 ```bash
-python addNFSMountToProtectionJob.py -v mycluster -u myusername -j "NAS Job Name" -m 192.168.1.4:/var/nfs2
+./addNFSMountToProtectionJob.py -v mycluster -u myusername -j "NAS Job Name" -m 192.168.1.4:/var/nfs2
 ```
 
 ## The Python Helper Module - pyhesity.py
