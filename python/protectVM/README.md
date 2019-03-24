@@ -6,24 +6,27 @@ This python script adds a VM to an existing protection job.
 
 ## Components
 
-* protectVM.sh: the main python script
+* protectVM.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./protectVM.sh -v mycluster -u admin -vm mongodb -job 'vm backup'
+./protectVM.py -v mycluster -u admin -vm mongodb -job 'vm backup'
 Connected!
 adding MongoDB to VM Backup job...
 ```
 
 ## The Python Helper Module - pyhesity.py
+
 The helper module provides functions to simplify operations such as authentication, api calls, storing encrypted passwords, and converting date formats. The module requires the requests python module.
 
 ### Installing the Prerequisites
+
 ```bash
 sudo yum install python-requests
 ```
+
 or
 
 ```bash
