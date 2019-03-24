@@ -31,7 +31,7 @@ f.close()
 if lastRun == '':
     lastRun = timeAgo(1,'sec')
 
-print "Waiting for Cohesity Protection Job To Run..."
+print("Waiting for Cohesity Protection Job To Run...")
 
 while True:
     try:
@@ -44,7 +44,7 @@ while True:
             runURL = 'protectionRuns?startedTimeUsecs=%s&jobId=%s' % (latestRun,jobId)
             #email start alert
             sendMessage(STARTMESSAGE + usecsToDate(latestRun))
-            print JOBNAME + ' started at ' + usecsToDate(latestRun)
+            print(JOBNAME + ' started at ' + usecsToDate(latestRun))
             stillRunning = True
             while (stillRunning):
                 state = api('get',runURL)
@@ -56,7 +56,7 @@ while True:
                     else:
                         COMPLETEDMESSAGE = ENDMESSAGE.replace('Ended', 'UNSUCCESSFUL!!')    
                     sendMessage(COMPLETEDMESSAGE + result + ' at ' + usecsToDate(state[0]['backupRun']['stats']['endTimeUsecs']))
-                    print JOBNAME + ' ended with ' + result + ' at ' + usecsToDate(state[0]['backupRun']['stats']['endTimeUsecs'])
+                    print(JOBNAME + ' ended with ' + result + ' at ' + usecsToDate(state[0]['backupRun']['stats']['endTimeUsecs']))
                     stillRunning = False
                 time.sleep(SLEEPTIME)
             lastRun = latestRun
