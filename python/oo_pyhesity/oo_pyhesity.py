@@ -12,7 +12,12 @@
 #
 ##########################################################################################
 
-import datetime, json, requests, getpass, os
+from datetime import datetime
+import time
+import json
+import requests
+import getpass
+import os
 from os.path import expanduser
 
 ### ignore unsigned certificates
@@ -22,6 +27,7 @@ requests.packages.urllib3.disable_warnings()
 __all__ = ['CohesityCluster', 'usecsToDate', 'dateToUsecs', 'timeAgo', 'dayDiff', 'display']
 
 CONFIGDIR = expanduser("~") + '/.pyhesity'
+
 
 class CohesityCluster:
     debug = 0
@@ -42,11 +48,11 @@ class CohesityCluster:
                 __accessToken = __response.json()['accessToken']
                 __tokenType = __response.json()['tokenType']
                 self.__HEADER = {'accept': 'application/json',
-                          'content-type': 'application/json',
-                          'authorization': __tokenType + ' ' + __accessToken}
+                                 'content-type': 'application/json',
+                                 'authorization': __tokenType + ' ' + __accessToken}
                 self.AUTHENTICATED = True
                 if self.__class__.debug > 0:
-                    print "Connected!"
+                    print("Connected!")
             else:
                 self.AUTHENTICATED = False
                 __response.raise_for_status()
@@ -55,30 +61,30 @@ class CohesityCluster:
     def __getpassword(self, __vip, __username, __domain, __updatepw):
         """get/set stored password"""
         __pwpath = os.path.join(CONFIGDIR, 'lt.' + __vip + '.' + __username + '.' + __domain)
-        if(__updatepw == True):
-            if(os.path.isfile(__pwpath) == True):
+        if(__updatepw is True):
+            if(os.path.isfile(__pwpath) is True):
                 os.remove(__pwpath)
         try:
-            __pwdfile=open(__pwpath,'r')
-            __pwd=''.join(map(lambda num: chr(int(num)-1), __pwdfile.read().split(',')))
+            __pwdfile = open(__pwpath, 'r')
+            __pwd = ''.join(map(lambda num: chr(int(num) - 1), __pwdfile.read().split(', ')))
             __pwdfile.close()
             return __pwd
-        except:
-            __pwd="1"
-            __pwd2="2"
-            while (__pwd <> __pwd2):
-                __pwd=getpass.getpass("Enter your password: ")
-                __pwd2=getpass.getpass("Confirm your password: ")
-                if(__pwd <> __pwd2):
-                    print "Passwords do not match. Try again:"
-            __pwdfile=open(__pwpath,'w')
-            __pwdfile.write(','.join(str(char) for char in list(map(lambda char: ord(char)+1, __pwd))))
+        except Exception:
+            __pwd = "1"
+            __pwd2 = "2"
+            while (__pwd != __pwd2):
+                __pwd = getpass.getpass("Enter your password: ")
+                __pwd2 = getpass.getpass("Confirm your password: ")
+                if(__pwd != __pwd2):
+                    print("Passwords do not match. Try again:")
+            __pwdfile = open(__pwpath, 'w')
+            __pwdfile.write(', '.join(str(char) for char in list(map(lambda char: ord(char) + 1, __pwd))))
             __pwdfile.close()
             return __pwd
 
     def apicall(self, __method, __uri, __data=''):
         """api call function"""
-        if self.AUTHENTICATED == False:
+        if self.AUTHENTICATED is False:
             return "Not Connected"
         __response = ''
         if __uri[0] != '/':
@@ -99,68 +105,74 @@ class CohesityCluster:
             __responsejson = __response.json()
             if 'errorCode' in __responsejson:
                 if 'message' in __responsejson:
-                    print '\033[93m' + __responsejson['errorCode'][1:] + ': ' + __responsejson['message'] + '\033[0m'
+                    print('\033[93m' + __responsejson['errorCode'][1:] + ': ' + __responsejson['message'] + '\033[0m')
                 else:
-                    print __responsejson
+                    print(__responsejson)
                 return ''
             else:
                 return __responsejson
-    
+
     def get(self, __uri):
         return self.apicall('get', __uri)
+
     def post(self, __uri, __data):
         return self.apicall('post', __uri, __data)
+
     def put(self, __uri, __data):
         return self.apicall('post', __uri, __data)
+
     def delete(self, __uri, __data):
-        return self.apicall('post', __uri, __data)    
+        return self.apicall('post', __uri, __data)
+
 
 ### convert usecs to date
 def usecsToDate(uedate):
     """Convert Unix Epoc Microseconds to Date String"""
-    uedate = uedate/1000000
-    return datetime.datetime.fromtimestamp(uedate).strftime('%Y-%m-%d %H:%M:%S')
+    uedate = int(uedate) / 1000000
+    return datetime.fromtimestamp(uedate).strftime('%Y-%m-%d %H:%M:%S')
+
 
 ### convert date to usecs
 def dateToUsecs(datestring):
     """Convert Date String to Unix Epoc Microseconds"""
-    dt = datetime.datetime.strptime(datestring, "%Y-%m-%d %H:%M:%S")
-    msecs = int(dt.strftime("%s"))
-    usecs = msecs*1000000
-    return usecs
+    dt = datetime.strptime(datestring, "%Y-%m-%d %H:%M:%S")
+    return int(time.mktime(dt.timetuple())) * 1000000
+
 
 ### convert date difference to usecs
-def timeAgo(timedelta,timeunit):
+def timeAgo(timedelta, timeunit):
     """Convert Date Difference to Unix Epoc Microseconds"""
-    now = int(datetime.datetime.now().strftime("%s"))*1000000
-    secs = {'seconds': 1, 'sec': 1, 'secs': 1, \
-            'minutes': 60, 'min': 60, 'mins': 60, \
-            'hours': 3600, 'hour': 3600, \
-            'days': 86400, 'day': 86400, \
-            'weeks': 604800, 'week': 604800, \
-            'months': 2628000, 'month': 2628000, \
-            'years': 31536000, 'year': 31536000 }
+    nowsecs = int(time.mktime(datetime.now().timetuple())) * 1000000
+    secs = {'seconds': 1, 'sec': 1, 'secs': 1,
+            'minutes': 60, 'min': 60, 'mins': 60,
+            'hours': 3600, 'hour': 3600,
+            'days': 86400, 'day': 86400,
+            'weeks': 604800, 'week': 604800,
+            'months': 2628000, 'month': 2628000,
+            'years': 31536000, 'year': 31536000}
     age = int(timedelta) * int(secs[timeunit.lower()]) * 1000000
-    return now - age
+    return nowsecs - age
 
-def dayDiff(newdate,olddate):
+
+def dayDiff(newdate, olddate):
     """Return number of days between usec dates"""
-    print newdate
-    print olddate
+    print(newdate)
+    print(olddate)
     return int(round((newdate - olddate) / float(86400000000)))
 
-### display json/dictionary as formatted text 
-def display (myjson):
-    """pretty print dictionary"""
-    if(isinstance(myjson,list)):
-        #handle list of results
+
+### display json/dictionary as formatted text
+def display(myjson):
+    """pretty print(dictionary"""
+    if(isinstance(myjson, list)):
+        # handle list of results
         for result in myjson:
-            print json.dumps(result, sort_keys=True, indent=4, separators=(',', ': '))
+            print(json.dumps(result, sort_keys=True, indent=4, separators=(', ', ': ')))
     else:
-        #or handle single result
-        print json.dumps(myjson, sort_keys=True, indent=4, separators=(',', ': '))
+        # or handle single result
+        print(json.dumps(myjson, sort_keys=True, indent=4, separators=(', ', ': ')))
+
 
 ### create CONFIGDIR if it doesn't exist
-if os.path.isdir(CONFIGDIR) == False:
+if os.path.isdir(CONFIGDIR) is False:
     os.mkdir(CONFIGDIR)
-
