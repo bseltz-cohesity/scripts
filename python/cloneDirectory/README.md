@@ -38,9 +38,7 @@ sudo easy_install requests
 Go to the folder where you want to download the files, then run the following commands:
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/cloneDirectory/cloneDirectory.sh
-
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/cloneDirectory/cloneDirectory.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/cloneDirectory/pyhesity.py
-
-chmod +x cloneDirectory.sh
+chmod +x cloneDirectory.py
 ```
