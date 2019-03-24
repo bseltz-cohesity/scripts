@@ -9,14 +9,14 @@ from pyhesity import *
 ### command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v','--vip', type=str, required=True)
-parser.add_argument('-u','--username', type=str, required=True)
-parser.add_argument('-d','--domain',type=str,default='local')
-parser.add_argument('-p','--policyName', type=str, required=True)
-parser.add_argument('-m','--mountPath', type=str, required=True )
+parser.add_argument('-v', '--vip', type=str, required=True)
+parser.add_argument('-u', '--username', type=str, required=True)
+parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-p', '--policyName', type=str, required=True)
+parser.add_argument('-m', '--mountPath', type=str, required=True)
 
 args = parser.parse_args()
-    
+
 vip = args.vip
 username = args.username
 domain = args.domain
@@ -27,14 +27,14 @@ mountPath = args.mountPath
 apiauth(vip, username, domain)
 
 ### find protectionPolicy
-policy = [ policy for policy in api('get','protectionPolicies') if policy['name'].lower() == policyName.lower() ]
+policy = [policy for policy in api('get', 'protectionPolicies') if policy['name'].lower() == policyName.lower()]
 if not policy:
-    print "Policy '%s' not fouond!" % policyName
+    print("Policy '%s' not fouond!" % policyName)
     exit()
 policy = policy[0]
 
 ### find storageDomain
-viewBox = api('get','viewBoxes')[0]
+viewBox = api('get', 'viewBoxes')[0]
 
 ### new NAS MountPoint Definition
 newNASMount = {
@@ -53,19 +53,19 @@ newNASMount = {
 }
 
 ### check for existing mountPoint
-mountPoints = api('get','/backupsources?envTypes=11')['entityHierarchy']['children'][0]['children']
-mountPoint = [mountPoint for mountPoint in mountPoints if mountPoint['entity']['genericNasEntity']['path'].lower() == mountPath.lower() ]
-mountRoot = api('get','/backupsources?onlyReturnOneLevel=true&envTypes=11')
+mountPoints = api('get', '/backupsources?envTypes=11')['entityHierarchy']['children'][0]['children']
+mountPoint = [mountPoint for mountPoint in mountPoints if mountPoint['entity']['genericNasEntity']['path'].lower() == mountPath.lower()]
+mountRoot = api('get', '/backupsources?onlyReturnOneLevel=true&envTypes=11')
 
 ### register new NAS MountPoint
 if (len(mountPoint) == 0):
-    result = api('post','/backupsources', newNASMount)
-    id = result['id']
+    result = api('post', '/backupsources', newNASMount)
+    id = result['entity']['id']
 else:
     id = mountPoint[0]['entity']['id']
 
 server = mountPath.split(':')[0]
-share =  mountPath.split('/')[-1]
+share = mountPath.split('/')[-1]
 jobName = server + '-' + share
 
 ### create new to ProtectionJob
@@ -119,8 +119,5 @@ jobTask = {
     }
 }
 
-print 'creating protection job %s' % (jobName)
-result = api('post','protectionJobs',jobTask)
-
-
-
+print('creating protection job %s' % (jobName))
+result = api('post', 'protectionJobs', jobTask)

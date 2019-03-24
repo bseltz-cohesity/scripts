@@ -6,21 +6,25 @@ This python script registers a new generic NAS (NFS) mount point and creates a n
 
 ## Components
 
-* protectNewNFSMount.sh: the main python script
+* protectNewNFSMount.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
+
 ```bash
-./protectNewNFSMountV2.sh -v mycluster -u admin -p "My Policy" -m "192.168.1.14:/var/nfs2"
+./protectNewNFSMount.py -v mycluster -u admin -p "My Policy" -m "192.168.1.14:/var/nfs2"
 ```
 
 ## The Python Helper Module - pyhesity.py
+
 The helper module provides functions to simplify operations such as authentication, api calls, storing encrypted passwords, and converting date formats. The module requires the requests python module.
 
 ### Installing the Prerequisites
+
 ```bash
 sudo yum install python-requests
 ```
+
 or
 
 ```bash
