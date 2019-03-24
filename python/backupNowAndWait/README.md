@@ -10,8 +10,9 @@ This python script performs a run of a protection job and waits for it to finish
 * pyhesity.py: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
+
 ```bash
-bash:~/scripts/python$ ./backupNowAndWait.py -v mycluster -u myuser -j 'VM Backup' -k 30
+bash:~/scripts/python$ ./backupNowAndWait.py -v mycluster -u myuser -j "VM Backup" -k 30
 Connected!
 Running VM Backup...
 New Job Run ID: 6811
@@ -20,12 +21,15 @@ Run URL: https://bseltzve01/protection/job/7/run/8365/1547289225383428/protectio
 ```
 
 ## The Python Helper Module - pyhesity.py
+
 The helper module provides functions to simplify operations such as authentication, api calls, storing encrypted passwords, and converting date formats. The module requires the requests python module.
 
 ### Installing the Prerequisites
+
 ```bash
 sudo yum install python-requests
 ```
+
 or
 
 ```bash
