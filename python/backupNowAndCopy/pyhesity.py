@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - v1.9 - Brian Seltzer - Feb 2019"""
+"""Cohesity Python REST API Wrapper Module - v2.0 - Brian Seltzer - Mar 2019"""
 
 ##########################################################################################
 # Change Log
@@ -13,7 +13,9 @@
 # 1.6 - added dayDiff function - May 2018
 # 1.7 - added password update feature - July 2018
 # 1.8 - added support for None JSON returned - Jan 2019
-# 1.9 - supressed HTTPS warning in Linux and PEP8 compliance (mostly) - Feb 2019
+# 1.9 - supressed HTTPS warning in Linux and PEP8 compliance - Feb 2019
+# 1.9.1 - added support for interactive password prompt - Mar 2019
+# 2.0 - python 3 compatibility - Mar 2019
 #
 ##########################################################################################
 # Install Notes
@@ -50,11 +52,11 @@ CONFIGDIR = expanduser("~") + '/.pyhesity'
 
 
 ### authentication
-def apiauth(vip, username, domain='local', updatepw=None):
+def apiauth(vip, username, domain='local', password=None, updatepw=None, prompt=None, quiet=None):
     """authentication function"""
     global APIROOT
     APIROOT = 'https://' + vip + '/irisservices/api/v1'
-    creds = json.dumps({"domain": domain, "password": __getpassword(vip, username, domain, updatepw), "username": username})
+    creds = json.dumps({"domain": domain, "password": __getpassword(vip, username, password, domain, updatepw, prompt), "username": username})
     global HEADER
     HEADER = {'accept': 'application/json', 'content-type': 'application/json'}
     url = APIROOT + '/public/accessTokens'
@@ -68,9 +70,10 @@ def apiauth(vip, username, domain='local', updatepw=None):
                       'authorization': tokenType + ' ' + accessToken}
             global AUTHENTICATED
             AUTHENTICATED = True
-            print "Connected!"
+            if(quiet is None):
+                print("Connected!")
         else:
-            response.raise_for_status()
+            print(response.json()['message'])
 
 
 ### api call function
@@ -95,22 +98,22 @@ def api(method, uri, data=None):
         if response != '':
             if response.status_code == 204:
                 return ''
-            if response.status_code == 404:
-                return 'Invalid api call: ' + uri
+            # if response.status_code == 404:
+            #     return 'Invalid api call: ' + uri
             responsejson = response.json()
             if isinstance(responsejson, bool):
                 return ''
             if responsejson is not None:
                 if 'errorCode' in responsejson:
                     if 'message' in responsejson:
-                        print '\033[93m' + responsejson['errorCode'][1:] + ': ' + responsejson['message'] + '\033[0m'
+                        print('\033[93m' + responsejson['errorCode'][1:] + ': ' + responsejson['message'] + '\033[0m')
                     else:
-                        print responsejson
+                        print(responsejson)
                     # return ''
                 # else:
                 return responsejson
     else:
-        print "invalid api method"
+        print("invalid api method")
 
 
 ### convert usecs to date
@@ -150,41 +153,40 @@ def dayDiff(newdate, olddate):
 
 
 ### get/store password for future runs
-def __getpassword(vip, username, domain, updatepw):
+def __getpassword(vip, username, password, domain, updatepw, prompt):
     """get/set stored password"""
+    if password is not None:
+        return password
+    if prompt is not None:
+        pwd = getpass.getpass("Enter your password: ")
+        return pwd
     pwpath = os.path.join(CONFIGDIR, 'lt.' + vip + '.' + username + '.' + domain)
-    if(updatepw == 'updatepw'):
+    if(updatepw is not None):
         if(os.path.isfile(pwpath) is True):
             os.remove(pwpath)
     try:
         pwdfile = open(pwpath, 'r')
-        pwd = ''.join(map(lambda num: chr(int(num) - 1), pwdfile.read().split(',')))
+        pwd = ''.join(map(lambda num: chr(int(num) - 1), pwdfile.read().split(', ')))
         pwdfile.close()
         return pwd
-    except:
-        pwd = "1"
-        pwd2 = "2"
-        while (pwd != pwd2):
-            pwd = getpass.getpass("Enter your password: ")
-            pwd2 = getpass.getpass("Confirm your password: ")
-            if(pwd != pwd2):
-                print "Passwords do not match. Try again:"
+    except Exception:
+        pwd = getpass.getpass("Enter your password: ")
         pwdfile = open(pwpath, 'w')
-        pwdfile.write(','.join(str(char) for char in list(map(lambda char: ord(char) + 1, pwd))))
+        pwdfile.write(', '.join(str(char) for char in list(map(lambda char: ord(char) + 1, pwd))))
         pwdfile.close()
         return pwd
 
 
 ### display json/dictionary as formatted text
 def display(myjson):
-    """pretty print dictionary"""
+    """prettyprint dictionary"""
     if(isinstance(myjson, list)):
         # handle list of results
         for result in myjson:
-            print json.dumps(result, sort_keys=True, indent=4, separators=(',', ': '))
+            print(json.dumps(result, sort_keys=True, indent=4, separators=(', ', ': ')))
     else:
         # or handle single result
-        print json.dumps(myjson, sort_keys=True, indent=4, separators=(',', ': '))
+        print(json.dumps(myjson, sort_keys=True, indent=4, separators=(', ', ': ')))
 
 
 ### create CONFIGDIR if it doesn't exist

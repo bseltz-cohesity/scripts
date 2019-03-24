@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-### usage: ./backupNowAndCopy.py -v mycluster -u admin -j 'Generic NAS' [ -r mycluster2 ] [ -a S3 ] [ -kr 5 ] [ -ka 10 ] [ -e ]
+### usage: ./backupNowAndCopy.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e]
 
 ### import pyhesity wrapper module
 from pyhesity import *
@@ -38,7 +38,7 @@ apiauth(vip, username, domain)
 ### find protectionJob
 job = [job for job in api('get', 'protectionJobs') if job['name'].lower() == jobName.lower()]
 if not job:
-    print "Job '%s' not found" % jobName
+    print("Job '%s' not found" % jobName)
     exit()
 
 copyRunTargets = []
@@ -56,7 +56,7 @@ if replicateTo is not None:
             }
         })
     else:
-        print "Remote Cluster %s not found!" % replicateTo
+        print("Remote Cluster %s not found!" % replicateTo)
         exit()
 
 if archiveTo is not None:
@@ -73,7 +73,7 @@ if archiveTo is not None:
             "type": "kArchival"
         })
     else:
-        print "Archive target %s not found!" % archiveTo
+        print("Archive target %s not found!" % archiveTo)
         exit()
 
 ### enable the job
@@ -81,7 +81,7 @@ if enable:
     enabled = api('post', 'protectionJobState/%s' % job[0]['id'], {'pause': False})
 
 ### run protectionJob
-print "Running %s..." % jobName
+print("Running %s..." % jobName)
 
 runNowTask = {
     "copyRunTargets": copyRunTargets,
