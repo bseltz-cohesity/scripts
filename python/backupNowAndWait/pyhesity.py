@@ -16,6 +16,7 @@
 # 1.9 - supressed HTTPS warning in Linux and PEP8 compliance - Feb 2019
 # 1.9.1 - added support for interactive password prompt - Mar 2019
 # 2.0 - python 3 compatibility - Mar 2019
+# 2.0.1 - fixed date functions for pythion 3 - Mar 2019
 #
 ##########################################################################################
 # Install Notes
@@ -28,7 +29,8 @@
 #
 ##########################################################################################
 
-import datetime
+from datetime import datetime
+import time
 import json
 import requests
 import getpass
@@ -119,23 +121,23 @@ def api(method, uri, data=None):
 ### convert usecs to date
 def usecsToDate(uedate):
     """Convert Unix Epoc Microseconds to Date String"""
-    uedate = uedate / 1000000
-    return datetime.datetime.fromtimestamp(uedate).strftime('%Y-%m-%d %H:%M:%S')
+    uedate = int(uedate) / 1000000
+    return datetime.fromtimestamp(uedate).strftime('%Y-%m-%d %H:%M:%S')
 
 
 ### convert date to usecs
 def dateToUsecs(datestring):
     """Convert Date String to Unix Epoc Microseconds"""
-    dt = datetime.datetime.strptime(datestring, "%Y-%m-%d %H:%M:%S")
-    msecs = int(dt.strftime("%s"))
-    usecs = msecs * 1000000
-    return usecs
+    dt = datetime.strptime(datestring, "%Y-%m-%d %H:%M:%S")
+    # msecs = int(dt.strftime("%s"))
+    # usecs = msecs * 1000000
+    return int(time.mktime(dt.timetuple())) * 1000000
 
 
 ### convert date difference to usecs
 def timeAgo(timedelta, timeunit):
     """Convert Date Difference to Unix Epoc Microseconds"""
-    now = int(datetime.datetime.now().strftime("%s")) * 1000000
+    nowsecs = int(time.mktime(datetime.now().timetuple())) * 1000000
     secs = {'seconds': 1, 'sec': 1, 'secs': 1,
             'minutes': 60, 'min': 60, 'mins': 60,
             'hours': 3600, 'hour': 3600,
@@ -144,7 +146,7 @@ def timeAgo(timedelta, timeunit):
             'months': 2628000, 'month': 2628000,
             'years': 31536000, 'year': 31536000}
     age = int(timedelta) * int(secs[timeunit.lower()]) * 1000000
-    return now - age
+    return nowsecs - age
 
 
 def dayDiff(newdate, olddate):
