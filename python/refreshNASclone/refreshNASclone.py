@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Recover a NAS Volume as a Cohesity View Using python"""
 
-### usage: ./refreshNASclone.py -s mycluster -u myuser -v '\\mynas.mydomain.net\Utils' -n test
+### usage: ./refreshNASclone.py -s mycluster -u myuser -v '\\mynas.mydomain.net\Utils' -n test [ -smb ]
 
 ### import pyhesity wrapper module
 from pyhesity import *
