@@ -17,6 +17,7 @@ parser.add_argument('-u', '--username', type=str, required=True)
 parser.add_argument('-d', '--domain', type=str, default='local')
 parser.add_argument('-v', '--volume', type=str, required=True)
 parser.add_argument('-n', '--newname', type=str, required=True)
+parser.add_argument('-smb', '--smbsettings', action='store_true')
 
 args = parser.parse_args()
 
@@ -25,6 +26,9 @@ username = args.username
 domain = args.domain
 volume = args.volume
 newname = args.newname
+smb = args.smbsettings
+
+finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
 
 ### authenticate
 apiauth(server, username, domain, quiet=True)
@@ -90,4 +94,25 @@ recoverTask = {
 }
 f.write('recovering %s from %s to %s\n' % (volume, usecsToDate(version['instanceId']['jobStartTimeUsecs']), newname))
 result = api('post', 'restore/recover', recoverTask)
+recoverTaskId = result['id']
+
+# wait for task to complete
+recoverStatus = 'kUnkown'
+while(recoverStatus not in finishedStates):
+    sleep(5)
+    recoverStatus = api('get', '/restoretasks/%s' % recoverTaskId)[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus']
+
+if smb:
+    # update view parameters
+    view = api('get', 'views/%s' % newname)
+    view['protocolAccess'] = 'kSMBOnly'
+    view['enableSmbViewDiscovery'] = True
+    view['enableSmbAccessBasedEnumeration'] = True
+    updateview = api('put', 'views/%s' % newname, view)
+
 f.close()
+
+        # "allowMountOnWindows": False,
+        # "protocolAccess": "kSMBOnly",
+        # "enableSmbViewDiscovery": True,
+        # "enableSmbAccessBasedEnumeration": True,

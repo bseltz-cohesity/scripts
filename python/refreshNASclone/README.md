@@ -24,8 +24,10 @@ chmod +x refreshNASclone.py
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./refreshNASclone.py -s mycluster -u myuser -v '\\mynas.mydomain.net\myshare' -n test
+./refreshNASclone.py -s mycluster -u myuser -v '\\mynas.mydomain.net\myshare' -n test [ - smb ]
 ```
+
+Note: the -smb parameter is optional. When set, it will make the view protocol accessSMB only, will make she shares browsable and will enable access based enumeration.
 
 If this is the first time connecting with this user, you will be prompted for your password, which will be stored encrypted for later use by the script. See below for instructions on updating this stored password.
 
@@ -52,7 +54,7 @@ crontab -e
 Let's say that you downloaded the scripts into /home/cohesity/scripts and you want it to run at 5am eastern time daily. Remember to adjust to pacific time. Enter the following line in crontab:
 
 ```text
-0 2 * * * /home/cohesity/scripts/refreshNASclone.py -s mycluster -u myuser -v '\\mynas.mydomain.net\myshare' -n test
+0 2 * * * /home/cohesity/scripts/refreshNASclone.py -s mycluster -u myuser -v '\\mynas.mydomain.net\myshare' -n test -smb
 ```
 
 ## The Python Helper Module - pyhesity.py
