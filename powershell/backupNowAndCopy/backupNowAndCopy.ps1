@@ -7,6 +7,7 @@ param (
     [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
     [Parameter()][string]$domain = 'local', # local or AD domain
     [Parameter(Mandatory = $True)][string]$jobName, # job to run
+    [Parameter()][int]$keepLocalFor = 5, # keep local snapshot for x days
     [Parameter()][string]$replicateTo = $null, # optional - remote cluster to replicate to
     [Parameter()][int]$keepReplicaFor = 5, # keep replica for x days
     [Parameter()][string]$archiveTo = $null, # optional - target to archive to
@@ -30,7 +31,12 @@ if($job){
     exit
 }
 
-$copyRunTargets = @()
+$copyRunTargets = @(
+    @{
+        "type" = "kLocal";
+        "daysToKeep" = $keepLocalFor
+    }
+)
 
 if ($replicateTo) {
     $remote = api get remoteClusters | Where-Object {$_.name -eq $replicateTo}
@@ -74,14 +80,28 @@ $jobdata = @{
    "copyRunTargets" = $copyRunTargets
 }
 
-### run protectionJob
 "Running $jobName..."
+
+### enable job
 if($enable){
-    $enabled = api post protectionJobState/$jobID @{ 'pause' = $false }
+    $lastRunTime = (api get "protectionRuns?jobId=$jobId&numRuns=1").backupRun.stats.startTimeUsecs
+    while($True -eq (api get protectionJobs/$jobID).isPaused){
+        $null = api post protectionJobState/$jobID @{ 'pause'= $false }
+        sleep 2
+    }
 }
-$runJob = api post ('protectionJobs/run/' + $jobID) $jobdata
+
+### run job
+$null = api post ('protectionJobs/run/' + $jobID) $jobdata
+
+### disable job
 if($enable){
-    sleep 2
-    $disabled = api post protectionJobState/$jobID @{ 'pause' = $true }
+    while($True -ne (api get protectionJobs/$jobID).isPaused){
+        if($lastRunTime -lt (api get "protectionRuns?jobId=$jobId&numRuns=1").backupRun.stats.startTimeUsecs){
+            $null = api post protectionJobState/$jobID @{ 'pause'= $true }
+        }else{
+            sleep 2
+        }
+    }
 }
 

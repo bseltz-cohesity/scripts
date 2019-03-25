@@ -12,8 +12,9 @@ This PowerShell script performs a runNow on a protection job and optionally repl
 Place all files in a folder together. then, run the main script like so:
 
 ```powershell
-./backupNowAndCopy.ps1 -vip mycluster -username myusername -domain mydomain.net -jobName 'My Job' -replicateTo myothercluster -keepReplicaFor 10
+./backupNowAndCopy.ps1 -vip mycluster -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 7 -replicateTo anothercluster -keepReplicaFor 10
 ```
+
 ```text
 Connected!
 Running My Job...
@@ -21,11 +22,12 @@ Running My Job...
 
 ## Optional Parameters
 
-*  -archiveTo: (optional) name of archival target to archive to
-*  -keepArchiveFor: days to keep in archive (default is 5 days)
-*  -replicateTo: (optional) name of remote cluster to replicate to
-*  -keepReplicaFor: days to keep replica for (default is 5 days)
-*  -enable: (optional) enable a paused job before running, then disable when done
+* -keepLocalFor: days to keep local snapshot (default is 5 days)
+* -archiveTo: (optional) name of archival target to archive to
+* -keepArchiveFor: days to keep in archive (default is 5 days)
+* -replicateTo: (optional) name of remote cluster to replicate to
+* -keepReplicaFor: days to keep replica for (default is 5 days)
+* -enable: (optional) enable a paused job before running, then disable when done
 
 ## Download the script
 
