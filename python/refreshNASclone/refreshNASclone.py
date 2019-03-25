@@ -111,8 +111,3 @@ if smb:
     updateview = api('put', 'views/%s' % newname, view)
 
 f.close()
-
-        # "allowMountOnWindows": False,
-        # "protocolAccess": "kSMBOnly",
-        # "enableSmbViewDiscovery": True,
-        # "enableSmbAccessBasedEnumeration": True,
