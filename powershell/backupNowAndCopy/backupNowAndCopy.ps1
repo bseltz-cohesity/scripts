@@ -28,7 +28,7 @@ if($job){
 
 }else{
     Write-Warning "Job $jobName not found!"
-    exit
+    exit 1
 }
 
 $copyRunTargets = @(
@@ -52,7 +52,7 @@ if ($replicateTo) {
     }
     else {
         Write-Warning "Remote Cluster $replicateTo not found!"
-        exit
+        exit 1
     }
 }
 
@@ -70,7 +70,7 @@ if($archiveTo){
           }
     }else{
         Write-Warning "Archive target $archiveTo not found!"
-        exit
+        exit 1
     }
 }
 
@@ -105,3 +105,4 @@ if($enable){
     }
 }
 
+exit $LASTEXITCODE
