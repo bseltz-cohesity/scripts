@@ -13,7 +13,7 @@ This script was written to run on AIX where a scripting language such as Python 
 ## Dependencies
 
 * curl: note that the version of curl must support TLS v1.2 to communicate with Cohesity
-* sed: uses on sed regular expressions to parse JSON responses
+* sed: uses sed regular expressions to parse JSON responses
 
 The script runs like so:
 
