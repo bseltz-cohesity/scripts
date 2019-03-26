@@ -65,7 +65,7 @@ Processing servers...
 Run these commands from PowerShell to download the script(s) into your current directory
 
 ```powershell
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectIsilonShares/protectIsilonShares.ps1).content | Out-File protectIsilonShares.ps1; (Get-Content protectIsilonShares.ps1) | Set-Content protectIsilonShares.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectIsilonShares/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectPhysicalWindows/protectPhysicalWindows.ps1).content | Out-File protectPhysicalWindows.ps1; (Get-Content protectPhysicalWindows.ps1) | Set-Content protectPhysicalWindows.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectPhysicalWindows/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 ```
 
