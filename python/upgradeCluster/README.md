@@ -63,7 +63,7 @@ And copy `upgradeServer.py` into that directory and make it executable (e.g. `ch
 
 Next, copy the `cohesity-upgradeserver.service` file to `/lib/systemd/system`
 
-From within the upgrade server directory, download at least one upgrad file:
+From within the upgrade server directory, download at least one upgrade package:
 
 ```bash
 cd \opt\cohesity\upgradeserver
