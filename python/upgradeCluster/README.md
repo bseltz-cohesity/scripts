@@ -45,7 +45,7 @@ upgradeServer.py uses Flask (a web services framework for python) which can be i
 
 The following instructions are for deploying upgradeServer.py on CentOS 7 Linux.
 
-ON a Linux host, install Flask:
+On a Linux host, install Flask:
 
 ```bash
 sudo yum install python-flask
