@@ -106,7 +106,7 @@ foreach($sourceId in $sourceIds){
             }
         }
         if($excludedFilePaths.Length -gt 0){
-            $filePath.excludedFilePaths = $filePath.excludedFilePaths + $excludedFilePaths | Select-Object -Unique
+            $filePath.excludedFilePaths = @($filePath.excludedFilePaths + $excludedFilePaths | Select-Object -Unique)
         }
         $sourceSpecialParameter.physicalSpecialParameters.filePaths += $filePath
     }
@@ -116,4 +116,4 @@ foreach($sourceId in $sourceIds){
 # update job
 $job.sourceSpecialParameters = $sourceSpecialParameters
 $job.sourceIds = $sourceIds
-$null = api put protectionJobs/$($job.id) $job
+$null = api put "protectionJobs/$($job.id)" $job
