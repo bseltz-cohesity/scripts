@@ -48,7 +48,7 @@ if(!$job){
 $sources = api get protectionSources?environment=kPhysical
 
 # add sourceIds for new servers
-$sourceIds = $job.sourceIds
+$sourceIds = @($job.sourceIds)
 
 foreach($server in $serversToAdd){
     $node = $sources.nodes | Where-Object { $_.protectionSource.name -eq $server }
@@ -64,7 +64,7 @@ foreach($server in $serversToAdd){
     }
 }
 
-$sourceIds = $sourceIds | Select-Object -Unique
+$sourceIds = @($sourceIds | Select-Object -Unique)
 
 # process inclusions and exclusions
 "Processing servers..."
@@ -83,9 +83,11 @@ foreach($sourceId in $sourceIds){
 
     # identify existing source volumes
     $mountPoints = $source.protectionSource.physicalProtectionSource.volumes.mountPoints
+
     foreach ($mountPoint in $mountPoints | Where-Object {$_ -ne $null}) {
 
-        $backupFilePath = "/$($mountPoint.substring(0,1))/"
+        $backupFilePath = "/$mountPoint".Replace(':\','/')
+
         if($null -ne ($existingSourceSpecialParameter.physicalSpecialParameters.filePaths | Where-Object {$_.backupFilePath -eq $backupFilePath})){
             $filePath = $existingSourceSpecialParameter.physicalSpecialParameters.filePaths | Where-Object {$_.backupFilePath -eq $backupFilePath}
         }else{
@@ -108,12 +110,15 @@ foreach($sourceId in $sourceIds){
         if($excludedFilePaths.Length -gt 0){
             $filePath.excludedFilePaths = @($filePath.excludedFilePaths + $excludedFilePaths | Select-Object -Unique)
         }
-        $sourceSpecialParameter.physicalSpecialParameters.filePaths += $filePath
+        if($mountPoint -notin $exclusions){
+            $sourceSpecialParameter.physicalSpecialParameters.filePaths += $filePath
+        }
     }
     $sourceSpecialParameters += $sourceSpecialParameter
 }
 
 # update job
 $job.sourceSpecialParameters = $sourceSpecialParameters
-$job.sourceIds = $sourceIds
+$job.sourceIds = @($sourceIds)
+# $job | convertto-json -depth 99
 $null = api put "protectionJobs/$($job.id)" $job
