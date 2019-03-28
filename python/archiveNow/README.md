@@ -22,17 +22,15 @@ chmod +x archiveNow.py
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./archiveNow.py -v mycluster -u myuser -d mydomain.net -j myjob -r '2019-03-26 12:55:00'
+./archiveNow.py -v mycluster -u myuser -d mydomain.net -j myjob -r '2019-03-26 14:55:00'
 ```
 
 The date entered is the date of the protection run that you want to archive. The script output should be similar to the following:
 
 ```text
 Connected!
-archiving snapshot from 2019-03-26 12:55:18...
+archiving snapshot from 2019-03-26 14:55:18...
 ```
-
-If the output does not report that it's archiving something then you probabbly entered the wrong datetime....
 
 ## The Python Helper Module - pyhesity.py
 

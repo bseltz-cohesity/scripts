@@ -46,6 +46,7 @@ daysToKeep = policy['snapshotArchivalCopyPolicies'][0]['daysToKeep']
 # find requested run
 runs = api('get', 'protectionRuns?jobId=%s' % job['id'])
 
+foundRun = False
 for run in runs:
     existingarchive = False
 
@@ -54,6 +55,7 @@ for run in runs:
     thisrundatebase = (thisrundate - timedelta(seconds=thisrundate.second)).strftime("%Y-%m-%d %H:%M:%S")
 
     if rundate == thisrundatebase:
+        foundRun = True
         print('archiving snapshot from %s...' % usecsToDate(run['copyRun'][0]['runStartTimeUsecs']))
         for copyRun in run['copyRun']:
 
@@ -86,3 +88,7 @@ for run in runs:
             # update run
             if(daysToKeep > 0):
                 result = api('put', 'protectionRuns', archiveTask)
+
+# report if no run was found
+if foundRun is False:
+    print('Could not find a run with the date %s' % rundate)
