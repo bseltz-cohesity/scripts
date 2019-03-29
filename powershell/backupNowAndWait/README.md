@@ -35,6 +35,8 @@ Job finished with status: kSuccess
 Run these commands from PowerShell to download the script(s) into your current directory
 
 ```powershell
+# Download commands
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/backupNowAndWait/backupNowAndWait.ps1).content | Out-File backupNowAndWait.ps1; (Get-Content backupNowAndWait.ps1) | Set-Content backupNowAndWait.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/backupNowAndWait/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# end download commands
 ```
