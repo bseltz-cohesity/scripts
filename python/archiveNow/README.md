@@ -47,7 +47,7 @@ archiving snapshot from 2019-03-26 14:55:18...
 
 If the job has a policy applied with an archival policy element, by default the script will use the target and retention specified in the policy. The retention to be set will be calculated from the snapshot date by default, so if the retention is 10 days, but the snapshot occured 2 days ago, then the retention will be set to 8 days.
 
-Using the -k parameter overrides the retention specified in the policy, or specifies a retention when the job has no archival policy. Again, retention is adjusted based on the age of the snapshot.
+Using the -k parameter overrides the retention specified in the policy, or specifies a retention when the job has no archival policy. Again, retention is adjusted based on the age of the snapshot. Also, if an existing archive exists, using -k will update the retention (otherwise the existing retention will be maintained).
 
 Using the -t parameter overrides the archival target specified in the policy, or specifies a target when the job has no archival policy.
 
