@@ -30,6 +30,12 @@ Connected!
 
 Searching for secretfile...
 
+Matches were found in the following objects
+-------------------------------------------
+CentOS3.mydomain.net (in job: CentOS3)
+CentOS3.mydomain.net (in job: File-Based Backup)
+AWSControlVM (in job: Infrastructure)
+
 Search Results:
 
 1: /home/myuser/scripts/secretfile
