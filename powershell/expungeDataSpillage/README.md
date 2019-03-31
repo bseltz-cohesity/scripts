@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-## Warning! This script deletes backup data! Make sure you know what you are doing before you run it!  
+## Warning! This script deletes backup data! Make sure you know what you are doing before you run it
 
 This powershell script searches for a file, and displays the ProtectionJobs/Objects where the file is stored. You can then select a ProtectionJob/Object and the script will delete all versions of the ProtectionJob/Object where that file exists. The deletion will include the local snapshots plus any remote replicas and archives.
 
@@ -24,55 +24,69 @@ Place both files in a folder together, then we can run the script.
 First, run the script WITHOUT the -delete switch to see what would be deleted.
 
 ```powershell
-powershell> ./expungeDataSpillage.ps1 -vip mycluster -username admin [ -domain mydomain ] -search 'jobmonitor.sh'
+powershell> ./expungeDataSpillage.ps1 -vip mycluster -username admin [ -domain mydomain ] -search 'secretfile'
 Connected!
-Searching for jobmonitor.sh...
+- Started at 03/31/2019 05:37:18 -------
+
+Searching for secretfile...
+
 Search Results:
-----
-0: /home/seltzerb/old-jobMonitor.sh
-VM Backup::CentOS1
-----
-1: /home/seltzerb/jobMonitor.sh
-VM Backup::CentOS1
-----
-Please select ID to expunge: 
+
+1: /home/myuser/scripts/secretfile
+   CentOS3::CentOS3.mydomain.net
+--
+2: /home/myuser/scripts/secretfile
+   File-Based Backup::CentOS3.mydomain.net
+--
+3: /home/myuser/secretfile
+   Infrastructure::AWSControlVM
+--
+0: Select All
+
+Select Files to Expunge:
+Enter one or more (comma separated) id(s):
 ```
 
-Select an item from the list by typing the ID (e.g. 0) 
+Select one or more (comma separated) id(s) from the file list
 
 ```powershell
 Please select ID to expunge: 0
-Searching for versions to delete...
-Deleting CentOS1 from VM Backup: 01/17/2019 23:30:01
-  Local Snapshot
-  Archive on S3
-Deleting CentOS1 from VM Backup: 01/15/2019 23:30:01
-  Local Snapshot
-  Archive on S3
-Deleting CentOS1 from VM Backup: 01/14/2019 23:30:01
-  Local Snapshot
-  Archive on S3
-Deleting CentOS1 from VM Backup: 01/13/2019 23:30:00
-  Archive on S3
-Deleting CentOS1 from VM Backup: 01/12/2019 23:30:01
-  Archive on S3
-Deleting CentOS1 from VM Backup: 01/11/2019 23:30:01
-  Archive on S3
-Deleting CentOS1 from VM Backup: 01/10/2019 23:30:00
-  Archive on S3
-Deleting CentOS1 from VM Backup: 01/09/2019 23:30:01
-  Archive on S3
+
+Processing /home/myuser/scripts/secretfile...
+
+Deleting object CentOS3.mydomain.net from affected runs of job: File-Based Backup
+  BSeltzVE01 (03/31/2019 00:40:00)
+  S3 (03/31/2019 00:40:00)
+  BSeltzVE01 (03/30/2019 17:59:53)
+  S3 (03/30/2019 17:59:53)
+  CohesityVE (03/31/2019 00:40:00)
+  CohesityVE (03/30/2019 17:59:53)
+
+Processing /home/myuser/secretfile...
+
+Deleting object AWSControlVM from affected runs of job: Infrastructure
+  no objects left to delete
+
+Summary of Affected Objects Processed
+-------------------------------------
+(retained) CentOS3:CentOS3.mydomain.net
+(processed) File-Based Backup:CentOS3.mydomain.net
+(processed) Infrastructure:AWSControlVM
+
+- Ended at 03/31/2019 05:37:25 -------
 ```
 
 Then, if you're happy with what would be deleted, re-run the script again and include the -delete switch. THIS WILL DELETE BACKUP DATA!!!
 
-Please note that there may be some delay before the deletions are reflected in file search results. 
+Please note that there may be some delay before the deletions are reflected in file search results.
 
 ## Download the Script
 
 Run these commands from PowerShell to download the script(s) into your current directory:
 
 ```powershell
+# download commands
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/expungeDataSpillage/expungeDataSpillage.ps1).content | Out-File expungeDataSpillage.ps1; (Get-Content expungeDataSpillage.ps1) | Set-Content expungeDataSpillage.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/expungeDataSpillage/cohesityCluster.ps1).content | Out-File cohesityCluster.ps1; (Get-Content cohesityCluster.ps1) | Set-Content cohesityCluster.ps1
+# end download commands
 ```
