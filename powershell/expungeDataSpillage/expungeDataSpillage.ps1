@@ -271,6 +271,12 @@ while($false -eq $doneSelecting -or $askAgain -eq $True){
     }
 }
 
+if($selections[0] -eq 0){
+    log ("`nAll Items Selected")
+}else{
+    log ("`nItem(s) $([string]::join(', ',$selections)) Selected")
+}
+
 # process selections
 if(0 -in $selections){
     foreach($instance in $instanceList){
