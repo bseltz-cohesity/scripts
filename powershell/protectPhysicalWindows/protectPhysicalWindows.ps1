@@ -90,6 +90,9 @@ foreach($sourceId in $sourceIds){
 
         if($null -ne ($existingSourceSpecialParameter.physicalSpecialParameters.filePaths | Where-Object {$_.backupFilePath -eq $backupFilePath})){
             $filePath = $existingSourceSpecialParameter.physicalSpecialParameters.filePaths | Where-Object {$_.backupFilePath -eq $backupFilePath}
+            if(! $filePath.PSObject.Properties['excludedFilePaths']){
+                $filePath | Add-Member -MemberType NoteProperty -Name excludedFilePaths -Value @()
+            }
         }else{
             $filePath = @{
                 "backupFilePath" = $backupFilePath;
@@ -108,7 +111,9 @@ foreach($sourceId in $sourceIds){
             }
         }
         if($excludedFilePaths.Length -gt 0){
-            $filePath.excludedFilePaths = @($filePath.excludedFilePaths + $excludedFilePaths | Select-Object -Unique)
+            
+            $filePath.excludedFilePaths = $filePath.excludedFilePaths + $excludedFilePaths | Select-Object -Unique
+
         }
         if($mountPoint -notin $exclusions){
             $sourceSpecialParameter.physicalSpecialParameters.filePaths += $filePath
