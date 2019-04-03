@@ -27,7 +27,7 @@ foreach ($job in (api get protectionJobs)) {
 
     $jobId = $job.id
 
-    foreach ($run in (api get protectionRuns?jobId=$($job.id)`&numRuns=99999`&excludeTasks=true`&excludeNonRestoreableRuns=true)) {
+    foreach ($run in (api get protectionRuns?jobId=$($job.id)`&numRuns=999999`&excludeTasks=true`&excludeNonRestoreableRuns=true)) {
         if ($run.backupRun.snapshotsDeleted -eq $false) {
             $startdate = usecstodate $run.copyRun[0].runStartTimeUsecs
             $startdateusecs = $run.copyRun[0].runStartTimeUsecs

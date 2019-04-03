@@ -4,7 +4,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script expires local snapshots older than x days. This is useful if you have reduced your on-prem retention and want to programatically expire local snapshots older than the new retention period.
 
-## Warning! This script deletes backup data! Make sure you know what you are doing before you run it!  
+## Warning! This script deletes backup data! Make sure you know what you are doing before you run it
 
 ## Components
 
@@ -18,6 +18,7 @@ First, run the script WITHOUT the -expire switch to see what would be deleted.
 ```powershell
 ./expireOldSnaps.ps1 -vip bseltzve01 -username admin -daysToKeep 365
 ```
+
 ```text
 Connected!
 Searching for old snapshots...
@@ -32,11 +33,13 @@ Oracle 11/28/2017 22:35:47
 Oracle 11/28/2017 16:35:47
 CorpShare 11/29/2017 04:07:00
 ```
+
 Then, if you're happy with the list of snapshots that will be deleted, run the script again and include the -expire switch. THIS WILL DELETE THE OLD SNAPSHOTS!!!
 
 ```powershell
 ./expireOldSnaps.ps1 -vip bseltzve01 -username admin -daysToKeep 365 -expire
 ```
+
 ```text
 Connected!
 Searching for old snapshots...
@@ -61,6 +64,17 @@ Expiring Oracle Snapshot from 11/28/2017 16:35:47
 
 Expiring CorpShare Snapshot from 11/29/2017 04:07:00
 ```
+
 You can run the script again you should see no results, unless the Cohesity cluster is very busy. It might take some time for the snapshots to actually be deleted.
 
 Also note that if you're waiting for capacity to be freed up, it may take hours to days for the garbage collector to actually free up the space. 
+
+## Download the Scripts
+
+Run these commands from PowerShell to download the scripts into the current folder:
+
+```powershell
+# download commands
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/expireOldSnaps/expireOldSnaps.ps1).content | Out-File expireOldSnaps.ps1; (Get-Content expireOldSnaps.ps1) | Set-Content expireOldSnaps.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/expireOldSnaps/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# end of download commands
