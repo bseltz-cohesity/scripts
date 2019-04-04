@@ -42,7 +42,7 @@ Similarly, you can add exclusion paths in the same way, using the -addExclusions
 
 # or
 
-Get-Content ./inclusions.txt | ./netappPathFilters.ps1 -vip mycluster -username myusername -jobName NetAppJob -addExclusions
+Get-Content ./exclusions.txt | ./netappPathFilters.ps1 -vip mycluster -username myusername -jobName NetAppJob -addExclusions
 ```
 
 ```text
