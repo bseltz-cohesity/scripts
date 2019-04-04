@@ -13,7 +13,7 @@ This powershell script installs and configures the Cohesity Windows agent on rem
 
 Place all files in a folder together, then we can run the script.
 
-__Note: The script must be run by a user who has rights to perform actions on the remote servers__
+Note: The script must be run by a user who has rights to perform actions on the remote servers
 
 The script can perform several steps, which can be run individually or together. The steps are:
 
@@ -30,6 +30,7 @@ It would be common to use all steps together as shown below if you are deploying
 ```powershell
 .\deployWindowsAgent.ps1 -vip mycluster -username admin -domain local -serverList .\sqlServers.txt -installAgent -register -registerSQL -serviceAccount mydomain.net\myuser
 ```
+
 ```text
 Connected!
 Enter password for mydomain.net\myuser: ********
@@ -47,8 +48,18 @@ managing Cohesity Agent on sqlserver2.mydomain.net
     Registering as SQL protection source...
 ```
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download commands
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployWindowsAgents/deployWindowsAgent.ps1).content | Out-File deployWindowsAgent.ps1; (Get-Content deployWindowsAgent.ps1) | Set-Content deployWindowsAgent.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployWindowsAgents/UserRights.psm1).content | Out-File UserRights.psm1; (Get-Content UserRights.psm1) | Set-Content UserRights.psm1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployWindowsAgents/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End download commands
+```
+
 ## Attributions
 
 * UserRights.psm1: was downloaded from: https://gallery.technet.microsoft.com/scriptcenter/Grant-Revoke-Query-user-26e259b0 thanks to Tony MCP: https://social.technet.microsoft.com/profile/tony%20mcp/ just what I was looking for!
-
-
