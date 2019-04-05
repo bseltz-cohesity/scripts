@@ -84,7 +84,7 @@ foreach ($server in $servers){
 
         ### install agent and open firewall port
         "`tinstalling Cohesity agent..."
-        $result = Invoke-Command -Computername $server -ArgumentList $remoteFilePath -ScriptBlock {
+        $null = Invoke-Command -Computername $server -ArgumentList $remoteFilePath -ScriptBlock {
             param($remoteFilePath)
             if (! $(Get-Service | Where-Object { $_.Name -eq 'CohesityAgent' })) {
                 ([WMICLASS]"\\localhost\ROOT\CIMV2:win32_process").Create("$remoteFilePath /type=allcbt /verysilent /supressmsgboxes /norestart")
@@ -119,10 +119,10 @@ foreach ($server in $servers){
                     'throttlingPolicy' = @{
                         'isThrottlingEnabled' = $false
                     };
-                    'forceRegister' = $false
+                    'forceRegister' = $True
                 }
             
-                $result2 = api post /backupsources $newPhysicalSource     
+                $null = api post /backupsources $newPhysicalSource     
             }    
         }
     }
@@ -131,7 +131,7 @@ foreach ($server in $servers){
     if($serviceAccount){
         "`tSetting CohesityAgent Service Logon Account..."
         Grant-UserRight -Computer $server -User $serviceAccount -Right SeServiceLogonRight
-        $result3 = Set-ServiceAcctCreds $server 'CohesityAgent' $serviceAccount $sqlPassword
+        $null = Set-ServiceAcctCreds $server 'CohesityAgent' $serviceAccount $sqlPassword
     }
 
     ### register server as SQL
@@ -142,7 +142,7 @@ foreach ($server in $servers){
             $sourceId = ($phys.nodes | Where-Object { $_.protectionSource.name -ieq $server }).protectionSource.id
             if ($sourceId) {
                 $regSQL = @{"ownerEntity" = @{"id" = $sourceId}; "appEnvVec" = @(3)}
-                $result4 = api post /applicationSourceRegistration $regSQL
+                $null = api post /applicationSourceRegistration $regSQL
             }
             else {
                 Write-Warning "$server is not yet registered as a protection source"
@@ -150,3 +150,4 @@ foreach ($server in $servers){
         }
     }
 }
+
