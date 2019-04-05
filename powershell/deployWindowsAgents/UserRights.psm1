@@ -1,4 +1,4 @@
-﻿<#  -- UserRights.psm1 --
+<#  -- UserRights.psm1 --
 
 The latest version of this script is available at https://gallery.technet.microsoft.com/Grant-Revoke-Query-user-26e259b0
 
@@ -1154,3 +1154,4 @@ Export-ModuleMember -Function Grant-TokenPrivilege, Revoke-TokenPrivilege
 # tfVAaP/6ZGfG85ZZGDLXajavRzUCFUCG08ySITY3b1+FPeRlWDVrn/99bbgHKcjY
 # 06SDVYw9qCKvdwbOjFrQ99VaTAXhVw+s
 # SIG # End signature block
+
