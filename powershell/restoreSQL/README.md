@@ -32,3 +32,14 @@ If you want to replay logs to a point in time, use this parameter:
 ```powershell
 -logTime '2019-01-20 23:47:02'
 ```
+
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download Commands
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/restoreSQL/restore-SQL.ps1).content | Out-File restore-SQL.ps1; (Get-Content restore-SQL.ps1) | Set-Content restore-SQL.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/restoreSQL/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
+```
