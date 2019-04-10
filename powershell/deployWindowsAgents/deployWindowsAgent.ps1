@@ -97,34 +97,35 @@ foreach ($server in $servers){
     if($register){
         "`tRegistering as Cohesity protection source..."
         $sourceId = $null
-        while($null -eq $sourceId){
-            $phys = api get protectionSources?environments=kPhysical
-            $sourceId = ($phys.nodes | Where-Object { $_.protectionSource.name -ieq $server }).protectionSource.id
-            if($null -eq $sourceId){
-                $newPhysicalSource = @{
-                    'entity' = @{
-                        'type' = 6;
-                        'physicalEntity' = @{
-                            'name' = $server;
-                            'type' = $entityType;
-                            'hostType' = 1
-                        }
-                    };
-                    'entityInfo' = @{
-                        'endpoint' = $server;
-                        'type' = 6;
+        $phys = api get protectionSources?environments=kPhysical
+        $sourceId = ($phys.nodes | Where-Object { $_.protectionSource.name -ieq $server }).protectionSource.id
+        if($null -eq $sourceId){
+            $newPhysicalSource = @{
+                'entity' = @{
+                    'type' = 6;
+                    'physicalEntity' = @{
+                        'name' = $server;
+                        'type' = $entityType;
                         'hostType' = 1
-                    };
-                    'sourceSideDedupEnabled' = $true;
-                    'throttlingPolicy' = @{
-                        'isThrottlingEnabled' = $false
-                    };
-                    'forceRegister' = $True
-                }
-            
-                $null = api post /backupsources $newPhysicalSource     
-            }    
-        }
+                    }
+                };
+                'entityInfo' = @{
+                    'endpoint' = $server;
+                    'type' = 6;
+                    'hostType' = 1
+                };
+                'sourceSideDedupEnabled' = $true;
+                'throttlingPolicy' = @{
+                    'isThrottlingEnabled' = $false
+                };
+                'forceRegister' = $True
+            }
+        
+            $result = api post /backupsources $newPhysicalSource
+            if($null -eq $result){
+                continue
+            } 
+        }    
     }
 
     ### set service account
@@ -150,4 +151,3 @@ foreach ($server in $servers){
         }
     }
 }
-
