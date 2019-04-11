@@ -58,7 +58,7 @@ Processing servers...
 
 * -domain: your AD domain (defaults to local)
 * -server: name of a single server to add to the job
-* -serverList: a text file list of servers to add to the job 
+* -serverList: a text file list of servers to add to the job
 
 ## Download the script
 
@@ -68,4 +68,3 @@ Run these commands from PowerShell to download the script(s) into your current d
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectPhysicalWindows/protectPhysicalWindows.ps1).content | Out-File protectPhysicalWindows.ps1; (Get-Content protectPhysicalWindows.ps1) | Set-Content protectPhysicalWindows.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectPhysicalWindows/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 ```
-

@@ -1,11 +1,12 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#   version 0.8 - Brian Seltzer - Mar 2019
+#   version 0.9 - Brian Seltzer - Apr 2019
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.6 - Consolidated Windows and Unix versions - June 2018
 # 0.7 - Added saveJson, loadJson and json2code utility functions - Feb 2019
 # 0.8 - added -prompt to prompt for password rather than save
+# 0.9 - added setApiProperty / delApiProperty
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
 
@@ -415,3 +416,27 @@ function json2code($json = '', $jsonFile = '', $psFile = 'myObject.ps1'){
     return $pscode
 }
 
+# add a property
+function setApiProperty{
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $True)][string]$name,
+        [Parameter(Mandatory = $True)][System.Object]$value,
+        [Parameter(Mandatory = $True, ValueFromPipeline = $True)][System.Object]$object
+    )
+    if(! $object.PSObject.Properties[$name]){
+        $object | Add-Member -MemberType NoteProperty -Name $name -Value $value
+    }else{
+        $object.$name = $value
+    }
+}
+
+# delete a propery
+function delApiProperty{
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $True)][string]$name,
+        [Parameter(Mandatory = $True, ValueFromPipeline = $True)][System.Object]$object
+    )
+    $object.PSObject.Members.Remove($name)
+}

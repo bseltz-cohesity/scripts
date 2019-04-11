@@ -16,10 +16,10 @@ If not specified, the script will attempt to pair the default storage domains, (
 ```powershell
 ./addRemoteCluster.ps1 -localVip 192.168.1.198 -localUsername admin -remoteVip 10.1.1.202 -remoteUsername admin
 ```
+
 ```text
 Connected!
 Connected!
 Added replication partnership awsce -> BSeltzVE01
 Added replication partnership awsce <- BSeltzVE01
 ```
-
