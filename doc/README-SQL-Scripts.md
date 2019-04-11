@@ -2,9 +2,9 @@
 
 There are three SQL related scripts that are often useful to SQL DBAs. They are:
 
-* restore-SQL.ps1: restore a SQL database for operational recovery or testing. View the readme for this script at https://github.com/bseltz-cohesity/scripts/tree/master/powershell/SQLrestore
+* restore-SQL.ps1: restore a SQL database for operational recovery or testing. View the readme for this script at https://github.com/bseltz-cohesity/scripts/tree/master/powershell/restoreSQL
 
-* sqlClone.ps1: clone a SQL database for test/dev. View the readme for this script at https://github.com/bseltz-cohesity/scripts/tree/master/powershell/SQLClone
+* sqlClone.ps1: clone a SQL database for test/dev. View the readme for this script at https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cloneSQL
 
 * destroyClone.ps1: tear down a SQL clone. View the readme for thids script at https://github.com/bseltz-cohesity/scripts/tree/master/powershell/destroyClone
 
