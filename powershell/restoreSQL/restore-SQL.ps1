@@ -58,7 +58,7 @@ $latestdb = ($dbresults | sort-object -property @{Expression={$_.vmDocument.vers
 
 if($null -eq $latestdb){
     write-host "Database Not Found" -foregroundcolor yellow
-    exit
+    exit 1
 }
 
 ### identify physical or vm
@@ -69,7 +69,7 @@ $entities = api get /appEntities?appEnvType=3`&envType=$entityType
 $sourceEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $sourceServer }
 if($null -eq $sourceEntity){
     Write-Host "Source Server Not Found" -ForegroundColor Yellow
-    exit
+    exit 1
 }
 
 ### handle log replay
@@ -167,7 +167,7 @@ if($validLogTime -eq $True){
     if($logTime){
         Write-Host "LogTime of $logTime is out of range" -ForegroundColor Yellow
         Write-Host "Available range is $(usecsToDate $logStart) to $(usecsToDate $logEnd)" -ForegroundColor Yellow
-        exit
+        exit 1
     }
 }
 
@@ -176,7 +176,7 @@ if($targetServer){
     $targetEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $targetServer }
     if($null -eq $targetEntity){
         Write-Host "Target Server Not Found" -ForegroundColor Yellow
-        exit
+        exit 1
     }
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams['targetHost'] = $targetEntity.appEntity.entity;
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams['targetHostParentSource'] = @{ 'id' = $targetEntity.appEntity.entity.parentId }
@@ -208,13 +208,20 @@ if($response){
 
 if($wait){
     $taskId = $response.restoreTask.performRestoreTaskState.base.taskId
-    $finishedStates = @('kSuccess','kFailed','kCanceled')
+    $finishedStates = @('kSuccess','kFailed','kCanceled', 'kFailure')
     while($True){
         $status = (api get /restoretasks/$taskId).restoreTask.performRestoreTaskState.base.publicStatus
-        if ($status-in $finishedStates){
+        if ($status -in $finishedStates){
             break
         }
         sleep 5
     }
     "restore ended with $status"
+    if($status -eq 'kSuccess'){
+        exit 0
+    }else{
+        exit 1
+    }
 }
+
+exit 0
