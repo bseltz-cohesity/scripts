@@ -4,7 +4,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This script demonstrates how to perform an restore of a SQL database. The script can restore the database to the original server, or a different server. It can overwrite the existing database or restore with a different database name.  
 
-## Warning!!
+## Warning
 
 This script can overwrite production data if you ask it to. Make sure you know what you are doing and test thoroughly before using in production!!!
 
@@ -24,29 +24,40 @@ Restoring cohesitydb to sqldev01 as restoreTest
 
 ## Parameters
 
+### Basic Parameters
+
 * -vip: Cohesity Cluster to connect to
 * -username: Cohesity username
 * -domain: Active Directory domain of user (defaults to local)
 * -sourceServer: Server name where the database was backed up
 * -sourceDB: Original database name
+* -mdfFolder: Location to place the primary data file (e.g. C:\SQLData)
+
+### Optional Parameters
+
 * -targetServer: Server name to restore to (defaults to same as sourceServer)
 * -targetDB: New database name (defaults to same as sourceDB)
 * -targetInstance: Instance name to restore to (defaults to MSSQLSERVER)
-* -overwrite: Overwrites an existing database (default is no overwrite)
-* -mdfFolder: Location to place the primary data file (e.g. C:\SQLData)
 * -ldfFolder: Location to place the log files (defaults to same as mdfFolder)
 * -ndfFolder: Location to place the secondary files (defaults to same as ndfFolder)
 * -ndfFolders: Locations to place various ndf files (see below)
 * -logTime: Point in time to replay the logs to during the restore (e.g. '2019-04-10 22:31:05')
 * -wait: Wait for the restore to complete and report end status (e.g. kSuccess)
+* -overwrite: Overwrites an existing database (default is no overwrite)
 
-Note: if you want to restore multiple ndf files to separate locations, use the following parameter:
+## Overwrite Warning
+
+Including the -overwrite parameter will overwrite an existing database. Use this parameter with extreme caution.
+
+## Multiple Folders for Secondary NDF Files
 
 ```powershell
 -ndfFolders @{'*1.ndf'='E:\sqlrestore\ndf1'; '*2.ndf'='E:\sqlrestore\ndf2'}
 ```
 
-If you want to replay logs to a point in time, use this parameter:
+## Point in Time Recovery
+
+If you want to replay logs to a point in time, use the -logTime parameter and specify a date and time in military format like so:
 
 ```powershell
 -logTime '2019-01-20 23:47:02'
