@@ -42,6 +42,9 @@ foreach ($job in @($jobs | Where-Object { $_.id -ne $myJob.id})){
             "  fixing..."
             # Remove redundant sources from the other job
             $job.sourceIds = @($job.sourceIds | Where-Object { $_ -notin $myJob.sourceIds })
+            if($job.PSObject.Properties['sourceSpecialParameters']){
+                $job.sourceSpecialParameters = @($job.sourceSpecialParameters | Where-Object { $_.sourceId -notin $myJob.sourceIds })
+            }
             $null = api put "protectionJobs/$($job.id)" $job
         }
     }
