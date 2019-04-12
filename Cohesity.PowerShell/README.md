@@ -4,5 +4,4 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This Folder will contain example script for use with the Cohesity.Powershell Module.
 
-Note: the Cohesity.PowerShell cmdlets can be found here: https://cohesity.github.io/cohesity-powershell-module/#/setup
-
+Note: the Cohesity.PowerShell cmdlets can be found here: <https://cohesity.github.io/cohesity-powershell-module/#/setup>
