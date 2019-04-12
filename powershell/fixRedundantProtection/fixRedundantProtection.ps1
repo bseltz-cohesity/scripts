@@ -45,7 +45,11 @@ foreach ($job in @($jobs | Where-Object { $_.id -ne $myJob.id})){
             if($job.PSObject.Properties['sourceSpecialParameters']){
                 $job.sourceSpecialParameters = @($job.sourceSpecialParameters | Where-Object { $_.sourceId -notin $myJob.sourceIds })
             }
-            $null = api put "protectionJobs/$($job.id)" $job
+            if($job.sourceIds.length -eq 0){
+                Write-Warning "Can't remove $($source.name) from $($job.name) because it would leave the job empty. Please just delete the job."
+            }else{
+                $null = api put "protectionJobs/$($job.id)" $job
+            }
         }
     }
 }
