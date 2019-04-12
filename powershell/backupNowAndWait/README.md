@@ -29,6 +29,7 @@ Job finished with status: kSuccess
 * -replicateTo: (optional) name of remote cluster to replicate to
 * -keepReplicaFor: days to keep replica for (default is 5 days)
 * -enable: (optional) enable a paused job before running, then disable when done
+* -logBackup: (optional) perform a log backup (default is regular backup) only appllies to database backups
 
 ## Download the script
 
