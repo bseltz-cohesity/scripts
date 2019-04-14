@@ -46,6 +46,7 @@ def extendRun(run, extendByDays):
     # get run date for printing
     runStartTimeUsecs = run['copyRun'][0]['runStartTimeUsecs']
     runStartTime = datetime.strptime(usecsToDate(runStartTimeUsecs), '%Y-%m-%d %H:%M:%S')
+    newExpireTimeUsecs = runStartTimeUsecs + (daysToKeep * 86400000000)
 
     # if run needs to be extended, extend it
     if extendByDays > 0:
