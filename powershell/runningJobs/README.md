@@ -19,4 +19,14 @@ Place both files in a folder together and run the main script like so:
 ```powershell
 ./runningJobs.ps1 -vip mycluster -username admin -domain local
 ```
- 
+
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Begin download commands
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/runningJobs/runningJobs.ps1).content | Out-File runningJobs.ps1; (Get-Content runningJobs.ps1) | Set-Content runningJobs.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/runningJobs/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End download commands
+```
