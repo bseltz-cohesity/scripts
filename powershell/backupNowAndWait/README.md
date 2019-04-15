@@ -12,7 +12,7 @@ This PowerShell script performs a runNow on a protection job and optionally repl
 Place all files in a folder together. then, run the main script like so:
 
 ```powershell
-./backupNowAndWait.ps1 -vip mycluster -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 7 -replicateTo anothercluster -keepReplicaFor 10
+./backupNowAndWait.ps1 -vip mycluster -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 7 -replicateTo anothercluster -keepReplicaFor 10 -backupType kRegular
 ```
 
 ```text
@@ -29,7 +29,7 @@ Job finished with status: kSuccess
 * -replicateTo: (optional) name of remote cluster to replicate to
 * -keepReplicaFor: days to keep replica for (default is 5 days)
 * -enable: (optional) enable a paused job before running, then disable when done
-* -logBackup: (optional) perform a log backup (default is regular backup) only appllies to database backups
+* -backupType: (optional) choose one of kRegular, kFull or kLog backup types. Default is kRegular (incremental)
 
 ## Download the script
 

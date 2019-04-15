@@ -13,7 +13,8 @@ param (
     [Parameter()][string]$archiveTo = $null,  # optional - target to archive to
     [Parameter()][int]$keepArchiveFor = 5,  # keep archive for x days
     [Parameter()][switch]$enable,  # enable a disabled job, run it, then disable when done
-    [Parameter()][switch]$logBackup  # perform a log backup instead of a DB backup
+    [Parameter()][ValidateSet(“kRegular”,”kFull”,”kLog”)][string]$backupType = 'kRegular'
+    # [Parameter()][switch]$logBackup  # perform a log backup instead of a DB backup
 )
 
 # source the cohesity-api helper code
@@ -26,7 +27,11 @@ apiauth -vip $vip -username $username -domain $domain
 $job = (api get protectionJobs | Where-Object name -ieq $jobName)
 if($job){
     $jobID = $job.id
-
+    $environment = $job.environment
+    if($environment -notin ('kOracle', 'kSQL') -and $backupType -eq 'kLog'){
+        Write-Warning "BackupType kLog not applicable to $environment jobs"
+        exit 1
+    }
 }else{
     Write-Warning "Job $jobName not found!"
     exit 1
@@ -92,14 +97,14 @@ if($archiveTo){
 }
 
 # Finalize RunProtectionJobParam object
-if($logBackup){
-    $runType = 'kLog'
-}else{
-    $runType = 'kRegular'
-}
+# if($logBackup){
+#     $runType = 'kLog'
+# }else{
+#     $runType = 'kRegular'
+# }
 
 $jobdata = @{
-   "runType" = $runType
+   "runType" = $backupType
    "copyRunTargets" = $copyRunTargets
 }
 
