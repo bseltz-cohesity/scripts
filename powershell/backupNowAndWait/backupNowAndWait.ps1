@@ -14,7 +14,6 @@ param (
     [Parameter()][int]$keepArchiveFor = 5,  # keep archive for x days
     [Parameter()][switch]$enable,  # enable a disabled job, run it, then disable when done
     [Parameter()][ValidateSet(“kRegular”,”kFull”,”kLog”)][string]$backupType = 'kRegular'
-    # [Parameter()][switch]$logBackup  # perform a log backup instead of a DB backup
 )
 
 # source the cohesity-api helper code
@@ -97,12 +96,6 @@ if($archiveTo){
 }
 
 # Finalize RunProtectionJobParam object
-# if($logBackup){
-#     $runType = 'kLog'
-# }else{
-#     $runType = 'kRegular'
-# }
-
 $jobdata = @{
    "runType" = $backupType
    "copyRunTargets" = $copyRunTargets
