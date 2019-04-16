@@ -30,8 +30,8 @@ Running My Job...
 Run the following commands to download the script(s):
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNowAndCopyV2/backupNowAndCopy.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNowAndCopyV2/pyhesity.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNowAndCopy/backupNowAndCopy.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNowAndCopy/pyhesity.py
 chmod +x backupNowAndCopy.py
 ```
 
