@@ -10,13 +10,13 @@ This script can overwrite production data if you ask it to. Make sure you know w
 
 ## Components
 
-* restore-SQL.ps1: the main powershell script
+* restoreSQL.ps1: the main powershell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./restore-SQL.ps1 -vip mycluster -username admin -sourceServer sql2012 -sourceDB cohesitydb -targetServer sqldev01 -targetDB restoreTest -mdfFolder c:\sqldata -ndfFolder c:\sqldata\ndf -ldfFolder c:\sqldata\logs
+./restoreSQL.ps1 -vip mycluster -username admin -sourceServer sql2012 -sourceDB cohesitydb -targetServer sqldev01 -targetDB restoreTest -mdfFolder c:\sqldata -ndfFolder c:\sqldata\ndf -ldfFolder c:\sqldata\logs
 
 Connected!
 Restoring cohesitydb to sqldev01 as restoreTest
@@ -69,7 +69,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/restoreSQL/restore-SQL.ps1).content | Out-File restore-SQL.ps1; (Get-Content restore-SQL.ps1) | Set-Content restore-SQL.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/restoreSQL/restoreSQL.ps1).content | Out-File restoreSQL.ps1; (Get-Content restoreSQL.ps1) | Set-Content restoreSQL.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/restoreSQL/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
