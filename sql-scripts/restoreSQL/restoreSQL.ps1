@@ -1,7 +1,7 @@
 ### v6.1 - added support for log replay
-### usage (Cohesity 5.0x): ./restore-SQL61.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB proddb -targetServer w2012a -targetDB bseltz-test-restore -overWrite -mdfFolder c:\sqldata -ldfFolder c:\sqldata\logs -ndfFolder c:\sqldata\ndf
+### usage (Cohesity 5.x): ./restore-SQL61.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB proddb -targetServer w2012a -targetDB bseltz-test-restore -overWrite -mdfFolder c:\sqldata -ldfFolder c:\sqldata\logs -ndfFolder c:\sqldata\ndf
 
-### usage (Cohesity 6.0x): ./restore-SQL61.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB cohesitydb -targetDB cohesitydb-restore -overWrite -mdfFolder c:\SQLData -ldfFolder c:\SQLData\logs -ndfFolders @{'*1.ndf'='E:\sqlrestore\ndf1'; '*2.ndf'='E:\sqlrestore\ndf2'}
+### usage (Cohesity 6.x): ./restore-SQL61.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB cohesitydb -targetDB cohesitydb-restore -overWrite -mdfFolder c:\SQLData -ldfFolder c:\SQLData\logs -ndfFolders @{'*1.ndf'='E:\sqlrestore\ndf1'; '*2.ndf'='E:\sqlrestore\ndf2'}
 ###                        ./restore-SQL61.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB cohesitydb -targetDB cohesitydb-restore -overWrite -mdfFolder c:\SQLData -ldfFolder c:\SQLData\logs -logTime '2019-01-18 03:01:15'
 
 ### process commandline arguments
@@ -51,7 +51,18 @@ if($sourceDB.Contains('/')){
 }
 
 ### narrow the search results to the correct source server
-$dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer } | Where-Object { $_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB }
+$dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer }
+if($null -eq $dbresults){
+    write-host "Server $sourceServer Not Found" -foregroundcolor yellow
+    exit
+}
+
+### narrow the search results to the correct source database
+$dbresults = $searchresults.vms | Where-Object { $_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB }
+if($null -eq $dbresults){
+    write-host "Database $sourceDB Not Found" -foregroundcolor yellow
+    exit
+}
 
 ### if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot 
 $latestdb = ($dbresults | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
