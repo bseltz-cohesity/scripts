@@ -66,7 +66,7 @@ Next, copy the `cohesity-upgradeserver.service` file to `/lib/systemd/system`
 From within the upgrade server directory, download at least one upgrade package:
 
 ```bash
-cd \opt\cohesity\upgradeserver
+cd /opt/cohesity/upgradeserver
 curl -O http://downloads.cohesity.com/public/pkg/6.1.1d_release-20190315_3d1332e6/cohesity-6.1.1d_release-20190315_3d1332e6.tar.gz
 ```
 
