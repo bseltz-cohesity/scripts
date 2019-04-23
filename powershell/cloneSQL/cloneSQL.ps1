@@ -1,4 +1,4 @@
-### usage: ./cloneSQL.ps1 -vip 192.168.1.198 -username admin [ -domain local ] -sourceServer 'SQL2012' -sourceDB 'CohesityDB' [ -targetServer 'SQLDEV01' ] [ -targetDB 'CohesityDB-Dev' ] [ -targetInstance 'MSSQLSERVER' ]
+### usage: ./sqlCloneV5.ps1 -vip 192.168.1.198 -username admin [ -domain local ] -sourceServer 'SQL2012' -sourceDB 'CohesityDB' [ -targetServer 'SQLDEV01' ] [ -targetDB 'CohesityDB-Dev' ] [ -targetInstance 'MSSQLSERVER' ]
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -22,13 +22,29 @@ apiauth -vip $vip -username $username -domain $domain
 ### search for database to clone
 $searchresults = api get /searchvms?environment=SQL`&entityTypes=kSQL`&entityTypes=kVMware`&vmName=$sourceDB
 
+### handle source instance name e.g. instance/dbname
+if($sourceDB.Contains('/')){
+    $sourceDB = $sourceDB.Split('/')[1]
+}
+
 ### narrow the search results to the correct source server
-$dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer } | Where-Object { $_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB }
+$dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer }
+if($null -eq $dbresults){
+    write-host "Server $sourceServer Not Found" -foregroundcolor yellow
+    exit
+}
+
+### narrow the search results to the correct source database
+$dbresults = $searchresults.vms | Where-Object { $_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB }
+if($null -eq $dbresults){
+    write-host "Database $sourceDB Not Found" -foregroundcolor yellow
+    exit
+}
 
 ### if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot 
 $latestdb = ($dbresults | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
 
-if($latestdb -eq $null){
+if($null -eq $latestdb){
     write-host "Database Not Found" -foregroundcolor yellow
     exit
 }
@@ -41,12 +57,12 @@ $entities = api get /appEntities?appEnvType=3`&envType=$entityType
 $sourceEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $sourceServer }
 $targetEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $targetServer }
 
-if($sourceEntity -eq $null){
+if($null -eq $sourceEntity){
     Write-Host "Source Server Not Found" -ForegroundColor Yellow
     exit
 }
 
-if($targetEntity -eq $null){
+if($null -eq $targetEntity){
     Write-Host "Target Server Not Found" -ForegroundColor Yellow
     exit
 }
