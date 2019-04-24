@@ -17,7 +17,7 @@ Place all files in a folder together. then, run the main script like so:
 
 ```text
 Connected!
-ObjectName             JobName                StartTime              ExpiryTime             DaysToExpiration
+ObjectName          JobName                StartTime              ExpiryTime             DaysToExpiration
 myvm                VM Backup              4/23/19 11:20:01 PM    4/28/19 11:20:45 PM    5
 myvm                VM Backup              4/22/19 11:20:00 PM    4/27/19 11:20:47 PM    4
 myvm                VM Backup              4/21/19 11:20:00 PM    4/26/19 11:20:45 PM    3
