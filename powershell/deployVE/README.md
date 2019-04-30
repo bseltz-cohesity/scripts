@@ -29,7 +29,7 @@ Place all files in a folder together. then, run the main script like so:
                -viHost 172.16.1.200 `
                -viDataStore nvme `
                -ovfPath 'c:\save\cohesity-6.1.1d_release-20190315_3d1332e6.ova' `
-               -licenseKey 'ABCD-EFGH-IJKL-MNOP'
+               -licenseKey 'XXXX-XXXX-XXXX-XXXX'
 ```
 
 ```text
