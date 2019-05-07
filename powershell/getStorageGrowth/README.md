@@ -1,0 +1,42 @@
+# Chart Storage Growth Using PowerShell
+
+Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
+
+## Note: Please use the download commands below to download the script
+
+This PowerShell script gathers storage usage statistics from a Cohesity cluster and charts them over time, using an Excel Chart.
+
+## Components
+
+* getStorageGrowth.ps1: the main PowerShell script
+* cohesity-api.ps1: the Cohesity REST API helper module
+
+Place all files in a folder together. then, run the main script like so:
+
+```powershell
+.\getStorageGrowth.ps1 -vip bseltzve01 -username admin -days 100
+```
+
+```text
+Connected!
+```
+
+Excel should open and display the chart of storage growth.
+
+## Parameters
+
+* -vip: the Cohesity cluster to connect to
+* -username: the cohesity user to login with
+* -domain: domain of the Cohesity user (defaults to local)
+* -days: number of days of storage statistics to display
+
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Begin download commands
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/getStorageGrowth/getStorageGrowth.ps1).content | Out-File getStorageGrowth.ps1; (Get-Content getStorageGrowth.ps1) | Set-Content getStorageGrowth.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/getStorageGrowth/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End download commands
+```
