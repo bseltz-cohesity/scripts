@@ -14,10 +14,7 @@ This PowerShell script gathers storage usage statistics from a Cohesity cluster 
 Place all files in a folder together. then, run the main script like so:
 
 ```powershell
-.\getStorageGrowth.ps1 -vip bseltzve01 -username admin -days 100
-```
-
-```text
+.\getStorageGrowth.ps1 -vip mycluster -username myuser -domain mydomain.net -days 100
 Connected!
 ```
 

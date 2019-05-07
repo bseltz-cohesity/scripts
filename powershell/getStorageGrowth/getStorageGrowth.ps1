@@ -1,4 +1,4 @@
-### usage: ./graphStorageGrowth.ps1 -vip 192.168.1.198 -username admin [ -domain local ] [ -days 60 ]
+### usage: ./graphStorageGrowth.ps1 -vip mycluster -username myuser [ -domain mydomain.net ] [ -days 60 ]
 
 ### process commandline arguments
 [CmdletBinding()]
