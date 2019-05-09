@@ -60,7 +60,7 @@ Note: you can use the same process to update the stored password if it ever need
 
 ## A Note about Timezones
 
-Cohesity clusters are typically set to US/Pacific time, rgardless of their physical location. If you schedule this script to run on a Cohesity cluster, make sure to account for the difference between your time zone and the cluster's timezone. For example, if you want to run the script at 5am eastern time, then schedule it to run at 2am on the cluster.
+Cohesity clusters are typically set to US/Pacific time regardless of their physical location. If you schedule this script to run on a Cohesity cluster, make sure to account for the difference between your time zone and the cluster's timezone. For example, if you want to run the script at 5am eastern time, then schedule it to run at 2am on the cluster.
 
 ## Schedule the Script to Run Daily
 
