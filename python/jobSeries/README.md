@@ -11,11 +11,11 @@ This python script runs a series of disabled jobs, one at a time, leaving them d
 
 ## Download The Scripts
 
-The script is designed to run from the Cohesity clister. To download and install the script, SSH into the cohesity cluster and run the following commands to download the scripts:
+The script is designed to run from the Cohesity cluster. To download and install the script, SSH into the cohesity cluster and run the following commands to download the scripts:
 
 ```bash
-mkdir /home/cohesity/scripts
-cd /home/cohesity/scripts
+mkdir /home/cohesity/data/scripts
+cd /home/cohesity/data/scripts
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/jobSeries/jobSeries.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/jobSeries/pyhesity.py
 chmod +x jobSeries.py
@@ -73,5 +73,5 @@ crontab -e
 Let's say that you want the script to run at 9PM eastern. Remember to adjust to pacific time, which would be 6PM (18:00). Enter the following line in crontab:
 
 ```text
-0 18 * * * /home/cohesity/scripts/jobSeries.py
+0 18 * * * /home/cohesity/data/scripts/jobSeries.py
 ```
