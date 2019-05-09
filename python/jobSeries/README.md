@@ -35,7 +35,7 @@ keepArchiveFor = 5
 jobs = ['Job1', 'Job2', 'Job3']
 ```
 
-Note: If you don't want to replicate, set replicateTo = None and the same can be done for arciveTo.
+Note: If you don't want to replicate, set replicateTo = None and the same can be done for archiveTo.
 
 The script will need to use a stored, encrypted password file to authenticate at runtime. To setup this password file, start an interactive python session and run the following commands:
 
