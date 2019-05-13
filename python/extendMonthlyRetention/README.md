@@ -9,10 +9,14 @@ This python script extends the retention of a specified snapshot (e.g. 1st of th
 * extendMontlyRetention.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
-You can download the scripts using the following commands:
+## Download The Scripts
+
+The script is designed to run from the Cohesity cluster. To download and install the script, SSH into the cohesity cluster and run the following commands to download the scripts:
 
 ```bash
 # begin download commands
+mkdir /home/cohesity/data/scripts
+cd /home/cohesity/data/scripts
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendMonthlyRetention/extendMonthlyRetention.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendMonthlyRetention/pyhesity.py
 chmod +x extendMonthlyRetention.py
@@ -73,3 +77,21 @@ apiauth('mycluster', 'myuser', 'mydomain', updatepw=True)
 ```
 
 If you don't want to store a password and want to be prompted to enter your password when you run your script, use prompt=True
+
+## A Note about Timezones
+
+Cohesity clusters are typically set to US/Pacific time regardless of their physical location. If you schedule this script to run on a Cohesity cluster, make sure to account for the difference between your time zone and the cluster's timezone. For example, if you want to run the script at 5am eastern time, then schedule it to run at 2am on the cluster.
+
+## Schedule the Script to Run Monthly
+
+We can schedule the script to run using cron.
+
+```bash
+crontab -e
+```
+
+Let's say that you want the script to on the 2nd (2) day of each month at 9PM eastern. Remember to adjust to pacific time, which would be 6PM (18). Enter the following line in crontab:
+
+```text
+0 18 2 * * /home/cohesity/data/scripts/extendMonthlyRetention.py -v mycluster -u myusername -d mydomain.net -j 'My Job' -k 365 -m 1
+```

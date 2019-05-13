@@ -28,6 +28,7 @@ Edit the script and configure the settings section:
 vip = 'mycluster'
 username = 'myusername'
 domain = 'mydomain.net'
+keepLocalFor = 5
 replicateTo = 'anothercluster'
 keepReplicaFor = 5
 archiveTo = 'archivetarget'
