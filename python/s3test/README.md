@@ -6,5 +6,5 @@ These Python scripts demonstrate how to upload and download files to a Cohesity 
 
 ## Components
 
-* s3upload.py: the main PowerShell script
-* s3download.py: the Cohesity REST API helper module
+* s3upload.py
+* s3download.py
