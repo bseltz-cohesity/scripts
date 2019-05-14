@@ -21,22 +21,36 @@ curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/
 chmod +x jobSeries.py
 ```
 
-Edit the script and configure the settings section:
+The script can be run as a scheduled cron task (see below) or run interactively like so:
 
 ```python
-### settings
-vip = 'mycluster'
-username = 'myusername'
-domain = 'mydomain.net'
-keepLocalFor = 5
-replicateTo = 'anothercluster'
-keepReplicaFor = 5
-archiveTo = 'archivetarget'
-keepArchiveFor = 5
-jobs = ['Job1', 'Job2', 'Job3']
+./jobSeries.py -v mycluster -u myuser -d mydomain.net -k 5 -j 'Job1' -j 'Job2' -j 'Job3'
+Connected!
+checking if Job1 is already running...
+checking if Job2 is already running...
+checking if Job3 is already running...
+Running Job1...
+New Job Run ID: 111530
+Running Job2...
+New Job Run ID: 111534
+Running Job3...
+New Job Run ID: 111541
 ```
 
-Note: If you don't want to replicate, set replicateTo = None and the same can be done for archiveTo.
+## Parameters
+
+* -v, --vip: name of Cohesity cluster to connect to
+* -u, --username: short username to authenticate to the cluster
+* -d, --domain: active directory domain of user (default is local)
+* -j, --jobname: name of protection job to run. Add one for each job like -j Job1 -j Job2
+* -k, --keepLocalFor: days to keep local snapshot (default is 5 days)
+* -a, --archiveTo: name of archival target to archive to (default is None)
+* -ka, --keepArchiveFor: days to keep in archive (default is 5 days)
+* -r, --replicateTo: name of remote cluster to replicate to (default is None)
+* -kr, --keepReplicaFor: days to keep replica for (default is 5 days)
+* -t, --backupType: choose one of kRegular, kFull or kLog backup types. Default is kRegular (incremental)
+
+## Stored Passwords
 
 The script will need to use a stored, encrypted password file to authenticate at runtime. To setup this password file, start an interactive python session and run the following commands:
 
@@ -63,7 +77,7 @@ Note: you can use the same process to update the stored password if it ever need
 
 Cohesity clusters are typically set to US/Pacific time regardless of their physical location. If you schedule this script to run on a Cohesity cluster, make sure to account for the difference between your time zone and the cluster's timezone. For example, if you want to run the script at 5am eastern time, then schedule it to run at 2am on the cluster.
 
-## Schedule the Script to Run Daily
+## Schedule the Script to Run using Cron
 
 We can schedule the script to run using cron.
 
@@ -74,5 +88,16 @@ crontab -e
 Let's say that you want the script to run at 9PM eastern. Remember to adjust to pacific time, which would be 6PM (18:00). Enter the following line in crontab:
 
 ```text
-0 18 * * * /home/cohesity/data/scripts/jobSeries.py
+0 18 * * * /home/cohesity/data/scripts/jobSeries.py -v mycluster -u myuser -d mydomain.net -k 5 -j 'Job1' -j 'Job2' -j 'Job3'
+```
+
+If you want to keep daily weekly and monthly backups, you can do something like this:
+
+```bash
+# Run daily at 6pm except for Sunday or the 1st of the month, and keep for 7 days
+0 18 2-31 * 1-6 /home/cohesity/data/scripts/jobSeries.py -v mycluster -u myuser -d mydomain.net -k 7 -j 'Job1' -j 'Job2' -j 'Job3'
+# Run weekly on Sunday, except for the 1st of the month, and keep for 31 days
+0 18 2-31 * 0 /home/cohesity/data/scripts/jobSeries.py -v mycluster -u myuser -d mydomain.net -k 31 -j 'Job1' -j 'Job2' -j 'Job3'
+# Run on the 1st of the month and keep for 365 days
+0 18 1 * * /home/cohesity/data/scripts/jobSeries.py -v mycluster -u myuser -d mydomain.net -k 365 -j 'Job1' -j 'Job2' -j 'Job3'
 ```

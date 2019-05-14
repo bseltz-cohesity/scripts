@@ -6,16 +6,43 @@ from pyhesity import *
 from datetime import datetime
 from time import sleep
 
+### command line arguments
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('-v', '--vip', type=str, required=True)
+parser.add_argument('-u', '--username', type=str, required=True)
+parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-k', '--keepLocalFor', type=int, default=5)
+parser.add_argument('-r', '--replicateTo', type=str, default=None)
+parser.add_argument('-kr', '--keepReplicaFor', type=int, default=5)
+parser.add_argument('-a', '--archiveTo', type=str, default=None)
+parser.add_argument('-ka', '--keepArchiveFor', type=int, default=5)
+parser.add_argument('-j', '--jobname', action='append', type=str, required=True)
+parser.add_argument('-t', '--backupType', type=str, choices=['kLog', 'kRegular', 'kFull'], default='kRegular')
+
+args = parser.parse_args()
+
+vip = args.vip
+username = args.username
+domain = args.domain
+keepLocalFor = args.keepLocalFor
+replicateTo = args.replicateTo
+keepReplicaFor = args.keepReplicaFor
+archiveTo = args.archiveTo
+keepArchiveFor = args.keepArchiveFor
+jobs = args.jobname
+backupType = args.backupType
+
 ### settings
-vip = 'mycluster'
-username = 'myuser'
-domain = 'mydomain.net'
+vip = 'bseltzve01'
+username = 'admin'
+domain = 'local'
 keepLocalFor = 5
 replicateTo = None
 keepReplicaFor = 5
 archiveTo = None
 keepArchiveFor = 5
-jobs = ['Exchange1', 'Exchange2', 'Exchange3']
+jobs = ['VM Backup', 'Infrastructure', 'SQL Backup']
 
 ### authenticate
 apiauth(vip, username, domain)
