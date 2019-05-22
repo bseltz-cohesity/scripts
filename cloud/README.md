@@ -20,7 +20,7 @@ mkdir /home/cohesity/scripts
 cd /home/cohesity/scripts
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/cloud/cohesity_cluster.sh
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/cloud/pyhesity.py
-curl -O https://github.com/bseltz-cohesity/scripts/blob/master/cloud/waitForJob.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/cloud/waitForJob.py
 chmod +x cohesity_cluster.sh
 # end commands
 ```
