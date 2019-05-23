@@ -4,6 +4,27 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This is a group of PowerShell scripts for deployment of a field rack.
 
+## Download the scripts
+
+Run the following commands from within PowerShell to download the scripts into the current folder:
+
+```powershell
+# Begin download commands
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployFieldRack/1-BuildOut.ps1).content | Out-File 1-BuildOut.ps1; (Get-Content 1-BuildOut.ps1) | Set-Content 1-BuildOut.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployFieldRack/2-GoLive.ps1).content | Out-File 2-GoLive.ps1; (Get-Content 2-GoLive.ps1) | Set-Content 2-GoLive.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployFieldRack/addRemoteCluster.ps1).content | Out-File addRemoteCluster.ps1; (Get-Content addRemoteCluster.ps1) | Set-Content addRemoteCluster.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployFieldRack/backupRunNow.ps1).content | Out-File backupRunNow.ps1; (Get-Content backupRunNow.ps1) | Set-Content backupRunNow.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployFieldRack/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployFieldRack/cohesityCluster.ps1).content | Out-File cohesityCluster.ps1; (Get-Content cohesityCluster.ps1) | Set-Content cohesityCluster.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployFieldRack/config-rack1.ps1).content | Out-File config-rack1.ps1; (Get-Content config-rack1.ps1) | Set-Content config-rack1.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployFieldRack/createProtectionPolicy.ps1).content | Out-File createProtectionPolicy.ps1; (Get-Content createProtectionPolicy.ps1) | Set-Content createProtectionPolicy.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployFieldRack/createVMProtectionJob.ps1).content | Out-File createVMProtectionJob.ps1; (Get-Content createVMProtectionJob.ps1) | Set-Content createVMProtectionJob.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployFieldRack/extendRetention.ps1).content | Out-File extendRetention.ps1; (Get-Content extendRetention.ps1) | Set-Content extendRetention.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployFieldRack/pauseProtectionJob.ps1).content | Out-File pauseProtectionJob.ps1; (Get-Content pauseProtectionJob.ps1) | Set-Content pauseProtectionJob.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployFieldRack/recoverVMJob.ps1).content | Out-File recoverVMJob.ps1; (Get-Content recoverVMJob.ps1) | Set-Content recoverVMJob.ps1
+# End download commands
+```
+
 ## High-level Steps
 
 * Create Configuration File for the rack
