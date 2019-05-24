@@ -33,17 +33,6 @@ keepArchiveFor = args.keepArchiveFor
 jobs = args.jobname
 backupType = args.backupType
 
-### settings
-vip = 'bseltzve01'
-username = 'admin'
-domain = 'local'
-keepLocalFor = 5
-replicateTo = None
-keepReplicaFor = 5
-archiveTo = None
-keepArchiveFor = 5
-jobs = ['VM Backup', 'Infrastructure', 'SQL Backup']
-
 ### authenticate
 apiauth(vip, username, domain)
 
