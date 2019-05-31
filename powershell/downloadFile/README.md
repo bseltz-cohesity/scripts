@@ -34,12 +34,3 @@ Place both files in a folder together and run the main script like so:
 * -objectName: name of the protected object to download a file from
 * -fileName: file to download
 * -outPath: folder path to download the file to
-
-
-## Whitelist entries
-
-IF you want to add whitelist overrides, you can add them using the -whiteList parameter. For example:
-
-```powershell
--whiteList @{'ip'='192.168.1.0'; "netmaskIp4" = "255.255.255.0";  "description" = "Home"}, @{'ip'='10.0.1.0'; "netmaskIp4" = "255.255.255.0"}
-```
