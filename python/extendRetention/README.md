@@ -18,6 +18,7 @@ The script is designed to run from the Cohesity cluster. To download and install
 mkdir /home/cohesity/data/scripts
 cd /home/cohesity/data/scripts
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendRetention/extendRetention.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendRetention/smtptool.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendRetention/pyhesity.py
 chmod +x extendRetention.py
 # end download commands
