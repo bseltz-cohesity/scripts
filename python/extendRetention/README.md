@@ -8,6 +8,7 @@ This python script extends the retention of exiting snapshots. It can set new ex
 
 * extendRetention.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
+* smtptool.py: smtp functions to send email alerts
 
 ## Download The Scripts
 
