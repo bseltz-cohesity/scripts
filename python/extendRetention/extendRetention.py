@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Extend Retention using Python"""
 
-# usage: ./extendRetention.py -v mycluster -u myusername -d mydomain.net -j 'My Job' \
+# usage: ./extendRetention.py -s mycluster -u myusername -d mydomain.net -j 'PROD*' -j '*DEV*' \
 #                             -wr 35 -w 6 -mr 365 -m 1 -ms 192.168.1.95 -mp 25 \
 #                             -to myuser@mydomain.com -fr someuser@mydomain.com
 
@@ -9,6 +9,7 @@
 from pyhesity import *
 from datetime import datetime
 from smtptool import *
+import fnmatch
 
 # command line arguments
 import argparse
@@ -16,7 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--server', type=str, required=True)
 parser.add_argument('-u', '--username', type=str, required=True)
 parser.add_argument('-d', '--domain', type=str, default='local')
-parser.add_argument('-j', '--jobname', type=str, required=True)
+parser.add_argument('-j', '--jobfilters', action='append', type=str, required=True)
 parser.add_argument('-y', '--dayofyear', type=int, default=1)
 parser.add_argument('-m', '--dayofmonth', type=int, default=1)
 parser.add_argument('-w', '--dayofweek', type=int, default=6)  # Monday is 0, Sunday is 6
@@ -33,7 +34,7 @@ args = parser.parse_args()
 vip = args.server
 username = args.username
 domain = args.domain
-jobname = args.jobname
+jobfilters = args.jobfilters
 dayofyear = args.dayofyear
 dayofmonth = args.dayofmonth
 dayofweek = args.dayofweek
@@ -45,30 +46,51 @@ mailport = args.mailport
 sendto = args.sendto
 sendfrom = args.sendfrom
 
+log = open('extendRetentionLog.txt', 'a')
+now = datetime.now()
+log.write('\n\n----------------\n')
+log.write('%s\n' % now.strftime("%Y-%m-%d %H:%M"))
+log.write('----------------\n')
+
 if mailserver is not None:
     if sendto is None or sendfrom is None:
         print('sendto and sendfrom parameters are required!')
+        log.write('sendto and sendfrom parameters are required!\n')
         exit(1)
     smtp_connect(mailserver, mailport)
 
 # authenticate
 apiauth(vip, username, domain)
 
-# find protectionJob
-job = [job for job in api('get', 'protectionJobs') if job['name'].lower() == jobname.lower()]
-if not job:
-    print("Job '%s' not found" % jobname)
+# find protectionJobs
+selectedjobs = []
+jobs = api('get', 'protectionJobs')
+for job in jobs:
+    for f in jobfilters:
+        if fnmatch.fnmatch(job['name'], f):
+            selectedjobs.append(job)
+
+if len(selectedjobs) == 0:
+    print('No Jobs Match Search Criteria')
+    log.write('No Jobs Match Search Criteria\n')
     if mailserver is not None:
-        smtp_send(sendfrom, sendto, 'extendedRetentionScript', "Script failed - Job '%s' not found" % jobname)
+        smtp_send(sendfrom, sendto, 'extendedRetentionScript', 'No Jobs Match Search Criteria')
         smtp_disconnect()
     exit(1)
 
 message = 'No actions taken'
+lastjobname = ''
+
+log.write('Selected Job List:\n')
+for job in selectedjobs:
+    log.write('\t%s\n' % job['name'])
+log.write('\n')
 
 
-def extendRun(run, retentiondays):
+def extendRun(job, run, retentiondays):
 
     global message
+    global lastjobname
     runStartTimeUsecs = run['copyRun'][0]['runStartTimeUsecs']
     currentExpireTimeUsecs = run['copyRun'][0]['expiryTimeUsecs']
     newExpireTimeUsecs = runStartTimeUsecs + (retentiondays * 86400000000)
@@ -79,12 +101,18 @@ def extendRun(run, retentiondays):
         # get run date for printing
         runStartTime = datetime.strptime(usecsToDate(runStartTimeUsecs), '%Y-%m-%d %H:%M:%S')
         newExpireTimeUsecs = runStartTimeUsecs + (retentiondays * 86400000000)
-        print('%s extending retention to %s' % (runStartTime, usecsToDate(newExpireTimeUsecs)))
         if message == 'No actions taken':
             message = ''
-        message = message + '\n' + '%s extending retention to %s' % (runStartTime, usecsToDate(newExpireTimeUsecs))
+        if job['name'] != lastjobname:
+            print('Job: %s' % job['name'])
+            log.write('Job: %s\n' % job['name'])
+            message = message + '\n\n Job: %s' % job['name']
+            lastjobname = job['name']
+        print('\t%s extending retention to %s' % (runStartTime, usecsToDate(newExpireTimeUsecs)))
+        log.write('\t%s extending retention to %s\n' % (runStartTime, usecsToDate(newExpireTimeUsecs)))
+        message = message + '\n' + '  %s extending retention to %s' % (runStartTime, usecsToDate(newExpireTimeUsecs))
 
-        thisRun = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&id=%s' % (run['copyRun'][0]['runStartTimeUsecs'], job[0]['id']))
+        thisRun = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&id=%s' % (run['copyRun'][0]['runStartTimeUsecs'], job['id']))
         jobUid = thisRun[0]['backupJobRuns']['jobDescription']['primaryJobUid']
 
         # update retention of job run
@@ -109,27 +137,35 @@ def extendRun(run, retentiondays):
         api('put', 'protectionRuns', runParameters)
 
 
-for run in api('get', 'protectionRuns?jobId=%s&excludeNonRestoreableRuns=true' % job[0]['id']):
+for job in selectedjobs:
 
-    if run['backupRun']['snapshotsDeleted'] is False:
+    for run in api('get', 'protectionRuns?jobId=%s&excludeNonRestoreableRuns=true' % job['id']):
 
-        runStartTimeUsecs = run['copyRun'][0]['runStartTimeUsecs']
-        runStartTime = datetime.strptime(usecsToDate(runStartTimeUsecs), '%Y-%m-%d %H:%M:%S')
+        if run['backupRun']['snapshotsDeleted'] is False:
 
-        if yearlyretention is not None:
-            if runStartTime.timetuple().tm_yday == dayofyear:
-                extendRun(run, yearlyretention)
-                continue
+            runStartTimeUsecs = run['copyRun'][0]['runStartTimeUsecs']
+            runStartTime = datetime.strptime(usecsToDate(runStartTimeUsecs), '%Y-%m-%d %H:%M:%S')
 
-        if monthlyretention is not None:
-            if runStartTime.day == dayofmonth:
-                extendRun(run, monthlyretention)
-                continue
+            if yearlyretention is not None:
+                if runStartTime.timetuple().tm_yday == dayofyear:
+                    extendRun(job, run, yearlyretention)
+                    continue
 
-        if weeklyretention is not None:
-            if runStartTime.weekday() == dayofweek:
-                extendRun(run, weeklyretention)
+            if monthlyretention is not None:
+                if runStartTime.day == dayofmonth:
+                    extendRun(job, run, monthlyretention)
+                    continue
+
+            if weeklyretention is not None:
+                if runStartTime.weekday() == dayofweek:
+                    extendRun(job, run, weeklyretention)
 
 if mailserver is not None:
     smtp_send(sendfrom, sendto, 'extendedRetentionScript', message)
     smtp_disconnect()
+
+if message == 'No actions taken':
+    print('No actions taken')
+    log.write('No actions taken\n')
+
+log.close()

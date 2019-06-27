@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This python script extends the retention of exiting snapshots. It can set new expiration dates for weekly, monthly and yearly snapshots.
+This python script extends the retention of existing snapshots. It can set new expiration dates for weekly, monthly and yearly snapshots.
 
 ## Components
 
@@ -28,8 +28,9 @@ chmod +x extendRetention.py
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./extendRetention.py -v mycluster -u myusername -d mydomain.net -j 'My Job' \
-                     -wr 35 -w 6 -mr 365 -m 1 -ms mail.mydomain.net -mp 25 \
+./extendRetention.py -v mycluster -u myusername -d mydomain.net \
+                     -j 'SQL*' -j '*ackup' -wr 35 -w 6 -mr 365 -m 1 \
+                     -ms mail.mydomain.net -mp 25 \
                      -to myuser@mydomain.com -fr someuser@mydomain.com
 ```
 
@@ -37,15 +38,30 @@ The script output should be similar to the following:
 
 ```text
 Connected!
-2019-04-01 01:40:00 extending retention to 2020-04-01 01:40:00
+Job: File-Based Backup
+    2019-06-23 00:40:00 extending retention to 2019-07-05 00:40:00
+Job: SQL Backup
+    2019-06-23 22:56:35 extending retention to 2019-07-05 22:56:35
+    2019-06-23 16:56:34 extending retention to 2019-07-05 16:56:34
+    2019-06-23 10:56:33 extending retention to 2019-07-05 10:56:33
+    2019-06-23 04:56:32 extending retention to 2019-07-05 04:56:32
+    2019-06-23 00:20:00 extending retention to 2019-07-05 00:20:00
+Job: Scripts Backup
+    2019-06-23 01:40:00 extending retention to 2019-07-05 01:40:00
+Job: RMAN Backup
+    2019-06-23 22:40:01 extending retention to 2019-07-05 22:40:01
+Job: Utils Backup
+    2019-06-23 08:58:00 extending retention to 2019-07-05 08:58:00
 ```
+
+The output will also be written to a log file extendRetentionLog.txt and optionally sent to an email recipient.
 
 ## Parameters
 
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
-* -j, --jobname: Name of protection job
+* -j, --jobfilters: search pattern for job names (e.g. 'prod*', '\*dev\*', '*ackup')
 * -y, --dayofyear: (optional) day of year to extend yearly snapshot (default is 1)
 * -m, --dayofmonth: (optional) day of month to extend monthly snapshot (default is 1)
 * -w, --dayofweek: (optional) day of week to extend weekly snapshot, Monday=0, Sunday=6 (default is 6)
@@ -101,5 +117,5 @@ crontab -e
 Let's say that you want the script to run every Monday at 7am eastern. Remember to adjust to pacific time, which would be 4am. Enter the following line in crontab:
 
 ```text
-0 4 * * 1 /home/cohesity/data/scripts/extendRetention.py -v mycluster -u myusername -d mydomain.net -j 'My Job' -wr 35 -w 6 -mr 365 -m 1 -ms mail.mydomain.net -mp 25 -to myuser@mydomain.com -fr someuser@mydomain.com
+0 4 * * 1 /home/cohesity/data/scripts/extendRetention.py -v mycluster -u myusername -d mydomain.net -j 'prod*' -j '*ackup' -wr 35 -w 6 -mr 365 -m 1 -ms mail.mydomain.net -mp 25 -to myuser@mydomain.com -fr someuser@mydomain.com
 ```
