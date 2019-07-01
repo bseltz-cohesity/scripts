@@ -38,7 +38,7 @@ $files = $fileResults.files |
             Where-Object { $_.fileDocument.objectId.entity.displayName -eq $objectName -and
                            (Split-Path $_.fileDocument.filename -Leaf) -eq $fileName }
 
-if (!$files.count){
+if (!$files){
     Write-Host "no files found" -ForegroundColor Yellow
     "no files found" | Out-File $logFile -Append
     exit    
