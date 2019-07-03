@@ -38,6 +38,9 @@ enable = args.enable
 wait = args.wait
 backupType = args.backupType
 
+if enable is True:
+    wait = True
+
 ### authenticate
 apiauth(vip, username, domain)
 
