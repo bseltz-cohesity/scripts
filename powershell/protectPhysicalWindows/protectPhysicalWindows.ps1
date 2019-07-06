@@ -71,7 +71,6 @@ $sourceIds = @($sourceIds | Select-Object -Unique)
 $sourceSpecialParameters = @()
 
 foreach($sourceId in $sourceIds){
-    $existingSourceSpecialParameter = $job.sourceSpecialParameters | Where-Object { $_.sourceId -eq $sourceId }
     $sourceSpecialParameter = @{
         "sourceId" = $sourceId;
         "physicalSpecialParameters" = @{
@@ -88,18 +87,12 @@ foreach($sourceId in $sourceIds){
 
         $backupFilePath = "/$mountPoint".Replace(':\','/')
 
-        if($null -ne ($existingSourceSpecialParameter.physicalSpecialParameters.filePaths | Where-Object {$_.backupFilePath -eq $backupFilePath})){
-            $filePath = $existingSourceSpecialParameter.physicalSpecialParameters.filePaths | Where-Object {$_.backupFilePath -eq $backupFilePath}
-            if(! $filePath.PSObject.Properties['excludedFilePaths']){
-                $filePath | Add-Member -MemberType NoteProperty -Name excludedFilePaths -Value @()
-            }
-        }else{
-            $filePath = @{
-                "backupFilePath" = $backupFilePath;
-                "skipNestedVolumes" = $true;
-                "excludedFilePaths" = @()
-            }
+        $filePath = @{
+            "backupFilePath" = $backupFilePath;
+            "skipNestedVolumes" = $true;
+            "excludedFilePaths" = @()
         }
+
 
         # identify exclusions that apply to existing source volumes
         $excludedFilePaths = @()
@@ -112,7 +105,7 @@ foreach($sourceId in $sourceIds){
         }
         if($excludedFilePaths.Length -gt 0){
             
-            $filePath.excludedFilePaths = $filePath.excludedFilePaths + $excludedFilePaths | Select-Object -Unique
+            $filePath.excludedFilePaths = @($filePath.excludedFilePaths + $excludedFilePaths | Select-Object -Unique)
 
         }
         if($mountPoint -notin $exclusions){
@@ -125,5 +118,4 @@ foreach($sourceId in $sourceIds){
 # update job
 $job.sourceSpecialParameters = $sourceSpecialParameters
 $job.sourceIds = @($sourceIds)
-# $job | convertto-json -depth 99
 $null = api put "protectionJobs/$($job.id)" $job
