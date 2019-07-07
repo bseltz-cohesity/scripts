@@ -1,4 +1,4 @@
-### usage: ./sqlCloneV5.ps1 -vip 192.168.1.198 -username admin [ -domain local ] -sourceServer 'SQL2012' -sourceDB 'CohesityDB' [ -targetServer 'SQLDEV01' ] [ -targetDB 'CohesityDB-Dev' ] [ -targetInstance 'MSSQLSERVER' ]
+### usage: ./cloneSQL.ps1 -vip 192.168.1.198 -username admin [ -domain local ] -sourceServer 'SQL2012' -sourceDB 'CohesityDB' [ -targetServer 'SQLDEV01' ] [ -targetDB 'CohesityDB-Dev' ] [ -targetInstance 'MSSQLSERVER' ] [ -wait ]
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -10,7 +10,9 @@ param (
     [Parameter(Mandatory = $True)][string]$sourceDB, #name of the source DB we want to clone
     [Parameter()][string]$targetServer = $sourceServer, #where to attach the clone DB
     [Parameter()][string]$targetDB = $sourceDB, #desired clone DB name
-    [Parameter()][string]$targetInstance = 'MSSQLSERVER' #SQL instance name on the targetServer
+    [Parameter()][string]$targetInstance = 'MSSQLSERVER', #SQL instance name on the targetServer
+    [Parameter()][string]$logTime,
+    [Parameter()][switch]$wait
 )
 
 ### source the cohesity-api helper code
@@ -67,9 +69,61 @@ if($null -eq $targetEntity){
     exit
 }
 
+### handle log replay
+$versionNum = 0
+$validLogTime = $False
+
+if ($logTime) {
+    $logUsecs = dateToUsecs $logTime
+    $dbVersions = $latestdb.vmDocument.versions
+
+    foreach ($version in $dbVersions) {
+        ### find db date before log time
+        $GetRestoreAppTimeRangesArg = @{
+            'type'                = 3;
+            'restoreAppObjectVec' = @(
+                @{
+                    'appEntity'     = $latestdb.vmDocument.objectId.entity;
+                    'restoreParams' = @{
+                        'sqlRestoreParams'    = @{
+                            'captureTailLogs'                 = $false;
+                            'newDatabaseName'                 = $sourceDB;
+                            'alternateLocationParams'         = @{};
+                            'secondaryDataFileDestinationVec' = @(@{})
+                        };
+                        'oracleRestoreParams' = @{
+                            'alternateLocationParams' = @{}
+                        }
+                    }
+                }
+            );
+            'ownerObjectVec'      = @(
+                @{
+                    'jobUid'         = $latestdb.vmDocument.objectId.jobUid;
+                    'jobId'          = $latestdb.vmDocument.objectId.jobId;
+                    'jobInstanceId'  = $version.instanceId.jobInstanceId;
+                    'startTimeUsecs' = $version.instanceId.jobStartTimeUsecs;
+                    'entity'         = $sourceEntity.appEntity.entity;
+                    'attemptNum'     = 1
+                }
+            )
+        }
+        $logTimeRange = api post /restoreApp/timeRanges $GetRestoreAppTimeRangesArg
+        $logStart = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].startTimeUsecs
+        $logEnd = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].endTimeUsecs
+        if ($logStart -le $logUsecs -and $logUsecs -le $logEnd) {
+            $validLogTime = $True
+            break
+        }
+        $versionNum += 1
+    }
+}
+
+$taskName = "dbClone-$(dateToUsecs (get-date))"
+
 ### create new clone task (RestoreAppArg Object)
 $cloneTask = @{
-    "name" = "dbClone-$(dateToUsecs (get-date))";
+    "name" = $taskName;
     "action" = "kCloneApp";
     "restoreAppParams" = @{
         "type" = 3;
@@ -106,9 +160,43 @@ $cloneTask = @{
     }
 }
 
+### apply log replay time
+if($validLogTime -eq $True){
+    $cloneTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['restoreTimeSecs'] = $([int64]($logUsecs/1000000))
+}else{
+    if($logTime){
+        Write-Host "LogTime of $logTime is out of range" -ForegroundColor Yellow
+        Write-Host "Available range is $(usecsToDate $logStart) to $(usecsToDate $logEnd)" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+
 ### execute the clone task (post /cloneApplication api call)
 $response = api post /cloneApplication $cloneTask
 
 if($response){
-    "Cloning $sourceDB to $targetServer as $targetDB"
+    $taskId = $response.restoreTask.performRestoreTaskState.base.taskId
+    "Cloning $sourceDB to $targetServer as $targetDB (task name: $taskName)"
+}else{
+    Write-Warning "No Response"
+    exit(1)
+}
+
+if($wait){
+    $status = 'started'
+    $finishedStates = @('kCanceled', 'kSuccess', 'kFailure')
+    while($status -ne 'completed'){
+        $task = api get "/restoretasks/$($taskId)"
+        $publicStatus = $task.restoreTask.performRestoreTaskState.base.publicStatus
+        if($publicStatus -in $finishedStates){
+            $status = 'completed'
+        }else{
+            sleep 3
+        }
+    }
+    write-host "Clone task completed with status: $publicStatus"
+    if($publicStatus -eq 'kFailure'){
+        write-host "Error Message: $($task.restoreTask.performRestoreTaskState.base.error.errorMsg)"
+    }
 }

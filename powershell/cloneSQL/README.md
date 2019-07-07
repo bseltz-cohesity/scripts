@@ -14,6 +14,8 @@ The script takes the following parameters:
 * -targetServer (optional - SQL Server to attach clone to, defaults to same as sourceServer)
 * -targetDB (optional - target Database Name - defaults to same as source)
 * -targetInstance (optional - name of SQL instance on targetServer, defaults to MSSQLSERVER)
+* -logTime (optional - point in time to replay the logs to - if omitted will default to time of latest DB backup)
+* -wait (wait for completion and report end status)
 
 ## Components
 
@@ -24,11 +26,13 @@ Place both files in a folder together and run the main script like so:
 
 ```powershell
 ./cloneSQL.ps1 -vip mycluster -username admin -sourceServer SQL2012PROD `
-    -sourceDB CohesityDB -targetServer SQL2012DEV -targetDB CohesityDB-Dev
+    -sourceDB CohesityDB -targetServer SQL2012DEV -targetDB CohesityDB-Dev `
+    -logTime '2019-06-30 04:30:55' -wait
 
 Connected!
 
-Cloning CohesityDB to SQL2012DEV as CohesityDB-Dev
+Cloning CohesityDB to SQL2012DEV as CohesityDB-Dev (task name: dbClone-1562532529000000)
+Clone task completed with status: kSuccess
 ```
 
 ## Download the script
