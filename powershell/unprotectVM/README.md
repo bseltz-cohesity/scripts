@@ -2,9 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This PowerShell script adds inclusion and exclusion paths to a NetApp protection job.
-
-The script will remove a VM from a protection job.
+This PowerShell script removes a VM from a protection job.
 
 ## Components
 
