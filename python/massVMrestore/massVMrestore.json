@@ -1,0 +1,12 @@
+{
+    "targets": [
+        {
+            "hostname": "192.168.1.200",
+            "datastorename": "nvme"
+        },
+        {
+            "hostname": "192.168.1.200",
+            "datastorename": "ssd"            
+        }
+    ]
+}
