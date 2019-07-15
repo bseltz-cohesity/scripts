@@ -107,9 +107,10 @@ for sourceId in job['sourceIds']:
 
             # if vm is powered off
             if excludePoweredOff is True:
-                vm = searcher.FindByUuid(uuid=node['protectionSource']['vmWareProtectionSource']['id']['uuid'], vmSearch=True, instanceUuid=True)
-                if vm.runtime.powerState == 'poweredOff':
-                    exclude(node, job, 'powered off')
+                if 'uuid' in node['protectionSource']['vmWareProtectionSource']['id']:
+                    vm = searcher.FindByUuid(uuid=node['protectionSource']['vmWareProtectionSource']['id']['uuid'], vmSearch=True, instanceUuid=True)
+                    if vm.runtime.powerState == 'poweredOff':
+                        exclude(node, job, 'powered off')
 
             # if vm is a template
             if excludeTemplates is True and 'isVmTemplate' in node['protectionSource']['vmWareProtectionSource']:
