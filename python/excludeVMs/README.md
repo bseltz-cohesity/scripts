@@ -6,7 +6,8 @@ This python script applies exclusions to an autoprotect VM protection job.
 
 ## Components
 
-* excludeVMs.py: the main python script
+* excludeVMs.py: the main python script (one job only)
+* excludeVMsAllJobs.py: alternate script (all jobs)
 * pyhesity.py: the Cohesity REST API helper module
 * pyVmomi: Python SDK for the VMware vSphere API (see attribution below)
 
@@ -15,17 +16,25 @@ You can download the scripts using the following commands:
 ```bash
 # download commands
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/excludeVMs.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/excludeVMsAllJobs.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/pyhesity.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/pyVmomi.tar.gz
 tar -xvf pyVmomi.tar.gz
 chmod +x excludeVMs.py
+chmod +x excludeVMsAllJobs.py
 # end download commands
 ```
 
-Run the main script like so:
+To set exclusions for a single job:
 
 ```bash
 ./excludeVMs.py -v mycluster -u myuser [-d mydomain.net -j 'VM Backup' -xt -x sql -x ora -xp -vu administrator@vsphere.local -vp swordfish
+```
+
+or to set exclusions for all jobs:
+
+```bash
+./excludeVMsAllJobs.py -v mycluster -u myuser [-d mydomain.net -xt -x sql -x ora -xp -vu administrator@vsphere.local -vp swordfish
 ```
 
 ```text
