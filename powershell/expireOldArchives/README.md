@@ -6,6 +6,17 @@ This powershell script expires archives older than x days. This is useful if you
 
 ## Warning! This script deletes backup data! Make sure you know what you are doing before you run it!  
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Begin download commands
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/expireOldArchives/expireOldArchives.ps1).content | Out-File expireOldArchives.ps1; (Get-Content expireOldArchives.ps1) | Set-Content expireOldArchives.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/expireOldArchives/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End download commands
+```
+
 ## Components
 
 * expireOldArchives.ps1: the main powershell script
