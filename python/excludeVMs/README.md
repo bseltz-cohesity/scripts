@@ -28,13 +28,17 @@ chmod +x excludeVMsAllJobs.py
 To set exclusions for a single job:
 
 ```bash
+# exclude templates, powered off vms, and vms that contain sql or ora from 'VM Backup' job
 ./excludeVMs.py -v mycluster -u myuser -d mydomain.net -j 'VM Backup' -xt -x sql -x ora -xp -vu administrator@vsphere.local -vp swordfish
+# end
 ```
 
 or to set exclusions for all jobs:
 
 ```bash
+# exclude templates, powered off vms, and vms that contain sql or ora from all jobs
 ./excludeVMsAllJobs.py -v mycluster -u myuser -d mydomain.net -xt -x sql -x ora -xp -vu administrator@vsphere.local -vp swordfish
+# end
 ```
 
 ```text
