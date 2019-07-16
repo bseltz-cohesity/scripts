@@ -28,13 +28,13 @@ chmod +x excludeVMsAllJobs.py
 To set exclusions for a single job:
 
 ```bash
-./excludeVMs.py -v mycluster -u myuser [-d mydomain.net -j 'VM Backup' -xt -x sql -x ora -xp -vu administrator@vsphere.local -vp swordfish
+./excludeVMs.py -v mycluster -u myuser -d mydomain.net -j 'VM Backup' -xt -x sql -x ora -xp -vu administrator@vsphere.local -vp swordfish
 ```
 
 or to set exclusions for all jobs:
 
 ```bash
-./excludeVMsAllJobs.py -v mycluster -u myuser [-d mydomain.net -xt -x sql -x ora -xp -vu administrator@vsphere.local -vp swordfish
+./excludeVMsAllJobs.py -v mycluster -u myuser -d mydomain.net -xt -x sql -x ora -xp -vu administrator@vsphere.local -vp swordfish
 ```
 
 ```text
