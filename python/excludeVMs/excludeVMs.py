@@ -105,13 +105,6 @@ for sourceId in job['sourceIds']:
         # if vm (node) is a child of the container (sourceId)
         if sourceId in nodeParents[node['protectionSource']['id']]:
 
-            # if vm is powered off
-            if excludePoweredOff is True:
-                if 'uuid' in node['protectionSource']['vmWareProtectionSource']['id']:
-                    vm = searcher.FindByUuid(uuid=node['protectionSource']['vmWareProtectionSource']['id']['uuid'], vmSearch=True, instanceUuid=True)
-                    if vm.runtime.powerState == 'poweredOff':
-                        exclude(node, job, 'powered off')
-
             # if vm is a template
             if excludeTemplates is True and 'isVmTemplate' in node['protectionSource']['vmWareProtectionSource']:
                 if node['protectionSource']['vmWareProtectionSource']['isVmTemplate'] is True:
@@ -121,6 +114,13 @@ for sourceId in job['sourceIds']:
             for excludeRule in excludeRules:
                 if excludeRule.lower() in node['protectionSource']['name'].lower():
                     exclude(node, job, 'rule match')
+
+            # if vm is powered off
+            if excludePoweredOff is True:
+                if 'uuid' in node['protectionSource']['vmWareProtectionSource']['id']:
+                    vm = searcher.FindByUuid(uuid=node['protectionSource']['vmWareProtectionSource']['id']['uuid'], vmSearch=True, instanceUuid=True)
+                    if vm.runtime.powerState == 'poweredOff':
+                        exclude(node, job, 'powered off')
 
 # update job with new exclusions
 updatedJob = api('put', 'protectionJobs/%s' % job['id'], job)
