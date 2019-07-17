@@ -12,7 +12,9 @@ This script sends an HTML-formatted backup summary report to Email recipients
 Place both files in a folder together and run the main script like so:
 
 ```powershell
+# example command
 ./smtpreport.ps1 -vip mycluster -username myusername -domain mydomain.net -prefix demo,test -sendTo myuser@mydomain.net, anotheruser@mydomain.net -smtpServer 192.168.1.95 -sendFrom backupreport@mydomain.net
+# end example
 ```
 
 ## Parameters
@@ -20,7 +22,7 @@ Place both files in a folder together and run the main script like so:
 * -vip: Cohesity Cluster to connect to
 * -username: Cohesity username
 * -domain: Active Directory domain of user (defaults to local)
-* -prefix: job name prefixes to include in the report (defaults to all jobs)
+* -prefix: job name prefixes to include in the report (comma separated, defaults to all jobs if omitted)
 * -sendTo: email addresses to send report to (comma separated)
 * -smtpServer: SMTP gateway to forward email through
 * -smtpPort: SMTP port to use (default is 25)
