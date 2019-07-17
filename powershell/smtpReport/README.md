@@ -24,7 +24,13 @@ Place both files in a folder together and run the main script like so:
 
 ```powershell
 # example command
-./smtpreport.ps1 -vip mycluster -username myusername -domain mydomain.net -prefix demo,test -sendTo myuser@mydomain.net, anotheruser@mydomain.net -smtpServer 192.168.1.95 -sendFrom backupreport@mydomain.net
+./smtpreport.ps1 -vip mycluster `
+                 -username myusername `
+                 -domain mydomain.net `
+                 -prefix demo,test `
+                 -sendTo myuser@mydomain.net, anotheruser@mydomain.net `
+                 -smtpServer 192.168.1.95 `
+                 -sendFrom backupreport@mydomain.net
 # end example
 ```
 
