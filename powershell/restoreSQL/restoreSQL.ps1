@@ -113,7 +113,9 @@ if ($logTime) {
                     'jobId'          = $latestdb.vmDocument.objectId.jobId;
                     'jobInstanceId'  = $version.instanceId.jobInstanceId;
                     'startTimeUsecs' = $version.instanceId.jobStartTimeUsecs;
-                    'entity'         = $sourceEntity.appEntity.entity;
+                    "entity" = @{
+                        "id" = $ownerId
+                    }
                     'attemptNum'     = 1
                 }
             )
