@@ -1,8 +1,8 @@
-### v6.1 - added support for log replay
-### usage (Cohesity 5.x): ./restore-SQL61.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB proddb -targetServer w2012a -targetDB bseltz-test-restore -overWrite -mdfFolder c:\sqldata -ldfFolder c:\sqldata\logs -ndfFolder c:\sqldata\ndf
+### v6.2 - added support for replicated recoveries
+### usage (Cohesity 5.x): ./restore-SQL.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB proddb -targetServer w2012a -targetDB bseltz-test-restore -overWrite -mdfFolder c:\sqldata -ldfFolder c:\sqldata\logs -ndfFolder c:\sqldata\ndf
 
-### usage (Cohesity 6.x): ./restore-SQL61.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB cohesitydb -targetDB cohesitydb-restore -overWrite -mdfFolder c:\SQLData -ldfFolder c:\SQLData\logs -ndfFolders @{'*1.ndf'='E:\sqlrestore\ndf1'; '*2.ndf'='E:\sqlrestore\ndf2'}
-###                        ./restore-SQL61.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB cohesitydb -targetDB cohesitydb-restore -overWrite -mdfFolder c:\SQLData -ldfFolder c:\SQLData\logs -logTime '2019-01-18 03:01:15'
+### usage (Cohesity 6.x): ./restore-SQL.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB cohesitydb -targetDB cohesitydb-restore -overWrite -mdfFolder c:\SQLData -ldfFolder c:\SQLData\logs -ndfFolders @{'*1.ndf'='E:\sqlrestore\ndf1'; '*2.ndf'='E:\sqlrestore\ndf2'}
+###                        ./restore-SQL.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB cohesitydb -targetDB cohesitydb-restore -overWrite -mdfFolder c:\SQLData -ldfFolder c:\SQLData\logs -logTime '2019-01-18 03:01:15'
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -77,11 +77,7 @@ $entityType = $latestdb.registeredSource.type
 
 ### search for source server
 $entities = api get /appEntities?appEnvType=3`&envType=$entityType
-$sourceEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $sourceServer }
-if($null -eq $sourceEntity){
-    Write-Host "Source Server Not Found" -ForegroundColor Yellow
-    exit 1
-}
+$ownerId = $latestdb.vmDocument.objectId.entity.sqlEntity.ownerId
 
 ### handle log replay
 $versionNum = 0
@@ -145,7 +141,9 @@ $restoreTask = @{
                 "jobId" = $latestdb.vmDocument.objectId.jobId;
                 "jobInstanceId" = $latestdb.vmDocument.versions[$versionNum].instanceId.jobInstanceId;
                 "startTimeUsecs" = $latestdb.vmDocument.versions[$versionNum].instanceId.jobStartTimeUsecs;
-                "entity" = $sourceEntity.appEntity.entity;
+                "entity" = @{
+                    "id" = $ownerId
+                }
             }
             'ownerRestoreParams' = @{
                 'action' = 'kRecoverVMs';
