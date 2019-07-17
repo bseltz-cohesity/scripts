@@ -4,6 +4,17 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This script sends an HTML-formatted backup summary report to Email recipients
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download Commands
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/smtpReport/smtpReport.ps1).content | Out-File smtpReport.ps1; (Get-Content smtpReport.ps1) | Set-Content smtpReport.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/smtpReport/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
+```
+
 ## Components
 
 * smtpReport.ps1: the main powershell script
@@ -27,14 +38,3 @@ Place both files in a folder together and run the main script like so:
 * -smtpServer: SMTP gateway to forward email through
 * -smtpPort: SMTP port to use (default is 25)
 * -sendFrom: email address to show in the from field
-
-## Download the script
-
-Run these commands from PowerShell to download the script(s) into your current directory
-
-```powershell
-# Download Commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/smtpReport/smtpReport.ps1).content | Out-File smtpReport.ps1; (Get-Content smtpReport.ps1) | Set-Content smtpReport.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/smtpReport/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-# End Download Commands
-```
