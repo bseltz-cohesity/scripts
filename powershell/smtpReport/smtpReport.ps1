@@ -23,6 +23,7 @@ write-host "Gathering Job Stats..."
 ### get jobs
 $jobs = api get protectionJobs
 $runs = @{}
+$cluster = api get cluster
 
 ### get report
 $report = api get 'reports/protectionSourcesJobsSummary?allUnderHierarchy=true'
@@ -34,7 +35,19 @@ function td($data, $color, $wrap='', $align='LEFT'){
     '<td ' + $wrap + ' colspan="1" bgcolor="#' + $color + '" valign="top" align="' + $align + '" border="0"><font size="2">' + $data + '</font></td>'
 }
 
-$html = '<html><table align="center" border="1" cellpadding="4" cellspacing="0" style="font-family: Roboto,RobotoDraft,Helvetica,Arial,sans-serif;font-size: small;">
+$html = '<html>'
+
+$html += '<div style="font-family: Roboto,RobotoDraft,Helvetica,Arial,sans-serif;font-size: small;"><font face="Tahoma" size="+3" color="#000080">
+<center>Backup Job Summary Report<br>
+<font size="+2">Backup Job Summary Report - NET Daily Backup Report</font></center>
+</font>
+<hr>
+Report generated on ' + (get-date) + '<br>
+Cohesity Cluster: ' + $cluster.name + '<br>
+Cohesity Version: ' + $cluster.clusterSoftwareVersion + '<br>
+<br><br></div>'
+
+$html += '<table align="center" border="1" cellpadding="4" cellspacing="0" style="font-family: Roboto,RobotoDraft,Helvetica,Arial,sans-serif;font-size: small;">
 <tbody><tr><td colspan="21" align="CENTER" valign="TOP" bgcolor="#000080"><font size="+1" color="#FFFFFF">Summary</font></td></tr><tr bgcolor="#FFFFFF">'
 
 $headings = @('Protection Object Type',
