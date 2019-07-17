@@ -184,7 +184,32 @@ foreach($source in $report.protectionSourcesJobsSummary){
     }
 }
 
-$html += '</tbody></table></html>'
+$html += '</tbody></table><br><br><hr><li>Color based on job status:
+<table align="center" border="1" cellpadding="4" cellspacing="0">
+<tbody>
+<tr>
+<td bgcolor="#66ABDD" valign="top" align="center" border="0" width="100"><font size="1">Running</font></td>
+<td bgcolor="#CC99FF" valign="top" align="center" border="0" width="100"><font size="1">Delayed</font></td>
+<td bgcolor="#CCFFCC" valign="top" align="center" border="0" width="100"><font size="1">Completed</font></td>
+<td bgcolor="#FFCC99" valign="top" align="center" border="0" width="100"><font size="1">Completed with errors</font></td>
+<td bgcolor="#00FFCC" valign="top" align="center" border="0" width="100"><font size="1">Completed with warnings</font></td>
+<td bgcolor="#FF99CC" valign="top" align="center" border="0" width="100"><font size="1">Cancelled</font></td>
+<td bgcolor="#FF3366" valign="top" align="center" border="0" width="100"><font size="1">Failed</font></td>
+</tr>
+</tbody>
+</table>
+<table align="center" border="1" cellpadding="4" cellspacing="0">
+<tbody>
+<tr>
+<td bgcolor="#CC9999" valign="top" align="center" border="0" width="100"><font size="1">Aged</font></td>
+<td bgcolor="#FFFFFF" valign="top" align="center" border="0" width="100"><font size="1">No Schedule</font></td>
+<td bgcolor="#FF9999" valign="top" align="center" border="0" width="100"><font size="1">No Run</font></td>
+<td bgcolor="93C54B" valign="top" align="center" border="0" width="100"><font size="1">Committed</font></td>
+<td bgcolor="#CCFFFF" valign="top" align="center" border="0" width="100"><font size="1">Increase/Decrease in Data Size by 10% or more</font></td>
+</tr>
+</tbody>
+</table>
+</li></html>'
 
 write-host "sending report to $([string]::Join(", ", $sendTo))"
 ### send email report
