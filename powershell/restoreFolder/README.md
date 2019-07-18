@@ -34,7 +34,7 @@ Place both files in a folder together and run the main script like so:
 
 ```text
 Connected!
-Restoring server1.seltzer.net/C/Users/mydomain/documents/stuff to server2.seltzer.net/C/Users/mydomain/documents
+Restoring server1.mydomain.net/C/Users/mydomain/documents/stuff to server2.mydomain.net/C/Users/mydomain/documents
 ```
 
 ## Parameters
