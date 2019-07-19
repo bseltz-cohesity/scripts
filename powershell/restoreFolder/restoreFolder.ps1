@@ -32,7 +32,7 @@ $files = $fileResults.files |
             Where-Object { $_.fileDocument.objectId.entity.displayName -eq $source -and
                            $_.fileDocument.filename -eq $folderName }
 
-if (!$files.count){
+if (!$files){
     Write-Host "no search results that match source name" -ForegroundColor Yellow
     exit    
 }
