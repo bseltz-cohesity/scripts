@@ -43,19 +43,6 @@ if excludePoweredOff is True:
 # functions =============================================
 
 
-# def getnodes(obj, parents):
-#     """gather list of VMs and parent/child relationships"""
-#     global nodes
-#     global nodeParents
-#     if 'nodes' in obj:
-#         parents.append(obj['protectionSource']['id'])
-#         for node in obj['nodes']:
-#             getnodes(node, parents)
-#         # parents.remove(obj['protectionSource']['id'])
-#     nodes.append(obj)
-#     nodeParents[obj['protectionSource']['id']] = tuple(parents)
-
-
 def getnodes(obj, parentid=0):
     """gather list of VMs and parent/child relationships"""
     global nodes
