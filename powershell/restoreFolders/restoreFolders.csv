@@ -1,0 +1,3 @@
+source,folderName,target,targetPath
+192.168.1.10,/home/seltzerb,centos3.seltzer.net,/home/seltzerb/restore
+sql2012.seltzer.net,/C/Users/seltzerb/documents/stuff,w2016t1.seltzer.net,/C/Users/seltzerb/documents
