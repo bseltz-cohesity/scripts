@@ -41,17 +41,33 @@ if excludePoweredOff is True:
 # functions =============================================
 
 
-def getnodes(obj, parents):
+# def getnodes(obj, parents):
+#     """gather list of VMs and parent/child relationships"""
+#     global nodes
+#     global nodeParents
+#     if 'nodes' in obj:
+#         parents.append(obj['protectionSource']['id'])
+#         for node in obj['nodes']:
+#             getnodes(node, parents)
+#         # parents.remove(obj['protectionSource']['id'])
+#     nodes.append(obj)
+#     nodeParents[obj['protectionSource']['id']] = tuple(parents)
+
+
+def getnodes(obj, parentid=0):
     """gather list of VMs and parent/child relationships"""
     global nodes
     global nodeParents
-    if 'nodes' in obj:
-        parents.append(obj['protectionSource']['id'])
-        for node in obj['nodes']:
-            getnodes(node, parents)
-        parents.remove(obj['protectionSource']['id'])
     nodes.append(obj)
-    nodeParents[obj['protectionSource']['id']] = tuple(parents)
+    if parentid not in nodeParents.keys():
+        nodeParents[parentid] = []
+    if obj['protectionSource']['id'] not in nodeParents.keys():
+        nodeParents[obj['protectionSource']['id']] = nodeParents[parentid] + [parentid]
+    else:
+        nodeParents[obj['protectionSource']['id']] = list(set(nodeParents[parentid] + [parentid] + nodeParents[obj['protectionSource']['id']]))
+    if 'nodes' in obj:
+        for node in obj['nodes']:
+            getnodes(node, obj['protectionSource']['id'])
 
 
 def exclude(node, job, reason):
@@ -94,7 +110,7 @@ for job in api('get', 'protectionJobs'):
         nodes = []
         parents = []
         nodeParents = {}
-        getnodes(parentSource, [])
+        getnodes(parentSource)
 
         # apply VM exclusion rules
         for sourceId in job['sourceIds']:
@@ -117,7 +133,7 @@ for job in api('get', 'protectionJobs'):
                     if excludePoweredOff is True:
                         if 'uuid' in node['protectionSource']['vmWareProtectionSource']['id']:
                             vm = searcher.FindByUuid(uuid=node['protectionSource']['vmWareProtectionSource']['id']['uuid'], vmSearch=True, instanceUuid=True)
-                            if vm.runtime.powerState == 'poweredOff':
+                            if vm is not None and vm.runtime.powerState == 'poweredOff':
                                 exclude(node, job, 'powered off')
 
         # update job with new exclusions
