@@ -22,8 +22,8 @@ $encodedFileName = [System.Web.HttpUtility]::UrlEncode($folderName)
 
 ### search for my file
 $fileResults = api get "/searchfiles?filename=$($encodedFileName)&isFolder=true"
-if (!$fileResults.count){
-    Write-Host "no files found" -ForegroundColor Yellow
+if (!$fileResults.files){
+    Write-Host "no search results" -ForegroundColor Yellow
     exit    
 }
 
@@ -33,7 +33,7 @@ $files = $fileResults.files |
                            $_.fileDocument.filename -eq $folderName }
 
 if (!$files.count){
-    Write-Host "no files found" -ForegroundColor Yellow
+    Write-Host "no search results that match source name" -ForegroundColor Yellow
     exit    
 }
 
