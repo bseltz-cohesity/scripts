@@ -45,7 +45,7 @@ foreach($node in $global:nodes){
     $sourceId = $node.protectionSource.id
 
     # find matching node
-    if($name -eq $object -and $sourceId -notin $foundIds){
+    if($name -like "*$($object)*" -and $sourceId -notin $foundIds){
         $environment = $node.protectionSource.environment
 
         # find job that protects this node
@@ -57,9 +57,11 @@ foreach($node in $global:nodes){
         }
         
         # report result
-        "({0}) {1} ({2}) {3}" -f $environment, $name, $sourceId, $protectionStatus
-        $foundNode = $True
-        $foundIds += $sourceId
+        if($environment -ne 'kAgent'){
+            "({0}) {1} ({2}) {3}" -f $environment, $name, $sourceId, $protectionStatus
+            $foundNode = $True
+            $foundIds += $sourceId
+        }
     }
 }
 
