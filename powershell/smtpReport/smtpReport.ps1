@@ -6,7 +6,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
     [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
     [Parameter()][string]$domain = 'local', #local or AD domain
-    [Parameter()][array]$prefix = 'all', #report jobs with 'prefix' only
+    [Parameter()][array]$prefix = 'ALL', #report jobs with 'prefix' only
     [Parameter(Mandatory = $True)][string]$smtpServer, #outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, #outbound smtp port
     [Parameter(Mandatory = $True)][array]$sendTo, #send to address
@@ -37,9 +37,11 @@ function td($data, $color, $wrap='', $align='LEFT'){
 
 $html = '<html>'
 
+$prefixTitle = "($([string]::Join(", ", $prefix.ToUpper())))"
+
 $html += '<div style="font-family: Roboto,RobotoDraft,Helvetica,Arial,sans-serif;font-size: small;"><font face="Tahoma" size="+3" color="#000080">
 <center>Backup Job Summary Report<br>
-<font size="+2">Backup Job Summary Report - NET Daily Backup Report</font></center>
+<font size="+2">Backup Job Summary Report - ' + $prefixTitle + ' Daily Backup Report</font></center>
 </font>
 <hr>
 Report generated on ' + (get-date) + '<br>
@@ -74,7 +76,7 @@ foreach($heading in $headings){
 $html += '</tr>'
 $nowrap = 'nowrap'
 
-foreach($source in $report.protectionSourcesJobsSummary){
+foreach($source in ($report.protectionSourcesJobsSummary | Sort-Object -Property {$_.protectionSource.name})){
     $html += '<tr>'
     $type = $source.protectionSource.environment.Substring(1)
     $name = $source.protectionSource.name
@@ -133,7 +135,7 @@ foreach($source in $report.protectionSourcesJobsSummary){
 
     $sendjob = $false
     foreach($pre in $prefix){
-        if ($jobName.tolower().startswith($pre.tolower()) -or $prefix -eq 'all') {
+        if ($jobName.tolower().startswith($pre.tolower()) -or $prefix -eq 'ALL') {
             $sendjob = $true
         }
     }
