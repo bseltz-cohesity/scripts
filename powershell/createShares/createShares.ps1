@@ -84,7 +84,7 @@ foreach($share in $shares){
                 # find local or wellknown sid
                 $principal = api get "activeDirectory/principals?includeComputers=true&search=$($permission.account)"
                 if(!$principal){
-                    write-host "user $workgroup\$user not found!" -ForegroundColor Yellow
+                    write-host "user $($permission.account) not found!" -ForegroundColor Yellow
                 }else{
                     $sid = $principal[0].sid
                     $sids[$permission.account] = $sid
