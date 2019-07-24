@@ -26,10 +26,10 @@ Place both files in a folder together and run the main script like so:
 
 ```powershell
 ./createShares.ps1 -vip mycluster `
-                 -username myusername `
-                 -domain mydomain.net `
-                 -shareDataFilename ./shares.csv `
-                 -sourcePathPrefix '/ifs/tpuisilon/'
+                   -username myusername `
+                   -domain mydomain.net `
+                   -shareDataFilename ./shares.csv `
+                   -sourcePathPrefix '/ifs/tpuisilon/'
 ```
 
 ## Parameters
