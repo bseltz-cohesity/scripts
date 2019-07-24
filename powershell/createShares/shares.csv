@@ -1,9 +1,9 @@
-Share1,/ifs/tpuisilon/FS005/Folder/Share1,,,
+Share1,/ifs/myisilon/FS1/Folder/Share1,,,
 Account,Account Type,Run as Root,Permisson Type,Permission
 Everyone,wellknown,FALSE,allow,read
 SELTZER\domain admins,group,FALSE,allow,full
 SELTZER\schema admins,group,FALSE,allow,change
-Share2,/ifs/tpuisilon/FS005/Folder/Share2,,,
+Share2,/ifs/myisilon/FS1/Folder/Share2,,,
 Account,Account Type,Run as Root,Permisson Type,Permission
 Everyone,wellknown,FALSE,allow,read
 SELTZER\domain admins,group,FALSE,allow,full
