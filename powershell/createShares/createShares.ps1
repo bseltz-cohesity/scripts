@@ -6,7 +6,7 @@ param (
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
     [Parameter()][string]$shareDataFilename = './shares.csv',
-    [Parameter()][string]$sourcePathPrefix = '/ifs/tpuisilon/'
+    [Parameter()][string]$sourcePathPrefix = '/ifs/myisilon/'
 )
 
 ### source the cohesity-api helper code
