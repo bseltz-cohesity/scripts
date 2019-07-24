@@ -74,7 +74,7 @@ foreach($share in $shares){
                     $domainName = $adDomain.domainName
                     $principal = api get "activeDirectory/principals?domain=$($domainName)&includeComputers=true&search=$($user)"
                     if(!$principal){
-                        write-host "user $workgroup\$user not found!" -ForegroundColor Yellow
+                        write-host "user $($permission.account) not found!" -ForegroundColor Yellow
                     }else{
                         $sid = $principal[0].sid
                         $sids[$permission.account] = $sid
