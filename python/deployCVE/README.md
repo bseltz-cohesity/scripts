@@ -15,6 +15,10 @@ Run these commands from PowerShell to download the script(s) into your current d
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deployCVE/deployCVEcluster.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deployCVE/pyhesity.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deployCVE/test-deployCVE.sh
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/pyVmomi.tar.gz
+tar -xvf pyVmomi.tar.gz
+chmod +x deployCVEcluster.py
+chmod +x test-deployCVE.sh
 # End download commands
 ```
 
@@ -23,6 +27,7 @@ curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/
 * deployCVEcluster.py: the main PowerShell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 * test-deployCVE.sh: example command line
+* pyVmomi: Python SDK for the VMware vSphere API (see attributions below)
 
 Place all files in a folder together. then, run the main script like so:
 
@@ -119,3 +124,11 @@ Cluster Creation Successful!
 * --fips: boolean, enable fips mode, default is False
 * -k, --licensekey: optional. Required if --accept_eula is present
 * --accept_eula: optional. If present, eula will be accepted
+
+### Attributions
+
+Thanks to VMware for the pyVmomi Python SDK for the VMware vSphere API. Located here: https://github.com/vmware/pyvmomi
+
+I'm using pyVmomi here to deploy the Cohesity Clustered Virtual Edition OVA.
+
+Normally I would advise users to do a proper install of pyVmomi, which would allow this script to work fine, but there's a strong likelihood of this script being deployed onto a Cohesity cluster, and I wouldn't advise installing pyVmomi on a Cohesity cluster (it might get wiped out during a Cohesity upgrade). So, I've decided to deliver pyVmomi as part of this script in portable form.
