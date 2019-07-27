@@ -1,0 +1,30 @@
+#!/bin/bash
+./deployCVEcluster.py  -vc 10.2.143.29 \
+                -vu administrator@vsphere.local \
+                -vp myvcpassword \
+                -ds datastore1 \
+                -ds datastore2 \
+                -ds datastore3 \
+                -f ../cohesity-6.1.1d_release-20190507_1eef123c-8tb.ova \
+                -vh 10.2.137.37 \
+                -vh 10.2.137.37 \
+                -vh 10.2.137.37 \
+                --vmname BSeltz-CVE1 \
+                --vmname BSeltz-CVE2 \
+                --vmname BSeltz-CVE3 \
+                -ip 10.2.143.48 \
+                -ip 10.2.143.49 \
+                -ip 10.2.143.50 \
+                -v 10.2.143.51 \
+                -v 10.2.143.52 \
+                -v 10.2.143.53 \
+                -m 255.255.248.0 \
+                -g 10.2.136.1 \
+                -c BSeltz-CVE \
+                -ntp pool.ntp.org \
+                -dns 10.2.143.28 \
+                -e \
+                --fips \
+                -cd mydomain.net \
+                -k ABDC-EFGH-IJKL-MNOP \
+                --accept_eula
