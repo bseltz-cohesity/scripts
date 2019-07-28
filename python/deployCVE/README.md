@@ -2,13 +2,17 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
+## Support for Python Versions
+
+This script may not work on Python 3 on Windows as there seem to be some issues with pyvmomi. This script was tested on CentOS 7.6 running Python 2.7.5.
+
 ## Note: Please use the download commands below to download the script
 
 This Python script deploys a multi-node Cohesity Clustered Virtual Edition (CVE) cluster on VMware vSphere. After deploying the OVAs, the script performs the cluster setup, and optionally applies a license key and accepts the end-user license agreement, leaving the new cluster fully built and ready for login.
 
 ## Download the script
 
-Run these commands from PowerShell to download the script(s) into your current directory
+Run these commands to download the script(s) into your current directory
 
 ```bash
 # Begin download commands
@@ -38,7 +42,7 @@ Place all files in a folder together. then, run the main script like so:
                 -ds datastore1 \
                 -ds datastore2 \
                 -ds datastore3 \
-                -f ../cohesity-6.1.1d_release-20190507_1eef123c-8tb.ova \
+                -f ./cohesity-6.1.1d_release-20190507_1eef123c-8tb.ova \
                 -vh 10.2.137.37 \
                 -vh 10.2.137.37 \
                 -vh 10.2.137.37 \
@@ -127,7 +131,7 @@ Cluster Creation Successful!
 
 ### Attributions
 
-Thanks to VMware for the pyVmomi Python SDK for the VMware vSphere API. Located here: https://github.com/vmware/pyvmomi
+Thanks to VMware for the pyVmomi Python SDK for the VMware vSphere API. Located here: <https://github.com/vmware/pyvmomi>
 
 I'm using pyVmomi here to deploy the Cohesity Clustered Virtual Edition OVA.
 

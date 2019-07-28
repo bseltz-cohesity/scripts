@@ -46,6 +46,7 @@ parser.add_argument('-x', '--skipcreate', action='store_true')
 parser.add_argument('-k', '--licensekey', type=str, default=None)
 parser.add_argument('--accept_eula', action='store_true')
 
+
 args = parser.parse_args()
 
 if not args.vipassword:
@@ -78,8 +79,8 @@ def get_obj_in_list(obj_name, obj_list):
     for o in obj_list:
         if o.name == obj_name:
             return o
-    print ("Unable to find object by the name of %s in list:\n%s" %
-           (obj_name, map(lambda o: o.name, obj_list)))
+    print("Unable to find object by the name of %s in list:\n%s" %
+          (obj_name, map(lambda o: o.name, obj_list)))
     exit(1)
 
 
@@ -105,7 +106,7 @@ def get_objects(si, args):
     elif len(datastore_list) > 0:
         datastore_obj = datastore_list[0]
     else:
-        print "No datastores found in DC (%s)." % datacenter_obj.name
+        print("No datastores found in DC (%s)." % datacenter_obj.name)
 
     # Get cluster object.
     cluster_list = datacenter_obj.hostFolder.childEntity
@@ -114,7 +115,7 @@ def get_objects(si, args):
     elif len(cluster_list) > 0:
         cluster_obj = cluster_list[0]
     else:
-        print "No clusters found in DC (%s)." % datacenter_obj.name
+        print("No clusters found in DC (%s)." % datacenter_obj.name)
 
     # Generate resource pool.
     resource_pool_obj = cluster_obj.resourcePool
@@ -160,7 +161,7 @@ def add_disk(vm, si, disk_size, disk_type, controller, unit_number):
     dev_changes.append(disk_spec)
     spec.deviceChange = dev_changes
     vm.ReconfigVM_Task(spec=spec)
-    print "%sGB disk added to %s" % (disk_size, vm.config.name)
+    print("%sGB disk added to %s" % (disk_size, vm.config.name))
 
 
 # validate parameters before proceeding
@@ -186,7 +187,7 @@ ovffile = t.extractfile(ovffilename)
 try:
     ovfd = ovffile.read()
 except Exception:
-    print "Could not read file: %s" % ovffile
+    print("Could not read file: %s" % ovffile)
     exit(1)
 ovffile.close()
 
@@ -197,7 +198,7 @@ try:
                                    pwd=args.vipassword,
                                    port=443)
 except Exception:
-    print "Unable to connect to %s" % args.vcenter
+    print("Unable to connect to %s" % args.vcenter)
     exit(1)
 
 for i, ip in enumerate(nodeips):
@@ -256,7 +257,7 @@ for i, ip in enumerate(nodeips):
             keepalive_thread.join()
             ovabusy = False
         elif lease.state == vim.HttpNfcLease.State.error:
-            print "Lease error: %s" % lease.error
+            print("Lease error: %s" % lease.error)
             exit(1)
 
     # add disks
