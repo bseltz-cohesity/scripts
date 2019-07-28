@@ -99,7 +99,7 @@ def apidrop():
 def api(method, uri, data=None, quiet=None):
     """api call function"""
     if AUTHENTICATED is False:
-        print 'Not Connected'
+        print('Not Connected')
         return None
     response = ''
     if uri[0] != '/':
