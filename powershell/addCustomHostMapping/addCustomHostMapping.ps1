@@ -1,5 +1,4 @@
-### usage: ./archiveOldSnapshots.ps1 -vip mycluster -username admin [ -domain local ] -vault S3 -olderThan 365 [ -IfExpiringAfter 30 ] [ -keepFor 365 ] [ -archive ]
-# version 5
+### usage: ./addCustomHostMapping.ps1 -vip mycluster -username admin [ -domain local ] -ip ipaddress -hostNames myserver, myserver.mydomain.net
 
 ### process commandline arguments
 [CmdletBinding()]
