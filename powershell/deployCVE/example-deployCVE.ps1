@@ -9,8 +9,8 @@
                 -network2 'VM Network 2' `
                 -metadataSize 51 `
                 -dataSize 201 `
-                -dnsServers @('10.2.143.28') `
-                -ntpServers @('pool.ntp.org') `
+                -dnsServers 10.2.143.28, 10.2.143.29 `
+                -ntpServers 'pool.ntp.org' `
                 -clusterName BSeltz-CVE `
                 -clusterDomain sa.corp.cohesity.com `
                 -encrypt `
