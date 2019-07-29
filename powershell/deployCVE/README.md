@@ -37,8 +37,8 @@ Place all files in a folder together. then, run the main script like so:
                 -network2 'VM Network 2' `
                 -metadataSize 51 `
                 -dataSize 201 `
-                -dnsServers @('10.2.143.28') `
-                -ntpServers @('pool.ntp.org') `
+                -dnsServers 10.2.143.28, 8.8.8.8 `
+                -ntpServers pool.ntp.org `
                 -clusterName BSeltz-CVE `
                 -clusterDomain sa.corp.cohesity.com `
                 -encrypt `
