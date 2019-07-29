@@ -4,7 +4,9 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 ## Note: Please use the download commands below to download the script
 
-This PowerShell script deploys a single-node Cohesity Virtual Edition (VE) appliance on VMware vSphere. After deploying the OVA, the script performs the cluster setup, applies a license key and accepts the end-user license agreement, leaving the new cluster fully built and ready for login.
+This PowerShell script deploys a multi-node Cohesity Virtual Edition (VE) cluster on VMware vSphere. After deploying the OVA, the script performs the cluster setup, applies a license key and accepts the end-user license agreement, leaving the new cluster fully built and ready for login.
+
+This script requires the VMware vSphere PowerCLI module for PowerShell.
 
 ## Download the script
 
