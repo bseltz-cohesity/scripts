@@ -37,7 +37,9 @@ if($ndfFolders){
 }
 
 ### source the cohesity-api helper code
-. ./cohesity-api
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+$CONFDIR = 'c:\program files\cohesity\user_scripts\.cohesity-api'
+if ($(Test-Path $CONFDIR) -eq $false) { New-Item -Type Directory -Path $CONFDIR | Out-Null }
 
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
