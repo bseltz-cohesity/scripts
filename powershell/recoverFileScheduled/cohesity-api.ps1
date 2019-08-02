@@ -1,13 +1,14 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#   version 0.10 - Brian Seltzer - Apr 2019
+#   version 0.11 - Brian Seltzer - Aug 2019
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.6 - Consolidated Windows and Unix versions - June 2018
 # 0.7 - Added saveJson, loadJson and json2code utility functions - Feb 2019
-# 0.8 - added -prompt to prompt for password rather than save
-# 0.9 - added setApiProperty / delApiProperty
-# 0.10 - added $REPORTAPIERRORS constant
+# 0.8 - added -prompt to prompt for password rather than save - Mar 2019
+# 0.9 - added setApiProperty / delApiProperty - Apr 2019
+# 0.10 - added $REPORTAPIERRORS constant - Apr 2019
+# 0.11 - added storePassword function and username parsing - Aug 2019
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
 
@@ -61,6 +62,12 @@ function apiauth($vip, $username, $domain, [switch] $prompt, [switch] $updatepas
         $username = Read-Host
         if(-not $username){write-host 'username is required' -foregroundcolor red; break}
     }
+    if($username.Contains('\')){
+        $domain, $username = $username.Split('\')
+    }
+    if($username.Contains('@')){
+        $username, $domain = $username.Split('@')
+    }
     if($updatepassword){
         $updatepw = '-updatePassword'
     }else{ 
@@ -71,7 +78,7 @@ function apiauth($vip, $username, $domain, [switch] $prompt, [switch] $updatepas
     }else{
         $pr = $null
     }
-    
+
     $global:VIP = $vip
     $global:APIROOT = 'https://' + $vip + '/irisservices/api/v1'
     $HEADER = @{'accept' = 'application/json'; 'content-type' = 'application/json'}
@@ -234,6 +241,7 @@ if ($UNIX) {
     }
 
     function getpwd($vip, $username, $domain, $prompt, $updatePassword) {
+
         if ($null -eq $domain) { $domain = 'local'}
         $keyName = $vip + ':' + $domain + ':' + $username
         $keyFile = "$CONFDIR/$keyName"
@@ -264,6 +272,7 @@ if ($UNIX) {
     }
 }else{
     function getpwd($vip, $username, $domain, $prompt, $updatePassword){
+
         $keyName = $vip + ':' + $domain + ':' + $username
         $registryPath = 'HKCU:\Software\Cohesity-API'
         $encryptedPasswordText = ''
@@ -288,6 +297,26 @@ if ($UNIX) {
         $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
         return [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
     }    
+}
+
+# store password function
+function storePassword($vip, $username, $domain){
+    if(-not $domain){
+        if($username.Contains('\')){
+            $domain, $username = $username.Split('\')
+        }
+        if($username.Contains('@')){
+            $username, $domain = $username.Split('@')
+        }
+    }
+    $pw = getpwd -vip $vip -username $username -domain $domain -updatePassword $true
+    $securePassword = Read-Host -Prompt "Re-enter password for $username at $vip" -AsSecureString
+    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
+    $unsecurePassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+    if($pw -ne $unsecurePassword){
+        write-host "Passwords do not match. Try again:" -ForegroundColor Yellow
+        storePassword -vip $vip -username $username -domain $domain 
+    }            
 }
 
 # date functions
