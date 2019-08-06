@@ -36,7 +36,8 @@ Place both files in a folder together and run the main script like so:
                      -n BSeltz-AzureCE-3 \
                      -k xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
                      -t xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
-                     -b xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                     -b xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
+                     -r resgroup1
 ```
 
 ```text
@@ -58,6 +59,7 @@ Stopping cloud edition instances...
 * -k, --accesskey: Azure access key ID (you will be prompted for your secret key)
 * -t, --tenant: Azure AD directory ID
 * -b, --subscription: Azure subscription ID
+* -r, --resourcegroup: Azure resource group where VMs reside
 
 ### Installing the Prerequisites
 
