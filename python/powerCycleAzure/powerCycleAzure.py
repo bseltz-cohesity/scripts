@@ -1,15 +1,15 @@
 #!/usr/bin/env python
-"""Power on/off an AWS Cloud Edition cluster"""
+"""Power on/off an Azure Cloud Edition cluster"""
 
 ### usage: ./powerCycleAzure.py -s 10.0.1.6 \
 #                     -u admin \
 #                     -o poweroff \
-#                     -n BSeltz-AzureCE-bs4xqrdggcft3tq3-1 \
-#                     -n BSeltz-AzureCE-bs4xqrdggcft3tq3-2 \
-#                     -n BSeltz-AzureCE-bs4xqrdggcft3tq3-3 \
-#                     -k myAccessKey-xxxxxxx \
-#                     -t myTenentId-xxxxxxxx \
-#                     -b mySubscriptionId--xxxxxxxx
+#                     -n BSeltz-AzureCE-1 \
+#                     -n BSeltz-AzureCE-2 \
+#                     -n BSeltz-AzureCE-3 \
+#                     -k xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
+#                     -t xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
+#                     -b xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
 ### import pyhesity wrapper module
 from pyhesity import *
