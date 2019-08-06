@@ -15,7 +15,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 ```powershell
 # Begin download commands
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployCVE/deployCVE.ps1).content | Out-File deployCVE.ps1; (Get-Content deployCVE.ps1) | Set-Content deployCVE.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployCVE/cohesity-delploy-api.ps1).content | Out-File cohesity-deploy-api.ps1; (Get-Content cohesity-deploy-api.ps1) | Set-Content cohesity-deploy-api.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployCVE/cohesity-deploy-api.ps1).content | Out-File cohesity-deploy-api.ps1; (Get-Content cohesity-deploy-api.ps1) | Set-Content cohesity-deploy-api.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployCVE/example-deployCVE.ps1).content | Out-File example-deployCVE.ps1; (Get-Content example-deployCVE.ps1) | Set-Content example-deployCVE.ps1
 # End download commands
 ```
