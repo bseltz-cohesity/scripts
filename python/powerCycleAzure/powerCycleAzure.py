@@ -9,7 +9,8 @@
 #                     -n BSeltz-AzureCE-3 \
 #                     -k xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
 #                     -t xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
-#                     -b xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+#                     -b xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
+#                     -r resgroup1
 
 ### import pyhesity wrapper module
 from pyhesity import *
@@ -28,6 +29,7 @@ parser.add_argument('-n', '--node', action='append', type=str, required=True)
 parser.add_argument('-b', '--subscription', type=str, required=True)
 parser.add_argument('-k', '--accesskey', type=str, required=True)
 parser.add_argument('-t', '--tenant', type=str, required=True)
+parser.add_argument('-r', '--resourcegroup', type=str, required=True)
 
 args = parser.parse_args()
 
@@ -92,13 +94,13 @@ def start_cluster():
 def powerOff():
     print('Stopping cloud edition instances...')
     for node in nodes:
-        async_vm_stop = compute_client.virtual_machines.power_off('resgroup1', node)
+        async_vm_stop = compute_client.virtual_machines.power_off(args.resourcegroup, node)
 
 
 def powerOn():
     print('Starting cloud edition instances...')
     for node in nodes:
-        async_vm_start = compute_client.virtual_machines.start('resgroup1', node)
+        async_vm_start = compute_client.virtual_machines.start(args.resourcegroup, node)
 
 
 ### connect to Azure
