@@ -10,38 +10,81 @@ Go to the folder where you want to download the files, then run the following co
 
 ```bash
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/powerCycleAzure.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/storePassword.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/waitForJob.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/azurece_control.sh
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/pyhesity.py
-chmod +x powerCycleAzure.py
+chmod +x azurece_control.sh
 ```
 
 ## Components
 
-* powerCycleAzure.py: the main python script
+* azurece_control.sh: the main bash script
+* powerCycleAzure.py: the power on/off process script
+* waitForJob.py: waits for inbound replication to complete before poweroff
+* storePassword.py: script to store passwords
 * pyhesity.py: the Cohesity REST API helper module
 
-## Dependencies
+### Installing the Prerequisites
 
-See below...
+```bash
+sudo pip install azure-mgmt-compute
+```
+
+## Configuring the script
+
+Place all files in a folder together, then open azurece_control.sh in a text editor and configure the following settings at the top of the file:
+
+```bash
+ce_ip='10.0.1.6'  # an IP or DNS name of the cloud edition cluster in Azure
+ce_user='admin'   # Cohesity user to log onto the cloud edition cluster
+ce_domain='local' # Cohesity domain to log onto the cloud edition cluster
+node_1='BSeltz-AzureCE-1'  # VM Name of cloud edition node 1
+node_2='BSeltz-AzureCE-2'  # VM Name of cloud edition node 2
+node_3='BSeltz-AzureCE-3'  # VM Name of cloud edition node 3
+key='xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'  # Azure application key ID
+subscription='xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'  # Azure subscription ID
+tenant='xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'  # Azure AD Directory ID
+resgroup='resgroup1'  # Azure resource group name
+onprem_ip='192.168.1.198'  # an IP or DNS name of on-prem Cohesity cluster
+onprem_user='admin'  # Cohesity user to log onto the on-prem Cohesity cluster
+onprem_domain='local'  # Cohesity domain to log onto the on-prem Cohesity cluster
+onprem_job='VM Backup'  # on-prem protection job to monitor for completion
+scriptpath='/Users/myusername/scripts/python'  # absolute path to the scripts
+```
 
 ## Running the Script
 
-Place both files in a folder together and run the main script like so:
+First, store the passwords that the script will need later:
 
 ```bash
-./powerCycleAzure.py -s 10.0.1.6 \
-                     -u admin \
-                     -o poweroff \
-                     -n BSeltz-AzureCE-1 \
-                     -n BSeltz-AzureCE-2 \
-                     -n BSeltz-AzureCE-3 \
-                     -k xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
-                     -t xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
-                     -b xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
-                     -r resgroup1
+./azurece_control.sh store_passwords
 ```
 
 ```text
-Connecting to azure...
+Please provide secretkey for Azure
+Enter your password:
+Re-enter your password:
+
+Please provide password for Cloud Edition user (admin)
+Enter your password:
+Re-enter your password:
+
+Please provide password for on-prem user (admin)
+Enter your password:
+Re-enter your password:
+```
+
+Then we can stop the cloud edition cluster:
+
+```bash
+./azurece_control.sh stop
+```
+
+```text
+waiting for existing job run to finish...
+latest job run completed with status: kSuccess
+Connecting to Azure...
 Connecting to Cohesity...
 Stopping all the cluster services...
 Waiting for cluster to stop...
@@ -49,20 +92,26 @@ Cluster stopped successfully!
 Stopping cloud edition instances...
 ```
 
-## Parameters
-
-* -s, --server: DNS or IP of the Cohesity cluster to connect to
-* -u, --username: username to authenticate to Cohesity cluster
-* -d, --domain: (optional) domain of username, defaults to local
-* -o, --operation: poweron or poweroff
-* -n, --node: the name of the Azure VM instance of a node. Include multiple nodes like: -n xxx1 -n xxx2, -n xxx3
-* -k, --accesskey: Azure access key ID (you will be prompted for your secret key)
-* -t, --tenant: Azure AD directory ID
-* -b, --subscription: Azure subscription ID
-* -r, --resourcegroup: Azure resource group where VMs reside
-
-### Installing the Prerequisites
+and start the cluster:
 
 ```bash
-sudo pip install azure-mgmt-compute
+./azurece_control.sh start
+```
+
+```text
+Connecting to Azure...
+Starting cloud edition instances...
+Connecting to Cohesity...
+Starting all the cluster services...
+Waiting for cluster to start...
+Cluster started successfully!
+```
+
+## CRON entries
+
+Example: start the cluster at 5PM, and stop it at 5AM
+
+```bash
+0 17 * * * /home/myusername/scripts/azurece_control.sh start
+0 5 * * * /home/myusername/scripts/azurece_control.sh stop
 ```
