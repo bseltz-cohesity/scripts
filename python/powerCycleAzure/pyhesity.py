@@ -19,7 +19,7 @@
 # 2.0.1 - fixed date functions for pythion 3 - Mar 2019
 # 2.0.2 - added file download - Jun 2019
 # 2.0.3 - added silent error handling, apdrop(), apiconnected() - Jun 2019
-# 2.0.4 - added pw storage for alternative infrastructure - Aug 2019
+# 2.0.4 - added pw and storepw - Aug 2019
 #
 ##########################################################################################
 # Install Notes
@@ -48,7 +48,7 @@ requests.packages.urllib3.disable_warnings()
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-__all__ = ['apiauth', 'api', 'usecsToDate', 'dateToUsecs', 'timeAgo', 'dayDiff', 'display', 'fileDownload', 'apiconnected', 'apidrop', 'pw']
+__all__ = ['apiauth', 'api', 'usecsToDate', 'dateToUsecs', 'timeAgo', 'dayDiff', 'display', 'fileDownload', 'apiconnected', 'apidrop', 'pw', 'storepw']
 
 APIROOT = ''
 HEADER = ''
@@ -60,6 +60,16 @@ CONFIGDIR = expanduser("~") + '/.pyhesity'
 ### pwstore for alternate infrastructure
 def pw(vip, username, domain='local', password=None, updatepw=None, prompt=None):
     return __getpassword(vip, username, password, domain, updatepw, prompt)
+
+
+def storepw(vip, username, domain='local', password=None, updatepw=True, prompt=None):
+    pwd1 = '1'
+    pwd2 = '2'
+    while(pwd1 != pwd2):
+        pwd1 = __getpassword(vip, username, password, domain, updatepw, prompt)
+        pwd2 = getpass.getpass("Re-enter your password: ")
+        if(pwd1 != pwd2):
+            print('Passwords do not match! Please re-enter...')
 
 
 ### authentication
