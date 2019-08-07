@@ -31,15 +31,19 @@ if not job:
     print("Job '%s' not found" % jobName)
     exit(1)
 
-runs = api('get', 'protectionRuns?jobId=%s' % job[0]['id'])
-
 # wait for existing job run to finish
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
-if (runs[0]['backupRun']['status'] not in finishedStates):
-    print("waiting for existing job run to finish...")
-    while (runs[0]['backupRun']['status'] not in finishedStates):
+finished = False
+print("waiting for existing job run to finish...")
+while finished is False:
+    finished = True
+    runs = sorted(api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s' % (job[0]['id'], timeAgo(30, 'days'))), key=lambda result: result['backupRun']['stats']['startTimeUsecs'], reverse=True)
+    for run in runs:
+        for copyRun in run['copyRun']:
+            if (copyRun['status'] not in finishedStates):
+                finished = False
+    if finished is False:
         sleep(5)
-        runs = api('get', 'protectionRuns?jobId=%s' % job[0]['id'])
 
 print("latest job run completed with status: %s" % runs[0]['backupRun']['status'])
 exit(0)
