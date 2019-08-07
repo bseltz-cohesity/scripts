@@ -28,7 +28,7 @@ See below...
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./powerCycleAWS.py -s 172.31.28.144 -u admin -o poweroff -n i-00b359f39aa83551d -n i-0aa0725c31c208d63 -n i-0fcc7118fb230b47e -k YAIAKSANPE7EVKZFEUTS -r us-east-2
+./powerCycleAWS.py -s 172.31.28.144 -u admin -o poweroff -n i-00b359f39aa83551d -n i-0aa0725c31c208d63 -n i-0fcc7118fb230b47e -k XXXXXXXXXXXXXXXXXXXX -r us-east-2
 ```
 
 ```text

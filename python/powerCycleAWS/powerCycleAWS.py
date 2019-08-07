@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Power on/off an AWS Cloud Edition cluster"""
 
-### usage: ./powerCycleAWS.py -s 172.31.28.144 -u admin -o poweroff -n i-00b359f39aa83551d -n i-0aa0725c31c208d63 -n i-0fcc7118fb230b47e -k YAIAKSANPE7EVKZFEUTS -r us-east-2
+### usage: ./powerCycleAWS.py -s 172.31.28.144 -u admin -o poweroff -n i-00b359f39aa83551d -n i-0aa0725c31c208d63 -n i-0fcc7118fb230b47e -k XXXXXXXXXXXXXXXXXXXX -r us-east-2
 
 ### import pyhesity wrapper module
 from pyhesity import *
