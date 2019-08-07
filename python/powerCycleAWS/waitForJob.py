@@ -40,7 +40,7 @@ while finished is False:
     runs = sorted(api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s' % (job[0]['id'], timeAgo(30, 'days'))), key=lambda result: result['backupRun']['stats']['startTimeUsecs'], reverse=True)
     for run in runs:
         for copyRun in run['copyRun']:
-            if (copyRun['status'] not in finishedStates):
+            if (copyRun['status'] not in finishedStates and copyRun['target']['type'] != 'kArchival'):
                 finished = False
     if finished is False:
         sleep(5)
