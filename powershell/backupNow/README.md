@@ -12,9 +12,14 @@ This PowerShell script performs a runNow on a protection job and optionally repl
 Place all files in a folder together. then, run the main script like so:
 
 ```powershell
-# example
-./backupNow.ps1 -vip mycluster -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 7 -replicateTo anothercluster -keepReplicaFor 10 -backupType kRegular
-# end example
+./backupNow.ps1 -vip mycluster `
+                -username myusername `
+                -domain mydomain.net `
+                -jobName 'My Job' `
+                -keepLocalFor 7 `
+                -replicateTo anothercluster `
+                -keepReplicaFor 10 `
+                -backupType kRegular
 ```
 
 ```text
