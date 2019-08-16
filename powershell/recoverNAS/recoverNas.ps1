@@ -28,34 +28,25 @@ $exactShares = $shares | Where-Object {$_.objectSnapshotInfo.snapshottedSource.n
 ### if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot 
 $latestsnapshot = ($exactShares | sort-object -property @{Expression={$_.objectSnapshotInfo.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
 
-### get entity
-$entities = api get /entitiesOfType?environmentTypes=kNetapp`&environmentTypes=kGenericNas`&genericNasEntityTypes=kHost`&isProtected=true`&netappEntityTypes=kVolume
-$entity = $entities | Where-Object { $_.displayName -ieq $shareName }
-
 $nasRecovery = @{
-    'action' = 10;
-    'name' = "Recover-$shareName";
-    'objects' = @(
+    "name" = "Recover-$shareName";
+    "objects" = @(
         @{
-            'jobId' = $latestsnapshot.objectSnapshotInfo[0].jobId;
-            'jobUid' = @{
-                'objectId' = $latestsnapshot.objectSnapshotInfo[0].jobUid.id;
-                'clusterIncarnationId' = $latestsnapshot.objectSnapshotInfo[0].jobUid.clusterIncarnationId;
-                'clusterId' = $latestsnapshot.objectSnapshotInfo[0].jobUid.clusterId
-            };
-            'entity' = $entity;
-            'jobInstanceId' = $latestsnapshot.objectSnapshotInfo[0].versions[0].jobRunId;
-            'attemptNum' = $latestsnapshot.objectSnapshotInfo[0].versions[0].attemptNumber;
-            'startTimeUsecs' = $latestsnapshot.objectSnapshotInfo[0].versions[0].startedTimeUsecs
+            "jobId" = $latestsnapshot.objectSnapshotInfo[0].jobId;
+            "jobUid" = $latestsnapshot.objectSnapshotInfo[0].jobUid;
+            "jobRunId" = $latestsnapshot.objectSnapshotInfo[0].versions[0].jobRunId;
+            "startedTimeUsecs" = $latestsnapshot.objectSnapshotInfo[0].versions[0].startedTimeUsecs;
+            "protectionSourceId" = $latestsnapshot.objectSnapshotInfo[0].snapshottedSource.id
         }
     );
-    'viewName' = $viewName;
-    'viewParams' = @{
-        'qos' = @{
-            'principalName' = $qosSetting
+    "type" = "kMountFileVolume";
+    "viewName" = $viewName;
+    "restoreViewParameters" = @{
+        "qos" = @{
+            "principalName" = $qosSetting
         }
     }
 }
 
 "Recovering $shareName as view $viewName"
-$result = api post /restore $nasRecovery
+$result = api post restore/recover $nasRecovery
