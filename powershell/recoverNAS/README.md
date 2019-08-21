@@ -6,8 +6,8 @@ This powershell script recovers a protected NAS share to a Cohesity View.
 
 ```powershell
 # Download Commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/recoverNas/recoverNas.ps1).content | Out-File recoverNas.ps1; (Get-Content recoverNas.ps1) | Set-Content recoverNas.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/recoverNas/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/recoverNAS/recoverNas.ps1).content | Out-File recoverNas.ps1; (Get-Content recoverNas.ps1) | Set-Content recoverNas.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/recoverNAS/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
 
