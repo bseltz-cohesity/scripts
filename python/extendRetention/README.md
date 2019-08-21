@@ -28,7 +28,7 @@ chmod +x extendRetention.py
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./extendRetention.py -v mycluster -u myusername -d mydomain.net \
+./extendRetention.py -s mycluster -u myusername -d mydomain.net \
                      -j 'SQL*' -j '*ackup' -wr 35 -w 6 -mr 365 -m 1 \
                      -ms mail.mydomain.net -mp 25 \
                      -to myuser@mydomain.com -fr someuser@mydomain.com
@@ -58,7 +58,7 @@ The output will also be written to a log file extendRetentionLog.txt and optiona
 
 ## Parameters
 
-* -v, --vip: DNS or IP of the Cohesity cluster to connect to
+* -s, --server: DNS or IP of the Cohesity cluster to connect to
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
 * -j, --jobfilters: search pattern for job names (e.g. 'prod*', '\*dev\*', '*ackup')
