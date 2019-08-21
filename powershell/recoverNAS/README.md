@@ -23,3 +23,38 @@ powershell> ./recoverNas.ps1 -vip mycluster -username admin -shareName \\netapp1
 Connected!
 Recovering \\netapp1.mydomain.net\share1 as view share1
 ```
+
+## Parameters
+
+* -vip: Cohesity cluster to connect to
+* -username: Cohesity logon username
+* -domain: (optional) Cohesity logon domain (defaults to local)
+* -shareName: name of protected NAS share to be recovered
+* -viewName: name of Cohesity view to recover to
+* -sourceName: (optional) name of protected NAS source
+
+## Notes
+
+The format of Isilon shares is different, so recovering an Isilon share looks like this:
+
+```powershell
+powershell> ./recoverNas.ps1 -vip mycluster -username admin -shareName /ifs/share1 -viewName share1
+Connected!
+Recovering /ifs/share1 as view share1
+```
+
+If you have two Isilon arrays and they both have an /ifs/share1 on them, then you can use the -sourceName parameter to specify which one you want to recover:
+
+```powershell
+powershell> ./recoverNas.ps1 -vip mycluster -username admin -shareName /ifs/share1 -viewName share1 -sourceName Isilon1
+Connected!
+Recovering /ifs/share1 as view share1
+```
+
+If you are using an Active Directory account to log onto Cohesity, use the -username and -domain parameters like this:
+
+```powershell
+powershell> ./recoverNas.ps1 -vip mycluster -username myusername -domain mydomain.net -shareName /ifs/share1 -viewName share1 -sourceName Isilon1
+Connected!
+Recovering /ifs/share1 as view share1
+```
