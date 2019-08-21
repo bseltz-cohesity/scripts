@@ -19,7 +19,7 @@ This powershell script recovers a protected NAS share to a Cohesity View.
 Place both files in a folder together, then run the script like so:
 
 ```powershell
-powershell> ./recoverNas.ps1 -vip mycluster -username admin -shareName \\netapp1.mydomain.net\share1 -viewName share1
+powershell> ./recoverNas.ps1 -vip mycluster -username admin -shareName \\netapp1.mydomain.net\share1 -viewName share1 -sourceName mynetapp
 Connected!
 Recovering \\netapp1.mydomain.net\share1 as view share1
 ```

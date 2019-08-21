@@ -7,7 +7,8 @@ param (
     [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
     [Parameter()][string]$domain = 'local', #local or AD domain
     [Parameter(Mandatory = $True)][string]$shareName, #sharename as listed in sources
-    [Parameter(Mandatory = $True)][string]$viewName #name of the view to create
+    [Parameter(Mandatory = $True)][string]$viewName, #name of the view to create
+    [Parameter()][string]$sourceName = $null
 )
 
 ### source the cohesity-api helper code
@@ -25,6 +26,14 @@ $shares = api get restore/objects?search=$shareName
 ### narrow results to VMs with the exact name
 $exactShares = $shares | Where-Object {$_.objectSnapshotInfo.snapshottedSource.name -ieq $shareName} #).objectSnapshotInfo[0]
 
+if($sourceName){
+    $exactShares = $exactShares | Where-Object {$_.objectSnapshotInfo.registeredSource.name -ieq $sourceName }
+}
+
+if(! $exactShares){
+    write-host "No matches found!" -ForegroundColor Yellow
+    exit
+}
 ### if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot 
 $latestsnapshot = ($exactShares | sort-object -property @{Expression={$_.objectSnapshotInfo.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
 
