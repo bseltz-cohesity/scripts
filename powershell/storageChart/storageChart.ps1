@@ -1,4 +1,4 @@
-### usage: ./graphStorageGrowth.ps1 -vip 192.168.1.198 -username admin [ -domain local ] [ -days 60 ]
+### usage: ./storageChart.ps1 -vip 192.168.1.198 -username admin [ -domain local ] [ -days 60 ]
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -10,7 +10,6 @@ param (
 )
 
 ### constants
-# $TB = (1024*1024*1024*1024)
 $GB = (1024*1024*1024)
 
 ### source the cohesity-api helper code
@@ -40,12 +39,6 @@ foreach ($stat in $stats.dataPointVec){
     $statDays += $dt
     $statConsumed +=  "{0:N2}" -f [math]::Round($consumed)
 }
-
-#$range = $statConsumed | Measure-Object -Maximum -Minimum
-#$max = [math]::Round($range.Maximum)
-#$min = [math]::Round($range.Minimum)
-#$floor = [math]::Round($min - (($max - $min) * 0.1))
-#$ceiling = [math]::Round($max + (($max - $min) * 0.1))
 
 $html = '<!DOCTYPE HTML>
 <html>
