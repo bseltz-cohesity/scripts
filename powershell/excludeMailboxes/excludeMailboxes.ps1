@@ -1,4 +1,4 @@
-# usage: ./excludeMailboxes.ps1 -vip mycluster -username myusername -domain mydomain.net -jobName 'My Job' -exclusionList ./excludedMailboxes.txt
+# usage: ./excludeMailboxes.ps1 -vip mycluster -username myusername -jobName 'My Job' -exclusionList ./excludedMailboxes.txt
 
 # process commandline arguments
 [CmdletBinding()]
@@ -33,10 +33,16 @@ if(!$job){
 # get physical protection sources
 $source = api get "protectionSources?id=$($job.parentSourceId)"
 
+if(! $job.PSObject.Properties['excludeSourceIds']){
+    $job | Add-Member -MemberType NoteProperty -Name excludeSourceIds -Value @()
+}
+
+$exclusionsAdded = $false
 foreach ($excludeUser in $exclusions){
     $node = $source.nodes[0].nodes | Where-Object { $_.protectionSource.name -eq $excludeUser -or $_.protectionSource.office365ProtectionSource.primarySMTPAddress -eq $excludeUser }
     if($node){
         if(!($node.protectionSource.id -in $job.excludeSourceIds)){
+            $exclusionsAdded = $True
             $job.excludeSourceIds += $node.protectionSource.id
             write-host "Excluding $($node.protectionSource.name)" -ForegroundColor Green
         }else{
@@ -47,4 +53,7 @@ foreach ($excludeUser in $exclusions){
     }
 }
 
-$null = api put "protectionJobs/$($job.id)" $job
+if($exclusionsAdded){
+    $null = api put "protectionJobs/$($job.id)" $job
+}
+
