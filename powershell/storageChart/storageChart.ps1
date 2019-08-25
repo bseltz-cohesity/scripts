@@ -37,7 +37,7 @@ foreach ($stat in $stats.dataPointVec){
 	$dt = usecsToDate (($stat.timestampMsecs)*1000)
     $consumed = $stat.data.int64Value/$GB
     $statDays += $dt
-    $statConsumed +=  "{0:N2}" -f [math]::Round($consumed)
+    $statConsumed +=  [math]::Round($consumed)
 }
 
 $html = '<!DOCTYPE HTML>
@@ -111,7 +111,7 @@ $("#tabs").tabs({
 $outFilePath = join-path -Path $PSScriptRoot -ChildPath 'storageGrowth.html'
 
 write-host "Writing Output to $outFilePath" -ForegroundColor Green
-$html | Out-File 'storageGrowth.html'
+$html | Out-File -Path 'storageGrowth.html' -Encoding ascii
 .$outFilePath
 
 
