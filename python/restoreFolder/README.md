@@ -22,7 +22,9 @@ chmod +x restoreFolder.py
 Place both files in a folder together and run the main script like so:
 
 ```bash
+# example
 ./restoreFolder.py -v mycluster -u myuser -d mydomain.net -j myjobname -s server1.mydomain.net -f /home/myuser -t server2.mydomain.net -p /tmp/restore
+# end example
 ```
 
 ```text
