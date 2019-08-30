@@ -55,16 +55,19 @@ else:
         print('BackupType kLog not applicable to %s jobs' % environment)
         exit(1)
 
-runs = api('get', 'protectionRuns?jobId=%s' % job[0]['id'])
-newRunId = lastRunId = runs[0]['backupRun']['jobRunId']
-
-# wait for existing job run to finish
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
-if (runs[0]['backupRun']['status'] not in finishedStates):
-    print("waiting for existing job run to finish...")
-    while (runs[0]['backupRun']['status'] not in finishedStates):
-        sleep(5)
-        runs = api('get', 'protectionRuns?jobId=%s' % job[0]['id'])
+runs = api('get', 'protectionRuns?jobId=%s' % job[0]['id'])
+if len(runs) > 0:
+    newRunId = lastRunId = runs[0]['backupRun']['jobRunId']
+
+    # wait for existing job run to finish
+    if (runs[0]['backupRun']['status'] not in finishedStates):
+        print("waiting for existing job run to finish...")
+        while (runs[0]['backupRun']['status'] not in finishedStates):
+            sleep(5)
+            runs = api('get', 'protectionRuns?jobId=%s' % job[0]['id'])
+else:
+    newRunId = lastRunId = 1
 
 # job data
 jobData = {
