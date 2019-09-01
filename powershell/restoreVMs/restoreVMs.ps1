@@ -1,0 +1,77 @@
+### usage: ./restoreVMs.ps1 -vip mycluster -username myusername -domain mydomain.net -vmlist ./vmlist.txt
+
+### process commandline arguments
+[CmdletBinding()]
+param (
+    [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
+    [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
+    [Parameter()][string]$domain = 'local', # local or AD domain
+    [Parameter()][string]$vmlist = './vmlist.txt', # list of VMs to recover
+    [Parameter()][string]$prefix = '',
+    [Parameter()][switch]$poweron # leave powered off by default
+)
+
+### source the cohesity-api helper code
+. ./cohesity-api
+
+### authenticate
+apiauth -vip $vip -username $username -domain $domain
+
+if (!(Test-Path -Path $vmlist)) {
+    Write-Host "vmlist file $vmlist not found" -ForegroundColor Yellow
+    exit
+}
+
+$restores = @()
+$restoreParams = @{}
+
+$protectedVMs = api get "/searchvms?entityTypes=kVMware"
+
+foreach($vm in get-content -Path $vmlist){
+    $protectedVM = $protectedVMs.vms | Where-Object { $_.vmDocument.objectName -eq $vm }
+    if($protectedVM){
+        $protectedVM = $protectedVM[0]
+        write-host "restoring $vm"
+        if($protectedVM.registeredSource.id -notin $restores){
+            $restores += $protectedVM.registeredSource.id
+            $recoverDate=(get-date).ToString().Replace(' ','_').Replace('/','-').Replace(':','-')
+            $restoreParams[$protectedVM.registeredSource.id] = @{
+                "name"                         = "Recover-$($protectedVM.registeredSource.id)-$recoverDate";
+                "objects"                      = @();
+                "powerStateConfig"             = @{
+                    "powerOn" = $false
+                };
+                "restoredObjectsNetworkConfig" = @{
+                    "disableNetwork" = $false
+                };
+                "continueRestoreOnError"       = $false;
+                "vaultRestoreParams"           = @{
+                    "glacier" = @{
+                        "retrievalType" = "kStandard"
+                    }
+                }
+            }
+            if($poweron){
+                $restoreParams[$protectedVM.registeredSource.id].powerStateConfig.powerOn = $True
+            }
+            
+            if($prefix -ne ''){
+                $restoreParams[$protectedVM.registeredSource.id]['renameRestoredObjectParam'] = @{'prefix' = "$prefix"}
+            }
+        }
+        $restoreObject = @{
+            "jobId" = $protectedVM.vmDocument.objectId.jobId;
+            "jobUid" = $protectedVM.vmDocument.objectId.jobUid;
+            "entity" = $protectedVM.vmDocument.objectId.entity;
+            "jobInstanceId" = $protectedVM.vmDocument.versions[0].instanceId.jobInstanceId;
+            "startTimeUsecs" = $protectedVM.vmDocument.versions[0].instanceId.jobStartTimeUsecs
+        }
+        $restoreParams[$protectedVM.registeredSource.id].objects += $restoreObject
+    }else{
+        write-host "skipping $vm (not protected)"
+    }
+}
+
+foreach ($parentId in $restoreParams.Keys) {
+    $null = api post /restore $restoreParams[$parentId]
+}
