@@ -48,3 +48,4 @@ Backing up pb-centos01 (TVCenter-VMs2)
 * -username: Cohesity username (e.g. admin)
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -vmlist: (optional) defaults to ./vmlist.txt
+* -wait: (optional) wait for jobs to complete
