@@ -8,7 +8,8 @@ param (
     [Parameter()][string]$domain = 'local', # local or AD domain
     [Parameter()][string]$vmlist = './vmlist.txt', # list of VMs to recover
     [Parameter()][string]$prefix = '',
-    [Parameter()][switch]$poweron # leave powered off by default
+    [Parameter()][switch]$poweron, # leave powered off by default
+    [Parameter()][switch]$wait # wait for restore tasks to complete
 )
 
 ### source the cohesity-api helper code
@@ -25,14 +26,17 @@ if (!(Test-Path -Path $vmlist)) {
 $restores = @()
 $restoreParams = @{}
 
+# get list of VM backups
 $protectedVMs = api get "/searchvms?entityTypes=kVMware"
 
 foreach($vm in get-content -Path $vmlist){
+    # this VM
     $protectedVM = $protectedVMs.vms | Where-Object { $_.vmDocument.objectName -eq $vm }
     if($protectedVM){
         $protectedVM = $protectedVM[0]
         write-host "restoring $vm"
         if($protectedVM.registeredSource.id -notin $restores){
+            # create restore parameters for this vCenter
             $restores += $protectedVM.registeredSource.id
             $recoverDate=(get-date).ToString().Replace(' ','_').Replace('/','-').Replace(':','-')
             $restoreParams[$protectedVM.registeredSource.id] = @{
@@ -59,6 +63,7 @@ foreach($vm in get-content -Path $vmlist){
                 $restoreParams[$protectedVM.registeredSource.id]['renameRestoredObjectParam'] = @{'prefix' = "$prefix"}
             }
         }
+        # add this VM to list of VMs to restore
         $restoreObject = @{
             "jobId" = $protectedVM.vmDocument.objectId.jobId;
             "jobUid" = $protectedVM.vmDocument.objectId.jobUid;
@@ -68,10 +73,33 @@ foreach($vm in get-content -Path $vmlist){
         }
         $restoreParams[$protectedVM.registeredSource.id].objects += $restoreObject
     }else{
+        # no backups for this VM
         write-host "skipping $vm (not protected)"
     }
 }
 
+# perform the restores
+$restoreTasks = @()
 foreach ($parentId in $restoreParams.Keys) {
-    $null = api post /restore $restoreParams[$parentId]
+    $restore = api post /restore $restoreParams[$parentId]
+    $taskid = $restore.restoreTask.performRestoreTaskState.base.taskId
+    $restoreTasks += $taskid
+}
+
+# wait for restores to complete
+if($wait){
+    "Waiting for restores to complete..."
+    $finishedStates = @('kCanceled', 'kSuccess', 'kFailure')
+    $pass = 0
+    foreach($taskid in $restoreTasks){
+        do {
+            if ($pass -gt 0){
+                sleep 10
+                $pass = 1
+            }
+            $restoreTask = api get /restoretasks/$taskid
+            $restoreTaskStatus = $restoreTask.restoreTask.performRestoreTaskState.base.publicStatus
+        } until ($restoreTaskStatus -in $finishedStates)
+        write-host "Restore task $($restoreTask.restoreTask.performRestoreTaskState.base.name) finished with status: $($restoreTask.restoreTask.performRestoreTaskState.base.publicStatus)"       
+    }
 }

@@ -50,3 +50,4 @@ restoring pb-centos01
 * -vmlist: (optional) defaults to ./vmlist.txt
 * -prefix: (optional) add a prefix to the VM names during restore
 * -poweron: (optional) power on the VMs during restore (default is false)
+* -wait: (optional) wait for restore tasks to complete
