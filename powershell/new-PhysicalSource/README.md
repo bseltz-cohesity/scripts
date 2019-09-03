@@ -4,6 +4,17 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script registers a new physical host as a Cohesity protection source.
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Begin download commands
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/new-PhysicalSource/new-PhysicalSource.ps1).content | Out-File new-PhysicalSource.ps1; (Get-Content new-PhysicalSource.ps1) | Set-Content new-PhysicalSource.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/new-PhysicalSource/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End download commands
+```
+
 ## Components
 
 * new-PhysicalSource.ps1: the main powershell script
