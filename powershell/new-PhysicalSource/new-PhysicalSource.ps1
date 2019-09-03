@@ -33,7 +33,7 @@ $newSource = @{
     'throttlingPolicy' = @{
         'isThrottlingEnabled' = $false
     };
-    'forceRegister' = $false
+    'forceRegister' = $True
 }
 
 $result = api post /backupsources $newSource
