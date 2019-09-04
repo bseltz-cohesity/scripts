@@ -30,7 +30,7 @@ job=$(echo $job | sed "s/\]xxendxx//g")
 
 jobid=$(echo $job | sed "s/.*\"id\":\([0-9]*\).*/\1/g")
 
-# get las job run ID
+# get last job run ID
 run=$(curl -X GET -k \
     --url "https://${cluster}/irisservices/api/v1/public/protectionRuns?jobId=${jobid}&numRuns=1"  \
     -H 'Content-type: application/json' \
