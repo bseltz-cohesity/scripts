@@ -6,6 +6,15 @@ This bash script unpauses a protection job, performs a runNow, waits for complet
 
 This script was written to run on AIX where a scripting language such as Python was unavailable.
 
+## Download the script
+
+```bash
+# Begin download commands
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/backupNowDisabledJob/backupNowDisabledJob.sh
+chmod +x backupNowDisabledJob.sh
+# End download commands
+```
+
 ## Components
 
 * backupNowDisabledJob.sh: the bash script

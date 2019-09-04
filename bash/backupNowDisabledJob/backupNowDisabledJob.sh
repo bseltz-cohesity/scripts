@@ -7,6 +7,7 @@ domain='mydomain.net'
 jobname='MyJob'
 keeplocalfor=5
 
+# authenticate
 auth=$(curl -X POST -k \
     --url "https://${cluster}/irisservices/api/v1/public/accessTokens" \
     -H 'Accept: application/json' \
@@ -18,6 +19,7 @@ auth=$(curl -X POST -k \
 
 token=$(echo $auth | sed "s/.*\"accessToken\":\"\([^\"]*\).*/\1/")
 
+# find job
 job=$(curl -X GET -k \
     --url "https://${cluster}/irisservices/api/v1/public/protectionJobs?names=${jobname}"  \
     -H 'Content-type: application/json' \
@@ -28,6 +30,7 @@ job=$(echo $job | sed "s/\]xxendxx//g")
 
 jobid=$(echo $job | sed "s/.*\"id\":\([0-9]*\).*/\1/g")
 
+# get las job run ID
 run=$(curl -X GET -k \
     --url "https://${cluster}/irisservices/api/v1/public/protectionRuns?jobId=${jobid}&numRuns=1"  \
     -H 'Content-type: application/json' \
@@ -36,7 +39,7 @@ run=$(curl -X GET -k \
 lastRunId=$(echo $run | sed "s/.*\"jobRunId\":\([0-9]*\).*/\1/g")
 newRunId=$lastRunId
 
-#enable job
+# enable job
 enable=$(curl -X POST -k \
     --url "https://${cluster}/irisservices/api/v1/public/protectionJobState/${jobid}"  \
     -H 'Content-type: application/json' \
@@ -73,7 +76,7 @@ newRunId=$(echo $run | sed "s/.*\"jobRunId\":\([0-9]*\).*/\1/g")
 sleep 1
 done
 
-# wait for job to finish
+# wait for job run to finish
 status="kRunning"
 finishedStates=(kCanceled kSuccess kFailure)
 while [[ ! " ${finishedStates[@]} " =~ " ${status} " ]]
@@ -88,7 +91,7 @@ done
 
 echo "Status: $status"
 
-#disable job
+# disable job
 enable=$(curl -X POST -k \
     --url "https://${cluster}/irisservices/api/v1/public/protectionJobState/${jobid}"  \
     -H 'Content-type: application/json' \
