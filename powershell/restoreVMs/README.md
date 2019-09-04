@@ -25,7 +25,11 @@ Create a text file containing a list of VMs. Note that these VMs must already be
 ```powershell
 ./restoreVMs.ps1 -vip mycluster `
                     -username myusername `
-                    -domain mydomain.net
+                    -domain mydomain.net `
+                    =vmlist ./vmlist.txt `
+                    -prefix test `
+                    -poweron `
+                    -wait
 ```
 
 ```text
