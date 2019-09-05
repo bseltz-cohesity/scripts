@@ -24,7 +24,7 @@ chmod +x clusterCreate-test.sh
 * pyhesity.py: the Cohesity REST API helper module
 * clusterCreate-test.sh: example command line
 
-## Note: by running the script, you are accepting the Cohesity End User License Agreement
+### Note: by running the script, you are accepting the Cohesity End User License Agreement
 
 Place all files in a folder together. then, run the main script like below, or modify the clusterCreate-test.sh with the desired parameters and run that script:
 
