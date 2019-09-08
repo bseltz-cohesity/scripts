@@ -81,7 +81,7 @@ If you want to limit the scope to snapshots that are older than say, 30 days, us
                     -username myusername `
                     -domain mydomain.net `
                     -sorted `
-                    -olderThan 30 `
+                    -olderThan 30
 ```
 
 ## Parameters
