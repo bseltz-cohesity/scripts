@@ -18,3 +18,46 @@ Run these commands from PowerShell to download the scripts into your current dir
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cloneList/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End download commands
 ```
+
+Generate a storage growth chart (HTML5):
+
+```powershell
+.\storageChart.ps1 -vip mycluster `
+                   -username myuser `
+                   -domain mydomain.net `
+                   -days 100
+```
+
+List the snapshots present on the cluster:
+
+```powershell
+./snapshotList.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net
+```
+
+List the clones (VMs and Databases) present on the cluster:
+
+```powershell
+./cloneList.ps1 -vip mycluster `
+                -username myusername `
+                -domain mydomain.net
+```
+
+List protected objects and views by logical usage:
+
+```powershell
+./logicalUsage.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net
+```
+
+Expire snapshots older than 90 days:
+
+```powershell
+./expireOldSnaps.ps1 -vip mycluster `
+                     -username myusername `
+                     -domain mydomain.net `
+                     -daysToKeep 90 `
+                     -expire
+```
