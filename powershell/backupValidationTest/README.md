@@ -4,6 +4,19 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This script demonstrates how to download and check files from protected servers to validate that backups were successful. The script will report if checks failed or if the latest backup is more than 24 hours old. The script can be scheduled to run daily using the Windows task scheduler.  
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download Commands
+$scriptName = 'backupValidationTest'
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
+```
+
 ## Components
 
 * backupValidationTest.ps1: the main powershell script
