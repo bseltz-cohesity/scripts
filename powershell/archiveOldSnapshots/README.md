@@ -4,6 +4,19 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script archives local snapshots older than x days. This is useful if you have created an archive target (e.g. AWS S3) and want to programatically archive existing local snapshots.
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download Commands
+$scriptName = 'archiveOldSnapshots'
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
+```
+
 ## Components
 
 * archiveOldSnapshots.ps1: the main powershell script
