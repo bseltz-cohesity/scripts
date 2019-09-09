@@ -1,4 +1,4 @@
-### usage: ./expireOldSnaps.ps1 -vip 192.168.1.198 -username admin [ -domain local ] -daysToKeep 60 [ -expire ]
+### usage: ./expireOldSnaps.ps1 -vip 192.168.1.198 -username admin [ -domain local ] [ -jobname myjob ]  -daysToKeep 60 [ -expire ]
 ### omitting the -expire parameter: the script will only display all the snaps older than -daysToKeep
 ### including the -expire parameter: the script will actually expire all the snaps older than -daysToKeep 
 
@@ -8,6 +8,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vip,
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$jobname = $null,
     [Parameter(Mandatory = $True)][string]$daysToKeep,
     [Parameter()][switch]$expire
 )
@@ -18,12 +19,20 @@ param (
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
 
-### cluster Id
-$clusterId = (api get cluster).id
+### filter on jobname
+$jobs = api get protectionJobs
+if($jobname){
+    $jobs = $jobs | Where-Object { $_.name -eq $jobname }
+    if($jobs.count -eq 0){
+        Write-Host "Job '$jobname' not found" -ForegroundColor Yellow
+        exit
+    }
+}
 
 ### find protectionRuns that are older than daysToKeep
 "Searching for old snapshots..."
-foreach ($job in (api get protectionJobs)) {
+
+foreach ($job in $jobs) {
 
     $jobId = $job.id
 
