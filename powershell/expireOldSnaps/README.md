@@ -6,6 +6,17 @@ This powershell script expires local snapshots older than x days. This is useful
 
 ## Warning! This script deletes backup data! Make sure you know what you are doing before you run it
 
+## Download the Scripts
+
+Run these commands from PowerShell to download the scripts into the current folder:
+
+```powershell
+# download commands
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/expireOldSnaps/expireOldSnaps.ps1).content | Out-File expireOldSnaps.ps1; (Get-Content expireOldSnaps.ps1) | Set-Content expireOldSnaps.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/expireOldSnaps/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# end of download commands
+```
+
 ## Components
 
 * expireOldSnaps.ps1: the main powershell script
@@ -45,36 +56,26 @@ Connected!
 Searching for old snapshots...
 
 Expiring VM Backup Snapshot from 11/29/2017 01:00:01
-
 Expiring SQL VM Backup Snapshot from 11/29/2017 15:19:28
-
 Expiring SQL VM Backup Snapshot from 11/29/2017 09:19:28
-
 Expiring NAS Backup Snapshot from 11/29/2017 01:45:01
-
 Expiring Infrastructure Snapshot from 11/29/2017 02:15:00
-
 Expiring TestDB Snapshot from 11/29/2017 15:15:29
-
 Expiring TestDB Snapshot from 11/29/2017 09:15:29
-
 Expiring Oracle Snapshot from 11/28/2017 22:35:47
-
 Expiring Oracle Snapshot from 11/28/2017 16:35:47
-
 Expiring CorpShare Snapshot from 11/29/2017 04:07:00
 ```
 
 You can run the script again you should see no results, unless the Cohesity cluster is very busy. It might take some time for the snapshots to actually be deleted.
 
-Also note that if you're waiting for capacity to be freed up, it may take hours to days for the garbage collector to actually free up the space. 
+Also note that if you're waiting for capacity to be freed up, it may take hours to days for the garbage collector to actually free up the space.
 
-## Download the Scripts
+## Parameters
 
-Run these commands from PowerShell to download the scripts into the current folder:
-
-```powershell
-# download commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/expireOldSnaps/expireOldSnaps.ps1).content | Out-File expireOldSnaps.ps1; (Get-Content expireOldSnaps.ps1) | Set-Content expireOldSnaps.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/expireOldSnaps/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-# end of download commands
+* -vip: Cohesity cluster to connect to
+* -username: Cohesity username (e.g. admin)
+* -domain: (optional) Active Directory domain (defaults to 'local')
+* -jobname: (optional) narrow scope to just the specified job
+* -daysToKeep: show/expire snapshots older than this many days
+* -expire: (optional) expire the snapshots (if omitted, the script will only show what 'would' be expired)
