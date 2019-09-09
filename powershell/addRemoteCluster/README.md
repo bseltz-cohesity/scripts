@@ -4,6 +4,17 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script establishes replication between two Cohesity clusters.
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download Commands
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/addRemoteCluster/addRemoteCluster.ps1).content | Out-File addRemoteCluster.ps1; (Get-Content addRemoteCluster.ps1) | Set-Content addRemoteCluster.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/addRemoteCluster/cohesityCluster.ps1).content | Out-File cohesityCluster.ps1; (Get-Content cohesityCluster.ps1) | Set-Content cohesityCluster.ps1
+# End Download Commands
+```
+
 ## Components
 
 * addRemoteCluster.ps1: the main powershell script
@@ -23,3 +34,14 @@ Connected!
 Added replication partnership awsce -> BSeltzVE01
 Added replication partnership awsce <- BSeltzVE01
 ```
+
+## Parameters
+
+* -vip: Cohesity Cluster to connect to
+* -username: Cohesity username
+* -domain: (optional) Active Directory domain of user (defaults to local)
+* -localStorageDomain: (optional) local storage domain or pairing (defaults to DefaultStorageDomain)
+* -remoteVip: remote cluster to pair for replication
+* -remoteUsername: username to connect to the remote cluster
+* -remoteDomain: (optional) remote user domain name (defaults to local)
+* -remoteStorageDomain: = (optional) remote storage domain or pairing (defaults to DefaultStorageDomain)
