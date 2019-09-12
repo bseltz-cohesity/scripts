@@ -58,7 +58,7 @@ if($null -eq $dbresults){
 }
 
 ### narrow the search results to the correct source database
-$dbresults = $searchresults.vms | Where-Object { $_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB }
+$dbresults = $dbresults | Where-Object { $_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB }
 if($null -eq $dbresults){
     write-host "Database $sourceDB Not Found" -foregroundcolor yellow
     exit
