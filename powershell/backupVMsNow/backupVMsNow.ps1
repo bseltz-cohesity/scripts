@@ -33,7 +33,13 @@ foreach($vm in get-content -Path $vmlist){
     $protectedVM = $protectedVMs | Where-Object { $_.name -eq $vm }
     if($protectedVM){
         # find my job
-        $job = $jobs | where-object { $protectedVM.id -in $_.sourceIds }
+        $job = $null
+        $foundVMs = api get /searchvms?vmName=$vm
+        if($foundVMs.vms.count -gt 0){
+            $foundVM = $foundVMs.vms | Where-Object {$_.vmDocument.objectName -eq $vm}
+            $jobName = $foundVM.vmDocument.jobName
+            $job = $jobs | where-object { $jobName -eq $_.name }
+        }
         if($job){
             write-host "Adding $vm ($($job.name))"
             # add vm to run now list for this job
@@ -43,6 +49,8 @@ foreach($vm in get-content -Path $vmlist){
             }else{
                 $vmIds[$job.id] += $protectedVM.id
             }
+        }else{
+            write-host "No job found for $vm"
         }
     }else{
         # this VM is not in a job
