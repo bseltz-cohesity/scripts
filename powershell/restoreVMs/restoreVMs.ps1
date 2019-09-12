@@ -27,10 +27,10 @@ $restores = @()
 $restoreParams = @{}
 
 # get list of VM backups
-$protectedVMs = api get "/searchvms?entityTypes=kVMware"
 
 foreach($vm in get-content -Path $vmlist){
     # this VM
+    $protectedVMs = api get "/searchvms?entityTypes=kVMware&vmName=$vm"
     $protectedVM = $protectedVMs.vms | Where-Object { $_.vmDocument.objectName -eq $vm }
     if($protectedVM){
         $protectedVM = $protectedVM[0]
