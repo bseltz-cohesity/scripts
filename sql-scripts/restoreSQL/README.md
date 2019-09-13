@@ -42,6 +42,7 @@ Restoring cohesitydb to sqldev01 as restoreTest
 * -ndfFolder: Location to place the secondary files (defaults to same as ndfFolder)
 * -ndfFolders: Locations to place various ndf files (see below)
 * -logTime: Point in time to replay the logs to during the restore (e.g. '2019-04-10 22:31:05')
+* -latest: Replay the logs to the latest point in time available
 * -wait: Wait for the restore to complete and report end status (e.g. kSuccess)
 * -overwrite: Overwrites an existing database (default is no overwrite)
 

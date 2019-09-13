@@ -21,7 +21,8 @@ param (
     [Parameter()][string]$ndfFolder,                     #single path to restore ndfs (Cohesity 5.0x)
     [Parameter()][string]$logTime,                       #date time to replay logs to e.g. '2019-01-20 02:01:47'
     [Parameter()][switch]$wait,                          #wait for completion
-    [Parameter()][string]$targetInstance = 'MSSQLSERVER' #SQL instance name on the targetServer
+    [Parameter()][string]$targetInstance = 'MSSQLSERVER', #SQL instance name on the targetServer
+    [Parameter()][switch]$latest
 )
 
 ### handle 6.0x alternate secondary data file locations
@@ -83,8 +84,10 @@ $ownerId = $latestdb.vmDocument.objectId.entity.sqlEntity.ownerId
 $versionNum = 0
 $validLogTime = $False
 
-if ($logTime) {
-    $logUsecs = dateToUsecs $logTime
+if ($logTime -or $latest) {
+    if($logTime){
+        $logUsecs = dateToUsecs $logTime
+    }
     $dbVersions = $latestdb.vmDocument.versions
 
     foreach ($version in $dbVersions) {
@@ -121,8 +124,20 @@ if ($logTime) {
             )
         }
         $logTimeRange = api post /restoreApp/timeRanges $GetRestoreAppTimeRangesArg
+        if($latest){
+            if(! $logTimeRange.ownerObjectTimeRangeInfoVec[0].PSobject.Properties['timeRangeVec']){
+                $logTime = $null
+                $latest = $null
+                break
+            }
+        }
         $logStart = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].startTimeUsecs
         $logEnd = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].endTimeUsecs
+        if($latest){
+            $logUsecs = $logEnd - 1000000
+            $validLogTime = $True
+            break
+        }
         if ($logStart -le $logUsecs -and $logUsecs -le $logEnd) {
             $validLogTime = $True
             break
