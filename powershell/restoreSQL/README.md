@@ -8,6 +8,17 @@ This script demonstrates how to perform an restore of a SQL database. The script
 
 This script can overwrite production data if you ask it to. Make sure you know what you are doing and test thoroughly before using in production!!!
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download Commands
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql-scripts/restoreSQL/restoreSQL.ps1).content | Out-File restoreSQL.ps1; (Get-Content restoreSQL.ps1) | Set-Content restoreSQL.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql-scripts/restoreSQL/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
+```
+
 ## Components
 
 * restoreSQL.ps1: the main powershell script
@@ -64,13 +75,4 @@ If you want to replay logs to a point in time, use the -logTime parameter and sp
 -logTime '2019-01-20 23:47:02'
 ```
 
-## Download the script
-
-Run these commands from PowerShell to download the script(s) into your current directory
-
-```powershell
-# Download Commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/restoreSQL/restoreSQL.ps1).content | Out-File restoreSQL.ps1; (Get-Content restoreSQL.ps1) | Set-Content restoreSQL.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/restoreSQL/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-# End Download Commands
-```
+Or if you want to replay the logs to the very latest available point in time, use the -latest parameter instead of the -logtime parameter.
