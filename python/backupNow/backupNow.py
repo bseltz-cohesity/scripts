@@ -128,7 +128,10 @@ if wait is True:
     while(newRunId == lastRunId):
         sleep(1)
         runs = api('get', 'protectionRuns?jobId=%s' % job[0]['id'])
-        newRunId = runs[0]['backupRun']['jobRunId']
+        if len(runs) > 0:
+            newRunId = runs[0]['backupRun']['jobRunId']
+        else:
+            newRunId = 1
     print("New Job Run ID: %s" % newRunId)
 
 # wait for job run to finish and report completion
