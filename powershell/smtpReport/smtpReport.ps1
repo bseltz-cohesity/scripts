@@ -76,7 +76,7 @@ $nowrap = 'nowrap'
 foreach($job in $jobs){
     $report = api get "reports/protectionSourcesJobsSummary?allUnderHierarchy=true&jobIds=$($job.id)"
     foreach($source in ($report.protectionSourcesJobsSummary | Sort-Object -Property {$_.protectionSource.name})){
-        $html += '<tr>'
+        
         $type = $source.protectionSource.environment.Substring(1)
         $name = $source.protectionSource.name
         $parentName = $source.registeredSource
@@ -160,6 +160,7 @@ foreach($job in $jobs){
             if(([datetime]$lastRunStartTime) -lt (get-date).AddHours(-25)){
                 $color = 'CC9999'
             }
+            $html += '<tr>'
             $html += td $type $color $nowrap
             $html += td $name $color $nowrap
             $html += td $parentName $color $nowrap
@@ -177,6 +178,7 @@ foreach($job in $jobs){
             $html += td $numDataReadBytes $color $nowrap
             $html += td $numLogicalBytesProtected $color $nowrap
             $html += td $lastRunErrorMsg $color $nowrap
+            $html += '</tr>'
         }
     }
 }
@@ -211,6 +213,6 @@ $html += '</tbody></table><br><br><hr><li>Color based on job status:
 write-host "sending report to $([string]::Join(", ", $sendTo))"
 ### send email report
 foreach($toaddr in $sendTo){
-    Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject "backupSummaryReport" -BodyAsHtml $html
+    Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject "$prefixTitle backupSummaryReport" -BodyAsHtml $html
 }
 $html | out-file smtpreport.html
