@@ -213,3 +213,4 @@ write-host "sending report to $([string]::Join(", ", $sendTo))"
 foreach($toaddr in $sendTo){
     Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject "backupSummaryReport" -BodyAsHtml $html
 }
+$html | out-file smtpreport.html
