@@ -73,10 +73,10 @@ Including the **-overwrite** parameter will overwrite an existing database. Use 
 
 ## Point in Time Recovery
 
-If you want to replay logs to a point in time, use the **-logTime** parameter and specify a date and time in military format like so:
+If you want to replay the logs to the very latest available point in time, use the **-latest** parameter instead of the -logtime parameter.
+
+Or, if you want to replay logs to a specific point in time, use the **-logTime** parameter and specify a date and time in military format like so:
 
 ```powershell
 -logTime '2019-01-20 23:47:02'
 ```
-
-Or if you want to replay the logs to the very latest available point in time, use the **-latest** parameter instead of the -logtime parameter.
