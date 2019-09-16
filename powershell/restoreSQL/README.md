@@ -40,7 +40,7 @@ Restoring cohesitydb to sqldev01 as restoreTest
 * -vip: Cohesity Cluster to connect to
 * -username: Cohesity username
 * -domain: Active Directory domain of user (defaults to local)
-* -sourceServer: Server name where the database was backed up
+* -sourceServer: Server name (or AAG name) where the database was backed up
 * -sourceDB: Original database name
 * -mdfFolder: Location to place the primary data file (e.g. C:\SQLData)
 
@@ -56,6 +56,10 @@ Restoring cohesitydb to sqldev01 as restoreTest
 * -latest: Replay the logs to the latest point in time available
 * -wait: Wait for the restore to complete and report end status (e.g. kSuccess)
 * -overwrite: Overwrites an existing database (default is no overwrite)
+
+## Always On Availability Groups
+
+Use the AAG name as the -sourceServer when restoring from an AAG backup (e.g. -sourceServer myAAG1)
 
 ## Overwrite Warning
 
