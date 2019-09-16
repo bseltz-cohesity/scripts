@@ -59,11 +59,11 @@ Restoring cohesitydb to sqldev01 as restoreTest
 
 ## Always On Availability Groups
 
-Use the AAG name as the -sourceServer when restoring from an AAG backup (e.g. -sourceServer myAAG1)
+Use the **AAG name** as the **-sourceServer** when restoring from an AAG backup (e.g. -sourceServer myAAG1)
 
 ## Overwrite Warning
 
-Including the -overwrite parameter will overwrite an existing database. Use this parameter with extreme caution.
+Including the **-overwrite** parameter will overwrite an existing database. Use this parameter with extreme caution.
 
 ## Multiple Folders for Secondary NDF Files
 
@@ -73,10 +73,10 @@ Including the -overwrite parameter will overwrite an existing database. Use this
 
 ## Point in Time Recovery
 
-If you want to replay logs to a point in time, use the -logTime parameter and specify a date and time in military format like so:
+If you want to replay logs to a point in time, use the **-logTime** parameter and specify a date and time in military format like so:
 
 ```powershell
 -logTime '2019-01-20 23:47:02'
 ```
 
-Or if you want to replay the logs to the very latest available point in time, use the -latest parameter instead of the -logtime parameter.
+Or if you want to replay the logs to the very latest available point in time, use the **-latest** parameter instead of the -logtime parameter.
