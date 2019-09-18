@@ -1,23 +1,20 @@
-### usage: ./chargebackReport.ps1 -vip mycluster -username myusername -domain mydomain.net -start '2019-07-14' -end '2019-07-21' -amt .10 -smtpServer 192.168.1.95 -sendTo myusername@mydomain.net -sendFrom reports@mydomain.net
-
+#./chargebackReport.ps1 -vip mycluster -username myusername [ -domain mydomain.net ] -start 05/01/2019 -end 05/31/2019 -amt .10 [ -prefix demo, test ] -sendTo myuser@mydomain.net, anotheruser@mydomain.net -smtpServer 192.168.1.95 -sendFrom backupreport@mydomain.net
+ 
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
-    [Parameter()][string]$domain = 'local', # local or AD domain
-    [Parameter()][string]$start = '', # start of date range 
-    [Parameter()][string]$end = '', # end of date range
-    [Parameter(Mandatory = $True)][string]$amt, # cost per GB of storage
+    [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
+    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
+    [Parameter()][string]$domain = 'local', #local or AD domain
+    [Parameter(Mandatory = $True)][string]$start,
+    [Parameter(Mandatory = $True)][string]$end,
+    [Parameter(Mandatory = $True)][string]$amt,
+    [Parameter()][array]$prefix = 'ALL', #report jobs with 'prefix' only
     [Parameter(Mandatory = $True)][string]$smtpServer, #outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, #outbound smtp port
     [Parameter(Mandatory = $True)][array]$sendTo, #send to address
     [Parameter(Mandatory = $True)][string]$sendFrom #send from address
 )
-
-function td($data, $color, $wrap='', $align='LEFT'){
-    '<td ' + $wrap + ' colspan="1" bgcolor="#' + $color + '" valign="top" align="' + $align + '" border="0"><font size="2">' + $data + '</font></td>'
-}
 
 ### source the cohesity-api helper code
 . ./cohesity-api
@@ -26,127 +23,128 @@ function td($data, $color, $wrap='', $align='LEFT'){
 apiauth -vip $vip -username $username -domain $domain
 
 ### Convert time
-if($start -eq ''){
-    $startDate = (get-date).AddMonths(-1)
-}else{
-    $startDate = (Get-Date -Date $start)
-}
-$uStart = dateToUsecs $startDate
+$uStart = ([int][double]::Parse((Get-Date -Date $start -UFormat %s))).ToString() + "000000"
+$uEnd = ([int][double]::Parse((Get-Date -Date $end -UFormat %s))).ToString() + "000000"
 
-if($end -eq ''){
-    $endDate = (get-date)
-}else{
-    $endDate  = (Get-Date -Date $end)
-}
-$uEnd = dateToUsecs $endDate
+$title = "($([string]::Join(", ", $prefix.ToUpper()))) Chargeback Report ($start - $end)"
 
-### gather storage statistics
-write-host "Gathering storage statistics..."
-$allInfo = api get /reports/objects/storage?startTimeUsecs=$uStart`&endTimeUsecs=$uEnd | Sort-Object -Property name
+$csvFileName = "$([string]::Join("_", $prefix.ToUpper()))_Chargeback_Report_$start_$end.csv"
 
-### html start
-$html = '<html>'
-$title = 'Chargeback Report for ' + $startDate.ToString('yyyy-MM-dd') + ' to ' + $endDate.ToString('yyyy-MM-dd')
+$date = (get-date).ToString()
 
-$html += '<div style="font-family: Roboto,RobotoDraft,Helvetica,Arial,sans-serif;font-size: small;"><font face="Tahoma" size="+3" color="#000080">
-<center>' + $title + '</center>
-</font>
-<hr>
-Report generated on ' + (get-date) + '<br>
-<br></div>'
+"Object,Size,Cost" | Out-File $csvFileName -Encoding ascii
 
-$html += '<table border="1" cellpadding="4" cellspacing="0" style="font-family: Roboto,RobotoDraft,Helvetica,Arial,sans-serif;font-size: small;">
-<tbody><tr bgcolor="#FFFFFF">'
+$html = '<html>
+<head>
+    <style>
+        p {
+            color: #555555;
+            font-family:Arial, Helvetica, sans-serif;
+        }
+        span {
+            color: #555555;
+            font-family:Arial, Helvetica, sans-serif;
+        }
+        
 
-$headings = @('Server',
-              'Unique Data', 
-              'Cost')
+        table {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #333333;
+            font-size: 0.75em;
+            border-collapse: collapse;
+            width: 100%;
+        }
 
-foreach($heading in $headings){
-    $html += td $heading 'CCCCCC' '' 'LEFT'
-}
-$html += '</tr>'
-$nowrap = 'nowrap'
+        tr {
+            border: 1px solid #F1F1F1;
+        }
 
-### open excel
-$excel = New-Object -ComObject excel.application
-$excel.visible = $True
+        td,
+        th {
+            width: 33%;
+            text-align: left;
+            padding: 6px;
+        }
 
-### add a default workbook
-$workbook = $excel.Workbooks.Add()
+        tr:nth-child(even) {
+            background-color: #F1F1F1;
+        }
+    </style>
+</head>
+<body>
+    
+    <div style="margin:15px;">
+            <img src="https://www.cohesity.com/wp-content/themes/cohesity/refresh_2018/templates/dist/images/footer/footer-logo-green.png" style="width:180px">
+        <p style="margin-top: 15px; margin-bottom: 15px;">
+            <span style="font-size:1.3em;">'
 
-### give the worksheet a name
-$uregwksht= $workbook.Worksheets.Item(1)
-$uregwksht.Name = 'Monthly Chargeback'
+$html += $title
+$html += '</span>
+<span style="font-size:0.75em; text-align: right; padding-top: 8px; padding-right: 2px; float: right;">'
+$html += $date
+$html += '</span>
+</p>
+<table>
+<tr>
+        <th>Object Name</th>
+        <th>Size</th>
+        <th>Cost</th>
+      </tr>'
 
-### Create a Title for the first worksheet and adjust the font
-$uregwksht.Cells.Item(1,1)= $title
+$allInfo = api get /reports/objects/storage 
 
-### merging a few cells on the top row to make the title look nicer
-$MergeCells = $uregwksht.Range("A1:H1")
-$MergeCells.Select() | Out-Null
-$MergeCells.MergeCells = $true
-$uregwksht.Cells(1,1).HorizontalAlignment = -4108
-$uregwksht.Cells.Item(1,1).Font.Size = 14
-$uregwksht.Cells.Item(1,1).Font.Bold=$True
-$uregwksht.Cells.Item(1,1).Font.Name = "Cambria"
-$uregwksht.Cells.Item(1,1).Font.ThemeFont = 1
-$uregwksht.Cells.Item(1,1).Font.ThemeColor = 4
-$uregwksht.Cells.Item(1,1).Font.ColorIndex = 55
-$uregwksht.Cells.Item(1,1).Font.Color = 8210719
-
-### create the column headers
-$uregwksht.Cells.Item(3,1) = 'Server'
-$uregwksht.Cells.Item(3,2) = 'Unique Data'
-$uregwksht.Cells.Item(3,3) = 'Cost'
-$uregwksht.Rows(3).Font.Bold=$True
-
-$dateString = (get-date).ToString().Replace(' ','_').Replace('/','-').Replace(':','-')
-$excelfileName = Join-Path -Path (get-location).path -ChildPath "Chargeback-$dateString.xlsx"
-
-$rownum = 4
-$color = 'FFFFFF'
+$totalSize = 0
+$totalCost = 0
 
 foreach ($allInfoItem in $allinfo) {
     $server = $allInfoItem.name
-    $snapshots = $allInfoItem.dataPoints
-    $maxsize = 0
-    foreach ($snapshotsItem in $snapshots) {
-        If ($snapshotsItem.snapshotTimeUsecs -lt $uEnd -And $snapshotsItem.snapshotTimeUsecs -gt $uStart) {
-            if($snapshotsItem.primaryPhysicalSizeBytes -gt $maxsize){
-                $maxsize = $snapshotsItem.primaryPhysicalSizeBytes
-            }
+    $jobName = $allInfoItem.jobName
+    $includeRecord = $false
+    foreach($pre in $prefix){
+        if ($jobName.tolower().startswith($pre.tolower()) -or $prefix -eq 'ALL') {
+            $includeRecord = $true
         }
     }
-    $maxsize = $maxsize/(1024*1024*1024) # GB
-    $chargeback = $maxsize * $amt
-    $html += '<tr>'
-    $excel.cells.item($rownum,1) = $server
-    $excel.cells.item($rownum,2) = [math]::Round($maxsize,2)
-    $excel.cells.item($rownum,3) = [math]::Round($chargeback,2)
-    $html += td $server $color $nowrap
-    $html += td ([math]::Round($maxsize,2)) $color $nowrap
-    $html += td ([math]::Round($chargeback,2)) $color $nowrap
-    $html += '</tr>'
-    $rownum += 1
+    if($includeRecord){
+        $snapshots = $allInfoItem.dataPoints
+        $maxsize = 0
+        foreach ($snapshotsItem in $snapshots) {
+            If ($snapshotsItem.snapshotTimeUsecs -lt $uEnd -And $snapshotsItem.snapshotTimeUsecs -gt $uStart) {
+                if($snapshotsItem.primaryPhysicalSizeBytes -gt $maxsize){
+                    $maxsize = $snapshotsItem.primaryPhysicalSizeBytes
+                }
+            }
+        }
+        $maxsize = [math]::Round($maxsize/(1024*1024*1024),2)
+        $chargeback = [math]::Round($maxsize * $amt,2)
+        $totalSize += $maxsize
+        $totalCost += $chargeback
+        "$server,$maxsize,$chargeback" | Out-File $csvFileName -Append ascii
+        $html += "<tr>
+            <td>$server</td>
+            <td>$maxsize</td>
+            <td>$chargeback</td>
+        </tr>"
+    }
 }
-$html += '</tbody></table></html>'
 
-### adjusting the column width so all data's properly visible
-$usedRange = $uregwksht.UsedRange	
-$usedRange.EntireColumn.AutoFit() | Out-Null
+"Total,$totalSize,$totalCost" | Out-File $csvFileName -Append ascii
 
-### saving & closing the file
-write-host "Saving Chargeback Report as $excelfileName..."
-$workbook.SaveAs($excelfileName)
-$workbook.close()
-$excel.quit()
+$html += "<tr>
+<td>Total</td>
+<td>$totalSize</td>
+<td>$totalCost</td>
+</tr>
+</table>                
+</div>
+</body>
+</html>"
 
-### send email report
+$html | out-file chargeBackReport.html
+
 write-host "sending report to $([string]::Join(", ", $sendTo))"
-
+### send email report
 foreach($toaddr in $sendTo){
-    Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject "ChargebackReport" -BodyAsHtml $html -Attachments $excelfileName
+    Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject $title -BodyAsHtml $html -Attachments $csvFileName
 }
 
-Remove-Item -Path $excelfileName
