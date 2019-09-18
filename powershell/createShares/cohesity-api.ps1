@@ -26,6 +26,7 @@ else {
 
     # ignore unsigned certificates
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
     Add-Type @"
     using System;
     using System.Net;

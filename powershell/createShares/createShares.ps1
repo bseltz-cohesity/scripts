@@ -6,7 +6,7 @@ param (
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
     [Parameter()][string]$shareDataFilename = './shares.csv',
-    [Parameter()][string]$sourcePathPrefix = '/ifs/myisilon/'
+    [Parameter()][string]$sourcePathPrefix = '/ifs/tpuisilon/'
 )
 
 ### source the cohesity-api helper code
@@ -29,9 +29,9 @@ foreach($shareData in $shareDataFile){
     # share line item
     if($shareItems[1].Contains('/')){
         $shareCount += 1
-        $folderPath = $shareItems[1].replace($sourcePathPrefix, '')
-        $viewName = $folderPath.split('/')[0]
-        $folderPath = $folderPath.split($viewName)[1]
+        $rootPath = $shareItems[1].replace($sourcePathPrefix, '')
+        $viewName, $folderPath = $rootPath.split('/', 2)
+        $folderPath = "/$folderPath"
         $shares += @{'viewName' = $viewName; 'name' = $shareItems[0]; 'folderPath' = $folderPath; 'permissions' = @() }
         # permission line item    
     }elseif($shareItems[1] -ne 'Account Type'){
