@@ -12,7 +12,8 @@ param (
     [Parameter()][string]$targetDB = $sourceDB, #desired clone DB name
     [Parameter()][string]$targetInstance = 'MSSQLSERVER', #SQL instance name on the targetServer
     [Parameter()][string]$logTime,
-    [Parameter()][switch]$wait
+    [Parameter()][switch]$wait,
+    [Parameter()][switch]$latest
 )
 
 ### source the cohesity-api helper code
@@ -73,8 +74,10 @@ if($null -eq $targetEntity){
 $versionNum = 0
 $validLogTime = $False
 
-if ($logTime) {
-    $logUsecs = dateToUsecs $logTime
+if ($logTime -or $latest) {
+    if($logTime){
+        $logUsecs = dateToUsecs $logTime
+    }
     $dbVersions = $latestdb.vmDocument.versions
 
     foreach ($version in $dbVersions) {
@@ -109,8 +112,20 @@ if ($logTime) {
             )
         }
         $logTimeRange = api post /restoreApp/timeRanges $GetRestoreAppTimeRangesArg
+        if($latest){
+            if(! $logTimeRange.ownerObjectTimeRangeInfoVec[0].PSobject.Properties['timeRangeVec']){
+                $logTime = $null
+                $latest = $null
+                break
+            }
+        }
         $logStart = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].startTimeUsecs
         $logEnd = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].endTimeUsecs
+        if($latest){
+            $logUsecs = $logEnd - 1000000
+            $validLogTime = $True
+            break
+        }
         if ($logStart -le $logUsecs -and $logUsecs -le $logEnd) {
             $validLogTime = $True
             break

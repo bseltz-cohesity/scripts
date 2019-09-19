@@ -52,7 +52,8 @@ $clones = api get ("/restoretasks?restoreTypes=kCloneView&" +
                                 "restoreTypes=kCloneApp&" +
                                 "restoreTypes=kCloneVMs") `
                                 | where-object { $_.restoreTask.destroyClonedTaskStateVec -eq $null } `
-                                | Where-Object { $_.restoreTask.performRestoreTaskState.base.type -eq $cloneTypes[$cloneType]}
+                                | Where-Object { $_.restoreTask.performRestoreTaskState.base.type -eq $cloneTypes[$cloneType]} `
+                                | Where-Object { $_.restoreTask.performRestoreTaskState.base.publicStatus -eq 'kSuccess' }
 
 ### tear down matching clone
 foreach ($clone in $clones){

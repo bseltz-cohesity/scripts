@@ -4,18 +4,16 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This script demonstrates how to perform a SQL Clone Attach using PowerShell. The script takes a thin-provisioned clone of the latest backup of a SQL database and attaches it to a SQL server.
 
-The script takes the following parameters:
+## Download the script
 
-* -vip (DNS or IP of the Cohesity Cluster)
-* -username (Cohesity User Name)
-* -domain (optional - defaults to 'local')
-* -sourceServer (source SQL Server Name)
-* -sourceDB (source Database Name)
-* -targetServer (optional - SQL Server to attach clone to, defaults to same as sourceServer)
-* -targetDB (optional - target Database Name - defaults to same as source)
-* -targetInstance (optional - name of SQL instance on targetServer, defaults to MSSQLSERVER)
-* -logTime (optional - point in time to replay the logs to - if omitted will default to time of latest DB backup)
-* -wait (wait for completion and report end status)
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Begin download commands
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cloneSQL/cloneSQL.ps1).content | Out-File cloneSQL.ps1; (Get-Content cloneSQL.ps1) | Set-Content cloneSQL.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cloneSQL/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End download commands
+```
 
 ## Components
 
@@ -35,13 +33,16 @@ Cloning CohesityDB to SQL2012DEV as CohesityDB-Dev (task name: dbClone-156253252
 Clone task completed with status: kSuccess
 ```
 
-## Download the script
+The script takes the following parameters:
 
-Run these commands from PowerShell to download the script(s) into your current directory
-
-```powershell
-# Begin download commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cloneSQL/cloneSQL.ps1).content | Out-File cloneSQL.ps1; (Get-Content cloneSQL.ps1) | Set-Content cloneSQL.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cloneSQL/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-# End download commands
-```
+* -vip (DNS or IP of the Cohesity Cluster)
+* -username (Cohesity User Name)
+* -domain (optional - defaults to 'local')
+* -sourceServer (source SQL Server Name)
+* -sourceDB (source Database Name)
+* -targetServer (optional - SQL Server to attach clone to, defaults to same as sourceServer)
+* -targetDB (optional - target Database Name - defaults to same as source)
+* -targetInstance (optional - name of SQL instance on targetServer, defaults to MSSQLSERVER)
+* -logTime (optional - point in time to replay the logs to - if omitted will default to time of latest DB backup)
+* -wait (wait for completion and report end status)
+* -latest (optional - replay the logs to the latest point in time available)
