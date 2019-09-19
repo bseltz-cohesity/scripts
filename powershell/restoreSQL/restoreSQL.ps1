@@ -1,4 +1,4 @@
-### v6.2 - added support for replicated recoveries
+### v2019-09-19 - added support for replicated recoveries
 ### usage (Cohesity 5.x): ./restore-SQL.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB proddb -targetServer w2012a -targetDB bseltz-test-restore -overWrite -mdfFolder c:\sqldata -ldfFolder c:\sqldata\logs -ndfFolder c:\sqldata\ndf
 
 ### usage (Cohesity 6.x): ./restore-SQL.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB cohesitydb -targetDB cohesitydb-restore -overWrite -mdfFolder c:\SQLData -ldfFolder c:\SQLData\logs -ndfFolders @{'*1.ndf'='E:\sqlrestore\ndf1'; '*2.ndf'='E:\sqlrestore\ndf2'}
@@ -12,10 +12,10 @@ param (
     [Parameter()][string]$domain = 'local',              #local or AD domain
     [Parameter(Mandatory = $True)][string]$sourceServer, #protection source where the DB was backed up
     [Parameter(Mandatory = $True)][string]$sourceDB,     #name of the source DB we want to restore
-    [Parameter()][string]$targetServer,                  #where to restore the DB to
+    [Parameter()][string]$targetServer = $sourceServer,  #where to restore the DB to
     [Parameter()][string]$targetDB = $sourceDB,          #desired restore DB name
     [Parameter()][switch]$overWrite,                     #overwrite existing DB
-    [Parameter(Mandatory = $True)][string]$mdfFolder,    #path to restore the mdf
+    [Parameter()][string]$mdfFolder,                     #path to restore the mdf
     [Parameter()][string]$ldfFolder = $mdfFolder,        #path to restore the ldf
     [Parameter()][hashtable]$ndfFolders,                 #paths to restore the ndfs (requires Cohesity 6.0x)
     [Parameter()][string]$ndfFolder,                     #single path to restore ndfs (Cohesity 5.0x)
@@ -174,15 +174,32 @@ $restoreTask = @{
                 'restoreParams' = @{
                     'sqlRestoreParams' = @{
                         'captureTailLogs' = $false;
-                        'dataFileDestination' = $mdfFolder;
-                        'logFileDestination' = $ldfFolder;
-                        'secondaryDataFileDestinationVec' = $secondaryFileLocation
-                        "newDatabaseName" = $targetDB;
+                        'secondaryDataFileDestinationVec' = @();
                         'alternateLocationParams' = @{};
                     };
                 }
             }
         )
+    }
+}
+
+### if not restoring to original server/DB
+if($targetDB -ne $sourceDB -or $targetServer -ne $sourceServer){
+    if('' -eq $mdfFolder){
+        write-host "-mdfFolder must be specified when restoring to a new database name or different target server" -ForegroundColor Yellow
+        exit
+    }
+    $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['dataFileDestination'] = $mdfFolder;
+    $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['logFileDestination'] = $ldfFolder;
+    $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['secondaryDataFileDestinationVec'] = $secondaryFileLocation;
+    $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['newDatabaseName'] = $targetDB;    
+}
+
+### overwrite warning
+if($targetDB -eq $sourceDB -and $targetServer -eq $sourceServer){
+    if(! $overWrite){
+        write-host "Please use the -overWrite parameter to confirm overwrite of the source database!" -ForegroundColor Yellow
+        exit
     }
 }
 
@@ -198,7 +215,7 @@ if($validLogTime -eq $True){
 }
 
 ### search for target server
-if($targetServer){
+if($targetServer -ne $sourceServer){
     $targetEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $targetServer }
     if($null -eq $targetEntity){
         Write-Host "Target Server Not Found" -ForegroundColor Yellow
@@ -224,6 +241,9 @@ if($ndfFolder){
 if($overWrite){
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['dbRestoreOverwritePolicy'] = 1
 }
+
+#$restoreTask | ConvertTo-Json -Depth 99
+#exit
 
 ### execute the recovery task (post /recoverApplication api call)
 $response = api post /recoverApplication $restoreTask
