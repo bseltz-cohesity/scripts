@@ -27,9 +27,7 @@ Place both files in a folder together and run the main script like so:
                  -username myusername `
                  -domain mydomain.net `
                  -prefix demo,test `
-                 -start '2019-08-01' `
-                 -end '2019-09-01' `
-                 -amt 0.10
+                 -costPerGB 0.10 `
                  -sendTo myuser@mydomain.net, anotheruser@mydomain.net `
                  -smtpServer 192.168.1.95 `
                  -sendFrom backupreport@mydomain.net
@@ -41,10 +39,25 @@ Place both files in a folder together and run the main script like so:
 * -username: Cohesity username
 * -domain: Active Directory domain of user (defaults to local)
 * -prefix: job name prefixes to include in the report (comma separated, defaults to all jobs if omitted)
-* -start: start of date range to report on
-* -end: end of date range to report on
-* -amt: Cost per GB per date range (e.g. per month)
+* -costPerGB: Cost per GB per date range (e.g. per month)
 * -sendTo: email addresses to send report to (comma separated)
 * -smtpServer: SMTP gateway to forward email through
 * -smtpPort: SMTP port to use (default is 25)
 * -sendFrom: email address to show in the from field
+
+## Date Range Parameters
+
+If no date range parameters are specified, the date range will default to the last 31 days. Otherwise you can use one of the following:
+
+* -lastXdays: (optional) the range will be from X days ago to today (e.g. -lastXdays 14)
+
+or
+
+* -lastCalendarMonth: (optional) the range will be from the first day of last month to the first day of this month.
+
+or
+
+* -startDate: (optional) start of date range to report on (e.g. -startDate '2019-08-01')
+* -endDate: (optional) end of date range to report on (e.g. -endDate '2019-09-01')
+
+Keep in mind that if your date range is older than your backup retention, object sizes will be returned as 0!
