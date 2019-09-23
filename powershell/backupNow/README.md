@@ -41,6 +41,13 @@ Running My Job...
 Job finished with status: kSuccess
 ```
 
+## Mandatory Parameters
+
+* -vip: DNS or IP of the Cohesity Cluster
+* -username: Cohesity User Name
+* -domain: (optional) - defaults to 'local'
+* -jobName: name of protection job to run
+
 ## Optional Parameters
 
 * -keepLocalFor: days to keep local snapshot (default is 5 days)
@@ -50,3 +57,4 @@ Job finished with status: kSuccess
 * -keepReplicaFor: days to keep replica for (default is 5 days)
 * -enable: (optional) enable a paused job before running, then disable when done
 * -backupType: (optional) choose one of kRegular, kFull, kLog or kSystem backup types. Default is kRegular (incremental)
+* -objects: (optional) comma separated list of object names to include in the job run
