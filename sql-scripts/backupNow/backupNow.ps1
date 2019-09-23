@@ -13,7 +13,8 @@ param (
     [Parameter()][string]$archiveTo = $null,  # optional - target to archive to
     [Parameter()][int]$keepArchiveFor = 5,  # keep archive for x days
     [Parameter()][switch]$enable,  # enable a disabled job, run it, then disable when done
-    [Parameter()][ValidateSet(“kRegular”,”kFull”,”kLog”,"kSystem")][string]$backupType = 'kRegular'
+    [Parameter()][ValidateSet(“kRegular”,”kFull”,”kLog”,"kSystem")][string]$backupType = 'kRegular',
+    [Parameter()][array]$objects
 )
 
 # source the cohesity-api helper code
@@ -21,6 +22,45 @@ param (
 
 # authenticate
 apiauth -vip $vip -username $username -domain $domain
+
+# build list of sourceIds if specified
+function getObjectId($objectName){
+    $global:_object_id = $null
+
+    function get_nodes($obj){
+        if($obj.protectionSource.name -eq $objectName){
+            $global:_object_id = $obj.protectionSource.id
+            break
+        }
+        if($obj.PSObject.Properties['nodes']){
+            foreach($node in $obj.nodes){
+                if($null -eq $global:_object_id){
+                    get_nodes $node
+                }
+            }
+        }
+    }
+    
+    foreach($source in (api get protectionSources)){
+        if($null -eq $global:_object_id){
+            get_nodes $source
+        }
+    }
+    return $global:_object_id
+}
+
+if($objects){
+    $sourceIds = @()
+    foreach($object in $objects){
+        $objectId = getObjectId $object
+        if($objectId){
+            $sourceIds += $objectId
+        }else{
+            write-host "Object $object not found" -ForegroundColor Yellow
+            exit
+        }
+    }    
+}
 
 # find the jobID
 $job = (api get protectionJobs | Where-Object name -ieq $jobName)
@@ -43,8 +83,12 @@ $newRunId = $lastRunId = $runs[0].backupRun.jobRunId
 $finishedStates = @('kCanceled', 'kSuccess', 'kFailure')
 
 # wait for existing job run to finish
-"waiting for existing job run to finish..."
+$alertWaiting = $True
 while ($runs[0].backupRun.status -notin $finishedStates){
+    if($alertWaiting){
+        "waiting for existing job run to finish..."
+        $alertWaiting = $false
+    }
     sleep 5
     $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
 }
@@ -101,6 +145,11 @@ $jobdata = @{
    "copyRunTargets" = $copyRunTargets
 }
 
+# Add sourceIds if soecified
+if($objects){
+    $jobdata['sourceIds'] = $sourceIds
+}
+
 # enable job
 if($enable){
     $lastRunTime = (api get "protectionRuns?jobId=$jobId&numRuns=1").backupRun.stats.startTimeUsecs
@@ -145,4 +194,3 @@ if($runs[0].backupRun.status -eq 'kSuccess'){
 }else{
     exit 1
 }
-
