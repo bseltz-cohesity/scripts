@@ -22,6 +22,7 @@ parser.add_argument('-ka', '--keepArchiveFor', type=int, default=5)
 parser.add_argument('-e', '--enable', action='store_true')
 parser.add_argument('-w', '--wait', action='store_true')
 parser.add_argument('-t', '--backupType', type=str, choices=['kLog', 'kRegular', 'kFull'], default='kRegular')
+parser.add_argument('-o', '--objectname', action='append', type=str)
 
 args = parser.parse_args()
 
@@ -37,12 +38,50 @@ keepArchiveFor = args.keepArchiveFor
 enable = args.enable
 wait = args.wait
 backupType = args.backupType
+objectnames = args.objectname
 
 if enable is True:
     wait = True
 
 ### authenticate
 apiauth(vip, username, domain)
+
+
+### get object ID
+def getObjectId(objectName):
+
+    d = {'_object_id': None}
+
+    def get_nodes(node):
+
+        if node['protectionSource']['name'].lower() == objectName.lower():
+            d['_object_id'] = node['protectionSource']['id']
+            exit
+        if 'nodes' in node:
+            for node in node['nodes']:
+                if d['_object_id'] is None:
+                    get_nodes(node)
+                else:
+                    exit
+
+    for source in (api('get', 'protectionSources')):
+        if d['_object_id'] is None:
+            get_nodes(source)
+
+    return d['_object_id']
+
+
+### get source IDs
+sourceIds = None
+if objectnames is not None:
+    sourceIds = []
+    for objectName in objectnames:
+        sourceId = getObjectId(objectName)
+        if sourceId is not None:
+            sourceIds.append(sourceId)
+        else:
+            print('Object %s not found!' % objectName)
+            exit()
 
 ### find protectionJob
 job = [job for job in api('get', 'protectionJobs') if job['name'].lower() == jobName.lower()]
@@ -80,6 +119,9 @@ jobData = {
     "sourceIds": [],
     "runType": backupType
 }
+
+if sourceIds is not None:
+    jobData['sourceIds'] = sourceIds
 
 if replicateTo is not None:
     remote = [remote for remote in api('get', 'remoteClusters') if remote['name'].lower() == replicateTo.lower()]

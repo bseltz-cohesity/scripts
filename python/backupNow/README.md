@@ -4,6 +4,18 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This Python script performs a runNow on a protection job and optionally replicates and/or archives the backup to the specified targets. Also, the script will optionally enable a disabled job to run it, and disable it when done. The script will wait for the job to fimish and report the end status of the job.
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```bash
+# Begin download commands
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNow/backupNow.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNow/pyhesity.py
+chmod +x backupNow.py
+# End download commands
+```
+
 ## Components
 
 * backupNow.py: the main PowerShell script
@@ -32,6 +44,7 @@ Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/prote
 ## Optional Parameters
 
 * -d, --domain: active directory domain of user (default is local)
+* -o, --objectname: name of object to backup (repeat this parameter for multiple objects)
 * -k, --keepLocalFor: days to keep local snapshot (default is 5 days)
 * -a, --archiveTo: name of archival target to archive to
 * -ka, --keepArchiveFor: days to keep in archive (default is 5 days)
@@ -40,15 +53,3 @@ Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/prote
 * -e, --enable: enable a paused job before running, then disable when done
 * -w, --wait: wait for backup run to complete and report result
 * -t, --backupType: choose one of kRegular, kFull or kLog backup types. Default is kRegular (incremental)
-
-## Download the script
-
-Run these commands from PowerShell to download the script(s) into your current directory
-
-```bash
-# Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNow/backupNow.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNow/pyhesity.py
-chmod +x backupNow.py
-# End download commands
-```
