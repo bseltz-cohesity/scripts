@@ -15,6 +15,7 @@ Run these commands from PowerShell to download the scripts into your current dir
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/logicalUsage/logicalUsage.ps1).content | Out-File logicalUsage.ps1; (Get-Content logicalUsage.ps1) | Set-Content logicalUsage.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/snapshotList/snapshotList.ps1).content | Out-File snapshotList.ps1; (Get-Content snapshotList.ps1) | Set-Content snapshotList.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/storageChart/storageChart.ps1).content | Out-File storageChart.ps1; (Get-Content storageChart.ps1) | Set-Content storageChart.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/JobSizeEstimate/JobSizeEstimate.ps1).content | Out-File JobSizeEstimate.ps1; (Get-Content JobSizeEstimate.ps1) | Set-Content JobSizeEstimate.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cloneList/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End download commands
 ```
@@ -60,4 +61,14 @@ Expire snapshots older than 90 days:
                      -domain mydomain.net `
                      -daysToKeep 90 `
                      -expire
+```
+
+Estimate the storage consumption of a protection job:
+
+```powershell
+.\jobSizeEstimate.ps1 -vip mycluster `
+                      -username myuser `
+                      -domain mydomain.net `
+                      -jobName 'SQL Backup' `
+                      -fullFactor 50
 ```
