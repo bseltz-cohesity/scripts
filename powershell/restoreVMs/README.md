@@ -55,3 +55,4 @@ restoring pb-centos01
 * -prefix: (optional) add a prefix to the VM names during restore
 * -poweron: (optional) power on the VMs during restore (default is false)
 * -wait: (optional) wait for restore tasks to complete
+* -recoverDate: (optional) use latest point in time at or before date, e.g. '2019-10-01 23:30:00'
