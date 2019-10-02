@@ -59,3 +59,12 @@ $nasRecovery = @{
 
 "Recovering $shareName as view $viewName"
 $result = api post restore/recover $nasRecovery
+if($result){
+    sleep 1
+    $newView = (api get views).views | Where-Object { $_.name -eq $viewName }
+    $newView | setApiProperty -name enableSmbViewDiscovery -value $True
+    $newView.qos = @{
+        "principalName" = 'TestAndDev High';
+    }
+    $null = api put views $newView
+}
