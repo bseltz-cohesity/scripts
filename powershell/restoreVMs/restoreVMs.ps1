@@ -9,7 +9,8 @@ param (
     [Parameter()][string]$vmlist = './vmlist.txt', # list of VMs to recover
     [Parameter()][string]$prefix = '',
     [Parameter()][switch]$poweron, # leave powered off by default
-    [Parameter()][switch]$wait # wait for restore tasks to complete
+    [Parameter()][switch]$wait, # wait for restore tasks to complete
+    [Parameter()][string]$recoverDate = $null
 )
 
 ### source the cohesity-api helper code
@@ -26,6 +27,10 @@ if (!(Test-Path -Path $vmlist)) {
 $restores = @()
 $restoreParams = @{}
 
+if($recoverDate){
+    $recoverUsecs = dateToUsecs $recoverDate
+}
+
 # get list of VM backups
 
 foreach($vm in get-content -Path $vmlist){
@@ -34,44 +39,62 @@ foreach($vm in get-content -Path $vmlist){
     $protectedVM = $protectedVMs.vms | Where-Object { $_.vmDocument.objectName -eq $vm }
     if($protectedVM){
         $protectedVM = $protectedVM[0]
-        write-host "restoring $vm"
-        if($protectedVM.registeredSource.id -notin $restores){
-            # create restore parameters for this vCenter
-            $restores += $protectedVM.registeredSource.id
-            $recoverDate=(get-date).ToString().Replace(' ','_').Replace('/','-').Replace(':','-')
-            $restoreParams[$protectedVM.registeredSource.id] = @{
-                "name"                         = "Recover-$($protectedVM.registeredSource.id)-$recoverDate";
-                "objects"                      = @();
-                "powerStateConfig"             = @{
-                    "powerOn" = $false
-                };
-                "restoredObjectsNetworkConfig" = @{
-                    "disableNetwork" = $false
-                };
-                "continueRestoreOnError"       = $false;
-                "vaultRestoreParams"           = @{
-                    "glacier" = @{
-                        "retrievalType" = "kStandard"
-                    }
+        # get correct version
+        $recoverVersion = $null
+        if($recoverDate){
+            foreach($version in $protectedVM.vmDocument.versions){
+                if($version.instanceId.jobStartTimeUsecs -lt ($recoverUsecs+3600000000)){
+                    $recoverVersion = $version
+                    break
                 }
             }
-            if($poweron){
-                $restoreParams[$protectedVM.registeredSource.id].powerStateConfig.powerOn = $True
-            }
-            
-            if($prefix -ne ''){
-                $restoreParams[$protectedVM.registeredSource.id]['renameRestoredObjectParam'] = @{'prefix' = "$prefix"}
-            }
+        }else{
+            $recoverVersion = $protectedVM.vmDocument.versions[0]
         }
-        # add this VM to list of VMs to restore
-        $restoreObject = @{
-            "jobId" = $protectedVM.vmDocument.objectId.jobId;
-            "jobUid" = $protectedVM.vmDocument.objectId.jobUid;
-            "entity" = $protectedVM.vmDocument.objectId.entity;
-            "jobInstanceId" = $protectedVM.vmDocument.versions[0].instanceId.jobInstanceId;
-            "startTimeUsecs" = $protectedVM.vmDocument.versions[0].instanceId.jobStartTimeUsecs
+        if($recoverVersion){
+            write-host "restoring $vm"
+            if($protectedVM.registeredSource.id -notin $restores){
+                # create restore parameters for this vCenter
+                $restores += $protectedVM.registeredSource.id
+                $recoverDateString=(get-date).ToString().Replace(' ','_').Replace('/','-').Replace(':','-')
+                $restoreParams[$protectedVM.registeredSource.id] = @{
+                    "name"                         = "Recover-$($protectedVM.registeredSource.id)-$recoverDateString";
+                    "objects"                      = @();
+                    "powerStateConfig"             = @{
+                        "powerOn" = $false
+                    };
+                    "restoredObjectsNetworkConfig" = @{
+                        "disableNetwork" = $false
+                    };
+                    "continueRestoreOnError"       = $false;
+                    "vaultRestoreParams"           = @{
+                        "glacier" = @{
+                            "retrievalType" = "kStandard"
+                        }
+                    }
+                }
+                if($poweron){
+                    $restoreParams[$protectedVM.registeredSource.id].powerStateConfig.powerOn = $True
+                }
+                
+                if($prefix -ne ''){
+                    $restoreParams[$protectedVM.registeredSource.id]['renameRestoredObjectParam'] = @{'prefix' = "$prefix"}
+                }
+            }
+
+            # add this VM to list of VMs to restore
+            $restoreObject = @{
+                "jobId" = $protectedVM.vmDocument.objectId.jobId;
+                "jobUid" = $protectedVM.vmDocument.objectId.jobUid;
+                "entity" = $protectedVM.vmDocument.objectId.entity;
+                "jobInstanceId" = $recoverVersion.instanceId.jobInstanceId;
+                "startTimeUsecs" = $recoverVersion.instanceId.jobStartTimeUsecs
+            }
+            $restoreParams[$protectedVM.registeredSource.id].objects += $restoreObject
+        }else{
+            # no backups for this VM
+            write-host "skipping $vm (not protected)"
         }
-        $restoreParams[$protectedVM.registeredSource.id].objects += $restoreObject
     }else{
         # no backups for this VM
         write-host "skipping $vm (not protected)"
