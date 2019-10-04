@@ -49,19 +49,6 @@ function getObjectId($objectName){
     return $global:_object_id
 }
 
-if($objects){
-    $sourceIds = @()
-    foreach($object in $objects){
-        $objectId = getObjectId $object
-        if($objectId){
-            $sourceIds += $objectId
-        }else{
-            write-host "Object $object not found" -ForegroundColor Yellow
-            exit
-        }
-    }    
-}
-
 # find the jobID
 $job = (api get protectionJobs | Where-Object name -ieq $jobName)
 if($job){
@@ -74,6 +61,61 @@ if($job){
 }else{
     Write-Warning "Job $jobName not found!"
     exit 1
+}
+
+# handle SQL DB run now objects
+if($environment -eq 'kSQL' -and $job.environmentParameters.sqlParameters.backupType -eq 'kSqlVSSFile'){
+    if($objects){
+        $runNowParameters = @()
+        foreach($object in $objects){
+            $server, $instance, $db = $object.split('/')
+            $serverObjectId = getObjectId $server
+            if($serverObjectId){
+                if(! ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId})){
+                    $runNowParameters += @{
+                        "sourceId" = $serverObjectId;
+                        "databaseIds" = @()
+                    }
+                }
+                $serverSource = api get "protectionSources?id=$serverObjectId"
+                if($serverSource.PSObject.Properties['applicationNodes']){
+                    $instanceNode = $serverSource.applicationNodes | where-object {$_.protectionSource.name -eq $instance}
+                    if($instanceNode){
+                        $dbNode = $instanceNode.nodes | Where-Object {$_.protectionSource.Name -eq "$instance/$db"}
+                        if($dbNode){
+                            $dbId = $dbNode.protectionSource.id
+                            ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId}).databaseIds += $dbId
+                        }else{
+                            write-host "Object $object not found (db name)" -ForegroundColor Yellow
+                            exit                            
+                        }
+                    }else{
+                        write-host "Object $object not found (instance name)" -ForegroundColor Yellow
+                        exit
+                    }
+                }else{
+                    write-host "Object $object not found (server name)" -ForegroundColor Yellow
+                    exit                     
+                }
+            }else{
+                write-host "Object $object not found (server name)" -ForegroundColor Yellow
+                exit                
+            }
+        }
+    }
+}else{
+    if($objects){
+        $sourceIds = @()
+        foreach($object in $objects){
+            $objectId = getObjectId $object
+            if($objectId){
+                $sourceIds += $objectId
+            }else{
+                write-host "Object $object not found" -ForegroundColor Yellow
+                exit
+            }
+        }    
+    }
 }
 
 # get last run id
@@ -145,9 +187,13 @@ $jobdata = @{
    "copyRunTargets" = $copyRunTargets
 }
 
-# Add sourceIds if soecified
+# Add sourceIds if specified
 if($objects){
-    $jobdata['sourceIds'] = $sourceIds
+    if($environment -eq 'kSQL' -and $job.environmentParameters.sqlParameters.backupType -eq 'kSqlVSSFile'){
+        $jobdata['runNowParameters'] = $runNowParameters
+    }else{
+        $jobdata['sourceIds'] = $sourceIds
+    }
 }
 
 # enable job
