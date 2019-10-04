@@ -87,19 +87,19 @@ if($environment -eq 'kSQL' -and $job.environmentParameters.sqlParameters.backupT
                             ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId}).databaseIds += $dbId
                         }else{
                             write-host "Object $object not found (db name)" -ForegroundColor Yellow
-                            exit                            
+                            exit 1
                         }
                     }else{
                         write-host "Object $object not found (instance name)" -ForegroundColor Yellow
-                        exit
+                        exit 1
                     }
                 }else{
                     write-host "Object $object not found (server name)" -ForegroundColor Yellow
-                    exit                     
+                    exit 1
                 }
             }else{
                 write-host "Object $object not found (server name)" -ForegroundColor Yellow
-                exit                
+                exit 1
             }
         }
     }
@@ -112,7 +112,7 @@ if($environment -eq 'kSQL' -and $job.environmentParameters.sqlParameters.backupT
                 $sourceIds += $objectId
             }else{
                 write-host "Object $object not found" -ForegroundColor Yellow
-                exit
+                exit 1
             }
         }    
     }
