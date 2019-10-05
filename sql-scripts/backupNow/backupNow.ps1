@@ -24,6 +24,8 @@ param (
 apiauth -vip $vip -username $username -domain $domain
 
 # build list of sourceIds if specified
+$sources = @{}
+
 function getObjectId($objectName){
     $global:_object_id = $null
 
@@ -41,7 +43,7 @@ function getObjectId($objectName){
         }
     }
     
-    foreach($source in (api get protectionSources)){
+    foreach($source in $sources){
         if($null -eq $global:_object_id){
             get_nodes $source
         }
@@ -57,6 +59,12 @@ if($job){
     if($environment -notin ('kOracle', 'kSQL') -and $backupType -eq 'kLog'){
         Write-Warning "BackupType kLog not applicable to $environment jobs"
         exit 1
+    }
+    if($objects){
+        $sources = api get "protectionSources?environments=$environment"
+        if($environment -eq 'kSQL'){
+            $sources = $sources.nodes | where-object { $_.protectionSource.id -in $job.sourceIds }
+        }
     }
 }else{
     Write-Warning "Job $jobName not found!"
