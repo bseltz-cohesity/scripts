@@ -34,6 +34,10 @@ function getObjectId($objectName){
             $global:_object_id = $obj.protectionSource.id
             break
         }
+        if($obj.name -eq $objectName){
+            $global:_object_id = $obj.id
+            break
+        }        
         if($obj.PSObject.Properties['nodes']){
             foreach($node in $obj.nodes){
                 if($null -eq $global:_object_id){
@@ -61,9 +65,15 @@ if($job){
         exit 1
     }
     if($objects){
-        $sources = api get "protectionSources?environments=$environment"
+        # $sources = api get "protectionSources?environments=$environment"
+        # if($environment -eq 'kSQL'){
+        #     $sources = $sources.nodes | where-object { $_.protectionSource.id -in $job.sourceIds }
+        # }
         if($environment -eq 'kSQL'){
+            $sources = api get "protectionSources?environments=$environment"
             $sources = $sources.nodes | where-object { $_.protectionSource.id -in $job.sourceIds }
+        }else{
+            $sources = api get "protectionSources/objects?objectIds=$($job.sourceIds -join ',')"
         }
     }
 }else{
