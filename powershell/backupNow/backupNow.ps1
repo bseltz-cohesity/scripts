@@ -65,10 +65,6 @@ if($job){
         exit 1
     }
     if($objects){
-        # $sources = api get "protectionSources?environments=$environment"
-        # if($environment -eq 'kSQL'){
-        #     $sources = $sources.nodes | where-object { $_.protectionSource.id -in $job.sourceIds }
-        # }
         if($environment -eq 'kSQL'){
             $sources = api get "protectionSources?environments=$environment"
             $sources = $sources.nodes | where-object { $_.protectionSource.id -in $job.sourceIds }
