@@ -22,7 +22,8 @@ param (
     [Parameter()][string]$logTime,                       #date time to replay logs to e.g. '2019-01-20 02:01:47'
     [Parameter()][switch]$wait,                          #wait for completion
     [Parameter()][string]$targetInstance = 'MSSQLSERVER', #SQL instance name on the targetServer
-    [Parameter()][switch]$latest
+    [Parameter()][switch]$latest,
+    [Parameter()][switch]$noRecovery
 )
 
 ### handle 6.0x alternate secondary data file locations
@@ -181,6 +182,10 @@ $restoreTask = @{
             }
         )
     }
+}
+
+if($noRecovery){
+    $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.withNoRecovery = $True
 }
 
 ### if not restoring to original server/DB
