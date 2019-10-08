@@ -14,7 +14,8 @@ param (
     [Parameter()][int]$keepArchiveFor = 5,  # keep archive for x days
     [Parameter()][switch]$enable,  # enable a disabled job, run it, then disable when done
     [Parameter()][ValidateSet(“kRegular”,”kFull”,”kLog”,"kSystem")][string]$backupType = 'kRegular',
-    [Parameter()][array]$objects
+    [Parameter()][array]$objects,
+    [Parameter()][switch]$progress
 )
 
 # source the cohesity-api helper code
@@ -231,8 +232,17 @@ while($newRunId -eq $lastRunId){
 }
 
 # wait for job run to finish
+$lastProgress = -1
 while ($runs[0].backupRun.status -notin $finishedStates){
     sleep 5
+    if($progress){
+        $progressMonitor = api get "/progressMonitors?taskPathVec=backup_$($newRunId)_1&includeFinishedTasks=true&excludeSubTasks=false"
+        $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
+        if($percentComplete -gt $lastProgress){
+            "{0} percent complete" -f [math]::Round($percentComplete, 0)
+            $lastProgress = $percentComplete
+        }
+    }
     $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
 }
 

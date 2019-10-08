@@ -57,6 +57,7 @@ Restoring cohesitydb to sqldev01 as restoreTest
 * -wait: Wait for the restore to complete and report end status (e.g. kSuccess)
 * -overwrite: Overwrites an existing database (default is no overwrite)
 * -noRecovery: Restore the DB with NORECOVER option (default is to recover)
+* -progress: (optional) display percent complete
 
 ## Always On Availability Groups
 

@@ -23,7 +23,8 @@ param (
     [Parameter()][switch]$wait,                          #wait for completion
     [Parameter()][string]$targetInstance = 'MSSQLSERVER', #SQL instance name on the targetServer
     [Parameter()][switch]$latest,
-    [Parameter()][switch]$noRecovery
+    [Parameter()][switch]$noRecovery,
+    [Parameter()][switch]$progress
 )
 
 ### handle 6.0x alternate secondary data file locations
@@ -257,11 +258,20 @@ if($response){
     "Restoring $sourceDB to $targetServer as $targetDB"
 }
 
-if($wait){
+if($wait -or $progress){
+    $lastProgress = -1
     $taskId = $response.restoreTask.performRestoreTaskState.base.taskId
     $finishedStates = @('kSuccess','kFailed','kCanceled', 'kFailure')
     while($True){
         $status = (api get /restoretasks/$taskId).restoreTask.performRestoreTaskState.base.publicStatus
+        if($progress){
+            $progressMonitor = api get "/progressMonitors?taskPathVec=restore_sql_$($taskId)&includeFinishedTasks=true&excludeSubTasks=false"
+            $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
+            if($percentComplete -gt $lastProgress){
+                "{0} percent complete" -f [math]::Round($percentComplete, 0)
+                $lastProgress = $percentComplete
+            }
+        }
         if ($status -in $finishedStates){
             break
         }
