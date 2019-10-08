@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#   version 0.11 - Brian Seltzer - Aug 2019
+#   version 0.12 - Brian Seltzer - Oct 2019
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.6 - Consolidated Windows and Unix versions - June 2018
@@ -9,6 +9,7 @@
 # 0.9 - added setApiProperty / delApiProperty - Apr 2019
 # 0.10 - added $REPORTAPIERRORS constant - Apr 2019
 # 0.11 - added storePassword function and username parsing - Aug 2019
+# 0.12 - begrudgingly added -password to apiauth function - Oct 2019
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
 
@@ -26,6 +27,7 @@ else {
 
     # ignore unsigned certificates
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
     Add-Type @"
     using System;
     using System.Net;
@@ -50,7 +52,7 @@ else {
 }
 
 # authentication function
-function apiauth($vip, $username, $domain, [switch] $prompt, [switch] $updatepassword, [switch] $quiet){
+function apiauth($vip, $username, $domain, $password, [switch] $prompt, [switch] $updatepassword, [switch] $quiet){
 
     if(-not $vip){
         write-host 'VIP: ' -foregroundcolor green -nonewline
@@ -89,7 +91,7 @@ function apiauth($vip, $username, $domain, [switch] $prompt, [switch] $updatepas
         $auth = Invoke-RestMethod -Method Post -Uri $url  -Header $HEADER -Body $(
             ConvertTo-Json @{
                 'domain' = $domain; 
-                'password' = (getpwd -vip $vip -username $username -domain $domain -prompt $pr -updatePassword $updatepw); 
+                'password' = $(if($password){$password}else{getpwd -vip $vip -username $username -domain $domain -prompt $pr -updatePassword $updatepw}); 
                 'username' = $username
             }) -SkipCertificateCheck
         $global:CURLHEADER = "authorization: $($auth.tokenType) $($auth.accessToken)"
@@ -97,7 +99,7 @@ function apiauth($vip, $username, $domain, [switch] $prompt, [switch] $updatepas
             $auth = Invoke-RestMethod -Method Post -Uri $url  -Header $HEADER -Body $(
                 ConvertTo-Json @{
                     'domain' = $domain; 
-                    'password' = (getpwd $vip $username -domain $domain -prompt $pr -updatePassword $updatepw); 
+                    'password' = $(if($password){$password}else{getpwd $vip $username -domain $domain -prompt $pr -updatePassword $updatepw}); 
                     'username' = $username
                 })
             $WEBCLI.Headers['authorization'] = $auth.tokenType + ' ' + $auth.accessToken;
