@@ -25,7 +25,9 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 Place both files in a folder together and run the main script like so:
 
 ```powershell
+# example
 ./addVMtoProtectionJob.ps1 -vip mycluster -username admin -jobName 'vm backup' -vmName mongodb, webserver1
+# end example
 ```
 
 ## Parameters
