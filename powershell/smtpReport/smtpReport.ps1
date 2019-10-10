@@ -22,6 +22,7 @@ apiauth -vip $vip -username $username -domain $domain
 write-host "Gathering Job Stats..."
 ### get jobs
 $jobs = api get protectionJobs
+$policies = api get protectionPolicies
 $runs = @{}
 $cluster = api get cluster
 
@@ -74,111 +75,121 @@ $html += '</tr>'
 $nowrap = 'nowrap'
 
 foreach($job in $jobs){
-    $report = api get "reports/protectionSourcesJobsSummary?allUnderHierarchy=true&jobIds=$($job.id)"
-    foreach($source in ($report.protectionSourcesJobsSummary | Sort-Object -Property {$_.protectionSource.name})){
-        
-        $type = $source.protectionSource.environment.Substring(1)
-        $name = $source.protectionSource.name
-        $parentName = $source.registeredSource
-        $jobName = $job.name
-        $jobId = $job.id
-        $jobUrl = "https://$vip/protection/job/$jobId/details"
-        $numSnapshots = $source.numSnapshots
-        $lastRunStatus = $source.lastRunStatus.Substring(1)
-        $lastRunType = $source.lastRunType
-        $lastRunStartTime = usecsToDate $source.lastRunStartTimeUsecs
-        $lastRunEndTime = usecsToDate $source.lastRunEndTimeUsecs
-        $firstSuccessfulRunTime = usecsToDate $source.firstSuccessfulRunTimeUsecs
-        $lastSuccessfulRunTime = usecsToDate $source.lastSuccessfulRunTimeUsecs
-        if($lastRunStatus -eq 'Error'){
-            $lastRunErrorMsg = $source.lastRunErrorMsg.replace("`r`n"," ").split('.')[0]
-            $firstFailedRunTime = usecsToDate $source.firstFailedRunTimeUsecs
-            $lastFailedRunTime = usecsToDate $source.lastFailedRunTimeUsecs
+    # only local jobs
+    if($job.uid.clusterId -eq $job.policyId.split(":")[0]){
+        $policy = $policies | Where-Object id -eq $job.policyId
+        # set lateHours based on policy frequency
+        if($policy.incrementalSchedulingPolicy.dailySchedule.days){
+            $lateHours = 169
         }else{
-            $lastRunErrorMsg = ''
-            $firstFailedRunTime = ''
-            $lastFailedRunTime = ''
+            $lateHours = 25
         }
-        $numDataReadBytes = $source.numDataReadBytes
-        $numDataReadBytes = $numDataReadBytes/$numSnapshots
-        if($numDataReadBytes -lt 1000){
-            $numDataReadBytes = "$numDataReadBytes B"
-        }elseif ($numDataReadBytes -lt 1000000) {
-            $numDataReadBytes = "$([math]::Round($numDataReadBytes/1024, 2)) KiB"
-        }elseif ($numDataReadBytes -lt 1000000000) {
-            $numDataReadBytes = "$([math]::Round($numDataReadBytes/(1024*1024), 2)) MiB"
-        }elseif ($numDataReadBytes -lt 1000000000000) {
-            $numDataReadBytes = "$([math]::Round($numDataReadBytes/(1024*1024*1024), 2)) GiB"
-        }else{
-            $numDataReadBytes = "$([math]::Round($numDataReadBytes/(1024*1024*1024*1024), 2)) TiB"
-        }
-        $numLogicalBytesProtected = $source.numLogicalBytesProtected/$numSnapshots
-        if($numLogicalBytesProtected -lt 1000){
-            $numLogicalBytesProtected = "$numLogicalBytesProtected B"
-        }elseif ($numLogicalBytesProtected -lt 1000000) {
-            $numLogicalBytesProtected = "$([math]::Round($numLogicalBytesProtected/1024, 2)) KiB"
-        }elseif ($numLogicalBytesProtected -lt 1000000000) {
-            $numLogicalBytesProtected = "$([math]::Round($numLogicalBytesProtected/(1024*1024), 2)) MiB"
-        }elseif ($numLogicalBytesProtected -lt 1000000000000) {
-            $numLogicalBytesProtected = "$([math]::Round($numLogicalBytesProtected/(1024*1024*1024), 2)) GiB"
-        }else{
-            $numLogicalBytesProtected = "$([math]::Round($numLogicalBytesProtected/(1024*1024*1024*1024), 2)) TiB"
-        }
-
-        $numErrors = $source.numErrors + $source.numWarnings
-
-        $sendjob = $false
-        foreach($pre in $prefix){
-            if ($jobName.tolower().startswith($pre.tolower()) -or $prefix -eq 'ALL') {
-                $sendjob = $true
-            }
-        }
-        if ($sendjob) {
-            if($lastRunStatus -eq 'Warning'){
-                $color = '00FFCC'
-            }
+        $report = api get "reports/protectionSourcesJobsSummary?allUnderHierarchy=true&jobIds=$($job.id)"
+        foreach($source in ($report.protectionSourcesJobsSummary | Sort-Object -Property {$_.protectionSource.name})){
+            
+            $type = $source.protectionSource.environment.Substring(1)
+            $name = $source.protectionSource.name
+            $parentName = $source.registeredSource
+            $jobName = $job.name
+            $jobId = $job.id
+            $jobUrl = "https://$vip/protection/job/$jobId/details"
+            $numSnapshots = $source.numSnapshots
+            $lastRunStatus = $source.lastRunStatus.Substring(1)
+            $lastRunType = $source.lastRunType
+            $lastRunStartTime = usecsToDate $source.lastRunStartTimeUsecs
+            $lastRunEndTime = usecsToDate $source.lastRunEndTimeUsecs
+            $firstSuccessfulRunTime = usecsToDate $source.firstSuccessfulRunTimeUsecs
+            $lastSuccessfulRunTime = usecsToDate $source.lastSuccessfulRunTimeUsecs
             if($lastRunStatus -eq 'Error'){
-                $color='FF3366'
+                $lastRunErrorMsg = $source.lastRunErrorMsg.replace("`r`n"," ").split('.')[0]
+                $firstFailedRunTime = usecsToDate $source.firstFailedRunTimeUsecs
+                $lastFailedRunTime = usecsToDate $source.lastFailedRunTimeUsecs
+            }else{
+                $lastRunErrorMsg = ''
+                $firstFailedRunTime = ''
+                $lastFailedRunTime = ''
             }
-            if($lastRunStatus -eq 'Success'){
-                $color='CCFFCC'
+            $numDataReadBytes = $source.numDataReadBytes
+            $numDataReadBytes = $numDataReadBytes/$numSnapshots
+            if($numDataReadBytes -lt 1000){
+                $numDataReadBytes = "$numDataReadBytes B"
+            }elseif ($numDataReadBytes -lt 1000000) {
+                $numDataReadBytes = "$([math]::Round($numDataReadBytes/1024, 2)) KiB"
+            }elseif ($numDataReadBytes -lt 1000000000) {
+                $numDataReadBytes = "$([math]::Round($numDataReadBytes/(1024*1024), 2)) MiB"
+            }elseif ($numDataReadBytes -lt 1000000000000) {
+                $numDataReadBytes = "$([math]::Round($numDataReadBytes/(1024*1024*1024), 2)) GiB"
+            }else{
+                $numDataReadBytes = "$([math]::Round($numDataReadBytes/(1024*1024*1024*1024), 2)) TiB"
             }
-            if($jobId){
-                if($runs.ContainsKey($jobId)){
-                    $run = $runs[$jobId]
-                }else{
-                    $run = api get "protectionRuns?jobId=$jobId&numRuns=1"
-                    $runs[$jobId] = $run
+            $numLogicalBytesProtected = $source.numLogicalBytesProtected/$numSnapshots
+            if($numLogicalBytesProtected -lt 1000){
+                $numLogicalBytesProtected = "$numLogicalBytesProtected B"
+            }elseif ($numLogicalBytesProtected -lt 1000000) {
+                $numLogicalBytesProtected = "$([math]::Round($numLogicalBytesProtected/1024, 2)) KiB"
+            }elseif ($numLogicalBytesProtected -lt 1000000000) {
+                $numLogicalBytesProtected = "$([math]::Round($numLogicalBytesProtected/(1024*1024), 2)) MiB"
+            }elseif ($numLogicalBytesProtected -lt 1000000000000) {
+                $numLogicalBytesProtected = "$([math]::Round($numLogicalBytesProtected/(1024*1024*1024), 2)) GiB"
+            }else{
+                $numLogicalBytesProtected = "$([math]::Round($numLogicalBytesProtected/(1024*1024*1024*1024), 2)) TiB"
+            }
+
+            $numErrors = $source.numErrors + $source.numWarnings
+
+            $sendjob = $false
+            foreach($pre in $prefix){
+                if ($jobName.tolower().startswith($pre.tolower()) -or $prefix -eq 'ALL') {
+                    $sendjob = $true
                 }
-                if($run.backupRun.status -eq 'kAccepted'){
-                    $color='66ABDD'
-                }
-                if($run.backupRun.status -eq 'kCanceled'){
-                    $color='FF99CC'
-                }
             }
-            if(([datetime]$lastRunStartTime) -lt (get-date).AddHours(-25)){
-                $color = 'CC9999'
+            if ($sendjob) {
+                if($lastRunStatus -eq 'Warning'){
+                    $color = '00FFCC'
+                }
+                if($lastRunStatus -eq 'Error'){
+                    $color='FF3366'
+                }
+                if($lastRunStatus -eq 'Success'){
+                    $color='CCFFCC'
+                }
+                if($jobId){
+                    if($runs.ContainsKey($jobId)){
+                        $run = $runs[$jobId]
+                    }else{
+                        $run = api get "protectionRuns?jobId=$jobId&numRuns=1"
+                        $runs[$jobId] = $run
+                    }
+                    if($run.backupRun.status -eq 'kAccepted'){
+                        $color='66ABDD'
+                    }
+                    if($run.backupRun.status -eq 'kCanceled'){
+                        $color='FF99CC'
+                    }
+                }
+                if(([datetime]$lastRunStartTime) -lt (get-date).AddHours(-$lateHours)){
+                    $color = 'CC9999'
+                }
+                $html += '<tr>'
+                $html += td $type $color $nowrap
+                $html += td $name $color $nowrap
+                $html += td $parentName $color $nowrap
+                $html += td "<a href=$jobUrl>$jobName</a>" $color $nowrap
+                $html += td $numSnapshots $color $nowrap 'CENTER'
+                $html += td $lastRunStatus $color $nowrap
+                $html += td $lastRunType $color $nowrap
+                $html += td $lastRunStartTime $color '' 'CENTER'
+                $html += td $lastRunEndTime $color '' 'CENTER'
+                $html += td $firstSuccessfulRunTime $color '' 'CENTER'
+                $html += td $firstFailedRunTime $color '' 'CENTER'
+                $html += td $lastSuccessfulRunTime $color '' 'CENTER'
+                $html += td $lastFailedRunTime $color '' 'CENTER'
+                $html += td $numErrors $color $nowrap 'CENTER'
+                $html += td $numDataReadBytes $color $nowrap
+                $html += td $numLogicalBytesProtected $color $nowrap
+                $html += td $lastRunErrorMsg $color $nowrap
+                $html += '</tr>'
             }
-            $html += '<tr>'
-            $html += td $type $color $nowrap
-            $html += td $name $color $nowrap
-            $html += td $parentName $color $nowrap
-            $html += td "<a href=$jobUrl>$jobName</a>" $color $nowrap
-            $html += td $numSnapshots $color $nowrap 'CENTER'
-            $html += td $lastRunStatus $color $nowrap
-            $html += td $lastRunType $color $nowrap
-            $html += td $lastRunStartTime $color '' 'CENTER'
-            $html += td $lastRunEndTime $color '' 'CENTER'
-            $html += td $firstSuccessfulRunTime $color '' 'CENTER'
-            $html += td $firstFailedRunTime $color '' 'CENTER'
-            $html += td $lastSuccessfulRunTime $color '' 'CENTER'
-            $html += td $lastFailedRunTime $color '' 'CENTER'
-            $html += td $numErrors $color $nowrap 'CENTER'
-            $html += td $numDataReadBytes $color $nowrap
-            $html += td $numLogicalBytesProtected $color $nowrap
-            $html += td $lastRunErrorMsg $color $nowrap
-            $html += '</tr>'
         }
     }
 }
