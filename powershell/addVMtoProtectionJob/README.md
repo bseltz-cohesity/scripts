@@ -26,7 +26,15 @@ Place both files in a folder together and run the main script like so:
 
 ```powershell
 # example
-./addVMtoProtectionJob.ps1 -vip mycluster -username admin -jobName 'vm backup' -vmName mongodb, webserver1
+./addVMtoProtectionJob.ps1 -vip mycluster -username admin -jobName 'vm backup' -vmNames mongodb, webserver1
+# end example
+```
+
+or if you want to input a list of VMs from a text file, you can do this:
+
+```powershell
+# example
+./addVMtoProtectionJob.ps1 -vip mycluster -username admin -jobName 'vm backup' -vmNames (Get-Content ./vms.txt)
 # end example
 ```
 
@@ -36,4 +44,4 @@ Place both files in a folder together and run the main script like so:
 * -username: Cohesity User Name
 * -domain: (optional) - defaults to 'local'
 * -jobName: name of protection job to add VMs to
-* -vmName: name of one or more VMs (comma separated) to add to the protection job
+* -vmNames: names of one or more VMs (comma separated) to add to the protection job
