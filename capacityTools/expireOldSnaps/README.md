@@ -78,4 +78,5 @@ Also note that if you're waiting for capacity to be freed up, it may take hours 
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -jobname: (optional) narrow scope to just the specified job
 * -daysToKeep: show/expire snapshots older than this many days
+* -backupType: (optional) choose one of kRegular, kFull, kLog or kSystem backup types. Default is all
 * -expire: (optional) expire the snapshots (if omitted, the script will only show what 'would' be expired)

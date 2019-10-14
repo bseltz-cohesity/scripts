@@ -10,6 +10,7 @@ param (
     [Parameter()][string]$domain = 'local',
     [Parameter()][string]$jobname = $null,
     [Parameter(Mandatory = $True)][string]$daysToKeep,
+    [Parameter()][ValidateSet(“kRegular”,”kFull”,”kLog”,"kSystem","kAll")][string]$backupType = 'kAll',
     [Parameter()][switch]$expire
 )
 
@@ -37,7 +38,7 @@ foreach ($job in $jobs) {
     $jobId = $job.id
 
     foreach ($run in (api get protectionRuns?jobId=$($job.id)`&numRuns=999999`&excludeTasks=true`&excludeNonRestoreableRuns=true)) {
-        if ($run.backupRun.snapshotsDeleted -eq $false) {
+        if ($run.backupRun.snapshotsDeleted -eq $false -and ($run.backupRun.runType -eq $backupType -or $backupType -eq 'kAll')) {
             $startdate = usecstodate $run.copyRun[0].runStartTimeUsecs
             $startdateusecs = $run.copyRun[0].runStartTimeUsecs
             if ($startdateusecs -lt $(timeAgo $daysToKeep days) ) {
@@ -66,7 +67,7 @@ foreach ($job in $jobs) {
                     api put protectionRuns $expireRun
                 }else{
                     ### just print old snapshots if we're not expiring
-                    "$($job.name) $($startdate)"
+                    "$($job.name) ($($run.backupRun.runType.subString(1))) $($startdate)"
                 }
             }
         }
