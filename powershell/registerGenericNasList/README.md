@@ -23,7 +23,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./registerGenericNasList.ps1 -vip mycluster -username myusername -domain mydomain.net -nasList mynaslist.txt -smbUserName mydomain.net\myusername
+./registerGenericNasList.ps1 -vip mycluster -username myusername -domain mydomain.net -nasList ./mynaslist.txt -smbUserName mydomain.net\myusername
 ```
 
 ## Parameters
