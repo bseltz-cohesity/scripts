@@ -74,6 +74,38 @@ foreach ($job in $jobs) {
                         "Keep $($job.name) $($startdate)"
                         $firstSnap = $false
                     }
+                }else{
+                    $newExpiryUsecs = [int64](dateToUsecs $startdate.addDays($daysToKeep))
+                    if($run.copyRun[0].expiryTimeUsecs -gt ($newExpiryUsecs + 86400000000)){
+                        $reduceByDays = [int64][math]::floor(($run.copyRun[0].expiryTimeUsecs - $newExpiryUsecs) / 86400000000)
+                        ### if -expire is set, reduce the retention
+                        if ($expire) {
+                            $exactRun = api get /backupjobruns?exactMatchStartTimeUsecs=$startdateusecs`&id=$jobId
+                            $jobUid = $exactRun[0].backupJobRuns.protectionRuns[0].backupRun.base.jobUid
+                            ### edit the snapshot
+                            "Reducing retention for $($job.name) Snapshot from $startdate"
+                            $editRun = @{'jobRuns' = @(
+                                    @{
+                                        'jobUid'            = @{
+                                            'clusterId' = $jobUid.clusterId;
+                                            'clusterIncarnationId' = $jobUid.clusterIncarnationId;
+                                            'id' = $jobUid.objectId;
+                                        }
+                                        'runStartTimeUsecs' = $startdateusecs;
+                                        'copyRunTargets'    = @(
+                                            @{'daysToKeep' = -$reduceByDays;
+                                                'type'     = 'kLocal';
+                                            }
+                                        )
+                                    }
+                                )
+                            }
+                            $null = api put protectionRuns $editRun
+                        }else{
+                            ### just print snapshots we would expire
+                            "Would reduce $($job.name) $($startdate) by $reduceByDays days"
+                        }    
+                    }
                 }
             }
         }
