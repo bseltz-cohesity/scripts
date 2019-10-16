@@ -135,19 +135,25 @@ if($environment -eq 'kSQL' -and $job.environmentParameters.sqlParameters.backupT
 
 # get last run id
 $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
-$newRunId = $lastRunId = $runs[0].backupRun.jobRunId
+if($runs){
+    $newRunId = $lastRunId = $runs[0].backupRun.jobRunId
+}else{
+    $newRunId = $lastRunId = 0
+}
 
 $finishedStates = @('kCanceled', 'kSuccess', 'kFailure')
 
 # wait for existing job run to finish
-$alertWaiting = $True
-while ($runs[0].backupRun.status -notin $finishedStates){
-    if($alertWaiting){
-        "waiting for existing job run to finish..."
-        $alertWaiting = $false
-    }
-    sleep 5
-    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
+if($runs){
+    $alertWaiting = $True
+    while ($runs[0].backupRun.status -notin $finishedStates){
+        if($alertWaiting){
+            "waiting for existing job run to finish..."
+            $alertWaiting = $false
+        }
+        sleep 5
+        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
+    }    
 }
 
 # set local retention
