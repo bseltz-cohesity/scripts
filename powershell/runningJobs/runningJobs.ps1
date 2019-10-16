@@ -15,28 +15,26 @@ apiauth -vip $vip -username $username -domain $domain
 $finishedStates = @('kCanceled', 'kSuccess', 'kFailure')
 
 ### protection runs
-$runs = api get protectionRuns | sort-object -property @{Expression={$_.backupRun.stats.startTimeUsecs}} #| ?{ $_.copyRun.length -gt 1 }
+$runs = api get protectionRuns?numRuns=999999`&excludeTasks=true | sort-object -property {$_.jobName}, {$_.backupRun.stats.startTimeUsecs} #| ?{ $_.copyRun.length -gt 1 }
 $overallstatus = 'No Jobs Running'
+"`nRunning Jobs:"
+"=============`n"
+"JobName,StartTime,TargetType,Status" | Out-File -FilePath ./runningJobs.csv
 foreach ($run in $runs){
    $jobName = $run.jobName
    $runStartTime = $run.backupRun.stats.startTimeUsecs
    $startTime = usecsToDate $runStartTime
-   if($run.backupRun.status -notin $finishedStates){
-       $overallstatus = $null
-       $targetType = 'Local Snapshot'
-       $status = $run.backupRun.status.substring(1)
-       "{0,-20} {1,-20} {2,-15} {3}" -f ($jobName, $startTime, $targetType, $status)
-   }else{
-       foreach ($copyRun in $run.copyRun){
-           if ($copyRun.target.type -ne 'kLocal'){
-               if ($copyRun.status -notin $finishedStates){
-                   $overallstatus = $null
-                   $targetType = $copyRun.target.type.substring(1)
-                   $status = $copyRun.status.substring(1)
-                   "{0,-20} {1,-20} {2,-15} {3}" -f ($jobName, $startTime, $targetType, $status)
-               }
-           }
-       }
-   }
+
+    foreach ($copyRun in $run.copyRun){
+        if ($copyRun.status -notin $finishedStates){
+            $overallstatus = $null
+            $targetType = $copyRun.target.type.substring(1)
+            $status = $copyRun.status.substring(1)
+            "{0,-20} {1,-22} {2,-10} {3}" -f ($jobName, $startTime, $targetType, $status)
+            "$jobName, $startTime, $targetType, $status" | Out-File -FilePath ./runningJobs.csv -Append
+        }
+    }
 }
 $overallstatus
+$overallstatus | Out-File -FilePath ./runningJobs.csv -Append
+"`nOutput written to runningJobs.csv`n"

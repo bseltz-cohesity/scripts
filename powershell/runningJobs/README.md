@@ -9,6 +9,17 @@ This powershell script lists running protection jobs. For each running job, the 
 * current task (local, archival, replication)
 * state of current task
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Begin download commands
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/runningJobs/runningJobs.ps1).content | Out-File runningJobs.ps1; (Get-Content runningJobs.ps1) | Set-Content runningJobs.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/runningJobs/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End download commands
+```
+
 ## Components
 
 * runningJobs.ps1: the main powershell script
@@ -20,13 +31,19 @@ Place both files in a folder together and run the main script like so:
 ./runningJobs.ps1 -vip mycluster -username admin -domain local
 ```
 
-## Download the script
+```text
+Connected!
 
-Run these commands from PowerShell to download the script(s) into your current directory
+Running Jobs:
+=============
 
-```powershell
-# Begin download commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/runningJobs/runningJobs.ps1).content | Out-File runningJobs.ps1; (Get-Content runningJobs.ps1) | Set-Content runningJobs.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/runningJobs/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-# End download commands
+Demo_Archive         10/16/19 12:58:05 PM   Local      Running
+Demo_Archive         10/16/19 12:58:05 PM   Remote     Accepted
+Demo_Archive         10/16/19 12:58:05 PM   Archival   Running
+pb-sql               10/16/19 12:15:51 PM   Local      Running
+pb-sql               10/16/19 12:15:51 PM   Remote     Accepted
+Raja                 10/16/19 12:40:53 PM   Local      Running
+Raja                 10/16/19 12:40:53 PM   Remote     Accepted
+
+Output written to runningJobs.csv
 ```
