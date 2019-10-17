@@ -51,3 +51,34 @@ or
 ```bash
 sudo easy_install requests
 ```
+
+### Stored Passwords
+
+There is no parameter to provide your password. The fist time you authenticate to a cluster, you will be prompted for your password. The password will be encrypted and stored in the user's home folder. The stored password will then be used automatically so that scripts can run unattended.
+
+If your password changes, use apiauth with updatepw to prompt for the new password. Run python interactively and enter the following commands:
+
+```python
+from pyhesity import *
+apiauth('mycluster', 'myuser', 'mydomain', updatepw=True)
+```
+
+If you don't want to store a password and want to be prompted to enter your password when you run your script, use prompt=True
+
+## A Note about Timezones
+
+Cohesity clusters are typically set to US/Pacific time regardless of their physical location. If you schedule this script to run on a Cohesity cluster, make sure to account for the difference between your time zone and the cluster's timezone. For example, if you want to run the script at 5am eastern time, then schedule it to run at 2am on the cluster.
+
+## Schedule the Script to Run Weekly
+
+We can schedule the script to run using cron.
+
+```bash
+crontab -e
+```
+
+Let's say that you want the script to run every Saturday at 7am eastern. Remember to adjust to pacific time, which would be 4am. Enter the following line in crontab:
+
+```text
+0 4 * * 6 /home/cohesity/data/scripts/archiveEndOfMonth.py -v mycluster -u myusername -d mydomain.net -j myjob1 -j myjob2 -k 365 -t S3
+```
