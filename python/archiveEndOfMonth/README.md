@@ -80,5 +80,7 @@ crontab -e
 Let's say that you want the script to run every Saturday at 7am eastern. Remember to adjust to pacific time, which would be 4am. Enter the following line in crontab:
 
 ```text
+# crontab example
 0 4 * * 6 /home/cohesity/data/scripts/archiveEndOfMonth.py -v mycluster -u myusername -d mydomain.net -j myjob1 -j myjob2 -k 365 -t S3
+# end crontab example
 ```
