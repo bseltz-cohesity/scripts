@@ -23,7 +23,16 @@ Run these commands from PowerShell to download the script(s) into your current d
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./createSMBView.ps1 -vip mycluster -username myusername -domain mydomain.net -viewName newview1 -readWrite mydomain.net\server1 -fullControl mydomain.net\admingroup1 -qosPolicy 'TestAndDev High' -storageDomain mystoragedomain
+#example
+./createSMBView.ps1 -vip mycluster `
+                    -username myusername `
+                    -domain mydomain.net `
+                    -viewName newview1 `
+                    -readWrite mydomain.net\server1 `
+                    -fullControl mydomain.net\admingroup1, mydomain.net\admingroup2 `
+                    -qosPolicy 'TestAndDev High' `
+                    -storageDomain mystoragedomain
+#end example
 ```
 
 ## Parameters
