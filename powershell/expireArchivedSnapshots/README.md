@@ -4,7 +4,20 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script expires local snapshots that have been archived. This is useful if you have reduced your on-prem retention and want to programatically expire local snapshots that have been archived and are older than the new retention period.
 
-## Warning! This script deletes backup data! Make sure you know what you are doing before you run it!  
+## Warning! This script deletes backup data! Make sure you know what you are doing before you run it
+
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download Commands
+$scriptName = 'expireArchivedSnapshots'
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
+```
 
 ## Components
 
@@ -18,6 +31,7 @@ First, run the script WITHOUT the -expire switch to see what would be deleted.
 ```powershell
 ./expireArchivedSnapshots.ps1 -vip mycluster -username admin -olderThan 365
 ```
+
 ```text
 Connected!
 searching for old snapshots...

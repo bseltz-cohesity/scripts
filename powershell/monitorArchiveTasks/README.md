@@ -4,6 +4,19 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script monitors archive tasks. This is especially useful if have just started archiving and may have a back log that you may wish to monitor, or if you are archiving to a seed and ship device (e.g. AWS Snowball).
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download Commands
+$scriptName = 'monitorArchiveTasks'
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
+```
+
 ## Components
 
 * monitorArchiveTasks.ps1: the main powershell script
@@ -14,6 +27,7 @@ Place both files in a folder together, then we can run the script.
 ```powershell
 ./monitorArchiveTasks.ps1 -vip bseltzve01 -username admin -olderThan 0
 ```
+
 ```text
 Connected!
 searching for old snapshots...
@@ -26,4 +40,3 @@ found 7 snapshots with archive tasks
 12/03/2018 01:00:00  VM Backup  (Archive kSuccessful)
 12/03/2018 02:10:00  CorpShare  (Archive kSuccessful)
 ```
-   

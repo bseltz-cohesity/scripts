@@ -4,6 +4,19 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This script demonstrates how to get statistics from job runs.
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download Commands
+$scriptName = 'runStats'
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
+```
+
 ## Components
 
 * runStats.ps1: the main powershell script
@@ -12,7 +25,7 @@ This script demonstrates how to get statistics from job runs.
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./runStats.ps1 -vip 10.99.1.64 -username admin                                                                                              
+./runStats.ps1 -vip 10.99.1.64 -username admin
 Connected!
 Collecting Job Run Statistics...
 Runs for VMware Backups
@@ -35,4 +48,3 @@ Run Date             MB Read MB Written
 11/10/18 11:05:49 PM     677        100
 11/10/18 11:05:49 AM     643         42
 ```
-
