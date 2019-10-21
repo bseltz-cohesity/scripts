@@ -142,9 +142,9 @@ function api($method, $uri, $data){
             $url = $APIROOT + $uri
             $body = ConvertTo-Json -Depth 100 $data
             if ($UNIX){
-                $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER  -SkipCertificateCheck
+                $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER  -SkipCertificateCheck -TimeoutSec 180
             }else{
-                $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER
+                $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER -TimeoutSec 180
             }
             return $result
         }
