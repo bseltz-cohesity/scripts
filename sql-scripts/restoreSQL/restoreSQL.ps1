@@ -21,7 +21,7 @@ param (
     [Parameter()][string]$ndfFolder,                     #single path to restore ndfs (Cohesity 5.0x)
     [Parameter()][string]$logTime,                       #date time to replay logs to e.g. '2019-01-20 02:01:47'
     [Parameter()][switch]$wait,                          #wait for completion
-    [Parameter()][string]$targetInstance = 'MSSQLSERVER', #SQL instance name on the targetServer
+    [Parameter()][string]$targetInstance,                #SQL instance name on the targetServer
     [Parameter()][switch]$latest,
     [Parameter()][switch]$noRecovery,
     [Parameter()][switch]$progress
@@ -190,7 +190,7 @@ if($noRecovery){
 }
 
 ### if not restoring to original server/DB
-if($targetDB -ne $sourceDB -or $targetServer -ne $sourceServer){
+if($targetDB -ne $sourceDB -or $targetServer -ne $sourceServer -or $targetInstance){
     if('' -eq $mdfFolder){
         write-host "-mdfFolder must be specified when restoring to a new database name or different target server" -ForegroundColor Yellow
         exit
@@ -221,7 +221,7 @@ if($validLogTime -eq $True){
 }
 
 ### search for target server
-if($targetServer -ne $sourceServer){
+if($targetServer -ne $sourceServer -or $targetInstance){
     $targetEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $targetServer }
     if($null -eq $targetEntity){
         Write-Host "Target Server Not Found" -ForegroundColor Yellow
