@@ -11,8 +11,10 @@ The script will overwrite existing exclusions, so make sure all desired exclusio
 Run these commands from PowerShell to download the script(s) into your current directory
 
 ```powershell
+# begin download commands
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectPhysicalLinux/protectPhysicalLinux.ps1).content | Out-File protectPhysicalLinux.ps1; (Get-Content protectPhysicalLinux.ps1) | Set-Content protectPhysicalLinux.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectPhysicalLinux/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# end download commands
 ```
 
 ## Components
