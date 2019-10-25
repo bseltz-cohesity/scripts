@@ -4,6 +4,17 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This repository contains many examples of how to automate Cohesity using PowerShell. Common to each example is a function library that makes it easy to authenticate and make api calls. Below are details of this library.
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download Commands
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
+```
+
 ## Function library - cohesity-api.ps1
 
 The function library, cohesity-api.ps1 provides a suite of functions to make it easier to use the Cohesity API. To use the library, we can source (or dot) the library within a PowerShell session or within a script, like so:
