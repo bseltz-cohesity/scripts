@@ -71,29 +71,21 @@ $sourceIds = @($sourceIds | Select-Object -Unique)
 $sourceSpecialParameters = @()
 
 foreach($sourceId in $sourceIds){
-    $existingSourceSpecialParameter = $job.sourceSpecialParameters | Where-Object { $_.sourceId -eq $sourceId }
+
     $sourceSpecialParameter = @{
         "sourceId" = $sourceId;
         "physicalSpecialParameters" = @{
             "filePaths" = @()
         }
     }
+
     $source = $sources.nodes | Where-Object {$_.protectionSource.id -eq $sourceId}
     "  $($source.protectionSource.name)"
 
-    $backupFilePath = "/"
-
-    if($null -ne ($existingSourceSpecialParameter.physicalSpecialParameters.filePaths | Where-Object {$_.backupFilePath -eq $backupFilePath})){
-        $filePath = $existingSourceSpecialParameter.physicalSpecialParameters.filePaths | Where-Object {$_.backupFilePath -eq $backupFilePath}
-        if(! $filePath.PSObject.Properties['excludedFilePaths']){
-            $filePath | Add-Member -MemberType NoteProperty -Name excludedFilePaths -Value @()
-        }
-    }else{
-        $filePath = @{
-            "backupFilePath" = $backupFilePath;
-            "skipNestedVolumes" = $true;
-            "excludedFilePaths" = @()
-        }
+    $filePath = @{
+        "backupFilePath" = "/";
+        "skipNestedVolumes" = $true;
+        "excludedFilePaths" = @()
     }
 
     # identify exclusions that apply to existing source volumes
