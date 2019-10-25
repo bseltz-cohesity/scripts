@@ -45,25 +45,31 @@ if($ndfFolders){
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
 
-### search for database to clone
-$searchresults = api get /searchvms?environment=SQL`&entityTypes=kSQL`&entityTypes=kVMware`&vmName=$sourceDB
-
 ### handle source instance name e.g. instance/dbname
 if($sourceDB.Contains('/')){
-    $sourceDB = $sourceDB.Split('/')[1]
+    if($targetDB -eq $sourceDB){
+        $targetDB = $sourceDB.Split('/')[1]
+    }
+    $sourceInstance, $sourceDB = $sourceDB.Split('/')
+}else{
+    $sourceInstance = 'MSSQLSERVER'
+}
+
+### search for database to clone
+$searchresults = api get /searchvms?environment=SQL`&entityTypes=kSQL`&entityTypes=kVMware`&vmName=$sourceInstance/$sourceDB
+
+if($targetInstance -ne '' -and $targetInstance -ne $sourceInstance){
+    $differentInstance = $True
+}else{
+    $differentInstance = $False
 }
 
 ### narrow the search results to the correct source server
-$dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer }
-if($null -eq $dbresults){
-    write-host "Server $sourceServer Not Found" -foregroundcolor yellow
-    exit
-}
+$dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer } | `
+                                  Where-Object { $_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB }
 
-### narrow the search results to the correct source database
-$dbresults = $dbresults | Where-Object { $_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB }
 if($null -eq $dbresults){
-    write-host "Database $sourceDB Not Found" -foregroundcolor yellow
+    write-host "Database $sourceInstance/$sourceDB on Server $sourceServer Not Found" -foregroundcolor yellow
     exit
 }
 
@@ -71,7 +77,7 @@ if($null -eq $dbresults){
 $latestdb = ($dbresults | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
 
 if($null -eq $latestdb){
-    write-host "Database Not Found" -foregroundcolor yellow
+    write-host "Database $sourceInstance/$sourceDB on Server $sourceServer Not Found" -foregroundcolor yellow
     exit 1
 }
 
@@ -190,7 +196,7 @@ if($noRecovery){
 }
 
 ### if not restoring to original server/DB
-if($targetDB -ne $sourceDB -or $targetServer -ne $sourceServer -or $targetInstance){
+if($targetDB -ne $sourceDB -or $targetServer -ne $sourceServer -or $differentInstance){
     if('' -eq $mdfFolder){
         write-host "-mdfFolder must be specified when restoring to a new database name or different target server" -ForegroundColor Yellow
         exit
@@ -202,7 +208,7 @@ if($targetDB -ne $sourceDB -or $targetServer -ne $sourceServer -or $targetInstan
 }
 
 ### overwrite warning
-if($targetDB -eq $sourceDB -and $targetServer -eq $sourceServer){
+if($targetDB -eq $sourceDB -and $targetServer -eq $sourceServer -and $differentInstance -eq $False){
     if(! $overWrite){
         write-host "Please use the -overWrite parameter to confirm overwrite of the source database!" -ForegroundColor Yellow
         exit
@@ -248,14 +254,15 @@ if($overWrite){
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['dbRestoreOverwritePolicy'] = 1
 }
 
-#$restoreTask | ConvertTo-Json -Depth 99
-#exit
-
 ### execute the recovery task (post /recoverApplication api call)
 $response = api post /recoverApplication $restoreTask
 
+if($targetInstance -eq ''){
+    $targetInstance = $sourceInstance
+}
+
 if($response){
-    "Restoring $sourceDB to $targetServer as $targetDB"
+    "Restoring $sourceInstance/$sourceDB to $targetServer/$targetInstance as $targetDB"
 }
 
 if($wait -or $progress){
