@@ -4,7 +4,16 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This PowerShell script adds physical Linux servers to a file-based protection job. The script will automatically include the root path and will apply a list of exclusion paths to each server added to the job.
 
-The script will add to existing exclusions (existing exclusions will be preserved, and new ones will be added).
+The script will overwrite existing exclusions, so make sure all desired exclusions are included in the exclusions list.
+
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectPhysicalLinux/protectPhysicalLinux.ps1).content | Out-File protectPhysicalLinux.ps1; (Get-Content protectPhysicalLinux.ps1) | Set-Content protectPhysicalLinux.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectPhysicalLinux/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+```
 
 ## Components
 
@@ -57,12 +66,3 @@ Processing servers...
 * -domain: your AD domain (defaults to local)
 * -server: name of a single server to add to the job
 * -serverList: a text file list of servers to add to the job
-
-## Download the script
-
-Run these commands from PowerShell to download the script(s) into your current directory
-
-```powershell
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectPhysicalLinux/protectPhysicalLinux.ps1).content | Out-File protectPhysicalLinux.ps1; (Get-Content protectPhysicalLinux.ps1) | Set-Content protectPhysicalLinux.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectPhysicalLinux/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-```
