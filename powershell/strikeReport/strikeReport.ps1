@@ -18,7 +18,12 @@ param (
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
 
-$report = api get reports/protectionSourcesJobsSummary
+$environments = @('kUnknown', 'kVMware' , 'kHyperV' , 'kSQL' , 'kView' , 'kPuppeteer' , 'kPhysical' , 'kPure' , 'kAzure' , 'kNetapp' , 'kAgent' , 'kGenericNas' , 'kAcropolis' , 'kPhysicalFiles' , 'kIsilon' , 'kKVM' , 'kAWS' , 'kExchange' , 'kHyperVVSS' , 'kOracle' , 'kGCP' , 'kFlashBlade' , 'kAWSNative' , 'kVCD' , 'kO365' , 'kO365Outlook' , 'kHyperFlex' , 'kGCPNative', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown')
+
+write-host "Collecting report data..."
+
+$report = api get reports/protectionSourcesJobsSummary?allUnderHierarchy=true
+$jobs = api get protectionJobs?isDeleted=false
 
 $title = "Strike Summary Backup Report"
 $date = (get-date).ToString()
@@ -75,12 +80,15 @@ $html += '</span>
 </p>
 <table>
 <tr>
-        <th>Object Name</th>
-        <th>Type</th>
-        <th>Job Name</th>
-        <th>Failure Count</th>
-        <th>Last Good BU</th>
-      </tr>'
+    <th>Object Name</th>
+    <th>App Name</th>
+    <th>Type</th>
+    <th>Job Name</th>
+    <th>Failure Count</th>
+    <th>Last Good BU</th>
+</tr>'
+
+$errorsRecorded = 0
 
 foreach($obj in $report.protectionSourcesJobsSummary){
     $objName = $obj.protectionSource.name
@@ -88,20 +96,56 @@ foreach($obj in $report.protectionSourcesJobsSummary){
     $jobName = $obj.jobName
     $numErrors = $obj.numErrors
     $lastGoodUsecs = $obj.lastSuccessfulRunTimeUsecs
+    $lastUsecs = $obj.lastRunStartTimeUsecs
     $lastStatus = $obj.lastRunStatus
-
     if($lastStatus -ne 'kSuccess' -and $numErrors -gt 0){
+        $errorsRecorded += 1
+        $job = ($jobs | Where-Object name -eq $jobName)
+        if($job){
+            $jobId = $job[-1].id
+            $jobUrl = "https://$vip/protection/job/$jobId/details"
+            $jobEntry = "<a href=$jobUrl>$jobName</a>"
+        }else{
+            $jobId = $null
+            $jobEntry = $jobName
+        }
+  
         $html += "<tr>
-        <td>$objName</td>
-        <td>$($objType.subString(1))</td>
-        <td>$jobName</td>
-        <td>$numErrors</td>
-        <td>$(usecsToDate $lastGoodUsecs)</td>
-      </tr>"
+            <td>$objName</td>
+            <td>-</td>
+            <td>$($objType.subString(1))</td>
+            <td>$jobEntry</td>
+            <td>$numErrors</td>
+            <td>$(usecsToDate $lastGoodUsecs)</td>
+        </tr>"
+        if($jobId){
+            $run = api get "/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=$lastUsecs&id=$jobId"
+            if($run.backupJobRuns.protectionRuns.Count -gt 0){
+                foreach($task in $run.backupJobRuns.protectionRuns[-1].backupRun.latestFinishedTasks){
+                    if($task.connectorParams.endpoint -eq $objName){
+                        if($task.psobject.properties['appEntityStateVec']){
+                            foreach($app in $task.appEntityStateVec){
+                                if($app.publicStatus -ne 'kSuccess'){
+                                    $html += "<tr>
+                                        <td></td>
+                                        <td>$($app.appEntity.displayName)</td>
+                                        <td>$($environments[$app.appEntity.type].subString(1))</td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
-$html += '</table>                
+$html += '</table>
+<p style="margin-top: 15px; margin-bottom: 15px;"><span style="font-size:1em;">Number of errors recorded: ' + $errorsRecorded + '</span></p>               
 </div>
 </body>
 </html>
