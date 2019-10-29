@@ -23,8 +23,9 @@ $environments = @('kUnknown', 'kVMware' , 'kHyperV' , 'kSQL' , 'kView' , 'kPuppe
 write-host "Collecting report data..."
 
 $jobs = api get protectionJobs?isDeleted=false
+$cluster = api get cluster
 
-$title = "Strike Summary Backup Report"
+$title = "Strike Summary Backup Report ($($cluster.name))"
 $date = (get-date).ToString()
 
 $html = '<html>
@@ -164,10 +165,11 @@ $html += '</table>
 </html>
 '
 
-$html | out-file strikeReport.html
+$fileName = "./strikeReport-$($cluster.name).html"
+$html | out-file $fileName
 
 write-host "sending report to $([string]::Join(", ", $sendTo))"
 ### send email report
 foreach($toaddr in $sendTo){
-    Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject "Backup Strike Report" -BodyAsHtml $html -Attachments ./strikeReport.html
+    Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject "Backup Strike Report" -BodyAsHtml $html -Attachments $fileName
 }
