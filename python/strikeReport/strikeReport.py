@@ -9,6 +9,7 @@ from datetime import datetime
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import re
 
 ### command line arguments
 import argparse
@@ -31,6 +32,13 @@ mailport = args.mailport
 sendto = args.sendto
 sendfrom = args.sendfrom
 
+
+def cleanhtml(raw_html):
+    cleanr = re.compile('<.*?>')
+    cleantext = re.sub(cleanr, '', raw_html)
+    return cleantext
+
+
 ### authenticate
 apiauth(vip, username, domain)
 
@@ -42,7 +50,7 @@ report = api('get', 'reports/protectionSourcesJobsSummary?allUnderHierarchy=true
 jobs = api('get', 'protectionJobs?isDeleted=false')
 cluster = api('get', 'cluster')
 
-title = 'Backup Strike Report for %s' % cluster['name']
+title = 'Backup Strike Report (%s)' % cluster['name']
 now = datetime.now()
 date = now.strftime("%m/%d/%Y %H:%M:%S")
 
@@ -72,7 +80,6 @@ html = '''<html>
 
         td,
         th {
-            width: 20%;
             text-align: left;
             padding: 6px;
         }
@@ -150,7 +157,7 @@ html = '''<html>
 
 html += title
 html += '''</span>
-<span style="font-size:0.75em; text-align: right; padding-top: 8px; padding-right: 2px; float: right;">'''
+<span style="font-size:1em; text-align: right; padding-top: 8px; padding-right: 2px; float: right;">'''
 html += date
 html += '''</span>
 </p>
@@ -161,69 +168,94 @@ html += '''</span>
     <th>Type</th>
     <th>Job Name</th>
     <th>Failure Count</th>
-    <th>Last Good BU</th>
+    <th>Last Good Backup</th>
 </tr>'''
 
 errorsRecorded = 0
 
-for obj in report['protectionSourcesJobsSummary']:
-    objName = obj['protectionSource']['name']
-    objType = obj['protectionSource']['environment']
-    jobName = obj['jobName']
-    numErrors = obj['numErrors']
-    lastGoodUsecs = obj.get('lastSuccessfulRunTimeUsecs', 0)
-    if lastGoodUsecs == 0:
-        lastGoodDate = '-'
-    else:
-        lastGoodDate = datetime.strptime(usecsToDate(lastGoodUsecs), '%Y-%m-%d %H:%M:%S').strftime('%m/%d/%Y %H:%M:%S')
-    lastUsecs = obj['lastRunStartTimeUsecs']
-    lastStatus = obj['lastRunStatus']
-    if lastStatus != 'kSuccess' and numErrors > 0 and jobName[0:9] != '_DELETED_':
-        errorsRecorded += 1
-        job = [job for job in jobs if job['name'].lower() == jobName.lower()]
-        if job:
-            jobId = job[-1]['id']
-            jobUrl = 'https://%s/protection/job/%s/details' % (vip, jobId)
-            jobEntry = '<a href=%s>%s</a>' % (jobUrl, jobName)
-        else:
-            jobId = None
-            jobEntry = jobName
+errorCount = {}
+latestError = {}
+skip = []
+lastSuccessful = {}
+appErrors = {}
+objErrors = {}
+allObjects = []
+totalObjects = 0
+totalFailedObjects = 0
 
-        html += '''<tr>
-            <td>''' + str(objName) + '''</td>
-            <td>-</td>
-            <td>''' + str(objType[1:]) + '''</td>
-            <td>''' + str(jobEntry) + '''</td>
-            <td>''' + str(numErrors) + '''</td>
-            <td>''' + str(lastGoodDate) + '''</td>
-        </tr>'''
-
-        if jobId is not None:
-            run = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&id=%s&numRuns=1' % (lastUsecs, jobId))
-            if len(run) > 0:
-                for task in run[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['latestFinishedTasks']:
-                    if task['connectorParams'] != {}:
-                        if task['connectorParams']['endpoint'] == objName:
+for job in jobs:
+    objType = job['environment']
+    runs = api('get', '/backupjobruns?id=%s&startTimeUsecs=%s' % (job['id'], timeAgo(31, 'days')))
+    if len(runs) > 0:
+        for protectionRun in runs[0]['backupJobRuns']['protectionRuns']:
+            runStartTimeUsecs = protectionRun['copyRun']['runStartTimeUsecs']
+            if 'latestFinishedTasks' in protectionRun['backupRun']:
+                for task in protectionRun['backupRun']['latestFinishedTasks']:
+                    objName = task['base']['sources'][0]['source']['displayName']
+                    if objName.lower() not in allObjects:
+                        allObjects.append(objName.lower())
+                        totalObjects += 1
+                    objStatus = task['base']['publicStatus']
+                    if objName not in skip and objStatus == 'kFailure':
+                        errorsRecorded += 1
+                        if objName not in errorCount.keys():
+                            totalFailedObjects += 1
+                            print('%s  %s\t%s' % (objStatus, job['name'], objName))
+                            errorCount[objName] = 1
+                            latestError[objName] = cleanhtml(task['base']['error']['errorMsg'])
+                            appHtml = ''
                             if 'appEntityStateVec' in task:
                                 for app in task['appEntityStateVec']:
-                                    if app.get('publicStatus', 'kError') != 'kSuccess':
-                                        html += '''<tr>
+                                    totalObjects += 1
+                                    if 'error' in app:
+                                        totalFailedObjects += 1
+                                        appHtml += '''<tr>
                                             <td></td>
-                                            <td>''' + app['appEntity']['displayName'] + '''</td>
-                                            <td>''' + environments[app['appEntity']['type']][1:] + '''</td>
+                                            <td>%s</td>
+                                            <td>%s</td>
                                             <td></td>
                                             <td></td>
                                             <td></td>
-                                        </tr>'''
+                                            <td>%s</td>
+                                        </tr>''' % (app['appEntity']['displayName'], environments[app['appEntity']['type']][1:], cleanhtml(app['error']['errorMsg']))
+
+                            appErrors[objName] = appHtml
+                        else:
+                            errorCount[objName] += 1
+                        jobId = job['id']
+                        jobName = job['name']
+                        jobUrl = 'https://%s/protection/job/%s/details' % (vip, jobId)
+                        jobEntry = '<a href=%s>%s</a>' % (jobUrl, jobName)
+                        objErrors[objName] = '''<tr>
+                            <td>%s</td>
+                            <td>-</td>
+                            <td>%s</td>
+                            <td>%s</td>
+                            <td>%s</td>
+                            <td>%s</td>
+                            <td>%s</td>
+                        </tr>''' % (objName, objType[1:], jobEntry, errorCount[objName], usecsToDate(runStartTimeUsecs), latestError[objName])
+                    else:
+                        skip += objName
+
+
+for objName in sorted(errorCount.keys()):
+    html += objErrors[objName]
+    if objName in appErrors.keys():
+        html += appErrors[objName]
+
+percentFailed = round((100 * (float(totalObjects - totalFailedObjects)) / float(totalObjects)), 2)
 
 html += '''</table>
-<p style="margin-top: 15px; margin-bottom: 15px;"><span style="font-size:1em;">Number of errors recorded: ''' + str(errorsRecorded) + '''</span></p>
+<p style="margin-top: 15px; margin-bottom: 15px;"><span style="font-size:1em;">Number of errors reported: %s</span></p>
+<p style="margin-top: 15px; margin-bottom: 15px;"><span style="font-size:1em;">%s protected objects failed out of %s total objects (%s%% success rate)</span></p>
 </div>
 </body>
-</html>'''
+</html>
+''' % (totalFailedObjects, totalFailedObjects, totalObjects, percentFailed)
 
-print('saving report as strikeReport.html')
-outfileName = 'strikeReport.html'
+print('saving report as strikeReport-%s' % cluster['name'])
+outfileName = 'strikeReport-%s.html' % cluster['name']
 f = open(outfileName, "w")
 f.write(html)
 f.close()
