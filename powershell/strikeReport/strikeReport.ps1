@@ -22,7 +22,6 @@ $environments = @('kUnknown', 'kVMware' , 'kHyperV' , 'kSQL' , 'kView' , 'kPuppe
 
 write-host "Collecting report data..."
 
-$report = api get reports/protectionSourcesJobsSummary?allUnderHierarchy=true
 $jobs = api get protectionJobs?isDeleted=false
 
 $title = "Strike Summary Backup Report"
@@ -55,7 +54,6 @@ $html = '<html>
 
         td,
         th {
-            width: 20%;
             text-align: left;
             padding: 6px;
         }
@@ -86,61 +84,76 @@ $html += '</span>
     <th>Job Name</th>
     <th>Failure Count</th>
     <th>Last Good BU</th>
+    <th>Last Error</th>
 </tr>'
 
 $errorsRecorded = 0
 
-foreach($obj in $report.protectionSourcesJobsSummary){
-    $objName = $obj.protectionSource.name
-    $objType = $obj.protectionSource.environment
-    $jobName = $obj.jobName
-    $numErrors = $obj.numErrors
-    $lastGoodUsecs = $obj.lastSuccessfulRunTimeUsecs
-    $lastUsecs = $obj.lastRunStartTimeUsecs
-    $lastStatus = $obj.lastRunStatus
-    if($lastStatus -ne 'kSuccess' -and $numErrors -gt 0){
-        $errorsRecorded += 1
-        $job = ($jobs | Where-Object name -eq $jobName)
-        if($job){
-            $jobId = $job[-1].id
-            $jobUrl = "https://$vip/protection/job/$jobId/details"
-            $jobEntry = "<a href=$jobUrl>$jobName</a>"
-        }else{
-            $jobId = $null
-            $jobEntry = $jobName
-        }
-  
-        $html += "<tr>
-            <td>$objName</td>
-            <td>-</td>
-            <td>$($objType.subString(1))</td>
-            <td>$jobEntry</td>
-            <td>$numErrors</td>
-            <td>$(usecsToDate $lastGoodUsecs)</td>
-        </tr>"
-        if($jobId){
-            $run = api get "/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=$lastUsecs&id=$jobId"
-            if($run.backupJobRuns.protectionRuns.Count -gt 0){
-                foreach($task in $run.backupJobRuns.protectionRuns[-1].backupRun.latestFinishedTasks){
-                    if($task.connectorParams.endpoint -eq $objName){
-                        if($task.psobject.properties['appEntityStateVec']){
-                            foreach($app in $task.appEntityStateVec){
-                                if($app.publicStatus -ne 'kSuccess'){
-                                    $html += "<tr>
-                                        <td></td>
-                                        <td>$($app.appEntity.displayName)</td>
-                                        <td>$($environments[$app.appEntity.type].subString(1))</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                    </tr>"
-                                }
+$errorCount = @{}
+$latestError = @{}
+$skip = @()
+$lastSuccessful = @{}
+$appErrors = @{}
+$objErrors = @{}
+
+foreach($job in $jobs){
+    $objType = $job.environment
+    $runs = api get "/backupjobruns?id=$($job.id)&startTimeUsecs=$(timeAgo 31 days)"
+    foreach($protectionRun in $runs.backupJobRuns.protectionRuns){
+        $runStartTimeUsecs = $protectionRun.copyRun[0].runStartTimeUsecs
+        foreach($task in $protectionRun.backupRun.latestFinishedTasks){
+            $objName = $task.base.sources[0].source.displayName
+            $objStatus = $task.base.publicStatus
+            if($objName -notin $skip -and $objStatus -eq 'kFailure'){
+                $errorsRecorded += 1
+                if($objName -notin $errorCount.Keys){
+                    write-host "$objStatus  $($job.name)`t$objName"
+                    $errorCount[$objName] = 1
+                    $latestError[$objName] = $task.base.error.errorMsg
+                    $appHtml = ''
+                    if($task.psobject.properties['appEntityStateVec']){
+                        foreach($app in $task.appEntityStateVec){
+                            if($app.publicStatus -ne 'kSuccess'){
+                                $appHtml += "<tr>
+                                    <td></td>
+                                    <td>$($app.appEntity.displayName)</td>
+                                    <td>$($environments[$app.appEntity.type].subString(1))</td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>"
                             }
                         }
                     }
+                    $appErrors[$objName] = $appHtml
+                }else{
+                    $errorCount[$objName] += 1
                 }
+                $jobId = $job.id
+                $jobName = $job.name
+                $jobUrl = "https://$vip/protection/job/$jobId/details"
+                $jobEntry = "<a href=$jobUrl>$jobName</a>"
+                $objErrors[$objName] = "<tr>
+                    <td>$objName</td>
+                    <td>-</td>
+                    <td>$($objType.subString(1))</td>
+                    <td>$jobEntry</td>
+                    <td>$($errorCount[$objName])</td>
+                    <td>$(usecsToDate $runStartTimeUsecs)</td>
+                    <td>$($latestError[$objName])</td>
+                </tr>"
+            }else{
+                $skip += $objName
             }
         }
+    }
+}
+
+foreach($objName in ($errorCount.Keys | Sort-Object)){
+    $html += $objErrors[$objName]
+    if($objName -in $appErrors.Keys){
+        $html += $appErrors[$objName]
     }
 }
 
