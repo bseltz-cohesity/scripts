@@ -122,7 +122,7 @@ foreach($job in $jobs){
                                     <td></td>
                                     <td></td>
                                     <td></td>
-                                    <td></td>
+                                    <td>$($app.error.errorMsg)</td>
                                 </tr>"
                             }
                         }
