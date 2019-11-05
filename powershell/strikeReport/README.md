@@ -42,3 +42,5 @@ Place both files in a folder together and run the main script like so:
 * -smtpServer: SMTP gateway to forward email through
 * -smtpPort: SMTP port to use (default is 25)
 * -sendFrom: email address to show in the from field
+* -days: number of days of history (default is 31)
+* -slurp: number of runs to parse per api call (default is 500) reduce to solve for JSON response too large errors
