@@ -23,7 +23,9 @@ Run these commands from PowerShell to download the script(s) into your current d
 Place both files in a folder together on the proxy computer using the download commands above, then, run the linkShares.ps1 script like so:
 
 ```powershell
+# example command
 .\linkShares.ps1 -vip mycluster -username myusername -domain mydomain.net -jobName myjob -remoteComputer fileserver.mydomain.net -proxyComputer protectedcomputer.mydomain.net -localDirectory c:\Cohesity
+# end example command
 ```
 
 ## Parameters
