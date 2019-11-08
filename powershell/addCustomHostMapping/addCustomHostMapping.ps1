@@ -23,6 +23,5 @@ $hosts = api get /nexus/cluster/get_hosts_file
 ### add new host mapping
 $hosts.hosts = @($hosts.hosts + @{ 'ip' = $ip; 'domainName' = @($hostNames)})
 $hosts | setApiProperty 'validate' $True
-$hosts | ConvertTo-Json -Depth 99
 $result = api put /nexus/cluster/upload_hosts_file $hosts
 write-host $result.message -ForegroundColor Green
