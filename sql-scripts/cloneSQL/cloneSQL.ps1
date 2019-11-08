@@ -58,13 +58,8 @@ $entityType = $latestdb.registeredSource.type
 
 ### search for source and target servers
 $entities = api get /appEntities?appEnvType=3`&envType=$entityType
-$sourceEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $sourceServer }
+$ownerId = $latestdb.vmDocument.objectId.entity.sqlEntity.ownerId
 $targetEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $targetServer }
-
-if($null -eq $sourceEntity){
-    Write-Host "Source Server Not Found" -ForegroundColor Yellow
-    exit
-}
 
 if($null -eq $targetEntity){
     Write-Host "Target Server Not Found" -ForegroundColor Yellow
@@ -107,7 +102,9 @@ if ($logTime -or $latest) {
                     'jobId'          = $latestdb.vmDocument.objectId.jobId;
                     'jobInstanceId'  = $version.instanceId.jobInstanceId;
                     'startTimeUsecs' = $version.instanceId.jobStartTimeUsecs;
-                    'entity'         = $sourceEntity.appEntity.entity;
+                    "entity" = @{
+                        "id" = $ownerId
+                    };
                     'attemptNum'     = 1
                 }
             )
@@ -149,7 +146,9 @@ $cloneTask = @{
                 "jobId" = $latestdb.vmDocument.objectId.jobId;
                 "jobInstanceId" = $latestdb.vmDocument.versions[0].instanceId.jobInstanceId;
                 "startTimeUsecs" = $latestdb.vmDocument.versions[0].instanceId.jobStartTimeUsecs;
-                "entity" = $sourceEntity.appEntity.entity;
+                "entity" = @{
+                    "id" = $ownerId
+                }
             }
             "ownerRestoreParams" = @{
                 "action" = "kCloneVMs";
