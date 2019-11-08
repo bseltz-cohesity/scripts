@@ -16,7 +16,8 @@ param (
 # authenticate
 apiauth -vip $vip -username $username -domain $domain
 
-$pw = Read-Host -Prompt "Enter Password for vCenter user $vcuser"
+$secureString = Read-Host -Prompt "Enter Password for vCenter user $vcuser" -AsSecureString
+$pw = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureString))
 
 $registerVcenter = @{
     "entity"                 = @{
@@ -43,5 +44,6 @@ $registerVcenter = @{
         }
     }
 }
-
-api post /backupsources $registerVcenter
+Clear-Variable pw
+write-host "Registering $vcenter..." 
+$null = api post /backupsources $registerVcenter
