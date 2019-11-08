@@ -20,6 +20,6 @@ apiauth -vip $vip -username $username -domain $domain
 $hosts = api get /nexus/cluster/get_hosts_file
 
 ### add new host mapping
-$hosts.hosts += @{ 'ip' = $ip; 'domainName' = $hostNames}
+$hosts.hosts += @{ 'ip' = $ip; 'domainName' = @($hostNames)}
 $result = api put /nexus/cluster/upload_hosts_file $hosts
 write-host $result.message -ForegroundColor Green
