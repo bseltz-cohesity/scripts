@@ -4,6 +4,10 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script recovers a list of protected NAS shares as Cohesity Views.
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
 ```powershell
 # Download Commands
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/recoverNasList/recoverNasList.ps1).content | Out-File recoverNasList.ps1; (Get-Content recoverNasList.ps1) | Set-Content recoverNasList.ps1
