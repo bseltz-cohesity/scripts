@@ -7,7 +7,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
     [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
     [Parameter()][string]$domain = 'local', #local or AD domain
-    [Parameter(Mandatory = $True)][ValidateSet('sql','view','vm')][string]$cloneType,
+    [Parameter(Mandatory = $True)][ValidateSet('sql','view','vm','oracle')][string]$cloneType,
     [Parameter()][string]$viewName = '', #name of clone view to tear down
     [Parameter()][string]$vmName = '', #name of clone VM to tear down
     [Parameter()][string]$dbName = '', #name of clone DB to tear down
@@ -15,7 +15,7 @@ param (
     [Parameter()][string]$instance = 'MSSQLSERVER'
 )
 
-if ($cloneType -eq 'sql'){
+if ($cloneType -eq 'sql' -or $cloneType -eq 'oracle'){
     if($dbName -eq '' -or $dbServer -eq ''){
         write-host "dbName and dbServer parameters required" -foregroundcolor yellow
         exit
@@ -42,7 +42,7 @@ if ($cloneType -eq 'vm'){
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
 
-$cloneTypes = @{ 'vm' = 2; 'view' = 5; 'sql' = 7 }
+$cloneTypes = @{ 'vm' = 2; 'view' = 5; 'sql' = 7 ; 'oracle' = 7}
 
 $taskId = $null
 
@@ -73,6 +73,18 @@ foreach ($clone in $clones){
         }
     }
 
+    ### tear down Oracle clone
+    if($cloneType -eq 'oracle'){
+    
+        $cloneDB = $clone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.newDatabaseName
+        $cloneHost = $clone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.targetHost.displayName
+        
+        if ($cloneDB -ieq $dbName -and $cloneHost -ieq $dbServer){
+            "tearing down ORacle DB: $cloneDB from $cloneHost..."
+            $taskId = $thisTaskId
+        }
+    }
+
     ### tear down view
     if($cloneType -eq 'view'){
         
@@ -80,7 +92,7 @@ foreach ($clone in $clones){
         
         if ($cloneViewName -eq $viewName){
             "tearing down View: $cloneViewName..."
-            $result = api delete views/$cloneViewName
+            $null = api delete views/$cloneViewName
             exit
         }
     }
@@ -98,7 +110,7 @@ foreach ($clone in $clones){
 }
 
 if ($taskId) {
-    $result = api post "/destroyclone/$taskId"
+    $null = api post "/destroyclone/$taskId"
 }else{
     write-host "Clone Not Found" -foregroundcolor yellow
 }
