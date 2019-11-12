@@ -15,7 +15,8 @@ param (
     [Parameter()][switch]$enable,  # enable a disabled job, run it, then disable when done
     [Parameter()][ValidateSet(“kRegular”,”kFull”,”kLog”,"kSystem")][string]$backupType = 'kRegular',
     [Parameter()][array]$objects,
-    [Parameter()][switch]$progress
+    [Parameter()][switch]$progress,
+    [Parameter()][switch]$wait
 )
 
 # source the cohesity-api helper code
@@ -106,6 +107,39 @@ if($environment -eq 'kSQL' -and $job.environmentParameters.sqlParameters.backupT
                         }
                     }else{
                         write-host "Object $object not found (instance name)" -ForegroundColor Yellow
+                        exit 1
+                    }
+                }else{
+                    write-host "Object $object not found (server name)" -ForegroundColor Yellow
+                    exit 1
+                }
+            }else{
+                write-host "Object $object not found (server name)" -ForegroundColor Yellow
+                exit 1
+            }
+        }
+    }
+}elseif ($environment -eq 'kOracle') {
+    if($objects){
+        $runNowParameters = @()
+        foreach($object in $objects){
+            $server, $db = $object.split('/')
+            $serverObjectId = getObjectId $server
+            if($serverObjectId){
+                if(! ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId})){
+                    $runNowParameters += @{
+                        "sourceId" = $serverObjectId;
+                        "databaseIds" = @()
+                    }
+                }
+                $serverSource = api get "protectionSources?id=$serverObjectId"
+                if($serverSource.PSObject.Properties['applicationNodes']){
+                    $dbNode = $serverSource.applicationNodes | Where-Object {$_.protectionSource.Name -eq $db}
+                    if($dbNode){
+                        $dbId = $dbNode.protectionSource.id
+                        ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId}).databaseIds += $dbId
+                    }else{
+                        write-host "Object $object not found (db name)" -ForegroundColor Yellow
                         exit 1
                     }
                 }else{
@@ -210,7 +244,7 @@ $jobdata = @{
 
 # Add sourceIds if specified
 if($objects){
-    if($environment -eq 'kSQL' -and $job.environmentParameters.sqlParameters.backupType -eq 'kSqlVSSFile'){
+    if(($environment -eq 'kSQL' -and $job.environmentParameters.sqlParameters.backupType -eq 'kSqlVSSFile') -or $environment -eq 'kOracle'){
         $jobdata['runNowParameters'] = $runNowParameters
     }else{
         $jobdata['sourceIds'] = $sourceIds
@@ -238,18 +272,20 @@ while($newRunId -eq $lastRunId){
 }
 
 # wait for job run to finish
-$lastProgress = -1
-while ($runs[0].backupRun.status -notin $finishedStates){
-    sleep 5
-    if($progress){
-        $progressMonitor = api get "/progressMonitors?taskPathVec=backup_$($newRunId)_1&includeFinishedTasks=true&excludeSubTasks=false"
-        $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
-        if($percentComplete -gt $lastProgress){
-            "{0} percent complete" -f [math]::Round($percentComplete, 0)
-            $lastProgress = $percentComplete
+if($wait -or $enable){
+    $lastProgress = -1
+    while ($runs[0].backupRun.status -notin $finishedStates){
+        sleep 5
+        if($progress){
+            $progressMonitor = api get "/progressMonitors?taskPathVec=backup_$($newRunId)_1&includeFinishedTasks=true&excludeSubTasks=false"
+            $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
+            if($percentComplete -gt $lastProgress){
+                "{0} percent complete" -f [math]::Round($percentComplete, 0)
+                $lastProgress = $percentComplete
+            }
         }
+        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
     }
-    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
 }
 
 # disable job
@@ -263,10 +299,12 @@ if($enable){
     }
 }
 
-"Job finished with status: $($runs[0].backupRun.status)"
+if($wait -or $enable){
+    "Job finished with status: $($runs[0].backupRun.status)"
 
-if($runs[0].backupRun.status -eq 'kSuccess'){
-    exit 0
-}else{
-    exit 1
+    if($runs[0].backupRun.status -eq 'kSuccess'){
+        exit 0
+    }else{
+        exit 1
+    }
 }
