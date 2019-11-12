@@ -21,10 +21,10 @@ You can download these scripts onto your PC by opening a PowerShell session and 
 
 Please review the README for each:
 
-restoreOracle README: <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/restoreOracle>
+* restoreOracle: <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/restoreOracle>
 
-cloneOracle README: <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/cloneOracle>
+* cloneOracle: <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/cloneOracle>
 
-destroyClone README: <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/destroyClone>
+* destroyClone: <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/destroyClone>
 
-backupNow README: <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/backupNow>
+* backupNow: <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/backupNow>
