@@ -2,9 +2,9 @@
 
 There are four Oracle related scripts that are often useful to Oracle DBAs. They are:
 
-* restoreOracle.ps1: restore a Oracle database for operational recovery or testing
-* cloneOracle.ps1: clone a Oracle database for test/dev
-* destroyClone.ps1: tear down a Oracle clone
+* restoreOracle.ps1: restore an Oracle database for operational recovery or testing
+* cloneOracle.ps1: clone an Oracle database for test/dev
+* destroyClone.ps1: tear down an Oracle clone
 * backupNow.ps1: perform an on demand backup
 
 You can download these scripts onto your PC by opening a PowerShell session and running the following commands:
