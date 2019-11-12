@@ -41,4 +41,6 @@ The script takes the following parameters:
 * -sourceDB (source Database Name)
 * -targetServer (optional - SQL Server to attach clone to, defaults to same as sourceServer)
 * -targetDB (optional - target Database Name - defaults to same as source)
+* -logTime (optional - point in time to replay the logs to - if omitted will default to time of latest DB backup)
+* -latest (optional - replay the logs to the latest point in time available)
 * -wait (wait for completion and report end status)

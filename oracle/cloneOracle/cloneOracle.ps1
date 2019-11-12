@@ -1,7 +1,7 @@
 ### usage: ./cloneOracle.ps1 -vip mycluster -username myusername -domain mydomain.net `
 #                            -sourceServer oracle.mydomain.net -sourceDB cohesity `
 #                            -targetServer oracle2.mydomain.net -targetDB clonedb `
-#                            -oracleHome /home/oracle/app/oracle/product/11.2.0/dbhome_1 ` 
+#                            -oracleHome /home/oracle/app/oracle/product/11.2.0/dbhome_1 `
 #                            -oracleBase /home/oracle/app/oracle
 
 ### process commandline arguments
@@ -17,6 +17,8 @@ param (
     [Parameter(Mandatory = $True)][string]$oracleHome,
     [Parameter(Mandatory = $True)][string]$oracleBase,
     [Parameter()][switch]$wait, # wait for clone to finish
+    [Parameter()][string]$logTime,                       # PIT to replay logs to e.g. '2019-01-20 02:01:47'
+    [Parameter()][switch]$latest,                        # replay to latest available log PIT
     [Parameter()][string]$password = $null # optional! clear text password
 )
 
@@ -53,6 +55,85 @@ if($null -eq $targetEntity){
 
 ### version
 $version = $latestdb.vmDocument.versions[0]
+$ownerId = $latestdb.vmDocument.objectId.entity.oracleEntity.ownerId
+
+### handle log replay
+$versionNum = 0
+$validLogTime = $False
+
+if ($logTime -or $latest) {
+    if($logTime){
+        $logUsecs = dateToUsecs $logTime
+    }
+    $dbVersions = $latestdb.vmDocument.versions
+
+    foreach ($version in $dbVersions) {
+        ### find db date before log time
+        $GetRestoreAppTimeRangesArg = @{
+            "type"                = 19;
+            "restoreAppObjectVec" = @(
+                @{
+                    "appEntity"     = $latestdb.vmDocument.objectId.entity; ;
+                    "restoreParams" = @{
+                        "sqlRestoreParams"    = @{
+                            "captureTailLogs" = $true
+                        };
+                        "oracleRestoreParams" = @{
+                            "alternateLocationParams"         = @{
+                                "oracleDBConfig" = @{
+                                    "controlFilePathVec"   = @();
+                                    "enableArchiveLogMode" = $true;
+                                    "redoLogConf"          = @{
+                                        "groupMemberVec" = @();
+                                        "memberPrefix"   = "redo";
+                                        "sizeMb"         = 20
+                                    };
+                                    "fraSizeMb"            = 2048
+                                }
+                            };
+                            "captureTailLogs"                 = $false;
+                            "secondaryDataFileDestinationVec" = @(
+                                @{ }
+                            )
+                        }
+                    }
+                }
+            );
+            "ownerObjectVec"      = @(
+                @{
+                    'jobUid'         = $latestdb.vmDocument.objectId.jobUid;
+                    'jobId'          = $latestdb.vmDocument.objectId.jobId;
+                    'jobInstanceId'  = $version.instanceId.jobInstanceId;
+                    'startTimeUsecs' = $version.instanceId.jobStartTimeUsecs;
+                    "entity"         = @{
+                        "id" = $ownerId
+                    }
+                    'attemptNum'     = 1
+                }
+            )
+        }
+        $logTimeRange = api post /restoreApp/timeRanges $GetRestoreAppTimeRangesArg
+        if($latest){
+            if(! $logTimeRange.ownerObjectTimeRangeInfoVec[0].PSobject.Properties['timeRangeVec']){
+                $logTime = $null
+                $latest = $null
+                break
+            }
+        }
+        $logStart = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].startTimeUsecs
+        $logEnd = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].endTimeUsecs
+        if($latest){
+            $logUsecs = $logEnd - 1000000
+            $validLogTime = $True
+            break
+        }
+        if ($logStart -le $logUsecs -and $logUsecs -le $logEnd) {
+            $validLogTime = $True
+            break
+        }
+        $versionNum += 1
+    }
+}
 
 ### create clone task
 $taskName = "Clone-Oracle_$(dateToUsecs (get-date))"
@@ -100,6 +181,17 @@ $cloneParams = @{
                 }
             }
         )
+    }
+}
+
+### apply log replay time
+if($validLogTime -eq $True){
+    $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.restoreTimeSecs = $([int64]($logUsecs/1000000))
+}else{
+    if($logTime){
+        Write-Host "LogTime of $logTime is out of range" -ForegroundColor Yellow
+        Write-Host "Available range is $(usecsToDate $logStart) to $(usecsToDate $logEnd)" -ForegroundColor Yellow
+        exit 1
     }
 }
 
