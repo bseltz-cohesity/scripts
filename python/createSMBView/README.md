@@ -42,7 +42,8 @@ Place both files in a folder together and run the main script like so:
 * -u, --username: Cohesity username
 * -d, --domain: (optional) Active Directory domain (defaults to 'local')
 * -n, --viewname: name of new view to create
-* -w, --readwrite: comma separated list of principals to grant read/write access
-* -f, --fullcontrol: comma separated list of principals to grant full control
+* -r, --readonly: principal to grant readonly access (can be used multiple times)
+* -w, --readwrite: principal to grant read/write access (can be used multiple times)
+* -f, --fullcontrol: principal to grant full control (can be used multiple times)
 * -q, --qospolicy: defaults to 'Backup Target Low' or choose 'Backup Target High', 'TestAndDev High' or 'TestAndDev Low'
 * -s, --storageDomain: name of storage domain to place view data. Defaults to DefaultStorageDomain
