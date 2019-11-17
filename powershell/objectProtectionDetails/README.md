@@ -29,15 +29,17 @@ Place both files in a folder together and run the main script like so:
                               -username myusername `
                               -domain mydomain.net `
                               -objects vm1, vm2 `
-                              -startDate 2019-10-01
-                              -endDate 2019-11-01
+                              -startDate 2019-10-01 `
+                              -endDate 2019-11-01 `
                               -includeExpired
 ```
 
 or
 
 ```powershell
+# example objects from a list
 (get-content ./vms.txt) | %{ $_ | ./objectProtectionDetails.ps1 -vip mycluster -username myusername -domain mydomain.net }
+# end example
 ```
 
 ## Parameters
