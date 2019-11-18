@@ -1,6 +1,4 @@
-### usage: ./cloneList.ps1 -vip mycluster -username myusername -domain mydomain.net [ -olderThan 30 ] [ -tearDown ]
-### omitting the -tearDown parameter: the script will only display the lit of existing clones
-### including the -tearDown parameter: the script will actually tear down all clones! 
+### usage: ./viewGrowth.ps1 -vip mycluster -username myusername -domain mydomain.net [ -days 31 ]
 
 ### process commandline arguments
 [CmdletBinding()]
