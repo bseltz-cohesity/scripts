@@ -43,7 +43,7 @@ function formatSize($size){
     "$size $sizeUnits"
 }
 
-"View Name,Start Size,Start (Formatted),End Size,End (Formatted),Growth,Growth (Formatted)," | Out-File -Path $outfile
+"View Name,Start Size,Start (Formatted),End Size,End (Formatted),Growth,Growth (Formatted)," | Out-File $outfile
 
 foreach($view in $views | Sort-Object -Property name){
     $stats = api get "statistics/timeSeriesStats?endTimeMsecs=$endDateMsecs&entityId=$($view.viewId)&metricName=kSystemUsageBytes&metricUnitType=0&range=week&rollupFunction=latest&rollupIntervalSecs=14400&schemaName=kBridgeViewLogicalStats&startTimeMsecs=$startDateMsecs"
@@ -56,10 +56,10 @@ Start Size: {1} ({2})
   End Size: {3} ({4})
     Growth: {5} ({6})" -f $view.name, $startSize, $(formatSize($startSize)), $endSize, $(formatSize($endSize)), $($endSize - $startSize), $(formatSize(($endSize - $startSize)))    
 
-        "{0},{1},{2},{3},{4},{5},{6}" -f $view.name, $startSize, $(formatSize($startSize)), $endSize, $(formatSize($endSize)), $($endSize - $startSize), $(formatSize(($endSize - $startSize))) | Out-File -Path $outfile -Append
+        "{0},{1},{2},{3},{4},{5},{6}" -f $view.name, $startSize, $(formatSize($startSize)), $endSize, $(formatSize($endSize)), $($endSize - $startSize), $(formatSize(($endSize - $startSize))) | Out-File $outfile -Append
 
     }else{
-        $view.name | Out-File -Path $outfile -Append
+        $view.name | Out-File $outfile -Append
         Write-Warning "No stats for $($view.name)"
     }
 }
