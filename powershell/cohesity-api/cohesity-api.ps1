@@ -10,6 +10,7 @@
 # 0.10 - added $REPORTAPIERRORS constant - Apr 2019
 # 0.11 - added storePassword function and username parsing - Aug 2019
 # 0.12 - begrudgingly added -password to apiauth function - Oct 2019
+# 0.13 - added showProps function - Nov 2019
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
 
@@ -142,9 +143,9 @@ function api($method, $uri, $data){
             $url = $APIROOT + $uri
             $body = ConvertTo-Json -Depth 100 $data
             if ($UNIX){
-                $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER  -SkipCertificateCheck -TimeoutSec 180
+                $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER  -SkipCertificateCheck -TimeoutSec 10
             }else{
-                $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER -TimeoutSec 180
+                $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER -TimeoutSec 10
             }
             return $result
         }
@@ -487,4 +488,45 @@ function delApiProperty{
         [Parameter(Mandatory = $True, ValueFromPipeline = $True)][System.Object]$object
     )
     $object.PSObject.Members.Remove($name)
+}
+
+# show properties of an object
+function showProps{
+    param (
+        [Parameter(Mandatory = $True)]$obj,
+        [Parameter()]$parent = 'myobject',
+        [Parameter()]$search = $null
+    )
+    if($obj.getType().Name -eq 'String' -or $obj.getType().Name -eq 'Int64'){
+        if($null -ne $search){
+            if($parent.ToLower().Contains($search) -or ($obj.getType().Name -eq 'String' -and $obj.ToLower().Contains($search))){
+                "$parent = $obj"
+            }
+        }else{
+            "$parent = $obj"
+        }
+        
+    }else{ 
+        foreach($prop in $obj.PSObject.Properties | Sort-Object -Property Name){
+            if($($prop.Value.GetType().Name) -eq 'PSCustomObject'){
+                $thisObj = $prop.Value
+                showProps $thisObj "$parent.$($prop.Name)" $search
+            }elseif($($prop.Value.GetType().Name) -eq 'Object[]'){
+                $thisObj = $prop.Value
+                $x = 0
+                foreach($item in $thisObj){
+                    showProps $thisObj[$x] "$parent.$($prop.Name)[$x]" $search
+                    $x += 1
+                }
+            }else{
+                if($null -ne $search){
+                    if($prop.Name.ToLower().Contains($search) -or ($prop.Value.getType().Name -eq 'String' -and $prop.Value.ToLower().Contains($search))){
+                        "$parent.$($prop.Name) = $($prop.Value)"
+                    }
+                }else{
+                    "$parent.$($prop.Name) = $($prop.Value)"
+                }
+            }
+        }
+    }
 }
