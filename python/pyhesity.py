@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - v2.0 - Brian Seltzer - Mar 2019"""
+"""Cohesity Python REST API Wrapper Module - v2.0.3 - Brian Seltzer - Jun 2019"""
 
 ##########################################################################################
 # Change Log
@@ -17,6 +17,10 @@
 # 1.9.1 - added support for interactive password prompt - Mar 2019
 # 2.0 - python 3 compatibility - Mar 2019
 # 2.0.1 - fixed date functions for pythion 3 - Mar 2019
+# 2.0.2 - added file download - Jun 2019
+# 2.0.3 - added silent error handling, apdrop(), apiconnected() - Jun 2019
+# 2.0.4 - added pw and storepw - Aug 2019
+# 2.0.5 - added showProps - Nov 2019
 #
 ##########################################################################################
 # Install Notes
@@ -40,11 +44,12 @@ from os.path import expanduser
 
 ### ignore unsigned certificates
 import requests.packages.urllib3
+
 requests.packages.urllib3.disable_warnings()
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-__all__ = ['apiauth', 'api', 'usecsToDate', 'dateToUsecs', 'timeAgo', 'dayDiff', 'display']
+__all__ = ['apiauth', 'api', 'usecsToDate', 'dateToUsecs', 'timeAgo', 'dayDiff', 'display', 'fileDownload', 'apiconnected', 'apidrop', 'pw', 'storepw', 'showProps']
 
 APIROOT = ''
 HEADER = ''
@@ -53,69 +58,108 @@ APIMETHODS = ['get', 'post', 'put', 'delete']
 CONFIGDIR = expanduser("~") + '/.pyhesity'
 
 
+### pwstore for alternate infrastructure
+def pw(vip, username, domain='local', password=None, updatepw=None, prompt=None):
+    return __getpassword(vip, username, password, domain, updatepw, prompt)
+
+
+def storepw(vip, username, domain='local', password=None, updatepw=True, prompt=None):
+    pwd1 = '1'
+    pwd2 = '2'
+    while(pwd1 != pwd2):
+        pwd1 = __getpassword(vip, username, password, domain, updatepw, prompt)
+        pwd2 = getpass.getpass("Re-enter your password: ")
+        if(pwd1 != pwd2):
+            print('Passwords do not match! Please re-enter...')
+
+
 ### authentication
 def apiauth(vip, username, domain='local', password=None, updatepw=None, prompt=None, quiet=None):
     """authentication function"""
     global APIROOT
+    global HEADER
+    global AUTHENTICATED
     APIROOT = 'https://' + vip + '/irisservices/api/v1'
     creds = json.dumps({"domain": domain, "password": __getpassword(vip, username, password, domain, updatepw, prompt), "username": username})
-    global HEADER
     HEADER = {'accept': 'application/json', 'content-type': 'application/json'}
     url = APIROOT + '/public/accessTokens'
-    response = requests.post(url, data=creds, headers=HEADER, verify=False)
-    if response != '':
-        if response.status_code == 201:
-            accessToken = response.json()['accessToken']
-            tokenType = response.json()['tokenType']
-            HEADER = {'accept': 'application/json',
-                      'content-type': 'application/json',
-                      'authorization': tokenType + ' ' + accessToken}
-            global AUTHENTICATED
-            AUTHENTICATED = True
-            if(quiet is None):
-                print("Connected!")
-        else:
-            print(response.json()['message'])
+    try:
+        response = requests.post(url, data=creds, headers=HEADER, verify=False)
+        if response != '':
+            if response.status_code == 201:
+                accessToken = response.json()['accessToken']
+                tokenType = response.json()['tokenType']
+                HEADER = {'accept': 'application/json',
+                          'content-type': 'application/json',
+                          'authorization': tokenType + ' ' + accessToken}
+                AUTHENTICATED = True
+                if(quiet is None):
+                    print("Connected!")
+            else:
+                print(response.json()['message'])
+    except requests.exceptions.RequestException as e:
+        AUTHENTICATED = False
+        if quiet is None:
+            print(e)
+
+
+def apiconnected():
+    return AUTHENTICATED
+
+
+def apidrop():
+    global AUTHENTICATED
+    AUTHENTICATED = False
 
 
 ### api call function
-def api(method, uri, data=None):
+def api(method, uri, data=None, quiet=None):
     """api call function"""
     if AUTHENTICATED is False:
-        return "Not Connected"
+        print('Not Connected')
+        return None
     response = ''
     if uri[0] != '/':
         uri = '/public/' + uri
     if method in APIMETHODS:
-        if method == 'get':
-            response = requests.get(APIROOT + uri, headers=HEADER, verify=False)
-        if method == 'post':
-            response = requests.post(APIROOT + uri, headers=HEADER, json=data, verify=False)
-        if method == 'put':
-            response = requests.put(APIROOT + uri, headers=HEADER, json=data, verify=False)
-        if method == 'delete':
-            response = requests.delete(APIROOT + uri, headers=HEADER, json=data, verify=False)
+        try:
+            if method == 'get':
+                response = requests.get(APIROOT + uri, headers=HEADER, verify=False)
+            if method == 'post':
+                response = requests.post(APIROOT + uri, headers=HEADER, json=data, verify=False)
+            if method == 'put':
+                response = requests.put(APIROOT + uri, headers=HEADER, json=data, verify=False)
+            if method == 'delete':
+                response = requests.delete(APIROOT + uri, headers=HEADER, json=data, verify=False)
+        except requests.exceptions.RequestException as e:
+            if quiet is None:
+                print(e)
+
         if isinstance(response, bool):
             return ''
         if response != '':
             if response.status_code == 204:
                 return ''
-            # if response.status_code == 404:
-            #     return 'Invalid api call: ' + uri
+            if response.status_code == 404:
+                if quiet is None:
+                    print('Invalid api call: ' + uri)
+                return None
             responsejson = response.json()
             if isinstance(responsejson, bool):
                 return ''
             if responsejson is not None:
                 if 'errorCode' in responsejson:
-                    if 'message' in responsejson:
-                        print('\033[93m' + responsejson['errorCode'][1:] + ': ' + responsejson['message'] + '\033[0m')
-                    else:
-                        print(responsejson)
+                    if quiet is None:
+                        if 'message' in responsejson:
+                            print('\033[93m' + responsejson['errorCode'][1:] + ': ' + responsejson['message'] + '\033[0m')
+                        else:
+                            print(responsejson)
                     # return ''
                 # else:
                 return responsejson
     else:
-        print("invalid api method")
+        if quiet is None:
+            print("invalid api method")
 
 
 ### convert usecs to date
@@ -189,6 +233,39 @@ def display(myjson):
     else:
         # or handle single result
         print(json.dumps(myjson, sort_keys=True, indent=4, separators=(', ', ': ')))
+
+
+def fileDownload(uri, fileName):
+    """download file"""
+    if AUTHENTICATED is False:
+        return "Not Connected"
+    if uri[0] != '/':
+        uri = '/public/' + uri
+    response = requests.get(APIROOT + uri, headers=HEADER, verify=False, stream=True)
+    f = open(fileName, 'wb')
+    for chunk in response.iter_content(chunk_size=1048576):
+        if chunk:
+            f.write(chunk)
+    f.close()
+
+
+def showProps(obj, parent='myobject', search=None):
+    if isinstance(obj, dict):
+        for key in sorted(obj):  # obj.keys():
+            showProps(obj[key], "%s['%s']" % (parent, key), search)
+    elif isinstance(obj, list):
+        x = 0
+        for item in obj:
+            showProps(obj[x], "%s[%s]" % (parent, x), search)
+            x = x + 1
+    else:
+        if search is not None:
+            if search.lower() in parent.lower():
+                print("%s = %s" % (parent, obj))
+            elif isinstance(obj, unicode) and search.lower() in obj.lower():
+                print("%s = %s" % (parent, obj))
+        else:
+            print("%s = %s" % (parent, obj))
 
 
 ### create CONFIGDIR if it doesn't exist
