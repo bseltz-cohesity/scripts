@@ -520,7 +520,7 @@ function showProps{
                 }
             }else{
                 if($null -ne $search){
-                    if($prop.Name.ToLower().Contains($search) -or ($prop.Value.getType().Name -eq 'String' -and $prop.Value.ToLower().Contains($search))){
+                    if($prop.Name.ToLower().Contains($search.ToLower()) -or ($prop.Value.getType().Name -eq 'String' -and $prop.Value.ToLower().Contains($search.ToLower()))){
                         "$parent.$($prop.Name) = $($prop.Value)"
                     }
                 }else{
