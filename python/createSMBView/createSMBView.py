@@ -115,12 +115,19 @@ for user in fullControl:
 if len(whitelist) > 0:
     newView['subnetWhitelist'] = []
     for ip in whitelist:
+        if ',' in ip:
+            (thisip, description) = ip.split(',')
+            description = description.lstrip()
+        else:
+            thisip = ip
+            description = ''
         newView['subnetWhitelist'].append(
             {
+                "description": description,
                 "nfsAccess": "kReadWrite",
                 "smbAccess": "kReadWrite",
                 "nfsRootSquash": False,
-                "ip": ip,
+                "ip": thisip,
                 "netmaskIp4": "255.255.255.255"
             }
         )
