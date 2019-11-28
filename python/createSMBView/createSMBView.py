@@ -10,7 +10,8 @@
 #                           -f mydomain.net\admingroup2 \
 #                           -r mydomain.net\auditors \
 #                           -q 'TestAndDev High' \
-#                           -s mystoragedomain
+#                           -s mystoragedomain \
+#                           -i 192.168.1.97
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -27,6 +28,7 @@ parser.add_argument('-f', '--fullcontrol', action='append', default=[])  # user/
 parser.add_argument('-w', '--readwrite', action='append', default=[])  # user/group to grant readWrite
 parser.add_argument('-r', '--readonly', action='append', default=[])  # user/group to grant readOnly
 parser.add_argument('-q', '--qospolicy', type=str, choices=['Backup Target Low', 'Backup Target High', 'TestAndDev High', 'TestAndDev Low'], default='Backup Target Low')  # qos policy
+parser.add_argument('-i', '--whitelist', action='append', default=[])  # ip to whitelist
 
 args = parser.parse_args()
 
@@ -39,6 +41,7 @@ fullControl = args.fullcontrol
 readWrite = args.readwrite
 reeadOnly = args.readonly
 qosPolicy = args.qospolicy
+whitelist = args.whitelist
 
 # authenticate
 apiauth(vip, username, domain)
@@ -109,6 +112,18 @@ for user in readWrite:
 for user in fullControl:
     addPermission(user, 'kFullControl')
 
+if len(whitelist) > 0:
+    newView['subnetWhitelist'] = []
+    for ip in whitelist:
+        newView['subnetWhitelist'].append(
+            {
+                "nfsAccess": "kReadWrite",
+                "smbAccess": "kReadWrite",
+                "nfsRootSquash": False,
+                "ip": ip,
+                "netmaskIp4": "255.255.255.255"
+            }
+        )
 # create the view
 print("Creating view %s..." % viewName)
 result = api('post', 'views', newView)

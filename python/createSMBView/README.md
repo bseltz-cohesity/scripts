@@ -32,7 +32,8 @@ Place both files in a folder together and run the main script like so:
                    -f mydomain.net\admingroup2 \
                    -r mydomain.net\auditors \
                    -q 'TestAndDev High' \
-                   -s mystoragedomain
+                   -s mystoragedomain \
+                   -i 192.168.1.10
 #end example
 ```
 
@@ -47,3 +48,4 @@ Place both files in a folder together and run the main script like so:
 * -f, --fullcontrol: principal to grant full control (can be used multiple times)
 * -q, --qospolicy: defaults to 'Backup Target Low' or choose 'Backup Target High', 'TestAndDev High' or 'TestAndDev Low'
 * -s, --storageDomain: name of storage domain to place view data. Defaults to DefaultStorageDomain
+* -i, --whitelist: ip address to whitelist (can be used multiple times)
