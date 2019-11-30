@@ -11,7 +11,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 ```bash
 # Begin download commands
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNow/backupNow.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNow/pyhesity.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x backupNow.py
 # End download commands
 ```
@@ -53,3 +53,11 @@ Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/prote
 * -e, --enable: enable a paused job before running, then disable when done
 * -w, --wait: wait for backup run to complete and report result
 * -t, --backupType: choose one of kRegular, kFull or kLog backup types. Default is kRegular (incremental)
+
+## Using -o (--objectname) Parameter
+
+If the -o parameter is omitted, all objects within the specified job are backed up. To select specific objects to backup, us the -o parameter. The format of the object name varies per object type. For example:
+
+-o myvm1 (VM)
+-o oracle1.mydomain.net/testdb (Oracle)
+-o sql1.mydomain.net/MSSQLSERVER/proddb (SQL)

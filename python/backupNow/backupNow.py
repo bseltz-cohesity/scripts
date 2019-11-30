@@ -46,6 +46,8 @@ if enable is True:
 ### authenticate
 apiauth(vip, username, domain)
 
+sources = {}
+
 
 ### get object ID
 def getObjectId(objectName):
@@ -53,10 +55,14 @@ def getObjectId(objectName):
     d = {'_object_id': None}
 
     def get_nodes(node):
-
-        if node['protectionSource']['name'].lower() == objectName.lower():
-            d['_object_id'] = node['protectionSource']['id']
-            exit
+        if 'name' in node:
+            if node['name'].lower() == objectName.lower():
+                d['_object_id'] = node['id']
+                exit
+        if 'protectionSource' in node:
+            if node['protectionSource']['name'].lower() == objectName.lower():
+                d['_object_id'] = node['protectionSource']['id']
+                exit
         if 'nodes' in node:
             for node in node['nodes']:
                 if d['_object_id'] is None:
@@ -64,24 +70,12 @@ def getObjectId(objectName):
                 else:
                     exit
 
-    for source in (api('get', 'protectionSources')):
+    for source in sources:
         if d['_object_id'] is None:
             get_nodes(source)
 
     return d['_object_id']
 
-
-### get source IDs
-sourceIds = None
-if objectnames is not None:
-    sourceIds = []
-    for objectName in objectnames:
-        sourceId = getObjectId(objectName)
-        if sourceId is not None:
-            sourceIds.append(sourceId)
-        else:
-            print('Object %s not found!' % objectName)
-            exit()
 
 ### find protectionJob
 job = [job for job in api('get', 'protectionJobs') if job['name'].lower() == jobName.lower()]
@@ -89,13 +83,70 @@ if not job:
     print("Job '%s' not found" % jobName)
     exit(1)
 else:
-    environment = job[0]['environment']
+    job = job[0]
+    environment = job['environment']
     if environment not in ['kOracle', 'kSQL'] and backupType == 'kLog':
         print('BackupType kLog not applicable to %s jobs' % environment)
         exit(1)
+    if objectnames is not None:
+        sources = api('get', 'protectionSources/objects?objectIds=%s' % ','.join(str(x) for x in job['sourceIds']))
+
+# handle run now objects
+sourceIds = None
+runNowParameters = []
+if environment == 'kOracle' or (environment == 'kSQL' and job['environmentParameters']['sqlParameters']['backupType'] == 'kSqlVSSFile'):
+    if objectnames is not None:
+        for objectname in objectnames:
+            if environment == 'kSQL':
+                (server, instance, db) = objectname.split('/')
+            else:
+                (server, instance) = objectname.split('/', 1)
+            serverObjectId = getObjectId(server)
+            if serverObjectId is not None:
+                if len([obj for obj in runNowParameters if obj['sourceId'] == serverObjectId]) == 0:
+                    runNowParameters.append(
+                        {
+                            "sourceId": serverObjectId,
+                            "databaseIds": []
+                        }
+                    )
+                serverSource = api('get', 'protectionSources?id=%s' % serverObjectId)[0]
+                instanceNodes = [node for node in serverSource['applicationNodes'] if node['protectionSource']['name'].lower() == instance.lower()]
+                if len(instanceNodes) > 0:
+                    if environment == 'kSQL':
+                        dbNodes = [dbNode for dbNode in instanceNodes[0]['nodes'] if dbNode['protectionSource']['name'].lower() == '%s/%s' % (instance.lower(), db.lower())]
+                    else:
+                        dbNodes = instanceNodes
+                    if len(dbNodes) > 0:
+                        dbId = dbNodes[0]['protectionSource']['id']
+                        for runNowParameter in runNowParameters:
+                            if runNowParameter['sourceId'] == serverObjectId:
+                                runNowParameter['databaseIds'].append(dbId)
+                    else:
+                        print('Object %s not found (db name)' % db)
+                        exit(1)
+                else:
+                    if environment == 'kSQL':
+                        print('Object %s not found (instance name)' % instance)
+                    else:
+                        print('Object %s not found (db name)' % instance)
+                    exit(1)
+            else:
+                print('Object %s not found (server name)' % server)
+                exit(1)
+else:
+    if objectnames is not None:
+        sourceIds = []
+        for objectName in objectnames:
+            sourceId = getObjectId(objectName)
+            if sourceId is not None:
+                sourceIds.append(sourceId)
+            else:
+                print('Object %s not found!' % objectName)
+                exit(1)
 
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
-runs = api('get', 'protectionRuns?jobId=%s' % job[0]['id'])
+runs = api('get', 'protectionRuns?jobId=%s' % job['id'])
 if len(runs) > 0:
     newRunId = lastRunId = runs[0]['backupRun']['jobRunId']
 
@@ -104,7 +155,7 @@ if len(runs) > 0:
         print("waiting for existing job run to finish...")
         while (runs[0]['backupRun']['status'] not in finishedStates):
             sleep(5)
-            runs = api('get', 'protectionRuns?jobId=%s' % job[0]['id'])
+            runs = api('get', 'protectionRuns?jobId=%s' % job['id'])
 else:
     newRunId = lastRunId = 1
 
@@ -122,6 +173,8 @@ jobData = {
 
 if sourceIds is not None:
     jobData['sourceIds'] = sourceIds
+if len(runNowParameters) > 0:
+    jobData['runNowParameters'] = runNowParameters
 
 if replicateTo is not None:
     remote = [remote for remote in api('get', 'remoteClusters') if remote['name'].lower() == replicateTo.lower()]
@@ -158,18 +211,18 @@ if archiveTo is not None:
 
 ### enable the job
 if enable:
-    enabled = api('post', 'protectionJobState/%s' % job[0]['id'], {'pause': False})
+    enabled = api('post', 'protectionJobState/%s' % job['id'], {'pause': False})
 
 ### run protectionJob
 print("Running %s..." % jobName)
 
-runNow = api('post', "protectionJobs/run/%s" % job[0]['id'], jobData)
+runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData)
 
 # wait for new job run to appear
 if wait is True:
     while(newRunId == lastRunId):
         sleep(1)
-        runs = api('get', 'protectionRuns?jobId=%s' % job[0]['id'])
+        runs = api('get', 'protectionRuns?jobId=%s' % job['id'])
         if len(runs) > 0:
             newRunId = runs[0]['backupRun']['jobRunId']
         else:
@@ -180,7 +233,7 @@ if wait is True:
 if wait is True:
     while(runs[0]['backupRun']['status'] not in finishedStates):
         sleep(5)
-        runs = api('get', 'protectionRuns?jobId=%s' % job[0]['id'])
+        runs = api('get', 'protectionRuns?jobId=%s' % job['id'])
     print("Job finished with status: %s" % runs[0]['backupRun']['status'])
     runURL = "https://%s/protection/job/%s/run/%s/%s/protection" % \
         (vip, runs[0]['jobId'], runs[0]['backupRun']['jobRunId'], runs[0]['copyRun'][0]['runStartTimeUsecs'])
@@ -188,7 +241,7 @@ if wait is True:
 
 # disable job
 if enable:
-    disabled = api('post', 'protectionJobState/%s' % job[0]['id'], {'pause': True})
+    disabled = api('post', 'protectionJobState/%s' % job['id'], {'pause': True})
 
 # return exit code
 if wait is True:
