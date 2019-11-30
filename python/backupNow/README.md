@@ -61,3 +61,5 @@ If the -o parameter is omitted, all objects within the specified job are backed 
 * -o myvm1 (VM)
 * -o oracle1.mydomain.net/testdb (Oracle)
 * -o sql1.mydomain.net/MSSQLSERVER/proddb (SQL)
+
+Repeat the parameter to include multiple objects.
