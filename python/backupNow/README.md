@@ -58,6 +58,6 @@ Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/prote
 
 If the -o parameter is omitted, all objects within the specified job are backed up. To select specific objects to backup, us the -o parameter. The format of the object name varies per object type. For example:
 
--o myvm1 (VM)
--o oracle1.mydomain.net/testdb (Oracle)
--o sql1.mydomain.net/MSSQLSERVER/proddb (SQL)
+* -o myvm1 (VM)
+* -o oracle1.mydomain.net/testdb (Oracle)
+* -o sql1.mydomain.net/MSSQLSERVER/proddb (SQL)
