@@ -51,10 +51,10 @@ apiauth(vip, username, domain)
 
 allclones = api('get', '/restoretasks?restoreTypes=kCloneView&restoreTypes=kConvertAndDeployVMs&restoreTypes=kCloneApp&restoreTypes=kCloneVMs')
 
-availableclones = [clone for clone in allclones if
-                   'destroyClonedTaskStateVec' not in clone['restoreTask'] and
-                   clone['restoreTask']['performRestoreTaskState']['base']['type'] == cloneTypes[clonetype] and
-                   clone['restoreTask']['performRestoreTaskState']['base']['publicStatus'] == 'kSuccess']
+availableclones = [clone for clone in allclones if (
+    'destroyClonedTaskStateVec' not in clone['restoreTask']
+    and clone['restoreTask']['performRestoreTaskState']['base']['type'] == cloneTypes[clonetype]
+    and clone['restoreTask']['performRestoreTaskState']['base']['publicStatus'] == 'kSuccess')]
 
 for clone in availableclones:
     thisTaskId = clone['restoreTask']['performRestoreTaskState']['base']['taskId']
@@ -102,19 +102,19 @@ elif taskId is not None:
             sleep(3)
             result = api('get', '/restoretasks/%s' % taskId)
 
-            if clonetype == 'sql' or clonetype == 'oracle':
-                if 'destroyClonedTaskStateVec' in result[0]['restoreTask']:
-                    if len(result[0]['restoreTask']['destroyClonedTaskStateVec']) > 0:
-                        if 'finished' in result[0]['restoreTask']['destroyClonedTaskStateVec'][0]['destroyCloneAppTaskInfo']:
-                            if result[0]['restoreTask']['destroyClonedTaskStateVec'][0]['destroyCloneAppTaskInfo']['finished'] is True:
-                                finished = True
+            if ((clonetype == 'sql' or clonetype == 'oracle')
+                    and 'destroyClonedTaskStateVec' in result[0]['restoreTask']
+                    and len(result[0]['restoreTask']['destroyClonedTaskStateVec']) > 0
+                    and 'finished' in result[0]['restoreTask']['destroyClonedTaskStateVec'][0]['destroyCloneAppTaskInfo']
+                    and result[0]['restoreTask']['destroyClonedTaskStateVec'][0]['destroyCloneAppTaskInfo']['finished'] is True):
+                finished = True
 
-            elif clonetype == 'vm':
-                if 'destroyClonedTaskStateVec' in result[0]['restoreTask']:
-                    if len(result[0]['restoreTask']['destroyClonedTaskStateVec']) > 0:
-                        if 'status' in result[0]['restoreTask']['destroyClonedTaskStateVec'][0]:
-                            if result[0]['restoreTask']['destroyClonedTaskStateVec'][0]['status'] == 2:
-                                finished = True
+            elif (clonetype == 'vm'
+                    and 'destroyClonedTaskStateVec' in result[0]['restoreTask']
+                    and len(result[0]['restoreTask']['destroyClonedTaskStateVec']) > 0
+                    and 'status' in result[0]['restoreTask']['destroyClonedTaskStateVec'][0]
+                    and result[0]['restoreTask']['destroyClonedTaskStateVec'][0]['status'] == 2):
+                finished = True
 
 else:
     print('clone %s not found' % objectname)
