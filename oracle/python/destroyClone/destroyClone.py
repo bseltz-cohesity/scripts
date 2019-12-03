@@ -103,17 +103,17 @@ elif taskId is not None:
             result = api('get', '/restoretasks/%s' % taskId)
 
             if ((clonetype == 'sql' or clonetype == 'oracle')
-                    and 'destroyClonedTaskStateVec' in result[0]['restoreTask']
-                    and len(result[0]['restoreTask']['destroyClonedTaskStateVec']) > 0
-                    and 'finished' in result[0]['restoreTask']['destroyClonedTaskStateVec'][0]['destroyCloneAppTaskInfo']
-                    and result[0]['restoreTask']['destroyClonedTaskStateVec'][0]['destroyCloneAppTaskInfo']['finished'] is True):
+                    and result[0]['restoreTask'].get('destroyClonedTaskStateVec', [
+                        {
+                            'destroyCloneAppTaskInfo': {}
+                        }
+                    ])[0]['destroyCloneAppTaskInfo'].get('finished', False) is True):
                 finished = True
 
             elif (clonetype == 'vm'
-                    and 'destroyClonedTaskStateVec' in result[0]['restoreTask']
-                    and len(result[0]['restoreTask']['destroyClonedTaskStateVec']) > 0
-                    and 'status' in result[0]['restoreTask']['destroyClonedTaskStateVec'][0]
-                    and result[0]['restoreTask']['destroyClonedTaskStateVec'][0]['status'] == 2):
+                    and result[0]['restoreTask'].get('destroyClonedTaskStateVec', [
+                        {}
+                    ])[0].get('status', 0) == 2):
                 finished = True
 
 else:
