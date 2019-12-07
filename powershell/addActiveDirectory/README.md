@@ -84,6 +84,6 @@ Save the above as a .ps1 file like myActiveDirectory.ps1 and then you can use th
 ./addActiveDirectory.ps1 -cluster mycluster `
                          -username myuser `
                          -domain local `
-                         -configFile ./myActiveDirectorty.ps1
+                         -configFile ./myActiveDirectory.ps1
 # end example
 ```
