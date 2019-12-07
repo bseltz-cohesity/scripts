@@ -1,4 +1,4 @@
-# Add a VLAN Using PowerShell
+# Join Active Direcory Using PowerShell
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
@@ -54,7 +54,7 @@ Place the files in a folder together and run the main script like so:
 
 ## Using a Config File
 
-If you don't want to provide all the parameters on the command line, you can provide a config file. The config file should contain any VLAN parameters you want to provide. Like so:
+If you don't want to provide all the parameters on the command line, you can provide a config file. The config file should contain any parameters you want to provide. Like so:
 
 ```powershell
 # config file example
