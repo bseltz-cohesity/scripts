@@ -11,6 +11,7 @@
 # 0.11 - added storePassword function and username parsing - Aug 2019
 # 0.12 - begrudgingly added -password to apiauth function - Oct 2019
 # 0.13 - added showProps function - Nov 2019
+# 0.14 - added storePasswordFromInput function - Dec 2019
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
 
@@ -273,9 +274,19 @@ if ($UNIX) {
     
         return $clearTextPassword
     }
+
+    function storePasswordFromInput($vip, $username, $domain, $password){
+        if ($null -eq $domain) { $domain = 'local'}
+        $keyName = $vip + ':' + $domain + ':' + $username
+        $keyFile = "$CONFDIR/$keyName"
+        $key = Create-AesKey
+        $key | Out-File $keyFile
+        $encryptedPassword = Encrypt-String $key $password
+        $encryptedPassword | Out-File $keyFile -Append
+    }
 }else{
     function getpwd($vip, $username, $domain, $prompt, $updatePassword){
-
+        if ($null -eq $domain) { $domain = 'local'}
         $keyName = $vip + ':' + $domain + ':' + $username
         $registryPath = 'HKCU:\Software\Cohesity-API'
         $encryptedPasswordText = ''
@@ -299,7 +310,20 @@ if ($UNIX) {
         }        
         $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
         return [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
-    }    
+    }
+
+    function storePasswordFromInput($vip, $username, $domain, $password){
+        if ($null -eq $domain) { $domain = 'local'}
+        $keyName = $vip + ':' + $domain + ':' + $username
+        $registryPath = 'HKCU:\Software\Cohesity-API'
+        $encryptedPasswordText = ''
+        $securePassword = ConvertTo-SecureString -String $password -AsPlainText -Force
+        $encryptedPasswordText = $securePassword | ConvertFrom-SecureString
+        if(!(Test-Path $registryPath)){
+            New-Item -Path $registryPath -Force | Out-Null
+        }
+        Set-ItemProperty -Path "$registryPath" -Name "$keyName" -Value "$encryptedPasswordText"      
+    }
 }
 
 # store password function
