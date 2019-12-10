@@ -12,6 +12,7 @@
 # 0.12 - begrudgingly added -password to apiauth function - Oct 2019
 # 0.13 - added showProps function - Nov 2019
 # 0.14 - added storePasswordFromInput function - Dec 2019
+# 0.15 - added support for PS Core on Windows - Dec 2019
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
 
@@ -89,21 +90,26 @@ function apiauth($vip, $username, $domain, $password, [switch] $prompt, [switch]
     $url = $APIROOT + '/public/accessTokens'
 
     try {
-        if($UNIX){
-        $auth = Invoke-RestMethod -Method Post -Uri $url  -Header $HEADER -Body $(
-            ConvertTo-Json @{
-                'domain' = $domain; 
-                'password' = $(if($password){$password}else{getpwd -vip $vip -username $username -domain $domain -prompt $pr -updatePassword $updatepw}); 
-                'username' = $username
-            }) -SkipCertificateCheck
-        $global:CURLHEADER = "authorization: $($auth.tokenType) $($auth.accessToken)"
+        if($PSVersionTable.PSEdition -eq 'Core'){
+            $auth = Invoke-RestMethod -Method Post -Uri $url  -Header $HEADER -Body $(
+                ConvertTo-Json @{
+                    'domain' = $domain; 
+                    'password' = $(if($password){$password}else{getpwd -vip $vip -username $username -domain $domain -prompt $pr -updatePassword $updatepw}); 
+                    'username' = $username
+                }
+            ) -SkipCertificateCheck
         }else{
             $auth = Invoke-RestMethod -Method Post -Uri $url  -Header $HEADER -Body $(
                 ConvertTo-Json @{
                     'domain' = $domain; 
                     'password' = $(if($password){$password}else{getpwd $vip $username -domain $domain -prompt $pr -updatePassword $updatepw}); 
                     'username' = $username
-                })
+                }
+            )
+        }
+        if($UNIX){
+            $global:CURLHEADER = "authorization: $($auth.tokenType) $($auth.accessToken)"
+        }else{
             $WEBCLI.Headers['authorization'] = $auth.tokenType + ' ' + $auth.accessToken;
         }
         $global:AUTHORIZED = $true
@@ -143,7 +149,7 @@ function api($method, $uri, $data){
             if ($uri[0] -ne '/'){ $uri = '/public/' + $uri}
             $url = $APIROOT + $uri
             $body = ConvertTo-Json -Depth 100 $data
-            if ($UNIX){
+            if ($PSVersionTable.PSEdition -eq 'Core'){
                 $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER  -SkipCertificateCheck -TimeoutSec 10
             }else{
                 $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER -TimeoutSec 10
