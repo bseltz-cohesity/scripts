@@ -54,6 +54,7 @@ Then, if you're happy with the list of snapshots that will be archived, run the 
                           -domain mydomain.net `
                           -vault s3 `
                           -jobNames 'SQL Backup', 'NAS Backup' `
+                          -keepFor 365
                           -archive
 ```
 
