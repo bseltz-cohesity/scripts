@@ -1,4 +1,12 @@
-# usage: ./archiveOldSnapshots.ps1 -vip mycluster -username admin [ -domain local ] -vault S3 [ -olderThan 365 ] [ -IfExpiringAfter 30 ] [ -keepFor 365 ] [ -archive ]
+# usage: ./archiveOldSnapshots.ps1 -vip mycluster `
+#                                  -username admin `
+#                                  -domain local `
+#                                  -vault S3 `
+#                                  -jobName myjob1, myjob2
+#                                  -olderThan 30 `
+#                                  -ifExpiringAfter 30 `
+#                                  -keepFor 365 `
+#                                  -archive
 
 # process commandline arguments
 [CmdletBinding()]
@@ -9,7 +17,7 @@ param (
     [Parameter(Mandatory = $True)][array]$jobNames, # jobs to archive
     [Parameter(Mandatory = $True)][string]$vault, #name of archive target
     [Parameter()][string]$olderThan = 0, #archive snapshots older than x days
-    [Parameter()][string]$IfExpiringAfter = 0, #do not archve if the snapshot is going to expire within x days
+    [Parameter()][string]$ifExpiringAfter = 0, #do not archve if the snapshot is going to expire within x days
     [Parameter()][string]$keepFor = 0, #set archive retention to x days from original backup date
     [Parameter()][switch]$archive
 )
@@ -90,7 +98,7 @@ foreach($jobname in $jobNames){
             }
 
             # If the Local Snapshot is not expiring soon...
-            if ($daysToExpire -gt $IfExpiringAfter) {
+            if ($daysToExpire -gt $ifExpiringAfter) {
                 $newExpireDate = (get-date).AddDays($daysToKeep).ToString('yyyy-MM-dd')
                 if ($archive) {
                     write-host "$($jobName): archiving $runDate until $newExpireDate" -ForegroundColor Green

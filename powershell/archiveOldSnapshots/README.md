@@ -27,20 +27,50 @@ Place both files in a folder together, then we can run the script.
 First, run the script WITHOUT the -archive switch to see what would be archived.
 
 ```powershell
-./archiveOldSnapshots.ps1 -vip mycluster -username admin -vault s3 -olderThan 365 -IfExpiringAfter 30
+./archiveOldSnapshots.ps1 -vip mycluster `
+                          -username myuser `
+                          -domain mydomain.net `
+                          -vault s3 `
+                          -jobNames 'SQL Backup', 'NAS Backup' `
+                          -keepFor 365
 ```
+
 ```text
-Connected!
-Searching for old snapshots...
-found 3 snapshots to archive
-12/01/2017 01:30:00  Physical Windows Backup  (would archive for 72 days)
-12/01/2017 01:45:00  NAS Backup  (would archive for 72 days)
-12/02/2017 02:30:01  TestDB  (would archive for 71 days)
+searching for old SQL Backup snapshots...
+SQL Backup: would archive 12/11/2019 01:00:01 until 2019-12-16
+SQL Backup: would archive 12/12/2019 01:00:01 until 2019-12-17
+SQL Backup: would archive 12/13/2019 01:00:01 until 2019-12-18
+searching for old NAS Backup snapshots...
+NAS Backup: would archive 12/11/2019 01:20:00 until 2019-12-16
+NAS Backup: would archive 12/12/2019 01:20:01 until 2019-12-17
+NAS Backup: would archive 12/13/2019 01:20:01 until 2019-12-18
 ```
+
 Then, if you're happy with the list of snapshots that will be archived, run the script again and include the -archive switch. This will execute the archive tasks
 
 ```powershell
-./archiveOldSnapshots.ps1 -vip mycluster -username admin -vault s3 -olderThan 365 -IfExpiringAfter 30 -archive
+./archiveOldSnapshots.ps1 -vip mycluster `
+                          -username myuser `
+                          -domain mydomain.net `
+                          -vault s3 `
+                          -jobNames 'SQL Backup', 'NAS Backup' `
+                          -archive
 ```
 
-To monitor the archive tasks, see the script 'monitorArchiveTasks' 
+## Parameters
+
+* -vip: Cohesity Cluster to connect to
+* -username: Cohesity username
+* -domain: Cohesity logon domain (defaults to local)
+* -vault: Name of archive target
+* -jobNames: One or more job names to archive (comma separated)
+* -keepFor: (optional) keep archive for X days (from original backup date)
+* -ifExpiringAfter: (optional) skip if local snapshot set to expire in X or less days
+* -olderThan: (optional) skip if local snapshot is newer than X days
+* -archive: (optional) if excluded script will only report what it would do (test run mode)
+
+To monitor the archive tasks, see the script 'monitorArchiveTasks'
+
+## Running and Scheduling PowerShell Scripts
+
+For additional help running and scheduling Cohesity PowerShell scripts, please see <https://github.com/bseltz-cohesity/scripts/blob/master/powershell/Running%20Cohesity%20PowerShell%20Scripts.pdf>
