@@ -54,7 +54,6 @@ region='us-east-2'  # ec2 region name
 onprem_ip='192.168.1.198'  # an IP or DNS name of on-prem Cohesity cluster
 onprem_user='admin'  # Cohesity user to log onto the on-prem Cohesity cluster
 onprem_domain='local'  # Cohesity domain to log onto the on-prem Cohesity cluster
-onprem_job='VM Backup'  # on-prem protection job to monitor for completion
 scriptpath='/Users/myusername/scripts/python'  # absolute path to the scripts
 ```
 
