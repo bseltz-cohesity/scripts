@@ -13,7 +13,9 @@ param (
 
 if ($smbUserName -ne ''){
     $securePassword = Read-Host -Prompt "Please enter password for $smbUserName" -AsSecureString
-    $smbPassword = [System.Net.NetworkCredential]::new('',$securePassword).Password
+    $cred = New-Object -TypeName System.Net.NetworkCredential
+    $cred.SecurePassword = $securePassword
+    $smbPassword = $cred.Password
 }
 
 $pathList = Get-Content $nasList
@@ -70,6 +72,8 @@ foreach ($nasPath in $pathList) {
         $newSource.entityInfo['credentials'] = $credentials
     }
 
-    "Registering $nasPath"
-    $result = api post /backupsources $newSource
+    if($nasPath -ne ''){
+        "Registering $nasPath"
+        $null = api post /backupsources $newSource
+    }
 }
