@@ -26,13 +26,13 @@ Place both files in a folder together and run the main script like so:
 
 ```powershell
 ./chargebackReport.ps1 -vip mycluster `
-                 -username myusername `
-                 -domain mydomain.net `
-                 -prefix demo,test `
-                 -costPerGB 0.10 `
-                 -sendTo myuser@mydomain.net, anotheruser@mydomain.net `
-                 -smtpServer 192.168.1.95 `
-                 -sendFrom backupreport@mydomain.net
+                       -username myusername `
+                       -domain mydomain.net `
+                       -prefix demo,test `
+                       -costPerGB 0.10 `
+                       -sendTo myuser@mydomain.net, anotheruser@mydomain.net `
+                       -smtpServer 192.168.1.95 `
+                       -sendFrom backupreport@mydomain.net
 ```
 
 ## Parameters
