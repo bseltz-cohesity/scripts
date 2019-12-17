@@ -9,10 +9,12 @@ This powershell script registers a list of generic NAS shares as sources on Cohe
 Run these commands from PowerShell to download the script(s) into your current directory
 
 ```powershell
-# Begin download commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/registerGenericNasList/registerGenericNasList.ps1).content | Out-File registerGenericNasList.ps1; (Get-Content registerGenericNasList.ps1) | Set-Content registerGenericNasList.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/registerGenericNasList/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-# End download commands
+# Download Commands
+$scriptName = 'registerGenericNasList'
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
 ```
 
 ## Components
