@@ -1,6 +1,14 @@
-#./chargebackReport.ps1 -vip mycluster -username myusername [ -domain mydomain.net ] -costPerGB .10 [ -prefix demo, test ] -sendTo myuser@mydomain.net, anotheruser@mydomain.net -smtpServer 192.168.1.95 -sendFrom backupreport@mydomain.net
- 
-### process commandline arguments
+# usage:
+# ./chargebackReport.ps1 -vip mycluster 
+#                        -username myusername
+#                        -domain mydomain.net
+#                        -costPerGB .10
+#                        -prefix demo, test
+#                        -sendTo myuser@mydomain.net, anotheruser@mydomain.net 
+#                        -smtpServer 192.168.1.95 
+#                        -sendFrom backupreport@mydomain.net
+
+# process commandline arguments
 [CmdletBinding()]
 param (
     [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
@@ -18,13 +26,17 @@ param (
     [Parameter(Mandatory = $True)][string]$sendFrom #send from address
 )
 
-### source the cohesity-api helper code
-. ./cohesity-api
+# source the cohesity-api helper code
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
+# authenticate
 apiauth -vip $vip -username $username -domain $domain
 
-### determine start and end dates
+# get cluster info
+$cluster = api get cluster
+$clusterName = $cluster.name.ToUpper()
+
+# determine start and end dates
 $today = Get-Date
 
 if($startDate -ne '' -and $endDate -ne ''){
@@ -44,13 +56,18 @@ if($startDate -ne '' -and $endDate -ne ''){
 $start = (usecsToDate $uStart).ToString('yyyy-MM-dd')
 $end = (usecsToDate $uEnd).ToString('yyyy-MM-dd')
 
-$title = "($([string]::Join(", ", $prefix.ToUpper()))) Chargeback Report ($start - $end)"
+$startingDate = usecsToDate (dateToUsecs $start)
+$endingDate = usecsToDate (dateToUsecs $end)
 
-$csvFileName = "$([string]::Join("_", $prefix.ToUpper()))_Chargeback_Report_$start_$end.csv"
+# start files
+$title = "$clusterName ($([string]::Join(", ", $prefix.ToUpper()))) Chargeback Report ($start - $end)"
+
+$csvFileName = "$($clusterName)_$([string]::Join("_", $prefix.ToUpper()))_Chargeback_Report_$start_$end.csv"
+$htmlFileName = "$($clusterName)_$([string]::Join("_", $prefix.ToUpper()))_Chargeback_Report_$start_$end.html"
 
 $date = (get-date).ToString()
 
-"Object,Size,Cost" | Out-File $csvFileName -Encoding ascii
+"Object,Size (GB),Cost" | Out-File $csvFileName -Encoding ascii
 
 $html = '<html>
 <head>
@@ -164,63 +181,101 @@ $html += '</span>
 <table>
 <tr>
         <th>Object Name</th>
-        <th>Size</th>
+        <th>Size (GB)</th>
         <th>Cost</th>
       </tr>'
 
-$allInfo = api get /reports/objects/storage 
 
-$totalSize = 0
-$totalCost = 0
+$jobs = api get protectionJobs | Sort-Object -Property name
 
-foreach ($allInfoItem in $allinfo) {
-    $server = $allInfoItem.name
-    $jobName = $allInfoItem.jobName
+$entitySizes = @{}
+
+"Gathering job run details..."
+
+foreach($job in $jobs){
+    $jobName = $job.name
     $includeRecord = $false
+    # filter on prefixes
     foreach($pre in $prefix){
         if ($jobName.tolower().startswith($pre.tolower()) -or $prefix -eq 'ALL') {
             $includeRecord = $true
         }
     }
     if($includeRecord){
-        $snapshots = $allInfoItem.dataPoints
-        $maxsize = 0
-        foreach ($snapshotsItem in $snapshots) {
-            If ($snapshotsItem.snapshotTimeUsecs -lt $uEnd -And $snapshotsItem.snapshotTimeUsecs -gt $uStart) {
-                if($snapshotsItem.primaryPhysicalSizeBytes -gt $maxsize){
-                    $maxsize = $snapshotsItem.primaryPhysicalSizeBytes
+        "  $($job.name)"
+        # walk through date range looking for eneties and their sizes
+        $thisDate = $startingDate
+        while($thisDate -ne $endingDate){
+            $runs = api get "/backupjobruns?id=$($job.id)&numRuns=1&startTimeUsecs=$(dateToUsecs $thisDate)"
+            foreach($run in $runs){
+                foreach($task in $run.backupJobRuns.protectionRuns.backupRun.latestFinishedTasks){
+                    if($task){
+                        $displayName = $task.base.sources[0].source.displayName
+                        $size = $task.base.totalLogicalBackupSizeBytes
+                        # gather database sizes
+                        if($task.PSObject.Properties['appEntityStateVec']){
+                            foreach($app in $task.appEntityStateVec){
+                                if($entitySizes.ContainsKey("$displayName/$($app.appentity.displayName)")){
+                                    if($app.totalLogicalBytes -gt $entitySizes["$displayName/$($app.appentity.displayName)"]){
+                                        $entitySizes["$displayName/$($app.appentity.displayName)"] = $app.totalLogicalBytes
+                                    }
+                                }else{
+                                    $entitySizes["$displayName/$($app.appentity.displayName)"] = $app.totalLogicalBytes
+                                }
+                            }
+                        }else{
+                            if($entitySizes.ContainsKey($displayName)){
+                                if($size -gt $entitySizes[$displayName]){
+                                    $entitySizes[$displayName] = $size
+                                }
+                            }else{
+                                $entitySizes[$displayName] = $size
+                            }
+                        }
+                    }
                 }
             }
+            $thisDate = $thisDate.AddDays(1)
         }
-        $maxsize = [math]::Round($maxsize/(1024*1024*1024),2)
-        $chargeback = [math]::Round($maxsize * $costPerGB,2)
-        $totalSize += $maxsize
-        $totalCost += $chargeback
-        "$server,$maxsize,$chargeback" | Out-File $csvFileName -Append ascii
-        $html += "<tr>
-            <td>$server</td>
-            <td>$maxsize</td>
-            <td>$chargeback</td>
-        </tr>"
     }
 }
 
+$totalSize = 0
+$totalCost = 0
+
+# populate html/csv rows
+foreach ($entity in $entitySizes.Keys | sort){
+    $size = $entitySizes[$entity]/(1024*1024*1024)
+    $chargeback = [math]::Round($size * $costPerGB, 2)
+    $totalSize += $size
+    $totalCost += $chargeback
+    $size = [math]::Round($size, 2)
+    "$entity,$size,$chargeback" | Out-File $csvFileName -Append ascii
+    $html += "<tr>
+        <td>$entity</td>
+        <td>$size</td>
+        <td>$chargeback</td>
+    </tr>"
+}
+
+# finalize files
+$totalSize = [math]::Round($totalSize, 2)
 "Total,$totalSize,$totalCost" | Out-File $csvFileName -Append ascii
 
 $html += "<tr>
-<td>Total</td>
-<td>$totalSize</td>
-<td>$totalCost</td>
+    <td>Total</td>
+    <td>$totalSize</td>
+    <td>$totalCost</td>
 </tr>
 </table>                
 </div>
 </body>
 </html>"
 
-$html | out-file chargeBackReport.html
+$html | out-file $htmlFileName
 
+# send email report
 write-host "sending report to $([string]::Join(", ", $sendTo))"
-### send email report
 foreach($toaddr in $sendTo){
-    Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject $title -BodyAsHtml $html -Attachments $csvFileName
+    Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject $title -BodyAsHtml $html -Attachments $csvFileName -WarningAction SilentlyContinue
 }
