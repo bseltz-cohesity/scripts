@@ -193,45 +193,48 @@ foreach($policyName in $policyNames){
     }
 }
 
-function extendSnapshot($run, $days, $extendType){
-    # calculate days to extend
-    $runStartTimeUsecs = $run.copyRun[0].runStartTimeUsecs
-    $runDate = usecsToDate $runStartTimeUsecs
+function extendAndArchiveSnapshot($run, $keepDays, $archiveDays, $extendType){
+
+    $editRun = $false
+
+    $startTimeUsecs = $run.copyRun[0].runStartTimeUsecs
+    $runDate = usecsToDate $startTimeUsecs
+
+    $runParameters = @{
+        "jobRuns"= @(
+            @{
+                "jobUid" = $run.jobUid;
+                "runStartTimeUsecs" = $startTimeUsecs;
+                "copyRunTargets" = @()
+            }
+        )
+    }
+
+    # calculate days to extend snapshot
     $currentExpireTimeUsecs = $run.copyRun[0].expiryTimeUsecs
-    $newExpireTimeUsecs = $runStartTimeUsecs + ($days * 86400000000)
+    $newExpireTimeUsecs = $startTimeUsecs + ($keepDays * 86400000000)
     $newExpireDate = (usecsToDate $newExpireTimeUsecs).ToString('yyyy-MM-dd')
     $daysToExtend = [math]::Round(($newExpireTimeUsecs - $currentExpireTimeUsecs) / 86400000000)
+
     if("$($runDate.Year)-$($runDate.DayOfYear)-$($run.jobId)" -notin $global:processedExtensions){
-        if($daysToExtend -gt 0){
-            $runParameters = @{
-                "jobRuns"= @(
-                    @{
-                        "jobUid" = $run.jobUid;
-                        "runStartTimeUsecs" = $runStartTimeUsecs;
-                        "copyRunTargets" = @(
-                            @{
-                                "daysToKeep" = [int] $daysToExtend;
-                                "type" = "kLocal"
-                            }
-                        )
-                    }
-                )
+        if($daysToExtend -ne 0){
+            $runParameters.jobRuns[0].copyRunTargets += @{
+                "daysToKeep" = [int] $daysToExtend;
+                "type" = "kLocal"
             }
             if($commit){
                 "  $runDate - extending to $newExpireDate ($extendType)" | Tee-Object -FilePath $logfile -Append | write-host -ForegroundColor Green
-                $null = api put protectionRuns $runParameters
+                $editRun = $True
             }else{
                 "  $runDate - would extend to $newExpireDate ($extendType)" | Tee-Object -FilePath $logfile -Append | write-host -ForegroundColor Green
-            }        
+            }  
         }else{
-            "  $runDate - already extended to $newExpireDate" | Tee-Object -FilePath $logfile -Append | write-host -ForegroundColor Green
+            "  $runDate - already extended to $newExpireDate ($extendType)" | Tee-Object -FilePath $logfile -Append | write-host -ForegroundColor Green
         }
         $global:processedExtensions += "$($runDate.Year)-$($runDate.DayOfYear)-$($run.jobId)"
     }
-}
 
-function archiveSnapshot($run, $days, $extendType){
-    # select vault
+    # archive
     if($extendType -eq 'yearly'){
         $vault = $yVault
     }elseif($extendType -eq 'monthly'){
@@ -244,54 +247,56 @@ function archiveSnapshot($run, $days, $extendType){
     $vaultId = $vault[0].id
     $vaultName = $vault[0].name
 
-    # if run not already archived
-    if(('kArchival' -notin $run.copyRun.target.type) -or ($run.copyRun | Where-Object { $_.target.type -eq 'kArchival' -and $_.status -in @('kCanceled','kFailed')})){
-        # calculate daysToKeep
-        $startTimeUsecs = $run.copyRun[0].runStartTimeUsecs
-        $expireTimeUsecs = $startTimeUsecs + ([int]$days * 86400000000)
+    # calculate days to keep archive
+    $expireTimeUsecs = $startTimeUsecs + ([int]$archiveDays * 86400000000)
+
+    # find existing archive date
+    $existingExpiry = 0
+    foreach($copyRun in $run.copyRun){
+        if($copyRun.target.type -eq 'kArchival' -and $copyRun.target.archivalTarget.vaultId -eq $vaultId){
+            $existingExpiry = $copyRun.expiryTimeUsecs
+            $existingExpiryDate = usecsToDate $existingExpiry
+        }
+    }
+    if($existingExpiry -eq 0){
+        # new archive
         $now = dateToUsecs $(get-date)
-        $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
         $daysToKeep = [math]::Round(($expireTimeUsecs - $now) / 86400000000)
         $expireDate = (get-date).AddDays($daysToKeep).ToString('yyyy-MM-dd')
-        if("$($runDate.Year)-$($runDate.DayOfYear)-$($run.jobId)" -notin $global:processedArchives){
-            if($daysToKeep -gt 0){
-                # archive params
-                $archiveTask = @{
-                    'jobRuns' = @(
-                        @{
-                            'copyRunTargets'    = @(
-                                @{
-                                    'archivalTarget' = @{
-                                        'vaultId'   = $vaultId;
-                                        'vaultName' = $vaultName;
-                                        'vaultType' = 'kCloud'
-                                    };
-                                    'daysToKeep'     = [int] $daysToKeep;
-                                    'type'           = 'kArchival'
-                                }
-                            );
-                            'runStartTimeUsecs' = $run.copyRun[0].runStartTimeUsecs;
-                            'jobUid'            = $run.jobUid
-                        }
-                    )
-                }
-                if ($commit) {
-                    # archive the snapshot
-                    "  $runDate - archiving to $expireDate ($extendType)" | Tee-Object -FilePath $logfile -Append | write-host -ForegroundColor Green
-                    $null = api put protectionRuns $archiveTask
-                }else{
-                    # display only (test run)
-                    "  $runDate - would archive to $expireDate ($extendType)" | Tee-Object -FilePath $logfile -Append | write-host -ForegroundColor Green
-                }    
-            }
-            $global:processedArchives += "$($runDate.Year)-$($runDate.DayOfYear)-$($run.jobId)"
-        }
     }else{
-        # report already archived
-        if("$($runDate.Year)-$($runDate.DayOfYear)-$($run.jobId)" -notin $global:processedArchives){
-            "  $runDate - already archived" | Tee-Object -FilePath $logfile -Append | write-host -ForegroundColor Green
-            $global:processedArchives += "$($runDate.Year)-$($runDate.DayOfYear)-$($run.jobId)"
+        # extend existing archive
+        $daysToKeep = [math]::Round(($expireTimeUsecs - $existingExpiry) / 86400000000)
+        $expireDate = $existingExpiryDate.AddDays($daysToKeep).ToString('yyyy-MM-dd')
+    }
+
+    if("$($runDate.Year)-$($runDate.DayOfYear)-$($run.jobId)" -notin $global:processedArchives){
+        if($daysToKeep -ne 0){
+            $runParameters.jobRuns[0].copyRunTargets += @{
+                'archivalTarget' = @{
+                    'vaultId'   = $vaultId;
+                    'vaultName' = $vaultName;
+                    'vaultType' = 'kCloud'
+                };
+                'daysToKeep'     = [int] $daysToKeep;
+                'type'           = 'kArchival'
+            }
+            if ($commit) {
+                # archive the snapshot
+                "  $runDate - archiving to $expireDate ($extendType)" | Tee-Object -FilePath $logfile -Append | write-host -ForegroundColor Green
+                $editRun = $True
+            }else{
+                # display only (test run)
+                "  $runDate - would archive to $expireDate ($extendType)" | Tee-Object -FilePath $logfile -Append | write-host -ForegroundColor Green
+            }
+        }else{
+            "  $runDate - already archived to $expireDate ($extendType)" | Tee-Object -FilePath $logfile -Append | write-host -ForegroundColor Green
         }
+        $global:processedArchives += "$($runDate.Year)-$($runDate.DayOfYear)-$($run.jobId)"
+    }
+    
+    # commit any changes
+    if($editRun -eq $True){
+        $null = api put protectionRuns $runParameters
     }
 }
 
@@ -334,9 +339,10 @@ while($x -ge 0){
     $x -= 1
 }
 
+# find job runs that match dates to process
 foreach($job in $selectedJobs){
     "$($job.name)" | Tee-Object -FilePath $logfile -Append | write-host -ForegroundColor White
-    # find available runs that are newer than X days
+
     $runs = api get "protectionRuns?jobId=$($job.id)&runTypes=kRegular&runTypes=kFull&excludeTasks=true&excludeNonRestoreableRuns=true&startTimeUsecs=$(timeAgo $newerThan days)" | `
         Where-Object { $_.backupRun.snapshotsDeleted -eq $false } | `
         Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
@@ -355,17 +361,13 @@ foreach($job in $selectedJobs){
             $runDate = usecsToDate ($run.copyRun[0].runStartTimeUsecs)
             # process yearly, or monthly, or weekly
             if($extendType -eq 'special' -and $runDate -le $wantedDate.AddDays($maxSpecialDrift)){
-                extendSnapshot $run $keepSpecial $extendType
-                archiveSnapshot $run $archiveSpecial $extendType
+                extendAndArchiveSnapshot $run $keepSpecial $archiveSpecial $extendType
             }elseif($extendType -eq 'yearly' -and $runDate -le $wantedDate.AddDays($maxYearlyDrift)){
-                extendSnapshot $run $keepYearly $extendType
-                archiveSnapshot $run $archiveYearly $extendType
+                extendAndArchiveSnapshot $run $keepYearly $archiveYearly $extendType
             }elseif($extendType -eq 'monthly'  -and $runDate -le $wantedDate.AddDays($maxMonthlyDrift)){
-                extendSnapshot $run $keepMonthly $extendType
-                archiveSnapshot $run $archiveMonthly $extendType
+                extendAndArchiveSnapshot $run $keepMonthly $archiveMonthly $extendType
             }elseif($extendType -eq 'weekly'  -and $runDate -le $wantedDate.AddDays($maxWeeklyDrift)){
-                extendSnapshot $run $keepWeekly $extendType
-                archiveSnapshot $run $archiveWeekly $extendType
+                extendAndArchiveSnapshot $run $keepWeekly $archiveWeekly $extendType
             }
             $runCount += 1
         }
