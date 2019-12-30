@@ -330,6 +330,6 @@ $html += '</tbody></table><br>
 # send email report
 write-host "sending report to $([string]::Join(", ", $sendTo))"
 foreach($toaddr in $sendTo){
-    Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject "$prefixTitle backupSummaryReport" -BodyAsHtml $html -WarningAction SilentlyContinue
+    Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject "$prefixTitle backupSummaryReport ($($cluster.name))" -BodyAsHtml $html -WarningAction SilentlyContinue
 }
 $html | out-file "$($cluster.name)-objectreport.html"
