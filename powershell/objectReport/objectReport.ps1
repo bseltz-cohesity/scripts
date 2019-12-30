@@ -1,11 +1,11 @@
 # usage:
 # ./objectReport.ps1 -vip mycluster `
-#                    -username myusername `
-#                    -domain mydomain.net `
-#                    -prefix demo, test `
-#                    -sendTo myuser@mydomain.net, anotheruser@mydomain.net `
-#                    -smtpServer 192.168.1.95 `
-#                    -sendFrom backupreport@mydomain.net
+#                  -username myusername `
+#                  -domain mydomain.net `
+#                  -prefix demo, test `
+#                  -sendTo myuser@mydomain.net, anotheruser@mydomain.net `
+#                  -smtpServer 192.168.1.95 `
+#                  -sendFrom backupreport@mydomain.net
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -39,9 +39,26 @@ $envType = @('kUnknown', 'kVMware', 'kHyperV', 'kSQL', 'kView', 'kRemote Adapter
 
 $objectStatus = @{}
 
-function latestStatus($objectName, $status, $jobName, $jobType, $jobId, $startTimeUsecs, $message, $isPaused) {
+function latestStatus($objectName,
+                      $status,
+                      $jobName,
+                      $jobType,
+                      $jobId,
+                      $startTimeUsecs,
+                      $message,
+                      $isPaused,
+                      $logicalSize,
+                      $dataWritten){
 
-    $thisStatus = @{'status' = $status; 'jobName' = $jobName; 'jobType' = $jobType; 'jobId' = $jobId; 'lastRunUsecs' = $startTimeUsecs; 'isPaused' = $isPaused }
+    $thisStatus = @{'status' = $status; 
+                    'jobName' = $jobName; 
+                    'jobType' = $jobType; 
+                    'jobId' = $jobId; 
+                    'lastRunUsecs' = $startTimeUsecs; 
+                    'isPaused' = $isPaused;
+                    'logicalSize' = $logicalSize;
+                    'dataWritten' = $dataWritten}
+
     $thisStatus['message'] = $message
     $thisStatus['lastError'] = ''
     $thisStatus['lastSuccess'] = ''
@@ -105,6 +122,8 @@ $headings = @('Object Type',
               'Latest Status', 
               'Last Start Time',
               'Last Success',
+              'Logical Size (GB)',
+              'Change Rate (%)',
               'Failure Count',
               'Error Message')
 
@@ -154,6 +173,8 @@ foreach($job in $jobSummary | Sort-Object -Property { $_.backupJobSummary.jobDes
                 $status = $task.base.publicStatus
                 $jobType = $task.base.type
                 $entity = $task.base.sources[0].source.displayName
+                $dataWritten = $task.base.totalPhysicalBackupSizeBytes
+                $logicalSize = $task.base.totalLogicalBackupSizeBytes
                 if($status -eq 'kFailure'){
                     $message = $task.base.error.errorMsg
                 }elseif ($status -eq 'kWarning') {
@@ -169,7 +190,12 @@ foreach($job in $jobSummary | Sort-Object -Property { $_.backupJobSummary.jobDes
                     foreach($app in $task.appEntityStateVec){
                         $appEntity = $app.appentity.displayName
                         $appStatus = $app.publicStatus
+                        if($null -eq $appStatus){
+                            $appStatus = $status
+                        }
                         $objectName = "$entity/$appEntity"
+                        $logicalSize = $app.totalLogicalBytes
+                        $dataWritten = $app.totalPhysicalBackupSizeBytes
                         if($appStatus -eq 'kFailure'){
                             $message = $task.base.error.errorMsg
                         }elseif ($appStatus -eq 'kWarning') {
@@ -180,11 +206,29 @@ foreach($job in $jobSummary | Sort-Object -Property { $_.backupJobSummary.jobDes
                         if($message.Length -gt 100){
                             $message = $message.Substring(0,99)
                         }
-                        latestStatus -objectName $objectName -status $appStatus -jobName $jobName -jobType $jobType -jobId $jobId -message $message -startTimeUsecs $startTimeUsecs -isPaused $isPaused
+                        latestStatus -objectName $objectName `
+                                     -status $appStatus `
+                                     -jobName $jobName `
+                                     -jobType $jobType `
+                                     -jobId $jobId `
+                                     -message $message `
+                                     -startTimeUsecs $startTimeUsecs `
+                                     -isPaused $isPaused `
+                                     -logicalSize $logicalSize `
+                                     -dataWritten $dataWritten
                     }
                 }else{
                     $objectName = $entity
-                    latestStatus -objectName $objectName -status $status -jobName $jobName -jobType $jobType -jobId $jobId -message $message -startTimeUsecs $startTimeUsecs -isPaused $isPaused
+                    latestStatus -objectName $objectName `
+                                 -status $status `
+                                 -jobName $jobName `
+                                 -jobType $jobType `
+                                 -jobId $jobId `
+                                 -message $message `
+                                 -startTimeUsecs $startTimeUsecs `
+                                 -isPaused $isPaused `
+                                 -logicalSize $logicalSize `
+                                 -dataWritten $dataWritten
                 }
             }
         }
@@ -208,6 +252,20 @@ foreach ($entity in $objectStatus.Keys | Sort-Object){
     $lastRunStartTime = usecsToDate $objectStatus[$entity].lastRunUsecs
     $lastSuccess = $objectStatus[$entity].lastSuccess
     $isPaused = $objectStatus[$entity].isPaused
+    $logicalSize = $objectStatus[$entity].logicalSize
+    $dataWritten = $objectStatus[$entity].dataWritten
+    if($logicalSize -gt 0){
+        $changeRate = $dataWritten / $logicalSize
+        $changeRatePct = [math]::Round(100 * $changeRate, 1)
+        $displaySize = [math]::Round($logicalSize/(1024*1024*1024),1)
+    }elseif($logicalSize -eq 0){
+        $changeRatePct = 0
+        $displaySize = 0
+    }else{
+        $changeRatePct = '-'
+        $displaySize = '-'
+    }
+    
     $lastSuccessfulRunTime = ''
     if($lastSuccess -eq '?'){
         $lastSuccessfulRunTime = '?'
@@ -217,7 +275,6 @@ foreach ($entity in $objectStatus.Keys | Sort-Object){
     $numErrors = $objectStatus[$entity].numErrors
     if($numErrors -eq 0){ $numErrors = ''}
     $lastRunErrorMsg = $objectStatus[$entity].message
-
     if($status -eq 'Warning'){
         $color = 'F3F387'
     }elseif($status -eq 'Failure'){
@@ -242,6 +299,12 @@ foreach ($entity in $objectStatus.Keys | Sort-Object){
     $html += td $status $color $nowrap 'CENTER'
     $html += td $lastRunStartTime $color '' 'CENTER'
     $html += td $lastSuccessfulRunTime $color '' 'CENTER'
+    $html += td $displaySize $color
+    if($changeRatePct -ge 10){
+        $html += td $changeRatePct 'DAB0B0'
+    }else{
+        $html += td $changeRatePct $color
+    }
     $html += td $numErrors $color $nowrap 'CENTER'
     $html += td $lastRunErrorMsg $color
     $html += '</tr>'
@@ -258,6 +321,7 @@ $html += '</tbody></table><br>
 <td bgcolor="#F3F387" valign="top" align="center" border="0" width="100"><font size="1">Completed with warnings</font></td>
 <td bgcolor="#F3BB76" valign="top" align="center" border="0" width="100"><font size="1">Cancelled</font></td>
 <td bgcolor="#FF9292" valign="top" align="center" border="0" width="100"><font size="1">Failed</font></td>
+<td bgcolor="#DAB0B0" valign="top" align="center" border="0" width="100"><font size="1">Change Rate &gt; 10%</font></td>
 </tr>
 </tbody>
 </table>
