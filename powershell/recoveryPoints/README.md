@@ -4,6 +4,19 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This PowerShell script lists available recovery points for every protected object in Cohesity.
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download Commands
+$scriptName = 'recoveryPoints'
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
+```
+
 ## Components
 
 * recoveryPoints.ps1: the main python script
@@ -14,6 +27,7 @@ Place both files in a folder together and run the main script like so:
 ```bash
 ./recoveryPoints.ps1 -vip mycluster -username myusername -domain mydomain.net
 ```
+
 ```text
 Connected!
 File-Based Backup(Physical) CentOS3.mydomain.net
@@ -61,5 +75,3 @@ Infrastructure(VMware) CentOS1
 	2019-02-11 23:40:00	https://mycluster/protection/job/12/run/25020/1549946400078295/protection
 	2019-02-10 23:40:00	https://mycluster/protection/job/12/run/24500/1549860000767626/protection
 ```
-
-
