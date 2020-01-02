@@ -137,11 +137,13 @@ def extendRun(job, run, retentiondays):
         api('put', 'protectionRuns', runParameters)
 
 
+finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
+
 for job in selectedjobs:
 
-    for run in api('get', 'protectionRuns?jobId=%s&excludeNonRestoreableRuns=true&runTypes=kRegular&runTypes=kFull&numRuns=999' % job['id']):
+    for run in api('get', 'protectionRuns?jobId=%s&excludeNonRestoreableRuns=true&runTypes=kRegular&runTypes=kFull&numRuns=100' % job['id']):
 
-        if run['backupRun']['snapshotsDeleted'] is False:
+        if run['backupRun']['snapshotsDeleted'] is False and run['backupRun']['status'] in finishedStates:
 
             runStartTimeUsecs = run['copyRun'][0]['runStartTimeUsecs']
             runStartTime = datetime.strptime(usecsToDate(runStartTimeUsecs), '%Y-%m-%d %H:%M:%S')
