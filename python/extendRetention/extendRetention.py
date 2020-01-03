@@ -28,6 +28,7 @@ parser.add_argument('-ms', '--mailserver', type=str)
 parser.add_argument('-mp', '--mailport', type=int, default=25)
 parser.add_argument('-to', '--sendto', type=str)
 parser.add_argument('-fr', '--sendfrom', type=str)
+parser.add_argument('-o', '--offset', type=int, default=-8)
 
 args = parser.parse_args()
 
@@ -45,6 +46,7 @@ mailserver = args.mailserver
 mailport = args.mailport
 sendto = args.sendto
 sendfrom = args.sendfrom
+offset = args.offset
 
 log = open('extendRetentionLog.txt', 'a')
 now = datetime.now()
@@ -67,7 +69,7 @@ selectedjobs = []
 jobs = api('get', 'protectionJobs')
 for job in jobs:
     for f in jobfilters:
-        if fnmatch.fnmatch(job['name'], f):
+        if fnmatch.fnmatch(job['name'].lower(), f.lower()):
             selectedjobs.append(job)
 
 if len(selectedjobs) == 0:
@@ -145,7 +147,7 @@ for job in selectedjobs:
 
         if run['backupRun']['snapshotsDeleted'] is False and run['copyRun'][0]['status'] in finishedStates:
 
-            runStartTimeUsecs = run['copyRun'][0]['runStartTimeUsecs']
+            runStartTimeUsecs = run['copyRun'][0]['runStartTimeUsecs'] + ((offset + 8) * 3600000000)
             runStartTime = datetime.strptime(usecsToDate(runStartTimeUsecs), '%Y-%m-%d %H:%M:%S')
 
             if yearlyretention is not None:
