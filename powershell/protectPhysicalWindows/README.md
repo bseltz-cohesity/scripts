@@ -4,7 +4,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This PowerShell script adds physical Windows servers to a file-based protection job. The script will automatically include all volumes (C:\, D:\, etc.) and will apply a global list of exclusion paths to each server added to the job.
 
-**Note: The script will overwrite existing exclusions, so make sure all desired exclusions are included in the exclusions list.**
+**Warning:** The script will overwrite existing exclusions, so make sure all desired exclusions are included in the exclusions list.
 
 ## Components
 
