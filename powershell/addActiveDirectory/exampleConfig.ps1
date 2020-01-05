@@ -1,11 +1,14 @@
 # AD Domain to join
-$adDomain = 'my.domain.net'
+# $adDomain = 'my.domain.net'
 
 # AD Username
-$adUsername = 'myuser@my.domain.net' 
+# $adUsername = 'myuser@my.domain.net' 
 
 # AD Password
-$adPassword = 'bosco'
+# $adPassword = 'bosco'
 
 # AD Computername
-$adComputername = 'mycluster'
+# $adComputername = 'mycluster'
+
+# AD Conotainer
+# $adContainer = 'Servers/IT/Cohesity'
