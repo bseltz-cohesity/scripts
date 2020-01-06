@@ -3,6 +3,7 @@
 #                  -username myusername `
 #                  -domain mydomain.net `
 #                  -prefix demo, test `
+#                  -includeDatabases `
 #                  -sendTo myuser@mydomain.net, anotheruser@mydomain.net `
 #                  -smtpServer 192.168.1.95 `
 #                  -sendFrom backupreport@mydomain.net
@@ -15,6 +16,7 @@ param (
     [Parameter()][string]$domain = 'local', #local or AD domain
     [Parameter()][array]$prefix = 'ALL', #report jobs with 'prefix' only
     [Parameter(Mandatory = $True)][string]$smtpServer, #outbound smtp server '192.168.1.95'
+    [Parameter()][switch]$includeDatabases, #switch to include individual databases or not
     [Parameter()][string]$smtpPort = 25, #outbound smtp port
     [Parameter(Mandatory = $True)][array]$sendTo, #send to address
     [Parameter(Mandatory = $True)][string]$sendFrom #send from address
@@ -37,42 +39,57 @@ $envType = @('kUnknown', 'kVMware', 'kHyperV', 'kSQL', 'kView', 'kRemote Adapter
              'kO365', 'kO365 Outlook', 'kHyperFlex', 'kGCP Native', 'kAzure Native',
              'kAD', 'kAWS Snapshot Manager', 'kFuture', 'kFuture', 'kFuture')
 
+$runType = @('kRegular', 'kFull', 'kLog', 'kSystem')
+
 $objectStatus = @{}
 
 function latestStatus($objectName,
+                      $registeredSource,
                       $status,
+                      $scheduleType,
                       $jobName,
                       $jobType,
                       $jobId,
                       $startTimeUsecs,
                       $message,
                       $isPaused,
-                      $logicalSize,
-                      $dataWritten){
+                      $logicalSize = 0,
+                      $dataWritten = 0,
+                      $dataRead = 0){
 
-    $thisStatus = @{'status' = $status; 
+    $thisStatus = @{'status' = $status;
+                    'scheduleType' = $scheduleType;
+                    'registeredSource' = $registeredSource;
                     'jobName' = $jobName; 
                     'jobType' = $jobType; 
                     'jobId' = $jobId; 
-                    'lastRunUsecs' = $startTimeUsecs; 
+                    'lastRunUsecs' = $startTimeUsecs;
+                    'endTimeUsecs' = $endTimeUsecs;
                     'isPaused' = $isPaused;
                     'logicalSize' = $logicalSize;
-                    'dataWritten' = $dataWritten}
+                    'dataWritten' = $dataWritten;
+                    'dataRead' = $dataRead}
 
     $thisStatus['message'] = $message
     $thisStatus['lastError'] = ''
     $thisStatus['lastSuccess'] = ''
+    $searchJobType = $jobType
+        if($jobType -eq 5){
+            $searchJobType = 4
+        }
+    $search = api get "/searchvms?vmName=$objectName&entityTypes=$($envType[$searchJobType])"
+    if($null -ne $search.vms){
+        $versions = $search.vms[0].vmDocument.versions
+        $thisStatus['numSnapshots'] = $versions.count 
+    }else{
+        $thisStatus['numSnapshots'] = 0
+    }
     if($status -eq 'kSuccess'){
         $thisStatus['numErrors'] = 0
     }else{
         if($status -eq 'kFailure'){
             $thisStatus['lastError'] = $startTimeUsecs
         }
-        $searchJobType = $jobType
-        if($jobType -eq 5){
-            $searchJobType = 4
-        }
-        $search = api get "/searchvms?vmName=$objectName&entityTypes=$($envType[$searchJobType])"
         if($search.vms.length -gt 0){
             if($status -eq 'kFailure' -or $status -eq 'kAccepted' -or $status -eq 'kRunning'){
                 $thisStatus['lastSuccess'] = $search.vms[0].vmDocument.versions[0].instanceId.jobStartTimeUsecs
@@ -117,13 +134,17 @@ $html += '<table align="center" border="0" cellpadding="4" cellspacing="1" style
 
 $headings = @('Object Type',
               'Object Name', 
-              'Database',	
-              'Job Name', 	
-              'Latest Status', 
+              'Database',
+              'Registered Source',
+              'Job Name',
+              'Available Snapshots',
+              'Latest Status',
+              'Schedule Type',
               'Last Start Time',
-              'Last Success',
-              'Logical Size (GB)',
-              'Change Rate (%)',
+              'Last End Time',
+              'Logical GB',
+              'Read GB',
+              'Change %',
               'Failure Count',
               'Error Message')
 
@@ -139,6 +160,7 @@ write-host "Gathering Job Stats..."
 $jobSummary = api get '/backupjobssummary?_includeTenantInfo=true&allUnderHierarchy=true&includeJobsWithoutRun=false&isActive=true&isDeleted=false&numRuns=1000&onlyReturnBasicSummary=true&onlyReturnJobDescription=false'
 
 foreach($job in $jobSummary | Sort-Object -Property { $_.backupJobSummary.jobDescription.name }){
+    $registeredSource = $job.backupJobSummary.jobDescription.parentSource.displayName
     if($job.backupJobSummary.jobDescription.isPaused -eq $True){
         $isPaused = $True
     }else{
@@ -154,10 +176,13 @@ foreach($job in $jobSummary | Sort-Object -Property { $_.backupJobSummary.jobDes
     if($includeJob){
         write-host "  $jobName"
         $startTimeUsecs = $job.backupJobSummary.lastProtectionRun.backupRun.base.startTimeUsecs
+        $endTimeUsecs = $job.backupJobSummary.lastProtectionRun.backupRun.base.endTimeUsecs
         $jobId = $job.backupJobSummary.lastProtectionRun.backupRun.base.jobId
         if($jobId -and $startTimeUsecs){
             $lastrun = api get "/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=$startTimeUsecs&id=$jobId&onlyReturnDataMigrationJobs=false"
+            $scheduleType = $runType[$lastrun.backupJobRuns.protectionRuns[0].backupRun.base.backupType]
             if($lastrun.backupJobRuns.protectionRuns[0].backupRun.PSObject.Properties['activeAttempt']){
+                $endTimeUsecs = 0
                 $message = ''
                 $attempt = $lastrun.backupJobRuns.protectionRuns[0].backupRun.activeAttempt.base
                 $status = $attempt.publicStatus
@@ -165,7 +190,17 @@ foreach($job in $jobSummary | Sort-Object -Property { $_.backupJobSummary.jobDes
                 foreach($source in $attempt.sources){
                     $entity = $source.source.displayName
                     $objectName = $entity
-                    latestStatus -objectName $objectName -status $status -jobName $jobName -jobType $jobType -jobId $jobId -message $message -startTimeUsecs $startTimeUsecs -isPaused $isPaused
+                    latestStatus -objectName $objectName `
+                                 -registeredSource $registeredSource `
+                                 -status $status `
+                                 -scheduleType $scheduleType `
+                                 -jobName $jobName `
+                                 -jobType $jobType `
+                                 -jobId $jobId `
+                                 -message $message `
+                                 -startTimeUsecs $startTimeUsecs `
+                                 -endTimeUsecs = $endTimeUsecs `
+                                 -isPaused $isPaused
                 }
             }
             foreach($task in $lastrun.backupJobRuns.protectionRuns[0].backupRun.latestFinishedTasks){
@@ -174,6 +209,7 @@ foreach($job in $jobSummary | Sort-Object -Property { $_.backupJobSummary.jobDes
                 $jobType = $task.base.type
                 $entity = $task.base.sources[0].source.displayName
                 $dataWritten = $task.base.totalPhysicalBackupSizeBytes
+                $dataRead = $task.base.totalBytesReadFromSource
                 $logicalSize = $task.base.totalLogicalBackupSizeBytes
                 if($status -eq 'kFailure'){
                     $message = $task.base.error.errorMsg
@@ -186,7 +222,7 @@ foreach($job in $jobSummary | Sort-Object -Property { $_.backupJobSummary.jobDes
                     $message = $message.Substring(0,99)
                 }
         
-                if($task.PSObject.Properties['appEntityStateVec']){
+                if($includeDatabases -and $task.PSObject.Properties['appEntityStateVec']){
                     foreach($app in $task.appEntityStateVec){
                         $appEntity = $app.appentity.displayName
                         $appStatus = $app.publicStatus
@@ -195,6 +231,7 @@ foreach($job in $jobSummary | Sort-Object -Property { $_.backupJobSummary.jobDes
                         }
                         $objectName = "$entity/$appEntity"
                         $logicalSize = $app.totalLogicalBytes
+                        $dataRead = $app.totalBytesReadFromSource
                         $dataWritten = $app.totalPhysicalBackupSizeBytes
                         if($appStatus -eq 'kFailure'){
                             $message = $task.base.error.errorMsg
@@ -207,28 +244,36 @@ foreach($job in $jobSummary | Sort-Object -Property { $_.backupJobSummary.jobDes
                             $message = $message.Substring(0,99)
                         }
                         latestStatus -objectName $objectName `
+                                     -registeredSource $registeredSource `
                                      -status $appStatus `
+                                     -scheduleType $scheduleType `
                                      -jobName $jobName `
                                      -jobType $jobType `
                                      -jobId $jobId `
                                      -message $message `
                                      -startTimeUsecs $startTimeUsecs `
+                                     -endTimeUsecs = $endTimeUsecs `
                                      -isPaused $isPaused `
                                      -logicalSize $logicalSize `
-                                     -dataWritten $dataWritten
+                                     -dataWritten $dataWritten `
+                                     -dataRead $dataRead
                     }
                 }else{
                     $objectName = $entity
                     latestStatus -objectName $objectName `
+                                 -registeredSource $registeredSource `
                                  -status $status `
+                                 -scheduleType $scheduleType `
                                  -jobName $jobName `
                                  -jobType $jobType `
                                  -jobId $jobId `
                                  -message $message `
                                  -startTimeUsecs $startTimeUsecs `
+                                 -endTimeUsecs = $endTimeUsecs `
                                  -isPaused $isPaused `
                                  -logicalSize $logicalSize `
-                                 -dataWritten $dataWritten
+                                 -dataWritten $dataWritten `
+                                 -dataRead $dataRead
                 }
             }
         }
@@ -244,34 +289,46 @@ foreach ($entity in $objectStatus.Keys | Sort-Object){
         $objectName, $app = $entity.split('/',2)
     }
     $environment = $envType[$objectStatus[$entity].jobType].Substring(1)
+    $registeredSource = $objectStatus[$entity].registeredSource
+    $scheduleType = $objectStatus[$entity].scheduleType.Substring(1)
     $status = $objectStatus[$entity].status.Substring(1)
     $jobName = $objectStatus[$entity].jobName
+    $numSnapshots = $objectStatus[$entity].numSnapshots
     $message = $objectStatus[$entity].message
     $jobId = $objectStatus[$entity].jobId
     $jobUrl = "https://$vip/protection/job/$jobId/details"
     $lastRunStartTime = usecsToDate $objectStatus[$entity].lastRunUsecs
-    $lastSuccess = $objectStatus[$entity].lastSuccess
+    $endTimeUsecs = $objectStatus[$entity].endTimeUsecs
+    if($endTimeUsecs -eq 0){
+        $endTime = ''
+    }else{
+        $endTime = usecsToDate $endTimeUsecs
+    }
+    # $lastSuccess = $objectStatus[$entity].lastSuccess
     $isPaused = $objectStatus[$entity].isPaused
     $logicalSize = $objectStatus[$entity].logicalSize
     $dataWritten = $objectStatus[$entity].dataWritten
+    $dataRead = $objectStatus[$entity].dataRead
+    if($dataRead -gt 0){
+        $displayRead = [math]::Round($dataRead/(1024*1024*1024),1)
+    }else{
+        $displayRead = 0
+    }
     if($logicalSize -gt 0){
         $changeRate = $dataWritten / $logicalSize
         $changeRatePct = [math]::Round(100 * $changeRate, 1)
         $displaySize = [math]::Round($logicalSize/(1024*1024*1024),1)
-    }elseif($logicalSize -eq 0){
+    }else{
         $changeRatePct = 0
         $displaySize = 0
-    }else{
-        $changeRatePct = '-'
-        $displaySize = '-'
     }
-    
-    $lastSuccessfulRunTime = ''
-    if($lastSuccess -eq '?'){
-        $lastSuccessfulRunTime = '?'
-    }elseif($lastSuccess -ne ''){
-        $lastSuccessfulRunTime = usecsToDate $lastSuccess
-    }
+
+    # $lastSuccessfulRunTime = ''
+    # if($lastSuccess -eq '?'){
+    #     $lastSuccessfulRunTime = '?'
+    # }elseif($lastSuccess -ne ''){
+    #     $lastSuccessfulRunTime = usecsToDate $lastSuccess
+    # }
     $numErrors = $objectStatus[$entity].numErrors
     if($numErrors -eq 0){ $numErrors = ''}
     $lastRunErrorMsg = $objectStatus[$entity].message
@@ -295,11 +352,16 @@ foreach ($entity in $objectStatus.Keys | Sort-Object){
     $html += td $environment $color ''
     $html += td $objectName $color ''
     $html += td $app $color ''
+    $html += td $registeredSource $color ''
     $html += td "<a target=`"_blank`" href=$jobUrl>$jobName</a>" $color $nowrap 'CENTER'
+    $html += td $numSnapshots $color '' 'CENTER'
     $html += td $status $color $nowrap 'CENTER'
+    $html += td $scheduleType $color '' 'CENTER'
     $html += td $lastRunStartTime $color '' 'CENTER'
-    $html += td $lastSuccessfulRunTime $color '' 'CENTER'
+    $html += td $endTime $color '' 'CENTER'
+    # $html += td $lastSuccessfulRunTime $color '' 'CENTER'
     $html += td $displaySize $color
+    $html += td $displayRead $color
     if($changeRatePct -ge 10){
         $html += td $changeRatePct 'DAB0B0'
     }else{

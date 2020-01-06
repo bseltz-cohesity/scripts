@@ -29,6 +29,7 @@ Place both files in a folder together and run the main script like so:
                    -username myusername `
                    -domain mydomain.net `
                    -prefix demo,test `
+                   -includeDatabases `
                    -sendTo myuser@mydomain.net, anotheruser@mydomain.net `
                    -smtpServer 192.168.1.95 `
                    -sendFrom backupreport@mydomain.net
@@ -40,6 +41,7 @@ Place both files in a folder together and run the main script like so:
 * -username: Cohesity username
 * -domain: Active Directory domain of user (defaults to local)
 * -prefix: job name prefixes to include in the report (comma separated, defaults to all jobs if omitted)
+* -includeDatabases: show individual Oracle and MSSQL databases in output
 * -sendTo: email addresses to send report to (comma separated)
 * -smtpServer: SMTP gateway to forward email through
 * -smtpPort: SMTP port to use (default is 25)
