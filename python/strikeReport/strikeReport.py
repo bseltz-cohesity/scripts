@@ -183,18 +183,8 @@ html += '''</span>
     <th>Error Message</th>
 </tr>'''
 
-# errorsRecorded = 0
 objectStatus = {}
-
-# errorCount = {}
-# latestError = {}
-# skip = []
-# jobEntry = {}
-# appErrors = {}
-# objErrors = {}
-# allObjects = []
 totalObjects = 0
-# totalFailedObjects = 0
 
 
 def objectHistory(objectName, status, scheduleType, jobName, jobId, jobType, startTimeUsecs, message):
