@@ -11,7 +11,7 @@ You can download the scripts using the following commands:
 ```bash
 # download commands
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/strikeReport/strikeReport.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/strikeReport/pyhesity.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x strikeReport.py
 # end download commands
 ```
@@ -43,4 +43,3 @@ Place both files in a folder together and run the main script like so:
 * -f, --sendfrom: email address to show in the from field
 * -t, --sendto: email addresses to send report to (use repeatedly to add recipients)
 * -dy, --days: number of days of history (default is 31)
-* -sl, --slurp: number of runs to parse per api call (default is 500) reduce to solve for JSON response too large errors
