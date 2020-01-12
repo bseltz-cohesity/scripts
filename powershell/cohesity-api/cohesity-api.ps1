@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#   version 0.15 - Brian Seltzer - Dec 2019
+#   version 0.16 - Brian Seltzer - Jan 2020
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.6 - Consolidated Windows and Unix versions - June 2018
@@ -13,6 +13,7 @@
 # 0.13 - added showProps function - Nov 2019
 # 0.14 - added storePasswordFromInput function - Dec 2019
 # 0.15 - added support for PS Core on Windows - Dec 2019
+# 0.16 - added ServicePoint connection workaround
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
 
@@ -148,6 +149,7 @@ function api($method, $uri, $data){
         try {
             if ($uri[0] -ne '/'){ $uri = '/public/' + $uri}
             $url = $APIROOT + $uri
+            # $ServicePoint = [System.Net.ServicePointManager]::FindServicePoint($url)
             $body = ConvertTo-Json -Depth 100 $data
             if ($PSVersionTable.PSEdition -eq 'Core'){
                 $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER  -SkipCertificateCheck -TimeoutSec 10
