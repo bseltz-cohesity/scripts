@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#   version 0.12 - Brian Seltzer - Oct 2019
+#   version 0.15 - Brian Seltzer - Dec 2019
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.6 - Consolidated Windows and Unix versions - June 2018
@@ -9,7 +9,7 @@
 # 0.9 - added setApiProperty / delApiProperty - Apr 2019
 # 0.10 - added $REPORTAPIERRORS constant - Apr 2019
 # 0.11 - added storePassword function and username parsing - Aug 2019
-# 0.12 - begrudgingly added -password to apiauth function - Oct 2019
+# 0.12 - added -password to apiauth function - Oct 2019
 # 0.13 - added showProps function - Nov 2019
 # 0.14 - added storePasswordFromInput function - Dec 2019
 # 0.15 - added support for PS Core on Windows - Dec 2019
