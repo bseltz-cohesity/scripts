@@ -13,7 +13,7 @@
 # 0.13 - added showProps function - Nov 2019
 # 0.14 - added storePasswordFromInput function - Dec 2019
 # 0.15 - added support for PS Core on Windows - Dec 2019
-# 0.16 - added ServicePoint connection workaround
+# 0.16 - added ServicePoint connection workaround - Jan 2020
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
 
