@@ -40,3 +40,7 @@ Place both files in a folder together and run the main script like so:
 * -viServer: vCenter to connect to
 * -viUser: vCenter user name
 * -attributeName: name of custom attribute to use (defaults to 'Last Cohesity Backup')
+
+## Notes
+
+This script can be scheduled to run periodically using Windows task scheduler. For help, please review this guide: <https://github.com/bseltz-cohesity/scripts/blob/master/powershell/Running%20Cohesity%20PowerShell%20Scripts.pdf>
