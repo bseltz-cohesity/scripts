@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script updates a vSphere custom attribute with the last successful backup date/time per VM.
+This script updates a vSphere custom attribute with the last successful backup date/time per VM. Note that this script requires vSphere PowerCLI to be installed, and the vSphere version must support custom attributes.
 
 ## Download the script
 
