@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#   version 0.16 - Brian Seltzer - Jan 2020
+#   version 0.17 - Brian Seltzer - Jan 2020
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.6 - Consolidated Windows and Unix versions - June 2018
@@ -14,6 +14,7 @@
 # 0.14 - added storePasswordFromInput function - Dec 2019
 # 0.15 - added support for PS Core on Windows - Dec 2019
 # 0.16 - added ServicePoint connection workaround - Jan 2020
+# 0.17 - fixed json2code line endings on Windows - Jan 2020
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
 
@@ -399,7 +400,7 @@ function json2code($json = '', $jsonFile = '', $psFile = 'myObject.ps1'){
     
     $pscode = ''
     foreach ($line in $json.split("`n")) {
-
+        $line = $line.TrimEnd()
         # preserve end of line character
         $finalEntry = $true
         if ($line[-1] -eq ',') {
