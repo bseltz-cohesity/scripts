@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script collects cluster and node information
+This script collects cluster and node information and sends as an email attachment to specified users.
 
 ## Download the script
 
@@ -26,7 +26,11 @@ Place both files in a folder together and run the main script like so:
 ```bash
 ./clusterInfo.py -v mycluster \
                   -u myusername \
-                  -d mydomain.net
+                  -d mydomain.net \
+                  -t myuser@mydomain.net \
+                  -t anotheruser@mydomain.net \
+                  -s 192.168.1.95 \
+                  -f backupreport@mydomain.net
 ```
 
 ## Parameters
@@ -34,6 +38,10 @@ Place both files in a folder together and run the main script like so:
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
+* -s, --mailserver: SMTP gateway to forward email through
+* -p, --mailport: (optional) defaults to 25
+* -f, --sendfrom: email address to show in the from field
+* -t, --sendto: email addresses to send report to (use repeatedly to add recipients)
 
 ## Output
 
