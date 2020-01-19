@@ -142,8 +142,9 @@ $headings = @('Object Type',
               'Schedule Type',
               'Last Start Time',
               'Last End Time',
-              'Logical GB',
-              'Read GB',
+              'Logical MB',
+              'Read MB',
+              'Written MB',
               'Change %',
               'Failure Count',
               'Error Message')
@@ -304,31 +305,28 @@ foreach ($entity in $objectStatus.Keys | Sort-Object){
     }else{
         $endTime = usecsToDate $endTimeUsecs
     }
-    # $lastSuccess = $objectStatus[$entity].lastSuccess
     $isPaused = $objectStatus[$entity].isPaused
     $logicalSize = $objectStatus[$entity].logicalSize
     $dataWritten = $objectStatus[$entity].dataWritten
     $dataRead = $objectStatus[$entity].dataRead
     if($dataRead -gt 0){
-        $displayRead = [math]::Round($dataRead/(1024*1024*1024),1)
+        $displayRead = [math]::Round($dataRead/(1024*1024),0)
     }else{
         $displayRead = 0
     }
     if($logicalSize -gt 0){
         $changeRate = $dataWritten / $logicalSize
         $changeRatePct = [math]::Round(100 * $changeRate, 1)
-        $displaySize = [math]::Round($logicalSize/(1024*1024*1024),1)
+        $displaySize = [math]::Round($logicalSize/(1024*1024),0)
     }else{
         $changeRatePct = 0
         $displaySize = 0
     }
-
-    # $lastSuccessfulRunTime = ''
-    # if($lastSuccess -eq '?'){
-    #     $lastSuccessfulRunTime = '?'
-    # }elseif($lastSuccess -ne ''){
-    #     $lastSuccessfulRunTime = usecsToDate $lastSuccess
-    # }
+    if($dataWritten -gt 0){
+        $displayWritten = [math]::Round($dataWritten/(1024*1024),0) 
+    }else{
+        $displayWritten = 0
+    }
     $numErrors = $objectStatus[$entity].numErrors
     if($numErrors -eq 0){ $numErrors = ''}
     $lastRunErrorMsg = $objectStatus[$entity].message
@@ -362,6 +360,7 @@ foreach ($entity in $objectStatus.Keys | Sort-Object){
     # $html += td $lastSuccessfulRunTime $color '' 'CENTER'
     $html += td $displaySize $color
     $html += td $displayRead $color
+    $html += td $displayWritten $color
     if($changeRatePct -ge 10){
         $html += td $changeRatePct 'DAB0B0'
     }else{
