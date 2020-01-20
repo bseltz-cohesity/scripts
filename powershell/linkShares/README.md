@@ -35,7 +35,7 @@ Place the linkSharesProxy.ps1 and the cohesity-api.ps1 files on each proxy compu
 ```powershell
 .\linkSharesProxy.ps1 -vip mycluster `
                       -username myusername `
-                      - mydomain.net `
+                      -domain mydomain.net `
                       -jobName 'my job name' `
                       -nas mynas `
                       -localDirory C:\Cohesity\ `
