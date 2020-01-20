@@ -26,7 +26,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ## Setup
 
-Place the linkSharesStatus.json file somewhere where it can be reached via UNC path, like: \\myserver\myshare\linkSharesStatus.json
+Place the linkSharesStatus.json file somewhere where it can be reached via UNC path, like: \\\\myserver\myshare\linkSharesStatus.json
 
 ## Proxy Role
 
