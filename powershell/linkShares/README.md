@@ -38,7 +38,7 @@ Place the linkSharesProxy.ps1 and the cohesity-api.ps1 files on each proxy compu
                       -domain mydomain.net `
                       -jobName 'my job name' `
                       -nas mynas `
-                      -localDirory C:\Cohesity\ `
+                      -localDirectory C:\Cohesity\ `
                       -statusFile \\myserver\myshare\linkSharesStatus.json
 ```
 
