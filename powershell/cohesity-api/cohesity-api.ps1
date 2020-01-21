@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#   version 0.17 - Brian Seltzer - Jan 2020
+#   version 0.18 - Brian Seltzer - Jan 2020
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.6 - Consolidated Windows and Unix versions - June 2018
@@ -15,10 +15,12 @@
 # 0.15 - added support for PS Core on Windows - Dec 2019
 # 0.16 - added ServicePoint connection workaround - Jan 2020
 # 0.17 - fixed json2code line endings on Windows - Jan 2020
+# 0.18 - added REINVOKE - Jan 2020 
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
 
 $REPORTAPIERRORS = $true
+$REINVOKE = 0
 
 # platform detection and prerequisites
 if ($PSVersionTable.Platform -eq 'Unix') {
@@ -87,6 +89,8 @@ function apiauth($vip, $username, $domain, $password, [switch] $prompt, [switch]
     }
 
     $global:VIP = $vip
+    $global:USERNAMECACHE = $username
+    $global:DOMAINNAMECACHE = $domain
     $global:APIROOT = 'https://' + $vip + '/irisservices/api/v1'
     $HEADER = @{'accept' = 'application/json'; 'content-type' = 'application/json'}
     $url = $APIROOT + '/public/accessTokens'
@@ -150,23 +154,28 @@ function api($method, $uri, $data){
         try {
             if ($uri[0] -ne '/'){ $uri = '/public/' + $uri}
             $url = $APIROOT + $uri
-            # $ServicePoint = [System.Net.ServicePointManager]::FindServicePoint($url)
             $body = ConvertTo-Json -Depth 100 $data
             if ($PSVersionTable.PSEdition -eq 'Core'){
                 $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER  -SkipCertificateCheck -TimeoutSec 10
             }else{
                 $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER -TimeoutSec 10
             }
+            $global:REINVOKE = 0
             return $result
         }
         catch {
-            if($REPORTAPIERRORS){
+            if($REPORTAPIERRORS -and $global:REINVOKE -eq 1){
                 if($_.ToString().contains('"message":')){
                     write-host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
                 }else{
                     write-host $_.ToString() -foregroundcolor yellow
                 }
-            }                
+            }
+            if($global:REINVOKE -eq 0){
+                $global:REINVOKE = 1
+                apiauth -vip $global:VIP -username $global:USERNAMECACHE -domain $global:DOMAINNAMECACHE -quiet
+                api $method $uri $data
+            }              
         }
     }
 }
