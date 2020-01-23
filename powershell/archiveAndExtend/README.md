@@ -45,6 +45,9 @@ First, run the script WITHOUT the -commit switch to see what would be extended /
                        -keepWeekly 14 `
                        -archiveWeekly 30 `
                        -weeklyVault myWeeklyTarget `
+                       -keepDaily 7 `
+                       -archiveDaily 14 `
+                       -dailyVault myDailyTarget `
                        -specialDate '03-31' `
                        -keepSpecial 365 `
                        -archiveSpecial 2555 `
@@ -71,6 +74,9 @@ Then, if you're happy with the list of snapshots that will be processed, run the
 * -keepWeekly: (optional) days to retain weekly snapshots
 * -archiveWeekly: (optional) days to retain weekly archives
 * -weeklyVault: (optional) external target for weekly archives
+* -keepDaily: (optional) days to retain daily snapshots
+* -archiveDaily: (optional) days to retain daily archives
+* -dailyVault: (optional) external target for daily archives
 * -specialDate: (optional) date for special extension / archive (e.g. '03-31')
 * -keepSpecial: (optional) days to retain special snapshots
 * -archiveSpecial: (optional) days to retain special archives

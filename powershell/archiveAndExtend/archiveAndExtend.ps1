@@ -16,6 +16,9 @@
 #                        -archiveWeekly 30 `
 #                        -weeklyVault myWeeklyTarget `
 #                        -specialDate '03-31' `
+#                        -keepDaily 7 `
+#                        -archiveDaily 14 `
+#                        -dailyVault myDailyTarget `
 #                        -keepSpecial 365 `
 #                        -archiveSpecial 2555 `
 #                        -specialVault mySpecialTarget `
@@ -28,6 +31,7 @@ param (
     [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
     [Parameter()][string]$domain = 'local', # local or AD domain
     [Parameter(Mandatory = $True)][array]$policyNames, # jobs to archive
+    [Parameter()][string]$dailyVault = $null,
     [Parameter()][string]$weeklyVault = $null, # name of archive target
     [Parameter()][string]$monthlyVault = $null, # name of archive target
     [Parameter()][string]$yearlyVault = $null, # name of archive target
@@ -37,10 +41,12 @@ param (
     [Parameter()][ValidateSet('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','unselected')][string]$dayOfWeek = 'unselected',
     [Parameter()][ValidateRange(-1,31)][int32]$dayOfMonth = 0,
     [Parameter()][ValidateRange(-1,366)][int32]$dayOfYear = 0,
+    [Parameter()][int32]$keepDaily = 0, # local retention (days) for daily snapshots
     [Parameter()][int32]$keepWeekly = 0, # local retention (days) for weekly snapshots 
     [Parameter()][int32]$keepMonthly = 0, # local retention (days) for monthly snapshots
     [Parameter()][int32]$keepYearly = 0, # local retention (days) for yearly snapshots
     [Parameter()][int32]$keepSpecial = 0, # local retention (days) for yearly snapshots
+    [Parameter()][int32]$archiveDaily = 0, # archive retention for daily snapshots
     [Parameter()][int32]$archiveWeekly = 0, # archive retention for weekly snapshots
     [Parameter()][int32]$archiveMonthly = 0, # archive retention for monthly snapshots
     [Parameter()][int32]$archiveYearly = 0, # archive retention for yearly snapshots
@@ -49,6 +55,13 @@ param (
 )
 
 # validate args
+if($archiveDaily -ne 0){
+    if('' -eq $dailyVault){
+        Write-Host "-dailyVault required" -ForegroundColor Yellow
+        exit
+    }
+}
+
 if($keepWeekly -ne 0){
     if($dayOfWeek -eq 'unselected'){
         write-host "-dayOfWeek required" -ForegroundColor Yellow
@@ -142,6 +155,14 @@ apiauth -vip $vip -username $username -domain $domain
 
 # get archive target info
 $vaults = api get vaults
+
+if($dailyVault){
+    $dVault = $vaults | Where-Object { $_.name -eq $dailyVault }
+    if(!$dVault){
+        "  Archive Target $dailyVault not found" | Tee-Object -FilePath $logfile -Append | Write-Host -ForegroundColor Yellow
+        exit        
+    }
+}
 
 if($weeklyVault){
     $wVault = $vaults | Where-Object { $_.name -eq $weeklyVault }
@@ -243,6 +264,8 @@ function extendAndArchiveSnapshot($run, $keepDays, $archiveDays, $extendType){
         $vault = $wVault
     }elseif($extendType -eq 'special'){
         $vault = $sVault
+    }elseif($extendType -eq 'daily'){
+        $vault = $dVault
     }
     $vaultId = $vault[0].id
     $vaultName = $vault[0].name
@@ -335,6 +358,8 @@ while($x -ge 0){
         $wantedDays += "$($thisDate.ToString('yyyy-MM-dd')):monthly"
     }elseif($thisDate.DayOfWeek -eq $dayOfWeek){
         $wantedDays += "$($thisDate.ToString('yyyy-MM-dd')):weekly"
+    }elseif($keepDaily -ne 0){
+        $wantedDays += "$($thisDate.ToString('yyyy-MM-dd')):daily"
     }
     $x -= 1
 }
@@ -359,7 +384,7 @@ foreach($job in $selectedJobs){
             $theseRuns = $dailyRuns[0].Group | Sort-Object -Property { $_.copyRun[0].runStartTimeUsecs } -Descending
             $run = $theseruns[0]
             $runDate = usecsToDate ($run.copyRun[0].runStartTimeUsecs)
-            # process yearly, or monthly, or weekly
+            # process special, yearly, monthly, weekly or daily
             if($extendType -eq 'special' -and $runDate -le $wantedDate.AddDays($maxSpecialDrift)){
                 extendAndArchiveSnapshot $run $keepSpecial $archiveSpecial $extendType
             }elseif($extendType -eq 'yearly' -and $runDate -le $wantedDate.AddDays($maxYearlyDrift)){
@@ -368,6 +393,8 @@ foreach($job in $selectedJobs){
                 extendAndArchiveSnapshot $run $keepMonthly $archiveMonthly $extendType
             }elseif($extendType -eq 'weekly'  -and $runDate -le $wantedDate.AddDays($maxWeeklyDrift)){
                 extendAndArchiveSnapshot $run $keepWeekly $archiveWeekly $extendType
+            }elseif($extendType -eq 'daily'){
+                extendAndArchiveSnapshot $run $keepDaily $archiveDaily $extendType
             }
             $runCount += 1
         }
