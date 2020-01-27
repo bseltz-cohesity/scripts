@@ -1,0 +1,162 @@
+# usage: ./protectPhysicalLinux.ps1 -vip mycluster -username myusername -jobName 'My Job' -serverList ./servers.txt -exclusionList ./exclusions.txt
+
+# process commandline arguments
+[CmdletBinding()]
+param (
+    [Parameter(Mandatory = $True)][string]$vip,  # the cluster to connect to (DNS name or IP)
+    [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
+    [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][array]$servers = '',  # optional name of one server protect
+    [Parameter()][string]$serverList = '',  # optional textfile of servers to protect
+    [Parameter()][array]$inclusions = '', # optional paths to exclude (comma separated)
+    [Parameter()][string]$inclusionList = '',  # optional list of exclusions in file
+    [Parameter()][array]$exclusions = '',  # optional name of one server protect
+    [Parameter()][string]$exclusionList = '',  # required list of exclusions
+    [Parameter(Mandatory = $True)][string]$jobName,  # name of the job to add server to
+    [Parameter()][switch]$skipNestedMountPoints
+)
+
+# gather list of servers to add to job
+$serversToAdd = @()
+foreach($server in $servers){
+    $serversToAdd += $server
+}
+if ('' -ne $serverList){
+    if(Test-Path -Path $serverList -PathType Leaf){
+        $servers = Get-Content $serverList
+        foreach($server in $servers){
+            $serversToAdd += $server
+        }
+    }else{
+        Write-Warning "Server list $serverList not found!"
+        exit
+    }
+}
+
+# gather inclusion list
+$includePaths = @()
+foreach($inclusion in $inclusions){
+    $includePaths += $inclusion
+}
+if('' -ne $inclusionList){
+    if(Test-Path -Path $inclusionList -PathType Leaf){
+        $inclusions = Get-Content $inclusionList
+        foreach($inclusion in $inclusions){
+            $includePaths += $inclusion
+        }
+    }else{
+        Write-Warning "Inclusions file $inclusionList not found!"
+        exit
+    }
+}
+if(! $includePaths){
+    $includePaths += '/'
+}
+
+# gather exclusion list
+$excludePaths = @()
+foreach($exclusion in $exclusions){
+    $excludePaths += $exclusion
+}
+if('' -ne $exclusionList){
+    if(Test-Path -Path $exclusionList -PathType Leaf){
+        $exclusions = Get-Content $exclusionList
+        foreach($exclusion in $exclusions){
+            $excludePaths += $exclusion
+        }
+    }else{
+        Write-Warning "Exclusions file $exclusionList not found!"
+        exit
+    }
+}
+
+# skip nested mount points
+if($skipNestedMountPoints){
+    $skip = $True
+}else{
+    $skip = $false
+}
+
+# source the cohesity-api helper code
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+
+# authenticate
+apiauth -vip $vip -username $username -domain $domain
+
+# get the protectionJob
+$job = api get protectionJobs | Where-Object {$_.name -ieq $jobName}
+if(!$job){
+    Write-Warning "Job $jobName not found!"
+    exit
+}
+
+# get physical protection sources
+$sources = api get protectionSources?environment=kPhysical
+
+# add sourceIds for new servers
+$sourceIds = @($job.sourceIds)
+$newSourceIds = @()
+foreach($server in $serversToAdd | Where-Object {$_ -ne ''}){
+    $server = $server.ToString()
+    $node = $sources.nodes | Where-Object { $_.protectionSource.name -eq $server }
+    if($node){
+        if($node.protectionSource.physicalProtectionSource.hostType -ne 'kWindows'){
+            $sourceId = $node.protectionSource.id
+            $sourceIds += $sourceId
+            $newSourceIds += $sourceId
+        }else{
+            Write-Warning "$server is not a Linux/AIX/Solaris host"
+        }
+    }else{
+        Write-Warning "$server is not a registered source"
+    }
+}
+
+$sourceIds = @($sourceIds | Select-Object -Unique)
+$existingParams = $job.sourceSpecialParameters
+$newParams = @()
+
+# process inclusions and exclusions
+foreach($sourceId in $sourceIds){
+    if($sourceId -in $newSourceIds){
+        $newParam= @{
+            "sourceId" = $sourceId;
+            "physicalSpecialParameters" = @{
+                "filePaths" = @()
+            }
+        }
+        $source = $sources.nodes | Where-Object {$_.protectionSource.id -eq $sourceId}
+        "  processing $($source.protectionSource.name)"
+
+        foreach($includePath in $includePaths | Where-Object {$_ -ne ''}){
+            $includePath = $includePath.ToString()
+            $filePath = @{
+                "backupFilePath" = $includePath;
+                "skipNestedVolumes" = $skip;
+                "excludedFilePaths" = @()
+            }
+            $newParam.physicalSpecialParameters.filePaths += $filePath
+        }
+
+        foreach($excludePath in $excludePaths | Where-Object {$_ -ne ''}){
+            $excludePath = $excludePath.ToString()
+            $parentPath = $newParam.physicalSpecialParameters.filePaths | Where-Object {$excludePath.contains($_.backupFilePath)} | Sort-Object -Property {$_.backupFilePath.Length} -Descending | Select-Object -First 1
+            if($parentPath){
+                $parentPath.excludedFilePaths += $excludePath
+            }else{
+                foreach($parentPath in $newParam.physicalSpecialParameters.filePaths){
+                    $parentPath.excludedFilePaths += $excludePath
+                }
+            }
+        }
+        $newParams += $newParam
+    }else{
+        $newParams += $existingParams | Where-Object {$_.sourceId -eq $sourceId}
+    }
+}
+
+# update job
+$job.sourceSpecialParameters = $newParams
+$job.sourceIds = @($sourceIds)
+
+$null = api put "protectionJobs/$($job.id)" $job
