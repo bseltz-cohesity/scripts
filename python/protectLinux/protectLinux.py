@@ -27,7 +27,8 @@ parser.add_argument('-d', '--domain', type=str, default='local')
 parser.add_argument('-s', '--servername', action='append', type=str)
 parser.add_argument('-l', '--serverlist', type=str)
 parser.add_argument('-j', '--jobname', type=str, required=True)
-parser.add_argument('-i', '--include', action='append', type=str, required=True)
+parser.add_argument('-i', '--include', action='append', type=str)
+parser.add_argument('-n', '--includefile', type=str)
 parser.add_argument('-e', '--exclude', action='append', type=str)
 parser.add_argument('-x', '--excludefile', type=str)
 parser.add_argument('-m', '--skipnestedmountpoints', action='store_true')
@@ -41,20 +42,32 @@ servernames = args.servername   # name of server to protect
 serverlist = args.serverlist    # file with server names
 jobname = args.jobname          # name of protection job to add server to
 includes = args.include         # include path
+includefile = args.includefile  # file with include paths
 excludes = args.exclude         # exclude path
 excludefile = args.excludefile  # file with exclude paths
 skipmountpoints = args.skipnestedmountpoints  # skip nested mount points
 
+# read server file
 if servernames is None:
     servernames = []
-
-# read server file
 if serverlist is not None:
     f = open(serverlist, 'r')
     servernames += [s.strip() for s in f.readlines() if s.strip() != '']
     f.close()
 
+# read include file
+if includes is None:
+    includes = []
+if includefile is not None:
+    f = open(includefile, 'r')
+    includes += [e.strip() for e in f.readlines() if e.strip() != '']
+    f.close()
+if len(includes) == 0:
+    includes += '/'
+
 # read exclude file
+if excludes is None:
+    excludes = []
 if excludefile is not None:
     f = open(excludefile, 'r')
     excludes += [e.strip() for e in f.readlines() if e.strip() != '']

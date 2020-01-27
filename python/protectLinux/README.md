@@ -32,6 +32,7 @@ Place both files in a folder together and run the main script like so:
                   -l serverlist.txt \
                   -i /var \
                   -i /home \
+                  -n includes.txt \
                   -e /var/log \
                   -e /home/oracle \
                   -e *.dbf \
@@ -46,7 +47,8 @@ Place both files in a folder together and run the main script like so:
 * -s, --servername: (optional) name of server to add to the job (use multiple times for multiple)
 * -l, --serverlist: (optional) list of server names in a text file
 * -j, --jobname: name of the job to add the server to
-* -i, --include: file path to include (use multiple times for multiple paths)
+* -i, --include: (optional) file path to include (use multiple times for multiple paths)
+* -n, --includefile: (optional) a text file full of include paths
 * -x, --exclude: (optional) file path to exclude (use multiple times for multiple paths)
 * -f, --excludefile: (optional) a text file full of exclude file paths
 * -m, --skipnestedmountpoints: (optional) if omitted, nested mount paths are not skipped
