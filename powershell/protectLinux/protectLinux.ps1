@@ -13,7 +13,8 @@ param (
     [Parameter()][array]$exclusions = '',  # optional name of one server protect
     [Parameter()][string]$exclusionList = '',  # required list of exclusions
     [Parameter(Mandatory = $True)][string]$jobName,  # name of the job to add server to
-    [Parameter()][switch]$skipNestedMountPoints
+    [Parameter()][switch]$skipNestedMountPoints,
+    [Parameter()][switch]$overwriteAll
 )
 
 # gather list of servers to add to job
@@ -118,7 +119,7 @@ $newParams = @()
 
 # process inclusions and exclusions
 foreach($sourceId in $sourceIds){
-    if($sourceId -in $newSourceIds){
+    if($sourceId -in $newSourceIds -or $overwriteAll){
         $newParam= @{
             "sourceId" = $sourceId;
             "physicalSpecialParameters" = @{

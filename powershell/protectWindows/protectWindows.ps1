@@ -19,7 +19,8 @@ param (
     [Parameter()][array]$exclusions = '', # optional paths to exclude (comma separated)
     [Parameter()][string]$exclusionList = '',  # optional list of exclusions in file
     [Parameter(Mandatory = $True)][string]$jobName,  # name of the job to add server to
-    [Parameter()][switch]$skipNestedMountPoints  # if omitted, nested mountpoints will not be skipped
+    [Parameter()][switch]$skipNestedMountPoints,  # if omitted, nested mountpoints will not be skipped
+    [Parameter()][switch]$overwriteAll
 )
 
 # gather list of servers to add to job
@@ -82,7 +83,7 @@ $sources = api get protectionSources?environment=kPhysical
 $sourceIds = @($job.sourceIds)
 $newSourceIds = @()
 
-foreach($server in $serversToAdd){
+foreach($server in $serversToAdd | Where-Object {$_ -ne ''}){
     $server = $server.ToString()
     $node = $sources.nodes | Where-Object { $_.protectionSource.name -eq $server }
     if($node){
@@ -103,7 +104,7 @@ $sourceIds = @($sourceIds | Select-Object -Unique)
 $existingParams = $job.sourceSpecialParameters
 $newParams = @()
 foreach($sourceId in $sourceIds){
-    if($sourceId -in $newSourceIds){
+    if($sourceId -in $newSourceIds -or $overwriteAll){
         $newParam= @{
             "sourceId" = $sourceId;
             "physicalSpecialParameters" = @{
