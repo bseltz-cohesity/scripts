@@ -83,6 +83,7 @@ $sourceIds = @($job.sourceIds)
 $newSourceIds = @()
 
 foreach($server in $serversToAdd){
+    $server = $server.ToString()
     $node = $sources.nodes | Where-Object { $_.protectionSource.name -eq $server }
     if($node){
         if($node.protectionSource.physicalProtectionSource.hostType -eq 'kWindows'){
