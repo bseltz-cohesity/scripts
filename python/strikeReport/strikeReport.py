@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Backup Strike Report v2.0"""
+"""Backup Strike Report v3.0"""
 
 # usage: ./strikeReport.py -v mycluster \
 #                          -u myusername \
@@ -48,15 +48,6 @@ def cleanhtml(raw_html):
 
 # authenticate
 apiauth(vip, username, domain)
-
-environments = ['kUnknown', 'kVMware', 'kHyperV', 'kSQL', 'kView', 'kRemote Adapter',
-                'kPhysical', 'kPure', 'kAzure', 'kNetapp', 'kAgent', 'kGenericNas',
-                'kAcropolis', 'kPhysical Files', 'kIsilon', 'kKVM', 'kAWS', 'kExchange',
-                'kHyperVVSS', 'kOracle', 'kGCP', 'kFlashBlade', 'kAWSNative', 'kVCD',
-                'kO365', 'kO365 Outlook', 'kHyperFlex', 'kGCP Native', 'kAzure Native',
-                'kAD', 'kAWS Snapshot Manager', 'kFuture', 'kFuture', 'kFuture']
-
-runType = ['kRegular', 'kFull', 'kLog', 'kSystem']
 
 print('Collecting report data...')
 
@@ -186,66 +177,49 @@ html += '''</span>
 objectStatus = {}
 totalObjects = 0
 
+print('getting runs...')
+allruns = api('get', 'protectionRuns?excludeTasks=true&startTimeUsecs=%s&numRuns=999999' % timeAgo(31, 'days'))
+print('getting jobs...')
+jobs = api('get', 'protectionJobs?allUnderHierarchy=true&isActive=true&includeLastRunAndStats=true')
 
-def objectHistory(objectName, status, scheduleType, jobName, jobId, jobType, startTimeUsecs, message):
-    thisStatus = {'objectName': objectName,
-                  'status': status,
-                  'scheduleType': scheduleType,
-                  'jobName': jobName,
-                  'jobId': jobId,
-                  'jobType': jobType,
-                  'startTimeUsecs': startTimeUsecs,
-                  'message': message}
-    searchJobType = jobType
-    if jobType == 5:
-        searchJobType = 4
-    search = api('get', '/searchvms?vmName=%s&entityTypes=%s&allUnderHierarchy=true' % (objectName, environments[searchJobType]))
-    if 'vms' in search:
-        latestSnapshotUsecs = search['vms'][0]['vmDocument']['versions'][0]['instanceId']['jobStartTimeUsecs']
-        errorRuns = api('get', '/backupjobruns?id=%s&startTimeUsecs=%s&allUnderHierarchy=true&excludeTasks=true&numRuns=99999' % (jobId, (latestSnapshotUsecs + 1)))
-    else:
-        errorRuns = api('get', '/backupjobruns?id=%s&startTimeUsecs=%s&allUnderHierarchy=true&excludeTasks=true&numRuns=99999' % (jobId, (timeAgo(days, 'days'))))
-        latestSnapshotUsecs = 0
-    if errorRuns:
-        numErrors = len(errorRuns[0]['backupJobRuns']['protectionRuns'])
-    else:
-        numErrors = '-'
-    thisStatus['latestSnapshotUsecs'] = latestSnapshotUsecs
-    thisStatus['numErrors'] = numErrors
-    if objectName not in objectStatus or startTimeUsecs > objectStatus[objectName]['startTimeUsecs']:
-        objectStatus[objectName] = thisStatus
-
-
-jobs = api('get', '/backupjobssummary?_includeTenantInfo=true&allUnderHierarchy=true&includeJobsWithoutRun=false&isActive=true&isDeleted=false&numRuns=1000&onlyReturnBasicSummary=true&onlyReturnJobDescription=false')
-
-for job in sorted(jobs, key=lambda job: job['backupJobSummary']['jobDescription']['name'].lower()):
-    jobName = job['backupJobSummary']['jobDescription']['name']
-    jobId = job['backupJobSummary']['jobDescription']['jobId']
-    print(jobName)
-    if 'lastProtectionRun' in job['backupJobSummary']:
-        startTimeUsecs = job['backupJobSummary']['lastProtectionRun']['backupRun']['base'].get('startTimeUsecs', None)
-        endTimeUsecs = job['backupJobSummary']['lastProtectionRun']['backupRun']['base'].get('endTimeUsecs', None)
-        jobId = job['backupJobSummary']['lastProtectionRun']['backupRun']['base'].get('jobId', None)
-        if jobId is not None and startTimeUsecs is not None:
-            lastrun = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&id=%s&onlyReturnDataMigrationJobs=false' % (startTimeUsecs, jobId))
-            scheduleType = runType[lastrun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['backupType']]
-            if 'activeAttempt' in lastrun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']:
-                attempt = lastrun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['activeAttempt']
-                status = attempt['publicStatus']
-                jobType = attempt['type']
-                for source in attempt['sources']:
-                    entity = source['source']['displayName']
-                    totalObjects += 1
-                    objectHistory(entity, status, scheduleType, jobName, jobId, jobType, startTimeUsecs, '')
-            if 'latestFinishedTasks' in lastrun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']:
-                for task in lastrun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['latestFinishedTasks']:
-                    status = task['base']['publicStatus']
-                    jobType = task['base']['type']
-                    entity = task['base']['sources'][0]['source']['displayName']
-                    totalObjects += 1
-                    if status == 'kFailure':
-                        message = task['base']['error']['errorMsg']
-                        objectHistory(entity, status, scheduleType, jobName, jobId, jobType, startTimeUsecs, message)
+for job in sorted(jobs, key=lambda job: job['name'].lower()):
+    print("  %s" % job['name'])
+    if 'lastRun' in job:
+        startTimeUsecs = job['lastRun']['backupRun']['stats']['startTimeUsecs']
+        for source in job['lastRun']['backupRun']['sourceBackupStatus']:
+            totalObjects += 1
+            sourcename = source['source']['name']
+            if source['status'] not in ['kSuccess', 'kWarning']:
+                sourceType = source['source']['environment']
+                if sourceType == 'kPuppeteer':
+                    sourceType == 'kView'
+                search = api('get', '/searchvms?vmName=%s&entityTypes=%s&allUnderHierarchy=true&jobIds=%s' % (sourcename, sourceType, job['id']))
+                if 'vms' in search:
+                    latestSnapshotUsecs = search['vms'][0]['vmDocument']['versions'][0]['instanceId']['jobStartTimeUsecs']
+                    errorRuns = [run for run in allruns if run['jobId'] == job['id'] and run['backupRun']['stats']['startTimeUsecs'] > latestSnapshotUsecs]
+                else:
+                    errorRuns = [run for run in allruns if run['jobId'] == job['id'] and run['backupRun']['stats']['startTimeUsecs'] > (timeAgo(31, 'days'))]
+                    latestSnapshotUsecs = 0
+                if errorRuns:
+                    numErrors = len(errorRuns)
+                    if source['status'] != 'kFailure':
+                        numErrors -= 1
+                else:
+                    numErrors = '-'
+                thisStatus = {'objectName': sourcename,
+                              'status': source['status'],
+                              'jobName': job['name'],
+                              'jobId': job['id'],
+                              'jobType': source['source']['environment'],
+                              'startTimeUsecs': startTimeUsecs,
+                              'latestSnapshotUsecs': latestSnapshotUsecs,
+                              'numErrors': numErrors}
+                if 'error' in source:
+                    thisStatus['message'] = source['error']
+                else:
+                    thisStatus['message'] = ''
+                if numErrors != 0 and (sourcename not in objectStatus or startTimeUsecs > objectStatus[sourcename]['startTimeUsecs']):
+                    objectStatus[sourcename] = thisStatus
 
 for entity in objectStatus:
     if objectStatus[entity]['latestSnapshotUsecs'] == 0:
@@ -261,7 +235,7 @@ for entity in objectStatus:
                 <td>%s</td>
                 <td>%s</td>
                 <td>%s</td>
-            </tr>''' % (entity, environments[objectStatus[entity]['jobType']], jobEntry, objectStatus[entity]['numErrors'], lastSuccess, objectStatus[entity]['message'][:99])
+            </tr>''' % (entity, objectStatus[entity]['jobType'], jobEntry, objectStatus[entity]['numErrors'], lastSuccess, objectStatus[entity]['message'][:99])
     html += row
 
 totalFailedObjects = len(objectStatus)
