@@ -120,7 +120,7 @@ foreach($sourceId in $sourceIds){
         foreach ($mountPoint in $mountPoints | Where-Object {$_ -ne $null}) {
     
             $backupFilePath = "/$mountPoint".Replace(':\','/')
-            $mountLetter = $backupFilePath.Substring(0,$backupFilePath.Length-1)
+            $mountLetter = $backupFilePath.Substring(0,$backupFilePath.Length-1).ToLower()
             $filePath = @{
                 "backupFilePath" = $backupFilePath;
                 "skipNestedVolumes" = $skip;
@@ -129,7 +129,7 @@ foreach($sourceId in $sourceIds){
     
             # identify exclusions that apply to existing source volumes
             $excludedFilePaths = @()
-            foreach ($exclusion in $exclusions) {
+            foreach ($exclusion in $excludePaths | Where-Object {$_ -ne ''}) {
                 $exclusion = $exclusion.ToString()
                 if ($exclusion.substring(0, 3) -eq $mountPoint) {
                     $exclusion = "/$($exclusion.replace(':','').replace('\','/'))"
@@ -137,7 +137,7 @@ foreach($sourceId in $sourceIds){
                 }elseif ($exclusion.substring(0, 3) -eq '*:\') {
                     $exclusion = "$($exclusion.replace('*:',$mountLetter).replace('\','/'))"
                     $excludedFilePaths += $exclusion
-                }elseif ($exclusion.Contains('*') -or $exclusion.Contains('?')){
+                }elseif ($exclusion.substring(1,2) -ne ':\'){
                     $exclusion = $exclusion.replace('\','/')
                     $excludedFilePaths += $exclusion
                 }
