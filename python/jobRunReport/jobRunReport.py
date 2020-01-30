@@ -23,7 +23,7 @@ domain = args.domain
 apiauth(vip, username, domain)
 
 ### find protectionRuns for last 24 hours
-runs = api('get', 'protectionRuns?startTimeUsecs=%s' % timeAgo('24', 'hours'))
+runs = api('get', 'protectionRuns?startTimeUsecs=%s&numRuns=100000' % timeAgo('24', 'hours'))
 
 seen = {}
 print("{:>20} {:>10}  {:25}".format('JobName', 'Status ', 'StartTime'))
