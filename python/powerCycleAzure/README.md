@@ -13,7 +13,7 @@ curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/storePassword.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/waitForJob.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/azurece_control.sh
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/pyhesity.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x azurece_control.sh
 ```
 
