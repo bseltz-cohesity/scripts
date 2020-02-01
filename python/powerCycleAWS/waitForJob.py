@@ -32,7 +32,7 @@ print("waiting for existing job runs to finish...")
 while finished is False:
     finished = True
     for job in jobs:
-        runs = sorted(api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s' % (job['id'], timeAgo(7, 'days'))), key=lambda result: result['backupRun']['stats']['startTimeUsecs'], reverse=True)
+        runs = sorted(api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&excludeTasks=true' % (job['id'], timeAgo(31, 'days'))), key=lambda result: result['backupRun']['stats']['startTimeUsecs'], reverse=True)
         for run in runs:
             for copyRun in run['copyRun']:
                 if (copyRun['status'] not in finishedStates and copyRun['target']['type'] != 'kArchival'):

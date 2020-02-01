@@ -26,7 +26,13 @@ function f_start_cohesity() {
 }
 
 function f_stop_cohesity() {
-    python ${scriptpath}/waitForJob.py -v "${onprem_ip}" -u "${onprem_user}" -d "${onprem_domain}"
+    while true; do
+        python ${scriptpath}/waitForJob.py -v "${onprem_ip}" -u "${onprem_user}" -d "${onprem_domain}"
+        if [ $? -eq 0 ]; then
+            break
+        fi
+        sleep 5
+    done
     python ${scriptpath}/powerCycleAWS.py -s "${ce_ip}" \
                                           -u "${ce_user}" \
                                           -d "${ce_domain}" \
