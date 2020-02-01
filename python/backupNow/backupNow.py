@@ -146,16 +146,29 @@ else:
                 exit(1)
 
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
-runs = api('get', 'protectionRuns?jobId=%s' % job['id'])
+runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
 if len(runs) > 0:
     newRunId = lastRunId = runs[0]['backupRun']['jobRunId']
 
     # wait for existing job run to finish
-    if (runs[0]['backupRun']['status'] not in finishedStates):
-        print("waiting for existing job run to finish...")
-        while (runs[0]['backupRun']['status'] not in finishedStates):
-            sleep(5)
-            runs = api('get', 'protectionRuns?jobId=%s' % job['id'])
+    status = 'unknown'
+    reportedwaiting = False
+    while status not in finishedStates:
+        try:
+            runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
+            status = runs[0]['backupRun']['status']
+            if status not in finishedStates:
+                if reportedwaiting is False:
+                    print('Waiting for existing job run to finish...')
+                    reportedwaiting = True
+                sleep(5)
+        except Exception:
+            print("got an error...")
+            sleep(2)
+            try:
+                apiauth(vip, username, domain, quiet=True)
+            except Exception2:
+                sleep(2)
 else:
     newRunId = lastRunId = 1
 
@@ -231,9 +244,20 @@ if wait is True:
 
 # wait for job run to finish and report completion
 if wait is True:
-    while(runs[0]['backupRun']['status'] not in finishedStates):
-        sleep(5)
-        runs = api('get', 'protectionRuns?jobId=%s' % job['id'])
+    status = 'unknown'
+    while status not in finishedStates:
+        try:
+            runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
+            status = runs[0]['backupRun']['status']
+            if status not in finishedStates:
+                sleep(5)
+        except Exception:
+            print("got an error...")
+            sleep(5)
+            try:
+                apiauth(vip, username, domain, quiet=True)
+            except Exception2:
+                sleep(2)
     print("Job finished with status: %s" % runs[0]['backupRun']['status'])
     runURL = "https://%s/protection/job/%s/run/%s/%s/protection" % \
         (vip, runs[0]['jobId'], runs[0]['backupRun']['jobRunId'], runs[0]['copyRun'][0]['runStartTimeUsecs'])
