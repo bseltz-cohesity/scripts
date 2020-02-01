@@ -13,7 +13,7 @@ curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAWS/storePassword.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAWS/waitForJob.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAWS/awsce_control.sh
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAWS/pyhesity.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x awsce_control.sh
 ```
 
