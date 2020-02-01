@@ -49,7 +49,6 @@ resgroup='resgroup1'  # Azure resource group name
 onprem_ip='192.168.1.198'  # an IP or DNS name of on-prem Cohesity cluster
 onprem_user='admin'  # Cohesity user to log onto the on-prem Cohesity cluster
 onprem_domain='local'  # Cohesity domain to log onto the on-prem Cohesity cluster
-onprem_job='VM Backup'  # on-prem protection job to monitor for completion
 scriptpath='/Users/myusername/scripts/python'  # absolute path to the scripts
 ```
 
@@ -83,7 +82,6 @@ Then we can stop the cloud edition cluster:
 
 ```text
 waiting for existing job run to finish...
-latest job run completed with status: kSuccess
 Connecting to Azure...
 Connecting to Cohesity...
 Stopping all the cluster services...

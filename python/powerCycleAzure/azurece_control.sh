@@ -13,7 +13,6 @@ resgroup='resgroup1'
 onprem_ip='192.168.1.198'
 onprem_user='admin'
 onprem_domain='local'
-onprem_job='VM Backup'
 scriptpath='/Users/myusername/scripts/python'
 
 function f_start_cohesity() {
@@ -31,7 +30,13 @@ function f_start_cohesity() {
 }
 
 function f_stop_cohesity() {
-    python ${scriptpath}/waitForJob.py -v "${onprem_ip}" -u "${onprem_user}" -d "${onprem_domain}" -j "${onprem_job}"
+    while true; do
+        python ${scriptpath}/waitForJob.py -v "${onprem_ip}" -u "${onprem_user}" -d "${onprem_domain}"
+        if [ $? -eq 0 ]; then
+            break
+        fi
+        sleep 5
+    done
     python ${scriptpath}/powerCycleAzure.py -s "${ce_ip}" \
                                             -u "${ce_user}" \
                                             -d "${ce_domain}" \
@@ -66,7 +71,6 @@ function f_show() {
     echo "onprem_ip: ${onprem_ip}"
     echo "onprem_user: ${onprem_user}"
     echo "onprem_domain: ${onprem_domain}"
-    echo "onprem_job: ${onprem_job}"
     echo ""
     echo "ce_ip: ${ce_ip}"
     echo "ce_user: ${ce_user}"
