@@ -310,20 +310,20 @@ foreach ($entity in $objectStatus.Keys | Sort-Object){
     $dataWritten = $objectStatus[$entity].dataWritten
     $dataRead = $objectStatus[$entity].dataRead
     if($dataRead -gt 0){
-        $displayRead = [math]::Round($dataRead/(1024*1024),0)
+        $displayRead = [math]::Round($dataRead/(1024*1024),3)
     }else{
         $displayRead = 0
     }
     if($logicalSize -gt 0){
         $changeRate = $dataWritten / $logicalSize
         $changeRatePct = [math]::Round(100 * $changeRate, 1)
-        $displaySize = [math]::Round($logicalSize/(1024*1024),0)
+        $displaySize = [math]::Round($logicalSize/(1024*1024),3)
     }else{
         $changeRatePct = 0
         $displaySize = 0
     }
     if($dataWritten -gt 0){
-        $displayWritten = [math]::Round($dataWritten/(1024*1024),0) 
+        $displayWritten = [math]::Round($dataWritten/(1024*1024),3) 
     }else{
         $displayWritten = 0
     }
