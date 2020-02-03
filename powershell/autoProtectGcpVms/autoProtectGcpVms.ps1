@@ -3,11 +3,13 @@
 #                  -username myusername `
 #                  -domain mydomain.net `
 #                  -excludeProjects sbx, test `
-#                  -policyName 'My Policy' `
+#                  -policy 'My Policy' `
 #                  -storageDomain DefaultStorageDomain `
 #                  -sendTo myuser@mydomain.net, anotheruser@mydomain.net `
 #                  -smtpServer 192.168.1.95 `
-#                  -sendFrom backupreport@mydomain.net
+#                  -sendFrom backupreport@mydomain.net `
+#                  -reprotectOldVms `
+#                  -project myproject
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -159,11 +161,11 @@ foreach($source in $sources){
             $newJob = $false
 
             # find existing job or define a new job
-            $job = $jobs | Where-Object name -eq $projectName
+            $job = $jobs | Where-Object name -eq "GCP-$projectName"
             if(! $job){
                 $job = createNewJob
                 $newJob = $True
-                $job.name = $projectName
+                $job.name = "GCP-$projectName"
                 $job.parentSourceId = $source.protectionSource.id
             }
 
