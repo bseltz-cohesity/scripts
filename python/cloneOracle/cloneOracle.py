@@ -28,6 +28,8 @@ parser.add_argument('-ts', '--targetserver', type=str, default=None)  # name of 
 parser.add_argument('-td', '--targetdb', type=str, default=None)  # name of target oracle DB
 parser.add_argument('-oh', '--oraclehome', type=str, required=True)  # oracle home path on target
 parser.add_argument('-ob', '--oraclebase', type=str, required=True)  # oracle base path on target
+parser.add_argument('-lt', '--logtime', type=str, default=None)  # oracle base path on target
+parser.add_argument('-l', '--latest', action='store_true')
 parser.add_argument('-w', '--wait', action='store_true')  # wait for completion
 
 args = parser.parse_args()
@@ -50,6 +52,8 @@ else:
 
 oraclehome = args.oraclehome
 oraclebase = args.oraclebase
+logtime = args.logtime
+latest = args.latest
 wait = args.wait
 
 ### authenticate
@@ -70,6 +74,7 @@ if len(searchResults) == 0:
 ### find latest snapshot
 latestdb = sorted(searchResults, key=lambda result: result['vmDocument']['versions'][0]['snapshotTimestampUsecs'], reverse=True)[0]
 version = latestdb['vmDocument']['versions'][0]
+ownerId = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['ownerId']
 
 ### find target host
 entities = api('get', '/appEntities?appEnvType=19')
@@ -79,6 +84,81 @@ for entity in entities:
 if targetEntity is None:
     print "target server not found"
     exit()
+
+# handle log replay
+versionNum = 0
+validLogTime = False
+
+if logtime is not None or latest is True:
+    if logtime is not None:
+        logusecs = dateToUsecs(logtime)
+    dbversions = latestdb['vmDocument']['versions']
+
+    for version in dbversions:
+        # find db date before log time
+        GetRestoreAppTimeRangesArg = {
+            "type": 19,
+            "restoreAppObjectVec": [
+                {
+                    "appEntity": latestdb['vmDocument']['objectId']['entity'],
+                    "restoreParams": {
+                        "sqlRestoreParams": {
+                            "captureTailLogs": True
+                        },
+                        "oracleRestoreParams": {
+                            "alternateLocationParams": {
+                                "oracleDBConfig": {
+                                    "controlFilePathVec": [],
+                                    "enableArchiveLogMode": True,
+                                    "redoLogConf": {
+                                        "groupMemberVec": [],
+                                        "memberPrefix": "redo",
+                                        "sizeMb": 20
+                                    },
+                                    "fraSizeMb": 2048
+                                }
+                            },
+                            "captureTailLogs": False,
+                            "secondaryDataFileDestinationVec": [
+                                {}
+                            ]
+                        }
+                    }
+                }
+            ],
+            "ownerObjectVec": [
+                {
+                    "jobUid": latestdb['vmDocument']['objectId']['jobUid'],
+                    "jobId": latestdb['vmDocument']['objectId']['jobId'],
+                    "jobInstanceId": version['instanceId']['jobInstanceId'],
+                    "startTimeUsecs": version['instanceId']['jobStartTimeUsecs'],
+                    "entity": {
+                        "id": ownerId
+                    },
+                    "attemptNum": 1
+                }
+            ]
+        }
+        logTimeRange = api('post', '/restoreApp/timeRanges', GetRestoreAppTimeRangesArg)
+
+        if latest is True:
+            if 'timeRangeVec' not in logTimeRange['ownerObjectTimeRangeInfoVec'][0]:
+                logTime = None
+                latest = None
+                break
+
+        logStart = logTimeRange['ownerObjectTimeRangeInfoVec'][0]['timeRangeVec'][0]['startTimeUsecs']
+        logEnd = logTimeRange['ownerObjectTimeRangeInfoVec'][0]['timeRangeVec'][0]['endTimeUsecs']
+        if latest is True:
+            logusecs = logEnd - 1000000
+            validLogTime = True
+            break
+
+        if logStart <= logusecs and logusecs <= logEnd:
+            validLogTime = True
+            break
+
+        versionNum += 1
 
 cloneParams = {
     "name": "Clone-Oracle",
@@ -126,6 +206,14 @@ cloneParams = {
     }
 }
 
+# apply log replay time
+if validLogTime is True:
+    cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['restoreTimeSecs'] = int(logusecs / 1000000)
+else:
+    if logtime is not None:
+        print('LogTime of %s is out of range' % logtime)
+        print('Available range is %s to %s' % (usecsToDate(logStart), usecsToDate(logEnd)))
+        exit(1)
 
 ### execute the clone task
 response = api('post', '/cloneApplication', cloneParams)
@@ -143,8 +231,8 @@ if wait is True:
         sleep(1)
         status = api('get', '/restoretasks/%s' % taskId)
     if(status[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus'] == 'kSuccess'):
-        print('Cloned View Successfully')
+        print('Clone Completed Successfully')
         exit(0)
     else:
-        print('Clone View ended with state: %s' % status[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus'])
+        print('Clone ended with state: %s' % status[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus'])
         exit(1)

@@ -45,4 +45,16 @@ The script takes the following parameters:
 * -td, --targetdb: name of target oracle DB
 * -oh, --oraclehome: oracle home path on target
 * -ob, --oraclebase: oracle base path on target
+* -lt, --logtime: point in time to replay the logs to
+* -l, --latest: replay logs to latest available point in time
 * -w, --wait: wait for completion
+
+## Point in Time Recovery
+
+If you want to replay the logs to the very latest available point in time, use the **-l** parameter.
+
+Or, if you want to replay logs to a specific point in time, use the **-lt** parameter and specify a date and time in military format like so:
+
+```bash
+-lt '2019-01-20 23:47:02'
+```
