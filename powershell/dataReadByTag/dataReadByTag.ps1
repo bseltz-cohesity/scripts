@@ -43,6 +43,7 @@ $fileName = "dataByTag_$($clusterName)_$($jobId)_$($fileDate).csv"
 
 # gather data read by tag
 $readByTag = @{}
+$vms = @{}
 
 $runs = api get "protectionRuns?jobId=$jobId&excludeTasks=true&startTimeUsecs=$(timeAgo 31 days)" | Where-Object {$_.backupRun.snapshotsDeleted -ne $True}
 $groupedByDay = $runs | Group-Object -Property {(usecsToDate $_.copyRun[0].runStartTimeUsecs).DayOfYear}, {(usecsToDate $_.copyRun[0].runStartTimeUsecs).Year}
@@ -52,6 +53,7 @@ foreach($run in $runs){
     $thisrun = api get "/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=$startTimeUsecs&id=$jobId&onlyReturnDataMigrationJobs=false"
     foreach($task in $thisrun.backupJobRuns.protectionRuns[0].backupRun.latestFinishedTasks){
         $dataRead = $task.base.totalBytesReadFromSource
+        $vmName = $task.base.sources[0].source.displayName
         $vmTags = $task.base.sources[0].source.vmwareEntity.tagAttributesVec | Where-Object {$_.name -in $tags}
         if($vmTags){
             $tagName = $vmTags[0].name
@@ -59,9 +61,19 @@ foreach($run in $runs){
             $tagName = 'Unspecified'
         }
         if($tagName -in $readByTag.Keys){
-            $readByTag[$tagName] += $dataRead
+            $readByTag[$tagName]['dataRead'] += $dataRead
+            if($vmName -notin $readByTag[$tagName]['vms']){
+                $readByTag[$tagName]['vms'] += $vmName
+            }
         }else{
-            $readByTag[$tagName] = $dataRead
+            $readByTag[$tagName] = @{}
+            $readByTag[$tagName]['dataRead'] = $dataRead
+            $readByTag[$tagName]['vms'] = @($vmName)
+        }
+        if($vmName -in $vms.Keys){
+            $vms[$vmName] += $dataRead
+        }else{
+            $vms[$vmName] = $dataRead
         }
     }
 }
@@ -74,12 +86,17 @@ $sinceDate = usecsToDate $startTimeUsecs
 "Job Name,{0}" -f $job.name | out-file -FilePath $fileName -Append
 "Date,{0}" -f $nowDate | out-file -FilePath $fileName -Append
 "Days Collected,{0}" -f $groupedByDay.Count | Out-File -FilePath $fileName -Append
-"`nTag,MB Read" | Out-File -FilePath $fileName -Append
+"`nTag,VM,MB Read" | Out-File -FilePath $fileName -Append
 
 foreach($tagName in ($readByTag.Keys | sort)){
-    $MBread = [math]::Round(($readByTag[$tagName]/(1024*1024)), 0)
-    "  {0}:  {1} MB" -f $tagName, $MBread
-    "{0},{1}" -f $tagName, $MBread | Out-File -FilePath $fileName -Append
+    $MBread = [math]::Round(($readByTag[$tagName]['dataRead']/(1024*1024)), 0)
+    $tagName
+    "{0},{1},{2}" -f $tagName, 'Total', $MBread | Out-File -FilePath $fileName -Append
+    foreach($vmName in $readByTag[$tagName]['vms']){
+        $MBread = [math]::Round(($vms[$vmName]/(1024*1024)), 0)
+        "  {0}:  {1} MB" -f $vmName, $MBread
+        "{0},{1},{2}" -f '', $vmName, $MBread | Out-File -FilePath $fileName -Append
+    }
 }
 
 # send email
