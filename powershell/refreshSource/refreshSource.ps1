@@ -1,27 +1,47 @@
-### usage: ./refreshSource.ps1 -vip 192.168.1.198 -username admin [ -domain local ] -source myVcenter
-
 ### process commandline arguments
 [CmdletBinding()]
 param (
     [Parameter(Mandatory = $True)][string]$vip,
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
-    [Parameter(Mandatory = $True)][string]$source
+    [Parameter(Mandatory = $True)][string]$sourceName
 )
 
 ### source the cohesity-api helper code
-. ./cohesity-api
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
 
-### find and refresh protection Source
-$sources = api get protectionSources | Where-Object {$_.protectionSource.name -ieq $source }
-if($sources){
-    "refreshing $source..."
-    api post protectionSources/refresh/$($sources[0].protectionSource.id)
-}else{
-    Write-Warning "$source not found!"
+function getObjectId($sourceName){
+    $global:_object_id = $null
+
+    function get_nodes($obj){
+        if($obj.protectionSource.name -eq $sourceName){
+            $global:_object_id = $obj.protectionSource.id
+            break
+        }
+        if($obj.PSObject.Properties['nodes']){
+            foreach($node in $obj.nodes){
+                if($null -eq $global:_object_id){
+                    get_nodes $node
+                }
+            }
+        }
+    }
+    
+    foreach($source in (api get protectionSources)){
+        if($null -eq $global:_object_id){
+            get_nodes $source
+        }
+    }
+    return $global:_object_id
 }
 
-
+$objectId = getObjectId $sourceName
+if($objectId){
+    write-host "refreshing $sourceName..."
+    api post protectionSources/refresh/$($objectId)
+}else{
+    write-host "$sourceName not found" -ForegroundColor Yellow
+}

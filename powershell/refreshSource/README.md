@@ -8,7 +8,7 @@ The script takes the following parameters:
 - -vip (DNS or IP of the Cohesity Cluster)
 - -username (Cohesity User Name)
 - -domain (optional - defaults to 'local')
-- -source (name of the source to refresh)
+- -sourceName (name of the source to refresh)
 
 ## Download the script
 
@@ -31,10 +31,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./refreshSource.ps1 -vip mycluster -username admin -source myVcenter
-
+./refreshSource.ps1 -vip mycluster -username admin -domain mydomain.net -sourceName vcenter.mydomain.net
 Connected!
 
-Refreshing myVcenter...
+Refreshing vcenter.mydomain.net...
 ```
- 
