@@ -22,6 +22,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, required=True)
 parser.add_argument('-u', '--username', type=str, required=True)
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-pw', '--password', type=str)
+parser.add_argument('-of', '--outfolder', type=str, default='.')
 parser.add_argument('-s', '--mailserver', type=str)
 parser.add_argument('-p', '--mailport', type=int, default=25)
 parser.add_argument('-t', '--sendto', action='append', type=str)
@@ -32,18 +34,23 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
+password = args.password
+folder = args.outfolder
 mailserver = args.mailserver
 mailport = args.mailport
 sendto = args.sendto
 sendfrom = args.sendfrom
 
-### authenticate
-apiauth(vip, username, domain)
+# authenticate
+if password is not None:
+    apiauth(vip, username, domain, password=password)
+else:
+    apiauth(vip, username, domain)
 
 cluster = api('get', 'cluster')
 
 dateString = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-outfileName = 'clusterInfo-%s-%s.txt' % (cluster['name'], dateString)
+outfileName = '%s/%s-%s-clusterInfo.txt' % (folder, dateString, cluster['name'])
 f = open(outfileName, "w")
 
 status = api('get', '/nexus/cluster/status')

@@ -22,6 +22,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, required=True)
 parser.add_argument('-u', '--username', type=str, required=True)
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-pw', '--password', type=str)
+parser.add_argument('-of', '--outfolder', type=str, default='.')
 parser.add_argument('-s', '--mailserver', type=str)
 parser.add_argument('-p', '--mailport', type=int, default=25)
 parser.add_argument('-t', '--sendto', action='append', type=str)
@@ -33,6 +35,8 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
+password = args.password
+folder = args.outfolder
 mailserver = args.mailserver
 mailport = args.mailport
 sendto = args.sendto
@@ -47,7 +51,10 @@ def cleanhtml(raw_html):
 
 
 # authenticate
-apiauth(vip, username, domain)
+if password is not None:
+    apiauth(vip, username, domain, password=password)
+else:
+    apiauth(vip, username, domain)
 
 print('Collecting report data...')
 
@@ -239,7 +246,10 @@ for entity in objectStatus:
     html += row
 
 totalFailedObjects = len(objectStatus)
-percentFailed = round((100 * (float(totalObjects - totalFailedObjects)) / float(totalObjects)), 2)
+if totalObjects != 0:
+    percentFailed = round((100 * (float(totalObjects - totalFailedObjects)) / float(totalObjects)), 2)
+else:
+    percentFailed = 0
 
 html += '''</table>
 <p style="margin-top: 15px; margin-bottom: 15px;"><span style="font-size:1em;">%s protected objects failed out of %s total objects (%s%% success rate)</span></p>
@@ -248,8 +258,12 @@ html += '''</table>
 </html>
 ''' % (totalFailedObjects, totalObjects, percentFailed)
 
-print('saving report as strikeReport-%s' % cluster['name'])
-outfileName = 'strikeReport-%s.html' % cluster['name']
+now = datetime.now()
+nowstring = now.strftime("%Y-%m-%d-%H-%M-%S")
+outfileName = '%s/%s-%s-strikeReport.html' % (folder, nowstring, cluster['name'])
+
+print('saving report as %s' % outfileName)
+
 f = open(outfileName, "w")
 f.write(html)
 f.close()
