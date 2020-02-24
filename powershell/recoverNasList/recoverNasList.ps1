@@ -22,7 +22,8 @@ foreach($shareName in $nasListFile){
 
     # find nas share to recover
     $shares = api get restore/objects?search=$shareName
-    $exactShares = $shares | Where-Object {$_.objectSnapshotInfo.snapshottedSource.name -ieq $shareName}
+    $exactShares = $shares.objectSnapshotInfo | Where-Object {$_.snapshottedSource.name -ieq $shareName}
+
     if(! $exactShares){
         write-host "Can't find $shareName - skipping..." -ForegroundColor Yellow
     }else{
@@ -30,18 +31,18 @@ foreach($shareName in $nasListFile){
         $newViewName = $shareName.replace('\\','').replace('\','_')
 
         # select latest snapshot to recover
-        $latestsnapshot = ($exactShares | sort-object -property @{Expression={$_.objectSnapshotInfo.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
+        $latestsnapshot = ($exactShares | sort-object -property @{Expression={$_.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
 
         # new view parameters
         $nasRecovery = @{
             "name" = "Recover-$shareName";
             "objects" = @(
                 @{
-                    "jobId" = $latestsnapshot.objectSnapshotInfo[0].jobId;
-                    "jobUid" = $latestsnapshot.objectSnapshotInfo[0].jobUid;
-                    "jobRunId" = $latestsnapshot.objectSnapshotInfo[0].versions[0].jobRunId;
-                    "startedTimeUsecs" = $latestsnapshot.objectSnapshotInfo[0].versions[0].startedTimeUsecs;
-                    "protectionSourceId" = $latestsnapshot.objectSnapshotInfo[0].snapshottedSource.id
+                    "jobId" = $latestsnapshot.jobId;
+                    "jobUid" = $latestsnapshot.jobUid;
+                    "jobRunId" = $latestsnapshot.versions[0].jobRunId;
+                    "startedTimeUsecs" = $latestsnapshot.versions[0].startedTimeUsecs;
+                    "protectionSourceId" = $latestsnapshot.snapshottedSource.id
                 }
             );
             "type" = "kMountFileVolume";
