@@ -27,7 +27,7 @@ foreach($jobName in ($jobNames | Sort-Object -Property name)){
         write-host "$jobName not found" -ForegroundColor Yellow
     }else{
         $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$(timeAgo 24 hours)&runTypes=kRegular"
-        foreach($run in $runs){
+        foreach($run in $runs | Where-Object {$_.backupRun.status -eq 'kSuccess'}){
             $startTimeUsecs = $run.backupRun.stats.startTimeUsecs
             $startTime = usecsToDate $startTimeUsecs
             $endTimeUsecs = $run.backupRun.stats.endTimeUsecs
