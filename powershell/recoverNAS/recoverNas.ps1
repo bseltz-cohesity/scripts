@@ -24,10 +24,10 @@ $qosSetting = 'TestAndDev High'
 $shares = api get restore/objects?search=$shareName
 
 ### narrow results to VMs with the exact name
-$exactShares = $shares | Where-Object {$_.objectSnapshotInfo.snapshottedSource.name -ieq $shareName} #).objectSnapshotInfo[0]
+$exactShares = $shares.objectSnapshotInfo | Where-Object {$_.snapshottedSource.name -ieq $shareName} #).objectSnapshotInfo[0]
 
 if($sourceName){
-    $exactShares = $exactShares | Where-Object {$_.objectSnapshotInfo.registeredSource.name -ieq $sourceName }
+    $exactShares = $exactShares | Where-Object {$_.registeredSource.name -ieq $sourceName }
 }
 
 if(! $exactShares){
@@ -35,17 +35,17 @@ if(! $exactShares){
     exit
 }
 ### if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot 
-$latestsnapshot = ($exactShares | sort-object -property @{Expression={$_.objectSnapshotInfo.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
+$latestsnapshot = ($exactShares | sort-object -property @{Expression={$_.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
 
 $nasRecovery = @{
     "name" = "Recover-$shareName";
     "objects" = @(
         @{
-            "jobId" = $latestsnapshot.objectSnapshotInfo[0].jobId;
-            "jobUid" = $latestsnapshot.objectSnapshotInfo[0].jobUid;
-            "jobRunId" = $latestsnapshot.objectSnapshotInfo[0].versions[0].jobRunId;
-            "startedTimeUsecs" = $latestsnapshot.objectSnapshotInfo[0].versions[0].startedTimeUsecs;
-            "protectionSourceId" = $latestsnapshot.objectSnapshotInfo[0].snapshottedSource.id
+            "jobId" = $latestsnapshot.jobId;
+            "jobUid" = $latestsnapshot.jobUid;
+            "jobRunId" = $latestsnapshot.versions[0].jobRunId;
+            "startedTimeUsecs" = $latestsnapshot.versions[0].startedTimeUsecs;
+            "protectionSourceId" = $latestsnapshot.snapshottedSource.id
         }
     );
     "type" = "kMountFileVolume";
@@ -58,6 +58,7 @@ $nasRecovery = @{
 }
 
 "Recovering $shareName as view $viewName"
+
 $result = api post restore/recover $nasRecovery
 if($result){
     sleep 1
