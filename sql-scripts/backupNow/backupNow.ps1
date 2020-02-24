@@ -90,38 +90,51 @@ if($environment -eq 'kSQL' -and $job.environmentParameters.sqlParameters.backupT
                 if(! ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId})){
                     $runNowParameters += @{
                         "sourceId" = $serverObjectId;
-                        "databaseIds" = @()
+                    }
+                    if($instance -or $db){
+                        ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId}).databaseIds = @()
                     }
                 }
                 $serverSource = api get "protectionSources?id=$serverObjectId"
                 if($serverSource.PSObject.Properties['applicationNodes']){
                     $instanceNodes = $serverSource.applicationNodes
                     if($instance){
-                        $instanceNodes = @($instanceNodes | where-object {$_.protectionSource.name -eq $instance})
-                    }
-                    foreach($instanceNode in $instanceNodes){
+                        $instanceNode = $instanceNodes | Where-Object {$_.protectionSource.Name -eq $instance }
                         if($instanceNode){
-                            if($db){
-                                $dbNode = $instanceNode.nodes | Where-Object {$_.protectionSource.Name -eq "$instance/$db"}
-                                if($dbNode -and $dbNode.protectionSource.id -in $job.sourceIds){
-                                    $dbId = $dbNode.protectionSource.id
-                                    ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId}).databaseIds += $dbId
+                            if(! $db){
+                                if($instanceNode.protectionSource.id -in $job.sourceSpecialParameters.sqlSpecialParameters.applicationEntityIds -or ! ($job.sourceSpecialParameters | Where-Object {$_.sourceId -eq $serverObjectId})){
+                                    ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId}).databaseIds += $instanceNode.protectionSource.id
                                 }else{
-                                    write-host "Object $object not found (db name)" -ForegroundColor Yellow
-                                    exit 1
-                                }
-                            }else{
-                                $dbNodes = $instanceNode.nodes
-                                foreach($dbNode in $dbNodes){
-                                    if($dbNode.protectionSource.id -in $job.sourceSpecialParameters.sqlSpecialParameters.applicationEntityIds){
-                                        ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId}).databaseIds += $dbNode.protectionSource.id
-
+                                    $dbNodes = $instanceNode.nodes
+                                    foreach($dbNode in $dbNodes){
+                                        if($dbNode.protectionSource.id -in $job.sourceSpecialParameters.sqlSpecialParameters.applicationEntityIds){
+                                            ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId}).databaseIds += $dbNode.protectionSource.id
+                                        }
                                     }
                                 }
-                            }
+                            }else{
+                                $dbNode = $instanceNode.nodes | Where-Object {$_.protectionSource.Name -eq "$instance/$db"}
+                                    if($dbNode){
+                                        if($dbNode.protectionSource.id -in $job.sourceSpecialParameters.sqlSpecialParameters.applicationEntityIds -or $instanceNode.protectionSource.id -in $job.sourceSpecialParameters.sqlSpecialParameters.applicationEntityIds){
+                                            ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId}).databaseIds += $dbNode.protectionSource.id
+                                        }else{
+                                            write-host "DB $db not protected by job" -ForegroundColor Yellow
+                                            exit 1
+                                        }
+                                    }else{
+                                        write-host "Object $object not found (db name)" -ForegroundColor Yellow
+                                        exit 1
+                                    }
+                            } 
                         }else{
-                            write-host "Object $object not found (instance name)" -ForegroundColor Yellow
+                            write-host "instance $instance not found" -ForegroundColor Yellow
                             exit 1
+                        }
+                    }else{
+                        if($job.sourceSpecialParameters | Where-Object {$_.sourceId -eq $serverObjectId}){
+                            foreach($dbId in ($job.sourceSpecialParameters | Where-Object {$_.sourceId -eq $serverObjectId})){
+                                ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId}).databaseIds += $dbId
+                            }
                         }
                     }
                 }else{
