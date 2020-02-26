@@ -31,7 +31,12 @@ Place both files in a folder together. Create a text file for input, with the li
 Then run the script like so:
 
 ```powershell
-./recoverNasList.ps1 -vip mycluster -username admin -nasList .\nasList.txt
+./recoverNasList.ps1 -vip mycluster 
+                     -username myuser
+                     -domain mydomain.net
+                     -fullControl 'mydomain.net\domain admins'
+                     -readWrite 'mydomain.net\group1', 'mydomain.net\group2'
+                     -nasList .\nasList.txt
 ```
 
 ## Parameters
@@ -40,6 +45,10 @@ Then run the script like so:
 * -username: Cohesity logon username
 * -domain: (optional) Cohesity logon domain (defaults to local)
 * -nasList: (optional) defaults to .\nasList.txt
+* -fullControl: comma separated list of users to grant full control (share permissions)
+* -readWrite: comma separated list of users to grant read/write (share permissions)
+* -readOnly: comma separated list of users to grant read-only (share permissions)
+* -modify: comma separated list of users to grant modify (share permissions)
 
 ## Notes
 
