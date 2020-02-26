@@ -240,6 +240,25 @@ foreach($job in $jobs){
     }
 }
 
+# include unprotected views
+$views = (api get views).views | Where-Object {$_.viewProtection -eq $null}
+if($views.count -gt 0){
+    "Gathering unprotected view details..."
+    foreach($view in $views){
+        $includeRecord = $false
+        foreach($pre in $prefix){
+            if ($view.name.tolower().startswith($pre.tolower()) -or $prefix -eq 'ALL') {
+                $includeRecord = $True
+            }
+        }
+        if($includeRecord -eq $True){
+            "  $($view.name)"
+            $entitySizes[$view.name] = $view.logicalUsageBytes
+        }
+    }
+}
+
+
 $totalSize = 0
 $totalCost = 0
 
