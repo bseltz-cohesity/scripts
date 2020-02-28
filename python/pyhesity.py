@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - v2.0.3 - Brian Seltzer - Jun 2019"""
+"""Cohesity Python REST API Wrapper Module - v2.0.7 - Brian Seltzer - Feb 2020"""
 
 ##########################################################################################
 # Change Log
@@ -22,6 +22,7 @@
 # 2.0.4 - added pw and storepw - Aug 2019
 # 2.0.5 - added showProps - Nov 2019
 # 2.0.6 - handle another None return condition - Dec 2019
+# 2.0.7 - added storePasswordFromInput function - Feb 2020
 #
 ##########################################################################################
 # Install Notes
@@ -50,7 +51,7 @@ requests.packages.urllib3.disable_warnings()
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-__all__ = ['apiauth', 'api', 'usecsToDate', 'dateToUsecs', 'timeAgo', 'dayDiff', 'display', 'fileDownload', 'apiconnected', 'apidrop', 'pw', 'storepw', 'showProps']
+__all__ = ['apiauth', 'api', 'usecsToDate', 'dateToUsecs', 'timeAgo', 'dayDiff', 'display', 'fileDownload', 'apiconnected', 'apidrop', 'pw', 'storepw', 'showProps', 'storePasswordFromInput']
 
 APIROOT = ''
 HEADER = ''
@@ -225,6 +226,14 @@ def __getpassword(vip, username, password, domain, updatepw, prompt):
         pwdfile.write(', '.join(str(char) for char in list(map(lambda char: ord(char) + 1, pwd))))
         pwdfile.close()
         return pwd
+
+
+### store password from input
+def storePasswordFromInput(vip, username, password, domain):
+    pwpath = os.path.join(CONFIGDIR, 'lt.' + vip + '.' + username + '.' + domain)
+    pwdfile = open(pwpath, 'w')
+    pwdfile.write(', '.join(str(char) for char in list(map(lambda char: ord(char) + 1, password))))
+    pwdfile.close()
 
 
 ### display json/dictionary as formatted text
