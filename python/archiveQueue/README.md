@@ -30,6 +30,9 @@ Place both files in a folder together and run the main script like so:
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username (default is local)
+* -o, --canceloutdated: (optional) cancel running archives that are past their intended expiration
+* -q, --cancelqueued: (optional) cancel queued archives that have not started running
+* -a, --cancellall: (optional) cancel all archive tasks
 * -n, --numRuns: (optional) number of runs per job to inspect (default is 9999)
 
 ## The Python Helper Module - pyhesity.py
