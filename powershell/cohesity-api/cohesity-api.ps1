@@ -3,10 +3,10 @@
 #   version 0.18 - Brian Seltzer - Jan 2020
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
-# 0.6 - Consolidated Windows and Unix versions - June 2018
-# 0.7 - Added saveJson, loadJson and json2code utility functions - Feb 2019
-# 0.8 - added -prompt to prompt for password rather than save - Mar 2019
-# 0.9 - added setApiProperty / delApiProperty - Apr 2019
+# 0.06 - Consolidated Windows and Unix versions - June 2018
+# 0.07 - Added saveJson, loadJson and json2code utility functions - Feb 2019
+# 0.08 - added -prompt to prompt for password rather than save - Mar 2019
+# 0.09 - added setApiProperty / delApiProperty - Apr 2019
 # 0.10 - added $REPORTAPIERRORS constant - Apr 2019
 # 0.11 - added storePassword function and username parsing - Aug 2019
 # 0.12 - added -password to apiauth function - Oct 2019
@@ -15,7 +15,8 @@
 # 0.15 - added support for PS Core on Windows - Dec 2019
 # 0.16 - added ServicePoint connection workaround - Jan 2020
 # 0.17 - fixed json2code line endings on Windows - Jan 2020
-# 0.18 - added REINVOKE - Jan 2020 
+# 0.18 - added REINVOKE - Jan 2020
+# 0.19 - fixed password encryption for PowerShell 7.0 - Mar 2020
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
 
@@ -281,7 +282,7 @@ if ($UNIX) {
         }
         else {
             $secureString = Read-Host -Prompt "Enter password for $username at $vip" -AsSecureString
-            $clearTextPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureString))
+            $clearTextPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
             if($null -eq $prompt){
                 $key = Create-AesKey
                 $key | Out-File $keyFile
@@ -326,8 +327,8 @@ if ($UNIX) {
                 Set-ItemProperty -Path "$registryPath" -Name "$keyName" -Value "$encryptedPasswordText"
             }
         }        
-        $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
-        return [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+        $clearTextPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $securePassword ))
+        return $clearTextPassword
     }
 
     function storePasswordFromInput($vip, $username, $domain, $password){
@@ -356,8 +357,7 @@ function storePassword($vip, $username, $domain){
     }
     $pw = getpwd -vip $vip -username $username -domain $domain -updatePassword $true
     $securePassword = Read-Host -Prompt "Re-enter password for $username at $vip" -AsSecureString
-    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
-    $unsecurePassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+    $unsecurePassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $securePassword ))
     if($pw -ne $unsecurePassword){
         write-host "Passwords do not match. Try again:" -ForegroundColor Yellow
         storePassword -vip $vip -username $username -domain $domain 
@@ -571,4 +571,13 @@ function showProps{
             }
         }
     }
+}
+
+# convert syntax to python
+function py($p){
+    $py = $p.replace("$","").replace("].","]['").replace(".","']['")
+    if($py[-1] -ne ']'){
+        $py += "']"
+    }
+    $py
 }
