@@ -16,13 +16,3 @@ Add-Type -TypeDefinition $code
 
 #disable checks using new class
 [System.Net.ServicePointManager]::ServerCertificateValidationCallback = [SSLHandler]::GetSSLHandler()
-#do the request
-try
-{
-    invoke-WebRequest -Uri myurl -UseBasicParsing
-} catch {
-    # do something
-} finally {
-   #enable checks again
-   [System.Net.ServicePointManager]::ServerCertificateValidationCallback = $null
-}
