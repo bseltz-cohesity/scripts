@@ -17,6 +17,9 @@ parser.add_argument('-s', '--mailserver', type=str)
 parser.add_argument('-p', '--mailport', type=int, default=25)
 parser.add_argument('-t', '--sendto', action='append', type=str)
 parser.add_argument('-f', '--sendfrom', type=str)
+parser.add_argument('-b', '--maxbackuphrs', type=int, default=8)
+parser.add_argument('-r', '--maxreplicationhrs', type=int, default=12)
+
 args = parser.parse_args()
 
 vip = args.vip
@@ -26,6 +29,8 @@ mailserver = args.mailserver
 mailport = args.mailport
 sendto = args.sendto
 sendfrom = args.sendfrom
+maxbackuphrs = args.maxbackuphrs
+maxreplicationhrs = args.maxreplicationhrs
 
 ### authenticate
 apiauth(vip, username, domain)
@@ -50,8 +55,9 @@ for job in jobs:
         slaPass = 'Pass'
         sla = job['incrementalProtectionSlaTimeMins']
         slaUsecs = sla * 60000000
-        runs = api('get', 'protectionRuns?jobId=%s&numRuns=2&excludeTasks=true' % jobId)
+        runs = api('get', 'protectionRuns?jobId=%s&numRuns=2' % jobId)
         for run in runs:
+            # get backup run time
             startTimeUsecs = run['backupRun']['stats']['startTimeUsecs']
             status = run['backupRun']['status']
             if status in finishedStates:
@@ -59,11 +65,28 @@ for job in jobs:
                 runTimeUsecs = endTimeUsecs - startTimeUsecs
             else:
                 runTimeUsecs = nowUsecs - startTimeUsecs
-            if runTimeUsecs > slaUsecs:
-                slaPass = 'Miss'
             runTimeMinutes = int(round(runTimeUsecs / 60000000))
-            if slaPass == 'Miss':
+            runTimeHours = runTimeMinutes / 60
+            # get replication time
+            replHours = 0
+            remoteRuns = [copyRun for copyRun in run['copyRun'] if copyRun['target']['type'] == 'kRemote']
+            for remoteRun in remoteRuns:
+                if 'stats' in remoteRun:
+                    if 'startTimeUsecs' in remoteRun['stats']:
+                        replStartTimeUsecs = remoteRun['stats']['startTimeUsecs']
+                        if 'endTimeUsecs' in remoteRun['stats']:
+                            replEndTimeUsecs = remoteRun['stats']['endTimeUsecs']
+                            replUsecs = replEndTimeUsecs - replStartTimeUsecs
+                        else:
+                            replUsecs = nowUsecs - replStartTimeUsecs
+                        replHours = int(round(replUsecs / 60000000)) / 60
+                        if replHours > maxreplicationhrs:
+                            break
+
+            if runTimeUsecs > slaUsecs or runTimeHours > maxbackuphrs or replHours > maxreplicationhrs:
+                slaPass = 'Miss'
                 missesRecorded = True
+                # replort sla miss
                 if status in finishedStates:
                     verb = 'ran'
                 else:
@@ -71,6 +94,24 @@ for job in jobs:
                 messageline = '%s (Missed SLA) %s for %s minutes (SLA: %s minutes)' % (jobName, verb, runTimeMinutes, sla)
                 message += '%s\n' % messageline
                 print(messageline)
+                # report long running replication
+                if replHours >= maxreplicationhrs:
+                    messageline = '                       replication time: %s hours' % replHours
+                    message += '%s\n' % messageline
+                    print(messageline)
+                # identify long running objects
+                if 'sourceBackupStatus' in run['backupRun']:
+                    for source in run['backupRun']['sourceBackupStatus']:
+                        if 'timeTakenUsecs' in source['stats']:
+                            timeTakenUsecs = source['stats']['timeTakenUsecs']
+                        else:
+                            timeTakenUsecs = 0
+                        if timeTakenUsecs > slaUsecs:
+                            timeTakenMin = int(round(timeTakenUsecs / 60000000))
+                            messageline = '                       %s %s for %s minutes' % (source['source']['name'], verb, timeTakenMin)
+                            message += '%s\n' % messageline
+                            print(messageline)
+                break
 
 if missesRecorded is False:
     print('No SLA misses recorded')
