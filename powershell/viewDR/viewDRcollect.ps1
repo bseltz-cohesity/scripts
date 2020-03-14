@@ -1,3 +1,5 @@
+### usage: .\viewDRcollect.ps1 -vip mycluster -username myusername [ -domain mydomain.net ] -inPath \\myserver\mypath
+
 ### process commandline arguments
 [CmdletBinding()]
 param (

@@ -1,4 +1,4 @@
-### usage: ./viewDRclone.ps1 -vip mycluster -username myusername [ -domain mydomain.net ] -viewName 'My View' [ -newName 'Cloned-View' ] -inPath \\myserver\mypath\viewname
+### usage: ./viewDRclone.ps1 -vip mycluster -username myusername [ -domain mydomain.net ] -viewName 'My View' [ -newName 'Cloned-View' ] -inPath \\myserver\mypath
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -18,6 +18,7 @@ param (
 apiauth -vip $vip -username $username -domain $domain
 
 ### get view metadata from file
+$inPath = Join-Path -Path $inPath -ChildPath $viewName
 if(Test-Path $inPath){
     $metadata = Get-Content $inPath | ConvertFrom-Json
 }else{
@@ -58,11 +59,17 @@ if ($viewResult) {
 
     if ($cloneOp) {
         "Cloned $newName from $viewName"
-        sleep 1
+        Start-Sleep 1
         $newView = (api get views).views | Where-Object { $_.name -eq $newName }
         $newView.enableSmbViewDiscovery = $metadata.enableSmbViewDiscovery
         $newView.qos = @{
             "principalName" = $metadata.qos.principalName;
+        }
+        if($metadata.PSObject.Properties['subnetWhitelist']){
+            if(! $newView.PSObject.Properties['subnetWhiteList']){
+                $newView | Add-Member -MemberType NoteProperty -Name subnetWhiteList -Value @()
+            }
+            $newView.subnetWhitelist = $metadata.subnetWhiteList
         }
         $null = api put views $newView
         if($metadata.PSObject.Properties['aliases']){
