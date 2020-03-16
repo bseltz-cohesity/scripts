@@ -11,7 +11,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 ```powershell
 # Begin download commands
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/downloadFile/downloadFile.ps1).content | Out-File downloadFile.ps1; (Get-Content downloadFile.ps1) | Set-Content downloadFile.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/downloadFile/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End download commands
 ```
 
