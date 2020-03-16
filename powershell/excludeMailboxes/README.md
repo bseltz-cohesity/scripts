@@ -9,10 +9,12 @@ This PowerShell script excludes user mailboxes from an O365 Exchange protection 
 Run these commands from PowerShell to download the script(s) into your current directory
 
 ```powershell
-# begin download commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/excludeMailboxes/excludeMailboxes.ps1).content | Out-File excludeMailboxes.ps1; (Get-Content excludeMailboxes.ps1) | Set-Content excludeMailboxes.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/excludeMailboxes/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-# end download commands
+# Begin download commands
+$scriptName = 'excludeMailboxes'
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End download commands
 ```
 
 ## Components
