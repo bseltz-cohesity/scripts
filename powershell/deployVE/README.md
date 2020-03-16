@@ -6,6 +6,19 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This PowerShell script deploys a single-node Cohesity Virtual Edition (VE) appliance on VMware vSphere. After deploying the OVA, the script performs the cluster setup, applies a license key and accepts the end-user license agreement, leaving the new cluster fully built and ready for login.
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Begin download commands
+$scriptName = 'deployVE'
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End download commands
+```
+
 ## Components
 
 * deployVE.ps1: the main PowerShell script
@@ -63,14 +76,3 @@ VE Deployment Complete
 * -viDataStore: vSphere datastore name
 * -ovfPath: path to OVA file
 * -licenseKey: Cohesity license key
-
-## Download the script
-
-Run these commands from PowerShell to download the script(s) into your current directory
-
-```powershell
-# Begin download commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployVE/deployVE.ps1).content | Out-File deployVE.ps1; (Get-Content deployVE.ps1) | Set-Content deployVE.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployVE/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-# End download commands
-```
