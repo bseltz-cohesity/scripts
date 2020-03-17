@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#   version 0.18 - Brian Seltzer - Jan 2020
+#   version 0.20 - Brian Seltzer - Mar 2020
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.06 - Consolidated Windows and Unix versions - June 2018
@@ -17,128 +17,225 @@
 # 0.17 - fixed json2code line endings on Windows - Jan 2020
 # 0.18 - added REINVOKE - Jan 2020
 # 0.19 - fixed password encryption for PowerShell 7.0 - Mar 2020
+# 0.20 - refactored, added apipwd, added helios access - Mar 2020
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
 
 $REPORTAPIERRORS = $true
 $REINVOKE = 0
+$MAXREINVOKE = 3
+$heliosClusters = @()
+$heliosConnectedClusters = @()
 
-# platform detection and prerequisites
+# platform detection and prerequisites ============================================================
+
 if ($PSVersionTable.Platform -eq 'Unix') {
-    $UNIX = $true
     $CONFDIR = '~/.cohesity-api'
-    if ($(Test-Path $CONFDIR) -eq $false) { $quiet = New-Item -Type Directory -Path $CONFDIR}
+    if ($(Test-Path $CONFDIR) -eq $false) { $null = New-Item -Type Directory -Path $CONFDIR}
+}else{
+    $registryPath = 'HKCU:\Software\Cohesity-API'
+    $WEBCLI = New-Object System.Net.WebClient;    
 }
-else {
-    $UNIX = $false
-    $WEBCLI = New-Object System.Net.WebClient;
 
-    # ignore unsigned certificates
+if($PSVersionTable.PSEdition -eq 'Desktop'){
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
-    Add-Type @"
-    using System;
-    using System.Net;
-    using System.Net.Security;
-    using System.Security.Cryptography.X509Certificates;
-    public class ServerCertificateValidationCallback
+    $ignoreCerts = @"
+public class SSLHandler
+{
+    public static System.Net.Security.RemoteCertificateValidationCallback GetSSLHandler()
     {
-        public static void Ignore()
-        {
-            ServicePointManager.ServerCertificateValidationCallback += 
-                delegate
-                (
-                    Object obj, 
-                    X509Certificate certificate, 
-                    X509Chain chain, 
-                    SslPolicyErrors errors
-                )
-                {
-                    return true;};}}
+        return new System.Net.Security.RemoteCertificateValidationCallback((sender, certificate, chain, policyErrors) => { return true; });
+    }
+}
 "@
-    [ServerCertificateValidationCallback]::Ignore();
+
+    Add-Type -TypeDefinition $ignoreCerts
+    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = [SSLHandler]::GetSSLHandler()
 }
 
-# authentication function
-function apiauth($vip, $username, $domain, $password, [switch] $prompt, [switch] $updatepassword, [switch] $quiet){
+# authentication functions ========================================================================
 
+function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $password = $null, [switch] $quiet, [switch] $noprompt, [switch] $updatePassword, [switch] $helios){
+    # prompt for vip
     if(-not $vip){
-        write-host 'VIP: ' -foregroundcolor green -nonewline
-        $vip = Read-Host
-        if(-not $vip){write-host 'vip is required' -foregroundcolor red; break}
+        if($helios){
+            $vip = 'helios.cohesity.com'
+        }else{
+            write-host 'VIP: ' -foregroundcolor green -nonewline
+            $vip = Read-Host
+            if(-not $vip){write-host 'vip is required' -foregroundcolor red; break}
+        }
     }
-    if(-not $username){
+    # prompt for username
+    if($username -eq 'helios' -and !$helios -and $vip -ne 'helios.cohesity.com'){
         write-host 'Username: ' -foregroundcolor green -nonewline
         $username = Read-Host
-        if(-not $username){write-host 'username is required' -foregroundcolor red; break}
     }
+    # parse domain\username or username@domain
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
     }
     if($username.Contains('@')){
         $username, $domain = $username.Split('@')
     }
-    if($updatepassword){
-        $updatepw = '-updatePassword'
-    }else{ 
-        $updatepw = $null
+    if($password){ $pwd = $password }
+    if($updatePassword){
+        Set-CohesityAPIPassword -vip $vip -username $username -domain $domain
     }
-    if($prompt){
-        $pr = '-prompt'
-    }else{
-        $pr = $null
+    # get password
+    if(!$pwd){
+        $pwd = Get-CohesityAPIPassword -vip $vip -username $username -domain $domain
+        if(!$pwd -and !$noprompt){
+            Set-CohesityAPIPassword -vip $vip -username $username -domain $domain
+            $pwd = Get-CohesityAPIPassword -vip $vip -username $username -domain $domain
+        }
+        if(!$pwd){
+            Write-Host "No password provided for $username at $vip" -ForegroundColor Yellow
+            $global:AUTHORIZED = $false
+            break
+        }
+    }
+
+    $body = ConvertTo-Json @{
+        'domain' = $domain;
+        'username' = $username;
+        'password' = $pwd
     }
 
     $global:VIP = $vip
-    $global:USERNAMECACHE = $username
-    $global:DOMAINNAMECACHE = $domain
+    $global:USERNAME = $username
+    $global:DOMAIN = $domain
     $global:APIROOT = 'https://' + $vip + '/irisservices/api/v1'
     $HEADER = @{'accept' = 'application/json'; 'content-type' = 'application/json'}
-    $url = $APIROOT + '/public/accessTokens'
-
-    try {
-        if($PSVersionTable.PSEdition -eq 'Core'){
-            $auth = Invoke-RestMethod -Method Post -Uri $url  -Header $HEADER -Body $(
-                ConvertTo-Json @{
-                    'domain' = $domain; 
-                    'password' = $(if($password){$password}else{getpwd -vip $vip -username $username -domain $domain -prompt $pr -updatePassword $updatepw}); 
-                    'username' = $username
-                }
-            ) -SkipCertificateCheck
-        }else{
-            $auth = Invoke-RestMethod -Method Post -Uri $url  -Header $HEADER -Body $(
-                ConvertTo-Json @{
-                    'domain' = $domain; 
-                    'password' = $(if($password){$password}else{getpwd $vip $username -domain $domain -prompt $pr -updatePassword $updatepw}); 
-                    'username' = $username
-                }
-            )
-        }
-        if($UNIX){
-            $global:CURLHEADER = "authorization: $($auth.tokenType) $($auth.accessToken)"
-        }else{
-            $WEBCLI.Headers['authorization'] = $auth.tokenType + ' ' + $auth.accessToken;
-        }
-        $global:AUTHORIZED = $true
-        $global:HEADER = @{'accept' = 'application/json'; 
-            'content-type' = 'application/json'; 
-            'authorization' = $auth.tokenType + ' ' + $auth.accessToken
-        }
-        if(!$quiet){ write-host "Connected!" -foregroundcolor green }
-    }
-    catch {
-        $global:AUTHORIZED = $false
-        if($REPORTAPIERRORS){
+    if($vip -eq 'helios.cohesity.com' -or $helios){
+        # Authenticate Helios
+        $HEADER['apiKey'] = $pwd
+        $URL = 'https://helios.cohesity.com/mcm/clusters/connectionStatus'
+        try{
+            if($PSVersionTable.Edition -eq 'Core'){
+                $global:heliosClusters = Invoke-RestMethod -Method get -Uri $URL -Header $HEADER -SkipCertificateCheck
+            }else{
+                $global:heliosClusters = Invoke-RestMethod -Method get -Uri $URL -Header $HEADER
+            }
+            $global:heliosConnectedClusters = $global:heliosClusters | Where-Object connectedToCluster -eq $true
+            $global:HEADER = $HEADER
+            $global:AUTHORIZED = $true
+            if(!$quiet){ write-host "Connected!" -foregroundcolor green }
+        }catch{
             if($_.ToString().contains('"message":')){
                 write-host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
             }else{
                 write-host $_.ToString() -foregroundcolor yellow
             }
         }
+    }else{
+        # Authenticate Cluster
+        $url = $APIROOT + '/public/accessTokens'
+        try {
+            # authenticate
+            if($PSVersionTable.PSEdition -eq 'Core'){
+                $auth = Invoke-RestMethod -Method Post -Uri $url -Header $HEADER -Body $body -SkipCertificateCheck
+            }else{
+                $auth = Invoke-RestMethod -Method Post -Uri $url -Header $HEADER -Body $body
+            }
+            # set file transfer details
+            if($PSVersionTable.Platform -eq 'Unix'){
+                $global:CURLHEADER = "authorization: $($auth.tokenType) $($auth.accessToken)"
+            }else{
+                $WEBCLI.Headers['authorization'] = $auth.tokenType + ' ' + $auth.accessToken;
+            }
+            # store token
+            $global:AUTHORIZED = $true
+            $global:HEADER = @{'accept' = 'application/json'; 
+                'content-type' = 'application/json'; 
+                'authorization' = $auth.tokenType + ' ' + $auth.accessToken
+            }
+            if(!$quiet){ write-host "Connected!" -foregroundcolor green }
+        }catch{
+            $global:AUTHORIZED = $false
+            if($REPORTAPIERRORS){
+                if($_.ToString().contains('"message":')){
+                    write-host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
+                }else{
+                    write-host $_.ToString() -foregroundcolor yellow
+                }
+            }
+        }
     }
 }
 
-# api call function
+# api password setter/updater tool
+function apipwd($vip, $username='helios', $domain='local', [switch] $asUser, [switch] $helios){
+    # prompt for vip
+    if(-not $vip){
+        if($helios){
+            $vip = 'helios.cohesity.com'
+        }else{
+            write-host 'VIP: ' -foregroundcolor green -nonewline
+            $vip = Read-Host
+            if(-not $vip){write-host 'vip is required' -foregroundcolor red; break}
+        }
+    }
+    # prompt for username
+    if($username -eq 'helios' -and !$helios -and $vip -ne 'helios.cohesity.com'){
+        write-host 'Username: ' -foregroundcolor green -nonewline
+        $username = Read-Host
+    }
+    # parse domain\username or username@domain
+    if($username.Contains('\')){
+        $domain, $username = $username.Split('\')
+    }
+    if($username.Contains('@')){
+        $username, $domain = $username.Split('@')
+    }
+    if($password){ $pwd = $password }
+    if($helios){
+        if(!$asUser){
+            apiauth -username $username -helios -updatePassword
+        }else{
+            if($PSVersionTable.Platform -ne 'Unix'){
+                $credential = Get-Credential -Message "Enter Credentials for the Windows User"
+    
+                $args = "write-host ('running as ' + [System.Security.Principal.WindowsIdentity]::GetCurrent().Name);
+                . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1);
+                apiauth {0} -helios -updatePassword;
+                pause;" -f $username
+
+                Start-Process powershell.exe -Credential $credential -ArgumentList ("-command $args")
+            }else{
+                Write-Host "The -asUser option is only valid for Windows" -ForegroundColor Yellow
+            }
+        }
+    }else{
+        if(!$asUser){
+            apiauth $vip $username $domain -updatePassword
+        }else{
+            if($PSVersionTable.Platform -ne 'Unix'){
+                $credential = Get-Credential -Message "Enter Credentials for the Windows User"
+    
+                $args = "write-host ('running as ' + [System.Security.Principal.WindowsIdentity]::GetCurrent().Name);
+                . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1);
+                apiauth -vip {0} -username {1} -domain {2} -updatePassword;
+                pause;" -f $vip, $username, $domain
+        
+                Start-Process powershell.exe -Credential $credential -ArgumentList ("-command $args")
+            }else{
+                Write-Host "The -asUser option is only valid for Windows" -ForegroundColor Yellow
+            }
+        }
+    }
+}
+
+# terminate authentication
+function apidrop([switch] $quiet){
+    $global:AUTHORIZED = $false
+    $global:HEADER = ''
+    if(!$quiet){ write-host "Disonnected!" -foregroundcolor green }
+}
+
+# api call functions ==============================================================================
+
 $methods = 'get', 'post', 'put', 'delete'
 function api($method, $uri, $data){
     if (-not $global:AUTHORIZED){ 
@@ -157,7 +254,11 @@ function api($method, $uri, $data){
             $url = $APIROOT + $uri
             $body = ConvertTo-Json -Depth 100 $data
             if ($PSVersionTable.PSEdition -eq 'Core'){
-                $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER  -SkipCertificateCheck -TimeoutSec 10
+                if($method -eq 'post' -or $method -eq 'put'){
+                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER -SkipCertificateCheck -TimeoutSec 10
+                }else{
+                    $result = Invoke-RestMethod -Method $method -Uri $url -Header $HEADER -SkipCertificateCheck -TimeoutSec 10
+                }
             }else{
                 $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER -TimeoutSec 10
             }
@@ -165,15 +266,15 @@ function api($method, $uri, $data){
             return $result
         }
         catch {
-            if($REPORTAPIERRORS -and $global:REINVOKE -eq 1){
+            if($REPORTAPIERRORS -and $global:REINVOKE -eq $MAXREINVOKE){
                 if($_.ToString().contains('"message":')){
                     write-host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
                 }else{
                     write-host $_.ToString() -foregroundcolor yellow
                 }
             }
-            if($global:REINVOKE -eq 0){
-                $global:REINVOKE = 1
+            if($global:REINVOKE -lt $MAXREINVOKE){
+                $global:REINVOKE += 1
                 apiauth -vip $global:VIP -username $global:USERNAMECACHE -domain $global:DOMAINNAMECACHE -quiet
                 api $method $uri $data
             }              
@@ -203,168 +304,22 @@ function fileDownload($uri, $fileName){
     }
 }
 
-# terminate authentication
-function apidrop([switch] $quiet){
-    $global:AUTHORIZED = $false
-    $global:HEADER = ''
-    if(!$quiet){ write-host "Disonnected!" -foregroundcolor green }
-}
-
-# manage secure password
-if ($UNIX) {
-
-    function Create-AesManagedObject($key, $IV) {
-        $aesManaged = New-Object "System.Security.Cryptography.AesManaged"
-        $aesManaged.Mode = [System.Security.Cryptography.CipherMode]::CBC
-        $aesManaged.Padding = [System.Security.Cryptography.PaddingMode]::Zeros
-        $aesManaged.BlockSize = 128
-        $aesManaged.KeySize = 256
-        if ($IV) {
-            if ($IV.getType().Name -eq "String") {
-                $aesManaged.IV = [System.Convert]::FromBase64String($IV)
-            }
-            else {
-                $aesManaged.IV = $IV
-            }
-        }
-        if ($key) {
-            if ($key.getType().Name -eq "String") {
-                $aesManaged.Key = [System.Convert]::FromBase64String($key)
-            }
-            else {
-                $aesManaged.Key = $key
-            }
-        }
-        $aesManaged
-    }
-    function Create-AesKey() {
-        $aesManaged = Create-AesManagedObject
-        $aesManaged.GenerateKey()
-        [System.Convert]::ToBase64String($aesManaged.Key)
-    }
-
-    function Encrypt-String($key, $unencryptedString) {
-        $bytes = [System.Text.Encoding]::UTF8.GetBytes($unencryptedString)
-        $aesManaged = Create-AesManagedObject $key
-        $encryptor = $aesManaged.CreateEncryptor()
-        $encryptedData = $encryptor.TransformFinalBlock($bytes, 0, $bytes.Length);
-        [byte[]] $fullData = $aesManaged.IV + $encryptedData
-        $aesManaged.Dispose()
-        [System.Convert]::ToBase64String($fullData)
-    }
-
-    function Decrypt-String($key, $encryptedStringWithIV) {
-        $bytes = [System.Convert]::FromBase64String($encryptedStringWithIV)
-        $IV = $bytes[0..15]
-        $aesManaged = Create-AesManagedObject $key $IV
-        $decryptor = $aesManaged.CreateDecryptor();
-        $unencryptedData = $decryptor.TransformFinalBlock($bytes, 16, $bytes.Length - 16);
-        $aesManaged.Dispose()
-        [System.Text.Encoding]::UTF8.GetString($unencryptedData).Trim([char]0)
-    }
-
-    function getpwd($vip, $username, $domain, $prompt, $updatePassword) {
-
-        if ($null -eq $domain) { $domain = 'local'}
-        $keyName = $vip + ':' + $domain + ':' + $username
-        $keyFile = "$CONFDIR/$keyName"
-        $storedPassword = $null
-        $key = $null
-        #get the encrypted password if it exists
-        if ((Test-Path $keyFile) -eq $True) {
-            $key, $storedPassword = get-content $keyFile
-        }
-        if ($null -ne $updatePassword -or $null -ne $prompt) { $storedPassword = $null }
-        If (($null -ne $storedPassword) -and ($storedPassword.Length -ne 0) -and ($null -ne $key)) {
-            $encryptedPassword = $storedPassword
-            $clearTextPassword = Decrypt-String $key $encryptedPassword
-            #else prompt the user for the password and store it in CONFDIR/keyFile for next time    
-        }
-        else {
-            $secureString = Read-Host -Prompt "Enter password for $username at $vip" -AsSecureString
-            $clearTextPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
-            if($null -eq $prompt){
-                $key = Create-AesKey
-                $key | Out-File $keyFile
-                $encryptedPassword = Encrypt-String $key $clearTextPassword
-                $encryptedPassword | Out-File $keyFile -Append
-            }
-        }
-    
-        return $clearTextPassword
-    }
-
-    function storePasswordFromInput($vip, $username, $domain, $password){
-        if ($null -eq $domain) { $domain = 'local'}
-        $keyName = $vip + ':' + $domain + ':' + $username
-        $keyFile = "$CONFDIR/$keyName"
-        $key = Create-AesKey
-        $key | Out-File $keyFile
-        $encryptedPassword = Encrypt-String $key $password
-        $encryptedPassword | Out-File $keyFile -Append
-    }
-}else{
-    function getpwd($vip, $username, $domain, $prompt, $updatePassword){
-        if ($null -eq $domain) { $domain = 'local'}
-        $keyName = $vip + ':' + $domain + ':' + $username
-        $registryPath = 'HKCU:\Software\Cohesity-API'
-        $encryptedPasswordText = ''
-        # get the encrypted password from the registry if it exists
-        $storedPassword = Get-ItemProperty -Path "$registryPath" -Name "$keyName" -ErrorAction SilentlyContinue
-        if($null -ne $updatepassword -or $null -ne $prompt){ $storedPassword = $null }
-        If (($null -ne $storedPassword) -and ($storedPassword.Length -ne 0)) {
-            $encryptedPasswordText = $storedPassword.$keyName
-            $securePassword = $encryptedPasswordText  | ConvertTo-SecureString
-    
-        # else prompt the user for the password and store it in the registry for next time    
+# select helios access cluster
+function heliosCluster($clusterName){
+    if($clusterName){
+        $cluster = $heliosConnectedClusters | Where-Object name -eq $clusterName
+        if($cluster){
+            $global:HEADER.accessClusterId = $cluster.clusterId
         }else{
-            $securePassword = Read-Host -Prompt "Enter password for $username at $vip" -AsSecureString
-            $encryptedPasswordText = $securePassword | ConvertFrom-SecureString
-            if($null -eq $prompt){
-                if(!(Test-Path $registryPath)){
-                    New-Item -Path $registryPath -Force | Out-Null
-                }
-                Set-ItemProperty -Path "$registryPath" -Name "$keyName" -Value "$encryptedPasswordText"
-            }
-        }        
-        $clearTextPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $securePassword ))
-        return $clearTextPassword
-    }
-
-    function storePasswordFromInput($vip, $username, $domain, $password){
-        if ($null -eq $domain) { $domain = 'local'}
-        $keyName = $vip + ':' + $domain + ':' + $username
-        $registryPath = 'HKCU:\Software\Cohesity-API'
-        $encryptedPasswordText = ''
-        $securePassword = ConvertTo-SecureString -String $password -AsPlainText -Force
-        $encryptedPasswordText = $securePassword | ConvertFrom-SecureString
-        if(!(Test-Path $registryPath)){
-            New-Item -Path $registryPath -Force | Out-Null
+            Write-Host "Cluster $clusterName not connected to Helios" -ForegroundColor Yellow
         }
-        Set-ItemProperty -Path "$registryPath" -Name "$keyName" -Value "$encryptedPasswordText"      
+    }else{
+        $heliosConnectedClusters | Sort-Object -Property name | Select-Object -Property name, clusterId, softwareVersion
     }
 }
 
-# store password function
-function storePassword($vip, $username, $domain){
-    if(-not $domain){
-        if($username.Contains('\')){
-            $domain, $username = $username.Split('\')
-        }
-        if($username.Contains('@')){
-            $username, $domain = $username.Split('@')
-        }
-    }
-    $pw = getpwd -vip $vip -username $username -domain $domain -updatePassword $true
-    $securePassword = Read-Host -Prompt "Re-enter password for $username at $vip" -AsSecureString
-    $unsecurePassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $securePassword ))
-    if($pw -ne $unsecurePassword){
-        write-host "Passwords do not match. Try again:" -ForegroundColor Yellow
-        storePassword -vip $vip -username $username -domain $domain 
-    }            
-}
+# date functions ==================================================================================
 
-# date functions
 function timeAgo([int64] $age, [string] $units){
     $currentTime = ([Math]::Floor([decimal](Get-Date(Get-Date).ToUniversalTime()-uformat "%s")))*1000000
     $secs=@{'seconds'= 1; 'sec'= 1; 'secs' = 1;
@@ -390,7 +345,122 @@ function dateToUsecs($datestring){
     $usecs
 }
 
-# developer tools
+# password functions ==============================================================================
+
+function Get-CohesityAPIPassword($vip, $username, $domain='local'){
+    $keyName = "$vip`:$domain`:$username"
+    if($PSVersionTable.Platform -eq 'Unix'){
+        # Unix
+        $keyFile = "$CONFDIR/$keyName"
+        if (Test-Path $keyFile) {
+            $key, $storedPassword = Get-Content $keyFile
+            return Unprotect-CohesityAPIPassword $key $storedPassword
+        }
+    }else{
+        # Windows
+        $storedPassword = Get-ItemProperty -Path "$registryPath" -Name "$keyName" -ErrorAction SilentlyContinue
+        If (($null -ne $storedPassword) -and ($storedPassword.Length -ne 0)) {
+            $securePassword = $storedPassword.$keyName  | ConvertTo-SecureString
+            return [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $securePassword ))
+        }
+    }
+}
+
+function Set-CohesityAPIPassword($vip, $username, $domain='local', $pwd=$null){
+    # prompt for vip
+    if(-not $vip){
+        write-host 'VIP: ' -foregroundcolor green -nonewline
+        $vip = Read-Host
+        if(-not $vip){write-host 'vip is required' -foregroundcolor red; break}
+    }
+    # prompt for username
+    if(-not $username){
+        write-host 'Username: ' -foregroundcolor green -nonewline
+        $username = Read-Host
+        if(-not $username){write-host 'username is required' -foregroundcolor red; break}
+    }
+    # parse domain\username or username@domain
+    if($username.Contains('\')){
+        $domain, $username = $username.Split('\')
+    }
+    if($username.Contains('@')){
+        $username, $domain = $username.Split('@')
+    }
+    $keyName = "$vip`:$domain`:$username"
+    if(!$pwd){
+        $secureString = Read-Host -Prompt "Enter password for $username at $vip" -AsSecureString
+        $pwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
+    }
+    if($PSVersionTable.Platform -eq 'Unix'){
+        # Unix
+        $keyFile = "$CONFDIR/$keyName"
+        $key = New-AesKey 
+        $key | Out-File $keyFile
+        Protect-CohesityAPIPassword $key $pwd | Out-File $keyFile -Append
+    }else{
+        # Windows
+        $securePassword = ConvertTo-SecureString -String $pwd -AsPlainText -Force
+        $encryptedPasswordText = $securePassword | ConvertFrom-SecureString
+        if(!(Test-Path $registryPath)){
+            New-Item -Path $registryPath -Force | Out-Null
+        }
+        Set-ItemProperty -Path "$registryPath" -Name "$keyName" -Value "$encryptedPasswordText"
+    }
+}
+
+# security functions ==============================================================================
+
+function New-AesManagedObject($key, $IV){
+    $aesManaged = New-Object "System.Security.Cryptography.AesManaged"
+    $aesManaged.Mode = [System.Security.Cryptography.CipherMode]::CBC
+    $aesManaged.Padding = [System.Security.Cryptography.PaddingMode]::Zeros
+    $aesManaged.BlockSize = 128
+    $aesManaged.KeySize = 256
+    if($IV){
+        if($IV.getType().Name -eq "String"){
+            $aesManaged.IV = [System.Convert]::FromBase64String($IV)
+        }else{
+            $aesManaged.IV = $IV
+        }
+    }
+    if($key){
+        if($key.getType().Name -eq "String") {
+            $aesManaged.Key = [System.Convert]::FromBase64String($key)
+        }else{
+            $aesManaged.Key = $key
+        }
+    }
+    $aesManaged
+}
+
+function New-AesKey() {
+    $aesManaged = New-AesManagedObject
+    $aesManaged.GenerateKey()
+    [System.Convert]::ToBase64String($aesManaged.Key)
+}
+
+function Protect-CohesityAPIPassword($key, $unencryptedString) {
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($unencryptedString)
+    $aesManaged = New-AesManagedObject $key
+    $encryptor = $aesManaged.CreateEncryptor()
+    $encryptedData = $encryptor.TransformFinalBlock($bytes, 0, $bytes.Length);
+    [byte[]] $fullData = $aesManaged.IV + $encryptedData
+    $aesManaged.Dispose()
+    [System.Convert]::ToBase64String($fullData)
+}
+
+function Unprotect-CohesityAPIPassword($key, $encryptedStringWithIV) {
+    $bytes = [System.Convert]::FromBase64String($encryptedStringWithIV)
+    $IV = $bytes[0..15]
+    $aesManaged = New-AesManagedObject $key $IV
+    $decryptor = $aesManaged.CreateDecryptor();
+    $unencryptedData = $decryptor.TransformFinalBlock($bytes, 16, $bytes.Length - 16);
+    $aesManaged.Dispose()
+    [System.Text.Encoding]::UTF8.GetString($unencryptedData).Trim([char]0)
+}
+
+# developer tools =================================================================================
+
 function saveJson($object, $jsonFile = './debug.json'){
     $object | ConvertTo-Json -Depth 99 | out-file -FilePath $jsonFile
 }
