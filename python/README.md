@@ -81,3 +81,35 @@ dateToUsecs('2018-08-11 05:00:38')
 timeAgo('24','hours')
 1534410755000000
 ```
+
+### Helios Access
+
+You can connect to Helios. When prompted for a password, enter the apiKey (create one in Helios under access management).
+
+```python
+apiauth()
+```
+
+and list helios connected clusters:
+
+```python
+heliosClusters()
+```
+
+```text
+ClusterID           SoftwareVersion                     ClusterName
+---------           ---------------                     -----------
+3245772218955543    6.4.1_release-20191219_aafe3274     BKDataRep01
+5860211595354073    6.4.1_release-20191219_aafe3274     BKDRRep02
+8535175768906402    6.4.1a_release-20200127_bd2f17b1    Cluster-01
+```
+
+then choose a cluster to operate on:
+
+```python
+heliosCluster('Cluster-01')
+```
+
+```text
+Using Cluster-01
+```
