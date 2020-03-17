@@ -36,4 +36,4 @@ Connected!
 New Physical Server Registered. ID: 593
 ```
 
-Note that the Cohesity agent must be installed on the host and that firewall port 50051/tcp on the host must be accessible by the Cohesity cluster. 
+Note that the Cohesity agent must be installed on the host and that firewall port 50051/tcp on the host must be accessible by the Cohesity cluster.
