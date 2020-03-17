@@ -11,10 +11,12 @@ This powershell script expires local snapshots older than x days. This is useful
 Run these commands from PowerShell to download the scripts into the current folder:
 
 ```powershell
-# download commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/expireOldSnaps/expireOldSnaps.ps1).content | Out-File expireOldSnaps.ps1; (Get-Content expireOldSnaps.ps1) | Set-Content expireOldSnaps.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/expireOldSnaps/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-# end of download commands
+# Download Commands
+$scriptName = 'expireOldSnaps'
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
 ```
 
 ## Components
