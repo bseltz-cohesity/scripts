@@ -58,8 +58,10 @@ Duplicate entries will be ignored.
 Run these commands from PowerShell to download the script(s) into your current directory
 
 ```powershell
-# Download commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/netappPathFilters/netappPathFilters.ps1).content | Out-File netappPathFilters.ps1; (Get-Content netappPathFilters.ps1) | Set-Content netappPathFilters.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/netappPathFilters/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-# End download commands
+# Download Commands
+$scriptName = 'netappPathFilters'
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
 ```
