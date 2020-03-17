@@ -92,11 +92,9 @@ apiauth()
 
 and list helios connected clusters:
 
-```python
-heliosClusters()
-```
-
 ```text
+heliosClusters()
+
 ClusterID           SoftwareVersion                     ClusterName
 ---------           ---------------                     -----------
 3245772218955543    6.4.1_release-20191219_aafe3274     BKDataRep01
@@ -106,10 +104,8 @@ ClusterID           SoftwareVersion                     ClusterName
 
 then choose a cluster to operate on:
 
-```python
-heliosCluster('Cluster-01')
-```
-
 ```text
+heliosCluster('Cluster-01')
+
 Using Cluster-01
 ```
