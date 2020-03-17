@@ -11,10 +11,12 @@ This script can expire existing backups. Please be sure you know what you are do
 Run these commands from PowerShell to download the script(s) into your current directory
 
 ```powershell
-# Begin download commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/reduceSnapshotRetention/reduceSnapshotRetention.ps1).content | Out-File reduceSnapshotRetention.ps1; (Get-Content reduceSnapshotRetention.ps1) | Set-Content reduceSnapshotRetention.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/reduceSnapshotRetention/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-# End download commands
+# Download Commands
+$scriptName = 'reduceSnapshotRetention'
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
 ```
 
 ## How it works
