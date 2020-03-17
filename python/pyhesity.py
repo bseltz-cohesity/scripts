@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - v2.0.7 - Brian Seltzer - Feb 2020"""
+"""Cohesity Python REST API Wrapper Module - v2.0.8 - Brian Seltzer - Mar 2020"""
 
 ##########################################################################################
 # Change Log
@@ -23,6 +23,7 @@
 # 2.0.5 - added showProps - Nov 2019
 # 2.0.6 - handle another None return condition - Dec 2019
 # 2.0.7 - added storePasswordFromInput function - Feb 2020
+# 2.0.8 - added helios support - Mar 2020
 #
 ##########################################################################################
 # Install Notes
@@ -51,7 +52,22 @@ requests.packages.urllib3.disable_warnings()
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-__all__ = ['apiauth', 'api', 'usecsToDate', 'dateToUsecs', 'timeAgo', 'dayDiff', 'display', 'fileDownload', 'apiconnected', 'apidrop', 'pw', 'storepw', 'showProps', 'storePasswordFromInput']
+__all__ = ['apiauth',
+           'api',
+           'usecsToDate',
+           'dateToUsecs',
+           'timeAgo',
+           'dayDiff',
+           'display',
+           'fileDownload',
+           'apiconnected',
+           'apidrop',
+           'pw',
+           'storepw',
+           'showProps',
+           'storePasswordFromInput',
+           'heliosCluster',
+           'heliosClusters']
 
 APIROOT = ''
 HEADER = ''
@@ -60,49 +76,57 @@ APIMETHODS = ['get', 'post', 'put', 'delete']
 CONFIGDIR = expanduser("~") + '/.pyhesity'
 
 
-### pwstore for alternate infrastructure
-def pw(vip, username, domain='local', password=None, updatepw=None, prompt=None):
-    return __getpassword(vip, username, password, domain, updatepw, prompt)
-
-
-def storepw(vip, username, domain='local', password=None, updatepw=True, prompt=None):
-    pwd1 = '1'
-    pwd2 = '2'
-    while(pwd1 != pwd2):
-        pwd1 = __getpassword(vip, username, password, domain, updatepw, prompt)
-        pwd2 = getpass.getpass("Re-enter your password: ")
-        if(pwd1 != pwd2):
-            print('Passwords do not match! Please re-enter...')
-
-
 ### authentication
-def apiauth(vip, username, domain='local', password=None, updatepw=None, prompt=None, quiet=None):
+def apiauth(vip='helios.cohesity.com', username='helios', domain='local', password=None, updatepw=None, prompt=None, quiet=None, helios=False):
     """authentication function"""
     global APIROOT
     global HEADER
     global AUTHENTICATED
-    APIROOT = 'https://' + vip + '/irisservices/api/v1'
-    creds = json.dumps({"domain": domain, "password": __getpassword(vip, username, password, domain, updatepw, prompt), "username": username})
+    global HELIOSCLUSTERS
+    global CONNECTEDHELIOSCLUSTERS
+
+    if helios is True:
+        vip = 'helios.cohesity.com'
+    pwd = password
+    if password is None:
+        pwd = __getpassword(vip, username, password, domain, updatepw, prompt)
     HEADER = {'accept': 'application/json', 'content-type': 'application/json'}
-    url = APIROOT + '/public/accessTokens'
-    try:
-        response = requests.post(url, data=creds, headers=HEADER, verify=False)
-        if response != '':
-            if response.status_code == 201:
-                accessToken = response.json()['accessToken']
-                tokenType = response.json()['tokenType']
-                HEADER = {'accept': 'application/json',
-                          'content-type': 'application/json',
-                          'authorization': tokenType + ' ' + accessToken}
-                AUTHENTICATED = True
-                if(quiet is None):
-                    print("Connected!")
-            else:
-                print(response.json()['message'])
-    except requests.exceptions.RequestException as e:
-        AUTHENTICATED = False
-        if quiet is None:
-            print(e)
+    APIROOT = 'https://' + vip + '/irisservices/api/v1'
+    if vip == 'helios.cohesity.com':
+        HEADER = {'accept': 'application/json', 'content-type': 'application/json', 'apiKey': pwd}
+        URL = 'https://helios.cohesity.com/mcm/clusters/connectionStatus'
+        try:
+            HELIOSCLUSTERS = (requests.get(URL, headers=HEADER, verify=False)).json()
+            CONNECTEDHELIOSCLUSTERS = [cluster for cluster in HELIOSCLUSTERS if cluster['connectedToCluster'] is True]
+            AUTHENTICATED = True
+            if(quiet is None):
+                print("Connected!")
+        except requests.exceptions.RequestException as e:
+            AUTHENTICATED = False
+            if quiet is None:
+                print(e)
+    else:
+        creds = json.dumps({"domain": domain, "password": pwd, "username": username})
+
+        url = APIROOT + '/public/accessTokens'
+        try:
+            response = requests.post(url, data=creds, headers=HEADER, verify=False)
+            if response != '':
+                if response.status_code == 201:
+                    accessToken = response.json()['accessToken']
+                    tokenType = response.json()['tokenType']
+                    HEADER = {'accept': 'application/json',
+                              'content-type': 'application/json',
+                              'authorization': tokenType + ' ' + accessToken}
+                    AUTHENTICATED = True
+                    if(quiet is None):
+                        print("Connected!")
+                else:
+                    print(response.json()['message'])
+        except requests.exceptions.RequestException as e:
+            AUTHENTICATED = False
+            if quiet is None:
+                print(e)
 
 
 def apiconnected():
@@ -112,6 +136,26 @@ def apiconnected():
 def apidrop():
     global AUTHENTICATED
     AUTHENTICATED = False
+
+
+def heliosCluster(clusterName=None):
+    global HEADER
+    if clusterName is not None:
+        accessCluster = [cluster for cluster in CONNECTEDHELIOSCLUSTERS if cluster['name'].lower() == clusterName.lower()]
+        if not accessCluster:
+            print('Cluster %s not connected to Helios' % clusterName)
+        else:
+            HEADER['accessClusterId'] = str(accessCluster[0]['clusterId'])
+            print('Using %s' % clusterName)
+    else:
+        print("\n{0:<20}{1:<36}{2}".format('ClusterID', 'SoftwareVersion', "ClusterName"))
+        print("{0:<20}{1:<36}{2}".format('---------', '---------------', "-----------"))
+        for cluster in sorted(CONNECTEDHELIOSCLUSTERS, key=lambda cluster: cluster['name'].lower()):
+            print("{0:<20}{1:<36}{2}".format(cluster['clusterId'], cluster['softwareVersion'], cluster['name']))
+
+
+def heliosClusters():
+    heliosCluster()
 
 
 ### api call function
@@ -226,6 +270,21 @@ def __getpassword(vip, username, password, domain, updatepw, prompt):
         pwdfile.write(', '.join(str(char) for char in list(map(lambda char: ord(char) + 1, pwd))))
         pwdfile.close()
         return pwd
+
+
+### pwstore for alternate infrastructure
+def pw(vip, username, domain='local', password=None, updatepw=None, prompt=None):
+    return __getpassword(vip, username, password, domain, updatepw, prompt)
+
+
+def storepw(vip, username, domain='local', password=None, updatepw=True, prompt=None):
+    pwd1 = '1'
+    pwd2 = '2'
+    while(pwd1 != pwd2):
+        pwd1 = __getpassword(vip, username, password, domain, updatepw, prompt)
+        pwd2 = getpass.getpass("Re-enter your password: ")
+        if(pwd1 != pwd2):
+            print('Passwords do not match! Please re-enter...')
 
 
 ### store password from input
