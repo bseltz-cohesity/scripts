@@ -4,7 +4,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script expires archives older than x days. This is useful if you want to reduce your long term archive retention to reduce storage consumption in the cloud or other archive target.
 
-## Warning! This script deletes backup data! Make sure you know what you are doing before you run it!  
+## Warning! This script deletes backup data! Make sure you know what you are doing before you run it!
 
 ## Download the script
 
@@ -29,7 +29,7 @@ Place both files in a folder together, then we can run the script.
 First, run the script WITHOUT the -expire switch to see what would be deleted.
 
 ```powershell
-powershell> ./expireOldArchives.ps1 -vip 10.99.1.64 -username admin -olderThan 120            
+powershell> ./expireOldArchives.ps1 -vip 10.99.1.64 -username admin -olderThan 120
 Connected!
 searching for old snapshots...
 07/01/2018 00:38:02  hdname
@@ -38,6 +38,7 @@ searching for old snapshots...
 08/03/2018 15:51:37  JZ Cloud Archive
 08/04/2018 13:38:00  JZ Cloud Archive
 ```
+
 Then, if you're happy with the list of archives that will be deleted, run the script again and include the -expire switch. THIS WILL DELETE THE OLD ARCHIVES!!!
 
 ```powershell
@@ -46,4 +47,4 @@ Then, if you're happy with the list of archives that will be deleted, run the sc
 
 You can run the script again you should see no results.
 
-Also note that data in the archive target may not be immediately deleted if a newer reference archive has not yet been created. 
+Also note that data in the archive target may not be immediately deleted if a newer reference archive has not yet been created.
