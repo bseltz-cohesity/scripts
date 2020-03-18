@@ -176,6 +176,7 @@ function heliosCluster($clusterName, [switch] $quiet){
             $global:HEADER.accessClusterId = $cluster.clusterId
             $global:CLUSTERSELECTED = $true
             $global:SELECTEDCLUSTER = $cluster.name
+            $global:CLUSTERREADONLY = (api get /mcm/config).mcmReadOnly
             if(!$quiet){
                 return "Using $($cluster.name)"
             }
@@ -275,6 +276,10 @@ function api($method, $uri, $data){
             write-host 'Please use heliosCluster to connect to a cohesity cluster' -ForegroundColor Yellow
         }
     }else{
+        if($method -ne 'get' -and $global:CLUSTERREADONLY -eq $true){
+            write-host "Cluster connection is READ-ONLY" -ForegroundColor Yellow
+            break
+        }
         if (-not $methods.Contains($method)){
             if($REPORTAPIERRORS){
                 write-host "invalid api method: $method" -foregroundcolor yellow
