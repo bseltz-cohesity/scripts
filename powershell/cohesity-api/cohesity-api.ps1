@@ -23,9 +23,7 @@
 
 $REPORTAPIERRORS = $true
 $REINVOKE = 0
-$MAXREINVOKE = 3
-$heliosClusters = @()
-$heliosConnectedClusters = @()
+$MAXREINVOKE = 2
 
 # platform detection and prerequisites ============================================================
 
@@ -106,6 +104,7 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
     $global:VIP = $vip
     $global:USERNAME = $username
     $global:DOMAIN = $domain
+    $global:SELECTEDCLUSTER = $null
     $global:APIROOT = 'https://' + $vip + '/irisservices/api/v1'
     $HEADER = @{'accept' = 'application/json'; 'content-type' = 'application/json'}
     if($vip -eq 'helios.cohesity.com' -or $helios){
@@ -114,13 +113,15 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
         $URL = 'https://helios.cohesity.com/mcm/clusters/connectionStatus'
         try{
             if($PSVersionTable.Edition -eq 'Core'){
-                $global:heliosClusters = Invoke-RestMethod -Method get -Uri $URL -Header $HEADER -SkipCertificateCheck
+                $global:HELIOSALLCLUSTERS = Invoke-RestMethod -Method get -Uri $URL -Header $HEADER -SkipCertificateCheck
             }else{
-                $global:heliosClusters = Invoke-RestMethod -Method get -Uri $URL -Header $HEADER
+                $global:HELIOSALLCLUSTERS = Invoke-RestMethod -Method get -Uri $URL -Header $HEADER
             }
-            $global:heliosConnectedClusters = $global:heliosClusters | Where-Object connectedToCluster -eq $true
+            $global:HELIOSCONNECTEDCLUSTERS = $global:HELIOSALLCLUSTERS | Where-Object connectedToCluster -eq $true
             $global:HEADER = $HEADER
             $global:AUTHORIZED = $true
+            $global:CLUSTERSELECTED = $false
+            $global:USING_HELIOS = $true
             if(!$quiet){ write-host "Connected!" -foregroundcolor green }
         }catch{
             if($_.ToString().contains('"message":')){
@@ -147,6 +148,8 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
             }
             # store token
             $global:AUTHORIZED = $true
+            $global:CLUSTERSELECTED = $true
+            $global:USING_HELIOS = $false
             $global:HEADER = @{'accept' = 'application/json'; 
                 'content-type' = 'application/json'; 
                 'authorization' = $auth.tokenType + ' ' + $auth.accessToken
@@ -163,6 +166,31 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
             }
         }
     }
+}
+
+# select helios access cluster
+function heliosCluster($clusterName, [switch] $quiet){
+    if($clusterName){
+        $cluster = $HELIOSCONNECTEDCLUSTERS | Where-Object name -eq $clusterName
+        if($cluster){
+            $global:HEADER.accessClusterId = $cluster.clusterId
+            $global:CLUSTERSELECTED = $true
+            $global:SELECTEDCLUSTER = $cluster.name
+            if(!$quiet){
+                return "Using $($cluster.name)"
+            }
+        }else{
+            Write-Host "Cluster $clusterName not connected to Helios" -ForegroundColor Yellow
+            $global:CLUSTERSELECTED = $false
+            return $null
+        }
+    }else{
+        $HELIOSCONNECTEDCLUSTERS | Sort-Object -Property name | Select-Object -Property name, clusterId, softwareVersion
+    }
+}
+
+function heliosClusters(){
+    heliosCluster
 }
 
 # api password setter/updater tool
@@ -241,7 +269,11 @@ function api($method, $uri, $data){
     if (-not $global:AUTHORIZED){ 
         if($REPORTAPIERRORS){
             write-host 'Please use apiauth to connect to a cohesity cluster' -foregroundcolor yellow
-        } 
+        }
+    }elseif(-not $global:CLUSTERSELECTED){
+        if($REPORTAPIERRORS){
+            write-host 'Please use heliosCluster to connect to a cohesity cluster' -ForegroundColor Yellow
+        }
     }else{
         if (-not $methods.Contains($method)){
             if($REPORTAPIERRORS){
@@ -266,7 +298,7 @@ function api($method, $uri, $data){
             return $result
         }
         catch {
-            if($REPORTAPIERRORS -and $global:REINVOKE -eq $MAXREINVOKE){
+            if($REPORTAPIERRORS -and $global:REINVOKE -ge $MAXREINVOKE){
                 if($_.ToString().contains('"message":')){
                     write-host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
                 }else{
@@ -275,7 +307,9 @@ function api($method, $uri, $data){
             }
             if($global:REINVOKE -lt $MAXREINVOKE){
                 $global:REINVOKE += 1
-                apiauth -vip $global:VIP -username $global:USERNAMECACHE -domain $global:DOMAINNAMECACHE -quiet
+                $hcluster = $global:SELECTEDCLUSTER
+                apiauth -vip $global:VIP -username $global:USERNAME -domain $global:DOMAIN -quiet
+                if($hcluster){ heliosCluster $hcluster -quiet}
                 api $method $uri $data
             }              
         }
@@ -301,20 +335,6 @@ function fileDownload($uri, $fileName){
         }else{
             write-host $_.ToString() -foregroundcolor yellow
         }                
-    }
-}
-
-# select helios access cluster
-function heliosCluster($clusterName){
-    if($clusterName){
-        $cluster = $heliosConnectedClusters | Where-Object name -eq $clusterName
-        if($cluster){
-            $global:HEADER.accessClusterId = $cluster.clusterId
-        }else{
-            Write-Host "Cluster $clusterName not connected to Helios" -ForegroundColor Yellow
-        }
-    }else{
-        $heliosConnectedClusters | Sort-Object -Property name | Select-Object -Property name, clusterId, softwareVersion
     }
 }
 
