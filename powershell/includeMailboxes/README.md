@@ -35,13 +35,17 @@ Note that the user names should be in the exact same format as shown in O365. Al
 Then, run the main script like so:
 
 ```powershell
+# example - adding users from the command line
 ./includeMailboxes.ps1 -vip mycluster -username myusername -domain mydomain.net -jobName 'My Job' -users 'Stan Lee', 'mmurdoc@mydomain.com'
+# end example
 ```
 
 or
 
 ```powershell
+# example - adding users from a text file
 ./includeMailboxes.ps1 -vip mycluster -username myusername -domain mydomain.net -jobName 'My Job' -userList ./myuserlist.txt
+# end example
 ```
 
 ```text
