@@ -36,6 +36,7 @@ Place both files in a folder together and run the main script like so:
 * -t, --sendto: email addresses to send report to (use repeatedly to add recipients)
 * -b, --maxbackuphrs: (optional) defaults to 8
 * -r, --maxreplicationhrs: (optional) defaults to 12
+* -w, --watch: (optional) all, backup or replication (defaults to all)
 
 ## The Python Helper Module - pyhesity.py
 
