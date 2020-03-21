@@ -104,7 +104,7 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
     $global:VIP = $vip
     $global:USERNAME = $username
     $global:DOMAIN = $domain
-    $global:SELECTEDCLUSTER = $null
+    $global:SELECTEDHELIOSCLUSTER = $null
     $global:APIROOT = 'https://' + $vip + '/irisservices/api/v1'
     $HEADER = @{'accept' = 'application/json'; 'content-type' = 'application/json'}
     if($vip -eq 'helios.cohesity.com' -or $helios){
@@ -170,15 +170,15 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
 
 # select helios access cluster
 function heliosCluster($clusterName, [switch] $quiet){
-    if($clusterName){
+    if($clusterName -and $HELIOSCONNECTEDCLUSTERS){
         $cluster = $HELIOSCONNECTEDCLUSTERS | Where-Object name -eq $clusterName
         if($cluster){
             $global:HEADER.accessClusterId = $cluster.clusterId
             $global:CLUSTERSELECTED = $true
-            $global:SELECTEDCLUSTER = $cluster.name
+            $global:SELECTEDHELIOSCLUSTER = $cluster.name
             $global:CLUSTERREADONLY = (api get /mcm/config).mcmReadOnly
             if(!$quiet){
-                return "Using $($cluster.name)"
+                write-host "Connected ($($cluster.name))" -ForegroundColor Green
             }
         }else{
             Write-Host "Cluster $clusterName not connected to Helios" -ForegroundColor Yellow
@@ -187,6 +187,12 @@ function heliosCluster($clusterName, [switch] $quiet){
         }
     }else{
         $HELIOSCONNECTEDCLUSTERS | Sort-Object -Property name | Select-Object -Property name, clusterId, softwareVersion
+        "`ntype heliosCluster <clustername> to connect to a cluster"
+    }
+    if (-not $global:AUTHORIZED){ 
+        if($REPORTAPIERRORS){
+            write-host 'Please use apiauth to connect to helios' -foregroundcolor yellow
+        }
     }
 }
 
@@ -260,6 +266,8 @@ function apipwd($vip, $username='helios', $domain='local', [switch] $asUser, [sw
 function apidrop([switch] $quiet){
     $global:AUTHORIZED = $false
     $global:HEADER = ''
+    $global:HELIOSALLCLUSTERS = $null
+    $global:HELIOSCONNECTEDCLUSTERS = $null
     if(!$quiet){ write-host "Disonnected!" -foregroundcolor green }
 }
 
@@ -312,7 +320,7 @@ function api($method, $uri, $data){
             }
             if($global:REINVOKE -lt $MAXREINVOKE){
                 $global:REINVOKE += 1
-                $hcluster = $global:SELECTEDCLUSTER
+                $hcluster = $global:SELECTEDHELIOSCLUSTER
                 apiauth -vip $global:VIP -username $global:USERNAME -domain $global:DOMAIN -quiet
                 if($hcluster){ heliosCluster $hcluster -quiet}
                 api $method $uri $data
@@ -327,7 +335,7 @@ function fileDownload($uri, $fileName){
     try {
         if ($uri[0] -ne '/'){ $uri = '/public/' + $uri}
         $url = $APIROOT + $uri
-        if ($UNIX){
+        if ($PSVersionTable.Platform -eq 'Unix'){
             curl -k -s -H "$global:CURLHEADER" -o "$fileName" "$url"
         }else{
             $WEBCLI.DownloadFile($url, $fileName)
