@@ -24,27 +24,52 @@ if($serverList){
 apiauth -vip $vip -username $username -domain $domain
 
 ### get protection sources
-$sources = api get protectionSources/registrationInfo
 $oracleSources = api get protectionSources?environments=kOracle
+$phys = api get protectionSources?environments=kPhysical
 
 ### register server as SQL
 foreach ($server in $servers){
     $server = $server.ToString()
-
-    if (! $($sources.rootNodes | Where-Object { $_.rootNode.name -eq $server -and $_.applications.environment -eq 'kSQL' })) {
-        $phys = api get protectionSources?environments=kPhysical
-        $sourceId = ($phys.nodes | Where-Object { $_.protectionSource.name -ieq $server }).protectionSource.id
-        if ($sourceId) {
-            if($oracleSources.nodes | Where-Object {$_.protectionSource.id -eq $sourceId}){
-                Write-Host "$server is already registered as an Oracle protection source" -ForegroundColor Blue
-                break
-            }
-            "Registering $server as Oracle protection source..."
-            $regOracle = @{"ownerEntity" = @{"id" = $sourceId}; "appEnvVec" = @(19)}
-            $null = api post /applicationSourceRegistration $regOracle
+    $sourceId = ($phys.nodes | Where-Object { $_.protectionSource.name -ieq $server }).protectionSource.id
+    if (!$sourceId){
+        # register physical server
+        "Registering $server as a physical protection source..."
+        $newSource = @{
+            'entity' = @{
+                'type' = 6;
+                'physicalEntity' = @{
+                    'name' = $server;
+                    'type' = 1;
+                    'hostType' = 1
+                }
+            };
+            'entityInfo' = @{
+                'endpoint' = $server;
+                'type' = 6;
+                'hostType' = 1
+            };
+            'sourceSideDedupEnabled' = $true;
+            'throttlingPolicy' = @{
+                'isThrottlingEnabled' = $false
+            };
+            'forceRegister' = $True
         }
-        else {
-            Write-Host "$server is not registered as a protection source" -ForegroundColor Yellow
+        
+        $result = api post /backupsources $newSource
+        if($result){
+            $sourceId = $result.entity.id
         }
+    }
+    if ($sourceId) {
+        if($oracleSources.nodes | Where-Object {$_.protectionSource.id -eq $sourceId}){
+            Write-Host "$server is already registered as an Oracle protection source" -ForegroundColor Blue
+            break
+        }
+        "Registering $server as an Oracle protection source..."
+        $regOracle = @{"ownerEntity" = @{"id" = $sourceId}; "appEnvVec" = @(19)}
+        $null = api post /applicationSourceRegistration $regOracle
+    }
+    else {
+        Write-Host "$server is not registered as a protection source" -ForegroundColor Yellow
     }
 }
