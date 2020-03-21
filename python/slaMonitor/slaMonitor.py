@@ -19,6 +19,7 @@ parser.add_argument('-t', '--sendto', action='append', type=str)
 parser.add_argument('-f', '--sendfrom', type=str)
 parser.add_argument('-b', '--maxbackuphrs', type=int, default=8)
 parser.add_argument('-r', '--maxreplicationhrs', type=int, default=12)
+parser.add_argument('-w', '--watch', type=str, choices=['all', 'backup', 'replication'], default='all')
 
 args = parser.parse_args()
 
@@ -31,6 +32,7 @@ sendto = args.sendto
 sendfrom = args.sendfrom
 maxbackuphrs = args.maxbackuphrs
 maxreplicationhrs = args.maxreplicationhrs
+watch = args.watch
 
 ### authenticate
 apiauth(vip, username, domain)
@@ -52,7 +54,6 @@ for job in jobs:
     if 'isDeleted' not in job and ('isActive' not in job or job['isActive'] is not False):
         jobId = job['id']
         jobName = job['name']
-        slaPass = 'Pass'
         sla = job['incrementalProtectionSlaTimeMins']
         slaUsecs = sla * 60000000
         runs = api('get', 'protectionRuns?jobId=%s&numRuns=2' % jobId)
@@ -84,33 +85,34 @@ for job in jobs:
                             break
 
             if runTimeUsecs > slaUsecs or runTimeHours > maxbackuphrs or replHours > maxreplicationhrs:
-                slaPass = 'Miss'
-                missesRecorded = True
                 # replort sla miss
                 if status in finishedStates:
                     verb = 'ran'
                 else:
                     verb = 'has been running'
-                messageline = '%s (Missed SLA) %s for %s minutes (SLA: %s minutes)' % (jobName, verb, runTimeMinutes, sla)
-                message += '%s\n' % messageline
-                print(messageline)
-                # report long running replication
-                if replHours >= maxreplicationhrs:
-                    messageline = '                       replication time: %s hours' % replHours
+                if (watch == 'all' or watch == 'backup') and (runTimeUsecs > slaUsecs or runTimeHours > maxbackuphrs):
+                    messageline = '%s (Missed Backup SLA) %s for %s minutes (SLA: %s minutes)' % (jobName, verb, runTimeMinutes, sla)
                     message += '%s\n' % messageline
                     print(messageline)
-                # identify long running objects
-                if 'sourceBackupStatus' in run['backupRun']:
-                    for source in run['backupRun']['sourceBackupStatus']:
-                        if 'timeTakenUsecs' in source['stats']:
-                            timeTakenUsecs = source['stats']['timeTakenUsecs']
-                        else:
-                            timeTakenUsecs = 0
-                        if timeTakenUsecs > slaUsecs:
-                            timeTakenMin = int(round(timeTakenUsecs / 60000000))
-                            messageline = '                       %s %s for %s minutes' % (source['source']['name'], verb, timeTakenMin)
-                            message += '%s\n' % messageline
-                            print(messageline)
+                    missesRecorded = True
+                    # identify long running objects
+                    if 'sourceBackupStatus' in run['backupRun']:
+                        for source in run['backupRun']['sourceBackupStatus']:
+                            if 'timeTakenUsecs' in source['stats']:
+                                timeTakenUsecs = source['stats']['timeTakenUsecs']
+                            else:
+                                timeTakenUsecs = 0
+                            if timeTakenUsecs > slaUsecs:
+                                timeTakenMin = int(round(timeTakenUsecs / 60000000))
+                                messageline = '                       %s %s for %s minutes' % (source['source']['name'], verb, timeTakenMin)
+                                message += '%s\n' % messageline
+                                print(messageline)
+                # report long running replication
+                if (watch == 'all' or watch == 'replication') and replHours >= maxreplicationhrs:
+                    messageline = '%s (Missed Replication SLA) replication time: %s hours' % (jobName, replHours)
+                    message += '%s\n' % messageline
+                    print(messageline)
+                    missesRecorded = True
                 break
 
 if missesRecorded is False:
