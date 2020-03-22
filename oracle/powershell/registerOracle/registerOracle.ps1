@@ -1,13 +1,14 @@
     ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, #Cohesity cluster to connect to
-    [Parameter(Mandatory = $True)][string]$username, #Cohesity username
-    [Parameter()][string]$domain = 'local', #Cohesity user domain name
-    [Parameter()][string]$serverList, #Servers to add as physical source
-    [Parameter()][string]$server
+    [Parameter(Mandatory = $True)][string]$vip, # Cohesity cluster to connect to
+    [Parameter(Mandatory = $True)][string]$username, # Cohesity username
+    [Parameter()][string]$domain = 'local', # Cohesity user domain name
+    [Parameter()][string]$serverList, # file with servers to add as Oracle sources
+    [Parameter()][string]$server # one server to add as an Oracle source
 )
 
+# gather server list
 if($serverList){
     $servers = get-content $serverList
 }elseif($server){
@@ -17,23 +18,21 @@ if($serverList){
     exit
 }
 
-### source the cohesity-api helper code
+# source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
+# authenticate
 apiauth -vip $vip -username $username -domain $domain
 
-### get protection sources
+# get protection sources
 $oracleSources = api get protectionSources?environments=kOracle
 $phys = api get protectionSources?environments=kPhysical
 
-### register server as SQL
 foreach ($server in $servers){
     $server = $server.ToString()
     $sourceId = ($phys.nodes | Where-Object { $_.protectionSource.name -ieq $server }).protectionSource.id
     if (!$sourceId){
-        # register physical server
-        "Registering $server as a physical protection source..."
+        # register physical server if not already registered
         $newSource = @{
             'entity' = @{
                 'type' = 6;
@@ -61,15 +60,17 @@ foreach ($server in $servers){
         }
     }
     if ($sourceId) {
+        # see if server is already registered as Oracle
         if($oracleSources.nodes | Where-Object {$_.protectionSource.id -eq $sourceId}){
             Write-Host "$server is already registered as an Oracle protection source" -ForegroundColor Blue
             break
         }
+        # register server as Oracle
         "Registering $server as an Oracle protection source..."
         $regOracle = @{"ownerEntity" = @{"id" = $sourceId}; "appEnvVec" = @(19)}
         $null = api post /applicationSourceRegistration $regOracle
     }
     else {
-        Write-Host "$server is not registered as a protection source" -ForegroundColor Yellow
+        Write-Host "failed to register $server" -ForegroundColor Yellow
     }
 }
