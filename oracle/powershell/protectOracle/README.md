@@ -24,21 +24,24 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 Place both files in a folder together and run the main script.
 
-To add a single database to an existing protection job:
-
 ```powershell
+# add one database to an existing protection job
 ./protectOracle.ps1 -vip mycluster -username admin -jobname 'Oracle Backup' -servervmname oracle1.mydomain.net -dbname myDB
+# end
 ```
 
-or to add all databases from a server:
+or:
 
 ```powershell
+# add all databases on a server to an existing protection job
 ./protectOracle.ps1 -vip mycluster -username admin -jobname 'Oracle Backup' -servervmname oracle1.mydomain.net
+# end
 ```
 
-or to create a new protection job:
+or:
 
 ```powershell
+# add all databases on a server to a new protection job
 ./protectOracle.ps1 -vip mycluster -username admin -jobname 'New Oracle Backup' -policyname 'My Policy' -servervmname oracle1.mydomain.net
 ```
 
