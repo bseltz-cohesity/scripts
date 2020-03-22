@@ -43,6 +43,7 @@ or:
 ```powershell
 # add all databases on a server to a new protection job
 ./protectOracle.ps1 -vip mycluster -username admin -jobname 'New Oracle Backup' -policyname 'My Policy' -servervmname oracle1.mydomain.net
+# end
 ```
 
 ## Parameters
