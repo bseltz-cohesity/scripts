@@ -27,7 +27,7 @@ if($job){
 }
 
 # get storage domain dedup ratio
-$sd = api get "viewBoxes?id=$($job.viewBoxId)&fetchStats=true"
+$sd = api get viewBoxes?fetchStats=true | Where-Object id -eq $job.viewBoxId
 $dedupRatio = [math]::Round(($sd.stats.usagePerfStats.dataInBytes/$sd.stats.usagePerfStats.dataInBytesAfterReduction),2)
 
 # get run stats
