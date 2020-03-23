@@ -47,6 +47,9 @@ Place both files in a folder together and run the main script like so:
 * -sourceDB: Original database name
 * -targetServer: Server name to restore to (defaults to same as sourceServer)
 * -targetDB: New database name (defaults to same as sourceDB)
+* -oracleHome: oracle home path (not required when overwriting original db)
+* -oracleBase: oracle base path (not required when overwriting original db)
+* -oracleData: oracle data path (not required when overwriting original db)
 * -logTime: Point in time to replay the logs to during the restore (e.g. '2019-04-10 22:31:05')
 * -latest: Replay the logs to the latest point in time available
 * -wait: Wait for the restore to complete and report end status (e.g. kSuccess)
