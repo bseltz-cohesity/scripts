@@ -14,7 +14,7 @@ param (
     [Parameter()][string]$archiveTo = $null,  # optional - target to archive to
     [Parameter()][int]$keepArchiveFor = 5,  # keep archive for x days
     [Parameter()][switch]$enable,  # enable a disabled job, run it, then disable when done
-    [Parameter()][ValidateSet(“kRegular”,”kFull”,”kLog”,"kSystem")][string]$backupType = 'kRegular',
+    [Parameter()][ValidateSet('kRegular','kFull','kLog','kSystem')][string]$backupType = 'kRegular',
     [Parameter()][array]$objects,
     [Parameter()][switch]$progress,
     [Parameter()][switch]$wait,
@@ -317,6 +317,7 @@ if($enable){
 
 # run job
 "Running $jobName..."
+$jobdata | ConvertTo-Json -Depth 99
 $null = api post ('protectionJobs/run/' + $jobID) $jobdata
 
 # wait for new job run to appear
