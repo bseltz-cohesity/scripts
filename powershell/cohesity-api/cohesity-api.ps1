@@ -381,6 +381,13 @@ function dateToUsecs($datestring){
 # password functions ==============================================================================
 
 function Get-CohesityAPIPassword($vip, $username, $domain='local'){
+    # parse domain\username or username@domain
+    if($username.Contains('\')){
+        $domain, $username = $username.Split('\')
+    }
+    if($username.Contains('@')){
+        $username, $domain = $username.Split('@')
+    }
     $keyName = "$vip`:$domain`:$username"
     if($PSVersionTable.Platform -eq 'Unix'){
         # Unix
