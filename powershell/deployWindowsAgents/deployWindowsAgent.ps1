@@ -1,6 +1,6 @@
 ### usage: ./deployWindowsAgent.ps1 -vip bseltzve01 -username admin -serverList ./servers.txt [ -installAgent ] [ -register ] [ -registerSQL ] [ -serviceAccount mydomain.net\myuser ]
 ### provide a list of servers in a text file
-### specify any of -installAgent -register -registerSQL -serviceAccount
+### specify any of -installAgent -register -registerSQL -serviceAccount -storePassword
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -10,6 +10,7 @@ param (
     [Parameter()][string]$domain = 'local', #Cohesity user domain name
     [Parameter()][string]$serverList, #Servers to add as physical source
     [Parameter()][string]$server,
+    [Parameter()][switch]$storePassword,
     [Parameter()][switch]$installAgent,
     [Parameter()][switch]$register,
     [Parameter()][switch]$registerSQL,
@@ -27,18 +28,18 @@ if($serverList){
     }
     
 ### source the cohesity-api helper code
-. ./cohesity-api
-Import-Module .\userRights.psm1
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+Import-Module $(Join-Path -Path $PSScriptRoot -ChildPath userRights.psm1)
 
 ### function to set service account
 Function Set-ServiceAcctCreds([string]$strCompName,[string]$strServiceName,[string]$newAcct,[string]$newPass){
     $filter = 'Name=' + "'" + $strServiceName + "'" + ''
-    $service = Get-WMIObject -ComputerName $strCompName -namespace "root\cimv2" -class Win32_Service -Filter $filter
+    $service = Get-WMIObject -ComputerName $strCompName -Authentication PacketPrivacy -namespace "root\cimv2" -class Win32_Service -Filter $filter
     $service.Change($null,$null,$null,$null,$null,$null,$newAcct,$newPass)
     $service.StopService()
     while ($service.Started){
-      sleep 2
-      $service = Get-WMIObject -ComputerName $strCompName -namespace "root\cimv2" -class Win32_Service -Filter $filter
+      Start-Sleep 2
+      $service = Get-WMIObject -ComputerName $strCompName -Authentication PacketPrivacy -namespace "root\cimv2" -class Win32_Service -Filter $filter
     }
     $service.StartService()
 }
@@ -48,9 +49,14 @@ apiauth -vip $vip -username $username -domain $domain
 
 ### get sqlAccount Password
 if($serviceAccount){
-    $securePassword = Read-Host -AsSecureString -Prompt "Enter password for $serviceAccount"
-    $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
-    $sqlPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+    $sqlPassword = Get-CohesityAPIPassword -vip windows -username $serviceAccount
+    if(!$sqlPassword){
+        $securePassword = Read-Host -AsSecureString -Prompt "Enter password for $serviceAccount"
+        $sqlPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $securePassword ))
+        if($storePassword){
+            Set-CohesityAPIPassword -vip windows -username $serviceAccount -pwd $sqlPassword
+        }
+    }
 }
 
 if($sqlCluster){
@@ -151,4 +157,3 @@ foreach ($server in $servers){
         }
     }
 }
-

@@ -4,6 +4,18 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script installs and configures the Cohesity Windows agent on remote hosts. This is useful when deploying the agent on new hosts. After the agent is installed, Cohesity can push out aget upgrades from the UI.
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download commands
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployWindowsAgents/deployWindowsAgent.ps1).content | Out-File deployWindowsAgent.ps1; (Get-Content deployWindowsAgent.ps1) | Set-Content deployWindowsAgent.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployWindowsAgents/UserRights.psm1).content | Out-File UserRights.psm1; (Get-Content UserRights.psm1) | Set-Content UserRights.psm1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End download commands
+```
+
 ## Components
 
 * deployWindowsAgent.ps1: the main powershell script
@@ -48,17 +60,19 @@ managing Cohesity Agent on sqlserver2.mydomain.net
     Registering as SQL protection source...
 ```
 
-## Download the script
+## Parameters
 
-Run these commands from PowerShell to download the script(s) into your current directory
-
-```powershell
-# Download commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployWindowsAgents/deployWindowsAgent.ps1).content | Out-File deployWindowsAgent.ps1; (Get-Content deployWindowsAgent.ps1) | Set-Content deployWindowsAgent.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployWindowsAgents/UserRights.psm1).content | Out-File UserRights.psm1; (Get-Content UserRights.psm1) | Set-Content UserRights.psm1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-# End download commands
-```
+* -vip: name of the Cohesity cluster to connect to
+* -username: Cohesity user name
+* -domain: (optional) Cohesity user domain (defaults to local)
+* -serverList: (optional) path to file containing servernames to deploy to
+* -server: (optional) name of one server to deploy to
+* -storePassword: (optional) store service account password (encrypted) for later use
+* -installAgent: (optional) install the Cohesity agent
+* -register: (optional) register server as a Cohesity physical protection source
+* -registerSQL: (optional) register server as a Cohesity SQL protection source
+* -sqlCluster: (optional) register server as a Cohesity SQL Failover Cluster node
+* -serviceAccount: (optional) set Cohesity agent to run using a service account
 
 ## Attributions
 
