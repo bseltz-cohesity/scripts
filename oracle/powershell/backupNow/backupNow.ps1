@@ -3,9 +3,10 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,  # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
+    [Parameter()][string]$vip = 'helios.cohesity.com',  # the cluster to connect to (DNS name or IP)
+    [Parameter()][string]$username = 'helios',  # username (local or AD)
     [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][string]$clusterName = $null,  # helios cluster to access 
     [Parameter(Mandatory = $True)][string]$jobName,  # job to run
     [Parameter()][int]$keepLocalFor = 5,  # keep local snapshot for x days
     [Parameter()][string]$replicateTo = $null,  # optional - remote cluster to replicate to
@@ -13,17 +14,26 @@ param (
     [Parameter()][string]$archiveTo = $null,  # optional - target to archive to
     [Parameter()][int]$keepArchiveFor = 5,  # keep archive for x days
     [Parameter()][switch]$enable,  # enable a disabled job, run it, then disable when done
-    [Parameter()][ValidateSet(“kRegular”,”kFull”,”kLog”,"kSystem")][string]$backupType = 'kRegular',
+    [Parameter()][ValidateSet('kRegular','kFull','kLog','kSystem')][string]$backupType = 'kRegular',
     [Parameter()][array]$objects,
     [Parameter()][switch]$progress,
-    [Parameter()][switch]$wait
+    [Parameter()][switch]$wait,
+    [Parameter()][switch]$helios
 )
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-# authenticate
 apiauth -vip $vip -username $username -domain $domain
+
+if($USING_HELIOS){
+    if($clusterName){
+        heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
 
 # build list of sourceIds if specified
 $sources = @{}
@@ -57,9 +67,16 @@ function getObjectId($objectName){
     return $global:_object_id
 }
 
+# get cluster id
+$cluster = api get cluster
+
 # find the jobID
 $job = (api get protectionJobs | Where-Object name -ieq $jobName)
 if($job){
+    if($job.policyId.split(':')[0] -ne $cluster.id){
+        Write-Host "Job $jobName is not local to the cluster $($cluster.name)" -ForegroundColor Yellow
+        exit 1
+    }
     $jobID = $job.id
     $environment = $job.environment
     if($environment -notin ('kOracle', 'kSQL') -and $backupType -eq 'kLog'){
@@ -300,11 +317,18 @@ if($enable){
 
 # run job
 "Running $jobName..."
+
 $null = api post ('protectionJobs/run/' + $jobID) $jobdata
 
 # wait for new job run to appear
+$x = 0
 while($newRunId -eq $lastRunId){
     sleep 2
+    $x += 1
+    if($x -ge 30){
+        write-host "Timing out waiting for new run" -ForegroundColor Yellow
+        exit 1
+    }
     $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
     $newRunId = $runs[0].backupRun.jobRunId
 }

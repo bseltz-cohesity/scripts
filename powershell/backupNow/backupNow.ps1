@@ -317,7 +317,7 @@ if($enable){
 
 # run job
 "Running $jobName..."
-$jobdata | ConvertTo-Json -Depth 99
+
 $null = api post ('protectionJobs/run/' + $jobID) $jobdata
 
 # wait for new job run to appear
