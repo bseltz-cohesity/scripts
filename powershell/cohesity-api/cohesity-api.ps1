@@ -113,9 +113,9 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
         $URL = 'https://helios.cohesity.com/mcm/clusters/connectionStatus'
         try{
             if($PSVersionTable.Edition -eq 'Core'){
-                $global:HELIOSALLCLUSTERS = Invoke-RestMethod -Method get -Uri $URL -Header $HEADER -SkipCertificateCheck
+                $global:HELIOSALLCLUSTERS = Invoke-RestMethod -Method get -Uri $URL -Header $HEADER -SkipCertificateCheck -TimeoutSec 30
             }else{
-                $global:HELIOSALLCLUSTERS = Invoke-RestMethod -Method get -Uri $URL -Header $HEADER
+                $global:HELIOSALLCLUSTERS = Invoke-RestMethod -Method get -Uri $URL -Header $HEADER -TimeoutSec 30
             }
             $global:HELIOSCONNECTEDCLUSTERS = $global:HELIOSALLCLUSTERS | Where-Object connectedToCluster -eq $true
             $global:HEADER = $HEADER
