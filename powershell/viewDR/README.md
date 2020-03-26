@@ -12,8 +12,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 # Download Commands
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/viewDRcollect.ps1).content | Out-File viewDRcollect.ps1; (Get-Content viewDRcollect.ps1) | Set-Content viewDRcollect.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/viewDRclone.ps1).content | Out-File viewDRclone.ps1; (Get-Content viewDRclone.ps1) | Set-Content viewDRclone.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/viewDRcloneAll.ps1).content | Out-File viewDRcloneAll.ps1; (Get-Content viewDRcloneAll.ps1) | Set-Content viewDRcloneAll.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/viewDRdeleteAll.ps1).content | Out-File viewDRdeleteAll.ps1; (Get-Content viewDRdeleteAll.ps1) | Set-Content viewDRdeleteAll.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/viewDRdelete.ps1).content | Out-File viewDRdelete.ps1; (Get-Content viewDRdelete.ps1) | Set-Content viewDRdelete.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
