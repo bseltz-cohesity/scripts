@@ -31,7 +31,7 @@ if(Test-Path -PathType Leaf -Path $idMapPath){
 }
 
 $newStorageDomains = api get viewBoxes
-$oldStorageDomains = get-content $storageDomainPath | ConvertFrom-Json -Depth 99
+$oldStorageDomains = get-content $storageDomainPath | ConvertFrom-Json
 
 foreach($oldStorageDomain in $oldStorageDomains){
     $oldId = $oldStorageDomain.id

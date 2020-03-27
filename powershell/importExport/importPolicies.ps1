@@ -19,7 +19,7 @@ if(! (Test-Path -PathType Leaf -Path $clusterPath)){
     Write-Host "cluster file not found" -ForegroundColor Yellow
     exit
 }
-$oldClusterName = (get-content $clusterPath | ConvertFrom-Json -Depth 99).name
+$oldClusterName = (get-content $clusterPath | ConvertFrom-Json).name
 
 # get sources file
 $policyPath = Join-Path -Path $configFolder -ChildPath 'policies.json'
@@ -39,7 +39,7 @@ if(Test-Path -PathType Leaf -Path $idMapPath){
 }
 
 $newPolicies = api get protectionPolicies
-$oldPolicies = get-content $policyPath | ConvertFrom-Json -Depth 99
+$oldPolicies = get-content $policyPath | ConvertFrom-Json
 
 foreach($oldPolicy in $oldPolicies){
     $oldId = $oldPolicy.id

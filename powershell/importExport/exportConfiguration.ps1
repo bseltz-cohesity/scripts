@@ -65,3 +65,4 @@ api get protectionJobs?allUnderHierarchy=true | ConvertTo-Json -Depth 99 | Out-F
 api get views?allUnderHierarchy=true | ConvertTo-Json -Depth 99 | Out-File -FilePath (Join-Path -Path $configPath -ChildPath 'views.json')
 api get externalClientSubnets | ConvertTo-Json -Depth 99 | Out-File -FilePath (Join-Path -Path $configPath -ChildPath 'globalWhitelist.json')
 api get shares | ConvertTo-Json -Depth 99 | Out-File -FilePath (Join-Path -Path $configPath -ChildPath 'shares.json')
+

@@ -37,7 +37,7 @@ write-host "Importing NAS Registrations..."
 $sources = api get protectionSources?environments=kGenericNas
 
 # import GenericNas sources
-$oldNasSources = (get-content $sourcesPath | ConvertFrom-Json -Depth 99) | Where-Object {$_.protectionSource.environment -eq 'kGenericNas' }
+$oldNasSources = (get-content $sourcesPath | ConvertFrom-Json) | Where-Object {$_.protectionSource.environment -eq 'kGenericNas' }
 foreach($node in $oldNasSources.nodes){
 
     $oldId = $node.protectionSource.id
@@ -103,14 +103,3 @@ foreach($node in $oldNasSources.nodes){
 }
 # store id map
 $idmap.Keys | ForEach-Object { "$($_)=$($idmap[$_])" } | Out-File -FilePath $idMapPath
-
-# # get jobs file
-# $jobsPath = Join-Path -Path $configFolder -ChildPath 'jobs.json'
-# if(! (Test-Path -PathType Leaf -Path $jobsPath)){
-#     Write-Host "jobs file not found" -ForegroundColor Yellow
-#     exit
-# }
-# $oldNasJobs = (get-content $jobsPath | ConvertFrom-Json -Depth 99) | Where-Object {$_.environment -eq 'kGenericNas' -and $_.isDeleted -ne $True -and $_.isActive -ne $false}
-# foreach($oldNasJob in $oldNasJobs){
-
-# }

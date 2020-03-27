@@ -19,7 +19,7 @@ if(! (Test-Path -PathType Leaf -Path $clusterPath)){
     Write-Host "cluster file not found" -ForegroundColor Yellow
     exit
 }
-$oldClusterName = (get-content $clusterPath | ConvertFrom-Json -Depth 99).name
+$oldClusterName = (get-content $clusterPath | ConvertFrom-Json).name
 
 # get storageDomain file
 $jobsPath = Join-Path -Path $configFolder -ChildPath 'jobs.json'
@@ -41,7 +41,7 @@ if(Test-Path -PathType Leaf -Path $idMapPath){
 $parentId = (api get protectionSources?environment=kGenericNas).protectionSource.id
 
 $newJobs = api get protectionJobs
-$oldNasJobs = (get-content $jobsPath | ConvertFrom-Json -Depth 99) | Where-Object {$_.environment -eq 'kGenericNas' -and $_.isDeleted -ne $True -and $_.isActive -ne $false}
+$oldNasJobs = (get-content $jobsPath | ConvertFrom-Json) | Where-Object {$_.environment -eq 'kGenericNas' -and $_.isDeleted -ne $True -and $_.isActive -ne $false}
 
 foreach($oldJob in $oldNasJobs){
     $oldId = $oldJob.id
