@@ -138,7 +138,7 @@ def apidrop():
     AUTHENTICATED = False
 
 
-def heliosCluster(clusterName=None):
+def heliosCluster(clusterName=None, verbose=False):
     global HEADER
     if clusterName is not None:
         accessCluster = [cluster for cluster in CONNECTEDHELIOSCLUSTERS if cluster['name'].lower() == clusterName.lower()]
@@ -146,7 +146,8 @@ def heliosCluster(clusterName=None):
             print('Cluster %s not connected to Helios' % clusterName)
         else:
             HEADER['accessClusterId'] = str(accessCluster[0]['clusterId'])
-            print('Using %s' % clusterName)
+            if verbose is True:
+                print('Using %s' % clusterName)
     else:
         print("\n{0:<20}{1:<36}{2}".format('ClusterID', 'SoftwareVersion', "ClusterName"))
         print("{0:<20}{1:<36}{2}".format('---------', '---------------', "-----------"))
@@ -155,7 +156,7 @@ def heliosCluster(clusterName=None):
 
 
 def heliosClusters():
-    heliosCluster()
+    return sorted(CONNECTEDHELIOSCLUSTERS, key=lambda cluster: cluster['name'].lower())
 
 
 ### api call function

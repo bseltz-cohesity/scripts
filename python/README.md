@@ -93,7 +93,7 @@ apiauth()
 and list helios connected clusters:
 
 ```text
-heliosClusters()
+heliosCluster()
 
 ClusterID           SoftwareVersion                     ClusterName
 ---------           ---------------                     -----------
@@ -108,4 +108,35 @@ then choose a cluster to operate on:
 heliosCluster('Cluster-01')
 
 Using Cluster-01
+```
+
+or loop through all clusters:
+
+```python
+from pyhesity import *
+
+apiauth()
+
+for cluster in heliosClusters():
+    heliosCluster(cluster['name'])
+    thiscluster = api('get', 'cluster')
+    if thiscluster:
+        print('%-17s Metadata %% Used = %0.1f' % (thiscluster['name'], thiscluster['usedMetadataSpacePct']))
+    else:
+        print('%-17s (trouble accessing cluster)' % cluster['name'])
+```
+
+```text
+BKDataRep01       Metadata % Used = 11.6
+BKDRRep02         Metadata % Used = 11.6
+Cluster-01        Metadata % Used = 6.1
+co1               Metadata % Used = 43.2
+Cohesity-02       Metadata % Used = 6.1
+cohesity-agabriel Metadata % Used = 12.7
+cohesity-c02      Metadata % Used = 12.5
+Cohesity-ENash    Metadata % Used = 21.5
+cohesity01        Metadata % Used = 15.6
+Cohesity03        Metadata % Used = 18.8
+Cohesity1-MP      Metadata % Used = 4.6
+Cohesity2-MP      Metadata % Used = 6.1
 ```
