@@ -24,6 +24,7 @@
 # 2.0.6 - handle another None return condition - Dec 2019
 # 2.0.7 - added storePasswordFromInput function - Feb 2020
 # 2.0.8 - added helios support - Mar 2020
+# 2.0.9 - helios and error handling changes - Mar 2020
 #
 ##########################################################################################
 # Install Notes
@@ -204,9 +205,9 @@ def api(method, uri, data=None, quiet=None):
                             print('\033[93m' + responsejson['errorCode'][1:] + ': ' + responsejson['message'] + '\033[0m')
                         else:
                             print(responsejson)
-                    # return ''
-                # else:
-                return responsejson
+                    return None
+                else:
+                    return responsejson
     else:
         if quiet is None:
             print("invalid api method")
