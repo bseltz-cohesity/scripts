@@ -18,6 +18,7 @@
 # 0.18 - added REINVOKE - Jan 2020
 # 0.19 - fixed password encryption for PowerShell 7.0 - Mar 2020
 # 0.20 - refactored, added apipwd, added helios access - Mar 2020
+# 0.21 - helios changes - Mar 2020
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
 
@@ -169,15 +170,18 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
 }
 
 # select helios access cluster
-function heliosCluster($clusterName, [switch] $quiet){
+function heliosCluster($clusterName, [switch] $verbose){
     if($clusterName -and $HELIOSCONNECTEDCLUSTERS){
+        if(! ($clusterName -is [string])){
+            $clusterName = $clusterName.name
+        }
         $cluster = $HELIOSCONNECTEDCLUSTERS | Where-Object name -eq $clusterName
         if($cluster){
             $global:HEADER.accessClusterId = $cluster.clusterId
             $global:CLUSTERSELECTED = $true
             $global:SELECTEDHELIOSCLUSTER = $cluster.name
             $global:CLUSTERREADONLY = (api get /mcm/config).mcmReadOnly
-            if(!$quiet){
+            if($verbose){
                 write-host "Connected ($($cluster.name))" -ForegroundColor Green
             }
         }else{
@@ -197,7 +201,7 @@ function heliosCluster($clusterName, [switch] $quiet){
 }
 
 function heliosClusters(){
-    heliosCluster
+    return $HELIOSCONNECTEDCLUSTERS | Sort-Object -Property name
 }
 
 # api password setter/updater tool
