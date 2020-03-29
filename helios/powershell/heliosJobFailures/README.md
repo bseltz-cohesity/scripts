@@ -32,6 +32,22 @@ If you'd like to send the report via email, include the mail-related parameters:
 ./heliosJobFailures.ps1 -smtpServer mysmtpserver -sendFrom myuser@mydomain.net -sendTo anotheruser@mydomain.net
 ```
 
+```text
+CLUSTER-01
+  DSKWIN10 (PhysicalFiles) 3/27/20 1:00:01 AM
+      192.168.1.4 (Cohesity service on host 192.168.1.4 cannot be reached . Please check connectivity to ...)
+
+CO1
+  WINTST (Physical) 3/29/20 8:05:00 AM
+      WINSERVER1 (Connection failure to WinServer1 during the call GetAgentInfo)
+
+COHESITY-ENASH
+  AD-PROTECT (AD) 3/29/20 10:22:04 AM
+      DC02 (Cohesity service on host DC02 cannot be reached . Please check connectivity to the service, i...)
+  VM1 (VMware) 3/29/20 11:48:22 AM
+      DC01 (The operation is not allowed in the current state.)
+```
+
 ## Parameters
 
 * -vip: (optional) DNS or IP of the Helios endpoint (defaults to helios.cohesity.com)
