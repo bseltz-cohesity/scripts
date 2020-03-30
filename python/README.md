@@ -118,7 +118,7 @@ from pyhesity import *
 apiauth()
 
 for cluster in heliosClusters():
-    heliosCluster(cluster['name'])
+    heliosCluster(cluster)
     thiscluster = api('get', 'cluster')
     if thiscluster:
         print('%-17s Metadata %% Used = %0.1f' % (thiscluster['name'], thiscluster['usedMetadataSpacePct']))
