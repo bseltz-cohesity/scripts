@@ -30,26 +30,32 @@ Place both files in a folder together and run the main script like so:
 
 ```text
 Connected!
-SQL Backup(SQL) SQLSERVER2012/namedDB on sql2012.seltzer.net
-	RunDate: 2/13/20 11:00:02 PM	ExpiryDate: 2/18/20 11:00:24 PM
-	RunDate: 2/12/20 11:00:01 PM	ExpiryDate: 2/17/20 11:00:25 PM
-	RunDate: 2/11/20 11:00:01 PM	ExpiryDate: 2/16/20 11:00:20 PM
-	RunDate: 2/10/20 11:00:00 PM	ExpiryDate: 2/15/20 11:00:22 PM
-	RunDate: 2/10/20 1:04:47 PM	ExpiryDate: 2/15/20 1:05:07 PM
-	RunDate: 2/9/20 11:00:01 PM	ExpiryDate: 2/14/20 11:00:23 PM
-VM Backup(VMware) CentOS1
-	RunDate: 2/13/20 11:00:02 PM	ExpiryDate: 2/18/20 11:00:47 PM
-	RunDate: 2/12/20 11:00:01 PM	ExpiryDate: 2/17/20 11:00:41 PM
-	RunDate: 2/11/20 11:00:01 PM	ExpiryDate: 2/16/20 11:00:43 PM
-	RunDate: 2/10/20 11:00:00 PM	ExpiryDate: 2/15/20 11:00:40 PM
-	RunDate: 2/10/20 1:04:17 PM	ExpiryDate: 2/15/20 1:04:59 PM
-	RunDate: 2/9/20 11:00:01 PM	ExpiryDate: 2/14/20 11:00:45 PM
-VM Backup(VMware) CentOS2
-	RunDate: 2/13/20 11:00:02 PM	ExpiryDate: 2/18/20 11:00:47 PM
-	RunDate: 2/12/20 11:00:01 PM	ExpiryDate: 2/17/20 11:00:41 PM
-	RunDate: 2/11/20 11:00:01 PM	ExpiryDate: 2/16/20 11:00:43 PM
-	RunDate: 2/10/20 11:00:00 PM	ExpiryDate: 2/15/20 11:00:40 PM
-	RunDate: 2/10/20 1:04:17 PM	ExpiryDate: 2/15/20 1:04:59 PM
-	RunDate: 2/9/20 11:00:01 PM	ExpiryDate: 2/14/20 11:00:45 PM
+
+VM Backup (VMware) CentOS2
+
+	             RunDate           SnapExpires        ReplicaExpires        ArchiveExpires
+	 3/29/20 11:30:01 PM    4/3/20 11:30:45 PM                     -   4/29/20 11:30:01 PM
+	 3/22/20 11:30:00 PM                     -                     -   4/22/20 11:30:00 PM
+	 3/15/20 11:00:01 PM                     -                     -   4/15/20 11:00:01 PM
+	  3/8/20 11:00:01 PM                     -                     -    4/8/20 11:00:01 PM
+
+NAS Backup (GenericNas) 192.168.1.7:/volume1/backups
+
+	             RunDate           SnapExpires        ReplicaExpires        ArchiveExpires
+	  3/30/20 1:20:01 AM     4/4/20 1:20:13 AM     4/4/20 1:22:12 AM                     -
+	  3/29/20 1:20:01 AM     4/3/20 1:20:11 AM     4/3/20 1:22:10 AM                     -
+	  3/28/20 1:20:00 AM     4/2/20 1:20:10 AM     4/2/20 1:22:12 AM                     -
+	  3/27/20 1:20:00 AM     4/1/20 1:20:12 AM     4/1/20 1:22:10 AM                     -
+	  3/26/20 1:20:00 AM    3/31/20 1:20:04 AM    3/31/20 1:20:37 AM                     -
+
+Oracle Backup (Oracle) cohesity on oracle.seltzer.net
+
+	             RunDate           SnapExpires        ReplicaExpires        ArchiveExpires
+	 3/29/20 11:40:01 PM    4/3/20 11:40:53 PM    4/3/20 11:42:22 PM                     -
+	 3/28/20 11:40:00 PM    4/2/20 11:40:52 PM    4/2/20 11:42:21 PM                     -
+	 3/27/20 11:40:00 PM    4/1/20 11:40:49 PM    4/1/20 11:42:22 PM                     -
+	 3/26/20 11:40:01 PM   3/31/20 11:40:50 PM   3/31/20 11:42:22 PM                     -
+	 3/25/20 11:40:01 PM   3/30/20 11:40:49 PM   3/30/20 11:42:22 PM                     -
+
 Report Saved to RecoverPoints-2-14-20_5-05-21_AM.csv
 ```

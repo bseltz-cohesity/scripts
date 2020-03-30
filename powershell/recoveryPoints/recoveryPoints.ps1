@@ -13,7 +13,7 @@ apiauth -vip $vip -username $username -domain $domain
 
 $dateString = (get-date).ToString().Replace(' ','_').Replace('/','-').Replace(':','-')
 $outfileName = "RecoverPoints-$dateString.csv"
-"JobName,JobType,ProtectedObject,RecoveryDate,ExpiryDate,RunURL" | Out-File -FilePath $outfileName
+"Job Name,Job Type,Protected Object,Recovery Date,Local Expiry,Remote Expiry,Archival Expiry,Run URL" | Out-File -FilePath $outfileName
 
 ### find recoverable objects
 $ro = api get /searchvms
@@ -44,24 +44,56 @@ if($ro.count -gt 0){
         if($objAlias -ne ''){
             $objName = "$objName on $objAlias"
         }
-        "{0}({1}) {2}" -f $jobName, $objType, $objName
+        write-host ("`n{0} ({1}) {2}" -f $jobName, $objType, $objName) -ForegroundColor Green 
+        $versionList = @()
         $doc.versions | ForEach-Object {  
-            $version = $_          
+            $version = $_
+            $runId = $version.instanceId.jobInstanceId
+            $startTime = $version.instanceId.jobStartTimeUsecs
+            $local = 0
+            $remote = 0
+            $archive = 0
+
             $version.replicaInfo.replicaVec | ForEach-Object {
                 if($_.target.type -eq 1){
-                    $runId = $version.instanceId.jobInstanceId
-                    $startTime = $version.instanceId.jobStartTimeUsecs
-                    $run = api get "protectionRuns?startedTimeUsecs=$startTime&jobId=$jobId"
-                    $localRun = $run.copyRun | Where-Object {$_.target.type -eq 'kLocal'}
-                    $expiryTimeUsecs = $localRun.expiryTimeUsecs
-                    $runURL = "https://$vip/protection/job/$jobId/run/$runId/$startTime/protection"
-                    "`tRunDate: {0}`tExpiryDate: {1}" -f $(usecsToDate $startTime), $(usecsToDate $expiryTimeUsecs)
-                    "$jobName,$objType,$objName,$(usecsToDate $startTime), $(usecsToDate $expiryTimeUsecs), $runURL" | Out-File -FilePath $outfileName -Append    
+                    $local = $_.expiryTimeUsecs
+                }elseif($_.target.type -eq 2){
+                    if($_.expiryTimeUsecs -gt $remote){
+                        $remote = $_.expiryTimeUsecs
+                    }
+                }elseif($_.target.type -eq 3) {
+                    if($_.expiryTimeUsecs -gt $archive){
+                        $archive = $_.expiryTimeUsecs
+                    }
                 }
             }
+            $versionList += @{'RunDate' = $startTime; 'local' = $local; 'remote' = $remote; 'archive' = $archive; 'runId' = $runId; 'startTime' = $startTime}
+        }
+        write-host "`n`t             RunDate           SnapExpires        ReplicaExpires        ArchiveExpires" -ForegroundColor Blue
+        foreach($version in $versionList){
+            if($version['local'] -eq 0){
+                $local = '-'
+            }else{
+                $local = usecsToDate $version['local']
+            }
+            if($version['remote'] -eq 0){
+                $remote = '-'
+            }else{
+                $remote = usecsToDate $version['remote']
+            }
+            if($version['archive'] -eq 0){
+                $archive = '-'
+            }else{
+                $archive = usecsToDate $version['archive']
+            }
+            $runDate = usecsToDate $version['RunDate']
+            "`t{0,20}  {1,20}  {2,20}  {3,20}" -f $runDate, $local, $remote, $archive
+            
+            $runURL = "https://$vip/protection/job/$jobId/run/$($version['runId'])/$($version['startTime'])/protection"
+            "$jobName,$objType,$objName,$runDate,$local,$remote,$archive,$runURL" | Out-File -FilePath $outfileName -Append
         }
     }
-    "Report Saved to $outFileName"
+    write-host "`nReport Saved to $outFileName`n" -ForegroundColor Blue
 }
 
 
