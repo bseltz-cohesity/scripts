@@ -6,6 +6,7 @@ param (
     [Parameter()][string]$vip = 'helios.cohesity.com',  # the cluster to connect to (DNS name or IP)
     [Parameter()][string]$username = 'helios',  # username (local or AD)
     [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][string]$password = $null, # optional password
     [Parameter()][string]$clusterName = $null,  # helios cluster to access 
     [Parameter(Mandatory = $True)][string]$jobName,  # job to run
     [Parameter()][int]$keepLocalFor = 5,  # keep local snapshot for x days
@@ -24,7 +25,10 @@ param (
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-apiauth -vip $vip -username $username -domain $domain
+# if($password){
+    apiauth -vip $vip -username $username -domain $domain -password $password
+# }
+# apiauth -vip $vip -username $username -domain $domain
 
 if($USING_HELIOS){
     if($clusterName){
