@@ -122,6 +122,7 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
             $global:HEADER = $HEADER
             $global:AUTHORIZED = $true
             $global:CLUSTERSELECTED = $false
+            $global:CLUSTERREADONLY = $false
             $global:USING_HELIOS = $true
             if(!$quiet){ write-host "Connected!" -foregroundcolor green }
         }catch{
@@ -151,6 +152,7 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
             $global:AUTHORIZED = $true
             $global:CLUSTERSELECTED = $true
             $global:USING_HELIOS = $false
+            $global:CLUSTERREADONLY = $false
             $global:HEADER = @{'accept' = 'application/json'; 
                 'content-type' = 'application/json'; 
                 'authorization' = $auth.tokenType + ' ' + $auth.accessToken
