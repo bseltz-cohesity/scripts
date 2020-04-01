@@ -87,70 +87,87 @@ $entityType = $latestdb.registeredSource.type
 ### search for source server
 $entities = api get /appEntities?appEnvType=3`&envType=$entityType
 $ownerId = $latestdb.vmDocument.objectId.entity.sqlEntity.ownerId
+$dbId = $latestdb.vmDocument.objectId.entity.id
 
 ### handle log replay
 $versionNum = 0
 $validLogTime = $False
+$useLogTime = $False
+$latestUsecs = 0
+$oldestUsecs = 0
 
-if ($logTime -or $latest) {
+if ($logTime -or $latest){
     if($logTime){
         $logUsecs = dateToUsecs $logTime
+        $logUsecsDayStart = [int64] (dateToUsecs (get-date $logTime).Date) 
+        $logUsecsDayEnd = [int64] (dateToUsecs (get-date $logTime).Date.AddDays(1).AddSeconds(-1))
+    }elseif($latest){
+        $logUsecsDayStart = [int64]( dateToUsecs (get-date).AddDays(-3))
+        $logUsecsDayEnd = [int64]( dateToUsecs (get-date))
     }
     $dbVersions = $latestdb.vmDocument.versions
 
     foreach ($version in $dbVersions) {
-        ### find db date before log time
-        $GetRestoreAppTimeRangesArg = @{
-            'type'                = 3;
-            'restoreAppObjectVec' = @(
+        $snapshotTimestampUsecs = $version.snapshotTimestampUsecs
+        $oldestUsecs = $snapshotTimestampUsecs
+        $timeRangeQuery = @{
+            "endTimeUsecs"       = $logUsecsDayEnd;
+            "protectionSourceId" = $dbId;
+            "environment"        = "kSQL";
+            "jobUids"            = @(
                 @{
-                    'appEntity'     = $latestdb.vmDocument.objectId.entity;
-                    'restoreParams' = @{
-                        'sqlRestoreParams'    = @{
-                            'captureTailLogs'                 = $false;
-                            'newDatabaseName'                 = $sourceDB;
-                            'alternateLocationParams'         = @{};
-                            'secondaryDataFileDestinationVec' = @(@{})
-                        };
-                        'oracleRestoreParams' = @{
-                            'alternateLocationParams' = @{}
-                        }
-                    }
+                    "clusterId"            = $latestdb.vmDocument.objectId.jobUid.clusterId;
+                    "clusterIncarnationId" = $latestdb.vmDocument.objectId.jobUid.clusterIncarnationId;
+                    "id"                   = $latestdb.vmDocument.objectId.jobUid.objectId
                 }
             );
-            'ownerObjectVec'      = @(
-                @{
-                    'jobUid'         = $latestdb.vmDocument.objectId.jobUid;
-                    'jobId'          = $latestdb.vmDocument.objectId.jobId;
-                    'jobInstanceId'  = $version.instanceId.jobInstanceId;
-                    'startTimeUsecs' = $version.instanceId.jobStartTimeUsecs;
-                    "entity" = @{
-                        "id" = $ownerId
-                    }
-                    'attemptNum'     = 1
-                }
-            )
+            "startTimeUsecs"     = $logUsecsDayStart
         }
-        $logTimeRange = api post /restoreApp/timeRanges $GetRestoreAppTimeRangesArg
-        if($latest){
-            if(! $logTimeRange.ownerObjectTimeRangeInfoVec[0].PSobject.Properties['timeRangeVec']){
-                $logTime = $null
-                $latest = $null
-                break
+        $pointsForTimeRange = api post restore/pointsForTimeRange $timeRangeQuery
+        if($pointsForTimeRange.PSobject.Properties['timeRanges']){
+            foreach($timeRange in $pointsForTimeRange.timeRanges){
+                $logStart = $timeRange.startTimeUsecs
+                $logEnd = $timeRange.endTimeUsecs
+                if($latestUsecs -eq 0){
+                    $latestUsecs = $logEnd - 1000000
+                }
+                if($latest){
+                    $logUsecs = $logEnd - 1000000
+                }
+                if ($logStart -le $logUsecs -and $logUsecs -le $logEnd -and $logUsecs -ge $snapshotTimestampUsecs) {
+                    $validLogTime = $True
+                    $useLogTime = $True
+                    break
+                }
+            }
+        }else{
+            foreach($snapshot in $pointsForTimeRange.fullSnapshotInfo){
+                if($latestUsecs -eq 0){
+                    $latestUsecs = $snapshotTimestampUsecs
+                }
+                if($logTime){
+                    if($snapshotTimestampUsecs -le ($logUsecs + 60000000)){
+                        $validLogTime = $True
+                        $useLogTime = $False
+                        break
+                    }
+                }elseif ($latest) {
+                    $validLogTime = $True
+                    $useLogTime = $False
+                    break
+                }
             }
         }
-        $logStart = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].startTimeUsecs
-        $logEnd = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].endTimeUsecs
-        if($latest){
-            $logUsecs = $logEnd - 1000000
-            $validLogTime = $True
+        if(! $validLogTime){
+            $versionNum += 1
+        }else{
             break
         }
-        if ($logStart -le $logUsecs -and $logUsecs -le $logEnd) {
-            $validLogTime = $True
-            break
-        }
-        $versionNum += 1
+    }
+    if(! $validLogTime){
+        Write-Host "log time is out of range" -ForegroundColor Yellow
+        Write-Host "Valid range is $(usecsToDate $oldestUsecs) to $(usecsToDate $latestUsecs)"
+        exit(1)
     }
 }
 
@@ -216,14 +233,8 @@ if($targetDB -eq $sourceDB -and $targetServer -eq $sourceServer -and $differentI
 }
 
 ### apply log replay time
-if($validLogTime -eq $True){
+if($useLogTime -eq $True){
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['restoreTimeSecs'] = $([int64]($logUsecs/1000000))
-}else{
-    if($logTime){
-        Write-Host "LogTime of $logTime is out of range" -ForegroundColor Yellow
-        Write-Host "Available range is $(usecsToDate $logStart) to $(usecsToDate $logEnd)" -ForegroundColor Yellow
-        exit 1
-    }
 }
 
 ### search for target server
