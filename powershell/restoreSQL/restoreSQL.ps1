@@ -125,6 +125,7 @@ if ($logTime -or $latest){
         }
         $pointsForTimeRange = api post restore/pointsForTimeRange $timeRangeQuery
         if($pointsForTimeRange.PSobject.Properties['timeRanges']){
+            # log backups available
             foreach($timeRange in $pointsForTimeRange.timeRanges){
                 $logStart = $timeRange.startTimeUsecs
                 $logEnd = $timeRange.endTimeUsecs
@@ -141,6 +142,7 @@ if ($logTime -or $latest){
                 }
             }
         }else{
+            # no log backups available
             foreach($snapshot in $pointsForTimeRange.fullSnapshotInfo){
                 if($latestUsecs -eq 0){
                     $latestUsecs = $snapshotTimestampUsecs
@@ -158,6 +160,9 @@ if ($logTime -or $latest){
                 }
             }
         }
+        if($latestUsecs -eq 0){
+            $latestUsecs = $oldestUsecs
+        }
         if(! $validLogTime){
             $versionNum += 1
         }else{
@@ -165,7 +170,7 @@ if ($logTime -or $latest){
         }
     }
     if(! $validLogTime){
-        Write-Host "log time is out of range" -ForegroundColor Yellow
+        Write-Host "log time is out of range" -ForegroundColor Yellow        
         Write-Host "Valid range is $(usecsToDate $oldestUsecs) to $(usecsToDate $latestUsecs)"
         exit(1)
     }
