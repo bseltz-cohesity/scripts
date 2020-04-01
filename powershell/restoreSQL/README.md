@@ -84,3 +84,5 @@ Or, if you want to replay logs to a specific point in time, use the **-logTime**
 ```powershell
 -logTime '2019-01-20 23:47:02'
 ```
+
+Note that when the -logTime parameter is used with databases in simple recovery mode, the full/incremental backup that occured at or before the specified log time will be used.
