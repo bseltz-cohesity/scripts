@@ -135,7 +135,11 @@ if ($logTime -or $latest){
                 if($latest){
                     $logUsecs = $logEnd - 1000000
                 }
-                if ($logStart -le $logUsecs -and $logUsecs -le $logEnd -and $logUsecs -ge $snapshotTimestampUsecs) {
+                if(($logUsecs - 1000000) -le $snapshotTimestampUsecs -or $snapshotTimestampUsecs -ge ($logUsecs + 1000000)){
+                    $validLogTime = $True
+                    $useLogTime = $False
+                    break
+                }elseif($logStart -le $logUsecs -and $logUsecs -le $logEnd -and $logUsecs -ge ($snapshotTimestampUsecs - 1000000)) {
                     $validLogTime = $True
                     $useLogTime = $True
                     break
