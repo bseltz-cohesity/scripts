@@ -4,29 +4,26 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This python script finds missed SLAs for recent job runs, and runs on the Cohesity EasyScript app.
 
-## Components
-
-* heliosSlaMonitor.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+## Download the Script
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/easyScript/esHeliosSlaMonitor/esHeliosSlaMonitor.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/easyScript/heliosSlaMonitor/heliosSlaMonitorES.zip
 # end download commands
 ```
 
-Place both files in a folder together and run the main script like so:
+Upload the zip file to easyScript and specify the arguments, like:
 
 ```bash
-./esHeliosSlaMonitor.py -pw xxxxxxxxxxxx
+-pw xxxxxxxxxxxx
 ```
 
-If you'd like to send the report via email, include the mail-related parameters:
+Where -pw is the helios API key (see below). If you'd like to send the report via email, the provide the mail-related arguments:
 
 ```bash
-./eaHeliosSlaMonitor.py -pw xxxxxxxxxxxx -s mysmtpserver -t toaddr@mydomain.net -f fromaddr@mydomain.net
+-pw xxxxxxxxxxxx -s mysmtpserver -t toaddr@mydomain.net -f fromaddr@mydomain.net
 ```
 
 ## Parameters
