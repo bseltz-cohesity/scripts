@@ -42,8 +42,6 @@ addding centos7 to exclusions (template)
 
 ### Attributions
 
-Thanks to VMware for the pyVmomi Python SDK for the VMware vSphere API. Located here: https://github.com/vmware/pyvmomi
+Thanks to VMware for the pyVmomi Python SDK for the VMware vSphere API. Located here: <https://github.com/vmware/pyvmomi>
 
 I'm using pyVmomi here to query vCenter for the powerState of VMs.
-
-Normally I would advise users to do a proper install of pyVmomi, which would allow the excludeVMs script to work fine, but there's a strong likelihood of excludeVMs being deployed onto a Cohesity cluster to run in a scheduled fashion, and I wouldn't advise installing pyVmomi on a Cohesity cluster (it might get wiped out during a Cohesity upgrade). So, I've decided to deliver pyVmomi as part of this script in portable form.  
