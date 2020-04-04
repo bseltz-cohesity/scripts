@@ -22,6 +22,12 @@
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
 
+if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
+    Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
+    Pause
+    exit
+}
+
 $REPORTAPIERRORS = $true
 $REINVOKE = 0
 $MAXREINVOKE = 2
