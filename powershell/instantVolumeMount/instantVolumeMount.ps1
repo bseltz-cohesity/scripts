@@ -30,7 +30,7 @@ $searchResults2 = $searchresults.vms | Where-Object { $_.vmDocument.objectName -
 ### if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot 
 $latestResult = ($searchResults2 | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
 
-if($latestResult -eq $null){
+if(!$latestResult){
     write-host "Source Server $sourceServer Not Found" -foregroundcolor yellow
     exit
 }
@@ -41,12 +41,12 @@ $virtualEntities = api get "/entitiesOfType?environmentTypes=kVMware&environment
 $sourceEntity = (($physicalEntities + $virtualEntities) | Where-Object { $_.displayName -ieq $sourceServer })[0]
 $targetEntity = (($physicalEntities + $virtualEntities) | Where-Object { $_.displayName -ieq $targetServer })[0]
 
-if($sourceEntity -eq $null){
+if(!$sourceEntity){
     Write-Host "Source Server $sourceServer Not Found" -ForegroundColor Yellow
     exit
 }
 
-if($targetEntity -eq $null){
+if(!$targetEntity){
     Write-Host "Target Server $targetServer Not Found" -ForegroundColor Yellow
     exit
 }
