@@ -142,7 +142,7 @@ def apidrop():
 def heliosCluster(clusterName=None, verbose=False):
     global HEADER
     if clusterName is not None:
-        if isinstance(clusterName, basestring) is not True:
+        if isinstance(clusterName, dict) is True:
             clusterName = clusterName['name']
         accessCluster = [cluster for cluster in CONNECTEDHELIOSCLUSTERS if cluster['name'].lower() == clusterName.lower()]
         if not accessCluster:
