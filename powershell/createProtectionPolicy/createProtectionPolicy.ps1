@@ -61,6 +61,6 @@ if($policies){
         'cloudDeployPolicies' = @()
     }
     "creating policy $policyName..."
-    $result = api post protectionPolicies $newPolicy
+    $null = api post protectionPolicies $newPolicy
 }
 
