@@ -135,5 +135,5 @@ $newJob = @{
 }
 
 "creating protection job $jobName..."
-$result = api post protectionJobs $newJob
+$null = api post protectionJobs $newJob
 
