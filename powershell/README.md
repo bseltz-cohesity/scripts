@@ -204,3 +204,21 @@ storePasswordInFile -vip ve2 -username myusername -domain mydomain.net
 ```
 
 The password will be stored (obfuscated) in a file in the current folder.
+
+### Self Updater
+
+You can get the current version information of this file like so:
+
+```powershell
+. ./cohesity-api.ps1
+cohesityAPIversion
+```
+
+and get the latest version:
+
+```powershell
+. ./cohesity-api.ps1
+cohesityAPIversion -update
+```
+
+Please exit and restart PowerShell after updating.
