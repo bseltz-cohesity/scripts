@@ -43,7 +43,7 @@ apiauth supports the following parameters:
 
 * -vip: FQDN or IP Address of the Cohesity cluster to connect to
 * -username: username to connect to Cohesity
-* -domain: (optional) Active Directory domain name of user (defaults to local)
+* -domain: (optional) Active Directory domain name of user (defaults to mydomain.net)
 * -pwd: (optional) hard code the password (not recommended) the password will not be stored
 * -password: (optional) hard code the password (not recommended) the password will not be stored
 * -updatepassword: (optional) prompt for password and overwrite the stored password
@@ -181,7 +181,7 @@ apiauth -vip mycluster -username myusername -domain mydomain.net -updatepassword
 You can also use the apipwd function which has some additional functionality:
 
 ```powershell
-apipwd -vip bseltzve01 -username admin -domain local
+apipwd -vip mycluster -username myusername -domain mydomain.net
 ```
 
 When passwords are stored, they are stored for the currently logged in OS user. In Linux, the encrypted password is stored under the currently logged in OS user's home directory. In Windows, the encrypted password is stored under the currently logged in OS user's registry.
@@ -189,7 +189,18 @@ When passwords are stored, they are stored for the currently logged in OS user. 
 If you are setting up a script to run unattended by another user who is not currently logged in, we must store the password while logged in as that user. This is common in Windows environments where scripts may be run by the SQL Agent account. To store the password as another Windows user, you can type:
 
 ```powershell
-apipwd -vip bseltzve01 -username admin -domain local -asUser
+apipwd -vip mycluster -username myusername -domain mydomain.net -asUser
 ```
 
 You will be prompted for the credentials of another Windows user, and then a new PowerShell window will open and prompt you for the api password.
+
+### Using a Password File
+
+In some cases it can be challenging to store the API password for a service account to use, in which case it might be easier (albeit less secure) to store the API password in a file. You can store the password in a file, in the same folder as the script(s) that you want to run, like so:
+
+```powershell
+. ./cohesity-api.ps1
+storePasswordInFile -vip ve2 -username myusername -domain mydomain.net
+```
+
+The password will be stored (obfuscated) in a file in the current folder.
