@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#   version 0.20 - Brian Seltzer - Mar 2020
+#   version 0.22 - Brian Seltzer - Apr 2020
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.06 - Consolidated Windows and Unix versions - June 2018
@@ -19,6 +19,7 @@
 # 0.19 - fixed password encryption for PowerShell 7.0 - Mar 2020
 # 0.20 - refactored, added apipwd, added helios access - Mar 2020
 # 0.21 - helios changes - Mar 2020
+# 0.22 - added password file storage - Apr 2020
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
 
@@ -33,6 +34,7 @@ $REINVOKE = 0
 $MAXREINVOKE = 2
 
 # platform detection and prerequisites ============================================================
+$pwfile = $(Join-Path -Path $PSScriptRoot -ChildPath YWRtaW4)
 
 if ($PSVersionTable.Platform -eq 'Unix') {
     $CONFDIR = '~/.cohesity-api'
@@ -400,6 +402,10 @@ function Get-CohesityAPIPassword($vip, $username, $domain='local'){
     if($username.Contains('@')){
         $username, $domain = $username.Split('@')
     }
+    $pwd = Get-CohesityAPIPasswordFromFile -vip $vip -username $username -domain $domain
+    if($pwd){
+        return $pwd
+    }
     $keyName = "$vip`:$domain`:$username"
     if($PSVersionTable.Platform -eq 'Unix'){
         # Unix
@@ -417,6 +423,74 @@ function Get-CohesityAPIPassword($vip, $username, $domain='local'){
         }
     }
 }
+
+
+function Get-CohesityAPIPasswordFromFile($vip, $username, $domain){
+    $pwlist = Get-Content -Path $pwfile -ErrorAction SilentlyContinue
+    foreach($pwitem in $pwlist){
+        $v, $d, $u, $cpwd = $pwitem.split(":", 4)
+        if($v -eq $vip -and $d -eq $domain -and $u -eq $username){
+            return [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($cpwd))
+        }
+    }
+    return $null
+}
+
+
+function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $domain='local'){
+    # parse domain\username or username@domain
+    if($username.Contains('\')){
+        $domain, $username = $username.Split('\')
+    }
+    if($username.Contains('@')){
+        $username, $domain = $username.Split('@')
+    }
+
+
+    if($vip -eq 'helios.cohesity.com' -and $username -eq 'helios'){
+        # prompt for vip
+        $newVip = Read-Host -Prompt "Enter VIP ($vip)"
+        if($newVip -ne ''){ $vip = $newVip }
+
+        # prompt for domain
+        $newDomain = Read-Host -Prompt "Enter domain ($domain)"
+        if($newDomain -ne ''){ $domain = $newDomain }
+
+        # prompt for username
+        $newUsername = Read-Host -Prompt "Enter username ($username)"
+        if($newUsername -ne ''){ $username = $newUsername }
+    }
+
+    # prompt for password
+    $secureString = Read-Host -Prompt "Enter password for $domain\$username at $vip" -AsSecureString
+    $pwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
+    $opwd = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($pwd))
+
+    $pwlist = Get-Content -Path $pwfile -ErrorAction SilentlyContinue
+    $updatedContent = ''
+    $foundPwd = $false
+    foreach($pwitem in $pwlist){
+        $v, $d, $u, $cpwd = $pwitem.split(":", 4)
+        # update existing
+        if($v -eq $vip -and $d -eq $domain -and $u -eq $username){
+            $foundPwd = $true
+            $updatedContent += "{0}:{1}:{2}:{3}`n" -f $vip, $domain, $username, $opwd
+        # other existing records    
+        }else{
+            if($pwitem -ne ''){
+                $updatedContent += "{0}`n" -f $pwitem
+            }
+        }
+    }
+    # add new
+    if(!$foundPwd){
+        $updatedContent += "{0}:{1}:{2}:{3}`n" -f $vip, $domain, $username, $opwd
+    }
+
+    $updatedContent | out-file -FilePath $pwfile
+    write-host "Password stored!" -ForegroundColor Green
+}
+
 
 function Set-CohesityAPIPassword($vip, $username, $domain='local', $pwd=$null){
     # prompt for vip
@@ -459,6 +533,7 @@ function Set-CohesityAPIPassword($vip, $username, $domain='local', $pwd=$null){
         Set-ItemProperty -Path "$registryPath" -Name "$keyName" -Value "$encryptedPasswordText"
     }
 }
+
 
 # security functions ==============================================================================
 
