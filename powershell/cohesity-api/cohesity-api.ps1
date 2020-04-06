@@ -20,8 +20,10 @@
 # 0.20 - refactored, added apipwd, added helios access - Mar 2020
 # 0.21 - helios changes - Mar 2020
 # 0.22 - added password file storage - Apr 2020
+# 0.23 - added self updater - Apr 2020
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
+$versionCohesityAPI = '0.23'
 
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
@@ -777,4 +779,16 @@ function py($p){
         $py += "']"
     }
     $py
+}
+
+
+# self updater
+function cohesityAPIversion([switch]$update){
+    if($update){
+        $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+        (Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+        write-host "Cohesity-API version updated! Please restart PowerShell"
+    }else{
+        write-host "Cohesity-API version $versionCohesityAPI" -ForegroundColor Green 
+    }
 }
