@@ -13,7 +13,7 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/updateVcenterCredentials/updateVcenterCredentials.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/updateVcenterCredentials/updateVcenterCredentials.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x updateVcenterCredentials.py
 # end download commands
