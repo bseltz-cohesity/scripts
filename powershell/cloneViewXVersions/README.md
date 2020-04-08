@@ -20,7 +20,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 ## Components
 
 * cloneViewXVersions.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* cohesity-api.ps1: the Cohesity REST API helper module ([Get it Here...](../cohesity-api/README.md))
 
 Place both files in a folder together and run the main script like so:
 
