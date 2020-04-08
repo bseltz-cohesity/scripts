@@ -175,7 +175,7 @@ foreach ($restore in $restores){
     $taskName = $restore.restoreTask.performRestoreTaskState.base.name
     $status = ($restore.restoreTask.performRestoreTaskState.base.publicStatus).Substring(1)
     $startTime = usecsToDate $restore.restoreTask.performRestoreTaskState.base.startTimeUsecs
-    $link = "https://$vip/protection/recovery/detail/local/$taskId"
+    $link = "https://$vip/protection/recovery/detail/local/$taskId/"
     if($restore.restoreTask.performRestoreTaskState.PSObject.properties['objects']){
         foreach ($object in $restore.restoreTask.performRestoreTaskState.objects){
             $objectType = $entityType[$object.entity.type]
@@ -224,5 +224,5 @@ write-host "sending report to $([string]::Join(", ", $sendTo))"
 
 ### send email report
 foreach($toaddr in $sendTo){
-    Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject $title -BodyAsHtml $html
+    Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject $title -BodyAsHtml $html -WarningAction SilentlyContinue
 }
