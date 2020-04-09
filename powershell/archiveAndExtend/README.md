@@ -65,35 +65,28 @@ Then, if you're happy with the list of snapshots that will be processed, run the
 * -vip: Cohesity Cluster to connect to
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain of user (defaults to local)
-
 * -archiveDaily: (optional) days to retain daily archives
 * -dailyVault: (optional) external target for daily archives
-
 * -dayOfWeek: (optional) day of Week for weekly snapshot (e.g. Sunday)
 * -keepWeekly: (optional) days to retain weekly snapshots
 * -archiveWeekly: (optional) days to retain weekly archives
 * -weeklyVault: (optional) external target for weekly archives
-
 * -dayOfMonth: (optional) day of month for monthly snapshot (1 = 1st day of month, -1 = last day of month)
 * -keepMonthly: (optional) days to retain monthly snapshots
 * -archiveMonthly: (optional) days to retain monthly archives
 * -monthlyVault: (optional) external target for monthly archives
-
 * -quarterlyDates: (optional) list of quarterly dates (e.g. '04-01', '07-01')
 * -keepMonthly: (optional) days to retain monthly snapshots
 * -archiveMonthly: (optional) days to retain monthly archives
 * -monthlyVault: (optional) external target for monthly archives
-
 * -dayOfYear: (optional) day of year for yearly snapshot (1 = Jan 1, -1 = Dec 31)
 * -keepYearly: (optional) days to retain yearly snapshots
 * -archiveYearly: (optional) days to retain yearly archives
 * -yearlyVault: (optional) external target for yearly archives
-
 * -specialDates: (optional) list of special dates (e.g. '03-21', '09-21')
 * -keepSpecial: (optional) days to retain special snapshots
 * -archiveSpecial: (optional) days to retain special archives
 * -specialVault: (optional) external target for special archives
-
 * -commit: (optional) test run only if omitted
 
 ## Running and Scheduling PowerShell Scripts
