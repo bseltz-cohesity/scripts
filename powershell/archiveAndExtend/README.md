@@ -2,7 +2,9 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This powershell script archives and extends the retention of local snapshots from the specified day of the week, month and year.
+The purpose of this script is to perform all extended retentions and archive runs on the correct day of week, month, year, etc. Set your protection policy to perform the **base schedule** (e.g. daily) **local backup only**, and allow the script to handle all weekly, monthly, yearly extended retentions and archive runs. Schedule the script to run daily, and it will identify any existing backups that should have their local retention extended or should be archived.
+
+Note that when compound archive retention is desired, it is **strongly recommended** to archive daily, weekly, monthly archives to **separate external targets**, so that archive expiration of short-term archives won't be dependent on expiration of long-term archives.
 
 ## Download the script
 
@@ -88,7 +90,3 @@ Then, if you're happy with the list of snapshots that will be processed, run the
 * -archiveSpecial: (optional) days to retain special archives
 * -specialVault: (optional) external target for special archives
 * -commit: (optional) test run only if omitted
-
-## Running and Scheduling PowerShell Scripts
-
-For additional help running and scheduling Cohesity PowerShell scripts, please see <https://github.com/bseltz-cohesity/scripts/blob/master/powershell/Running%20Cohesity%20PowerShell%20Scripts.pdf>
