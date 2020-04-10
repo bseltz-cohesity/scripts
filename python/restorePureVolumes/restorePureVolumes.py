@@ -5,6 +5,7 @@
 
 # import pyhesity wrapper module
 from pyhesity import *
+from datetime import datetime
 
 # command line arguments
 import argparse
@@ -64,6 +65,8 @@ for volumename in volumes:
         print("Volume %s/%s not found!" % (purename, volumename))
         exit(1)
 
+taskdate = datetime.now().strftime("%h_%d_%Y_%H-%M%p")
+
 # proceed with restores
 for volumename in volumes:
     # find volume
@@ -73,9 +76,10 @@ for volumename in volumes:
         exit(1)
     else:
         # define restore params
+        taskname = "Recover-pure_%s-%s" % (taskdate, volumename)
         restoreParams = {
             'action': 8,
-            'name': 'Recover-pure_Apr_9_2020_2-06pm',
+            'name': taskname,
             'objects': [
                 {
                     'jobId': volume['objectId']['jobId'],
