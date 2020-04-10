@@ -67,6 +67,7 @@ Then, if you're happy with the list of snapshots that will be processed, run the
 * -vip: Cohesity Cluster to connect to
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain of user (defaults to local)
+* -newerThan: (optional) Process backups no older than x days (default is 2)
 * -archiveDaily: (optional) days to retain daily archives
 * -dailyVault: (optional) external target for daily archives
 * -dayOfWeek: (optional) day of Week for weekly snapshot (e.g. Sunday)
