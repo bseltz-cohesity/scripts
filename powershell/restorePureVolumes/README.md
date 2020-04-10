@@ -26,7 +26,12 @@ Place both files in a folder together and run the main script like so:
 
 ```powershell
 # example
-./restorePureVolumes.ps1 -vip mycluster -username myusername -pureName mypure -volumeName myserver_lun1, myserver_lun2 -prefix 'restore-' -suffix '-0410'
+./restorePureVolumes.ps1 -vip mycluster `
+                         -username myusername `
+                         -pureName mypure `
+                         -volumeName myserver_lun1, myserver_lun2 `
+                         -prefix 'restore-' `
+                         -suffix '-0410'
 # end example
 ```
 
