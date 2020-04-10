@@ -23,7 +23,13 @@ Place both files in a folder together and run the main script like so:
 
 ```bash
 # example
-./restorePureVolumes.py -c mycluster -u myusername -a mypure -v myserver_lun1 -v myserver_lun2 -p restore- -s -0410
+./restorePureVolumes.py -c mycluster \
+                        -u myusername \  
+                        -a mypure \
+                        -v myserver_lun1 \
+                        -v myserver_lun2 \
+                        -p restore- \
+                        -s -0410
 # end example
 ```
 
