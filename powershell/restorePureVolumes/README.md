@@ -25,8 +25,12 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 Place both files in a folder together and run the main script like so:
 
 ```powershell
+# example
 ./restorePureVolumes.ps1 -vip mycluster -username myusername -pureName mypure -volumeName myserver_lun1, myserver_lun2 -prefix 'restore-' -suffix '-0410'
+# end example
+```
 
+```text
 Connected!
 Restoring mypure/myserver_lun1 as mypure/restore-myserver_lun1-0410
 Restoring mypure/myserver_lun2 as mypure/restore-myserver_lun2-0410
