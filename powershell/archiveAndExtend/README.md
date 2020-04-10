@@ -79,9 +79,9 @@ Then, if you're happy with the list of snapshots that will be processed, run the
 * -archiveMonthly: (optional) days to retain monthly archives
 * -monthlyVault: (optional) external target for monthly archives
 * -quarterlyDates: (optional) list of quarterly dates (e.g. '04-01', '07-01')
-* -keepMonthly: (optional) days to retain monthly snapshots
-* -archiveMonthly: (optional) days to retain monthly archives
-* -monthlyVault: (optional) external target for monthly archives
+* -keepQuarterly: (optional) days to retain monthly snapshots
+* -archiveQuarterly: (optional) days to retain monthly archives
+* -quarterlyVault: (optional) external target for monthly archives
 * -dayOfYear: (optional) day of year for yearly snapshot (1 = Jan 1, -1 = Dec 31)
 * -keepYearly: (optional) days to retain yearly snapshots
 * -archiveYearly: (optional) days to retain yearly archives
