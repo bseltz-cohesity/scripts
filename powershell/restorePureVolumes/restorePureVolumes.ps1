@@ -55,6 +55,8 @@ foreach($volumeName in $volumes){
     }
 }
 
+$taskDate = Get-Date -UFormat "%b_%d_%Y_%H-%M"
+
 # proceed with restores
 foreach($volumeName in $volumes){
     $volume = searchVolume $pureName $volumeName
@@ -62,10 +64,11 @@ foreach($volumeName in $volumes){
         write-host "Volume $pureName/$volumeName not found!" -ForegroundColor Yellow
         exit 1
     }
+    
     # restore params
     $restoreParams = @{
         "action"                    = 8;
-        "name"                      = "Recover-pure_Apr_9_2020_2-06pm";
+        "name"                      = "Recover-pure_$taskDate-$volumeName";
         "objects"                   = @(
             @{
                 "jobId"          = $volume.objectId.jobId;
