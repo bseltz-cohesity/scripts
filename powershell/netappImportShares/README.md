@@ -32,7 +32,7 @@ Then you can export the share information like so:
 
 ```powershell
 Connect-NcController -Name mynetapp-controller.mydomain.net -Vserver SVM1 -HTTPS
-$netappShares = Get-NcCifsShareGet-NcCifsShare
+$netappShares = Get-NcCifsShare
 $netappShares | ConvertTo-Json -Depth 99 | Out-File -FilePath ./netappShares.json
 ```
 
