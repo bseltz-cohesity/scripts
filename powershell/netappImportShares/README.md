@@ -31,9 +31,11 @@ Download the [NetApp PowerShell Toolkit here](https://mysupport.netapp.com/site/
 Then you can export the share information like so:
 
 ```powershell
+# export cifs shares from NetApp
 Connect-NcController -Name mynetapp-controller.mydomain.net -Vserver SVM1 -HTTPS
 $netappShares = Get-NcCifsShare
 $netappShares | ConvertTo-Json -Depth 99 | Out-File -FilePath ./netappShares.json
+# end
 ```
 
 ## Importing the Shares into Cohesity
