@@ -3,9 +3,9 @@
 #                          -username myusername `
 #                          -domain mydomain.net `
 #                          -importFile .\netappShares.json `
-#                          -netappSource mynetapp
-#                          -volumeName vol1, vol2 
-#                          -viewPrefix ntap- 
+#                          -netappSource mynetapp `
+#                          -volumeName vol1, vol2 `
+#                          -viewPrefix ntap- `
 #                          -restrictVolumeSharePermissions 'mydomain.net\domain admins', 'mydomain.net\storage admins'
 
 ### process commandline arguments
