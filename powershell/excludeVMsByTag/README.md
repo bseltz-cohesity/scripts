@@ -25,7 +25,9 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 Place the files in a folder together and run the script like so:
 
 ```powershell
+# example
 ./excludeVMsByTag.ps1 -vip mycluster -username myusername -domain mydomain.net -tag 'DoNotBackup' -vCenterName myvcenter.mydomain.net
+# end
 ```
 
 ```text
