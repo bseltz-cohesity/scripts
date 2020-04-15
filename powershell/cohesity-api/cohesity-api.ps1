@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#   version 0.23 - Brian Seltzer - Apr 2020
+#   version 0.24 - Brian Seltzer - Apr 2020
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.06 - Consolidated Windows and Unix versions - June 2018
@@ -21,6 +21,7 @@
 # 0.21 - helios changes - Mar 2020
 # 0.22 - added password file storage - Apr 2020
 # 0.23 - added self updater - Apr 2020
+# 0.24 - added delete with body - Apr 2020
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
 $versionCohesityAPI = '0.23'
@@ -315,7 +316,8 @@ function api($method, $uri, $data){
             $url = $APIROOT + $uri
             $body = ConvertTo-Json -Depth 100 $data
             if ($PSVersionTable.PSEdition -eq 'Core'){
-                if($method -eq 'post' -or $method -eq 'put'){
+                #if($method -eq 'post' -or $method -eq 'put'){
+                if($body){
                     $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER -SkipCertificateCheck -TimeoutSec 10
                 }else{
                     $result = Invoke-RestMethod -Method $method -Uri $url -Header $HEADER -SkipCertificateCheck -TimeoutSec 10
