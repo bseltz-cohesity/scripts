@@ -7,14 +7,18 @@ param (
     [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
     [Parameter()][string]$domain = 'local', #local or AD domain
     [Parameter(Mandatory = $True)][string]$viewList, #name of VM to protect
-    [Parameter(Mandatory = $True)][string]$policyName #name of the job to add VM to
+    [Parameter(Mandatory = $True)][string]$policyName, #name of the job to add VM to
+    [Parameter()][switch]$paused
 )
 
 ### source the cohesity-api helper code
-. ./cohesity-api
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
+
+### cluster info
+$clusterName = (api get cluster).name
 
 $policy = api get protectionPolicies | Where-Object { $_.name -ieq $policyName }
 if(!$policy){
@@ -29,15 +33,33 @@ if(Test-Path $viewList -PathType Leaf){
     exit
 }
 
+
+function getViews(){
+    $myViews = @()
+    $views = api get views
+    $myViews += $views.views
+    $lastResult = $views.lastResult
+    while(! $lastResult){
+        $lastViewId = $views.views[-1].viewId
+        $views = api get views?maxViewId=$lastViewId
+        $lastResult = $views.lastResult
+        $myViews += $views.views
+    }
+    return $myViews
+}
+
+
+$views = getViews
+
 foreach ($viewName in $viewNames){
-    $view = $(api get views).views | Where-Object { $_.name -ieq $viewName }
+    $view = $views | Where-Object { $_.name -ieq $viewName }
     if(!$view){
         Write-Warning "View $viewName not found. Skipping!"
         continue
     }
     
     $protectionJob = @{
-        'name' = "$($view.name) backup";
+        'name' = "$clusterName $($view.name) backup";
         'environment' = 'kView';
         '_envParams' = @{};
         'viewBoxId' = $view.viewBoxId;
@@ -81,9 +103,14 @@ foreach ($viewName in $viewNames){
             'minute' = 55;
         }
     }
+
+
     
     "Creating Protection Job for $($view.name)..."
-    $result = api post protectionJobs $protectionJob
+    $newJob = api post protectionJobs $protectionJob
+    if($paused){
+         $null = api post protectionJobState/$($newJob.id) @{ "pause" = $True; "pauseReason" = 0 }
+    }
 }
 
 

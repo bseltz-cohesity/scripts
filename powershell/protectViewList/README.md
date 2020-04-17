@@ -27,3 +27,12 @@ Place both files in a folder together and run the main script like so:
 ```powershell
 ./protectViewList.ps1 -vip mycluster -username admin -viewList ./viewlist.txt -policyName 'Standard Protection'
 ```
+
+## Parameters
+
+* -vip: name or IP of Cohesity cluster
+* -username: name of user to connect to Cohesity
+* -domain: your AD domain (defaults to local)
+* -viewList: text file of view names to protect
+* -policyName: name of protection policy to apply to the new job
+* -pause: leave the new job paused so it won't start
