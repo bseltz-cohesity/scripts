@@ -3,10 +3,7 @@
 #                                  -domain local `
 #                                  -vault S3 `
 #                                  -jobName myjob1, myjob2
-#                                  -olderThan 30 `
-#                                  -ifExpiringAfter 30 `
-#                                  -keepFor 365 `
-#                                  -archive
+#                                  -keepFor 365
 
 # process commandline arguments
 [CmdletBinding()]

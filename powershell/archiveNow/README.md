@@ -39,6 +39,15 @@ NAS Backup (04/18/2020 01:20:02) --> S3 (07/17/2020 01:20:02)
 SQL Backup (04/17/2020 23:00:01) --> S3 (07/16/2020 23:00:01)
 ```
 
+## Parameters
+
+* -vip: Cohesity Cluster to connect to
+* -username: Cohesity username
+* -domain: (optional) Active Directory domain of user (defaults to local)
+* -jobNames: one or more job names (comma separated)
+* -vault: name of external target to archive to
+* -keepFor: number of days (from original backup date) to retain the archive
+
 ## Running and Scheduling PowerShell Scripts
 
 For additional help running and scheduling Cohesity PowerShell scripts, please see [Running Cohesity PowerShell Scripts](https://github.com/bseltz-cohesity/scripts/blob/master/powershell/Running%20Cohesity%20PowerShell%20Scripts.pdf)
