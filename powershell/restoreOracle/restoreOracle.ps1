@@ -216,10 +216,10 @@ if($targetServer -ne $sourceServer -or $targetDB -ne $sourceDB){
         };
         "databaseFileDestination" = $oracleData
     };
-    $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.targetHost = $targetEntity[0].appEntity.entity;
-    $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.targetHostParentSource = @{
-        "id" = $targetEntity[0].appEntity.entity.id
-    }
+    $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.targetHost = $targetEntity[0].appEntity.entity;
+    # $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.targetHostParentSource = @{
+    #     "id" = $targetEntity[0].appEntity.entity.id
+    # }
 }
 
 ### apply log replay time
