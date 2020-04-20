@@ -46,7 +46,12 @@ SQL Backup (04/17/2020 23:00:01) --> S3 (07/16/2020 23:00:01)
 * -domain: (optional) Active Directory domain of user (defaults to local)
 * -jobNames: one or more job names (comma separated)
 * -vault: name of external target to archive to
+* -dayOfYear: (optional) day of year for yearly snapshot (1 = Jan 1, -1 = Dec 31)
+* -dayOfMonth: (optional) day of month for monthly snapshot (1 = 1st day of month, -1 = last day of month)
+* -dayOfWeek: (optional) day of Week for weekly snapshot (e.g. Sunday)
+* -runId: (optional) archive a specific job run ID
 * -keepFor: number of days (from original backup date) to retain the archive
+* -pastSearchDays: (optional) number of days back to seach for snapshots to archive (default is 31)
 
 ## Running and Scheduling PowerShell Scripts
 

@@ -13,7 +13,12 @@ param (
     [Parameter()][string]$domain = 'local', #local or AD domain
     [Parameter(Mandatory = $True)][array]$jobNames, # jobs to archive
     [Parameter(Mandatory = $True)][string]$vault, #name of archive target
-    [Parameter()][int]$keepFor #set archive retention to x days from backup date
+    [Parameter()][ValidateSet('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','unselected')][string]$dayOfWeek = 'unselected',
+    [Parameter()][int]$dayOfMonth,
+    [Parameter()][int]$dayOfYear,
+    [Parameter()][int64]$runId,
+    [Parameter()][int]$keepFor, #set archive retention to x days from backup date
+    [Parameter()][int]$pastSearchDays = 31
 )
 
 # source the cohesity-api helper code
@@ -31,6 +36,10 @@ if (!$vaults) {
 $vaultName = $vaults[0].name
 $vaultId = $vaults[0].id
 
+# calculate dates
+$searchTimeUsecs = dateToUsecs ((get-date).AddDays(-$pastSearchDays))
+$monthDays = @(0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 20, 31)
+
 # find specified jobs
 $jobs = api get protectionJobs
 
@@ -39,14 +48,58 @@ foreach($jobname in $jobNames){
     if($job){
 
         # find latest local snapshot that has not been archived yet
-        $runs = (api get protectionRuns?jobId=$($job.id)`&numRuns=1`&runTypes=kRegular`&runTypes=kFull`&excludeTasks=true`&excludeNonRestoreableRuns=true) | `
+        $runs = (api get protectionRuns?jobId=$($job.id)`&numRuns=9999`&runTypes=kRegular`&runTypes=kFull`&excludeTasks=true`&excludeNonRestoreableRuns=true`&startTimeUsecs=$searchTimeUsecs) | `
             Where-Object { $_.backupRun.snapshotsDeleted -eq $false } | `
             Where-Object { !('kArchival' -in $_.copyRun.target.type) -or ($_.copyRun | Where-Object { $_.target.type -eq 'kArchival' -and $_.status -in @('kCanceled','kFailed') }) } | `
-            Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
+            Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $false }
 
+        $selectedRun = $null
         foreach ($run in $runs) {
             $jobName = $run.jobName
             $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
+            # adjust last day of year for leap year
+            if($dayOfYear -eq -1){
+                $dayOfYear = 365
+                if([datetime]::IsLeapYear($runDate.Year)){
+                    $dayOfYear = 366
+                }
+            }
+            # adjust last day of february for leap year
+            if($dayOfMonth -eq -1){
+                $dayOfMonth = $monthDays[$runDate.Month]
+                if($runDate.Month -eq 2 -and [datetime]::IsLeapYear($runDate.Year)){
+                    $dayOfMonth += 1
+                }
+            }
+
+            # select specific, yearly, monthly, weekly or daily snapshot
+            if($runId){
+                if($run.backupRun.jobRunId -eq $runId){
+                    $selectedRun = $run
+                }
+            }elseif($dayOfYear){
+                if($runDate.DayOfYear -eq $dayOfYear){
+                    $selectedRun = $run
+                }
+            }elseif($dayOfMonth){
+                if($runDate.Day -eq $dayOfMonth){
+                    $selectedRun = $run
+                }
+            }elseif($dayOfWeek -ne 'unselected'){
+                if($runDate.DayOfWeek -eq $dayOfWeek){
+                    $selectedRun = $run
+                }
+            }else{
+                $selectedRun = $run
+            }
+            if($selectedRun){
+                break
+            }
+        }
+
+        if($selectedRun){
+            $run = $selectedRun
+
             $now = dateToUsecs $(get-date)
 
             # local snapshots stats
@@ -93,6 +146,8 @@ foreach($jobname in $jobNames){
             # submit the archive task
             write-host "$($jobName) ($runDate) --> $vaultName ($expireDate)"
             $null = api put protectionRuns $archiveTask
+        }else{
+            Write-Host "$($jobname): nothing to archive"
         }
     }else{
         # report job not found
