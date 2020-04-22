@@ -59,8 +59,8 @@ Restore finished with status kSuccess
 
 File names must be specified as absolute paths like:
 
-Linux: /home/myusername/file1
-Windows: /C/Users/MyUserName/Documents/File1
+* Linux: /home/myusername/file1
+* Windows: /C/Users/MyUserName/Documents/File1
 
 ## The Python Helper Module - pyhesity.py
 
