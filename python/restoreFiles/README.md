@@ -55,7 +55,7 @@ Restore finished with status kSuccess
 * -f, --filedate: (optional) select backup version at or after specified date (defaults to latest backup)
 * -w, --wait: (optional) wait for completion and report status
 
-## file names and paths
+## File Names and Paths
 
 File names must be specified as absolute paths like:
 
