@@ -64,16 +64,4 @@ File names must be specified as absolute paths like:
 
 ## The Python Helper Module - pyhesity.py
 
-The helper module provides functions to simplify operations such as authentication, api calls, storing encrypted passwords, and converting date formats. The module requires the requests python module.
-
-### Installing the Prerequisites
-
-```bash
-sudo yum install python-requests
-```
-
-or
-
-```bash
-sudo easy_install requests
-```
+Please find more info on the pyhesity module here: <https://github.com/bseltz-cohesity/scripts/tree/master/python>
