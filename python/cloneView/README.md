@@ -29,13 +29,13 @@ Cloning View myview as newview...
 
 ## Parameters
 
-* -s, --server: DNS or IP of the Cohesity cluster to connect to
-* -u, --username: username to authenticate to Cohesity cluster
-* -d, --domain: (optional) domain of username, defaults to local
-* -v, --view: name of source view to be cloned
-* -n, --newname: name of clone view to create
-* -f, --filedate: (optional) select backup version at or after specified date (defaults to latest backup)
-* -w, --wait: (optional) wait for completion and report exit status
+* `-s, --server`: DNS or IP of the Cohesity cluster to connect to
+* `-u, --username`: username to authenticate to Cohesity cluster
+* `-d, --domain`: (optional) domain of username, defaults to local
+* `-v, --view`: name of source view to be cloned
+* `-n, --newname`: name of clone view to create
+* `-f, --filedate`: (optional) select backup version at or after specified date (defaults to latest backup)
+* `-w, --wait`: (optional) wait for completion and report exit status
 
 ## Dates
 
