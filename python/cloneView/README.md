@@ -41,7 +41,7 @@ Cloning View myview as newview...
 
 Use the -f parameter to specify the date from which to clone the view. The date may be entered like: '2020-04-20 17:05:00' or '2020-04-20' (which is interpreted as '2020-04-20 00:00:00).
 
-The oldest snapshot that is equal to or newer than the specified date will be used. For example, if the view is backed up every night at 9PM and you enter -f '2020-04-20 12:00:00', backup from Monday night at 9PM would be selected (Monday night's backup contains the files as they were on Monday at noon).
+The oldest snapshot that is equal to or newer than the specified date will be used. For example, if the view is backed up every night at 9PM and you enter -f '2020-04-20 12:00:00', the backup from April 20th at 9PM would be selected.
 
 If the -f parameter is omitted, then the latest backup is used by default.
 
