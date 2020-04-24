@@ -15,6 +15,7 @@ parser.add_argument('-u', '--username', type=str, required=True)  # Cohesity Use
 parser.add_argument('-d', '--domain', type=str, default='local')  # Cohesity User Domain
 parser.add_argument('-v', '--view', type=str, required=True)  # name of source view to clone
 parser.add_argument('-n', '--newname', type=str, required=True)  # name of target view to create
+parser.add_argument('-f', '--filedate', type=str, default=None)  # date time to recover view to
 parser.add_argument('-w', '--wait', action='store_true')  # wait for completion
 
 args = parser.parse_args()
@@ -24,6 +25,7 @@ username = args.username
 domain = args.domain
 viewName = args.view
 newName = args.newname
+filedate = args.filedate
 wait = args.wait
 
 ### authenticate
@@ -41,9 +43,22 @@ if len(viewResults) == 0:
     print("View %s not found" % viewName)
     exit()
 
-viewResult = viewResults[0]
+doc = viewResults[0]['vmDocument']
 
-view = api('get', 'views/%s?includeInactive=True' % viewResult['vmDocument']['objectName'])
+view = api('get', 'views/%s?includeInactive=True' % doc['objectName'])
+
+if filedate is not None:
+    if ':' not in filedate:
+        filedate = '%s 00:00:00' % filedate
+    filedateusecs = dateToUsecs(filedate)
+    versions = [v for v in doc['versions'] if filedateusecs <= v['snapshotTimestampUsecs']]
+    if versions:
+        version = versions[-1]
+    else:
+        print('No backups from the specified date')
+        exit(1)
+else:
+    version = doc['versions'][0]
 
 taskName = "Clone-View_%s_as_%s" % (viewName, newName)
 
@@ -51,11 +66,11 @@ cloneTask = {
     "name": taskName,
     "objects": [
         {
-            "jobUid": viewResult['vmDocument']['objectId']['jobUid'],
-            "jobId": viewResult['vmDocument']['objectId']['jobId'],
-            "jobInstanceId": viewResult['vmDocument']['versions'][0]['instanceId']['jobInstanceId'],
-            "startTimeUsecs": viewResult['vmDocument']['versions'][0]['instanceId']['jobStartTimeUsecs'],
-            "entity": viewResult['vmDocument']['objectId']['entity']
+            "jobUid": doc['objectId']['jobUid'],
+            "jobId": doc['objectId']['jobId'],
+            "jobInstanceId": version['instanceId']['jobInstanceId'],
+            "startTimeUsecs": version['instanceId']['jobStartTimeUsecs'],
+            "entity": doc['objectId']['entity']
         }
     ],
     "viewName": newName,
@@ -64,7 +79,7 @@ cloneTask = {
         "sourceViewName": view['name'],
         "cloneViewName": newName,
         "viewBoxId": view['viewBoxId'],
-        "viewId": viewResult['vmDocument']['objectId']['entity']['id']
+        "viewId": doc['objectId']['entity']['id']
     }
 }
 
@@ -75,6 +90,9 @@ if 'errorCode' in response:
     exit(1)
 
 print("Cloning View %s as %s..." % (viewName, newName))
+print("Backup date: %s" % usecsToDate(version['instanceId']['jobStartTimeUsecs']))
+
+# wait for completion and report status
 taskId = response['restoreTask']['performRestoreTaskState']['base']['taskId']
 status = api('get', '/restoretasks/%s' % taskId)
 

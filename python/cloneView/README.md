@@ -22,7 +22,7 @@ chmod +x cloneView.py
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./cloneView.py -s mycluster -u admin [ -d domain ] -v myview -n newview [ -w ]
+./cloneView.py -s mycluster -u admin [ -d domain ] -v myview -n newview [ -f '2020-04-18 18:00:00' ] [ -w ]
 Connected!
 Cloning View myview as newview...
 ```
@@ -34,20 +34,17 @@ Cloning View myview as newview...
 * -d, --domain: (optional) domain of username, defaults to local
 * -v, --view: name of source view to be cloned
 * -n, --newname: name of clone view to create
+* -f, --filedate: (optional) select backup version at or after specified date (defaults to latest backup)
 * -w, --wait: (optional) wait for completion and report exit status
+
+## Dates
+
+Use the -f parameter to specify the date from which to clone the view. The date may be entered like: '2020-04-20 17:05:00' or '2020-04-20' (which is interpreted as '2020-04-20 00:00:00).
+
+The oldest snapshot that is equal to or newer than the specified date will be used. For example, if the view is backed up every night at 9PM and you enter -f '2020-04-20 12:00:00', backup from Monday night at 9PM would be selected (Monday night's backup contains the files as they were on Monday at noon).
+
+If the -f parameter is omitted, then the latest backup is used by default.
 
 ## The Python Helper Module - pyhesity.py
 
-The helper module provides functions to simplify operations such as authentication, api calls, storing encrypted passwords, and converting date formats. The module requires the requests python module.
-
-### Installing the Prerequisites
-
-```bash
-sudo yum install python-requests
-```
-
-or
-
-```bash
-sudo easy_install requests
-```
+Please find more info on the pyhesity module here: <https://github.com/bseltz-cohesity/scripts/tree/master/python>
