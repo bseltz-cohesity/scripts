@@ -35,15 +35,6 @@ mailport = args.mailport
 sendto = args.sendto
 sendfrom = args.sendfrom
 
-
-def spanBold(content, margin):
-    return '<span style="margin-left: %spx; font-weight: normal; color: #000;">%s</span>' % (margin, content)
-
-
-def span(content, color):
-    return '<span style="font-weight: 300; color: #%s;">%s</span>' % (color, content)
-
-
 consoleWidth = 100
 
 ### authenticate
@@ -58,9 +49,76 @@ cluster = api('get', 'cluster')
 
 title = 'Cohesity Failure Report (%s)' % cluster['name'].upper()
 
-message = '<html><body style="font-family: Helvetica, Arial, sans-serif; font-size: 12px; background-color: #f1f3f6; color: #444444;">'
-message += '<div style="background-color: #fff; width:fit-content; padding: 2px 6px 8px 6px; font-weight: 300; box-shadow: 1px 2px 4px #cccccc; border-radius: 4px;">'
-message += '<p style="font-weight: bold;">%s Failure Report (%s)</p>' % (cluster['name'].upper(), now.date())
+message = '''<html>
+<head>
+    <style>
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 12px;
+            background-color: #f1f3f6;
+            color: #444444;
+            overflow: auto;
+        }
+
+        #wrapper {
+            background-color: #fff;
+            width: fit-content;
+            padding: 2px 6px 8px 6px;
+            font-weight: 300;
+            box-shadow: 1px 2px 4px #cccccc;
+            border-radius: 4px;
+        }
+
+        .title {
+            font-weight: bold;
+        }
+
+        .jobname {
+            margin-left: 0px;
+            font-weight: normal;
+            color: #000;
+        }
+
+        .info {
+            font-weight: 300;
+            color: #000;
+        }
+
+        .Warning {
+            font-weight: normal;
+            color: #E5742A;
+        }
+
+        .Failure {
+            font-weight: normal;
+            color: #E2181A;
+        }
+
+        .object {
+            margin: 2px 0px 2px 40px;
+            font-weight: normal;
+            color: #000;
+            text-decoration: none;
+        }
+
+        .message {
+            font-weight: 300;
+            font-size: 11px;
+            background-color: #f1f3f6;
+            padding: 4px 6px 4px 6px;
+            margin: 3px 3px 5px 50px;
+            line-height: 1.5em;
+            border-radius: 4px;
+            box-shadow: 1px 2px 4px #cccccc;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">'''
+
+message += '<p class="title">%s Failure Report (%s)</p>' % (cluster['name'].upper(), now.date())
+
 failureCount = 0
 
 jobs = api('get', 'protectionJobs')
@@ -78,36 +136,31 @@ for job in jobs:
             if status == 'kFailure' or 'warnings' in run['backupRun']:
                 if status == 'kFailure':
                     msgType = 'Failure'
-                    msgColor = 'E2181A'
                 else:
                     msgType = 'Warning'
-                    msgColor = 'E5742A'
                 failureCount += 1
                 # report job name
                 print("%s (%s) %s (%s)" % (job['name'].upper(), job['environment'][1:], (usecsToDate(run['backupRun']['stats']['startTimeUsecs'])), msgType))
                 if failureCount > 1:
                     message += '<br/>'
-                message += '%s <span style="font-weight: 300;">(%s) %s (</span>%s<span style="font-weight: 300; color: #000;">)</span><br/>' % (spanBold(job['name'].upper(), 0), job['environment'][1:], (usecsToDate(run['backupRun']['stats']['startTimeUsecs'])), span(msgType, msgColor))
-
+                message += '<span class="jobname">%s</span><span class="info"> (%s) %s </span><span class="%s">%s<br /></span>' % (job['name'].upper(), job['environment'][1:], (usecsToDate(run['backupRun']['stats']['startTimeUsecs'])), msgType, msgType)
                 if 'sourceBackupStatus' in run['backupRun']:
                     for source in run['backupRun']['sourceBackupStatus']:
                         if source['status'] == 'kFailure' or 'warnings' in source:
                             if source['status'] == 'kFailure':
                                 msg = source['error']
+                                msghtml = source['error']
                                 msgType = 'Failure'
-                                msgColor = 'E2181A'
                             else:
-                                msg = source['warnings'][0]
+                                msg = "\n".join(source['warnings'])
+                                msghtml = '<br />'.join(source['warnings'])
                                 msgType = 'Warning'
-                                msgColor = 'E5742A'
                             # report object name and error
                             objectReport = "    %s (%s): %s" % (source['source']['name'].upper(), msgType, msg)
                             if len(objectReport) > consoleWidth:
                                 objectReport = '%s...' % objectReport[0: consoleWidth - 5]
                             print(objectReport)
-                            if (len(msg) + len(msgType) + len(source['source']['name'])) > consoleWidth:
-                                msg = '%s...' % msg[0: (consoleWidth - 10 - len(msgType) - len(source['source']['name']))]
-                            message += '%s <span style="font-weight:300; color: #000;">(</span>%s<span style="font-weight: 300; color: #000;">) %s</span><br/>' % (spanBold(source['source']['name'].upper(), 40), span(msgType, msgColor), msg)
+                            message += '<span class="object">%s</span><span class="info"> (<span class="%s">%s</span>)</span><div class="message"><span>%s</span></div>' % (source['source']['name'].upper(), msgType, msgType, msghtml)
                 # if the first run had an error, skip the 2nd run
                 break
 
