@@ -60,6 +60,10 @@ message = '''<html>
             overflow: auto;
         }
 
+        div {
+            clear: both;
+        }
+
         #wrapper {
             background-color: #fff;
             width: fit-content;
@@ -95,7 +99,7 @@ message = '''<html>
         }
 
         .object {
-            margin: 2px 0px 2px 40px;
+            margin: 4px 0px 2px 40px;
             font-weight: normal;
             color: #000;
             text-decoration: none;
@@ -106,7 +110,7 @@ message = '''<html>
             font-size: 11px;
             background-color: #f1f3f6;
             padding: 4px 6px 4px 6px;
-            margin: 3px 3px 5px 50px;
+            margin: 3px 3px 7px 10px;
             line-height: 1.5em;
             border-radius: 4px;
             box-shadow: 1px 2px 4px #cccccc;
@@ -140,11 +144,13 @@ for job in jobs:
                     msgType = 'Warning'
                 failureCount += 1
                 # report job name
+                link = 'https://%s/protection/job/%s/run/%s/%s/protection' % (vip, jobId, run['backupRun']['jobRunId'], run['backupRun']['stats']['startTimeUsecs'])
                 print("%s (%s) %s (%s)" % (job['name'].upper(), job['environment'][1:], (usecsToDate(run['backupRun']['stats']['startTimeUsecs'])), msgType))
                 if failureCount > 1:
                     message += '<br/>'
-                message += '<span class="jobname">%s</span><span class="info"> (%s) %s </span><span class="%s">%s<br /></span>' % (job['name'].upper(), job['environment'][1:], (usecsToDate(run['backupRun']['stats']['startTimeUsecs'])), msgType, msgType)
+                message += '<div class="jobname"><span>%s</span><span class="info"> (%s) <a href="%s" target="_blank">%s</a> </span><span class="%s">%s</span></div>' % (job['name'].upper(), job['environment'][1:], link, (usecsToDate(run['backupRun']['stats']['startTimeUsecs'])), msgType, msgType)
                 if 'sourceBackupStatus' in run['backupRun']:
+                    message += '<div class="object">'
                     for source in run['backupRun']['sourceBackupStatus']:
                         if source['status'] == 'kFailure' or 'warnings' in source:
                             if source['status'] == 'kFailure':
@@ -160,7 +166,8 @@ for job in jobs:
                             if len(objectReport) > consoleWidth:
                                 objectReport = '%s...' % objectReport[0: consoleWidth - 5]
                             print(objectReport)
-                            message += '<span class="object">%s</span><span class="info"> (<span class="%s">%s</span>)</span><div class="message"><span>%s</span></div>' % (source['source']['name'].upper(), msgType, msgType, msghtml)
+                            message += '<span>%s</span><span class="info"> (<span class="%s">%s</span>)</span><div class="message"><span>%s</span></div>' % (source['source']['name'].upper(), msgType, msgType, msghtml)
+                    message += '</div>'
                 # if the first run had an error, skip the 2nd run
                 break
 
@@ -168,6 +175,9 @@ if failureCount == 0:
     print('No failures recorded')
 else:
     message += '</div></body></html>'
+    f = open('report.html', 'w')
+    f.write(message)
+    f.close()
     # email report
     if mailserver is not None:
         print('\nSending report to %s...' % ', '.join(sendto))
