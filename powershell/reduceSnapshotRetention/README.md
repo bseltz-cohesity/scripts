@@ -57,4 +57,5 @@ Reducing retention for VM Backup Snapshot from 05/10/2019 08:00:06
 * -username: the cohesity user to login with
 * -domain: (optional) domain of the Cohesity user (defaults to local)
 * -newRetention: number of days (from original start time) to keep snapshots
+* -jobName: (optional) operate on a specific job (default is all jobs)
 * -force: (optional) actually perform snapshot modifications/expirations
