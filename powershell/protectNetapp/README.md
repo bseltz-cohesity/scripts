@@ -59,7 +59,7 @@ Place all files in a folder together. And run the script like so:
 * -exclusionList: (optional) text file list of exclusion paths
 * -timeZone: (optional) e.g. 'America/New_York' (default is 'America/Los_Angeles')
 * -incrementalProtectionSlaTimeMins: (optional) default 60
-* -fullProtectionSlaTimeMinsL (optional) defaul is 120
+* -fullProtectionSlaTimeMins: (optional) defaul is 120
 * -enableIndexing: (optional) default is disabled
 * -cloudArchiveDirect: (optional) default is false
 * -storageDomainName: (optional) default is 'DefaultStorageDomain' (or 'Direct_Archive_Viewbox' for cloud archive direct jobs)
