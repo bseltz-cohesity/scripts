@@ -26,7 +26,7 @@ Place all files in a folder together. And run the script like so:
 
 ```powershell
 # example
-./protectNetApp.ps1 -vip mycluster `
+./protectNetapp.ps1 -vip mycluster `
                     -username myuser `
                     -domain mydomain.net `
                     -policyName 'My Policy' `
