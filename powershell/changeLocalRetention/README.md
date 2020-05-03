@@ -53,7 +53,7 @@ Warning: Any snapshots whose new expire date is set to a date in the past will e
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -jobname: (optional) narrow scope to just the specified jobs (comma separated)
 * -daysToKeep: set retention to X days from original run date
-* -snapshotDate (optional) specify run date to monify (e.g. '2020-04-30' or '2020-04-30 23:00' or '2020-04-30 23:00:02')
+* -snapshotDate (optional) specify run date to modify (e.g. '2020-04-30' or '2020-04-30 23:00')
 * -backupType: (optional) choose one of kRegular, kFull, kLog or kSystem backup types. Default is all
 * -force: (optional) perform the changes. If omitted, script will run in show/only mode
 * -maxRuns: (optional) dig back in time for X snapshots. Default is 100000. Increase this value to get further back in time, decrease this parameter if the script reports an error that the response it too large
