@@ -63,21 +63,32 @@ function changeRetention($run){
         $daysToChange = -([int][math]::Round(($oldExpireUsecs - $newExpireUsecs) / 86400000000))
     }
     write-host "Changing retention for $($run.jobName) ($($startDate)) to $newExpireDate"
-    if($force){
-        $editRun = @{
-            'jobRuns' = @(
-                @{
-                    'jobUid'            = $run.jobUid;
-                    'runStartTimeUsecs' = $startDateUsecs;
-                    'copyRunTargets'    = @(
-                        @{'daysToKeep' = $daysToChange;
-                            'type'     = 'kLocal';
-                        }
-                    )
-                }
-            )
+    if($daysToChange -eq 0){
+        break
+    }else{
+        
+        if($force){
+            $exactRun = api get /backupjobruns?exactMatchStartTimeUsecs=$startDateUsecs`&id=$($run.jobId)
+            $jobUid = $exactRun[0].backupJobRuns.protectionRuns[0].backupRun.base.jobUid
+            $editRun = @{
+                'jobRuns' = @(
+                    @{
+                        'jobUid'            = @{
+                            'clusterId' = $jobUid.clusterId;
+                            'clusterIncarnationId' = $jobUid.clusterIncarnationId;
+                            'id' = $jobUid.objectId
+                        };
+                        'runStartTimeUsecs' = $startDateUsecs;
+                        'copyRunTargets'    = @(
+                            @{'daysToKeep' = $daysToChange;
+                                'type'     = 'kLocal';
+                            }
+                        )
+                    }
+                )
+            }
+            $null = api put protectionRuns $editRun
         }
-        $null = api put protectionRuns $editRun
     }
 }
 
