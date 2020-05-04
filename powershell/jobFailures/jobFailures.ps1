@@ -44,6 +44,16 @@ $message = '<html>
             clear: both;
         }
 
+        ul {
+            displa-block;
+            margin: 2px; 2px; 2px; -5px;
+        }
+
+        li {
+            margin-left: -25px;
+            margin-bottom: 2px;
+        }
+
         #wrapper {
             background-color: #fff;
             width: fit-content;
@@ -123,17 +133,18 @@ foreach($job in $jobs){
             if($failureCount -gt 1){
                 $message += '<br/>'
             }
-            $message += '<div class="jobname"><span>{0}</span><span class="info"> ({1}) <a href="{2}" target="_blank">{3}</a> </span><span class="{4}">{5}</span></div>' -f $job.name.ToUpper(), $job.environment.substring(1), $link, (usecsToDate $run.backupRun.stats.startTimeUsecs), $msgType, $msgType
+            $message += '<div class="jobname"><span>{0}</span><span class="info"> ({1}) <a href="{2}" target="_blank">{3}</a></span></div>' -f $job.name.ToUpper(), $job.environment.substring(1), $link, (usecsToDate $run.backupRun.stats.startTimeUsecs)
             $message += '<div class="object">'        
-            foreach($source in $runs[0].backupRun.sourceBackupStatus){
+            foreach($source in $run.backupRun.sourceBackupStatus){
                 if($source.status -eq 'kFailure' -or $source.PSObject.Properties['warnings']){
                     if($source.status -eq 'kFailure'){
                         $msg = $source.error
-                        $msgHTML = $source.error
+                        $msgHTML = "<ul><li>{0}</li></ul>" -f $source.error
                         $msgType = 'Failure'
                     }else{
                         $msg = $source.warnings[0]
-                        $msgHTML = $source.warnings -join "<br />"
+                        $msgHTML = "<ul><li>{0}</li></ul>" -f ($source.warnings -join "</li><li>")
+                        # $msgHTML
                         $msgType = 'Warning'
                     }
                     $objectReport = "    {0} ({1}): {2}" -f $source.source.name.ToUpper(), $msgType, $msg
@@ -142,7 +153,7 @@ foreach($job in $jobs){
                         $objectReport = "$($objectReport.substring(0,($consoleWidth-6)))..."
                     }
                     $objectReport
-                    $message += '<span>{0}</span><span class="info"> (<span class="{1}">{2}</span>)</span><div class="message"><span>{3}</span></div>' -f $source.source.name.ToUpper(), $msgType, $msgType, $msgHTML
+                    $message += '<span>{0}</span><span class="info"> (<span class="{1}">{2}</span>)</span><div class="message">{3}</div>' -f $source.source.name.ToUpper(), $msgType, $msgType, $msgHTML
                 }
             }
             $message += '</div>'
