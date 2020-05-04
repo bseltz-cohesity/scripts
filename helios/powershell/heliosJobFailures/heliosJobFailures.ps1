@@ -164,7 +164,7 @@ foreach($cluster in heliosClusters){
 }
 
 $message += '</div></body></html>'
-$message | out-file -FilePath "$($cluster.name.ToUpper())-jobFailures.html"
+$message | out-file -FilePath "heliosJobFailures.html"
 
 if($failureCount -and $smtpServer -and $sendTo -and $sendFrom){
     write-host "`nsending report to $([string]::Join(", ", $sendTo))"
