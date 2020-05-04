@@ -64,6 +64,16 @@ message = '''<html>
             clear: both;
         }
 
+        ul {
+            displa-block;
+            margin: 2px; 2px; 2px; -5px;
+        }
+
+        li {
+            margin-left: -25px;
+            margin-bottom: 2px;
+        }
+
         #wrapper {
             background-color: #fff;
             width: fit-content;
@@ -99,7 +109,7 @@ message = '''<html>
         }
 
         .object {
-            margin: 4px 0px 2px 40px;
+            margin: 4px 0px 2px 20px;
             font-weight: normal;
             color: #000;
             text-decoration: none;
@@ -110,7 +120,7 @@ message = '''<html>
             font-size: 11px;
             background-color: #f1f3f6;
             padding: 4px 6px 4px 6px;
-            margin: 3px 3px 7px 10px;
+            margin: 3px 3px 7px 15px;
             line-height: 1.5em;
             border-radius: 4px;
             box-shadow: 1px 2px 4px #cccccc;
@@ -145,28 +155,28 @@ for job in jobs:
                 failureCount += 1
                 # report job name
                 link = 'https://%s/protection/job/%s/run/%s/%s/protection' % (vip, jobId, run['backupRun']['jobRunId'], run['backupRun']['stats']['startTimeUsecs'])
-                print("%s (%s) %s (%s)" % (job['name'].upper(), job['environment'][1:], (usecsToDate(run['backupRun']['stats']['startTimeUsecs'])), msgType))
+                print("%s (%s) %s" % (job['name'].upper(), job['environment'][1:], (usecsToDate(run['backupRun']['stats']['startTimeUsecs']))))
                 if failureCount > 1:
                     message += '<br/>'
-                message += '<div class="jobname"><span>%s</span><span class="info"> (%s) <a href="%s" target="_blank">%s</a> </span><span class="%s">%s</span></div>' % (job['name'].upper(), job['environment'][1:], link, (usecsToDate(run['backupRun']['stats']['startTimeUsecs'])), msgType, msgType)
+                message += '<div class="jobname"><span>%s</span><span class="info"> (%s) <a href="%s" target="_blank">%s</a> </span></div>' % (job['name'].upper(), job['environment'][1:], link, (usecsToDate(run['backupRun']['stats']['startTimeUsecs'])))
                 if 'sourceBackupStatus' in run['backupRun']:
                     message += '<div class="object">'
                     for source in run['backupRun']['sourceBackupStatus']:
                         if source['status'] == 'kFailure' or 'warnings' in source:
                             if source['status'] == 'kFailure':
                                 msg = source['error']
-                                msghtml = source['error']
+                                msghtml = '<ul><li>%s</li></ul>' % source['error']
                                 msgType = 'Failure'
                             else:
-                                msg = "\n".join(source['warnings'])
-                                msghtml = '<br />'.join(source['warnings'])
+                                msg = source['warnings'][0]
+                                msghtml = '<ul><li>%s</li></ul>' % '</li><li>'.join(source['warnings'])
                                 msgType = 'Warning'
                             # report object name and error
                             objectReport = "    %s (%s): %s" % (source['source']['name'].upper(), msgType, msg)
                             if len(objectReport) > consoleWidth:
                                 objectReport = '%s...' % objectReport[0: consoleWidth - 5]
                             print(objectReport)
-                            message += '<span>%s</span><span class="info"> (<span class="%s">%s</span>)</span><div class="message"><span>%s</span></div>' % (source['source']['name'].upper(), msgType, msgType, msghtml)
+                            message += '<span>%s</span><span class="info"> (<span class="%s">%s</span>)</span><div class="message">%s</div>' % (source['source']['name'].upper(), msgType, msgType, msghtml)
                     message += '</div>'
                 # if the first run had an error, skip the 2nd run
                 break
