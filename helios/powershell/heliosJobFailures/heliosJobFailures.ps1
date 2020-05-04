@@ -43,6 +43,16 @@ $message = @'
             clear: both;
         }
 
+        ul {
+            displa-block;
+            margin: 2px; 2px; 2px; -5px;
+        }
+
+        li {
+            margin-left: -25px;
+            margin-bottom: 2px;
+        }
+
         #wrapper {
             background-color: #fff;
             width: fit-content;
@@ -141,11 +151,11 @@ foreach($cluster in heliosClusters){
                     if($source.status -eq 'kFailure' -or $source.PSObject.Properties['warnings']){
                         if($source.status -eq 'kFailure'){
                             $msg = $source.error
-                            $msgHTML = $source.error
+                            $msgHTML = "<ul><li>{0}</li></ul>" -f $source.error
                             $msgType = 'Failure'
                         }else{
                             $msg = $source.warnings[0]
-                            $msgHTML = $source.warnings -join "<br />"
+                            $msgHTML = "<ul><li>{0}</li></ul>" -f ($source.warnings -join "</li><li>")
                             $msgType = 'Warning'
                         }
                         $objectReport = "      {0} ({1}): {2}" -f $source.source.name.ToUpper(), $msgType, $msg
