@@ -164,46 +164,59 @@ if($volumes.Length -gt 0){
     $sourceIds += $parentId
 }
 
-$jobParams = @{
-    "name"                             = $jobName;
-    "description"                      = "";
-    "environment"                      = "kNetapp";
-    "policyId"                         = $policy.id;
-    "viewBoxId"                        = $viewBox.id;
-    "parentSourceId"                   = $parentId;
-    "sourceIds"                        = $sourceIds;
-    "startTime"                        = @{
-        "hour"   = [int]$hour;
-        "minute" = [int]$minute
-    };
-    "timezone"                         = $timeZone;
-    "incrementalProtectionSlaTimeMins" = $incrementalProtectionSlaTimeMins;
-    "fullProtectionSlaTimeMins"        = $fullProtectionSlaTimeMins;
-    "priority"                         = "kMedium";
-    "alertingPolicy"                   = @(
-        "kFailure"
-    );
-    "indexingPolicy"                   = @{
-        "disableIndexing" = $disableIndexing;
-        "allowPrefixes"   = @(
-            "/"
-        )
-    };
-    "abortInBlackoutPeriod"            = $false;
-    "qosType"                          = "kBackupHDD";
-    "environmentParameters"            = @{
-        "nasParameters" = @{
-            "nasProtocol"     = "kNfs3";
-            "continueOnError" = $true;
-            "filePathFilters" = @{
-                "protectFilters" = $includePaths
+# new or existing job
+$job = api get protectionJobs | Where-Object {$_.name -eq $jobName -and $_.environment -eq 'kNetapp'}
+if(! $job){
+
+    $jobParams = @{
+        "name"                             = $jobName;
+        "description"                      = "";
+        "environment"                      = "kNetapp";
+        "policyId"                         = $policy.id;
+        "viewBoxId"                        = $viewBox.id;
+        "parentSourceId"                   = $parentId;
+        "sourceIds"                        = $sourceIds;
+        "startTime"                        = @{
+            "hour"   = [int]$hour;
+            "minute" = [int]$minute
+        };
+        "timezone"                         = $timeZone;
+        "incrementalProtectionSlaTimeMins" = $incrementalProtectionSlaTimeMins;
+        "fullProtectionSlaTimeMins"        = $fullProtectionSlaTimeMins;
+        "priority"                         = "kMedium";
+        "alertingPolicy"                   = @(
+            "kFailure"
+        );
+        "indexingPolicy"                   = @{
+            "disableIndexing" = $disableIndexing;
+            "allowPrefixes"   = @(
+                "/"
+            )
+        };
+        "abortInBlackoutPeriod"            = $false;
+        "qosType"                          = "kBackupHDD";
+        "environmentParameters"            = @{
+            "nasParameters" = @{
+                "nasProtocol"     = "kNfs3";
+                "continueOnError" = $true;
+                "filePathFilters" = @{
+                    "protectFilters" = $includePaths
+                }
             }
-        }
-    };
-    "isDirectArchiveEnabled"           = $isCAD;
+        };
+        "isDirectArchiveEnabled"           = $isCAD;
+    }
+    if($excludePaths.Length -gt 0){
+        $jobParams.environmentParameters.nasParameters.filePathFilters.excludeFilters = $excludePaths
+    }
+    "Creating protection job $jobName..."
+    $null = api post protectionJobs $jobParams
+}else{
+    if($cloudArchiveDirect){
+        Write-Host "Cloud Archive Direct jobs are limited to a single mountPoint" -ForegroundColor Yellow
+        exit
+    }
+    "Updating protection job $jobName..."
+    $job.sourceIds += $sourceIds | Sort-Object -Unique
+    $null = api put protectionJobs/$($job.id) $job
 }
-if($excludePaths.Length -gt 0){
-    $jobParams.environmentParameters.nasParameters.filePathFilters.excludeFilters = $excludePaths
-}
-"Creating protection job $jobName..."
-$null = api post protectionJobs $jobParams
