@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#   version 0.24 - Brian Seltzer - Apr 2020
+#   version 0.26 - Brian Seltzer - May 2020
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.06 - Consolidated Windows and Unix versions - June 2018
@@ -22,9 +22,11 @@
 # 0.22 - added password file storage - Apr 2020
 # 0.23 - added self updater - Apr 2020
 # 0.24 - added delete with body - Apr 2020
+# 0.25 - added paged view list - Apr 2020
+# 0.26 - added support for tenants - May 2020
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
-$versionCohesityAPI = '0.23'
+$versionCohesityAPI = '0.26'
 
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
@@ -66,7 +68,7 @@ public class SSLHandler
 
 # authentication functions ========================================================================
 
-function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $password = $null, [switch] $quiet, [switch] $noprompt, [switch] $updatePassword, [switch] $helios){
+function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $password = $null, $tenantId = $null, [switch] $quiet, [switch] $noprompt, [switch] $updatePassword, [switch] $helios){
     # prompt for vip
     if(-not $vip){
         if($helios){
@@ -85,9 +87,6 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
     # parse domain\username or username@domain
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
-    }
-    if($username.Contains('@')){
-        $username, $domain = $username.Split('@')
     }
     if($password){ $pwd = $password }
     if($updatePassword){
@@ -167,6 +166,9 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
             $global:HEADER = @{'accept' = 'application/json'; 
                 'content-type' = 'application/json'; 
                 'authorization' = $auth.tokenType + ' ' + $auth.accessToken
+            }
+            if($tenantId){
+                $global:HEADER['x-impersonate-tenant-id'] = "$tenantId/"
             }
             if(!$quiet){ write-host "Connected!" -foregroundcolor green }
         }catch{
@@ -793,4 +795,34 @@ function cohesityAPIversion([switch]$update){
     }else{
         write-host "Cohesity-API version $versionCohesityAPI" -ForegroundColor Green 
     }
+}
+
+
+# paged view list
+function getViews([switch]$includeInactive){
+    $myViews = @()
+    $views = $null
+    while(! $views){
+        if($includeInactive){
+            $views = api get views?includeInactive=true
+        }else{
+            $views = api get views
+        }
+    }
+    $myViews += $views.views
+    $lastResult = $views.lastResult
+    while(! $lastResult){
+        $lastViewId = $views.views[-1].viewId
+        $views = $null
+        while(! $views){
+            if($includeInactive){
+                $views = api get "views?maxViewId=$lastViewId&includeInactive=true"
+            }else{
+                $views = api get views?maxViewId=$lastViewId
+            }
+        }
+        $lastResult = $views.lastResult
+        $myViews += $views.views
+    }
+    return $myViews
 }
