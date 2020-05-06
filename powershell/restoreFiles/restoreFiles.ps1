@@ -75,7 +75,7 @@ if($fileDate){
 $restoreTaskName = "Recover-Files_$(get-date -UFormat '%b_%d_%Y_%H-%M%p')"
 
 $restoreParams = @{
-    "filenames"        = $files;
+    "filenames"        = [string[]]$files;
     "sourceObjectInfo" = @{
         "jobId"          = $doc.objectId.jobId;
         "jobInstanceId"  = $version.instanceId.jobInstanceId;

@@ -54,3 +54,10 @@ Restore finished with status Success
 * -restorePath: (optional) path to restore files on targetServer
 * -fileDate: (optional) date to restore files to (e.g. '2020-04-18 18:00:00')
 * -wait: wait for completion and report status
+
+## File Names and Paths
+
+File names must be specified as absolute paths like:
+
+* Linux: /home/myusername/file1
+* Windows: /C/Users/MyUserName/Documents/File1
