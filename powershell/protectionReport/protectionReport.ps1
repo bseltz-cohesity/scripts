@@ -1,10 +1,10 @@
 # usage:
 # ./protectionReport.ps1 -vip mycluster `
-#                        -username admin `
+#                        -username myusername `
 #                        -showApps `
 #                        -smtpServer 192.168.1.95 `
-#                        -sendTo bseltzer@cohesity.com `
-#                        -sendFrom seltzerb01@gmail.com
+#                        -sendTo me@mydomain.net `
+#                        -sendFrom them@mydomain.net
 
 # process commandline arguments
 [CmdletBinding()]
