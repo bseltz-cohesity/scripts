@@ -3,7 +3,7 @@
 
 # from smtptool import *
 # smtp_connect('192.168.1.95',25)
-# smtp_send('seltzerb01@gmail.com', 'bseltzer@cohesity.com', 'test2', 'hi')
+# smtp_send('them@mydomain.net', 'me@mydomain.net', 'test2', 'hi')
 # smtp_disconnect()
 
 import smtplib
