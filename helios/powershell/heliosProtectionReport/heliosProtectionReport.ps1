@@ -47,6 +47,8 @@ foreach($cluster in heliosClusters){
 
     heliosCluster $cluster
 
+    $clusterPartitions = api get clusterPartitions
+    $vip = $clusterPartitions.hostName
     $title = "Cohesity Protection Report ($($cluster.name.ToUpper()))"
     $title
 
