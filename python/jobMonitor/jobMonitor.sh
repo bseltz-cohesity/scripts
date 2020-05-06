@@ -11,8 +11,8 @@ USERNAME = 'admin'
 DOMAIN = 'local'
 JOBNAME = 'VM Backup'
 SLEEPTIME = 15  # seconds
-FROMADDR = 'jobMonitor@seltzer.net'
-TOADDR = 'bseltzer@cohesity.com'
+FROMADDR = 'jobMonitor@mydomain.net'
+TOADDR = 'me@mydomain.net'
 
 STARTMESSAGE = 'Subject:' + JOBNAME + ' Started' + '\n\nProtection Job ' + JOBNAME + ' started at '
 ENDMESSAGE = 'Subject:' + JOBNAME + ' Ended' + '\n\nProtection Job ' + JOBNAME + ' ended with '
