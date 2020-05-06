@@ -31,7 +31,7 @@ Place both files in a folder together and run the main script like so:
                   -showApps `
                   -smtpServer mySMTPserver `
                   -sendTo me@mydomain.net `
-                  -sendFrom helios@mydomain.net
+                  -sendFrom them@mydomain.net
 ```
 
 ## Parameters
