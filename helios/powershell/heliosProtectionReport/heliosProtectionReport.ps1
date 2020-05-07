@@ -62,25 +62,43 @@ foreach($cluster in heliosClusters){
                 color: #444444;
                 overflow: auto;
             }
-
+    
+            a {
+                color: #0E4091;
+                font-weight: 300;
+                -webkit-text-decoration-color: #bbb; /* Safari */  
+                text-decoration-color: #bbb;
+            }
+    
+            a:visited {
+                color: #0E4091;
+                font-weight: 300;
+            }
+    
+            a:hover {
+                color: #000;
+                font-weight: 300;
+            }
+    
             div {
                 clear: both;
             }
-
+    
             ul {
                 margin: 2px; 2px; 2px; -5px;
             }
-
+    
             li {
                 margin-left: -25px;
                 margin-bottom: 2px;
             }
-
+    
             hr {
                 border: 1px solid #F1F1F1;
                 margin-left: 5px;
                 margin-right: 5px;
             }
+    
             #wrapper {
                 background-color: #fff;
                 width: fit-content;
@@ -89,20 +107,18 @@ foreach($cluster in heliosClusters){
                 box-shadow: 1px 2px 4px #cccccc;
                 border-radius: 4px;
             }
-
+    
             .title {
                 font-weight: bold;
             }
-
+    
             .job {
                 margin-left: 0px;
                 font-weight: bold;
-                color: #000;
             }
-
+    
             .snapshot {
                 font-weight: normal;
-                color: #000;
                 background-color: #FDFEFD;
                 padding: 4px 6px 4px 6px;
                 margin: 5px 7px 7px 15px;
@@ -110,137 +126,149 @@ foreach($cluster in heliosClusters){
                 border-radius: 4px;
                 box-shadow: 1px 2px 4px #CCCCCC;
             }
-
+    
             .object {
-                font-weight: normal;
-                color: #000;
+                font-weight: 400;
                 text-decoration: none;
-                background-color: #FBFCFB;
+                background-color: #FAFAFA;
                 padding: 4px 6px 4px 6px;
-                margin: 5px 7px 5px 15px;
+                margin: 5px 7px 5px 20px;
             }
-
+    
             .app {
-                font-weight: normal;
-                color: #000;
+                font-weight: 300;
+                font-size: 11px;
                 text-decoration: none;
-                background-color: #F8F8F8;
+                background-color: #FAFAFA;
                 padding: 4px 6px 4px 6px;
                 margin: 5px 7px 7px 25px;
             }
-
+    
             .message {
                 font-weight: 300;
-                font-size: 11px;
+                font-size: 10px;
                 padding: 4px 6px 4px 6px;
                 margin: 0px 7px 5px 15px;
             }
-
+    
             .appmessage {
                 font-weight: 300;
-                font-size: 11px;
+                font-size: 10px;
                 padding: 4px 6px 4px 6px;
                 margin: 0px 7px 5px 55px;
             }
-
+    
+            .date {
+                display: inline-block;
+                width: 18ch;
+                color: #0E4091;
+                text-align: right;
+            }
+    
             .info {
                 font-weight: 300;
-                color: #000;
             }
-
+    
+            .runtype {
+                font-weight: 300;
+                color: #609;
+                display: inline-block;
+                width: 10ch;
+                margin-left: 5px;
+            }
+    
+            .remote {
+                display: inline-block;
+                width: 18ch;
+                text-align: right;
+            }
+    
+            .objectname {
+                display: inline-block;
+                width: 24ch;
+                color: #222222;
+            }
+    
+            .expiredate {
+                display: inline-block;
+                width: 9ch;
+                color: #0E4091;
+                text-align: center;
+                margin-right: 2px;
+            }
+    
+            .status {
+                display: inline-block;
+                width: 8ch;            
+            }
+    
             .Warning {
                 font-weight: 300;
                 color: #E5742A;
                 display: inline-block;
                 width: 8ch;
             }
-
+    
             .Failure {
                 font-weight: 300;
                 color: #E2181A;
                 display: inline-block;
                 width: 8ch;
             }
-
+    
             .Success {
                 font-weight: 300;
                 color: #008E00;
                 display: inline-block;
                 width: 8ch;
             }
-
+    
             .Canceled {
                 font-weight: 300;
                 color: #FB9344;
                 display: inline-block;
                 width: 8ch;
             }
-
+    
             .Pass {
                 font-weight: 300;
                 color: #008E00;
             }
-
+    
             .Miss {
                 font-weight: 300;
                 color: #E2181A;
             }
-
-            .date {
-                display: inline-block;
-                width: 19ch;
-                color: #0E4091;
-            }
-
-            .remote {
-                display: inline-block;
-                width: 19ch;
-            }
-
-            .objectname {
-                display: inline-block;
-                width: 24ch;
-                color: #222222;
-            }
-
-            .expire {
-                display: inline-block;
-                width: 26ch;
-            }
-
-            .status {
-                display: inline-block;
-                width: 8ch;            
-            }
+    
         </style>
     </head>
-
+    
     <body>
         <div id="wrapper">'
-
+    
     $global:message += '<p class="title">{0} Protection Report ({1})</p>' -f $cluster.name.ToUpper(), (Get-Date)
-
+    
     $dateString = get-date -UFormat '%Y-%m-%d'
     $daysBackUsecs = (dateToUsecs (get-date -UFormat '%Y-%m-%d')) - ($daysBack * 86400000000)
     $nowUsecs = dateToUsecs (get-date)
-
+    
     $jobs = api get "protectionJobs?includeLastRunAndStats=true" | Sort-Object -Property name
     $maxLength = 0
     $jobs.name | ForEach-Object{ if($_.Length -gt $maxLength){ $maxLength = $_.Length}}
     $jobSpacer = ' ' * ($maxLength + 1)
-
+    
     function expiry($copyRun){
         if($copyRun.expiryTimeUsecs){
             if($copyRun.expiryTimeUsecs -lt $nowUsecs){
-                return 'Expired'
+                return '- expired -'
             }else{
-                return usecsToDate $copyRun.expiryTimeUsecs
+                return (usecsToDate $copyRun.expiryTimeUsecs).ToString('MM/dd/yyyy')
             }
         }else{
-            return 'Expired'
+            return '- expired -'
         }
     }
-
+    
     function displaySnapshot($run){
         $link = "https://{0}/protection/job/{1}/run/{2}/{3}/protection" -f $vip, $job.id, $run.backupRun.jobRunId, $run.backupRun.stats.startTimeUsecs
         if($run.backupRun.slaViolated){
@@ -248,49 +276,51 @@ foreach($cluster in heliosClusters){
         }else{
             $slaStatus = 'Pass'
         }
+        $runType = $run.backupRun.runType.substring(1).replace('Regular', 'Incremental').Replace('System','Bare Metal')
         $localRun = $run.copyRun | Where-Object {$_.target.type -eq 'kLocal'}
         $expireTime = expiry $localRun
-        $global:message += '<hr /><span class="date";><a href="{0}" target="_blank">{1}</a></span> <span class="status";><span class="{2}";>{2}</span></span> <span class="info";><span class="expire">Expires: <span class="date">{3}</span></span> SLA: <span class="{4}";>{4}</span></span><br />' -f $link, 
-                                                                                                                                (usecsToDate $run.backupRun.stats.startTimeUsecs),
-                                                                                                                                $run.backupRun.status.subString(1),
-                                                                                                                                $expireTime,
-                                                                                                                                $slaStatus
+        $global:message += '<hr /><span class="date";><a href="{0}" target="_blank">{1}</a></span> <span class="runtype">{5}</span> <span class="status";><span class="{2}";>{2}</span></span> <span class="info";>Expires: <span class="expiredate">{3}</span> SLA: </span><span class="{4}";>{4}</span><br />' -f $link, 
+                                                                                                                                   ((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString('M/d/yyyy hh:mm tt')),
+                                                                                                                                   $run.backupRun.status.subString(1),
+                                                                                                                                   $expireTime,
+                                                                                                                                   $slaStatus,
+                                                                                                                                   $runType
         Write-Host ("{0}Local Snapshot: {1,20} ({2}) Expires: {3,20} SLA: {4}" -f $jobSpacer,
-                                                                                (usecsToDate $run.backupRun.stats.startTimeUsecs),
-                                                                                $run.backupRun.status.subString(1),
-                                                                                $expireTime,
-                                                                                $slaStatus)
+                                                                                  (usecsToDate $run.backupRun.stats.startTimeUsecs),
+                                                                                  $run.backupRun.status.subString(1),
+                                                                                  $expireTime,
+                                                                                  $slaStatus)
     }
-
+    
     function displayReplicas($run){
         $replicas = $run.copyRun | Where-Object {$_.target.type -eq 'kRemote'}
         foreach($replica in $replicas){
             $expireTime = expiry $replica
-            $global:message += '<span class="remote">{0} (Replica)</span> <span class="status"><span class="{1}";>{1}</span></span> <span class="info">Expires: <span class="date";>{2}</span></span><br />' -f $replica.target.replicationTarget.clusterName, 
-                                                                                                                                                    $replica.status.subString(1),
-                                                                                                                                                    $expireTime
+            $global:message += '<span class="remote">{0}</span> <span class="runtype">Replica</span> <span class="status"><span class="{1}";>{1}</span></span> <span class="info">Expires: <span class="expiredate";>{2}</span></span><br />' -f $replica.target.replicationTarget.clusterName, 
+                                                                                                                                                      $replica.status.subString(1),
+                                                                                                                                                      $expireTime
             Write-Host ("{0}Replication --> {1,20} ({2}) Expires: {3,20}" -f $jobSpacer,
-                                                                            $replica.target.replicationTarget.clusterName, 
-                                                                            $replica.status.subString(1),
-                                                                            $expireTime)
+                                                                             $replica.target.replicationTarget.clusterName, 
+                                                                             $replica.status.subString(1),
+                                                                             $expireTime)
         }
     }
-
+    
     function displayArchives($run){
         $archives = $run.copyRun | Where-Object {$_.target.type -eq 'kArchival'}
         foreach($archive in $archives){
             $expireTime = expiry $archive
-            $global:message += '<span class="remote">{0} (Archive)</span> <span class="status"><span class="{1}";>{1}</span></span> <span class="info">Expires: <span class="date";>{2}</span></span><br />' -f $archive.target.archivalTarget.vaultName, 
-                                                                                                                                                    $archive.status.subString(1),
-                                                                                                                                                    $expireTime
-
+            $global:message += '<span class="remote">{0}</span> <span class="runtype">Archive</span> <span class="status"><span class="{1}";>{1}</span></span> <span class="info">Expires: <span class="expiredate";>{2}</span></span><br />' -f $archive.target.archivalTarget.vaultName, 
+                                                                                                                                                      $archive.status.subString(1),
+                                                                                                                                                      $expireTime
+    
             Write-Host ("{0}    Archive --> {1,20} ({2}) Expires: {3,20}" -f $jobSpacer,
-                                                                            $archive.target.archivalTarget.vaultName, 
-                                                                            $archive.status.subString(1),
-                                                                            $expireTime)
+                                                                             $archive.target.archivalTarget.vaultName, 
+                                                                             $archive.status.subString(1),
+                                                                             $expireTime)
         }
     }
-
+    
     function displayObjects($run){
         if(! $run.backupRun.snapshotsDeleted){
             $thisRun = api get "/backupjobruns?id=$($job.id)&exactMatchStartTimeUsecs=$($run.backupRun.stats.startTimeUsecs)"
@@ -323,7 +353,7 @@ foreach($cluster in heliosClusters){
             $global:message += '<br />'
         }
     }
-
+    
     function displayApps($task){
         if($task.PSObject.Properties['appEntityStateVec']){
             $global:message += '<div class="app">'
@@ -344,18 +374,18 @@ foreach($cluster in heliosClusters){
                     $msgHTML = '<ul><li>{0}</li></ul>' -f ($app.warnings.errorMsg -join "</li><li>")
                 }
                 $global:message += '<span class="info"> <span class="{1}">{1}</span></span> <span class="objectname">{0}</span><br />' -f $app.appEntity.displayName,
-                                                                                                                                        $statusHTML
+                                                                                                                                          $statusHTML
                 if($msgHTML){
                     $global:message += '<div class="appmessage">{0}</div>' -f $msgHTML
                 }
                 "{0} {1,45} {2}" -f $jobSpacer,
-                                    $app.appEntity.displayName,
-                                    $status
+                                      $app.appEntity.displayName,
+                                      $status
             }
             $global:message += '</div>'
         }
     }
-
+    
     foreach($job in $jobs){
         if($job.lastRun.backupRun.slaViolated){
             $slaStatus = 'Miss'
@@ -388,7 +418,6 @@ foreach($cluster in heliosClusters){
             $global:message += '</div>'
         }
     }
-
     $global:message += '</div></body></html>'
     $fileName = "$($cluster.name.ToUpper())-protectionReport-$dateString.html"
     if($outPath){
