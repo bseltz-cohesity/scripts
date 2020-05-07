@@ -58,6 +58,23 @@ $global:message = '<html>
             overflow: auto;
         }
 
+        a {
+            color: #0E4091;
+            font-weight: 300;
+            -webkit-text-decoration-color: #bbb; /* Safari */  
+            text-decoration-color: #bbb;
+        }
+
+        a:visited {
+            color: #0E4091;
+            font-weight: 300;
+        }
+
+        a:hover {
+            color: #000;
+            font-weight: 300;
+        }
+
         div {
             clear: both;
         }
@@ -76,6 +93,7 @@ $global:message = '<html>
             margin-left: 5px;
             margin-right: 5px;
         }
+
         #wrapper {
             background-color: #fff;
             width: fit-content;
@@ -92,12 +110,10 @@ $global:message = '<html>
         .job {
             margin-left: 0px;
             font-weight: bold;
-            color: #000;
         }
 
         .snapshot {
             font-weight: normal;
-            color: #000;
             background-color: #FDFEFD;
             padding: 4px 6px 4px 6px;
             margin: 5px 7px 7px 15px;
@@ -107,40 +123,78 @@ $global:message = '<html>
         }
 
         .object {
-            font-weight: normal;
-            color: #000;
+            font-weight: 400;
             text-decoration: none;
-            background-color: #FBFCFB;
+            background-color: #FAFAFA;
             padding: 4px 6px 4px 6px;
-            margin: 5px 7px 5px 15px;
+            margin: 5px 7px 5px 20px;
         }
 
         .app {
-            font-weight: normal;
-            color: #000;
+            font-weight: 300;
+            font-size: 11px;
             text-decoration: none;
-            background-color: #F8F8F8;
+            background-color: #FAFAFA;
             padding: 4px 6px 4px 6px;
             margin: 5px 7px 7px 25px;
         }
 
         .message {
             font-weight: 300;
-            font-size: 11px;
+            font-size: 10px;
             padding: 4px 6px 4px 6px;
             margin: 0px 7px 5px 15px;
         }
 
         .appmessage {
             font-weight: 300;
-            font-size: 11px;
+            font-size: 10px;
             padding: 4px 6px 4px 6px;
             margin: 0px 7px 5px 55px;
         }
 
+        .date {
+            display: inline-block;
+            width: 18ch;
+            color: #0E4091;
+            text-align: right;
+        }
+
         .info {
             font-weight: 300;
-            color: #000;
+        }
+
+        .runtype {
+            font-weight: 300;
+            color: #609;
+            display: inline-block;
+            width: 10ch;
+            margin-left: 5px;
+        }
+
+        .remote {
+            display: inline-block;
+            width: 18ch;
+            text-align: right;
+        }
+
+        .objectname {
+            display: inline-block;
+            width: 24ch;
+            color: #222222;
+        }
+
+        .expiredate {
+            display: inline-block;
+            width: 9ch;
+            color: #0E4091;
+            text-align: center;
+            margin-right: 2px;
+        }
+
+        .status {
+            display: inline-block;
+            width: 8ch;            
         }
 
         .Warning {
@@ -181,32 +235,6 @@ $global:message = '<html>
             color: #E2181A;
         }
 
-        .date {
-            display: inline-block;
-            width: 19ch;
-            color: #0E4091;
-        }
-
-        .remote {
-            display: inline-block;
-            width: 19ch;
-        }
-
-        .objectname {
-            display: inline-block;
-            width: 24ch;
-            color: #222222;
-        }
-
-        .expire {
-            display: inline-block;
-            width: 26ch;
-        }
-
-        .status {
-            display: inline-block;
-            width: 8ch;            
-        }
     </style>
 </head>
 
@@ -227,12 +255,12 @@ $jobSpacer = ' ' * ($maxLength + 1)
 function expiry($copyRun){
     if($copyRun.expiryTimeUsecs){
         if($copyRun.expiryTimeUsecs -lt $nowUsecs){
-            return 'Expired'
+            return '- expired -'
         }else{
-            return usecsToDate $copyRun.expiryTimeUsecs
+            return (usecsToDate $copyRun.expiryTimeUsecs).ToString('MM/dd/yyyy')
         }
     }else{
-        return 'Expired'
+        return '- expired -'
     }
 }
 
@@ -243,13 +271,15 @@ function displaySnapshot($run){
     }else{
         $slaStatus = 'Pass'
     }
+    $runType = $run.backupRun.runType.substring(1).replace('Regular', 'Incremental').Replace('System','Bare Metal')
     $localRun = $run.copyRun | Where-Object {$_.target.type -eq 'kLocal'}
     $expireTime = expiry $localRun
-    $global:message += '<hr /><span class="date";><a href="{0}" target="_blank">{1}</a></span> <span class="status";><span class="{2}";>{2}</span></span> <span class="info";><span class="expire">Expires: <span class="date">{3}</span></span> SLA: <span class="{4}";>{4}</span></span><br />' -f $link, 
-                                                                                                                               (usecsToDate $run.backupRun.stats.startTimeUsecs),
+    $global:message += '<hr /><span class="date";><a href="{0}" target="_blank">{1}</a></span> <span class="runtype">{5}</span> <span class="status";><span class="{2}";>{2}</span></span> <span class="info";>Expires: <span class="expiredate">{3}</span> SLA: </span><span class="{4}";>{4}</span><br />' -f $link, 
+                                                                                                                               ((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString('M/d/yyyy hh:mm tt')),
                                                                                                                                $run.backupRun.status.subString(1),
                                                                                                                                $expireTime,
-                                                                                                                               $slaStatus
+                                                                                                                               $slaStatus,
+                                                                                                                               $runType
     Write-Host ("{0}Local Snapshot: {1,20} ({2}) Expires: {3,20} SLA: {4}" -f $jobSpacer,
                                                                               (usecsToDate $run.backupRun.stats.startTimeUsecs),
                                                                               $run.backupRun.status.subString(1),
@@ -261,7 +291,7 @@ function displayReplicas($run){
     $replicas = $run.copyRun | Where-Object {$_.target.type -eq 'kRemote'}
     foreach($replica in $replicas){
         $expireTime = expiry $replica
-        $global:message += '<span class="remote">{0} (Replica)</span> <span class="status"><span class="{1}";>{1}</span></span> <span class="info">Expires: <span class="date";>{2}</span></span><br />' -f $replica.target.replicationTarget.clusterName, 
+        $global:message += '<span class="remote">{0}</span> <span class="runtype">Replica</span> <span class="status"><span class="{1}";>{1}</span></span> <span class="info">Expires: <span class="expiredate";>{2}</span></span><br />' -f $replica.target.replicationTarget.clusterName, 
                                                                                                                                                   $replica.status.subString(1),
                                                                                                                                                   $expireTime
         Write-Host ("{0}Replication --> {1,20} ({2}) Expires: {3,20}" -f $jobSpacer,
@@ -275,7 +305,7 @@ function displayArchives($run){
     $archives = $run.copyRun | Where-Object {$_.target.type -eq 'kArchival'}
     foreach($archive in $archives){
         $expireTime = expiry $archive
-        $global:message += '<span class="remote">{0} (Archive)</span> <span class="status"><span class="{1}";>{1}</span></span> <span class="info">Expires: <span class="date";>{2}</span></span><br />' -f $archive.target.archivalTarget.vaultName, 
+        $global:message += '<span class="remote">{0}</span> <span class="runtype">Archive</span> <span class="status"><span class="{1}";>{1}</span></span> <span class="info">Expires: <span class="expiredate";>{2}</span></span><br />' -f $archive.target.archivalTarget.vaultName, 
                                                                                                                                                   $archive.status.subString(1),
                                                                                                                                                   $expireTime
 
