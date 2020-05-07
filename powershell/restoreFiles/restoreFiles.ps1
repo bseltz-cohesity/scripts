@@ -29,7 +29,7 @@ apiauth -vip $vip -username $username -domain $domain
 
 # gather file names
 $files = @()
-if(Test-Path $fileList -PathType Leaf){
+if($fileList -and (Test-Path $fileList -PathType Leaf)){
     $files += Get-Content $fileList | Where-Object {$_ -ne ''}
 }elseif($fileList){
     Write-Warning "File $fileList not found!"
@@ -42,6 +42,10 @@ if($files.Length -eq 0){
     Write-Host "No files selected for restore"
     exit 1
 }
+
+# convert to unix style file paths
+$restorePath = ("/" + $restorePath.Replace('\','/').replace(':','')).Replace('//','/')
+$files = [string[]]$files | ForEach-Object {("/" + $_.Replace('\','/').replace(':','')).Replace('//','/')}
 
 # find source and target servers
 $physicalEntities = api get "/entitiesOfType?environmentTypes=kPhysical&physicalEntityTypes=kHost"
@@ -59,11 +63,15 @@ if(!$targetEntity){
 # find backups for source server
 $searchResults = api get "/searchvms?entityTypes=kPhysical&vmName=$sourceServer"
 $searchResults = $searchResults.vms | Where-Object {$_.vmDocument.objectName -eq $sourceServer}
+
 if(!$searchResults){
     Write-Host "$sourceServer is not protected" -ForegroundColor Yellow
     exit 1
 }
-$doc = $searchResults[0].vmDocument
+
+$searchResult = ($searchResults | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
+
+$doc = $searchResult.vmDocument
 
 # find version just after requested date
 if($fileDate){
@@ -115,7 +123,7 @@ if($restoreTask){
         $finishedStates = @('kCanceled', 'kSuccess', 'kFailure')
         $restoreTaskStatus = $restoreTask.restoreTask.performRestoreTaskState.base.publicStatus
         do {
-            sleep 3
+            Start-Sleep 3
             $restoreTask = api get /restoretasks/$taskId
             $restoreTaskStatus = $restoreTask.restoreTask.performRestoreTaskState.base.publicStatus
         } until ($restoreTaskStatus -in $finishedStates)
@@ -134,4 +142,3 @@ if($restoreTask){
 }else{
     exit 1
 }
-
