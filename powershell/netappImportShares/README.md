@@ -66,4 +66,5 @@ After the information has been exported from NetApp, we can import into Cohesity
 * -volumeList: (optional) text file list volumes to migrate (e.g. .\volumes.txt) if omitted, all volumes are migrated
 * -viewPrefix: (optional) prefix to apply to volume/view level shares (e.g. ntap-)
 * -sharePrefix: (optional) prefix to apply to shares (e.g. ntap-)
+* -copySharePermissions: (optional) if omitted, share permissions are not copied
 * -restrictVolumeSharePermissions: (optional) restrict share permissions for volume/view level shares (e.g. 'mydomain.net\domain admins', 'mydomain.net\storage admins')

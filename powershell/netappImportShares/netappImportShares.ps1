@@ -20,7 +20,8 @@ param (
     [Parameter()][array]$restrictVolumeSharePermissions, # list of full control groups for root volumes
     [Parameter()][string]$volumeList = $null, # file list of volumes to recover
     [Parameter()][string]$viewPrefix = '', # prefix to apply to volume-level views
-    [Parameter()][string]$sharePrefix = '' # prefix to apply to shares within views
+    [Parameter()][string]$sharePrefix = '', # prefix to apply to shares within views
+    [Parameter()][switch]$copySharePermissions
 )
 
 # source the cohesity-api helper code
@@ -48,6 +49,14 @@ if ($volumeList){
 
 $volumesToRecover = @()
 $recoveredVolumes = @()
+
+# get import file
+if($importFile -and (Test-Path -Path $importFile -PathType Leaf)){
+    $netappShares = Get-Content -Path $importFile | ConvertFrom-Json
+}else{
+    Write-Host "Import file $importFile not found!" -ForegroundColor Yellow
+    exit
+}
 
 # enumerate netappVolumes
 foreach($netappShare in $netappShares | Where-Object Path -ne '/'){
@@ -158,7 +167,11 @@ foreach($volumeName in $recoveredVolumes){
     $view = $views.views | Where-Object name -eq $newViewName
     if($view){
         $view.protocolAccess = 'kSMBOnly'
-        $view.enableSmbViewDiscovery = $True
+        if($view.PSObject.properties['enableSmbViewDiscovery']){
+            $view.enableSmbViewDiscovery = $True
+        }else{
+            setApiProperty -obj $view -name 'enableSmbViewDiscovery' -value $True
+        }
         if($restrictVolumeSharePermissions.Length -ne 0){
             $view.sharePermissions = @()
             foreach($principalName in $restrictVolumeSharePermissions){
@@ -190,24 +203,28 @@ foreach($netappShare in $netappShares | Where-Object {$_.ShareName -ne "/$($_.Pa
         $shareParams = @{
             "viewName"         = $newViewName;
             "viewPath"         = "$relativePath";
-            "aliasName"        = "$shareName";
-            "sharePermissions" = @()
+            "aliasName"        = "$shareName"
         }
-        $acl = $netappShare.Acl
-        foreach($ace in $acl){
-            $principalName, $permission = $ace.split('/')
-            $principalName = $principalName.Trim()
-            $permission = $permission.Trim()
-            $sid = getSid $principalName
-            if($sid){
-                $shareParams.sharePermissions += @{
-                    "visible" = $true;
-                    "sid"    = $sid;
-                    "access" = $permission.replace('Full Control', 'kFullControl').replace('Read', 'kReadOnly').replace('Change', 'kModify');
-                    "type"   = "kAllow"
+
+        if($copySharePermissions){
+            $shareParams["sharePermissions"] = @()
+            $acl = $netappShare.Acl
+            foreach($ace in $acl){
+                $principalName, $permission = $ace.split('/')
+                $principalName = $principalName.Trim()
+                $permission = $permission.Trim()
+                $sid = getSid $principalName
+                if($sid){
+                    $shareParams.sharePermissions += @{
+                        "visible" = $true;
+                        "sid"    = $sid;
+                        "access" = $permission.replace('Full Control', 'kFullControl').replace('Read', 'kReadOnly').replace('Change', 'kModify');
+                        "type"   = "kAllow"
+                    }
                 }
             }
         }
+
         "Sharing {0}{1} as {2}" -f $newViewName, $relativePath, $shareName
         $null = api post viewAliases $shareParams
     }
