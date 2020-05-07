@@ -60,6 +60,9 @@ if len(files) == 0:
     print("No files selected for restore")
     exit(1)
 
+files = [('/' + item).replace('\\', '/').replace(':', '').replace('//', '/') for item in files]
+restorepath = ('/' + restorepath).replace('\\', '/').replace(':', '').replace('//', '/')
+
 # authenticate
 apiauth(vip, username, domain)
 
@@ -80,11 +83,15 @@ if len(targetEntity) == 0:
 searchResults = api('get', '/searchvms?entityTypes=kPhysical&vmName=%s' % sourceserver)
 if searchResults:
     searchResults = [v for v in searchResults['vms'] if v['vmDocument']['objectName'].lower() == sourceserver.lower()]
+
 if len(searchResults) == 0:
     print("%s is not protected" % sourceserver)
     exit(1)
 
-doc = searchResults[0]['vmDocument']
+# find newest among multiple jobs
+searchResult = sorted(searchResults, key=lambda result: result['vmDocument']['versions'][0]['snapshotTimestampUsecs'], reverse=True)[0]
+
+doc = searchResult['vmDocument']
 
 if filedate is not None:
     filedateusecs = dateToUsecs(filedate)
