@@ -44,6 +44,7 @@ apiauth supports the following parameters:
 * -vip: FQDN or IP Address of the Cohesity cluster to connect to
 * -username: username to connect to Cohesity
 * -domain: (optional) Active Directory domain name of user (defaults to mydomain.net)
+* -tenantId: (optional) tenant to impersonate
 * -pwd: (optional) hard code the password (not recommended) the password will not be stored
 * -password: (optional) hard code the password (not recommended) the password will not be stored
 * -updatepassword: (optional) prompt for password and overwrite the stored password
@@ -51,7 +52,7 @@ apiauth supports the following parameters:
 * -noprompt: (optional) will not prompt user for password and will exit if password is not already stored
 * -helios: (optional) will use Helios api key for authentication
 
-You can use various username formats like:
+You can combine the domain and username like this:
 
 ```powershell
 apiauth -vip mycluster -username mydomain.net\myusername
@@ -60,7 +61,21 @@ apiauth -vip mycluster -username mydomain.net\myusername
 or
 
 ```powershell
-apiauth -vip mycluster -username myusername@mydomain.net
+apiauth -vip mycluster -username myusername -domain mydomain.net
+```
+
+### Working with Organizations (Tenants)
+
+As an administrator, you can impersonate a tenant, like this:
+
+```powershell
+apiauth -vip mycluster -username myusername -domain mydomain.net -tenantId org1
+```
+
+Or you can log on as a tenant user:
+
+```powershell
+apiauth -vip mycluster -username myusername@org1 -domain mydomain.net
 ```
 
 ### Making API Calls
