@@ -4,7 +4,6 @@
 #                     -domain mydomain.net `
 #                     -sourceServer sqlserver1.mydomain.net `
 #                     -allDBs `
-#                     -jobName 'My SQL Job' `
 #                     -overWrite `
 #                     -latest
 
@@ -15,7 +14,6 @@ param (
     [Parameter(Mandatory = $True)][string]$username,       # username (local or AD)
     [Parameter()][string]$domain = 'local',                # local or AD domain
     [Parameter(Mandatory = $True)][string]$sourceServer,   # protection source where the DB was backed up
-    [Parameter(Mandatory = $True)][string]$jobName,        # name of protection job to restore from
     [Parameter()][string]$sourceInstance = $null,          # source instance name
     [Parameter()][array]$sourceDBnames,                    # names of the source DBs we want to restore
     [Parameter()][string]$sourceDBList,                    # text file containing DB names
@@ -60,9 +58,12 @@ if((! $allDBs) -and $dbs.Length -eq 0){
 ### search for databases on sourceServer
 $searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&vmName=$sourceServer"
 
-### narrow to the correct sourceServer and jobName
-$dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer} `
-                                | Where-Object {$_.vmDocument.jobName -eq $jobName}
+### narrow to the correct sourceServer
+$dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer}
+
+### if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot 
+$dbresults = ($dbresults | Sort-Object -Property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False}) |
+                           Sort-Object -Property @{Expression={$_.vmDocument.objectName}} -Unique
 
 ### narrow by sourceInstance
 if($sourceInstance){

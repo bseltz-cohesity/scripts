@@ -34,7 +34,6 @@ Place both files in a folder together and run the main script like so:
                     -domain mydomain.net `
                     -sourceServer sqlserver1.mydomain.net `
                     -allDBs `
-                    -jobName 'My SQL Job' `
                     -overWrite `
                     -latest
 ```
@@ -47,7 +46,6 @@ Place both files in a folder together and run the main script like so:
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain of user (defaults to local)
 * -sourceServer: Server name (or AAG name) where the database was backed up
-* -jobName: Name of protection job to restore from
 
 ### Source DB Selections
 
