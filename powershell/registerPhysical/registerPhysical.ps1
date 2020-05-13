@@ -27,6 +27,7 @@ if($serverList){
 apiauth -vip $vip -username $username -domain $domain
 
 foreach($server in $servers){
+    $server = [string]$server
     $newSource = @{
         'entity' = @{
             'type' = 6;
