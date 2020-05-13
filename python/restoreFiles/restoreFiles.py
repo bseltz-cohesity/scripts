@@ -61,7 +61,8 @@ if len(files) == 0:
     exit(1)
 
 files = [('/' + item).replace('\\', '/').replace(':', '').replace('//', '/') for item in files]
-restorepath = ('/' + restorepath).replace('\\', '/').replace(':', '').replace('//', '/')
+if restorepath is not None:
+    restorepath = ('/' + restorepath).replace('\\', '/').replace(':', '').replace('//', '/')
 
 # authenticate
 apiauth(vip, username, domain)
