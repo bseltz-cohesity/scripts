@@ -1,4 +1,10 @@
-### usage: ./registerGenericNasList.ps1 -vip bseltzve01 -username admin -nasList ./nasList.txt -smbUserName mydomain\myusername
+### usage: 
+# ./registerGenericNasList.ps1 -vip bseltzve01 `
+#                              -username admin `
+#                              -domain mydomain.net `
+#                              -nasList ./nasList.txt `
+#                              -smbUserName mydomain\myusername
+
 ### provide a list of mount points in a text file
 
 ### process commandline arguments
@@ -65,6 +71,11 @@ foreach ($nasPath in $pathList) {
         'entityInfo' = @{
             'endpoint' = $nasPath;
             'type'     = 11
+        };
+        'registeredEntityParams' = @{
+            'genericNasParams' = @{
+              'skipValidation' = $true
+            }
         }
     }
     
