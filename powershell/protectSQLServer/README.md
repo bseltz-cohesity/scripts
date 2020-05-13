@@ -1,0 +1,67 @@
+# Protect SQL Server using PowerShell
+
+Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
+
+This PowerShell script adds a SQL server to a new or existing SQL protection job.
+
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download Commands
+$scriptName = 'protectSQLServer'
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
+```
+
+## Components
+
+* protectSQLServer.ps1: the main PowerShell script
+* cohesity-api.ps1: the Cohesity REST API helper module
+
+Place all files in a folder together. And run the script like so:
+
+To create a new protection job:
+
+```powershell
+# example
+./protectSQLServer.ps1 -vip mycluster `
+                       -username myuser `
+                       -domain mydomain.net `
+                       -servername server1.mydomain.net `
+                       -policyname 'My Policy' `
+                       -jobname 'My New Job'
+# end example
+```
+
+Or to update an existing job:
+
+```powershell
+# example
+./protectSQLServer.ps1 -vip mycluster `
+                       -username myuser `
+                       -domain mydomain.net `
+                       -servername server1.mydomain.net `
+                       -jobname 'My Existing Job'
+# end example
+```
+
+## Parameters
+
+* -vip: name or IP of Cohesity cluster
+* -username: name of user to connect to Cohesity
+* -domain: your AD domain (defaults to local)
+* -jobname: name of protection job
+* -servername: name of registered SQL server to protect
+
+## Optional Prameters
+
+* -policyName: (optional) name of the protection policy to use
+* -startTime: (optional) e.g. '18:30' (defaults to 8PM)
+* -timeZone: (optional) e.g. 'America/New_York' (default is 'America/Los_Angeles')
+* -incrementalProtectionSlaTimeMins: (optional) default 60
+* -fullProtectionSlaTimeMins: (optional) default is 120
+* -storageDomainName: (optional) default is 'DefaultStorageDomain' (or 'Direct_Archive_Viewbox' for cloud archive direct jobs)
