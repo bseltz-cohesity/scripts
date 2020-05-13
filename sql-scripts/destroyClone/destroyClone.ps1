@@ -66,7 +66,7 @@ foreach ($clone in $clones){
         $cloneDB = $clone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.newDatabaseName
         $cloneHost = $clone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.targetHost.displayName
         $cloneInstance = $clone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.instanceName
-    
+
         if ($cloneDB -ieq $dbName -and $cloneHost -ieq $dbServer -and $cloneInstance -ieq $instance){
             "tearing down SQLDB: $cloneDB from $cloneHost..."
             $taskId = $thisTaskId
