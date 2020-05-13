@@ -37,5 +37,8 @@ Place both files in a folder together and run the main script like so:
 * -vip: Cohesity Cluster to connect to
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain of user (defaults to local)
-* -ip: IP address of host mapping
-* -hostNames: one or more host names to associate with the IP address (comma separated)
+* -ip: (optional) IP address of host mapping
+* -hostNames: (optional) one or more host names to associate with the IP address (comma separated)
+* -inputFile: (optional) csv file containing ip,hostname1,hostname2,hostname(n)
+* -backup: (optional) backup existing host mappings to file hosts-backup-date.csv
+* -overwrite: (optional) if IP already exists, replace the host names (default is to append new host names)
