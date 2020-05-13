@@ -23,9 +23,11 @@ apiauth -vip $vip -username $username -domain $domain
 $hosts = api get /nexus/cluster/get_hosts_file
 
 if($backup){
+    $backupFile = "hosts-backup-$(get-date -UFormat %Y-%m-%d-%H-%M-%S).csv"
     $hosts.hosts | ForEach-Object{ 
         "{0},{1}" -f $_.ip, ($_.domainName -join ',') 
-    } | Out-File -FilePath "hosts-backup-$(get-date -UFormat %Y-%m-%d-%H-%M-%S).csv"
+    } | Out-File -FilePath $backupFile
+    Write-Host "Hosts backed up to $backupFile"
 }
 
 function addEntry($ip, $hostNames){
@@ -54,10 +56,12 @@ function addEntry($ip, $hostNames){
     return @($newhosts | Sort-Object -Property ip)
 }
 
+$changesMade = $false
 
 # process single entry
 if($ip -and $hostNames){
    $hosts.hosts = addEntry $ip $hostNames
+   $changesMade = $True
 }elseif($ip){
     Write-Host "-hostNames required" -ForegroundColor Yellow
 }elseif($hostNames){
@@ -79,6 +83,7 @@ if($inputFile){
             $hostNames = $hostNames.split(',')
             if($ip -and $hostNames){
                 $hosts.hosts = addEntry $ip $hostNames
+                $changesMade = $True
             }else{
                 Write-Host "Skipping invalid Record: $record" -ForegroundColor Yellow
             }
@@ -90,5 +95,11 @@ if($inputFile){
 $hosts.hosts | Sort-Object -Property ip
 
 $hosts | setApiProperty 'validate' $True
-$result = api put /nexus/cluster/upload_hosts_file $hosts
-write-host $result.message -ForegroundColor Green
+if($changesMade){
+    $result = api put /nexus/cluster/upload_hosts_file $hosts
+    write-host $result.message -ForegroundColor Green
+}else{
+    Write-Host "No changes made"
+}
+Write-Host "`n"
+
