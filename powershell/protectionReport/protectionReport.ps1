@@ -13,6 +13,7 @@ param (
     [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
     [Parameter()][string]$domain = 'local',  # local or AD domain
     [Parameter()][int]$daysBack = 7,  # number of days to include in report
+    [Parameter()][array]$jobTypes,  # filter by type (SQL, Oracle, VMware, etc.)
     [Parameter()][switch]$lastRunOnly,  # only show latest run
     [Parameter()][switch]$showObjects,  # show objects of jobs
     [Parameter()][switch]$showApps,  # show apps of objects
@@ -248,6 +249,10 @@ $daysBackUsecs = (dateToUsecs (get-date -UFormat '%Y-%m-%d')) - ($daysBack * 864
 $nowUsecs = dateToUsecs (get-date)
 
 $jobs = api get "protectionJobs?includeLastRunAndStats=true" | Sort-Object -Property name
+if($jobTypes){
+    $jobs = $jobs | Where-Object {$_.environment.substring(1) -in $jobTypes -or $_.environment -in $jobTypes}
+}
+
 $maxLength = 0
 $jobs.name | ForEach-Object{ if($_.Length -gt $maxLength){ $maxLength = $_.Length}}
 $jobSpacer = ' ' * ($maxLength + 1)

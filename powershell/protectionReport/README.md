@@ -39,6 +39,7 @@ Place both files in a folder together and run the main script like so:
 * -vip: the Cohesity cluster to connect to
 * -username: the cohesity user to login with
 * -domain: (optional) domain of the Cohesity user (defaults to local)
+* -environments: (optional) filter by job type (SQL, ORacle, VMWare, etc)
 * -daysBack: (optional) number of days to include in report (default is 7 days)
 * -lastRunOnly: (optional) only include the latest runs
 * -showObjects: (optional) show objects in jobs
