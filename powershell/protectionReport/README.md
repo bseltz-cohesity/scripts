@@ -22,7 +22,9 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 * protectionReport.ps1: the main python script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
-Place both files in a folder together and run the main script like so:
+Place both files in a folder together and run the main script.
+
+To show the results of all jobs (successful or not):
 
 ```powershell
 ./protectionReport.ps1 -vip mycluster `
@@ -34,13 +36,27 @@ Place both files in a folder together and run the main script like so:
                   -sendFrom them@mydomain.net
 ```
 
+To show only failures and warnings:
+
+```powershell
+./protectionReport.ps1 -vip mycluster `
+                  -username myuser `
+                  -domain mydomain.net `
+                  -showApps `
+                  -failuresOnly `
+                  -smtpServer mySMTPserver `
+                  -sendTo me@mydomain.net `
+                  -sendFrom them@mydomain.net
+```
+
 ## Parameters
 
 * -vip: the Cohesity cluster to connect to
 * -username: the cohesity user to login with
 * -domain: (optional) domain of the Cohesity user (defaults to local)
-* -environments: (optional) filter by job type (SQL, ORacle, VMWare, etc)
 * -daysBack: (optional) number of days to include in report (default is 7 days)
+* -jobTypes: (optional) filter by job type (SQL, ORacle, VMWare, etc)
+* -failuresOnly: (optional) only include latest runs of jobs with errors or warnings
 * -lastRunOnly: (optional) only include the latest runs
 * -showObjects: (optional) show objects in jobs
 * -showApps: (optional) show apps in objects

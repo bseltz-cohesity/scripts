@@ -387,6 +387,8 @@ function displayApps($task){
     }
 }
 
+$noFailures = $True
+
 foreach($job in $jobs){
     if($job.lastRun.backupRun.slaViolated){
         $slaStatus = 'Miss'
@@ -397,6 +399,7 @@ foreach($job in $jobs){
         # lastest run summary
         if($job.lastRun){
             if((! $failuresOnly) -or $job.lastRun.backupRun.PSObject.Properties['warnings'] -or $job.lastRun.backupRun.PSObject.Properties['error']){
+                $noFailures = $false
                 $global:message += '<br /><div class="job"><span>{0}</span><span class="info"> ({1})</span></div>' -f $job.name.ToUpper(), $job.environment.substring(1)
                 "`n{0,$maxLength} ({1})`n" -f $job.name, $job.environment.subString(1)
                 $global:message += '<div class="snapshot">'
@@ -406,15 +409,17 @@ foreach($job in $jobs){
                 if($showObjects){
                     displayObjects $job.lastRun
                 }
-                if(! $lastRunOnly){
+                if((! $lastRunOnly) -and (! $failuresOnly)){
                     # get runs
                     $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs&excludeTasks=true"
                     foreach($run in $runs | Where-Object {$_.backupRun.stats.startTimeUsecs -ne $job.lastRun.backupRun.stats.startTimeUsecs}){
-                        displaySnapshot $run
-                        displayReplicas $run
-                        displayArchives $run
-                        if($showObjects){
-                            displayObjects $run
+                        if((! $failuresOnly) -or $run.backupRun.PSObject.Properties['warnings'] -or $run.backupRun.PSObject.Properties['error']){
+                            displaySnapshot $run
+                            displayReplicas $run
+                            displayArchives $run
+                            if($showObjects){
+                                displayObjects $run
+                            }
                         }
                     }
                 }
@@ -422,6 +427,11 @@ foreach($job in $jobs){
             }
         }
     }
+}
+
+if($noFailures){
+    $global:message += '<p class="job" style="color: #008E00; font-weight: 400;">No New Failures or Warnings Detected</p>'
+    Write-Host "No failures or warnings detected" -ForegroundColor Green
 }
 
 $global:message += '</div></body></html>'
