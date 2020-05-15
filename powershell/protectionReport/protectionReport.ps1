@@ -397,11 +397,13 @@ foreach($job in $jobs){
         $global:message += '<br /><div class="job"><span>{0}</span><span class="info"> ({1})</span></div>' -f $job.name.ToUpper(), $job.environment.substring(1)
         "`n{0,$maxLength} ({1})`n" -f $job.name, $job.environment.subString(1)
         $global:message += '<div class="snapshot">'
-        displaySnapshot $job.lastRun
-        displayReplicas $job.lastRun
-        displayArchives $job.lastRun
-        if($showObjects){
-            displayObjects $job.lastRun
+        if($job.lastRun){
+            displaySnapshot $job.lastRun
+            displayReplicas $job.lastRun
+            displayArchives $job.lastRun
+            if($showObjects){
+                displayObjects $job.lastRun
+            }
         }
         if(! $lastRunOnly){
             # get runs
