@@ -24,9 +24,10 @@
 # 0.24 - added delete with body - Apr 2020
 # 0.25 - added paged view list - Apr 2020
 # 0.26 - added support for tenants - May 2020
+# 0.27 - added support for Iris API Key - May 2020
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
-$versionCohesityAPI = '0.26'
+$versionCohesityAPI = '0.27'
 
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
@@ -68,7 +69,7 @@ public class SSLHandler
 
 # authentication functions ========================================================================
 
-function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $password = $null, $tenantId = $null, [switch] $quiet, [switch] $noprompt, [switch] $updatePassword, [switch] $helios){
+function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $password = $null, $tenantId = $null, [switch] $quiet, [switch] $noprompt, [switch] $updatePassword, [switch] $helios, [switch] $useApiKey){
     # prompt for vip
     if(-not $vip){
         if($helios){
@@ -79,11 +80,7 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
             if(-not $vip){write-host 'vip is required' -foregroundcolor red; break}
         }
     }
-    # prompt for username
-    if($username -eq 'helios' -and !$helios -and $vip -ne 'helios.cohesity.com'){
-        write-host 'Username: ' -foregroundcolor green -nonewline
-        $username = Read-Host
-    }
+
     # parse domain\username or username@domain
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
@@ -118,7 +115,17 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
     $global:SELECTEDHELIOSCLUSTER = $null
     $global:APIROOT = 'https://' + $vip + '/irisservices/api/v1'
     $HEADER = @{'accept' = 'application/json'; 'content-type' = 'application/json'}
-    if($vip -eq 'helios.cohesity.com' -or $helios){
+    if($useApiKey){
+        $HEADER['apiKey'] = $pwd
+        $global:HEADER = $HEADER
+        $global:AUTHORIZED = $true
+        $global:USING_HELIOS = $false
+        $global:CLUSTERSELECTED = $true
+        $cluster = api get cluster
+        if($cluster){
+            if(!$quiet){ write-host "Connected!" -foregroundcolor green }
+        }
+    }elseif($vip -eq 'helios.cohesity.com' -or $helios){
         # Authenticate Helios
         $HEADER['apiKey'] = $pwd
         $URL = 'https://helios.cohesity.com/mcm/clusters/connectionStatus'
@@ -230,11 +237,6 @@ function apipwd($vip, $username='helios', $domain='local', [switch] $asUser, [sw
             $vip = Read-Host
             if(-not $vip){write-host 'vip is required' -foregroundcolor red; break}
         }
-    }
-    # prompt for username
-    if($username -eq 'helios' -and !$helios -and $vip -ne 'helios.cohesity.com'){
-        write-host 'Username: ' -foregroundcolor green -nonewline
-        $username = Read-Host
     }
     # parse domain\username or username@domain
     if($username.Contains('\')){
