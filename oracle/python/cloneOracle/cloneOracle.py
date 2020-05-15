@@ -60,7 +60,7 @@ wait = args.wait
 apiauth(vip, username, domain)
 
 ### search for view to clone
-searchResults = api('get', '/searchvms?entityTypes=kSQL&entityTypes=kOracle&showAll=false&onlyLatestVersion=true&vmName=%s' % sourcedb)
+searchResults = api('get', '/searchvms?entityTypes=kSQL&entityTypes=kOracle&showAll=false&vmName=%s' % sourcedb)
 if len(searchResults) == 0:
     print("SourceDB %s not found" % sourcedb)
     exit()
@@ -72,6 +72,7 @@ if len(searchResults) == 0:
     exit()
 
 ### find latest snapshot
+
 latestdb = sorted(searchResults, key=lambda result: result['vmDocument']['versions'][0]['snapshotTimestampUsecs'], reverse=True)[0]
 version = latestdb['vmDocument']['versions'][0]
 ownerId = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['ownerId']
@@ -149,6 +150,7 @@ if logtime is not None or latest is True:
 
         logStart = logTimeRange['ownerObjectTimeRangeInfoVec'][0]['timeRangeVec'][0]['startTimeUsecs']
         logEnd = logTimeRange['ownerObjectTimeRangeInfoVec'][0]['timeRangeVec'][0]['endTimeUsecs']
+
         if latest is True:
             logusecs = logEnd - 1000000
             validLogTime = True
