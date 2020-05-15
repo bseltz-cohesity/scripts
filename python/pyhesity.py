@@ -25,6 +25,7 @@
 # 2.0.7 - added storePasswordFromInput function - Feb 2020
 # 2.0.8 - added helios support - Mar 2020
 # 2.0.9 - helios and error handling changes - Mar 2020
+# 2.1.0 - added support for Iris API Key - May 2020
 #
 ##########################################################################################
 # Install Notes
@@ -78,7 +79,7 @@ CONFIGDIR = expanduser("~") + '/.pyhesity'
 
 
 ### authentication
-def apiauth(vip='helios.cohesity.com', username='helios', domain='local', password=None, updatepw=None, prompt=None, quiet=None, helios=False):
+def apiauth(vip='helios.cohesity.com', username='helios', domain='local', password=None, updatepw=None, prompt=None, quiet=None, helios=False, useApiKey=False):
     """authentication function"""
     global APIROOT
     global HEADER
@@ -106,6 +107,15 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
             AUTHENTICATED = False
             if quiet is None:
                 print(e)
+    elif useApiKey is True:
+        HEADER = {'accept': 'application/json', 'content-type': 'application/json', 'apiKey': pwd}
+        AUTHENTICATED = True
+        cluster = api('get', 'cluster')
+        if cluster is not None:
+            if(quiet is None):
+                print("Connected!")
+        else:
+            AUTHENTICATED = False
     else:
         creds = json.dumps({"domain": domain, "password": pwd, "username": username})
 

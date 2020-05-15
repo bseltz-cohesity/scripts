@@ -11,8 +11,9 @@ from time import sleep
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, required=True)
-parser.add_argument('-u', '--username', type=str, required=True)
+parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-j', '--jobName', type=str, required=True)
 parser.add_argument('-k', '--keepLocalFor', type=int, default=5)
 parser.add_argument('-r', '--replicateTo', type=str, default=None)
@@ -39,12 +40,13 @@ enable = args.enable
 wait = args.wait
 backupType = args.backupType
 objectnames = args.objectname
+useApiKey = args.useApiKey
 
 if enable is True:
     wait = True
 
 ### authenticate
-apiauth(vip, username, domain)
+apiauth(vip, username, domain, useApiKey=useApiKey)
 
 sources = {}
 
