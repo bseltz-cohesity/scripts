@@ -14,6 +14,7 @@ param (
     [Parameter()][string]$domain = 'local',  # local or AD domain
     [Parameter()][int]$daysBack = 7,  # number of days to include in report
     [Parameter()][array]$jobTypes,  # filter by type (SQL, Oracle, VMware, etc.)
+    [Parameter()][switch]$failuresOnly,  # only show unsuccessful runs 
     [Parameter()][switch]$lastRunOnly,  # only show latest run
     [Parameter()][switch]$showObjects,  # show objects of jobs
     [Parameter()][switch]$showApps,  # show apps of objects
@@ -394,30 +395,32 @@ foreach($job in $jobs){
     }
     if($job.isDeleted -ne $true -and $job.isPaused -ne $true -and $job.isActive -ne $false){
         # lastest run summary
-        $global:message += '<br /><div class="job"><span>{0}</span><span class="info"> ({1})</span></div>' -f $job.name.ToUpper(), $job.environment.substring(1)
-        "`n{0,$maxLength} ({1})`n" -f $job.name, $job.environment.subString(1)
-        $global:message += '<div class="snapshot">'
         if($job.lastRun){
-            displaySnapshot $job.lastRun
-            displayReplicas $job.lastRun
-            displayArchives $job.lastRun
-            if($showObjects){
-                displayObjects $job.lastRun
-            }
-        }
-        if(! $lastRunOnly){
-            # get runs
-            $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs&excludeTasks=true"
-            foreach($run in $runs | Where-Object {$_.backupRun.stats.startTimeUsecs -ne $job.lastRun.backupRun.stats.startTimeUsecs}){
-                displaySnapshot $run
-                displayReplicas $run
-                displayArchives $run
+            if((! $failuresOnly) -or $job.lastRun.backupRun.PSObject.Properties['warnings'] -or $job.lastRun.backupRun.PSObject.Properties['error']){
+                $global:message += '<br /><div class="job"><span>{0}</span><span class="info"> ({1})</span></div>' -f $job.name.ToUpper(), $job.environment.substring(1)
+                "`n{0,$maxLength} ({1})`n" -f $job.name, $job.environment.subString(1)
+                $global:message += '<div class="snapshot">'
+                displaySnapshot $job.lastRun
+                displayReplicas $job.lastRun
+                displayArchives $job.lastRun
                 if($showObjects){
-                    displayObjects $run
+                    displayObjects $job.lastRun
                 }
+                if(! $lastRunOnly){
+                    # get runs
+                    $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs&excludeTasks=true"
+                    foreach($run in $runs | Where-Object {$_.backupRun.stats.startTimeUsecs -ne $job.lastRun.backupRun.stats.startTimeUsecs}){
+                        displaySnapshot $run
+                        displayReplicas $run
+                        displayArchives $run
+                        if($showObjects){
+                            displayObjects $run
+                        }
+                    }
+                }
+                $global:message += '</div>'
             }
         }
-        $global:message += '</div>'
     }
 }
 
