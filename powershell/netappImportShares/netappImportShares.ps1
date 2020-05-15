@@ -21,6 +21,7 @@ param (
     [Parameter()][string]$volumeList = $null, # file list of volumes to recover
     [Parameter()][string]$viewPrefix = '', # prefix to apply to volume-level views
     [Parameter()][string]$sharePrefix = '', # prefix to apply to shares within views
+    [Parameter()][array]$exclude, # skip creating shares that match these substrings
     [Parameter()][switch]$copySharePermissions
 )
 
@@ -113,7 +114,7 @@ function getSid($principalName){
 
 # recover netapp volumes as views
 foreach($volumeName in $volumesToRecover){
-    $newViewName = "$viewPrefix$volumeName"
+    $newViewName = "$viewPrefix$volumeName$"
     $existingView = $views.views | Where-Object name -eq $newViewName
     if(!$existingView){
         # migrate the netapp volume
@@ -163,7 +164,7 @@ Start-Sleep -Seconds 2
 # set properties of migrated volume views
 $views = api get views
 foreach($volumeName in $recoveredVolumes){
-    $newViewName = "$viewPrefix$volumeName"
+    $newViewName = "$viewPrefix$volumeName$"
     $view = $views.views | Where-Object name -eq $newViewName
     if($view){
         $view.protocolAccess = 'kSMBOnly'
@@ -195,37 +196,51 @@ $shares = api get shares
 
 foreach($netappShare in $netappShares | Where-Object {$_.ShareName -ne "/$($_.Path)" -and $_.Path -ne '/'}){
     $shareName = "$sharePrefix$($netappShare.shareName)"
-    $volumeName = $netappShare.Path.Split('/')[1]
-    $newViewName = "$viewPrefix$volumeName"
-    $relativePath = "/$($netappShare.Path.split('/',3)[2])"
-
-    if($relativePath -and $shareName -ne $volumeName -and $shareName -notin $shares.sharesList.shareName){
-        $shareParams = @{
-            "viewName"         = $newViewName;
-            "viewPath"         = "$relativePath";
-            "aliasName"        = "$shareName"
+    # skip if shareName matches excludes
+    $skip = $false
+    foreach($ex in $exclude){
+        if($netappShare.shareName -match $ex){
+            $skip = $True
         }
-
-        if($copySharePermissions){
-            $shareParams["sharePermissions"] = @()
-            $acl = $netappShare.Acl
-            foreach($ace in $acl){
-                $principalName, $permission = $ace.split('/')
-                $principalName = $principalName.Trim()
-                $permission = $permission.Trim()
-                $sid = getSid $principalName
-                if($sid){
-                    $shareParams.sharePermissions += @{
-                        "visible" = $true;
-                        "sid"    = $sid;
-                        "access" = $permission.replace('Full Control', 'kFullControl').replace('Read', 'kReadOnly').replace('Change', 'kModify');
-                        "type"   = "kAllow"
+    }
+    if($skip){
+        "** Skipping share $($netappShare.shareName)..."
+    }else{
+        $volumeName = $netappShare.Path.Split('/')[1]
+        # skip if volume was not migrated
+        if($volumeName -in $recoveredVolumes){
+            $newViewName = "$viewPrefix$volumeName$"
+            $relativePath = "/$($netappShare.Path.split('/',3)[2])"
+        
+            if($relativePath -and $shareName -ne $volumeName -and $shareName -notin $shares.sharesList.shareName){
+                $shareParams = @{
+                    "viewName"         = $newViewName;
+                    "viewPath"         = "$relativePath";
+                    "aliasName"        = "$shareName"
+                }
+        
+                if($copySharePermissions){
+                    $shareParams["sharePermissions"] = @()
+                    $acl = $netappShare.Acl
+                    foreach($ace in $acl){
+                        $principalName, $permission = $ace.split('/')
+                        $principalName = $principalName.Trim()
+                        $permission = $permission.Trim()
+                        $sid = getSid $principalName
+                        if($sid){
+                            $shareParams.sharePermissions += @{
+                                "visible" = $true;
+                                "sid"    = $sid;
+                                "access" = $permission.replace('Full Control', 'kFullControl').replace('Read', 'kReadOnly').replace('Change', 'kModify');
+                                "type"   = "kAllow"
+                            }
+                        }
                     }
                 }
+        
+                "Sharing {0}{1} as {2}" -f $newViewName, $relativePath, $shareName
+                $null = api post viewAliases $shareParams
             }
-        }
-
-        "Sharing {0}{1} as {2}" -f $newViewName, $relativePath, $shareName
-        $null = api post viewAliases $shareParams
+        }                  
     }
 }
