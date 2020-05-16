@@ -79,7 +79,7 @@ if targetdb == sourcedb and targetserver == sourceserver:
 apiauth(vip, username, domain)
 
 # search for view to clone
-searchResults = api('get', '/searchvms?entityTypes=kOracle&onlyLatestVersion=true&vmName=%s' % sourcedb)
+searchResults = api('get', '/searchvms?entityTypes=kOracle&vmName=%s' % sourcedb)
 if len(searchResults) == 0:
     print("SourceDB %s not found" % sourcedb)
     exit()
@@ -169,16 +169,17 @@ if logtime is not None or latest is True:
                 latest = None
                 break
 
-        logStart = logTimeRange['ownerObjectTimeRangeInfoVec'][0]['timeRangeVec'][0]['startTimeUsecs']
-        logEnd = logTimeRange['ownerObjectTimeRangeInfoVec'][0]['timeRangeVec'][0]['endTimeUsecs']
-        if latest is True:
-            logusecs = logEnd - 1000000
-            validLogTime = True
-            break
+        if 'timeRangeVec' in logTimeRange['ownerObjectTimeRangeInfoVec'][0]:
+            logStart = logTimeRange['ownerObjectTimeRangeInfoVec'][0]['timeRangeVec'][0]['startTimeUsecs']
+            logEnd = logTimeRange['ownerObjectTimeRangeInfoVec'][0]['timeRangeVec'][0]['endTimeUsecs']
+            if latest is True:
+                logusecs = logEnd - 1000000
+                validLogTime = True
+                break
 
-        if logStart <= logusecs and logusecs <= logEnd:
-            validLogTime = True
-            break
+            if logStart <= logusecs and logusecs <= logEnd:
+                validLogTime = True
+                break
 
         versionNum += 1
 
@@ -246,6 +247,7 @@ if targetserver != sourceserver or targetdb != sourcedb:
 
 # apply log replay time
 if validLogTime is True:
+    print(logusecs)
     restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['restoreTimeSecs'] = int(logusecs / 1000000)
 else:
     if logtime is not None:
