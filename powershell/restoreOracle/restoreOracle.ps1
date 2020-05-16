@@ -50,7 +50,7 @@ if($targetDB -eq $sourceDB -and $targetServer -eq $sourceServer){
 apiauth -vip $vip -username $username -domain $domain -password $password
 
 ### search for database to clone
-$searchresults = api get "/searchvms?entityTypes=kOracle&onlyLatestVersion=true&vmName=$sourceDB"
+$searchresults = api get "/searchvms?entityTypes=kOracle&vmName=$sourceDB"
 
 ### narrow the search results to the correct source server
 $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer }
@@ -133,6 +133,7 @@ if ($logTime -or $latest) {
                 }
             )
         }
+        
         $logTimeRange = api post /restoreApp/timeRanges $GetRestoreAppTimeRangesArg
         if($latest){
             if(! $logTimeRange.ownerObjectTimeRangeInfoVec[0].PSobject.Properties['timeRangeVec']){
@@ -141,17 +142,21 @@ if ($logTime -or $latest) {
                 break
             }
         }
-        $logStart = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].startTimeUsecs
-        $logEnd = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].endTimeUsecs
-        if($latest){
-            $logUsecs = $logEnd - 1000000
-            $validLogTime = $True
-            break
+
+        if($logTimeRange.ownerObjectTimeRangeInfoVec[0].PSobject.Properties['timeRangeVec']){
+            $logStart = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].startTimeUsecs
+            $logEnd = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].endTimeUsecs
+            if($latest){
+                $logUsecs = $logEnd - 1000000
+                $validLogTime = $True
+                break
+            }
+            if ($logStart -le $logUsecs -and $logUsecs -le $logEnd) {
+                $validLogTime = $True
+                break
+            }
         }
-        if ($logStart -le $logUsecs -and $logUsecs -le $logEnd) {
-            $validLogTime = $True
-            break
-        }
+
         $versionNum += 1
     }
 }

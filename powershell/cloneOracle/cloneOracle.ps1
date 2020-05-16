@@ -17,8 +17,8 @@ param (
     [Parameter(Mandatory = $True)][string]$oracleHome,
     [Parameter(Mandatory = $True)][string]$oracleBase,
     [Parameter()][switch]$wait, # wait for clone to finish
-    [Parameter()][string]$logTime,                       # PIT to replay logs to e.g. '2019-01-20 02:01:47'
-    [Parameter()][switch]$latest,                        # replay to latest available log PIT
+    [Parameter()][string]$logTime, # PIT to replay logs to e.g. '2019-01-20 02:01:47'
+    [Parameter()][switch]$latest, # replay to latest available log PIT
     [Parameter()][string]$password = $null # optional! clear text password
 )
 
@@ -29,7 +29,7 @@ param (
 apiauth -vip $vip -username $username -domain $domain -password $password
 
 ### search for database to clone
-$searchresults = api get "/searchvms?entityTypes=kSQL&entityTypes=kOracle&showAll=false&onlyLatestVersion=true&vmName=$sourceDB"
+$searchresults = api get "/searchvms?entityTypes=kOracle&vmName=$sourceDB"
 
 ### narrow the search results to the correct source server
 $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer }
@@ -112,6 +112,7 @@ if ($logTime -or $latest) {
                 }
             )
         }
+        
         $logTimeRange = api post /restoreApp/timeRanges $GetRestoreAppTimeRangesArg
         if($latest){
             if(! $logTimeRange.ownerObjectTimeRangeInfoVec[0].PSobject.Properties['timeRangeVec']){
@@ -120,17 +121,21 @@ if ($logTime -or $latest) {
                 break
             }
         }
-        $logStart = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].startTimeUsecs
-        $logEnd = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].endTimeUsecs
-        if($latest){
-            $logUsecs = $logEnd - 1000000
-            $validLogTime = $True
-            break
+
+        if($logTimeRange.ownerObjectTimeRangeInfoVec[0].PSobject.Properties['timeRangeVec']){
+            $logStart = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].startTimeUsecs
+            $logEnd = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].endTimeUsecs
+            if($latest){
+                $logUsecs = $logEnd - 1000000
+                $validLogTime = $True
+                break
+            }
+            if ($logStart -le $logUsecs -and $logUsecs -le $logEnd) {
+                $validLogTime = $True
+                break
+            }
         }
-        if ($logStart -le $logUsecs -and $logUsecs -le $logEnd) {
-            $validLogTime = $True
-            break
-        }
+
         $versionNum += 1
     }
 }
