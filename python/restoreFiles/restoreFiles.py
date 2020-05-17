@@ -20,22 +20,25 @@ from time import sleep
 # command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)       # cluster to connect to
-parser.add_argument('-u', '--username', type=str, required=True)  # username
-parser.add_argument('-d', '--domain', type=str, default='local')  # (optional) domain - defaults to local
-parser.add_argument('-s', '--sourceserver', type=str, required=True)   # name of source server
-parser.add_argument('-t', '--targetserver', type=str, default=None)    # name of target server
-parser.add_argument('-n', '--filename', type=str, action='append')
-parser.add_argument('-l', '--filelist', type=str, default=None)
-parser.add_argument('-p', '--restorepath', type=str, default=None)  # destination path
-parser.add_argument('-f', '--filedate', type=str, default=None)
-parser.add_argument('-w', '--wait', action='store_true')
+parser.add_argument('-v', '--vip', type=str, required=True)           # cluster to connect to
+parser.add_argument('-u', '--username', type=str, default='helios')   # username
+parser.add_argument('-d', '--domain', type=str, default='local')      # domain - defaults to local
+parser.add_argument('-i', '--useApiKey', action='store_true')         # use API key authentication
+parser.add_argument('-s', '--sourceserver', type=str, required=True)  # name of source server
+parser.add_argument('-t', '--targetserver', type=str, default=None)   # name of target server
+parser.add_argument('-j', '--jobname', type=str, default=None)        # narrow search by job name
+parser.add_argument('-n', '--filename', type=str, action='append')    # file name to restore
+parser.add_argument('-l', '--filelist', type=str, default=None)       # text file list of files to restore
+parser.add_argument('-p', '--restorepath', type=str, default=None)    # destination path
+parser.add_argument('-f', '--filedate', type=str, default=None)       # date to restore from
+parser.add_argument('-w', '--wait', action='store_true')              # wait for completion and report result
 
 args = parser.parse_args()
 
 vip = args.vip
 username = args.username
 domain = args.domain
+useApiKey = args.useApiKey
 sourceserver = args.sourceserver
 
 if args.targetserver is None:
@@ -43,6 +46,7 @@ if args.targetserver is None:
 else:
     targetserver = args.targetserver
 
+jobname = args.jobname
 files = args.filename
 filelist = args.filelist
 restorepath = args.restorepath
@@ -65,7 +69,7 @@ if restorepath is not None:
     restorepath = ('/' + restorepath).replace('\\', '/').replace(':', '').replace('//', '/')
 
 # authenticate
-apiauth(vip, username, domain)
+apiauth(vip, username, domain, useApiKey=useApiKey)
 
 # find source and target servers
 physicalEntities = api('get', '/entitiesOfType?environmentTypes=kPhysical&physicalEntityTypes=kHost')
@@ -84,9 +88,14 @@ if len(targetEntity) == 0:
 searchResults = api('get', '/searchvms?entityTypes=kPhysical&vmName=%s' % sourceserver)
 if searchResults:
     searchResults = [v for v in searchResults['vms'] if v['vmDocument']['objectName'].lower() == sourceserver.lower()]
+    if jobname is not None:
+        searchResults = [v for v in searchResults if v['vmDocument']['jobName'].lower() == jobname.lower()]
 
 if len(searchResults) == 0:
-    print("%s is not protected" % sourceserver)
+    if jobName is not None:
+        print("%s is not protected by %s" % (sourceserver, jobname))
+    else:
+        print("%s is not protected" % sourceserver)
     exit(1)
 
 # find newest among multiple jobs

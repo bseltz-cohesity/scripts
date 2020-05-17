@@ -10,10 +10,12 @@
 [CmdletBinding()]
 param (
     [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
+    [Parameter()][string]$username='helios', # username (local or AD)
     [Parameter()][string]$domain = 'local', # local or AD domain
+    [Parameter()][switch]$useApiKey, # use API key for authentication
     [Parameter(Mandatory = $True)][string]$sourceServer, # source server
     [Parameter()][string]$targetServer = $sourceServer, # target server
+    [Parameter()][string]$jobName, # narrow search by job name
     [Parameter()][array]$fileNames, # one or more file paths comma separated
     [Parameter()][string]$fileList, # text file with file paths
     [Parameter()][string]$restorePath, # target path
@@ -25,7 +27,11 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -useApiKey
+}else{
+    apiauth -vip $vip -username $username -domain $domain
+}
 
 # gather file names
 $files = @()
@@ -64,8 +70,17 @@ if(!$targetEntity){
 $searchResults = api get "/searchvms?entityTypes=kPhysical&vmName=$sourceServer"
 $searchResults = $searchResults.vms | Where-Object {$_.vmDocument.objectName -eq $sourceServer}
 
+# narrow search by job name
+if($jobName){
+    $searchResults = $searchResults | Where-Object {$_.vmDocument.jobName -eq $jobName}
+}
+
 if(!$searchResults){
-    Write-Host "$sourceServer is not protected" -ForegroundColor Yellow
+    if($jobName){
+        Write-Host "$sourceServer is not protected by $jobName" -ForegroundColor Yellow
+    }else{
+        Write-Host "$sourceServer is not protected" -ForegroundColor Yellow
+    }
     exit 1
 }
 
