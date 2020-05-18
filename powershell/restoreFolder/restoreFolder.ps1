@@ -3,20 +3,24 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
+    [Parameter()][string]$vip='helios.cohesity.com', # the cluster to connect to (DNS name or IP)
+    [Parameter()][string]$username='helios', # username (local or AD)
     [Parameter()][string]$domain = 'local', # local or AD domain
+    [Parameter()][switch]$useApiKey, # use API key for authentication
     [Parameter(Mandatory = $True)][string]$source, # source server
     [Parameter(Mandatory = $True)][string]$folderName, # folder path
-    [Parameter(Mandatory = $True)][string]$target, # target server
-    [Parameter(Mandatory = $True)][string]$targetPath # target path
+    [Parameter()][string]$target = $source, # target server
+    [Parameter()][string]$targetPath # target path
 )
 
-### source the cohesity-api helper code
-. ./cohesity-api
+# source the cohesity-api helper code
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -password $password -useApiKey
+}else{
+    apiauth -vip $vip -username $username -domain $domain -password $password
+}
 
 $encodedFileName = [System.Web.HttpUtility]::UrlEncode($folderName)
 
@@ -57,34 +61,38 @@ if(!$targetServer){
 $now = (get-date).ToString().replace('/','_').replace(':','_').replace(' ','_')
 
 $restoreParams = @{
-    "filenames" = @(
-      $files[0].fileDocument.filename
+    "filenames"        = @(
+        $files[0].fileDocument.filename
     );
     "sourceObjectInfo" = @{
-      "jobId" = $files[0].fileDocument.objectId.jobId;
-      "jobInstanceId" = $versions.versions[0].instanceId.jobInstanceId;
-      "startTimeUsecs" = $versions.versions[0].instanceId.jobStartTimeUsecs;
-      "entity" = $files[0].fileDocument.objectId.entity;
-      "jobUid" = $files[0].fileDocument.objectId.jobUid
+        "jobId"          = $files[0].fileDocument.objectId.jobId;
+        "jobInstanceId"  = $versions.versions[0].instanceId.jobInstanceId;
+        "startTimeUsecs" = $versions.versions[0].instanceId.jobStartTimeUsecs;
+        "entity"         = $files[0].fileDocument.objectId.entity;
+        "jobUid"         = $files[0].fileDocument.objectId.jobUid
     };
-    "params" = @{
-      "targetEntity" = $targetServer.entity;
-      "targetEntityCredentials" = @{
-        "username" = "";
-        "password" = ""
-      };
-      "restoreFilesPreferences" = @{
-        "restoreToOriginalPaths" = $false;
-        "overrideOriginals" = $true;
-        "preserveTimestamps" = $true;
-        "preserveAcls" = $true;
-        "preserveAttributes" = $true;
-        "continueOnError" = $false;
-        "alternateRestoreBaseDirectory" = $targetPath
-      }
+    "params"           = @{
+        "targetEntity"            = $targetServer.entity;
+        "targetEntityCredentials" = @{
+            "username" = "";
+            "password" = ""
+        };
+        "restoreFilesPreferences" = @{
+            "restoreToOriginalPaths" = $True;
+            "overrideOriginals"      = $true;
+            "preserveTimestamps"     = $true;
+            "preserveAcls"           = $true;
+            "preserveAttributes"     = $true;
+            "continueOnError"        = $false
+        }
     };
-    "name" = "Recover-Files_$now"
-  }
+    "name"             = "Recover-Files_$now"
+}
 
-$result = api post /restoreFiles $restoreParams
+if($targetPath){
+    $restoreParams.params.restoreFilesPreferences['alternateRestoreBaseDirectory'] = $targetPath
+    $restoreParams.params.restoreFilesPreferences.restoreToOriginalPaths = $false
+}
+
+$null = api post /restoreFiles $restoreParams
 write-host "Restoring $source$folderName to $target$targetPath"

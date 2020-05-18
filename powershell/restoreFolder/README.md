@@ -41,9 +41,10 @@ Restoring server1.mydomain.net/C/Users/mydomain/documents/stuff to server2.mydom
 
 ## Parameters
 
-* -vip: Cohesity cluster to connect to
-* -username: Cohesity username (e.g. admin)
+* -vip: Cohesity cluster to connect to 
+* -username: (optional) Cohesity username (e.g. admin)
 * -domain: (optional) Active Directory domain (defaults to 'local')
+* -useApiKey: (optional) Use API key for authentication
 * -source: name of source physical server (e.g. server1.mydomain.net)
 * -folderName: path of source folder (e.g. /C/Users/myusername/Documents/Stuff)
 * -target: name of target physical server (e.g. server2.mydomain.net)
