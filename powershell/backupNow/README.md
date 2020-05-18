@@ -43,20 +43,21 @@ Job finished with status: kSuccess
 
 ## Mandatory Parameters
 
-* -vip: DNS or IP of the Cohesity Cluster
-* -username: Cohesity User Name
-* -domain: (optional) - defaults to 'local'
 * -jobName: name of protection job to run
 
 ## Optional Parameters
 
+* -vip: DNS or IP of the Cohesity Cluster
+* -username: Cohesity User Name
+* -domain: - defaults to 'local'
+* -useApiKey: Use API key for authentication
 * -keepLocalFor: days to keep local snapshot (default is 5 days)
-* -archiveTo: (optional) name of archival target to archive to
+* -archiveTo: name of archival target to archive to
 * -keepArchiveFor: days to keep in archive (default is 5 days)
-* -replicateTo: (optional) name of remote cluster to replicate to
+* -replicateTo: name of remote cluster to replicate to
 * -keepReplicaFor: days to keep replica for (default is 5 days)
-* -enable: (optional) enable a paused job before running, then disable when done
-* -backupType: (optional) choose one of kRegular, kFull, kLog or kSystem backup types. Default is kRegular (incremental)
-* -objects: (optional) comma separated list of object names to include in the job run. For VMs, simply include the VM name. For SQL databases, object names should be in the form of server.mydomain.net/instanceName/dbName. For Oracle databases, object names should be in the form of server.mydomain.net/dbName
-* -progress: (optional) display percent complete
-* -wait: (optional) wait for job to complete and return exit code, otherwise exit immediately after starting the job
+* -enable: enable a paused job before running, then disable when done
+* -backupType: choose one of kRegular, kFull, kLog or kSystem backup types. Default is kRegular (incremental)
+* -objects: comma separated list of object names to include in the job run. For VMs, simply include the VM name. For SQL databases, object names should be in the form of server.mydomain.net/instanceName/dbName. For Oracle databases, object names should be in the form of server.mydomain.net/dbName
+* -progress: display percent complete
+* -wait: wait for job to complete and return exit code, otherwise exit immediately after starting the job

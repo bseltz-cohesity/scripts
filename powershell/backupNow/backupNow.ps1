@@ -7,6 +7,7 @@ param (
     [Parameter()][string]$username = 'helios',  # username (local or AD)
     [Parameter()][string]$domain = 'local',  # local or AD domain
     [Parameter()][string]$password = $null, # optional password
+    [Parameter()][switch]$useApiKey, # use API key for authentication
     [Parameter()][string]$clusterName = $null,  # helios cluster to access 
     [Parameter(Mandatory = $True)][string]$jobName,  # job to run
     [Parameter()][int]$keepLocalFor = 5,  # keep local snapshot for x days
@@ -25,10 +26,11 @@ param (
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-# if($password){
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -password $password -useApiKey
+}else{
     apiauth -vip $vip -username $username -domain $domain -password $password
-# }
-# apiauth -vip $vip -username $username -domain $domain
+}
 
 if($USING_HELIOS){
     if($clusterName){
