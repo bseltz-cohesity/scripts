@@ -35,13 +35,14 @@ Restoring server1.mydomain.net:/home/myuser to server2.mydomain.net:/tmp/restore
 ## Parameters
 
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
-* -u, --username: username to authenticate to Cohesity cluster
+* -u, --username: (optional) username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
+* -i, --useApiKey: (optional) use API keey for authentication
 * -j, --jobName: Name of protection job
 * -s, --sourceServer: Name of source server
 * -f, --sourceFolder: Path of the folder to be recovered
-* -t, --targetServer: Name of target server
-* -p, --targetPath: Destination path
+* -t, --targetServer: (optional) Name of target server
+* -p, --targetPath: (optional) Destination path
 
 ## The Python Helper Module - pyhesity.py
 

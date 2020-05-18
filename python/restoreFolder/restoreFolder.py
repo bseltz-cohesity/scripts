@@ -11,14 +11,15 @@ from datetime import datetime
 # command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)       # cluster to connect to
-parser.add_argument('-u', '--username', type=str, required=True)  # username
+parser.add_argument('-v', '--vip', type=str, required=True)  # cluster to connect to
+parser.add_argument('-u', '--username', type=str, default='helios')  # (optional) username
 parser.add_argument('-d', '--domain', type=str, default='local')  # (optional) domain - defaults to local
+parser.add_argument('-i', '--useApiKey', action='store_true')  # (optional) use API key for authentication
 parser.add_argument('-j', '--jobName', type=str, required=True)   # job name
 parser.add_argument('-s', '--sourceServer', type=str, required=True)   # name of source server
 parser.add_argument('-f', '--sourceFolder', type=str, required=True)    # path of folder to be recovered
-parser.add_argument('-t', '--targetServer', type=str, required=True)    # name of target server
-parser.add_argument('-p', '--targetPath', type=str, required=True)  # destination path
+parser.add_argument('-t', '--targetServer', type=str, default=None)    # name of target server
+parser.add_argument('-p', '--targetPath', type=str, default=None)  # destination path
 
 args = parser.parse_args()
 
@@ -30,9 +31,13 @@ sourceServer = args.sourceServer
 targetServer = args.targetServer
 sourceFolder = args.sourceFolder
 targetPath = args.targetPath
+useApiKey = args.useApiKey
+
+if targetServer is None:
+    targetServer = sourceServer
 
 # authenticate
-apiauth(vip, username, domain)
+apiauth(vip, username, domain, useApiKey=useApiKey)
 
 encodedfilename = quote_plus(sourceFolder)
 
@@ -81,17 +86,20 @@ restoreParams = {
             "password": ""
         },
         "restoreFilesPreferences": {
-            "restoreToOriginalPaths": False,
+            "restoreToOriginalPaths": True,
             "overrideOriginals": True,
             "preserveTimestamps": True,
             "preserveAcls": True,
             "preserveAttributes": True,
-            "continueOnError": False,
-            "alternateRestoreBaseDirectory": targetPath
+            "continueOnError": False
         }
     },
     "name": "restorefolders-%s" % now
 }
+
+if targetPath is not None:
+    restoreParams['params']['restoreFilesPreferences']['restoreToOriginalPaths'] = False
+    restoreParams['params']['restoreFilesPreferences']['alternateRestoreBaseDirectory'] = targetPath
 
 # execute restore
 result = api('post', '/restoreFiles', restoreParams)
