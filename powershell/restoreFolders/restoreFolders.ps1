@@ -1,26 +1,30 @@
-### usage: ./restoreFolder.ps1 -vip mycluster -username myusername -domain mydomain.net -source server1.mydomain.net -folderName /C/Users/myusername/documents/stuff -target server2.mydomain.net -targetPath /C/Users/myuser/documents
+### usage: ./restoreFolders.ps1 -vip mycluster -username myusername -domain mydomain.net -csv ./restoreFolders.csv
 
 ### process commandline arguments
 [CmdletBinding()]
 param (
     [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
+    [Parameter()][string]$username='helios', # username (local or AD)
     [Parameter()][string]$domain = 'local', # local or AD domain
+    [Parameter()][switch]$useApiKey, # use API key for authentication
     [Parameter()][string]$csv = './restoreFolders.csv'
 )
 
-### source the cohesity-api helper code
-. ./cohesity-api
+# source the cohesity-api helper code
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain
-
-if (!(Test-Path -Path $csv)) {
-    Write-Host "csv file $csv not found" -ForegroundColor Yellow
-    exit
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -password $password -useApiKey
+}else{
+    apiauth -vip $vip -username $username -domain $domain -password $password
 }
 
-$transfers = import-csv -Path ./restoreFolders.csv
+if(! (Test-Path -Path $csv -PathType Leaf)){
+    Write-Host "Can't find file $csv" -ForegroundColor Yellow
+    exit 1
+}
+
+$transfers = import-csv -Path $csv
 
 foreach ($transfer in $transfers) {
     $folderName = $transfer.folderName
@@ -33,8 +37,8 @@ foreach ($transfer in $transfers) {
     ### search for my file
     $fileResults = api get "/searchfiles?filename=$($encodedFileName)&isFolder=true"
     if (!$fileResults.files) {
-        Write-Host "no search results" -ForegroundColor Yellow
-        exit    
+        Write-Host "no search results for $folderName" -ForegroundColor Yellow
+        continue    
     }
   
     ### narrow results to exact server and file name
@@ -43,8 +47,8 @@ foreach ($transfer in $transfers) {
         $_.fileDocument.filename -eq $folderName }
   
     if (!$files) {
-        Write-Host "no search results that match source name" -ForegroundColor Yellow
-        exit    
+        Write-Host "no search results that match source name $source" -ForegroundColor Yellow
+        continue   
     }
   
     $clusterId = $files[0].fileDocument.objectId.jobUid.clusterId
@@ -61,7 +65,7 @@ foreach ($transfer in $transfers) {
   
     if (!$targetServer) {
         write-host "target server $target not found!" -ForegroundColor Yellow
-        exit
+        continue
     }
   
     $now = (get-date).ToString().replace('/', '_').replace(':', '_').replace(' ', '_')
@@ -96,7 +100,7 @@ foreach ($transfer in $transfers) {
         "name"             = "Recover-Files_$now"
     }
   
-    $result = api post /restoreFiles $restoreParams
+    $null = api post /restoreFiles $restoreParams
     write-host "Restoring $source$folderName to $target$targetPath"
 
 }

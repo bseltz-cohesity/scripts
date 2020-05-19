@@ -25,9 +25,9 @@ Place both files in a folder together and run the main script like so:
 
 ```powershell
 ./restoreFolders.ps1 -vip mycluster `
-                    -username myusername `
-                    -domain mydomain.net `
-                    -csv ./restoreFolders.csv
+                     -username myusername `
+                     -domain mydomain.net `
+                     -csv ./restoreFolders.csv
 ```
 
 ```text
@@ -38,8 +38,9 @@ Restoring server1.mydomain.net/C/Users/mydomain/documents/stuff to server2.mydom
 ## Parameters
 
 * -vip: Cohesity cluster to connect to
-* -username: Cohesity username (e.g. admin)
+* -username: (optional) Cohesity username (defaults to 'helios')
 * -domain: (optional) Active Directory domain (defaults to 'local')
+* -useApiKey: (optional) use API key for authentication
 * -csv: (optional) csv file containing transfer specs (defaults to ./restoreFolders.csv)
 
 ## CSV File
