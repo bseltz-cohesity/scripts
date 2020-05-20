@@ -40,4 +40,5 @@ Your browser should open and display the chart of storage growth.
 * -vip: the Cohesity cluster to connect to
 * -username: the cohesity user to login with
 * -domain: domain of the Cohesity user (defaults to local)
+* -showCapacity: add cluster capacity limit to the graph
 * -days: number of days of storage statistics to display
