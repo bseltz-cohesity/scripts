@@ -26,6 +26,7 @@
 # 2.0.8 - added helios support - Mar 2020
 # 2.0.9 - helios and error handling changes - Mar 2020
 # 2.1.0 - added support for Iris API Key - May 2020
+# 2.1.1 - added support for PWFILE - May 2020
 #
 ##########################################################################################
 # Install Notes
@@ -43,6 +44,7 @@ import time
 import json
 import requests
 import getpass
+import base64
 import os
 import urllib3
 from os.path import expanduser
@@ -66,6 +68,7 @@ __all__ = ['apiauth',
            'apidrop',
            'pw',
            'storepw',
+           'setpwd',
            'showProps',
            'storePasswordFromInput',
            'heliosCluster',
@@ -76,6 +79,8 @@ HEADER = ''
 AUTHENTICATED = False
 APIMETHODS = ['get', 'post', 'put', 'delete']
 CONFIGDIR = expanduser("~") + '/.pyhesity'
+SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
+PWFILE = grouppath = os.path.join(SCRIPTDIR, 'YWRtaW4')
 
 
 ### authentication
@@ -269,6 +274,14 @@ def __getpassword(vip, username, password, domain, updatepw, prompt):
     if prompt is not None:
         pwd = getpass.getpass("Enter your password: ")
         return pwd
+    if os.path.exists(PWFILE):
+        f = open(PWFILE, 'r')
+        pwdlist = [e.strip() for e in f.readlines() if e.strip() != '']
+        f.close()
+        for pwditem in pwdlist:
+            v, d, u, opwd = pwditem.split(":", 4)
+            if v.lower() == vip.lower() and d.lower() == domain.lower() and u.lower() == username.lower():
+                return base64.b64decode('%s==' % opwd).decode('utf-8')
     pwpath = os.path.join(CONFIGDIR, 'lt.' + vip + '.' + username + '.' + domain)
     if(updatepw is not None):
         if(os.path.isfile(pwpath) is True):
@@ -284,6 +297,31 @@ def __getpassword(vip, username, password, domain, updatepw, prompt):
         pwdfile.write(', '.join(str(char) for char in list(map(lambda char: ord(char) + 1, pwd))))
         pwdfile.close()
         return pwd
+
+
+# store password in PWFILE
+def setpwd(v='helios.cohesity.com', u='helios', d='local'):
+    pwd = getpass.getpass("Enter password: ")
+    opwd = base64.b64encode('%s' % pwd).encode('utf-8')
+    if os.path.exists(PWFILE):
+        f = open(PWFILE, 'r')
+        pwdlist = [e.strip() for e in f.readlines() if e.strip() != '']
+        f.close()
+    else:
+        pwdlist = []
+    f = open(PWFILE, 'w')
+    foundPwd = False
+    for pwditem in pwdlist:
+        vip, domain, username, cpwd = pwditem.split(":", 4)
+        if v.lower() == vip.lower() and d.lower() == domain.lower() and u.lower() == username.lower():
+            f.write('%s:%s:%s:%s\n' % (v, d, u, opwd))
+            foundPwd = True
+        else:
+            f.write('%s\n' % pwditem)
+    if foundPwd is False:
+        f.write('%s:%s:%s:%s\n' % (v, d, u, opwd))
+    f.close()
+    print("Password stored!")
 
 
 ### pwstore for alternate infrastructure
