@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 ## Components
 
-* heliosProtectionDetailsPerObject.ps1: the main python script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* heliosProtectionDetailsPerObject.ps1: the main python script [raw](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/helios/powershell/heliosProtectionDetailsPerObject/heliosProtectionDetailsPerObject.ps1)
+* cohesity-api.ps1: the Cohesity REST API helper module [raw](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1)
 
 Place both files in a folder together and run the main script like so:
 
