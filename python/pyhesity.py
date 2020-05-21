@@ -281,7 +281,7 @@ def __getpassword(vip, username, password, domain, updatepw, prompt):
         for pwditem in pwdlist:
             v, d, u, opwd = pwditem.split(":", 4)
             if v.lower() == vip.lower() and d.lower() == domain.lower() and u.lower() == username.lower():
-                return base64.b64decode('%s==' % opwd).decode('utf-8')
+                return base64.b64decode(opwd.encode('utf-8')).decode('utf-8')
     pwpath = os.path.join(CONFIGDIR, 'lt.' + vip + '.' + username + '.' + domain)
     if(updatepw is not None):
         if(os.path.isfile(pwpath) is True):
@@ -302,7 +302,7 @@ def __getpassword(vip, username, password, domain, updatepw, prompt):
 # store password in PWFILE
 def setpwd(v='helios.cohesity.com', u='helios', d='local'):
     pwd = getpass.getpass("Enter password: ")
-    opwd = base64.b64encode('%s' % pwd).encode('utf-8')
+    opwd = base64.b64encode(pwd.encode('utf-8')).decode('utf-8')
     if os.path.exists(PWFILE):
         f = open(PWFILE, 'r')
         pwdlist = [e.strip() for e in f.readlines() if e.strip() != '']
