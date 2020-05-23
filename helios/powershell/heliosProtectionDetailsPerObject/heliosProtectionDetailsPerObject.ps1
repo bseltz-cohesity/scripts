@@ -4,7 +4,8 @@ param (
     [Parameter()][string]$vip='helios.cohesity.com',
     [Parameter()][string]$username='helios',
     [Parameter()][string]$domain = 'local',
-    [Parameter()][int]$slurp = 25,
+    [Parameter()][int]$slurp = 20,
+    [Parameter()][int]$pageCount = 6200,
     [Parameter()][string]$startDate = '',
     [Parameter()][string]$endDate = '',
     [Parameter()][switch]$thisCalendarMonth,
@@ -60,7 +61,7 @@ foreach($cluster in heliosClusters){
     $i = 0
     while($i -lt $entities.Length){
         $theseEntities = $entities[$i..($i + $slurp -1)]
-        $uri =  "reports/protectionSourcesJobRuns?startTimeUsecs=$uStart&endTimeUsecs=$uEnd"
+        $uri =  "reports/protectionSourcesJobRuns?startTimeUsecs=$uStart&endTimeUsecs=$uEnd&pageCount=$pageCount"
         foreach($entity in $theseEntities){
             $uri += "&protectionSourceIds=$($entity.id)"
         }
