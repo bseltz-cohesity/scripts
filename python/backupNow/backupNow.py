@@ -93,20 +93,41 @@ else:
         print('BackupType kLog not applicable to %s jobs' % environment)
         exit(1)
     if objectnames is not None:
-        sources = api('get', 'protectionSources/objects?objectIds=%s' % ','.join(str(x) for x in job['sourceIds']))
+        if 'kAWS' in environment:
+            sources = api('get', 'protectionSources?environments=kAWS')
+        else:
+            sources = api('get', 'protectionSources?environments=%s' % environment)
 
 # handle run now objects
-sourceIds = None
-runNowParameters = []
-if environment == 'kOracle' or (environment == 'kSQL' and job['environmentParameters']['sqlParameters']['backupType'] == 'kSqlVSSFile'):
-    if objectnames is not None:
-        for objectname in objectnames:
+sourceIds = []
+if objectnames is not None:
+    runNowParameters = []
+    for objectname in objectnames:
+        if environment == 'kSQL' or environment == 'kOracle':
+            parts = objectname.split('/')
             if environment == 'kSQL':
-                (server, instance, db) = objectname.split('/')
+                if len(parts) == 3:
+                    (server, instance, db) = parts
+                elif len(parts) == 2:
+                    (server, instance) = parts
+                    db = None
+                else:
+                    server = parts[0]
+                    instance = None
+                    db = None
             else:
-                (server, instance) = objectname.split('/', 1)
+                if len(parts) == 2:
+                    (server, instance) = parts
+                else:
+                    server = parts[0]
+                    instance = None
+                    db = None
+
             serverObjectId = getObjectId(server)
             if serverObjectId is not None:
+                if serverObjectId not in job['sourceIds']:
+                    print("%s not protected by %s" % (server, jobName))
+                    exit(1)
                 if len([obj for obj in runNowParameters if obj['sourceId'] == serverObjectId]) == 0:
                     runNowParameters.append(
                         {
@@ -114,39 +135,40 @@ if environment == 'kOracle' or (environment == 'kSQL' and job['environmentParame
                             "databaseIds": []
                         }
                     )
-                serverSource = api('get', 'protectionSources?id=%s' % serverObjectId)[0]
-                instanceNodes = [node for node in serverSource['applicationNodes'] if node['protectionSource']['name'].lower() == instance.lower()]
-                if len(instanceNodes) > 0:
-                    if environment == 'kSQL':
-                        dbNodes = [dbNode for dbNode in instanceNodes[0]['nodes'] if dbNode['protectionSource']['name'].lower() == '%s/%s' % (instance.lower(), db.lower())]
-                    else:
-                        dbNodes = instanceNodes
-                    if len(dbNodes) > 0:
-                        dbId = dbNodes[0]['protectionSource']['id']
+                if instance is not None or db is not None:
+                    if environment == 'kOracle' or (environment == 'kSQL' and job['environmentParameters']['sqlParameters']['backupType'] == 'kSqlVSSFile'):
                         for runNowParameter in runNowParameters:
                             if runNowParameter['sourceId'] == serverObjectId:
-                                runNowParameter['databaseIds'].append(dbId)
+                                runNowParameter['databaseIds'] = []
+                        protectedDbList = api('get', 'protectionSources/protectedObjects?environment=%s&id=%s' % (environment, serverObjectId))
+                        protectedDbList = [d for d in protectedDbList if jobName.lower() in [j['name'].lower() for j in d['protectionJobs']]]
+                        if environment == 'kSQL':
+                            if db is None:
+                                protectedDbList = [d for d in protectedDbList if d['protectionSource']['name'].lower().split('/')[0] == instance.lower()]
+                            else:
+                                protectedDbList = [d for d in protectedDbList if d['protectionSource']['name'].lower() == '%s/%s' % (instance.lower(), db.lower())]
+                        else:
+                            protectedDbList = [d for d in protectedDbList if d['protectionSource']['name'].lower() == '%s' % instance.lower()]
+                        if len(protectedDbList) > 0:
+                            for runNowParameter in runNowParameters:
+                                if runNowParameter['sourceId'] == serverObjectId:
+                                    for protectedDb in protectedDbList:
+                                        runNowParameter['databaseIds'].append(protectedDb['protectionSource']['id'])
+                        else:
+                            print('%s not protected by %s' % (objectname, jobName))
+                            exit(1)
                     else:
-                        print('Object %s not found (db name)' % db)
+                        print("Job is Volume based. Can not selectively backup instances/databases")
                         exit(1)
-                else:
-                    if environment == 'kSQL':
-                        print('Object %s not found (instance name)' % instance)
-                    else:
-                        print('Object %s not found (db name)' % instance)
-                    exit(1)
             else:
                 print('Object %s not found (server name)' % server)
                 exit(1)
-else:
-    if objectnames is not None:
-        sourceIds = []
-        for objectName in objectnames:
-            sourceId = getObjectId(objectName)
+        else:
+            sourceId = getObjectId(objectname)
             if sourceId is not None:
                 sourceIds.append(sourceId)
             else:
-                print('Object %s not found!' % objectName)
+                print('Object %s not found!' % objectname)
                 exit(1)
 
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
@@ -171,7 +193,7 @@ if len(runs) > 0:
             sleep(2)
             try:
                 apiauth(vip, username, domain, quiet=True)
-            except Exception2:
+            except Exception:
                 sleep(2)
 else:
     newRunId = lastRunId = 1
@@ -260,7 +282,7 @@ if wait is True:
             sleep(5)
             try:
                 apiauth(vip, username, domain, quiet=True)
-            except Exception2:
+            except Exception:
                 sleep(2)
     print("Job finished with status: %s" % runs[0]['backupRun']['status'])
     runURL = "https://%s/protection/job/%s/run/%s/%s/protection" % \
