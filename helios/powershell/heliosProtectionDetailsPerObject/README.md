@@ -33,6 +33,8 @@ Place both files in a folder together and run the main script like so:
 * -vip: (optional) defaults to helios.cohesity.com
 * -username: (optional) defaults to helios
 * -domain: (optional) domain of the Cohesity user (defaults to local)
+* -slurp: (optional) get stats for X objects per API call (default is 20)
+* -pageCount: (optional) retrieve X pages of results (default is 6200)
 
 ## Date Range Parameters
 
