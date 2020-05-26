@@ -13,6 +13,7 @@ param (
     [Parameter()][string]$username='helios', # username (local or AD)
     [Parameter()][string]$domain = 'local', # local or AD domain
     [Parameter()][switch]$useApiKey, # use API key for authentication
+    [Parameter()][string]$password = $null,
     [Parameter(Mandatory = $True)][string]$sourceServer, # source server
     [Parameter()][string]$targetServer = $sourceServer, # target server
     [Parameter()][string]$jobName, # narrow search by job name
@@ -28,9 +29,9 @@ param (
 
 ### authenticate
 if($useApiKey){
-    apiauth -vip $vip -username $username -domain $domain -useApiKey
+    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
 }else{
-    apiauth -vip $vip -username $username -domain $domain
+    apiauth -vip $vip -username $username -domain $domain -password $password
 }
 
 # gather file names
