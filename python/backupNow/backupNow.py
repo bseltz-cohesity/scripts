@@ -131,15 +131,15 @@ if objectnames is not None:
                 if len([obj for obj in runNowParameters if obj['sourceId'] == serverObjectId]) == 0:
                     runNowParameters.append(
                         {
-                            "sourceId": serverObjectId,
-                            "databaseIds": []
+                            "sourceId": serverObjectId
                         }
                     )
                 if instance is not None or db is not None:
                     if environment == 'kOracle' or (environment == 'kSQL' and job['environmentParameters']['sqlParameters']['backupType'] == 'kSqlVSSFile'):
                         for runNowParameter in runNowParameters:
                             if runNowParameter['sourceId'] == serverObjectId:
-                                runNowParameter['databaseIds'] = []
+                                if 'databaseIds' not in runNowParameter:
+                                    runNowParameter['databaseIds'] = []
                         protectedDbList = api('get', 'protectionSources/protectedObjects?environment=%s&id=%s' % (environment, serverObjectId))
                         protectedDbList = [d for d in protectedDbList if jobName.lower() in [j['name'].lower() for j in d['protectionJobs']]]
                         if environment == 'kSQL':
