@@ -35,22 +35,39 @@ Place both files in a folder together and run the main script like so:
                    -l -w
 ```
 
-The script takes the following parameters:
+## Parameters
 
 * -v, --vip: Cohesity cluster name or IP
 * -u, --username: Cohesity Username
 * -d, --domain: Cohesity User Domain
 * -ss, --sourceserver: name of source oracle server
 * -sd, --sourcedb: name of source oracle DB
-* -ts, --targetserver: name of target oracle server
-* -td, --targetdb: name of target oracle DB
+* -c, --channels: number of restore channels
+* -o, --overwrite: overwrite existing database
+* -n, --norecovery: leave database in no recovery mode
+
+## Point in Time Parameters
+
+* -lt, --logtime: point in time to replay the logs to
+* -l, --latest: replay logs to latest available point in time
+
+## Alternate Destination Parameters
+
+* -ts, --targetserver: name of target oracle server (default is sourceserver)
+* -td, --targetdb: name of target oracle DB (default is sourcedb)
 * -oh, --oraclehome: oracle home path on target
 * -ob, --oraclebase: oracle base path on target
 * -od, --oracledata: oracle data path on target
-* -lt, --logtime: point in time to replay the logs to
-* -l, --latest: replay logs to latest available point in time
-* -o, --overwrite: overwrite existing database
-* -n, --norecovery: leave database in no recovery mode
+* -cf, --controlfile: alternate ctl file path
+* -r, --redologpath: alternate redo log path
+* -a, --auditpath: alternate audit path
+* -dp, --diagpath: alternate diag path
+* -f, --frapath: alternate fra path
+* -fs, --frasizeMB: alternate fra size in MB
+* -b, --bctfile:  alternate bct file path
+
+## Misc Parameters
+
 * -w, --wait: wait for completion
 
 ## Point in Time Recovery

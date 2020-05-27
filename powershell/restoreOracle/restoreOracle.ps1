@@ -18,6 +18,14 @@ param (
     [Parameter()][string]$oracleHome = $null,            # oracle home location
     [Parameter()][string]$oracleBase = $null,            # oracle base location
     [Parameter()][string]$oracleData = $null,            # destination for data files
+    [Parameter()][int]$channels = $null,              # number of restore channels
+    [Parameter()][array]$controlfile,                    # alternate ctl file path
+    [Parameter()][array]$redologpath,                    # alternate redo log path
+    [Parameter()][string]$auditpath = $null,             # alternate audit path
+    [Parameter()][string]$diagpath = $null,              # alternate diag path
+    [Parameter()][string]$frapath = $null,               # alternate fra path
+    [Parameter()][int]$frasizeMB = $null,                # alternate fra path
+    [Parameter()][string]$bctfile = $null,               # alternate bct file path
     [Parameter()][switch]$wait,                          # wait for restore to finish
     [Parameter()][switch]$progress,                      # display progress
     [Parameter()][string]$logTime,                       # PIT to replay logs to e.g. '2019-01-20 02:01:47'
@@ -203,6 +211,28 @@ $restoreParams = @{
     }
 }
 
+### configure channels
+if($channels){
+    $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams['oracleTargetParams'] = @{
+        "additionalOracleDbParamsVec" = @(
+            @{
+                "appEntityId"      = $latestdb.vmDocument.objectId.entity.id;
+                "dbInfoChannelVec" = @(
+                    @{
+                        "hostInfoVec" = @(
+                            @{
+                                "host"        = $targetServer;
+                                "numChannels" = $channels;
+                            }
+                        );
+                        "dbUuid"      = $latestdb.vmDocument.objectId.entity.oracleEntity.uuid
+                    }
+                )
+            }
+        )
+    }
+}
+
 ### alternate location params
 if($targetServer -ne $sourceServer -or $targetDB -ne $sourceDB){
     $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams = @{
@@ -220,11 +250,30 @@ if($targetServer -ne $sourceServer -or $targetDB -ne $sourceDB){
             "fraSizeMb"            = 2048
         };
         "databaseFileDestination" = $oracleData
-    };
+    }
     $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.targetHost = $targetEntity[0].appEntity.entity;
-    # $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.targetHostParentSource = @{
-    #     "id" = $targetEntity[0].appEntity.entity.id
-    # }
+    if($controlfile){
+        $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDBConfig['controlFilePathVec'] = $controlfile
+    }
+    if($redologpath){
+        $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDBConfig.redoLogConf['groupMemberVec'] = $redologpath
+        $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDBConfig.redoLogConf['numGroups'] = $redologpath.Length
+    }
+    if($frasizeMB){
+        $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDBConfig['fraSizeMb'] = $frasizeMB
+    }
+    if($bctfile){
+        $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDBConfig['bctFilePath'] = $bctfile
+    }
+    if($auditpath){
+        $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDBConfig['auditLogDest'] = $auditpath
+    }
+    if($diagpath){
+        $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDBConfig['diagDest'] = $diagpath
+    }
+    if($frapath){
+        $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDBConfig['fraDest'] = $frapath
+    }
 }
 
 ### apply log replay time

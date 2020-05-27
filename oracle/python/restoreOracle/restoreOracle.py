@@ -29,11 +29,19 @@ parser.add_argument('-ts', '--targetserver', type=str, default=None)  # name of 
 parser.add_argument('-td', '--targetdb', type=str, default=None)  # name of target oracle DB
 parser.add_argument('-oh', '--oraclehome', type=str, default=None)  # oracle home path on target
 parser.add_argument('-ob', '--oraclebase', type=str, default=None)  # oracle base path on target
-parser.add_argument('-od', '--oracledata', type=str, default=None)  # oracle base path on target
-parser.add_argument('-lt', '--logtime', type=str, default=None)  # oracle base path on target
-parser.add_argument('-l', '--latest', action='store_true')
-parser.add_argument('-o', '--overwrite', action='store_true')
-parser.add_argument('-n', '--norecovery', action='store_true')
+parser.add_argument('-od', '--oracledata', type=str, default=None)  # oracle data path on target
+parser.add_argument('-c', '--channels', type=int, default=None)  # number of restore channels
+parser.add_argument('-cf', '--controlfile', type=str, action='append')  # alternate ctl file path
+parser.add_argument('-r', '--redologpath', type=str, action='append')  # alternate redo log path
+parser.add_argument('-a', '--auditpath', type=str, default=None)  # alternate audit path
+parser.add_argument('-dp', '--diagpath', type=str, default=None)  # alternate diag path
+parser.add_argument('-f', '--frapath', type=str, default=None)  # alternate fra path
+parser.add_argument('-fs', '--frasizeMB', type=int, default=None)  # alternate fra path
+parser.add_argument('-b', '--bctfile', type=str, default=None)  # alternate bct file path
+parser.add_argument('-lt', '--logtime', type=str, default=None)  # pit to recover to
+parser.add_argument('-l', '--latest', action='store_true')  # recover to latest available pit
+parser.add_argument('-o', '--overwrite', action='store_true')  # overwrite existing DB
+parser.add_argument('-n', '--norecovery', action='store_true')  # leave DB in recovering mode
 parser.add_argument('-w', '--wait', action='store_true')  # wait for completion
 
 args = parser.parse_args()
@@ -57,6 +65,14 @@ else:
 oraclehome = args.oraclehome
 oraclebase = args.oraclebase
 oracledata = args.oracledata
+channels = args.channels
+controlfile = args.controlfile
+redologpath = args.redologpath
+auditpath = args.auditpath
+diagpath = args.diagpath
+frapath = args.frapath
+frasizeMB = args.frasizeMB
+bctfile = args.bctfile
 overwrite = args.overwrite
 logtime = args.logtime
 latest = args.latest
@@ -222,6 +238,27 @@ restoreParams = {
     }
 }
 
+# configure channels
+if channels is not None:
+    restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['oracleTargetParams'] = {
+        "additionalOracleDbParamsVec": [
+            {
+                "appEntityId": latestdb['vmDocument']['objectId']['entity']['id'],
+                "dbInfoChannelVec": [
+                    {
+                        "hostInfoVec": [
+                            {
+                                "host": targetserver,
+                                "numChannels": channels
+                            }
+                        ],
+                        "dbUuid": latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
+                    }
+                ]
+            }
+        ]
+    }
+
 # alternate location params
 if targetserver != sourceserver or targetdb != sourcedb:
     restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams'] = {
@@ -240,10 +277,22 @@ if targetserver != sourceserver or targetdb != sourcedb:
         },
         "databaseFileDestination": oracledata
     }
-    restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['targetHost'] = targetEntity['appEntity']['entity']
-    restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['targetHostParentSource'] = {
-        "id": targetEntity['appEntity']['entity']['id']
-    }
+    restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['targetHost'] = targetEntity['appEntity']['entity']
+    if controlfile is not None:
+        restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['controlFilePathVec'] = controlfile
+    if redologpath is not None:
+        restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['redoLogConf']['groupMemberVec'] = redologpath
+        restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['redoLogConf']['numGroups'] = len(redologpath)
+    if frasizeMB is not None:
+        restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['fraSizeMb'] = frasizeMB
+    if bctfile is not None:
+        restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['bctFilePath'] = bctfile
+    if auditpath is not None:
+        restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['auditLogDest'] = auditpath
+    if diagpath is not None:
+        restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['diagDest'] = diagpath
+    if frapath is not None:
+        restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['fraDest'] = frapath
 
 # apply log replay time
 if validLogTime is True:

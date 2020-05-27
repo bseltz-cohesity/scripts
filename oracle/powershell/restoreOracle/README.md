@@ -45,16 +45,33 @@ Place both files in a folder together and run the main script like so:
 * -domain: Active Directory domain of user (defaults to local)
 * -sourceServer: Server name (or AAG name) where the database was backed up
 * -sourceDB: Original database name
+* -overwrite: Overwrites an existing database (default is no overwrite)
+* -channels: Number of restore channels
+
+## Point in Time Parameters
+
+* -logTime: Point in time to replay the logs to during the restore (e.g. '2019-04-10 22:31:05')
+* -latest: Replay the logs to the latest point in time available
+* -noRecovery: Restore the DB with NORECOVER option (default is to recover)
+
+## Alternate Destination Parameters
+
 * -targetServer: Server name to restore to (defaults to same as sourceServer)
 * -targetDB: New database name (defaults to same as sourceDB)
 * -oracleHome: oracle home path (not required when overwriting original db)
 * -oracleBase: oracle base path (not required when overwriting original db)
 * -oracleData: oracle data path (not required when overwriting original db)
-* -logTime: Point in time to replay the logs to during the restore (e.g. '2019-04-10 22:31:05')
-* -latest: Replay the logs to the latest point in time available
+* -controlfile: (optional) alternate control file path
+* -redologpath: (optional) alternate redo log path
+* -auditpath: (optional) alternate audit path
+* -diagpath: (optional) alternate diag path
+* -frapath: (optional) alternate fra path
+* -frasizeMB: (optional) alternate fra size in MB
+* -bctfile: (optional) alternate bct file path
+
+## Miscellaneous Parameters
+
 * -wait: Wait for the restore to complete and report end status (e.g. kSuccess)
-* -overwrite: Overwrites an existing database (default is no overwrite)
-* -noRecovery: Restore the DB with NORECOVER option (default is to recover)
 * -progress: (optional) display percent complete
 
 ## Point in Time Recovery
