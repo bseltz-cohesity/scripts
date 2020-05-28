@@ -11,21 +11,23 @@ from datetime import datetime
 # command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)  # cluster to connect to
-parser.add_argument('-u', '--username', type=str, default='helios')  # (optional) username
-parser.add_argument('-d', '--domain', type=str, default='local')  # (optional) domain - defaults to local
-parser.add_argument('-i', '--useApiKey', action='store_true')  # (optional) use API key for authentication
-parser.add_argument('-j', '--jobName', type=str, required=True)   # job name
-parser.add_argument('-s', '--sourceServer', type=str, required=True)   # name of source server
-parser.add_argument('-f', '--sourceFolder', type=str, required=True)    # path of folder to be recovered
-parser.add_argument('-t', '--targetServer', type=str, default=None)    # name of target server
-parser.add_argument('-p', '--targetPath', type=str, default=None)  # destination path
+parser.add_argument('-v', '--vip', type=str, required=True)           # cluster to connect to
+parser.add_argument('-u', '--username', type=str, default='helios')   # (optional) username
+parser.add_argument('-d', '--domain', type=str, default='local')      # (optional) domain - defaults to local
+parser.add_argument('-i', '--useApiKey', action='store_true')         # (optional) use API key for authentication
+parser.add_argument('-pwd', '--password', type=str, default=None)     # optional password
+parser.add_argument('-j', '--jobName', type=str, required=True)       # job name
+parser.add_argument('-s', '--sourceServer', type=str, required=True)  # name of source server
+parser.add_argument('-f', '--sourceFolder', type=str, required=True)  # path of folder to be recovered
+parser.add_argument('-t', '--targetServer', type=str, default=None)   # name of target server
+parser.add_argument('-p', '--targetPath', type=str, default=None)     # destination path
 
 args = parser.parse_args()
 
 vip = args.vip
 username = args.username
 domain = args.domain
+password = args.password
 jobName = args.jobName
 sourceServer = args.sourceServer
 targetServer = args.targetServer
@@ -37,7 +39,7 @@ if targetServer is None:
     targetServer = sourceServer
 
 # authenticate
-apiauth(vip, username, domain, useApiKey=useApiKey)
+apiauth(vip, username, domain, password=password, useApiKey=useApiKey)
 
 encodedfilename = quote_plus(sourceFolder)
 

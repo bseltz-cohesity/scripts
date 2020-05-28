@@ -24,6 +24,7 @@ parser.add_argument('-v', '--vip', type=str, required=True)           # cluster 
 parser.add_argument('-u', '--username', type=str, default='helios')   # username
 parser.add_argument('-d', '--domain', type=str, default='local')      # domain - defaults to local
 parser.add_argument('-i', '--useApiKey', action='store_true')         # use API key authentication
+parser.add_argument('-pwd', '--password', type=str, default=None)       # optional password
 parser.add_argument('-s', '--sourceserver', type=str, required=True)  # name of source server
 parser.add_argument('-t', '--targetserver', type=str, default=None)   # name of target server
 parser.add_argument('-j', '--jobname', type=str, default=None)        # narrow search by job name
@@ -38,6 +39,7 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
+password = args.password
 useApiKey = args.useApiKey
 sourceserver = args.sourceserver
 
@@ -69,7 +71,7 @@ if restorepath is not None:
     restorepath = ('/' + restorepath).replace('\\', '/').replace(':', '').replace('//', '/')
 
 # authenticate
-apiauth(vip, username, domain, useApiKey=useApiKey)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
 
 # find source and target servers
 physicalEntities = api('get', '/entitiesOfType?environmentTypes=kPhysical&physicalEntityTypes=kHost')
