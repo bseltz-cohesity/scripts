@@ -100,8 +100,8 @@ else:
 
 # handle run now objects
 sourceIds = []
+runNowParameters = []
 if objectnames is not None:
-    runNowParameters = []
     for objectname in objectnames:
         if environment == 'kSQL' or environment == 'kOracle':
             parts = objectname.split('/')
