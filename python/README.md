@@ -34,18 +34,20 @@ sudo easy_install requests
 from pyhesity import *
 apiauth('mycluster', 'admin') # domain defaults to local
 # or
-apiauth('mycluster', 'myuser', 'mydomain') # specify an Active Directory domain
+apiauth('mycluster', 'myuser', 'mydomain.net') # specify an Active Directory domain
 ```
 
 ### Stored Passwords
 
-There is no parameter to provide your password. The fist time you authenticate to a cluster, you will be prompted for your password. The password will be encrypted and stored in the user's home folder. The stored password will then be used automatically so that scripts can run unattended.
+Although there is a password parameter, it is not recommended to use it. Instead, the fist time you attempt to authenticate to a cluster, you will be prompted for your password. The password will be encrypted and stored in <user's home folder>/.pyhesity. The stored password will then be used automatically so that scripts can run unattended.
 
-If your password changes, use apiauth with updatepw to prompt for the new password.
+If your password changes, you will be prompted again to re-enter it.
+
+To preemptively update the stored password, use apiauth with updatepw to prompt for the new password.
 
 ```python
 from pyhesity import *
-apiauth('mycluster', 'myuser', 'mydomain', updatepw=True)
+apiauth('mycluster', 'myuser', 'mydomain.net', updatepw=True)
 ```
 
 If you don't want to store a password and want to be prompted to enter your password when you run your script, use prompt=True
@@ -54,6 +56,19 @@ If you don't want to store a password and want to be prompted to enter your pass
 from pyhesity import *
 apiauth('mycluster', 'myuser', 'mydomain', prompt=True)
 ```
+
+### Using a Password File
+
+If you want to use a shared, portable password file, you can use the setpwd function:
+
+```python
+from pyhesity import *
+setpwd('mycluster','myuser','mydomain.net')
+```
+
+You will be prompted to enter the password, and the password will be stored, encrypted, in a file called YWRtaW4 in the current folder. This file will be queried for passwords when scripts are run. If the required password is not found in the file, you will be prompted as usual.
+
+The password file can be copied to other hosts to make password management easier.
 
 ### API Calls
 
