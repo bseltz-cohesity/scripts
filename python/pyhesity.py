@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - v2.0.8 - Brian Seltzer - Mar 2020"""
+"""Cohesity Python REST API Wrapper Module - v2020.05.29"""
 
 ##########################################################################################
 # Change Log
@@ -27,6 +27,7 @@
 # 2.0.9 - helios and error handling changes - Mar 2020
 # 2.1.0 - added support for Iris API Key - May 2020
 # 2.1.1 - added support for PWFILE - May 2020
+# 2020.05.29 - added re-prompt for bad password, debug log, password storage changes
 #
 ##########################################################################################
 # Install Notes
@@ -80,7 +81,8 @@ AUTHENTICATED = False
 APIMETHODS = ['get', 'post', 'put', 'delete']
 CONFIGDIR = expanduser("~") + '/.pyhesity'
 SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
-PWFILE = grouppath = os.path.join(SCRIPTDIR, 'YWRtaW4')
+PWFILE = os.path.join(SCRIPTDIR, 'YWRtaW4')
+LOGFILE = os.path.join(SCRIPTDIR, 'pyhesity-debug.log')
 
 
 ### authentication
@@ -111,6 +113,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
         except requests.exceptions.RequestException as e:
             AUTHENTICATED = False
             if quiet is None:
+                __writelog(e)
                 print(e)
     elif useApiKey is True:
         HEADER = {'accept': 'application/json', 'content-type': 'application/json', 'apiKey': pwd}
@@ -138,8 +141,14 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                     if(quiet is None):
                         print("Connected!")
                 else:
-                    print(response.json()['message'])
+                    __writelog(response.json()['message'])
+                    if quiet is None:
+                        print(response.json()['message'])
+                    if 'invalid username' in response.json()['message'].lower():
+                        apiauth(vip=vip, username=username, domain=domain, password=password, updatepw=True, prompt=prompt, quiet=quiet, helios=helios, useApiKey=useApiKey)
+
         except requests.exceptions.RequestException as e:
+            __writelog(e)
             AUTHENTICATED = False
             if quiet is None:
                 print(e)
@@ -197,6 +206,7 @@ def api(method, uri, data=None, quiet=None):
             if method == 'delete':
                 response = requests.delete(APIROOT + uri, headers=HEADER, json=data, verify=False)
         except requests.exceptions.RequestException as e:
+            __writelog(e)
             if quiet is None:
                 print(e)
 
@@ -241,8 +251,6 @@ def usecsToDate(uedate):
 def dateToUsecs(datestring):
     """Convert Date String to Unix Epoc Microseconds"""
     dt = datetime.strptime(datestring, "%Y-%m-%d %H:%M:%S")
-    # msecs = int(dt.strftime("%s"))
-    # usecs = msecs * 1000000
     return int(time.mktime(dt.timetuple())) * 1000000
 
 
@@ -282,19 +290,25 @@ def __getpassword(vip, username, password, domain, updatepw, prompt):
             v, d, u, opwd = pwditem.split(":", 4)
             if v.lower() == vip.lower() and d.lower() == domain.lower() and u.lower() == username.lower():
                 return base64.b64decode(opwd.encode('utf-8')).decode('utf-8')
-    pwpath = os.path.join(CONFIGDIR, 'lt.' + vip + '.' + username + '.' + domain)
+    if domain.lower() == 'local':
+        pwpath = os.path.join(CONFIGDIR, vip + '-' + username)
+    else:
+        pwpath = os.path.join(CONFIGDIR, domain + '-' + username)
     if(updatepw is not None):
         if(os.path.isfile(pwpath) is True):
             os.remove(pwpath)
     try:
         pwdfile = open(pwpath, 'r')
-        pwd = ''.join(map(lambda num: chr(int(num) - 1), pwdfile.read().split(', ')))
+        opwd = pwdfile.read()
+        pwd = base64.b64decode(opwd.encode('utf-8')).decode('utf-8')
         pwdfile.close()
         return pwd
     except Exception:
+        __writelog('prompting for password...')
         pwd = getpass.getpass("Enter your password: ")
         pwdfile = open(pwpath, 'w')
-        pwdfile.write(', '.join(str(char) for char in list(map(lambda char: ord(char) + 1, pwd))))
+        opwd = base64.b64encode(pwd.encode('utf-8')).decode('utf-8')
+        pwdfile.write(opwd)
         pwdfile.close()
         return pwd
 
@@ -341,10 +355,22 @@ def storepw(vip, username, domain='local', password=None, updatepw=True, prompt=
 
 ### store password from input
 def storePasswordFromInput(vip, username, password, domain):
-    pwpath = os.path.join(CONFIGDIR, 'lt.' + vip + '.' + username + '.' + domain)
+    if domain.lower() == 'local':
+        pwpath = os.path.join(CONFIGDIR, vip + '-' + username)
+    else:
+        pwpath = os.path.join(CONFIGDIR, domain + '-' + username)
     pwdfile = open(pwpath, 'w')
-    pwdfile.write(', '.join(str(char) for char in list(map(lambda char: ord(char) + 1, password))))
+    opwd = base64.b64encode(password.encode('utf-8')).decode('utf-8')
+    pwdfile.write(opwd)
     pwdfile.close()
+
+
+### debug log
+def __writelog(logmessage):
+    debuglog = open(LOGFILE, 'a')
+    debuglog.write('%s:\n' % datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+    debuglog.write('%s\n' % logmessage)
+    debuglog.close()
 
 
 ### display json/dictionary as formatted text
