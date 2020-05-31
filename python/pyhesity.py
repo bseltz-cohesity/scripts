@@ -314,8 +314,11 @@ def __getpassword(vip, username, password, domain, updatepw, prompt):
 
 
 # store password in PWFILE
-def setpwd(v='helios.cohesity.com', u='helios', d='local'):
-    pwd = getpass.getpass("Enter password: ")
+def setpwd(v='helios.cohesity.com', u='helios', d='local', password=None):
+    if password is None:
+        pwd = getpass.getpass("Enter password: ")
+    else:
+        pwd = password
     opwd = base64.b64encode(pwd.encode('utf-8')).decode('utf-8')
     if os.path.exists(PWFILE):
         f = open(PWFILE, 'r')
