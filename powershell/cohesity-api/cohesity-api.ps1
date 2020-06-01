@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#   version 0.28 - Brian Seltzer - May 2020
+#   version 0.29 - Brian Seltzer - May 2020
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.06 - Consolidated Windows and Unix versions - June 2018
@@ -26,9 +26,10 @@
 # 0.26 - added support for tenants - May 2020
 # 0.27 - added support for Iris API Key - May 2020
 # 0.28 - added reprompt for password, debug log - June 2020
+# 0.29 - update storePasswordInFile - June 2020
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
-$versionCohesityAPI = '0.28'
+$versionCohesityAPI = '0.29'
 
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
@@ -462,7 +463,7 @@ function Get-CohesityAPIPasswordFromFile($vip, $username, $domain){
 }
 
 
-function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $domain='local'){
+function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $domain='local', [switch]$helios){
     # parse domain\username or username@domain
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
@@ -471,8 +472,7 @@ function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $do
         $username, $domain = $username.Split('@')
     }
 
-
-    if($vip -eq 'helios.cohesity.com' -and $username -eq 'helios'){
+    if($vip -eq 'helios.cohesity.com' -and $username -eq 'helios' -and ! $helios){
         # prompt for vip
         __writeLog "Prompting for VIP, USERNAME, DOMAIN"
         $newVip = Read-Host -Prompt "Enter VIP ($vip)"
