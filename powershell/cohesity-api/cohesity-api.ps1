@@ -815,7 +815,9 @@ function cohesityAPIversion([switch]$update){
     if($update){
         $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
         (Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File -Force cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-        write-host "Cohesity-API version updated! Please restart PowerShell"
+        Write-Host "Reloading cohesity-api..."
+        . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+        # write-host "Cohesity-API version updated! Please restart PowerShell"
     }else{
         write-host "Cohesity-API version $versionCohesityAPI" -ForegroundColor Green 
     }
