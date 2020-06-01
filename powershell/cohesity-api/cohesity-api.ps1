@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#   version 0.26 - Brian Seltzer - May 2020
+#   version 0.28 - Brian Seltzer - May 2020
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.06 - Consolidated Windows and Unix versions - June 2018
@@ -25,9 +25,10 @@
 # 0.25 - added paged view list - Apr 2020
 # 0.26 - added support for tenants - May 2020
 # 0.27 - added support for Iris API Key - May 2020
+# 0.28 - added reprompt for password, debug log - June 2020
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
-$versionCohesityAPI = '0.27'
+$versionCohesityAPI = '0.28'
 
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
@@ -39,8 +40,10 @@ $REPORTAPIERRORS = $true
 $REINVOKE = 0
 $MAXREINVOKE = 2
 
-# platform detection and prerequisites ============================================================
 $pwfile = $(Join-Path -Path $PSScriptRoot -ChildPath YWRtaW4)
+$logfile = $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api-debug.log)
+
+# platform detection and prerequisites ============================================================
 
 if ($PSVersionTable.Platform -eq 'Unix') {
     $CONFDIR = '~/.cohesity-api'
@@ -67,6 +70,10 @@ public class SSLHandler
     [System.Net.ServicePointManager]::ServerCertificateValidationCallback = [SSLHandler]::GetSSLHandler()
 }
 
+function __writeLog($logmessage){
+    "$(Get-Date): $logmessage" | Out-File -FilePath $logfile -Append
+}
+
 # authentication functions ========================================================================
 
 function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $password = $null, $tenantId = $null, [switch] $quiet, [switch] $noprompt, [switch] $updatePassword, [switch] $helios, [switch] $useApiKey){
@@ -75,6 +82,7 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
         if($helios){
             $vip = 'helios.cohesity.com'
         }else{
+            __writeLog "prompting for VIP"
             write-host 'VIP: ' -foregroundcolor green -nonewline
             $vip = Read-Host
             if(-not $vip){write-host 'vip is required' -foregroundcolor red; break}
@@ -143,10 +151,14 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
             $global:USING_HELIOS = $true
             if(!$quiet){ write-host "Connected!" -foregroundcolor green }
         }catch{
+            __writeLog $_.ToString()
             if($_.ToString().contains('"message":')){
                 write-host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
             }else{
                 write-host $_.ToString() -foregroundcolor yellow
+            }
+            if($_.ToString().ToLower().Contains('authentication failed')){
+                apiauth -vip $vip -username $username -domain $domain -updatePassword
             }
         }
     }else{
@@ -179,6 +191,7 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
             }
             if(!$quiet){ write-host "Connected!" -foregroundcolor green }
         }catch{
+            __writeLog $_.ToString()
             $global:AUTHORIZED = $false
             if($REPORTAPIERRORS){
                 if($_.ToString().contains('"message":')){
@@ -186,6 +199,9 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
                 }else{
                     write-host $_.ToString() -foregroundcolor yellow
                 }
+            }
+            if($_.ToString().ToLower().contains('invalid username')){
+                apiauth -vip $vip -username $username -domain $domain -updatePassword
             }
         }
     }
@@ -233,6 +249,7 @@ function apipwd($vip, $username='helios', $domain='local', [switch] $asUser, [sw
         if($helios){
             $vip = 'helios.cohesity.com'
         }else{
+            __writeLog "Prompting for VIP"
             write-host 'VIP: ' -foregroundcolor green -nonewline
             $vip = Read-Host
             if(-not $vip){write-host 'vip is required' -foregroundcolor red; break}
@@ -331,8 +348,8 @@ function api($method, $uri, $data){
             }
             $global:REINVOKE = 0
             return $result
-        }
-        catch {
+        }catch{
+            __writeLog $_.ToString()
             if($REPORTAPIERRORS -and $global:REINVOKE -ge $MAXREINVOKE){
                 if($_.ToString().contains('"message":')){
                     write-host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
@@ -362,8 +379,8 @@ function fileDownload($uri, $fileName){
         }else{
             $WEBCLI.DownloadFile($url, $fileName)
         } 
-    }
-    catch {
+    }catch{
+        __writeLog $_.ToString()
         $_.ToString()
         if($_.ToString().contains('"message":')){
             write-host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
@@ -457,6 +474,7 @@ function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $do
 
     if($vip -eq 'helios.cohesity.com' -and $username -eq 'helios'){
         # prompt for vip
+        __writeLog "Prompting for VIP, USERNAME, DOMAIN"
         $newVip = Read-Host -Prompt "Enter VIP ($vip)"
         if($newVip -ne ''){ $vip = $newVip }
 
@@ -470,6 +488,7 @@ function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $do
     }
 
     # prompt for password
+    __writeLog "Prompting for Password"
     $secureString = Read-Host -Prompt "Enter password for $domain\$username at $vip" -AsSecureString
     $pwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
     $opwd = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($pwd))
@@ -503,12 +522,14 @@ function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $do
 function Set-CohesityAPIPassword($vip, $username, $domain='local', $pwd=$null){
     # prompt for vip
     if(-not $vip){
+        __writeLog "Prompting for VIP"
         write-host 'VIP: ' -foregroundcolor green -nonewline
         $vip = Read-Host
         if(-not $vip){write-host 'vip is required' -foregroundcolor red; break}
     }
     # prompt for username
     if(-not $username){
+        __writeLog "Prompting for Username"
         write-host 'Username: ' -foregroundcolor green -nonewline
         $username = Read-Host
         if(-not $username){write-host 'username is required' -foregroundcolor red; break}
@@ -522,6 +543,7 @@ function Set-CohesityAPIPassword($vip, $username, $domain='local', $pwd=$null){
     }
     $keyName = "$vip`:$domain`:$username"
     if(!$pwd){
+        __writeLog "Prompting for Password"
         $secureString = Read-Host -Prompt "Enter password for $username at $vip" -AsSecureString
         $pwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
     }
