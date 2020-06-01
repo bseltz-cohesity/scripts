@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#   version 0.30 - Brian Seltzer - June 2020
+#   version 0.29 - Brian Seltzer - June 2020
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.06 - Consolidated Windows and Unix versions - June 2018
@@ -27,10 +27,9 @@
 # 0.27 - added support for Iris API Key - May 2020
 # 0.28 - added reprompt for password, debug log - June 2020
 # 0.29 - update storePasswordInFile - June 2020
-# 0.30 - update self updater - June 2020
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
-$versionCohesityAPI = '0.30'
+$versionCohesityAPI = '0.29'
 
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
@@ -816,9 +815,7 @@ function cohesityAPIversion([switch]$update){
     if($update){
         $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
         (Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File -Force cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-        Write-Host "Reloading cohesity-api..."
-        . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
-        # write-host "Cohesity-API version updated! Please restart PowerShell"
+        write-host "Cohesity-API version updated! Please restart PowerShell"
     }else{
         write-host "Cohesity-API version $versionCohesityAPI" -ForegroundColor Green 
     }
