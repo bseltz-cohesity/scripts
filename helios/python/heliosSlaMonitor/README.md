@@ -52,9 +52,9 @@ Please see here for more information: <https://github.com/bseltz-cohesity/script
 
 ## Authenticating to Helios
 
-Helios uses an API key for authentication. To acquire an API key: 
+Helios uses an API key for authentication. To acquire an API key:
 
-* log onto Helios 
+* log onto Helios
 * click the gear icon -> access management -> API Keys
 * click Add API Key
 * enter a name for your key
