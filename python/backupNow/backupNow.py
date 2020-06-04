@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
+# version 2020.06.04
+
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
 ### import pyhesity wrapper module

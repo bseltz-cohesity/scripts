@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# version 2020.06.04
+
 cluster='mycluster'
 apikey='12345678-1234-5678-9012-345678901234'
 jobname='my job'

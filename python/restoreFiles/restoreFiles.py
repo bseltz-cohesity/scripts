@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """restore files using python"""
 
+# version 2020.06.04
+
 # usage: ./restoreFiles.py -v mycluster \
 #                          -u myusername \
 #                          -d mydomain .net \

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - v2020.05.29"""
+"""Cohesity Python REST API Wrapper Module - 2020.06.04"""
 
 ##########################################################################################
 # Change Log
@@ -28,6 +28,7 @@
 # 2.1.0 - added support for Iris API Key - May 2020
 # 2.1.1 - added support for PWFILE - May 2020
 # 2020.05.29 - added re-prompt for bad password, debug log, password storage changes
+# 2020.06.04 - bumping version (no reason)
 #
 ##########################################################################################
 # Install Notes

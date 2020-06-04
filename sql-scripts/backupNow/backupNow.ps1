@@ -1,3 +1,4 @@
+# version 2020.06.04
 # usage: ./backupNow.ps1 -vip mycluster -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
@@ -119,27 +120,28 @@ if($objects){
                         $runNowParameters += @{
                             "sourceId" = $serverObjectId;
                         }
-                        if($instance -or $db){
-                            
-                            if($environment -eq 'kOracle' -or $job.environmentParameters.sqlParameters.backupType -eq 'kSqlVSSFile'){
-                                ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId}).databaseIds = @()
-                                $protectedDbList = api get "protectionSources/protectedObjects?environment=$environment&id=$serverObjectId" | Where-Object {$jobName -in $_.protectionJobs.name}
-                                if($environment -eq 'kSQL'){
-                                    $protectedDb = $protectedDbList | Where-Object {$_.protectionSource.name -eq "$instance/$db"}
-                                }else{
-                                    $protectedDb = $protectedDbList | Where-Object {$_.protectionSource.name -eq $db}
-                                }
-                                
-                                if($protectedDb){
-                                    ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId}).databaseIds += $protectedDb[0].protectionSource.id
-                                }else{
-                                    write-host "$object not protected by job $jobName"
-                                    exit 1
-                                }
+                    }
+                    if($instance -or $db){                  
+                        if($environment -eq 'kOracle' -or $job.environmentParameters.sqlParameters.backupType -eq 'kSqlVSSFile'){
+                            $runNowParameter = $runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId}
+                            if(! $runNowParameter.databaseIds){
+                                $runNowParameter.databaseIds = @()
+                            }
+                            $protectedDbList = api get "protectionSources/protectedObjects?environment=$environment&id=$serverObjectId" | Where-Object {$jobName -in $_.protectionJobs.name}
+                            if($environment -eq 'kSQL'){
+                                $protectedDb = $protectedDbList | Where-Object {$_.protectionSource.name -eq "$instance/$db"}
                             }else{
-                                Write-Host "Job is Volume based. Can not selectively backup instances/databases"
+                                $protectedDb = $protectedDbList | Where-Object {$_.protectionSource.name -eq $db}
+                            }               
+                            if($protectedDb){
+                                $runNowParameter.databaseIds += $protectedDb[0].protectionSource.id
+                            }else{
+                                write-host "$object not protected by job $jobName"
                                 exit 1
                             }
+                        }else{
+                            Write-Host "Job is Volume based. Can not selectively backup instances/databases"
+                            exit 1
                         }
                     }
                 }else{
