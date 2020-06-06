@@ -48,8 +48,12 @@ Place both files in a folder together and run the main script like so:
 
 If both -j and -f parameters are omitted, the script will process all jobs of type kPhysicalFiles. If you want to limit the script to specific jobs, you can either use the -j parameter, like:
 
+```bash
 -j 'My Job 1' -j 'My Job 2'
+```
 
 or place the job names in a text file (one job name per line) and use the -f parameter, like:
 
+```bash
 -f ./jobs.txt
+```
