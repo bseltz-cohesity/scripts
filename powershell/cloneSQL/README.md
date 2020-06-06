@@ -48,3 +48,5 @@ The script takes the following parameters:
 * -logTime (optional - point in time to replay the logs to - if omitted will default to time of latest DB backup)
 * -wait (wait for completion and report end status)
 * -latest (optional - replay the logs to the latest point in time available)
+
+To specify a source instance, include the instance name in the sourceDB name, like MYINSTANCE/MyDB

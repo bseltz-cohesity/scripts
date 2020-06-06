@@ -46,6 +46,8 @@ Restoring cohesitydb to sqldev01 as restoreTest
 * -sourceDB: Original database name
 * -mdfFolder: Location to place the primary data file (e.g. C:\SQLData)
 
+To specify a source instance, include the instance name in the sourceDB name, like MYINSTANCE/MyDB
+
 ### Optional Parameters
 
 * -targetServer: Server name to restore to (defaults to same as sourceServer)
