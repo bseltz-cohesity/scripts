@@ -28,6 +28,7 @@ Place both files in a folder together and run the main script like so:
                               -u myuser \
                               -d mydomain.net \
                               -j 'My Backup Job' \
+                              -j 'Another Job' \
                               -e 'E:\' \
                               -e 'F:\' \
                               -x excludes.txt
@@ -38,6 +39,17 @@ Place both files in a folder together and run the main script like so:
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
-* -j, --jobname: name of the job to add the server to
+* -j, --jobname: (optional) name of the job to make changes to (repeat paramter for multiple jobs)
+* -f, --jobfile: (optional) text file containing job names to include
 * -e, --exclude: (optional) volume path to exclude (use multiple times for multiple paths)
 * -x, --excludefile: (optional) a text file full of exclude file paths
+
+## Selecting jobs to process
+
+If both -j and -f parameters are omitted, the script will process all jobs of type kPhysicalFiles. If you want to limit the script to specific jobs, you can either use the -j parameter, like:
+
+-j 'My Job 1' -j 'My Job 2'
+
+or place the job names in a text file (one job name per line) and use the -f parameter, like:
+
+-f ./jobs.txt
