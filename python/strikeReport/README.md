@@ -38,6 +38,9 @@ Place both files in a folder together and run the main script like so:
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
+* -i, --useApiKey: (optional) use API key for authentication
+* -pwd: --password: (optional) use password from command line instead of stored password
+* -of: --outfolder: (optional) where to write report html (default is current directory)
 * -s, --mailserver: SMTP gateway to forward email through
 * -p, --mailport: (optional) defaults to 25
 * -f, --sendfrom: email address to show in the from field

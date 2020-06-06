@@ -15,14 +15,16 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import re
+import codecs
 
 # command line arguments
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, required=True)
-parser.add_argument('-u', '--username', type=str, required=True)
+parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
-parser.add_argument('-pw', '--password', type=str)
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str)
 parser.add_argument('-of', '--outfolder', type=str, default='.')
 parser.add_argument('-s', '--mailserver', type=str)
 parser.add_argument('-p', '--mailport', type=int, default=25)
@@ -42,6 +44,7 @@ mailport = args.mailport
 sendto = args.sendto
 sendfrom = args.sendfrom
 days = args.days
+useApiKey = args.useApiKey
 
 
 def cleanhtml(raw_html):
@@ -51,10 +54,7 @@ def cleanhtml(raw_html):
 
 
 # authenticate
-if password is not None:
-    apiauth(vip, username, domain, password=password)
-else:
-    apiauth(vip, username, domain)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
 
 print('Collecting report data...')
 
@@ -264,19 +264,20 @@ outfileName = '%s/%s-%s-strikeReport.html' % (folder, nowstring, cluster['name']
 
 print('saving report as %s' % outfileName)
 
-f = open(outfileName, "w")
+f = codecs.open(outfileName, 'w', 'utf-8')
 f.write(html)
 f.close()
 
 # email report
 if mailserver is not None:
     print('Sending report to %s...' % ', '.join(sendto))
-    emailhtml = MIMEText(html, 'html')
+    emailhtml = MIMEText(html, 'html', 'utf-8')
     msg = MIMEMultipart('alternative')
     msg['Subject'] = title
     msg['From'] = sendfrom
     msg['To'] = ','.join(sendto)
     msg.attach(emailhtml)
+    msg['Content-Transfer-Encoding'] = '8bit'
     smtpserver = smtplib.SMTP(mailserver, mailport)
     smtpserver.sendmail(sendfrom, sendto, msg.as_string())
     smtpserver.quit()
