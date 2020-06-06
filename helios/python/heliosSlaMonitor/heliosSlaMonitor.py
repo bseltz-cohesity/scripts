@@ -6,6 +6,7 @@ from datetime import datetime
 import smtplib
 import email.message
 import email.utils
+import codecs
 
 ### command line arguments
 import argparse
@@ -134,7 +135,7 @@ if missesRecorded is False:
     print('No SLA misses recorded')
 else:
     message += '</body></html>'
-    f = open('out.html', 'w')
+    f = codecs.open('out.html', 'w', 'utf-8')
     f.write(message)
     f.close()
     # email report
@@ -146,6 +147,9 @@ else:
         msg['To'] = ','.join(sendto)
         msg.add_header('Content-Type', 'text/html')
         msg.set_payload(message)
+        # handle unicode
+        msg['Content-Transfer-Encoding'] = '8bit'
+        msg.set_payload(message, 'UTF-8')
         smtpserver = smtplib.SMTP(mailserver, mailport)
         smtpserver.sendmail(sendfrom, sendto, msg.as_string())
         smtpserver.quit()
