@@ -14,33 +14,9 @@ curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/easyScr
 # end download commands
 ```
 
-Upload the zip file to easyScript and specify the arguments, like:
+Unzip the file. We can then use Python or PowerShell to store a password for use by easyScript.
 
-```bash
--pw xxxxxxxxxxxx
-```
-
-Where -pw is the helios API key (see below). If you'd like to send the report via email, the provide the mail-related arguments:
-
-```bash
--pw xxxxxxxxxxxx -s mysmtpserver -t toaddr@mydomain.net -f fromaddr@mydomain.net
-```
-
-## Parameters
-
-* -v, --vip: (optional) DNS or IP of the Helios endpoint (defaults to helios.cohesity.com)
-* -u, --username: (optional) username to store helios API key (defaults to helios)
-* -d, --domain: (optional) domain of username to store helios API key (default is local)
-* -pw, --password: use the helios API key as the password (see below)
-* -s, --mailserver: (optional) SMTP gateway to forward email through
-* -p, --mailport: (optional) defaults to 25
-* -f, --sendfrom: (optional) email address to show in the from field
-* -t, --sendto: (optional) email addresses to send report to (use repeatedly to add recipients)
-* -b, --maxbackuphrs: (optional) defaults to 8
-* -r, --maxreplicationhrs: (optional) defaults to 12
-* -w, --watch: (optional) all, backup or replication (defaults to all)
-
-## Authenticating to Helios
+## Getting a Password for Helios
 
 Helios uses an API key for authentication. To acquire an API key:
 
@@ -52,4 +28,49 @@ Helios uses an API key for authentication. To acquire an API key:
 
 Immediately copy the API key (you only have one chance to copy the key. Once you leave the screen, you can not access it again).
 
-Use this API key as the password (-pw) above
+Use this API key as the password.
+
+## Storing the Password with Python
+
+Open a terminal or command prompt and change directory to where the files were unzipped. Then run the command:
+
+```bash
+python storePassword.py
+Enter password for local/helios at helios.cohesity.com: ************************************
+```
+
+## Storing the Password with PowerShell
+
+```powershell
+.\storePassword.ps1
+Enter password for local/helios at helios.cohesity.com: ************************************
+```
+
+Once the password is stored, create a zip file of all the files in the folder again, for upload to EasyScript.
+
+## Uploading to EasyScript
+
+* In EasyScript, click "Upload a Script"
+* Enter a descriptive name for the script
+* Select Python 2.7 or 3.7 (both work for this script)
+* enter a description (optional)
+* enter the arguments (note that all arguments are optional)
+
+For example: you can have the script send a report via email using the folllowing arguments:
+
+```bash
+-s smtp.mydomain.net -t myemail.mydomain.net -f easyscript.mydomain.net
+```
+
+## Arguments
+
+* -v, --vip: (optional) DNS or IP of the Helios endpoint (defaults to helios.cohesity.com)
+* -u, --username: (optional) username to store helios API key (defaults to helios)
+* -d, --domain: (optional) domain of username to store helios API key (default is local)
+* -s, --mailserver: (optional) SMTP gateway to forward email through
+* -p, --mailport: (optional) defaults to 25
+* -f, --sendfrom: (optional) email address to show in the from field
+* -t, --sendto: (optional) email addresses to send report to (use repeatedly to add recipients)
+* -b, --maxbackuphrs: (optional) defaults to 8
+* -r, --maxreplicationhrs: (optional) defaults to 12
+* -w, --watch: (optional) all, backup or replication (defaults to all)
