@@ -46,7 +46,7 @@ Enter password for local/helios at helios.cohesity.com: ************************
 Enter password for local/helios at helios.cohesity.com: ************************************
 ```
 
-Once the password is stored, create a zip file of all the files in the folder again, for upload to EasyScript.
+Once the password is stored, create a new zip file of all the files in the folder, for upload to EasyScript.
 
 ## Uploading to EasyScript
 
@@ -55,12 +55,7 @@ Once the password is stored, create a zip file of all the files in the folder ag
 * Select Python 2.7 or 3.7 (both work for this script)
 * enter a description (optional)
 * enter the arguments (note that all arguments are optional)
-
-For example: you can have the script send a report via email using the folllowing arguments:
-
-```bash
--s smtp.mydomain.net -t myemail.mydomain.net -f easyscript.mydomain.net
-```
+* browse and upload our new zip file
 
 ## Arguments
 
@@ -74,3 +69,9 @@ For example: you can have the script send a report via email using the folllowin
 * -b, --maxbackuphrs: (optional) defaults to 8
 * -r, --maxreplicationhrs: (optional) defaults to 12
 * -w, --watch: (optional) all, backup or replication (defaults to all)
+
+For example: you can have the script send a report via email using the folllowing arguments:
+
+```bash
+-s smtp.mydomain.net -t myemail.mydomain.net -f easyscript.mydomain.net
+```
