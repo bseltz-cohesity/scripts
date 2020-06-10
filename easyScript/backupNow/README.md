@@ -16,34 +16,20 @@ curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/easyScr
 
 Unzip the file. We can then use Python or PowerShell to store a password for use by easyScript.
 
-## Getting a Password for Helios
-
-Helios uses an API key for authentication. To acquire an API key:
-
-* log onto Helios
-* click the gear icon -> access management -> API Keys
-* click Add API Key
-* enter a name for your key
-* click Save
-
-Immediately copy the API key (you only have one chance to copy the key. Once you leave the screen, you can not access it again).
-
-Use this API key as the password.
-
 ## Storing the Password with Python
 
 Open a terminal or command prompt and change directory to where the files were unzipped. Then run the command:
 
 ```bash
-python storePassword.py
-Enter password for local/helios at helios.cohesity.com: ************************************
+python storePassword.py -v mycluster -u myuser -d mydomain.net
+Enter password for mydomain.net/myuser at mycluster: ************************************
 ```
 
 ## Storing the Password with PowerShell
 
 ```powershell
-.\storePassword.ps1
-Enter password for local/helios at helios.cohesity.com: ************************************
+.\storePassword.ps1 -vip mycluster -username myuser -domain mydomain.net
+Enter password for mydomain.net/myuser at mycluster: ************************************
 ```
 
 Once the password is stored, create a new zip file of all the files in the folder, for upload to EasyScript.
