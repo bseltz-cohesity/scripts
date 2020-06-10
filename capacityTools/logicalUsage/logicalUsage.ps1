@@ -6,7 +6,8 @@ param (
     [Parameter(Mandatory = $True)][string]$vip,
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
-    [Parameter()][int]$days = 90
+    [Parameter()][int]$days = 90,
+    [Parameter()][switch]$localOnly
 )
 
 ### source the cohesity-api helper code
@@ -18,19 +19,21 @@ apiauth -vip $vip -username $username -domain $domain
 $report = @{}
 
 "Inspecting snapshots..."
-foreach ($job in (api get protectionJobs)) {
-    $runs = api get protectionRuns?jobId=$($job.id)`&numRuns=99999`&excludeNonRestoreableRuns=true`&runTypes=kFull`&runTypes=kRegular`&startTimeUsecs=$(timeAgo $days days)
-    foreach ($run in $runs){
-        if ($run.backupRun.snapshotsDeleted -eq $false) {
-            foreach($source in $run.backupRun.sourceBackupStatus){
-                $sourcename = $source.source.name
-                if($sourcename -notin $report.Keys){
-                    $report[$sourcename] = @{}
-                    $report[$sourcename]['size'] = 0
-                    $report[$sourcename]['environment'] = $source.source.environment
-                }
-                if($source.stats.totalLogicalBackupSizeBytes -gt $report[$sourcename]['size']){
-                    $report[$sourcename]['size'] = $source.stats.totalLogicalBackupSizeBytes
+foreach ($job in (api get protectionJobs)){
+    if(!($localOnly -and $job.IsActive -eq $False)){
+        $runs = api get protectionRuns?jobId=$($job.id)`&numRuns=99999`&excludeNonRestoreableRuns=true`&runTypes=kFull`&runTypes=kRegular`&startTimeUsecs=$(timeAgo $days days)
+        foreach ($run in $runs){
+            if ($run.backupRun.snapshotsDeleted -eq $false) {
+                foreach($source in $run.backupRun.sourceBackupStatus){
+                    $sourcename = $source.source.name
+                    if($sourcename -notin $report.Keys){
+                        $report[$sourcename] = @{}
+                        $report[$sourcename]['size'] = 0
+                        $report[$sourcename]['environment'] = $source.source.environment
+                    }
+                    if($source.stats.totalLogicalBackupSizeBytes -gt $report[$sourcename]['size']){
+                        $report[$sourcename]['size'] = $source.stats.totalLogicalBackupSizeBytes
+                    }
                 }
             }
         }
@@ -38,7 +41,11 @@ foreach ($job in (api get protectionJobs)) {
 }                                                                                           
 
 "Inspecting Views..."
-$views = api get views?includeInactive=true
+if($localOnly){
+    $views = api get views
+}else{
+    $views = api get views?includeInactive=true
+}
 foreach($view in $views.views){
     $viewname = $view.name
     if($view.name -notin $report.Keys){
