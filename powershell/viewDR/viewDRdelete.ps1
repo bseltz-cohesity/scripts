@@ -35,9 +35,6 @@ if($viewList){
     exit
 }
 
-$myviews
-exit
-
 ### source the cohesity-api helper code
 . ./cohesity-api
 
