@@ -16,6 +16,7 @@ parser.add_argument('-d', '--domain', type=str, default='local')  # Cohesity Use
 parser.add_argument('-v', '--view', type=str, required=True)  # name of source view to clone
 parser.add_argument('-n', '--newname', type=str, required=True)  # name of target view to create
 parser.add_argument('-f', '--filedate', type=str, default=None)  # date time to recover view to
+parser.add_argument('-b', '--before', action='store_true')  # use snapshot before file date (default is after)
 parser.add_argument('-w', '--wait', action='store_true')  # wait for completion
 
 args = parser.parse_args()
@@ -26,6 +27,7 @@ domain = args.domain
 viewName = args.view
 newName = args.newname
 filedate = args.filedate
+before = args.before
 wait = args.wait
 
 ### authenticate
@@ -51,12 +53,20 @@ if filedate is not None:
     if ':' not in filedate:
         filedate = '%s 00:00:00' % filedate
     filedateusecs = dateToUsecs(filedate)
-    versions = [v for v in doc['versions'] if filedateusecs <= v['snapshotTimestampUsecs']]
-    if versions:
-        version = versions[-1]
+    if before:
+        versions = [v for v in doc['versions'] if filedateusecs > v['snapshotTimestampUsecs']]
+        if versions:
+            version = versions[0]
+        else:
+            print('No backups from the specified date')
+            exit(1)
     else:
-        print('No backups from the specified date')
-        exit(1)
+        versions = [v for v in doc['versions'] if filedateusecs <= v['snapshotTimestampUsecs']]
+        if versions:
+            version = versions[-1]
+        else:
+            print('No backups from the specified date')
+            exit(1)
 else:
     version = doc['versions'][0]
 

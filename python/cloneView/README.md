@@ -29,19 +29,20 @@ Cloning View myview as newview...
 
 ## Parameters
 
-* `-s, --server`: DNS or IP of the Cohesity cluster to connect to
-* `-u, --username`: username to authenticate to Cohesity cluster
-* `-d, --domain`: (optional) domain of username, defaults to local
-* `-v, --view`: name of source view to be cloned
-* `-n, --newname`: name of clone view to create
-* `-f, --filedate`: (optional) select backup version at or after specified date (defaults to latest backup)
-* `-w, --wait`: (optional) wait for completion and report exit status
+* -s, --server: DNS or IP of the Cohesity cluster to connect to
+* -u, --username: username to authenticate to Cohesity cluster
+* -d, --domain: (optional) domain of username, defaults to local
+* -v, --view: name of source view to be cloned
+* -n, --newname: name of clone view to create
+* -f, --filedate: (optional) select backup version at or after specified date (defaults to latest backup)
+* -b, --before: (optional) select last backup version before file date (default is to use next backup after file date)
+* -w, --wait: (optional) wait for completion and report exit status
 
 ## Dates
 
 Use the `-f` parameter to specify the date from which to clone the view. The date may be entered like: `'2020-04-20 17:05:00'` or `'2020-04-20'` (which is interpreted as `'2020-04-20 00:00:00'`).
 
-The oldest snapshot that is equal to or newer than the specified date will be used. For example, if the view is backed up every night at 9PM and you enter `-f '2020-04-20 12:00:00'`, the backup from April 20th at 9PM would be selected.
+The oldest snapshot that is equal to or newer than the specified date will be used. For example, if the view is backed up every night at 9PM and you enter `-f '2020-04-20 12:00:00'`, the backup from April 20th at 9PM would be selected. Use the `-b` parameter to reverse this behavior and use the newest snapshot that is older than the specified date.
 
 If the `-f` parameter is omitted, then the latest backup is used by default.
 
