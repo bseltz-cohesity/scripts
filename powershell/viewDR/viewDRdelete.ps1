@@ -85,9 +85,9 @@ foreach($viewname in $myviews){
                 }else{
                     $null = api delete "protectionJobs/$($view.viewProtection.protectionJobs[0].jobId)"
                 }
+                "Deleting $viewname"
+                $null = api delete "views/$viewname"
             }
-            "Deleting $viewname"
-            $null = api delete "views/$viewname"
         }
     }
 }
