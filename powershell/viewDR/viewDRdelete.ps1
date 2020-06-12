@@ -36,7 +36,7 @@ if($viewList){
 }
 
 ### source the cohesity-api helper code
-. ./cohesity-api
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
@@ -61,8 +61,9 @@ $views = getViews
 
 $confirmed = $false
 
-foreach($viewname in $myviews){
-    $view = $views | Where-Object { $_.name -ieq $viewname }
+foreach($viewName in $myviews){
+    $viewName = [string]$viewName
+    $view = $views | Where-Object { $_.name -ieq $viewName }
     if($view){
         $view = $view[0]
         if($confirmed -eq $false){
@@ -85,8 +86,13 @@ foreach($viewname in $myviews){
                 }else{
                     $null = api delete "protectionJobs/$($view.viewProtection.protectionJobs[0].jobId)"
                 }
-                "Deleting $viewname"
-                $null = api delete "views/$viewname"
+                "Deleting $viewName"
+                $null = api delete "views/$viewName"
+            }else{
+                if(! $all){
+                    "Deleting $viewName"
+                    $null = api delete "views/$viewName"
+                }
             }
         }
     }

@@ -76,6 +76,8 @@ function getViews(){
 "Gathering Views..."
 $views = getViews
 
+$clonedViewList = "clonedViews-{0}" -f (get-date).ToString('yyyy-MM-dd_hh-mm-ss')
+
 foreach($viewName in $myViews){
     ### get view metadata from file
     $filePath = Join-Path -Path $inPath -ChildPath $viewName
@@ -124,6 +126,7 @@ foreach($viewName in $myViews){
 
         if ($cloneOp) {
             "Cloned $viewName"
+            "$viewName" | Out-File -FilePath $clonedViewList -Append
         }
     }
 }
@@ -137,7 +140,14 @@ foreach($viewName in $myViews){
     $newView = ($views | Where-Object name -eq $viewName)
     if($newView){
         $newView = $newView[0]
-        $newView.enableSmbViewDiscovery = $false #$metadata.enableSmbViewDiscovery
+        ### get view metadata from file
+        $filePath = Join-Path -Path $inPath -ChildPath $viewName
+        if(Test-Path $filePath){
+            $metadata = Get-Content $filePath | ConvertFrom-Json
+        }else{
+            Write-Warning "$filePath not found"
+        }
+        $newView.enableSmbViewDiscovery = $metadata.enableSmbViewDiscovery
         $newView.qos = @{
             "principalName" = $metadata.qos.principalName;
         }
@@ -191,4 +201,3 @@ foreach($viewName in $myViews){
         }
     }
 }
-
