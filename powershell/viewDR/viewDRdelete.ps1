@@ -6,7 +6,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vip,
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
-    [Parameter()][string]$viewName,
+    [Parameter()][array]$viewNames,
     [Parameter()][string]$viewList,
     [Parameter()][switch]$all,
     [Parameter()][string]$inPath,
@@ -16,8 +16,8 @@ param (
 # gather view list
 if($viewList){
     $myviews = get-content $viewList
-}elseif($viewName){
-    $myviews = @($viewName)
+}elseif($viewNames){
+    $myviews = @($viewNames)
 }elseif($all -and $inPath){
     if(test-path $inPath){
         $files = Get-ChildItem $inPath

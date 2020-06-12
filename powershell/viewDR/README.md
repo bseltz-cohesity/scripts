@@ -20,8 +20,8 @@ Run these commands from PowerShell to download the script(s) into your current d
 ## Components
 
 * viewDRcollect.ps1: collect view metatdata at the primary site
-* viewDRclone.ps1: recover a view at the DR site
-* viewDRcloneAll.ps1: recover all views at the DR site
+* viewDRclone.ps1: clone views at the DR site
+* viewDRdelete.ps1: delete views (from primary, or from DR after a DR test or failback)
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 First, create a location to store view metadata that whill be reachable from both the primary and DR sites. It is strongly recommended that this location be at the DR site so that it will be available at time of recovery.
@@ -41,14 +41,45 @@ At time of DR, you can recover one view:
 Or you can recover all views:
 
 ```powershell
-./viewDRcloneAll.ps1 -vip myDRcluster -username admin [ -domain local ] -inPath \\myserver\myshare
+./viewDRclone.ps1 -vip myDRcluster -username admin [ -domain local ] -inPath \\myserver\myshare -all
 ```
+
+The clone script outputs a text file list of views that have been cloned. This can be used later by the delete script (using the -viewList parameter) to delete the correct list of views.
 
 After completing a DR test, you can delete all of the test views:
 
 ```powershell
-./viewDRdeleteAll.ps1 -vip myDRcluster -username admin [ -domain local ] -inPath \\myserver\myshare
+./viewDRdelete.ps1 -vip myDRcluster -username admin [ -domain local ] -inPath \\myserver\myshare -all
 ```
+
+## Collection Script Parameters
+
+* -vip: Cohesity cluster to connect to (primary side)
+* -username: Cohesity username
+* -domain: (optional) AC Domain of Cohesity user (defaults to local)
+* -outPath: path to deposit view metadata files (recommend this be an SMB path at the DR site)
+
+## Clone Script Parameters
+
+* -vip: Cohesity cluster to connect to (primary side)
+* -username: Cohesity username
+* -domain: (optional) AC Domain of Cohesity user (defaults to local)
+* -viewNames: (optional) comma separated list of view names to clone
+* -viewList: (optional) text file containing view list to clone (one view name per line)
+* -all: (optional) clone all available views
+* -policyName: (optional) protect cloned view with this policy
+* -inPath: path to output files from the collector script
+
+## Delete Script Parameters
+
+* -vip: Cohesity cluster to connect to (primary side)
+* -username: Cohesity username
+* -domain: (optional) AC Domain of Cohesity user (defaults to local)
+* -viewNames: (optional) comma separated list of view names to clone
+* -viewList: (optional) text file containing view list to clone (one view name per line)
+* -all: (optional) clone all available views
+* -inPath: (optional) path to output files from the collector script (only needed when using -all)
+* -deleteSnapshots: (optional) delete leftover snapshots when the protection job is deleted
 
 ## Scheduling PowerShell Scripts
 
