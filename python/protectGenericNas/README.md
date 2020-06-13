@@ -12,7 +12,7 @@ You can download the scripts using the following commands:
 # download commands
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectGenericNas/protectGenericNas.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-chmod +x protectNewWindowsVolumes.py
+chmod +x protectGenericNas.py
 # end download commands
 ```
 
