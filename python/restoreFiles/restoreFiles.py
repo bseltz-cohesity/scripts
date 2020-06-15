@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """restore files using python"""
 
-# version 2020.06.04
+# version 2020.06.14
 
 # usage: ./restoreFiles.py -v mycluster \
 #                          -u myusername \
@@ -34,6 +34,7 @@ parser.add_argument('-n', '--filename', type=str, action='append')    # file nam
 parser.add_argument('-l', '--filelist', type=str, default=None)       # text file list of files to restore
 parser.add_argument('-p', '--restorepath', type=str, default=None)    # destination path
 parser.add_argument('-f', '--filedate', type=str, default=None)       # date to restore from
+parser.add_argument('-o', '--newonly', action='store_true')           # abort if PIT is not new
 parser.add_argument('-w', '--wait', action='store_true')              # wait for completion and report result
 
 args = parser.parse_args()
@@ -55,6 +56,7 @@ files = args.filename
 filelist = args.filelist
 restorepath = args.restorepath
 filedate = args.filedate
+newonly = args.newonly
 wait = args.wait
 
 # gather volume list
@@ -96,7 +98,7 @@ if searchResults:
         searchResults = [v for v in searchResults if v['vmDocument']['jobName'].lower() == jobname.lower()]
 
 if len(searchResults) == 0:
-    if jobName is not None:
+    if jobname is not None:
         print("%s is not protected by %s" % (sourceserver, jobname))
     else:
         print("%s is not protected" % sourceserver)
@@ -117,6 +119,19 @@ if filedate is not None:
         exit(1)
 else:
     version = doc['versions'][0]
+
+if newonly:
+    # get last restore date from tracking file
+    try:
+        f = open('lastrestorepoint', 'r')
+        lastrestorepoint = long(f.read())
+    except Exception as e:
+        lastrestorepoint = 0
+    if version['instanceId']['jobStartTimeUsecs'] > lastrestorepoint:
+        print('found newer version to restore')
+    else:
+        print('no new versions found')
+        exit(1)
 
 restoreTaskName = "Recover-Files_%s" % datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
@@ -166,6 +181,10 @@ if restoreTask:
             restoreTask = api('get', '/restoretasks/%s' % taskId)
         if restoreTask[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus'] == 'kSuccess':
             print("Restore finished with status %s" % restoreTask[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus'])
+            if newonly:
+                f = open('lastrestorepoint', 'w')
+                f.write('%s' % version['instanceId']['jobStartTimeUsecs'])
+                f.close()
             exit(0)
         else:
             if 'error' in restoreTask[0]['restoreTask']['performRestoreTaskState']['base']:
@@ -176,6 +195,10 @@ if restoreTask:
             print(errorMsg)
             exit(1)
     else:
+        if newonly:
+            f = open('lastrestorepoint', 'w')
+            f.write('%s' % version['instanceId']['jobStartTimeUsecs'])
+            f.close()
         exit(0)
 else:
     exit(1)
