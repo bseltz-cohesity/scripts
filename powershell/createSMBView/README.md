@@ -33,6 +33,8 @@ Place both files in a folder together and run the main script like so:
                     -readWrite mydomain.net\server1 `
                     -fullControl mydomain.net\admingroup1, mydomain.net\admingroup2 `
                     -qosPolicy 'TestAndDev High' `
+                    -quotaLimitGB 20 `
+                    -quotaAlertGB 18 `
                     -storageDomain mystoragedomain
 #end example
 ```
@@ -43,9 +45,9 @@ Place both files in a folder together and run the main script like so:
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -viewName: name of new view to create
-* -readWrite: comma separated list of principals to grant read/write access
-* -fullControl: comma separated list of principals to grant full control
-* -qosPolicy: defaults to 'Backup Target Low' or choose 'Backup Target High', 'TestAndDev High' or 'TestAndDev Low'
-* -storageDomain: name of storage domain to place view data. Defaults to DefaultStorageDomain
-* -quotaLimitGB: logical quota in GiB
-* -quotaAlertGB: alert threshold in GiB
+* -readWrite: (optional) comma separated list of principals to grant read/write access
+* -fullControl: (optional) comma separated list of principals to grant full control
+* -qosPolicy: (optional) defaults to 'Backup Target Low' or choose 'Backup Target High', 'TestAndDev High' or 'TestAndDev Low'
+* -storageDomain: (optional) name of storage domain to place view data. Defaults to DefaultStorageDomain
+* -quotaLimitGB: (optional) logical quota in GiB
+* -quotaAlertGB: (optional) alert threshold in GiB
