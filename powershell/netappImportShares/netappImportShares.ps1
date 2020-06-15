@@ -61,9 +61,14 @@ if($importFile -and (Test-Path -Path $importFile -PathType Leaf)){
 
 # enumerate netappVolumes
 foreach($netappShare in $netappShares | Where-Object Path -ne '/'){
+    
     $volumeName = $netappShare.Path.Split('/')[1]
-    if($volumeName -in $volumes -or $volumes.Length -eq 0){
+    $altVolumeName = $netappShare.Path.Split('/')[2]
+    if(($volumeName -in $volumes -or $volumes.Length -eq 0) -and $volumeName -ne "vol"){
         $volumesToRecover += $volumeName
+    }
+    if($volumeName -eq "vol" -and ($altVolumeName -in $volumes -or $volumes.Length -eq 0)){
+       $volumesToRecover += $altVolumeName
     }
 }
 $volumesToRecover = $volumesToRecover | Sort-Object -Unique
@@ -114,9 +119,10 @@ function getSid($principalName){
 
 # recover netapp volumes as views
 foreach($volumeName in $volumesToRecover){
+
     $newViewName = "$viewPrefix$volumeName$"
     $existingView = $views.views | Where-Object name -eq $newViewName
-    if(!$existingView){
+    if(! $existingView){
         # migrate the netapp volume
         $searchResult = api get "/searchvms?entityTypes=kNetapp&vmName=$volumeName"
         $viewResult = $searchResult.vms | Where-Object {$_.vmDocument.objectName -eq $volumeName -and $_.vmDocument.registeredSource.displayName -eq $netappSource}
@@ -203,16 +209,17 @@ foreach($netappShare in $netappShares | Where-Object {$_.ShareName -ne "/$($_.Pa
             $skip = $True
         }
     }
-    if($skip){
-        "** Skipping share $($netappShare.shareName)..."
-    }else{
-        $volumeName = $netappShare.Path.Split('/')[1]
-        # skip if volume was not migrated
-        if($volumeName -in $recoveredVolumes){
+
+    $volumeName = $netappShare.Path.Split('/')[1]
+    # skip if volume was not migrated
+    if($volumeName -in $recoveredVolumes){
+        if($skip){
+            "** Skipping share $($netappShare.shareName)..."
+        }else{
             $newViewName = "$viewPrefix$volumeName$"
             $relativePath = "/$($netappShare.Path.split('/',3)[2])"
-        
-            if($relativePath -and $shareName -ne $volumeName -and $shareName -notin $shares.sharesList.shareName){
+            
+            if($relativePath -and $shareName -ne $newViewName -and $shareName -notin $shares.sharesList.shareName){
                 $shareParams = @{
                     "viewName"         = $newViewName;
                     "viewPath"         = "$relativePath";
@@ -241,6 +248,6 @@ foreach($netappShare in $netappShares | Where-Object {$_.ShareName -ne "/$($_.Pa
                 "Sharing {0}{1} as {2}" -f $newViewName, $relativePath, $shareName
                 $null = api post viewAliases $shareParams
             }
-        }                  
+        }
     }
 }
