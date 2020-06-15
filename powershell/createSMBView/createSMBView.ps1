@@ -10,7 +10,11 @@ param (
     [Parameter()][string]$storageDomain = 'DefaultStorageDomain',  # name of storage domain in which to create view
     [Parameter()][array]$fullControl,                 # list of users to grant full control
     [Parameter()][array]$readWrite,                   # list of users to grant read/write
-    [Parameter()][ValidateSet(“Backup Target Low”,”Backup Target High”,”TestAndDev High”,"TestAndDev Low")][string]$qosPolicy = 'Backup Target Low'
+    [Parameter()][array]$readOnly,                    # list of users to grant read-only
+    [Parameter()][array]$modify,                      # list of users to grant modify
+    [Parameter()][int64]$quotaLimitGB = 0,            # quota Limit in GiB
+    [Parameter()][int64]$quotaAlertGB = 0,            # quota alert threshold in GiB
+    [Parameter()][ValidateSet('Backup Target Low','Backup Target High','TestAndDev High','TestAndDev Low')][string]$qosPolicy = 'Backup Target Low'
 )
 
 ### source the cohesity-api helper code
@@ -41,6 +45,14 @@ $newView = @{
       "fileExtensionsList" = @()
     };
     "securityMode" = "kNativeMode";
+    "sharePermissions" = @(
+      @{
+        "sid" = "S-1-1-0";
+        "access" = "kFullControl";
+        "mode" = "kFolderSubFoldersAndFiles";
+        "type" = "kAllow"
+      }
+    );
     "smbPermissionsInfo" = @{
       "ownerSid" = "S-1-5-32-544";
       "permissions" = @()
@@ -58,12 +70,22 @@ $newView = @{
     "name" = $viewName
 }
 
+# quota
+if($quotaLimitGB -ne 0 -or $quotaAlertGB -ne 0){
+  $newView['logicalQuota'] = @{}
+  if($quotaLimitGB -ne 0){
+    $newView.logicalQuota['hardLimitBytes'] = $quotaLimitGB * 1024 * 1024 * 1024
+  }
+  if($quotaAlertGB -ne 0){
+    $newView.logicalQuota['alertLimitBytes'] = $quotaAlertGB * 1024 * 1024 * 1024
+  }
+}
+
 ### add permissions
 function addPermission($user, $perms){
     $domain, $domainuser = $user.split('\')
     $principal = api get "activeDirectory/principals?domain=$domain&includeComputers=true&search=$domainuser" | Where-Object fullName -eq $domainuser
     if($principal){
-        $sid = $principal.sid
         $permission = @{
             "sid" = $principal.sid;
             "type" = "kAllow";
@@ -83,6 +105,14 @@ foreach($user in $readWrite){
 
 foreach($user in $fullControl){
     addPermission $user 'kFullControl'
+}
+
+foreach($user in $readOnly){
+  addPermission $user 'kReadOnly'
+}
+
+foreach($user in $modify){
+  addPermission $user 'kModify'
 }
 
 ### create the view

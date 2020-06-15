@@ -47,3 +47,5 @@ Place both files in a folder together and run the main script like so:
 * -fullControl: comma separated list of principals to grant full control
 * -qosPolicy: defaults to 'Backup Target Low' or choose 'Backup Target High', 'TestAndDev High' or 'TestAndDev Low'
 * -storageDomain: name of storage domain to place view data. Defaults to DefaultStorageDomain
+* -quotaLimitGB: logical quota in GiB
+* -quotaAlertGB: alert threshold in GiB
