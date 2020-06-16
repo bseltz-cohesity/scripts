@@ -22,6 +22,13 @@ apiauth -vip $vip -username $username -domain $domain
 ### get host mappings
 $hosts = api get /nexus/cluster/get_hosts_file
 
+if(! $hosts){
+    $hosts = @{'hosts' = @()}
+}
+if(! $hosts.hosts){
+    $hosts.hosts = @()
+}
+
 if($backup){
     $backupFile = "hosts-backup-$(get-date -UFormat %Y-%m-%d-%H-%M-%S).csv"
     $hosts.hosts | ForEach-Object{ 
@@ -32,8 +39,8 @@ if($backup){
 
 function addEntry($ip, $hostNames){
     $newentry = New-Object pscustomobject -Property @{ip = $ip; domainName = @($hostNames)}
-    if($null -eq $hosts.hosts){
-        $newhosts = @($newentry)
+    if($hosts.hosts.Count -eq 0){
+        $newhosts = ,$newentry
     }else{
         $duplicate = $false
         $newhosts = @($hosts.hosts) | ForEach-Object{
@@ -60,7 +67,7 @@ $changesMade = $false
 
 # process single entry
 if($ip -and $hostNames){
-   $hosts.hosts = addEntry $ip $hostNames
+   $hosts.hosts = @(addEntry $ip $hostNames)
    $changesMade = $True
 }elseif($ip){
     Write-Host "-hostNames required" -ForegroundColor Yellow
@@ -95,6 +102,7 @@ if($inputFile){
 $hosts.hosts | Sort-Object -Property ip
 
 $hosts | setApiProperty 'validate' $True
+
 if($changesMade){
     $result = api put /nexus/cluster/upload_hosts_file $hosts
     write-host $result.message -ForegroundColor Green
