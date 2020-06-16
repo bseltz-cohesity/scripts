@@ -28,9 +28,10 @@
 # 0.28 - added reprompt for password, debug log - June 2020
 # 0.29 - update storePasswordInFile - June 2020
 # 2020.06.04 - updated version numbering - June 2020
+# 2020.06.16 - improved REINVOKE - June 2020
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
-$versionCohesityAPI = '2020.06.04'
+$versionCohesityAPI = '2020.06.16'
 
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
@@ -40,7 +41,9 @@ if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
 
 $REPORTAPIERRORS = $true
 $REINVOKE = 0
-$MAXREINVOKE = 2
+$MAXREINVOKE = 10
+$PROMPTFORPASSWORDCHANGE = $true
+$TOKENDATE = $null
 
 $pwfile = $(Join-Path -Path $PSScriptRoot -ChildPath YWRtaW4)
 $logfile = $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api-debug.log)
@@ -85,9 +88,9 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
             $vip = 'helios.cohesity.com'
         }else{
             __writeLog "prompting for VIP"
-            write-host 'VIP: ' -foregroundcolor green -nonewline
+            Write-Host 'VIP: ' -foregroundcolor green -nonewline
             $vip = Read-Host
-            if(-not $vip){write-host 'vip is required' -foregroundcolor red; break}
+            if(-not $vip){Write-Host 'vip is required' -foregroundcolor red; break}
         }
     }
 
@@ -119,9 +122,9 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
         'password' = $pwd
     }
 
-    $global:VIP = $vip
-    $global:USERNAME = $username
-    $global:DOMAIN = $domain
+    $global:__VIP = $vip
+    $global:__USERNAME = $username
+    $global:__DOMAIN = $domain
     $global:SELECTEDHELIOSCLUSTER = $null
     $global:APIROOT = 'https://' + $vip + '/irisservices/api/v1'
     $HEADER = @{'accept' = 'application/json'; 'content-type' = 'application/json'}
@@ -133,8 +136,9 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
         $global:CLUSTERSELECTED = $true
         $cluster = api get cluster
         if($cluster){
-            if(!$quiet){ write-host "Connected!" -foregroundcolor green }
+            if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
         }
+        $global:TOKENDATE = dateToUsecs (get-date)
     }elseif($vip -eq 'helios.cohesity.com' -or $helios){
         # Authenticate Helios
         $HEADER['apiKey'] = $pwd
@@ -151,16 +155,19 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
             $global:CLUSTERSELECTED = $false
             $global:CLUSTERREADONLY = $false
             $global:USING_HELIOS = $true
-            if(!$quiet){ write-host "Connected!" -foregroundcolor green }
+            if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
+            $global:TOKENDATE = dateToUsecs (get-date)
         }catch{
             __writeLog $_.ToString()
             if($_.ToString().contains('"message":')){
-                write-host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
+                Write-Host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
             }else{
-                write-host $_.ToString() -foregroundcolor yellow
+                Write-Host $_.ToString() -foregroundcolor yellow
             }
             if($_.ToString().ToLower().Contains('authentication failed')){
-                apiauth -vip $vip -username $username -domain $domain -updatePassword
+                if($PROMPTFORPASSWORDCHANGE -eq $true){
+                    apiauth -vip $vip -username $username -domain $domain -updatePassword
+                }
             }
         }
     }else{
@@ -191,19 +198,22 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
             if($tenantId){
                 $global:HEADER['x-impersonate-tenant-id'] = "$tenantId/"
             }
-            if(!$quiet){ write-host "Connected!" -foregroundcolor green }
+            if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
+            $global:TOKENDATE = dateToUsecs (get-date)
         }catch{
             __writeLog $_.ToString()
             $global:AUTHORIZED = $false
             if($REPORTAPIERRORS){
                 if($_.ToString().contains('"message":')){
-                    write-host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
+                    Write-Host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
                 }else{
-                    write-host $_.ToString() -foregroundcolor yellow
+                    Write-Host $_.ToString() -foregroundcolor yellow
                 }
             }
             if($_.ToString().ToLower().contains('invalid username')){
-                apiauth -vip $vip -username $username -domain $domain -updatePassword
+                if($PROMPTFORPASSWORDCHANGE -eq $true){
+                    apiauth -vip $vip -username $username -domain $domain -updatePassword
+                }
             }
         }
     }
@@ -222,7 +232,7 @@ function heliosCluster($clusterName, [switch] $verbose){
             $global:SELECTEDHELIOSCLUSTER = $cluster.name
             $global:CLUSTERREADONLY = (api get /mcm/config).mcmReadOnly
             if($verbose){
-                write-host "Connected ($($cluster.name))" -ForegroundColor Green
+                Write-Host "Connected ($($cluster.name))" -ForegroundColor Green
             }
         }else{
             Write-Host "Cluster $clusterName not connected to Helios" -ForegroundColor Yellow
@@ -235,7 +245,7 @@ function heliosCluster($clusterName, [switch] $verbose){
     }
     if (-not $global:AUTHORIZED){ 
         if($REPORTAPIERRORS){
-            write-host 'Please use apiauth to connect to helios' -foregroundcolor yellow
+            Write-Host 'Please use apiauth to connect to helios' -foregroundcolor yellow
         }
     }
 }
@@ -252,9 +262,9 @@ function apipwd($vip, $username='helios', $domain='local', [switch] $asUser, [sw
             $vip = 'helios.cohesity.com'
         }else{
             __writeLog "Prompting for VIP"
-            write-host 'VIP: ' -foregroundcolor green -nonewline
+            Write-Host 'VIP: ' -foregroundcolor green -nonewline
             $vip = Read-Host
-            if(-not $vip){write-host 'vip is required' -foregroundcolor red; break}
+            if(-not $vip){Write-Host 'vip is required' -foregroundcolor red; break}
         }
     }
     # parse domain\username or username@domain
@@ -272,7 +282,7 @@ function apipwd($vip, $username='helios', $domain='local', [switch] $asUser, [sw
             if($PSVersionTable.Platform -ne 'Unix'){
                 $credential = Get-Credential -Message "Enter Credentials for the Windows User"
     
-                $args = "write-host ('running as ' + [System.Security.Principal.WindowsIdentity]::GetCurrent().Name);
+                $args = "Write-Host ('running as ' + [System.Security.Principal.WindowsIdentity]::GetCurrent().Name);
                 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1);
                 apiauth {0} -helios -updatePassword;
                 pause;" -f $username
@@ -289,7 +299,7 @@ function apipwd($vip, $username='helios', $domain='local', [switch] $asUser, [sw
             if($PSVersionTable.Platform -ne 'Unix'){
                 $credential = Get-Credential -Message "Enter Credentials for the Windows User"
     
-                $args = "write-host ('running as ' + [System.Security.Principal.WindowsIdentity]::GetCurrent().Name);
+                $args = "Write-Host ('running as ' + [System.Security.Principal.WindowsIdentity]::GetCurrent().Name);
                 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1);
                 apiauth -vip {0} -username {1} -domain {2} -updatePassword;
                 pause;" -f $vip, $username, $domain
@@ -308,7 +318,7 @@ function apidrop([switch] $quiet){
     $global:HEADER = ''
     $global:HELIOSALLCLUSTERS = $null
     $global:HELIOSCONNECTEDCLUSTERS = $null
-    if(!$quiet){ write-host "Disonnected!" -foregroundcolor green }
+    if(!$quiet){ Write-Host "Disonnected!" -foregroundcolor green }
 }
 
 # api call functions ==============================================================================
@@ -317,20 +327,20 @@ $methods = 'get', 'post', 'put', 'delete'
 function api($method, $uri, $data){
     if (-not $global:AUTHORIZED){ 
         if($REPORTAPIERRORS){
-            write-host 'Please use apiauth to connect to a cohesity cluster' -foregroundcolor yellow
+            Write-Host 'Please use apiauth to connect to a cohesity cluster' -foregroundcolor yellow
         }
     }elseif(-not $global:CLUSTERSELECTED){
         if($REPORTAPIERRORS){
-            write-host 'Please use heliosCluster to connect to a cohesity cluster' -ForegroundColor Yellow
+            Write-Host 'Please use heliosCluster to connect to a cohesity cluster' -ForegroundColor Yellow
         }
     }else{
         if($method -ne 'get' -and $global:CLUSTERREADONLY -eq $true){
-            write-host "Cluster connection is READ-ONLY" -ForegroundColor Yellow
+            Write-Host "Cluster connection is READ-ONLY" -ForegroundColor Yellow
             break
         }
         if (-not $methods.Contains($method)){
             if($REPORTAPIERRORS){
-                write-host "invalid api method: $method" -foregroundcolor yellow
+                Write-Host "invalid api method: $method" -foregroundcolor yellow
             }
             break
         }
@@ -354,16 +364,28 @@ function api($method, $uri, $data){
             __writeLog $_.ToString()
             if($REPORTAPIERRORS -and $global:REINVOKE -ge $MAXREINVOKE){
                 if($_.ToString().contains('"message":')){
-                    write-host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
+                    Write-Host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
                 }else{
-                    write-host $_.ToString() -foregroundcolor yellow
+                    Write-Host $_.ToString() -foregroundcolor yellow
                 }
             }
             if($global:REINVOKE -lt $MAXREINVOKE){
                 $global:REINVOKE += 1
-                $hcluster = $global:SELECTEDHELIOSCLUSTER
-                apiauth -vip $global:VIP -username $global:USERNAME -domain $global:DOMAIN -quiet
-                if($hcluster){ heliosCluster $hcluster -quiet}
+                if($REPORTAPIERRORS){
+                    if($_.ToString().contains('"message":')){
+                        Write-Host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
+                    }else{
+                        Write-Host $_.ToString() -foregroundcolor yellow
+                    }
+                }
+                $tokenAge = (dateToUsecs (get-date)) - $global:TOKENDATE
+                if($tokenAge -ge 86400000000){
+                    Write-Host "auth token expired - reauthenticating..."
+                    $hcluster = $global:SELECTEDHELIOSCLUSTER
+                    apiauth -vip $global:__VIP -username $global:__USERNAME -domain $global:__DOMAIN -quiet
+                    if($hcluster){ heliosCluster $hcluster -quiet}
+                }
+                start-sleep 5
                 api $method $uri $data
             }              
         }
@@ -372,7 +394,7 @@ function api($method, $uri, $data){
 
 # file download function
 function fileDownload($uri, $fileName){
-    if (-not $global:AUTHORIZED){ write-host 'Please use apiauth to connect to a cohesity cluster' -foregroundcolor yellow; break }
+    if (-not $global:AUTHORIZED){ Write-Host 'Please use apiauth to connect to a cohesity cluster' -foregroundcolor yellow; break }
     try {
         if ($uri[0] -ne '/'){ $uri = '/public/' + $uri}
         $url = $APIROOT + $uri
@@ -385,9 +407,9 @@ function fileDownload($uri, $fileName){
         __writeLog $_.ToString()
         $_.ToString()
         if($_.ToString().contains('"message":')){
-            write-host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
+            Write-Host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
         }else{
-            write-host $_.ToString() -foregroundcolor yellow
+            Write-Host $_.ToString() -foregroundcolor yellow
         }                
     }
 }
@@ -516,7 +538,7 @@ function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $do
     }
 
     $updatedContent | out-file -FilePath $pwfile
-    write-host "Password stored!" -ForegroundColor Green
+    Write-Host "Password stored!" -ForegroundColor Green
 }
 
 
@@ -524,16 +546,16 @@ function Set-CohesityAPIPassword($vip, $username, $domain='local', $pwd=$null){
     # prompt for vip
     if(-not $vip){
         __writeLog "Prompting for VIP"
-        write-host 'VIP: ' -foregroundcolor green -nonewline
+        Write-Host 'VIP: ' -foregroundcolor green -nonewline
         $vip = Read-Host
-        if(-not $vip){write-host 'vip is required' -foregroundcolor red; break}
+        if(-not $vip){Write-Host 'vip is required' -foregroundcolor red; break}
     }
     # prompt for username
     if(-not $username){
         __writeLog "Prompting for Username"
-        write-host 'Username: ' -foregroundcolor green -nonewline
+        Write-Host 'Username: ' -foregroundcolor green -nonewline
         $username = Read-Host
-        if(-not $username){write-host 'username is required' -foregroundcolor red; break}
+        if(-not $username){Write-Host 'username is required' -foregroundcolor red; break}
     }
     # parse domain\username or username@domain
     if($username.Contains('\')){
@@ -816,9 +838,9 @@ function cohesityAPIversion([switch]$update){
     if($update){
         $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
         (Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File -Force cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-        write-host "Cohesity-API version updated! Please restart PowerShell"
+        Write-Host "Cohesity-API version updated! Please restart PowerShell"
     }else{
-        write-host "Cohesity-API version $versionCohesityAPI" -ForegroundColor Green 
+        Write-Host "Cohesity-API version $versionCohesityAPI" -ForegroundColor Green 
     }
 }
 
