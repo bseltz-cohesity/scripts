@@ -25,11 +25,11 @@ Place both files in a folder together and run the main script like so:
 
 ```bash
 ./registerGenericNas.ps1 -v mycluster \
-                        -u myuser \
-                        -d mydomain.net \
-                        -m \\myserver\myshare \
-                        -m \\myserver\myshare2 \
-                        -s 'mydomain.net\myuser'
+                         -u myuser \
+                         -d mydomain.net \
+                         -m \\myserver\myshare \
+                         -m \\myserver\myshare2 \
+                         -s 'mydomain.net\myuser'
 ```
 
 ## Parameters
