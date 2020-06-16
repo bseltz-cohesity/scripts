@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2020.06.04"""
+"""Cohesity Python REST API Wrapper Module - 2020.06.16"""
 
 ##########################################################################################
 # Change Log
@@ -29,6 +29,7 @@
 # 2.1.1 - added support for PWFILE - May 2020
 # 2020.05.29 - added re-prompt for bad password, debug log, password storage changes
 # 2020.06.04 - bumping version (no reason)
+# 2020.06.16 - removed ansi codes from error message (Windows didn't display them correctly)
 #
 ##########################################################################################
 # Install Notes
@@ -230,7 +231,7 @@ def api(method, uri, data=None, quiet=None):
                 if 'errorCode' in responsejson:
                     if quiet is None:
                         if 'message' in responsejson:
-                            print('\033[93m' + responsejson['errorCode'][1:] + ': ' + responsejson['message'] + '\033[0m')
+                            print(responsejson['errorCode'][1:] + ': ' + responsejson['message'])
                         else:
                             print(responsejson)
                     return None
@@ -317,7 +318,7 @@ def __getpassword(vip, username, password, domain, updatepw, prompt):
 # store password in PWFILE
 def setpwd(v='helios.cohesity.com', u='helios', d='local', password=None):
     if password is None:
-        pwd = getpass.getpass("Enter password: ")
+        pwd = getpass.getpass("Enter password for %s/%s at %s: " % (d, u, v))
     else:
         pwd = password
     opwd = base64.b64encode(pwd.encode('utf-8')).decode('utf-8')
