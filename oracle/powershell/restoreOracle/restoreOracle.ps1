@@ -307,8 +307,9 @@ if($wait -or $progress){
     $lastProgress = -1
     $taskId = $response.restoreTask.performRestoreTaskState.base.taskId
     $finishedStates = @('kSuccess','kFailed','kCanceled', 'kFailure')
-    while($True){
-        $status = (api get /restoretasks/$taskId).restoreTask.performRestoreTaskState.base.publicStatus
+    $status = (api get /restoretasks/$taskId).restoreTask.performRestoreTaskState.base.publicStatus
+    while($status -notin $finishedStates){
+        sleep 10
         if($progress){
             $progressMonitor = api get "/progressMonitors?taskPathVec=restore_sql_$($taskId)&includeFinishedTasks=true&excludeSubTasks=false"
             $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
@@ -317,15 +318,15 @@ if($wait -or $progress){
                 $lastProgress = $percentComplete
             }
         }
-        if ($status -in $finishedStates){
-            break
-        }
-        sleep 5
+        $status = (api get /restoretasks/$taskId).restoreTask.performRestoreTaskState.base.publicStatus
     }
-    "restore ended with $status"
+    "Restore ended with status $status"
     if($status -eq 'kSuccess'){
         exit 0
     }else{
         exit 1
     }
+    exit 1
+}else{
+    exit 0
 }
