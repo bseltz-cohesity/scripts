@@ -217,8 +217,8 @@ foreach ($restore in $restores){
             if($restore.restoreTask.performRestoreTaskState.renameRestoredObjectParam.suffix){
                 $targetObject = "$targetObject$($restore.restoreTask.performRestoreTaskState.renameRestoredObjectParam.suffix)"
             }
-            # netapp
-            if($restore.restoreTask.performRestoreTaskState.restoreInfo.type -eq 9){
+            # netapp, isilon, genericNas
+            if($restore.restoreTask.performRestoreTaskState.restoreInfo.type -in @(9, 11, 14)){
                 $targetObject = $restore.restoreTask.performRestoreTaskState.fullViewName
             }
             if($status -eq 'Failure'){
