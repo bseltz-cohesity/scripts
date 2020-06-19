@@ -15,8 +15,8 @@ param (
     [Parameter(Mandatory = $True)][string]$viewName,
     [Parameter()][array]$path,
     [Parameter()][string]$pathList,
-    [Parameter(Mandatory = $True)][int64]$quotaLimitGB,
-    [Parameter(Mandatory = $True)][int64]$quotaAlertGB
+    [Parameter()][int64]$quotaLimitGB,
+    [Parameter()][int64]$quotaAlertGB
 )
 
 # source the cohesity-api helper code
@@ -49,8 +49,29 @@ if($path){
     $paths += $path
 }
 if($paths.Length -eq 0){
-    Write-Host "No paths modified"
-    exit 1
+    # show existing quotas
+    $quotas = api get "viewDirectoryQuotas?viewName=$viewName"
+    if($quotas.quotas){
+        Write-Host ("`nLimitGB  AlertGB  Path")
+        Write-Host ("-------  -------  ----")
+    }else{
+        Write-Host "No quotas found"
+    }
+    foreach($quota in $quotas.quotas){
+        $limit = [math]::Round($quota.policy.hardLimitBytes/(1024*1024*1024))
+        if($quota.policy.alertLimitBytes){
+            $alert = [math]::Round($quota.policy.alertLimitBytes/(1024*1024*1024))
+        }else{
+            $alert = ''
+        }
+        Write-Host ("{0,7}  {1,7}  {2}" -f $limit, $alert, $quota.dirPath )
+    }
+    Write-Host "`n"
+}else{
+    if((! $quotaLimitGB) -or (! $quotaAlertGB)){
+        Write-Host "-quotaLimitGB and -quotaAlertGB parameters required" -ForegroundColor Yellow
+        exit 1
+    }
 }
 
 foreach($dirpath in $paths){
