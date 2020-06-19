@@ -30,7 +30,7 @@ Place both files in a folder together and run the main script like so:
                      -username myusername `
                      -domain mydomain.net `
                      -viewName myview `
-                     -path /mydir `
+                     -path /mydir, /mydir2 `
                      -quotaLimitGB 20 `
                      -quotaAlertGB 18
 #end example
@@ -41,7 +41,8 @@ Place both files in a folder together and run the main script like so:
 * -vip: Cohesity cluster to connect to
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain (defaults to 'local')
-* -viewName: name of new view to create
-* -path: directory path within view to apply the quota
+* -viewName: name of new view where paths are located
+* -path: (optional) directory path(s) within view to apply the quota (comma separated)
+* -pathList: (optional) text file containing paths to apply the quota (one path per line)
 * -quotaLimitGB: quota limit in GB
 * -quotaAlertGB: alert threshold in GB
