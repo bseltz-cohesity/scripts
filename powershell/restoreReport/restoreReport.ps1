@@ -17,7 +17,7 @@ param (
 )
 
 ### source the cohesity-api helper code
-. ./cohesity-api
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
@@ -161,10 +161,40 @@ $html += '</span>
         <th>Task</th>
         <th>Object</th>
         <th>Type</th>
+        <th>Target</th>
         <th>Status</th>
       </tr>'
 
-$entityType=@("", "VMware", "HyperV", "SQL", "View", "Puppeteer", "Physical", "Pure", "Azure", "Netapp", "Agent", "GenericNas", "Acropolis", "PhysicalFiles", "Isilon", "KVM", "AWS", "Exchange", "HyperVVSS", "Oracle", "GCP", "FlashBlade", "AWSNative", "VCD", "O365", "O365Outlook", "HyperFlex", "GCPNative")
+$entityType=@("", 
+              "VMware", 
+              "HyperV", 
+              "SQL", 
+              "View", 
+              "Puppeteer", 
+              "Physical", 
+              "Pure", 
+              "Azure", 
+              "Netapp", 
+              "Agent", 
+              "GenericNas", 
+              "Acropolis", 
+              "PhysicalFiles", 
+              "Isilon", 
+              "KVM", 
+              "AWS", 
+              "Exchange", 
+              "HyperVVSS", 
+              "Oracle", 
+              "GCP", 
+              "FlashBlade", 
+              "AWSNative", 
+              "VCD", 
+              "O365", 
+              "O365Outlook", 
+              "HyperFlex", 
+              "GCPNative",
+              "",
+              "Active Directory")
 
 #$restores = api get "/restoretasks?startTimeUsecs=$uStart&endTimeUsecs=$uEnd"
 $restores = api get "/restoretasks?_includeTenantInfo=true&endTimeUsecs=$uEnd&restoreTypes=kMountFileVolume&restoreTypes=kMountVolumes&restoreTypes=kSystem&restoreTypes=kRecoverApp&restoreTypes=kRecoverSanVolume&restoreTypes=kRecoverVMs&restoreTypes=kRestoreFiles&restoreTypes=kRecoverVolumes&restoreTypes=kDownloadFiles&restoreTypes=kRecoverEmails&restoreTypes=kRecoverDisks&startTimeUsecs=$uStart&targetType=kLocal"
@@ -179,7 +209,18 @@ foreach ($restore in $restores){
     if($restore.restoreTask.performRestoreTaskState.PSObject.properties['objects']){
         foreach ($object in $restore.restoreTask.performRestoreTaskState.objects){
             $objectType = $entityType[$object.entity.type]
-            $objectName = $object.entity.displayName
+            $targetObject = $objectName = $object.entity.displayName
+            # vmware prefix/suffix
+            if($restore.restoreTask.performRestoreTaskState.renameRestoredObjectParam.prefix){
+                $targetObject = "$($restore.restoreTask.performRestoreTaskState.renameRestoredObjectParam.prefix)$targetObject"
+            }
+            if($restore.restoreTask.performRestoreTaskState.renameRestoredObjectParam.suffix){
+                $targetObject = "$targetObject$($restore.restoreTask.performRestoreTaskState.renameRestoredObjectParam.suffix)"
+            }
+            # netapp
+            if($restore.restoreTask.performRestoreTaskState.restoreInfo.type -eq 9){
+                $targetObject = $restore.restoreTask.performRestoreTaskState.fullViewName
+            }
             if($status -eq 'Failure'){
                 $html += "<tr style='color:BA3415;'>"
             }else{
@@ -189,13 +230,33 @@ foreach ($restore in $restores){
             <td><a href=$link>$taskName</a></td>
             <td>$objectName</td>
             <td>$objectType</td>
+            <td>$targetObject</td>
             <td>$status</td>
             </tr>"
         }
     }elseif($restore.restoreTask.performRestoreTaskState.PSObject.properties['restoreAppTaskState']){
+        $targetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
         foreach ($restoreAppObject in $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec){
             $objectName = $restoreAppObject.appEntity.displayName
             $objectType = $entityType[$restoreAppObject.appEntity.type]
+            if($restoreAppObject.restoreParams.targetHost.displayName){
+                $targetServer = $restoreAppObject.restoreParams.targetHost.displayName
+            }
+            $targetObject = $targetServer
+            # sql target
+            if($restoreAppObject.restoreParams.sqlRestoreParams.instanceName){
+                $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.instanceName)"
+            }
+            if($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName){
+                $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName)"
+            }
+            # oracle target
+            if($restoreAppObject.restoreParams.oracleRestoreParams.alternateLocationParams.newDatabaseName){
+                $targetObject += "/$($restoreAppObject.restoreParams.oracleRestoreParams.alternateLocationParams.newDatabaseName)"
+            }
+            if($targetObject -eq $targetServer){
+                $targetObject = "$targetServer/$objectName"
+            }
             if($status -eq 'Failure'){
                 $html += "<tr style='color:BA3415;'>"
             }else{
@@ -203,8 +264,9 @@ foreach ($restore in $restores){
             }
             $html += "<td>$startTime</td>
             <td><a href=$link>$taskName</a></td>
-            <td>$objectName</td>
+            <td>$sourceServer/$objectName</td>
             <td>$objectType</td>
+            <td>$targetObject</td>
             <td>$status</td>
             </tr>"
         }
