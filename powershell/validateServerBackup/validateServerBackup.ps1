@@ -196,7 +196,7 @@ foreach($object in $objects){
             $lastRecoveryPoint = $version.instanceId.jobStartTimeUsecs
             $run = (api get "protectionRuns?jobId=$jobId&numRuns=2" | Where-Object {$_.backupRun.status -in $finishedStates})[0]
             $lastRunUsecs = $run.backupRun.stats.startTimeUsecs
-            $lastStatus = $job.lastRun.backupRun.status
+            $lastStatus = $run.backupRun.status
             # get latest recovery point dirlist
             $readableBackup = $False
             $instance = ("attemptNum={0}&clusterId={1}&clusterIncarnationId={2}&entityId={3}&jobId={4}&jobInstanceId={5}&jobStartTimeUsecs={6}&jobUidObjectId={7}" -f `
@@ -256,7 +256,7 @@ $fileDate = $date.Replace('/','-').Replace(':','-').Replace(' ','_')
 $html | Out-File -FilePath "validationReport_$fileDate.html"
 
 if($smtpServer -and $sendTo -and $sendFrom){
-    write-host "sending report to $([string]::Join(", ", $sendTo))"
+    write-host "`nsending report to $([string]::Join(", ", $sendTo))`n"
 
     # send email report
     foreach($toaddr in $sendTo){
