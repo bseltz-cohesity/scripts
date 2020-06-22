@@ -225,7 +225,6 @@ if(! $searchResult.vms){
         }
         if($restoreTask[0].restoreTask.performRestoreTaskState.base.publicStatus -ne 'kSuccess'){
             Write-Host "Something went wrong with the AD mount" -ForegroundColor Yellow
-            exit 1
         }else{
             Write-Host "AD mount successful..."
             # query mounted AD topology
@@ -237,38 +236,35 @@ if(! $searchResult.vms){
             # destroy mount
             Write-Host "Tearing down mount..."
             $null = api post "/destroyclone/$taskId"
-
-            # report
-            $lastBackupReadable = (($lastRecoveryPoint -eq $lastRunUsecs) -and $readableBackup)
-            if($status -eq 'Failure' -or $False -eq $lastBackupReadable){
-                $html += "<tr style='color:BA3415;'>"
-            }else{
-                $html += "<tr>"
-            }
-
-            $html += ("<td>{0}</td>
-            <td>{1}</td>
-            <td>{2}</td>
-            <td>{3}</td>
-            <td>{4}</td>
-            </tr>" -f $objectName, $jobName, (usecsToDate $lastRunUsecs), $lastStatus.subString(1), $lastBackupReadable)
-
-            $fileDate = $date.Replace('/','-').Replace(':','-').Replace(' ','_')
-            $html | Out-File -FilePath "ADvalidationReport_$fileDate.html"
-
-            if($smtpServer -and $sendTo -and $sendFrom){
-                write-host "`nsending report to $([string]::Join(", ", $sendTo))`n"
-
-                # send email report
-                foreach($toaddr in $sendTo){
-                    Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject $title -BodyAsHtml $html -WarningAction SilentlyContinue
-                }
-            }
-            exit 0
         }
     }else{
         Write-Host "Something went wrong with the AD mount" -ForegroundColor Yellow
-        exit 1
     }
 }
 
+# report
+$lastBackupReadable = (($lastRecoveryPoint -eq $lastRunUsecs) -and $readableBackup)
+if($status -eq 'Failure' -or $False -eq $lastBackupReadable){
+    $html += "<tr style='color:BA3415;'>"
+}else{
+    $html += "<tr>"
+}
+
+$html += ("<td>{0}</td>
+<td>{1}</td>
+<td>{2}</td>
+<td>{3}</td>
+<td>{4}</td>
+</tr>" -f $objectName, $jobName, (usecsToDate $lastRunUsecs), $lastStatus.subString(1), $lastBackupReadable)
+
+$fileDate = $date.Replace('/','-').Replace(':','-').Replace(' ','_')
+$html | Out-File -FilePath "ADvalidationReport_$fileDate.html"
+
+if($smtpServer -and $sendTo -and $sendFrom){
+    write-host "`nsending report to $([string]::Join(", ", $sendTo))`n"
+
+    # send email report
+    foreach($toaddr in $sendTo){
+        Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject $title -BodyAsHtml $html -WarningAction SilentlyContinue
+    }
+}
