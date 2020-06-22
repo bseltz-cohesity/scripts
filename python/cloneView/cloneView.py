@@ -13,6 +13,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--server', type=str, required=True)  # Cohesity cluster name or IP
 parser.add_argument('-u', '--username', type=str, required=True)  # Cohesity Username
 parser.add_argument('-d', '--domain', type=str, default='local')  # Cohesity User Domain
+parser.add_argument('-j', '--jobname', type=str)  # Job name
 parser.add_argument('-v', '--view', type=str, required=True)  # name of source view to clone
 parser.add_argument('-n', '--newname', type=str, required=True)  # name of target view to create
 parser.add_argument('-f', '--filedate', type=str, default=None)  # date time to recover view to
@@ -26,6 +27,7 @@ username = args.username
 domain = args.domain
 viewName = args.view
 newName = args.newname
+jobName = args.jobname
 filedate = args.filedate
 before = args.before
 wait = args.wait
@@ -41,6 +43,12 @@ if len(searchResults) == 0:
 
 ### narrow search results to the correct view
 viewResults = [viewResult for viewResult in searchResults['vms'] if viewResult['vmDocument']['objectName'].lower() == viewName.lower()]
+if len(viewResults) == 0:
+    print("View %s not found" % viewName)
+    exit()
+
+if jobName is not None:
+    viewResults = [v for v in viewResults if v['vmDocument']['jobName'].lower() == jobName.lower()]
 if len(viewResults) == 0:
     print("View %s not found" % viewName)
     exit()
