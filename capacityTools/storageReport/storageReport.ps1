@@ -1,47 +1,13 @@
-# usage: 
-# ./validateServerBackup.ps1 -vip mycluster `
-#                            -username myusername `
-#                            -domain mydomain.net `
-#                            -objectName w2012b, centos2, /ifs/share3 `
-#                            -smtpServer 192.168.1.95 `
-#                            -sendTo myusername@mydomain.net `
-#                            -sendFrom mycluster@mydomain.net
-
-# process commandline arguments
 [CmdletBinding()]
 param (
     [Parameter(Mandatory = $True)][string]$vip, # Cohesity cluster to connect to
-    [Parameter(Mandatory = $True)][string]$username, # Cohesity username
-    [Parameter()][string]$domain = 'local', # Cohesity user domain name
-    [Parameter()][array]$objectName, # object to validate (comma separated)
-    [Parameter()][string]$objectList, # text file of objects to validate (one per line)
+    [Parameter(Mandatory = $True)][string]$username, #cohesity username
+    [Parameter()][string]$domain = 'local',  # local or AD domain
     [Parameter()][string]$smtpServer, # outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, # outbound smtp port
     [Parameter()][array]$sendTo, # send to address
     [Parameter()][string]$sendFrom # send from address
 )
-
-# gather volume list from command-line and/or text file
-$objects = @()
-foreach($o in $objectName){
-    $objects += $o
-}
-if ($objectList){
-    if(Test-Path -Path $objectList -PathType Leaf){
-        $olist = Get-Content $objectList
-        foreach($o in $olist){
-            $objects += [string]$o
-        }
-    }else{
-        Write-Host "Object list $objectList not found" -ForegroundColor Yellow
-        exit 1
-    }
-}
-
-if($objects.Count -eq 0){
-    Write-Host "No objects specified" -ForegroundColor Yellow
-    exit 1
-}
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -49,9 +15,12 @@ if($objects.Count -eq 0){
 # authenticate
 apiauth -vip $vip -username $username -domain $domain
 
-$date = (get-date).ToString()
+$cluster = api get cluster
 
-$title = "Backup Validation Report"
+$today = get-date
+$date = $today.ToString()
+
+$title = "Storage Report for $($cluster.name)"
 
 $html = '<html>
 <head>
@@ -80,7 +49,7 @@ $html = '<html>
 
         td,
         th {
-            width: 20%;
+            width: 16%;
             text-align: left;
             padding: 6px;
         }
@@ -164,85 +133,71 @@ $html += '</span>
 </p>
 <table>
 <tr>
-    <th>ObjectName</th>
-    <th>JobName</th>
-    <th>Last Run Date</th>
-    <th>Status</th>
-    <th>Validated</th>
+    <th>Job/View Name</th>
+    <th>Environment</th>
+    <th>Local/Replicated</th>
+    <th>GiB Consumed</th>
+    <th>Dedup Ratio</th>
+    <th>Compression</th>
 </tr>'
 
-$volumeTypes = @(1, 6)
-$finishedStates = @('kCanceled', 'kSuccess', 'kFailure')
+$jobs = api get protectionJobs
 
-foreach($object in $objects){
-    $object = [string]$object
-    $search = api get "/searchvms?entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAWSSnapshotManager&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kFlashBlade&entityTypes=kGCP&entityTypes=kGenericNas&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kIsilon&entityTypes=kKVM&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware&vmName=$object"
-    if(! $search.vms){
-        Write-Host "$object not found" -ForegroundColor Yellow
-    }else{
-        # narrow search to exact name match
-        $search.vms = $search.vms | Where-Object {$_.vmDocument.objectName -eq $object}
-        if(! $search.vms){
-            Write-Host "$object not found" -ForegroundColor Yellow
+function processStats($stats, $name, $environment, $location){
+    
+        $dataIn = $stats.statsList[0].stats.dataInBytes
+        $dataInAfterDedup = $stats.statsList[0].stats.dataInBytesAfterDedup
+        $dataWritten = $stats.statsList[0].stats.dataWrittenBytes
+        if($dataInAfterDedup -gt 0 -and $dataWritten -gt 0){
+            $dedup = [math]::Round($dataIn/$dataInAfterDedup,1)
+            $compression = [math]::Round($dataInAfterDedup/$dataWritten,1)
         }else{
-            # narrow search to latest available recovery point
-            $vm = ($search.vms | Sort-Object -Property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
-            $doc = $vm.vmDocument
-            $version = $doc.versions[0]
-            $jobId = $doc.objectId.jobId
-            $jobName = $doc.jobName
-            $backupType = $doc.backupType
-            # get latest completed run status and date
-            $lastRecoveryPoint = $version.instanceId.jobStartTimeUsecs
-            $run = (api get "protectionRuns?jobId=$jobId&numRuns=2" | Where-Object {$_.backupRun.status -in $finishedStates})[0]
-            $lastRunUsecs = $run.backupRun.stats.startTimeUsecs
-            $lastStatus = $run.backupRun.status
-            # get latest recovery point dirlist
-            $readableBackup = $False
-            $instance = ("attemptNum={0}&clusterId={1}&clusterIncarnationId={2}&entityId={3}&jobId={4}&jobInstanceId={5}&jobStartTimeUsecs={6}&jobUidObjectId={7}" -f `
-                    $version.instanceId.attemptNum,
-                    $doc.objectId.jobUid.clusterId,
-                    $doc.objectId.jobUid.clusterIncarnationId,
-                    $doc.objectId.entity.id,
-                    $doc.objectId.jobId,
-                    $version.instanceId.jobInstanceId,
-                    $version.instanceId.jobStartTimeUsecs,
-                    $doc.objectId.jobUid.objectId)
-            if($backupType -in $volumeTypes){
-                $volumeList = api get "/vm/volumeInfo?$instance&statFileEntries=false"
-                if($volumeList.volumeInfos){
-                    $volumeInfoCookie = $volumeList.volumeInfoCookie
-                    $volumeName = [System.Web.HttpUtility]::UrlEncode($volumeList.volumeInfos[0].name)
-                    $dirList = api get "/vm/directoryList?$instance&dirPath=%2F&statFileEntries=false&volumeInfoCookie=$volumeInfoCookie&volumeName=$volumeName"
-                    if($dirList.entries){
-                        $readableBackup = $True
-                    }
-                }                
-            }else{
-                $dirList = api get "/vm/directoryList?$instance&dirPath=%2F&statFileEntries=false"
-                if($dirList.entries){
-                    $readableBackup = $True
-                }
-            }
-            $lastBackupReadable = (($lastRecoveryPoint -eq $lastRunUsecs) -and $readableBackup)
-            if($status -eq 'Failure' -or $False -eq $lastBackupReadable){
-                $html += "<tr style='color:BA3415;'>"
-            }else{
-                $html += "<tr>"
-            }
-            $html += ("<td>{0}</td>
-            <td>{1}</td>
-            <td>{2}</td>
-            <td>{3}</td>
-            <td>{4}</td>
-            </tr>" -f $object, $jobName, (usecsToDate $lastRunUsecs), $lastStatus.subString(1), $lastBackupReadable)
+            $dedup = 0
+            $compression = 0
+        }
+        $consumption = [math]::Round($stats.statsList[0].stats.storageConsumedBytes / (1024 * 1024 * 1024), 2)
+        Write-Host ("{0,30}: {1,11:f2} {2}" -f $name, $consumption, 'GiB')
+        return ("<td>{0}</td>
+        <td>{1}</td>
+        <td>{2}</td>
+        <td>{3}</td>
+        <td>{4}</td>
+        <td>{5}</td>
+        </tr>" -f $name,
+                  $environment,
+                  $location,
+                  $consumption,
+                  $dedup,
+                  $compression)
+    
+}
 
-            Write-Host ("{0}  {1}  {2}  {3}  {4}" -f `
-                        $object,
-                        $jobName,
-                        (usecsToDate $lastRunUsecs),
-                        $lastStatus.subString(1),
-                        $lastBackupReadable)
+
+Write-Host "  Local Jobs..."
+foreach($job in $jobs | Sort-Object -Property name){
+    if($job.policyId.split(':')[0] -eq $cluster.id){
+        $stats = api get "stats/consumers?consumerType=kProtectionRuns&consumerIdList=$($job.id)"
+        if($stats.statsList){
+            $html += processStats $stats $job.name $job.environment.subString(1) 'Local'
+        }
+    }
+}
+
+Write-Host "  Unprotected Views..."
+$views = api get views
+foreach($view in $views.views | Sort-Object -Property name | Where-Object viewProtection -eq $null){
+    $stats = api get "stats/consumers?consumerType=kViews&consumerIdList=$($view.viewId)"
+    if($stats.statsList){
+        $html += processStats $stats $view.name 'View' 'Local'
+    }
+}
+
+Write-Host "  Replicated Jobs..."
+foreach($job in $jobs | Sort-Object -Property name){
+    if($job.policyId.split(':')[0] -ne $cluster.id){
+        $stats = api get "stats/consumers?consumerType=kReplicationRuns&consumerIdList=$($job.id)"
+        if($stats.statsList){
+            $html += processStats $stats $job.name $job.environment.subString(1) 'Replicated'
         }
     }
 }
@@ -253,10 +208,12 @@ $html += "</table>
 </html>"
 
 $fileDate = $date.Replace('/','-').Replace(':','-').Replace(' ','_')
-$html | Out-File -FilePath "validationReport_$fileDate.html"
+$html | Out-File -FilePath "storageReport_$($cluster.name)_$fileDate.html"
+
+Write-Host "`nsaving report as storageReport_$($cluster.name)_$fileDate.html"
 
 if($smtpServer -and $sendTo -and $sendFrom){
-    write-host "`nsending report to $([string]::Join(", ", $sendTo))`n"
+    Write-Host "`nsending report to $([string]::Join(", ", $sendTo))`n"
 
     # send email report
     foreach($toaddr in $sendTo){
