@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#  version 2020.06.04 - Brian Seltzer - June 2020
+#  version 2020.06.25 - Brian Seltzer - June 2020
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.06 - Consolidated Windows and Unix versions - June 2018
@@ -29,9 +29,10 @@
 # 0.29 - update storePasswordInFile - June 2020
 # 2020.06.04 - updated version numbering - June 2020
 # 2020.06.16 - improved REINVOKE - June 2020
+# 2020-06.25 - added API v2 support (-version 2) or (-v2)
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
-$versionCohesityAPI = '2020.06.16'
+$versionCohesityAPI = '2020.06.25'
 
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
@@ -127,6 +128,7 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
     $global:__DOMAIN = $domain
     $global:SELECTEDHELIOSCLUSTER = $null
     $global:APIROOT = 'https://' + $vip + '/irisservices/api/v1'
+    $global:APIROOTv2 = 'https://' + $vip + '/v2/'
     $HEADER = @{'accept' = 'application/json'; 'content-type' = 'application/json'}
     if($useApiKey){
         $HEADER['apiKey'] = $pwd
@@ -324,7 +326,7 @@ function apidrop([switch] $quiet){
 # api call functions ==============================================================================
 
 $methods = 'get', 'post', 'put', 'delete'
-function api($method, $uri, $data){
+function api($method, $uri, $data, $version=1, [switch]$v2){
     if (-not $global:AUTHORIZED){ 
         if($REPORTAPIERRORS){
             Write-Host 'Please use apiauth to connect to a cohesity cluster' -foregroundcolor yellow
@@ -345,8 +347,13 @@ function api($method, $uri, $data){
             break
         }
         try {
-            if ($uri[0] -ne '/'){ $uri = '/public/' + $uri}
-            $url = $APIROOT + $uri
+            
+            if($version -eq 2 -or $v2){
+                $url = $APIROOTv2 + $uri
+            }else{
+                if ($uri[0] -ne '/'){ $uri = '/public/' + $uri}
+                $url = $APIROOT + $uri
+            }
             $body = ConvertTo-Json -Depth 100 $data
             if ($PSVersionTable.PSEdition -eq 'Core'){
                 #if($method -eq 'post' -or $method -eq 'put'){
