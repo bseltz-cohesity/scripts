@@ -42,7 +42,7 @@ if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
 
 $REPORTAPIERRORS = $true
 $REINVOKE = 0
-$MAXREINVOKE = 10
+$MAXREINVOKE = 0
 $PROMPTFORPASSWORDCHANGE = $true
 $TOKENDATE = $null
 
