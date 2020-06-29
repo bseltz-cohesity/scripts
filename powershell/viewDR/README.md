@@ -35,13 +35,13 @@ Then, run the viewDRcollect.ps1 script to collect the metadata of the views at t
 At time of DR, you can recover one view:
 
 ```powershell
-./viewDRclone.ps1 -vip myDRcluster -username admin [ -domain local ] -viewName myview -inPath \\myserver\myshare
+./viewDRclone.ps1 -vip myDRcluster -username admin [ -domain local ] -viewName myview -inPath \\myserver\myshare\mycluster
 ```
 
 Or you can recover all views:
 
 ```powershell
-./viewDRclone.ps1 -vip myDRcluster -username admin [ -domain local ] -inPath \\myserver\myshare -all
+./viewDRclone.ps1 -vip myDRcluster -username admin [ -domain local ] -inPath \\myserver\myshare\mycluster -all
 ```
 
 The clone script outputs a text file list of views that have been cloned. This can be used later by the delete script (using the -viewList parameter) to delete the correct list of views.
@@ -49,7 +49,7 @@ The clone script outputs a text file list of views that have been cloned. This c
 After completing a DR test, you can delete all of the test views:
 
 ```powershell
-./viewDRdelete.ps1 -vip myDRcluster -username admin [ -domain local ] -inPath \\myserver\myshare -all
+./viewDRdelete.ps1 -vip myDRcluster -username admin [ -domain local ] -inPath \\myserver\myshare\mycluster -all
 ```
 
 ## Collection Script Parameters
