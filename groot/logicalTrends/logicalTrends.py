@@ -10,12 +10,20 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, required=True)
 parser.add_argument('-u', '--username', type=str, required=True)
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-n', '--units', type=str, choices=['MB', 'GB', 'TB', 'mb', 'gb', 'tb'], default='GB')
 
 args = parser.parse_args()
 
 vip = args.vip
 username = args.username
 domain = args.domain
+units = args.units
+
+multiplier = 1024 * 1024 * 1024
+if units.lower() == 'mb':
+    multiplier = 1024 * 1024
+elif units.lower() == 'tb':
+    multiplier = 1024 * 1024 * 1024 * 1024
 
 # authenticate
 apiauth(vip, username, domain)
@@ -37,7 +45,7 @@ logical_trend = """
 select
   start_time_usecs,
   source_logical_size_bytes,
-  entity_name,
+  protection_job_run_entities.entity_id,
   env_name
 from
   reporting.protection_job_run_entities
@@ -54,31 +62,37 @@ rows = cur.fetchall()
 
 # data dictionary
 trend = {}
-trenditems = []
+trendTypes = []
 
 for row in rows:
-    (startTimeUsecs, logicalBytes, entityName, entityType) = row
+    (startTimeUsecs, logicalBytes, entityId, entityType) = row
     startDate = datetime.strptime(usecsToDate(startTimeUsecs), '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%d")
     if startDate not in trend:
         trend[startDate] = {}
     if entityType not in trend[startDate]:
-        trend[startDate][entityType] = 0
-    if entityType not in trenditems:
-        trenditems.append(entityType)
-    trend[startDate][entityType] += logicalBytes
+        trend[startDate][entityType] = {"logicalBytes": 0, "entities": []}
+    if entityType not in trendTypes:
+        trendTypes.append(entityType)
+    if entityId not in trend[startDate][entityType]['entities']:
+        trend[startDate][entityType]['logicalBytes'] += logicalBytes
+        trend[startDate][entityType]['entities'].append(entityId)
 
 # output to csv
 f = open('logicalTrends-%s.csv' % vip, 'w')
 
 # csv header
-f.write('%s,%s\n' % ('Date', ','.join(sorted(trenditems))))
+f.write('%s,%s,,%s,%s\n' % ('Date', ','.join(sorted(trendTypes)), 'Date', ','.join(sorted(trendTypes))))
 
 for startDate in sorted(trend.keys()):
     print(startDate)
-    theseItems = []
-    for entityType in sorted(trenditems):
-        logicalMiB = round(trend[startDate].get(entityType, 0) / (1024 * 1024), 2)
-        print('  %s  %s' % (entityType, logicalMiB))
-        theseItems.append(str(logicalMiB))
-    f.write('%s,%s\n' % (startDate, ','.join(theseItems)))
+    theseLogical = []
+    theseCount = []
+    for entityType in sorted(trendTypes):
+        entityData = trend[startDate].get(entityType, {"logicalBytes": 0, "entities": []})
+        logical = round(entityData['logicalBytes'] / multiplier, 2)
+        itemCount = len(entityData['entities'])
+        print('  %s (%s)  %s' % (entityType, itemCount, logical))
+        theseLogical.append(str(logical))
+        theseCount.append(str(itemCount))
+    f.write('%s,%s,,%s,%s\n' % (startDate, ','.join(theseLogical), startDate, ','.join(theseCount)))
 f.close()
