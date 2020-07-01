@@ -1,0 +1,44 @@
+# Backup Up File List for Python
+
+Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
+
+This Python script enumerates the files that are available for restore from the specified server/job. The file list is written to an output text file.
+
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```bash
+# Begin download commands
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backuedUpFileList/backedUpFileList.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+chmod +x backupNow.py
+# End download commands
+```
+
+## Components
+
+* backedUpFileList.py: the main PowerShell script
+* pyhesity.py: the Cohesity REST API helper module
+
+Place all files in a folder together. then, run the main script like so:
+
+```bash
+./backedUpFileList.py -v mycluster \
+                      -u myuser \
+                      -d mydomain.net \
+                      -s server1.mydomain.net \
+                      -j 'My Backup Job' \
+                      -f '2020-06-30 13:00:00'
+```
+
+## Parameters
+
+* -v, --vip: name of Cohesity cluster to connect to
+* -u, --username: short username to authenticate to the cluster
+* -d, --domain: active directory domain of user (default is local)
+* -i, --useApiKey: use API key for authentication
+* -pwd, --password: (optional) password for Cohesity user
+* -s, --sourceserver: name of server to inspect
+* -j, --jobname: name of protection job to run
+* -f, --filedate: (optional) date to inspect (next backup after date will be inspected)
