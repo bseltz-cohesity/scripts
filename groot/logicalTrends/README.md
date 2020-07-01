@@ -21,7 +21,7 @@ chmod +x logicalTrends.py
 
 ## Prerequisites
 
-This python script requires two python modules (requests, psycopg2) that are not present in the standard library. These can be installed in one of the following ways:
+This python script requires two python modules (requests, psycopg2-binary) that are not present in the standard library. These can be installed in one of the following ways:
 
 Using yum:
 
@@ -33,14 +33,14 @@ Using pip:
 
 ```bash
 pip install requests
-pip install psycopg2
+pip install psycopg2-binary
 ```
 
 Using easy_install:
 
 ```bash
 easy_install requests
-easy_install psycopg2
+easy_install psycopg2-binary
 ```
 
 ## Running the script
