@@ -77,14 +77,9 @@ if restorepath is not None:
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
 
-# find source and target servers
+# find target server
 physicalEntities = api('get', '/entitiesOfType?environmentTypes=kPhysical&physicalEntityTypes=kHost')
-sourceEntity = [e for e in physicalEntities if e['displayName'].lower() == sourceserver.lower()]
 targetEntity = [e for e in physicalEntities if e['displayName'].lower() == targetserver.lower()]
-
-if len(sourceEntity) == 0:
-    print("%s not found" % sourceserver)
-    exit(1)
 
 if len(targetEntity) == 0:
     print("%s not found" % targetserver)
@@ -141,7 +136,7 @@ restoreParams = {
         "jobId": doc['objectId']['jobId'],
         "jobInstanceId": version['instanceId']['jobInstanceId'],
         "startTimeUsecs": version['instanceId']['jobStartTimeUsecs'],
-        "entity": sourceEntity[0],
+        "entity": doc['objectId']['entity'],
         "jobUid": doc['objectId']['jobUid']
     },
     "params": {
