@@ -55,14 +55,10 @@ if($files.Length -eq 0){
 $restorePath = ("/" + $restorePath.Replace('\','/').replace(':','')).Replace('//','/')
 $files = [string[]]$files | ForEach-Object {("/" + $_.Replace('\','/').replace(':','')).Replace('//','/')}
 
-# find source and target servers
+# find target server
 $physicalEntities = api get "/entitiesOfType?environmentTypes=kPhysical&physicalEntityTypes=kHost"
-$sourceEntity = $physicalEntities | Where-Object displayName -eq $sourceServer
 $targetEntity = $physicalEntities | Where-Object displayName -eq $targetServer
-if(!$sourceEntity){
-    Write-Host "$sourceServer not found" -ForegroundColor Yellow
-    exit 1
-}
+
 if(!$targetEntity){
     Write-Host "$targetServer not found" -ForegroundColor Yellow
     exit 1
@@ -105,7 +101,7 @@ $restoreParams = @{
         "jobId"          = $doc.objectId.jobId;
         "jobInstanceId"  = $version.instanceId.jobInstanceId;
         "startTimeUsecs" = $version.instanceId.jobStartTimeUsecs;
-        "entity"         = $sourceEntity;
+        "entity"         = $doc.objectId.entity;
         "jobUid"         = $doc.objectId.jobUid
     };
     "params"           = @{
