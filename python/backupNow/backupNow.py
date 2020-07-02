@@ -288,7 +288,7 @@ if wait is True:
                 sleep(2)
     print("Job finished with status: %s" % runs[0]['backupRun']['status'])
     runURL = "https://%s/protection/job/%s/run/%s/%s/protection" % \
-        (vip, runs[0]['jobId'], runs[0]['backupRun']['jobRunId'], runs[0]['copyRun'][0]['runStartTimeUsecs'])
+        (vip, runs[0]['jobId'], runs[0]['backupRun']['jobRunId'], runs[0]['backupRun']['stats']['startTimeUsecs'])
     print("Run URL: %s" % runURL)
 
 # disable job
