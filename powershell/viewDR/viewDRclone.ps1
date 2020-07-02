@@ -84,7 +84,8 @@ foreach($viewName in $myViews){
     if(Test-Path $filePath){
         $metadata = Get-Content $filePath | ConvertFrom-Json
     }else{
-        Write-Warning "$filePath not found"
+        Write-Host "$filePath not found" -ForegroundColor Yellow
+        continue
     }
 
     ### search for view to clone
@@ -133,71 +134,73 @@ foreach($viewName in $myViews){
 
 Start-Sleep 10
 
-"Gathering Views..."
 $views = getViews
 
 foreach($viewName in $myViews){
     $newView = ($views | Where-Object name -eq $viewName)
     if($newView){
         $newView = $newView[0]
-        ### get view metadata from file
-        $filePath = Join-Path -Path $inPath -ChildPath $viewName
-        if(Test-Path $filePath){
-            $metadata = Get-Content $filePath | ConvertFrom-Json
-        }else{
-            Write-Warning "$filePath not found"
-        }
-        $newView.enableSmbViewDiscovery = $metadata.enableSmbViewDiscovery
-        $newView.qos = @{
-            "principalName" = $metadata.qos.principalName;
-        }
-        if($metadata.PSObject.Properties['subnetWhitelist']){
-            if(! $newView.PSObject.Properties['subnetWhiteList']){
-                $newView | Add-Member -MemberType NoteProperty -Name subnetWhiteList -Value @()
+        if($newView.PSObject.Properties['createTimeMsecs']){
+            ### get view metadata from file
+            $filePath = Join-Path -Path $inPath -ChildPath $viewName
+            if(Test-Path $filePath){
+                $metadata = Get-Content $filePath | ConvertFrom-Json
+            }else{
+                Write-Host "$filePath not found" -ForegroundColor Yellow
+                continue
             }
-            $newView.subnetWhitelist = $metadata.subnetWhiteList
-        }
-        $null = api put views $newView
-        if($metadata.PSObject.Properties['aliases']){
-            write-host "Creating Shares..."
-            foreach($alias in $metadata.aliases){
-                write-host "`t$($alias.aliasName)"
-                $viewPath = $alias.viewPath.trimend("/")
-                $null = api post viewAliases @{'viewName' = $viewName; 'viewPath' = $viewPath; 'aliasName' = $alias.aliasName}
+            $newView.enableSmbViewDiscovery = $metadata.enableSmbViewDiscovery
+            $newView.qos = @{
+                "principalName" = $metadata.qos.principalName;
             }
-        }
-        if($policyName){
-            # protect cloned view
-            $protectionJob = @{
-                'name' = "$clusterName $($newView.name) backup";
-                'environment' = 'kView';
-                'viewBoxId' = $newView.viewBoxId;
-                'sourceIds' = @();
-                'excludeSourceIds' = @();
-                'vmTagIds' = @();
-                'excludeVmTagIds' = @();
-                'policyId' = $policy.id;
-                'priority' = 'kMedium';
-                'alertingPolicy' = @(
-                    'kFailure'
-                );
-                'timezone' = 'America/New_York';
-                'incrementalProtectionSlaTimeMins' = 60;
-                'fullProtectionSlaTimeMins' = 120;
-                'qosType' = 'kBackupHDD';
-                'viewName' = $newView.name;
-                'isActive' = $true;
-                'sourceSpecialParameters' = @();
-                'indexingPolicy' = @{
-                    'disableIndexing' = $true
-                };
-                'startTime' = @{
-                    'hour' = 23;
-                    'minute' = 55;
+            if($metadata.PSObject.Properties['subnetWhitelist']){
+                if(! $newView.PSObject.Properties['subnetWhiteList']){
+                    $newView | Add-Member -MemberType NoteProperty -Name subnetWhiteList -Value @()
+                }
+                $newView.subnetWhitelist = $metadata.subnetWhiteList
+            }
+            $null = api put views $newView
+            if($metadata.PSObject.Properties['aliases']){
+                write-host "Creating Shares..."
+                foreach($alias in $metadata.aliases){
+                    write-host "`t$($alias.aliasName)"
+                    $viewPath = $alias.viewPath.trimend("/")
+                    $null = api post viewAliases @{'viewName' = $viewName; 'viewPath' = $viewPath; 'aliasName' = $alias.aliasName}
                 }
             }
-            "Creating Protection Job for $($newView.name)..."
-            $null = api post protectionJobs $protectionJob
+            if($policyName){
+                # protect cloned view
+                $protectionJob = @{
+                    'name' = "$clusterName $($newView.name) backup";
+                    'environment' = 'kView';
+                    'viewBoxId' = $newView.viewBoxId;
+                    'sourceIds' = @();
+                    'excludeSourceIds' = @();
+                    'vmTagIds' = @();
+                    'excludeVmTagIds' = @();
+                    'policyId' = $policy.id;
+                    'priority' = 'kMedium';
+                    'alertingPolicy' = @(
+                        'kFailure'
+                    );
+                    'timezone' = 'America/New_York';
+                    'incrementalProtectionSlaTimeMins' = 60;
+                    'fullProtectionSlaTimeMins' = 120;
+                    'qosType' = 'kBackupHDD';
+                    'viewName' = $newView.name;
+                    'isActive' = $true;
+                    'sourceSpecialParameters' = @();
+                    'indexingPolicy' = @{
+                        'disableIndexing' = $true
+                    };
+                    'startTime' = @{
+                        'hour' = 23;
+                        'minute' = 55;
+                    }
+                }
+                "Creating Protection Job for $($newView.name)..."
+                $null = api post protectionJobs $protectionJob
+            }
         }
     }
 }
