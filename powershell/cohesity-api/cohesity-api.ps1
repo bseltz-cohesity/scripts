@@ -47,7 +47,7 @@ $PROMPTFORPASSWORDCHANGE = $true
 $TOKENDATE = $null
 
 $pwfile = $(Join-Path -Path $PSScriptRoot -ChildPath YWRtaW4)
-$logfile = $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api-debug.log)
+$apilogfile = $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api-debug.log)
 
 # platform detection and prerequisites ============================================================
 
@@ -77,7 +77,7 @@ public class SSLHandler
 }
 
 function __writeLog($logmessage){
-    "$(Get-Date): $logmessage" | Out-File -FilePath $logfile -Append
+    "$(Get-Date): $logmessage" | Out-File -FilePath $apilogfile -Append
 }
 
 # authentication functions ========================================================================
