@@ -10,8 +10,8 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployWindowsAgents/deployWindowsAgent.ps1).content | Out-File deployWindowsAgent.ps1; (Get-Content deployWindowsAgent.ps1) | Set-Content deployWindowsAgent.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployWindowsAgents/UserRights.psm1).content | Out-File UserRights.psm1; (Get-Content UserRights.psm1) | Set-Content UserRights.psm1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployWindowsAgent/deployWindowsAgent.ps1).content | Out-File deployWindowsAgent.ps1; (Get-Content deployWindowsAgent.ps1) | Set-Content deployWindowsAgent.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployWindowsAgent/UserRights.psm1).content | Out-File UserRights.psm1; (Get-Content UserRights.psm1) | Set-Content UserRights.psm1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End download commands
 ```
@@ -32,6 +32,8 @@ The script can perform several steps, which can be run individually or together.
 * -installAgent: This step copies the agent installer to the remote system, runs the installer and opens the necessary port on the firewall.
 
 * -register: This step registers the host as a Cohesity protection source (physical server). This step requires the agent to be installed and firewall port open first.
+
+* -registerAD: This step registers the host as an Active Directory domain controller. This step requires the server to be registered as a protection source first.
 
 * -registerSQL: This step registers the protection source as a SQL server. This step requires the server to be registered as a protection source first.
 
@@ -67,11 +69,12 @@ managing Cohesity Agent on sqlserver2.mydomain.net
 * -domain: (optional) Cohesity user domain (defaults to local)
 * -serverList: (optional) path to file containing servernames to deploy to
 * -server: (optional) name of one server to deploy to
-* -storePassword: (optional) store service account password (encrypted) for later use
+* -storePassword: (optional) store service account password (encrypted) for later script runs
 * -installAgent: (optional) install the Cohesity agent
 * -register: (optional) register server as a Cohesity physical protection source
-* -registerSQL: (optional) register server as a Cohesity SQL protection source
-* -sqlCluster: (optional) register server as a Cohesity SQL Failover Cluster node
+* -registerAD: (optional) register server as an Active Directory protection source (requires -register or previous registration)
+* -registerSQL: (optional) register server as a MSSQL protection source (requires -register or previous registration)
+* -sqlCluster: (optional) register server as a MSSQL Failover Cluster node (requires -register or previous registration)
 * -serviceAccount: (optional) set Cohesity agent to run using a service account
 
 ## Attributions

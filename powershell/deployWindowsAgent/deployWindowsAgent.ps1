@@ -13,6 +13,7 @@ param (
     [Parameter()][switch]$storePassword,
     [Parameter()][switch]$installAgent,
     [Parameter()][switch]$register,
+    [Parameter()][switch]$registerAD,
     [Parameter()][switch]$registerSQL,
     [Parameter()][switch]$sqlCluster,
     [Parameter()][string]$serviceAccount = $null
@@ -139,6 +140,22 @@ foreach ($server in $servers){
         "`tSetting CohesityAgent Service Logon Account..."
         Grant-UserRight -Computer $server -User $serviceAccount -Right SeServiceLogonRight
         $null = Set-ServiceAcctCreds $server 'CohesityAgent' $serviceAccount $sqlPassword
+    }
+
+    ### register server as AD domain controller
+    if ($registerAD){
+        "`tRegistering as Active Directory Domain Controller..."
+        $phys = api get protectionSources?environments=kPhysical
+        $sourceId = ($phys.nodes | Where-Object { $_.protectionSource.name -ieq $server }).protectionSource.id
+        $adParams = @{
+            "ownerEntity" = @{
+                "id" = $sourceId
+            };
+            "appEnvVec"   = @(
+                29
+            )
+        }
+        $null = api post /applicationSourceRegistration $adParams
     }
 
     ### register server as SQL
