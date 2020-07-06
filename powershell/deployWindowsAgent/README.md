@@ -42,7 +42,9 @@ The script can perform several steps, which can be run individually or together.
 It would be common to use all steps together as shown below if you are deploying to stand-alone SQL servers or SQL AAG nodes. For SQL Failover Clusters, just use -installAgent and -sqlAccount, then register the SQL cluster manually in the UI (I may add code in the future to handle clusters).
 
 ```powershell
+# example
 .\deployWindowsAgent.ps1 -vip mycluster -username admin -domain local -serverList .\sqlServers.txt -installAgent -register -registerSQL -serviceAccount mydomain.net\myuser
+# end example
 ```
 
 ```text
