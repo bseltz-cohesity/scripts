@@ -81,4 +81,4 @@ managing Cohesity Agent on sqlserver2.mydomain.net
 
 ## Attributions
 
-* UserRights.psm1: was downloaded from: https://gallery.technet.microsoft.com/scriptcenter/Grant-Revoke-Query-user-26e259b0 thanks to Tony MCP: https://social.technet.microsoft.com/profile/tony%20mcp/ just what I was looking for!
+* UserRights.psm1: was downloaded from: <https://gallery.technet.microsoft.com/scriptcenter/Grant-Revoke-Query-user-26e259b0> thanks to Tony MCP: <https://social.technet.microsoft.com/profile/tony%20mcp/> just what I was looking for!
