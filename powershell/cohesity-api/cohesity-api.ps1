@@ -30,9 +30,10 @@
 # 2020.06.04 - updated version numbering - June 2020
 # 2020.06.16 - improved REINVOKE - June 2020
 # 2020-06.25 - added API v2 support (-version 2) or (-v2)
+# 2020.07.08 - removed timout
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
-$versionCohesityAPI = '2020.06.25'
+$versionCohesityAPI = '2020.07.08'
 
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
@@ -147,9 +148,9 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
         $URL = 'https://helios.cohesity.com/mcm/clusters/connectionStatus'
         try{
             if($PSVersionTable.Edition -eq 'Core'){
-                $global:HELIOSALLCLUSTERS = Invoke-RestMethod -Method get -Uri $URL -Header $HEADER -SkipCertificateCheck -TimeoutSec 30
+                $global:HELIOSALLCLUSTERS = Invoke-RestMethod -Method get -Uri $URL -Header $HEADER -SkipCertificateCheck
             }else{
-                $global:HELIOSALLCLUSTERS = Invoke-RestMethod -Method get -Uri $URL -Header $HEADER -TimeoutSec 30
+                $global:HELIOSALLCLUSTERS = Invoke-RestMethod -Method get -Uri $URL -Header $HEADER
             }
             $global:HELIOSCONNECTEDCLUSTERS = $global:HELIOSALLCLUSTERS | Where-Object connectedToCluster -eq $true
             $global:HEADER = $HEADER
@@ -358,12 +359,12 @@ function api($method, $uri, $data, $version=1, [switch]$v2){
             if ($PSVersionTable.PSEdition -eq 'Core'){
                 #if($method -eq 'post' -or $method -eq 'put'){
                 if($body){
-                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER -SkipCertificateCheck -TimeoutSec 10
+                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER -SkipCertificateCheck
                 }else{
-                    $result = Invoke-RestMethod -Method $method -Uri $url -Header $HEADER -SkipCertificateCheck -TimeoutSec 10
+                    $result = Invoke-RestMethod -Method $method -Uri $url -Header $HEADER -SkipCertificateCheck
                 }
             }else{
-                $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER -TimeoutSec 10
+                $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER
             }
             $global:REINVOKE = 0
             return $result
