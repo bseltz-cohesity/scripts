@@ -48,3 +48,12 @@ Then, if you're happy with the list of archives that will be deleted, run the sc
 You can run the script again you should see no results.
 
 Also note that data in the archive target may not be immediately deleted if a newer reference archive has not yet been created.
+
+## Parameters
+
+* -vip: Cohesity cluster to connect to
+* -username: Cohesity username (e.g. admin)
+* -domain: (optional) Active Directory domain (defaults to 'local')
+* -target: (optional) narrow scope to a specific archive target
+* -olderThan: show/expire snapshots older than this many days
+* -expire: (optional) expire the snapshots (if omitted, the script will only show what 'would' be expired)

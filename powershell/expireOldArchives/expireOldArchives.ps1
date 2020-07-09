@@ -6,12 +6,13 @@ param (
     [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
     [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
     [Parameter()][string]$domain = 'local', #local or AD domain
+    [Parameter()][string]$target, # optional target name
     [Parameter()][string]$olderThan = 0, #archive snapshots older than x days
     [Parameter()][switch]$expire
 )
 
 ### source the cohesity-api helper code
-. ./cohesity-api
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
@@ -38,27 +39,27 @@ foreach ($job in ((api get protectionJobs) | Where-Object{ $_.policyId.split(':'
 
         ### Display Status of archive task
         foreach ($copyRun in $run.copyRun) {
-            #$copyRun | ConvertTo-Json -Depth 99
             if ($copyRun.target.type -eq 'kArchival') {
                 if ($copyRun.status -eq 'kSuccess') {
                     if ($copyRun.expiryTimeUsecs -gt 0) {
-                        write-host "$runDate  $jobName" -ForegroundColor Green
-                        $expireRun = @{'jobRuns' = @(
-                                @{'expiryTimeUsecs'     = 0;
-                                    'jobUid'            = $run.jobUid;
-                                    'runStartTimeUsecs' = $run.backupRun.stats.startTimeUsecs;
-                                    'copyRunTargets'    = @(
-                                        @{'daysToKeep'       = 0;
-                                            'type'           = 'kArchival';
-                                            'archivalTarget' = $copyRun.target.archivalTarget
-                                        }
-                                    )
-                                }
-                            )
-                        }
-                        #$expireRun | ConvertTo-Json -Depth 99
-                        if ($expire) {
-                            api put protectionRuns $expireRun
+                        if( ! $target -or $copyRun.target.archivalTarget.vaultName -eq $target){
+                            write-host "$runDate  $jobName" -ForegroundColor Green
+                            $expireRun = @{'jobRuns' = @(
+                                    @{'expiryTimeUsecs'     = 0;
+                                        'jobUid'            = $run.jobUid;
+                                        'runStartTimeUsecs' = $run.backupRun.stats.startTimeUsecs;
+                                        'copyRunTargets'    = @(
+                                            @{'daysToKeep'       = 0;
+                                                'type'           = 'kArchival';
+                                                'archivalTarget' = $copyRun.target.archivalTarget
+                                            }
+                                        )
+                                    }
+                                )
+                            }
+                            if ($expire) {
+                                api put protectionRuns $expireRun
+                            }
                         }
                     }
                 }
