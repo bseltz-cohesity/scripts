@@ -24,13 +24,47 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 Place both files in a folder together and run the main script like so:
 
+List the available versions:
+
 ```powershell
 ./backedUpFileList.ps1 -vip mycluster `
-                    -username myusername `
-                    -domain mydomain.net `
-                    -sourceServer server1.mydomain.net `
-                    -jobName myjob `
-                    -fileDate '2020-04-18 18:00:00'
+                       -username myusername `
+                       -domain mydomain.net `
+                       -sourceServer server1.mydomain.net `
+                       -jobName myjob `
+                       -showVersions
+```
+
+Select a specific job run ID:
+
+```powershell
+./backedUpFileList.ps1 -vip mycluster `
+                       -username myusername `
+                       -domain mydomain.net `
+                       -sourceServer server1.mydomain.net `
+                       -jobName myjob `
+                       -runId 123456
+```
+
+Or specify a file date (the next backup at or after the specified date will be selected)
+
+```powershell
+./backedUpFileList.ps1 -vip mycluster `
+                       -username myusername `
+                       -domain mydomain.net `
+                       -sourceServer server1.mydomain.net `
+                       -jobName myjob `
+                       -fileDate '2020-04-18 18:00:00'
+```
+
+Or simply use the latest version:
+
+```powershell
+./backedUpFileList.ps1 -vip mycluster `
+                       -username myusername `
+                       -domain mydomain.net `
+                       -sourceServer server1.mydomain.net `
+                       -jobName myjob
 ```
 
 ## Parameters
@@ -42,4 +76,6 @@ Place both files in a folder together and run the main script like so:
 * -password: (optional) will use stored password or be prompted if omitted
 * -sourceServer: server that was backed up
 * -jobName: name of protection job
+* -showVersions: (optional) just list available versions and exit
+* -runId: (optional) use snapshot version with specific job run ID
 * -fileDate: (optional) use snapshot version at or after date specified

@@ -1,9 +1,12 @@
+# version 2020.07.10
 # usage: ./backedUpFileList.ps1 -vip mycluster \
 #                               -username myuser \
 #                               -domain mydomain.net \
 #                               -sourceServer server1.mydomain.net \
 #                               -jobName myjob \
-#                               -fileDate '2020-06-29 12:00:00'
+#                               [ -showVersions ]
+#                               [ -runId 123456 ] 
+#                               [ -fileDate '2020-06-29 12:00:00' ]
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -15,6 +18,8 @@ param (
     [Parameter()][string]$password = $null,
     [Parameter(Mandatory = $True)][string]$sourceServer, # source server
     [Parameter(Mandatory = $True)][string]$jobName, # narrow search by job name
+    [Parameter()][switch]$showVersions,
+    [Parameter()][Int64]$runId,
     [Parameter()][datetime]$fileDate
 )
 
@@ -43,10 +48,28 @@ $searchResult = ($searchResults | sort-object -property @{Expression={$_.vmDocum
 
 $doc = $searchResult.vmDocument
 
-# find version just after requested date
-if($fileDate){
+# show versions
+if($showVersions){
+    $doc.versions | Select-Object -Property @{label='runId'; expression={$_.instanceId.jobInstanceId}}, @{label='runDate'; expression={usecsToDate $_.instanceId.jobStartTimeUsecs}}
+    exit 0
+}
+
+# select version
+if($runId){
+    # select version with matching runId
+    $version = ($doc.versions | Where-Object {$_.instanceId.jobInstanceId -eq $runId})
+    if(! $version){
+        Write-Host "Job run ID $runId not found" -ForegroundColor Yellow
+        exit 1
+    }
+}elseif($fileDate){
+    # select version just after requested date
     $version = ($doc.versions | Where-Object {$fileDate -le (usecsToDate ($_.snapshotTimestampUsecs))})[-1]
+    if(! $version){
+        $version = $doc.versions[0]
+    }
 }else{
+    # just use latest version
     $version = $doc.versions[0]
 }
 
