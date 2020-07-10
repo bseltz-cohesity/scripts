@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
+# version 2020.07.10
+
 # usage: ./backedUpFileList.py -v mycluster \
 #                              -u myuser \
 #                              -d mydomain.net \
@@ -20,9 +22,11 @@ parser.add_argument('-v', '--vip', type=str, required=True)           # cluster 
 parser.add_argument('-u', '--username', type=str, default='helios')   # username
 parser.add_argument('-d', '--domain', type=str, default='local')      # domain - defaults to local
 parser.add_argument('-i', '--useApiKey', action='store_true')         # use API key authentication
-parser.add_argument('-pwd', '--password', type=str, default=None)       # optional password
+parser.add_argument('-pwd', '--password', type=str, default=None)     # optional password
 parser.add_argument('-s', '--sourceserver', type=str, required=True)  # name of source server
-parser.add_argument('-j', '--jobname', type=str, required=True)        # narrow search by job name
+parser.add_argument('-j', '--jobname', type=str, required=True)       # narrow search by job name
+parser.add_argument('-l', '--showverions', action='store_true')       # show available snapshots
+parser.add_argument('-r', '--runid', type=int, default=None)          # choose specific job run id
 parser.add_argument('-f', '--filedate', type=str, default=None)       # date to restore from
 
 args = parser.parse_args()
@@ -34,6 +38,8 @@ password = args.password
 useApiKey = args.useApiKey
 sourceserver = args.sourceserver
 jobname = args.jobname
+showversions = args.showverions
+runid = args.runid
 filedate = args.filedate
 
 # authenticate
@@ -59,7 +65,24 @@ searchResult = sorted(searchResults, key=lambda result: result['vmDocument']['ve
 
 doc = searchResult['vmDocument']
 
-if filedate is not None:
+if showversions:
+    print('%10s  %s' % ('runId', 'runDate'))
+    print('%10s  %s' % ('-----', '-------'))
+    for version in doc['versions']:
+        print('%10d  %s' % (version['instanceId']['jobInstanceId'], usecsToDate(version['instanceId']['jobStartTimeUsecs'])))
+    exit(0)
+
+# select version
+if runid is not None:
+    # select version with matching runId
+    versions = [v for v in doc['versions'] if runid == v['instanceId']['jobInstanceId']]
+    if len(versions) == 0:
+        print('Run ID not found')
+        exit(1)
+    else:
+        version = versions[0]
+elif filedate is not None:
+    # select version just after requested date
     filedateusecs = dateToUsecs(filedate)
     versions = [v for v in doc['versions'] if filedateusecs <= v['snapshotTimestampUsecs']]
     if versions:
@@ -68,6 +91,7 @@ if filedate is not None:
         print('No backups from the specified date')
         exit(1)
 else:
+    # just use latest version
     version = doc['versions'][0]
 
 instance = ("attemptNum=%s&clusterId=%s&clusterIncarnationId=%s&entityId=%s&jobId=%s&jobInstanceId=%s&jobStartTimeUsecs=%s&jobUidObjectId=%s" %

@@ -23,6 +23,30 @@ chmod +x backupNow.py
 
 Place all files in a folder together. then, run the main script like so:
 
+To list what versions are available:
+
+```bash
+./backedUpFileList.py -v mycluster \
+                      -u myuser \
+                      -d mydomain.net \
+                      -s server1.mydomain.net \
+                      -j 'My Backup Job' \
+                      -l
+```
+
+To use a specific job run ID:
+
+```bash
+./backedUpFileList.py -v mycluster \
+                      -u myuser \
+                      -d mydomain.net \
+                      -s server1.mydomain.net \
+                      -j 'My Backup Job' \
+                      -r 123456
+```
+
+To choose the backup at or after the specified file date:
+
 ```bash
 ./backedUpFileList.py -v mycluster \
                       -u myuser \
@@ -41,4 +65,6 @@ Place all files in a folder together. then, run the main script like so:
 * -pwd, --password: (optional) password for Cohesity user
 * -s, --sourceserver: name of server to inspect
 * -j, --jobname: name of protection job to run
+* -l, --showversions: show available versions
+* -r, --runid: use specific run ID
 * -f, --filedate: (optional) date to inspect (next backup after date will be inspected)
