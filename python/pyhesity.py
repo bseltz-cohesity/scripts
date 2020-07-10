@@ -30,6 +30,7 @@
 # 2020.05.29 - added re-prompt for bad password, debug log, password storage changes
 # 2020.06.04 - bumping version (no reason)
 # 2020.06.16 - removed ansi codes from error message (Windows didn't display them correctly)
+# 2020.07.10 - added support for tenant impersonation
 #
 ##########################################################################################
 # Install Notes
@@ -88,7 +89,7 @@ LOGFILE = os.path.join(SCRIPTDIR, 'pyhesity-debug.log')
 
 
 ### authentication
-def apiauth(vip='helios.cohesity.com', username='helios', domain='local', password=None, updatepw=None, prompt=None, quiet=None, helios=False, useApiKey=False):
+def apiauth(vip='helios.cohesity.com', username='helios', domain='local', password=None, updatepw=None, prompt=None, quiet=None, helios=False, useApiKey=False, tenantId=None):
     """authentication function"""
     global APIROOT
     global HEADER
@@ -119,6 +120,8 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                 print(e)
     elif useApiKey is True:
         HEADER = {'accept': 'application/json', 'content-type': 'application/json', 'apiKey': pwd}
+        if tenantId is not None:
+            HEADER['x-impersonate-tenant-id'] = '%s/' % tenantId
         AUTHENTICATED = True
         cluster = api('get', 'cluster')
         if cluster is not None:
@@ -139,6 +142,8 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                     HEADER = {'accept': 'application/json',
                               'content-type': 'application/json',
                               'authorization': tokenType + ' ' + accessToken}
+                    if tenantId is not None:
+                        HEADER['x-impersonate-tenant-id'] = '%s/' % tenantId
                     AUTHENTICATED = True
                     if(quiet is None):
                         print("Connected!")
