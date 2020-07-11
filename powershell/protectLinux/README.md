@@ -83,5 +83,6 @@ Processing servers...
 * -inclusionList: a text file list of paths to include
 * -exclusions: one or more exclusion paths (comma separated)
 * -exclusionList: a text file list of exclusion paths
-* -skipNestedMountPoints: if omitted, nested mount points will not be skipped
+* -skipNestedMountPoints: (6.3 and below) if omitted, nested mount points will not be skipped
+* -skipNestedMountPointTypes: (6.4 and above) comma separated list of mount point types to skip (e.g. nfs, xfs)
 * -overwriteAll: overwrite existing inclusions/exclusions for all servers in job

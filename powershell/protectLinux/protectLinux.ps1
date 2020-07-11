@@ -13,7 +13,8 @@ param (
     [Parameter()][array]$exclusions = '',  # optional name of one server protect
     [Parameter()][string]$exclusionList = '',  # required list of exclusions
     [Parameter(Mandatory = $True)][string]$jobName,  # name of the job to add server to
-    [Parameter()][switch]$skipNestedMountPoints,
+    [Parameter()][switch]$skipNestedMountPoints,  # 6.3 and below - skip all nested mount points
+    [Parameter()][array]$skipNestedMountPointTypes = @(),  # 6.4 and above - skip listed mount point types
     [Parameter()][switch]$overwriteAll
 )
 
@@ -125,6 +126,10 @@ foreach($sourceId in $sourceIds){
             "physicalSpecialParameters" = @{
                 "filePaths" = @()
             }
+        }
+        if($skipNestedMountPointTypes.Count -gt 0){
+            $newParam.physicalSpecialParameters['usesSkipNestedVolumesVec'] = $True
+            $newParam.physicalSpecialParameters['skipNestedVolumesVec'] = $skipNestedMountPointTypes
         }
         $source = $sources.nodes | Where-Object {$_.protectionSource.id -eq $sourceId}
         "  processing $($source.protectionSource.name)"
