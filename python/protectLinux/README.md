@@ -51,7 +51,8 @@ Place both files in a folder together and run the main script like so:
 * -n, --includefile: (optional) a text file full of include paths
 * -x, --exclude: (optional) file path to exclude (use multiple times for multiple paths)
 * -f, --excludefile: (optional) a text file full of exclude file paths
-* -m, --skipnestedmountpoints: (optional) if omitted, nested mount paths are not skipped
+* -m, --skipnestedmountpoints: (optional - 6.3 and below) if omitted, nested mount paths are not skipped
+* -t, --skipnestedmountpointtypes: (optional - 6.4 and above) repeat for each mount type to exclude (e.g. -t nfs -t xfs)
 
 ## Notes
 

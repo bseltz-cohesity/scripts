@@ -32,6 +32,7 @@ parser.add_argument('-n', '--includefile', type=str)
 parser.add_argument('-e', '--exclude', action='append', type=str)
 parser.add_argument('-x', '--excludefile', type=str)
 parser.add_argument('-m', '--skipnestedmountpoints', action='store_true')
+parser.add_argument('-t', '--skipnestedmountpointtypes', action='append', type=str)
 
 args = parser.parse_args()
 
@@ -45,7 +46,8 @@ includes = args.include         # include path
 includefile = args.includefile  # file with include paths
 excludes = args.exclude         # exclude path
 excludefile = args.excludefile  # file with exclude paths
-skipmountpoints = args.skipnestedmountpoints  # skip nested mount points
+skipmountpoints = args.skipnestedmountpoints  # skip nested mount points (6.3 and below)
+skipnestedmountpointtypes = args.skipnestedmountpointtypes  # skip nester mount point types (6.4 and above)
 
 # read server file
 if servernames is None:
@@ -119,6 +121,11 @@ for servername in servernames:
             },
             "sourceId": physicalServer['protectionSource']['id']
         }
+
+        # add mount point type exclusions
+        if len(skipnestedmountpointtypes) > 0:
+            newParameter['physicalSpecialParameters']['usesSkipNestedVolumesVec'] = True
+            newParameter['physicalSpecialParameters']['skipNestedVolumesVec'] = skipnestedmountpointtypes
 
         # add includes to parameter
         for include in includes:
