@@ -40,7 +40,7 @@ Passwords are obfuscated and stored in a file called YWRtaW4. Once the password 
 * Enter a descriptive name for the script
 * Select Python 2.7 or 3.7 (both work for this script)
 * enter a description (optional)
-* enter the arguments (note that all arguments are optional)
+* enter the arguments (see example below)
 * browse and upload our new zip file
 
 ## Arguments
@@ -54,3 +54,9 @@ Passwords are obfuscated and stored in a file called YWRtaW4. Once the password 
 * -p, --mailport: (optional) defaults to 25
 * -f, --sendfrom: (optional) email address to show in the from field
 * -t, --sendto: (optional) email addresses to send report to (use repeatedly to add recipients)
+
+## Example Arguments
+
+```bash
+-v mycluster -u myuser -d mydomain.net -k 16 -s smtp.mydomain.net -f mycluster@mydomain.net -t myuser@mydomain.net
+```
