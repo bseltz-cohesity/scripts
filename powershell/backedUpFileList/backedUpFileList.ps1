@@ -19,6 +19,8 @@ param (
     [Parameter(Mandatory = $True)][string]$sourceServer, # source server
     [Parameter(Mandatory = $True)][string]$jobName, # narrow search by job name
     [Parameter()][switch]$showVersions,
+    [Parameter()][datetime]$start,
+    [Parameter()][datetime]$end,
     [Parameter()][Int64]$runId,
     [Parameter()][datetime]$fileDate
 )
@@ -49,7 +51,13 @@ $searchResult = ($searchResults | sort-object -property @{Expression={$_.vmDocum
 $doc = $searchResult.vmDocument
 
 # show versions
-if($showVersions){
+if($showVersions -or $start -or $end){
+    if($start){
+        $doc.versions = $doc.versions | Where-Object {$start -le (usecsToDate ($_.snapshotTimestampUsecs))}
+    }
+    if($end){
+        $doc.versions = $doc.versions | Where-Object {$end -ge (usecsToDate ($_.snapshotTimestampUsecs))}
+    }
     $doc.versions | Select-Object -Property @{label='runId'; expression={$_.instanceId.jobInstanceId}}, @{label='runDate'; expression={usecsToDate $_.instanceId.jobStartTimeUsecs}}
     exit 0
 }

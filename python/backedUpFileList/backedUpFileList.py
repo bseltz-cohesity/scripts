@@ -26,6 +26,8 @@ parser.add_argument('-pwd', '--password', type=str, default=None)     # optional
 parser.add_argument('-s', '--sourceserver', type=str, required=True)  # name of source server
 parser.add_argument('-j', '--jobname', type=str, required=True)       # narrow search by job name
 parser.add_argument('-l', '--showverions', action='store_true')       # show available snapshots
+parser.add_argument('-t', '--start', type=str, default=None)          # show snapshots after date
+parser.add_argument('-e', '--end', type=str, default=None)            # show snapshots before date
 parser.add_argument('-r', '--runid', type=int, default=None)          # choose specific job run id
 parser.add_argument('-f', '--filedate', type=str, default=None)       # date to restore from
 
@@ -39,6 +41,8 @@ useApiKey = args.useApiKey
 sourceserver = args.sourceserver
 jobname = args.jobname
 showversions = args.showverions
+start = args.start
+end = args.end
 runid = args.runid
 filedate = args.filedate
 
@@ -65,7 +69,13 @@ searchResult = sorted(searchResults, key=lambda result: result['vmDocument']['ve
 
 doc = searchResult['vmDocument']
 
-if showversions:
+if showversions or start is not None or end is not None:
+    if start is not None:
+        startusecs = dateToUsecs(start)
+        doc['versions'] = [v for v in doc['versions'] if startusecs <= v['snapshotTimestampUsecs']]
+    if end is not None:
+        endusecs = dateToUsecs(end)
+        doc['versions'] = [v for v in doc['versions'] if endusecs >= v['snapshotTimestampUsecs']]
     print('%10s  %s' % ('runId', 'runDate'))
     print('%10s  %s' % ('-----', '-------'))
     for version in doc['versions']:

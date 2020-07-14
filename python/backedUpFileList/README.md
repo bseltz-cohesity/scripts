@@ -66,5 +66,7 @@ To choose the backup at or after the specified file date:
 * -s, --sourceserver: name of server to inspect
 * -j, --jobname: name of protection job to run
 * -l, --showversions: show available versions
+* -t, --start: show versions after date
+* -e, --end: show versions before date
 * -r, --runid: use specific run ID
 * -f, --filedate: (optional) date to inspect (next backup after date will be inspected)

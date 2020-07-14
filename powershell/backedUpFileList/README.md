@@ -77,5 +77,7 @@ Or simply use the latest version:
 * -sourceServer: server that was backed up
 * -jobName: name of protection job
 * -showVersions: (optional) just list available versions and exit
+* -start: (optional) show versions starting at date (e.g. '07-10-2020 13:30:00')
+* -end: (optional) show versions starting at date (e.g. '07-14-2020 23:59:00')
 * -runId: (optional) use snapshot version with specific job run ID
 * -fileDate: (optional) use snapshot version at or after date specified
