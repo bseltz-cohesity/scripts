@@ -18,7 +18,8 @@ param (
     [Parameter()][int]$dayOfYear,
     [Parameter()][int64]$runId,
     [Parameter()][int]$keepFor, #set archive retention to x days from backup date
-    [Parameter()][int]$pastSearchDays = 31
+    [Parameter()][int]$pastSearchDays = 31,
+    [Parameter()][int]$maxDrift = 3
 )
 
 # source the cohesity-api helper code
@@ -40,28 +41,35 @@ $vaultId = $vaults[0].id
 $searchTimeUsecs = dateToUsecs ((get-date).AddDays(-$pastSearchDays))
 $monthDays = @(0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 20, 31)
 
+$desiredDayOfMonth = $dayOfMonth
+$desiredDayOfYear = $dayOfYear
+
 # find specified jobs
 $jobs = api get protectionJobs
 
 foreach($jobname in $jobNames){
     $job = $jobs | Where-Object name -eq $jobname
     if($job){
-
+        $weekdayBurn = 0
         # find latest local snapshot that has not been archived yet
-        $runs = (api get protectionRuns?jobId=$($job.id)`&numRuns=9999`&runTypes=kRegular`&runTypes=kFull`&excludeTasks=true`&excludeNonRestoreableRuns=true`&startTimeUsecs=$searchTimeUsecs) | `
+        $runs = (api get protectionRuns?jobId=$($job.id)`&numRuns=9999`&runTypes=kRegular`&runTypes=kFull`&excludeTasks=true`&startTimeUsecs=$searchTimeUsecs) | `
             Where-Object { $_.backupRun.snapshotsDeleted -eq $false } | `
             Where-Object { !('kArchival' -in $_.copyRun.target.type) -or ($_.copyRun | Where-Object { $_.target.type -eq 'kArchival' -and $_.status -in @('kCanceled','kFailed') }) } | `
-            Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $false }
+            Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
 
         $selectedRun = $null
         foreach ($run in $runs) {
+            $lastDayOfYear = 365
             $jobName = $run.jobName
+            $status = $run.backupRun.status
             $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
+
             # adjust last day of year for leap year
             if($dayOfYear -eq -1){
                 $dayOfYear = 365
                 if([datetime]::IsLeapYear($runDate.Year)){
                     $dayOfYear = 366
+                    $lastDayOfYear = 366
                 }
             }
             # adjust last day of february for leap year
@@ -79,15 +87,63 @@ foreach($jobname in $jobNames){
                 }
             }elseif($dayOfYear){
                 if($runDate.DayOfYear -eq $dayOfYear){
-                    $selectedRun = $run
+                    # drift forward if yearly snapshot failed
+                    if($status -ne 'kSuccess'){
+                        if($dayOfYear -le ($desiredDayOfYear + $maxDrift)){
+                            $dayOfYear += 1
+                            if($dayOfYear -gt $lastDayOfYear){
+                                $dayOfYear = 1
+                                $desiredDayOfYear = 0
+                            }
+                        }
+                    }else{
+                        $selectedRun = $run
+                    }
                 }
             }elseif($dayOfMonth){
                 if($runDate.Day -eq $dayOfMonth){
-                    $selectedRun = $run
+                    # drift forward if monthly snapshot failed
+                    if($status -ne 'kSuccess'){
+                        if($dayOfMonth -le ($desiredDayOfMonth + $maxDrift)){
+                            $dayOfMonth += 1
+                            if($dayOfMonth -gt $monthDays[$runDate.Month]){
+                                $dayOfMonth = 1
+                                $desiredDayOfMonth = 0
+                            }
+                        }
+                    }else{
+                        $selectedRun = $run
+                    }
                 }
             }elseif($dayOfWeek -ne 'unselected'){
                 if($runDate.DayOfWeek -eq $dayOfWeek){
-                    $selectedRun = $run
+                    # drift forward if weekly snapshot failed
+                    if($status -ne 'kSuccess'){
+                        if($dayOfWeek -eq 'Sunday' -and $weekdayBurn -lt $maxDrift){
+                            $dayOfWeek = 'Monday'
+                            $weekdayBurn += 1
+                        }elseif($dayOfWeek -eq 'Monday' -and $weekdayBurn -lt $maxDrift){
+                            $dayOfWeek = 'Tuesday'
+                            $weekdayBurn += 1
+                        }elseif($dayOfWeek -eq 'Tuesday' -and $weekdayBurn -lt $maxDrift){
+                            $dayOfWeek = 'Wednesday'
+                            $weekdayBurn += 1
+                        }elseif($dayOfWeek -eq 'Wednesday' -and $weekdayBurn -lt $maxDrift){
+                            $dayOfWeek = 'Thursday'
+                            $weekdayBurn += 1
+                        }elseif($dayOfWeek -eq 'Thursday' -and $weekdayBurn -lt $maxDrift){
+                            $dayOfWeek = 'Friday'
+                            $weekdayBurn += 1
+                        }elseif($dayOfWeek -eq 'Friday' -and $weekdayBurn -lt $maxDrift){
+                            $dayOfWeek = 'Saturday'
+                            $weekdayBurn += 1
+                        }elseif($dayOfWeek -eq 'Saturday' -and $weekdayBurn -lt $maxDrift){
+                            $dayOfWeek = 'Sunday'
+                            $weekdayBurn += 1
+                        }
+                    }else{
+                        $selectedRun = $run
+                    }
                 }
             }else{
                 $selectedRun = $run

@@ -52,6 +52,7 @@ SQL Backup (04/17/2020 23:00:01) --> S3 (07/16/2020 23:00:01)
 * -runId: (optional) archive a specific job run ID
 * -keepFor: number of days (from original backup date) to retain the archive
 * -pastSearchDays: (optional) number of days back to seach for snapshots to archive (default is 31)
+* -maxDrift: (optional) if snapshot failed on desired day, try the next X days (default is 3)
 
 ## Running and Scheduling PowerShell Scripts
 
