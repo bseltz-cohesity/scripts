@@ -52,6 +52,7 @@ Restore finished with status kSuccess
 * -n, --filename: (optional) path of file to recover (repeat parameter for multiple files)
 * -l, --filelist: (optional) text file containing multiple files to restore
 * -p, --restorepath: (optional) path to restore files on target server (defaults to original location)
+* -r, --runid: (optional) select backup version with this job run ID 
 * -f, --filedate: (optional) select backup version at or after specified date (defaults to latest backup)
 * -o, --newonly: (optional) only restore if there is a new point in time to restore
 * -w, --wait: (optional) wait for completion and report status
