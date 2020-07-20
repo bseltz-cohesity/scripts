@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 """restore files using python"""
 
-# version 2020.06.14
+# version 2020.07.18
+# 2020.07.18 fixed newonly for python3, added runid parameter
 
 # usage: ./restoreFiles.py -v mycluster \
 #                          -u myusername \
@@ -18,6 +19,7 @@
 from pyhesity import *
 from datetime import datetime
 from time import sleep
+import sys
 
 # command line arguments
 import argparse
@@ -33,6 +35,7 @@ parser.add_argument('-j', '--jobname', type=str, default=None)        # narrow s
 parser.add_argument('-n', '--filename', type=str, action='append')    # file name to restore
 parser.add_argument('-l', '--filelist', type=str, default=None)       # text file list of files to restore
 parser.add_argument('-p', '--restorepath', type=str, default=None)    # destination path
+parser.add_argument('-r', '--runid', type=int, default=None)          # job run id to restore from
 parser.add_argument('-f', '--filedate', type=str, default=None)       # date to restore from
 parser.add_argument('-o', '--newonly', action='store_true')           # abort if PIT is not new
 parser.add_argument('-w', '--wait', action='store_true')              # wait for completion and report result
@@ -56,8 +59,12 @@ files = args.filename
 filelist = args.filelist
 restorepath = args.restorepath
 filedate = args.filedate
+runid = args.runid
 newonly = args.newonly
 wait = args.wait
+
+if sys.version_info > (3,):
+    long = int
 
 # gather volume list
 if files is None:
@@ -104,7 +111,14 @@ searchResult = sorted(searchResults, key=lambda result: result['vmDocument']['ve
 
 doc = searchResult['vmDocument']
 
-if filedate is not None:
+if runid is not None:
+    versions = [v for v in doc['versions'] if runid == v['instanceId']['jobInstanceId']]
+    if versions:
+        version = versions[0]
+    else:
+        print("Job run %s not found" % runid)
+        exit(1)
+elif filedate is not None:
     filedateusecs = dateToUsecs(filedate)
     versions = [v for v in doc['versions'] if filedateusecs <= v['snapshotTimestampUsecs']]
     if versions:
