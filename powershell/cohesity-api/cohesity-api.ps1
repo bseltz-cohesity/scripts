@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#  version 2020.07.20 - Brian Seltzer - July 2020
+#  version 2020.07.20 - Brian Seltzer - July 20, 2020
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.06 - Consolidated Windows and Unix versions - June 2018
