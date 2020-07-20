@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#  version 2020.06.25 - Brian Seltzer - June 2020
+#  version 2020.07.20 - Brian Seltzer - July 2020
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.06 - Consolidated Windows and Unix versions - June 2018
@@ -31,9 +31,10 @@
 # 2020.06.16 - improved REINVOKE - June 2020
 # 2020-06.25 - added API v2 support (-version 2) or (-v2)
 # 2020.07.08 - removed timout
+# 2020.07.20 - fixed dateToUsecs for international date formats
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
-$versionCohesityAPI = '2020.07.08'
+$versionCohesityAPI = '2020.07.20'
 
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
@@ -445,7 +446,7 @@ function usecsToDate($usecs){
 
 function dateToUsecs($datestring){
     if($datestring -isnot [datetime]){ $datestring = [datetime] $datestring }
-    $usecs =  ([Math]::Floor([decimal](Get-Date($datestring).ToUniversalTime()-uformat "%s")))*1000000
+    $usecs = [int64](($datestring)-(get-date "1/1/1970")).TotalSeconds*1000000
     $usecs
 }
 
