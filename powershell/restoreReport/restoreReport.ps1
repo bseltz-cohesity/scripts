@@ -196,9 +196,7 @@ $entityType=@("",
               "",
               "Active Directory")
 
-#$restores = api get "/restoretasks?startTimeUsecs=$uStart&endTimeUsecs=$uEnd"
-$restores = api get "/restoretasks?_includeTenantInfo=true&endTimeUsecs=$uEnd&restoreTypes=kMountFileVolume&restoreTypes=kMountVolumes&restoreTypes=kSystem&restoreTypes=kRecoverApp&restoreTypes=kRecoverSanVolume&restoreTypes=kRecoverVMs&restoreTypes=kRestoreFiles&restoreTypes=kRecoverVolumes&restoreTypes=kDownloadFiles&restoreTypes=kRecoverEmails&restoreTypes=kRecoverDisks&startTimeUsecs=$uStart&targetType=kLocal"
-# $restores | ft
+$restores = api get "/restoretasks?_includeTenantInfo=true&endTimeUsecs=$uEnd&restoreTypes=kCloneView&restoreTypes=kConvertAndDeployVMs&restoreTypes=kCloneApp&restoreTypes=kCloneVMs&restoreTypes=kDeployVMs&restoreTypes=kMountFileVolume&restoreTypes=kMountVolumes&restoreTypes=kSystem&restoreTypes=kRecoverApp&restoreTypes=kRecoverSanVolume&restoreTypes=kRecoverVMs&restoreTypes=kRestoreFiles&restoreTypes=kRecoverVolumes&restoreTypes=kDownloadFiles&restoreTypes=kRecoverEmails&restoreTypes=kRecoverDisks&startTimeUsecs=$uStart&targetType=kLocal"
 
 foreach ($restore in $restores){
     $taskId = $restore.restoreTask.performRestoreTaskState.base.taskId
