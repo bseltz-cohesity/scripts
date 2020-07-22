@@ -10,7 +10,7 @@ param (
     [Parameter()][string]$domain = 'local',
     [Parameter()][string]$jobname = $null,
     [Parameter(Mandatory = $True)][string]$daysToKeep,
-    [Parameter()][ValidateSet(“kRegular”,”kFull”,”kLog”,"kSystem","kAll")][string]$backupType = 'kAll',
+    [Parameter()][ValidateSet("kRegular","kFull","kLog","kSystem","kAll")][string]$backupType = 'kAll',
     [Parameter()][switch]$expire
 )
 
