@@ -50,12 +50,20 @@ Restore finished with status kSuccess
 * -s, --sourceserver: name of source server
 * -t, --targetserver: (optional) name of target server (defaults to source server)
 * -n, --filename: (optional) path of file to recover (repeat parameter for multiple files)
-* -l, --filelist: (optional) text file containing multiple files to restore
+* -f, --filelist: (optional) text file containing multiple files to restore
 * -p, --restorepath: (optional) path to restore files on target server (defaults to original location)
 * -r, --runid: (optional) select backup version with this job run ID 
-* -f, --filedate: (optional) select backup version at or after specified date (defaults to latest backup)
+* -b, --start: (optional) oldest backup date to restore files from (e.g. '2020-04-18 18:00:00')
+* -e, --end: (optional) newest backup date to restore files from (e.g. '2020-04-20 18:00:00')
+* -l, --latest: (optional) use latest backup date to restore files from
 * -o, --newonly: (optional) only restore if there is a new point in time to restore
 * -w, --wait: (optional) wait for completion and report status
+
+## Backup Versions
+
+By default, the script will search for each file and restore it from the newest version available for that file. You can narrow the date range that will be searched by using the --start and --end parameters.
+
+Using the --runid or --latest parameters will cause the script to try to restore all the requested files at once (in one recovery task), from one backup version.
 
 ## File Names and Paths
 

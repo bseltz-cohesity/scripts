@@ -32,7 +32,6 @@ Place both files in a folder together and run the main script like so:
                     -targetServer server2.mydomain.net `
                     -fileNames /home/myuser/file1, /home/myuser/file2 `
                     -restorePath /tmp/restoretest1/ `
-                    -fileDate '2020-04-18 18:00:00' `
                     -wait
 ```
 
@@ -52,8 +51,17 @@ Restore finished with status Success
 * -fileNames: (optional) file names to restore (comma separated)
 * -fileList: (optional) text file of file names to restore
 * -restorePath: (optional) path to restore files on targetServer
-* -fileDate: (optional) date to restore files to (e.g. '2020-04-18 18:00:00')
+* -start: (optional) oldest backup date to restore files from (e.g. '2020-04-18 18:00:00')
+* -end: (optional) newest backup date to restore files from (e.g. '2020-04-20 18:00:00')
+* -runId: (optional) use specified runId to restore files from
+* -latest: (optional) use the latest backup date to restore files from
 * -wait: wait for completion and report status
+
+## Backup Versions
+
+By default, the script will search for each file and restore it from the newest version available for that file. You can narrow the date range that will be searched by using the -start and -end parameters.
+
+Using the -runId or -latest parameters will cause the script to try to restore all the requested files at once (in one recovery task), from one backup version.
 
 ## File Names and Paths
 
