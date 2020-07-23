@@ -1,16 +1,18 @@
-# version 2020.06.04
-# usage: ./backupNow.ps1 -vip mycluster -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
+# version 2020.07.23
+# usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
 [CmdletBinding()]
 param (
     [Parameter()][string]$vip = 'helios.cohesity.com',  # the cluster to connect to (DNS name or IP)
+    [Parameter()][string]$vip2, # alternate cluster to connect to
     [Parameter()][string]$username = 'helios',  # username (local or AD)
     [Parameter()][string]$domain = 'local',  # local or AD domain
     [Parameter()][string]$password = $null, # optional password
     [Parameter()][switch]$useApiKey, # use API key for authentication
     [Parameter()][string]$clusterName = $null,  # helios cluster to access 
     [Parameter(Mandatory = $True)][string]$jobName,  # job to run
+    [Parameter()][string]$jobName2, # alternate jobName to run
     [Parameter()][int]$keepLocalFor = 5,  # keep local snapshot for x days
     [Parameter()][string]$replicateTo = $null,  # optional - remote cluster to replicate to
     [Parameter()][int]$keepReplicaFor = 5,  # keep replica for x days
@@ -29,8 +31,23 @@ param (
 
 if($useApiKey){
     apiauth -vip $vip -username $username -domain $domain -password $password -useApiKey
+    if((! $AUTHORIZED) -and $vip2){
+        Write-Host "Failed to connect to $vip. Trying $vip2..." -ForegroundColor Yellow
+        apiauth -vip2 $vip -username $username -domain $domain -password $password -useApiKey
+        $jobName = $jobName2
+    }
 }else{
     apiauth -vip $vip -username $username -domain $domain -password $password
+    if((! $AUTHORIZED) -and $vip2){
+        Write-Host "Failed to connect to $vip. Trying $vip2..." -ForegroundColor Yellow
+        apiauth -vip $vip2 -username $username -domain $domain -password $password
+        $jobName = $jobName2
+    }
+}
+
+if(! $AUTHORIZED){
+    Write-Host "Failed to connect to Cohesity cluster" -ForegroundColor Yellow
+    exit 1
 }
 
 if($USING_HELIOS){
@@ -86,6 +103,9 @@ if($job){
     }
     $jobID = $job.id
     $environment = $job.environment
+    if($environment -eq 'kPhysicalFiles'){
+        $environment = 'kPhysical'
+    }
     if($environment -notin ('kOracle', 'kSQL') -and $backupType -eq 'kLog'){
         Write-Warning "BackupType kLog not applicable to $environment jobs"
         exit 1
