@@ -50,6 +50,7 @@ To specify a source instance, include the instance name in the sourceDB name, li
 
 ### Optional Parameters
 
+* -clusterName: Specify cluster name when connected through Helios
 * -targetServer: Server name to restore to (defaults to same as sourceServer)
 * -targetDB: New database name (defaults to same as sourceDB)
 * -targetInstance: Instance name to restore to (defaults to MSSQLSERVER)
@@ -61,7 +62,8 @@ To specify a source instance, include the instance name in the sourceDB name, li
 * -wait: Wait for the restore to complete and report end status (e.g. kSuccess)
 * -overwrite: Overwrites an existing database (default is no overwrite)
 * -noRecovery: Restore the DB with NORECOVER option (default is to recover)
-* -progress: (optional) display percent complete
+* -progress: display percent complete
+* -helios: use on-prem helios
 
 ## Always On Availability Groups
 

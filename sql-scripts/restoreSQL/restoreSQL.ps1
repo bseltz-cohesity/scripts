@@ -7,24 +7,26 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,          #the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username,     #username (local or AD)
-    [Parameter()][string]$domain = 'local',              #local or AD domain
-    [Parameter(Mandatory = $True)][string]$sourceServer, #protection source where the DB was backed up
-    [Parameter(Mandatory = $True)][string]$sourceDB,     #name of the source DB we want to restore
-    [Parameter()][string]$targetServer = $sourceServer,  #where to restore the DB to
-    [Parameter()][string]$targetDB = $sourceDB,          #desired restore DB name
-    [Parameter()][switch]$overWrite,                     #overwrite existing DB
-    [Parameter()][string]$mdfFolder,                     #path to restore the mdf
-    [Parameter()][string]$ldfFolder = $mdfFolder,        #path to restore the ldf
-    [Parameter()][hashtable]$ndfFolders,                 #paths to restore the ndfs (requires Cohesity 6.0x)
-    [Parameter()][string]$ndfFolder,                     #single path to restore ndfs (Cohesity 5.0x)
-    [Parameter()][string]$logTime,                       #date time to replay logs to e.g. '2019-01-20 02:01:47'
-    [Parameter()][switch]$wait,                          #wait for completion
-    [Parameter()][string]$targetInstance,                #SQL instance name on the targetServer
-    [Parameter()][switch]$latest,
-    [Parameter()][switch]$noRecovery,
-    [Parameter()][switch]$progress
+    [Parameter()][string]$vip = 'helios.cohesity.com',   # the cluster to connect to (DNS name or IP)
+    [Parameter()][string]$username = 'helios',           # username (local or AD)
+    [Parameter()][string]$domain = 'local',              # local or AD domain
+    [Parameter()][string]$clusterName = $null,           # helios cluster to access 
+    [Parameter(Mandatory = $True)][string]$sourceServer, # protection source where the DB was backed up
+    [Parameter(Mandatory = $True)][string]$sourceDB,     # name of the source DB we want to restore
+    [Parameter()][string]$targetServer = $sourceServer,  # where to restore the DB to
+    [Parameter()][string]$targetDB = $sourceDB,          # desired restore DB name
+    [Parameter()][switch]$overWrite,                     # overwrite existing DB
+    [Parameter()][string]$mdfFolder,                     # path to restore the mdf
+    [Parameter()][string]$ldfFolder = $mdfFolder,        # path to restore the ldf
+    [Parameter()][hashtable]$ndfFolders,                 # paths to restore the ndfs (requires Cohesity 6.0x)
+    [Parameter()][string]$ndfFolder,                     # single path to restore ndfs (Cohesity 5.0x)
+    [Parameter()][string]$logTime,                       # date time to replay logs to e.g. '2019-01-20 02:01:47'
+    [Parameter()][switch]$wait,                          # wait for completion
+    [Parameter()][string]$targetInstance,                # SQL instance name on the targetServer
+    [Parameter()][switch]$latest,                        # use latest point in time available
+    [Parameter()][switch]$noRecovery,                    # restore with NORECOVERY option
+    [Parameter()][switch]$progress,                      # display progress
+    [Parameter()][switch]$helios                         # connect via Helios
 )
 
 ### handle 6.0x alternate secondary data file locations
@@ -44,6 +46,15 @@ if($ndfFolders){
 
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
+
+if($USING_HELIOS){
+    if($clusterName){
+        heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
 
 ### handle source instance name e.g. instance/dbname
 if($sourceDB.Contains('/')){
