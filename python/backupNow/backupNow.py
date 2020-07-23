@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2020.06.04
+# version 2020.07.23
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -13,11 +13,13 @@ from time import sleep
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, required=True)
+parser.add_argument('-v2', '--vip2', type=str, default=None)
 parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
 parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-p', '--password', type=str, default=None)
 parser.add_argument('-j', '--jobName', type=str, required=True)
+parser.add_argument('-j2', '--jobName2', type=str, default=None)
 parser.add_argument('-k', '--keepLocalFor', type=int, default=5)
 parser.add_argument('-r', '--replicateTo', type=str, default=None)
 parser.add_argument('-kr', '--keepReplicaFor', type=int, default=5)
@@ -31,10 +33,12 @@ parser.add_argument('-o', '--objectname', action='append', type=str)
 args = parser.parse_args()
 
 vip = args.vip
+vip2 = args.vip2
 username = args.username
 domain = args.domain
 password = args.password
 jobName = args.jobName
+jobName2 = args.jobName2
 keepLocalFor = args.keepLocalFor
 replicateTo = args.replicateTo
 keepReplicaFor = args.keepReplicaFor
@@ -51,6 +55,15 @@ if enable is True:
 
 ### authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+if apiconnected() is False and vip2 is not None:
+    print('\nFailed to connect to %s. Trying %s...' % (vip, vip2))
+    apiauth(vip=vip2, username=username, domain=domain, password=password, useApiKey=useApiKey)
+    if jobName2 is not None:
+        jobName = jobName2
+
+if apiconnected() is False:
+    print('\nFailed to connect to Cohesity cluster')
+    exit(1)
 
 sources = {}
 
@@ -91,6 +104,8 @@ if not job:
 else:
     job = job[0]
     environment = job['environment']
+    if environment == 'kPhysicalFiles':
+        environment = 'kPhysical'
     if environment not in ['kOracle', 'kSQL'] and backupType == 'kLog':
         print('BackupType kLog not applicable to %s jobs' % environment)
         exit(1)
