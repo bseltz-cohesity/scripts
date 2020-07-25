@@ -1,9 +1,9 @@
 # usage: .\linkSharesProxy.ps1 -vip mycluster `
 #                              -username myusername `
-#                              - mydomain.net `
+#                              -domain mydomain.net `
 #                              -jobName 'my job name' `
 #                              -nas mynas `
-#                              -localDirory C:\Cohesity\ `
+#                              -localDirectory C:\Cohesity\ `
 #                              -statusFile \\mylinkmaster\myshare\linkSharesStatus.json
 
 # process commandline arguments
@@ -15,7 +15,12 @@ param (
     [Parameter(Mandatory = $True)][string]$nas,  # name of nas target
     [Parameter(Mandatory = $True)][string]$localDirectory,  # local path where links will be created
     [Parameter(Mandatory = $True)][string]$statusFile,  # unc path to central json file
-    [Parameter(Mandatory = $True)][string]$jobName  # name of cohesity protection job
+    [Parameter()][int64]$lockTimeOut = 10,
+    [Parameter(Mandatory = $True)][string]$jobName,  # name of cohesity protection job
+    [Parameter()][string]$smtpServer, # outbound smtp server '192.168.1.95'
+    [Parameter()][string]$smtpPort = 25, # outbound smtp port
+    [Parameter()][array]$sendTo, # send to address
+    [Parameter()][string]$sendFrom # send from address
 )
 
 # source the cohesity-api helper code
@@ -43,14 +48,39 @@ if(!$source){
 
 $localLinks = (Get-Item $localDirectory) | Get-ChildItem
 
+function sendAlert($msg){
+    Write-Host $msg -ForegroundColor Yellow
+    $title = 'linkShares alert'
+    if($smtpServer -and $sendTo -and $sendFrom){
+        write-host "sending alert to $([string]::Join(", ", $sendTo))"
+        # send email report
+        foreach($toaddr in $sendTo){
+            Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject $title -Body $msg -WarningAction SilentlyContinue
+        }
+    }
+}
+
 # wait for and aqcuire lock on status file
+$waitFor = $lockTimeOut + (Get-Random -Maximum 10)
+$waitedFor = 0
 $status = 'Running'
-while($status -eq 'Running'){
-    "waiting for exclusive config file access..."
+"waiting for exclusive config file access..."
+while($status -ne 'Ready'){
     Start-Sleep -Seconds 1
     $config = Get-Content -Path $statusFile | ConvertFrom-Json
     $status = $config.status
+    $waitedFor += 1
+    if($waitedFor -gt $waitFor){
+        # release lock ---------------------------------------
+        sendAlert "Status file was locked by $($config.lockedBy) - resetting...`nPlease check $($config.lockedBy) it might be stuck"
+        $config.lockedBy = ''
+        $config.status = 'Ready'
+        $config | ConvertTo-Json -Depth 99 | Set-Content -Path $statusFile
+        Start-Sleep -Seconds (5 + (Get-Random -Maximum 10))
+        $waitedFor = 0
+    }
 }
+"acquired exclusive lock"
 $config.status = 'Running'
 $config.lockedBy = $thisComputer
 $config | ConvertTo-Json -Depth 99 | Set-Content -Path $statusFile
