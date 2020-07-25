@@ -60,36 +60,42 @@ function sendAlert($msg){
     }
 }
 
-# wait for and aqcuire lock on status file
-$waitFor = $lockTimeOut + (Get-Random -Maximum 10)
-$waitedFor = 0
-$status = 'Running'
-"waiting for exclusive config file access..."
-while($status -ne 'Ready'){
-    Start-Sleep -Seconds 1
-    $config = Get-Content -Path $statusFile | ConvertFrom-Json
-    $status = $config.status
-    $waitedFor += 1
-    if($waitedFor -gt $waitFor){
-        # release lock ---------------------------------------
-        sendAlert "Status file was locked by $($config.lockedBy) - resetting...`nPlease check $($config.lockedBy) it might be stuck"
-        $config.lockedBy = ''
-        $config.status = 'Ready'
-        $config | ConvertTo-Json -Depth 99 | Set-Content -Path $statusFile
-        Start-Sleep -Seconds (5 + (Get-Random -Maximum 10))
-        $waitedFor = 0
-    }
-}
-"acquired exclusive lock"
-$config.status = 'Running'
-$config.lockedBy = $thisComputer
-$config | ConvertTo-Json -Depth 99 | Set-Content -Path $statusFile
-
-# lock acquired - do stuff to the file ---------------
+$config = Get-Content -Path $statusFile | ConvertFrom-Json
 
 # register this proxy
 if(! ($config.proxies | Where-Object name -eq $thisComputer)){
+    "Registering as new proxy..."
+    # wait for and aqcuire lock on status file
+    $waitFor = $lockTimeOut + (Get-Random -Maximum 10)
+    $waitedFor = 0
+    $status = 'Running'
+    "waiting for exclusive config file access..."
+    while($status -ne 'Ready'){
+        Start-Sleep -Seconds 1
+        $config = Get-Content -Path $statusFile | ConvertFrom-Json
+        $status = $config.status
+        $waitedFor += 1
+        if($waitedFor -gt $waitFor){
+            # release lock ---------------------------------------
+            sendAlert "Status file was locked by $($config.lockedBy) - resetting...`nPlease check $($config.lockedBy) it might be stuck"
+            $config.lockedBy = ''
+            $config.status = 'Ready'
+            $config | ConvertTo-Json -Depth 99 | Set-Content -Path $statusFile
+            Start-Sleep -Seconds (5 + (Get-Random -Maximum 10))
+            $waitedFor = 0
+        }
+    }
+    "acquired exclusive lock"
+    $config.status = 'Running'
+    $config.lockedBy = $thisComputer
+    $config | ConvertTo-Json -Depth 99 | Set-Content -Path $statusFile
+
+    # lock acquired - do stuff to the file ---------------
     $config.proxies += @{'name'= $thisComputer; 'shows'= @()}
+    # release lock ---------------------------------------
+    $config.lockedBy = ''
+    $config.status = 'Ready'
+    $config | ConvertTo-Json -Depth 99 | Set-Content -Path $statusFile
 }
 $thisProxy = $config.proxies | Where-Object name -eq $thisComputer
 
@@ -139,8 +145,3 @@ if($newLinksFound){
 }else{
     Write-Host "No new links found"
 }
-
-# release lock ---------------------------------------
-$config.lockedBy = ''
-$config.status = 'Ready'
-$config | ConvertTo-Json -Depth 99 | Set-Content -Path $statusFile
