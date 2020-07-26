@@ -1,7 +1,7 @@
 # usage: .\linkSharesMaster.ps1 -linuxUser myuser `
 #                               -linuxHost myhost `
 #                               -linuxPath /home/myuser/mydir `
-#                               -statusFile \\mylinkmaster\myshare\linkSharesStatus.json
+#                               -statusFolder \\mylinkmaster\myshare
 
 # process commandline arguments
 [CmdletBinding()]
@@ -9,19 +9,23 @@ param (
     [Parameter(Mandatory = $True)][string]$linuxUser,
     [Parameter(Mandatory = $True)][string]$linuxHost,
     [Parameter(Mandatory = $True)][string]$linuxPath,
-    [Parameter(Mandatory = $True)][string]$statusFile,
-    [Parameter()][int64]$lockTimeOut = 10,
+    [Parameter(Mandatory = $True)][string]$statusFolder,
     [Parameter()][string]$smtpServer, # outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, # outbound smtp port
     [Parameter()][array]$sendTo, # send to address
-    [Parameter()][string]$sendFrom # send from address
+    [Parameter()][string]$sendFrom, # send from address
+    [Parameter()][Int64]$maxCheckinHours = 25
 )
 
+$logFile = Join-Path -Path $statusFolder -ChildPath "master.log"
+$statusFile = Join-Path -Path $statusFolder -ChildPath "linkSharesStatus.json"
+$config = Get-Content -Path $statusFile | ConvertFrom-Json
+"Check in at $(Get-Date)" | Out-File -FilePath $logFile
+
 # create any missing links
-write-host "Searching for new workspaces..."
+"Searching for new workspaces..." | Tee-Object -FilePath $logFile -Append
 $workspaces = (ssh -qt "$linuxUser@$linuxHost" 'ls -1 '$linuxPath)
 $shows = $workspaces | Group-Object -Property {$_.split('_')[0]}
-$thisComputer = $Env:Computername
 
 function sendAlert($msg){
     Write-Host $msg -ForegroundColor Yellow
@@ -34,33 +38,6 @@ function sendAlert($msg){
         }
     }
 }
-
-# wait for and aqcuire lock on status file
-$waitFor = $lockTimeOut + (Get-Random -Maximum 10)
-$waitedFor = 0
-$status = 'Running'
-"waiting for exclusive config file access..."
-while($status -ne 'Ready'){
-    Start-Sleep -Seconds 1
-    $config = Get-Content -Path $statusFile | ConvertFrom-Json
-    $status = $config.status
-    $waitedFor += 1
-    if($waitedFor -gt $waitFor){
-        # release lock ---------------------------------------
-        sendAlert "Status file was locked by $($config.lockedBy) - resetting...`nPlease check $($config.lockedBy) it might be stuck"
-        $config.lockedBy = ''
-        $config.status = 'Ready'
-        $config | ConvertTo-Json -Depth 99 | Set-Content -Path $statusFile
-        Start-Sleep -Seconds (5 + (Get-Random -Maximum 10))
-        $waitedFor = 0
-    }
-}
-"acquired exclusive lock"
-$config.status = 'Running'
-$config.lockedBy = $thisComputer
-$config | ConvertTo-Json -Depth 99 | Set-Content -Path $statusFile
-
-# lock acquired - do stuff to the file ---------------
 
 foreach($show in $shows){
 
@@ -91,13 +68,29 @@ foreach($show in $shows){
 
         # add show to least used proxy
         $thisProxy = $config.proxies | Where-Object name -eq $leastUsedProxy
-        "adding $($show.Name) to $($thisProxy.name) ($($thisProxy.shows.count))"
+        "adding $($show.Name) to $($thisProxy.name) ($($thisProxy.shows.count))" | Tee-Object -FilePath $logFile -Append
         $thisProxy.shows += $show.Name
     }
 }
 
-# release lock ---------------------------------------
-$config.lockedBy = ''
-$config.status = 'Ready'
 $config | ConvertTo-Json -Depth 99 | Set-Content -Path $statusFile
-"Lock released"
+
+# check for dead proxies
+$alert = ""
+foreach($proxy in $config.proxies){
+    $logPath = Join-Path -Path $statusFolder -ChildPath "$($proxy.name).log"
+    if(Test-Path -Path $logPath){
+        $proxyLog = Get-Item -Path $logPath
+        $hours = ((Get-Date) - $proxyLog.LastWriteTime).TotalHours
+        if($hours -gt $maxCheckinHours){
+            $alert += "Proxy $($proxy.name) is late checking in`n"
+        }
+    }else{
+        $alert += "Proxy $($proxy.name) has not checked in`n"
+    }
+}
+if($alert -ne ""){
+    "$alert" | Out-File -FilePath $logFile -Append
+    sendAlert $alert
+}
+"Completed at $(get-date)" | Tee-Object -FilePath $logFile -Append
