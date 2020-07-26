@@ -22,6 +22,10 @@ $statusFile = Join-Path -Path $statusFolder -ChildPath "linkSharesStatus.json"
 $config = Get-Content -Path $statusFile | ConvertFrom-Json
 "Check in at $(Get-Date)" | Out-File -FilePath $logFile
 
+# backup status file
+$backupFile = Join-Path -Path $statusFolder -ChildPath "linkSharesStatus-backup$((get-date).DayOfYear % 3).json"
+$config | ConvertTo-Json -Depth 99 | Set-Content -Path $backupFile
+
 # create any missing links
 "Searching for new workspaces..." | Tee-Object -FilePath $logFile -Append
 $workspaces = (ssh -qt "$linuxUser@$linuxHost" 'ls -1 '$linuxPath)
