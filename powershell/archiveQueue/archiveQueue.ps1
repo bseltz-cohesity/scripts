@@ -4,6 +4,9 @@ param (
    [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
    [Parameter()][string]$domain = 'local', #local or AD domain
+   [Parameter()][switch]$cancelOutdated,
+   [Parameter()][switch]$cancelQueued,
+   [Parameter()][switch]$cancelAll,
    [Parameter()][int]$numRuns = 9999
 )
 
@@ -57,19 +60,42 @@ if($runningTasks.Keys.Count -gt 0){
             if($task.snapshotTarget.type -eq 3){
     
                 $noLongerNeeded = ''
+                $cancelling = ''
+                $cancel = $false
                 $daysToKeep = $task.retentionPolicy.numDaysToKeep
                 $usecsToKeep = $daysToKeep * 1000000 * 86400
                 $timePassed = $nowUsecs - $runStartTimeUsecs
                 if($timePassed -gt $usecsToKeep){
                     $noLongerNeeded = "NO LONGER NEEDED"
+                    if($cancelOutdated -or $cancelAll){
+                        $cancel = $True
+                        $cancelling = 'Cancelling'
+                    }
                 }
                 if($task.archivalInfo.logicalBytesTransferred){
                     $transferred = $task.archivalInfo.logicalBytesTransferred
                 }else{
                     $transferred = 0
                 }
-                "                       Archive Task ID: {0}  {1}" -f $task.taskUid.objectId, $noLongerNeeded
+                if($transferred -eq 0 -and ($cancelQueued -or $cancelAll)){
+                    $cancel = $True
+                    $cancelling = 'Cancelling'
+                }
+
+                "                       Archive Task ID: {0}  {1}  {2}" -f $task.taskUid.objectId, $noLongerNeeded, $cancelling
                 "                       Data Transferred: {0}" -f $transferred
+                # cancel archive task
+                if($cancel -eq $True){
+                    $cancelTaskParams = @{
+                        "jobId"       = $t.jobId;
+                        "copyTaskUid" = @{
+                            "id"                   = $task.taskUid.objectId;
+                            "clusterId"            = $task.taskUid.clusterId;
+                            "clusterIncarnationId" = $task.taskUid.clusterIncarnationId
+                        }
+                    }
+                    $null = api post "protectionRuns/cancel/$($t.jobId)" $cancelTaskParams 
+                }
             }
         }
     }    
