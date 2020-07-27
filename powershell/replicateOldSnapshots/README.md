@@ -56,7 +56,7 @@ Then, if you're happy with the list of snapshots that will be replicated, run th
 * -username: Cohesity username
 * -domain: AD domain name (defaults to local)
 * -jobName: (optional) replicate only specified job (otherwise replicate all jobs)
-* -replicateTo: (optional) name of remote cluster to replicate to
+* -replicateTo: name of remote cluster to replicate to
 * -keepFor: days to keep replica (default is same as local) existing age is subtracted
 * -olderThan: (optional) only replicate if older than X days
 * -IfExpiringAfter: (optional) only replicate if there are X or more days left before expiration

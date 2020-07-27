@@ -9,7 +9,7 @@ param (
     [Parameter()][string]$jobName = $null, # name of job to replicate
     [Parameter(Mandatory = $True)][string]$replicateTo, # name of replication target
     [Parameter()][string]$olderThan = 0, # archive snapshots older than x days
-    [Parameter()][string]$IfExpiringAfter = 0, # do not archve if the snapshot is going to expire within x days
+    [Parameter()][string]$IfExpiringAfter = -1, # do not archve if the snapshot is going to expire within x days
     [Parameter()][string]$keepFor = 0, # set archive retention to x days from original backup date
     [Parameter()][switch]$replicate # actually replicate (otherwise test run)
 )
