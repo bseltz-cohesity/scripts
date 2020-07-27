@@ -14,8 +14,8 @@ param (
     [Parameter()][string]$policyName,
     [Parameter()][Int64]$intervalMinutes = 60,
     [Parameter()][Int64]$daysToKeep = $null,
-    [Parameter()][Int64]$retries = $null,
-    [Parameter()][Int64]$retryInterval = $null
+    [Parameter()][Int64]$retries = 3,
+    [Parameter()][Int64]$retryInterval = 30
 )
 
 if($intervalMinutes -lt 3 -or $intervalMinutes -gt 1440){
@@ -83,24 +83,14 @@ if($policy){
     }else{
         $policy.blackoutPeriods = $blackoutPeriods
     }
-    if($null -ne $retries){
-        $policy.retries = $retries
-    }
-    if($null -ne $retryInterval){
-        $policy.retryIntervalMins = $retryInterval
-    }
+    $policy.retries = $retries
+    $policy.retryIntervalMins = $retryInterval
     "Updating policy $policyName..."
     $null = api put "protectionPolicies/$($policy.id)" $policy
 }else{
     # create new policy
     if(! $daysToKeep){
         $daysToKeep = 14
-    }
-    if(! $retries){
-        $retries = 3
-    }
-    if(! $retryInterval){
-        $retryInterval = 30
     }
     $policy = @{
         "name"                        = $policyName;
