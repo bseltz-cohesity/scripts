@@ -1,9 +1,9 @@
 # usage:
 # ./intervalPolicy.ps1 -vip mycluster `
-#                      -username myuser `
-#                      -domain mydomain.net `
-#                      -policyName 'my policy' `
-#                      -intervalMinutes 20
+#                           -username myuser `
+#                           -domain mydomain.net `
+#                           -policyName 'my policy' `
+#                           -intervalMinutes 20
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -44,7 +44,7 @@ $endTime = $midnight
 $blackoutPeriods = @()
 while($startTime -ne $endOfDay){
     $startTime = $endTime.AddMinutes(1)
-    $endTime = $startTime.AddMinutes($intervalMinutes - 1)
+    $endTime = $startTime.AddMinutes($intervalMinutes - 2)
     if($endTime -gt $endOfDay){
         $endTime = $endOfDay
     }
@@ -62,6 +62,7 @@ while($startTime -ne $endOfDay){
         }
     }
     $startTime = $endTime
+    $endTime = $endTime.AddMinutes(1)
 }
 
 if($policy){
