@@ -13,7 +13,9 @@ param (
     [Parameter()][string]$domain = 'local',
     [Parameter()][string]$policyName,
     [Parameter()][Int64]$intervalMinutes = 60,
-    [Parameter()][Int64]$daysToKeep = $null
+    [Parameter()][Int64]$daysToKeep = $null,
+    [Parameter()][Int64]$retries = $null,
+    [Parameter()][Int64]$retryInterval = $null
 )
 
 if($intervalMinutes -lt 3 -or $intervalMinutes -gt 1440){
@@ -77,9 +79,15 @@ if($policy){
         $policy.daysToKeep = $daysToKeep
     }
     if(! $policy.PSObject.Properties['blackoutPeriods']){
-        setApiProperty -name 'blackoutPeriods' -value $blackoutPeriods
+        setApiProperty -name 'blackoutPeriods' -value $blackoutPeriods -object $policy
     }else{
         $policy.blackoutPeriods = $blackoutPeriods
+    }
+    if($null -ne $retries){
+        $policy.retries = $retries
+    }
+    if($null -ne $retryInterval){
+        $policy.retryIntervalMins = $retryInterval
     }
     "Updating policy $policyName..."
     $null = api put "protectionPolicies/$($policy.id)" $policy
@@ -87,6 +95,12 @@ if($policy){
     # create new policy
     if(! $daysToKeep){
         $daysToKeep = 14
+    }
+    if(! $retries){
+        $retries = 3
+    }
+    if(! $retryInterval){
+        $retryInterval = 30
     }
     $policy = @{
         "name"                        = $policyName;
@@ -97,8 +111,8 @@ if($policy){
             }
         };
         "blackoutPeriods"             = $blackoutPeriods;
-        "retries"                     = 3;
-        "retryIntervalMins"           = 30;
+        "retries"                     = $retries;
+        "retryIntervalMins"           = $retryInterval;
         "daysToKeep"                  = $daysToKeep
     }
     "Creating policy $policyName..."

@@ -44,3 +44,5 @@ The policy will now have a fequency of 20 minutes and blackout windows such that
 * -policyName: name of policy to export/import
 * -intervalMinutes: minutes between backups
 * -daysToKeep: retention period
+* -retries: (optional) default is 3
+* -retryInterval (optional) default is 30 (minutes)
