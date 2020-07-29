@@ -32,10 +32,11 @@
 # 2020-06.25 - added API v2 support (-version 2) or (-v2)
 # 2020.07.08 - removed timout
 # 2020.07.20 - fixed dateToUsecs for international date formats
-# 2020.07.29 - fixed usecsToDate timezone issue 
+# 2020.07.29 - fixed usecsToDate timezone issue
+# 2020.07.29b - quiet ssl handler
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
-$versionCohesityAPI = '2020.07.29'
+$versionCohesityAPI = '2020.07.29b'
 
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
@@ -75,7 +76,7 @@ public class SSLHandler
 }
 "@
 
-    Add-Type -TypeDefinition $ignoreCerts
+    Add-Type -TypeDefinition $ignoreCerts -ErrorAction SilentlyContinue
     [System.Net.ServicePointManager]::ServerCertificateValidationCallback = [SSLHandler]::GetSSLHandler()
 }
 

@@ -20,6 +20,7 @@ parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-p', '--password', type=str, default=None)
 parser.add_argument('-j', '--jobName', type=str, required=True)
 parser.add_argument('-j2', '--jobName2', type=str, default=None)
+parser.add_argument('-y', '--usepolicy', action='store_true')
 parser.add_argument('-k', '--keepLocalFor', type=int, default=5)
 parser.add_argument('-r', '--replicateTo', type=str, default=None)
 parser.add_argument('-kr', '--keepReplicaFor', type=int, default=5)
@@ -49,6 +50,7 @@ wait = args.wait
 backupType = args.backupType
 objectnames = args.objectname
 useApiKey = args.useApiKey
+usepolicy = args.usepolicy
 
 if enable is True:
     wait = True
@@ -232,38 +234,56 @@ if sourceIds is not None:
 if len(runNowParameters) > 0:
     jobData['runNowParameters'] = runNowParameters
 
-if replicateTo is not None:
-    remote = [remote for remote in api('get', 'remoteClusters') if remote['name'].lower() == replicateTo.lower()]
-    if len(remote) > 0:
-        remote = remote[0]
-        jobData['copyRunTargets'].append({
-            "type": "kRemote",
-            "daysToKeep": keepReplicaFor,
-            "replicationTarget": {
-                "clusterId": remote['clusterId'],
-                "clusterName": remote['name']
-            }
-        })
-    else:
-        print("Remote Cluster %s not found!" % replicateTo)
-        exit(1)
+if usepolicy:
+    policy = api('get', 'protectionPolicies/%s' % job['policyId'])
+    jobData['copyRunTargets'][0]['daysToKeep'] = policy['daysToKeep']
+    if 'snapshotReplicationCopyPolicies' in policy:
+        for replica in policy['snapshotReplicationCopyPolicies']:
+            jobData['copyRunTargets'].append({
+                "daysToKeep": replica['daysToKeep'],
+                "replicationTarget": replica['target'],
+                "type": "kRemote"
+            })
+    if 'snapshotArchivalCopyPolicies' in policy:
+        for archive in policy['snapshotArchivalCopyPolicies']:
+            jobData['copyRunTargets'].append({
+                "archivalTarget": archive['target'],
+                "daysToKeep": archive['daysToKeep'],
+                "type": "kArchival"
+            })
+else:
+    if replicateTo is not None:
+        remote = [remote for remote in api('get', 'remoteClusters') if remote['name'].lower() == replicateTo.lower()]
+        if len(remote) > 0:
+            remote = remote[0]
+            jobData['copyRunTargets'].append({
+                "type": "kRemote",
+                "daysToKeep": keepReplicaFor,
+                "replicationTarget": {
+                    "clusterId": remote['clusterId'],
+                    "clusterName": remote['name']
+                }
+            })
+        else:
+            print("Remote Cluster %s not found!" % replicateTo)
+            exit(1)
 
-if archiveTo is not None:
-    vault = [vault for vault in api('get', 'vaults') if vault['name'].lower() == archiveTo.lower()]
-    if len(vault) > 0:
-        vault = vault[0]
-        jobData['copyRunTargets'].append({
-            "archivalTarget": {
-                "vaultId": vault['id'],
-                "vaultName": vault['name'],
-                "vaultType": "kCloud"
-            },
-            "daysToKeep": keepArchiveFor,
-            "type": "kArchival"
-        })
-    else:
-        print("Archive target %s not found!" % archiveTo)
-        exit(1)
+    if archiveTo is not None:
+        vault = [vault for vault in api('get', 'vaults') if vault['name'].lower() == archiveTo.lower()]
+        if len(vault) > 0:
+            vault = vault[0]
+            jobData['copyRunTargets'].append({
+                "archivalTarget": {
+                    "vaultId": vault['id'],
+                    "vaultName": vault['name'],
+                    "vaultType": "kCloud"
+                },
+                "daysToKeep": keepArchiveFor,
+                "type": "kArchival"
+            })
+        else:
+            print("Archive target %s not found!" % archiveTo)
+            exit(1)
 
 ### enable the job
 if enable:
