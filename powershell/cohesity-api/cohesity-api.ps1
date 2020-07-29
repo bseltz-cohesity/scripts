@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#  version 2020.07.20 - Brian Seltzer - July 20, 2020
+#  version 2020.07.29 - Brian Seltzer - July 29, 2020
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.06 - Consolidated Windows and Unix versions - June 2018
@@ -32,9 +32,10 @@
 # 2020-06.25 - added API v2 support (-version 2) or (-v2)
 # 2020.07.08 - removed timout
 # 2020.07.20 - fixed dateToUsecs for international date formats
+# 2020.07.29 - fixed usecsToDate timezone issue 
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
-$versionCohesityAPI = '2020.07.20'
+$versionCohesityAPI = '2020.07.29'
 
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
@@ -441,7 +442,7 @@ function timeAgo([int64] $age, [string] $units){
 function usecsToDate($usecs){
     $unixTime=$usecs/1000000
     [datetime]$origin = '1970-01-01 00:00:00'
-    return $origin.AddSeconds($unixTime).ToLocalTime()
+    return $origin.AddSeconds($unixTime)
 }
 
 function dateToUsecs($datestring){
