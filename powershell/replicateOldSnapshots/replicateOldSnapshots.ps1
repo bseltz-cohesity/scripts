@@ -15,7 +15,7 @@ param (
 )
 
 ### source the cohesity-api helper code
-. ./cohesity-api
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
@@ -52,9 +52,10 @@ foreach ($job in ((api get protectionJobs) | Where-Object{ $_.policyId.split(':'
         $runs = (api get protectionRuns?jobId=$($job.id)`&numRuns=999999`&runTypes=kRegular`&excludeTasks=true`&excludeNonRestoreableRuns=true) | `
             Where-Object { $_.backupRun.snapshotsDeleted -eq $false } | `
             Where-Object { $_.copyRun[0].runStartTimeUsecs -le $olderThanUsecs } | `
-            Where-Object { !('kRemote' -in $_.copyRun.target.type) -or ($_.copyRun | Where-Object { $_.target.type -eq 'kRemote' -and $_.status -in @('kCanceled','kFailed') }) } | `
+            Where-Object { !('kRemote' -in $_.copyRun.target.type) -or !($_.copyRun.target.ReplicationTarget.clusterName -eq $replicateTo) -or ($_.copyRun | Where-Object { $_.target.type -eq 'kRemote' -and $_.status -in @('kCanceled','kFailed') })} | `
             Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
 
+            # 
         foreach ($run in $runs) {
 
             $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
