@@ -443,12 +443,12 @@ function timeAgo([int64] $age, [string] $units){
 function usecsToDate($usecs){
     $unixTime=$usecs/1000000
     [datetime]$origin = '1970-01-01 00:00:00'
-    return $origin.AddSeconds($unixTime)
+    return $origin.AddSeconds($unixTime).ToLocalTime()
 }
 
 function dateToUsecs($datestring){
     if($datestring -isnot [datetime]){ $datestring = [datetime] $datestring }
-    $usecs = [int64](($datestring)-(get-date "1/1/1970")).TotalSeconds*1000000
+    $usecs = [int64](($datestring)-((get-date "1/1/1970")).ToLocalTime()).TotalSeconds*1000000
     $usecs
 }
 
