@@ -1,44 +1,70 @@
-### usage: ./expireOldSnaps.ps1 -vip 192.168.1.198 -username admin [ -domain local ] [ -jobname myjob ]  -daysToKeep 60 [ -expire ]
-### omitting the -expire parameter: the script will only display all the snaps older than -daysToKeep
-### including the -expire parameter: the script will actually expire all the snaps older than -daysToKeep 
+# usage: ./expireOldReplicas.ps1 -vip mycluster `
+#                                -username myuser `
+#                                -domain mydomain.net `
+#                                -jobname myjob1, myjob2 `
+#                                -daysToKeep 14 `
+#                                -expire
 
-### process commandline arguments
+# omitting the -expire parameter: the script will only display all the snapshots older than -daysToKeep
+# including the -expire parameter: the script will actually expire all the snaps older than -daysToKeep 
+
+# process commandline arguments
 [CmdletBinding()]
 param (
     [Parameter(Mandatory = $True)][string]$vip,
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
-    [Parameter()][string]$jobname = $null,
+    [Parameter()][array]$jobname = $null,
     [Parameter(Mandatory = $True)][string]$daysToKeep,
     [Parameter()][ValidateSet("kRegular","kFull","kLog","kSystem","kAll")][string]$backupType = 'kAll',
-    [Parameter()][switch]$expire
+    [Parameter()][switch]$expire,
+    [Parameter()][Int64]$numRuns = 1000,
+    [Parameter()][Int64]$daysBack = 180
 )
 
-### source the cohesity-api helper code
-. ./cohesity-api
+# source the cohesity-api helper code
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
+# authenticate
 apiauth -vip $vip -username $username -domain $domain
 
-### filter on jobname
+# filter on jobname
 $jobs = api get protectionJobs
 if($jobname){
-    $jobs = $jobs | Where-Object { $_.name -eq $jobname }
-    if($jobs.count -eq 0){
-        Write-Host "Job '$jobname' not found" -ForegroundColor Yellow
-        exit
+    $jobs = $jobs | Where-Object { $_.name -in $jobname }
+    $notfoundJobs = $jobname | Where-Object {$_ -notin $jobs.name}
+    if($notfoundJobs){
+        Write-Host "Jobs not found $($notfoundJobs -join ', ')" -ForegroundColor Yellow
+        exit 1
     }
 }
 
-### find protectionRuns that are older than daysToKeep
+$daysBackUsecs = dateToUsecs (get-date).AddDays(-$daysBack)
+
+# find protectionRuns that are older than daysToKeep
 "Searching for old snapshots..."
 
-foreach ($job in $jobs) {
-
+foreach ($job in $jobs | Sort-Object -Property name) {
+    $job.name
     $jobId = $job.id
 
-    foreach ($run in (api get protectionRuns?jobId=$($job.id)`&numRuns=999999`&excludeTasks=true`&excludeNonRestoreableRuns=true)) {
-        if ($run.backupRun.snapshotsDeleted -eq $false -and ($run.backupRun.runType -eq $backupType -or $backupType -eq 'kAll')) {
+    $endUsecs = dateToUsecs (Get-Date)
+    while($True){
+        # paging: get numRuns at a time
+        if($endUsecs -le $daysBackUsecs){
+            break
+        }
+        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&endTimeUsecs=$endUsecs&excludeTasks=true&excludeNonRestoreableRuns=true" | Where-Object {$_.backupRun.stats.endTimeUsecs -lt $endUsecs}
+        if($runs){
+            $endUsecs = $runs[-1].backupRun.stats.startTimeUsecs
+        }else{
+            break
+        }
+        # runs with undeleted snapshots
+        foreach ($run in $runs | Where-Object{$_.backupRun.snapshotsDeleted -eq $false -and ($_.backupRun.runType -eq $backupType -or $backupType -eq 'kAll')}){
+            if($run.backupRun.stats.startTimeUsecs -le $daysBackUsecs){
+                break
+            }
             $startdate = usecstodate $run.copyRun[0].runStartTimeUsecs
             $startdateusecs = $run.copyRun[0].runStartTimeUsecs
             if ($startdateusecs -lt $(timeAgo $daysToKeep days) ) {
@@ -47,7 +73,7 @@ foreach ($job in $jobs) {
                     $exactRun = api get /backupjobruns?exactMatchStartTimeUsecs=$startdateusecs`&id=$jobId
                     $jobUid = $exactRun[0].backupJobRuns.protectionRuns[0].backupRun.base.jobUid
                     ### expire the snapshot
-                    "Expiring $($job.name) Snapshot from $startdate"
+                    "    Expiring $($job.name) Snapshot from $startdate"
                     $expireRun = @{'jobRuns' = @(
                             @{'expiryTimeUsecs'     = 0;
                                 'jobUid'            = @{
@@ -64,10 +90,10 @@ foreach ($job in $jobs) {
                             }
                         )
                     }
-                    api put protectionRuns $expireRun
+                    $null = api put protectionRuns $expireRun
                 }else{
                     ### just print old snapshots if we're not expiring
-                    "Woud expire $($job.name) ($($run.backupRun.runType.subString(1))) $($startdate)"
+                    "    Woud expire $($job.name) ($($run.backupRun.runType.subString(1))) $($startdate)"
                 }
             }else{
                 $newExpiryUsecs = [int64](dateToUsecs $startdate.addDays($daysToKeep))
@@ -78,7 +104,7 @@ foreach ($job in $jobs) {
                         $exactRun = api get /backupjobruns?exactMatchStartTimeUsecs=$startdateusecs`&id=$jobId
                         $jobUid = $exactRun[0].backupJobRuns.protectionRuns[0].backupRun.base.jobUid
                         ### edit the snapshot
-                        "Reducing retention for $($job.name) Snapshot from $startdate"
+                        "    Reducing retention for $($job.name) Snapshot from $startdate"
                         $editRun = @{'jobRuns' = @(
                                 @{
                                     'jobUid'            = @{
@@ -98,10 +124,10 @@ foreach ($job in $jobs) {
                         $null = api put protectionRuns $editRun
                     }else{
                         ### just print snapshots we would expire
-                        "Would reduce $($job.name) $($startdate) by $reduceByDays days"
+                        "    Would reduce $($job.name) $($startdate) by $reduceByDays days"
                     }    
                 }
             }
         }
     }
-}                                                                                           
+}
