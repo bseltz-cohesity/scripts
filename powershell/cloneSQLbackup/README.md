@@ -78,6 +78,7 @@ To delete a view when finished:
 * -runId: (optional) use specific job run ID (defaults to latest run)
 * -sqlServer: (optional) name of sqlServer whose backup to clone
 * -viewName: (optional) name of new or existing view to clone backup files to
+* -access: (optional) Active Directory users/groups (comma separated) to add to share permissions (default is everyone)
 * -storageDomain: (optional) name of storage domain to create view (defaults to DefaultStorageDomain)
 * -listRuns: (optional) list available job run IDs and dates
 * -deleteView: (optional) delete view when finished

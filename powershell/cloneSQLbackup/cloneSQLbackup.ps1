@@ -12,6 +12,7 @@ param (
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
     [Parameter()][string]$viewName,
+    [Parameter()][array]$access,
     [Parameter()][string]$storageDomain = 'DefaultStorageDomain',
     [Parameter()][string]$sqlServer,
     [Parameter()][string]$jobName,
@@ -55,7 +56,10 @@ if(!$job){
 # get runs
 $runs = (api get "protectionRuns?jobId=$($job.id)")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
 if($listRuns){
-    $runs | Select-Object -Property @{label='runId'; expression={$_.backupRun.jobRunId}}, @{label='runDate'; expression={usecsToDate $_.backupRun.stats.startTimeUsecs}}
+    $runs | Select-Object -Property @{label='runId'; expression={$_.backupRun.jobRunId}}, 
+                                    @{label='runDate'; expression={usecsToDate $_.backupRun.stats.startTimeUsecs}},
+                                    @{label='runType'; expression={$_.backupRun.runType.substring(1)}}
+                                    
     exit 0
 }
 
@@ -88,55 +92,67 @@ if(!$view){
         Write-Host "Storage domain $storageDomain not found" -ForegroundColor Yellow
         exit 1
     }
+
     $newView = @{
-        "caseInsensitiveNamesEnabled"     = $true;
-        "enableAppAwareUptiering"         = $true;
-        "enableFastDurableHandle"         = $false;
-        "enableNfsViewDiscovery"          = $true;
         "enableSmbAccessBasedEnumeration" = $false;
-        "enableSmbMultichannel"           = $true;
-        "enableSmbOplock"                 = $true;
-        "enableSmbViewDiscovery"          = $true;
-        "fileExtensionFilter"             = @{
-            "isEnabled"          = $false;
-            "mode"               = "kBlacklist";
-            "fileExtensionsList" = @()
+        "enableSmbViewDiscovery" = $true;
+        "fileDataLock" = @{
+          "lockingProtocol" = "kSetReadOnly"
         };
-        "nfsRootPermissions"              = @{
-            "gid"  = 0;
-            "mode" = 493;
-            "uid"  = 0
+        "fileExtensionFilter" = @{
+          "isEnabled" = $false;
+          "mode" = "kBlacklist";
+          "fileExtensionsList" = @()
         };
-        "overrideGlobalWhitelist"         = $true;
-        "prefetchSequencedFilenames"      = $true;
-        "protocolAccess"                  = "kAll";
-        "securityMode"                    = "kNativeMode";
-        "sharePermissions"                = @(
-            @{
-                "sid"    = "S-1-1-0";
-                "access" = "kFullControl";
-                "mode"   = "kFolderSubFoldersAndFiles";
-                "type"   = "kAllow"
-            }
-        );
-        "smbPermissionsInfo"              = @{
-            "ownerSid"    = "S-1-5-32-544";
-            "permissions" = @(
-                @{
-                    "sid"    = "S-1-1-0";
-                    "access" = "kFullControl";
-                    "mode"   = "kFolderSubFoldersAndFiles";
-                    "type"   = "kAllow"
-                }
-            )
+        "securityMode" = "kNativeMode";
+        "sharePermissions" = @();
+        "smbPermissionsInfo" = @{
+          "ownerSid" = "S-1-5-32-544";
+          "permissions" = @()
         };
-        "subnetWhitelist"                 = @();
+        "protocolAccess" = "kSMBOnly";
+        "subnetWhitelist" = @();
+        "caseInsensitiveNamesEnabled" = $true;
+        "storagePolicyOverride" = @{
+          "disableInlineDedupAndCompression" = $false
+        };
         "qos"                             = @{
             "principalName" = "TestAndDev High"
         };
         "viewBoxId"                       = $sd.id;
         "name"                            = $viewName
     }
+ 
+    function addPermission($user, $perms){
+        $domain, $domainuser = $user.split('\')
+        $principal = api get "activeDirectory/principals?domain=$domain&includeComputers=true&search=$domainuser" | Where-Object fullName -eq $domainuser
+        if($principal){
+            $permission = @{
+                "sid" = $principal.sid;
+                "type" = "kAllow";
+                "mode" = "kFolderSubFoldersAndFiles";
+                "access" = $perms
+            }
+            $newView.sharePermissions += $permission
+        }else{
+            Write-Warning "User $user not found"
+            exit 1
+        }
+    }
+
+    if($access){
+        foreach($user in $access){
+            addPermission $user 'kFullControl'
+        }
+    }else{
+        $newView.sharePermissions += @{
+            "sid" = "S-1-1-0";
+            "access" = "kFullControl";
+            "mode" = "kFolderSubFoldersAndFiles";
+            "type" = "kAllow"
+        }
+    }
+
     Write-Host "Creating new view $viewName"
     $view = api post views $newView
 }
