@@ -1,4 +1,4 @@
-# usage: ./cloneSQLVDIbackup.ps1 -vip mycluster `
+# usage: ./cloneSQLbackup.ps1 -vip mycluster `
 #                                -username myuser `
 #                                -domain mydomain.net
 #                                -jobName 'My SQL VDI Job' `
