@@ -1,8 +1,8 @@
-# Clone SQL VDI Backup Files to a View using PowerShell
+# Clone SQL Backup Files to a View using PowerShell
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This powershell script clones SQL VDI backup files to a Cohesity view.
+This powershell script clones SQL backup files to a Cohesity view.
 
 ## Warning! This script can delete views! Make sure you know what you are doing before you run it
 
@@ -12,7 +12,7 @@ Run these commands from PowerShell to download the scripts into the current fold
 
 ```powershell
 # Download Commands
-$scriptName = 'cloneSQLVDIbackup'
+$scriptName = 'cloneSQLbackup'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
 (Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
@@ -21,7 +21,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* cloneSQLVDIbackup.ps1: the main powershell script
+* cloneSQLbackup.ps1: the main powershell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place both files in a folder together, then we can run the script.
@@ -29,44 +29,56 @@ Place both files in a folder together, then we can run the script.
 To clone the latest backup:
 
 ```powershell
-./cloneSQLVDIbackup.ps1 -vip mycluster `
-                        -username myuser `
-                        -domain mydomain.net `
-                        -jobName 'My SQL VDI Job' `
-                        -sqlServer mysqlserver.mydomain.net `
-                        -viewName cloned
+./cloneSQLbackup.ps1 -vip mycluster `
+                     -username myuser `
+                     -domain mydomain.net `
+                     -jobName 'My SQL Job' `
+                     -sqlServer mysqlserver.mydomain.net `
+                     -viewName cloned
+```
+
+To limit access to specific users:
+
+```powershell
+./cloneSQLbackup.ps1 -vip mycluster `
+                     -username myuser `
+                     -domain mydomain.net `
+                     -jobName 'My SQL Job' `
+                     -sqlServer mysqlserver.mydomain.net `
+                     -viewName cloned `
+                     -access 'mydomain.net\domain admins', mydomain.net\othergroup
 ```
 
 To list available runs:
 
 ```powershell
-./cloneSQLVDIbackup.ps1 -vip mycluster `
-                        -username myuser `
-                        -domain mydomain.net `
-                        -jobName 'My SQL VDI Job' `
-                        -listRuns
+./cloneSQLbackup.ps1 -vip mycluster `
+                     -username myuser `
+                     -domain mydomain.net `
+                     -jobName 'My SQL Job' `
+                     -listRuns
 ```
 
 To clone a specific run:
 
 ```powershell
-./cloneSQLVDIbackup.ps1 -vip mycluster `
-                        -username myuser `
-                        -domain mydomain.net `
-                        -jobName 'My SQL VDI Job' `
-                        -sqlServer mysqlserver.mydomain.net `
-                        -viewName cloned `
-                        -runId 12345
+./cloneSQLbackup.ps1 -vip mycluster `
+                     -username myuser `
+                     -domain mydomain.net `
+                     -jobName 'My SQL Job' `
+                     -sqlServer mysqlserver.mydomain.net `
+                     -viewName cloned `
+                     -runId 12345
 ```
 
 To delete a view when finished:
 
 ```powershell
-./cloneSQLVDIbackup.ps1 -vip mycluster `
-                        -username myuser `
-                        -domain mydomain.net `
-                        -viewName cloned `
-                        -deleteView
+./cloneSQLbackup.ps1 -vip mycluster `
+                     -username myuser `
+                     -domain mydomain.net `
+                     -viewName cloned `
+                     -deleteView
 ```
 
 ## Parameters
@@ -74,7 +86,7 @@ To delete a view when finished:
 * -vip: Cohesity cluster to connect to
 * -username: Cohesity username (e.g. admin)
 * -domain: (optional) Active Directory domain (defaults to 'local')
-* -jobname: (optional) name of SQL VDI protection job
+* -jobname: (optional) name of SQL protection job
 * -runId: (optional) use specific job run ID (defaults to latest run)
 * -sqlServer: (optional) name of sqlServer whose backup to clone
 * -viewName: (optional) name of new or existing view to clone backup files to
