@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#  version 2020.07.29 - Brian Seltzer - July 29, 2020
+#  version 2020.07.30 - Brian Seltzer - July 30, 2020
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.06 - Consolidated Windows and Unix versions - June 2018
@@ -33,10 +33,10 @@
 # 2020.07.08 - removed timout
 # 2020.07.20 - fixed dateToUsecs for international date formats
 # 2020.07.29 - fixed usecsToDate timezone issue
-# 2020.07.29b - quiet ssl handler
+# 2020.07.30 - quiet ssl handler
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
-$versionCohesityAPI = '2020.07.29b'
+$versionCohesityAPI = '2020.07.30'
 
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
@@ -76,7 +76,9 @@ public class SSLHandler
 }
 "@
 
-    Add-Type -TypeDefinition $ignoreCerts -ErrorAction SilentlyContinue
+    if(!("SSLHandler" -as [type])){
+        Add-Type -TypeDefinition $ignoreCerts
+    }
     [System.Net.ServicePointManager]::ServerCertificateValidationCallback = [SSLHandler]::GetSSLHandler()
 }
 
