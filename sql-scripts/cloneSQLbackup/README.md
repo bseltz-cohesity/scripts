@@ -26,7 +26,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 Place both files in a folder together, then we can run the script.
 
-To clone the latest backup:
+To clone all available backups:
 
 ```powershell
 ./cloneSQLbackup.ps1 -vip mycluster `
@@ -59,7 +59,7 @@ To list available runs:
                      -listRuns
 ```
 
-To clone a specific run:
+To clone a specific range of run dates:
 
 ```powershell
 ./cloneSQLbackup.ps1 -vip mycluster `
@@ -68,7 +68,8 @@ To clone a specific run:
                      -jobName 'My SQL Job' `
                      -sqlServer mysqlserver.mydomain.net `
                      -viewName cloned `
-                     -runId 12345
+                     -firstRunId 12345 `
+                     -lastRunId 12399
 ```
 
 To delete a view when finished:
@@ -87,7 +88,8 @@ To delete a view when finished:
 * -username: Cohesity username (e.g. admin)
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -jobname: (optional) name of SQL protection job
-* -runId: (optional) use specific job run ID (defaults to latest run)
+* -firstRunId: (optional) earliest run to clone (defaults to all)
+* -lastRunId: (optional) most recent run to clone (defaultds to all)
 * -sqlServer: (optional) name of sqlServer whose backup to clone
 * -viewName: (optional) name of new or existing view to clone backup files to
 * -access: (optional) Active Directory users/groups (comma separated) to add to share permissions (default is everyone)

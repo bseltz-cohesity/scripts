@@ -18,7 +18,8 @@ param (
     [Parameter()][string]$jobName,
     [Parameter()][switch]$listRuns,
     [Parameter()][switch]$deleteView,
-    [Parameter()][Int64]$runId
+    [Parameter()][Int64]$firstRunId,
+    [Parameter()][Int64]$lastRunId
 )
 
 # source the cohesity-api helper code
@@ -55,22 +56,21 @@ if(!$job){
 
 # get runs
 $runs = (api get "protectionRuns?jobId=$($job.id)")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
+
+if($firstRunId){
+    $runs = $runs | Where-Object {$_.backupRun.jobRunId -ge $firstRunId}
+}
+
+if($lastRunId){
+    $runs = $runs | Where-Object {$_.backupRun.jobRunId -le $lastRunId}
+}
+
 if($listRuns){
     $runs | Select-Object -Property @{label='runId'; expression={$_.backupRun.jobRunId}}, 
                                     @{label='runDate'; expression={usecsToDate $_.backupRun.stats.startTimeUsecs}},
                                     @{label='runType'; expression={$_.backupRun.runType.substring(1)}}
                                     
     exit 0
-}
-
-if($runId){
-   $run = $runs | Where-Object {$_.backupRun.jobRunId -eq $runId}
-   if(!$run){
-       Write-Host "Job run $runId not found" -ForegroundColor Yellow
-       exit 1
-   }
-}else{
-    $run = $runs[0]
 }
 
 if(!$sqlServer){
@@ -83,9 +83,11 @@ if(!$viewName){
     Write-Host "-viewName parameter required" -ForegroundColor Yellow
     exit 1
 }
+
 $REPORTAPIERRORS = $false
 $view = api get "views/$viewName"
 $REPORTAPIERRORS = $True
+
 if(!$view){
     $sd = api get viewBoxes | Where-Object name -eq $storageDomain
     if(!$sd){
@@ -157,23 +159,25 @@ if(!$view){
     $view = api post views $newView
 }
 
-# get snapshot path
-$sourceInfo = $run.backupRun.sourceBackupStatus | Where-Object {$_.source.name -eq $sqlServer}
-if(!$sourceInfo){
-    write-host "$sqlServer not found in job run" -ForegroundColor Yellow
-    exit 1
+foreach($run in $runs){
+    # get snapshot path
+    $sourceInfo = $run.backupRun.sourceBackupStatus | Where-Object {$_.source.name -eq $sqlServer}
+    if(!$sourceInfo){
+        write-host "$sqlServer not found in job run" -ForegroundColor Yellow
+        exit 1
+    }
+
+    $sourceView = $sourceInfo.currentSnapshotInfo.viewName
+    $sourcePath = $sourceInfo.currentSnapshotInfo.relativeSnapshotDirectory
+    $destinationPath = "$sqlServer-$((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss"))-$($run.backupRun.runType.substring(1))"
+
+    # clone snapshot directory
+    $CloneDirectoryParams = @{
+        'destinationDirectoryName' = $destinationPath;
+        'destinationParentDirectoryPath' = "/$viewName";
+        'sourceDirectoryPath' = "/$sourceView/$sourcePath"
+    }
+
+    Write-Host "Cloning $sqlServer backup files to $($view.smbMountPath)\$destinationPath"
+    $null = api post views/cloneDirectory $CloneDirectoryParams
 }
-
-$sourceView = $sourceInfo.currentSnapshotInfo.viewName
-$sourcePath = $sourceInfo.currentSnapshotInfo.relativeSnapshotDirectory
-$destinationPath = "$sqlServer-$((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss"))"
-
-# clone snapshot directory
-$CloneDirectoryParams = @{
-    'destinationDirectoryName' = $destinationPath;
-    'destinationParentDirectoryPath' = "/$viewName";
-    'sourceDirectoryPath' = "/$sourceView/$sourcePath"
-}
-
-Write-Host "Cloning $sqlServer backup files to $($view.smbMountPath)\$destinationPath"
-$null = api post views/cloneDirectory $CloneDirectoryParams
