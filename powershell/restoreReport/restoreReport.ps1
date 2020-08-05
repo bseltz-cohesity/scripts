@@ -29,14 +29,14 @@ if($startDate -ne '' -and $endDate -ne ''){
     $uStart = dateToUsecs $startDate
     $uEnd = dateToUsecs $endDate
 }elseif ($lastXDays -ne 0) {
-    $uStart = dateToUsecs ($today.Date.AddDays(-$lastXDays))
-    $uEnd = dateToUsecs $today.Date.AddSeconds(-1)
+    $uStart = dateToUsecs ($today.AddDays(-$lastXDays))
+    $uEnd = dateToUsecs $today.AddSeconds(-1)
 }elseif ($lastCalendarMonth) {
     $uStart = dateToUsecs ($today.Date.AddDays(-($today.day-1)).AddMonths(-1))
     $uEnd = dateToUsecs ($today.Date.AddDays(-($today.day-1)).AddSeconds(-1))
 }else{
     $uStart = dateToUsecs ($today.Date.AddDays(-31))
-    $uEnd = dateToUsecs $today.Date.AddSeconds(-1)
+    $uEnd = dateToUsecs $today.AddSeconds(-1)
 }
 
 $start = (usecsToDate $uStart).ToString('yyyy-MM-dd')

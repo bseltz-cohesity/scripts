@@ -445,7 +445,7 @@ function timeAgo([int64] $age, [string] $units){
 function usecsToDate($usecs){
     $unixTime=$usecs/1000000
     [datetime]$origin = '1970-01-01 00:00:00'
-    return $origin.AddSeconds($unixTime).ToLocalTime()
+    return $origin.ToLocalTime().AddSeconds($unixTime)
 }
 
 function dateToUsecs($datestring){
