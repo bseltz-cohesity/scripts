@@ -55,7 +55,9 @@ if($files.Length -eq 0){
 }
 
 # convert to unix style file paths
-$restorePath = ("/" + $restorePath.Replace('\','/').replace(':','')).Replace('//','/')
+if($restorePath){
+    $restorePath = ("/" + $restorePath.Replace('\','/').replace(':','')).Replace('//','/')
+}
 $files = [string[]]$files | ForEach-Object {("/" + $_.Replace('\','/').replace(':','')).Replace('//','/')}
 
 # find target server
