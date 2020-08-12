@@ -31,7 +31,7 @@ foreach ($job in $jobs){
     $jobId = $job.id
     $jobType = $job.environment.substring(1)
     "$($job.name) ($($jobType))"
-    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=999999"
+    $runs = api get "protectionRuns?jobId=$($job.id)&excludeTasks=true&numRuns=9999"
 
     foreach ($run in $runs){
         $nowTime = dateToUsecs (get-date)
