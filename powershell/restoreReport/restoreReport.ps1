@@ -163,6 +163,7 @@ $html += '</span>
         <th>Type</th>
         <th>Target</th>
         <th>Status</th>
+        <th>User</th>
       </tr>'
 
 $entityType=@("", 
@@ -230,6 +231,7 @@ foreach ($restore in $restores){
             <td>$objectType</td>
             <td>$targetObject</td>
             <td>$status</td>
+            <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
             </tr>"
         }
     }elseif($restore.restoreTask.performRestoreTaskState.PSObject.properties['restoreAppTaskState']){
@@ -266,6 +268,7 @@ foreach ($restore in $restores){
             <td>$objectType</td>
             <td>$targetObject</td>
             <td>$status</td>
+            <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
             </tr>"
         }
     }else{
