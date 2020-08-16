@@ -93,7 +93,7 @@ foreach ($job in $jobs | Sort-Object -Property name) {
                     $null = api put protectionRuns $expireRun
                 }else{
                     ### just print old snapshots if we're not expiring
-                    "    Woud expire $($job.name) ($($run.backupRun.runType.subString(1))) $($startdate)"
+                    "    Would expire $($job.name) ($($run.backupRun.runType.subString(1))) $($startdate)"
                 }
             }else{
                 $newExpiryUsecs = [int64](dateToUsecs $startdate.addDays($daysToKeep))
