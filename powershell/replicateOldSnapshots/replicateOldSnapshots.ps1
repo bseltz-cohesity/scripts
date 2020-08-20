@@ -52,62 +52,75 @@ foreach ($job in ((api get protectionJobs) | Where-Object{ $_.policyId.split(':'
         $runs = (api get protectionRuns?jobId=$($job.id)`&numRuns=999999`&runTypes=kRegular`&excludeTasks=true`&excludeNonRestoreableRuns=true) | `
             Where-Object { $_.backupRun.snapshotsDeleted -eq $false } | `
             Where-Object { $_.copyRun[0].runStartTimeUsecs -le $olderThanUsecs } | `
-            Where-Object { !('kRemote' -in $_.copyRun.target.type) -or !($_.copyRun.target.ReplicationTarget.clusterName -eq $replicateTo) -or ($_.copyRun | Where-Object { $_.target.type -eq 'kRemote' -and $_.status -in @('kCanceled','kFailed') })} | `
             Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
 
-            # 
         foreach ($run in $runs) {
-
-            $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
-            $thisJobName = $run.jobName
-
-            ### calculate daysToKeep
-            $startTimeUsecs = $run.copyRun[0].runStartTimeUsecs
-            if($keepFor -gt 0){
-                $expireTimeUsecs = $startTimeUsecs + ([int]$keepFor * 86400000000)
-            }else{
-                $expireTimeUsecs = $run.copyRun[0].expiryTimeUsecs
-            }
-            $now = dateToUsecs $(get-date)
-            $daysToKeep = [math]::Round(($expireTimeUsecs - $now) / 86400000000) 
-
-            ### create replication task definition
-            $replicationTask = @{
-                'jobRuns' = @(
-                    @{
-                        'copyRunTargets'    = @(
-                            @{
-                                "replicationTarget" = @{
-                                    "clusterId" = $remote.clusterId;
-                                    "clusterName" = $remote.name
-                                };
-                                'daysToKeep'     = [int] $daysToKeep;
-                                'type'           = 'kRemote'
-                            }
-                        );
-                        'runStartTimeUsecs' = $run.copyRun[0].runStartTimeUsecs;
-                        'jobUid'            = $run.jobUid
+            ### determine if replica already exists
+            $alreadyReplicated = $false
+            foreach($copyRun in $run.copyRun){
+                if($copyRun.target.type -eq 'kRemote'){
+                    if($copyRun.target.replicationTarget.clusterName -eq $replicateTo){
+                        if($copyRun.status -eq 'kSuccess' -and $copyRun.expiryTimeUsecs -ne 0){
+                            $alreadyReplicated = $True
+                        }
                     }
-                )
+                }
             }
 
-            ### If the Local Snapshot is not expiring soon...
-            if ($daysToKeep -gt $IfExpiringAfter) {
-                if ($replicate) {
-                    write-host "Replicating $runDate  $thisJobName for $daysToKeep days" -ForegroundColor Green
-                    ### execute replication task if arcvhive swaitch is set
-                    $null = api put protectionRuns $replicationTask
+            if($alreadyReplicated -eq $false){
+                $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
+                $thisJobName = $run.jobName
+    
+                ### calculate daysToKeep
+                $startTimeUsecs = $run.copyRun[0].runStartTimeUsecs
+                if($keepFor -gt 0){
+                    $expireTimeUsecs = $startTimeUsecs + ([int]$keepFor * 86400000000)
+                }else{
+                    $expireTimeUsecs = $run.copyRun[0].expiryTimeUsecs
                 }
+                $now = dateToUsecs $(get-date)
+                $daysToKeep = [math]::Round(($expireTimeUsecs - $now) / 86400000000) 
+                if($daysToKeep -eq 0){
+                    $daysToKeep = 1
+                }
+
+                ### create replication task definition
+                $replicationTask = @{
+                    'jobRuns' = @(
+                        @{
+                            'copyRunTargets'    = @(
+                                @{
+                                    "replicationTarget" = @{
+                                        "clusterId" = $remote.clusterId;
+                                        "clusterName" = $remote.name
+                                    };
+                                    'daysToKeep'     = [int] $daysToKeep;
+                                    'type'           = 'kRemote'
+                                }
+                            );
+                            'runStartTimeUsecs' = $run.copyRun[0].runStartTimeUsecs;
+                            'jobUid'            = $run.jobUid
+                        }
+                    )
+                }
+    
+                ### If the Local Snapshot is not expiring soon...
+                if ($daysToKeep -gt $IfExpiringAfter) {
+                    if ($replicate) {
+                        write-host "Replicating $runDate  $thisJobName for $daysToKeep days" -ForegroundColor Green
+                        ### execute replication task if arcvhive swaitch is set
+                        $null = api put protectionRuns $replicationTask
+                    }
+                    else {
+                        ### just display what we would do if archive switch is not set
+                        write-host "$runDate  $thisJobName  (would replicate for $daysToKeep days)" -ForegroundColor Green
+                    }
+                }
+                ### Otherwise tell us that we're not archiving since the snapshot is expiring soon
                 else {
-                    ### just display what we would do if archive switch is not set
-                    write-host "$runDate  $thisJobName  (would replicate for $daysToKeep days)" -ForegroundColor Green
+                    write-host "$runDate  $thisJobName  (expiring in $daysToKeep days. skipping...)" -ForegroundColor Gray
                 }
-            }
-            ### Otherwise tell us that we're not archiving since the snapshot is expiring soon
-            else {
-                write-host "$runDate  $thisJobName  (expiring in $daysToKeep days. skipping...)" -ForegroundColor Gray
             }
         }
     }
 }
-
