@@ -33,4 +33,5 @@ Place both files in a folder together and run the main script like so:
 * -vip: the Cohesity cluster to connect to
 * -username: the cohesity user to login with
 * -domain: (optional) domain of the Cohesity user (defaults to local)
-* -numRuns: (optional) number of runs per job to inspect (defaults to 9999)
+* -numRuns: (optional) number of runs per job to inspect (defaults to 999)
+* -cancelAll: (optional) cancel existing replication tasks
