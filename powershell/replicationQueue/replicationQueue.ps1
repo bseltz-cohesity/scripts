@@ -4,7 +4,8 @@ param (
    [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
    [Parameter()][string]$domain = 'local', #local or AD domain
-   [Parameter()][int]$numRuns = 9999
+   [Parameter()][int]$numRuns = 999,
+   [Parameter()][switch]$cancelAll
 )
 
 ### source the cohesity-api helper code
@@ -73,6 +74,17 @@ if($runningTasks.Keys.Count -gt 0){
                         }
                         "                       {0} ({1})`t{2}" -f $subTask.publicStatus, $pct, $subTask.entity.displayName
                     }
+                }
+                if($cancelAll){
+                    $cancelTaskParams = @{
+                        "jobId"       = $t.jobId;
+                        "copyTaskUid" = @{
+                            "id"                   = $task.taskUid.objectId;
+                            "clusterId"            = $task.taskUid.clusterId;
+                            "clusterIncarnationId" = $task.taskUid.clusterIncarnationId
+                        }
+                    }
+                    $null = api post "protectionRuns/cancel/$($t.jobId)" $cancelTaskParams 
                 }
             }
         }
