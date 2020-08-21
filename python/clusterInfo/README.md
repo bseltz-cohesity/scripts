@@ -27,10 +27,12 @@ Place both files in a folder together and run the main script like so:
 ./clusterInfo.py -v mycluster \
                   -u myusername \
                   -d mydomain.net \
+                  -pwd swordfish \
                   -t myuser@mydomain.net \
                   -t anotheruser@mydomain.net \
                   -s 192.168.1.95 \
-                  -f backupreport@mydomain.net
+                  -f backupreport@mydomain.net \
+                  -l
 ```
 
 ## Parameters
@@ -38,6 +40,9 @@ Place both files in a folder together and run the main script like so:
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
+* -i, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: password for authentication
+* -l, --listgflags: list cluster gflags
 * -s, --mailserver: SMTP gateway to forward email through
 * -p, --mailport: (optional) defaults to 25
 * -f, --sendfrom: email address to show in the from field
