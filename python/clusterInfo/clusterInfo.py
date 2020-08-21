@@ -85,7 +85,11 @@ output(' Stopped Services: %s' % status['bulletinState']['stoppedServices'])
 output('------------------------------------')
 for chassis in chassisList:
     # chassis info
-    output('\n   Chassis Name: %s' % chassis['name'])
+    if 'name' in chassis:
+        chassisname = chassis['name']
+    else:
+        chassisname = chassis['serial']
+    output('\n   Chassis Name: %s' % chassisname)
     output('     Chassis ID: %s' % chassis['id'])
     output('       Hardware: %s' % chassis.get('hardwareModel', 'VirtualEdition'))
     gotSerial = False
