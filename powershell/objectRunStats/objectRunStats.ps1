@@ -2,7 +2,7 @@
 [CmdletBinding()]
 param (
     [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
-    [Parameter()][string]$username='helios', # username (local or AD)
+    [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
     [Parameter()][string]$domain = 'local', # local or AD domain
     [Parameter()][string]$password = $null,
     [Parameter(Mandatory = $True)][string]$objectName, # source server
