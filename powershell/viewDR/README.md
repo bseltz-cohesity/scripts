@@ -24,24 +24,24 @@ Run these commands from PowerShell to download the script(s) into your current d
 * viewDRdelete.ps1: delete views (from primary, or from DR after a DR test or failback)
 * cohesity-api.ps1: the Cohesity REST API helper module
 
-First, create a location to store view metadata that whill be reachable from both the primary and DR sites. It is strongly recommended that this location be at the DR site so that it will be available at time of recovery.
+First, create a location to store view metadata that will be reachable from both the primary and DR sites. It is strongly recommended that this location be at the DR site so that it will be available at time of recovery. This could be a view on the DR cluster (e.g. \\myDRcluster\viewDR)
 
 Then, run the viewDRcollect.ps1 script to collect the metadata of the views at the primary site. This script can be scheduled to run periodically (daily).
 
 ```powershell
-./viewDRcollect.ps1 -vip mycluster -username admin [ -domain local ] -outPath \\myserver\myshare
+./viewDRcollect.ps1 -vip mycluster -username admin [ -domain local ] -outPath \\myDRcluster\viewDR
 ```
 
 At time of DR, you can recover one view:
 
 ```powershell
-./viewDRclone.ps1 -vip myDRcluster -username admin [ -domain local ] -viewName myview -inPath \\myserver\myshare\mycluster
+./viewDRclone.ps1 -vip myDRcluster -username admin [ -domain local ] -viewName myview -inPath \\myDRcluster\viewDR\mycluster
 ```
 
 Or you can recover all views:
 
 ```powershell
-./viewDRclone.ps1 -vip myDRcluster -username admin [ -domain local ] -inPath \\myserver\myshare\mycluster -all
+./viewDRclone.ps1 -vip myDRcluster -username admin [ -domain local ] -inPath \\myDRcluster\viewDR\mycluster -all
 ```
 
 The clone script outputs a text file list of views that have been cloned. This can be used later by the delete script (using the -viewList parameter) to delete the correct list of views.
@@ -49,7 +49,7 @@ The clone script outputs a text file list of views that have been cloned. This c
 After completing a DR test, you can delete all of the test views:
 
 ```powershell
-./viewDRdelete.ps1 -vip myDRcluster -username admin [ -domain local ] -inPath \\myserver\myshare\mycluster -all
+./viewDRdelete.ps1 -vip myDRcluster -username admin [ -domain local ] -inPath \\myDRcluster\viewDR\mycluster -all
 ```
 
 ## Collection Script Parameters
