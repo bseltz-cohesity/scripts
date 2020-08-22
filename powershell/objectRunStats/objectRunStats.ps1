@@ -1,12 +1,3 @@
-# version 2020.07.21
-### usage: ./restoreFiles.ps1 -vip mycluster -username myuser -domain mydomain.net `
-#                             -sourceServer server1.mydomain.net `
-#                             -targetServer server2.mydomain.net `
-#                             -fileNames /home/myuser/file1, /home/myuser/file2 `
-#                             -restorePath /tmp/restoretest1/ `
-#                             -fileDate '2020-04-18 18:00:00' `
-#                             -wait
-
 ### process commandline arguments
 [CmdletBinding()]
 param (
