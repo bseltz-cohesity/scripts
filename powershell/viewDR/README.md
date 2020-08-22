@@ -24,7 +24,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 * viewDRdelete.ps1: delete views (from primary, or from DR after a DR test or failback)
 * cohesity-api.ps1: the Cohesity REST API helper module
 
-First, create a location to store view metadata that will be reachable from both the primary and DR sites. It is strongly recommended that this location be at the DR site so that it will be available at time of recovery. This could be a view on the DR cluster (e.g. \\myDRcluster\viewDR)
+First, create a location to store view metadata that will be reachable from both the primary and DR sites. It is strongly recommended that this location be at the DR site so that it will be available at time of recovery. This could be a view on the DR cluster (e.g. \\\\myDRcluster\viewDR)
 
 Then, run the viewDRcollect.ps1 script to collect the metadata of the views at the primary site. This script can be scheduled to run periodically (daily).
 
