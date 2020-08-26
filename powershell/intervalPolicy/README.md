@@ -41,8 +41,9 @@ The policy will now have a fequency of 20 minutes and blackout windows such that
 * -vip: Cohesity Cluster to connect to
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain of user (defaults to local)
-* -policyName: name of policy to export/import
+* -policyName: name of policy to create
 * -intervalMinutes: minutes between backups
+* -offset: offset intervals by X minutes (e.g. 20 - start backups at 20 after the hour)
 * -daysToKeep: retention period
 * -retries: (optional) default is 3
 * -retryInterval (optional) default is 30 (minutes)

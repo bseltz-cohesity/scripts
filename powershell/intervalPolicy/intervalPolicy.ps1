@@ -13,6 +13,7 @@ param (
     [Parameter()][string]$domain = 'local',
     [Parameter()][string]$policyName,
     [Parameter()][Int64]$intervalMinutes = 60,
+    [Parameter()][Int64]$offset = 0,
     [Parameter()][Int64]$daysToKeep = $null,
     [Parameter()][Int64]$retries = 3,
     [Parameter()][Int64]$retryInterval = 30
@@ -44,6 +45,24 @@ $endOfDay = $midnight.AddHours(24).AddMinutes(-1)
 $startTime = $midnight
 $endTime = $midnight
 $blackoutPeriods = @()
+if($offset -gt 0){
+    $endTime = $startTime.AddMinutes($offset - 1)
+    foreach($day in $days){
+        $blackoutPeriods += @{
+            "day"       = $day;
+            "startTime" = @{
+                "hour"   = $startTime.Hour;
+                "minute" = $startTime.Minute
+            };
+            "endTime"   = @{
+                "hour"   = $endTime.Hour;
+                "minute" = $endTime.Minute
+            }
+        }
+    }
+    $startTime = $endTime
+    $endTime = $endTime.AddMinutes(1)
+}
 while($startTime -ne $endOfDay){
     $startTime = $endTime.AddMinutes(1)
     $endTime = $startTime.AddMinutes($intervalMinutes - 2)
