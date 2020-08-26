@@ -29,16 +29,15 @@ Place the files in a folder together and run the main script like so:
                 -username myusername `
                 -domain mydomain.net `
                 -vmName myvm `
-                -vCenter myvcenter.mydomain.net `
-                -vmNetwork 'VM Network' `
-                -vmDatastore datastore1 `
-                -vmResourcePool resgroup1 `
-                -vmFolder folder1 `
+                -vCenterName myvcenter.mydomain.net `
+                -datacenterName mydatacenter `
+                -hostName esx1 `
+                -folderName myFolder `
+                -networkName 'VM Network' `
+                -datastoreName datastore1 `
                 -poweron `
                 -disableNetwork `
-                -recoverDate '2020-06-02 14:00' `
-                -prefix restore- `
-                -wait
+                -prefix restore-
 ```
 
 ## Parameters
@@ -48,12 +47,12 @@ Place the files in a folder together and run the main script like so:
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -vmName: Name of VM to recover
 * -prefix: (optional) add a prefix to the VM name during restore
-* -vCenter: vCenter protection source to recover to
-* -vmNetwork: VM Network to attach the VMs to
-* -vmDatastore: Datastore to recover the VMs to
-* -vmResourcePool: (optional) Resource Pool to recover to
-* -vmFolder: (optional) VM folder to recover to
+* -vCenterName: vCenter protection source to recover to
+* -datacenterName: name of vSphere data center to recover to
+* -hostName: name of vSphere host to recover to
+* -folderName: name of vSphere folder to recover to
+* -networkName: VM Network to attach the VM to
+* -datastoreName: Datastore to recover the VM to
 * -poweron: (optional) power on the VMs during restore (default is false)
-* -disableNetwork: (optional) leave VM network disconnected (default is false)
-* -wait: (optional) wait for restore tasks to complete (default is false)
-* -recoverDate: (optional) use point in time at or after date, e.g. '2019-10-01 23:30:00'
+* -detachNetwork: (optional) leave VM network disconnected (default is false)
+* -preserveMacAddress: (optional) maintain original Mac address (default is false)
