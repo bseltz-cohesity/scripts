@@ -54,6 +54,7 @@ Also note that data in the archive target may not be immediately deleted if a ne
 * -vip: Cohesity cluster to connect to
 * -username: Cohesity username (e.g. admin)
 * -domain: (optional) Active Directory domain (defaults to 'local')
+* -jobName: (optional) Name of protection job to expire archives from (default is all jobs)
 * -target: (optional) narrow scope to a specific archive target
 * -olderThan: show/expire snapshots older than this many days
 * -expire: (optional) expire the snapshots (if omitted, the script will only show what 'would' be expired)

@@ -6,6 +6,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
     [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
     [Parameter()][string]$domain = 'local', #local or AD domain
+    [Parameter()][string]$jobName, # optional jobName 
     [Parameter()][string]$target, # optional target name
     [Parameter()][string]$olderThan = 0, #archive snapshots older than x days
     [Parameter()][switch]$expire
@@ -25,7 +26,13 @@ $olderThanUsecs = timeAgo $olderThan days
 
 ### find protectionRuns with old local snapshots with archive tasks and sort oldest to newest
 "searching for old snapshots..."
-foreach ($job in ((api get protectionJobs) | Where-Object{ $_.policyId.split(':')[0] -eq $clusterId })) {
+
+$jobs = api get protectionJobs | Where-Object { $_.policyId.split(':')[0] -eq $clusterId }
+if($jobName){
+    $jobs = $jobs | Where-Object name -eq $jobName
+}
+
+foreach ($job in $jobs) {
     
     $runs = (api get protectionRuns?jobId=$($job.id)`&excludeTasks=true`&excludeNonRestoreableRuns=true`&numRuns=999999`&runTypes=kRegular`&endTimeUsecs=$olderThanUsecs) | `
         Where-Object { $_.copyRun[0].runStartTimeUsecs -le $olderThanUsecs } | `
