@@ -10,12 +10,12 @@ param (
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
     [Parameter(Mandatory = $True)][string]$vmName,
-    [Parameter(Mandatory = $True)][string]$vCenterName,
-    [Parameter(Mandatory = $True)][string]$datacenterName,
-    [Parameter(Mandatory = $True)][string]$hostName,
-    [Parameter(Mandatory = $True)][string]$folderName,
-    [Parameter(Mandatory = $True)][string]$networkName,
-    [Parameter(Mandatory = $True)][string]$datastoreName,
+    [Parameter()][string]$vCenterName,
+    [Parameter()][string]$datacenterName,
+    [Parameter()][string]$hostName,
+    [Parameter()][string]$folderName,
+    [Parameter()][string]$networkName,
+    [Parameter()][string]$datastoreName,
     [Parameter()][string]$prefix = '',
     [Parameter()][switch]$preserveMacAddress,
     [Parameter()][switch]$detachNetwork,
@@ -32,34 +32,6 @@ apiauth -vip $vip -username $username -domain $domain
 $vms = api get "/searchvms?entityTypes=kVMware&vmName=$vmName"
 $exactVMs = $vms.vms | Where-Object {$_.vmDocument.objectName -eq $vmName}
 $latestsnapshot = ($exactVMs | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
-
-### select vCenter
-$vCenterList = api get /entitiesOfType?environmentTypes=kVMware`&vmwareEntityTypes=kVCenter`&vmwareEntityTypes=kStandaloneHost
-$vCenter = $vCenterList | Where-Object { $_.displayName -ieq $vCenterName }
-$vCenterId = $vCenter.id
-
-if(! $vCenter){
-    write-host "vCenter Not Found" -ForegroundColor Yellow
-    exit
-}
-
-### select resource pool
-$vCenterSource = api get protectionSources?environments=kVMware | Where-Object {$_.protectionSource.name -eq $vCenterName}
-$dataCenterSource = $vCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $datacenterName}
-$hostSource = $dataCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $hostName}
-$resourcePoolSource = $hostSource.nodes | Where-Object {$_.protectionSource.vmWareProtectionSource.type -eq 'kResourcePool'}
-$resourcePoolId = $resourcePoolSource.protectionSource.id
-$resourcePool = api get /resourcePools?vCenterId=$vCenterId | Where-Object {$_.resourcePool.id -eq $resourcePoolId}
-$datastores = api get "/datastores?resourcePoolId=$resourcePoolId&vCenterId=$vCenterId" | Where-Object { $_.vmWareEntity.name -eq $datastoreName }
-
-### select VM folder
-$vmFolders = api get /vmwareFolders?resourcePoolId=$resourcePoolId`&vCenterId=$vCenterId
-$vmFolder = $vmFolders.vmFolders | Where-Object displayName -eq $folderName
-
-if(! $vmFolder){
-    write-host "folder $folderName not found" -ForegroundColor Yellow
-    exit
-}
 
 ### build recovery task
 $recoverDate = (get-date).ToString().Replace(' ','_').Replace('/','-').Replace(':','-')
@@ -83,11 +55,95 @@ $restoreParams = @{
         'disableNetwork' = $False
     };
     'continueRestoreOnError' = $False;
-    'restoreParentSource' = $vCenter;
-    'resourcePoolEntity' = $resourcePool.resourcePool;
-    'datastoreEntity' = $datastores[0];
-    'vmwareParams' = @{
-        'targetVmFolder' = $vmFolder
+}
+
+# alternate restore location params
+if($vCenterName){
+    # require alternate location params
+    if(!$datacenterName){
+        Write-Host "datacenterName required" -ForegroundColor Yellow
+        exit
+    }
+    if(!$hostName){
+        Write-Host "hostName required" -ForegroundColor Yellow
+        exit
+    }
+    if(!$datastoreName){
+        Write-Host "datastoreName required" -ForegroundColor Yellow
+        exit
+    }
+    if(!$folderName){
+        Write-Host "folderName required" -ForegroundColor Yellow
+        exit
+    }
+
+    # select vCenter
+    $vCenterSource = api get protectionSources?environments=kVMware | Where-Object {$_.protectionSource.name -eq $vCenterName}
+    $vCenterList = api get /entitiesOfType?environmentTypes=kVMware`&vmwareEntityTypes=kVCenter`&vmwareEntityTypes=kStandaloneHost
+    $vCenter = $vCenterList | Where-Object { $_.displayName -ieq $vCenterName }
+    $vCenterId = $vCenter.id
+
+    if(! $vCenter){
+        write-host "vCenter Not Found" -ForegroundColor Yellow
+        exit
+    }
+
+    # select data center
+    $dataCenterSource = $vCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $datacenterName}
+    if(!$dataCenterSource){
+        Write-Host "Datacenter $datacenterName not found" -ForegroundColor Yellow
+        exit
+    }
+
+    # select host
+    $hostSource = $dataCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $hostName}
+    if(!$dataCenterSource){
+        Write-Host "Datacenter $datacenterName not found" -ForegroundColor Yellow
+        exit
+    }
+
+    # select resource pool
+    $resourcePoolSource = $hostSource.nodes | Where-Object {$_.protectionSource.vmWareProtectionSource.type -eq 'kResourcePool'}
+    $resourcePoolId = $resourcePoolSource.protectionSource.id
+    $resourcePool = api get /resourcePools?vCenterId=$vCenterId | Where-Object {$_.resourcePool.id -eq $resourcePoolId}
+
+    # select datastore
+    $datastores = api get "/datastores?resourcePoolId=$resourcePoolId&vCenterId=$vCenterId" | Where-Object { $_.vmWareEntity.name -eq $datastoreName }
+    if(!$datastores){
+        Write-Host "Datastore $datastoreName not found" -ForegroundColor Yellow
+        exit
+    }
+
+    # select VM folder
+    $vmFolders = api get /vmwareFolders?resourcePoolId=$resourcePoolId`&vCenterId=$vCenterId
+    $vmFolder = $vmFolders.vmFolders | Where-Object displayName -eq $folderName
+    if(! $vmFolder){
+        write-host "folder $folderName not found" -ForegroundColor Yellow
+        exit
+    }
+
+    $restoreParams['restoreParentSource'] = $vCenter
+    $restoreParams['resourcePoolEntity'] = $resourcePool.resourcePool
+    $restoreParams['datastoreEntity'] = $datastores[0]
+    $restoreParams['vmwareParams'] = @{'targetVmFolder' = $vmFolder}
+
+    if(!$detachNetwork){
+        # select network
+        if(! $networkName){
+            Write-Host "network name required" -ForegroundColor Yellow
+            exit
+        }
+        $networks = api get "/networkEntities?resourcePoolId=$resourcePoolId&vCenterId=$vCenterId"
+        $network = $networks | Where-Object displayName -eq $networkName
+
+        if(! $network){
+            Write-Host "network $networkName not found" -ForegroundColor Yellow
+            exit
+        }
+        $restoreParams.restoredObjectsNetworkConfig['networkEntity'] = $network
+        if($preserveMacAddress){
+            $restoreParams.restoredObjectsNetworkConfig['preserveMacAddressOnNewNetwork'] = $True
+        }
     }
 }
 
@@ -97,23 +153,6 @@ if($powerOn){
 
 if($detachNetwork){
     $restoreParams.restoredObjectsNetworkConfig['detachNetwork'] = $True
-}else{
-    ### select network
-    if(! $networkName){
-        Write-Host "network name required" -ForegroundColor Yellow
-        exit
-    }
-    $networks = api get "/networkEntities?resourcePoolId=$resourcePoolId&vCenterId=$vCenterId"
-    $network = $networks | Where-Object displayName -eq $networkName
-
-    if(! $network){
-        Write-Host "network $networkName not found" -ForegroundColor Yellow
-        exit
-    }
-    $restoreParams.restoredObjectsNetworkConfig['networkEntity'] = $network
-    if($preserveMacAddress){
-        $restoreParams.restoredObjectsNetworkConfig['preserveMacAddressOnNewNetwork'] = $True
-    }
 }
 
 if ($prefix -ne '') {

@@ -47,12 +47,12 @@ Place the files in a folder together and run the main script like so:
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -vmName: Name of VM to recover
 * -prefix: (optional) add a prefix to the VM name during restore
-* -vCenterName: vCenter protection source to recover to
-* -datacenterName: name of vSphere data center to recover to
-* -hostName: name of vSphere host to recover to
-* -folderName: name of vSphere folder to recover to
-* -networkName: VM Network to attach the VM to
-* -datastoreName: Datastore to recover the VM to
+* -vCenterName: (optional)vCenter protection source to recover to
+* -datacenterName: (optional) name of vSphere data center to recover to
+* -hostName: (optional) name of vSphere host to recover to
+* -folderName: (optional) name of vSphere folder to recover to
+* -networkName: (optional) VM Network to attach the VM to
+* -datastoreName: (optional) Datastore to recover the VM to
 * -poweron: (optional) power on the VMs during restore (default is false)
 * -detachNetwork: (optional) leave VM network disconnected (default is false)
 * -preserveMacAddress: (optional) maintain original Mac address (default is false)
