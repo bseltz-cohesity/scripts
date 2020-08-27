@@ -20,12 +20,12 @@ mkdir /home/cohesity/data/scripts
 cd /home/cohesity/data/scripts
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendRetention/extendRetention.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendRetention/smtptool.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendRetention/pyhesity.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x extendRetention.py
 # end download commands
 ```
 
-Place both files in a folder together and run the main script like so:
+Place the files in a folder together and run the main script like so:
 
 ```bash
 ./extendRetention.py -s mycluster -u myusername -d mydomain.net \
@@ -73,6 +73,7 @@ The output will also be written to a log file extendRetentionLog.txt and optiona
 * -to, --sendto: (optional) email address to send reports to
 * -fr, --sendfrom: (optional) email address to send reports from
 * -o, --offset: (optional) timezone offset (default is -8)
+* -r, --includereplicas: (optional) extend retention of replicas also
 
 ## The Python Helper Module
 

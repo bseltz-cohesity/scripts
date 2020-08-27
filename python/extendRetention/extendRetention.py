@@ -28,6 +28,7 @@ parser.add_argument('-ms', '--mailserver', type=str)
 parser.add_argument('-mp', '--mailport', type=int, default=25)
 parser.add_argument('-to', '--sendto', type=str)
 parser.add_argument('-fr', '--sendfrom', type=str)
+parser.add_argument('-r', '--includereplicas', action='store_true')
 parser.add_argument('-o', '--offset', type=int, default=-8)
 
 args = parser.parse_args()
@@ -47,6 +48,7 @@ mailport = args.mailport
 sendto = args.sendto
 sendfrom = args.sendfrom
 offset = args.offset
+includereplicas = args.includereplicas
 
 log = open('extendRetentionLog.txt', 'a')
 now = datetime.now()
@@ -136,6 +138,14 @@ def extendRun(job, run, retentiondays):
                 }
             ]
         }
+        if includereplicas:
+            replicaRuns = [r for r in run['copyRun'] if r['target']['type'] == 'kRemote']
+            for replicaRun in replicaRuns:
+                runParameters['jobRuns'][0]['copyRunTargets'].append({
+                    "daysToKeep": extendByDays,
+                    "replicationTarget": replicaRun['target']['replicationTarget'],
+                    "type": "kRemote"
+                })
         api('put', 'protectionRuns', runParameters)
 
 
