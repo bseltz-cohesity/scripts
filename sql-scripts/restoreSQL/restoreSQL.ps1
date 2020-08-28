@@ -1,10 +1,20 @@
-### v2019-09-19 - added support for replicated recoveries
-### usage (Cohesity 5.x): ./restore-SQL.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB proddb -targetServer w2012a -targetDB bseltz-test-restore -overWrite -mdfFolder c:\sqldata -ldfFolder c:\sqldata\logs -ndfFolder c:\sqldata\ndf
+# version 2020-08-28
+# usage: ./restore-SQL.ps1 -vip mycluster `
+#                          -username myusername `
+#                          -domain mydomain.net `
+#                          -sourceServer sqlserver1.mydomain.net `
+#                          -sourceDB myinstance/mydb `
+#                          -targetInstance otherinstance `
+#                          -targetDB otherdb `
+#                          -mdfFolder c:\SQLData `
+#                          -ldfFolder c:\SQLData\logs `
+#                          -ndfFolders @{'*1.ndf'='E:\sqlrestore\ndf1'; '*2.ndf'='E:\sqlrestore\ndf2'}
+#                          -overWrite `
+#                          -resume `
+#                          -noRecovery `
+#                          -logTime '2020-08-28 02:30:00'
 
-### usage (Cohesity 6.x): ./restore-SQL.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB cohesitydb -targetDB cohesitydb-restore -overWrite -mdfFolder c:\SQLData -ldfFolder c:\SQLData\logs -ndfFolders @{'*1.ndf'='E:\sqlrestore\ndf1'; '*2.ndf'='E:\sqlrestore\ndf2'}
-###                        ./restore-SQL.ps1 -vip bseltzve01 -username admin -domain local -sourceServer sql2012 -sourceDB cohesitydb -targetDB cohesitydb-restore -overWrite -mdfFolder c:\SQLData -ldfFolder c:\SQLData\logs -logTime '2019-01-18 03:01:15'
-
-### process commandline arguments
+# process commandline arguments
 [CmdletBinding()]
 param (
     [Parameter()][string]$vip = 'helios.cohesity.com',   # the cluster to connect to (DNS name or IP)
@@ -26,10 +36,11 @@ param (
     [Parameter()][switch]$latest,                        # use latest point in time available
     [Parameter()][switch]$noRecovery,                    # restore with NORECOVERY option
     [Parameter()][switch]$progress,                      # display progress
-    [Parameter()][switch]$helios                         # connect via Helios
+    [Parameter()][switch]$helios,                        # connect via Helios
+    [Parameter()][switch]$resume                         # resume recovery of previously restored DB
 )
 
-### handle 6.0x alternate secondary data file locations
+# handle alternate secondary data file locations
 if($ndfFolders){
     if($ndfFolders -is [hashtable]){
         $secondaryFileLocation = @()
@@ -41,10 +52,10 @@ if($ndfFolders){
     $secondaryFileLocation = @()
 }
 
-### source the cohesity-api helper code
+# source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
+# authenticate
 apiauth -vip $vip -username $username -domain $domain
 
 if($USING_HELIOS){
@@ -56,7 +67,7 @@ if($USING_HELIOS){
     }
 }
 
-### handle source instance name e.g. instance/dbname
+# handle source instance name e.g. instance/dbname
 if($sourceDB.Contains('/')){
     if($targetDB -eq $sourceDB){
         $targetDB = $sourceDB.Split('/')[1]
@@ -66,7 +77,7 @@ if($sourceDB.Contains('/')){
     $sourceInstance = 'MSSQLSERVER'
 }
 
-### search for database to clone
+# search for database to clone
 $searchresults = api get /searchvms?environment=SQL`&entityTypes=kSQL`&entityTypes=kVMware`&vmName=$sourceInstance/$sourceDB
 
 if($targetInstance -ne '' -and $targetInstance -ne $sourceInstance){
@@ -75,7 +86,7 @@ if($targetInstance -ne '' -and $targetInstance -ne $sourceInstance){
     $differentInstance = $False
 }
 
-### narrow the search results to the correct source server
+# narrow the search results to the correct source server
 $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer } | `
                                   Where-Object { $_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB }
 
@@ -84,7 +95,7 @@ if($null -eq $dbresults){
     exit
 }
 
-### if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot 
+# if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot 
 $latestdb = ($dbresults | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
 
 if($null -eq $latestdb){
@@ -92,15 +103,15 @@ if($null -eq $latestdb){
     exit 1
 }
 
-### identify physical or vm
+# identify physical or vm
 $entityType = $latestdb.registeredSource.type
 
-### search for source server
+# search for source server
 $entities = api get /appEntities?appEnvType=3`&envType=$entityType
 $ownerId = $latestdb.vmDocument.objectId.entity.sqlEntity.ownerId
 $dbId = $latestdb.vmDocument.objectId.entity.id
 
-### handle log replay
+# handle log replay
 $versionNum = 0
 $validLogTime = $False
 $useLogTime = $False
@@ -146,7 +157,7 @@ if ($logTime -or $latest){
                 if($latest){
                     $logUsecs = $logEnd - 1000000
                 }
-                if(($logUsecs - 1000000) -le $snapshotTimestampUsecs -or $snapshotTimestampUsecs -ge ($logUsecs + 1000000)){
+                if((($logUsecs - 1000000) -le $snapshotTimestampUsecs -or $snapshotTimestampUsecs -ge ($logUsecs + 1000000)) -and !$resume){
                     $validLogTime = $True
                     $useLogTime = $False
                     break
@@ -191,7 +202,7 @@ if ($logTime -or $latest){
     }
 }
 
-### create new clone task (RestoreAppArg Object)
+# create new clone task (RestoreAppArg Object)
 $restoreTask = @{
     "name" = "dbRestore-$(dateToUsecs (get-date))";
     'action' = 'kRecoverApp';
@@ -228,11 +239,12 @@ $restoreTask = @{
     }
 }
 
+# noRecovery
 if($noRecovery){
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.withNoRecovery = $True
 }
 
-### if not restoring to original server/DB
+# if not restoring to original server/DB
 if($targetDB -ne $sourceDB -or $targetServer -ne $sourceServer -or $differentInstance){
     if('' -eq $mdfFolder){
         write-host "-mdfFolder must be specified when restoring to a new database name or different target server" -ForegroundColor Yellow
@@ -244,7 +256,7 @@ if($targetDB -ne $sourceDB -or $targetServer -ne $sourceServer -or $differentIns
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['newDatabaseName'] = $targetDB;    
 }
 
-### overwrite warning
+# overwrite warning
 if($targetDB -eq $sourceDB -and $targetServer -eq $sourceServer -and $differentInstance -eq $False){
     if(! $overWrite){
         write-host "Please use the -overWrite parameter to confirm overwrite of the source database!" -ForegroundColor Yellow
@@ -252,12 +264,12 @@ if($targetDB -eq $sourceDB -and $targetServer -eq $sourceServer -and $differentI
     }
 }
 
-### apply log replay time
+# apply log replay time
 if($useLogTime -eq $True){
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['restoreTimeSecs'] = $([int64]($logUsecs/1000000))
 }
 
-### search for target server
+# search for target server
 if($targetServer -ne $sourceServer -or $targetInstance){
     $targetEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $targetServer }
     if($null -eq $targetEntity){
@@ -275,17 +287,17 @@ if($targetServer -ne $sourceServer -or $targetInstance){
     $targetServer = $sourceServer
 }
 
-### handle 5.0x secondary file location
+# handle 5.0x secondary file location
 if($ndfFolder){
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['secondaryDataFileDestination'] = $ndfFolder
 }
 
-### overWrite existing DB
+# overWrite existing DB
 if($overWrite){
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['dbRestoreOverwritePolicy'] = 1
 }
 
-### execute the recovery task (post /recoverApplication api call)
+# execute the recovery task (post /recoverApplication api call)
 $response = api post /recoverApplication $restoreTask
 
 if($targetInstance -eq ''){
