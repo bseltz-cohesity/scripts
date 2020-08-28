@@ -26,10 +26,10 @@ Place the files in a folder together and run the main script like so:
 
 ```powershell
 ./vmProtectionReport.ps1 -vip mycluster `
-              -username myusername `
-              -domain mydomain.net `
-              -parentSourceName myvcenter.mydomain.net `
-              -unProtected
+                         -username myusername `
+                         -domain mydomain.net `
+                         -parentSourceName myvcenter.mydomain.net `
+                         -unProtected
 ```
 
 ## Parameters
