@@ -1,32 +1,33 @@
-# version 2020.07.24
+# version 2020.08.20
 # usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
 [CmdletBinding()]
 param (
     [Parameter()][string]$vip = 'helios.cohesity.com',  # the cluster to connect to (DNS name or IP)
-    [Parameter()][string]$vip2,       # alternate cluster to connect to
+    [Parameter()][string]$vip2,        # alternate cluster to connect to
     [Parameter()][string]$username = 'helios',  # username (local or AD)
     [Parameter()][string]$domain = 'local',     # local or AD domain
     [Parameter()][string]$password = $null,     # optional password
-    [Parameter()][switch]$useApiKey,  # use API key for authentication
+    [Parameter()][switch]$useApiKey,   # use API key for authentication
     [Parameter()][string]$clusterName = $null,  # helios cluster to access 
     [Parameter(Mandatory = $True)][string]$jobName,  # job to run
-    [Parameter()][switch]$usePolicy, # honor basic policy elements
+    [Parameter()][switch]$usePolicy,   # honor basic policy elements
     [Parameter()][string]$jobName2,             # alternate jobName to run
     [Parameter()][int]$keepLocalFor = 5,        # keep local snapshot for x days
     [Parameter()][string]$replicateTo = $null,  # optional - remote cluster to replicate to
     [Parameter()][int]$keepReplicaFor = 5,      # keep replica for x days
     [Parameter()][string]$archiveTo = $null,    # optional - target to archive to
     [Parameter()][int]$keepArchiveFor = 5,      # keep archive for x days
-    [Parameter()][switch]$enable,    # enable a disabled job, run it, then disable when done
+    [Parameter()][switch]$enable,      # enable a disabled job, run it, then disable when done
     [Parameter()][ValidateSet('kRegular','kFull','kLog','kSystem')][string]$backupType = 'kRegular',
-    [Parameter()][array]$objects,    # list of objects to include in run
-    [Parameter()][switch]$progress,  # display progress percent
-    [Parameter()][switch]$wait,      # wait for completion and report end status
-    [Parameter()][switch]$helios,    # use helios on-prem
-    [Parameter()][string]$logfile, # name of log file
-    [Parameter()][switch]$outputlog  # enable logging
+    [Parameter()][array]$objects,      # list of objects to include in run
+    [Parameter()][switch]$progress,    # display progress percent
+    [Parameter()][switch]$wait,        # wait for completion and report end status
+    [Parameter()][switch]$helios,      # use helios on-prem
+    [Parameter()][string]$logfile,     # name of log file
+    [Parameter()][switch]$outputlog,   # enable logging
+    [Parameter()][string]$metaDataFile # backup file list
 )
 
 # source the cohesity-api helper code
@@ -229,7 +230,7 @@ if($runs){
 $finishedStates = @('kCanceled', 'kSuccess', 'kFailure')
 
 # wait for existing job run to finish
-if($runs){
+if($runs -and !$metaDataFile){
     $alertWaiting = $True
     while ($runs[0].backupRun.status -notin $finishedStates){
         if($alertWaiting){
@@ -255,19 +256,23 @@ if($usePolicy){
     $copyRunTargets[0].daysToKeep = $policy.daysToKeep
     if($policy.PSObject.Properties['snapshotReplicationCopyPolicies']){
         foreach($replica in $policy.snapshotReplicationCopyPolicies){
-            $copyRunTargets = $copyRunTargets + @{
-                "daysToKeep"        = $replica.daysToKeep;
-                "replicationTarget" = $replica.target;
-                "type"              = "kRemote"
+            if(!($copyRunTargets | Where-Object {$_.replicationTarget.clusterName -eq $replica.target.clusterName})){
+                $copyRunTargets = $copyRunTargets + @{
+                    "daysToKeep"        = $replica.daysToKeep;
+                    "replicationTarget" = $replica.target;
+                    "type"              = "kRemote"
+                }
             }
         }
     }
     if($policy.PSObject.Properties['snapshotArchivalCopyPolicies']){
         foreach($archive in $policy.snapshotArchivalCopyPolicies){
-            $copyRunTargets = $copyRunTargets + @{
-                "archivalTarget" = $archive.target;
-                "daysToKeep"     = $archive.daysToKeep;
-                "type"           = "kArchival"
+            if(!($copyRunTargets | Where-Object {$_.archivalTarget.vaultName -eq $archive.target.vaultName})){
+                $copyRunTargets = $copyRunTargets + @{
+                    "archivalTarget" = $archive.target;
+                    "daysToKeep"     = $archive.daysToKeep;
+                    "type"           = "kArchival"
+                }
             }
         }
     }
@@ -322,7 +327,14 @@ if($objects){
     if(($environment -eq 'kSQL' -and $job.environmentParameters.sqlParameters.backupType -eq 'kSqlVSSFile') -or $environment -eq 'kOracle'){
         $jobdata['runNowParameters'] = $runNowParameters
     }else{
-        $jobdata['sourceIds'] = $sourceIds
+        if($metaDataFile){
+            $jobdata['runNowParameters'] = @()
+            foreach($sourceId in $sourceIds){
+                $jobdata['RunNowParameters'] += @{'sourceId' = $sourceId; 'physicalParams' = @{'metadataFilePath' = $metaDataFile}}
+            }
+        }else{
+            $jobdata['sourceIds'] = $sourceIds
+        }
     }
 }
 
