@@ -10,7 +10,8 @@ param (
     [Parameter()][string[]]$hostNames,                # one or more host names (comma separated)
     [Parameter()][string]$inputFile,                  # name of file containing entries to add
     [Parameter()][switch]$backup,                     # backup existing hosts before making changes
-    [Parameter()][switch]$overwrite                   # overwrite hostnames for existing IP (default is to add hostnames)
+    [Parameter()][switch]$overwrite,                  # overwrite hostnames for existing IP (default is to add hostnames)
+    [Parameter()][switch]$delete                      # delete IP from list
 )
 
 ### source the cohesity-api helper code
@@ -70,12 +71,20 @@ if($ip -and $hostNames){
    $hosts.hosts = @(addEntry $ip $hostNames)
    $changesMade = $True
 }elseif($ip){
-    Write-Host "-hostNames required" -ForegroundColor Yellow
+    if(! $delete){
+        Write-Host "-hostNames required" -ForegroundColor Yellow
+    }
 }elseif($hostNames){
     Write-Host "-ip required" -ForegroundColor Yellow
 }
 
 # process input file
+if($ip){ 
+    $deleteIPs = @($ip)
+}else{
+    $deleteIPs = @()
+}
+
 if($inputFile){
     if(! (Test-Path -Path $inputFile -PathType Leaf)){
         Write-Host "$inputFile not found!" -ForegroundColor Yellow
@@ -87,14 +96,27 @@ if($inputFile){
             $ip = $hostNames = $null
             $record = [string]$_
             $ip, $hostNames = $record.replace(' ','').split(',',2)
-            $hostNames = $hostNames.split(',')
-            if($ip -and $hostNames){
-                $hosts.hosts = addEntry $ip $hostNames
-                $changesMade = $True
+            if($delete){
+                $deleteIPs += $ip
             }else{
-                Write-Host "Skipping invalid Record: $record" -ForegroundColor Yellow
+                $hostNames = $hostNames.split(',')
+                if($ip -and $hostNames){
+                    $hosts.hosts = addEntry $ip $hostNames
+                    $changesMade = $True
+                }else{
+                    Write-Host "Skipping invalid Record: $record" -ForegroundColor Yellow
+                }
             }
         }
+    }
+}
+
+# process deletes
+if($delete){
+    foreach($deleteIP in $deleteIPs){
+        "Deleting $deleteIP"
+        $hosts.hosts = $hosts.hosts | Where-Object ip -ne $deleteIP
+        $changesMade = $True
     }
 }
 
