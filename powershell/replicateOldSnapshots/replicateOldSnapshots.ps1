@@ -8,10 +8,11 @@ param (
     [Parameter()][string]$domain = 'local', # local or AD domain
     [Parameter()][string]$jobName = $null, # name of job to replicate
     [Parameter(Mandatory = $True)][string]$replicateTo, # name of replication target
-    [Parameter()][string]$olderThan = 0, # archive snapshots older than x days
+    [Parameter()][int]$olderThan = 0, # archive snapshots older than x days
     [Parameter()][string]$IfExpiringAfter = -1, # do not archve if the snapshot is going to expire within x days
     [Parameter()][string]$keepFor = 0, # set archive retention to x days from original backup date
-    [Parameter()][switch]$replicate # actually replicate (otherwise test run)
+    [Parameter()][switch]$replicate, # actually replicate (otherwise test run)
+    [Parameter()][int]$newerThan
 )
 
 ### source the cohesity-api helper code
@@ -44,6 +45,7 @@ if($jobName){
 
 ### olderThan days in usecs
 $olderThanUsecs = timeAgo $olderThan days
+$newerThanUsecs = timeAgo $newerThan days
 
 ### find protectionRuns with old local snapshots that are not archived yet and sort oldest to newest
 "searching for old snapshots..."
@@ -54,6 +56,9 @@ foreach ($job in ((api get protectionJobs) | Where-Object{ $_.policyId.split(':'
             Where-Object { $_.copyRun[0].runStartTimeUsecs -le $olderThanUsecs } | `
             Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
 
+        if($newerThan){
+            $runs = $runs | Where-Object {$_.copyRun[0].runStartTimeUsecs -ge $newerThanUsecs}
+        }
         foreach ($run in $runs) {
             ### determine if replica already exists
             $alreadyReplicated = $false
