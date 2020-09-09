@@ -76,6 +76,29 @@ Tearing down mount points...
 * -d, --domain: (optional) domain of username, defaults to local
 * -t, --taskid: task ID to tear down
 
+## Notes
+
+The same rules apply as when you are using the UI...
+
+When targeting a VM, if the agent is not already present, you have to supply guest credentials (for VMtools to authenticate into the guest to instantiate the auto-deploy agent), using -n and -p parameters, like:
+
+```bash
+./instantVolumeMount.py -v mycluster -u myusername -s myvm -n root -p swordfish
+```
+
+Or if the agent is already installed in the VM, or if you're targeting a registered physical server, then you tell the script to use the existing agent using -a parameter, like:
+
+```bash
+./instantVolumeMount.py -v mycluster -u myusername -s myvm -a
+```
+
+It is strongly recommended that you try performing an IVM in the UI first so you can prove that it works, before trying with the script. Some reminders:
+
+* IVM will not work for Linux VMs prior to Cohesity 6.4.1.
+* Port 50051/TCP must be open inbound on the guest so the Cohesity cluster can reach the agent - this is true in every scenario (auto-deploy or pre-installed agent)
+* Auto-deploy agent won't work if VMtools not present and healthy.
+* Pre-installing the agent is more likely to succeed because it eliminates the gotchas for credentials and VMtools
+
 ## The Python Helper Module
 
 The helper module, pyhesity.py, provides functions to simplify operations such as authentication, api calls, storing encrypted passwords, and converting date formats. The module requires the requests python module.

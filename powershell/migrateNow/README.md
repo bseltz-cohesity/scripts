@@ -37,4 +37,3 @@ Place all files in a folder together. then, run the main script like so:
 * -username: Cohesity User Name
 * -domain: - defaults to 'local'
 * -jobName: name of protection job to run
-
