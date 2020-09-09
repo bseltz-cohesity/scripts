@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2020.06.16"""
+"""Cohesity Python REST API Wrapper Module - 2020.09.09"""
 
 ##########################################################################################
 # Change Log
@@ -31,6 +31,7 @@
 # 2020.06.04 - bumping version (no reason)
 # 2020.06.16 - removed ansi codes from error message (Windows didn't display them correctly)
 # 2020.07.10 - added support for tenant impersonation
+# 2020.09.09 - fixed invalid password loop for PWFILE
 #
 ##########################################################################################
 # Install Notes
@@ -296,7 +297,11 @@ def __getpassword(vip, username, password, domain, updatepw, prompt):
         for pwditem in pwdlist:
             v, d, u, opwd = pwditem.split(":", 4)
             if v.lower() == vip.lower() and d.lower() == domain.lower() and u.lower() == username.lower():
-                return base64.b64decode(opwd.encode('utf-8')).decode('utf-8')
+                if updatepw is not None:
+                    setpwd(v=vip, u=username, d=domain)
+                    return pw(vip, username, domain)
+                else:
+                    return base64.b64decode(opwd.encode('utf-8')).decode('utf-8')
     if domain.lower() == 'local':
         pwpath = os.path.join(CONFIGDIR, vip + '-' + username)
     else:
