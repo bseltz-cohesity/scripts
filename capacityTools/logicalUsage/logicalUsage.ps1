@@ -11,10 +11,13 @@ param (
 )
 
 ### source the cohesity-api helper code
-. ./cohesity-api
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
+
+$cluster = api get cluster
+$outFile = Join-Path -Path $PSScriptRoot -ChildPath "logicalUsage-$($cluster.name).csv"
 
 $report = @{}
 
@@ -59,8 +62,11 @@ $total = 0
 
 "`n{0,15}  {1,10:n0}  {2}" -f ('Environment', 'Size (GB)', 'Name')
 "{0,15}  {1,10:n0}  {2}" -f ('===========', '=========', '====')
+"Environment,Size(GB),Name" | Out-File -FilePath $outFile
+
 $report.GetEnumerator() | Sort-Object -Property {$_.Value.size} -Descending | ForEach-Object {
-    "{0,15}  {1,10:n0}  {2}" -f ($_.Value.environment, ($_.Value.size/(1024*1024*1024)), $_.Name)
+    "{0,15}  {1,10:n0}  {2}" -f ($_.Value.environment, [math]::Round(($_.Value.size/(1024*1024*1024)),2), $_.Name)
+    "{0},{1},{2}" -f ($_.Value.environment, [math]::Round(($_.Value.size/(1024*1024*1024)),2), $_.Name) | Out-File -FilePath $outFile -Append
     $total += $_.Value.size
 }
 "`n    Total Logical Size: {0:n0} GB`n" -f ($total/(1024*1024*1024))
