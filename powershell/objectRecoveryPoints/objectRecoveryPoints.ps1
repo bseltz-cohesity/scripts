@@ -20,14 +20,18 @@ $now = dateToUsecs (get-date)
 ### search for object
 $search = api get "/searchvms?vmName=$objectname"
 
+
 if(! $search.psobject.properties['vms']){
     write-host "No objects found with name $objectname" -ForegroundColor Yellow
     exit
 }
 
+$search.vms = $search.vms | Where-Object {$_.vmDocument.objectName -eq $objectname}
+
 "{0,-22} {1,-22} {2,-22} {3,-22} {4}" -f 'ObjectName', 'JobName', 'StartTime', 'ExpiryTime', 'DaysToExpiration'  
 
 foreach($vm in $search.vms){
+    $jobName
     $jobName = $vm.vmDocument.jobName
     $displayName = $vm.vmDocument.objectName
     foreach($version in $vm.vmDocument.versions){
