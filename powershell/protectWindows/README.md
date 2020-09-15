@@ -53,6 +53,7 @@ Then, run the main script like so:
                      -exclusions 'c:\windows', 'e:\excluded', 'c:\temp' `
                      -serverList .\serverlist.txt `
                      -exclusionList .\exclusions.txt `
+                     -allDrives `
                      -skipNestedMountPoints
 ```
 
@@ -71,7 +72,10 @@ Processing servers...
 * -servers: one or more servers (comma separated) to add to the proctection job
 * -serverList: file containing list of servers
 * -jobName: name of protection job
+* -inclusions: inclusion paths (comma separated)
+* -inclusionList: a text file list of paths to include (one per line)
 * -exclusions: one or more exclusion paths (comma separated)
-* -exclusionList: a text file list of servers to add to the job
+* -exclusionList: a text file list of exclusion paths (one per line)
+* -allDrives: include all drives in the inclusion list
 * -skipNestedMountPoints: if omitted, nested mount points will not be skipped
 * -overwriteAll: overwrite existing inclusions/exclusions for all servers in job

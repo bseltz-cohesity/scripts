@@ -1,11 +1,12 @@
 # usage: ./protectWindows.ps1 -vip mycluster `
 #                             -username myusername `
-#                             -domain mydomain.net
-#                             -servers server1.mydomain.net, server2.mydomain.net
-#                             -jobName 'File-based Windows Job' 
-#                             -exclusions 'c:\windows', 'e:\excluded', 'c:\temp'
-#                             -serverList .\serverlist.txt
-#                             -exclusionList .\exclusions.txt
+#                             -domain mydomain.net `
+#                             -servers server1.mydomain.net, server2.mydomain.net `
+#                             -jobName 'File-based Windows Job' `
+#                             -exclusions 'c:\windows', 'e:\excluded', 'c:\temp' `
+#                             -serverList .\serverlist.txt `
+#                             -exclusionList .\exclusions.txt `
+#                             -allDrives `
 #                             -skipNestedMountPoints
 
 # process commandline arguments
@@ -16,11 +17,14 @@ param (
     [Parameter()][string]$domain = 'local',  # local or AD domain
     [Parameter()][array]$servers = '',  # optional names of servers to protect (comma separated)
     [Parameter()][string]$serverList = '',  # optional textfile of servers to protect
+    [Parameter()][array]$inclusions = '', # optional paths to exclude (comma separated)
+    [Parameter()][string]$inclusionList = '',  # optional list of exclusions in file
     [Parameter()][array]$exclusions = '', # optional paths to exclude (comma separated)
     [Parameter()][string]$exclusionList = '',  # optional list of exclusions in file
     [Parameter(Mandatory = $True)][string]$jobName,  # name of the job to add server to
     [Parameter()][switch]$skipNestedMountPoints,  # if omitted, nested mountpoints will not be skipped
-    [Parameter()][switch]$overwriteAll
+    [Parameter()][switch]$overwriteAll,
+    [Parameter()][switch]$allDrives
 )
 
 # gather list of servers to add to job
@@ -37,6 +41,29 @@ if ('' -ne $serverList){
     }else{
         Write-Warning "Server list $serverList not found!"
         exit
+    }
+}
+
+# gather inclusion list
+$includePaths = @()
+foreach($inclusion in $inclusions){
+    $includePaths += $inclusion
+}
+if('' -ne $inclusionList){
+    if(Test-Path -Path $inclusionList -PathType Leaf){
+        $inclusions = Get-Content $inclusionList
+        foreach($inclusion in $inclusions){
+            $includePaths += $inclusion
+        }
+    }else{
+        Write-Warning "Inclusions file $inclusionList not found!"
+        exit
+    }
+}
+if(! $includePaths){
+    if(! $allDrives){
+        Write-Host "No include paths specified" -ForegroundColor Yellow
+        exit 1
     }
 }
 
@@ -114,38 +141,36 @@ foreach($sourceId in $sourceIds){
         $source = $sources.nodes | Where-Object {$_.protectionSource.id -eq $sourceId}
         "  processing $($source.protectionSource.name)"
     
-        # identify existing source volumes
-        $mountPoints = $source.protectionSource.physicalProtectionSource.volumes.mountPoints
-    
-        foreach ($mountPoint in $mountPoints | Where-Object {$_ -ne $null}) {
-    
-            $backupFilePath = "/$mountPoint".Replace(':\','/')
-            $mountLetter = $backupFilePath.Substring(0,$backupFilePath.Length-1).ToLower()
+        if($allDrives){
+            $mountPoints = $source.protectionSource.physicalProtectionSource.volumes.mountPoints
+            foreach ($mountPoint in $mountPoints | Where-Object {$_ -ne $null}) {
+                $includePaths += $mountPoint
+            }
+        }
+
+        foreach($includePath in $includePaths){
+            $backupFilePath = "/$includePath".Replace(':\','/')
+            $mountLetter = $backupFilePath.Substring(1,1).ToLower()
             $filePath = @{
                 "backupFilePath" = $backupFilePath;
                 "skipNestedVolumes" = $skip;
                 "excludedFilePaths" = @()
             }
-    
-            # identify exclusions that apply to existing source volumes
             $excludedFilePaths = @()
             foreach ($exclusion in $excludePaths | Where-Object {$_ -ne ''}) {
                 $exclusion = $exclusion.ToString()
-                if ($exclusion.substring(0, 3) -eq $mountPoint) {
-                    $exclusion = "/$($exclusion.replace(':','').replace('\','/'))"
-                    $excludedFilePaths += $exclusion
-                }elseif ($exclusion.substring(0, 3) -eq '*:\') {
-                    $exclusion = "$($exclusion.replace('*:',$mountLetter).replace('\','/'))"
-                    $excludedFilePaths += $exclusion
-                }elseif ($exclusion.substring(1,2) -ne ':\'){
-                    $exclusion = $exclusion.replace('\','/')
-                    $excludedFilePaths += $exclusion
+                $thisExclusion = "/$($exclusion.replace(':','').replace('\','/'))"
+                if($thisExclusion.Substring(1,1) -eq '*'){
+                    $thisExclusion = "/$mountLetter/$($thisExclusion.Substring(3))"
+                }
+                if("$thisExclusion/" -match "$backupFilePath/"){
+                    $excludedFilePaths += $thisExclusion
                 }
             }
             if($excludedFilePaths.Length -gt 0){            
                 $filePath.excludedFilePaths = @($filePath.excludedFilePaths + $excludedFilePaths | Select-Object -Unique)
             }
-            if($mountPoint -notin $exclusions){
+            if($includePath -notin $exclusions){
                 $newParam.physicalSpecialParameters.filePaths += $filePath
             }
         }
