@@ -141,7 +141,7 @@ $html += '</span>
     <th>Compression</th>
 </tr>'
 
-$jobs = api get protectionJobs
+$jobs = api get protectionJobs?allUnderHierarchy=true
 
 function processStats($stats, $name, $environment, $location){
     
@@ -184,7 +184,7 @@ foreach($job in $jobs | Sort-Object -Property name){
 }
 
 Write-Host "  Unprotected Views..."
-$views = api get views
+$views = api get views?allUnderHierarchy=true
 foreach($view in $views.views | Sort-Object -Property name | Where-Object viewProtection -eq $null){
     $stats = api get "stats/consumers?consumerType=kViews&consumerIdList=$($view.viewId)"
     if($stats.statsList){
