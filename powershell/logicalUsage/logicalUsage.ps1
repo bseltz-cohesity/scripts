@@ -6,7 +6,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vip,
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
-    [Parameter()][int]$days = 90,
+    [Parameter()][int]$days = 14,
     [Parameter()][switch]$localOnly
 )
 
