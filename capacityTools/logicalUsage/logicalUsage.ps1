@@ -22,7 +22,7 @@ $outFile = Join-Path -Path $PSScriptRoot -ChildPath "logicalUsage-$($cluster.nam
 $report = @{}
 
 "Inspecting snapshots..."
-foreach ($job in (api get protectionJobs)){
+foreach ($job in (api get protectionJobs?allUnderHierarchy=true)){
     if(!($localOnly -and $job.IsActive -eq $False)){
         $runs = api get protectionRuns?jobId=$($job.id)`&numRuns=99999`&excludeNonRestoreableRuns=true`&runTypes=kFull`&runTypes=kRegular`&startTimeUsecs=$(timeAgo $days days)
         foreach ($run in $runs){
@@ -45,7 +45,7 @@ foreach ($job in (api get protectionJobs)){
 
 "Inspecting Views..."
 if($localOnly){
-    $views = api get views
+    $views = api get views?allUnderHierarchy=true
 }else{
     $views = api get views?includeInactive=true
 }
