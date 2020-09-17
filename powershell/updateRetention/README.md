@@ -4,6 +4,8 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This script will update the retention of snapshots to match the base retention of the policy that is associated with the protection job. Let's say you have your policy set to keep snapshots for 30 days, and then later you decide to change the policy to keep snapshots for 60 days or 14 days or whatever. The policy change will only affect future snapshots. If you want to adjust (extend or reduce) the retention of the existing snapshots, this script will query the policy and make the adjustments to all existing snapshots.
 
+Warning: If used incorrectly, this script can expire old snapshots. Note that the script will set all snapshots to the base retention in the policy. It will not honor extended retention (e.g. weekly, monthly, etc). It's advisable to run the script without the -allowReduction and -commit parameters first and review the output before committing and changes.
+
 ## Download the script
 
 Run these commands from PowerShell to download the script(s) into your current directory
@@ -69,27 +71,8 @@ When you are happy with the output, re-run the command and include the -commit p
 * -vip: Cohesity Cluster to connect to
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain of user (defaults to local)
-* -newerThan: (optional) Process backups no older than x days (default is 2)
-* -archiveDaily: (optional) days to retain daily archives
-* -dailyVault: (optional) external target for daily archives
-* -dayOfWeek: (optional) day of Week for weekly snapshot (e.g. Sunday)
-* -keepWeekly: (optional) days to retain weekly snapshots
-* -archiveWeekly: (optional) days to retain weekly archives
-* -weeklyVault: (optional) external target for weekly archives
-* -dayOfMonth: (optional) day of month for monthly snapshot (1 = 1st day of month, -1 = last day of month)
-* -keepMonthly: (optional) days to retain monthly snapshots
-* -archiveMonthly: (optional) days to retain monthly archives
-* -monthlyVault: (optional) external target for monthly archives
-* -quarterlyDates: (optional) list of quarterly dates (e.g. '04-01', '07-01')
-* -keepQuarterly: (optional) days to retain monthly snapshots
-* -archiveQuarterly: (optional) days to retain monthly archives
-* -quarterlyVault: (optional) external target for monthly archives
-* -dayOfYear: (optional) day of year for yearly snapshot (1 = Jan 1, -1 = Dec 31)
-* -keepYearly: (optional) days to retain yearly snapshots
-* -archiveYearly: (optional) days to retain yearly archives
-* -yearlyVault: (optional) external target for yearly archives
-* -specialDates: (optional) list of special dates (e.g. '03-21', '09-21')
-* -keepSpecial: (optional) days to retain special snapshots
-* -archiveSpecial: (optional) days to retain special archives
-* -specialVault: (optional) external target for special archives
+* -newerThan: (optional) Process backups no older than x days (default is 31)
+* -policyNames: (optional) list of policy names (comma separated)
+* -jobNames: (optional) list of job names (comma separated)
+* -allowReduction: (optional) if omitted, no retentions will be shortened
 * -commit: (optional) test run only if omitted
