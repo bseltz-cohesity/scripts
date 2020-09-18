@@ -336,17 +336,18 @@ function displayObjects($run){
                 $msg = $task.base.warnings[0].errorMsg
                 $msgHTML = '<ul><li>{0}</li></ul>' -f ($task.base.warnings.errorMsg -join "</li><li>")
             }
-            $global:message += '<span class="info"> <span class="{1}">{1}</span></span> <span class="objectname">{0}</span><br />' -f $task.base.sources[0].source.displayName, 
-                                                                                                                                            $task.base.publicStatus.subString(1)
-            if($msg -ne ''){
-                $global:message += '<div class="message">{0}</div>' -f $msgHTML
-            }
-            "{0} {1,35} ({2}) {3}" -f $jobSpacer,
-                                            $task.base.sources[0].source.displayName,
-                                            $task.base.publicStatus.subString(1),
-                                            $msg
-            if($showApps){
+            if(!($failuresOnly -and $task.base.publicStatus -eq 'kSuccess')){
+                $global:message += '<span class="info"> <span class="{1}">{1}</span></span> <span class="objectname">{0}</span><br />' -f $task.base.sources[0].source.displayName, $task.base.publicStatus.subString(1)
+                if($msg -ne ''){
+                    $global:message += '<div class="message">{0}</div>' -f $msgHTML
+                }
+                "{0} {1,35} ({2}) {3}" -f $jobSpacer,
+                $task.base.sources[0].source.displayName,
+                $task.base.publicStatus.subString(1),
+                $msg
+                if($showApps){
                 displayApps $task
+                }
             }
         }
         $global:message += '</div>'
@@ -374,14 +375,13 @@ function displayApps($task){
                 $statusHTML = 'Warning'
                 $msgHTML = '<ul><li>{0}</li></ul>' -f ($app.warnings.errorMsg -join "</li><li>")
             }
-            $global:message += '<span class="info"> <span class="{1}">{1}</span></span> <span class="objectname">{0}</span><br />' -f $app.appEntity.displayName,
-                                                                                                                                      $statusHTML
-            if($msgHTML){
-                $global:message += '<div class="appmessage">{0}</div>' -f $msgHTML
+            if(!($failuresOnly -and $app.publicStatus -eq 'kSuccess')){
+                $global:message += '<span class="info"> <span class="{1}">{1}</span></span> <span class="objectname">{0}</span><br />' -f $app.appEntity.displayName, $statusHTML
+                if($msgHTML){
+                    $global:message += '<div class="appmessage">{0}</div>' -f $msgHTML
+                }
+                "{0} {1,45} {2}" -f $jobSpacer, $app.appEntity.displayName,$status
             }
-            "{0} {1,45} {2}" -f $jobSpacer,
-                                  $app.appEntity.displayName,
-                                  $status
         }
         $global:message += '</div>'
     }
@@ -397,32 +397,42 @@ foreach($job in $jobs){
     }
     if($job.isDeleted -ne $true -and $job.isPaused -ne $true -and $job.isActive -ne $false){
         # lastest run summary
+        $divOpen = $false
         if($job.lastRun){
             if((! $failuresOnly) -or $job.lastRun.backupRun.PSObject.Properties['warnings'] -or $job.lastRun.backupRun.PSObject.Properties['error']){
                 $noFailures = $false
                 $global:message += '<br /><div class="job"><span>{0}</span><span class="info"> ({1})</span></div>' -f $job.name.ToUpper(), $job.environment.substring(1)
                 "`n{0,$maxLength} ({1})`n" -f $job.name, $job.environment.subString(1)
                 $global:message += '<div class="snapshot">'
+                $divOpen = $True
                 displaySnapshot $job.lastRun
                 displayReplicas $job.lastRun
                 displayArchives $job.lastRun
                 if($showObjects){
                     displayObjects $job.lastRun
                 }
-                if((! $lastRunOnly) -and (! $failuresOnly)){
-                    # get runs
-                    $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs&excludeTasks=true"
-                    foreach($run in $runs | Where-Object {$_.backupRun.stats.startTimeUsecs -ne $job.lastRun.backupRun.stats.startTimeUsecs}){
-                        if((! $failuresOnly) -or $run.backupRun.PSObject.Properties['warnings'] -or $run.backupRun.PSObject.Properties['error']){
-                            displaySnapshot $run
-                            displayReplicas $run
-                            displayArchives $run
-                            if($showObjects){
-                                displayObjects $run
-                            }
+            }
+            if((! $lastRunOnly) -and ((! $failuresOnly)  -or $job.lastRun.backupRun.PSObject.Properties['warnings'] -or $job.lastRun.backupRun.PSObject.Properties['error'])){
+                # get runs
+                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs&excludeTasks=true"
+                foreach($run in $runs | Where-Object {$_.backupRun.stats.startTimeUsecs -ne $job.lastRun.backupRun.stats.startTimeUsecs}){
+                    if((! $failuresOnly) -or $run.backupRun.PSObject.Properties['warnings'] -or $run.backupRun.PSObject.Properties['error']){
+                        if(!$divOpen){
+                            $global:message += '<br /><div class="job"><span>{0}</span><span class="info"> ({1})</span></div>' -f $job.name.ToUpper(), $job.environment.substring(1)
+                            "`n{0,$maxLength} ({1})`n" -f $job.name, $job.environment.subString(1)
+                            $global:message += '<div class="snapshot">'
+                            $divOpen = $True
+                        }
+                        displaySnapshot $run
+                        displayReplicas $run
+                        displayArchives $run
+                        if($showObjects){
+                            displayObjects $run
                         }
                     }
                 }
+            }
+            if($divOpen){
                 $global:message += '</div>'
             }
         }
