@@ -249,7 +249,7 @@ $dateString = get-date -UFormat '%Y-%m-%d'
 $daysBackUsecs = (dateToUsecs (get-date -UFormat '%Y-%m-%d')) - ($daysBack * 86400000000)
 $nowUsecs = dateToUsecs (get-date)
 
-$jobs = api get "protectionJobs?includeLastRunAndStats=true" | Sort-Object -Property name
+$jobs = api get "protectionJobs?includeLastRunAndStats=true" | Sort-Object -Property name | Where-Object {$job.isDeleted -ne $true -and $job.isPaused -ne $true -and $job.isActive -ne $false}
 if($jobTypes){
     $jobs = $jobs | Where-Object {$_.environment.substring(1) -in $jobTypes -or $_.environment -in $jobTypes}
 }
@@ -271,47 +271,78 @@ function expiry($copyRun){
 }
 
 function displaySnapshot($run){
+    $snapshotVisible = $false
     $link = "https://{0}/protection/job/{1}/run/{2}/{3}/protection" -f $vip, $job.id, $run.backupRun.jobRunId, $run.backupRun.stats.startTimeUsecs
     if($run.backupRun.slaViolated){
         $slaStatus = 'Miss'
+        $global:showJob = $true
+        $global:noFailures = $false
+        $snapshotVisible = $true
     }else{
         $slaStatus = 'Pass'
     }
     $runType = $run.backupRun.runType.substring(1).replace('Regular', 'Incremental').Replace('System','Bare Metal')
     $localRun = $run.copyRun | Where-Object {$_.target.type -eq 'kLocal'}
     $expireTime = expiry $localRun
-    $global:message += '<hr /><span class="date";><a href="{0}" target="_blank">{1}</a></span> <span class="runtype">{5}</span> <span class="status";><span class="{2}";>{2}</span></span> <span class="info";>Expires: <span class="expiredate">{3}</span> SLA: </span><span class="{4}";>{4}</span><br />' -f $link, 
-                                                                                                                               ((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString('M/d/yyyy hh:mm tt')),
-                                                                                                                               $run.backupRun.status.subString(1),
-                                                                                                                               $expireTime,
-                                                                                                                               $slaStatus,
-                                                                                                                               $runType
+    $snapshotMessage = '<hr /><span class="date";><a href="{0}" target="_blank">{1}</a></span> <span class="runtype">{5}</span> <span class="status";><span class="{2}";>{2}</span></span> <span class="info";>Expires: <span class="expiredate">{3}</span> SLA: </span><span class="{4}";>{4}</span><br />' -f $link, 
+                                                                                                                                                                                                                                                                                                                ((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString('M/d/yyyy hh:mm tt')),
+                                                                                                                                                                                                                                                                                                                $run.backupRun.status.subString(1),
+                                                                                                                                                                                                                                                                                                                $expireTime,
+                                                                                                                                                                                                                                                                                                                $slaStatus,
+                                                                                                                                                                                                                                                                                                                $runType
+
+
     Write-Host ("{0}Local Snapshot: {1,20} ({2}) Expires: {3,20} SLA: {4}" -f $jobSpacer,
                                                                               (usecsToDate $run.backupRun.stats.startTimeUsecs),
                                                                               $run.backupRun.status.subString(1),
                                                                               $expireTime,
                                                                               $slaStatus)
+    if($run.backupRun.status -ne 'kSuccess'){
+        $snapshotVisible = $true
+        $global:showJob = $true
+        $global:noFailures = $false
+    }
+    if((! $failuresOnly) -or $snapshotVisible){
+        return $snapshotMessage  
+    }else{
+        return $null
+    }                                                           
 }
 
 function displayReplicas($run){
+    $replicaMessage = ""
+    $replicaVisible = $false
     $replicas = $run.copyRun | Where-Object {$_.target.type -eq 'kRemote'}
     foreach($replica in $replicas){
         $expireTime = expiry $replica
-        $global:message += '<span class="remote">{0}</span> <span class="runtype">Replica</span> <span class="status"><span class="{1}";>{1}</span></span> <span class="info">Expires: <span class="expiredate";>{2}</span></span><br />' -f $replica.target.replicationTarget.clusterName, 
+        $replicaMessage += '<span class="remote">{0}</span> <span class="runtype">Replica</span> <span class="status"><span class="{1}";>{1}</span></span> <span class="info">Expires: <span class="expiredate";>{2}</span></span><br />' -f $replica.target.replicationTarget.clusterName, 
                                                                                                                                                   $replica.status.subString(1),
                                                                                                                                                   $expireTime
         Write-Host ("{0}Replication --> {1,20} ({2}) Expires: {3,20}" -f $jobSpacer,
                                                                          $replica.target.replicationTarget.clusterName, 
                                                                          $replica.status.subString(1),
                                                                          $expireTime)
+        if($replica.status -ne 'kSuccess'){
+            $global:showJob = $true
+            $global:noFailures = $false
+            $replicaVisible = $true
+        }
     }
+    if((! $failuresOnly) -or $replicaVisible){
+        return $replicaMessage
+    }else{
+        return $null
+    }
+    
 }
 
 function displayArchives($run){
+    $archiveMessage = ""
+    $archiveVisible = $false
     $archives = $run.copyRun | Where-Object {$_.target.type -eq 'kArchival'}
     foreach($archive in $archives){
         $expireTime = expiry $archive
-        $global:message += '<span class="remote">{0}</span> <span class="runtype">Archive</span> <span class="status"><span class="{1}";>{1}</span></span> <span class="info">Expires: <span class="expiredate";>{2}</span></span><br />' -f $archive.target.archivalTarget.vaultName, 
+        $archiveMessage += '<span class="remote">{0}</span> <span class="runtype">Archive</span> <span class="status"><span class="{1}";>{1}</span></span> <span class="info">Expires: <span class="expiredate";>{2}</span></span><br />' -f $archive.target.archivalTarget.vaultName, 
                                                                                                                                                   $archive.status.subString(1),
                                                                                                                                                   $expireTime
 
@@ -319,127 +350,173 @@ function displayArchives($run){
                                                                          $archive.target.archivalTarget.vaultName, 
                                                                          $archive.status.subString(1),
                                                                          $expireTime)
+        if($archive.status -ne 'kSuccess'){
+            $global:showJob = $true
+            $global:noFailures = $false
+            $replicaVisible = $true
+        }   
     }
+    if((! $failuresOnly) -or $archiveVisible){
+        return $archiveMessage
+    }else{
+        return $null
+    }
+    
+}
+
+function displayObject($task){
+    $msg = ''
+    $objectVisible = $false
+    if($task.base.error){
+        $msg = $task.base.error[0].errorMsg
+        $msgHTML = '<ul><li>{0}</li></ul>' -f $task.base.error[0].errorMsg
+        $objectsVisible = $objectVisible = $true
+    }
+    if($task.base.warnings){
+        $msg = $task.base.warnings[0].errorMsg
+        $msgHTML = '<ul><li>{0}</li></ul>' -f ($task.base.warnings.errorMsg -join "</li><li>")
+        $objectsVisible = $objectVisible = $true
+    }
+    if($objectsVisible){
+        $global:showJob = $true
+        $global:noFailures = $false
+    }
+    if(!($failuresOnly -and $task.base.publicStatus -eq 'kSuccess')){
+        $taskMessage = '<span class="info"> <span class="{1}">{1}</span></span> <span class="objectname">{0}</span><br />' -f $task.base.sources[0].source.displayName, $task.base.publicStatus.subString(1)
+        if($msg -ne ''){
+            $taskMessage += '<div class="message">{0}</div>' -f $msgHTML
+        }
+        write-host ("{0} {1,35} ({2}) {3}" -f $jobSpacer,
+        $task.base.sources[0].source.displayName,
+        $task.base.publicStatus.subString(1),
+        $msg)
+        if($showApps){
+            $taskMessage += displayApps $task
+        }
+    }
+    return $taskMessage
 }
 
 function displayObjects($run){
+    $objectsVisible = $false
     if(! $run.backupRun.snapshotsDeleted){
         $thisRun = api get "/backupjobruns?id=$($job.id)&exactMatchStartTimeUsecs=$($run.backupRun.stats.startTimeUsecs)"
-        $global:message += '<div class="object">'
+        $objectMessage = '<div class="object">'
         foreach($task in $thisRun.backupJobRuns.protectionRuns[0].backupRun.latestFinishedTasks | Sort-Object -Property {$_.base.sources[0].source.displayName}){
-            $msg = ''
-            if($task.base.error){
-                $msg = $task.base.error[0].errorMsg
-                $msgHTML = '<ul><li>{0}</li></ul>' -f $task.base.error[0].errorMsg
-            }
-            if($task.base.warnings){
-                $msg = $task.base.warnings[0].errorMsg
-                $msgHTML = '<ul><li>{0}</li></ul>' -f ($task.base.warnings.errorMsg -join "</li><li>")
-            }
-            if(!($failuresOnly -and $task.base.publicStatus -eq 'kSuccess')){
-                $global:message += '<span class="info"> <span class="{1}">{1}</span></span> <span class="objectname">{0}</span><br />' -f $task.base.sources[0].source.displayName, $task.base.publicStatus.subString(1)
-                if($msg -ne ''){
-                    $global:message += '<div class="message">{0}</div>' -f $msgHTML
-                }
-                "{0} {1,35} ({2}) {3}" -f $jobSpacer,
-                $task.base.sources[0].source.displayName,
-                $task.base.publicStatus.subString(1),
-                $msg
-                if($showApps){
-                displayApps $task
-                }
+            $taskMessage = displayObject $task
+            if($taskMessage){
+                $objectsVisible = $true
+                $objectMessage += $taskMessage
+                $global:showJob = $true
             }
         }
-        $global:message += '</div>'
+        $objectMessage += '</div>'
     }else{
-        $global:message += '<br />'
+        $objectMessage += '<br />'
     }
+    if($objectsVisible){
+        return $objectMessage
+    }else{
+        return $null
+    }
+}
+
+function displayApp($app){
+    $msgHTML = $null
+    if($app.publicStatus -eq 'kSuccess'){
+        $status = '(Success)'
+        $statusHTML = 'Success'
+    }
+    if($app.error){
+        $status = '(Failure) ' + $app.error[0].errorMsg
+        $statusHTML = 'Failure'
+        $msgHTML = '<ul><li>{0}</li></ul>' -f $app.error[0].errorMsg
+        $global:noFailures = $false
+    }
+    if($app.warnings){
+        $status = '(Warning) ' + $app.warnings[0].errorMsg
+        $statusHTML = 'Warning'
+        $msgHTML = '<ul><li>{0}</li></ul>' -f ($app.warnings.errorMsg -join "</li><li>")
+        $global:noFailures = $false
+    }
+    if(!($failuresOnly -and $app.publicStatus -eq 'kSuccess')){
+        $appMessage = '<span class="info"> <span class="{1}">{1}</span></span> <span class="objectname">{0}</span><br />' -f $app.appEntity.displayName, $statusHTML
+        if($msgHTML){
+            $appMessage += '<div class="appmessage">{0}</div>' -f $msgHTML
+        }
+        write-host ("{0} {1,45} {2}" -f $jobSpacer, $app.appEntity.displayName,$status)
+        $global:showJob = $true
+    }
+    return $appMessage
 }
 
 function displayApps($task){
+    $appsVisible = $false
     if($task.PSObject.Properties['appEntityStateVec']){
-        $global:message += '<div class="app">'
+        $appsMessage = '<div class="app">'
         foreach($app in $task.appEntityStateVec | Sort-Object -Property {$_.appEntity.displayName}){
-            $msgHTML = $null
-            if($app.publicStatus -eq 'kSuccess'){
-                $status = '(Success)'
-                $statusHTML = 'Success'
-            }
-            if($app.error){
-                $status = '(Failure) ' + $app.error[0].errorMsg
-                $statusHTML = 'Failure'
-                $msgHTML = '<ul><li>{0}</li></ul>' -f $app.error[0].errorMsg
-            }
-            if($app.warnings){
-                $status = '(Warning) ' + $app.warnings[0].errorMsg
-                $statusHTML = 'Warning'
-                $msgHTML = '<ul><li>{0}</li></ul>' -f ($app.warnings.errorMsg -join "</li><li>")
-            }
-            if(!($failuresOnly -and $app.publicStatus -eq 'kSuccess')){
-                $global:message += '<span class="info"> <span class="{1}">{1}</span></span> <span class="objectname">{0}</span><br />' -f $app.appEntity.displayName, $statusHTML
-                if($msgHTML){
-                    $global:message += '<div class="appmessage">{0}</div>' -f $msgHTML
-                }
-                "{0} {1,45} {2}" -f $jobSpacer, $app.appEntity.displayName,$status
+            $appsMessage += displayApp $app
+            if($appsMessage){
+                $appsVisible = $true
             }
         }
-        $global:message += '</div>'
+        $appsMessage += '</div>'
+    }
+    if($appsVisible){
+        return $appsMessage
+    }else{
+        return $null
     }
 }
 
-$noFailures = $True
+$global:noFailures = $True
+
+if($failuresOnly){
+    $global:showJob = $false
+}else{
+    $global:showJob = $true
+}
 
 foreach($job in $jobs){
+
+    if($failuresOnly){
+        $global:showJob = $false
+    }else{
+        $global:showJob = $true
+    }
+
     if($job.lastRun.backupRun.slaViolated){
         $slaStatus = 'Miss'
     }else{
         $slaStatus = 'Pass'
     }
-    if($job.isDeleted -ne $true -and $job.isPaused -ne $true -and $job.isActive -ne $false){
-        # lastest run summary
-        $divOpen = $false
-        if($job.lastRun){
-            if((! $failuresOnly) -or $job.lastRun.backupRun.PSObject.Properties['warnings'] -or $job.lastRun.backupRun.PSObject.Properties['error']){
-                $noFailures = $false
-                $global:message += '<br /><div class="job"><span>{0}</span><span class="info"> ({1})</span></div>' -f $job.name.ToUpper(), $job.environment.substring(1)
-                "`n{0,$maxLength} ({1})`n" -f $job.name, $job.environment.subString(1)
-                $global:message += '<div class="snapshot">'
-                $divOpen = $True
-                displaySnapshot $job.lastRun
-                displayReplicas $job.lastRun
-                displayArchives $job.lastRun
-                if($showObjects){
-                    displayObjects $job.lastRun
-                }
-            }
-            if((! $lastRunOnly) -and ((! $failuresOnly)  -or $job.lastRun.backupRun.PSObject.Properties['warnings'] -or $job.lastRun.backupRun.PSObject.Properties['error'])){
-                # get runs
-                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs&excludeTasks=true"
-                foreach($run in $runs | Where-Object {$_.backupRun.stats.startTimeUsecs -ne $job.lastRun.backupRun.stats.startTimeUsecs}){
-                    if((! $failuresOnly) -or $run.backupRun.PSObject.Properties['warnings'] -or $run.backupRun.PSObject.Properties['error']){
-                        if(!$divOpen){
-                            $global:message += '<br /><div class="job"><span>{0}</span><span class="info"> ({1})</span></div>' -f $job.name.ToUpper(), $job.environment.substring(1)
-                            "`n{0,$maxLength} ({1})`n" -f $job.name, $job.environment.subString(1)
-                            $global:message += '<div class="snapshot">'
-                            $divOpen = $True
-                        }
-                        displaySnapshot $run
-                        displayReplicas $run
-                        displayArchives $run
-                        if($showObjects){
-                            displayObjects $run
-                        }
-                    }
-                }
-            }
-            if($divOpen){
-                $global:message += '</div>'
+
+    if($job.lastRun){
+        if($lastRunOnly){
+            $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true"
+        }else{
+            $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs&excludeTasks=true"
+        }
+
+        $jobMessage = '<br /><div class="job"><span>{0}</span><span class="info"> ({1})</span></div><div class="snapshot">' -f $job.name.ToUpper(), $job.environment.substring(1)
+        "`n{0,$maxLength} ({1})`n" -f $job.name, $job.environment.subString(1)
+
+        foreach($run in $runs){
+            $jobMessage += displaySnapshot $run
+            $jobMessage += displayReplicas $run
+            $jobMessage += displayArchives $run
+            if($showObjects){
+                $jobMessage += displayObjects $run
             }
         }
+        $jobMessage += '</div>'
+    }
+    if($global:showJob){
+        $global:message += $jobMessage
     }
 }
 
-if($noFailures){
+if($global:noFailures){
     $global:message += '<p class="job" style="color: #008E00; font-weight: 400;">No New Failures or Warnings Detected</p>'
     Write-Host "No failures or warnings detected" -ForegroundColor Green
 }
