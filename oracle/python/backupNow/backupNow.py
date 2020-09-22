@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2020.07.23
+# version 2020.09.22
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -30,6 +30,7 @@ parser.add_argument('-e', '--enable', action='store_true')
 parser.add_argument('-w', '--wait', action='store_true')
 parser.add_argument('-t', '--backupType', type=str, choices=['kLog', 'kRegular', 'kFull'], default='kRegular')
 parser.add_argument('-o', '--objectname', action='append', type=str)
+parser.add_argument('-m', '--metadatafile', type=str, default=None)
 
 args = parser.parse_args()
 
@@ -51,6 +52,7 @@ backupType = args.backupType
 objectnames = args.objectname
 useApiKey = args.useApiKey
 usepolicy = args.usepolicy
+metadatafile = args.metadatafile
 
 if enable is True:
     wait = True
@@ -192,7 +194,8 @@ if objectnames is not None:
 
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
 runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
-if len(runs) > 0:
+
+if len(runs) > 0 and metadatafile is None:
     newRunId = lastRunId = runs[0]['backupRun']['jobRunId']
 
     # wait for existing job run to finish
@@ -217,7 +220,7 @@ if len(runs) > 0:
 else:
     newRunId = lastRunId = 1
 
-# job data
+# job parameters (base)
 jobData = {
     "copyRunTargets": [
         {
@@ -229,29 +232,41 @@ jobData = {
     "runType": backupType
 }
 
+# add objects (non-DB)
 if sourceIds is not None:
-    jobData['sourceIds'] = sourceIds
+    if metadatafile is not None:
+        jobData['runNowParameters'] = []
+        for sourceId in sourceIds:
+            jobData['runNowParameters'].append({"sourceId": sourceId, "physicalParams": {"metadataFilePath": metadatafile}})
+    else:
+        jobData['sourceIds'] = sourceIds
+
+# add objects (DB)
 if len(runNowParameters) > 0:
     jobData['runNowParameters'] = runNowParameters
 
+# use base retention and copy targets from policy
 if usepolicy:
     policy = api('get', 'protectionPolicies/%s' % job['policyId'])
     jobData['copyRunTargets'][0]['daysToKeep'] = policy['daysToKeep']
     if 'snapshotReplicationCopyPolicies' in policy:
         for replica in policy['snapshotReplicationCopyPolicies']:
-            jobData['copyRunTargets'].append({
-                "daysToKeep": replica['daysToKeep'],
-                "replicationTarget": replica['target'],
-                "type": "kRemote"
-            })
+            if replica['target'] not in [p.get('replicationTarget', None) for p in jobData['copyRunTargets']]:
+                jobData['copyRunTargets'].append({
+                    "daysToKeep": replica['daysToKeep'],
+                    "replicationTarget": replica['target'],
+                    "type": "kRemote"
+                })
     if 'snapshotArchivalCopyPolicies' in policy:
         for archive in policy['snapshotArchivalCopyPolicies']:
-            jobData['copyRunTargets'].append({
-                "archivalTarget": archive['target'],
-                "daysToKeep": archive['daysToKeep'],
-                "type": "kArchival"
-            })
+            if archive['target'] not in [p.get('archivalTarget', None) for p in jobData['copyRunTargets']]:
+                jobData['copyRunTargets'].append({
+                    "archivalTarget": archive['target'],
+                    "daysToKeep": archive['daysToKeep'],
+                    "type": "kArchival"
+                })
 else:
+    # or use retention and copy targets specified at the command line
     if replicateTo is not None:
         remote = [remote for remote in api('get', 'remoteClusters') if remote['name'].lower() == replicateTo.lower()]
         if len(remote) > 0:

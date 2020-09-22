@@ -35,16 +35,15 @@ Job finished with status: kSuccess
 Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/protection
 ```
 
-## Basic Parameters
+## Parameters
 
-* -v, --vip: name of Cohesity cluster to connect to
-* -u, --username: short username to authenticate to the cluster
-* -j, --jobname: name of protection job to run
-
-## Optional Parameters
-
+* -v, --vip: name of Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: short username to authenticate to the cluster (default is helios)
 * -d, --domain: active directory domain of user (default is local)
+* -i, --useApiKey: use API key for authentication
+* -j, --jobname: name of protection job to run
 * -o, --objectname: name of object to backup (repeat this parameter for multiple objects)
+* -y, --usepolicy: use base retention and copy targets from protection policy
 * -k, --keepLocalFor: days to keep local snapshot (default is 5 days)
 * -a, --archiveTo: name of archival target to archive to
 * -ka, --keepArchiveFor: days to keep in archive (default is 5 days)
