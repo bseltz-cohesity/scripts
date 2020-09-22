@@ -41,16 +41,14 @@ Running My Job...
 Job finished with status: kSuccess
 ```
 
-## Mandatory Parameters
-
-* -jobName: name of protection job to run
-
-## Optional Parameters
+## Parameters
 
 * -vip: DNS or IP of the Cohesity Cluster
 * -username: Cohesity User Name
 * -domain: - defaults to 'local'
 * -useApiKey: Use API key for authentication
+* -jobName: name of protection job to run
+* -usePolicy: use base retention and copy targets from protection policy
 * -keepLocalFor: days to keep local snapshot (default is 5 days)
 * -archiveTo: name of archival target to archive to
 * -keepArchiveFor: days to keep in archive (default is 5 days)
