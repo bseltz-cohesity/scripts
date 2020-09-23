@@ -18,6 +18,7 @@ param (
     [Parameter()][array]$vmName,  # optional names of vms to expunge (comma separated)
     [Parameter()][string]$vmList = '',  # optional textfile of vms to expunge (one per line)
     [Parameter()][string]$jobName,
+    [Parameter()][int]$olderThan = 0,
     [Parameter()][switch]$delete # delete or just a test run
 )
 
@@ -70,6 +71,8 @@ else {
 
 $remoteClusters = @()
 
+$olderThanUsecs = dateToUsecs (get-date).AddDays(-$olderThan)
+
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
@@ -87,55 +90,57 @@ foreach($vName in $vms){
         $doc = $vm.vmDocument
         if((! $jobName) -or $jobName -eq $doc.jobName){
             foreach($version in $doc.versions){
-                $canDelete = $false
-                $runParameters = @{
-                    "jobRuns" = @(
-                        @{
-                            "copyRunTargets"    = @();
-                            "runStartTimeUsecs" = $version.instanceId.jobStartTimeUsecs;
-                            "jobUid"            = @{
-                                "clusterId"            = $doc.objectId.jobUid.clusterId;
-                                "clusterIncarnationId" = $doc.objectId.jobUid.clusterIncarnationId;
-                                "id"                   = $doc.objectId.jobUid.objectId
-                            };
-                            "sourceIds"         = @(
-                                $doc.objectId.entity.id
-                            )
-                        }
-                    )
-                }
-                foreach($replica in $version.replicaInfo.replicaVec){
-                    if($replica.target.type -eq 1){
-                        $canDelete = $True
-                        $runParameters.jobRuns[0].copyRunTargets += @{
-                            'daysToKeep' = 0;
-                            'type'       = 'kLocal'
-                        }
+                if($version.instanceId.jobStartTimeUsecs -lt $olderThanUsecs){
+                    $canDelete = $false
+                    $runParameters = @{
+                        "jobRuns" = @(
+                            @{
+                                "copyRunTargets"    = @();
+                                "runStartTimeUsecs" = $version.instanceId.jobStartTimeUsecs;
+                                "jobUid"            = @{
+                                    "clusterId"            = $doc.objectId.jobUid.clusterId;
+                                    "clusterIncarnationId" = $doc.objectId.jobUid.clusterIncarnationId;
+                                    "id"                   = $doc.objectId.jobUid.objectId
+                                };
+                                "sourceIds"         = @(
+                                    $doc.objectId.entity.id
+                                )
+                            }
+                        )
                     }
-                    if($replica.target.type -eq 2){
-                        if($replica.target.replicationTarget.clusterName -notin $remoteClusters){
-                            $remoteClusters += $replica.target.replicationTarget.clusterName 
+                    foreach($replica in $version.replicaInfo.replicaVec){
+                        if($replica.target.type -eq 1){
+                            $canDelete = $True
+                            $runParameters.jobRuns[0].copyRunTargets += @{
+                                'daysToKeep' = 0;
+                                'type'       = 'kLocal'
+                            }
                         }
-                    }
-                    if($replica.target.type -eq 3 -and $replica.tartet.archivalTarget.type -eq 0){
-                        $canDelete = $True
-                        $runParameters.jobRuns[0].copyRunTargets += @{
-                            'daysToKeep' = 0;
-                            'type' = 'kArchival';
-                            'archivalTarget' = @{
-                                'vaultName' = $replica.target.archivalTarget.name;
-                                'vaultId'= $replica.target.archivalTarget.vaultId;
-                                'vaultType' = 'kCloud'
+                        if($replica.target.type -eq 2){
+                            if($replica.target.replicationTarget.clusterName -notin $remoteClusters){
+                                $remoteClusters += $replica.target.replicationTarget.clusterName 
+                            }
+                        }
+                        if($replica.target.type -eq 3 -and $replica.tartet.archivalTarget.type -eq 0){
+                            $canDelete = $True
+                            $runParameters.jobRuns[0].copyRunTargets += @{
+                                'daysToKeep' = 0;
+                                'type' = 'kArchival';
+                                'archivalTarget' = @{
+                                    'vaultName' = $replica.target.archivalTarget.name;
+                                    'vaultId'= $replica.target.archivalTarget.vaultId;
+                                    'vaultType' = 'kCloud'
+                                }
                             }
                         }
                     }
-                }
-                if($True -eq $canDelete){
-                    if($delete){
-                        log ("deleting {0} from {1} ({2})" -f $vName, $($doc.jobName), $(usecsToDate $version.instanceId.jobStartTimeUsecs))
-                        $null = api put protectionRuns $runParameters
-                    }else{
-                        log ("found {0} in {1} ({2})" -f $vName, $($doc.jobName), $(usecsToDate $version.instanceId.jobStartTimeUsecs))
+                    if($True -eq $canDelete){
+                        if($delete){
+                            log ("deleting {0} from {1} ({2})" -f $vName, $($doc.jobName), $(usecsToDate $version.instanceId.jobStartTimeUsecs))
+                            $null = api put protectionRuns $runParameters
+                        }else{
+                            log ("found {0} in {1} ({2})" -f $vName, $($doc.jobName), $(usecsToDate $version.instanceId.jobStartTimeUsecs))
+                        }
                     }
                 }
             }

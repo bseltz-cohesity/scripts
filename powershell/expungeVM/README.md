@@ -46,4 +46,5 @@ Please note that there may be some delay before the deletions are reflected in s
 * -vmName: (optional) one or more vm names (comma separated)
 * -vmList: (optional) text file with vm names (one per line)
 * -jobName: (optional) limit search to specific job name (default is all jobs)
+* -olderThan: (optional) only delete snapshots/archives older than X days (defaults to 0)
 * -delete: (optional) if omitted, script will only display what would be deleted
