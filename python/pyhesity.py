@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2020.09.09"""
+"""Cohesity Python REST API Wrapper Module - 2020.10.01"""
 
 ##########################################################################################
 # Change Log
@@ -32,6 +32,7 @@
 # 2020.06.16 - removed ansi codes from error message (Windows didn't display them correctly)
 # 2020.07.10 - added support for tenant impersonation
 # 2020.09.09 - fixed invalid password loop for PWFILE
+# 2020.10.01 - added noretry for password checking
 #
 ##########################################################################################
 # Install Notes
@@ -90,7 +91,7 @@ LOGFILE = os.path.join(SCRIPTDIR, 'pyhesity-debug.log')
 
 
 ### authentication
-def apiauth(vip='helios.cohesity.com', username='helios', domain='local', password=None, updatepw=None, prompt=None, quiet=None, helios=False, useApiKey=False, tenantId=None):
+def apiauth(vip='helios.cohesity.com', username='helios', domain='local', password=None, updatepw=None, prompt=None, quiet=None, helios=False, useApiKey=False, tenantId=None, noretry=False):
     """authentication function"""
     global APIROOT
     global HEADER
@@ -153,7 +154,8 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                     if quiet is None:
                         print(response.json()['message'])
                     if 'invalid username' in response.json()['message'].lower():
-                        apiauth(vip=vip, username=username, domain=domain, password=password, updatepw=True, prompt=prompt, quiet=quiet, helios=helios, useApiKey=useApiKey)
+                        if noretry is False:
+                            apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
 
         except requests.exceptions.RequestException as e:
             __writelog(e)
