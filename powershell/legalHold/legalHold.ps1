@@ -8,7 +8,8 @@ param (
     [Parameter()][switch]$listRuns,
     [Parameter()][int64]$runId,
     [Parameter()][switch]$removeHold,
-    [Parameter()][switch]$addHold
+    [Parameter()][switch]$addHold,
+    [Parameter()][switch]$latest
 )
 
 # source the cohesity-api helper code
@@ -24,8 +25,12 @@ if($job){
     if($listRuns){
         $runs | Select-Object -Property @{label='RunId'; expression={$_.backupRun.jobRunId}}, @{label='RunDate'; expression={usecsToDate $_.backupRun.stats.startTimeUsecs}}
     }else{
-        if($runId){
-            $run = $runs | Where-Object {$_.backupRun.jobRunId -eq $runId}
+        if($runId -or $latest){
+            if($latest){
+                $run = $runs[0]
+            }else{
+                $run = $runs | Where-Object {$_.backupRun.jobRunId -eq $runId}
+            }
             if($run){
                 if($addHold -or $removeHold){
                     if($removeHold){
@@ -59,6 +64,8 @@ if($job){
                     }
                     write-host "$($job.name): $(usecsToDate $run.backupRun.stats.startTimeUsecs): LegalHold = $legalHoldState"
                 }
+            }else{
+                Write-Host "Run not found" -ForegroundColor Yellow
             }
         }
     }

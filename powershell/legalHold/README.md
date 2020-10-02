@@ -58,6 +58,16 @@ Check the hold status of the run:
                 -runId 163093
 ```
 
+Or use the latest run:
+
+```powershell
+./legalHold.ps1 -vip mycluster `
+                -username myusername `
+                -domain mydomain.net `
+                -jobName 'my job' `
+                -latest
+```
+
 Add legal hold:
 
 ```powershell
@@ -87,5 +97,6 @@ Remove legal hold:
 * -domain: (optional) Active Directory domain of user (defaults to local)
 * -jobName: name of the protection job
 * -listRuns: (optional) show available runs
+* -latest: (optional) use latest run
 * -addHold: (optional) add legal hold to the run
 * -removeHold: (optional) remove legal host from the run
