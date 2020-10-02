@@ -34,9 +34,10 @@
 # 2020.07.20 - fixed dateToUsecs for international date formats
 # 2020.07.30 - quiet ssl handler
 # 2020.08.08 - fixed timezone issue
+# 2020.10.02 - set PROMPTFORPASSWORDCHANGE to false
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
-$versionCohesityAPI = '2020.08.08'
+$versionCohesityAPI = '2020.10.02'
 
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
@@ -47,7 +48,7 @@ if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
 $REPORTAPIERRORS = $true
 $REINVOKE = 0
 $MAXREINVOKE = 0
-$PROMPTFORPASSWORDCHANGE = $true
+$PROMPTFORPASSWORDCHANGE = $false
 $TOKENDATE = $null
 
 $pwfile = $(Join-Path -Path $PSScriptRoot -ChildPath YWRtaW4)
@@ -88,7 +89,7 @@ function __writeLog($logmessage){
 
 # authentication functions ========================================================================
 
-function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $password = $null, $tenantId = $null, [switch] $quiet, [switch] $noprompt, [switch] $updatePassword, [switch] $helios, [switch] $useApiKey){
+function apiauth($vip, $username='helios', $domain='local', $passwd=$null, $password = $null, $tenantId = $null, [switch] $quiet, [switch] $noprompt, [switch] $updatePassword, [switch] $helios, [switch] $useApiKey){
     # prompt for vip
     if(-not $vip){
         if($helios){
@@ -105,18 +106,23 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
     }
-    if($password){ $pwd = $password }
+    if($password){ $passwd = $password }
     if($updatePassword){
-        Set-CohesityAPIPassword -vip $vip -username $username -domain $domain
+        $fpasswd = Get-CohesityAPIPasswordFromFile -vip $vip -username $username -domain $domain
+        if($fpasswd){
+            storePasswordInFile  -vip $vip -username $username -domain $domain
+        }else{
+            Set-CohesityAPIPassword -vip $vip -username $username -domain $domain
+        }
     }
     # get password
-    if(!$pwd){
-        $pwd = Get-CohesityAPIPassword -vip $vip -username $username -domain $domain
-        if(!$pwd -and !$noprompt){
+    if(!$passwd){
+        $passwd = Get-CohesityAPIPassword -vip $vip -username $username -domain $domain
+        if(!$passwd -and !$noprompt){
             Set-CohesityAPIPassword -vip $vip -username $username -domain $domain
-            $pwd = Get-CohesityAPIPassword -vip $vip -username $username -domain $domain
+            $passwd = Get-CohesityAPIPassword -vip $vip -username $username -domain $domain
         }
-        if(!$pwd){
+        if(!$passwd){
             Write-Host "No password provided for $username at $vip" -ForegroundColor Yellow
             $global:AUTHORIZED = $false
             break
@@ -126,7 +132,7 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
     $body = ConvertTo-Json @{
         'domain' = $domain;
         'username' = $username;
-        'password' = $pwd
+        'password' = $passwd
     }
 
     $global:__VIP = $vip
@@ -137,7 +143,7 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
     $global:APIROOTv2 = 'https://' + $vip + '/v2/'
     $HEADER = @{'accept' = 'application/json'; 'content-type' = 'application/json'}
     if($useApiKey){
-        $HEADER['apiKey'] = $pwd
+        $HEADER['apiKey'] = $passwd
         $global:HEADER = $HEADER
         $global:AUTHORIZED = $true
         $global:USING_HELIOS = $false
@@ -149,7 +155,7 @@ function apiauth($vip, $username='helios', $domain='local', $pwd=$null, $passwor
         $global:TOKENDATE = dateToUsecs (get-date)
     }elseif($vip -eq 'helios.cohesity.com' -or $helios){
         # Authenticate Helios
-        $HEADER['apiKey'] = $pwd
+        $HEADER['apiKey'] = $passwd
         $URL = 'https://helios.cohesity.com/mcm/clusters/connectionStatus'
         try{
             if($PSVersionTable.Edition -eq 'Core'){
@@ -282,7 +288,7 @@ function apipwd($vip, $username='helios', $domain='local', [switch] $asUser, [sw
     if($username.Contains('@')){
         $username, $domain = $username.Split('@')
     }
-    if($password){ $pwd = $password }
+    if($password){ $passwd = $password }
     if($helios){
         if(!$asUser){
             apiauth -username $username -helios -updatePassword
@@ -290,12 +296,12 @@ function apipwd($vip, $username='helios', $domain='local', [switch] $asUser, [sw
             if($PSVersionTable.Platform -ne 'Unix'){
                 $credential = Get-Credential -Message "Enter Credentials for the Windows User"
     
-                $args = "Write-Host ('running as ' + [System.Security.Principal.WindowsIdentity]::GetCurrent().Name);
+                $cmdargs = "Write-Host ('running as ' + [System.Security.Principal.WindowsIdentity]::GetCurrent().Name);
                 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1);
                 apiauth {0} -helios -updatePassword;
                 pause;" -f $username
 
-                Start-Process powershell.exe -Credential $credential -ArgumentList ("-command $args")
+                Start-Process powershell.exe -Credential $credential -ArgumentList ("-command $cmdargs")
             }else{
                 Write-Host "The -asUser option is only valid for Windows" -ForegroundColor Yellow
             }
@@ -307,12 +313,12 @@ function apipwd($vip, $username='helios', $domain='local', [switch] $asUser, [sw
             if($PSVersionTable.Platform -ne 'Unix'){
                 $credential = Get-Credential -Message "Enter Credentials for the Windows User"
     
-                $args = "Write-Host ('running as ' + [System.Security.Principal.WindowsIdentity]::GetCurrent().Name);
+                $cmdargs = "Write-Host ('running as ' + [System.Security.Principal.WindowsIdentity]::GetCurrent().Name);
                 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1);
                 apiauth -vip {0} -username {1} -domain {2} -updatePassword;
                 pause;" -f $vip, $username, $domain
         
-                Start-Process powershell.exe -Credential $credential -ArgumentList ("-command $args")
+                Start-Process powershell.exe -Credential $credential -ArgumentList ("-command $cmdargs")
             }else{
                 Write-Host "The -asUser option is only valid for Windows" -ForegroundColor Yellow
             }
@@ -464,9 +470,9 @@ function Get-CohesityAPIPassword($vip, $username, $domain='local'){
     if($username.Contains('@')){
         $username, $domain = $username.Split('@')
     }
-    $pwd = Get-CohesityAPIPasswordFromFile -vip $vip -username $username -domain $domain
-    if($pwd){
-        return $pwd
+    $passwd = Get-CohesityAPIPasswordFromFile -vip $vip -username $username -domain $domain
+    if($passwd){
+        return $passwd
     }
     $keyName = "$vip`:$domain`:$username"
     if($PSVersionTable.Platform -eq 'Unix'){
@@ -526,8 +532,8 @@ function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $do
     # prompt for password
     __writeLog "Prompting for Password"
     $secureString = Read-Host -Prompt "Enter password for $domain\$username at $vip" -AsSecureString
-    $pwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
-    $opwd = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($pwd))
+    $passwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
+    $opwd = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($passwd))
 
     $pwlist = Get-Content -Path $pwfile -ErrorAction SilentlyContinue
     $updatedContent = ''
@@ -555,7 +561,7 @@ function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $do
 }
 
 
-function Set-CohesityAPIPassword($vip, $username, $domain='local', $pwd=$null){
+function Set-CohesityAPIPassword($vip, $username, $domain='local', $passwd=$null){
     # prompt for vip
     if(-not $vip){
         __writeLog "Prompting for VIP"
@@ -578,20 +584,20 @@ function Set-CohesityAPIPassword($vip, $username, $domain='local', $pwd=$null){
         $username, $domain = $username.Split('@')
     }
     $keyName = "$vip`:$domain`:$username"
-    if(!$pwd){
+    if(!$passwd){
         __writeLog "Prompting for Password"
         $secureString = Read-Host -Prompt "Enter password for $username at $vip" -AsSecureString
-        $pwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
+        $passwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
     }
     if($PSVersionTable.Platform -eq 'Unix'){
         # Unix
         $keyFile = "$CONFDIR/$keyName"
         $key = New-AesKey 
         $key | Out-File $keyFile
-        Protect-CohesityAPIPassword $key $pwd | Out-File $keyFile -Append
+        Protect-CohesityAPIPassword $key $passwd | Out-File $keyFile -Append
     }else{
         # Windows
-        $securePassword = ConvertTo-SecureString -String $pwd -AsPlainText -Force
+        $securePassword = ConvertTo-SecureString -String $passwd -AsPlainText -Force
         $encryptedPasswordText = $securePassword | ConvertFrom-SecureString
         if(!(Test-Path $registryPath)){
             New-Item -Path $registryPath -Force | Out-Null
