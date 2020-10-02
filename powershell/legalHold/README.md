@@ -97,6 +97,7 @@ Remove legal hold:
 * -domain: (optional) Active Directory domain of user (defaults to local)
 * -jobName: name of the protection job
 * -listRuns: (optional) show available runs
+* -runId: (optional) use specific runId
 * -latest: (optional) use latest run
 * -addHold: (optional) add legal hold to the run
 * -removeHold: (optional) remove legal host from the run
