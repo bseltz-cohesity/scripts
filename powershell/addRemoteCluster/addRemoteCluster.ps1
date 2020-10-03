@@ -10,14 +10,15 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$localVip, #local cluster to connect to
+    [Parameter(Mandatory = $True)][string]$localVip,      #local cluster to connect to
     [Parameter(Mandatory = $True)][string]$localUsername, #local username
-    [Parameter()][string]$localDomain = 'local', #local user domain name
+    [Parameter()][string]$localDomain = 'local',          #local user domain name
     [Parameter()][string]$localStorageDomain = 'DefaultStorageDomain', #local storage domain
-    [Parameter(Mandatory = $True)][string]$remoteVip, #remote cluster to connect to
+    [Parameter(Mandatory = $True)][string]$remoteVip,      #remote cluster to connect to
     [Parameter(Mandatory = $True)][string]$remoteUsername, #remote username
-    [Parameter()][string]$remoteDomain = 'local', #remote user domain name
-    [Parameter()][string]$remoteStorageDomain = 'DefaultStorageDomain' #remote storage domain
+    [Parameter()][string]$remoteDomain = 'local',          #remote user domain name
+    [Parameter()][string]$remoteStorageDomain = 'DefaultStorageDomain', #remote storage domain
+    [Parameter()][switch]$remoteAccess # enable remote access
 )
 
 ### source the cohesity-api helper code
@@ -81,6 +82,11 @@ $remoteToLocal = @{
     'compressionEnabled' = $true;
     'purposeReplication' = $true;
     'purposeRemoteAccess' = $false
+}
+
+if($remoteAccess){
+    $localToRemote.purposeRemoteAccess = $True
+    $remoteToLocal.purposeRemoteAccess = $True
 }
 
 ### join clusters
