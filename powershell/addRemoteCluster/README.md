@@ -31,17 +31,18 @@ If not specified, the script will attempt to pair the default storage domains, (
 ```text
 Connected!
 Connected!
-Added replication partnership awsce -> BSeltzVE01
-Added replication partnership awsce <- BSeltzVE01
+Added replication partnership cohesity1 -> cohesity2
+Added replication partnership cohesity2 <- cohesity1
 ```
 
 ## Parameters
 
-* -vip: Cohesity Cluster to connect to
-* -username: Cohesity username
-* -domain: (optional) Active Directory domain of user (defaults to local)
+* -localVip: Cohesity Cluster to connect to
+* -localUsername: Cohesity username
+* -localDomain: (optional) Active Directory domain of user (defaults to local)
 * -localStorageDomain: (optional) local storage domain or pairing (defaults to DefaultStorageDomain)
 * -remoteVip: remote cluster to pair for replication
 * -remoteUsername: username to connect to the remote cluster
 * -remoteDomain: (optional) remote user domain name (defaults to local)
-* -remoteStorageDomain: = (optional) remote storage domain or pairing (defaults to DefaultStorageDomain)
+* -remoteStorageDomain: (optional) remote storage domain or pairing (defaults to DefaultStorageDomain)
+* -remoteAccess: enable remote access
