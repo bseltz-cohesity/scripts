@@ -22,6 +22,12 @@ param (
     [Parameter()][switch]$delete # delete or just a test run
 )
 
+# source the cohesity-api helper code
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -password $password
+
 # gather list of vms to expunge
 
 $vms = @()
@@ -72,12 +78,6 @@ else {
 $remoteClusters = @()
 
 $olderThanUsecs = dateToUsecs (get-date).AddDays(-$olderThan)
-
-# source the cohesity-api helper code
-. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
-
-# authenticate
-apiauth -vip $vip -username $username -domain $domain -password $password
 
 foreach($vName in $vms){
     $vName = [string]$vName
