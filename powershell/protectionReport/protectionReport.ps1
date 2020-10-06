@@ -22,7 +22,8 @@ param (
     [Parameter()][string]$smtpPort = 25,  # outbound smtp port
     [Parameter()][array]$sendTo,  # send to address
     [Parameter()][string]$sendFrom,  # send from address
-    [Parameter()][string]$outPath  # folder to write output file
+    [Parameter()][string]$outPath,  # folder to write output file
+    [Parameter()][switch]$skipLogBackups
 )
 
 if($showApps){
@@ -493,11 +494,18 @@ foreach($job in $jobs){
 
     if($job.lastRun){
         if($lastRunOnly){
-            $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true"
+            if($skipLogBackups){
+                $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true&runTypes=kRegular&runTypes=kFull"
+            }else{
+                $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true"
+            }
         }else{
-            $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs&excludeTasks=true"
+            if($skipLogBackups){
+                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs&excludeTasks=true&runTypes=kRegular&runTypes=kFull"
+            }else{
+                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs&excludeTasks=true"
+            }   
         }
-
         $jobMessage = '<br /><div class="job"><span>{0}</span><span class="info"> ({1})</span></div><div class="snapshot">' -f $job.name.ToUpper(), $job.environment.substring(1)
         "`n{0,$maxLength} ({1})`n" -f $job.name, $job.environment.subString(1)
 

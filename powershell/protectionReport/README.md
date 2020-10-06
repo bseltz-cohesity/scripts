@@ -58,6 +58,7 @@ To show only failures and warnings:
 * -jobTypes: (optional) filter by job type (SQL, ORacle, VMWare, etc)
 * -failuresOnly: (optional) only include latest runs of jobs with errors or warnings
 * -lastRunOnly: (optional) only include the latest runs
+* -skipLogBackups: (optional) show only full/incremental backups
 * -showObjects: (optional) show objects in jobs
 * -showApps: (optional) show apps in objects
 * -smtpServer: (optional) SMTP gateway to forward email through
