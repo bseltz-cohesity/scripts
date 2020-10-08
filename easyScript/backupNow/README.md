@@ -61,6 +61,7 @@ Once the password is stored, create a new zip file of all the files in the folde
 * -kr, --keepReplicaFor: days to keep replica for (default is 5 days)
 * -e, --enable: enable a paused job before running, then disable when done
 * -w, --wait: wait for backup run to complete and report result
+* -s, --waitforstart: wait for existing job run to complete before starting
 * -t, --backupType: choose one of kRegular, kFull or kLog backup types. Default is kRegular (incremental)
 
 ## Using -o (--objectname) Parameter
