@@ -281,25 +281,28 @@ function extendAndArchiveSnapshot($run, $keepDays, $archiveDays, $extendType){
     if($extendType -eq 'daily'){
         $daysToExtend = 0
     }
-    if("$($runDate.Year)-$($runDate.DayOfYear)-$($run.jobId)" -notin $global:processedExtensions){
-        if($daysToExtend -ne 0){
-            $runParameters.jobRuns[0].copyRunTargets += @{
-                "daysToKeep" = [int] $daysToExtend;
-                "type" = "kLocal"
-            }
-            if($commit){
-                "  $runDate - extending to $newExpireDate ($extendType)" | Tee-Object -FilePath $logfile -Append | write-host -ForegroundColor Green
-                $editRun = $True
+    if($keepDays -ne 0){
+        if("$($runDate.Year)-$($runDate.DayOfYear)-$($run.jobId)" -notin $global:processedExtensions){
+            if($daysToExtend -ne 0){
+                $runParameters.jobRuns[0].copyRunTargets += @{
+                    "daysToKeep" = [int] $daysToExtend;
+                    "type" = "kLocal"
+                }
+                if($commit){
+                    "  $runDate - extending to $newExpireDate ($extendType)" | Tee-Object -FilePath $logfile -Append | write-host -ForegroundColor Green
+                    $editRun = $True
+                }else{
+                    "  $runDate - would extend to $newExpireDate ($extendType)" | Tee-Object -FilePath $logfile -Append | write-host -ForegroundColor Green
+                }  
             }else{
-                "  $runDate - would extend to $newExpireDate ($extendType)" | Tee-Object -FilePath $logfile -Append | write-host -ForegroundColor Green
-            }  
-        }else{
-            if($extendType -ne 'daily'){
-                "  $runDate - already extended to $newExpireDate ($extendType)" | Tee-Object -FilePath $logfile -Append | write-host -ForegroundColor Green
+                if($extendType -ne 'daily'){
+                    "  $runDate - already extended to $newExpireDate ($extendType)" | Tee-Object -FilePath $logfile -Append | write-host -ForegroundColor Green
+                }
             }
+            $global:processedExtensions += "$($runDate.Year)-$($runDate.DayOfYear)-$($run.jobId)"
         }
-        $global:processedExtensions += "$($runDate.Year)-$($runDate.DayOfYear)-$($run.jobId)"
     }
+
     if($archiveDays -gt 0){
         # select vault
         if($extendType -eq 'yearly'){
