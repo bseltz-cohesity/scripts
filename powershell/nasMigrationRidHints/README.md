@@ -46,7 +46,8 @@ View Protection Job: netapp7-vol0-backup
 View Name: netapp7-vol0
 NAS Job ID: 137404
 NAS Entity: \\netapp7.seltzer.net\vol0
-Replication ID: 51211479
+Replication ID: 51211474 (VE3)
+Replication ID: 51211479 (VE4)
 
 iris_cli cluster update-gflag gflag-name=bridge_madrox_ancestor_rid_hint gflag-value="dummy:dummy:dummy:1,netapp7-vol0-backup:netapp7-vol0:VE3:51211474,netapp7-vol0-backup:netapp7-vol0:VE4:51211479" reason="madrox seed" effective-now=true service-name=bridge
 
@@ -56,7 +57,8 @@ View Protection Job: netapp7-scripts-backup
 View Name: netapp7-scripts
 NAS Job ID: 137404
 NAS Entity: \\netapp7.seltzer.net\scripts
-Replication ID: 51211480
+Replication ID: 51211475 (VE3)
+Replication ID: 51211480 (VE4)
 
 iris_cli cluster update-gflag gflag-name=bridge_madrox_ancestor_rid_hint gflag-value="dummy:dummy:dummy:1,netapp7-scripts-backup:netapp7-scripts:VE3:51211475,netapp7-scripts-backup:netapp7-scripts:VE4:51211480" reason="madrox seed" effective-now=true service-name=bridge
 
