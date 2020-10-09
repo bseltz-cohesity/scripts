@@ -32,8 +32,7 @@ First, run the script WITHOUT the -commit switch to see what snapshots would be 
 ./nasMigrationRidHints.ps1 -vip mycluster `
                            -username myuser `
                            -domain mydomain.net `
-                           -daysAgo 1 `
-                           -remoteCluster othercluster
+                           -daysAgo 1
 ```
 
 The output will look something like this:
@@ -43,23 +42,23 @@ Connected!
 
 --------
 
-View Protection Job: ntap7-vol0-backups
-View Name: ntap7-vol0
+View Protection Job: netapp7-vol0-backup
+View Name: netapp7-vol0
 NAS Job ID: 137404
 NAS Entity: \\netapp7.seltzer.net\vol0
-Replication ID: 49940811
+Replication ID: 51211479
 
-iris_cli cluster update-gflag gflag-name=bridge_madrox_ancestor_rid_hint gflag-value="dummy:dummy:1,ntap7-vol0-backups:ntap7-vol0:49940811" reason="madrox seed" effective-now=true service-name=bridge
+iris_cli cluster update-gflag gflag-name=bridge_madrox_ancestor_rid_hint gflag-value="dummy:dummy:dummy:1,netapp7-vol0-backup:netapp7-vol0:VE3:51211474,netapp7-vol0-backup:netapp7-vol0:VE4:51211479" reason="madrox seed" effective-now=true service-name=bridge
 
 --------
 
-View Protection Job: ntap7-scripts-backup
-View Name: ntap7-scripts
+View Protection Job: netapp7-scripts-backup
+View Name: netapp7-scripts
 NAS Job ID: 137404
 NAS Entity: \\netapp7.seltzer.net\scripts
-Replication ID: 49940812
+Replication ID: 51211480
 
-iris_cli cluster update-gflag gflag-name=bridge_madrox_ancestor_rid_hint gflag-value="dummy:dummy:1,ntap7-scripts-backup:ntap7-scripts:49940812" reason="madrox seed" effective-now=true service-name=bridge
+iris_cli cluster update-gflag gflag-name=bridge_madrox_ancestor_rid_hint gflag-value="dummy:dummy:dummy:1,netapp7-scripts-backup:netapp7-scripts:VE3:51211475,netapp7-scripts-backup:netapp7-scripts:VE4:51211480" reason="madrox seed" effective-now=true service-name=bridge
 
 --------
 
@@ -76,4 +75,3 @@ You can then apply the gflag change and perform the initial replication of the p
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain of user (defaults to local)
 * -daysAgo: (optional) number of days back to search for recoveries (default is 1)
-* -remoteCluster: name of replica cluster
