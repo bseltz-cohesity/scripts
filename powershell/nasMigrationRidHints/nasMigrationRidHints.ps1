@@ -50,6 +50,8 @@ foreach($task in $restoreTasks){
                 $replTasks = $jobRun.backupJobRuns.protectionRuns[0].copyRun.finishedTasks | Where-Object {$_.snapshotTarget.type -eq 2}
                 $subTasks = $replTasks.finishedCopySubTasks | Where-Object {$_.entity.displayName -eq $entityName}
 
+                "--------`n`nView Protection Job: {0}`nView Name: {1}`nNAS Job ID: {2}`nNAS Entity: {3}" -f $viewProtectionJobName, $viewName, $jobId, $entityName | Tee-Object -FilePath ".\nasMigrationReport.txt" -Append
+
                 # construct the gflag value
                 $gflagValue = "dummy:dummy:dummy:1"
 
@@ -58,11 +60,12 @@ foreach($task in $restoreTasks){
                     $remoteCluster = $subTask.snapshotTarget.replicationTarget.clusterName
                     $entry = ",{0}:{1}:{2}:{3}" -f $viewProtectionJobName, $viewName, $remoteCluster, $rid
                     $gflagValue += $entry
+                    "Replication ID: {0} ({1})" -f $rid, $remoteCluster | Tee-Object -FilePath ".\nasMigrationReport.txt" -Append
                 }
 
                 # output the gflag syntax
                 $irisCmd = "iris_cli cluster update-gflag gflag-name=bridge_madrox_ancestor_rid_hint gflag-value=""$gflagValue"" reason=""madrox seed"" effective-now=true service-name=bridge"
-                "--------`n`nView Protection Job: {0}`nView Name: {1}`nNAS Job ID: {2}`nNAS Entity: {3}`nReplication ID: {4}`n`n{5}`n" -f $viewProtectionJobName, $viewName, $jobId, $entityName, $rid, $irisCmd | Tee-Object -FilePath ".\nasMigrationReport.txt" -Append
+                "`n{0}`n" -f $irisCmd | Tee-Object -FilePath ".\nasMigrationReport.txt" -Append
 
             }else{
                 Write-Host "View $viewName not found" -ForegroundColor Yellow
