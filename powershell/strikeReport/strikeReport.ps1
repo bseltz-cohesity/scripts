@@ -174,15 +174,15 @@ foreach($job in $jobs | Sort-Object -Property name){
         if($runCount -lt $thisSlurp){
             $thisSlurp = $runCount
         }
-        $startTimeUsecs = $runs.backupJobRuns.protectionRuns[$runNum + $thisSlurp].copyRun[0].runStartTimeUsecs
-        $endTimeUsecs = $($runs.backupJobRuns.protectionRuns[$runNum].copyRun[0].endTimeUsecs)
-        if($endTimeUsecs -ne 0){
+        $startTimeUsecs = $runs.backupJobRuns.protectionRuns[$runNum + $thisSlurp].backupRun.base.startTimeUsecs
+        $endTimeUsecs = $($runs.backupJobRuns.protectionRuns[$runNum].backupRun.base.endTimeUsecs)
+        if($endTimeUsecs -ge 0){
             $theseRuns = api get "/backupjobruns?startTimeUsecs=$startTimeUsecs&endTimeUsecs=$endTimeUsecs&numRuns=$slurp&id=$($job.id)"
         }else{
             $theseRuns = api get "/backupjobruns?startTimeUsecs=$startTimeUsecs&numRuns=$slurp&id=$($job.id)"
         }
         foreach($protectionRun in $theseRuns.backupJobRuns.protectionRuns){
-            $runStartTimeUsecs = $protectionRun.copyRun[0].runStartTimeUsecs
+            $runStartTimeUsecs = $protectionRun.backupRun.base.startTimeUsecs
             foreach($task in $protectionRun.backupRun.latestFinishedTasks){
                 $objName = $task.base.sources[0].source.displayName
                 # add object to allObjects list
