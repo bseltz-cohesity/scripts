@@ -1,7 +1,7 @@
-# . . . . . . . . . . . . . . . . . . . . . . . .
-#  Unofficial PowerShell Module for Cohesity API
-#  version 2020.08.08 - Brian Seltzer - Aug 08, 2020
-# . . . . . . . . . . . . . . . . . . . . . . . .
+# . . . . . . . . . . . . . . . . . . .
+#  PowerShell Module for Cohesity API
+#  Version 2020.10.13 - Brian Seltzer
+# . . . . . . . . . . . . . . . . . . .
 #
 # 0.06 - Consolidated Windows and Unix versions - June 2018
 # 0.07 - Added saveJson, loadJson and json2code utility functions - Feb 2019
@@ -35,9 +35,12 @@
 # 2020.07.30 - quiet ssl handler
 # 2020.08.08 - fixed timezone issue
 # 2020.10.02 - set PROMPTFORPASSWORDCHANGE to false
+# 2020.10.05 - retired REINVOKE
+# 2020.10.06 - exit script when attempting unauthenticated api call
+# 2020.10.13 - fixed timeAgo function for i14n
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
-$versionCohesityAPI = '2020.10.02'
+$versionCohesityAPI = '2020.10.13'
 
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
@@ -46,10 +49,8 @@ if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
 }
 
 $REPORTAPIERRORS = $true
-$REINVOKE = 0
-$MAXREINVOKE = 0
 $PROMPTFORPASSWORDCHANGE = $false
-$TOKENDATE = $null
+$COHESITY_PROMPTS = $false
 
 $pwfile = $(Join-Path -Path $PSScriptRoot -ChildPath YWRtaW4)
 $apilogfile = $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api-debug.log)
@@ -95,9 +96,11 @@ function apiauth($vip, $username='helios', $domain='local', $passwd=$null, $pass
         if($helios){
             $vip = 'helios.cohesity.com'
         }else{
-            __writeLog "prompting for VIP"
-            Write-Host 'VIP: ' -foregroundcolor green -nonewline
-            $vip = Read-Host
+            if($COHESITY_PROMPTS){
+                __writeLog "prompting for VIP"
+                Write-Host 'VIP: ' -foregroundcolor green -nonewline
+                $vip = Read-Host
+            }
             if(-not $vip){Write-Host 'vip is required' -foregroundcolor red; break}
         }
     }
@@ -151,8 +154,9 @@ function apiauth($vip, $username='helios', $domain='local', $passwd=$null, $pass
         $cluster = api get cluster
         if($cluster){
             if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
+        }else{
+            $global:AUTHORIZED = $false
         }
-        $global:TOKENDATE = dateToUsecs (get-date)
     }elseif($vip -eq 'helios.cohesity.com' -or $helios){
         # Authenticate Helios
         $HEADER['apiKey'] = $passwd
@@ -170,8 +174,8 @@ function apiauth($vip, $username='helios', $domain='local', $passwd=$null, $pass
             $global:CLUSTERREADONLY = $false
             $global:USING_HELIOS = $true
             if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
-            $global:TOKENDATE = dateToUsecs (get-date)
         }catch{
+            $global:AUTHORIZED = $false
             __writeLog $_.ToString()
             if($_.ToString().contains('"message":')){
                 Write-Host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
@@ -213,8 +217,8 @@ function apiauth($vip, $username='helios', $domain='local', $passwd=$null, $pass
                 $global:HEADER['x-impersonate-tenant-id'] = "$tenantId/"
             }
             if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
-            $global:TOKENDATE = dateToUsecs (get-date)
         }catch{
+            $global:AUTHORIZED = $false
             __writeLog $_.ToString()
             $global:AUTHORIZED = $false
             if($REPORTAPIERRORS){
@@ -341,7 +345,10 @@ $methods = 'get', 'post', 'put', 'delete'
 function api($method, $uri, $data, $version=1, [switch]$v2){
     if (-not $global:AUTHORIZED){ 
         if($REPORTAPIERRORS){
-            Write-Host 'Please use apiauth to connect to a cohesity cluster' -foregroundcolor yellow
+            Write-Host 'Not authenticated to a cohesity cluster' -foregroundcolor yellow
+            if($MyInvocation.PSCommandPath){
+                exit 1
+            }
         }
     }elseif(-not $global:CLUSTERSELECTED){
         if($REPORTAPIERRORS){
@@ -377,36 +384,16 @@ function api($method, $uri, $data, $version=1, [switch]$v2){
             }else{
                 $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER
             }
-            $global:REINVOKE = 0
             return $result
         }catch{
             __writeLog $_.ToString()
-            if($REPORTAPIERRORS -and $global:REINVOKE -ge $MAXREINVOKE){
+            if($REPORTAPIERRORS){
                 if($_.ToString().contains('"message":')){
                     Write-Host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
                 }else{
                     Write-Host $_.ToString() -foregroundcolor yellow
                 }
-            }
-            if($global:REINVOKE -lt $MAXREINVOKE){
-                $global:REINVOKE += 1
-                if($REPORTAPIERRORS){
-                    if($_.ToString().contains('"message":')){
-                        Write-Host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
-                    }else{
-                        Write-Host $_.ToString() -foregroundcolor yellow
-                    }
-                }
-                $tokenAge = (dateToUsecs (get-date)) - $global:TOKENDATE
-                if($tokenAge -ge 86400000000){
-                    Write-Host "auth token expired - reauthenticating..."
-                    $hcluster = $global:SELECTEDHELIOSCLUSTER
-                    apiauth -vip $global:__VIP -username $global:__USERNAME -domain $global:__DOMAIN -quiet
-                    if($hcluster){ heliosCluster $hcluster -quiet}
-                }
-                start-sleep 5
-                api $method $uri $data
-            }              
+            }            
         }
     }
 }
@@ -436,7 +423,7 @@ function fileDownload($uri, $fileName){
 # date functions ==================================================================================
 
 function timeAgo([int64] $age, [string] $units){
-    $currentTime = ([Math]::Floor([decimal](Get-Date(Get-Date).ToUniversalTime()-uformat "%s")))*1000000
+    $currentTime = [int64](((get-date).ToUniversalTime())-([datetime]"1970-01-01 00:00:00")).TotalSeconds*1000000
     $secs=@{'seconds'= 1; 'sec'= 1; 'secs' = 1;
             'minutes' = 60; 'min' = 60; 'mins' = 60;
             'hours' = 3600; 'hour' = 3600; 
