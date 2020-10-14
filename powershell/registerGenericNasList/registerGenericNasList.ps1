@@ -14,14 +14,17 @@ param (
     [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
     [Parameter()][string]$domain = 'local', #local or AD domain
     [Parameter(Mandatory = $True)][string]$nasList, #protection source name of the netapp
-    [Parameter()][string]$smbUserName = '' #name of the svm (child of the netapp)
+    [Parameter()][string]$smbUserName = '', #name of the svm (child of the netapp)
+    [Parameter()][string]$smbPassword
  )
 
 if ($smbUserName -ne ''){
-    $securePassword = Read-Host -Prompt "Please enter password for $smbUserName" -AsSecureString
-    $cred = New-Object -TypeName System.Net.NetworkCredential
-    $cred.SecurePassword = $securePassword
-    $smbPassword = $cred.Password
+    if(! $smbPassword){
+        $securePassword = Read-Host -Prompt "Please enter password for $smbUserName" -AsSecureString
+        $cred = New-Object -TypeName System.Net.NetworkCredential
+        $cred.SecurePassword = $securePassword
+        $smbPassword = $cred.Password
+    }
 }
 
 $pathList = Get-Content $nasList
