@@ -10,14 +10,16 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
-    [Parameter()][string]$domain = 'local', #local or AD domain
-    [Parameter(Mandatory = $True)][string]$nasList, #protection source name of the netapp
-    [Parameter()][string]$smbUserName = '', #name of the svm (child of the netapp)
-    [Parameter()][string]$smbPassword
+    [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
+    [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
+    [Parameter()][string]$domain = 'local', # local or AD domain
+    [Parameter()][array]$mountPoint, # nas path to register (comma separated)
+    [Parameter()][string]$nasList, # text file of nas paths to register (one per line)
+    [Parameter()][string]$smbUserName = '', # username to register smb paths
+    [Parameter()][string]$smbPassword # password to register smb paths
  )
 
+# prompt for smb password if needed
 if ($smbUserName -ne ''){
     if(! $smbPassword){
         $securePassword = Read-Host -Prompt "Please enter password for $smbUserName" -AsSecureString
@@ -27,17 +29,30 @@ if ($smbUserName -ne ''){
     }
 }
 
-$pathList = Get-Content $nasList
+# gather path list
+$pathList = @()
+if($nasList -and (Test-Path $nasList -PathType Leaf)){
+    $pathList += Get-Content $nasList | Where-Object {$_ -ne ''}
+}elseif($nasList){
+    Write-Warning "File $nasList not found!"
+    exit 1
+}
+if($mountPoint){
+    $pathList += $mountPoint
+}
+if($pathList.Length -eq 0){
+    Write-Host "No nas paths specified"
+    exit 1
+}
 
 ### source the cohesity-api helper code
-. ./cohesity-api
-
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
 
 foreach ($nasPath in $pathList) {
-    $nasPath = $nasPath.ToString()
+    $nasPath = [string]$nasPath
     $newSource = @{}
 
     if ($nasPath.Contains('\')) {

@@ -33,6 +33,7 @@ Place both files in a folder together and run the main script like so:
 * -vip: Cohesity cluster to connect to
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain (defaults to 'local')
-* -nasList: path to text file containing list of NAS shares to register
+* -mountPoint: (optional) nas mount points to register (comma separated)
+* -nasList: (optional) text file containing list of mount points to register (one per line)
 * -smbUserName: (optional) SMB username to connect to SMB shares, e.g. mydomain\myusername
 * -smbPassword: (optional) SMB password to connect to SMB shares (will be prompted if necessary)
