@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This powershell script archives the latest local snapshot to an external target.
+This powershell script archives the oldest local snapshot that matches the specified criteria to an external target.
 
 ## Download the script
 
@@ -30,7 +30,8 @@ Place both files in a folder together, then we can run the script like so:
                  -domain mydomain.net `
                  -jobNames 'NAS Backup', 'SQL Backup' `
                  -vault s3 `
-                 -keepFor 180
+                 -keepFor 180 `
+                 -commit
 ```
 
 ```text
@@ -53,6 +54,8 @@ SQL Backup (04/17/2020 23:00:01) --> S3 (07/16/2020 23:00:01)
 * -keepFor: number of days (from original backup date) to retain the archive
 * -pastSearchDays: (optional) number of days back to seach for snapshots to archive (default is 31)
 * -maxDrift: (optional) if snapshot failed on desired day, try the next X days (default is 3)
+* -localOnly: (optional) archive only jobs local to this cluster
+* -commit: (optional) execute the archive tasks (default is to show what would happen)
 
 ## Running and Scheduling PowerShell Scripts
 
