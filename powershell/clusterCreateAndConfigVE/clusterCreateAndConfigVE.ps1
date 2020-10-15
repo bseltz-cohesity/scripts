@@ -12,7 +12,8 @@ param (
     [Parameter(Mandatory = $True)][string]$pwd,           # new admin password
     [Parameter(Mandatory = $True)][string]$adminEmail,    # admin email address
     [Parameter(Mandatory = $True)][string]$adDomain,      # AD domain to join
-    [Parameter(Mandatory = $True)][string]$preferredDC,   # preferred domain controller
+    [Parameter(Mandatory = $True)][array]$preferredDC,   # preferred domain controller
+    [Parameter()][string]$adOu = 'Computers',             # canonical name of container/OU
     [Parameter(Mandatory = $True)][string]$adAdmin,       # AD admin account name
     [Parameter(Mandatory = $True)][string]$adPwd,         # AD admin password
     [Parameter(Mandatory = $True)][string]$adAdminGroup,  # AD admin group to add
@@ -135,11 +136,7 @@ $cluster = api get cluster
 
 $adParams = @{
     "domainName" = $adDomain;
-    "preferredDomainControllers" = @(
-        @{
-            "name" = $preferredDC
-        }
-    );
+    "preferredDomainControllers" = @();
     "machineAccounts" = @(
         @{
             "name" = $cluster.name
@@ -150,12 +147,24 @@ $adParams = @{
         "username" = $adAdmin;
         "password" = $adPwd
     };
+    "organizationalUnitName" = $adOu;
     "trustedDomainParams" = @{
         "enabled" = $false
     }
 }
 
+foreach($dc in $preferredDC){
+    $adParams.preferredDomainControllers += @{"name" = $dc}
+}
+
 $null = api post active-directories $adParams -v2
+
+# set fqdn
+"Setting FQDN..."
+$vlan = api get vlans | Where-Object id -eq 0
+$vlan.hostname = "{0}.{1}" -f $clusterName, $clusterDomain
+delApiProperty -object $vlan.subnet -name netmaskBits
+$null = api put vlans/0 $vlan
 
 # timezone and documentation
 "Setting timezone..."
@@ -198,7 +207,7 @@ $supportCreds = @{
 }
 
 $null = api put users/linuxPassword $supportCreds
-$null = api put users/linuxSupportUserSudoAccess @{"sudoAccessEnable" = $false}
+$null = api put users/linuxSupportUserSudoAccess @{"sudoAccessEnable" = $True}
 
 # critical alerts
 "Configuring critial alert recipients..."
