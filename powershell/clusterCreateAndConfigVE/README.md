@@ -52,7 +52,8 @@ Place the files in a folder together, and modify the example script to fit your 
 * -pwd: new admin password
 * -adminEmail: admin email address
 * -adDomain: AD domain to join
-* -preferredDC: preferred domain controller
+* -adOu: canonical path of container/OU to create computer account (e.g. Servers/Cohesity)
+* -preferredDC: preferred domain controller(s) (comma separated)
 * -adAdmin: AD admin account name
 * -adPwd: AD admin password
 * -adAdminGroup: AD admin group to add
