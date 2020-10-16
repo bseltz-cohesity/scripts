@@ -1,4 +1,4 @@
-# version 2020.07.10
+# version 2020.08.17
 # usage: ./backedUpFileList.ps1 -vip mycluster \
 #                               -username myuser \
 #                               -domain mydomain.net \
@@ -19,11 +19,14 @@ param (
     [Parameter(Mandatory = $True)][string]$sourceServer, # source server
     [Parameter(Mandatory = $True)][string]$jobName, # narrow search by job name
     [Parameter()][switch]$showVersions,
+    [Parameter()][switch]$listFiles,
     [Parameter()][datetime]$start,
     [Parameter()][datetime]$end,
     [Parameter()][Int64]$runId,
     [Parameter()][datetime]$fileDate
 )
+
+$volumeTypes = @(1, 6)
 
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -34,66 +37,6 @@ if($useApiKey){
 }else{
     apiauth -vip $vip -username $username -domain $domain -password $password
 }
-
-$searchResults = api get "/searchvms?entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAWSSnapshotManager&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kFlashBlade&entityTypes=kGCP&entityTypes=kGenericNas&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kIsilon&entityTypes=kKVM&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware&vmName=$sourceserver"
-$searchResults = $searchResults.vms | Where-Object {$_.vmDocument.objectName -eq $sourceServer}
-
-# narrow search by job name
-$searchResults = $searchResults | Where-Object {$_.vmDocument.jobName -eq $jobName}
-
-if(!$searchResults){
-    Write-Host "$sourceServer is not protected by $jobName" -ForegroundColor Yellow
-    exit 1
-}
-
-$searchResult = ($searchResults | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
-
-$doc = $searchResult.vmDocument
-
-# show versions
-if($showVersions -or $start -or $end){
-    if($start){
-        $doc.versions = $doc.versions | Where-Object {$start -le (usecsToDate ($_.snapshotTimestampUsecs))}
-    }
-    if($end){
-        $doc.versions = $doc.versions | Where-Object {$end -ge (usecsToDate ($_.snapshotTimestampUsecs))}
-    }
-    $doc.versions | Select-Object -Property @{label='runId'; expression={$_.instanceId.jobInstanceId}}, @{label='runDate'; expression={usecsToDate $_.instanceId.jobStartTimeUsecs}}
-    exit 0
-}
-
-# select version
-if($runId){
-    # select version with matching runId
-    $version = ($doc.versions | Where-Object {$_.instanceId.jobInstanceId -eq $runId})
-    if(! $version){
-        Write-Host "Job run ID $runId not found" -ForegroundColor Yellow
-        exit 1
-    }
-}elseif($fileDate){
-    # select version just after requested date
-    $version = ($doc.versions | Where-Object {$fileDate -le (usecsToDate ($_.snapshotTimestampUsecs))})[-1]
-    if(! $version){
-        $version = $doc.versions[0]
-    }
-}else{
-    # just use latest version
-    $version = $doc.versions[0]
-}
-
-$versionDate = (usecsToDate $version.instanceId.jobStartTimeUsecs).ToString('yyyy-MM-dd_hh-mm-ss')
-
-$outputfile = "backedUpFiles-$($sourceServer)-$versionDate.txt"
-
-$instance = "attemptNum={0}&clusterId={1}&clusterIncarnationId={2}&entityId={3}&jobId={4}&jobInstanceId={5}&jobStartTimeUsecs={6}&jobUidObjectId={7}" -f
-            $version.instanceId.attemptNum,
-            $doc.objectId.jobUid.clusterId,
-            $doc.objectId.jobUid.clusterIncarnationId,
-            $doc.objectId.entity.id,
-            $doc.objectId.jobId,
-            $version.instanceId.jobInstanceId,
-            $version.instanceId.jobStartTimeUsecs,
-            $doc.objectId.jobUid.objectId
 
 function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null){
     $thisDirPath = [System.Web.HttpUtility]::UrlEncode($dirPath)
@@ -113,17 +56,93 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
     }
 }
 
-$volumeTypes = @(1, 6)
-$backupType = $doc.backupType
-if($backupType -in $volumeTypes){
-    $volumeList = api get "/vm/volumeInfo?$instance&statFileEntries=false"
-    if($volumeList.PSObject.Properties['volumeInfos']){
-        $volumeInfoCookie = $volumeList.volumeInfoCookie
-        foreach($volume in $volumeList.volumeInfos | Sort-Object -Property name){
-            $volumeName = [System.Web.HttpUtility]::UrlEncode($volume.name)
-            listdir '/' $instance $volumeInfoCookie $volumeName
+function showFiles($doc, $version){
+    $versionDate = (usecsToDate $version.instanceId.jobStartTimeUsecs).ToString('yyyy-MM-dd_hh-mm-ss')
+
+    $outputfile = $(Join-Path -Path $PSScriptRoot -ChildPath "backedUpFiles-$($version.instanceId.jobInstanceId)-$($sourceServer)-$versionDate.txt")
+    $null = Remove-Item -Path $outputfile -Force
+    
+    $instance = "attemptNum={0}&clusterId={1}&clusterIncarnationId={2}&entityId={3}&jobId={4}&jobInstanceId={5}&jobStartTimeUsecs={6}&jobUidObjectId={7}" -f
+                $version.instanceId.attemptNum,
+                $doc.objectId.jobUid.clusterId,
+                $doc.objectId.jobUid.clusterIncarnationId,
+                $doc.objectId.entity.id,
+                $doc.objectId.jobId,
+                $version.instanceId.jobInstanceId,
+                $version.instanceId.jobStartTimeUsecs,
+                $doc.objectId.jobUid.objectId
+    
+    $backupType = $doc.backupType
+    if($backupType -in $volumeTypes){
+        $volumeList = api get "/vm/volumeInfo?$instance&statFileEntries=false"
+        if($volumeList.PSObject.Properties['volumeInfos']){
+            $volumeInfoCookie = $volumeList.volumeInfoCookie
+            foreach($volume in $volumeList.volumeInfos | Sort-Object -Property name){
+                $volumeName = [System.Web.HttpUtility]::UrlEncode($volume.name)
+                listdir '/' $instance $volumeInfoCookie $volumeName
+            }
         }
+    }else{
+        listdir '/' $instance
     }
+    
+}
+
+$searchResults = api get "/searchvms?entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAWSSnapshotManager&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kFlashBlade&entityTypes=kGCP&entityTypes=kGenericNas&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kIsilon&entityTypes=kKVM&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware&vmName=$sourceserver"
+$searchResults = $searchResults.vms | Where-Object {$_.vmDocument.objectName -eq $sourceServer}
+
+# narrow search by job name
+$searchResults = $searchResults | Where-Object {$_.vmDocument.jobName -eq $jobName}
+
+if(!$searchResults){
+    Write-Host "$sourceServer is not protected by $jobName" -ForegroundColor Yellow
+    exit 1
+}
+
+$searchResult = ($searchResults | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
+
+$doc = $searchResult.vmDocument
+
+# show versions
+if($showVersions -or $start -or $end -or $listFiles){
+    if($start){
+        $doc.versions = $doc.versions | Where-Object {$start -le (usecsToDate ($_.snapshotTimestampUsecs))}
+    }
+    if($end){
+        $doc.versions = $doc.versions | Where-Object {$end -ge (usecsToDate ($_.snapshotTimestampUsecs))}
+    }
+    if($listFiles){
+        foreach($version in $doc.versions){
+            Write-Host "`n=============================="
+            Write-Host "   runId: $($version.instanceId.jobInstanceId)"
+            write-host " runDate: $(usecsToDate $version.instanceId.jobStartTimeUsecs)"
+            Write-Host "==============================`n"
+            showFiles $doc $version
+        }
+    }else{
+        $doc.versions | Select-Object -Property @{label='runId'; expression={$_.instanceId.jobInstanceId}}, @{label='runDate'; expression={usecsToDate $_.instanceId.jobStartTimeUsecs}}
+    }
+    exit 0
+}
+
+# select version
+if($runId){
+    # select version with matching runId
+    $version = ($doc.versions | Where-Object {$_.instanceId.jobInstanceId -eq $runId})
+    if(! $version){
+        Write-Host "Job run ID $runId not found" -ForegroundColor Yellow
+        exit 1
+    }
+    showFiles $doc $version
+}elseif($fileDate){
+    # select version just after requested date
+    $version = ($doc.versions | Where-Object {$fileDate -le (usecsToDate ($_.snapshotTimestampUsecs))})[-1]
+    if(! $version){
+        $version = $doc.versions[0]
+    }
+    showFiles $doc $version
 }else{
-    listdir '/' $instance
+    # just use latest version
+    $version = $doc.versions[0]
+    showFiles $doc $version
 }
