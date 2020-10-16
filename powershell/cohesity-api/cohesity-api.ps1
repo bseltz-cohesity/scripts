@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2020.10.13 - Brian Seltzer
+#  Version 2020.10.16 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 0.06 - Consolidated Windows and Unix versions - June 2018
@@ -38,9 +38,10 @@
 # 2020.10.05 - retired REINVOKE
 # 2020.10.06 - exit script when attempting unauthenticated api call
 # 2020.10.13 - fixed timeAgo function for i14n
+# 2020.10.16 - added password parameter to storePasswordInFile function
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
-$versionCohesityAPI = '2020.10.13'
+$versionCohesityAPI = '2020.10.16'
 
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
@@ -492,7 +493,7 @@ function Get-CohesityAPIPasswordFromFile($vip, $username, $domain){
 }
 
 
-function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $domain='local', [switch]$helios){
+function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $domain='local', [switch]$helios, $password=$null){
     # parse domain\username or username@domain
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
@@ -518,8 +519,12 @@ function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $do
 
     # prompt for password
     __writeLog "Prompting for Password"
-    $secureString = Read-Host -Prompt "Enter password for $domain\$username at $vip" -AsSecureString
-    $passwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
+    if(!$password){
+        $secureString = Read-Host -Prompt "Enter password for $domain\$username at $vip" -AsSecureString
+        $passwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))    
+    }else{
+        $passwd = $password
+    }
     $opwd = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($passwd))
 
     $pwlist = Get-Content -Path $pwfile -ErrorAction SilentlyContinue
