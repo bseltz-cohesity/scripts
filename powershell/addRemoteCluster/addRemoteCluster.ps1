@@ -13,20 +13,22 @@ param (
     [Parameter(Mandatory = $True)][string]$localVip,      #local cluster to connect to
     [Parameter(Mandatory = $True)][string]$localUsername, #local username
     [Parameter()][string]$localDomain = 'local',          #local user domain name
+    [Parameter()][string]$localPassword = $null,
     [Parameter()][string]$localStorageDomain = 'DefaultStorageDomain', #local storage domain
     [Parameter(Mandatory = $True)][string]$remoteVip,      #remote cluster to connect to
     [Parameter(Mandatory = $True)][string]$remoteUsername, #remote username
     [Parameter()][string]$remoteDomain = 'local',          #remote user domain name
+    [Parameter()][string]$remotePassword = $null,
     [Parameter()][string]$remoteStorageDomain = 'DefaultStorageDomain', #remote storage domain
     [Parameter()][switch]$remoteAccess # enable remote access
 )
 
 ### source the cohesity-api helper code
-. ./cohesityCluster.ps1
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesityCluster.ps1)
 
 ### authenticate with both clusters
-$localCluster = connectCohesityCluster -server $localVip -username $localUsername -domain $localDomain
-$remoteCluster = connectCohesityCluster -server $remoteVip -username $remoteUsername -domain $remoteDomain
+$localCluster = connectCohesityCluster -server $localVip -username $localUsername -domain $localDomain -password $localPassword
+$remoteCluster = connectCohesityCluster -server $remoteVip -username $remoteUsername -domain $remoteDomain -password $remotePassword
 
 ### get cluster info
 $localClusterInfo= $localCluster.get('cluster')
@@ -35,7 +37,6 @@ $localStorageDomainId = ($localCluster.get('viewBoxes') | Where-Object { $_.name
 $remoteStorageDomainId = ($remoteCluster.get('viewBoxes') | Where-Object { $_.name -eq $remoteStorageDomain }).id
 
 ### add remoteCluster as partner on localCluster
-
 $localToRemote = @{
     'name' = $remoteClusterInfo.name;
     'clusterIncarnationId' = $remoteClusterInfo.incarnationId;
@@ -60,7 +61,6 @@ $localToRemote = @{
 }
 
 ### add localCluster as partner on remoteCluster
-
 $remoteToLocal = @{
     'name' = $localClusterInfo.name;
     'clusterIncarnationId' = $localClusterInfo.incarnationId;

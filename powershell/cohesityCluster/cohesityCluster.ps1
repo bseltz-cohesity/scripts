@@ -1,16 +1,5 @@
-# . . . . . . . . . . . . . . . . . . . . . . . . . .
-#   Unofficial PowerShell Module for Cohesity API
-#  Object-Oriented Variant For Multi-cluster Acceess
-#      version 0.8 - Brian Seltzer - Mar 2019
-# . . . . . . . . . . . . . . . . . . . . . . . . . .
-#
-# 0.6 - Consolidated Windows and Unix versions - June 2018
-# 0.7 - Added saveJson, loadJson and json2code utility functions - Feb 2019
-# 0.8 - added -prompt to prompt for password rather than save
-#
-# . . . . . . . . . . . . . . . . . . . . . . . . 
-
 # platform detection and prerequisites
+
 if ($PSVersionTable.Platform -eq 'Unix') {
     $global:UNIX = $true
     $global:CONFDIR = '~/.cohesity-api'
@@ -21,7 +10,6 @@ else {
 
     #ignore unsigned certificates
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    if (-not ([System.Management.Automation.PSTypeName]'ServerCertificateValidationCallback').Type){
     Add-Type @"
     using System;
     using System.Net;
@@ -42,7 +30,6 @@ else {
                 {
                     return true;};}}
 "@
-    }
     [ServerCertificateValidationCallback]::Ignore();
 }
 
@@ -53,22 +40,32 @@ class CohesityCluster {
     [bool]$AUTHORIZED
     [string]$CURLHEADER
     [System.Object]$WEBCLI
+    [string]$SERVER
+    [string]$USERNAME
+    [string]$DOMAIN
+    [string]$PASSWORD
 
-    CohesityCluster([string]$server, [string]$username, [string]$domain, [switch]$prompt, [switch]$updatePassword=$false, [switch] $quiet=$false){
+    CohesityCluster([string]$server, [string]$username, [string]$domain, [string]$password, [switch]$updatePassword=$false, [switch] $quiet=$false){
+
+        $this.SERVER = $server
+        $this.USERNAME = $username
+        $this.DOMAIN = $domain
+        $this.PASSWORD = $password
+
         if($global:UNIX -eq $false){
             $this.WEBCLI = New-Object System.Net.WebClient;
         }
         if(-not $server){
             write-host 'server: ' -foregroundcolor green -nonewline
-            $server = Read-Host
-            if(-not $server){write-host 'server is required' -foregroundcolor red; break}
+            $this.SERVER = Read-Host
+            if(-not $this.SERVER){write-host 'server is required' -foregroundcolor red; break}
         }
         if(-not $username){
             write-host 'Username: ' -foregroundcolor green -nonewline
-            $username = Read-Host
-            if(-not $username){write-host 'username is required' -foregroundcolor red; break}
+            $this.USERNAME = Read-Host
+            if(-not $this.USERNAME){write-host 'username is required' -foregroundcolor red; break}
         }
-        $this.APIROOT = 'https://' + $server + '/irisservices/api/v1'
+        $this.APIROOT = 'https://' + $this.SERVER + '/irisservices/api/v1'
         $this.HEADER = @{'accept' = 'application/json'; 'content-type' = 'application/json'}
         $url = $this.APIROOT + '/public/accessTokens'
         if($updatePassword){
@@ -76,26 +73,21 @@ class CohesityCluster {
         }else{ 
             $updatepw = $null
         }
-        if($prompt){
-            $pr = '-prompt'
-        }else{
-            $pr = $null
-        }
         try {
             if($global:UNIX){
             $auth = Invoke-RestMethod -Method Post -Uri $url  -Header $this.HEADER -Body $(
                 ConvertTo-Json @{
-                    'domain' = $domain; 
-                    'password' = (getpwd -vip $server -username $username -domain $domain -prompt $pr -updatePassword $updatepw); 
-                    'username' = $username
+                    'domain' = $this.DOMAIN; 
+                    'password' = (getpwd $this.SERVER $this.USERNAME $this.DOMAIN $this.PASSWORD $updatepw); 
+                    'username' = $this.USERNAME
                 }) -SkipCertificateCheck
             $this.CURLHEADER = "authorization: $($auth.tokenType) $($auth.accessToken)"
             }else{
                 $auth = Invoke-RestMethod -Method Post -Uri $url  -Header $this.HEADER -Body $(
                     ConvertTo-Json @{
-                        'domain' = $domain; 
-                        'password' = (getpwd -vip $server -username $username -domain $domain -prompt $pr -updatePassword $updatepw); 
-                        'username' = $username
+                        'domain' = $this.DOMAIN; 
+                        'password' = (getpwd $this.SERVER $this.USERNAME $this.DOMAIN $this.PASSWORD $updatepw); 
+                        'username' = $this.USERNAME
                     })
                 $this.WEBCLI = New-Object System.Net.WebClient;    
                 $this.WEBCLI.Headers['authorization'] = $auth.tokenType + ' ' + $auth.accessToken;
@@ -119,6 +111,7 @@ class CohesityCluster {
 
     [System.Object] apicall($method, $uri, $data){
         if (-not $this.AUTHORIZED){ write-host 'Please use apiauth to connect to a cohesity cluster' -foregroundcolor yellow; break }
+        #if (-not $methods.Contains($method)){ write-host "invalid api method: $method" -foregroundcolor yellow; break }
         try {
             if ($uri[0] -ne '/'){ $uri = '/public/' + $uri}
             $url = $this.APIROOT + $uri
@@ -156,30 +149,14 @@ class CohesityCluster {
         return $this.apicall('delete',$uri,$data)
     }
 
-    fileDownload($uri, $fileName){
-        try {
-            if ($uri[0] -ne '/'){ $uri = '/public/' + $uri}
-            $url = $this.APIROOT + $uri
-            if ($global:UNIX){
-                curl -k -s -H $this.CURLHEADER -o "$fileName" "$url"
-            }else{
-                $this.WEBCLI.DownloadFile($url, $fileName)
-            } 
-        }
-        catch {
-            $_.ToString()
-            if($_.ToString().contains('"message":')){
-                write-host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
-            }else{
-                write-host $_.ToString() -foregroundcolor yellow
-            }                
-        }
+    [String]getPwd(){
+        return $(getpwd $this.SERVER $this.USERNAME $this.DOMAIN $this.PASSWORD)
     }
+
 }
 
-
-function connectCohesityCluster($server, $username, $domain='local', [switch]$prompt=$false, [switch]$updatePassword=$false, [switch]$quiet=$false){
-    return [CohesityCluster]::new($server, $username, $domain, $prompt, $updatePassword, $quiet)
+function connectCohesityCluster($server, $username, $domain='local', [string]$password=$null, [switch]$updatePassword=$false, [switch]$quiet=$false){
+    return [CohesityCluster]::new($server, $username, $domain, $password, $updatePassword, $quiet)
 }
 
 # manage secure password
@@ -235,8 +212,11 @@ if ($global:UNIX) {
         [System.Text.Encoding]::UTF8.GetString($unencryptedData).Trim([char]0)
     }
 
-    function getpwd($vip, $username, $domain, $prompt, $updatePassword) {
-        if ($null -eq $domain) { $domain = 'local'}
+    function getpwd($vip, $username, $domain, $password, $updatePassword) {
+        if($password){
+            return $password
+        }
+        if ($domain -eq $null) { $domain = 'local'}
         $keyName = $vip + ':' + $domain + ':' + $username
         $keyFile = "$CONFDIR/$keyName"
         $storedPassword = $null
@@ -247,9 +227,8 @@ if ($global:UNIX) {
             $key, $storedPassword = get-content $keyFile
         }
         
-        #if ($updatePassword) { $storedPassword = $null }
-        if ($null -ne $updatePassword -or $null -ne $prompt) { $storedPassword = $null }
-        If (($null -ne $storedPassword) -and ($storedPassword.Length -ne 0) -and ($null -ne $key)) {
+        if ($updatePassword) { $storedPassword = $null }
+        If (($storedPassword -ne $null) -and ($storedPassword.Length -ne 0) -and ($key -ne $null)) {
             $encryptedPassword = $storedPassword
             $clearTextPassword = Decrypt-String $key $encryptedPassword
 
@@ -258,40 +237,38 @@ if ($global:UNIX) {
         else {
             $secureString = Read-Host -Prompt "Enter password for $username at $vip" -AsSecureString
             $clearTextPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureString))
-            if($null -eq $prompt){
-                $key = Create-AesKey
-                $key | Out-File $keyFile
-                $encryptedPassword = Encrypt-String $key $clearTextPassword
-                $encryptedPassword | Out-File $keyFile -Append
-            }
+            $key = Create-AesKey
+            $key | Out-File $keyFile
+            $encryptedPassword = Encrypt-String $key $clearTextPassword
+            $encryptedPassword | Out-File $keyFile -Append
         }
     
         return $clearTextPassword
     }
 }else{
-    function getpwd($vip, $username, $domain, $prompt, $updatePassword){
+    function getpwd($vip, $username, $domain, $password, $updatepPassword){
+        if($password){
+            return $password
+        }
         $keyName = $vip + ':' + $domain + ':' + $username
         $registryPath = 'HKCU:\Software\Cohesity-API'
         $encryptedPasswordText = ''
     
         #get the encrypted password from the registry if it exists
         $storedPassword = Get-ItemProperty -Path "$registryPath" -Name "$keyName" -ErrorAction SilentlyContinue
-
-        if ($null -ne $updatePassword -or $null -ne $prompt) { $storedPassword = $null }
-        If (($null -ne $storedPassword) -and ($storedPassword.Length -ne 0)) {
+        if($updatepassword){ $storedPassword = $null }
+        If (($storedPassword -ne $null) -and ($storedPassword.Length -ne 0)) {
             $encryptedPasswordText = $storedPassword.$keyName
             $securePassword = $encryptedPasswordText  | ConvertTo-SecureString
     
         #else prompt the user for the password and store it in the registry for next time    
         }else{
             $securePassword = Read-Host -Prompt "Enter password for $username at $vip" -AsSecureString
-            if($null -eq $prompt){
-                $encryptedPasswordText = $securePassword | ConvertFrom-SecureString
-                if(!(Test-Path $registryPath)){
-                    New-Item -Path $registryPath -Force | Out-Null
-                }
-                Set-ItemProperty -Path "$registryPath" -Name "$keyName" -Value "$encryptedPasswordText"
+            $encryptedPasswordText = $securePassword | ConvertFrom-SecureString
+            if(!(Test-Path $registryPath)){
+                New-Item -Path $registryPath -Force | Out-Null
             }
+            Set-ItemProperty -Path "$registryPath" -Name "$keyName" -Value "$encryptedPasswordText"
         }
         
         $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
@@ -326,118 +303,3 @@ function dateToUsecs($datestring){
 }
 
 
-# developer tools
-function saveJson($object, $jsonFile = './debug.json'){
-    $object | ConvertTo-Json -Depth 99 | out-file -FilePath $jsonFile
-}
-
-function loadJson($jsonFile = './debug.json'){
-    return Get-Content $jsonFile | ConvertFrom-Json
-}
-
-function json2code($json = '', $jsonFile = '', $psFile = 'myObject.ps1'){
-
-    if($jsonFile -ne ''){
-        $json = (Get-Content $jsonFile) -join "`n"
-    }
-
-    $json = $json | ConvertFrom-Json | ConvertTo-Json -Depth 99
-    
-    $pscode = ''
-    foreach ($line in $json.split("`n")) {
-
-        # preserve end of line character
-        $finalEntry = $true
-        if ($line[-1] -eq ',') {
-            $finalEntry = $false
-            $line = $line -replace ".$"
-        }
-        
-        # key value delimiter :
-        $key, $value = $line.split(':', 2)
-
-        # line is braces only
-        $key = $key.Replace('{', '@{').Replace(']', ')')
-
-        if ($value) {
-            $value = $value.trim()
-
-        # value is quoted text
-            if ($value[0] -eq '"') {
-                $line = "$key = $value"
-            }
-
-        # value is opening { brace
-            elseif ('{' -eq $value) {
-                $value = $value.Replace('{', '@{')
-                $line = "$key = $value"
-            }
-        
-        # empty braces
-            elseif ('{}' -eq $value) {
-                $value = '@{}'
-                $line = "$key = $value"
-            }
-        
-        # empty list
-            elseif ('[]' -eq $value) {
-                $value = '@()'
-                $line = "$key = $value"
-            }
-
-        # value is opening ( list
-            elseif ('[' -eq $value) {
-                $value = $value.Replace('[', '@(')
-                $line = "$key = $value"
-            }
-
-        # value is a boolean
-            elseif ($value -eq 'true') {
-                $line = "$key = " + '$true'
-            }
-
-            elseif ($value -eq 'false') {
-                $line = "$key = " + '$false'
-            }
-
-        # null
-            elseif ($value -eq 'null') {
-                $line = "$key = " + '$null'
-            }
-            else {
-
-        # value is numeric
-                if ($value -as [long] -or $value -eq '0') {
-                    $line = "$($key) = $value"
-                }
-                else {
-
-        # delimeter : was inside of quotes
-                    $line = "$($key):$($value)"
-                }
-            }
-        }
-        else {
-
-        # was no value on this line
-            $line = $key
-        }
-
-        # replace end of line character ;
-        if (! $finalEntry) {
-            $line = "$line;"
-        }
-
-        $pscode += "$line`n"
-    }
-
-    $pscode = '$myObject = ' + $pscode
-
-    $pscode | out-file $psFile
-    return $pscode
-}
-
-
-# example
-# $myCluster = connectCohesityCluster -server bseltzve01 -username admin
-# $jobs = $myCluster.get('protectionJobs')
