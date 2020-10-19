@@ -40,9 +40,11 @@ Added replication partnership cohesity2 <- cohesity1
 * -localVip: Cohesity Cluster to connect to
 * -localUsername: Cohesity username
 * -localDomain: (optional) Active Directory domain of user (defaults to local)
+* -localPassword: (optional) password for local user (default is none)
 * -localStorageDomain: (optional) local storage domain or pairing (defaults to DefaultStorageDomain)
 * -remoteVip: remote cluster to pair for replication
 * -remoteUsername: username to connect to the remote cluster
+* -remotePassword: password for remote user (default is none)
 * -remoteDomain: (optional) remote user domain name (defaults to local)
 * -remoteStorageDomain: (optional) remote storage domain or pairing (defaults to DefaultStorageDomain)
 * -remoteAccess: enable remote access
