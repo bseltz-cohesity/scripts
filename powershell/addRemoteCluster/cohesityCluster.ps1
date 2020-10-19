@@ -43,12 +43,14 @@ class CohesityCluster {
     [string]$SERVER
     [string]$USERNAME
     [string]$DOMAIN
+    [string]$PASSWORD
 
-    CohesityCluster([string]$server, [string]$username, [string]$domain, [switch]$updatePassword=$false, [switch] $quiet=$false){
+    CohesityCluster([string]$server, [string]$username, [string]$domain, [string]$password, [switch]$updatePassword=$false, [switch] $quiet=$false){
 
         $this.SERVER = $server
         $this.USERNAME = $username
         $this.DOMAIN = $domain
+        $this.PASSWORD = $password
 
         if($global:UNIX -eq $false){
             $this.WEBCLI = New-Object System.Net.WebClient;
@@ -76,7 +78,7 @@ class CohesityCluster {
             $auth = Invoke-RestMethod -Method Post -Uri $url  -Header $this.HEADER -Body $(
                 ConvertTo-Json @{
                     'domain' = $this.DOMAIN; 
-                    'password' = (getpwd $this.SERVER $this.USERNAME $this.DOMAIN $updatepw); 
+                    'password' = (getpwd $this.SERVER $this.USERNAME $this.DOMAIN $this.PASSWORD $updatepw); 
                     'username' = $this.USERNAME
                 }) -SkipCertificateCheck
             $this.CURLHEADER = "authorization: $($auth.tokenType) $($auth.accessToken)"
@@ -84,7 +86,7 @@ class CohesityCluster {
                 $auth = Invoke-RestMethod -Method Post -Uri $url  -Header $this.HEADER -Body $(
                     ConvertTo-Json @{
                         'domain' = $this.DOMAIN; 
-                        'password' = (getpwd $this.SERVER $this.USERNAME $this.DOMAIN $updatepw); 
+                        'password' = (getpwd $this.SERVER $this.USERNAME $this.DOMAIN $this.PASSWORD $updatepw); 
                         'username' = $this.USERNAME
                     })
                 $this.WEBCLI = New-Object System.Net.WebClient;    
@@ -148,13 +150,13 @@ class CohesityCluster {
     }
 
     [String]getPwd(){
-        return $(getpwd $this.SERVER $this.USERNAME $this.DOMAIN)
+        return $(getpwd $this.SERVER $this.USERNAME $this.DOMAIN $this.PASSWORD)
     }
 
 }
 
-function connectCohesityCluster($server, $username, $domain='local', [switch]$updatePassword=$false, [switch]$quiet=$false){
-    return [CohesityCluster]::new($server, $username, $domain, $updatePassword, $quiet)
+function connectCohesityCluster($server, $username, $domain='local', [string]$password=$null, [switch]$updatePassword=$false, [switch]$quiet=$false){
+    return [CohesityCluster]::new($server, $username, $domain, $password, $updatePassword, $quiet)
 }
 
 # manage secure password
@@ -210,7 +212,10 @@ if ($global:UNIX) {
         [System.Text.Encoding]::UTF8.GetString($unencryptedData).Trim([char]0)
     }
 
-    function getpwd($vip, $username, $domain, $updatePassword) {
+    function getpwd($vip, $username, $domain, $password, $updatePassword) {
+        if($password){
+            return $password
+        }
         if ($domain -eq $null) { $domain = 'local'}
         $keyName = $vip + ':' + $domain + ':' + $username
         $keyFile = "$CONFDIR/$keyName"
@@ -241,7 +246,10 @@ if ($global:UNIX) {
         return $clearTextPassword
     }
 }else{
-    function getpwd($vip, $username, $domain, $updatepPassword){
+    function getpwd($vip, $username, $domain, $password, $updatepPassword){
+        if($password){
+            return $password
+        }
         $keyName = $vip + ':' + $domain + ':' + $username
         $registryPath = 'HKCU:\Software\Cohesity-API'
         $encryptedPasswordText = ''
