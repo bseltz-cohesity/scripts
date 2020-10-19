@@ -227,7 +227,7 @@ if($runs){
     $newRunId = $lastRunId = 0
 }
 
-$finishedStates = @('kCanceled', 'kSuccess', 'kFailure')
+$finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')
 
 # wait for existing job run to finish
 if($runs -and !$metaDataFile){

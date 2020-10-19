@@ -192,7 +192,7 @@ if objectnames is not None:
                 print('Object %s not found!' % objectname)
                 exit(1)
 
-finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
+finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning']
 runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
 
 if len(runs) > 0 and metadatafile is None:
