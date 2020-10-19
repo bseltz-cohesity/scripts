@@ -74,7 +74,7 @@ class CohesityCluster {
             $updatepw = $null
         }
         try {
-            if($global:UNIX){
+            if($($global:PSVersionTable.PSEdition) -eq 'Core'){
             $auth = Invoke-RestMethod -Method Post -Uri $url  -Header $this.HEADER -Body $(
                 ConvertTo-Json @{
                     'domain' = $this.DOMAIN; 
@@ -116,7 +116,7 @@ class CohesityCluster {
             if ($uri[0] -ne '/'){ $uri = '/public/' + $uri}
             $url = $this.APIROOT + $uri
             $body = ConvertTo-Json -Depth 100 $data
-            if ($global:UNIX){
+            if ($global:PSVersionTable.PSEdition -eq 'core'){
                 $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $this.HEADER  -SkipCertificateCheck
             }else{
                 $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $this.HEADER
@@ -216,7 +216,7 @@ if ($global:UNIX) {
         if($password){
             return $password
         }
-        if ($domain -eq $null) { $domain = 'local'}
+        if ($null -eq $domain) { $domain = 'local'}
         $keyName = $vip + ':' + $domain + ':' + $username
         $keyFile = "$CONFDIR/$keyName"
         $storedPassword = $null
@@ -228,7 +228,7 @@ if ($global:UNIX) {
         }
         
         if ($updatePassword) { $storedPassword = $null }
-        If (($storedPassword -ne $null) -and ($storedPassword.Length -ne 0) -and ($key -ne $null)) {
+        If (($null -eq $storedPassword) -and ($storedPassword.Length -ne 0) -and ($null -eq $key)) {
             $encryptedPassword = $storedPassword
             $clearTextPassword = Decrypt-String $key $encryptedPassword
 
@@ -257,7 +257,7 @@ if ($global:UNIX) {
         #get the encrypted password from the registry if it exists
         $storedPassword = Get-ItemProperty -Path "$registryPath" -Name "$keyName" -ErrorAction SilentlyContinue
         if($updatepassword){ $storedPassword = $null }
-        If (($storedPassword -ne $null) -and ($storedPassword.Length -ne 0)) {
+        If (($null -eq $storedPassword) -and ($storedPassword.Length -ne 0)) {
             $encryptedPasswordText = $storedPassword.$keyName
             $securePassword = $encryptedPasswordText  | ConvertTo-SecureString
     
@@ -301,5 +301,3 @@ function dateToUsecs($datestring){
     $usecs =  ([Math]::Floor([decimal](Get-Date($datestring).ToUniversalTime()-uformat "%s")))*1000000
     $usecs
 }
-
-
