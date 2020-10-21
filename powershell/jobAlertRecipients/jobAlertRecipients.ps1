@@ -16,7 +16,7 @@ apiauth -vip $vip -username $username -domain $domain
 
 $cluster = api get cluster
 "Modifying email recipients:"
-$jobs = api get protectionJobs
+$jobs = api get protectionJobs | Where-Object {$_.isDeleted -ne $true -and $_.isActive -ne $false}
 foreach($job in $jobs | Where-Object {$_.policyId.split(":")[0] -eq $cluster.id} | Sort-Object -Property name){
     "  $($job.name)"
     $jobEdited = $False
