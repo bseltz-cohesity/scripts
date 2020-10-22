@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2020.09.22
+# version 2020.10.21
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -337,6 +337,10 @@ if wait is True:
             except Exception:
                 sleep(2)
     print("Job finished with status: %s" % runs[0]['backupRun']['status'])
+    if runs[0]['backupRun']['status'] == 'kFailure':
+        print('Error: %s' % runs[0]['backupRun']['error'])
+    if runs[0]['backupRun']['status'] == 'kWarning':
+        print('Warning: %s' % runs[0]['backupRun']['warnings'])
     runURL = "https://%s/protection/job/%s/run/%s/%s/protection" % \
         (vip, runs[0]['jobId'], runs[0]['backupRun']['jobRunId'], runs[0]['backupRun']['stats']['startTimeUsecs'])
     print("Run URL: %s" % runURL)

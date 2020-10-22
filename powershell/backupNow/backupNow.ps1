@@ -1,4 +1,4 @@
-# version 2020.08.20
+# version 2020.10.22
 # usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
@@ -399,6 +399,12 @@ if($wait -or $enable){
     if($runs[0].backupRun.status -eq 'kSuccess'){
         exit 0
     }else{
+        if($runs[0].backupRun.status -eq 'kFailure'){
+            output "Error: $($runs[0].backupRun.error)"
+        }
+        if($runs[0].backupRun.status -eq 'kWarning'){
+            output "Warning: $($runs[0].backupRun.warnings)"
+        }
         exit 1
     }
 }
