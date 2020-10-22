@@ -21,7 +21,8 @@ param (
     [Parameter()][int]$pastSearchDays = 31,
     [Parameter()][int]$maxDrift = 3,
     [Parameter()][switch]$commit,
-    [Parameter()][switch]$localOnly
+    [Parameter()][switch]$localOnly,
+    [Parameter()][ValidateSet('kCloud','kTape','kNas')][string]$vaultType = 'kCloud'
 )
 
 # source the cohesity-api helper code
@@ -196,7 +197,7 @@ foreach($job in $jobs){
                             'archivalTarget' = @{
                                 'vaultId'   = $vaultId;
                                 'vaultName' = $vaultName;
-                                'vaultType' = 'kCloud'
+                                'vaultType' = $vaultType
                             };
                             'daysToKeep'     = [int] $daysToKeep;
                             'type'           = 'kArchival'
