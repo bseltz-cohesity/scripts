@@ -312,7 +312,7 @@ function restoreDB($db){
     if($wait -or $progress){
         $lastProgress = -1
         $taskId = $response.restoreTask.performRestoreTaskState.base.taskId
-        $finishedStates = @('kSuccess','kFailed','kCanceled', 'kFailure')
+        $finishedStates = @('kSuccess','kFailed','kCanceled','kFailure')
         while($True){
             $status = (api get /restoretasks/$taskId).restoreTask.performRestoreTaskState.base.publicStatus
             if($progress){
@@ -321,6 +321,9 @@ function restoreDB($db){
                 if($percentComplete -gt $lastProgress){
                     "{0} percent complete" -f [math]::Round($percentComplete, 0)
                     $lastProgress = $percentComplete
+                    if($percentComplete -eq 100){
+                        break
+                    }
                 }
             }
             if ($status -in $finishedStates){
@@ -328,6 +331,7 @@ function restoreDB($db){
             }
             sleep 5
         }
+        $status = (api get /restoretasks/$taskId).restoreTask.performRestoreTaskState.base.publicStatus
         "restore ended with $($status.substring(1))"
     }
 }
