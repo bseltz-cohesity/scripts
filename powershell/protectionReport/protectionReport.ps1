@@ -399,6 +399,7 @@ function displayObject($task){
 }
 
 function displayObjects($run){
+    $taskMessages = @()
     $objectsVisible = $false
     if(! $run.backupRun.snapshotsDeleted){
         $thisRun = api get "/backupjobruns?id=$($job.id)&exactMatchStartTimeUsecs=$($run.backupRun.stats.startTimeUsecs)"
@@ -407,7 +408,10 @@ function displayObjects($run){
             $taskMessage = displayObject $task
             if($taskMessage){
                 $objectsVisible = $true
-                $objectMessage += $taskMessage
+                if(!($taskMessage -in $taskMessages)){
+                    $objectMessage += $taskMessage
+                    $taskMessages += $taskMessage
+                }
                 $global:showJob = $true
             }
         }
