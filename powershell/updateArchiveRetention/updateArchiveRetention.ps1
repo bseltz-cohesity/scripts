@@ -21,7 +21,9 @@ param (
 apiauth -vip $vip -username $username -domain $domain
 
 ### cluster Id
-$clusterId = (api get cluster).id
+$cluster = api get cluster
+$clusterId = $cluster.id
+$modernVersion = $cluster.clusterSoftwareVersion -gt "6.5.1b"
 
 # job selector
 $jobs = api get protectionJobs
@@ -47,7 +49,7 @@ foreach ($job in $jobs | Sort-Object -Property name) {
                 $localCopy = $run.copyRun | Where-Object {$_.target.type -eq 'kLocal'}
                 $runDate = usecsToDate $localCopy.runStartTimeUsecs
                 $localExpiry = $localCopy.expiryTimeUsecs
-                if($localExpiry -gt (dateToUsecs (get-date))){
+                if($localExpiry -gt (dateToUsecs (get-date)) -or $True -eq $modernVersion){
 
                     foreach ($copyRun in $run.copyRun) {
                         if ($copyRun.target.type -eq 'kArchival') {
