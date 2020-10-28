@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2020.07.10
+# version 2020.10.28
 
 # usage: ./backedUpFileList.py -v mycluster \
 #                              -u myuser \
@@ -13,11 +13,15 @@
 # import pyhesity wrapper module
 from pyhesity import *
 from datetime import datetime
-from urllib import quote_plus
 import codecs
+import sys
+import argparse
+if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
+    from urllib.parse import quote_plus
+else:
+    from urllib import quote_plus
 
 # command line arguments
-import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, required=True)           # cluster to connect to
 parser.add_argument('-u', '--username', type=str, default='helios')   # username
