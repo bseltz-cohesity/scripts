@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """restore files using python"""
 
-# version 2020.07.21
+# version 2020.10.28
 
 # usage: ./restoreFiles.py -v mycluster \
 #                          -u myusername \
@@ -18,11 +18,14 @@
 from pyhesity import *
 from datetime import datetime
 from time import sleep
-from urllib import quote_plus
 import sys
+import argparse
+if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
+    from urllib.parse import quote_plus
+else:
+    from urllib import quote_plus
 
 # command line arguments
-import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, required=True)           # cluster to connect to
 parser.add_argument('-u', '--username', type=str, default='helios')   # username
@@ -86,7 +89,10 @@ if restorepath is not None:
     restorepath = ('/' + restorepath).replace('\\', '/').replace(':', '').replace('//', '/')
 
 # authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, noretry=True)
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
 
 # find target server
 physicalEntities = api('get', '/entitiesOfType?environmentTypes=kPhysical&physicalEntityTypes=kHost')
