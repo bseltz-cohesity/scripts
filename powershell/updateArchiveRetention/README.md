@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script will update the retention of existing archives. Note that the local snapshots must still exist for archive retention to be modified. Existing archives whose local snapshots have expired can not be modified.
+This script will update the retention of existing archives. Note that for Cohesity versions prior to 6.5.1b, the local snapshots must still exist for archive retention to be modified.
 
 Warning: If used incorrectly, this script can expire archives. It's advisable to run the script without the -allowReduction and -commit parameters first and review the output before committing and changes.
 
