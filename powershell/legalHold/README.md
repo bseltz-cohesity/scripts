@@ -90,6 +90,19 @@ Remove legal hold:
                 -removeHold
 ```
 
+Remove legal hold on a range of dates:
+
+```powershell
+./legalHold.ps1 -vip mycluster `
+                -username myusername `
+                -domain mydomain.net `
+                -jobName 'my job' `
+                -startDate '2020-10-22' `
+                -endDate '2020-10-27' `
+                -removeHold
+```
+
+
 ## Parameters
 
 * -vip: Cohesity Cluster to connect to
@@ -99,5 +112,7 @@ Remove legal hold:
 * -listRuns: (optional) show available runs
 * -runId: (optional) use specific runId
 * -latest: (optional) use latest run
+* -startDate: (optional) use range of dates starting with (e.g. '2020-10-22')
+* -endDate: (optional) use range of dates ending with (e.g. '2020-10-27')
 * -addHold: (optional) add legal hold to the run
 * -removeHold: (optional) remove legal host from the run
