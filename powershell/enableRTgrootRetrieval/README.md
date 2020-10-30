@@ -33,9 +33,19 @@ Place both files in a folder together, then we can run the script.
 
 Send the text output of the script to your Cohesity support representative. They can then use the information to collect the database export.
 
+If you want to close the support channel immediately:
+
+```powershell
+./enableRTgrootRetrieval.ps1 -vip mycluster `
+                             -username myuser `
+                             -domain mydomain.net `
+                             -disable
+```
+
 ## Parameters
 
 * -vip: Cohesity Cluster to connect to
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain of user (defaults to local)
-* -days: number of days to leave the support channel open
+* -days: (optional) number of days to leave the support channel open (default is 1)
+* -disable: (optional) close the support channel now
