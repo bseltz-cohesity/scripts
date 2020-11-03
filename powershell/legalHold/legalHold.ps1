@@ -48,13 +48,12 @@ if($job){
                             $holdValue = $True
                             "Adding legal hold to $($job.name): $(usecsToDate $run.backupRun.stats.startTimeUsecs)..."
                         }
-                        $thisRun = api get "/backupjobruns?id($run.jobId)&exactMatchStartTimeUsecs=$($run.backupRun.stats.startTimeUsecs)"
+                        $thisRun = api get "/backupjobruns?id=$($run.jobId)&exactMatchStartTimeUsecs=$($run.backupRun.stats.startTimeUsecs)"
                         $jobUid = @{
-                            "clusterId" = $thisrun.backupJobRuns.protectionRuns[0].backupRun.base.jobUid.clusterId;
-                            "clusterIncarnationId" = $thisrun.backupJobRuns.protectionRuns[0].backupRun.base.jobUid.clusterIncarnationId;
-                            "id" = $thisrun.backupJobRuns.protectionRuns[0].backupRun.base.jobUid.objectId;
+                            "clusterId" = $thisRun.backupJobRuns.protectionRuns[0].backupRun.base.jobUid.clusterId;
+                            "clusterIncarnationId" = $thisRun.backupJobRuns.protectionRuns[0].backupRun.base.jobUid.clusterIncarnationId;
+                            "id" = $thisRun.backupJobRuns.protectionRuns[0].backupRun.base.jobUid.objectId;
                         }
-
                         $runParams = @{
                             "jobRuns" = @(
                                 @{
