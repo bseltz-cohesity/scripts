@@ -49,7 +49,7 @@ $html = '<html>
 
         td,
         th {
-            width: 16%;
+            width: 13%;
             text-align: left;
             padding: 6px;
         }
@@ -136,6 +136,8 @@ $html += '</span>
     <th>Job/View Name</th>
     <th>Environment</th>
     <th>Local/Replicated</th>
+    <th>GiB Logical</th>
+    <th>GiB Ingested</th>
     <th>GiB Consumed</th>
     <th>Dedup Ratio</th>
     <th>Compression</th>
@@ -144,7 +146,8 @@ $html += '</span>
 $jobs = api get protectionJobs?allUnderHierarchy=true
 
 function processStats($stats, $name, $environment, $location){
-    
+
+        $logicalBytes = $stats.statsList[0].stats.totalLogicalUsageBytes
         $dataIn = $stats.statsList[0].stats.dataInBytes
         $dataInAfterDedup = $stats.statsList[0].stats.dataInBytesAfterDedup
         $dataWritten = $stats.statsList[0].stats.dataWrittenBytes
@@ -156,6 +159,8 @@ function processStats($stats, $name, $environment, $location){
             $compression = 0
         }
         $consumption = [math]::Round($stats.statsList[0].stats.storageConsumedBytes / (1024 * 1024 * 1024), 2)
+        $logical = [math]::Round($logicalBytes / (1024 * 1024 * 1024), 2)
+        $dataInGiB = [math]::Round($dataIn / (1024 * 1024 * 1024), 2)
         Write-Host ("{0,30}: {1,11:f2} {2}" -f $name, $consumption, 'GiB')
         return ("<td>{0}</td>
         <td>{1}</td>
@@ -163,9 +168,13 @@ function processStats($stats, $name, $environment, $location){
         <td>{3}</td>
         <td>{4}</td>
         <td>{5}</td>
+        <td>{6}</td>
+        <td>{7}</td>
         </tr>" -f $name,
                   $environment,
                   $location,
+                  $logical,
+                  $dataInGiB,
                   $consumption,
                   $dedup,
                   $compression)
