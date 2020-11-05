@@ -141,6 +141,7 @@ $html += '</span>
     <th>GiB Consumed</th>
     <th>Dedup Ratio</th>
     <th>Compression</th>
+    <th>Reduction</th>
 </tr>'
 
 $jobs = api get protectionJobs?allUnderHierarchy=true
@@ -151,6 +152,7 @@ function processStats($stats, $name, $environment, $location){
         $dataIn = $stats.statsList[0].stats.dataInBytes
         $dataInAfterDedup = $stats.statsList[0].stats.dataInBytesAfterDedup
         $dataWritten = $stats.statsList[0].stats.dataWrittenBytes
+        $consumedBytes = $stats.statsList[0].stats.storageConsumedBytes
         if($dataInAfterDedup -gt 0 -and $dataWritten -gt 0){
             $dedup = [math]::Round($dataIn/$dataInAfterDedup,1)
             $compression = [math]::Round($dataInAfterDedup/$dataWritten,1)
@@ -158,7 +160,12 @@ function processStats($stats, $name, $environment, $location){
             $dedup = 0
             $compression = 0
         }
-        $consumption = [math]::Round($stats.statsList[0].stats.storageConsumedBytes / (1024 * 1024 * 1024), 2)
+        if($consumedBytes -gt 0){
+            $reduction = [math]::Round($logicalBytes / $consumedBytes, 1)
+        }else{
+            $reduction = 0
+        }
+        $consumption = [math]::Round($consumedBytes / (1024 * 1024 * 1024), 2)
         $logical = [math]::Round($logicalBytes / (1024 * 1024 * 1024), 2)
         $dataInGiB = [math]::Round($dataIn / (1024 * 1024 * 1024), 2)
         Write-Host ("{0,30}: {1,11:f2} {2}" -f $name, $consumption, 'GiB')
@@ -170,6 +177,7 @@ function processStats($stats, $name, $environment, $location){
         <td>{5}</td>
         <td>{6}</td>
         <td>{7}</td>
+        <td>{8}</td>
         </tr>" -f $name,
                   $environment,
                   $location,
@@ -177,7 +185,8 @@ function processStats($stats, $name, $environment, $location){
                   $dataInGiB,
                   $consumption,
                   $dedup,
-                  $compression)
+                  $compression,
+                  $reduction)
     
 }
 
