@@ -44,5 +44,5 @@ Place both files in a folder together and run the main script like so:
 * -viewName: name of new view where paths are located
 * -path: (optional) directory path(s) within view to apply the quota (comma separated)
 * -pathList: (optional) text file containing paths to apply the quota (one path per line)
-* -quotaLimitGiB: quota limit in GiB
-* -quotaAlertGiB: alert threshold in GiB
+* -quotaLimitGiB: (optional) quota limit in GiB
+* -quotaAlertGiB: (optional) alert threshold in GiB
