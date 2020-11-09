@@ -3,8 +3,8 @@
 #                               -domain mydomain.net `
 #                               -viewName myview `
 #                               -path /mydir `
-#                               -quotaLimitGB 20 `
-#                               -quotaAlertGB 18
+#                               -quotaLimitGiB 20 `
+#                               -quotaAlertGiB 18
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -13,10 +13,10 @@ param (
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
     [Parameter(Mandatory = $True)][string]$viewName,
-    [Parameter()][array]$path,
+    [Parameter(ValueFromPipeline = $true)][array]$path,
     [Parameter()][string]$pathList,
-    [Parameter()][int64]$quotaLimitGB,
-    [Parameter()][int64]$quotaAlertGB
+    [Parameter()][int64]$quotaLimitGiB,
+    [Parameter()][int64]$quotaAlertGiB
 )
 
 # source the cohesity-api helper code
@@ -34,8 +34,11 @@ if(! $view){
 }
 
 # convert to Bytes
-$quotaLimitBytes = $quotaLimitGB * 1024 * 1024 * 1024
-$quotaAlertBytes = $quotaAlertGB * 1024 * 1024 * 1024
+$quotaLimitBytes = $quotaLimitGiB * 1024 * 1024 * 1024
+if(!$quotaAlertGiB){
+    $quotaAlertGiB = $quotaLimitGiB * 0.9
+}
+$quotaAlertBytes = $quotaAlertGiB * 1024 * 1024 * 1024
 
 # gather file names
 $paths = @()
@@ -51,31 +54,27 @@ if($path){
 if($paths.Length -eq 0){
     # show existing quotas
     $quotas = api get "viewDirectoryQuotas?viewName=$viewName"
-    if($quotas.quotas){
-        Write-Host ("`nLimitGB  AlertGB  Path")
-        Write-Host ("-------  -------  ----")
-    }else{
+    if(! $quotas.quotas){
         Write-Host "No quotas found"
     }
-    foreach($quota in $quotas.quotas){
-        $limit = [math]::Round($quota.policy.hardLimitBytes/(1024*1024*1024))
-        if($quota.policy.alertLimitBytes){
-            $alert = [math]::Round($quota.policy.alertLimitBytes/(1024*1024*1024))
-        }else{
-            $alert = ''
-        }
-        Write-Host ("{0,7}  {1,7}  {2}" -f $limit, $alert, $quota.dirPath )
-    }
-    Write-Host "`n"
-}else{
-    if((! $quotaLimitGB) -or (! $quotaAlertGB)){
-        Write-Host "-quotaLimitGB and -quotaAlertGB parameters required" -ForegroundColor Yellow
-        exit 1
-    }
+    $pLimitGiB = @{l='Limit(GiB)';e={[math]::Round($_.policy.hardLimitBytes / (1024 * 1024 * 1024),2)}}  
+    $pAlertGiB = @{l='Alert(GiB)';e={if($_.policy.alertLimitBytes){
+        [math]::Round($_.policy.alertLimitBytes / (1024 * 1024 * 1024),2)}else{
+            ""
+        }}}
+    $pDirPath = @{l='Directory'; e={$_.dirPath}}
+    $pUsageGiB = @{l='Usage(GiB)'; e={[math]::Round($_.usageBytes / (1024 * 1024 * 1024),2)}}
+    $quotas.quotas | Select-Object -Property $pDirPath, $pUsageGiB, $pLimitGiB, $pAlertGiB
 }
 
 foreach($dirpath in $paths){
+    if($dirpath -is [System.IO.DirectoryInfo]){
+        $dirpath = $dirpath.Name
+    }
     $dirpath = [string]$dirpath
+    if($dirpath[0] -ne '/'){
+        $dirpath = "/$dirpath"
+    }
     # set new quota parameters
     $quotaParams = @{
         "viewName" = $viewName;
@@ -89,7 +88,7 @@ foreach($dirpath in $paths){
     }
 
     # put new quota
-    Write-Host "Setting directory quota on $viewName$dirpath to $quotaLimitGB GB..."
+    Write-Host "Setting directory quota on $viewName$dirpath to $quotaLimitGiB GiB..."
     $null = api put viewDirectoryQuotas $quotaParams
 }
 

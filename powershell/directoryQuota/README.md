@@ -31,8 +31,8 @@ Place both files in a folder together and run the main script like so:
                      -domain mydomain.net `
                      -viewName myview `
                      -path /mydir, /mydir2 `
-                     -quotaLimitGB 20 `
-                     -quotaAlertGB 18
+                     -quotaLimitGiB 20 `
+                     -quotaAlertGiB 18
 #end example
 ```
 
@@ -44,5 +44,5 @@ Place both files in a folder together and run the main script like so:
 * -viewName: name of new view where paths are located
 * -path: (optional) directory path(s) within view to apply the quota (comma separated)
 * -pathList: (optional) text file containing paths to apply the quota (one path per line)
-* -quotaLimitGB: quota limit in GB
-* -quotaAlertGB: alert threshold in GB
+* -quotaLimitGiB: quota limit in GiB
+* -quotaAlertGiB: alert threshold in GiB
