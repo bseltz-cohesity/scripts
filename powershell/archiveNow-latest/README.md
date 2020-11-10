@@ -32,6 +32,7 @@ Place both files in a folder together, then we can run the script like so:
                         -vault s3 `
                         -valutType -kCloud `
                         -keepFor 180 `
+                        -localOnly `
                         -commit
 ```
 
