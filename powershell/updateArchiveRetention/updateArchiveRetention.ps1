@@ -53,7 +53,7 @@ foreach ($job in $jobs | Sort-Object -Property name) {
 
                     foreach ($copyRun in $run.copyRun) {
                         if ($copyRun.target.type -eq 'kArchival') {
-                            if ($copyRun.status -eq 'kSuccess') {
+                            # if ($copyRun.status -eq 'kSuccess') {
                                 if ($copyRun.expiryTimeUsecs -gt 0) {
                                     if( ! $target -or $copyRun.target.archivalTarget.vaultName -eq $target){
                                         $startTimeUsecs = $copyRun.runStartTimeUsecs
@@ -83,7 +83,7 @@ foreach ($job in $jobs | Sort-Object -Property name) {
                                         }
                                     }
                                 }
-                            }
+                            # }
                         }
                     }
                 }
