@@ -26,13 +26,13 @@ Place both files in a folder together, then we can run the script.
 
 ```powershell
 ./distributeBackups.ps1 -vip mycluster `
-                             -username myuser `
-                             -domain mydomain.net `
-                             -jobName MYJOB `
-                             -nasShares \\nas1\myshare, \\nas2\myshare, \\nas3\myshare `
-                             -policyName 'Local Only' `
-                             -inputFile ./folders.csv `
-                             -jobMultiplier 1
+                        -username myuser `
+                        -domain mydomain.net `
+                        -jobName MYJOB `
+                        -nasShares \\nas1\myshare, \\nas2\myshare, \\nas3\myshare `
+                        -policyName 'Local Only' `
+                        -inputFile ./folders.csv `
+                        -jobMultiplier 1
 ```
 
 ## Parameters
