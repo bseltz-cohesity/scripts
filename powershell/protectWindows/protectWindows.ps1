@@ -143,14 +143,13 @@ foreach($sourceId in $sourceIds){
     
         if($allDrives){
             $mountPoints = $source.protectionSource.physicalProtectionSource.volumes.mountPoints
-            foreach ($mountPoint in $mountPoints | Where-Object {$_ -ne $null}) {
+            foreach ($mountPoint in $mountPoints | Where-Object {$_ -ne $null -and $_ -ne ''}) {
                 $includePaths += $mountPoint
             }
         }
-
-        foreach($includePath in $includePaths){
+        foreach($includePath in $includePaths | Where-Object {$_ -ne $null -and $_ -ne ''}){
             $backupFilePath = "/$includePath".Replace(':\','/')
-            $mountLetter = $backupFilePath.Substring(1,1).ToLower()
+            $mountLetter = $backupFilePath.Substring(1,1).ToUpper()
             $filePath = @{
                 "backupFilePath" = $backupFilePath;
                 "skipNestedVolumes" = $skip;
@@ -160,10 +159,16 @@ foreach($sourceId in $sourceIds){
             foreach ($exclusion in $excludePaths | Where-Object {$_ -ne ''}) {
                 $exclusion = $exclusion.ToString()
                 $thisExclusion = "/$($exclusion.replace(':','').replace('\','/'))"
-                if($thisExclusion.Substring(1,1) -eq '*'){
+                # handle wildcard drive letter
+                if($thisExclusion.Substring(0,3) -eq '/*/'){
                     $thisExclusion = "/$mountLetter/$($thisExclusion.Substring(3))"
                 }
-                if("$thisExclusion/" -match "$backupFilePath/"){
+                # handle wildcard file name
+                if("$thisExclusion" -match "\*"){
+                    $thisExclusion = $thisExclusion.Substring(1)
+                }
+                # add to exclusions if drive letter match (or wildcard file)
+                if("$thisExclusion" -match "$backupFilePath" -or "$thisExclusion" -match "\*"){
                     $excludedFilePaths += $thisExclusion
                 }
             }
@@ -179,7 +184,6 @@ foreach($sourceId in $sourceIds){
         $newParams += $existingParams | Where-Object {$_.sourceId -eq $sourceId}
     }
 }
-
 # update job
 $job.sourceSpecialParameters = $newParams
 $job.sourceIds = @($sourceIds)
