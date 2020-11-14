@@ -36,7 +36,7 @@ if ('' -ne $serverList){
     if(Test-Path -Path $serverList -PathType Leaf){
         $servers = Get-Content $serverList
         foreach($server in $servers){
-            $serversToAdd += $server
+            $serversToAdd += [string]$server
         }
     }else{
         Write-Warning "Server list $serverList not found!"
@@ -53,7 +53,7 @@ if('' -ne $inclusionList){
     if(Test-Path -Path $inclusionList -PathType Leaf){
         $inclusions = Get-Content $inclusionList
         foreach($inclusion in $inclusions){
-            $includePaths += $inclusion
+            $includePaths += [string]$inclusion
         }
     }else{
         Write-Warning "Inclusions file $inclusionList not found!"
@@ -76,7 +76,7 @@ if('' -ne $exclusionList){
     if(Test-Path -Path $exclusionList -PathType Leaf){
         $exclusions = Get-Content $exclusionList
         foreach($exclusion in $exclusions){
-            $excludePaths += $exclusion
+            $excludePaths += [string]$exclusion
         }
     }else{
         Write-Warning "Exclusions file $exclusionList not found!"
@@ -95,6 +95,9 @@ if($skipNestedMountPoints){
 
 # authenticate
 apiauth -vip $vip -username $username -domain $domain -password $password
+
+# get cluster info
+$cluster = api get cluster
 
 # get the protectionJob
 $job = api get protectionJobs | Where-Object {$_.name -ieq $jobName}
@@ -131,59 +134,77 @@ $sourceIds = @($sourceIds | Select-Object -Unique)
 $existingParams = $job.sourceSpecialParameters
 $newParams = @()
 foreach($sourceId in $sourceIds){
-    if($sourceId -in $newSourceIds -or $overwriteAll){
-        $newParam= @{
-            "sourceId" = $sourceId;
-            "physicalSpecialParameters" = @{
-                "filePaths" = @()
-            }
+    $newParam = @{
+        "sourceId" = $sourceId;
+        "physicalSpecialParameters" = @{
+            "filePaths" = @()
         }
-        $source = $sources.nodes | Where-Object {$_.protectionSource.id -eq $sourceId}
-        "  processing $($source.protectionSource.name)"
-    
-        if($allDrives){
-            $mountPoints = $source.protectionSource.physicalProtectionSource.volumes.mountPoints
-            foreach ($mountPoint in $mountPoints | Where-Object {$_ -ne $null -and $_ -ne ''}) {
-                $includePaths += $mountPoint
-            }
-        }
-        foreach($includePath in $includePaths | Where-Object {$_ -ne $null -and $_ -ne ''}){
-            $backupFilePath = "/$includePath".Replace(':\','/')
-            $mountLetter = $backupFilePath.Substring(1,1).ToUpper()
-            $filePath = @{
-                "backupFilePath" = $backupFilePath;
-                "skipNestedVolumes" = $skip;
-                "excludedFilePaths" = @()
-            }
-            $excludedFilePaths = @()
-            foreach ($exclusion in $excludePaths | Where-Object {$_ -ne ''}) {
-                $exclusion = $exclusion.ToString()
-                $thisExclusion = "/$($exclusion.replace(':','').replace('\','/'))"
-                # handle wildcard drive letter
-                if($thisExclusion.Substring(0,3) -eq '/*/'){
-                    $thisExclusion = "/$mountLetter/$($thisExclusion.Substring(3))"
-                }
-                # handle wildcard file name
-                if("$thisExclusion" -match "\*"){
-                    $thisExclusion = $thisExclusion.Substring(1)
-                }
-                # add to exclusions if drive letter match (or wildcard file)
-                if("$thisExclusion" -match "$backupFilePath" -or "$thisExclusion" -match "\*"){
-                    $excludedFilePaths += $thisExclusion
-                }
-            }
-            if($excludedFilePaths.Length -gt 0){            
-                $filePath.excludedFilePaths = @($filePath.excludedFilePaths + $excludedFilePaths | Select-Object -Unique)
-            }
-            if($includePath -notin $exclusions){
-                $newParam.physicalSpecialParameters.filePaths += $filePath
-            }
-        }
-        $newParams += $newParam
-    }else{
-        $newParams += $existingParams | Where-Object {$_.sourceId -eq $sourceId}
     }
+
+    # get source mount points
+    $source = $sources.nodes | Where-Object {$_.protectionSource.id -eq $sourceId}
+    "  processing $($source.protectionSource.name)"
+    $mountPoints = $source.protectionSource.physicalProtectionSource.volumes.mountPoints | Where-Object {$_ -ne $null -and $_ -ne ''}
+
+    # get new include / exclude paths to process
+    $includePathsToProcess = $includePaths | Where-Object {$_ -ne $null -and $_ -ne ''}
+    $excludePathsToProcess = $excludePaths | Where-Object {$_ -ne $null -and $_ -ne ''}
+    $excludePathsProcessed = @()
+
+    # get existing include / exclude paths
+    $theseParams = $existingParams | Where-Object {$_.sourceId -eq $sourceId}
+    if($theseParams -and ! $overwriteAll){
+        $excludePathsToProcess += $theseParams.physicalSpecialParameters.filePaths.excludedFilePaths
+        $includePathsToProcess += $theseParams.physicalSpecialParameters.filePaths.backupFilePath
+    }
+    
+    # process exclude paths
+    $wildCardExcludePaths = $excludePathsToProcess | Where-Object {$_.subString(0,2) -eq '*:'}
+    $excludePathsToProcess = $excludePathsToProcess | Where-Object {$_ -notin $wildCardExcludePaths}
+    foreach($wildCardExcludePath in $wildCardExcludePaths){
+        foreach($mountPoint in $mountPoints){
+            $excludePathsToProcess += "$($mountPoint):" + $wildCardExcludePath.subString(2)
+        }
+    }
+    foreach($excludePath in $excludePathsToProcess){
+       if($excludePath.subString(1,1) -eq ':'){
+            $excludePath = "/$($excludePath.replace(':','').replace('\','/'))".replace('//','/')
+       }
+       $excludePathsProcessed += $excludePath
+    }
+    
+    # process include paths
+    $includePathsProcessed = @()
+    if($allDrives){
+        if($cluster.clusterSoftwareVersion -gt '6.5.1b'){
+            $includePathsProcessed += '$ALL_LOCAL_DRIVES'
+        }else{
+            foreach($mountPoint in $mountPoints){
+                $includePathsProcessed += "/$($mountPoint.replace(':','').replace('\','/'))/".replace('//','/')
+            }
+        }
+    }else{
+        foreach($includePath in $includePathsToProcess){
+            $includePathsProcessed += "/$($includePath.replace(':','').replace('\','/'))".replace('//','/')
+        }
+    }
+
+    foreach($includePath in $includePathsProcessed){
+        $newFilePath= @{
+            "backupFilePath" = $includePath;
+            "skipNestedVolumes" = $skip;
+            "excludedFilePaths" = @()
+        }
+        foreach($excludePath in $excludePathsProcessed){
+            if($excludePath -match $includePath -or $includePath -eq '$ALL_LOCAL_DRIVES' -or $excludePath[0] -ne '/'){
+                $newFilePath.excludedFilePaths += $excludePath
+            }
+        }
+        $newParam.physicalSpecialParameters.filePaths += $newFilePath
+    }
+    $newParams += $newParam
 }
+
 # update job
 $job.sourceSpecialParameters = $newParams
 $job.sourceIds = @($sourceIds)
