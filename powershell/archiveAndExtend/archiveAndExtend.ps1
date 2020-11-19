@@ -283,7 +283,7 @@ function extendAndArchiveSnapshot($run, $keepDays, $archiveDays, $extendType){
     }
     if($keepDays -ne 0){
         if("$($runDate.Year)-$($runDate.DayOfYear)-$($run.jobId)" -notin $global:processedExtensions){
-            if($daysToExtend -ne 0){
+            if($daysToExtend -gt 0){
                 $runParameters.jobRuns[0].copyRunTargets += @{
                     "daysToKeep" = [int] $daysToExtend;
                     "type" = "kLocal"
@@ -345,7 +345,7 @@ function extendAndArchiveSnapshot($run, $keepDays, $archiveDays, $extendType){
         }
 
         if("$($runDate.Year)-$($runDate.DayOfYear)-$($run.jobId)" -notin $global:processedArchives){
-            if($daysToKeep -ne 0){
+            if($daysToKeep -gt 0){
                 $runParameters.jobRuns[0].copyRunTargets += @{
                     'archivalTarget' = @{
                         'vaultId'   = $vaultId;
