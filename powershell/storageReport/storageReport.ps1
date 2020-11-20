@@ -217,7 +217,11 @@ foreach($view in $views.views | Sort-Object -Property name | Where-Object viewPr
 Write-Host "  Replicated Jobs..."
 foreach($job in $jobs | Sort-Object -Property name){
     if($job.policyId.split(':')[0] -ne $cluster.id){
-        $stats = api get "stats/consumers?consumerType=kReplicationRuns&consumerIdList=$($job.id)"
+        if($cluster.clusterSoftwareVersion -gt '6.5.1b' -and $job.environment -eq 'kView'){
+            $stats = api get "stats/consumers?consumerType=kViewProtectionRuns&consumerIdList=$($job.id)"
+        }else{
+            $stats = api get "stats/consumers?consumerType=kReplicationRuns&consumerIdList=$($job.id)"
+        }
         if($stats.statsList){
             $html += processStats $stats $job.name $job.environment.subString(1) 'Replicated'
         }
