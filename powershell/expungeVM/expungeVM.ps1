@@ -18,6 +18,7 @@ param (
     [Parameter()][array]$vmName,  # optional names of vms to expunge (comma separated)
     [Parameter()][string]$vmList = '',  # optional textfile of vms to expunge (one per line)
     [Parameter()][string]$jobName,
+    [Parameter()][string]$tenantId = $null,
     [Parameter()][int]$olderThan = 0,
     [Parameter()][switch]$delete # delete or just a test run
 )
@@ -26,7 +27,7 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain -password $password
+apiauth -vip $vip -username $username -domain $domain -password $password -tenantId $tenantId
 
 # gather list of vms to expunge
 
@@ -83,8 +84,7 @@ foreach($vName in $vms){
     $vName = [string]$vName
     # search for VM
     log "`nSearching for $vName...`n"
-
-    $search = api get "/searchvms?entityTypes=kVMware&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kAcropolis&entityTypes=kKVM&entityTypes=kAWS&vmName=$vName"
+    $search = api get "/searchvms?entityTypes=kVMware&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kAcropolis&entityTypes=kKVM&entityTypes=kAWS&vmName=$([uri]::EscapeUriString($vName))"
     $foundvms = $search.vms | Where-Object { $_.vmDocument.objectName -eq $vName }
     foreach($vm in $foundvms){
         $doc = $vm.vmDocument
