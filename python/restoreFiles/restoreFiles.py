@@ -20,7 +20,7 @@ from datetime import datetime
 from time import sleep
 import sys
 import argparse
-if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
+if sys.version_info.major >= 3 and sys.version_info.minor >= 4:
     from urllib.parse import quote_plus
 else:
     from urllib import quote_plus
