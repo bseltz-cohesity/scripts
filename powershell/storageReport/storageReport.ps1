@@ -19,6 +19,9 @@ $cluster = api get cluster
 
 $today = get-date
 $date = $today.ToString()
+$fileDate = $date.Replace('/','-').Replace(':','-').Replace(' ','_')
+
+$csvFile = "storageReport_$($cluster.name)_$fileDate.csv"
 
 $title = "Storage Report for $($cluster.name)"
 
@@ -144,6 +147,8 @@ $html += '</span>
     <th>Reduction</th>
 </tr>'
 
+"Job/View Name,Environment,Local/Replicated,GiB Logical,GiB Ingested,GiB Consumed,Dedup Ratio,Compression,Reduction" | Out-File -FilePath $csvFile
+
 $jobs = api get protectionJobs?allUnderHierarchy=true
 
 function processStats($stats, $name, $environment, $location){
@@ -169,6 +174,15 @@ function processStats($stats, $name, $environment, $location){
         $logical = [math]::Round($logicalBytes / (1024 * 1024 * 1024), 2)
         $dataInGiB = [math]::Round($dataIn / (1024 * 1024 * 1024), 2)
         Write-Host ("{0,30}: {1,11:f2} {2}" -f $name, $consumption, 'GiB')
+        "{0},{1},{2},{3},{4},{5},{6},{7},{8}" -f $name,
+                                                 $environment,
+                                                 $location,
+                                                 $logical,
+                                                 $dataInGiB,
+                                                 $consumption,
+                                                 $dedup,
+                                                 $compression,
+                                                 $reduction | Out-File -FilePath $csvFile -Append
         return ("<td>{0}</td>
         <td>{1}</td>
         <td>{2}</td>
@@ -233,10 +247,10 @@ $html += "</table>
 </body>
 </html>"
 
-$fileDate = $date.Replace('/','-').Replace(':','-').Replace(' ','_')
 $html | Out-File -FilePath "storageReport_$($cluster.name)_$fileDate.html"
 
 Write-Host "`nsaving report as storageReport_$($cluster.name)_$fileDate.html"
+Write-Host "also as csv file $csvFile"
 
 if($smtpServer -and $sendTo -and $sendFrom){
     Write-Host "`nsending report to $([string]::Join(", ", $sendTo))`n"
