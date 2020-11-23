@@ -53,7 +53,7 @@ foreach($job in $jobs){
     # find latest local snapshot
     $runs = (api get protectionRuns?jobId=$($job.id)`&numRuns=999`&runTypes=kRegular`&runTypes=kFull`&excludeTasks=true) | `
         Where-Object { $_.backupRun.snapshotsDeleted -eq $false } | `
-        Where-Object { $_.backupRun.status -eq 'kSuccess' } | `
+        Where-Object { $_.backupRun.status -eq 'kSuccess' -or $_.backupRun.status -eq 'kWarning' } | `
         Sort-Object -Property {$_.copyRun[0].runStartTimeUsecs} -Descending
     if($runs){
         $run = $runs[0]
