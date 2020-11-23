@@ -35,7 +35,7 @@ param (
     [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
     [Parameter()][string]$domain = 'local', # local or AD domain
     [Parameter(Mandatory = $True)][array]$policyNames, # jobs to archive
-    [Parameter()][int32]$newerThan = 2, # don't process spanshots older than X days
+    [Parameter()][int32]$newerThan = 7, # don't process spanshots older than X days
     [Parameter()][switch]$commit, # if excluded script will run in test run mode and will not archive
     # daily params
     [Parameter()][int32]$archiveDaily = 0, # archive retention for daily snapshots
@@ -45,31 +45,31 @@ param (
     [Parameter()][int32]$archiveWeekly = 0, # archive retention for weekly snapshots
     [Parameter()][string]$weeklyVault = $null, # name of weekly archive target
     [Parameter()][ValidateSet('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','unselected')][string]$dayOfWeek = 'unselected',
-    [Parameter()][int32]$maxWeeklyDrift = 5, # if day was missed how many days late will we use
+    [Parameter()][int32]$maxWeeklyDrift = 2, # if day was missed how many days late will we use
     # monthly params
     [Parameter()][int32]$keepMonthly = 0, # local retention (days) for monthly snapshots
     [Parameter()][int32]$archiveMonthly = 0, # archive retention for monthly snapshots
     [Parameter()][string]$monthlyVault = $null, # name of monthly archive target
     [Parameter()][ValidateRange(-1,31)][int32]$dayOfMonth = 0,
-    [Parameter()][int32]$maxMonthlyDrift = 21, # if day was missed how many days late will we use
+    [Parameter()][int32]$maxMonthlyDrift = 4, # if day was missed how many days late will we use
     # quarterly params
     [Parameter()][int32]$keepQuarterly = 0, # local retention (days) for quarterly snapshots
     [Parameter()][int32]$archiveQuarterly = 0, # archive retention for quarterly snapshots
     [Parameter()][string]$quarterlyVault = $null, # name of quarterly archive target
     [Parameter()][array]$quarterlyDates = $null, # days to run quarterlies
-    [Parameter()][int32]$maxQuarterlyDrift = 21, # if day was missed how many days late will we use
+    [Parameter()][int32]$maxQuarterlyDrift = 4, # if day was missed how many days late will we use
     # yearly params
     [Parameter()][int32]$keepYearly = 0, # local retention (days) for yearly snapshots
     [Parameter()][int32]$archiveYearly = 0, # archive retention for yearly snapshots
     [Parameter()][string]$yearlyVault = $null, # name of yearly archive target
     [Parameter()][ValidateRange(-1,366)][int32]$dayOfYear = 0,
-    [Parameter()][int32]$maxYearlyDrift = 273, # if day was missed how many days late will we use
+    [Parameter()][int32]$maxYearlyDrift = 4, # if day was missed how many days late will we use
     # special params
     [Parameter()][int32]$keepSpecial = 0, # local retention (days) for yearly snapshots
     [Parameter()][int32]$archiveSpecial = 0, # archive retention for yearly snapshots
     [Parameter()][string]$specialVault = $null, # name of special archive target
     [Parameter()][array]$specialDates = $null, # name of archive target
-    [Parameter()][int32]$maxSpecialDrift = 21 # if day was missed how many days late will we use
+    [Parameter()][int32]$maxSpecialDrift = 4 # if day was missed how many days late will we use
 )
 
 # validate daily parameters
@@ -174,7 +174,7 @@ if($archiveSpecial -ne 0){
 }
 
 # number of days per month
-$monthDays = @(0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 20, 31)
+$monthDays = @(0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
 # start logging
 $logfile = $(Join-Path -Path $PSScriptRoot -ChildPath log-archiveAndExtend.txt)
