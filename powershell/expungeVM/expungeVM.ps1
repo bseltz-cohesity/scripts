@@ -27,7 +27,7 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain -password $password -tenantId $tenantId
+apiauth -vip $vip -username $username -domain $domain -password $password -tenantId $tenantId.ToUpper()
 
 # gather list of vms to expunge
 
