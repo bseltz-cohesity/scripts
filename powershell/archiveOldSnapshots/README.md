@@ -55,7 +55,8 @@ Then, if you're happy with the list of snapshots that will be archived, run the 
                           -vault s3 `
                           -jobNames 'SQL Backup', 'NAS Backup' `
                           -keepFor 365 `
-                          -archive
+                          -archive `
+                          -includeLogs
 ```
 
 ## Parameters
@@ -69,6 +70,7 @@ Then, if you're happy with the list of snapshots that will be archived, run the 
 * -ifExpiringAfter: (optional) skip if local snapshot set to expire in X or less days
 * -olderThan: (optional) skip if local snapshot is newer than X days
 * -archive: (optional) if excluded script will only report what it would do (test run mode)
+* -includeLogs: (optional) also archive log backups (default is to only archive full and incremental backups)
 
 To monitor the archive tasks, see the script 'monitorArchiveTasks'
 
