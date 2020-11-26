@@ -31,6 +31,7 @@ parser.add_argument('-w', '--wait', action='store_true')
 parser.add_argument('-t', '--backupType', type=str, choices=['kLog', 'kRegular', 'kFull'], default='kRegular')
 parser.add_argument('-o', '--objectname', action='append', type=str)
 parser.add_argument('-m', '--metadatafile', type=str, default=None)
+parser.add_argument('-x', '--abortifrunning', action='store_true')
 
 args = parser.parse_args()
 
@@ -53,6 +54,7 @@ objectnames = args.objectname
 useApiKey = args.useApiKey
 usepolicy = args.usepolicy
 metadatafile = args.metadatafile
+abortIfRunning = args.abortifrunning
 
 if enable is True:
     wait = True
@@ -207,16 +209,15 @@ if len(runs) > 0 and metadatafile is None:
             status = runs[0]['backupRun']['status']
             if status not in finishedStates:
                 if reportedwaiting is False:
+                    if abortIfRunning:
+                        print('Job is already running')
+                        exit()
                     print('Waiting for existing job run to finish...')
                     reportedwaiting = True
                 sleep(5)
         except Exception:
             print("got an error...")
             sleep(2)
-            try:
-                apiauth(vip, username, domain, quiet=True)
-            except Exception:
-                sleep(2)
 else:
     newRunId = lastRunId = 1
 

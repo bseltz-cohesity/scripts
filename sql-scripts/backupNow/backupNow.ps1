@@ -27,7 +27,8 @@ param (
     [Parameter()][switch]$helios,      # use helios on-prem
     [Parameter()][string]$logfile,     # name of log file
     [Parameter()][switch]$outputlog,   # enable logging
-    [Parameter()][string]$metaDataFile # backup file list
+    [Parameter()][string]$metaDataFile, # backup file list
+    [Parameter()][switch]$abortIfRunning
 )
 
 # source the cohesity-api helper code
@@ -66,25 +67,25 @@ if($outputlog){
 
 if($useApiKey){
     apiauth -vip $vip -username $username -domain $domain -password $password -useApiKey
-    if((! $AUTHORIZED) -and $vip2){
+    if((! $AUTHORIZED -and ! $cohesity_api.authorized) -and $vip2){
         output "Failed to connect to $vip. Trying $vip2..." -warn
         apiauth -vip2 $vip -username $username -domain $domain -password $password -useApiKey
         $jobName = $jobName2
     }
 }else{
     apiauth -vip $vip -username $username -domain $domain -password $password
-    if((! $AUTHORIZED) -and $vip2){
+    if((! $AUTHORIZED -and ! $cohesity_api.authorized) -and $vip2){
         output "Failed to connect to $vip. Trying $vip2..." -warn
         $jobName = $jobName2
     }
 }
 
-if(! $AUTHORIZED){
+if(! $AUTHORIZED -and ! $cohesity_api.authorized){
     output "Failed to connect to Cohesity cluster" -warn
     exit 1
 }
 
-if($USING_HELIOS){
+if($vip -eq 'helios.cohesity.com'){
     if($clusterName){
         heliosCluster $clusterName
     }else{
@@ -234,6 +235,10 @@ if($runs -and !$metaDataFile){
     $alertWaiting = $True
     while ($runs[0].backupRun.status -notin $finishedStates){
         if($alertWaiting){
+            if($abortIfRunning){
+                output "job is already running"
+                exit
+            }
             output "waiting for existing job run to finish..."
             $alertWaiting = $false
         }
