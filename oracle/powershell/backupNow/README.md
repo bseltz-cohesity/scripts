@@ -59,3 +59,4 @@ Job finished with status: kSuccess
 * -objects: comma separated list of object names to include in the job run. For VMs, simply include the VM name. For SQL databases, object names should be in the form of server.mydomain.net/instanceName/dbName. For Oracle databases, object names should be in the form of server.mydomain.net/dbName
 * -progress: display percent complete
 * -wait: wait for job to complete and return exit code, otherwise exit immediately after starting the job
+* -abortIfRunning: exit if job is already running (default is to wait and run when existing run is finished)
