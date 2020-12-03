@@ -159,7 +159,7 @@ foreach($sourceId in $sourceIds){
     }
     
     # process exclude paths
-    $wildCardExcludePaths = $excludePathsToProcess | Where-Object {$_.subString(0,2) -eq '*:'}
+    $wildCardExcludePaths = $excludePathsToProcess | Where-Object {$_ -ne $null -and $_.subString(0,2) -eq '*:'}
     $excludePathsToProcess = $excludePathsToProcess | Where-Object {$_ -notin $wildCardExcludePaths}
     foreach($wildCardExcludePath in $wildCardExcludePaths){
         foreach($mountPoint in $mountPoints){
@@ -167,15 +167,16 @@ foreach($sourceId in $sourceIds){
         }
     }
     foreach($excludePath in $excludePathsToProcess){
-       if($excludePath.subString(1,1) -eq ':'){
+       if($null -ne $excludePath -and $excludePath.subString(1,1) -eq ':'){
             $excludePath = "/$($excludePath.replace(':','').replace('\','/'))".replace('//','/')
        }
-       $excludePathsProcessed += $excludePath
+       if($null -ne $excludePath -and $excludePath -notin $excludePathsProcessed){
+        $excludePathsProcessed += $excludePath
+       }
     }
-    
     # process include paths
     $includePathsProcessed = @()
-    if($allDrives){
+    if($allDrives -or '$ALL_LOCAL_DRIVES' -in $includePathsToProcess){
         if($cluster.clusterSoftwareVersion -gt '6.5.1b'){
             $includePathsProcessed += '$ALL_LOCAL_DRIVES'
         }else{
@@ -189,7 +190,7 @@ foreach($sourceId in $sourceIds){
         }
     }
 
-    foreach($includePath in $includePathsProcessed){
+    foreach($includePath in $includePathsProcessed | Sort-Object -Unique){
         $newFilePath= @{
             "backupFilePath" = $includePath;
             "skipNestedVolumes" = $skip;
