@@ -14,7 +14,7 @@ param (
 apiauth -vip $vip -username $username -domain $domain
 
 $groups = api get "data-protect/protection-groups?isDeleted=false&includeTenants=true&includeLastRunInfo=true" -v2
-$group = $groups.protectionGroups | Where-Object {$_.name -eq 'utils'}
+$group = $groups.protectionGroups | Where-Object {$_.name -eq $jobName}
 if($group){
     if($group.lastRun.localBackupInfo.status -eq 'SucceededWithWarning'){
         $run = api get "data-protect/protection-groups/$($group.id)/runs/$($group.lastRun.id)?includeObjectDetails=true" -v2
