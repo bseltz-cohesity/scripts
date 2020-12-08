@@ -19,14 +19,14 @@ This python script initiates an upgrade of a Cohesity cluster to a newer version
 Run the following commands to download the scripts:
 
 ```bash
-mkdir scripts
-cd scripts
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/upgradeCluster/upgradeCluster.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/upgradeCluster/pyhesity.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/upgradeCluster/upgradeServer.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/upgradeCluster/cohesity-upgradeserver.service
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/upgradeCluster/testupgrade.sh
 chmod +x upgradeCluster.py
 chmod +x upgradeServer.py
+chmod +x testupgrade.sh
 ```
 
 ## Hosting the upgrade files

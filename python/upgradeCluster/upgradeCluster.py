@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Upgrade Cluster for python"""
 
-### usage: ./upgradeCluster.py -v bseltzve01 -u admin -r '6.1.0b_release-20181211_b2d1609d' -url 'http://192.168.1.195:5000/6.1.0b_release-20181211_b2d1609d'
+### usage: ./upgradeCluster.py -v mycluster -u myuser -domain mydomain.net -r '6.5.1c_release-20201119_ec194046' -url 'http://10.19.0.67:5000/6.5.1c_release-20201119_ec194046'
 
 ### import pyhesity wrapper module
 from pyhesity import *
