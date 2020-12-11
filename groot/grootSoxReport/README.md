@@ -48,10 +48,20 @@ easy_install psycopg2-binary
 Place both files in a folder together and run the main script like so:
 
 ```bash
+# example
 ./grootSoxReport.py -v mycluster -u myuser -d mydomain.net
+# end example
 ```
 
-The script will write an output file soxReport-mycluster.html.
+The script will write an output file soxReport-mycluster.csv.
+
+If you want to send the output file to email recipients, you can include the email related parameters:
+
+```bash
+# example
+./grootSoxReport.py -v mycluster -u myuser -d mydomain.net -s smtp.mydomain.net -r someone@mydomain.net -t customer@mydomain.net
+# end example
+```
 
 ## Parameters
 
@@ -60,6 +70,10 @@ The script will write an output file soxReport-mycluster.html.
 * -d, --domain: (optional) domain of username (default is local)
 * -n, --numdays: (optional) number of days back to report (default is 31)
 * -f, --filter: (optional) wildcard match of source, object or job name
+* -s, --mailserver: (optional) smtp server to send mail through
+* -p, --mailport: (optional) default is 25
+* -t, --sendto: (optional) email recipient (repeat parameter to send to multiple recipients)
+* -r, --sendfrom: (optional) email address for from field
 
 ## Filter names using wildcards
 
