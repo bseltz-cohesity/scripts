@@ -43,6 +43,9 @@ apiauth -vip $vip -username $username -domain $domain
 ### cluster info
 $clusterName = (api get cluster).name
 
+### get view protection jobs
+$jobs = api get protectionJobs?environments=kView
+
 ### policy info
 if($policyName){
     # protect cloned view
@@ -57,7 +60,6 @@ if(! (Test-Path $inPath)){
     Write-Warning "$inPath not found"
     exit
 }
-
 
 function getViews(){
     $myViews = @()
@@ -77,8 +79,11 @@ function getViews(){
 $views = getViews
 
 $clonedViewList = "clonedViews-{0}" -f (get-date).ToString('yyyy-MM-dd_hh-mm-ss')
+$migratedShares = "migratedShares.txt"
+$null = Remove-Item -Path $migratedShares -Force -ErrorAction SilentlyContinue
 
 foreach($viewName in $myViews){
+    $viewName = [string]$viewName
     ### get view metadata from file
     $filePath = Join-Path -Path $inPath -ChildPath $viewName
     if(Test-Path $filePath){
@@ -99,8 +104,12 @@ foreach($viewName in $myViews){
     }
     
     if ($viewResult) {
-        
-        $view = $views | Where-Object name -eq $viewResult.vmDocument.objectName
+        $job = $jobs | Where-Object {$_.name -eq $viewResult.vmDocument.jobName}
+        if($job.PSObject.Properties['remoteViewName']){
+            $view = $views | Where-Object {$_.name -eq $job.remoteViewName}
+        }else{
+            $view = $views | Where-Object {$_.name -eq $viewResult.vmDocument.objectName}
+        }
         $view = $view[0]
         $cloneTask = @{
             "name"       = "Clone-View_" + $((get-date).ToString().Replace('/', '_').Replace(':', '_').Replace(' ', '_'));
@@ -128,15 +137,17 @@ foreach($viewName in $myViews){
         if ($cloneOp) {
             "Cloned $viewName"
             "$viewName" | Out-File -FilePath $clonedViewList -Append
+            "$viewName" | Out-File -FilePath $migratedShares -Append
         }
     }
 }
 
-Start-Sleep 10
+Start-Sleep 3
 
 $views = getViews
 
 foreach($viewName in $myViews){
+    $viewName = [string]$viewName
     $newView = ($views | Where-Object name -eq $viewName)
     if($newView){
         $newView = $newView[0]
@@ -166,6 +177,7 @@ foreach($viewName in $myViews){
                     write-host "`t$($alias.aliasName)"
                     $viewPath = $alias.viewPath.trimend("/")
                     $null = api post viewAliases @{'viewName' = $viewName; 'viewPath' = $viewPath; 'aliasName' = $alias.aliasName}
+                    "$($alias.aliasName)" | Out-File -FilePath $migratedShares -Append
                 }
             }
             if($policyName){
