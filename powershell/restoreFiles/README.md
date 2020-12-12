@@ -56,6 +56,7 @@ Restore finished with status Success
 * -runId: (optional) use specified runId to restore files from
 * -latest: (optional) use the latest backup date to restore files from
 * -wait: wait for completion and report status
+* -showLog: show detailed log output after completion
 
 ## Backup Versions
 

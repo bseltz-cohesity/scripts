@@ -25,7 +25,8 @@ param (
     [Parameter()][datetime]$start,
     [Parameter()][datetime]$end,
     [Parameter()][switch]$latest,
-    [Parameter()][switch]$wait
+    [Parameter()][switch]$wait,
+    [Parameter()][switch]$showLog
 )
 
 ### source the cohesity-api helper code
@@ -165,7 +166,7 @@ function restore($thesefiles, $doc, $version, $targetEntity, $singleFile){
     $restoreTask = api post /restoreFiles $restoreParams
     if($restoreTask){
         $taskId = $restoreTask.restoreTask.performRestoreTaskState.base.taskId
-        if($wait){
+        if($wait -or $showLog){
             $finishedStates = @('kCanceled', 'kSuccess', 'kFailure')
             $restoreTaskStatus = $restoreTask.restoreTask.performRestoreTaskState.base.publicStatus
             do {
@@ -173,6 +174,14 @@ function restore($thesefiles, $doc, $version, $targetEntity, $singleFile){
                 $restoreTask = api get /restoretasks/$taskId
                 $restoreTaskStatus = $restoreTask.restoreTask.performRestoreTaskState.base.publicStatus
             } until ($restoreTaskStatus -in $finishedStates)
+            if($showLog){
+                $progress = api get "/progressMonitors?taskPathVec=$($restoreTask.restoreTask.performRestoreTaskState.progressMonitorTaskPath)&excludeSubTasks=false&includeFinishedTasks=true"
+                "`n-----------"
+                "Log Output:"
+                "-----------`n"
+                $progress.resultGroupVec.taskVec.progress.eventVec.eventMsg
+                ""
+            }
             if($restoreTaskStatus -eq 'kSuccess'){
                 Write-Host "Restore finished with status $($restoreTaskStatus.Substring(1))" -ForegroundColor Green
                 if(! $singleFile){
