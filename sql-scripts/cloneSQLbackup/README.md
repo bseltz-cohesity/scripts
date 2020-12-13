@@ -82,6 +82,21 @@ To delete a view when finished:
                      -deleteView
 ```
 
+To refresh a view (on a schedule):
+
+```powershell
+./cloneSQLbackup.ps1 -vip mycluster `
+                     -username myuser `
+                     -domain mydomain.net `
+                     -jobName 'My SQL Job' `
+                     -sqlServer mysqlserver.mydomain.net `
+                     -viewName cloned `
+                     -refreshView `
+                     -force `
+                     -consolidate `
+                     -logsOnly
+```
+
 ## Parameters
 
 * -vip: Cohesity cluster to connect to
@@ -93,6 +108,9 @@ To delete a view when finished:
 * -sqlServer: (optional) name of sqlServer whose backup to clone
 * -viewName: (optional) name of new or existing view to clone backup files to
 * -access: (optional) Active Directory users/groups (comma separated) to add to share permissions (default is everyone)
-* -storageDomain: (optional) name of storage domain to create view (defaults to DefaultStorageDomain)
 * -listRuns: (optional) list available job run IDs and dates
 * -deleteView: (optional) delete view when finished
+* -refreshView: (optional) delete existing files in view
+* -force: (optional) do not prompt for confirmation when refreshing or deleting view (DANGEROUS!)
+* -consolidate: (optional) move all files to root of view
+* -logsOnly: (optional) only consolidate log files
