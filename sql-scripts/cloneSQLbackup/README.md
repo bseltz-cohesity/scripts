@@ -4,6 +4,8 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script clones SQL backup files to a Cohesity view.
 
+Note: Consolidation and Refresh options require PowerShell to have SMB access to the Cohesity view.
+
 ## Warning! This script can delete views! Make sure you know what you are doing before you run it
 
 ## Download the Scripts
