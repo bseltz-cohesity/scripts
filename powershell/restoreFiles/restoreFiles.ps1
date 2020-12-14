@@ -179,7 +179,9 @@ function restore($thesefiles, $doc, $version, $targetEntity, $singleFile){
                 "`n-----------"
                 "Log Output:"
                 "-----------`n"
-                $progress.resultGroupVec.taskVec.progress.eventVec.eventMsg
+                $progress.resultGroupVec.taskVec.progress.eventVec | ForEach-Object{
+                    "$(usecsToDate ($_.timestampSecs * 1000000))  $($_.eventMsg)" | Out-Host
+                }
                 ""
             }
             if($restoreTaskStatus -eq 'kSuccess'){
