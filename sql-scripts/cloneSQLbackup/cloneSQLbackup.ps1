@@ -215,11 +215,11 @@ foreach($run in $runs){
     }
 }
 
+$backupFolderPath = "\\$vip\$viewName"
+
 if($consolidate){
     Write-Host "Consolidating files..."
 
-    $backupFolderPath = "\\$vip\$viewName"
-    
     foreach($item in $paths){
         $itemPath = $item.path
         $runDate = $item.runDate
