@@ -11,7 +11,8 @@ param (
     [Parameter()][string]$inputFile,                  # name of file containing entries to add
     [Parameter()][switch]$backup,                     # backup existing hosts before making changes
     [Parameter()][switch]$overwrite,                  # overwrite hostnames for existing IP (default is to add hostnames)
-    [Parameter()][switch]$delete                      # delete IP from list
+    [Parameter()][switch]$delete,                     # delete IP from list
+    [Parameter()][switch]$quiet
 )
 
 ### source the cohesity-api helper code
@@ -121,15 +122,27 @@ if($delete){
 }
 
 # show new list
-$hosts.hosts | Sort-Object -Property ip
+if(!$quiet){
+    $hosts.hosts | Sort-Object -Property ip
+}
 
 $hosts | setApiProperty 'validate' $True
 
 if($changesMade){
+    if($hosts.PSObject.Properties['version']){
+        $hosts.version += 1
+    }
     $result = api put /nexus/cluster/upload_hosts_file $hosts
-    write-host $result.message -ForegroundColor Green
+    if(!$quiet){
+        write-host $result.message -ForegroundColor Green
+    }
 }else{
-    Write-Host "No changes made"
+    if(!$quiet){
+        Write-Host "No changes made"
+    }
+    
 }
-Write-Host "`n"
+if(!$quiet){
+    Write-Host "`n"
+}
 
