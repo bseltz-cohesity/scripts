@@ -26,10 +26,10 @@ Place both files in a folder together and run the main script like so:
 
 ```powershell
 ./addCustomHostMapping.ps1 -vip mycluster `
-                 -username myusername `
-                 -domain mydomain.net `
-                 -ip 192.168.1.110 `
-                 -hostNames myserver, myserver.mydomain.net
+                           -username myusername `
+                           -domain mydomain.net `
+                           -ip 192.168.1.110 `
+                           -hostNames myserver, myserver.mydomain.net
 ```
 
 ## Parameters
