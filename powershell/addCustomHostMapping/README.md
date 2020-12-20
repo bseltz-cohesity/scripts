@@ -26,10 +26,10 @@ Place both files in a folder together and run the main script like so:
 
 ```powershell
 ./addCustomHostMapping.ps1 -vip mycluster `
-                 -username myusername `
-                 -domain mydomain.net `
-                 -ip 192.168.1.110 `
-                 -hostNames myserver, myserver.mydomain.net
+                           -username myusername `
+                           -domain mydomain.net `
+                           -ip 192.168.1.110 `
+                           -hostNames myserver, myserver.mydomain.net
 ```
 
 ## Parameters
@@ -43,3 +43,4 @@ Place both files in a folder together and run the main script like so:
 * -backup: (optional) backup existing host mappings to file hosts-backup-date.csv
 * -overwrite: (optional) if IP already exists, replace the host names (default is to append new host names)
 * -delete: (optional) delete host mappings for the specified IP(s)
+
