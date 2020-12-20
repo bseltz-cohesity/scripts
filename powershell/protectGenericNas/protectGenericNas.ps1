@@ -1,13 +1,13 @@
 ### Usage:
-# ./protectNetApp.ps1 -vip mycluster `
-#                     -username myuser `
-#                     -domain mydomain.net `
-#                     -policyName 'My Policy' `
-#                     -jobName 'My New Job' `
-#                     -timeZone 'America/New_York' `
-#                     -enableIndexing `
-#                     -mountPath \\myserver\myshare `
-#                     -cloudArchiveDirect
+# ./protectGenericNas.ps1 -vip mycluster `
+#                         -username myuser `
+#                         -domain mydomain.net `
+#                         -policyName 'My Policy' `
+#                         -jobName 'My New Job' `
+#                         -timeZone 'America/New_York' `
+#                         -enableIndexing `
+#                         -mountPath \\myserver\myshare `
+#                         -cloudArchiveDirect
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -15,6 +15,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
     [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
     [Parameter()][string]$domain = 'local', # local or AD domain
+    [Parameter()][string]$tenant,
     [Parameter(Mandatory = $True)][string]$policyName, # policy to use for the new job
     [Parameter(Mandatory = $True)][string]$jobName, # name for the new job
     [Parameter()][string]$startTime = '20:00', # e.g. 23:30 for 11:30 PM
@@ -43,7 +44,7 @@ if($cloudArchiveDirect){
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain
+apiauth -vip $vip -username $username -domain $domain -tenant $tenant
 
 # parse startTime
 $hour, $minute = $startTime.split(':')
@@ -110,7 +111,7 @@ if('' -ne $exclusionList){
     if(Test-Path -Path $exclusionList -PathType Leaf){
         $exclusions = Get-Content $exclusionList
         foreach($exclusion in $exclusions){
-            $excludePaths += $exclusion
+            $excludePaths += [string]$exclusion
         }
     }else{
         Write-Warning "Exclusions file $exclusionList not found!"
