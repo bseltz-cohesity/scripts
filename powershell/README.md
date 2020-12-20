@@ -6,7 +6,7 @@ This repository contains many examples of how to automate Cohesity using PowerSh
 
 ## Download the script
 
-Run these commands from PowerShell to download the script(s) into your current directory
+Run these commands from PowerShell to download the script(s) into your current directory:
 
 ```powershell
 # Download Commands
