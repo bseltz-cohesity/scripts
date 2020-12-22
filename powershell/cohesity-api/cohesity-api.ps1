@@ -1,48 +1,16 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2020.10.16 - Brian Seltzer
+#  Version 2020.12.22 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
-# 0.06 - Consolidated Windows and Unix versions - June 2018
-# 0.07 - Added saveJson, loadJson and json2code utility functions - Feb 2019
-# 0.08 - added -prompt to prompt for password rather than save - Mar 2019
-# 0.09 - added setApiProperty / delApiProperty - Apr 2019
-# 0.10 - added $REPORTAPIERRORS constant - Apr 2019
-# 0.11 - added storePassword function and username parsing - Aug 2019
-# 0.12 - added -password to apiauth function - Oct 2019
-# 0.13 - added showProps function - Nov 2019
-# 0.14 - added storePasswordFromInput function - Dec 2019
-# 0.15 - added support for PS Core on Windows - Dec 2019
-# 0.16 - added ServicePoint connection workaround - Jan 2020
-# 0.17 - fixed json2code line endings on Windows - Jan 2020
-# 0.18 - added REINVOKE - Jan 2020
-# 0.19 - fixed password encryption for PowerShell 7.0 - Mar 2020
-# 0.20 - refactored, added apipwd, added helios access - Mar 2020
-# 0.21 - helios changes - Mar 2020
-# 0.22 - added password file storage - Apr 2020
-# 0.23 - added self updater - Apr 2020
-# 0.24 - added delete with body - Apr 2020
-# 0.25 - added paged view list - Apr 2020
-# 0.26 - added support for tenants - May 2020
-# 0.27 - added support for Iris API Key - May 2020
-# 0.28 - added reprompt for password, debug log - June 2020
-# 0.29 - update storePasswordInFile - June 2020
-# 2020.06.04 - updated version numbering - June 2020
-# 2020.06.16 - improved REINVOKE - June 2020
-# 2020-06.25 - added API v2 support (-version 2) or (-v2)
-# 2020.07.08 - removed timout
-# 2020.07.20 - fixed dateToUsecs for international date formats
-# 2020.07.30 - quiet ssl handler
-# 2020.08.08 - fixed timezone issue
-# 2020.10.02 - set PROMPTFORPASSWORDCHANGE to false
-# 2020.10.05 - retired REINVOKE
-# 2020.10.06 - exit script when attempting unauthenticated api call
-# 2020.10.13 - fixed timeAgo function for i14n
 # 2020.10.16 - added password parameter to storePasswordInFile function
+# 2020.10.20 - code cleanup (moved old version history to end of file)
+# 2020.12.22 - added v2 support for file download
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
-$versionCohesityAPI = '2020.10.16'
+$versionCohesityAPI = '2020.12.22'
 
+# demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
     Pause
@@ -50,14 +18,11 @@ if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
 }
 
 $REPORTAPIERRORS = $true
-$PROMPTFORPASSWORDCHANGE = $false
-$COHESITY_PROMPTS = $false
 
 $pwfile = $(Join-Path -Path $PSScriptRoot -ChildPath YWRtaW4)
 $apilogfile = $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api-debug.log)
 
-# platform detection and prerequisites ============================================================
-
+# platform detection ==========================================================================
 if ($PSVersionTable.Platform -eq 'Unix') {
     $CONFDIR = '~/.cohesity-api'
     if ($(Test-Path $CONFDIR) -eq $false) { $null = New-Item -Type Directory -Path $CONFDIR}
@@ -92,17 +57,13 @@ function __writeLog($logmessage){
 # authentication functions ========================================================================
 
 function apiauth($vip, $username='helios', $domain='local', $passwd=$null, $password = $null, $tenantId = $null, [switch] $quiet, [switch] $noprompt, [switch] $updatePassword, [switch] $helios, [switch] $useApiKey){
-    # prompt for vip
+
     if(-not $vip){
         if($helios){
             $vip = 'helios.cohesity.com'
         }else{
-            if($COHESITY_PROMPTS){
-                __writeLog "prompting for VIP"
-                Write-Host 'VIP: ' -foregroundcolor green -nonewline
-                $vip = Read-Host
-            }
-            if(-not $vip){Write-Host 'vip is required' -foregroundcolor red; break}
+            Write-Host 'vip is required' -foregroundcolor Yellow
+            break
         }
     }
 
@@ -139,10 +100,6 @@ function apiauth($vip, $username='helios', $domain='local', $passwd=$null, $pass
         'password' = $passwd
     }
 
-    $global:__VIP = $vip
-    $global:__USERNAME = $username
-    $global:__DOMAIN = $domain
-    $global:SELECTEDHELIOSCLUSTER = $null
     $global:APIROOT = 'https://' + $vip + '/irisservices/api/v1'
     $global:APIROOTv2 = 'https://' + $vip + '/v2/'
     $HEADER = @{'accept' = 'application/json'; 'content-type' = 'application/json'}
@@ -150,7 +107,6 @@ function apiauth($vip, $username='helios', $domain='local', $passwd=$null, $pass
         $HEADER['apiKey'] = $passwd
         $global:HEADER = $HEADER
         $global:AUTHORIZED = $true
-        $global:USING_HELIOS = $false
         $global:CLUSTERSELECTED = $true
         $cluster = api get cluster
         if($cluster){
@@ -173,7 +129,6 @@ function apiauth($vip, $username='helios', $domain='local', $passwd=$null, $pass
             $global:AUTHORIZED = $true
             $global:CLUSTERSELECTED = $false
             $global:CLUSTERREADONLY = $false
-            $global:USING_HELIOS = $true
             if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
         }catch{
             $global:AUTHORIZED = $false
@@ -182,11 +137,6 @@ function apiauth($vip, $username='helios', $domain='local', $passwd=$null, $pass
                 Write-Host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
             }else{
                 Write-Host $_.ToString() -foregroundcolor yellow
-            }
-            if($_.ToString().ToLower().Contains('authentication failed')){
-                if($PROMPTFORPASSWORDCHANGE -eq $true){
-                    apiauth -vip $vip -username $username -domain $domain -updatePassword
-                }
             }
         }
     }else{
@@ -208,7 +158,6 @@ function apiauth($vip, $username='helios', $domain='local', $passwd=$null, $pass
             # store token
             $global:AUTHORIZED = $true
             $global:CLUSTERSELECTED = $true
-            $global:USING_HELIOS = $false
             $global:CLUSTERREADONLY = $false
             $global:HEADER = @{'accept' = 'application/json'; 
                 'content-type' = 'application/json'; 
@@ -229,11 +178,6 @@ function apiauth($vip, $username='helios', $domain='local', $passwd=$null, $pass
                     Write-Host $_.ToString() -foregroundcolor yellow
                 }
             }
-            if($_.ToString().ToLower().contains('invalid username')){
-                if($PROMPTFORPASSWORDCHANGE -eq $true){
-                    apiauth -vip $vip -username $username -domain $domain -updatePassword
-                }
-            }
         }
     }
 }
@@ -248,7 +192,6 @@ function heliosCluster($clusterName, [switch] $verbose){
         if($cluster){
             $global:HEADER.accessClusterId = $cluster.clusterId
             $global:CLUSTERSELECTED = $true
-            $global:SELECTEDHELIOSCLUSTER = $cluster.name
             $global:CLUSTERREADONLY = (api get /mcm/config).mcmReadOnly
             if($verbose){
                 Write-Host "Connected ($($cluster.name))" -ForegroundColor Green
@@ -273,64 +216,6 @@ function heliosClusters(){
     return $HELIOSCONNECTEDCLUSTERS | Sort-Object -Property name
 }
 
-# api password setter/updater tool
-function apipwd($vip, $username='helios', $domain='local', [switch] $asUser, [switch] $helios){
-    # prompt for vip
-    if(-not $vip){
-        if($helios){
-            $vip = 'helios.cohesity.com'
-        }else{
-            __writeLog "Prompting for VIP"
-            Write-Host 'VIP: ' -foregroundcolor green -nonewline
-            $vip = Read-Host
-            if(-not $vip){Write-Host 'vip is required' -foregroundcolor red; break}
-        }
-    }
-    # parse domain\username or username@domain
-    if($username.Contains('\')){
-        $domain, $username = $username.Split('\')
-    }
-    if($username.Contains('@')){
-        $username, $domain = $username.Split('@')
-    }
-    if($password){ $passwd = $password }
-    if($helios){
-        if(!$asUser){
-            apiauth -username $username -helios -updatePassword
-        }else{
-            if($PSVersionTable.Platform -ne 'Unix'){
-                $credential = Get-Credential -Message "Enter Credentials for the Windows User"
-    
-                $cmdargs = "Write-Host ('running as ' + [System.Security.Principal.WindowsIdentity]::GetCurrent().Name);
-                . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1);
-                apiauth {0} -helios -updatePassword;
-                pause;" -f $username
-
-                Start-Process powershell.exe -Credential $credential -ArgumentList ("-command $cmdargs")
-            }else{
-                Write-Host "The -asUser option is only valid for Windows" -ForegroundColor Yellow
-            }
-        }
-    }else{
-        if(!$asUser){
-            apiauth $vip $username $domain -updatePassword
-        }else{
-            if($PSVersionTable.Platform -ne 'Unix'){
-                $credential = Get-Credential -Message "Enter Credentials for the Windows User"
-    
-                $cmdargs = "Write-Host ('running as ' + [System.Security.Principal.WindowsIdentity]::GetCurrent().Name);
-                . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1);
-                apiauth -vip {0} -username {1} -domain {2} -updatePassword;
-                pause;" -f $vip, $username, $domain
-        
-                Start-Process powershell.exe -Credential $credential -ArgumentList ("-command $cmdargs")
-            }else{
-                Write-Host "The -asUser option is only valid for Windows" -ForegroundColor Yellow
-            }
-        }
-    }
-}
-
 # terminate authentication
 function apidrop([switch] $quiet){
     $global:AUTHORIZED = $false
@@ -350,10 +235,6 @@ function api($method, $uri, $data, $version=1, [switch]$v2){
             if($MyInvocation.PSCommandPath){
                 exit 1
             }
-        }
-    }elseif(-not $global:CLUSTERSELECTED){
-        if($REPORTAPIERRORS){
-            Write-Host 'Please use heliosCluster to connect to a cohesity cluster' -ForegroundColor Yellow
         }
     }else{
         if($method -ne 'get' -and $global:CLUSTERREADONLY -eq $true){
@@ -376,7 +257,6 @@ function api($method, $uri, $data, $version=1, [switch]$v2){
             }
             $body = ConvertTo-Json -Depth 100 $data
             if ($PSVersionTable.PSEdition -eq 'Core'){
-                #if($method -eq 'post' -or $method -eq 'put'){
                 if($body){
                     $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER -SkipCertificateCheck
                 }else{
@@ -400,14 +280,21 @@ function api($method, $uri, $data, $version=1, [switch]$v2){
 }
 
 # file download function
-function fileDownload($uri, $fileName){
+function fileDownload($uri, $fileName, $version=1, [switch]$v2){
     if (-not $global:AUTHORIZED){ Write-Host 'Please use apiauth to connect to a cohesity cluster' -foregroundcolor yellow; break }
     try {
-        if ($uri[0] -ne '/'){ $uri = '/public/' + $uri}
-        $url = $APIROOT + $uri
+        if($version -eq 2 -or $v2){
+            $url = $APIROOTv2 + $uri
+        }else{
+            if ($uri[0] -ne '/'){ $uri = '/public/' + $uri}
+            $url = $APIROOT + $uri
+        }
         if ($PSVersionTable.Platform -eq 'Unix'){
             curl -k -s -H "$global:CURLHEADER" -o "$fileName" "$url"
         }else{
+            if($fileName -notmatch '\\'){
+                $fileName = $(Join-Path -Path $PSScriptRoot -ChildPath $fileName)
+            }
             $WEBCLI.DownloadFile($url, $fileName)
         } 
     }catch{
@@ -884,3 +771,42 @@ function getViews([switch]$includeInactive){
     }
     return $myViews
 }
+
+# old version history
+# . . . . . . . . . . . . . . . . . . . . . . . . 
+# 0.06 - Consolidated Windows and Unix versions - June 2018
+# 0.07 - Added saveJson, loadJson and json2code utility functions - Feb 2019
+# 0.08 - added -prompt to prompt for password rather than save - Mar 2019
+# 0.09 - added setApiProperty / delApiProperty - Apr 2019
+# 0.10 - added $REPORTAPIERRORS constant - Apr 2019
+# 0.11 - added storePassword function and username parsing - Aug 2019
+# 0.12 - added -password to apiauth function - Oct 2019
+# 0.13 - added showProps function - Nov 2019
+# 0.14 - added storePasswordFromInput function - Dec 2019
+# 0.15 - added support for PS Core on Windows - Dec 2019
+# 0.16 - added ServicePoint connection workaround - Jan 2020
+# 0.17 - fixed json2code line endings on Windows - Jan 2020
+# 0.18 - added REINVOKE - Jan 2020
+# 0.19 - fixed password encryption for PowerShell 7.0 - Mar 2020
+# 0.20 - refactored, added apipwd, added helios access - Mar 2020
+# 0.21 - helios changes - Mar 2020
+# 0.22 - added password file storage - Apr 2020
+# 0.23 - added self updater - Apr 2020
+# 0.24 - added delete with body - Apr 2020
+# 0.25 - added paged view list - Apr 2020
+# 0.26 - added support for tenants - May 2020
+# 0.27 - added support for Iris API Key - May 2020
+# 0.28 - added reprompt for password, debug log - June 2020
+# 0.29 - update storePasswordInFile - June 2020
+# 2020.06.04 - updated version numbering - June 2020
+# 2020.06.16 - improved REINVOKE - June 2020
+# 2020-06.25 - added API v2 support (-version 2) or (-v2)
+# 2020.07.08 - removed timout
+# 2020.07.20 - fixed dateToUsecs for international date formats
+# 2020.07.30 - quiet ssl handler
+# 2020.08.08 - fixed timezone issue
+# 2020.10.02 - set PROMPTFORPASSWORDCHANGE to false
+# 2020.10.05 - retired REINVOKE
+# 2020.10.06 - exit script when attempting unauthenticated api call
+# 2020.10.13 - fixed timeAgo function for i14n
+# . . . . . . . . . . . . . . . . . . . . . . . . 
