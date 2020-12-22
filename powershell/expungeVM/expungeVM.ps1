@@ -121,7 +121,7 @@ foreach($vName in $vms){
                                 $remoteClusters += $replica.target.replicationTarget.clusterName 
                             }
                         }
-                        if($replica.target.type -eq 3 -and $replica.tartet.archivalTarget.type -eq 0){
+                        if($replica.target.type -eq 3 -and $replica.target.archivalTarget.type -eq 0){
                             $canDelete = $True
                             $runParameters.jobRuns[0].copyRunTargets += @{
                                 'daysToKeep' = 0;
