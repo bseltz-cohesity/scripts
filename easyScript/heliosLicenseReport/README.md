@@ -14,8 +14,6 @@ curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/easyScr
 # end download commands
 ```
 
-Unzip the file. We can then use Python or PowerShell to store a password for use by easyScript.
-
 ## Getting a Password for Helios
 
 Helios uses an API key for authentication. To acquire an API key:
