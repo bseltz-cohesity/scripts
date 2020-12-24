@@ -14,7 +14,7 @@ curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/easyScr
 # end download commands
 ```
 
-## Getting a Password for Helios
+## Getting an API Key for Helios
 
 Helios uses an API key for authentication. To acquire an API key:
 
@@ -25,8 +25,6 @@ Helios uses an API key for authentication. To acquire an API key:
 * click Save
 
 Immediately copy the API key (you only have one chance to copy the key. Once you leave the screen, you can not access it again).
-
-Use this API key as the password.
 
 ## Uploading to EasyScript
 
@@ -39,7 +37,7 @@ Use this API key as the password.
 
 ## Arguments
 
-* -pwd, --password
+* -k, --apikey
 * -s, --mailserver: SMTP gateway to forward email through
 * -p, --mailport: (optional) defaults to 25
 * -f, --sendfrom: email address to show in the from field
@@ -48,5 +46,5 @@ Use this API key as the password.
 For example: you can have the script send a report via email using the folllowing arguments:
 
 ```bash
--pwd xxxxxxxxxxxxxxx -s smtp.mydomain.net -t myemail.mydomain.net -f easyscript.mydomain.net
+-k xxxxxxxxxxxxxxx -s smtp.mydomain.net -t myemail.mydomain.net -f easyscript.mydomain.net
 ```
