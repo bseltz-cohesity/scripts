@@ -44,10 +44,9 @@ Immediately copy the API key (you only have one chance to copy the key. Once you
 * -p, --mailport: (optional) defaults to 25
 * -f, --sendfrom: email address to show in the from field
 * -t, --sendto: email addresses to send report to (use repeatedly to add recipients)
-* -z, --timezone: timezone offset (default is -5)
 
 For example: you can have the script send a report via email using the folllowing arguments:
 
 ```bash
--k xxxxxxxxxxxxxxx -s smtp.mydomain.net -t myemail.mydomain.net -f easyscript.mydomain.net -z -6
+-k xxxxxxxxxxxxxxx -s smtp.mydomain.net -t myemail.mydomain.net -f easyscript.mydomain.net
 ```
