@@ -76,6 +76,6 @@ If you want to replay the logs to the very latest available point in time, use t
 
 Or, if you want to replay logs to a specific point in time, use the **-lt** parameter and specify a date and time in military format like so:
 
-```powershell
+```bash
 -lt '2019-01-20 23:47:02'
 ```
