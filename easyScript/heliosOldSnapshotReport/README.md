@@ -39,6 +39,7 @@ Immediately copy the API key (you only have one chance to copy the key. Once you
 
 * -k, --apikey
 * -d, --daystokeep: number of days of snapshots to keep
+* -c, --clustername: (optional) limit to single cluster (default is all helios clusters)
 * -e, --expire: (optional) expire old snapshots (default is to report only)
 * -b, --daysback: (optional) days of history to interrogate (default is 730)
 * -n, --numruns: (optional) page size for retrieving runs (default is 1000)
