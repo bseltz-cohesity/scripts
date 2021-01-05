@@ -58,6 +58,7 @@ foreach($job in $jobs){
         Where-Object { $_.backupRun.snapshotsDeleted -eq $false } | `
         Where-Object { $_.backupRun.status -eq 'kSuccess' -or $_.backupRun.status -eq 'kWarning' } | `
         Where-Object {@($_.copyRun.status | Where-Object {$finishedStates -notcontains $_}).Count -eq 0} | `
+        Where-Object { 'kArchival' -notin $_.copyRun.target.type } | ` 
         Sort-Object -Property {$_.copyRun[0].runStartTimeUsecs} -Descending
     if($fullOnly){
         $runs = $runs | Where-Object { $_.backupRun.runType -eq 'kFull' }
