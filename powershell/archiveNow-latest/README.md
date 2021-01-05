@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This powershell script archives the latest snapshot of all (ore selected) jobs to the specified criteria to an external target.
+This powershell script archives the latest snapshot of all (or selected) jobs to the specified criteria to an external target.
 
 ## Download the script
 
@@ -30,9 +30,7 @@ Place both files in a folder together, then we can run the script like so:
                         -domain mydomain.net `
                         -jobNames 'NAS Backup', 'SQL Backup' `
                         -vault s3 `
-                        -valutType -kCloud `
                         -keepFor 180 `
-                        -localOnly `
                         -commit
 ```
 
@@ -46,6 +44,7 @@ Place both files in a folder together, then we can run the script like so:
 * -vaultType: (optional) type of archive target (kCloud, kTape, kNas - defaults to kCloud)
 * -keepFor: number of days (from original backup date) to retain the archive
 * -localOnly: (optional) archive only jobs local to this cluster
+* -fullOnly: (optional) only archive full protection runs (not incremental)
 * -commit: (optional) execute the archive tasks (default is to show what would happen)
 
 ## Running and Scheduling PowerShell Scripts

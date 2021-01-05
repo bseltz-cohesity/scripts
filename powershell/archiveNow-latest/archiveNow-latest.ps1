@@ -18,7 +18,8 @@ param (
     [Parameter(Mandatory = $True)][int]$keepFor, #set archive retention to x days from backup date
     [Parameter()][switch]$commit,
     [Parameter()][switch]$localOnly,
-    [Parameter()][ValidateSet('kCloud','kTape','kNas')][string]$vaultType = 'kCloud'
+    [Parameter()][ValidateSet('kCloud','kTape','kNas')][string]$vaultType = 'kCloud',
+    [Parameter()][switch]$fullOnly
 )
 
 # source the cohesity-api helper code
@@ -53,11 +54,14 @@ foreach($job in $jobs){
 
     $jobName = $job.name
     # find latest local snapshot
-    $runs = (api get protectionRuns?jobId=$($job.id)`&numRuns=999`&runTypes=kRegular`&runTypes=kFull`&excludeTasks=true) | `
+    $runs = (api get "protectionRuns?jobId=$($job.id)&numRuns=999&runTypes=kRegular&runTypes=kFull&excludeTasks=true") | `
         Where-Object { $_.backupRun.snapshotsDeleted -eq $false } | `
         Where-Object { $_.backupRun.status -eq 'kSuccess' -or $_.backupRun.status -eq 'kWarning' } | `
         Where-Object {@($_.copyRun.status | Where-Object {$finishedStates -notcontains $_}).Count -eq 0} | `
         Sort-Object -Property {$_.copyRun[0].runStartTimeUsecs} -Descending
+    if($fullOnly){
+        $runs = $runs | Where-Object { $_.backupRun.runType -eq 'kFull' }
+    }
     if($runs){
         $run = $runs[0]
         if($run){
