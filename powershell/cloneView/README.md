@@ -25,5 +25,55 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./cloneView.ps1 -vip mycluster -username admin [ -domain local ] -viewName SMBShare -newName Cloned-SMBShare
+./cloneView.ps1 -vip mycluster `
+                -username admin `
+                -domain local `
+                -viewName SMBShare `
+                -newName Cloned-SMBShare
 ```
+
+By default, the latest available backup will be used. If you want to specify a particular date, then you can list the versions using the -showVersions or -showDates parameters, like so:
+
+```powershell
+./cloneView.ps1 -vip mycluster `
+                -username admin `
+                -domain local `
+                -viewName SMBShare `
+                -newName Cloned-SMBShare `
+                -showVersions
+```
+
+Then yuo can use the -backupDate parameter with an available version, like:
+
+```powershell
+./cloneView.ps1 -vip mycluster `
+                -username admin `
+                -domain local `
+                -viewName SMBShare `
+                -newName Cloned-SMBShare `
+                -backupDate '2020/12/30 23:00'
+```
+
+You can also specify an archival target to clone from using the -vaultName parameter:
+
+```powershell
+./cloneView.ps1 -vip mycluster `
+                -username admin `
+                -domain local `
+                -viewName SMBShare `
+                -newName Cloned-SMBShare `
+                -backupDate '2020/12/30 23:00' `
+                -vaultName 'My External Target'
+```
+
+## Parameters
+
+* -vip: Cohesity cluster to connect to
+* -username: Cohesity username (e.g. admin)
+* -domain: (optional) Active Directory domain (defaults to 'local')
+* -viewName: name of source view to clone
+* -newName: name of target view to create
+* -vaultName: (optional) name of archive target to clone from
+* -backupDate: (optional) date of backup (acceptable formats are 'YYYY/MM/dd' or 'YYYY/MM/dd HH:mm')
+* -showDates: (optional) list available backup dates in 'YYYY/MM/dd' format
+* -showVersions: (optional) list available backup dates in 'YYYY/MM/dd HH:mm' format
