@@ -11,7 +11,7 @@ param (
     [Parameter()][string]$vaultName = $null,
     [Parameter()][string]$backupDate = $null,
     [Parameter()][switch]$showVersions,
-    [Parameter()][switch]$showDays
+    [Parameter()][switch]$showDates
 )
 
 ### source the cohesity-api helper code
@@ -39,7 +39,7 @@ if ($viewResult) {
         }else{
             $groups = $versions | Group-Object -Property {(usecsToDate $_.snapshotTimestampUsecs).ToString('yyyy/MM/dd')}
         }
-        if($showVersions -or $showDays){
+        if($showVersions -or $showDates){
             $groups | Format-Table -Property @{l='Available Dates';e={$_.Name}}
             exit 0
         }
