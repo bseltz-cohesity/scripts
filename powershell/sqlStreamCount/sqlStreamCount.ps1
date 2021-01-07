@@ -40,6 +40,7 @@ foreach($job in $jobs | Sort-Object -Property name){
     }
 }
 
+$output = $output | convertto-json | convertfrom-json
 $report = $output | Sort-Object -Property 'Job Name', 'Server Name' | `
                     Select-Object -Property 'Job Name', 'Server Name', 'Stream Count'
 
