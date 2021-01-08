@@ -32,7 +32,7 @@ $output = @()
 foreach($job in $jobs | Sort-Object -Property name){
     foreach($sqlServer in $job.sourceSpecialParameters){
         $sqlSource = $sources.rootNodes | Where-Object { $_.rootNode.id -eq $sqlServer.sourceId }
-        $output += @{
+        $output += New-Object psobject -Property @{
             'Job Name' = $job.name; 
             'Server Name' = $sqlSource.rootNode.name; 
             'Stream Count' = $job.environmentParameters.sqlParameters.numStreams
@@ -40,11 +40,7 @@ foreach($job in $jobs | Sort-Object -Property name){
     }
 }
 
-$output = $output | convertto-json | convertfrom-json
-$report = $output | Sort-Object -Property 'Job Name', 'Server Name' | `
-                    Select-Object -Property 'Job Name', 'Server Name', 'Stream Count'
-
 # output
-$report
-$report | Export-Csv -Path $(Join-Path -Path $PSScriptRoot -ChildPath $outFile)
+$output | Select-Object -Property 'Job Name', 'Server Name', 'Stream Count'
+$output | Select-Object -Property 'Job Name', 'Server Name', 'Stream Count'| Export-Csv -Path $(Join-Path -Path $PSScriptRoot -ChildPath $outFile) -NTI
 "`nOutput Saved to $outFile"
