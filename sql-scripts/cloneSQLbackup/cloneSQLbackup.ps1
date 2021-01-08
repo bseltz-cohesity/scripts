@@ -192,26 +192,28 @@ $paths = @()
 foreach($run in $runs){
     # get snapshot path
     $sourceInfo = $run.backupRun.sourceBackupStatus | Where-Object {$_.source.name -eq $sqlServer}
-    if(!$sourceInfo){
+    if(!$sourceInfo){ 
         write-host "$sqlServer not found in job run" -ForegroundColor Yellow
     }else{
-        $sourceView = $sourceInfo.currentSnapshotInfo.viewName
-        $sourcePath = $sourceInfo.currentSnapshotInfo.relativeSnapshotDirectory
-        $destinationPath = "$sqlServer-$((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss"))-$($run.backupRun.runType.substring(1))"
-        $runDate = (usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss")
-    
-        # clone snapshot directory
-        $CloneDirectoryParams = @{
-            'destinationDirectoryName' = $destinationPath;
-            'destinationParentDirectoryPath' = "/$viewName";
-            'sourceDirectoryPath' = "/$sourceView/$sourcePath"
-        }
-    
-        $folderPath = "\\$vip\$viewName\$destinationPath"
-        # Write-Host "Cloning $sqlServer backup files to $folderPath"
-        $null = api post views/cloneDirectory $CloneDirectoryParams
+        if($sourceInfo.status -in @('kSuccess', 'kWarning')){
+            $sourceView = $sourceInfo.currentSnapshotInfo.viewName
+            $sourcePath = $sourceInfo.currentSnapshotInfo.relativeSnapshotDirectory
+            $destinationPath = "$sqlServer-$((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss"))-$($run.backupRun.runType.substring(1))"
+            $runDate = (usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss")
         
-        $paths += @{'path' = $folderPath; 'runDate' = $runDate; 'runType' = $run.backupRun.runType}
+            # clone snapshot directory
+            $CloneDirectoryParams = @{
+                'destinationDirectoryName' = $destinationPath;
+                'destinationParentDirectoryPath' = "/$viewName";
+                'sourceDirectoryPath' = "/$sourceView/$sourcePath"
+            }
+        
+            $folderPath = "\\$vip\$viewName\$destinationPath"
+            # Write-Host "Cloning $sqlServer backup files to $folderPath"
+            $null = api post views/cloneDirectory $CloneDirectoryParams
+            
+            $paths += @{'path' = $folderPath; 'runDate' = $runDate; 'runType' = $run.backupRun.runType}
+        }
     }
 }
 
