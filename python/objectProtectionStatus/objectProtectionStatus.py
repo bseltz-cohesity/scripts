@@ -75,9 +75,11 @@ else:
     foundProtectedObject = False
     objectJobIDs = []
     for job in jobs:
+
         environment = job['environment']
         parentId = job['parentSourceId']
-        sourceIds = job['sourceIds']
+
+        sourceIds = job.get('sourceIds', [])
 
         if environment != 'kOracle' and environment != 'kSQL':
             protectedObjects = api('get', 'protectionSources/protectedObjects?environment=%s&id=%s' % (environment, parentId))
@@ -211,7 +213,7 @@ else:
                     dbReported = True
 
     if foundObject is False:
-        print "None::Not Protected"
+        print("None::Not Protected")
         exit(1)
     if dbname is not None and dbReported is False:
         print('%s Not Found on %s' % (dbname, objectname))
