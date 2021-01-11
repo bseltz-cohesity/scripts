@@ -19,7 +19,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* jobRunStats.ps1: the main python script
+* jobRunStats.ps1: the main powershell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
@@ -51,9 +51,13 @@ SQL Backup (SQL)
 ...
 ```
 
-## Optional Parameters
+## Parameters
 
-* failedOnly: Show only unsuccessful job runs
-* lastDay: Show only the past 24 hours of job runs
+* -vip: the Cohesity cluster to connect to
+* -username: the cohesity user to login with
+* -domain: domain of the Cohesity user (defaults to local)
+* -failedOnly: (optional) Show only unsuccessful job runs
+* -lastDay: (optional) Show only the past 24 hours of job runs
+* -numDays: (optional) Limit output to the last X days
 
 Stats are also output to a csv file for further review.
