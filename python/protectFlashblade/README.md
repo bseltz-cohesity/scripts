@@ -15,6 +15,8 @@ curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectFlashblade/flashBladeProtectionStatus.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x protectFlashblade.py
+chmod +x protectFlashblade-multi.py
+chmod +x flashBladeProtectionStatus.py
 # end download commands
 ```
 
