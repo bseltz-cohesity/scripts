@@ -6,7 +6,7 @@ This script protects generic NAS volumes.
 
 ## Download the script
 
-You can download the scripts using the following commands:
+You can download the scripts using the following commands (using curl on Linux):
 
 ```bash
 # download commands
@@ -16,6 +16,21 @@ curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x protectFlashblade.py
 # end download commands
+```
+
+You can also use these PowerShell commands to download the files in Windows:
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download Commands
+$scriptName = 'protectFlashblade'
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python'
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.py").content | Out-File "$scriptName.py"; (Get-Content "$scriptName.py") | Set-Content "$scriptName.py"
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName-multi.py").content | Out-File "$scriptName-multi.py"; (Get-Content "$scriptName-multi.py") | Set-Content "$scriptName-multi.py"
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/flashBladeProtectionStatus.py").content | Out-File "flashBladeProtectionStatus.py"; (Get-Content "flashBladeProtectionStatus.py") | Set-Content "flashBladeProtectionStatus.py"
+(Invoke-WebRequest -Uri "$repoUrl/pyhesity.py").content | Out-File pyhesity.py; (Get-Content pyhesity.py) | Set-Content pyhesity.py
+# End Download Commands
 ```
 
 ## Components
