@@ -31,6 +31,50 @@ dbname = args.dbname
 ### authenticate
 apiauth(vip, username, domain)
 
+sources = api('get', 'protectionSources/registrationInfo?includeApplicationsTreeInfo=false&allUnderHierarchy=true')
+
+dbenvironments = ['kSQL', 'kOracle']
+
+foundObject = False
+jobs = []
+jobnames = []
+objectId = None
+
+print('searching for %s' % objectname)
+
+for rootNode in sources['rootNodes']:
+    parentId = rootNode['rootNode']['id']
+    parentName = rootNode['rootNode']['name']
+    if parentName.lower() == objectname.lower():
+        foundObject = True
+        objectId = parentId
+    # gather environments (e.g. physical and SQL)
+    environments = []
+    environments.append(rootNode['rootNode']['environment'])
+    if 'environments' in rootNode['registrationInfo']:
+        for environment in rootNode['registrationInfo']['environments']:
+            environments.append(environment)
+    # find protected objects for each environment
+    for environment in environments:
+        protectedSources = api('get', 'protectionSources/protectedObjects?id=%s&environment=%s' % (parentId, environment))
+        for protectedSource in protectedSources:
+            childName = protectedSource['protectionSource']['name']
+            childId = protectedSource['protectionSource']['id']
+            if childName.lower() == objectname.lower():
+                foundObject = True
+                objectId = childId
+            for job in protectedSource['protectionJobs']:
+                jobName = job['name']
+                jobId = job['id']
+                if foundObject is True:
+                    if jobName not in jobnames:
+                        jobs.append(job)
+                        jobnames.append(jobName)
+            if foundObject is True and protectedSource['protectionSource']['environment'] not in dbenvironments:
+                break
+    if foundObject is True:
+        break
+
 
 ### get object ID
 def getObjectId(objectname):
@@ -60,14 +104,13 @@ def getObjectId(objectname):
     return d['_object_id']
 
 
-jobs = [job for job in api('get', 'protectionJobs') if 'isDeleted' not in job and ('isActive' not in job or job['isActive'] is not False)]
-sources = api('get', 'protectionSources')
+# jobs = [job for job in api('get', 'protectionJobs') if 'isDeleted' not in job and ('isActive' not in job or job['isActive'] is not False)]
+# sources = api('get', 'protectionSources')
 sqlSources = api('get', 'protectionSources?environments=kSQL')
 oracleSources = api('get', 'protectionSources?environments=kOracle')
-
 jobReports = []
 
-objectId = getObjectId(objectname)
+# objectId = getObjectId(objectname)
 if objectId is None:
     print("None::Not Found")
     exit(1)
@@ -75,7 +118,6 @@ else:
     foundProtectedObject = False
     objectJobIDs = []
     for job in jobs:
-
         environment = job['environment']
         parentId = job['parentSourceId']
 
@@ -159,7 +201,9 @@ else:
                             jobReport['objectStatus'] = 'Success'
 
             # get latest run
-            runs = sorted(api('get', 'protectionRuns?jobId=%s&excludeTasks=true&startTimeUsecs=%s' % (job['id'], yesterday)), key=lambda run: run['backupRun']['stats']['startTimeUsecs'])
+            runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=1' % job['id'])
+            # runs = sorted(api('get', 'protectionRuns?jobId=%s&excludeTasks=true&startTimeUsecs=%s' % (job['id'], yesterday)), key=lambda run: run['backupRun']['stats']['startTimeUsecs'])
+            foundRun = False
             for run in runs:
                 runStart = run['backupRun']['stats']['startTimeUsecs']
                 thisRun = api('get', '/backupjobruns?id=%s&exactMatchStartTimeUsecs=%s' % (job['id'], runStart))
