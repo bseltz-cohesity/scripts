@@ -17,6 +17,7 @@ curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x jobRunReport.py
 # end download commands
+```
 
 Place both files in a folder together and run the main script like so:
 
