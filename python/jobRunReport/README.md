@@ -9,6 +9,15 @@ This python script reports the status of the last job run of each protection job
 * jobRunReport.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
+You can download the scripts using the following commands:
+
+```bash
+# download commands
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/jobRunReport/jobRunReport.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+chmod +x jobRunReport.py
+# end download commands
+
 Place both files in a folder together and run the main script like so:
 
 ```bash
