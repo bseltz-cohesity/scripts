@@ -29,11 +29,11 @@ Place all files in a folder together, then run the main script like so:
 ./updateO365Credentials.ps1 -vip mycluster `
                             -username myusername `
                             -domain mydomain.net `
-                             -o365source mydomain.onmicrosoft.com `
-                             -o365user myO365user@mydomain.onmicrosoft.com `
-                             -o365pwd mySecretPassword `
-                             -appId abcdef12-3456-7890-abcd-ef1234567890 `
-                             -appSecretKey 'XZww7Y8TBHFNXaLazj8P-tYihCY/Z1=:'
+                            -o365source mydomain.onmicrosoft.com `
+                            -o365user myO365user@mydomain.onmicrosoft.com `
+                            -o365pwd mySecretPassword `
+                            -appId abcdef12-3456-7890-abcd-ef1234567890 `
+                            -appSecretKey 'XZww7Y8TBHFNXaLazj8P-tYihCY/Z1=:'
 # end example
 ```
 
