@@ -381,7 +381,7 @@ function extendAndArchiveSnapshot($run, $keepDays, $archiveDays, $extendType){
 # calculate dates to process
 $wantedDays = @()
 $x = $newerThan
-while($x -ge 0){
+while($x -gt 0){
     $thisDate = (get-date).AddDays(-$x)
     # handle leapyear for end of year
     $selectedDayOfYear = $dayOfYear
