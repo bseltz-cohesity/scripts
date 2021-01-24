@@ -1,8 +1,8 @@
-# Gather Front End Size of Views and Protected Servers
+# Gather Front End Size of Views and Protected Servers and NAS Volumes
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This PowerShell script gathers front end size of views and protected servers.
+This PowerShell script gathers front end size of views and protected servers and NAS volumes.
 
 ## Download the script
 

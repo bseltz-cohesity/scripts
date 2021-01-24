@@ -25,15 +25,16 @@ $environments = @('kUnknown', 'kVMware', 'kHyperV', 'kSQL', 'kView', 'kPuppeteer
                   'kO365', 'kO365Outlook', 'kHyperFlex', 'kGCPNative', 'kAzureNative',
                   'kAD', 'kAWSSnapshotManager', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown')
 
-$conversion = @{'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
+$nasEnvironments = @('kNetapp', 'kIsilon', 'kGenericNas', 'kFlashBlade', 'kGPFS', 'kElastifile')
 
+$conversion = @{'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
 function toUnits($val){
     return "{0:n2}" -f ($val/($conversion[$unit]))
 }
 
 "Job Name,Object Name,Object Type,Logical Size ($unit),Unique Size ($unit)" | Out-File -FilePath $outfileName
 
-# gather storage consumed by servers
+# gather capacity for servers
 $serverReport = api get /reports/objects/storage?msecsBeforeEndTime=0
 foreach($server in $serverReport | Sort-Object -Property jobName, name){
     $jobName = $server.jobName
@@ -46,6 +47,19 @@ foreach($server in $serverReport | Sort-Object -Property jobName, name){
     }
 }
 
+# gather capacoty for NAS backups
+$jobs = api get protectionJobs?includeLastRunAndStats=true | Where-Object {$_.environment -in $nasEnvironments}
+foreach($job in $jobs | Where-Object{$_.isDeleted -ne $True} | Sort-Object -Property name){
+    $jobName = $job.name
+    $jobType = $job.environment.Substring(1)
+    foreach($volume in $job.lastRun.backupRun.sourceBackupStatus){
+        $volumeName = $volume.source.name
+        $logicalBytes = $volume.stats.totalLogicalBackupSizeBytes
+        "{0},{1},{2},""{3}"",""{4}""" -f $jobName, $volumeName, $jobType, (toUnits $logicalBytes), 0 | Tee-Object -FilePath $outfileName -Append    
+    }
+}
+
+# gather capacity for views
 $views = api get views
 foreach($view in $views.views | Sort-Object -Property name){
     $viewName = $view.name
