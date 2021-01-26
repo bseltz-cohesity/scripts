@@ -36,3 +36,4 @@ The output will be written to a CSV file.
 * -username: the cohesity user to login with
 * -domain: (optional) domain of the Cohesity user (defaults to local)
 * -unit: (optional) MiB, GiB or TiB (default is GiB)
+* -localOnly: (optional) report only local objects (includes replicated objects by default)
