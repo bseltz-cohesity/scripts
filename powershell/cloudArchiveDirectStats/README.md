@@ -35,3 +35,6 @@ The output will be written to a CSV file.
 * -vip: the Cohesity cluster to connect to
 * -username: the cohesity user to login with
 * -domain: (optional) domain of the Cohesity user (defaults to local)
+* -unit: (optional) MiB, GiB or TiB (default is MiB)
+* -startDate: (optional) show run dates on or after this date (e.g. '1/21/2021' or '1/21/2021 23:59:05')
+* -endDate: (optional) show run dates on or before this date (e.g. '1/21/2021' or '1/21/2021 23:59:05')
