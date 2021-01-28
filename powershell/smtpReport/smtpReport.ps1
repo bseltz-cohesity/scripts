@@ -1,4 +1,10 @@
-### usage: ./smtpreport.ps1 -vip mycluster -username myusername -domain mydomain.net -prefix demo,test -sendTo myuser@mydomain.net, anotheruser@mydomain.net -smtpServer 192.168.1.95 -sendFrom backupreport@mydomain.net
+### usage: ./smtpreport.ps1 -vip mycluster `
+#                           -username myusername `
+#                           -domain mydomain.net `
+#                           -prefix demo,test 
+#                           -sendTo myuser@mydomain.net, anotheruser@mydomain.net 
+#                           -smtpServer 192.168.1.95 
+#                           -sendFrom backupreport@mydomain.net
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -86,10 +92,20 @@ foreach($job in $jobs){
         }
         $report = api get "reports/protectionSourcesJobsSummary?allUnderHierarchy=true&jobIds=$($job.id)"
         foreach($source in ($report.protectionSourcesJobsSummary | Sort-Object -Property {$_.protectionSource.name})){
-            
+            $environment = $source.protectionSource.environment
             $type = $source.protectionSource.environment.Substring(1)
             $name = $source.protectionSource.name
+            $sourceID = $source.protectionSource.id
+            $parentID = $source.protectionSource.parentId
+            if($parentID){
+                $protectedSource = api get "protectionSources/protectedObjects?environment=$environment&id=$parentID"
+            }else{
+                $protectedSource = api get "protectionSources/protectedObjects?environment=$environment&id=$sourceID"
+            }
+            # $protectedSource | ConvertTo-Json -Depth 99
             $parentName = $source.registeredSource
+            "$name $parentName"
+            # $source | ConvertTo-Json
             $jobName = $job.name
             $jobId = $job.id
             $jobUrl = "https://$vip/protection/job/$jobId/details"
@@ -224,6 +240,6 @@ $html += '</tbody></table><br><br><hr><li>Color based on job status:
 write-host "sending report to $([string]::Join(", ", $sendTo))"
 ### send email report
 foreach($toaddr in $sendTo){
-    Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject "$prefixTitle backupSummaryReport" -BodyAsHtml $html
+    Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject "$prefixTitle backupSummaryReport" -BodyAsHtml $html -WarningAction SilentlyContinue
 }
 $html | out-file smtpreport.html
