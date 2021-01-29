@@ -32,12 +32,13 @@ apiauth -vip $vip -username $username -domain $domain
 $cluster = api get cluster
 
 # environment types
-$envType = @('kUnknown', 'kVMware', 'kHyperV', 'kSQL', 'kView', 'kRemote Adapter', 
-             'kPhysical', 'kPure', 'kAzure', 'kNetapp', 'kAgent', 'kGenericNas', 
-             'kAcropolis', 'kPhysical Files', 'kIsilon', 'kKVM', 'kAWS', 'kExchange', 
-             'kHyperVVSS', 'kOracle', 'kGCP', 'kFlashBlade', 'kAWSNative', 'kVCD',
-             'kO365', 'kO365 Outlook', 'kHyperFlex', 'kGCP Native', 'kAzure Native',
-             'kAD', 'kAWS Snapshot Manager', 'kFuture', 'kFuture', 'kFuture')
+$envType = @('kUnknown', 'kVMware', 'kHyperV', 'kSQL', 'kView', 'kPuppeteer', 
+            'kPhysical', 'kPure', 'kAzure', 'kNetapp', 'kAgent', 'kGenericNas', 
+            'kAcropolis', 'kPhysicalFiles', 'kIsilon', 'kKVM', 'kAWS', 'kExchange', 
+            'kHyperVVSS', 'kOracle', 'kGCP', 'kFlashBlade', 'kAWSNative', 'kVCD',
+            'kO365', 'kO365Outlook', 'kHyperFlex', 'kGCPNative', 'kAzureNative',
+            'kAD', 'kAWSSnapshotManager', 'kUnknown', 'kUnknown', 'kUnknown', 
+            'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown')
 
 $runType = @('kRegular', 'kFull', 'kLog', 'kSystem')
 
@@ -55,7 +56,8 @@ function latestStatus($objectName,
                       $isPaused,
                       $logicalSize = 0,
                       $dataWritten = 0,
-                      $dataRead = 0){
+                      $dataRead = 0,
+                      $fileCount){
 
     $thisStatus = @{'status' = $status;
                     'scheduleType' = $scheduleType;
@@ -68,7 +70,8 @@ function latestStatus($objectName,
                     'isPaused' = $isPaused;
                     'logicalSize' = $logicalSize;
                     'dataWritten' = $dataWritten;
-                    'dataRead' = $dataRead}
+                    'dataRead' = $dataRead;
+                    'fileCount' = $fileCount}
 
     $thisStatus['message'] = $message
     $thisStatus['lastError'] = ''
@@ -145,6 +148,7 @@ $headings = @('Object Type',
               'Logical MB',
               'Read MB',
               'Written MB',
+              'File Count',
               'Change %',
               'Failure Count',
               'Error Message')
@@ -212,6 +216,17 @@ foreach($job in $jobSummary | Sort-Object -Property { $_.backupJobSummary.jobDes
                 $dataWritten = $task.base.totalPhysicalBackupSizeBytes
                 $dataRead = $task.base.totalBytesReadFromSource
                 $logicalSize = $task.base.totalLogicalBackupSizeBytes
+                $fileCount = ' - '
+                if($task.currentSnapshotInfo.PSObject.Properties['totalEntityCount']){
+                    $fileCount = $task.currentSnapshotInfo.totalEntityCount
+                }
+                if($task.currentSnapshotInfo.PSObject.Properties['totalChangedEntityCount']){
+                    $fileCount = "$($task.currentSnapshotInfo.totalChangedEntityCount) / $fileCount"
+                }else{
+                    if($fileCount -ne ' - '){
+                        $fileCount = "0 / $fileCount"
+                    }
+                }
                 if($status -eq 'kFailure'){
                     $message = $task.base.error.errorMsg
                 }elseif ($status -eq 'kWarning') {
@@ -257,7 +272,8 @@ foreach($job in $jobSummary | Sort-Object -Property { $_.backupJobSummary.jobDes
                                      -isPaused $isPaused `
                                      -logicalSize $logicalSize `
                                      -dataWritten $dataWritten `
-                                     -dataRead $dataRead
+                                     -dataRead $dataRead `
+                                     -fileCount $fileCount
                     }
                 }else{
                     $objectName = $entity
@@ -274,7 +290,8 @@ foreach($job in $jobSummary | Sort-Object -Property { $_.backupJobSummary.jobDes
                                  -isPaused $isPaused `
                                  -logicalSize $logicalSize `
                                  -dataWritten $dataWritten `
-                                 -dataRead $dataRead
+                                 -dataRead $dataRead `
+                                 -fileCount $fileCount
                 }
             }
         }
@@ -285,6 +302,7 @@ foreach($job in $jobSummary | Sort-Object -Property { $_.backupJobSummary.jobDes
 foreach ($entity in $objectStatus.Keys | Sort-Object){
     $app = ''
     $objectName = $entity
+    # $objectStatus[$entity]
     $environment = $envType[$objectStatus[$entity].jobType].Substring(1)
     if($entity.contains('/') -and $environment -in @('SQL', 'Oracle')){
         $objectName, $app = $entity.split('/',2)
@@ -309,6 +327,7 @@ foreach ($entity in $objectStatus.Keys | Sort-Object){
     $logicalSize = $objectStatus[$entity].logicalSize
     $dataWritten = $objectStatus[$entity].dataWritten
     $dataRead = $objectStatus[$entity].dataRead
+    $fileCount = $objectStatus[$entity].fileCount
     if($dataRead -gt 0){
         $displayRead = [math]::Round($dataRead/(1024*1024),3)
     }else{
@@ -361,6 +380,7 @@ foreach ($entity in $objectStatus.Keys | Sort-Object){
     $html += td $displaySize $color
     $html += td $displayRead $color
     $html += td $displayWritten $color
+    $html += td $fileCount $color '' 'CENTER'
     if($changeRatePct -ge 10){
         $html += td $changeRatePct 'DAB0B0'
     }else{
