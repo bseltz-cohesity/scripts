@@ -24,6 +24,7 @@ parser.add_argument('-t', '--targetserver', type=str, default=None)   # run date
 parser.add_argument('-n', '--targetusername', type=str, default='')    # (optional) will use policy retention if omitted
 parser.add_argument('-p', '--targetpassword', type=str, default='')  # (optional) will use policy target if omitted
 parser.add_argument('-a', '--useexistingagent', action='store_true')
+parser.add_argument('-m', '--volume', action='append', type=str)
 
 args = parser.parse_args()
 
@@ -35,6 +36,7 @@ targetserver = args.targetserver
 targetusername = args.targetusername
 targetpassword = args.targetpassword
 useexistingagent = args.useexistingagent
+volumes = args.volume
 
 if targetserver is None:
     targetserver = sourceserver
@@ -96,6 +98,9 @@ if 'parentId' in targetEntity:
 
 if useexistingagent:
     mountTask['mountVolumesParams']['useExistingAgent'] = True
+
+if volumes is not None:
+    mountTask['mountVolumesParams']['volumeNameVec'] = volumes
 
 print("mounting volumes to %s..." % targetserver)
 result = api('post', '/restore', mountTask)

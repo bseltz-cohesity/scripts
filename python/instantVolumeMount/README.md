@@ -47,6 +47,22 @@ C: mounted to F:\
 lvol_1 mounted to E:\
 ```
 
+To mount only a specific volume, use the -m option, like so:
+
+```bash
+./instantVolumeMount.py -v mycluster \
+                        -u myuser \
+                        -d mydomain.net \
+                        -s server1.mydomain.net \
+                        -t server2.mydomain.net \
+                        -n 'mydomain.net\myuser' \
+                        -p swordfish \
+                        -m /C
+                        -m /D
+```
+
+Note the volume naming convention, on Windows, mount points are entered as /C, /D, etc. In linux, mount points are entered like /, /opt/oracle, etc.
+
 To tear down the mount when finished:
 
 ```bash
@@ -68,6 +84,7 @@ Tearing down mount points...
 * -n, --targetusername: (optional) only required if agent is not already installed (VM)
 * -p, --targetpassword: (optional) only required if agent is not already installed (VM)
 * -a, --useexistingagent: (optional) use existing agent during mount to a VM
+* -m, --volume: (optional) specify volume name to mount (repeat for multiple volumes)
 
 ## Parameters for instantVolumeMountDestroy
 
