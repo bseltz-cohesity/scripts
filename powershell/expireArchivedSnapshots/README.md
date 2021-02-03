@@ -43,11 +43,13 @@ To Expire 12/03/2017 00:50:00  Infrastructure  (Archive kSuccessful)
 To Expire 12/03/2017 01:00:00  VM Backup  (Archive kSuccessful)
 To Expire 12/03/2017 02:10:00  CorpShare  (Archive kSuccessful)
 ```
+
 Then, if you're happy with the list of snapshots that will be deleted, run the script again and include the -expire switch. THIS WILL DELETE THE OLD SNAPSHOTS!!!
 
 ```powershell
 ./expireArchivedSnapshots.ps1 -vip mycluster -username admin -olderThan 365 -expire
 ```
+
 ```text
 Connected!
 searching for old snapshots...
@@ -59,6 +61,16 @@ Expiring  12/03/2017 00:50:00  Infrastructure  (Archive kSuccessful)
 Expiring  12/03/2017 01:00:00  VM Backup  (Archive kSuccessful)
 Expiring  12/03/2017 02:10:00  CorpShare  (Archive kSuccessful)
 ```
+
 You can run the script again you should see no results, unless the Cohesity cluster is very busy. It might take some time for the snapshots to actually be deleted.
 
-Also note that if you're waiting for capacity to be freed up, it may take hours to days for the garbage collector to actually free up the space. 
+Also note that if you're waiting for capacity to be freed up, it may take hours to days for the garbage collector to actually free up the space.
+
+## Parameters
+
+* -vip: Cohesity cluster to connect to
+* -username: Cohesity username (e.g. admin)
+* -domain: (optional) Active Directory domain (defaults to 'local')
+* -jobName: (optional) Name of protection job to expire archives from (default is all jobs)
+* -olderThan: show/expire snapshots older than this many days
+* -expire: (optional) expire the snapshots (if omitted, the script will only show what 'would' be expired)

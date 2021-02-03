@@ -7,11 +7,12 @@ param (
     [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
     [Parameter()][string]$domain = 'local', #local or AD domain
     [Parameter(Mandatory = $True)][string]$olderThan, #archive snapshots older than x days
+    [Parameter()][string]$jobName,
     [Parameter()][switch]$expire
 )
 
 ### source the cohesity-api helper code
-. ./cohesity-api
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
@@ -24,7 +25,15 @@ $olderThanUsecs = timeAgo $olderThan days
 
 ### find protectionRuns with old local snapshots that are archived and sort oldest to newest
 "searching for old snapshots..."
-foreach ($job in ((api get protectionJobs) | Where-Object{ $_.policyId.split(':')[0] -eq $clusterId })) {
+$jobs = api get protectionJobs | Where-Object{ $_.policyId.split(':')[0] -eq $clusterId }
+if($jobName){
+    $jobs = $jobs | Where-Object {$_.name -eq $jobName}
+    if(!$jobs){
+        Write-Host "Job $jobName not found" -ForegroundColor Yellow
+    }
+}
+
+foreach ($job in $jobs) {
     
     $runs = (api get protectionRuns?jobId=$($job.id)`&numRuns=999999`&runTypes=kRegular`&excludeTasks=true`&excludeNonRestoreableRuns=true) | `
     Where-Object { $_.backupRun.snapshotsDeleted -eq $false } | `
