@@ -186,7 +186,11 @@ foreach($sourceId in $sourceIds){
         }
     }else{
         foreach($includePath in $includePathsToProcess){
-            $includePathsProcessed += "/$($includePath.replace(':','').replace('\','/'))".replace('//','/')
+            foreach($mountPoint in $mountPoints){
+                if($includePath.split('\')[0] -eq $mountPoint.split('\')[0]){
+                    $includePathsProcessed += "/$($includePath.replace(':','').replace('\','/'))".replace('//','/')
+                }
+            }
         }
     }
 
