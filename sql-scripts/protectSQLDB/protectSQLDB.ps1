@@ -1,11 +1,10 @@
-# usage: ./protectPhysicalWindows.ps1 -vip mycluster -username myusername -jobName 'My Job' -serverList ./servers.txt -exclusionList ./exclusions.txt
-
 # process commandline arguments
 [CmdletBinding()]
 param (
     [Parameter(Mandatory = $True)][string]$vip,  # the cluster to connect to (DNS name or IP)
     [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
     [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][string]$password,
     [Parameter(Mandatory = $True)][string]$jobname,
     [Parameter(Mandatory = $True)][string]$servername,
     [Parameter()][string]$instancename = 'MSSQLSERVER',
@@ -47,6 +46,7 @@ if(!$db){
 }
 $dbId = $db.protectionSource.id
 
+$job.sourceIds = ($job.sourceIds + $serverId) | Sort-Object -Unique
 $sourceSpecialParameter = $job.sourceSpecialParameters | Where-Object {$_.sourceId -eq $serverId }
 if(!$sourceSpecialParameter){
     $job.sourceSpecialParameters += @{"sourceId" = $serverId; "sqlSpecialParameters" = @{"applicationEntityIds" = @($dbId)}}

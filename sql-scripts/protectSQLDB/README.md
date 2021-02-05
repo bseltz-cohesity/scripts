@@ -40,6 +40,7 @@ Place all files in a folder together. And run the script like so:
 * -vip: name or IP of Cohesity cluster
 * -username: name of user to connect to Cohesity
 * -domain: your AD domain (defaults to local)
+* -password: (optional) uses stored password by default
 * -jobname: name of protection job
 * -servername: name of registered SQL server to protect
 * -jobname: name of protection job to add DB to
