@@ -18,7 +18,7 @@ param (
 apiauth -vip $vip -username $username -domain $domain -password $password
 
 # get the protectionJob
-$job = api get protectionJobs | Where-Object {$_.name -ieq $jobName}
+$job = api get protectionJobs | Where-Object {$_.name -ieq $jobName -and $_.isDeleted -ne $True}
 if(!$job){
     Write-Warning "Job $jobName not found!"
     exit
