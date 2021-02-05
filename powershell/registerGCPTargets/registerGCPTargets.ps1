@@ -9,6 +9,12 @@ param (
     [Parameter()][string]$inputfile = 'gcptargets.csv' # CSV input file with targetname, bucketname, tiertype
 )
 
+### source the cohesity-api helper code
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+
+### authenticate
+apiauth -vip $vip -username $username -domain $domain -tenant $tenant
+
 $gcptargets = Import-Csv -Path $inputfile
 $privatekey = Get-Content -Path $keyfile -Raw
 
