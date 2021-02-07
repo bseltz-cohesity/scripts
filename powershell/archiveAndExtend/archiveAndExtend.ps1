@@ -35,7 +35,7 @@ param (
     [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
     [Parameter()][string]$domain = 'local', # local or AD domain
     [Parameter(Mandatory = $True)][array]$policyNames, # jobs to archive
-    [Parameter()][int32]$newerThan = 7, # don't process spanshots older than X days
+    [Parameter()][int32]$newerThan = 5, # don't process spanshots older than X days
     [Parameter()][switch]$commit, # if excluded script will run in test run mode and will not archive
     # daily params
     [Parameter()][int32]$archiveDaily = 0, # archive retention for daily snapshots
@@ -238,7 +238,7 @@ if($specialVault){
 }
 
 # job selector
-$jobs = api get protectionJobs
+$jobs = api get protectionJobs | Where-Object {$_.isDeleted -ne $True}
 $policies = api get protectionPolicies
 $selectedJobs = @()
 $global:processedArchives = @()
