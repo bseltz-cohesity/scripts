@@ -1,4 +1,4 @@
-# version 2020.07.21
+# version 2021.02.08
 ### usage: ./restoreFiles.ps1 -vip mycluster -username myuser -domain mydomain.net `
 #                             -sourceServer server1.mydomain.net `
 #                             -targetServer server2.mydomain.net `
@@ -76,7 +76,8 @@ $searchResults = $searchResults.vms | Where-Object {$_.vmDocument.objectName -eq
 
 # narrow search by job name
 if($jobName){
-    $searchResults = $searchResults | Where-Object {$_.vmDocument.jobName -eq $jobName}
+    $altJobName = "Old Name: $jobName"
+    $searchResults = $searchResults | Where-Object {$_.vmDocument.jobName -eq $jobName -or $_.vmDocument.jobName -match $altJobName}
 }
 
 if(!$searchResults){

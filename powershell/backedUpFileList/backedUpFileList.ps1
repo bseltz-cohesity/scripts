@@ -1,4 +1,4 @@
-# version 2020.08.17
+# version 2021.02.08
 # usage: ./backedUpFileList.ps1 -vip mycluster \
 #                               -username myuser \
 #                               -domain mydomain.net \
@@ -39,7 +39,8 @@ if($useApiKey){
 }
 
 function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null){
-    $thisDirPath = [System.Web.HttpUtility]::UrlEncode($dirPath)
+    # $thisDirPath = [System.Web.HttpUtility]::UrlEncode($dirPath)
+    $thisDirPath = $dirPath
     if($null -ne $volumeName){
         $dirList = api get "/vm/directoryList?$instance&dirPath=$thisDirPath&statFileEntries=false&volumeInfoCookie=$volumeInfoCookie&volumeName=$volumeName"
     }else{
@@ -60,7 +61,7 @@ function showFiles($doc, $version){
     $versionDate = (usecsToDate $version.instanceId.jobStartTimeUsecs).ToString('yyyy-MM-dd_hh-mm-ss')
 
     $outputfile = $(Join-Path -Path $PSScriptRoot -ChildPath "backedUpFiles-$($version.instanceId.jobInstanceId)-$($sourceServer)-$versionDate.txt")
-    $null = Remove-Item -Path $outputfile -Force
+    $null = Remove-Item -Path $outputfile -Force -ErrorAction SilentlyContinue
     
     $instance = "attemptNum={0}&clusterId={1}&clusterIncarnationId={2}&entityId={3}&jobId={4}&jobInstanceId={5}&jobStartTimeUsecs={6}&jobUidObjectId={7}" -f
                 $version.instanceId.attemptNum,
@@ -78,7 +79,8 @@ function showFiles($doc, $version){
         if($volumeList.PSObject.Properties['volumeInfos']){
             $volumeInfoCookie = $volumeList.volumeInfoCookie
             foreach($volume in $volumeList.volumeInfos | Sort-Object -Property name){
-                $volumeName = [System.Web.HttpUtility]::UrlEncode($volume.name)
+                # $volumeName = [System.Web.HttpUtility]::UrlEncode($volume.name)
+                $volumeName = $volume.name
                 listdir '/' $instance $volumeInfoCookie $volumeName
             }
         }
@@ -92,7 +94,8 @@ $searchResults = api get "/searchvms?entityTypes=kAcropolis&entityTypes=kAWS&ent
 $searchResults = $searchResults.vms | Where-Object {$_.vmDocument.objectName -eq $sourceServer}
 
 # narrow search by job name
-$searchResults = $searchResults | Where-Object {$_.vmDocument.jobName -eq $jobName}
+$altJobName = "Old Name: $jobName"
+$searchResults = $searchResults | Where-Object {$_.vmDocument.jobName -eq $jobName -or $_.vmDocument.jobName -match $altJobName}
 
 if(!$searchResults){
     Write-Host "$sourceServer is not protected by $jobName" -ForegroundColor Yellow
