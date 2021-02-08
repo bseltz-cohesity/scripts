@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """restore files using python"""
 
-# version 2020.10.28
+# version 2021.02.08
 
 # usage: ./restoreFiles.py -v mycluster \
 #                          -u myusername \
@@ -20,7 +20,7 @@ from datetime import datetime
 from time import sleep
 import sys
 import argparse
-if sys.version_info.major >= 3 and sys.version_info.minor >= 4:
+if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
     from urllib.parse import quote_plus
 else:
     from urllib import quote_plus
@@ -107,7 +107,9 @@ searchResults = api('get', '/searchvms?entityTypes=kPhysical&vmName=%s' % source
 if searchResults:
     searchResults = [v for v in searchResults['vms'] if v['vmDocument']['objectName'].lower() == sourceserver.lower()]
     if jobname is not None:
-        searchResults = [v for v in searchResults if v['vmDocument']['jobName'].lower() == jobname.lower()]
+        altJobName = 'old name: %s' % jobname.lower()
+        altJobName2 = '%s (old name' % jobname.lower()
+        searchResults = [vm for vm in searchResults if vm['vmDocument']['jobName'].lower() == jobname.lower() or altJobName in vm['vmDocument']['jobName'].lower() or altJobName2 in vm['vmDocument']['jobName'].lower()]
 
 if len(searchResults) == 0:
     if jobname is not None:

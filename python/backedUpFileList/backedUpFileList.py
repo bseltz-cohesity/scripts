@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2020.10.28
+# version 2021.02.08
 
 # usage: ./backedUpFileList.py -v mycluster \
 #                              -u myuser \
@@ -113,7 +113,10 @@ if len(search['vms']) == 0:
     print('%s not found' % sourceserver)
     exit(1)
 
-searchResults = [vm for vm in searchResults if vm['vmDocument']['jobName'].lower() == jobname.lower()]
+altJobName = 'old name: %s' % jobname.lower()
+altJobName2 = '%s (old name' % jobname.lower()
+searchResults = [vm for vm in searchResults if vm['vmDocument']['jobName'].lower() == jobname.lower() or altJobName in vm['vmDocument']['jobName'].lower() or altJobName2 in vm['vmDocument']['jobName'].lower()]
+
 if len(search['vms']) == 0:
     print('%s not protected by %s' % (sourceserver, jobname))
     exit(1)
