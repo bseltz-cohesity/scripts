@@ -21,7 +21,7 @@ chmod +x deleteJobs.py
 * deleteJobs.py: the main PowerShell script
 * pyhesity.py: the Cohesity REST API helper module
 
-To delete some protection jobs, place all files in a folder together. then, run the main script like so:
+To delete some protection jobs, place all files in a folder together, then run the main script like so:
 
 ```bash
 ./deleteJobs.py -v mycluster -u myuser -d mydomain.net -j 'My Backup Job 1' -j 'My Backup Job 2' -s -c
