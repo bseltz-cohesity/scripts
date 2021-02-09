@@ -39,16 +39,14 @@ Valid tier types are:
 * kGoogleRegional
 * kGoogleMultiRegional
 
-Also provide the GCP service account's provate key in a text file, then you can run the script like so;
+Also provide the GCP service account's json file, then you can run the script like so;
 
 ```powershell
 # example
 ./registerGCPTargets.ps1 -vip mycluster `
                          -username myusername `
                          -domain mydomain.net `
-                         -projectid my-project-123456 `
-                         -keyfile ./gcpkey.txt `
-                         -clientemail myaccount@my-project-123456.iam.gserviceaccount.com `
+                         -jsonfile my-project-xxxxxx.json `
                          -inputfile ./gcptargets.csv
 # end example
 ```
@@ -58,7 +56,5 @@ Also provide the GCP service account's provate key in a text file, then you can 
 * -vip: the Cohesity cluster to connect to
 * -username: the cohesity user to login with
 * -domain: (optional) domain of the Cohesity user (defaults to local)
-* -projectid: name of GCP project
-* -keyfile: path to text file containing private key (default is gcpkey.txt)
-* -clientemail: email address of GCP service account
+* -jsonfile: GCP service account JSON file (download from IAM)
 * -inputfile: path to CSV file (default is gcptargets.csv)

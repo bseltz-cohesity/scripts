@@ -3,9 +3,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
     [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
     [Parameter()][string]$domain = 'local', #local or AD domain
-    [Parameter()][string]$keyfile = 'gcpkey.txt', # text file containing private key
-    [Parameter(Mandatory = $True)][string]$clientemail, # GCP idenntity
-    [Parameter(Mandatory = $True)][string]$projectid, # GCP project ID
+    [Parameter(Mandatory = $True)][string]$jsonfile, #path to service account json file
     [Parameter()][string]$inputfile = 'gcptargets.csv' # CSV input file with targetname, bucketname, tiertype
 )
 
@@ -16,7 +14,10 @@ param (
 apiauth -vip $vip -username $username -domain $domain -tenant $tenant
 
 $gcptargets = Import-Csv -Path $inputfile
-$privatekey = Get-Content -Path $keyfile -Raw
+$myjson = get-content $jsonFile | ConvertFrom-Json
+$privatekey = $myjson.private_key.trim()
+$clientemail = $myjson.client_email
+$projectid = $myjson.project_id
 
 foreach($target in $gcptargets){
     $myObject = @{
