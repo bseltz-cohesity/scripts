@@ -51,17 +51,17 @@ Next optionally create a text file called exclusions.txt and populate with the f
 Then, run the main script like so:
 
 ```powershell
-./protectWindows.ps1 -vip mycluster `
-                     -username myusername `
-                     -domain mydomain.net `
-                     -jobName 'File-based Linux Job' `
-                     -servers server1.mydomain.net, server2.mydomain.net `
-                     -serverList .\serverlist.txt `
-                     -inclusions /var, /home `
-                     -inclusinfList .\inclusions.txt `
-                     -exclusions /var/log, /home/cohesityagent `
-                     -exclusionList .\exclusions.txt `
-                     -skipNestedMountPoints
+./protectLinux.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -jobName 'File-based Linux Job' `
+                   -servers server1.mydomain.net, server2.mydomain.net `
+                   -serverList .\serverlist.txt `
+                   -inclusions /var, /home `
+                   -inclusionList .\inclusions.txt `
+                   -exclusions /var/log, /home/cohesityagent `
+                   -exclusionList .\exclusions.txt `
+                   -skipNestedMountPoints
 ```
 
 ```text
