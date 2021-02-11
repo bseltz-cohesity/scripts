@@ -24,13 +24,6 @@ param (
 # authenticate
 apiauth -vip $vip -username $username -domain $domain -password $password
 
-# get view
-$view = (api get views).views | Where-Object name -eq $viewname
-if(!$view){
-    Write-Host "View $viewname not found!" -ForegroundColor Yellow
-    exit
-}
-
 # get policy
 $policy = api get protectionPolicies | Where-Object {$_.name -ieq $policyname}
 if(!$policy){
@@ -56,6 +49,33 @@ $hours, $minutes = $starttime.split(':')
 if(!($hours -match "^[\d\.]+$" -and $hours -in 0..23) -or !($minutes -match "^[\d\.]+$" -and $minutes -in 0..59)){
     write-host 'Start time is invalid' -ForegroundColor Yellow
     exit
+}
+
+# get view
+$view = (api get views).views | Where-Object name -eq $viewname
+if (!$view) {
+    # create view
+    $newView = @{
+        "name"                          = $viewname;
+        "category"                      = "FileServices";
+        "protocolAccess"                = @(
+            @{
+                "type" = "NFS";
+                "mode" = "ReadWrite"
+            }
+        );
+        "storageDomainId"               = $sd.id;
+        "storageDomainName"             = $sd.name;
+        "qos"                           = @{
+            "principalId"   = 6;
+            "principalName" = "TestAndDev High"
+        };
+        "caseInsensitiveNamesEnabled"   = $false;
+        "enableNfsViewDiscovery"        = $true;
+        "securityMode"                  = "NativeMode";
+        "overrideGlobalSubnetWhitelist" = $true
+    }
+    $view = api post -v2 "file-services/views" $newView
 }
 
 $myObject = @{

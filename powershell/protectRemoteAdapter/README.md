@@ -57,3 +57,7 @@ Place all files in a folder together, then run the main script like so:
 * -scriptParams: (optional) any parameters to be passed to the script
 * -logScriptPath: path to log backup script (required only if selected policy is log-enabled)
 * -logScriptParams: (optional) any parameters to be passed to the log script
+
+## Notes
+
+The script will create the view if it does not already exist. This script does not do any host-side setup; it is still required for the user to manage the deployment of the host-side scripts and ssh keys.
