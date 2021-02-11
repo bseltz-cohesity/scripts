@@ -422,7 +422,7 @@ while($x -gt 0){
 foreach($job in $selectedJobs){
     "$($job.name)" | Tee-Object -FilePath $logfile -Append | write-host -ForegroundColor White
 
-    $runs = api get "protectionRuns?jobId=$($job.id)&runTypes=kRegular&runTypes=kFull&excludeTasks=true&excludeNonRestoreableRuns=true&startTimeUsecs=$(timeAgo $newerThan days)" | `
+    $runs = api get "protectionRuns?jobId=$($job.id)&runTypes=kRegular&runTypes=kFull&excludeTasks=true&excludeNonRestoreableRuns=true&startTimeUsecs=$(timeAgo ($newerThan + 2) days)" | `
         Where-Object { $_.backupRun.snapshotsDeleted -eq $false } | `
         Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
 
