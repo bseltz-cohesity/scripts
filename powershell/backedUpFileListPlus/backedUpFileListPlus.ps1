@@ -58,8 +58,8 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
 
 function showFiles($doc, $version){
     $versionDate = (usecsToDate $version.instanceId.jobStartTimeUsecs).ToString('yyyy-MM-dd_hh-mm-ss')
-
-    $outputfile = $(Join-Path -Path $PSScriptRoot -ChildPath "backedUpFiles-$($version.instanceId.jobInstanceId)-$($sourceServer)-$versionDate.csv")
+    $sourceServerText = $sourceServer.Replace('/','-').Replace('\','-')
+    $outputfile = $(Join-Path -Path $PSScriptRoot -ChildPath "backedUpFiles-$($version.instanceId.jobInstanceId)-$($sourceServerText)-$versionDate.csv")
     $null = Remove-Item -Path $outputfile -Force -ErrorAction SilentlyContinue
     "FullPath,ModifiedDate,Bytes" | Out-File -FilePath $outputfile
     $instance = "attemptNum={0}&clusterId={1}&clusterIncarnationId={2}&entityId={3}&jobId={4}&jobInstanceId={5}&jobStartTimeUsecs={6}&jobUidObjectId={7}" -f
