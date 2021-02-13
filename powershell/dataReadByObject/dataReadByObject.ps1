@@ -1,13 +1,3 @@
-# usage: ./expireOldReplicas.ps1 -vip mycluster `
-#                                -username myuser `
-#                                -domain mydomain.net `
-#                                -jobname myjob1, myjob2 `
-#                                -daysToKeep 14 `
-#                                -expire
-
-# omitting the -expire parameter: the script will only display all the snapshots older than -daysToKeep
-# including the -expire parameter: the script will actually expire all the snaps older than -daysToKeep 
-
 # process commandline arguments
 [CmdletBinding()]
 param (
