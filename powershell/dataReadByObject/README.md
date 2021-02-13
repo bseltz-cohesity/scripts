@@ -26,9 +26,9 @@ Place both files in a folder together and run the main script like so:
 
 ```powershell
 ./dataReadByObject.ps1 -vip mycluster `
-                    -username myuser `
-                    -domain mydomain.net `
-                    -unit MiB
+                       -username myuser `
+                       -domain mydomain.net `
+                       -unit MiB
 ```
 
 ## Parameters
