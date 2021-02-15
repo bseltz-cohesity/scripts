@@ -52,7 +52,7 @@ Place both files in a folder together and run the main script like so:
 * -olderThan: (optional) restore from last version prior to this date, e.g. '2021-01-31', '2021-01-30 23:00'
 * -daysAgo: (optional) restore from last backup X days ago (1 = last night, 2 = night before last)
 * -runId: (optional) restore specified runId
-* -wait: wait for completion and report status
+* -wait: (optional) wait for completion and report status
 
 ## File Names and Paths
 
