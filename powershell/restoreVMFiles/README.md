@@ -1,0 +1,62 @@
+# Restore VM Files using PowerShell
+
+Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
+
+This powershell script restores files from a VMware VM backup.
+
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download Commands
+$scriptName = 'restoreVMFiles'
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
+```
+
+## Components
+
+* restoreVMFiles.ps1: the main powershell script
+* cohesity-api.ps1: the Cohesity REST API helper module
+
+Place both files in a folder together and run the main script like so:
+
+```powershell
+./restoreVMFiles.ps1 -vip mycluster `
+                     -username myusername `
+                     -domain mydomain.net `
+                     -sourceVM vm1 `
+                     -targetVM vm2 `
+                     -fileNames /home/myuser/file1, /home/myuser/file2 `
+                     -restorePath /tmp/restoretest1/ `
+                     -wait
+```
+
+## Parameters
+
+* -vip: Cohesity cluster to connect to
+* -username: Cohesity username (e.g. admin)
+* -domain: (optional) Active Directory domain (defaults to 'local')
+* -sourceVM: VM that was backed up
+* -targetVM: (optional) VM to restore to (defaults to sourceVM)
+* -fileNames: (optional) file /path/names to restore (comma separated)
+* -fileList: (optional) text file of file path/names to restore (one per line)
+* -restorePath: (optional) path to restore files on targetServer
+* -restoreMethod: (optional) ExistingAgent, AutoDeploy, or VMTools (default is AutoDeploy)
+* -vmUser: (optional) required for AutoDeploy and VMTools restore methods, e.g. mydomain.net\myuser
+* -vmPwd: (optional) will be prompted if required and omitted
+* -showVersions: (optional) show available backups (run ID and run date) and exit
+* -olderThan: (optional) restore from last version prior to this date, e.g. '2021-01-31', '2021-01-30 23:00'
+* -daysAgo: (optional) restore from last backup X days ago (1 = last night, 2 = night before last)
+* -runId: (optional) restore specified runId
+* -wait: wait for completion and report status
+
+## File Names and Paths
+
+File names must be specified as absolute paths like:
+
+* Linux: /home/myusername/file1
+* Windows: c:\Users\MyUserName\Documents\File1 or /C/Users/MyUserName/Documents/File1
