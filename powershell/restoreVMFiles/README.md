@@ -53,6 +53,7 @@ Place both files in a folder together and run the main script like so:
 * -daysAgo: (optional) restore from last backup X days ago (1 = last night, 2 = night before last)
 * -runId: (optional) restore specified runId
 * -wait: (optional) wait for completion and report status
+* -noIndex: (optional) use if VM is not indexed, file paths must be exact case
 
 ## File Names and Paths
 

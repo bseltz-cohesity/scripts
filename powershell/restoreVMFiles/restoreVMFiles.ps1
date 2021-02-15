@@ -16,7 +16,8 @@ param (
     [Parameter()][switch]$showVersions, # show available run dates
     [Parameter()][string]$runId, # restore from specified run ID
     [Parameter()][string]$olderThan, # restore from latest backup before date
-    [Parameter()][int]$daysAgo # restore from backup X days ago
+    [Parameter()][int]$daysAgo, # restore from backup X days ago
+    [Parameter()][switch]$noIndex
 )
 
 # source the cohesity-api helper code
@@ -181,33 +182,45 @@ if($targetVM){
 
 # find files for restore
 foreach($file in $files){
-    $searchParams = @{
-        "fileParams" = @{
-            "searchString"       = $file;
-            "sourceEnvironments" = @(
-                "kVMware"
-            );
-            "objectIds"          = @(
-                $objectId
-            )
-        };
-        "objectType" = "Files"
-    }
-    $search = api post -v2 "data-protect/search/indexed-objects" $searchParams
-    $thisFile = $search.files | Where-Object {("{0}/{1}" -f $_.path, $_.name) -eq $file -or ("{0}/{1}/" -f $_.path, $_.name) -eq $file}
-    if(!$thisFile){
-        Write-Host "file $file not found" -ForegroundColor Yellow
-    }else{
+    if($noIndex){
         if($file[-1] -eq '/'){
             $isDirectory = $True
-            $absolutePath = "{0}/{1}/" -f $thisFile[0].path, $thisFile[0].name
         }else{
             $isDirectory = $false
-            $absolutePath = "{0}/{1}" -f $thisFile[0].path, $thisFile[0].name
         }
         $restoreParams.vmwareParams.recoverFileAndFolderParams.filesAndFolders += @{
-            "absolutePath" = $absolutePath;
+            "absolutePath" = $file;
             "isDirectory" = $isDirectory
+        }
+    }else{
+        $searchParams = @{
+            "fileParams" = @{
+                "searchString"       = $file;
+                "sourceEnvironments" = @(
+                    "kVMware"
+                );
+                "objectIds"          = @(
+                    $objectId
+                )
+            };
+            "objectType" = "Files"
+        }
+        $search = api post -v2 "data-protect/search/indexed-objects" $searchParams
+        $thisFile = $search.files | Where-Object {("{0}/{1}" -f $_.path, $_.name) -eq $file -or ("{0}/{1}/" -f $_.path, $_.name) -eq $file}
+        if(!$thisFile){
+            Write-Host "file $file not found" -ForegroundColor Yellow
+        }else{
+            if($file[-1] -eq '/'){
+                $isDirectory = $True
+                $absolutePath = "{0}/{1}/" -f $thisFile[0].path, $thisFile[0].name
+            }else{
+                $isDirectory = $false
+                $absolutePath = "{0}/{1}" -f $thisFile[0].path, $thisFile[0].name
+            }
+            $restoreParams.vmwareParams.recoverFileAndFolderParams.filesAndFolders += @{
+                "absolutePath" = $absolutePath;
+                "isDirectory" = $isDirectory
+            }
         }
     }
 }
@@ -225,7 +238,7 @@ if($restoreParams.vmwareParams.recoverFileAndFolderParams.filesAndFolders.Count 
         if($restoreTask.status -eq 'Succeeded'){
             Write-Host "Restore $($restoreTask.status)"
         }else{
-            Write-Host "Restore $($restoreTask.status): $($restoreTask.messages -join ', ')"
+            Write-Host "Restore $($restoreTask.status): $($restoreTask.messages -join ', ')" -ForegroundColor Yellow
         }
     }
 }else{
