@@ -57,7 +57,19 @@ Place both files in a folder together and run the main script like so:
 
 ## File Names and Paths
 
-File names must be specified as absolute paths like:
+File names must be specified as absolute paths, like:
 
 * Linux: /home/myusername/file1
 * Windows: c:\Users\MyUserName\Documents\File1 or /C/Users/MyUserName/Documents/File1
+
+## Selecting a Point in Time
+
+By default, the latest backup will be used. You can use one of the following to select a different point in time:
+
+-showVersions: this switch will display the backup run dates and IDs that are available to select. Once you find the date you are looking for, you can specify that run ID using the -runId parameter.
+
+-runId: specify a runId (use -showVersions to see the list of available runIds).
+
+-olderThan: specify a date in formats like 'YYYY-MM-DD HH:mm:ss' e.g. '2021-01-31', '2021-01-30 23:00', '2021-01-30 23:01:45'. The script will select the latest point in time before the specified date.
+
+-daysAgo: the script will select the latest point in time that is X days ago. Yesterday is 1 day ago, so -daysAgo 1 will select the last backup that ran yesterday. -daysAgo 2 will select the last backup that occurred the day before yesterday, and so on.
