@@ -52,10 +52,10 @@ if($files.Length -eq 0){
 $files = [string[]]$files | ForEach-Object {("/" + $_.Replace('\','/').replace(':','')).Replace('//','/')}
 
 # find source object
-$objects = api get "data-protect/search/protected-objects?snapshotActions=RecoverFiles&searchString=$vmName&environments=kVMware" -v2
-$object = $objects.objects | Where-Object name -eq $vmname
+$objects = api get "data-protect/search/protected-objects?snapshotActions=RecoverFiles&searchString=$sourceVM&environments=kVMware" -v2
+$object = $objects.objects | Where-Object name -eq $sourceVM
 if(!$object){
-    Write-Host "VM $vmName not found" -ForegroundColor Yellow
+    Write-Host "VM $sourceVM not found" -ForegroundColor Yellow
     exit 1
 }
 
@@ -91,7 +91,7 @@ if($runId){
     if($olderSnapshots){
         $snapshotId = $olderSnapshots[-1].id
     }else{
-        Write-Host "Oldest snapshots is $(usecsToDate $snapshots.snapshots[0].runStartTimeUsecs)"
+        Write-Host "Oldest snapshot is $(usecsToDate $snapshots.snapshots[0].runStartTimeUsecs)"
         exit 1
     }
 }else{

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2020.10.01"""
+"""Cohesity Python REST API Wrapper Module - 2021.02.16"""
 
 ##########################################################################################
 # Change Log
@@ -33,6 +33,7 @@
 # 2020.07.10 - added support for tenant impersonation
 # 2020.09.09 - fixed invalid password loop for PWFILE
 # 2020.10.01 - added noretry for password checking
+# 2021.02.16 - added V2 API support
 #
 ##########################################################################################
 # Install Notes
@@ -81,6 +82,7 @@ __all__ = ['apiauth',
            'heliosClusters']
 
 APIROOT = ''
+APIROOTv2 = ''
 HEADER = ''
 AUTHENTICATED = False
 APIMETHODS = ['get', 'post', 'put', 'delete']
@@ -88,12 +90,14 @@ CONFIGDIR = expanduser("~") + '/.pyhesity'
 SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
 PWFILE = os.path.join(SCRIPTDIR, 'YWRtaW4')
 LOGFILE = os.path.join(SCRIPTDIR, 'pyhesity-debug.log')
+APIROOTMCM = 'https://helios.cohesity.com/mcm/'
 
 
 ### authentication
 def apiauth(vip='helios.cohesity.com', username='helios', domain='local', password=None, updatepw=None, prompt=None, quiet=None, helios=False, useApiKey=False, tenantId=None, noretry=False):
     """authentication function"""
     global APIROOT
+    global APIROOTv2
     global HEADER
     global AUTHENTICATED
     global HELIOSCLUSTERS
@@ -106,6 +110,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
         pwd = __getpassword(vip, username, password, domain, updatepw, prompt)
     HEADER = {'accept': 'application/json', 'content-type': 'application/json'}
     APIROOT = 'https://' + vip + '/irisservices/api/v1'
+    APIROOTv2 = 'https://' + vip + '/v2/'
     if vip == 'helios.cohesity.com':
         HEADER = {'accept': 'application/json', 'content-type': 'application/json', 'apiKey': pwd}
         URL = 'https://helios.cohesity.com/mcm/clusters/connectionStatus'
@@ -197,24 +202,32 @@ def heliosClusters():
 
 
 ### api call function
-def api(method, uri, data=None, quiet=None):
+def api(method, uri, data=None, quiet=None, mcm=None, v=1):
     """api call function"""
     if AUTHENTICATED is False:
         print('Not Connected')
         return None
     response = ''
-    if uri[0] != '/':
-        uri = '/public/' + uri
+    if mcm is not None:
+        url = APIROOTMCM + uri
+    else:
+        if v == 2:
+            url = APIROOTv2 + uri
+        else:
+            if uri[0] != '/':
+                uri = '/public/' + uri
+            url = APIROOT + uri
+
     if method in APIMETHODS:
         try:
             if method == 'get':
-                response = requests.get(APIROOT + uri, headers=HEADER, verify=False)
+                response = requests.get(url, headers=HEADER, verify=False)
             if method == 'post':
-                response = requests.post(APIROOT + uri, headers=HEADER, json=data, verify=False)
+                response = requests.post(url, headers=HEADER, json=data, verify=False)
             if method == 'put':
-                response = requests.put(APIROOT + uri, headers=HEADER, json=data, verify=False)
+                response = requests.put(url, headers=HEADER, json=data, verify=False)
             if method == 'delete':
-                response = requests.delete(APIROOT + uri, headers=HEADER, json=data, verify=False)
+                response = requests.delete(url, headers=HEADER, json=data, verify=False)
         except requests.exceptions.RequestException as e:
             __writelog(e)
             if quiet is None:
