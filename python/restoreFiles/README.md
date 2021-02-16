@@ -14,7 +14,7 @@ You can download the scripts using the following commands:
 ```bash
 # download commands
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/restoreFiles/restoreFiles.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/restoreFiles/pyhesity.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x restoreFiles.py
 # end download commands
 ```
