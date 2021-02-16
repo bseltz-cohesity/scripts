@@ -12,7 +12,8 @@ param (
     [Parameter()][string]$vmName = '', #name of clone VM to tear down
     [Parameter()][string]$dbName = '', #name of clone DB to tear down
     [Parameter()][string]$dbServer = '', #name of dbServer where clone is attached
-    [Parameter()][string]$instance = 'MSSQLSERVER'
+    [Parameter()][string]$instance = 'MSSQLSERVER',
+    [Parameter()][switch]$wait
 )
 
 if ($cloneType -eq 'sql' -or $cloneType -eq 'oracle'){
@@ -65,10 +66,11 @@ foreach ($clone in $clones){
         
         $cloneDB = $thisClone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.newDatabaseName
         $cloneHost = $thisClone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.targetHost.displayName
+        $sourceHost = $thisClone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
         $cloneInstance = $thisClone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.instanceName
 
-        if ($cloneDB -eq $dbName -and $cloneHost -eq $dbServer -and $cloneInstance -eq $instance){
-            "tearing down SQLDB: $cloneDB from $cloneHost..."
+        if ($cloneDB -eq $dbName -and ($cloneHost -eq $dbServer -or $sourceHost -eq $dbServer) -and $cloneInstance -eq $instance){
+            "tearing down SQLDB: $cloneDB from $dbServer..."
             $taskId = $thisTaskId
             break
         }
@@ -113,7 +115,14 @@ foreach ($clone in $clones){
 }
 
 if ($taskId) {
-    $null = api post "/destroyclone/$taskId"
+    $restoreTask = api post "/destroyclone/$taskId"
+    if($wait){
+        while($restoreTask.restoreTask.destroyClonedTaskStateVec[0].status -eq 1){
+            Start-Sleep 5
+            $restoreTask = api get "/restoretasks/$taskId"
+        }
+        Write-Host "Clone Destroyed"
+    }
     exit 0
 }else{
     write-host "Clone Not Found" -foregroundcolor yellow

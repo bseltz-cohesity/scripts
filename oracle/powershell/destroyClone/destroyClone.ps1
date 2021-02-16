@@ -12,7 +12,8 @@ param (
     [Parameter()][string]$vmName = '', #name of clone VM to tear down
     [Parameter()][string]$dbName = '', #name of clone DB to tear down
     [Parameter()][string]$dbServer = '', #name of dbServer where clone is attached
-    [Parameter()][string]$instance = 'MSSQLSERVER'
+    [Parameter()][string]$instance = 'MSSQLSERVER',
+    [Parameter()][switch]$wait
 )
 
 if ($cloneType -eq 'sql' -or $cloneType -eq 'oracle'){
@@ -46,42 +47,45 @@ $cloneTypes = @{ 'vm' = 2; 'view' = 5; 'sql' = 7 ; 'oracle' = 7}
 
 $taskId = $null
 
-###get list of active clones
+### get list of active clones
 $clones = api get ("/restoretasks?restoreTypes=kCloneView&" +
-                                "restoreTypes=kConvertAndDeployVMs&" +
                                 "restoreTypes=kCloneApp&" +
                                 "restoreTypes=kCloneVMs") `
                                 | where-object { $_.restoreTask.destroyClonedTaskStateVec -eq $null } `
                                 | Where-Object { $_.restoreTask.performRestoreTaskState.base.type -eq $cloneTypes[$cloneType]} `
                                 | Where-Object { $_.restoreTask.performRestoreTaskState.base.publicStatus -eq 'kSuccess' }
 
-### tear down matching clone
+### find matching clone
 foreach ($clone in $clones){
 
     $thisTaskId = $clone.restoreTask.performRestoreTaskState.base.taskId
+    $thisClone = api get "/restoretasks/$thisTaskId"
 
     ### tear down SQL clone
     if($cloneType -eq 'sql'){
         
-        $cloneDB = $clone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.newDatabaseName
-        $cloneHost = $clone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.targetHost.displayName
-        $cloneInstance = $clone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.instanceName
-    
-        if ($cloneDB -ieq $dbName -and $cloneHost -ieq $dbServer -and $cloneInstance -ieq $instance){
-            "tearing down SQLDB: $cloneDB from $cloneHost..."
+        $cloneDB = $thisClone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.newDatabaseName
+        $cloneHost = $thisClone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.targetHost.displayName
+        $sourceHost = $thisClone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
+        $cloneInstance = $thisClone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.instanceName
+
+        if ($cloneDB -eq $dbName -and ($cloneHost -eq $dbServer -or $sourceHost -eq $dbServer) -and $cloneInstance -eq $instance){
+            "tearing down SQLDB: $cloneDB from $dbServer..."
             $taskId = $thisTaskId
+            break
         }
     }
 
     ### tear down Oracle clone
     if($cloneType -eq 'oracle'){
     
-        $cloneDB = $clone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.newDatabaseName
-        $cloneHost = $clone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.targetHost.displayName
+        $cloneDB = $thisClone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.newDatabaseName
+        $cloneHost = $thisClone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.targetHost.displayName
         
-        if ($cloneDB -ieq $dbName -and $cloneHost -ieq $dbServer){
+        if ($cloneDB -eq $dbName -and $cloneHost -eq $dbServer){
             "tearing down ORacle DB: $cloneDB from $cloneHost..."
             $taskId = $thisTaskId
+            break
         }
     }
 
@@ -93,7 +97,7 @@ foreach ($clone in $clones){
         if ($cloneViewName -eq $viewName){
             "tearing down View: $cloneViewName..."
             $null = api delete views/$cloneViewName
-            exit
+            exit 0
         }
     }
 
@@ -104,13 +108,23 @@ foreach ($clone in $clones){
             if($vm.restoredEntity.vmwareEntity.name -ieq $vmName){
                 "tearing down VM: $vmName..."
                 $taskId = $thisTaskId
+                break
             }
         }
     }
 }
 
 if ($taskId) {
-    $null = api post "/destroyclone/$taskId"
+    $restoreTask = api post "/destroyclone/$taskId"
+    if($wait){
+        while($restoreTask.restoreTask.destroyClonedTaskStateVec[0].status -eq 1){
+            Start-Sleep 5
+            $restoreTask = api get "/restoretasks/$taskId"
+        }
+        Write-Host "Clone Destroyed"
+    }
+    exit 0
 }else{
     write-host "Clone Not Found" -foregroundcolor yellow
+    exit 1
 }

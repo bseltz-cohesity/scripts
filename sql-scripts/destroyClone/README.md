@@ -42,3 +42,4 @@ tearing down SQLDB: cohesitydb-test from sqldev01...
 * -dbName: name of clone DB to tear down
 * -dbServer: name of dbServer where clone is attached
 * -instance: name of SQL instance where clone is attached (default is MSSQLSERVER)
+* -wait: wait for completion before exit
