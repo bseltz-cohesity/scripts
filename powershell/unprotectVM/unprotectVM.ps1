@@ -25,7 +25,7 @@ if($vmid){
     if($jobs){
         foreach($job in $jobs){
             "Removing $vmName from $($job.name)"
-            $job.sourceIds = $job.sourceIds | Where-Object { $_ -ne $vmid }
+            $job.sourceIds = @($job.sourceIds | Where-Object { $_ -ne $vmid })
             $null = api put "protectionJobs/$($job.id)" $job
         }
     }else{
