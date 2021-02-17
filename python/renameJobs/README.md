@@ -21,7 +21,7 @@ chmod +x renameJobs.py
 * renameJobs.py: the main PowerShell script
 * pyhesity.py: the Cohesity REST API helper module
 
-To rename a protection jobs, place all files in a folder together, then run the main script like so:
+To rename a protection job, place all files in a folder together, then run the main script like so:
 
 ```bash
 ./renameJobs.py -v mycluster -u myuser -d mydomain.net -j 'My Backup Job 1' -n 'My Backup Job 2' -c
