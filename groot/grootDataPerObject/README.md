@@ -1,21 +1,21 @@
-# Groot Data Per VM Report using Python
+# Groot Data Per Object Report using Python
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This python script calculates the data read/written for protected VMs over time.
+This python script calculates the data read/written for protected objects over time.
 
 ## Components
 
-* grootDataPerVM.py: the main python script
+* grootDataPerObject.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/groot/grootDataPerVM/grootDataPerVM.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/groot/grootDataPerObject/grootDataPerObject.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-chmod +x grootDataPerVM.py
+chmod +x grootDataPerObject.py
 # end download commands
 ```
 
@@ -49,11 +49,11 @@ Place both files in a folder together and run the main script like so:
 
 ```bash
 # example
-./grootDataPerVM.py -v mycluster -u myuser -d mydomain.net
+./grootDataPerObject.py -v mycluster -u myuser -d mydomain.net
 # end example
 ```
 
-The script will write an output file dataPerVM-mycluster.csv.
+The script will write an output file dataPerObject-mycluster.csv.
 
 ## Parameters
 
