@@ -3,7 +3,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vip, # Cohesity cluster to connect to
     [Parameter(Mandatory = $True)][string]$username, #cohesity username
     [Parameter()][string]$domain = 'local',  # local or AD domain
-    [Parameter()][Int64]$days, # number of days back to gather statistics
+    [Parameter()][Int64]$days = 31, # number of days back to gather statistics
     [Parameter()][ValidateSet("Daily","Weekly","Monthly")][string]$rollup = 'Daily' # show daily, weekly or monthly
 )
 

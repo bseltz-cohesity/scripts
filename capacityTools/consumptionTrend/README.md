@@ -37,5 +37,5 @@ Place the files in a folder together and run the script like so:
 * -vip: name or IP of Cohesity cluster
 * -username: name of user to connect to Cohesity
 * -domain: your AD domain (defaults to local)
-* -days: number of days of statistics to collect
-* -rollup: Daily, Weekly or Monthly
+* -days: (optional) number of days of statistics to collect (default is 31)
+* -rollup: Daily, Weekly or Monthly (default is daily)
