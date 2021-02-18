@@ -29,7 +29,7 @@ if units == 'MiB':
 # authenticate
 apiauth(vip, username, domain)
 
-print('Collecting report data...')
+print('Connecting to Postgres...')
 
 # get groot connection info from cluster
 reporting = api('get', 'postgres', quiet=True)
@@ -44,6 +44,8 @@ startUsecs = timeAgo(numdays, 'days')
 # connect to groot
 conn = psycopg2.connect(host=reporting[0]['nodeIp'], port=reporting[0]['port'], database="postgres", user=reporting[0]['defaultUsername'], password=reporting[0]['defaultPassword'])
 cur = conn.cursor()
+
+print('Gethering parent/child relationships...')
 
 # gather parent relationships
 parent = {}
@@ -71,6 +73,8 @@ for row in rows:
     (sourceName, sourceId) = row
     parent[sourceId] = sourceName
 
+print ('gethering job run stats...')
+
 # sql query ----------------------------------------
 sql_query = """
 select
@@ -84,20 +88,15 @@ from
     reporting.protection_job_run_entities jre,
     reporting.protection_jobs pj,
     reporting.leaf_entities le,
-    reporting.job_run_status jrs,
     reporting.environment_types et,
     reporting.protection_job_runs pjr,
-    reporting.registered_sources rs,
-    reporting.protection_policy ppolicy,
-    reporting.leaf_entities pe
+    reporting.protection_policy ppolicy
 where
     jre.is_latest_attempt = true
     and jre.job_id = pj.job_id
     and jre.entity_id = le.entity_id
-    and jre.status = jrs.status_id
     and jre.entity_env_type = et.env_id
     and jre.job_run_id = pjr.job_run_id
-    and jre.parent_source_id = rs.source_id
     and pj.policy_id = ppolicy.id
     and jre.start_time_usecs > %s
 order by
