@@ -25,9 +25,10 @@ function toUnits($val){
 $cluster = api get cluster
 $dateString = get-date -UFormat '%Y-%m-%d_%H-%M-%S'
 $outputfile = $(Join-Path -Path $PSScriptRoot -ChildPath "dataReadByObject-$($cluster.name)-$dateString.csv")
-"Job Name,Object Name,Read Last 24 Hours ($unit),Read Last 7 Days ($unit),Read Daily Average ($unit),Read Monthly Estimate ($unit),Written Last 24 Hours ($unit),Written Last 7 Days ($unit),Written Daily Average ($unit),Written Monthly Estimate ($unit)" | Out-File -FilePath $outputfile
+"Job Name,Object Name,Read Last 24 Hours ($unit),Read Last $daysBack Days ($unit),Written Last 24 Hours ($unit),Written Last $daysBack Days ($unit),Days Gathered" | Out-File -FilePath $outputfile
 
 $jobs = api get protectionJobs | Where-Object {$_.isActive -ne $False -and $_.isDeleted -ne $True}
+$today = Get-Date
 
 $daysBackUsecs = dateToUsecs (get-date -Hour 0 -Minute 00).AddDays(-$daysBack)
 
@@ -78,23 +79,19 @@ foreach ($job in $jobs | Sort-Object -Property name) {
         $last24HoursDataWritten = 0
         $last24HourStats.dataWritten | ForEach-Object{ $last24HoursDataWritten += $_}
 
-        # last week
-        $lastWeek = dateToUsecs ((get-date).AddDays(-7))
-        $lastWeekStats = $stats[$sourceName] | Where-Object {$_.startTimeUsecs -ge $lastWeek}
-        $lastWeekDataRead = 0
-        $lastWeekStats.dataRead | foreach-object{ $lastWeekDataRead += $_ }
-        $lastWeekDataWritten = 0
-        $lastWeekStats.dataWritten | ForEach-Object{ $lastWeekDataWritten += $_}
+        # last X days
+        $lastXDays = dateToUsecs ((get-date).AddDays(-$daysBack))
+        $lastXDaysStats = $stats[$sourceName] | Where-Object {$_.startTimeUsecs -ge $lastXDays}
+        $lastXDaysDataRead = 0
+        $lastXDaysStats.dataRead | foreach-object{ $lastXDaysDataRead += $_ }
+        $lastXDaysDataWritten = 0
+        $lastXDaysStats.dataWritten | ForEach-Object{ $lastXDaysDataWritten += $_}
 
-        # average read per day
-        $averageDataRead = $lastWeekDataRead / 7
-        $averageDataWritten = $lastWeekDataWritten / 7
+        # number of days gathered
+        $oldestStat = usecsToDate $stats[$sourceName][-1]['startTimeUsecs']
+        $numDays = ($today - $oldestStat).Days + 1
 
-        # estimated 31 day total
-        $monthlyRead = $averageDataRead * 31
-        $monthlyWritten = $averageDataWritten * 31
-
-        "{0},{1},""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}""" -f $job.name, $sourceName, $(toUnits $last24HoursDataRead), $(toUnits $lastWeekDataRead), $(toUnits $averageDataRead), $(toUnits $monthlyRead), $(toUnits $last24HoursDataWritten), $(toUnits $lastWeekDataWritten), $(toUnits $averageDataWritten), $(toUnits $monthlyWritten) | Out-File -FilePath $outputfile -Append
+        "{0},{1},""{2}"",""{3}"",""{4}"",""{5}"",{6}" -f $job.name, $sourceName, $(toUnits $last24HoursDataRead), $(toUnits $lastXDaysDataRead), $(toUnits $last24HoursDataWritten), $(toUnits $lastXDaysDataWritten), $numDays | Out-File -FilePath $outputfile -Append
     }
 }
 
