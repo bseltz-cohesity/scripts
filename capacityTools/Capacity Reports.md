@@ -48,7 +48,7 @@ This script generates a CSV file containing protected objects and views, sorted 
 
 This script generates a CSV file containing views and their logical size over a range of X days, showing which are growing over time.
 
-<img src="../images/viewGrowth.png" height="350"/>
+<img src="../images/viewGrowth.png"/>
 
 ## Helios Cluster Status
 
@@ -56,7 +56,7 @@ This script generates a CSV file containing views and their logical size over a 
 
 This script generates HTML output with cluster health and storage stats for clusters connected to Helios.
 
-<img src="../images/heliosClusterStatus.png" height="350"/>
+<img src="../images/heliosClusterStatus.png" height="250"/>
 
 ## Chargeback Report
 
@@ -64,7 +64,7 @@ This script generates HTML output with cluster health and storage stats for clus
 
 This script generates HTML output showing the logical size of protected objects and an associated cost (note this is logical, not accurate post-dedup consumption).
 
-<img src="../images/chargebackReport.png" height="350"/>
+<img src="../images/chargebackReport.png"/>
 
 ## External Target Storage Chart
 
@@ -72,4 +72,4 @@ This script generates HTML output showing the logical size of protected objects 
 
 This script generates HTML output showing storage consumption of an external target over time.
 
-<img src="../images/externalTargetStorageChart.png" height="350"/>
+<img src="../images/externalTargetStorageChart.png"/>
