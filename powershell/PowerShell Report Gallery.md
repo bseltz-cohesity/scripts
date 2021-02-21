@@ -78,7 +78,7 @@ This script generates HTML showing recent restore tasks.
 
 This script generates HTML containing protection stats details per job/object, including successes and failures, for all Helios-connected clusters, which may be useful for compliance requirements.
 
-<img src="../images/heliosProtectionReport.png" height="400"/>
+<img src="../images/heliosProtectionReport.png" height="500"/>
 
 ## Helios Job Failures
 
