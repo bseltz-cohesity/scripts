@@ -46,7 +46,7 @@ This script generates HTML showing failures of protected objects.
 
 This script generates CSV output showing protection status per VM.
 
-<img src="../images/vmProtectionReport.png"/>
+<img src="../images/vmProtectionReport.png" height="350"/>
 
 ## Object Report
 
