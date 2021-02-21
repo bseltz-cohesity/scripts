@@ -38,7 +38,7 @@ This script generates HTML containing protection stats details per job/object, i
 
 This script generates HTML showing failures of protected objects.
 
-<img src="../images/strikeReport.png" height="400"/>
+<img src="../images/strikeReport.png" height="500"/>
 
 ## VM Protection Report
 
