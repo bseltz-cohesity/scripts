@@ -14,7 +14,7 @@ This script generates CSV output showing latest status for all protected objects
 
 This script generates CSV output showing objects protected by jobs.
 
-<img src="../images/jobObjects.png" height="200"/>
+<img src="../images/jobObjects.png" height="300"/>
 
 ## Job Failures
 
@@ -22,7 +22,7 @@ This script generates CSV output showing objects protected by jobs.
 
 This script generates HTML output showing any jobs that failed their latest run.
 
-<img src="../images/jobFailures.png"/>
+<img src="../images/jobFailures.png" height="350"/>
 
 ## Protection Report
 
