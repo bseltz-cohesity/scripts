@@ -64,7 +64,7 @@ This script generates HTML output with cluster health and storage stats for clus
 
 This script generates HTML output showing the logical size of protected objects and an associated cost (note this is logical, not accurate post-dedup consumption).
 
-<img src="../images/chargebackReport.png"/>
+<img src="../images/chargebackReport.png" height="450"/>
 
 ## External Target Storage Chart
 
