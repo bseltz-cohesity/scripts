@@ -86,7 +86,7 @@ This script generates HTML containing protection stats details per job/object, i
 
 This script generates HTML output with the latest job failures/warnings for clusters connected to Helios.
 
-<img src="../images/heliosJobFailures.png" height="400"/>
+<img src="../images/heliosJobFailures.png" height="375"/>
 
 ## Archived Objects
 
