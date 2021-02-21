@@ -70,7 +70,7 @@ This script generates CSV output showing the available recovery points per objec
 
 This script generates HTML showing recent restore tasks.
 
-<img src="../images/restoreReport.png" height="350"/>
+<img src="../images/restoreReport.png" height="400"/>
 
 ## Helios Protection Report
 
