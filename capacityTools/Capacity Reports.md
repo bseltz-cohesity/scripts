@@ -56,7 +56,7 @@ This script generates a CSV file containing views and their logical size over a 
 
 This script generates HTML output with cluster health and storage stats for clusters connected to Helios.
 
-<img src="../images/heliosClusterStatus.png" height="250"/>
+<img src="../images/heliosClusterStatus.png" height="350"/>
 
 ## Chargeback Report
 
