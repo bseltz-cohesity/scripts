@@ -22,7 +22,7 @@ This script generates CSV output showing objects protected by jobs.
 
 This script generates HTML output showing any jobs that failed their latest run.
 
-<img src="../images/jobFailures.png" height="350"/>
+<img src="../images/jobFailures.png" height="300"/>
 
 ## Protection Report
 
