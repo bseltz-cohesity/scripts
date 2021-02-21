@@ -48,7 +48,7 @@ This script generates a CSV file containing protected objects and views, sorted 
 
 This script generates a CSV file containing views and their logical size over a range of X days, showing which are growing over time.
 
-<img src="../images/viewGrowth.png"/>
+<img src="../images/viewGrowth.png" height="400"/>
 
 ## Helios Cluster Status
 
