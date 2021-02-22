@@ -37,19 +37,19 @@ Place both files in a folder together and run the main script like so:
 
 ## Parameters
 
-* -v, --vip: DNS or IP of the Cohesity cluster to connect to
-* -u, --username: username to authenticate to Cohesity cluster
-* -d, --domain: (optional) domain of username, defaults to local
-* -s, --sourcevolume: name of volume or mount point to recover
-* -n, --sourcename: (optional) name of registered source NAS
-* -t, --targetvolume: (optional) name of target volume, mount point, or view name
-* -m, --targetname: (optional) name of registered target NAS
-* -a, --asview: (optional) recover as Cohesity view
-* -l, --showversions: (optional) show available run IDs/dates and exit
-* -r, --runid: (optional) select specific run ID
-* -b, --before: (optional) select recovery date before this date (e.g. '2021-02-21 00:00:00')
-* -o, --overwrite: (optional) overwrite existing volumes
-* -w, --wait: (optional) wait for completion and report status
+* `-v, --vip`: DNS or IP of the Cohesity cluster to connect to
+* `-u, --username`: username to authenticate to Cohesity cluster
+* `-d, --domain`: (optional) domain of username, defaults to local
+* `-s, --sourcevolume`: name of volume or mount point to recover
+* `-n, --sourcename`: (optional) name of registered source NAS
+* `-t, --targetvolume`: (optional) name of target volume, mount point, or view name
+* `-m, --targetname`: (optional) name of registered target NAS
+* `-a, --asview`: (optional) recover as Cohesity view
+* `-l, --showversions`: (optional) show available run IDs/dates and exit
+* `-r, --runid`: (optional) select specific run ID
+* `-b, --before`: (optional) select recovery date before this date (e.g. '2021-02-21 00:00:00')
+* `-o, --overwrite`: (optional) overwrite existing volumes
+* `-w, --wait`: (optional) wait for completion and report status
 
 ## Backup Versions
 
