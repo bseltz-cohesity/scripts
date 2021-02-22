@@ -53,7 +53,7 @@ Place both files in a folder together and run the main script like so:
 
 ## Backup Versions
 
-By default, the script will restore from the latest backup version. Using -before will tell the script to restore from the latest version before the specified date. Using -runid will use a specific backup run. Use -showversions to list the available run IDs.
+By default, the script will restore from the latest backup version. Using `-before` will tell the script to restore from the latest version before the specified date. Using `-runid` will use a specific backup run. Use `-showversions` to list the available run IDs.
 
 ## The Python Helper Module - pyhesity.py
 
