@@ -95,6 +95,7 @@ for row in rows:
     totals[mykey]['written'] += dataWritten
 
 cur.close()
+conn.close()
 
 for mykey in sorted(totals):
     jobName = totals[mykey]['jobName']
