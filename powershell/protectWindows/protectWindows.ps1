@@ -24,6 +24,7 @@ param (
     [Parameter(Mandatory = $True)][string]$jobName,  # name of the job to add server to
     [Parameter()][switch]$skipNestedMountPoints,  # if omitted, nested mountpoints will not be skipped
     [Parameter()][switch]$overwriteAll,
+    [Parameter()][switch]$appendToExisting,
     [Parameter()][switch]$allDrives
 )
 
@@ -146,18 +147,22 @@ foreach($sourceId in $sourceIds){
     "  processing $($source.protectionSource.name)"
     $mountPoints = $source.protectionSource.physicalProtectionSource.volumes.mountPoints | Where-Object {$_ -ne $null -and $_ -ne ''}
 
+    $includePathsToProcess = @()
+    $excludePathsToProcess = @()
     # get new include / exclude paths to process
-    $includePathsToProcess = $includePaths | Where-Object {$_ -ne $null -and $_ -ne ''}
-    $excludePathsToProcess = $excludePaths | Where-Object {$_ -ne $null -and $_ -ne ''}
+    if(($sourceId -in $newSourceIds) -or ($appendToExisting -or $overwriteAll)){
+        $includePathsToProcess = @($includePaths | Where-Object {$_ -ne $null -and $_ -ne ''})
+        $excludePathsToProcess = @($excludePaths | Where-Object {$_ -ne $null -and $_ -ne ''})
+    }
     $excludePathsProcessed = @()
 
     # get existing include / exclude paths
     $theseParams = $existingParams | Where-Object {$_.sourceId -eq $sourceId}
-    if($theseParams -and ! $overwriteAll){
+    if($theseParams -and (! $overwriteAll)){
         $excludePathsToProcess += $theseParams.physicalSpecialParameters.filePaths.excludedFilePaths
         $includePathsToProcess += $theseParams.physicalSpecialParameters.filePaths.backupFilePath
     }
-    
+
     # process exclude paths
     $wildCardExcludePaths = $excludePathsToProcess | Where-Object {$_ -ne $null -and $_.subString(0,2) -eq '*:'}
     $excludePathsToProcess = $excludePathsToProcess | Where-Object {$_ -notin $wildCardExcludePaths}
@@ -176,6 +181,7 @@ foreach($sourceId in $sourceIds){
     }
     # process include paths
     $includePathsProcessed = @()
+    
     if($allDrives -or '$ALL_LOCAL_DRIVES' -in $includePathsToProcess){
         if($cluster.clusterSoftwareVersion -gt '6.5.1b'){
             $includePathsProcessed += '$ALL_LOCAL_DRIVES'
@@ -187,13 +193,12 @@ foreach($sourceId in $sourceIds){
     }else{
         foreach($includePath in $includePathsToProcess){
             foreach($mountPoint in $mountPoints){
-                if($includePath.split('\')[0] -eq $mountPoint.split('\')[0]){
-                    $includePathsProcessed += "/$($includePath.replace(':','').replace('\','/'))".replace('//','/')
+                if(($includePath.split('\')[0] -eq $mountPoint.split('\')[0]) -or ($includePath.split('/')[1] -eq $mountPoint.split(':')[0])){
+                    $includePathsProcessed = @($includePathsProcessed) + ,"/$($includePath.replace(':','').replace('\','/'))".replace('//','/')
                 }
             }
         }
     }
-
     foreach($includePath in $includePathsProcessed | Sort-Object -Unique){
         $newFilePath= @{
             "backupFilePath" = $includePath;
@@ -202,10 +207,10 @@ foreach($sourceId in $sourceIds){
         }
         foreach($excludePath in $excludePathsProcessed){
             if($excludePath -match $includePath -or $includePath -eq '$ALL_LOCAL_DRIVES' -or $excludePath[0] -ne '/'){
-                $newFilePath.excludedFilePaths += $excludePath
+                $newFilePath.excludedFilePaths += ,$excludePath
             }
         }
-        $newParam.physicalSpecialParameters.filePaths += $newFilePath
+        $newParam.physicalSpecialParameters.filePaths += ,$newFilePath
     }
     $newParams += $newParam
 }
