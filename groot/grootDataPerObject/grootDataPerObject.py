@@ -78,29 +78,29 @@ print ('gethering job run stats...')
 # sql query ----------------------------------------
 sql_query = """
 select
-    pj.job_name as "Job Name",
+    pj.job_name,
     et.env_name,
-    le.entity_name AS "Object Name",
+    le.entity_name,
     le.parent_id,
-    jre.source_delta_size_bytes as "Data Read",
-    jre.data_written_size_bytes as "Data Written"
+    jre.source_delta_size_bytes,
+    jre.data_written_size_bytes
 from
     reporting.protection_job_run_entities jre,
     reporting.protection_jobs pj,
     reporting.leaf_entities le,
     reporting.environment_types et,
-    reporting.protection_job_runs pjr,
-    reporting.protection_policy ppolicy
+    reporting.protection_job_runs pjr
 where
     jre.is_latest_attempt = true
     and jre.job_id = pj.job_id
     and jre.entity_id = le.entity_id
     and jre.entity_env_type = et.env_id
     and jre.job_run_id = pjr.job_run_id
-    and pj.policy_id = ppolicy.id
+    and le.is_protected = true
+    and le.is_deleted = false
     and jre.start_time_usecs > %s
 order by
-    to_timestamp(jre.start_time_usecs / 1000000) desc;""" % startUsecs
+    jre.start_time_usecs desc;""" % startUsecs
 
 now = datetime.now()
 date = now.strftime("%m/%d/%Y %H:%M:%S")
@@ -128,6 +128,7 @@ for row in rows:
     totals[mykey]['written'] += dataWritten
 
 cur.close()
+conn.close()
 
 for mykey in sorted(totals):
     jobName = totals[mykey]['jobName']
