@@ -78,4 +78,5 @@ Processing servers...
 * -exclusionList: a text file list of exclusion paths (one per line)
 * -allDrives: include all drives in the inclusion list
 * -skipNestedMountPoints: if omitted, nested mount points will not be skipped
-* -overwriteAll: overwrite existing inclusions/exclusions for all servers in job
+* -appendToExisting: add new inclusions/exclusions to all servers in job (including existing servers)
+* -overwriteAll: overwrite existing inclusions/exclusions for all servers in job (inclusing existing servers)
