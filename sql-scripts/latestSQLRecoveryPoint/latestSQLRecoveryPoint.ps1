@@ -16,7 +16,7 @@ param (
 
 $searchresults = api get /searchvms?environment=SQL`&entityTypes=kSQL`&entityTypes=kVMware`&vmName=$dbName
 
-$dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $serverName } |
+$dbresults = $searchresults.vms | Where-Object {$serverName -in $_.vmDocument.objectAliases } |
                                   Where-Object { $_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $dbName }
 
 if($null -eq $dbresults){
