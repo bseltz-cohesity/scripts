@@ -23,9 +23,9 @@ param (
     [Parameter()][string]$exclusionList = '',  # optional list of exclusions in file
     [Parameter(Mandatory = $True)][string]$jobName,  # name of the job to add server to
     [Parameter()][switch]$skipNestedMountPoints,  # if omitted, nested mountpoints will not be skipped
-    [Parameter()][switch]$overwriteAll,
-    [Parameter()][switch]$appendToExisting,
-    [Parameter()][switch]$allDrives
+    [Parameter()][switch]$allDrives,
+    [Parameter()][switch]$replaceRules,
+    [Parameter()][switch]$allServers
 )
 
 # gather list of servers to add to job
@@ -135,6 +135,8 @@ $sourceIds = @($sourceIds | Select-Object -Unique)
 $existingParams = $job.sourceSpecialParameters
 $newParams = @()
 foreach($sourceId in $sourceIds){
+    $newServer = $sourceId -in $newSourceIds
+
     $newParam = @{
         "sourceId" = $sourceId;
         "physicalSpecialParameters" = @{
@@ -144,26 +146,32 @@ foreach($sourceId in $sourceIds){
 
     # get source mount points
     $source = $sources.nodes | Where-Object {$_.protectionSource.id -eq $sourceId}
-    "  processing $($source.protectionSource.name)"
+    if($newServer -or $allServers){
+        "  processing $($source.protectionSource.name)"
+    }
     $mountPoints = $source.protectionSource.physicalProtectionSource.volumes.mountPoints | Where-Object {$_ -ne $null -and $_ -ne ''}
 
     $includePathsToProcess = @()
     $excludePathsToProcess = @()
+
     # get new include / exclude paths to process
-    if(($sourceId -in $newSourceIds) -or ($appendToExisting -or $overwriteAll)){
+    if($newServer -or $allServers){
         $includePathsToProcess = @($includePaths | Where-Object {$_ -ne $null -and $_ -ne ''})
         $excludePathsToProcess = @($excludePaths | Where-Object {$_ -ne $null -and $_ -ne ''})
     }
-    $excludePathsProcessed = @()
 
     # get existing include / exclude paths
     $theseParams = $existingParams | Where-Object {$_.sourceId -eq $sourceId}
-    if($theseParams -and (! $overwriteAll)){
-        $excludePathsToProcess += $theseParams.physicalSpecialParameters.filePaths.excludedFilePaths
-        $includePathsToProcess += $theseParams.physicalSpecialParameters.filePaths.backupFilePath
+    if($theseParams){
+        if(($newServer -and (! $replaceRules)) -or
+           ((! $newServer) -and (! ($replaceRules -and $allServers)))){
+               $excludePathsToProcess += $theseParams.physicalSpecialParameters.filePaths.excludedFilePaths
+               $includePathsToProcess += $theseParams.physicalSpecialParameters.filePaths.backupFilePath
+        }
     }
 
     # process exclude paths
+    $excludePathsProcessed = @()
     $wildCardExcludePaths = $excludePathsToProcess | Where-Object {$_ -ne $null -and $_.subString(0,2) -eq '*:'}
     $excludePathsToProcess = $excludePathsToProcess | Where-Object {$_ -notin $wildCardExcludePaths}
     foreach($wildCardExcludePath in $wildCardExcludePaths){

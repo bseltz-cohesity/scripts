@@ -57,13 +57,6 @@ Then, run the main script like so:
                      -skipNestedMountPoints
 ```
 
-```text
-Connected!
-Processing servers...
-  server1.mydomain.net
-  server2.mydomain.net
-```
-
 ## Parameters
 
 * -vip: name or IP of Cohesity cluster
@@ -78,5 +71,5 @@ Processing servers...
 * -exclusionList: a text file list of exclusion paths (one per line)
 * -allDrives: include all drives in the inclusion list
 * -skipNestedMountPoints: if omitted, nested mount points will not be skipped
-* -appendToExisting: add new inclusions/exclusions to all servers in job (including existing servers)
-* -overwriteAll: overwrite existing inclusions/exclusions for all servers in job (inclusing existing servers)
+* -replaceRules: if ommited, inclusions/exclusions are appended to existing server rules (if any)
+* -allServers: inclusions/exclusions are applied to all servers in the job
