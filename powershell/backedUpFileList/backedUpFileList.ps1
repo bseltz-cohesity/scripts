@@ -1,4 +1,4 @@
-# version 2021.02.08
+# version 2021.02.23
 # usage: ./backedUpFileList.ps1 -vip mycluster \
 #                               -username myuser \
 #                               -domain mydomain.net \
@@ -93,9 +93,15 @@ function showFiles($doc, $version){
 $searchResults = api get "/searchvms?entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAWSSnapshotManager&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kFlashBlade&entityTypes=kGCP&entityTypes=kGenericNas&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kIsilon&entityTypes=kKVM&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware&vmName=$sourceserver"
 $searchResults = $searchResults.vms | Where-Object {$_.vmDocument.objectName -eq $sourceServer}
 
+if(!$searchResults){
+    Write-Host "no backups found for $sourceServer" -ForegroundColor Yellow
+    exit 1
+}
+
 # narrow search by job name
 $altJobName = "Old Name: $jobName"
-$searchResults = $searchResults | Where-Object {$_.vmDocument.jobName -eq $jobName -or $_.vmDocument.jobName -match $altJobName}
+$altJobName2 = "$jobName \(Old Name:"
+$searchResults = $searchResults | Where-Object {($_.vmDocument.jobName -eq $jobName) -or ($_.vmDocument.jobName -match $altJobName) -or ($_.vmDocument.jobName -match $altJobName2)}
 
 if(!$searchResults){
     Write-Host "$sourceServer is not protected by $jobName" -ForegroundColor Yellow

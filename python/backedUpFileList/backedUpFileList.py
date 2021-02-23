@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2021.02.08
+# version 2021.02.23
 
 # usage: ./backedUpFileList.py -v mycluster \
 #                              -u myuser \
@@ -105,19 +105,20 @@ def showFiles(doc, version):
 search = api('get', '/searchvms?entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAWSSnapshotManager&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kFlashBlade&entityTypes=kGCP&entityTypes=kGenericNas&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kIsilon&entityTypes=kKVM&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware&vmName=%s' % sourceserver)
 
 if 'vms' not in search:
-    print('%s not found' % sourceserver)
+    print('no backups found for %s' % sourceserver)
     exit(1)
 
 searchResults = [vm for vm in search['vms'] if vm['vmDocument']['objectName'].lower() == sourceserver.lower()]
-if len(search['vms']) == 0:
-    print('%s not found' % sourceserver)
+
+if len(searchResults) == 0:
+    print('no backups found for %s' % sourceserver)
     exit(1)
 
 altJobName = 'old name: %s' % jobname.lower()
 altJobName2 = '%s (old name' % jobname.lower()
 searchResults = [vm for vm in searchResults if vm['vmDocument']['jobName'].lower() == jobname.lower() or altJobName in vm['vmDocument']['jobName'].lower() or altJobName2 in vm['vmDocument']['jobName'].lower()]
 
-if len(search['vms']) == 0:
+if len(searchResults) == 0:
     print('%s not protected by %s' % (sourceserver, jobname))
     exit(1)
 
