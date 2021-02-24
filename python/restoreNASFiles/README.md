@@ -30,7 +30,7 @@ Place both files in a folder together and run the main script like so:
                      -s vol2 \
                      -n netapp1.mydomain.net \
                      -t vol3 \
-                     -m nteapp1.mydomain.net \
+                     -m netapp1.mydomain.net \
                      -b '2020-04-18 18:00:00' \
                      -w
 # end example
