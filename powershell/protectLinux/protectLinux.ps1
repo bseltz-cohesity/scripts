@@ -15,7 +15,8 @@ param (
     [Parameter(Mandatory = $True)][string]$jobName,  # name of the job to add server to
     [Parameter()][switch]$skipNestedMountPoints,  # 6.3 and below - skip all nested mount points
     [Parameter()][array]$skipNestedMountPointTypes = @(),  # 6.4 and above - skip listed mount point types
-    [Parameter()][switch]$overwriteAll
+    [Parameter()][switch]$replaceRules,
+    [Parameter()][switch]$allServers
 )
 
 # gather list of servers to add to job
@@ -120,46 +121,67 @@ $newParams = @()
 
 # process inclusions and exclusions
 foreach($sourceId in $sourceIds){
-    if($sourceId -in $newSourceIds -or $overwriteAll){
-        $newParam= @{
-            "sourceId" = $sourceId;
-            "physicalSpecialParameters" = @{
-                "filePaths" = @()
-            }
+    $source = $sources.nodes | Where-Object {$_.protectionSource.id -eq $sourceId}
+    $newServer = $sourceId -in $newSourceIds
+
+    $newParam = @{
+        "sourceId" = $sourceId;
+        "physicalSpecialParameters" = @{
+            "filePaths" = @()
         }
+    }
+
+    $includePathsToProcess = @()
+    $excludePathsToProcess = @()
+
+    # get existing rules
+    $theseParams = $existingParams | Where-Object {$_.sourceId -eq $sourceId}
+    if($theseParams){
+        if(($newServer -and (! $replaceRules)) -or
+            ((! $newServer) -and (! ($replaceRules -and $allServers)))){
+                $excludePathsToProcess += $theseParams.physicalSpecialParameters.filePaths.excludedFilePaths
+                $includePathsToProcess += $theseParams.physicalSpecialParameters.filePaths.backupFilePath
+        }
+    }
+
+    # add new rules
+    if($newServer -or $allServers){
+        "  processing $($source.protectionSource.name)"
+        $includePathsToProcess += @($includePaths | Where-Object {$_ -ne $null -and $_ -ne ''})
+        $excludePathsToProcess += @($excludePaths | Where-Object {$_ -ne $null -and $_ -ne ''})
         if($skipNestedMountPointTypes.Count -gt 0){
             $newParam.physicalSpecialParameters['usesSkipNestedVolumesVec'] = $True
             $newParam.physicalSpecialParameters['skipNestedVolumesVec'] = $skipNestedMountPointTypes
         }
-        $source = $sources.nodes | Where-Object {$_.protectionSource.id -eq $sourceId}
-        "  processing $($source.protectionSource.name)"
-
-        foreach($includePath in $includePaths | Where-Object {$_ -ne ''}){
-            $includePath = $includePath.ToString()
-            $filePath = @{
-                "backupFilePath" = $includePath;
-                "skipNestedVolumes" = $skip;
-                "excludedFilePaths" = @()
-            }
-            $newParam.physicalSpecialParameters.filePaths += $filePath
-        }
-
-        foreach($excludePath in $excludePaths | Where-Object {$_ -ne ''}){
-            $excludePath = $excludePath.ToString()
-            $parentPath = $newParam.physicalSpecialParameters.filePaths | Where-Object {$excludePath.contains($_.backupFilePath)} | Sort-Object -Property {$_.backupFilePath.Length} -Descending | Select-Object -First 1
-            if($parentPath){
-                $parentPath.excludedFilePaths += $excludePath
-            }else{
-                foreach($parentPath in $newParam.physicalSpecialParameters.filePaths){
-                    $parentPath.excludedFilePaths += $excludePath
-                }
-            }
-        }
-        $newParams += $newParam
-    }else{
-        $newParams += $existingParams | Where-Object {$_.sourceId -eq $sourceId}
     }
+
+    # process include rules
+    foreach($includePath in $includePathsToProcess | Where-Object {$_ -ne ''} | Sort-Object -Unique){
+        $includePath = $includePath.ToString()
+        $filePath = @{
+            "backupFilePath" = $includePath;
+            "skipNestedVolumes" = $skip;
+            "excludedFilePaths" = @()
+        }
+        $newParam.physicalSpecialParameters.filePaths += $filePath
+    }
+
+    # process exclude rules
+    foreach($excludePath in $excludePathsToProcess | Where-Object {$_ -and $_ -ne ''} | Sort-Object -Unique){
+        $excludePath = $excludePath.ToString()
+        $parentPath = $newParam.physicalSpecialParameters.filePaths | Where-Object {$excludePath.contains($_.backupFilePath)} | Sort-Object -Property {$_.backupFilePath.Length} -Descending | Select-Object -First 1
+        if($parentPath){
+            $parentPath.excludedFilePaths += $excludePath
+        }else{
+            foreach($parentPath in $newParam.physicalSpecialParameters.filePaths){
+                $parentPath.excludedFilePaths += $excludePath
+            }
+        }
+    }
+    $newParams += $newParam
 }
+
+$newParams | ConvertTo-Json -Depth 99 | Out-File -FilePath protectLinuxDebug.txt
 
 # update job
 $job.sourceSpecialParameters = $newParams
