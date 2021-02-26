@@ -36,3 +36,4 @@ Place both files in a folder together and run the main script like so:
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -yesterdayOnly: (optional) only include yesterday 12AM to today 12AM (by default yesterday 12AM to now is included)
+* -filters: (optional) only show jobs that match any of the specified search strings (e.g. -filters prod, dev, test)

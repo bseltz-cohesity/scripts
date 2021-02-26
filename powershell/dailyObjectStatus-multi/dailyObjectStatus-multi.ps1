@@ -5,7 +5,8 @@ param (
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
     [Parameter()][int]$numRuns = 2,
-    [Parameter()][switch]$yesterdayOnly
+    [Parameter()][switch]$yesterdayOnly,
+    [Parameter()][array]$filters
 )
 
 # source the cohesity-api helper code
@@ -37,34 +38,50 @@ foreach($vip in $vips){
     "`n=========`n{0}`n=========" -f $cluster.name
     $jobs = api get protectionJobs | Where-Object {$_.isActive -ne $False -and $_.isDeleted -ne $True}
 
+    if($filters.Length -gt 0){
+        $jobs = $jobs | Where-Object { $_.name }
+    }
+
     foreach($job in $jobs | Sort-Object -Property name){
-        "`n    {0} ({1})`n" -f $job.name, $job.environment.subString(1)
-        $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$yesterdayUsecs&endTimeUsecs=$endTimeUsecs&numRuns=$numRuns"
-        $finishedRuns = $runs | Where-Object {$_.backupRun.status -in @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')}
-        $myRun = $null
-        if($finishedRuns.Count -eq 0){
-            # still running
-            if($runs.Count -gt 0){
-                $myRun = $runs[0]
+        if($filters.Length -gt 0){
+            $includeJob = $False
+            foreach($filter in $filters){
+                if($job.name -match $filter){
+                    $includeJob = $True
+                }
             }
         }else{
-            # finished
-            $myRun = $finishedRuns[0]
+            $includeJob = $True
         }
-        if($myRun){
-            $runStartTimeUsecs = $myRun.backupRun.stats.startTimeUsecs 
-            foreach($source in $myRun.backupRun.sourceBackupStatus | Sort-Object -Property {$_.source.name}){
-                $sourceName = $source.source.name
-                $status = $source.status.subString(1)
-                if($source.error.Length -gt 0){
-                    $message = $source.error
-                }elseif($source.warnings.Length -gt 0) {
-                    $message = $source.warnings -join ', '
-                }else{
-                    $message = ''
+        if($includeJob){
+            "`n    {0} ({1})`n" -f $job.name, $job.environment.subString(1)
+            $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$yesterdayUsecs&endTimeUsecs=$endTimeUsecs&numRuns=$numRuns"
+            $finishedRuns = $runs | Where-Object {$_.backupRun.status -in @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')}
+            $myRun = $null
+            if($finishedRuns.Count -eq 0){
+                # still running
+                if($runs.Count -gt 0){
+                    $myRun = $runs[0]
                 }
-                "          {0} ({1})" -f $sourceName, $status
-                "{0},{1},{2},{3},{4},{5},""{6}""" -f $cluster.name, $job.name, $job.environment.subString(1), $sourceName, $status, (usecsToDate $runStartTimeUsecs), $message | Out-File -FilePath $outputfile -Append
+            }else{
+                # finished
+                $myRun = $finishedRuns[0]
+            }
+            if($myRun){
+                $runStartTimeUsecs = $myRun.backupRun.stats.startTimeUsecs 
+                foreach($source in $myRun.backupRun.sourceBackupStatus | Sort-Object -Property {$_.source.name}){
+                    $sourceName = $source.source.name
+                    $status = $source.status.subString(1)
+                    if($source.error.Length -gt 0){
+                        $message = $source.error
+                    }elseif($source.warnings.Length -gt 0) {
+                        $message = $source.warnings -join ', '
+                    }else{
+                        $message = ''
+                    }
+                    "          {0} ({1})" -f $sourceName, $status
+                    "{0},{1},{2},{3},{4},{5},""{6}""" -f $cluster.name, $job.name, $job.environment.subString(1), $sourceName, $status, (usecsToDate $runStartTimeUsecs), $message | Out-File -FilePath $outputfile -Append
+                }
             }
         }
     }
