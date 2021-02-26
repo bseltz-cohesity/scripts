@@ -1,5 +1,13 @@
 # PowerShell Protection Reports
 
+## HeatMap Report
+
+<https://github.com/bseltz-cohesity/scripts/tree/master/powershell/heatMapReport>
+
+This script generates an HTML formatted heat map report.
+
+<img src="../images/heatMap.png"/>
+
 ## Daily Object Status
 
 <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/dailyObjectStatus>
