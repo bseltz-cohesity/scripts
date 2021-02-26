@@ -20,7 +20,8 @@ param (
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
 
-$environments = @('kUnknown', 'kVMware' , 'kHyperV' , 'kSQL' , 'kView' , 'kPuppeteer' , 'kPhysical' , 'kPure' , 'kAzure' , 'kNetapp' , 'kAgent' , 'kGenericNas' , 'kAcropolis' , 'kPhysicalFiles' , 'kIsilon' , 'kKVM' , 'kAWS' , 'kExchange' , 'kHyperVVSS' , 'kOracle' , 'kGCP' , 'kFlashBlade' , 'kAWSNative' , 'kVCD' , 'kO365' , 'kO365Outlook' , 'kHyperFlex' , 'kGCPNative', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown')
+# $environments = @('kUnknown', 'kVMware' , 'kHyperV' , 'kSQL' , 'kView' , 'kPuppeteer' , 'kPhysical' , 'kPure' , 'kAzure' , 'kNetapp' , 'kAgent' , 'kGenericNas' , 'kAcropolis' , 'kPhysicalFiles' , 'kIsilon' , 'kKVM' , 'kAWS' , 'kExchange' , 'kHyperVVSS' , 'kOracle' , 'kGCP' , 'kFlashBlade' , 'kAWSNative' , 'kVCD' , 'kO365' , 'kO365Outlook' , 'kHyperFlex' , 'kGCPNative', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown')
+$environments = @('env_name', 'kVMware', 'kHyperV', 'kSQL', 'kView', 'kPuppeteer', 'kPhysical', 'kPure', 'kAzure', 'kNetapp', 'kAgent', 'kGenericNas', 'kAcropolis', 'kPhysicalFiles', 'kIsilon', 'kKVM', 'kAWS', 'kExchange', 'kHyperVVSS', 'kOracle', 'kGCP', 'kFlashBlade', 'kAWSNative', 'kVCD', 'kO365', 'kO365Outlook', 'kHyperFlex', 'kGCPNative', 'kAzureNative', 'kAD', 'kAWSSnapshotManager', 'kGPFS', 'kRDSSnapshotManager', 'kKubernetes', 'kNimble', 'kAzureSnapshotManager', 'kElastifile', 'kCassandra', 'kMongoDB', 'kHBase', 'kHive', 'kHdfs', 'kCouchbase')
 
 write-host "Collecting report data per job..."
 
@@ -163,100 +164,114 @@ $totalFailedObjects = 0
 
 foreach($job in $jobs | Sort-Object -Property name){
     $objType = $job.environment
-    "$($job.name)"
-    # get all runs for the job
-    $runs = api get "/backupjobruns?id=$($job.id)&startTimeUsecs=$(timeAgo $days days)&allUnderHierarchy=true&excludeTasks=true&numRuns=99999"
-    $runCount = $runs.backupJobRuns.protectionRuns.count -1
-    $runNum = 0
-    $thisSlurp = $slurp
-    # slurp detailed job runs
-    while($runCount -gt 0){
-        if($runCount -lt $thisSlurp){
-            $thisSlurp = $runCount
-        }
-        $startTimeUsecs = $runs.backupJobRuns.protectionRuns[$runNum + $thisSlurp].backupRun.base.startTimeUsecs
-        $endTimeUsecs = $($runs.backupJobRuns.protectionRuns[$runNum].backupRun.base.endTimeUsecs)
-        if($endTimeUsecs -ge 0){
-            $theseRuns = api get "/backupjobruns?startTimeUsecs=$startTimeUsecs&endTimeUsecs=$endTimeUsecs&numRuns=$slurp&id=$($job.id)"
+    if($objType -eq 'kSql' -or $objType -eq 'kOracle'){
+        $runClasses = @('runTypes=kRegular&runTypes=kFull&runTypes=kSystem', 'runTypes=kLog')
+    }else{
+        $runClasses = @('runTypes=kAll')
+    }
+    foreach($runClass in $runClasses){
+        if($runClass -eq 'runTypes=kLog'){
+            "$($job.name) (Log)"
         }else{
-            $theseRuns = api get "/backupjobruns?startTimeUsecs=$startTimeUsecs&numRuns=$slurp&id=$($job.id)"
+            "$($job.name)"
         }
-        foreach($protectionRun in $theseRuns.backupJobRuns.protectionRuns){
-            $runStartTimeUsecs = $protectionRun.backupRun.base.startTimeUsecs
-            foreach($task in $protectionRun.backupRun.latestFinishedTasks){
-                $objName = $task.base.sources[0].source.displayName
-                # add object to allObjects list
-                if($objName.ToString().ToLower() -notin $allObjects){
-                    $allObjects += $objName.ToString().ToLower()
-                    $totalObjects += 1
-                }
-                $objStatus = $task.base.publicStatus
-                # record failure
-                if($objName -notin $skip -and $objStatus -eq 'kFailure'){
-                    $errorsRecorded += 1
-                    if($objName -notin $errorCount.Keys){
-                        # record most recent error
-                        $totalFailedObjects +=1
-                        $errorCount[$objName] = 1
-                        $latestError[$objName] = $task.base.error.errorMsg
-                        $appHtml = ''
-                        if($task.psobject.properties['appEntityStateVec']){
-                            # record per-DB failures
-                            foreach($app in $task.appEntityStateVec){
-                                $totalObjects += 1
-                                if($app.publicStatus -ne 'kSuccess'){
-                                    $totalFailedObjects += 1
-                                    $appHtml += "<tr>
-                                        <td></td>
-                                        <td>$($app.appEntity.displayName)</td>
-                                        <td>$($environments[$app.appEntity.type].subString(1))</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td>$($app.error.errorMsg)</td>
-                                    </tr>"
+        # get all runs for the job
+        $runs = api get "/backupjobruns?id=$($job.id)&startTimeUsecs=$(timeAgo $days days)&allUnderHierarchy=true&excludeTasks=true&numRuns=99999&$($runClass)"
+        $runCount = $runs.backupJobRuns.protectionRuns.count -1
+        $runNum = 0
+        $thisSlurp = $slurp
+        # slurp detailed job runs
+        while($runCount -gt 0){
+            if($runCount -lt $thisSlurp){
+                $thisSlurp = $runCount
+            }
+            $startTimeUsecs = $runs.backupJobRuns.protectionRuns[$runNum + $thisSlurp].backupRun.base.startTimeUsecs
+            $endTimeUsecs = $($runs.backupJobRuns.protectionRuns[$runNum].backupRun.base.endTimeUsecs)
+            if($endTimeUsecs -ge 0){
+                $theseRuns = api get "/backupjobruns?startTimeUsecs=$startTimeUsecs&endTimeUsecs=$endTimeUsecs&numRuns=$slurp&id=$($job.id)"
+            }else{
+                $theseRuns = api get "/backupjobruns?startTimeUsecs=$startTimeUsecs&numRuns=$slurp&id=$($job.id)"
+            }
+            foreach($protectionRun in $theseRuns.backupJobRuns.protectionRuns){
+                $runStartTimeUsecs = $protectionRun.backupRun.base.startTimeUsecs
+                foreach($task in $protectionRun.backupRun.latestFinishedTasks){
+                    $objName = $task.base.sources[0].source.displayName
+                    # add object to allObjects list
+                    if($objName.ToString().ToLower() -notin $allObjects){
+                        $allObjects += $objName.ToString().ToLower()
+                        $totalObjects += 1
+                    }
+                    $objStatus = $task.base.publicStatus
+                    # record failure
+                    if($objName -notin $skip -and $objStatus -eq 'kFailure'){
+                        $errorsRecorded += 1
+                        if($objName -notin $errorCount.Keys){
+                            # record most recent error
+                            $totalFailedObjects +=1
+                            $errorCount[$objName] = 1
+                            $latestError[$objName] = $task.base.error.errorMsg
+                            $appHtml = ''
+                            if($task.psobject.properties['appEntityStateVec']){
+                                # record per-DB failures
+                                foreach($app in $task.appEntityStateVec){
+                                    $totalObjects += 1
+                                    if($app.publicStatus -ne 'kSuccess'){
+                                        $totalFailedObjects += 1
+                                        $appHtml += "<tr>
+                                            <td></td>
+                                            <td>$($app.appEntity.displayName)</td>
+                                            <td>$($environments[$app.appEntity.type].subString(1))</td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td>$($app.error.errorMsg)</td>
+                                        </tr>"
+                                    }
                                 }
                             }
+                            $appErrors[$objName] = $appHtml
+                        }else{
+                            $errorCount[$objName] += 1
                         }
-                        $appErrors[$objName] = $appHtml
-                    }else{
-                        $errorCount[$objName] += 1
-                    }
-                    # populate html record
-                    $jobId = $job.id
-                    $jobName = $job.name
-                    $jobUrl = "https://$vip/protection/job/$jobId/details"
-                    $jobEntry[$objName] = "<a href=$jobUrl>$jobName</a>"
-                    $objErrors[$objName] = "<tr>
-                        <td>$objName</td>
-                        <td>-</td>
-                        <td>$($objType.subString(1))</td>
-                        <td>$($jobEntry[$objName])</td>
-                        <td>$($errorCount[$objName])+</td>
-                        <td>More than $days days ago</td>
-                        <td>$($latestError[$objName])</td>
-                    </tr>"
-                }else{
-                    if($objName -notin $skip){
-                        # last good backup
-                        $skip += $objName
+                        # populate html record
+                        $jobId = $job.id
+                        if($runClass -eq 'runTypes=kLog'){
+                            $jobName = "$($job.name) (Log)"
+                        }else{
+                            $jobName = $job.name
+                        }
+                        $jobUrl = "https://$vip/protection/job/$jobId/details"
+                        $jobEntry[$objName] = "<a href=$jobUrl>$jobName</a>"
                         $objErrors[$objName] = "<tr>
                             <td>$objName</td>
                             <td>-</td>
                             <td>$($objType.subString(1))</td>
                             <td>$($jobEntry[$objName])</td>
-                            <td>$($errorCount[$objName])</td>
-                            <td>$(usecsToDate $runStartTimeUsecs)</td>
+                            <td>$($errorCount[$objName])+</td>
+                            <td>More than $days days ago</td>
                             <td>$($latestError[$objName])</td>
                         </tr>"
+                    }else{
+                        if($objName -notin $skip){
+                            # last good backup
+                            $skip += $objName
+                            $objErrors[$objName] = "<tr>
+                                <td>$objName</td>
+                                <td>-</td>
+                                <td>$($objType.subString(1))</td>
+                                <td>$($jobEntry[$objName])</td>
+                                <td>$($errorCount[$objName])</td>
+                                <td>$(usecsToDate $runStartTimeUsecs)</td>
+                                <td>$($latestError[$objName])</td>
+                            </tr>"
+                        }
                     }
                 }
             }
+            $runNum += $thisSlurp
+            $runCount -= $thisSlurp
         }
-        $runNum += $thisSlurp
-        $runCount -= $thisSlurp
     }
-
 }
 
 foreach($objName in ($errorCount.Keys | Sort-Object)){
