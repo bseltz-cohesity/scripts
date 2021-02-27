@@ -13,100 +13,100 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 ### Cluster Configuration
 
-* Join Active Directory: [addActiveDirectory.ps1](./powershell/addActiveDirectory)
+* Join Active Directory: [addActiveDirectory](./powershell/addActiveDirectory)
 * Create and Configure Virtual Cluster: [clusterCreateAndConfigVE](./powershell/clusterCreateAndConfigVE)
-* Deploy Single-node (robo) Virtual Edition: [deployVE.ps1](./powershell/deployVE)
-* Deploy Clustered Virtual Edition [deployCVE.ps1](./powershell/deployCVE)
-* Custom Host Mappings: [addCustomHostMapping.ps1](./powershell/addCustomHostMapping)
-* Add a VLAN: [addVlan.ps1](./powershell/addVlan)
-* Add Object to User Access List: [addObjectToUserAccessList.ps1](./powershell/addObjectToUserAccessList)
-* Clone a Role: [cloneRole.ps1](./powershell/cloneRole)
+* Deploy Single-node (robo) Virtual Edition: [deployVE](./powershell/deployVE)
+* Deploy Clustered Virtual Edition [deployCVE](./powershell/deployCVE)
+* Custom Host Mappings: [addCustomHostMapping](./powershell/addCustomHostMapping)
+* Add a VLAN: [addVlan](./powershell/addVlan)
+* Add Object to User Access List: [addObjectToUserAccessList](./powershell/addObjectToUserAccessList)
+* Clone a Role: [cloneRole](./powershell/cloneRole)
 
 ### Data Protection
 
 #### Files and Folders
 
-* Restore Files and Folders (Physical): [restoreFiles.ps1](./powershell/restoreFiles)
-* Restore Files and Folders (VM): [restoreVMFiles.ps1](./powershell/restoreVMFiles)
+* Restore Files and Folders (Physical): [restoreFiles](./powershell/restoreFiles)
+* Restore Files and Folders (VM): [restoreVMFiles](./powershell/restoreVMFiles)
 
 #### Databases
 
-* Register Oracle Source (Physical): [registerOracle.ps1](./powershell/registerOracle)
-* Protect Oracle Database: [protectOracle.ps1](./oracle/powershell/protectOracle)
-* Restore Oracle Databse: [restoreOracle.ps1](./powershell/restoreOracle)
-* Register a SQL Source (Physical): [registerSQL.ps1](./powershell/registerSQL)
-* Register a SQL Source (VM): [registerSQLVM.ps1](./powershell/registerSQLVM)
-* Protect SQL Database: [protectSQLDB.ps1](./powershell/protectSQLDB)
-* Restore SQL Database: [restoreSQL.ps1](./powershell/restoreSQL)
-* Restore SQL Server: [restoreSQLDBs.ps1](./powershell/restoreSQLDBs)
+* Register Oracle Source (Physical): [registerOracle](./powershell/registerOracle)
+* Protect Oracle Database: [protectOracle](./oracle/powershell/protectOracle)
+* Restore Oracle Databse: [restoreOracle](./powershell/restoreOracle)
+* Register a SQL Source (Physical): [registerSQL](./powershell/registerSQL)
+* Register a SQL Source (VM): [registerSQLVM](./powershell/registerSQLVM)
+* Protect SQL Database: [protectSQLDB](./powershell/protectSQLDB)
+* Restore SQL Database: [restoreSQL](./powershell/restoreSQL)
+* Restore SQL Server: [restoreSQLDBs](./powershell/restoreSQLDBs)
 
 #### Physical Servers
 
-* Register a Physical Protection Source: [registerPhysical.ps1](./powershell/registerPhysical)
-* Add a Server to a Volume-based Protection Group: [addPhysicalToProtectionJob.ps1](./powershell/addPhysicalToProtectionJob)
-* Add Linux/Aix Servers to a File-based Protection Group: [protectLinux.ps1](./powershell/protectLinux)
-* Add Windows Servers to a File-based Protection Group: [protectWindows.ps1](./powershell/protectWindows)
+* Register a Physical Protection Source: [registerPhysical](./powershell/registerPhysical)
+* Add a Server to a Volume-based Protection Group: [addPhysicalToProtectionJob](./powershell/addPhysicalToProtectionJob)
+* Add Linux/Aix Servers to a File-based Protection Group: [protectLinux](./powershell/protectLinux)
+* Add Windows Servers to a File-based Protection Group: [protectWindows](./powershell/protectWindows)
 
 #### Virtual Machines
 
-* Register a vCenter Source: [registerVcenter.ps1](./powershell/registerVcenter)
+* Register a vCenter Source: [registerVcenter](./powershell/registerVcenter)
 * Add a VM to a Protection Group: [addVMtoProtectionJob](./powershell/addVMtoProtectionJob)
 * AutoProtect GCP VMs: [autoProtectGcpVms](./powershell/autoProtectGcpVms)
 * Create a VM Protection Group: [createVMProtectionJob](./powershell/createVMProtectionJob)
-* Set Last Backup Attribute in VMware: [lastBackupAttribute.ps1](./powershell/lastBackupAttribute)
-* Protect a VM: [protectVM.ps1](./powershell/protectVM)
-* Recover a VM: [recoverVM.ps1](./powershell/recoverVM)
-* Restore VMs: [restoreVMs.ps1](./powershell/restoreVMs)
+* Set Last Backup Attribute in VMware: [lastBackupAttribute](./powershell/lastBackupAttribute)
+* Protect a VM: [protectVM](./powershell/protectVM)
+* Recover a VM: [recoverVM](./powershell/recoverVM)
+* Restore VMs: [restoreVMs](./powershell/restoreVMs)
 
 #### NAS
 
-* Protect Generic NAS Mountpoints: [protectGenericNas.ps1](./powershell/protectGenericNas)
-* Protect Isilon Shares: [protectIsilonShares.ps1](./powershell/protectIsilonShares)
-* Protect Netapp: [protectNetapp.ps1](./powershell/protectNetapp)
-* Recover a Nas Volume: [recoverNAS.ps1](./powershell/recoverNAS)
-* Register Generic NAS Mountpoints: [registerGenericNasList.ps1](./powershell/registerGenericNasList)
+* Protect Generic NAS Mountpoints: [protectGenericNas](./powershell/protectGenericNas)
+* Protect Isilon Shares: [protectIsilonShares](./powershell/protectIsilonShares)
+* Protect Netapp: [protectNetapp](./powershell/protectNetapp)
+* Recover a Nas Volume: [recoverNAS](./powershell/recoverNAS)
+* Register Generic NAS Mountpoints: [registerGenericNasList](./powershell/registerGenericNasList)
 
 #### Other
 
-* Protect Remote Adapter: [protectRemoteAdapter.ps1](./powershell/protectRemoteAdapter)
-* List Backed Up Files: [backedUpFieList.ps1](./powershell/backedUpFileList)
-* Download a File: [downloadFile.ps1](./powershell/downloadFile)
-* Instant Volume Mount: [instanceVolumeMount.ps1](./powershell/instantVolumeMount)
-* Backup Now: [backupNow.ps1](./powershell/backupNow)
-* Manage Job Alert Recipients: [jobAlertRecipients.ps1](./powershell/jobAlertRecipients)
-* Refresh a Protection Source: [refreshSource.ps1](./powershell/refreshSource)
-* Restore Active Directory Objects: [restoreADobjects.ps1](./powershell/restoreADobjects)
-* Restore AWS EC2 VM: [restoreEC2VM.ps1](./powershell/restoreEC2VM)
-* Restore Pure FlashArray Volumes: [restorePureVolumes.ps1](./powershell/restorePureVolumes)
+* Protect Remote Adapter: [protectRemoteAdapter](./powershell/protectRemoteAdapter)
+* List Backed Up Files: [backedUpFieList](./powershell/backedUpFileList)
+* Download a File: [downloadFile](./powershell/downloadFile)
+* Instant Volume Mount: [instanceVolumeMount](./powershell/instantVolumeMount)
+* Backup Now: [backupNow](./powershell/backupNow)
+* Manage Job Alert Recipients: [jobAlertRecipients](./powershell/jobAlertRecipients)
+* Refresh a Protection Source: [refreshSource](./powershell/refreshSource)
+* Restore Active Directory Objects: [restoreADobjects](./powershell/restoreADobjects)
+* Restore AWS EC2 VM: [restoreEC2VM](./powershell/restoreEC2VM)
+* Restore Pure FlashArray Volumes: [restorePureVolumes](./powershell/restorePureVolumes)
 
 #### Cohesity Agents
 
-* Deploy Windows Agents: [deployWindowsAgent.ps1](./powershell/deployWindowsAgent)
-* List Agent Versions: [agentVersions.ps1](./powershell/agentVersions)
+* Deploy Windows Agents: [deployWindowsAgent](./powershell/deployWindowsAgent)
+* List Agent Versions: [agentVersions](./powershell/agentVersions)
 
 #### Archival
 
-* List Archived Objects: [archivedObjects.ps1](./powershell/archivedObjects)
-* Archive Existing Snapshots: [archiveNow.ps1](./powershell/archiveNow)
-* Archive Existing Snapshots (latest): [archiveNow-latest.ps1](./powershell/archiveNow-latest)
-* Archive Old Snapshots [archiveOldSnapshots.ps1](./powershell/archiveOldSnapshots)
-* List Queued Archive Tasks [archiveQueue.ps1](./powershell/archiveQueue)
+* List Archived Objects: [archivedObjects](./powershell/archivedObjects)
+* Archive Existing Snapshots: [archiveNow](./powershell/archiveNow)
+* Archive Existing Snapshots (latest): [archiveNow-latest](./powershell/archiveNow-latest)
+* Archive Old Snapshots [archiveOldSnapshots](./powershell/archiveOldSnapshots)
+* List Queued Archive Tasks [archiveQueue](./powershell/archiveQueue)
 * Cloud Archive Direct Stats [cloudArchiveDirectStats](./powershell/cloudArchiveDirectStats)
-* Monitor Archive Tasks: [monitorArchiveTasks.ps1](./powershell/monitorArchiveTasks)
+* Monitor Archive Tasks: [monitorArchiveTasks](./powershell/monitorArchiveTasks)
 
 #### Replication
 
-* Add a Replication Partnership: [addRemoteCluster.ps1](./powershell/addRemoteCluster)
-* Monitor Replication Tasks: [monitorReplicationTasks.ps1](./powershell/monitorReplicationTasks)
-* List Queued Replication Tasks: [replicacationQueue.ps1](./powershell/replicationQueue)
-* Replicate Old Snapshots: [replicateOldSnapshots.ps1](./powershell/replicateOldSnapshots)
+* Add a Replication Partnership: [addRemoteCluster](./powershell/addRemoteCluster)
+* Monitor Replication Tasks: [monitorReplicationTasks](./powershell/monitorReplicationTasks)
+* List Queued Replication Tasks: [replicacationQueue](./powershell/replicationQueue)
+* Replicate Old Snapshots: [replicateOldSnapshots](./powershell/replicateOldSnapshots)
 
 #### Change Retention
 
-* Change Local Retention: [changeLocalRetention.ps1](./powershell/changeLocalRetention)
-* Expire Archived Snapshots: [expireArchivedSnapshots.ps1](./powershell/expireArchivedSnapshots)
-* Expire Old Archives: [expireOldArchives.ps1](./powershell/expireOldArchives)
-* Expire Old Snapshots: [expireOldSnaps.ps1](./powershell/expireOldSnaps)
+* Change Local Retention: [changeLocalRetention](./powershell/changeLocalRetention)
+* Expire Archived Snapshots: [expireArchivedSnapshots](./powershell/expireArchivedSnapshots)
+* Expire Old Archives: [expireOldArchives](./powershell/expireOldArchives)
+* Expire Old Snapshots: [expireOldSnaps](./powershell/expireOldSnaps)
 * Expire Old Snapshots and Reduce Retention [expireOldSnapsAndReduceRetention](./powershell/expireOldSnapsAndReduceRetention)
 
 #### Other Clean Up
@@ -116,23 +116,23 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 ### Ransomware and Compliance
 
-* Extension Finder: [extensionFinder.ps1](./powershell/extensionFinder)
-* Manage Legal Hold [legalHold.ps1](./powershell/legalHold)
+* Extension Finder: [extensionFinder](./powershell/extensionFinder)
+* Manage Legal Hold [legalHold](./powershell/legalHold)
 
 ### SmartFiles
 
 * Clone a View: [cloneView](./powershell/cloneView)
-* Create an NFS View: [createNfsView.ps1](./powershell/createNfsView)
-* Create an SMB View: [createSMBView.ps1](./powershell/createSMBView)
-* Set Directory Quotas: [directoryQuota.ps1](./powershell/directoryQuota)
-* Protect a View: [protectView.ps1](./powershell/protectView)
+* Create an NFS View: [createNfsView](./powershell/createNfsView)
+* Create an SMB View: [createSMBView](./powershell/createSMBView)
+* Set Directory Quotas: [directoryQuota](./powershell/directoryQuota)
+* Protect a View: [protectView](./powershell/protectView)
 * Disaster Recoery: [viewDR](./powershell/viewDR)
 
 ### Test/Dev
 
-* List Existing Clones: [cloneList.ps1](./powershell/cloneList)
-* Clone an Oracle Database: [cloneOracle.ps1](./oracle/powershell/cloneOracle)
-* Clone a SQL Database: [cloneSQL.ps1](./sql-scripts/cloneSQL)
-* Clone SQL Backup Files [cloneSQLbackup.ps1](./sql-scripts/cloneSQLbackup)
-* Clone a VM [cloneVM.ps1](./powershell/cloneVM)
-* Tear Down a Clone [destroyClone.ps1](./powershell/destroyClone)
+* List Existing Clones: [cloneList](./powershell/cloneList)
+* Clone an Oracle Database: [cloneOracle](./oracle/powershell/cloneOracle)
+* Clone a SQL Database: [cloneSQL](./sql-scripts/cloneSQL)
+* Clone SQL Backup Files [cloneSQLbackup](./sql-scripts/cloneSQLbackup)
+* Clone a VM [cloneVM](./powershell/cloneVM)
+* Tear Down a Clone [destroyClone](./powershell/destroyClone)
