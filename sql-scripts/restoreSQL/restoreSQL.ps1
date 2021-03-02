@@ -118,17 +118,20 @@ $useLogTime = $False
 $latestUsecs = 0
 $oldestUsecs = 0
 
+$dbVersions = $latestdb.vmDocument.versions
+
 if ($logTime -or $latest){
     if($logTime){
         $logUsecs = dateToUsecs $logTime
-        $logUsecsDayStart = [int64] (dateToUsecs (get-date $logTime).Date) 
+        $logUsecsDayStart = $dbVersions[-1].instanceId.jobStartTimeUsecs
         $logUsecsDayEnd = [int64] (dateToUsecs (get-date $logTime).Date.AddDays(1).AddSeconds(-1))
     }elseif($latest){
         $logUsecsDayStart = [int64]( dateToUsecs (get-date).AddDays(-3))
         $logUsecsDayEnd = [int64]( dateToUsecs (get-date))
     }
-    $dbVersions = $latestdb.vmDocument.versions
-
+    if($logTime){
+        $dbVersions = $dbVersions | Where-Object {$_.snapshotTimestampUsecs -lt $logUsecs}
+    }
     foreach ($version in $dbVersions) {
         $snapshotTimestampUsecs = $version.snapshotTimestampUsecs
         $oldestUsecs = $snapshotTimestampUsecs
