@@ -68,7 +68,7 @@ foreach($job in $jobs){
     
         # must rename old job if we're not renaming new job or deleting old job
         if($false -eq $renaming -and (! $deleteOldJob) -and (! $deleteOldSnapshots)){
-            "Renaming job $($job.name) to Old-$($job.name)"
+            "Renaming old job: $($job.name) -> Old-$($job.name)"
             $job.name = "Old-{0}" -f $job.name
             $job.name
             $null = api put "protectionJobs/$($job.id)" $job
@@ -80,28 +80,29 @@ foreach($job in $jobs){
     
             # delete old job
             if($deleteOldSnapshots){
-                "Deleting job $($job.name) and existing snapshots"
+                "Deleting old job: $($job.name) (and existing snapshots)"
                 $null = api delete "protectionJobs/$($job.id)" @{'deleteSnapshots'= $True}
             }else{
-                "Deleting job $($job.name)"
+                "Deleting old job: $($job.name)"
                 $null = api delete "protectionJobs/$($job.id)" @{'deleteSnapshots'= $false}
             }
         }else{
             # pause old job
             if($pauseOldJob){
-                "Pausing job $($job.name)"
+                "Pausing old job: $($job.name)"
                 $null = api post protectionJobState/$($job.id) @{ "pause" = $true; "pauseReason" = 0 }
             }
         }
     
         # Create new job
-        "Creating new job $newJobName"
+        "Creating new job: $newJobName"
         $job.name = $newJobName
         $job.viewBoxId = $storageDomain.id
         $newJob = api post protectionJobs $job
     
         # Pause new job
         if($pauseNewJob){
+            "Pausing new job: $newJobName"
             $null = api post "protectionJobState/$($newJob.id)" @{'pause' = $True}
         }   
     }
