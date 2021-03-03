@@ -1,13 +1,5 @@
 #!/usr/bin/env python
-"""Create basic protectionPolicy in python"""
-
-# version 2020-10-12
-
-### usage: ./createPolicy.py --vip mycluster \
-#                            --username myuser \
-#                            --domain mydomain.net \
-#                            --useApiKey \
-#                            --password abdce
+"""refresh protection source"""
 
 ### import pyhesity wrapper module
 from pyhesity import *
