@@ -24,9 +24,9 @@ foreach($job in $jobs | Sort-Object -Property name | Where-Object {$_.isDeleted 
     $jobType = $job.environment.subString(1)
     write-host ("`n{0} ({1})" -f $jobName, $jobType) -ForegroundColor Green
     write-host "`n`t             RunDate           SnapExpires        ArchiveExpires" -ForegroundColor Blue
-    $ro = api get "/searchvms?jobId=$($job.id)"
+    $ro = api get "/searchvms?jobIds=$($job.id)"
     $jobRuns = $ro.vms.vmDocument.versions | Group-Object -Property {$_.instanceId.jobStartTimeUsecs}
-    foreach($jobDate in $jobRuns  | Sort-Object -Property Name -Descending){
+    foreach($jobDate in $jobRuns | Sort-Object -Property Name -Descending){
         $jobRun = $jobDate.Group[0]
         $runDate = usecsToDate $jobDate.Name
         $replicas = $jobRun.replicaInfo.replicaVec
