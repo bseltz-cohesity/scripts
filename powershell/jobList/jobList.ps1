@@ -5,6 +5,7 @@
 param (
     [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
     [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
+    [Parameter()][string]$jobName,
     [Parameter()][string]$domain = 'local'
  )
 
@@ -16,6 +17,11 @@ apiauth -vip $vip -username $username -domain $domain
 
 ### get protection jobs and policies
 $jobs = api get protectionJobs?isActive=true
+
+if($jobName){
+    $jobs = $jobs | Where-Object name -eq $jobName
+}
+
 $policies = api get protectionPolicies
 $cluster = api get cluster
 

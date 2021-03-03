@@ -2,6 +2,7 @@
 param (
     [Parameter(Mandatory = $True)][string]$vip,
     [Parameter(Mandatory = $True)][string]$username,
+    [Parameter()][string]$jobName,
     [Parameter()][string]$domain = 'local'
 )
 
@@ -18,6 +19,9 @@ $outfileName = "RecoverPoints-$($cluster.name)-$dateString.csv"
 "Job Name,Job Type,Backup Date,Local Expiry,Archival Target,Archival Expiry" | Out-File -FilePath $outfileName
 
 $jobs = api get protectionJobs
+if($jobName){
+    $jobs = $jobs | Where-Object name -eq $jobName
+}
 
 foreach($job in $jobs | Sort-Object -Property name | Where-Object {$_.isDeleted -ne $True}){
     $jobName = $job.name
