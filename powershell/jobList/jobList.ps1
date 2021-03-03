@@ -17,8 +17,9 @@ apiauth -vip $vip -username $username -domain $domain
 ### get protection jobs and policies
 $jobs = api get protectionJobs?isActive=true
 $policies = api get protectionPolicies
+$cluster = api get cluster
 
-$outfile = "$vip-jobList.csv"
+$outfile = "$($cluster.name)-jobList.csv"
 # write-host "Saving Job Retention Settings to $vip-jobRetentionReport.csv"
 "Job Name,Job ID,Job Type,Policy Name" | Out-File -FilePath $outfile
 
