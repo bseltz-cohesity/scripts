@@ -142,7 +142,8 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 * Expire Archived Snapshots: [expireArchivedSnapshots](./powershell/expireArchivedSnapshots)
 * Expire Old Archives: [expireOldArchives](./powershell/expireOldArchives)
 * Expire Old Snapshots: [expireOldSnaps](./powershell/expireOldSnaps)
-* Expire Old Snapshots: and Reduce Retention [expireOldSnapsAndReduceRetention](./powershell/expireOldSnapsAndReduceRetention)
+* Expire Old Snapshots and Reduce Retention: [expireOldSnapsAndReduceRetention](./powershell/expireOldSnapsAndReduceRetention)
+* Update Retention of Snapshots to Match Policy: [updateRetention](./powershell/updateRetention)
 
 #### Other Clean Up <a name="powershell-cleanup"/>
 
