@@ -95,7 +95,7 @@ Scripts also have `-username` and `-domain` parameters, and the format is the sa
 
 `-username admin -domain local`
 
-Actually, `-domain` defaults to local, so you cam omit the `-domain` parameter entirely if you're using a local account. For Active Directory accounts, the `-domain` should match what you see in the domain list in the UI logon screen (which is the FQDN of the Active Directory domain), like:
+Actually, `-domain` defaults to local, so you can omit the `-domain` parameter entirely if you're using a local account. For Active Directory accounts, the `-domain` should match what you see in the domain list in the UI logon screen (which is the FQDN of the Active Directory domain), like:
 
 `-username myuser -domain mydomain.net`
 
