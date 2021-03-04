@@ -1,5 +1,9 @@
 # Running These PowerShell Scripts
 
+## Where to Run These Scripts
+
+No, these scripts can not be run on the Cohesity cluster. PowerShell is not installed there, and we don't go around installing things on the cluster. You can run the script from almost anywhere else where PowerShell 5.1 or later is installed, including your <img src="../images/apple-1-logo-png-transparent.png" height="16"/> Macbook, a common <img src="../images/linux_PNG1.png" height="16"/> Linux distro, a <img src="../images/Windows_logo.png" height="13"/> Windows server, you name it.
+
 ## Check Your PowerShell Version
 
 First, let's make sure your PowerShell version is adequate. Open a PowerShell window and type:
