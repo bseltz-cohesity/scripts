@@ -26,35 +26,21 @@ sourceNames = args.sourcename
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
 
-sources = api('get', 'protectionSources')
+if sourceNames is None:
+    print('No sources specified')
+    exit()
+
+sources = api('get', 'protectionSources/registrationInfo?allUnderHierarchy=false')
+if 'rootNodes' not in sources:
+    print('No sources found')
+    exit()
 
 
-### get object ID
-def getObjectId(objectName):
-
-    d = {'_object_id': None}
-
-    def get_nodes(node):
-        if 'name' in node:
-            if node['name'].lower() == objectName.lower():
-                d['_object_id'] = node['id']
-                exit
-        if 'protectionSource' in node:
-            if node['protectionSource']['name'].lower() == objectName.lower():
-                d['_object_id'] = node['protectionSource']['id']
-                exit
-        if 'nodes' in node:
-            for node in node['nodes']:
-                if d['_object_id'] is None:
-                    get_nodes(node)
-                else:
-                    exit
-
-    for source in sources:
-        if d['_object_id'] is None:
-            get_nodes(source)
-
-    return d['_object_id']
+def getObjectId(sourcename):
+    for source in sources['rootNodes']:
+        if source['rootNode']['name'].lower() == sourcename.lower():
+            return source['rootNode']['id']
+    return None
 
 
 for sourcename in sourceNames:
@@ -62,7 +48,5 @@ for sourcename in sourceNames:
     if objectId is not None:
         print('refreshing %s...' % sourcename)
         result = api('post', 'protectionSources/refresh/%s' % objectId)
-        print(result)
     else:
         print('%s not found' % sourcename)
-        exit(1)
