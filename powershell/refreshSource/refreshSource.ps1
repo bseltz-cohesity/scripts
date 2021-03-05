@@ -11,37 +11,24 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain
+apiauth -vip $vip -username $username -domain $domain -quiet
+
+$sources = api get 'protectionSources/registrationInfo?allUnderHierarchy=false'
 
 function getObjectId($sourceName){
-    $global:_object_id = $null
-
-    function get_nodes($obj){
-        if($obj.protectionSource.name -eq $sourceName){
-            $global:_object_id = $obj.protectionSource.id
-            break
-        }
-        if($obj.PSObject.Properties['nodes']){
-            foreach($node in $obj.nodes){
-                if($null -eq $global:_object_id){
-                    get_nodes $node
-                }
-            }
+    foreach($source in $sources.rootNodes){
+        if($source.rootNode.name -eq $sourceName){
+            return $source.rootNode.id
         }
     }
-    
-    foreach($source in (api get protectionSources)){
-        if($null -eq $global:_object_id){
-            get_nodes $source
-        }
-    }
-    return $global:_object_id
+    return $null
 }
 
 $objectId = getObjectId $sourceName
 if($objectId){
     write-host "refreshing $sourceName..."
-    api post protectionSources/refresh/$($objectId)
+    $result = api post protectionSources/refresh/$($objectId)
+    $result
 }else{
     write-host "$sourceName not found" -ForegroundColor Yellow
 }
