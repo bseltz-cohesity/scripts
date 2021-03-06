@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This PowerShell script lists the currently active archive tasks, sorted oldest to newest
+This PowerShell script lists the currently active archive tasks and outputs to a CSV.
 
 ## Download the script
 
@@ -37,3 +37,4 @@ Place both files in a folder together and run the main script like so:
 * -cancelOutdated: (optional) cancel archive tasks that should be expired anyway
 * -cancelQueued: (optional) cancel archive tasks that haven't moved any data yet
 * -numRuns: (optional) number of runs per job to inspect (defaults to 9999)
+* -unit: (optional) MiB, GiB or TiB (default is MiB)
