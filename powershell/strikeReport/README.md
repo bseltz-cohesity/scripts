@@ -44,3 +44,4 @@ Place both files in a folder together and run the main script like so:
 * -sendFrom: email address to show in the from field
 * -days: number of days of history (default is 31)
 * -slurp: number of runs to parse per api call (default is 500) reduce to solve for JSON response too large errors
+* -failureCount: report only if failure count is equal or greater than X (default is 1)

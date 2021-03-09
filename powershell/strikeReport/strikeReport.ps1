@@ -11,11 +11,12 @@ param (
     [Parameter(Mandatory = $True)][array]$sendTo, #send to address
     [Parameter(Mandatory = $True)][string]$sendFrom, #send from address
     [Parameter()][int]$days = 31,
-    [Parameter()][int]$slurp = 500
+    [Parameter()][int]$slurp = 500,
+    [Parameter()][int]$failureCount = 1
 )
 
 ### source the cohesity-api helper code
-. ./cohesity-api
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
@@ -275,9 +276,11 @@ foreach($job in $jobs | Sort-Object -Property name){
 }
 
 foreach($objName in ($errorCount.Keys | Sort-Object)){
-    $html += $objErrors[$objName]
-    if($objName -in $appErrors.Keys){
-        $html += $appErrors[$objName]
+    if($errorCount[$objName] -ge $failureCount){
+        $html += $objErrors[$objName]
+        if($objName -in $appErrors.Keys){
+            $html += $appErrors[$objName]
+        }
     }
 }
 
