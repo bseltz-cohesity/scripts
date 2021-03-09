@@ -37,3 +37,4 @@ Place both files in a folder together and run the main script like so:
 * -d, --domain: (optional) domain of username, defaults to local
 * -s, --storagedomain: (optional) filter by storage domain (e.g. DefaultStorageDomain)
 * -e, --environment: (optional) filter by environment (e.g. GenericNAS)
+* -p, --paused: (optional) show only paused jobs
