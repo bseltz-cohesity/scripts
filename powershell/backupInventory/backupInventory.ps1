@@ -58,7 +58,7 @@ foreach ($job in $jobs | Sort-Object -Property name) {
             $startdate = usecstodate $run.copyRun[0].runStartTimeUsecs
             foreach($copyRun in $run.copyRun){
                 $expiry = $copyRun.expiryTimeUsecs
-                if($expiry -gt $today){
+                if(($expiry -gt $today) -or ($copyRun.holdForLegalPurpose -eq $True) -or ($null -ne $copyRun.legalHoldings)){
                     $showThisRun = $True
                     $thisRunCopies += $copyRun
                 }
