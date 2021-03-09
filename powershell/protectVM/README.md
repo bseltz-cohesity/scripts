@@ -27,3 +27,13 @@ Place both files in a folder together and run the main script like so:
 ```powershell
 ./protectVM.ps1 -vip mycluster -username admin -jobName 'vm backup' -vmName mongodb
 ```
+
+## Parameters
+
+* -vip: name or IP of Cohesity cluster
+* -username: name of user to connect to Cohesity
+* -domain: your AD domain (defaults to local)
+* -vmName: one or more VMs (comma separated) to add to the proctection job
+* -vmList: file containing list of VMs to add
+* -jobName: name of protection job
+* -excludeDisk: one of more disks to include (comma separated), e.g. 0:1, 0:2
