@@ -107,6 +107,12 @@ if(!$job){
     exit
 }
 
+if($cluster.clusterSoftwareVersion -gt '6.5'){
+    $protectionGroups = api get "data-protect/protection-groups?isDeleted=false&includeTenants=true&includeLastRunInfo=true" -v2
+    $protectionGroup = $protectionGroups.protectionGroups | Where-Object name -eq $jobName
+    $globalExcludePaths = $protectionGroup.physicalParams.fileProtectionTypeParams.globalExcludePaths
+}
+
 # get physical protection sources
 $sources = api get protectionSources?environment=kPhysical
 
@@ -227,3 +233,12 @@ foreach($sourceId in $sourceIds){
 $job.sourceSpecialParameters = $newParams
 $job.sourceIds = @($sourceIds)
 $null = api put "protectionJobs/$($job.id)" $job
+
+if($cluster.clusterSoftwareVersion -gt '6.5'){
+    if($globalExcludePaths){
+        $protectionGroups = api get "data-protect/protection-groups?isDeleted=false&includeTenants=true&includeLastRunInfo=true" -v2
+        $protectionGroup = $protectionGroups.protectionGroups | Where-Object name -eq $jobName
+        setApiProperty -object $protectionGroup.physicalParams.fileProtectionTypeParams -name 'globalExcludePaths' -value $globalExcludePaths
+        $null = api put "data-protect/protection-groups/$($protectionGroup.id)" $protectionGroup -v2
+    }
+}
