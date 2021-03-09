@@ -66,6 +66,13 @@ foreach ($job in $jobs | Sort-Object -Property name) {
             if($showThisRun){
                 "`n    $startdate ($($run.backupRun.runType.subString(1).replace('Regular','Incremental')))" | Tee-Object -FilePath $outFile -Append
                 foreach($copyRun in $thisRunCopies){
+                    $onHold = ''
+                    if($copyRun.holdForLegalPurpose -eq $True){
+                        $onHold = '(On Legal Hold)'
+                    }
+                    if($null -ne $copyRun.legalHoldings){
+                        $onHold = '(On Legal Hold)'
+                    }
                     $expiryDate = (usecsToDate $copyRun.expiryTimeUsecs).ToString('yyyy-MM-dd')
                     $targetType = $copyRun.target.type.subString(1)
                     $target = 'Local'
@@ -74,7 +81,7 @@ foreach ($job in $jobs | Sort-Object -Property name) {
                     }elseif ($targetType -eq 'Archival') {
                         $target = "$($copyRun.target.archivalTarget.vaultName) (Archive)"
                     }
-                    "        {0} ({1}) - {2}" -f $expiryDate, $copyRun.status.subString(1), $target | Tee-Object -FilePath $outFile -Append
+                    "        {0} ({1}) - {2} {3}" -f $expiryDate, $copyRun.status.subString(1), $target, $onHold | Tee-Object -FilePath $outFile -Append
                 }
             }
         }
