@@ -6,6 +6,7 @@ param (
     [Parameter()][string]$domain = 'local',  # local or AD domain
     [Parameter(Mandatory = $True)][string]$jobname,
     [Parameter(Mandatory = $True)][string]$servername,
+    [Parameter()][array]$instanceName,
     [Parameter()][string]$policyname,
     [Parameter()][string]$startTime = '20:00', # e.g. 23:30 for 11:30 PM
     [Parameter()][string]$timeZone = 'America/Los_Angeles', # e.g. 'America/New_York'
@@ -29,6 +30,26 @@ if(! $serverSource){
     Write-Host "Server $serverSource not found!" -ForegroundColor
     Write-Host "Make sure to enter the server name exactly as listed in Cohesity" -ForegroundColor Yellow
     exit 1
+}
+
+# instances
+$haveParams = $false
+$mySourceParams = @{
+    "sourceId" = $serverSource.protectionSource.id;
+    "sqlSpecialParameters" = @{
+        "applicationEntityIds" = @()
+    }
+}
+
+foreach($instance in $instanceName){
+    $instanceSource = $serverSource.applicationNodes | Where-Object {$_.protectionSource.name -eq $instance}
+    if(! $instanceSource){
+        Write-Host "Instance $instance not found on server $servername"
+        exit
+    }else{
+        $mySourceParams.sqlSpecialParameters.applicationEntityIds += $instanceSource.protectionSource.id
+        $haveParams = $True
+    }
 }
 
 # get the protectionJob
@@ -102,11 +123,26 @@ if(! $job){
             }
         }
     }
+    if($haveParams){
+        $job['sourceSpecialParameters'] = @($mySourceParams)
+    }
     Write-Host "Creating job $jobname..."
     $null = api post protectionJobs $job
 }else{
     # update existing job
+    if($haveParams){
+        if(! $job.PSObject.Properties['sourceSpecialParameters']){
+            setApiProperty -object $job -name 'sourceSpecialParameters' -value @($mySourceParams)
+        }else{
+            $existingParams = $job.sourceSpecialParameters | Where-Object {$_.sourceId -eq $serverSource.protectionSource.id}
+            if($existingParams){
+                $existingParams.sqlSpecialParameters.applicationEntityIds += @($mySourceParams.sqlSpecialParameters.applicationEntityIds | Sort-Object -Unique)
+            }else{
+                $job.sourceSpecialParameters += $mySourceParams
+            }
+        }
+    }
     Write-Host "Updating job $jobname..."
-    $job.sourceIds += $serverSource.protectionSource.id
+    $job.sourceIds += @($job.sourceIds + $serverSource.protectionSource.id | Sort-Object -Unique)
     $null = api put protectionJobs/$($job.id) $job 
 }
