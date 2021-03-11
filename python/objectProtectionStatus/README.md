@@ -12,7 +12,7 @@ You can download the scripts using the following commands:
 # download commands
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/objectProtectionStatus/objectProtectionStatus.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-chmod +x protectLinux.py
+chmod +x objectProtectionStatus.py
 # end download commands
 ```
 
