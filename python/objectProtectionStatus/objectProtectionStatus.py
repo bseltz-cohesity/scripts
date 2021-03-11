@@ -85,17 +85,15 @@ def getObjectId(objectname):
         if 'name' in node:
             if node['name'].lower() == objectname.lower():
                 d['_object_id'] = node['id']
-                exit
         if 'protectionSource' in node:
             if node['protectionSource']['name'].lower() == objectname.lower():
                 d['_object_id'] = node['protectionSource']['id']
-                exit
         if 'nodes' in node:
             for node in node['nodes']:
                 if d['_object_id'] is None:
                     get_nodes(node)
                 else:
-                    exit
+                    break
 
     for source in sources:
         if d['_object_id'] is None:
