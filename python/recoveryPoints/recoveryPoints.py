@@ -13,12 +13,16 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, required=True)
 parser.add_argument('-u', '--username', type=str, required=True)
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-j', '--jobname', type=str, default=None)
+parser.add_argument('-o', '--objectname', type=str, default=None)
 
 args = parser.parse_args()
 
 vip = args.vip
 username = args.username
 domain = args.domain
+jobname = args.jobname
+objectname = args.objectname
 
 ### authenticate
 apiauth(vip, username, domain)
@@ -28,8 +32,24 @@ outfileName = 'RecoverPoints-%s.csv' % dateString
 f = open(outfileName, "w")
 f.write("jobName,objType,objName,startTime,runURL\n")
 
+jobtail = ''
+if jobname is not None:
+    jobs = api('get', 'protectionJobs')
+    job = [j for j in jobs if j['name'].lower() == jobname.lower()]
+    if len(job) == 0:
+        print("Job %s not found" % jobname)
+        exit(1)
+    jobtail = '?jobIds=%s' % job[0]['id']
+
+objtail = ''
+if objectname is not None:
+    if jobtail != '':
+        objtail = '&vmName=%s' % objectname
+    else:
+        objtail = '?vmName=%s' % objectname
+
 ### find recoverable objects
-ro = api('get', '/searchvms')
+ro = api('get', '/searchvms%s%s' % (jobtail, objtail))
 
 environments = ['Unknown', 'VMware', 'HyperV', 'SQL', 'View',
                 'RemoteAdapter', 'Physical', 'Pure', 'Azure', 'Netapp',
@@ -40,7 +60,7 @@ environments = ['Unknown', 'VMware', 'HyperV', 'SQL', 'View',
                 'Unknown', 'Unknown', 'Unknown', 'Unknown', 'Unknown',
                 'Unknown', 'Unknown', 'Unknown']
 
-if ro['count'] > 0:
+if len(ro) > 0:
 
     ro['vms'].sort(key=lambda obj: obj['vmDocument']['jobName'])
     for vm in ro['vms']:
