@@ -26,12 +26,12 @@ if(! $search.psobject.properties['vms']){
     exit
 }
 
-$search.vms = $search.vms | Where-Object {$_.vmDocument.objectName -eq $objectname}
+$search.vms = $search.vms | Where-Object {$_.vmDocument.objectName -eq $objectname -or $objectName -in $_.vmDocument.objectAliases}
 
 "{0,-22} {1,-22} {2,-22} {3,-22} {4}" -f 'ObjectName', 'JobName', 'StartTime', 'ExpiryTime', 'DaysToExpiration'  
 
 foreach($vm in $search.vms){
-    $jobName
+    ''
     $jobName = $vm.vmDocument.jobName
     $displayName = $vm.vmDocument.objectName
     foreach($version in $vm.vmDocument.versions){
