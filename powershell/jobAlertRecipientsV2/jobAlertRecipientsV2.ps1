@@ -20,7 +20,7 @@ apiauth -vip $vip -username $username -domain $domain
 function gatherList($paramName, $textFileName=$null){
     $returnItems = @()
     foreach($item in $paramName){
-        $returnItems += $items
+        $returnItems += $item
     }
     if ($textFileName){
         if(Test-Path -Path $textFileName -PathType Leaf){
