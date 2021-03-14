@@ -34,6 +34,7 @@ Place both files in a folder together and run the main script like so:
 * -q, --cancelqueued: (optional) cancel queued archives that have not started running
 * -a, --cancellall: (optional) cancel all archive tasks
 * -n, --numRuns: (optional) number of runs per job to inspect (default is 9999)
+* -s, --units: (otional) MiB or GiB (default is MiB)
 
 ## The Python Helper Module - pyhesity.py
 
