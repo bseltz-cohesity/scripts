@@ -40,3 +40,12 @@ Place both files in a folder together and run the main script like so:
 * -o, --olderthan: delete files older than X units
 * -m, --timeunits: (optional) seconds, minutes, hours, days, weeks, months, years (default is days)
 * -t, --tzoffset: (optional) your timezone hour adjustment from GMT time (default is 0)
+
+## Dependencies
+
+This script requires the following python modules (which are not part of the standard library):
+
+* boto3 (AWS python module)
+* requests (http requests module)
+
+Please install these using pip, easy_install or yum
