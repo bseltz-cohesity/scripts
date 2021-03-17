@@ -14,6 +14,7 @@ param (
     [Parameter()][string]$domain = 'local',  # local or AD domain
     [Parameter()][int]$daysBack = 7,  # number of days to include in report
     [Parameter()][array]$jobTypes,  # filter by type (SQL, Oracle, VMware, etc.)
+    [Parameter()][array]$objectNames, # filter by object names
     [Parameter()][switch]$failuresOnly,  # only show unsuccessful runs 
     [Parameter()][switch]$lastRunOnly,  # only show latest run
     [Parameter()][switch]$showObjects,  # show objects of jobs
@@ -250,7 +251,7 @@ $dateString = get-date -UFormat '%Y-%m-%d'
 $daysBackUsecs = (dateToUsecs (get-date -UFormat '%Y-%m-%d')) - ($daysBack * 86400000000)
 $nowUsecs = dateToUsecs (get-date)
 
-$jobs = api get "protectionJobs?includeLastRunAndStats=true" | Sort-Object -Property name | Where-Object {$job.isDeleted -ne $true -and $job.isPaused -ne $true -and $job.isActive -ne $false}
+$jobs = api get "protectionJobs?includeLastRunAndStats=true" | Sort-Object -Property name | Where-Object {$_.isDeleted -ne $true -and $_.isPaused -ne $true -and $_.isActive -ne $false}
 if($jobTypes){
     $jobs = $jobs | Where-Object {$_.environment.substring(1) -in $jobTypes -or $_.environment -in $jobTypes}
 }
@@ -366,36 +367,48 @@ function displayArchives($run){
 }
 
 function displayObject($task){
-    $msg = ''
-    $objectVisible = $false
-    if($task.base.error){
-        $msg = $task.base.error[0].errorMsg
-        $msgHTML = '<ul><li>{0}</li></ul>' -f $task.base.error[0].errorMsg
-        $objectsVisible = $objectVisible = $true
-    }
-    if($task.base.warnings){
-        $msg = $task.base.warnings[0].errorMsg
-        $msgHTML = '<ul><li>{0}</li></ul>' -f ($task.base.warnings.errorMsg -join "</li><li>")
-        $objectsVisible = $objectVisible = $true
-    }
-    if($objectsVisible){
-        $global:showJob = $true
-        $global:noFailures = $false
-    }
-    if(!($failuresOnly -and $task.base.publicStatus -eq 'kSuccess')){
-        $taskMessage = '<span class="info"> <span class="{1}">{1}</span></span> <span class="objectname">{0}</span><br />' -f $task.base.sources[0].source.displayName, $task.base.publicStatus.subString(1)
-        if($msg -ne ''){
-            $taskMessage += '<div class="message">{0}</div>' -f $msgHTML
+    
+    if($objectNames.Length -eq 0 -or $task.base.sources[0].source.displayName -in $objectNames){
+        $global:inScope = $true
+        $msg = ''
+        $objectVisible = $false
+        if($task.base.error){
+            $msg = $task.base.error[0].errorMsg
+            $msgHTML = '<ul><li>{0}</li></ul>' -f $task.base.error[0].errorMsg
+            $objectsVisible = $objectVisible = $true
         }
-        write-host ("{0} {1,35} ({2}) {3}" -f $jobSpacer,
-        $task.base.sources[0].source.displayName,
-        $task.base.publicStatus.subString(1),
-        $msg)
-        if($showApps){
-            $taskMessage += displayApps $task
+        if($task.base.warnings){
+            $msg = $task.base.warnings[0].errorMsg
+            $msgHTML = '<ul><li>{0}</li></ul>' -f ($task.base.warnings.errorMsg -join "</li><li>")
+            $objectsVisible = $objectVisible = $true
         }
+        if($objectsVisible){
+            $global:showJob = $true
+            $global:noFailures = $false
+        }
+        if(!($failuresOnly -and $task.base.publicStatus -eq 'kSuccess')){
+            # Write-Host "*** $($task.base.sources[0].source.displayName)"
+            $taskMessage = '<span class="info"> <span class="{1}">{1}</span></span> <span class="objectname">{0}</span><br />' -f $task.base.sources[0].source.displayName, $task.base.publicStatus.subString(1)
+            if($msg -ne ''){
+                $taskMessage += '<div class="message">{0}</div>' -f $msgHTML
+            }
+            write-host ("{0} {1,35} ({2}) {3}" -f $jobSpacer,
+            $task.base.sources[0].source.displayName,
+            $task.base.publicStatus.subString(1),
+            $msg)
+            if($showApps){
+                $taskMessage += displayApps $task
+            }
+        }
+        if($task.base.sources[0].source.displayName -in $objectNames){
+            $global:showJob = $true
+        }
+        # Write-Host "*** $($global:showJob)"
+        return $taskMessage
+    }else{
+        # $global:showJob = $false
+        return $null
     }
-    return $taskMessage
 }
 
 function displayObjects($run){
@@ -476,18 +489,19 @@ function displayApps($task){
 
 $global:noFailures = $True
 
-if($failuresOnly){
-    $global:showJob = $false
-}else{
-    $global:showJob = $true
-}
-
 foreach($job in $jobs){
+    $global:inScope = $True
 
     if($failuresOnly){
         $global:showJob = $false
     }else{
         $global:showJob = $true
+    }
+
+    if($objectNames.Length -gt 0){
+        $showObjects = $True
+        $global:showJob = $false
+        $global:inScope = $false
     }
 
     if($job.lastRun.backupRun.slaViolated){
@@ -523,7 +537,7 @@ foreach($job in $jobs){
         }
         $jobMessage += '</div>'
     }
-    if($global:showJob){
+    if($global:showJob -and $global:inScope){
         $global:message += $jobMessage
     }
 }
