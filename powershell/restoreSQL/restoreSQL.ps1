@@ -205,9 +205,11 @@ if ($logTime -or $latest){
     }
 }
 
+$restoreTaskName = "Recover-{0}_{1}_{2}_{3}" -f $sourceServer, $sourceInstance, $sourceDB, $(get-date -UFormat '%b_%d_%Y_%H-%M%p')
+
 # create new clone task (RestoreAppArg Object)
 $restoreTask = @{
-    "name" = "dbRestore-$(dateToUsecs (get-date))";
+    "name" = $restoreTaskName;
     'action' = 'kRecoverApp';
     'restoreAppParams' = @{
         'type' = 3;
