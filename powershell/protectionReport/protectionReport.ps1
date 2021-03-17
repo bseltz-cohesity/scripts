@@ -519,9 +519,9 @@ foreach($job in $jobs){
             }
         }else{
             if($skipLogBackups){
-                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs&excludeTasks=true&runTypes=kRegular&runTypes=kFull"
+                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs&numRuns=9999&excludeTasks=true&runTypes=kRegular&runTypes=kFull"
             }else{
-                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs&excludeTasks=true"
+                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs&numRuns=9999&excludeTasks=true"
             }   
         }
         $jobMessage = '<br /><div class="job"><span>{0}</span><span class="info"> ({1})</span></div><div class="snapshot">' -f $job.name.ToUpper(), $job.environment.substring(1)
