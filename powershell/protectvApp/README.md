@@ -68,6 +68,7 @@ Or to update an existing job:
 
 ## Optional Prameters
 
+* -tenant: (optional) impersonate a Cohesity tenant
 * -policyName: (optional) name of the protection policy to use
 * -startTime: (optional) e.g. '18:30' (defaults to 8PM)
 * -timeZone: (optional) e.g. 'America/New_York' (default is 'America/Los_Angeles')
