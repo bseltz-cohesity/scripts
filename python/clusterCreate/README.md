@@ -11,7 +11,7 @@ Run these commands to download the script(s) into your current directory
 ```bash
 # Begin download commands
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/clusterCreate/clusterCreate.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/clusterCreate/pyhesity.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/clusterCreate/clusterCreate-test.sh
 chmod +x clusterCreate.py
 chmod +x clusterCreate-test.sh

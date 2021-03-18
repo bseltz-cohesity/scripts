@@ -12,7 +12,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 # Begin download commands
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/massVMrestore/massVMrestore.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/massVMrestore/massVMrestore.json
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/massVMrestore/pyhesity.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x massVMrestore.py
 # End download commands
 ```

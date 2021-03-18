@@ -19,7 +19,7 @@ mkdir /home/cohesity/data/scripts
 cd /home/cohesity/data/scripts
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/jobRunner/jobRunner.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/jobRunner/jobScheduler.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/jobRunner/pyhesity.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x jobRunner.py
 chmod +x jobScheduler.py
 ```

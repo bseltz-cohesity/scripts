@@ -17,7 +17,7 @@ You can download the scripts using the following commands:
 # download commands
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/excludeVMs.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/excludeVMsAllJobs.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/pyhesity.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/pyVmomi.tar.gz
 tar -xvf pyVmomi.tar.gz
 chmod +x excludeVMs.py

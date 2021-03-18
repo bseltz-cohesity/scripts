@@ -17,7 +17,7 @@ Run these commands to download the script(s) into your current directory
 ```bash
 # Begin download commands
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deployCVE/deployCVEcluster.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deployCVE/pyhesity.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deployCVE/test-deployCVE.sh
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/pyVmomi.tar.gz
 tar -xvf pyVmomi.tar.gz

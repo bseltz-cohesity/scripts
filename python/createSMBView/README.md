@@ -10,7 +10,7 @@ Run these commands to download the scripts into your current directory
 
 ```bash
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/createSMBView/createSMBView.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/createSMBView/pyhesity.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x createSMBView.py
 ```
 

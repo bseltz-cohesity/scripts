@@ -50,7 +50,7 @@ Use the following commands to download the script:
 
 ```bash
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/scheduleRT/enableRT.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/scheduleRT/pyhesity.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/scheduleRT/scheduleRT.py
 chmod +x scheduleRT.py
 chmod +x enableRT.py
