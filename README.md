@@ -168,6 +168,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 * Clone a View: [cloneView](./powershell/cloneView)
 * Create an NFS View: [createNfsView](./powershell/createNfsView)
 * Create an SMB View: [createSMBView](./powershell/createSMBView)
+* Create an S3 View: [createS3View](./powershell/createS3View)
 * Set Directory Quotas: [directoryQuota](./powershell/directoryQuota)
 * Protect a View: [protectView](./powershell/protectView)
 * Disaster Recoery: [viewDR](./powershell/viewDR)
