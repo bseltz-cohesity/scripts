@@ -2,6 +2,14 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
+## What's New
+
+* [Help Running PowerShell Scripts](https://github.com/bseltz-cohesity/scripts/blob/master/powershell/Running%20These%20Scripts.md)
+* [PowerShell Protection Report Gallery](https://github.com/bseltz-cohesity/scripts/blob/master/powershell/PowerShell%20Protection%20Reports.md)
+* [PowerShell Capacity Report Gallery](https://github.com/bseltz-cohesity/scripts/blob/master/capacityTools/README.md)
+* [Protect vCloud Director vApps](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectvApp)
+* [Create S3 Views](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/createS3View)
+
 ## Contents
 
 * [PowerShell](#powershell)
