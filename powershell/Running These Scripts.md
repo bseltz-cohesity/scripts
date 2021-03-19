@@ -118,7 +118,7 @@ Alternatively, you can delete the stored password manually. In Windows, password
 
 ## Sharing Error Messages
 
-There are three fundamental truths about error sharing:
+There are two fundamental truths about error sharing:
 
 1) If you send me a screenshot of an PowerShell error message, you are a horrible horrible person.
 
