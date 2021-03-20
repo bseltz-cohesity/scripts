@@ -272,6 +272,9 @@ if($targetDB -eq $sourceDB -and $targetServer -eq $sourceServer -and $differentI
 # apply log replay time
 if($useLogTime -eq $True){
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['restoreTimeSecs'] = $([int64]($logUsecs/1000000))
+    $newRestoreUsecs = $logUsecs
+}else{
+    $newRestoreUsecs = $latestdb.vmDocument.versions[$versionNum].instanceId.jobStartTimeUsecs
 }
 
 # search for target server
@@ -302,12 +305,32 @@ if($overWrite){
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['dbRestoreOverwritePolicy'] = 1
 }
 
-# execute the recovery task (post /recoverApplication api call)
-$response = api post /recoverApplication $restoreTask
-
 if($targetInstance -eq ''){
     $targetInstance = $sourceInstance
 }
+
+# resume only if newer point in time available
+if($resume){
+    $previousRestoreLog = $(Join-Path -Path $PSScriptRoot -ChildPath restoreSQL-previousRestores.txt)
+    $previousRestoreUsecs = 0
+    $previousRestores = Get-Content -Path $previousRestoreLog -ErrorAction SilentlyContinue
+    foreach($previousRestore in $previousRestores){
+        $previousTarget, $previousDB, $previousRestoreUsecs = $previousRestore.split(':')
+        if($previousTarget -eq $targetServer -and $previousDB -eq "$targetInstance/$targetDB"){
+            if($newRestoreUsecs -le $previousRestoreUsecs){
+                Write-Host "Target database is already up to date" -ForegroundColor Yellow
+                exit 0
+            }else{
+                $previousRestores = $previousRestores | Where-Object {$_ -ne $previousRestore}
+            }
+        }
+    }
+    $previousRestores += "$($targetServer):$($targetInstance)/$($targetDB):$($newRestoreUsecs)"
+    $previousRestores | Out-File -FilePath $previousRestoreLog
+}
+
+# execute the recovery task (post /recoverApplication api call)
+$response = api post /recoverApplication $restoreTask
 
 if($response){
     "Restoring $sourceInstance/$sourceDB to $targetServer/$targetInstance as $targetDB"
