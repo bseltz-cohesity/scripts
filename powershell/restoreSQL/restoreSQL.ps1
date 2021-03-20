@@ -272,9 +272,6 @@ if($targetDB -eq $sourceDB -and $targetServer -eq $sourceServer -and $differentI
 # apply log replay time
 if($useLogTime -eq $True){
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['restoreTimeSecs'] = $([int64]($logUsecs/1000000))
-    $newRestoreUsecs = $logUsecs
-}else{
-    $newRestoreUsecs = $latestdb.vmDocument.versions[$versionNum].instanceId.jobStartTimeUsecs
 }
 
 # search for target server
@@ -307,29 +304,6 @@ if($overWrite){
 
 if($targetInstance -eq ''){
     $targetInstance = $sourceInstance
-}
-
-# resume only if newer point in time available
-if($resume){
-    $previousRestoreUsecs = 0
-    $uStart = dateToUsecs ($today.AddDays(-32))
-    $restores = api get "/restoretasks?_includeTenantInfo=true&restoreTypes=kRecoverApp&startTimeUsecs=$uStart&targetType=kLocal"
-    $restores = $restores | Where-Object{($_.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].appEntity.displayName -eq "$targetDB" -or 
-                                          $_.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.newDatabaseName -eq "$targetDB") -and 
-                                          $_.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.instanceName -eq $targetInstance -and
-                                         $_.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.targetHost.displayName -eq $targetServer}
-    if($restores){
-        $previousRestore = $restores[0]
-        if($previousRestore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.PSObject.Properties['restoreTimeSecs']){
-            $previousRestoreUsecs = $previousRestore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.restoreTimeSecs * 1000000
-        }else{
-            $previousRestoreUsecs = $previousRestore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.startTimeUsecs
-        }
-    }
-    if($newRestoreUsecs -le $previousRestoreUsecs ){
-        Write-Host "Target database is already up to date" -ForegroundColor Yellow
-        exit 0
-    }
 }
 
 # execute the recovery task (post /recoverApplication api call)
