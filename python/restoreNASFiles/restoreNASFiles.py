@@ -106,8 +106,8 @@ if showversions:
 
 # select specified run ID
 if runid is not None:
-    versions = [v for v in doc['versions'] if runid == v['instanceId']['jobInstanceId']]
-    if len(versions) == 0:
+    doc['versions'] = [v for v in doc['versions'] if runid == v['instanceId']['jobInstanceId']]
+    if len(doc['versions']) == 0:
         print('Run ID %s not found' % runid)
         exit(1)
 
@@ -185,6 +185,9 @@ restoreParams = {
     },
     "name": restoreTaskName
 }
+
+if version['replicaInfo']['replicaVec'][0]['target']['type'] == 3:
+    restoreParams['sourceObjectInfo']['archivalTarget'] = version['replicaInfo']['replicaVec'][0]['target']['archivalTarget']
 
 if overwrite:
     restoreParams['params']['restoreFilesPreferences']['overrideOriginals'] = True
