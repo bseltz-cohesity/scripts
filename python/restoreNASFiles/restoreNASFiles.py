@@ -180,12 +180,13 @@ restoreParams = {
             "preserveTimestamps": True,
             "preserveAcls": True,
             "preserveAttributes": True,
-            "continueOnError": False
+            "continueOnError": True
         }
     },
     "name": restoreTaskName
 }
 
+# restore from archival target if it's the only copy available
 if version['replicaInfo']['replicaVec'][0]['target']['type'] == 3:
     restoreParams['sourceObjectInfo']['archivalTarget'] = version['replicaInfo']['replicaVec'][0]['target']['archivalTarget']
 
