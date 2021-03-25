@@ -48,3 +48,5 @@ Place both files in a folder together and run the main script like so:
 * -l, --quotalimit: (optional) quota limit in GiB
 * -a --quotaalert: (optional) quota alert threshold in GiB (defaults to 90% of quotalimit)
 * -r, --removewhitelistentries: (optional) remove specified entries from whitelist of existing view
+* -c, --clearwhitelist: (optional) clear out the existing whitelist and add specified entries (using -w)
+* -x, --updateexistingview: (optional) allow the script to update an existing view (otherwise quit if view exists)

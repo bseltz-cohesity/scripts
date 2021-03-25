@@ -16,7 +16,9 @@ parser.add_argument('-q', '--qospolicy', type=str, choices=['Backup Target Low',
 parser.add_argument('-w', '--whitelist', action='append', default=[])  # ip to whitelist
 parser.add_argument('-l', '--quotalimit', type=int, default=None)  # quota limit
 parser.add_argument('-a', '--quotaalert', type=int, default=None)  # quota alert threshold
+parser.add_argument('-c', '--clearwhitelist', action='store_true')
 parser.add_argument('-r', '--removewhitelistentries', action='store_true')
+parser.add_argument('-x', '--updateexistingview', action='store_true')
 
 args = parser.parse_args()
 
@@ -30,6 +32,8 @@ whitelist = args.whitelist
 quotalimit = args.quotalimit
 quotaalert = args.quotaalert
 removewhitelistentries = args.removewhitelistentries
+clearwhitelist = args.clearwhitelist
+updateexistingview = args.updateexistingview
 
 
 # netmask2cidr
@@ -48,11 +52,15 @@ apiauth(vip, username, domain)
 existingview = None
 views = api('get', 'views')
 if views['count'] > 0:
-    existingview = [v for v in views['views'] if v['name'].lower() == viewName.lower()]
-    if(len(existingview) > 0):
-        existingview = existingview[0]
+    existingviews = [v for v in views['views'] if v['name'].lower() == viewName.lower()]
+    if(len(existingviews) > 0):
+        existingview = existingviews[0]
 
-if len(existingview) == 0:
+if existingview is not None and updateexistingview is not True:
+    print('view %s already exists' % viewName)
+    exit(0)
+
+if existingview is None:
     # find storage domain
     sd = [sd for sd in api('get', 'viewBoxes') if sd['name'].lower() == storageDomain.lower()]
 
@@ -85,6 +93,9 @@ if len(existingview) == 0:
 
 else:
     newView = existingview
+
+if clearwhitelist is True:
+    newView['subnetWhitelist'] = []
 
 if len(whitelist) > 0:
 
@@ -130,7 +141,7 @@ if quotalimit is not None:
 newView['qos']['principalName'] = qosPolicy
 
 # create the view
-if len(existingview) == 0:
+if existingview is None:
     print("Creating view %s..." % viewName)
     result = api('post', 'views', newView)
 else:
