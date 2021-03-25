@@ -16,6 +16,7 @@ parser.add_argument('-q', '--qospolicy', type=str, choices=['Backup Target Low',
 parser.add_argument('-w', '--whitelist', action='append', default=[])  # ip to whitelist
 parser.add_argument('-l', '--quotalimit', type=int, default=None)  # quota limit
 parser.add_argument('-a', '--quotaalert', type=int, default=None)  # quota alert threshold
+parser.add_argument('-r', '--removewhitelistentries', action='store_true')
 
 args = parser.parse_args()
 
@@ -28,60 +29,91 @@ qosPolicy = args.qospolicy
 whitelist = args.whitelist
 quotalimit = args.quotalimit
 quotaalert = args.quotaalert
+removewhitelistentries = args.removewhitelistentries
+
+
+# netmask2cidr
+def netmask2cidr(netmask):
+    bin = ''.join(["{0:b}".format(int(o)) for o in netmask.split('.')])
+    if '0' in bin:
+        cidr = bin.index('0')
+    else:
+        cidr = 32
+    return cidr
+
 
 # authenticate
 apiauth(vip, username, domain)
 
-# find storage domain
-sd = [sd for sd in api('get', 'viewBoxes') if sd['name'].lower() == storageDomain.lower()]
+existingview = None
+views = api('get', 'views')
+if views['count'] > 0:
+    existingview = [v for v in views['views'] if v['name'].lower() == viewName.lower()]
+    if(len(existingview) > 0):
+        existingview = existingview[0]
 
-if len(sd) != 1:
-    print("Storage domain %s not found!" % storageDomain)
-    exit()
+if len(existingview) == 0:
+    # find storage domain
+    sd = [sd for sd in api('get', 'viewBoxes') if sd['name'].lower() == storageDomain.lower()]
 
-sdid = sd[0]['id']
+    if len(sd) != 1:
+        print("Storage domain %s not found!" % storageDomain)
+        exit()
 
-# new view parameters
+    sdid = sd[0]['id']
 
-newView = {
-    "caseInsensitiveNamesEnabled": True,
-    "enableNfsViewDiscovery": True,
-    "enableSmbAccessBasedEnumeration": False,
-    "enableSmbViewDiscovery": True,
-    "fileExtensionFilter": {
-        "isEnabled": False,
-        "mode": "kBlacklist",
-        "fileExtensionsList": []
-    },
-    "protocolAccess": "kNFSOnly",
-    "securityMode": "kNativeMode",
-    "subnetWhitelist": [],
-    "qos": {
-        "principalName": qosPolicy
-    },
-    "name": viewName,
-    "viewBoxId": sdid
-}
+    # new view parameters
+    newView = {
+        "caseInsensitiveNamesEnabled": True,
+        "enableNfsViewDiscovery": True,
+        "enableSmbAccessBasedEnumeration": False,
+        "enableSmbViewDiscovery": True,
+        "fileExtensionFilter": {
+            "isEnabled": False,
+            "mode": "kBlacklist",
+            "fileExtensionsList": []
+        },
+        "protocolAccess": "kNFSOnly",
+        "securityMode": "kNativeMode",
+        "subnetWhitelist": [],
+        "qos": {
+            "principalName": qosPolicy
+        },
+        "name": viewName,
+        "viewBoxId": sdid
+    }
+
+else:
+    newView = existingview
 
 if len(whitelist) > 0:
-    newView['subnetWhitelist'] = []
+
     for ip in whitelist:
         if ',' in ip:
             (thisip, netmask) = ip.split(',')
             netmask = netmask.lstrip()
+            cidr = netmask2cidr(netmask)
         else:
             thisip = ip
             netmask = '255.255.255.255'
-        newView['subnetWhitelist'].append(
-            {
+            cidr = 32
+
+        existingEntry = []
+        if 'subnetWhitelist' in newView:
+            existingEntry = [e for e in newView['subnetWhitelist'] if e['ip'] == thisip and e['netmaskBits'] == cidr]
+
+        if removewhitelistentries is not True and len(existingEntry) == 0:
+            newView['subnetWhitelist'].append({
                 "description": '',
                 "nfsAccess": "kReadWrite",
                 "smbAccess": "kReadWrite",
                 "nfsRootSquash": False,
                 "ip": thisip,
                 "netmaskIp4": netmask
-            }
-        )
+            })
+        else:
+            if removewhitelistentries is True:
+                newView['subnetWhitelist'] = [e for e in newView['subnetWhitelist'] if not (e['ip'] == thisip and e['netmaskBits'] == cidr)]
 
 # apply quota
 if quotalimit is not None:
@@ -94,6 +126,13 @@ if quotalimit is not None:
         "alertLimitBytes": quotaalert
     }
 
+# update qos policy
+newView['qos']['principalName'] = qosPolicy
+
 # create the view
-print("Creating view %s..." % viewName)
-result = api('post', 'views', newView)
+if len(existingview) == 0:
+    print("Creating view %s..." % viewName)
+    result = api('post', 'views', newView)
+else:
+    print("Updating view %s..." % viewName)
+    result = api('put', 'views', newView)

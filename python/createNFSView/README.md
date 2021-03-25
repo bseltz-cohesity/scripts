@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This python script creates a new SMB View on Cohesity
+This python script creates or updates an NFS View on Cohesity
 
 ## Download the script
 
@@ -41,9 +41,10 @@ Place both files in a folder together and run the main script like so:
 * -v, --vip: Cohesity cluster to connect to
 * -u, --username: Cohesity username
 * -d, --domain: (optional) Active Directory domain (defaults to 'local')
-* -n, --viewname: name of new view to create
+* -n, --viewname: name of new view to create or modify
 * -q, --qospolicy: (optional) 'Backup Target Low', 'Backup Target High' or 'TestAndDev Low' (default is 'TestAndDev High')
 * -s, --storageDomain: (optional) name of storage domain to place view data (default is DefaultStorageDomain)
 * -w, --whitelist: (optional) ip (and optional netmask) to whitelist (can be used multiple times) e.g. '192.168.1.0, 255.255.255.0'
 * -l, --quotalimit: (optional) quota limit in GiB
 * -a --quotaalert: (optional) quota alert threshold in GiB (defaults to 90% of quotalimit)
+* -r, --removewhitelistentries: (optional) remove specified entries from whitelist of existing view
