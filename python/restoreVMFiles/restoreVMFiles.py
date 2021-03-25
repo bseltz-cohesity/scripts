@@ -14,6 +14,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, required=True)           # cluster to connect to
 parser.add_argument('-u', '--username', type=str, default='helios')   # username
 parser.add_argument('-d', '--domain', type=str, default='local')      # domain - defaults to local
+parser.add_argument('-k', '--useApiKey', action='store_true')         # use API key authentication
+parser.add_argument('-pwd', '--password', type=str, default=None)       # optional password
 parser.add_argument('-s', '--sourcevm', type=str, required=True)  # name of source server
 parser.add_argument('-t', '--targetvm', type=str, default=None)   # name of target server
 parser.add_argument('-n', '--filename', type=str, action='append')    # file name to restore
@@ -33,6 +35,8 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
+password = args.password
+useApiKey = args.useApiKey
 sourcevm = args.sourcevm
 targetvm = args.targetvm
 files = args.filename
@@ -68,7 +72,7 @@ if restorepath is not None:
     restorepath = ('/' + restorepath).replace('\\', '/').replace(':', '').replace('//', '/')
 
 # authenticate
-apiauth(vip=vip, username=username, domain=domain, noretry=True)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, noretry=True)
 if apiconnected() is False:
     print('authentication failed')
     exit(1)
