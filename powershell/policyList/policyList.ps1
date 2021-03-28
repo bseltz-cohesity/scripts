@@ -39,9 +39,17 @@ foreach($policy in $policies){
         }
     )
     $policy | Add-Member -MemberType NoteProperty -Name 'Base Retention' -Value "$($policy.DaysToKeep) Days"
+    $policy | Add-Member -MemberType NoteProperty -Name 'Replication Targets' -Value $(
+        $policy.snapshotReplicationCopyPolicies.target.clusterName -join "`n"
+    )
+    $policy | Add-Member -MemberType NoteProperty -Name 'Archive Targets' -Value $(
+        $policy.snapshotArchivalCopyPolicies.target.vaultName -join "`n"
+    )
 }
 
 $policies | Format-List -Property 'Policy Name',
                                   'Base Retention',
                                   'DataLock Mode',
+                                  'Replication Targets',
+                                  'Archive Targets',
                                   'Protection Jobs' | Tee-Object -FilePath $outFile
