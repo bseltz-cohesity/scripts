@@ -22,7 +22,7 @@ function toUnits($val){
 $cluster = api get cluster
 $dateString = get-date -UFormat '%Y-%m-%d'
 $outputfile = $(Join-Path -Path $PSScriptRoot -ChildPath "lastRun-$($cluster.name)-$dateString.csv")
-"Job Name,Environment,Origination,Object Name,Last Run,Status,Logical Size $unit,Data Read $unit,Data Written $unit,Data Replicated $unit" | Out-File -FilePath $outputfile
+"Job Name,Environment,Origination,Policy Name,Object Name,Last Run,Status,Logical Size $unit,Data Read $unit,Data Written $unit,Data Replicated $unit" | Out-File -FilePath $outputfile
 
 if($localOnly){
     $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true&includeLastRunInfo=true"
@@ -30,10 +30,12 @@ if($localOnly){
     $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&includeTenants=true&includeLastRunInfo=true"
 }
 
+$policies = api get -v2 "data-protect/policies?includeTenants=true&excludeLinkedPolicies=false"
+
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     "{0}" -f $job.name
     $lastRun = api get -v2 "data-protect/protection-groups/$($job.id)/runs/$($job.lastRun.id)?includeObjectDetails=true"
-    
+    $policy = $policies.policies | Where-Object id -eq $job.policyId
     foreach($entity in $lastRun.objects | Sort-Object -Property {$_.object.name}){
         $objectName = $entity.object.name
         if($job.isActive -eq $false){
@@ -54,7 +56,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         $replicationTransferred = $entity.replicationInfo.replicationTargetResults.stats.physicalBytesTransferred
 
         "    {0}" -f $objectName
-        "{0},{1},{2},{3},{4},{5},""{6}"",""{7}"",""{8}"",""{9}""" -f $job.name, $job.environment.Substring(1) ,$origination, $objectName, (usecsToDate $startTimeUsecs), $status, (toUnits $logicalSize), (toUnits $localRead), (toUnits $localWritten), (toUnits $replicationTransferred) | Out-File -FilePath $outputfile -Append
+        "{0},{1},{2},{3},{4},{5},{6},""{7}"",""{8}"",""{9}"",""{10}""" -f $job.name, $job.environment.Substring(1) ,$origination, $policy.name, $objectName, (usecsToDate $startTimeUsecs), $status, (toUnits $logicalSize), (toUnits $localRead), (toUnits $localWritten), (toUnits $replicationTransferred) | Out-File -FilePath $outputfile -Append
     }
 }
 
