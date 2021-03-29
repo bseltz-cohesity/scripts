@@ -1,18 +1,12 @@
 #!/usr/bin/env python
-"""List Recovery Points for python"""
+"""Cluster Info for python"""
 
-# version 2020-07-17
-
-### usage: ./clusterInfo.py -v mycluster \
-#                           -u admin \
-#                           -d local \
-#                           -s 192.168.1.95 \
-#                           -f backupreport@mydomain.net
+# version 2021-03-29
 
 ### import pyhesity wrapper module
 from pyhesity import *
 import datetime
-# import requests
+import requests
 import smtplib
 import codecs
 from email.mime.multipart import MIMEMultipart
@@ -26,7 +20,7 @@ parser.add_argument('-v', '--vip', type=str, required=True)
 parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
 parser.add_argument('-i', '--useApiKey', action='store_true')
-parser.add_argument('-pwd', '--password', type=str, required=True)
+parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-l', '--listgflags', action='store_true')
 parser.add_argument('-of', '--outfolder', type=str, default='.')
 parser.add_argument('-s', '--mailserver', type=str)
@@ -51,7 +45,11 @@ useApiKey = args.useApiKey
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
 
+if password is None:
+    password = pw(vip=vip, username=username, domain=domain)
+
 cluster = api('get', 'cluster')
+version = cluster['clusterSoftwareVersion'].split('_')[0]
 
 dateString = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 outfileName = '%s/%s-%s-clusterInfo.txt' % (folder, dateString, cluster['name'])
@@ -83,34 +81,63 @@ output('   Healing Status: %s' % status['healingStatus'])
 output('     Service Sync: %s' % status['isServiceStateSynced'])
 output(' Stopped Services: %s' % status['bulletinState']['stoppedServices'])
 output('------------------------------------')
-for chassis in chassisList:
-    # chassis info
-    if 'name' in chassis:
-        chassisname = chassis['name']
-    else:
-        chassisname = chassis['serial']
-    output('\n   Chassis Name: %s' % chassisname)
-    output('     Chassis ID: %s' % chassis['id'])
-    output('       Hardware: %s' % chassis.get('hardwareModel', 'VirtualEdition'))
-    gotSerial = False
-    for node in nodeList:
-        if node['chassisId'] == chassis['id']:
-            # node info
-            apiauth(node['ip'].split(':')[-1], username, domain, password=password, quiet=True, useApiKey=useApiKey)
-            nodeInfo = api('get', '/nexus/node/hardware_info')
-            if gotSerial is False:
-                output(' Chassis Serial: %s' % nodeInfo['cohesityChassisSerial'])
-                gotSerial = True
-            output('\n            Node ID: %s' % node['id'])
-            output('            Node IP: %s' % node['ip'].split(':')[-1])
-            output('            IPMI IP: %s' % node.get('ipmiIp', 'n/a'))
-            output('            Slot No: %s' % node.get('slotNumber', 0))
-            output('          Serial No: %s' % nodeInfo.get('cohesityNodeSerial', 'VirtualEdition'))
-            output('      Product Model: %s' % nodeInfo['productModel'])
-            output('         SW Version: %s' % node['softwareVersion'])
-            for stat in nodeStatus:
-                if stat['nodeId'] == node['id']:
-                    output('             Uptime: %s' % stat['uptime'])
+
+if version > '6.3.1f':
+    for chassis in chassisList:
+        # chassis info
+        if 'name' in chassis:
+            chassisname = chassis['name']
+        else:
+            chassisname = chassis['serial']
+        output('\n   Chassis Name: %s' % chassisname)
+        output('     Chassis ID: %s' % chassis['id'])
+        output('       Hardware: %s' % chassis.get('hardwareModel', 'VirtualEdition'))
+        gotSerial = False
+        for node in nodeList:
+            if node['chassisId'] == chassis['id']:
+                # node info
+                apiauth(node['ip'].split(':')[-1], username, domain, password=password, quiet=True, useApiKey=useApiKey)
+                nodeInfo = api('get', '/nexus/node/hardware_info')
+                if gotSerial is False:
+                    output(' Chassis Serial: %s' % nodeInfo['cohesityChassisSerial'])
+                    gotSerial = True
+                output('\n            Node ID: %s' % node['id'])
+                output('            Node IP: %s' % node['ip'].split(':')[-1])
+                output('            IPMI IP: %s' % node.get('ipmiIp', 'n/a'))
+                output('            Slot No: %s' % node.get('slotNumber', 0))
+                output('          Serial No: %s' % nodeInfo.get('cohesityNodeSerial', 'VirtualEdition'))
+                output('      Product Model: %s' % nodeInfo['productModel'])
+                output('         SW Version: %s' % node['softwareVersion'])
+                for stat in nodeStatus:
+                    if stat['nodeId'] == node['id']:
+                        output('             Uptime: %s' % stat['uptime'])
+else:
+    for chassis in chassisList:
+        # chassis info
+        output('  Chassis Name: %s' % chassis['name'])
+        output('    Chassis ID: %s' % chassis['id'])
+        output('      Hardware: %s' % chassis.get('hardwareModel', 'VirtualEdition'))
+        gotSerial = False
+        for node in nodeList:
+            if node['chassisId'] == chassis['id']:
+                # node info
+                nodeInfo = requests.get('http://' + node['ip'].split(':')[-1] + ':23456/nexus/v1/node/info')
+                nodeJson = nodeInfo.json()
+                if gotSerial is False:
+                    output('Chassis Serial: %s' % nodeJson['chassisSerial'])
+                    gotSerial = True
+                output('\n           Node ID: %s' % node['id'])
+                output('           Node IP: %s' % node['ip'].split(':')[-1])
+                output('           IPMI IP: %s' % nodeJson.get('ipmiIp', 'n/a'))
+                productModel = nodeJson['productModel']
+
+                output('           Slot No: %s' % node.get('slotNumber', 0))
+                output('         Serial No: %s' % node.get('serialNumber', 'VirtualEdition'))
+                output('     Product Model: %s' % productModel)
+                output('        SW Version: %s' % node['softwareVersion'])
+                for stat in nodeStatus:
+                    if stat['nodeId'] == node['id']:
+                        output('            Uptime: %s\n' % stat['uptime'])
 
 if listgflags:
     output('\n--------\n Gflags\n--------')
