@@ -216,8 +216,8 @@ if($pfileParameterName.Count -ne $pfileParameterValue.Count){
         $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams['oracleDbConfig'] = @{ "pfileParameterMap" = @()}
         0..($pfileParameterName.Count - 1) | ForEach-Object {
             $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap += @{
-                "key" = $pfileParameterName[$_];
-                "value" = $pfileParameterValue[$_]
+                "key" = [string]$pfileParameterName[$_];
+                "value" = [string]$pfileParameterValue[$_]
             }
         }
     }
