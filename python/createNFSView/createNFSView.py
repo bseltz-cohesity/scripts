@@ -16,9 +16,9 @@ parser.add_argument('-q', '--qospolicy', type=str, choices=['Backup Target Low',
 parser.add_argument('-w', '--whitelist', action='append', default=[])  # ip to whitelist
 parser.add_argument('-l', '--quotalimit', type=int, default=None)  # quota limit
 parser.add_argument('-a', '--quotaalert', type=int, default=None)  # quota alert threshold
-parser.add_argument('-c', '--clearwhitelist', action='store_true')
-parser.add_argument('-r', '--removewhitelistentries', action='store_true')
-parser.add_argument('-x', '--updateexistingview', action='store_true')
+parser.add_argument('-c', '--clearwhitelist', action='store_true')  # erase existing whitelist
+parser.add_argument('-r', '--removewhitelistentries', action='store_true')  # remove whitelist entries specified with -w
+parser.add_argument('-x', '--updateexistingview', action='store_true')  # allow update of existing view (otherwise exit if view exists)
 
 args = parser.parse_args()
 
