@@ -19,7 +19,14 @@ param (
     [Parameter()][switch]$wait, # wait for clone to finish
     [Parameter()][string]$logTime, # PIT to replay logs to e.g. '2019-01-20 02:01:47'
     [Parameter()][switch]$latest, # replay to latest available log PIT
-    [Parameter()][string]$password = $null # optional! clear text password
+    [Parameter()][string]$password = $null, # optional! clear text password
+    [Parameter()][array]$pfileParameterName,
+    [Parameter()][array]$pfileParameterValue,
+    [Parameter()][string]$preScript,
+    [Parameter()][string]$preScriptArguments = '',
+    [Parameter()][string]$postScript,
+    [Parameter()][string]$postScriptArguments = '',
+    [Parameter()][Int64]$scriptTimeout = 900
 )
 
 ### source the cohesity-api helper code
@@ -200,7 +207,49 @@ if($validLogTime -eq $True){
     }
 }
 
+### handle pfile parameters
+if($pfileParameterName.Count -ne $pfileParameterValue.Count){
+    Write-Host "Number of pfile parameter names and values do not match" -ForegroundColor Yellow
+    exit 1
+}else{
+    if($pfileParameterName.Count -gt 0){
+        $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams['oracleDbConfig'] = @{ "pfileParameterMap" = @()}
+        0..($pfileParameterName.Count - 1) | ForEach-Object {
+            $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap += @{
+                "key" = $pfileParameterName[$_];
+                "value" = $pfileParameterValue[$_]
+            }
+        }
+    }
+}
+
+### handle pre script
+if($preScript -or $postScript){
+    $cloneParams.restoreAppParams.restoreAppObjectVec[0]['additionalParams'] = @{}
+    if($preScript){
+        $cloneParams.restoreAppParams.restoreAppObjectVec[0].additionalParams['preScript'] = @{
+            "script" = @{
+                "continueOnError" = $false;
+                "scriptPath" = $preScript;
+                "scriptParams" = $preScriptArguments;
+                "timeoutSecs" = $scriptTimeout
+            }
+        }
+    }
+    if($postScript){
+        $cloneParams.restoreAppParams.restoreAppObjectVec[0].additionalParams['postScript'] = @{
+            "script" = @{
+                "continueOnError" = $false;
+                "scriptPath" = $postScript;
+                "scriptParams" = $ostScriptArguments;
+                "timeoutSecs" = $scriptTimeout
+            }
+        }
+    }
+}
+
 ### execute the clone task (post /cloneApplication api call)
+# $cloneParams | ConvertTo-Json -Depth 99
 $response = api post /cloneApplication $cloneParams
 
 if($response){

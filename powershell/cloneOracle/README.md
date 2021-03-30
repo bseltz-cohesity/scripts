@@ -34,13 +34,23 @@ Place both files in a folder together and run the main script like so:
 
 The script takes the following parameters:
 
-* -vip (DNS or IP of the Cohesity Cluster)
-* -username (Cohesity User Name)
-* -domain (optional - defaults to 'local')
-* -sourceServer (source SQL Server Name)
-* -sourceDB (source Database Name)
-* -targetServer (optional - SQL Server to attach clone to, defaults to same as sourceServer)
-* -targetDB (optional - target Database Name - defaults to same as source)
-* -logTime (optional - point in time to replay the logs to - if omitted will default to time of latest DB backup)
-* -latest (optional - replay the logs to the latest point in time available)
-* -wait (wait for completion and report end status)
+* -vip: (DNS or IP of the Cohesity Cluster)
+* -username: (Cohesity User Name)
+* -domain: (optional) defaults to 'local'
+* -sourceServer: source Oracle Server Name
+* -sourceDB: source Database Name
+* -oracleHome: oracle home path
+* -oracleBase: oracle base path
+* -targetServer: (optional) Oracle Server to attach clone to, defaults to same as sourceServer
+* -targetDB: (optional) target Database Name, defaults to same as sourceDB
+* -logTime: (optional) point in time to replay the logs to. If omitted will default to time of latest DB backup
+* -latest: (optional) replay the logs to the latest point in time available
+* -wait: (optional) wait for completion and report end status
+* -pfileParameterName: (optional) one or more parameter names to include in pfile (comma seaparated)
+* -pfileParameterValue: (optional) one or more parameter values to include in pfile (comma separated)
+* -preScript: (optional) name of script to run before clone operation
+* -preScriptArguments: (optional) preScript parameters (use quotes, like: 'param1=test switch2')
+* -postScript: (optional) name of script to run after clone operation
+* -postScriptArguments: (optional) postScript parameters (use quotes, like: 'param1=test switch2')
+
+Note: the number of pfileParameterNames must match the number of pfileParameterValues.
