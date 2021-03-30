@@ -19,7 +19,9 @@ param (
     [Parameter()][string]$prefix = '',
     [Parameter()][switch]$preserveMacAddress,
     [Parameter()][switch]$detachNetwork,
-    [Parameter()][switch]$powerOn
+    [Parameter()][switch]$powerOn,
+    [Parameter()][switch]$showVersions,
+    [Parameter()][int64]$version = 0
 )
 
 ### source the cohesity-api helper code
@@ -33,6 +35,16 @@ $vms = api get "/searchvms?entityTypes=kVMware&vmName=$vmName"
 $exactVMs = $vms.vms | Where-Object {$_.vmDocument.objectName -eq $vmName}
 $latestsnapshot = ($exactVMs | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
 
+### show versions
+if($showVersions){
+    "Version  Date"
+    "=======  ===="
+    0..($latestsnapshot[0].vmDocument.versions.count - 1) | ForEach-Object{
+        "{0,7}  {1}" -f $_, (usecsToDate $latestsnapshot[0].vmDocument.versions[$_].instanceId.jobStartTimeUsecs)
+    }
+    exit 0
+}
+
 ### build recovery task
 $recoverDate = (get-date).ToString().Replace(' ','_').Replace('/','-').Replace(':','-')
 
@@ -43,8 +55,8 @@ $restoreParams = @{
             'entity' = $latestsnapshot[0].vmDocument.objectId.entity
             'jobId' = $latestsnapshot[0].vmDocument.objectId.jobId;
             'jobUid' = $latestsnapshot[0].vmDocument.objectId.jobUid;
-            'jobInstanceId' = $latestsnapshot[0].vmDocument.versions[0].instanceId.jobInstanceId
-            'startTimeUsecs' = $latestsnapshot[0].vmDocument.versions[0].instanceId.jobStartTimeUsecs
+            'jobInstanceId' = $latestsnapshot[0].vmDocument.versions[$version].instanceId.jobInstanceId
+            'startTimeUsecs' = $latestsnapshot[0].vmDocument.versions[$version].instanceId.jobStartTimeUsecs
             '_jobType' = 1
         }
     );

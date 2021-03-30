@@ -56,3 +56,5 @@ Place the files in a folder together and run the main script like so:
 * -poweron: (optional) power on the VMs during restore (default is false)
 * -detachNetwork: (optional) leave VM network disconnected (default is false)
 * -preserveMacAddress: (optional) maintain original Mac address (default is false)
+* -showVersions: (optional) show available recovery dates and exit
+* -version: (optional) use version number listed in showVersions (default is 0 - latest backup)
