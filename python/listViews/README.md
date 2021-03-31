@@ -46,5 +46,6 @@ or to produce detailed output:
 * -v, --vip: Cohesity cluster to connect to
 * -u, --username: Cohesity username
 * -d, --domain: (optional) Active Directory domain (defaults to 'local')
+* -n, --name: (optional) Show specified view only
 * -s, --showsettings: (optional) prodice detailed output
 * -x, --units: (optional) show values in GiB or MiB (default is GiB)
