@@ -159,6 +159,7 @@ foreach($vip in $vips){
     $cluster = api get cluster
 
     $errorCount = @{}
+    $failureCounted = @{}
     $latestError = @{}
     $skip = @()
     $jobEntry = @{}
@@ -211,8 +212,11 @@ foreach($vip in $vips){
                             $errorsRecorded += 1
                             if($objName -notin $errorCount.Keys){
                                 # record most recent error
-                                $totalFailedObjects +=1
                                 $errorCount[$objName] = 1
+                                if($errorCount[$objName] -ge $failureCount){
+                                    $totalFailedObjects +=1
+                                    $failureCounted[$objName] = 1
+                                }
                                 $latestError[$objName] = $task.base.error.errorMsg
                                 $appHtml = ''
                                 if($task.psobject.properties['appEntityStateVec']){
@@ -220,7 +224,10 @@ foreach($vip in $vips){
                                     foreach($app in $task.appEntityStateVec){
                                         $totalObjects += 1
                                         if($app.publicStatus -ne 'kSuccess'){
-                                            $totalFailedObjects += 1
+                                            if($errorCount[$objName] -ge $failureCount){
+                                                $totalFailedObjects +=1
+                                                $failureCounted[$objName] = 1
+                                            }
                                             $appHtml += "<tr>
                                                 <td></td>
                                                 <td></td>
@@ -237,6 +244,10 @@ foreach($vip in $vips){
                                 $appErrors[$objName] = $appHtml
                             }else{
                                 $errorCount[$objName] += 1
+                                if($errorCount[$objName] -ge $failureCount -and $objName -notin $failureCounted.Keys){
+                                    $totalFailedObjects +=1
+                                    $failureCounted[$objName] = 1
+                                }
                             }
                             # populate html record
                             $jobId = $job.id
