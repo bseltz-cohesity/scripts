@@ -23,6 +23,7 @@ param (
     [Parameter()][switch]$force,
     [Parameter()][switch]$consolidate,
     [Parameter()][string]$targetPath = $null,
+    [Parameter()][switch]$dbFolders,
     [Parameter()][switch]$logsOnly
 )
 
@@ -266,8 +267,13 @@ if($consolidate -or $targetPath){
                     }
                     if($runType -eq 'kLog' -or !$logsOnly){
                         # $newName
+                        $fileDestination = "$backupFolderPath\$newName"
+                        if($dbFolders){
+                            $null = New-Item -Path "$backupFolderPath\$dbName" -ItemType Directory -Force
+                            $fileDestination = "$backupFolderPath\$dbName\$newName"
+                        }
                         while($True){
-                            if(Move-Item -Path $file.FullName -Destination "$backupFolderPath\$newName" -PassThru){
+                            if(Move-Item -Path $file.FullName -Destination $fileDestination -PassThru){
                                 break
                             }
                             Start-Sleep 1
