@@ -107,6 +107,11 @@ if(!$job){
     exit
 }
 
+if($cluster.clusterSoftwareVersion -gt '6.5.0'){
+    Write-Host "This script is not 100% compatible with Cohesity 6.5.1 and later, please use protectWindowsV2" -ForegroundColor Yellow
+    exit
+}
+
 if($cluster.clusterSoftwareVersion -gt '6.5'){
     $protectionGroups = api get "data-protect/protection-groups?isDeleted=false&includeTenants=true&includeLastRunInfo=true" -v2
     $protectionGroup = $protectionGroups.protectionGroups | Where-Object name -eq $jobName
