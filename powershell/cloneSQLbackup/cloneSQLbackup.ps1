@@ -22,6 +22,7 @@ param (
     [Parameter()][switch]$refreshView,
     [Parameter()][switch]$force,
     [Parameter()][switch]$consolidate,
+    [Parameter()][string]$targetPath = $null,
     [Parameter()][switch]$logsOnly
 )
 
@@ -225,9 +226,12 @@ foreach($run in $runs){
 
 $backupFolderPath = "\\$vip\$viewName"
 
-if($consolidate){
+if($consolidate -or $targetPath){
     Write-Host "Consolidating files..."
-
+    if($targetPath){
+        $backupFolderPath = "{0}{1}" -f $backupFolderPath, $targetPath
+        $null = New-Item -Path $backupFolderPath -ItemType Directory -Force
+    }
     foreach($item in $paths){
         $itemPath = $item.path
         $runDate = $item.runDate

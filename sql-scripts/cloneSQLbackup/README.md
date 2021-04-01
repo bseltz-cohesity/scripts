@@ -115,4 +115,5 @@ To refresh a view (on a schedule):
 * -refreshView: (optional) delete existing files in view
 * -force: (optional) do not prompt for confirmation when refreshing or deleting view (DANGEROUS!)
 * -consolidate: (optional) move all files to root of view
+* -targetPath: (optional) move all files to this directory (e.g. \test\folder)
 * -logsOnly: (optional) only consolidate log files
