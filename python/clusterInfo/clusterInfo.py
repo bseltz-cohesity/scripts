@@ -9,6 +9,7 @@ import datetime
 import requests
 import smtplib
 import codecs
+import os.path
 from email.mime.multipart import MIMEMultipart
 from email.MIMEBase import MIMEBase
 from email import Encoders
@@ -51,7 +52,7 @@ if password is None:
 cluster = api('get', 'cluster')
 version = cluster['clusterSoftwareVersion'].split('_')[0]
 
-dateString = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+dateString = datetime.datetime.now().strftime("%Y-%m-%d")
 outfileName = '%s/%s-%s-clusterInfo.txt' % (folder, dateString, cluster['name'])
 f = codecs.open(outfileName, 'w', 'utf-8')
 
@@ -140,6 +141,14 @@ else:
                         output('            Uptime: %s\n' % stat['uptime'])
 
 if listgflags:
+    # gDateString = datetime.datetime.now().strftime("%Y-%m-%d")
+    gflagfileName = '%s/%s-gflags.csv' % (folder, dateString)
+    writeheader = True
+    if os.path.exists(gflagfileName):
+        writeheader = False
+    g = codecs.open(gflagfileName, 'a', 'utf-8')
+    if writeheader is True:
+        g.write('Cluster,Service,gFlag,Value,Reason\n')
     output('\n--------\n Gflags\n--------')
     flags = api('get', '/nexus/cluster/list_gflags')
     for service in flags['servicesGflags']:
@@ -152,6 +161,8 @@ if listgflags:
             flagvalue = gflag['value']
             reason = gflag['reason']
             output('    %s: %s (%s)' % (flagname, flagvalue, reason))
+            g.write('"%s","%s","%s","%s","%s"\n' % (cluster['name'], servicename, flagname, flagvalue, reason))
+    g.close()
 
 output('')
 f.close()
