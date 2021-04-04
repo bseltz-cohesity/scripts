@@ -81,3 +81,4 @@ Or simply use the latest version:
 * -end: (optional) show versions starting at date (e.g. '07-14-2020 23:59:00')
 * -runId: (optional) use snapshot version with specific job run ID
 * -fileDate: (optional) use snapshot version at or after date specified
+* -startPath: (optional) start listing files at path (default is /)

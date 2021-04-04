@@ -23,7 +23,8 @@ param (
     [Parameter()][datetime]$start,
     [Parameter()][datetime]$end,
     [Parameter()][Int64]$runId,
-    [Parameter()][datetime]$fileDate
+    [Parameter()][datetime]$fileDate,
+    [Parameter()][string]$startPath = '/'
 )
 
 $volumeTypes = @(1, 6)
@@ -81,11 +82,11 @@ function showFiles($doc, $version){
             foreach($volume in $volumeList.volumeInfos | Sort-Object -Property name){
                 # $volumeName = [System.Web.HttpUtility]::UrlEncode($volume.name)
                 $volumeName = $volume.name
-                listdir '/' $instance $volumeInfoCookie $volumeName
+                listdir $startPath $instance $volumeInfoCookie $volumeName
             }
         }
     }else{
-        listdir '/' $instance
+        listdir $startPath $instance
     }
     
 }

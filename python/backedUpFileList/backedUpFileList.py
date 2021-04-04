@@ -36,6 +36,7 @@ parser.add_argument('-t', '--start', type=str, default=None)          # show sna
 parser.add_argument('-e', '--end', type=str, default=None)            # show snapshots before date
 parser.add_argument('-r', '--runid', type=int, default=None)          # choose specific job run id
 parser.add_argument('-f', '--filedate', type=str, default=None)       # date to restore from
+parser.add_argument('-p', '--startpath', type=str, default='/')       # date to restore from
 
 args = parser.parse_args()
 
@@ -52,6 +53,7 @@ end = args.end
 runid = args.runid
 filedate = args.filedate
 listfiles = args.listfiles
+startpath = args.startpath
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
@@ -60,16 +62,17 @@ apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=
 def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None):
     thisDirPath = quote_plus(dirPath)
     if volumeName is not None:
-        dirList = api('get', '/vm/directoryList?%s&dirPath=%s&statFileEntries=false&volumeInfoCookie=%s&volumeName=%s' % (instance, thisDirPath, volumeInfoCookie, volumeName))
+        dirList = api('get', '/vm/directoryList?%s&dirPath=%s&statFileEntries=true&volumeInfoCookie=%s&volumeName=%s' % (instance, thisDirPath, volumeInfoCookie, volumeName))
     else:
-        dirList = api('get', '/vm/directoryList?%s&dirPath=%s&statFileEntries=false' % (instance, thisDirPath))
+        dirList = api('get', '/vm/directoryList?%s&dirPath=%s&statFileEntries=true' % (instance, thisDirPath))
     if dirList and 'entries' in dirList:
         for entry in sorted(dirList['entries'], key=lambda e: e['name']):
             if entry['type'] == 'kDirectory':
                 listdir('%s/%s' % (dirPath, entry['name']), instance, f, volumeInfoCookie, volumeName)
             else:
-                print(entry['fullPath'])
-                f.write('%s\n' % entry['fullPath'])
+                mtime = usecsToDate(entry['fstatInfo']['mtimeUsecs'])
+                print('%s (%s)' % (entry['fullPath'], mtime))
+                f.write('%s (%s)\n' % (entry['fullPath'], mtime))
 
 
 def showFiles(doc, version):
@@ -90,14 +93,14 @@ def showFiles(doc, version):
     volumeTypes = [1, 6]
     backupType = doc['backupType']
     if backupType in volumeTypes:
-        volumeList = api('get', '/vm/volumeInfo?%s&statFileEntries=false' % instance)
+        volumeList = api('get', '/vm/volumeInfo?%s&statFileEntries=true' % instance)
         if 'volumeInfos' in volumeList:
             volumeInfoCookie = volumeList['volumeInfoCookie']
             for volume in sorted(volumeList['volumeInfos'], key=lambda v: v['name']):
                 volumeName = quote_plus(volume['name'])
-                listdir('/', instance, f, volumeInfoCookie, volumeName)
+                listdir(startpath, instance, f, volumeInfoCookie, volumeName)
     else:
-        listdir('/', instance, f)
+        listdir(startpath, instance, f)
 
     f.close()
 
@@ -120,6 +123,12 @@ searchResults = [vm for vm in searchResults if vm['vmDocument']['jobName'].lower
 
 if len(searchResults) == 0:
     print('%s not protected by %s' % (sourceserver, jobname))
+    exit(1)
+
+searchResults = [r for r in searchResults if 'versions' in r['vmDocument'] and len(r['vmDocument']['versions']) > 0]
+
+if len(searchResults) == 0:
+    print('No backups available for %s in %s' % (sourceserver, jobname))
     exit(1)
 
 searchResult = sorted(searchResults, key=lambda result: result['vmDocument']['versions'][0]['snapshotTimestampUsecs'], reverse=True)[0]
