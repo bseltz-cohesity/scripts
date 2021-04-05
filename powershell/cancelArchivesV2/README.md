@@ -35,4 +35,4 @@ Place both files in a folder together and run the main script like so:
 * -domain: (optional) domain of the Cohesity user (defaults to local)
 * -cancelAll: (optional) cancel all archive tasks
 * -cancelQueued: (optional) cancel archive tasks that haven't moved any data yet
-* -numRuns: (optional) number of runs per job to inspect (defaults to 9999)
+* -daysBack: (optional) number of days back to search (default is 31)

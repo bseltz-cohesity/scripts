@@ -6,7 +6,7 @@ param (
    [Parameter()][string]$domain = 'local', #local or AD domain
    [Parameter()][switch]$cancelQueued,
    [Parameter()][switch]$cancelAll,
-   [Parameter()][int]$numRuns = 9999
+   [Parameter()][int]$daysBack = 31
 )
 
 ### source the cohesity-api helper code
@@ -31,35 +31,50 @@ $nowUsecs = dateToUsecs (get-date)
 
 $runningTasks = 0
 
+$now = Get-Date
+$nowUsecs = dateToUsecs $now
+$daysBackUsecs = dateToUsecs $now.AddDays(-$daysBack)
+
 foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true").protectionGroups | Sort-Object -Property name){
     $jobId = $job.id
     $jobName = $job.name
     "Getting tasks for $jobName"
-    $runs = api get -v2 "data-protect/protection-groups/$jobId/runs?numRuns=$numRuns&includeTenants=true&includeObjectDetails=false"
-    foreach($run in $runs.runs){
-        $runId = $run.id
-        $startTimeUsecs = $run.localBackupInfo.startTimeUsecs
-        foreach($archivalInfo in $run.archivalInfo.archivalTargetResults){
-            $taskId = $archivalInfo.archivalTaskId
-            $status = $archivalInfo.status
-            if($status -notin $finishedStates){
-                $cancelling = ''
-                if($cancelQueued -and $status -eq 'Accepted'){
-                    $cancelling = '(Cancelling)'
-                }
-                if($cancelAll){
-                    $cancelling = '(Cancelling)'
-                }
-                "  $status $(usecsToDate $startTimeUsecs) $cancelling"
-                if($cancelling -ne ''){
-                    $cancelParams = @{
-                        "archivalTaskId" = @(
-                              $taskId
-                        )
+    $endUsecs = dateToUsecs (Get-Date)
+    while($True){
+        if($endUsecs -le $daysBackUsecs){
+            break
+        }
+        $runs = api get -v2 "data-protect/protection-groups/$jobId/runs?endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=false"
+        if($runs.runs.Count -gt 0){
+            $endUsecs = $runs.runs[-1].localBackupInfo.startTimeUsecs - 1
+        }else{
+            break
+        }
+        foreach($run in $runs.runs){
+            $runId = $run.id
+            $startTimeUsecs = $run.localBackupInfo.startTimeUsecs
+            foreach($archivalInfo in $run.archivalInfo.archivalTargetResults){
+                $taskId = $archivalInfo.archivalTaskId
+                $status = $archivalInfo.status
+                if($status -notin $finishedStates){
+                    $cancelling = ''
+                    if($cancelQueued -and $status -eq 'Accepted'){
+                        $cancelling = '(Cancelling)'
                     }
-                    $null = api post -v2 "data-protect/protection-groups/$jobId/runs/$runId/cancel" $cancelParams
+                    if($cancelAll){
+                        $cancelling = '(Cancelling)'
+                    }
+                    "  $status $(usecsToDate $startTimeUsecs) $cancelling"
+                    if($cancelling -ne ''){
+                        $cancelParams = @{
+                            "archivalTaskId" = @(
+                                  $taskId
+                            )
+                        }
+                        $null = api post -v2 "data-protect/protection-groups/$jobId/runs/$runId/cancel" $cancelParams
+                    }
                 }
             }
         }
-    }
+    } 
 }
