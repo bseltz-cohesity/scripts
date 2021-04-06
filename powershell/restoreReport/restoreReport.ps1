@@ -10,10 +10,10 @@ param (
     [Parameter()][string]$endDate = '',
     [Parameter()][switch]$lastCalendarMonth,
     [Parameter()][int]$lastXDays = 0,
-    [Parameter(Mandatory = $True)][string]$smtpServer, #outbound smtp server '192.168.1.95'
+    [Parameter()][string]$smtpServer, #outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, #outbound smtp port
-    [Parameter(Mandatory = $True)][array]$sendTo, #send to address
-    [Parameter(Mandatory = $True)][string]$sendFrom #send from address
+    [Parameter()][array]$sendTo, #send to address
+    [Parameter()][string]$sendFrom #send from address
 )
 
 ### source the cohesity-api helper code
@@ -24,7 +24,6 @@ apiauth -vip $vip -username $username -domain $domain
 
 ### determine start and end dates
 $today = Get-Date
-
 if($startDate -ne '' -and $endDate -ne ''){
     $uStart = dateToUsecs $startDate
     $uEnd = dateToUsecs $endDate
@@ -45,6 +44,11 @@ $end = (usecsToDate $uEnd).ToString('yyyy-MM-dd')
 $title = "Restore Report ($start - $end)"
 
 $date = (get-date).ToString()
+
+$now = Get-Date -UFormat "%F"
+$csvFile = "restoreReport-$now.csv"
+
+"Date,Task,Object,Type,Target,Status,Duration (Min),User" | Out-File $csvFile
 
 $html = '<html>
 <head>
@@ -163,39 +167,18 @@ $html += '</span>
         <th>Type</th>
         <th>Target</th>
         <th>Status</th>
+        <th>Duration (Min)</th>
         <th>User</th>
       </tr>'
 
-$entityType=@("", 
-              "VMware", 
-              "HyperV", 
-              "SQL", 
-              "View", 
-              "Puppeteer", 
-              "Physical", 
-              "Pure", 
-              "Azure", 
-              "Netapp", 
-              "Agent", 
-              "GenericNas", 
-              "Acropolis", 
-              "PhysicalFiles", 
-              "Isilon", 
-              "KVM", 
-              "AWS", 
-              "Exchange", 
-              "HyperVVSS", 
-              "Oracle", 
-              "GCP", 
-              "FlashBlade", 
-              "AWSNative", 
-              "VCD", 
-              "O365", 
-              "O365Outlook", 
-              "HyperFlex", 
-              "GCPNative",
-              "",
-              "Active Directory")
+$entityType=@('Unknown', 'VMware', 'HyperV', 'SQL', 'View', 'Puppeteer',
+              'Physical', 'Pure', 'Azure', 'Netapp', 'Agent', 'GenericNas',
+              'Acropolis', 'PhysicalFiles', 'Isilon', 'KVM', 'AWS', 'Exchange',
+              'HyperVVSS', 'Oracle', 'GCP', 'FlashBlade', 'AWSNative', 'VCD',
+              'O365', 'O365Outlook', 'HyperFlex', 'GCPNative', 'AzureNative', 
+              'AD', 'AWSSnapshotManager', 'GPFS', 'RDSSnapshotManager', 'Kubernetes',
+              'Nimble', 'AzureSnapshotManager', 'Elastifile', 'Cassandra', 'MongoDB',
+              'HBase', 'Hive', 'Hdfs', 'Couchbase', 'Unknown', 'Unknown', 'Unknown')
 
 $restores = api get "/restoretasks?_includeTenantInfo=true&endTimeUsecs=$uEnd&restoreTypes=kCloneView&restoreTypes=kConvertAndDeployVMs&restoreTypes=kCloneApp&restoreTypes=kCloneVMs&restoreTypes=kDeployVMs&restoreTypes=kMountFileVolume&restoreTypes=kMountVolumes&restoreTypes=kSystem&restoreTypes=kRecoverApp&restoreTypes=kRecoverSanVolume&restoreTypes=kRecoverVMs&restoreTypes=kRestoreFiles&restoreTypes=kRecoverVolumes&restoreTypes=kDownloadFiles&restoreTypes=kRecoverEmails&restoreTypes=kRecoverDisks&startTimeUsecs=$uStart&targetType=kLocal"
 
@@ -204,9 +187,15 @@ foreach ($restore in $restores){
     $taskName = $restore.restoreTask.performRestoreTaskState.base.name
     $status = ($restore.restoreTask.performRestoreTaskState.base.publicStatus).Substring(1)
     $startTime = usecsToDate $restore.restoreTask.performRestoreTaskState.base.startTimeUsecs
+    $duration = '-'
+    if($restore.restoreTask.performRestoreTaskState.base.PSObject.properties['endTimeUsecs']){
+        $endTime = usecsToDate $restore.restoreTask.performRestoreTaskState.base.endTimeUsecs
+        $duration = ($endTime - $startTime).Minutes
+    }
     $link = "https://$vip/protection/recovery/detail/local/$taskId/"
     if($restore.restoreTask.performRestoreTaskState.PSObject.properties['objects']){
         foreach ($object in $restore.restoreTask.performRestoreTaskState.objects){
+
             $objectType = $entityType[$object.entity.type]
             $targetObject = $objectName = $object.entity.displayName
             # vmware prefix/suffix
@@ -231,8 +220,10 @@ foreach ($restore in $restores){
             <td>$objectType</td>
             <td>$targetObject</td>
             <td>$status</td>
+            <td>$duration</td>
             <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
             </tr>"
+            "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
         }
     }elseif($restore.restoreTask.performRestoreTaskState.PSObject.properties['restoreAppTaskState']){
         $targetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
@@ -268,8 +259,10 @@ foreach ($restore in $restores){
             <td>$objectType</td>
             <td>$targetObject</td>
             <td>$status</td>
+            <td>$duration</td>
             <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
             </tr>"
+            "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
         }
     }else{
         "***************more types****************"
@@ -281,11 +274,16 @@ $html += "</table>
 </body>
 </html>"
 
-$html | out-file restoreReport.html
+$html | out-file "restoreReport-$($now).html"
 
-write-host "sending report to $([string]::Join(", ", $sendTo))"
+"Saving output to restoreReport-$now.html and restoreReport-$now.csv"
 
-### send email report
-foreach($toaddr in $sendTo){
-    Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject $title -BodyAsHtml $html -WarningAction SilentlyContinue
+if($smtpServer -and $sendFrom -and $sendTo){
+    write-host "sending report to $([string]::Join(", ", $sendTo))"
+
+    ### send email report
+    foreach($toaddr in $sendTo){
+        Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject $title -BodyAsHtml $html -WarningAction SilentlyContinue
+    }
 }
+
