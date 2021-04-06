@@ -12,7 +12,8 @@ param (
     [Parameter()][string]$IfExpiringAfter = -1, # do not archve if the snapshot is going to expire within x days
     [Parameter()][string]$keepFor = 0, # set archive retention to x days from original backup date
     [Parameter()][switch]$replicate, # actually replicate (otherwise test run)
-    [Parameter()][int]$newerThan
+    [Parameter()][int]$newerThan,
+    [Parameter()][switch]$resync
 )
 
 ### source the cohesity-api helper code
@@ -72,10 +73,11 @@ foreach ($job in ((api get protectionJobs) | Where-Object{ $_.policyId.split(':'
                 }
             }
 
+            $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
+            $thisJobName = $run.jobName
+
             if($alreadyReplicated -eq $false){
-                $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
-                $thisJobName = $run.jobName
-    
+
                 ### calculate daysToKeep
                 $startTimeUsecs = $run.copyRun[0].runStartTimeUsecs
                 if($keepFor -gt 0){
@@ -124,6 +126,36 @@ foreach ($job in ((api get protectionJobs) | Where-Object{ $_.policyId.split(':'
                 ### Otherwise tell us that we're not archiving since the snapshot is expiring soon
                 else {
                     write-host "$runDate  $thisJobName  (expiring in $daysToKeep days. skipping...)" -ForegroundColor Gray
+                }
+            }else{
+                if($resync){
+                    ### create replication task definition
+                    $replicationTask = @{
+                        'jobRuns' = @(
+                            @{
+                                'copyRunTargets'    = @(
+                                    @{
+                                        "replicationTarget" = @{
+                                            "clusterId" = $remote.clusterId;
+                                            "clusterName" = $remote.name
+                                        };
+                                        'type'           = 'kRemote'
+                                    }
+                                );
+                                'runStartTimeUsecs' = $run.copyRun[0].runStartTimeUsecs;
+                                'jobUid'            = $run.jobUid
+                            }
+                        )
+                    }
+                    if($replicate){
+                        write-host "Resyncing $runDate  $thisJobName" -ForegroundColor Green
+                        ### execute replication task if arcvhive swaitch is set
+                        $null = api put protectionRuns $replicationTask
+                    }else{
+                        write-host "$runDate  $thisJobName  (would resync)" -ForegroundColor Green
+                    }
+                }else{
+                    write-host "$runDate  $thisJobName (already replicated)" -ForegroundColor Blue
                 }
             }
         }

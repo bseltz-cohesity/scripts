@@ -62,3 +62,4 @@ Then, if you're happy with the list of snapshots that will be replicated, run th
 * -newerThan: (optional) only replicate if newer than X days
 * -IfExpiringAfter: (optional) only replicate if there are X or more days left before expiration
 * -replicate: actually replicate (otherwise only a test run)
+* -resync: re-replicate to same target
