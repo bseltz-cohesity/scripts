@@ -45,7 +45,7 @@ $title = "Restore Report ($start - $end)"
 
 $date = (get-date).ToString()
 
-$now = Get-Date -UFormat "%F"
+$now = (Get-Date).ToString("yyyy-MM-dd")
 $csvFile = "restoreReport-$now.csv"
 
 "Date,Task,Object,Type,Target,Status,Duration (Min),User" | Out-File $csvFile
@@ -190,7 +190,7 @@ foreach ($restore in $restores){
     $duration = '-'
     if($restore.restoreTask.performRestoreTaskState.base.PSObject.properties['endTimeUsecs']){
         $endTime = usecsToDate $restore.restoreTask.performRestoreTaskState.base.endTimeUsecs
-        $duration = ($endTime - $startTime).Minutes
+        $duration = [math]::Round(($endTime - $startTime).TotalMinutes)
     }
     $link = "https://$vip/protection/recovery/detail/local/$taskId/"
     if($restore.restoreTask.performRestoreTaskState.PSObject.properties['objects']){
