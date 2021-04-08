@@ -61,6 +61,7 @@ To specify a source instance, include the instance name in the sourceDB name, li
 * -latest: Replay the logs to the latest point in time available
 * -wait: Wait for the restore to complete and report end status (e.g. kSuccess)
 * -overwrite: Overwrites an existing database (default is no overwrite)
+* -keepCdc: Keep change data capture during restore (default is false)
 * -noRecovery: Restore the DB with NORECOVER option (default is to recover)
 * -resume: Resume recovery of previously restored database (left in NORECOVERY mode)
 * -progress: display percent complete
