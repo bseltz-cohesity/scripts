@@ -40,8 +40,8 @@ if($useApiKey){
 }
 
 function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null){
-    # $thisDirPath = [System.Web.HttpUtility]::UrlEncode($dirPath)
-    $thisDirPath = $dirPath
+    $thisDirPath = [System.Web.HttpUtility]::UrlEncode($dirPath)
+    # $thisDirPath = $dirPath
     if($null -ne $volumeName){
         $dirList = api get "/vm/directoryList?$instance&dirPath=$thisDirPath&statFileEntries=false&volumeInfoCookie=$volumeInfoCookie&volumeName=$volumeName"
     }else{
@@ -80,8 +80,8 @@ function showFiles($doc, $version){
         if($volumeList.PSObject.Properties['volumeInfos']){
             $volumeInfoCookie = $volumeList.volumeInfoCookie
             foreach($volume in $volumeList.volumeInfos | Sort-Object -Property name){
-                # $volumeName = [System.Web.HttpUtility]::UrlEncode($volume.name)
-                $volumeName = $volume.name
+                $volumeName = [System.Web.HttpUtility]::UrlEncode($volume.name)
+                # $volumeName = $volume.name
                 listdir $startPath $instance $volumeInfoCookie $volumeName
             }
         }
