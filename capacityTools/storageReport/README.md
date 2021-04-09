@@ -38,6 +38,7 @@ Place the files in a folder together and run the script like so:
 * -vip: name or IP of Cohesity cluster
 * -username: name of user to connect to Cohesity
 * -domain: your AD domain (defaults to local)
+* -unit: TiB, GiB, MiB or KiB
 * -smtpServer: SMTP gateway to forward email through
 * -smtpPort: SMTP port to use (default is 25)
 * -sendTo: email addresses to send report to (comma separated)
