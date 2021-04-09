@@ -184,7 +184,7 @@ function processStats($stats, $name, $environment, $location){
         $dataInUnits = toUnits $dataIn
 
         Write-Host ("{0,30}: {1,11:f2} {2}" -f $name, $consumption, $unit)
-        "{0},{1},{2},{3},{4},{5},{6},{7},{8}" -f $name,
+        "{0},{1},""{2}"",""{3}"",""{4}"",""{5}"",{6},{7},{8}" -f $name,
                                                  $environment,
                                                  $location,
                                                  $logical,
