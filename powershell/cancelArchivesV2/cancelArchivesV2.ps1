@@ -4,6 +4,7 @@ param (
    [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
    [Parameter()][string]$domain = 'local', #local or AD domain
+   [Parameter()][string]$jobName,  #optional jobname filter
    [Parameter()][switch]$cancelQueued,
    [Parameter()][switch]$cancelAll,
    [Parameter()][int]$daysBack = 31
@@ -35,10 +36,15 @@ $now = Get-Date
 $nowUsecs = dateToUsecs $now
 $daysBackUsecs = dateToUsecs $now.AddDays(-$daysBack)
 
-foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true").protectionGroups | Sort-Object -Property name){
+$jobs = (api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true").protectionGroups | Sort-Object -Property name
+if($jobName){
+    $jobs = $jobs | Where-Object name -eq $jobName
+}
+
+foreach($job in $jobs){
     $jobId = $job.id
-    $jobName = $job.name
-    "Getting tasks for $jobName"
+    $thisJobName = $job.name
+    "Getting tasks for $thisJobName"
     $endUsecs = dateToUsecs (Get-Date)
     while($True){
         if($endUsecs -le $daysBackUsecs){
@@ -68,7 +74,7 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&isA
                     if($cancelling -ne ''){
                         $cancelParams = @{
                             "archivalTaskId" = @(
-                                  $taskId
+                                    $taskId
                             )
                         }
                         $null = api post -v2 "data-protect/protection-groups/$jobId/runs/$runId/cancel" $cancelParams
@@ -77,4 +83,5 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&isA
             }
         }
     } 
+
 }

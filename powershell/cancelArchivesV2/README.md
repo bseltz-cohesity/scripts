@@ -33,6 +33,7 @@ Place both files in a folder together and run the main script like so:
 * -vip: the Cohesity cluster to connect to
 * -username: the cohesity user to login with
 * -domain: (optional) domain of the Cohesity user (defaults to local)
+* -jobName: (optional) focus on just one job
 * -cancelAll: (optional) cancel all archive tasks
 * -cancelQueued: (optional) cancel archive tasks that haven't moved any data yet
 * -daysBack: (optional) number of days back to search (default is 31)
