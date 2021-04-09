@@ -3,6 +3,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vip, # Cohesity cluster to connect to
     [Parameter(Mandatory = $True)][string]$username, #cohesity username
     [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][ValidateSet('KiB','MiB','GiB','TiB')][string]$unit = 'MiB',
     [Parameter()][string]$smtpServer, # outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, # outbound smtp port
     [Parameter()][array]$sendTo, # send to address
@@ -14,6 +15,11 @@ param (
 
 # authenticate
 apiauth -vip $vip -username $username -domain $domain
+
+$conversion = @{'Kib' = 1024; 'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
+function toUnits($val){
+    return "{0:n2}" -f ($val/($conversion[$unit]))
+}
 
 $cluster = api get cluster
 
@@ -147,12 +153,12 @@ $html += '</span>
     <th>Reduction</th>
 </tr>'
 
-"Job/View Name,Environment,Local/Replicated,GiB Logical,GiB Ingested,GiB Consumed,Dedup Ratio,Compression,Reduction" | Out-File -FilePath $csvFile
+"Job/View Name,Environment,Local/Replicated,$unit Logical,$unit Ingested,$unit Consumed,Dedup Ratio,Compression,Reduction" | Out-File -FilePath $csvFile
 
 $jobs = api get protectionJobs?allUnderHierarchy=true
 
 function processStats($stats, $name, $environment, $location){
-
+        # write-host ($stats.statsList[0].stats | ConvertTo-Json)
         $logicalBytes = $stats.statsList[0].stats.totalLogicalUsageBytes
         $dataIn = $stats.statsList[0].stats.dataInBytes
         $dataInAfterDedup = $stats.statsList[0].stats.dataInBytesAfterDedup
@@ -170,15 +176,19 @@ function processStats($stats, $name, $environment, $location){
         }else{
             $reduction = 0
         }
-        $consumption = [math]::Round($consumedBytes / (1024 * 1024 * 1024), 2)
-        $logical = [math]::Round($logicalBytes / (1024 * 1024 * 1024), 2)
-        $dataInGiB = [math]::Round($dataIn / (1024 * 1024 * 1024), 2)
-        Write-Host ("{0,30}: {1,11:f2} {2}" -f $name, $consumption, 'GiB')
+        # $consumption = [math]::Round($consumedBytes / (1024 * 1024 * 1024), 2)
+        # $logical = [math]::Round($logicalBytes / (1024 * 1024 * 1024), 2)
+        # $dataInGiB = [math]::Round($dataIn / (1024 * 1024 * 1024), 2)
+        $consumption = toUnits $consumedBytes
+        $logical = toUnits $logicalBytes
+        $dataInUnits = toUnits $dataIn
+
+        Write-Host ("{0,30}: {1,11:f2} {2}" -f $name, $consumption, $unit)
         "{0},{1},{2},{3},{4},{5},{6},{7},{8}" -f $name,
                                                  $environment,
                                                  $location,
                                                  $logical,
-                                                 $dataInGiB,
+                                                 $dataInUnits,
                                                  $consumption,
                                                  $dedup,
                                                  $compression,
