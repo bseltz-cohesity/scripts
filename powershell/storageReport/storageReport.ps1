@@ -183,7 +183,8 @@ function processStats($stats, $name, $environment, $location){
         $logical = toUnits $logicalBytes
         $dataInUnits = toUnits $dataIn
 
-        Write-Host ("{0,30}: {1,11:f2} {2}" -f $name, $consumption, $unit)
+        Write-Host ("{0,35}: {1,11:f2} {2}" -f $name, $consumption, $unit)
+
         "{0},{1},""{2}"",""{3}"",""{4}"",""{5}"",{6},{7},{8}" -f $name,
                                                  $environment,
                                                  $location,
@@ -229,12 +230,14 @@ foreach($job in $jobs | Sort-Object -Property name){
     }
 }
 
-Write-Host "  Unprotected Views..."
+Write-Host "  Views..."
 $views = api get views?allUnderHierarchy=true
-foreach($view in $views.views | Sort-Object -Property name | Where-Object viewProtection -eq $null){
-    $stats = api get "stats/consumers?consumerType=kViews&consumerIdList=$($view.viewId)"
-    if($stats.statsList){
-        $html += processStats $stats $view.name 'View' 'Local'
+foreach($view in $views.views | Sort-Object -Property name){
+    if($cluster.clusterSoftwareVersion -le '6.5.1b' -or $null -eq $view.viewProtection){
+        $stats = api get "stats/consumers?consumerType=kViews&consumerIdList=$($view.viewId)"
+        if($stats.statsList){
+            $html += processStats $stats $view.name 'View' 'Local'
+        }
     }
 }
 
