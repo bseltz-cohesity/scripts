@@ -29,8 +29,8 @@ csvfileName = 'ViewFileCounts-%s-%s.csv' % (cluster['name'], datestring)
 csv = codecs.open(csvfileName, 'w', 'utf-8')
 csv.write("View Name,Folders,Files\n")
 
-endMsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S")) / 1000
-startMsecs = endMsecs - 172800000  # 48 hours ago
+endMsecs = int(dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S")) / 1000)
+startMsecs = int(endMsecs - 172800000)  # 48 hours ago
 
 views = api('get', 'views')
 
