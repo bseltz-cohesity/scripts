@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2020.10.21
+# version 2021.04.14
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -197,27 +197,28 @@ if objectnames is not None:
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning']
 runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
 
-if len(runs) > 0 and metadatafile is None:
+if len(runs) > 0:
     newRunId = lastRunId = runs[0]['backupRun']['jobRunId']
 
     # wait for existing job run to finish
     status = 'unknown'
     reportedwaiting = False
-    while status not in finishedStates:
-        try:
-            runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
-            status = runs[0]['backupRun']['status']
-            if status not in finishedStates:
-                if reportedwaiting is False:
-                    if abortIfRunning:
-                        print('Job is already running')
-                        exit()
-                    print('Waiting for existing job run to finish...')
-                    reportedwaiting = True
-                sleep(5)
-        except Exception:
-            print("got an error...")
-            sleep(2)
+    if metadatafile is None:
+        while status not in finishedStates:
+            try:
+                runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
+                status = runs[0]['backupRun']['status']
+                if status not in finishedStates:
+                    if reportedwaiting is False:
+                        if abortIfRunning:
+                            print('Job is already running')
+                            exit()
+                        print('Waiting for existing job run to finish...')
+                        reportedwaiting = True
+                    sleep(5)
+            except Exception:
+                print("got an error...")
+                sleep(2)
 else:
     newRunId = lastRunId = 1
 
@@ -324,10 +325,17 @@ if wait is True:
 # wait for job run to finish and report completion
 if wait is True:
     status = 'unknown'
+    lastProgress = -1
     while status not in finishedStates:
         try:
             runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
-            status = runs[0]['backupRun']['status']
+            run = [r for r in runs if r['backupRun']['jobRunId'] == newRunId]
+            status = run[0]['backupRun']['status']
+            progressMonitor = api('get', '/progressMonitors?taskPathVec=backup_%s_1&includeFinishedTasks=true&excludeSubTasks=false' % newRunId)
+            percentComplete = int(round(progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']))
+            if percentComplete > lastProgress:
+                print('%s%% completed' % percentComplete)
+                lastProgress = percentComplete
             if status not in finishedStates:
                 sleep(5)
         except Exception:
@@ -337,13 +345,13 @@ if wait is True:
                 apiauth(vip, username, domain, quiet=True)
             except Exception:
                 sleep(2)
-    print("Job finished with status: %s" % runs[0]['backupRun']['status'])
-    if runs[0]['backupRun']['status'] == 'kFailure':
-        print('Error: %s' % runs[0]['backupRun']['error'])
-    if runs[0]['backupRun']['status'] == 'kWarning':
-        print('Warning: %s' % runs[0]['backupRun']['warnings'])
+    print("Job finished with status: %s" % run[0]['backupRun']['status'])
+    if run[0]['backupRun']['status'] == 'kFailure':
+        print('Error: %s' % run[0]['backupRun']['error'])
+    if run[0]['backupRun']['status'] == 'kWarning':
+        print('Warning: %s' % run[0]['backupRun']['warnings'])
     runURL = "https://%s/protection/job/%s/run/%s/%s/protection" % \
-        (vip, runs[0]['jobId'], runs[0]['backupRun']['jobRunId'], runs[0]['backupRun']['stats']['startTimeUsecs'])
+        (vip, run[0]['jobId'], run[0]['backupRun']['jobRunId'], run[0]['backupRun']['stats']['startTimeUsecs'])
     print("Run URL: %s" % runURL)
 
 # disable job
