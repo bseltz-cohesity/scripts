@@ -24,7 +24,7 @@ $finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning')
 $cluster = api get cluster
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "MonitorArchives-$($cluster.name)-$dateString.csv"
-"JobName,RunDate,Status,$unit Transferred,StartTime,EndTime,Pct Complete,Duration" | Out-File -FilePath $outfileName
+"JobName,RunDate,Status,Target,$unit Transferred,StartTime,EndTime,Pct Complete,Duration" | Out-File -FilePath $outfileName
 
 $nowUsecs = dateToUsecs (get-date)
 
@@ -107,7 +107,7 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&isA
                     $endTime = '-'
                 }
 
-                "$jobName,$(usecsToDate $runStartTimeUsecs),$status,""$(toUnits $bytesTransferred)"",$startTime,$endTime,$pctComplete,$duration" | Out-File -FilePath $outfileName -Append
+                "$jobName,$(usecsToDate $runStartTimeUsecs),$status,$targetName,""$(toUnits $bytesTransferred)"",$startTime,$endTime,$pctComplete,$duration" | Out-File -FilePath $outfileName -Append
             }
         }
     } 
