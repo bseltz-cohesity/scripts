@@ -143,6 +143,7 @@ $html += '</span>
 <table>
 <tr>
     <th>Job/View Name</th>
+    <th>Tenant</th>
     <th>Environment</th>
     <th>Local/Replicated</th>
     <th>GiB Logical</th>
@@ -176,9 +177,6 @@ function processStats($stats, $name, $environment, $location, $tenant){
         }else{
             $reduction = 0
         }
-        # $consumption = [math]::Round($consumedBytes / (1024 * 1024 * 1024), 2)
-        # $logical = [math]::Round($logicalBytes / (1024 * 1024 * 1024), 2)
-        # $dataInGiB = [math]::Round($dataIn / (1024 * 1024 * 1024), 2)
         $consumption = toUnits $consumedBytes
         $logical = toUnits $logicalBytes
         $dataInUnits = toUnits $dataIn
@@ -204,11 +202,13 @@ function processStats($stats, $name, $environment, $location, $tenant){
         <td>{6}</td>
         <td>{7}</td>
         <td>{8}</td>
+        <td>{9}</td>
         </tr>" -f $name,
+                  $tenant,
                   $environment,
                   $location,
                   $logical,
-                  $dataInGiB,
+                  $dataInUnits,
                   $consumption,
                   $dedup,
                   $compression,
