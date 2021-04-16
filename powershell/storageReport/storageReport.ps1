@@ -153,11 +153,11 @@ $html += '</span>
     <th>Reduction</th>
 </tr>'
 
-"Job/View Name,Environment,Local/Replicated,$unit Logical,$unit Ingested,$unit Consumed,Dedup Ratio,Compression,Reduction" | Out-File -FilePath $csvFile
+"Job/View Name,Tenant,Environment,Local/Replicated,$unit Logical,$unit Ingested,$unit Consumed,Dedup Ratio,Compression,Reduction" | Out-File -FilePath $csvFile
 
 $jobs = api get protectionJobs?allUnderHierarchy=true
 
-function processStats($stats, $name, $environment, $location){
+function processStats($stats, $name, $environment, $location, $tenant){
         # write-host ($stats.statsList[0].stats | ConvertTo-Json)
         $logicalBytes = $stats.statsList[0].stats.totalLogicalUsageBytes
         $dataIn = $stats.statsList[0].stats.dataInBytes
@@ -185,7 +185,8 @@ function processStats($stats, $name, $environment, $location){
 
         Write-Host ("{0,35}: {1,11:f2} {2}" -f $name, $consumption, $unit)
 
-        "{0},{1},""{2}"",""{3}"",""{4}"",""{5}"",{6},{7},{8}" -f $name,
+        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}""" -f $name,
+                                                 $tenant,
                                                  $environment,
                                                  $location,
                                                  $logical,
@@ -218,6 +219,11 @@ function processStats($stats, $name, $environment, $location){
 
 Write-Host "  Local ProtectionJobs..."
 foreach($job in $jobs | Sort-Object -Property name){
+    if($job.PSObject.Properties['tenantId']){
+        $tenant = $job.tenantId.Substring(0, $job.tenantId.length - 1)
+    }else{
+        $tenant = ''
+    }
     if($job.policyId.split(':')[0] -eq $cluster.id){
         if($cluster.clusterSoftwareVersion -gt '6.5.1b' -and $job.environment -eq 'kView'){
             $stats = api get "stats/consumers?consumerType=kViewProtectionRuns&consumerIdList=$($job.id)"
@@ -225,7 +231,7 @@ foreach($job in $jobs | Sort-Object -Property name){
             $stats = api get "stats/consumers?consumerType=kProtectionRuns&consumerIdList=$($job.id)"
         }
         if($stats.statsList){
-            $html += processStats $stats $job.name $job.environment.subString(1) 'Local'
+            $html += processStats $stats $job.name $job.environment.subString(1) 'Local' $tenant
         }
     }
 }
@@ -233,16 +239,26 @@ foreach($job in $jobs | Sort-Object -Property name){
 Write-Host "  Views..."
 $views = api get views?allUnderHierarchy=true
 foreach($view in $views.views | Sort-Object -Property name){
+    if($view.PSObject.Properties['tenantId']){
+        $tenant = $view.tenantId.Substring(0, $view.tenantId.length - 1)
+    }else{
+        $tenant = ''
+    }
     if($cluster.clusterSoftwareVersion -le '6.5.1b' -or $null -eq $view.viewProtection){
         $stats = api get "stats/consumers?consumerType=kViews&consumerIdList=$($view.viewId)"
         if($stats.statsList){
-            $html += processStats $stats $view.name 'View' 'Local'
+            $html += processStats $stats $view.name 'View' 'Local' $tenant
         }
     }
 }
 
 Write-Host "  Replicated Jobs..."
 foreach($job in $jobs | Sort-Object -Property name){
+    if($job.PSObject.Properties['tenantId']){
+        $tenant = $job.tenantId.Substring(0, $job.tenantId.length - 1)
+    }else{
+        $tenant = ''
+    }
     if($job.policyId.split(':')[0] -ne $cluster.id){
         if($cluster.clusterSoftwareVersion -gt '6.5.1b' -and $job.environment -eq 'kView'){
             $stats = api get "stats/consumers?consumerType=kViewProtectionRuns&consumerIdList=$($job.id)"
@@ -250,7 +266,7 @@ foreach($job in $jobs | Sort-Object -Property name){
             $stats = api get "stats/consumers?consumerType=kReplicationRuns&consumerIdList=$($job.id)"
         }
         if($stats.statsList){
-            $html += processStats $stats $job.name $job.environment.subString(1) 'Replicated'
+            $html += processStats $stats $job.name $job.environment.subString(1) 'Replicated' $tenant
         }
     }
 }

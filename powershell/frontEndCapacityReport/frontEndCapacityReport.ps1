@@ -38,7 +38,7 @@ function toUnits($val){
     return "{0:n2}" -f ($val/($conversion[$unit]))
 }
 
-"Job Name,Object Name,Object Type,Logical Size ($unit),Unique Size ($unit)" | Out-File -FilePath $outfileName
+"Job Name,Tenant,Object Name,Object Type,Logical Size ($unit),Unique Size ($unit)" | Out-File -FilePath $outfileName
 
 $uniqueBytesTable = @{}
 $entityLogical = @{}
@@ -56,7 +56,7 @@ foreach($server in $serverReport | Sort-Object -Property jobName, name){
         }
     }
 }
-$jobs = (api get -v2 "data-protect/protection-groups?isDeleted=false&&includeTenants=true").protectionGroups | Sort-Object -Property name
+$jobs = (api get -v2 "data-protect/protection-groups?isDeleted=false&includeTenants=true").protectionGroups | Sort-Object -Property name
 
 if($localOnly){
     $jobs = $jobs | Where-Object isActive -eq $True
@@ -66,13 +66,22 @@ if($localOnly){
 foreach($job in $jobs){
     $jobId = $job.id
     $jobName = $job.name
+    if($job.PSObject.Properties['permissions']){
+        $tenant = $job.permissions[0].name
+    }else{
+        $tenant = ''
+    }
     $jobType = $job.environment.Substring(1)
     $runs = api get -v2 "data-protect/protection-groups/$jobId/runs?includeTenants=true&includeObjectDetails=true&numRuns=5"
 
     foreach($run in $runs.runs){
         foreach($server in ($run.objects | Sort-Object -Property {$_.object.name})){
             $serverName = $server.object.name
-            $logicalBytes = $server.localSnapshotInfo.snapshotInfo.stats.logicalSizeBytes
+            if($server.PSObject.Properties['originalBackupInfo']){
+                $logicalBytes = $server.originalBackupInfo.snapshotInfo.stats.logicalSizeBytes
+            }else{
+                $logicalBytes = $server.localSnapshotInfo.snapshotInfo.stats.logicalSizeBytes
+            }
             if($serverName -in $uniqueBytesTable.Keys){
                 $uniqueBytes = $uniqueBytesTable[$serverName]
             }else{
@@ -80,7 +89,7 @@ foreach($job in $jobs){
             }
             if($serverName -notin $entityLogical.Keys){
                 $entityLogical[$serverName] = $logicalBytes
-                "{0},{1},{2},""{3}"",""{4}""" -f $jobName, $serverName, $jobType, (toUnits $logicalBytes), (toUnits $uniqueBytes) | Tee-Object -FilePath $outfileName -Append
+                """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}""" -f $jobName, $tenant, $serverName, $jobType, (toUnits $logicalBytes), (toUnits $uniqueBytes) | Tee-Object -FilePath $outfileName -Append
             }
         }
     }
@@ -90,6 +99,11 @@ foreach($job in $jobs){
 $views = api get views
 foreach($view in $views.views | Sort-Object -Property name){
     $viewName = $view.name
+    if($view.PSObject.Properties['tenantId']){
+        $tenant = $view.tenantId.Substring(0, $view.tenantId.length - 1)
+    }else{
+        $tenant = ''
+    }
     $logicalBytes = $view.logicalUsageBytes
     if($view.PSObject.Properties['viewProtection']){
         $jobName = $view.viewProtection.protectionJobs[0].jobName
@@ -98,7 +112,7 @@ foreach($view in $views.views | Sort-Object -Property name){
     }
     if($viewName -notin $entityLogical.Keys){
         $entityLogical[$viewName] = $logicalBytes
-        "{0},{1},{2},""{3}"",""{4}""" -f $jobName, $viewName, 'View', (toUnits $logicalBytes), (toUnits $logicalBytes) | Tee-Object -FilePath $outfileName -Append
+        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"""-f $jobName, $tenant, $viewName, 'View', (toUnits $logicalBytes), (toUnits $logicalBytes) | Tee-Object -FilePath $outfileName -Append
     }
 }
 
