@@ -284,7 +284,7 @@ foreach($objName in ($errorCount.Keys | Sort-Object)){
     }
 }
 
-$percentFailed = (($totalObjects-$totalFailedObjects)/$totalObjects).ToString("P")
+$percentFailed = (($totalObjects-($totalFailedObjects / $failureCount))/$totalObjects).ToString("P")
 
 $html += '</table>
 <p style="margin-top: 15px; margin-bottom: 15px;"><span style="font-size:1em;">Number of errors reported: ' + $totalFailedObjects + '</span></p>               
