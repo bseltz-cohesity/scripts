@@ -70,4 +70,5 @@ To choose the backup at or after the specified file date:
 * -e, --end: show versions before date
 * -r, --runid: use specific run ID
 * -f, --filedate: (optional) date to inspect (next backup after date will be inspected)
-* -p, ---startpath: (optional) start listing files at path (default is /)
+* -p, --startpath: (optional) start listing files at path (default is /)
+* -n, --noindex: (optional) if omitted, indexer will be used
