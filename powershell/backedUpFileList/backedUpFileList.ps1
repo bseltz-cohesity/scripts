@@ -1,4 +1,4 @@
-# version 2021.02.23
+# version 2021.04.21
 # usage: ./backedUpFileList.ps1 -vip mycluster \
 #                               -username myuser \
 #                               -domain mydomain.net \
@@ -24,8 +24,15 @@ param (
     [Parameter()][datetime]$end,
     [Parameter()][Int64]$runId,
     [Parameter()][datetime]$fileDate,
-    [Parameter()][string]$startPath = '/'
+    [Parameter()][string]$startPath = '/',
+    [Parameter()][switch]$noIndex
 )
+
+if($noIndex){
+    $useLibrarian = $False
+}else{
+    $useLibrarian = $True
+}
 
 $volumeTypes = @(1, 6)
 
@@ -41,11 +48,10 @@ if($useApiKey){
 
 function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null){
     $thisDirPath = [System.Web.HttpUtility]::UrlEncode($dirPath)
-    # $thisDirPath = $dirPath
     if($null -ne $volumeName){
-        $dirList = api get "/vm/directoryList?$instance&dirPath=$thisDirPath&statFileEntries=false&volumeInfoCookie=$volumeInfoCookie&volumeName=$volumeName"
+        $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&dirPath=$thisDirPath&statFileEntries=false&volumeInfoCookie=$volumeInfoCookie&volumeName=$volumeName"
     }else{
-        $dirList = api get "/vm/directoryList?$instance&dirPath=$thisDirPath&statFileEntries=false"
+        $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&dirPath=$thisDirPath&statFileEntries=false"
     }
     if($dirList.PSObject.Properties['entries']){
         foreach($entry in $dirList.entries | Sort-Object -Property name){
@@ -60,8 +66,8 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
 
 function showFiles($doc, $version){
     $versionDate = (usecsToDate $version.instanceId.jobStartTimeUsecs).ToString('yyyy-MM-dd_hh-mm-ss')
-
-    $outputfile = $(Join-Path -Path $PSScriptRoot -ChildPath "backedUpFiles-$($version.instanceId.jobInstanceId)-$($sourceServer)-$versionDate.txt")
+    $sourceServerString = $sourceServer.Replace('\','-').Replace('/','-')
+    $outputfile = $(Join-Path -Path $PSScriptRoot -ChildPath "backedUpFiles-$($version.instanceId.jobInstanceId)-$($sourceServerString)-$versionDate.txt")
     $null = Remove-Item -Path $outputfile -Force -ErrorAction SilentlyContinue
     
     $instance = "attemptNum={0}&clusterId={1}&clusterIncarnationId={2}&entityId={3}&jobId={4}&jobInstanceId={5}&jobStartTimeUsecs={6}&jobUidObjectId={7}" -f
@@ -91,7 +97,7 @@ function showFiles($doc, $version){
     
 }
 
-$searchResults = api get "/searchvms?entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAWSSnapshotManager&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kFlashBlade&entityTypes=kGCP&entityTypes=kGenericNas&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kIsilon&entityTypes=kKVM&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware&vmName=$sourceserver"
+$searchResults = api get "/searchvms?entityTypes=kView&entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAWSSnapshotManager&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kFlashBlade&entityTypes=kGCP&entityTypes=kGenericNas&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kIsilon&entityTypes=kKVM&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware&vmName=$sourceserver"
 $searchResults = $searchResults.vms | Where-Object {$_.vmDocument.objectName -eq $sourceServer}
 
 if(!$searchResults){

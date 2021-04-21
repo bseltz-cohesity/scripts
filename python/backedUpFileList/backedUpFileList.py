@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2021.02.23
+# version 2021.04.21
 
 # usage: ./backedUpFileList.py -v mycluster \
 #                              -u myuser \
@@ -37,6 +37,7 @@ parser.add_argument('-e', '--end', type=str, default=None)            # show sna
 parser.add_argument('-r', '--runid', type=int, default=None)          # choose specific job run id
 parser.add_argument('-f', '--filedate', type=str, default=None)       # date to restore from
 parser.add_argument('-p', '--startpath', type=str, default='/')       # date to restore from
+parser.add_argument('-n', '--noindex', action='store_true')           # do not use librarian
 
 args = parser.parse_args()
 
@@ -54,6 +55,12 @@ runid = args.runid
 filedate = args.filedate
 listfiles = args.listfiles
 startpath = args.startpath
+noindex = args.noindex
+
+if noindex is True:
+    useLibrarian = False
+else:
+    useLibrarian = True
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
@@ -62,9 +69,9 @@ apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=
 def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None):
     thisDirPath = quote_plus(dirPath)
     if volumeName is not None:
-        dirList = api('get', '/vm/directoryList?%s&dirPath=%s&statFileEntries=true&volumeInfoCookie=%s&volumeName=%s' % (instance, thisDirPath, volumeInfoCookie, volumeName))
+        dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=true&dirPath=%s&volumeInfoCookie=%s&volumeName=%s' % (instance, useLibrarian, thisDirPath, volumeInfoCookie, volumeName))
     else:
-        dirList = api('get', '/vm/directoryList?%s&dirPath=%s&statFileEntries=true' % (instance, thisDirPath))
+        dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=true&dirPath=%s' % (instance, useLibrarian, thisDirPath))
     if dirList and 'entries' in dirList:
         for entry in sorted(dirList['entries'], key=lambda e: e['name']):
             if entry['type'] == 'kDirectory':
@@ -105,7 +112,7 @@ def showFiles(doc, version):
     f.close()
 
 
-search = api('get', '/searchvms?entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAWSSnapshotManager&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kFlashBlade&entityTypes=kGCP&entityTypes=kGenericNas&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kIsilon&entityTypes=kKVM&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware&vmName=%s' % sourceserver)
+search = api('get', '/searchvms?entityTypes=kView&entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAWSSnapshotManager&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kFlashBlade&entityTypes=kGCP&entityTypes=kGenericNas&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kIsilon&entityTypes=kKVM&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware&vmName=%s' % sourceserver)
 
 if 'vms' not in search:
     print('no backups found for %s' % sourceserver)
