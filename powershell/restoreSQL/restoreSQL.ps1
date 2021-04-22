@@ -1,4 +1,4 @@
-# version 2020-08-28
+# version 2021-04-22
 # usage: ./restore-SQL.ps1 -vip mycluster `
 #                          -username myusername `
 #                          -domain mydomain.net `
@@ -38,19 +38,19 @@ param (
     [Parameter()][switch]$progress,                      # display progress
     [Parameter()][switch]$helios,                        # connect via Helios
     [Parameter()][switch]$resume,                        # resume recovery of previously restored DB
-    [Parameter()][switch]$keepCdc                        # keepCDC
+    [Parameter()][switch]$keepCdc,                       # keepCDC
+    [Parameter()][switch]$showPaths,                     # show data file paths and exit
+    [Parameter()][switch]$useSourcePaths                 # use same paths from source server for target server
 )
 
 # handle alternate secondary data file locations
+$secondaryFileLocation = @()
 if($ndfFolders){
     if($ndfFolders -is [hashtable]){
-        $secondaryFileLocation = @()
         foreach ($key in $ndfFolders.Keys){
             $secondaryFileLocation += @{'filePattern' = $key; 'targetDirectory' = $ndfFolders[$key]}
         }
     }
-}else{
-    $secondaryFileLocation = @()
 }
 
 # source the cohesity-api helper code
@@ -102,6 +102,12 @@ $latestdb = ($dbresults | sort-object -property @{Expression={$_.vmDocument.vers
 if($null -eq $latestdb){
     write-host "Database $sourceInstance/$sourceDB on Server $sourceServer Not Found" -foregroundcolor yellow
     exit 1
+}
+
+
+if($showPaths){
+    $latestdb.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec | Format-Table -Property logicalName, @{l='Size (MiB)'; e={$_.sizeBytes / (1024 * 1024)}}, fullPath
+    exit
 }
 
 # identify physical or vm
@@ -257,6 +263,29 @@ if($keepCdc){
 
 # if not restoring to original server/DB
 if($targetDB -ne $sourceDB -or $targetServer -ne $sourceServer -or $differentInstance){
+    if($useSourcePaths){
+        $mdfFolderFound = $False
+        $ldfFolderFound = $False
+        foreach($datafile in $latestdb.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec){
+            $path = $datafile.fullPath.subString(0, $datafile.fullPath.LastIndexOf('\'))
+            $fileName = $datafile.fullPath.subString($datafile.fullPath.LastIndexOf('\') + 1)
+            if($datafile.type -eq 0){
+                if($mdfFolderFound -eq $False){
+                    $mdfFolder = $path
+                    $mdfFolderFound = $True
+                }else{
+                    $secondaryFileLocation += @{'filePattern' = $datafile.fullPath; 'targetDirectory' = $path}
+                }
+            }
+            if($datafile.type -eq 1){
+                if($ldfFolderFound -eq $False){
+                    $ldfFolder = $path
+                    $ldfFolderFound = $True
+                }
+            }
+        }
+    }
+
     if('' -eq $mdfFolder){
         write-host "-mdfFolder must be specified when restoring to a new database name or different target server" -ForegroundColor Yellow
         exit

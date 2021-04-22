@@ -54,6 +54,8 @@ To specify a source instance, include the instance name in the sourceDB name, li
 * -targetServer: Server name to restore to (defaults to same as sourceServer)
 * -targetDB: New database name (defaults to same as sourceDB)
 * -targetInstance: Instance name to restore to (defaults to MSSQLSERVER)
+* -showPaths: show data/log file paths and exit
+* -useSourcePaths: use same paths to restore to target server
 * -ldfFolder: Location to place the log files (defaults to same as mdfFolder)
 * -ndfFolder: Location to place the secondary files (defaults to same as ndfFolder)
 * -ndfFolders: Locations to place various ndf files (see below)
