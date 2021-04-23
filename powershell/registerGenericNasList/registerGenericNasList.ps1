@@ -13,6 +13,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
     [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
     [Parameter()][string]$domain = 'local', # local or AD domain
+    [Parameter()][string]$tenant,
     [Parameter()][array]$mountPoint, # nas path to register (comma separated)
     [Parameter()][string]$nasList, # text file of nas paths to register (one per line)
     [Parameter()][string]$smbUserName = '', # username to register smb paths
@@ -49,12 +50,22 @@ if($pathList.Length -eq 0){
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain
+apiauth -vip $vip -username $username -domain $domain -tenant $tenant
+
+$sources = api get "protectionSources/registrationInfo?includeEntityPermissionInfo=true"
 
 foreach ($nasPath in $pathList) {
     $nasPath = [string]$nasPath
-    $newSource = @{}
+    $existing = $sources.rootNodes | Where-Object {$_.rootNode.name -eq $nasPath}
 
+    if($existing){
+        $existingSource = api get "/backupsources?allUnderHierarchy=true&entityId=$($existing.rootNode.id)&onlyReturnOneLevel=true"
+        $updateParams = @{
+            'entity' = $existingSource.entityHierarchy.entity;
+            'entityInfo' = $existingSource.entityHierarchy.registeredEntityInfo.connectorParams;
+        }
+    }
+    
     if ($nasPath.Contains('\')) {
         $protocol = 2 #SMB
         if ($smbUserName.Contains('\')) {
@@ -72,11 +83,15 @@ foreach ($nasPath in $pathList) {
         if ($domainName) {
             $credentials.nasMountCredentials['domainName'] = $domainName
         }
+        if($existingSource){
+            $updateParams.entityInfo.credentials = $credentials
+        }
     }
     else {
         $protocol = 1 #NFS
     }
     
+
     $newSource = @{
         'entity'     = @{
             'type'             = 11;
@@ -92,17 +107,22 @@ foreach ($nasPath in $pathList) {
         };
         'registeredEntityParams' = @{
             'genericNasParams' = @{
-              'skipValidation' = $true
+                'skipValidation' = $true
             }
         }
     }
-    
+
     if ($protocol -eq 2) {
         $newSource.entityInfo['credentials'] = $credentials
     }
 
     if($nasPath -ne ''){
-        "Registering $nasPath"
-        $null = api post /backupsources $newSource
+        if($existing){
+            "Updating $nasPath"
+            $null = api put "/backupsources/$($existing.rootNode.id)" $updateParams
+        }else{
+            "Registering $nasPath"
+            $null = api post /backupsources $newSource
+        }
     }
 }
