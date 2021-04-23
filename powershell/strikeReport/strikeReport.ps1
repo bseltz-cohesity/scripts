@@ -6,30 +6,30 @@ param (
     [Parameter(Mandatory = $True)][string]$vip,
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
-    [Parameter(Mandatory = $True)][string]$smtpServer, #outbound smtp server '192.168.1.95'
+    [Parameter()][string]$smtpServer, #outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, #outbound smtp port
-    [Parameter(Mandatory = $True)][array]$sendTo, #send to address
-    [Parameter(Mandatory = $True)][string]$sendFrom, #send from address
+    [Parameter()][array]$sendTo, #send to address
+    [Parameter()][string]$sendFrom, #send from address
     [Parameter()][int]$days = 31,
-    [Parameter()][int]$slurp = 500,
+    [Parameter()][int]$slurp = 100,
     [Parameter()][int]$failureCount = 1
 )
 
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain
-
 # $environments = @('kUnknown', 'kVMware' , 'kHyperV' , 'kSQL' , 'kView' , 'kPuppeteer' , 'kPhysical' , 'kPure' , 'kAzure' , 'kNetapp' , 'kAgent' , 'kGenericNas' , 'kAcropolis' , 'kPhysicalFiles' , 'kIsilon' , 'kKVM' , 'kAWS' , 'kExchange' , 'kHyperVVSS' , 'kOracle' , 'kGCP' , 'kFlashBlade' , 'kAWSNative' , 'kVCD' , 'kO365' , 'kO365Outlook' , 'kHyperFlex' , 'kGCPNative', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown')
 $environments = @('env_name', 'kVMware', 'kHyperV', 'kSQL', 'kView', 'kPuppeteer', 'kPhysical', 'kPure', 'kAzure', 'kNetapp', 'kAgent', 'kGenericNas', 'kAcropolis', 'kPhysicalFiles', 'kIsilon', 'kKVM', 'kAWS', 'kExchange', 'kHyperVVSS', 'kOracle', 'kGCP', 'kFlashBlade', 'kAWSNative', 'kVCD', 'kO365', 'kO365Outlook', 'kHyperFlex', 'kGCPNative', 'kAzureNative', 'kAD', 'kAWSSnapshotManager', 'kGPFS', 'kRDSSnapshotManager', 'kKubernetes', 'kNimble', 'kAzureSnapshotManager', 'kElastifile', 'kCassandra', 'kMongoDB', 'kHBase', 'kHive', 'kHdfs', 'kCouchbase')
 
+### authenticate
+apiauth -vip $vip -username $username -domain $domain
+
 write-host "Collecting report data per job..."
 
-$jobs = api get "protectionJobs?isDeleted=false&isActive=true"
 $cluster = api get cluster
 
 $title = "Backup Strike Summary Report ($($cluster.name))"
+
 $date = (get-date).ToString()
 
 $html = '<html>
@@ -59,6 +59,7 @@ $html = '<html>
 
         td,
         th {
+            width: 3%;
             text-align: left;
             padding: 6px;
         }
@@ -152,16 +153,19 @@ $html += '</span>
 </tr>'
 
 $errorsRecorded = 0
+$totalObjects = 0
+$totalFailedObjects = 0
+
+$jobs = api get "protectionJobs?isDeleted=false&isActive=true"
 
 $errorCount = @{}
+$failureCounted = @{}
 $latestError = @{}
 $skip = @()
 $jobEntry = @{}
 $appErrors = @{}
 $objErrors = @{}
 $allObjects = @()
-$totalObjects = 0
-$totalFailedObjects = 0
 
 foreach($job in $jobs | Sort-Object -Property name){
     $objType = $job.environment
@@ -177,7 +181,7 @@ foreach($job in $jobs | Sort-Object -Property name){
             "$($job.name)"
         }
         # get all runs for the job
-        $runs = api get "/backupjobruns?id=$($job.id)&startTimeUsecs=$(timeAgo $days days)&allUnderHierarchy=true&excludeTasks=true&numRuns=99999&$($runClass)"
+        $runs = api get "/backupjobruns?id=$($job.id)&startTimeUsecs=$(timeAgo $days days)&allUnderHierarchy=true&excludeTasks=true&numRuns=9999&$($runClass)"
         $runCount = $runs.backupJobRuns.protectionRuns.count -1
         $runNum = 0
         $thisSlurp = $slurp
@@ -208,8 +212,11 @@ foreach($job in $jobs | Sort-Object -Property name){
                         $errorsRecorded += 1
                         if($objName -notin $errorCount.Keys){
                             # record most recent error
-                            $totalFailedObjects +=1
                             $errorCount[$objName] = 1
+                            if($errorCount[$objName] -ge $failureCount){
+                                $totalFailedObjects +=1
+                                $failureCounted[$objName] = 1
+                            }
                             $latestError[$objName] = $task.base.error.errorMsg
                             $appHtml = ''
                             if($task.psobject.properties['appEntityStateVec']){
@@ -217,7 +224,10 @@ foreach($job in $jobs | Sort-Object -Property name){
                                 foreach($app in $task.appEntityStateVec){
                                     $totalObjects += 1
                                     if($app.publicStatus -ne 'kSuccess'){
-                                        $totalFailedObjects += 1
+                                        if($errorCount[$objName] -ge $failureCount){
+                                            $totalFailedObjects +=1
+                                            $failureCounted[$objName] = 1
+                                        }
                                         $appHtml += "<tr>
                                             <td></td>
                                             <td>$($app.appEntity.displayName)</td>
@@ -233,6 +243,10 @@ foreach($job in $jobs | Sort-Object -Property name){
                             $appErrors[$objName] = $appHtml
                         }else{
                             $errorCount[$objName] += 1
+                            if($errorCount[$objName] -ge $failureCount -and $objName -notin $failureCounted.Keys){
+                                $totalFailedObjects +=1
+                                $failureCounted[$objName] = 1
+                            }
                         }
                         # populate html record
                         $jobId = $job.id
@@ -242,7 +256,7 @@ foreach($job in $jobs | Sort-Object -Property name){
                             $jobName = $job.name
                         }
                         $jobUrl = "https://$vip/protection/job/$jobId/details"
-                        $jobEntry[$objName] = "<a href=$jobUrl>$jobName</a>"
+                        $jobEntry[$objName] = "<a href=$jobUrl target=""_blank"">$jobName</a>"
                         $objErrors[$objName] = "<tr>
                             <td>$objName</td>
                             <td>-</td>
@@ -284,7 +298,7 @@ foreach($objName in ($errorCount.Keys | Sort-Object)){
     }
 }
 
-$percentFailed = (($totalObjects-($totalFailedObjects / $failureCount))/$totalObjects).ToString("P")
+$percentFailed = (($totalObjects-$totalFailedObjects)/$totalObjects).ToString("P")
 
 $html += '</table>
 <p style="margin-top: 15px; margin-bottom: 15px;"><span style="font-size:1em;">Number of errors reported: ' + $totalFailedObjects + '</span></p>               
@@ -297,8 +311,11 @@ $html += '</table>
 $fileName = "./strikeReport-$($cluster.name).html"
 $html | out-file $fileName
 
-write-host "sending report to $([string]::Join(", ", $sendTo))"
-### send email report
-foreach($toaddr in $sendTo){
-    Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject "Backup Strike Report" -BodyAsHtml $html -Attachments $fileName -WarningAction SilentlyContinue
+if($smtpServer -and $sendFrom -and $sendTo){
+    write-host "sending report to $([string]::Join(", ", $sendTo))"
+    ### send email report
+    foreach($toaddr in $sendTo){
+        Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject "Backup Strike Report" -BodyAsHtml $html -Attachments $fileName -WarningAction SilentlyContinue
+    }
 }
+
