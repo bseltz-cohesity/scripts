@@ -220,11 +220,11 @@ html += '''</span>
 
 
 def processStats(stats, name, environment, location):
-    logicalBytes = stats['statsList'][0]['stats']['totalLogicalUsageBytes']
-    dataIn = stats['statsList'][0]['stats']['dataInBytes']
-    dataInAfterDedup = stats['statsList'][0]['stats']['dataInBytesAfterDedup']
-    dataWritten = stats['statsList'][0]['stats']['dataWrittenBytes']
-    consumedBytes = stats['statsList'][0]['stats']['storageConsumedBytes']
+    logicalBytes = stats['statsList'][0]['stats'].get('totalLogicalUsageBytes', 0)
+    dataIn = stats['statsList'][0]['stats'].get('dataInBytes', 0)
+    dataInAfterDedup = stats['statsList'][0]['stats'].get('dataInBytesAfterDedup', 0)
+    dataWritten = stats['statsList'][0]['stats'].get('dataWrittenBytes', 0)
+    consumedBytes = stats['statsList'][0]['stats'].get('storageConsumedBytes', 0)
     if dataInAfterDedup > 0 and dataWritten > 0:
         dedup = round(float(dataIn) / dataInAfterDedup, 1)
         compression = round(float(dataInAfterDedup) / dataWritten, 1)
