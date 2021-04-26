@@ -28,41 +28,8 @@ Place all files in a folder together and run the main script like so:
 
 ```powershell
 ./cloneList.ps1 -vip mycluster `
-                    -username myusername `
-                    -domain mydomain.net
-```
-
-```text
-Connected!
-9/7/19 5:26:32 AM - Clone-VMs_Sep_7_2019_5-26am
-9/7/19 5:25:59 AM - Clone-SQL2012_MSSQLSERVER_CohesityDB_Sep_7_2019_5-25am
-```
-
-If you want to tear down the clones, include the -tearDown parameter like so:
-
-```powershell
-./cloneList.ps1 -vip mycluster `
-                    -username myusername `
-                    -domain mydomain.net `
-                    -tearDown
-```
-
-```text
-Connected!
-9/7/19 5:26:32 AM - Clone-VMs_Sep_7_2019_5-26am
-    tearing down...
-9/7/19 5:25:59 AM - Clone-SQL2012_MSSQLSERVER_CohesityDB_Sep_7_2019_5-25am
-    tearing down...
-```
-
-If you want to limit the scope to clones that are older than say, 30 days, use the -olderThan parameter, like:
-
-```powershell
-./cloneList.ps1 -vip mycluster `
-                    -username myusername `
-                    -domain mydomain.net `
-                    -olderThan 30 `
-                    -tearDown
+                -username myusername `
+                -domain mydomain.net
 ```
 
 ## Parameters
@@ -70,5 +37,12 @@ If you want to limit the scope to clones that are older than say, 30 days, use t
 * -vip: Cohesity cluster to connect to
 * -username: Cohesity username (e.g. admin)
 * -domain: (optional) Active Directory domain (defaults to 'local')
-* -olderThan: (optional) defaults to 0 days old
-* -tearDown: (optional) script will only display the clone list if omitted
+* -type: (optional) filter by type (sql, oracle, vm, view)
+* -olderThan: (optional) filter by create date (defaults to 0 days old)
+* -source: (optional) filter by source server, VM or view name
+* -sourceDB: (optional) filter by source database (e.g. dbname for Oracle, instance/dbname for SQL)
+* -target: (optional) filter by source server, VM or view name
+* -targetDB: (optional) filter by source database (e.g. dbname for Oracle, instance/dbname for SQL)
+* -taskId: (optional) filter by task ID
+* -destroy: (optional) destroy clones that match output list
+* -wait: (optional) wait for deletion(s) to complete
