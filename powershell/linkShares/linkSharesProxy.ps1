@@ -88,7 +88,7 @@ if($newLinksFound){
 
     # add new links to inclusions
     foreach($sourceSpecialParameter in $job.sourceSpecialParameters){
-        if($sourceSpecialParameter.sourceId = $source.protectionSource.id){
+        if($sourceSpecialParameter.sourceId -eq $source.protectionSource.id){
             foreach($localLink in $localLinks){
                 $linkPath = '/' + $localLink.fullName.replace(':','').replace('\','/')
                 if($linkPath -notin $sourceSpecialParameter.physicalSpecialParameters.filePaths.backupFilePath){
