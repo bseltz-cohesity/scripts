@@ -14,20 +14,43 @@ param (
     [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
     [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
     [Parameter()][string]$domain = 'local', #local or AD domain
-    [Parameter(Mandatory = $True)][array]$jobNames, # jobs to archive
+    [Parameter()][array]$jobName, # jobs to archive
+    [Parameter()][string]$jobList = '',
     [Parameter(Mandatory = $True)][string]$vault, #name of archive target
     [Parameter()][string]$olderThan = 0, #archive snapshots older than x days
     [Parameter()][string]$ifExpiringAfter = 0, #do not archve if the snapshot is going to expire within x days
     [Parameter()][string]$keepFor = 0, #set archive retention to x days from original backup date
     [Parameter()][switch]$archive,
-    [Parameter()][switch]$includeLogs
+    [Parameter()][switch]$includeLogs,
+    [Parameter()][array]$dates
 )
 
 # source the cohesity-api helper code
-. ./cohesity-api
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
 apiauth -vip $vip -username $username -domain $domain
+
+# gather list of jobs
+$jobNames = @()
+foreach($j in $jobName){
+    $jobNames += $j
+}
+if ('' -ne $jobList){
+    if(Test-Path -Path $jobList -PathType Leaf){
+        $jobs = Get-Content $jobList
+        foreach($j in $jobs){
+            $jobNames += [string]$j
+        }
+    }else{
+        Write-Host "Job list $jobList not found!" -ForegroundColor Yellow
+        exit
+    }
+}
+if($jobNames.Length -eq 0){
+    Write-Host "No jobs specified" -ForegroundColor Yellow
+    exit
+}
 
 # get archive target info
 $vaults = api get vaults | Where-Object { $_.name -eq $vault }
@@ -48,7 +71,7 @@ if($includeLogs){
     $runTypes = ''
 }
 
-foreach($jobname in $jobNames){
+foreach($jobname in $jobNames | Sort-Object -Unique){
     $job = $jobs | Where-Object name -eq $jobname
     if($job){
 
@@ -64,6 +87,8 @@ foreach($jobname in $jobNames){
         foreach ($run in $runs) {
 
             $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
+            $runDateShort = $runDate.ToString("yyyy-MM-dd")
+
             $jobName = $run.jobName
 
             $now = dateToUsecs $(get-date)
@@ -103,21 +128,23 @@ foreach($jobname in $jobNames){
             }
 
             # If the Local Snapshot is not expiring soon...
-            if ($daysToExpire -gt $ifExpiringAfter) {
-                $newExpireDate = (get-date).AddDays($daysToKeep).ToString('yyyy-MM-dd')
-                if ($archive) {
-                    write-host "$($jobName): archiving $runDate until $newExpireDate" -ForegroundColor Green
-                    # execute archive task if arcvhive swaitch is set
-                    $null = api put protectionRuns $archiveTask
+            if($dates.Length -eq 0 -or $runDateShort -in $dates){
+                if ($daysToExpire -gt $ifExpiringAfter) {
+                    $newExpireDate = (get-date).AddDays($daysToKeep).ToString('yyyy-MM-dd')
+                    if ($archive) {
+                        write-host "$($jobName): archiving $runDate until $newExpireDate" -ForegroundColor Green
+                        # execute archive task if arcvhive swaitch is set
+                        $null = api put protectionRuns $archiveTask
+                    }
+                    else {
+                        # or just display what we would do if archive switch is not set
+                        write-host "$($jobName): would archive $runDate until $newExpireDate" -ForegroundColor Green
+                    }
                 }
+                # otherwise tell us that we're not archiving since the snapshot is expiring soon
                 else {
-                    # or just display what we would do if archive switch is not set
-                    write-host "$($jobName): would archive $runDate until $newExpireDate" -ForegroundColor Green
+                    write-host "$($jobName): skipping $runDate (expiring in $daysToExpire days)" -ForegroundColor Gray
                 }
-            }
-            # otherwise tell us that we're not archiving since the snapshot is expiring soon
-            else {
-                write-host "$($jobName): skipping $runDate (expiring in $daysToExpire days)" -ForegroundColor Gray
             }
         }
     }else{
