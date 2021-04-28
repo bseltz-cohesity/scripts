@@ -86,6 +86,13 @@ if not job:
 
 job = job[0]
 
+cluster = api('get', 'cluster')
+
+if cluster['clusterSoftwareVersion'] > '6.5':
+    protectionGroups = api('get', 'data-protect/protection-groups?isDeleted=false&includeTenants=true&includeLastRunInfo=true', v=2)
+    protectionGroup = [p for p in protectionGroups['protectionGroups'] if p['name'].lower() == jobname.lower()][0]
+    globalExcludePaths = protectionGroup['physicalParams']['fileProtectionTypeParams']['globalExcludePaths']
+
 # get registered physical servers
 physicalServersRoot = api('get', 'protectionSources/rootNodes?allUnderHierarchy=false&environments=kPhysicalFiles&environments=kPhysical&environments=kPhysical')
 physicalServersRootId = physicalServersRoot[0]['protectionSource']['id']
@@ -99,7 +106,7 @@ for servername in servernames:
     # find server
     physicalServer = [s for s in physicalServers if s['protectionSource']['name'].lower() == servername.lower() and s['protectionSource']['physicalProtectionSource']['hostType'] == 'kLinux']
     if not physicalServer:
-        print ("******** %s is not a registered Linux server ********" % servername)
+        print("******** %s is not a registered Linux server ********" % servername)
     else:
         physicalServer = physicalServer[0]
         # get sourceSpecialParameters
@@ -123,7 +130,7 @@ for servername in servernames:
         }
 
         # add mount point type exclusions
-        if len(skipnestedmountpointtypes) > 0:
+        if skipnestedmountpointtypes is not None and len(skipnestedmountpointtypes) > 0:
             newParameter['physicalSpecialParameters']['usesSkipNestedVolumesVec'] = True
             newParameter['physicalSpecialParameters']['skipNestedVolumesVec'] = skipnestedmountpointtypes
 
@@ -153,3 +160,10 @@ for servername in servernames:
 
 # update job
 result = api('put', 'protectionJobs/%s' % job['id'], job)
+
+if cluster['clusterSoftwareVersion'] > '6.5':
+    if globalExcludePaths is not None:
+        protectionGroups = api('get', 'data-protect/protection-groups?isDeleted=false&includeTenants=true&includeLastRunInfo=true', v=2)
+        protectionGroup = [p for p in protectionGroups['protectionGroups'] if p['name'].lower() == jobname.lower()][0]
+        protectionGroup['physicalParams']['fileProtectionTypeParams']['globalExcludePaths'] = globalExcludePaths
+        result = api('put', 'data-protect/protection-groups/%s' % protectionGroup['id'], protectionGroup, v=2)
