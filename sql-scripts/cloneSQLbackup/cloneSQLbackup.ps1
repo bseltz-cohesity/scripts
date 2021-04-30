@@ -11,6 +11,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vip,
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
+    [Parameter()][switch]$useApiKey,
     [Parameter()][array]$access,
     [Parameter()][string]$sqlServer,
     [Parameter()][string]$jobName,
@@ -31,7 +32,11 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -useApiKey
+}else{
+    apiauth -vip $vip -username $username -domain $domain
+}
 
 if(!$deleteView){
     if(!$jobName){
@@ -79,17 +84,13 @@ if($refreshView){
     }
 }
 
-if($view -and !($deleteView -or $refreshView)){
-    Write-Host "View $viewName already exists" -ForegroundColor Yellow
-    exit 1
-}
-
 # find job
 $job = api get protectionJobs | Where-Object name -eq $jobName
 if(!$job){
     Write-Host "Job $jobName not found" -ForegroundColor Yellow
     exit 1
 }
+$job = ($job | Sort-Object id)[-1]
 
 $storageDomainId = $job.viewBoxId
 
@@ -110,6 +111,11 @@ if($listRuns){
                                     @{label='runType'; expression={$_.backupRun.runType.substring(1)}}
                                     
     exit 0
+}
+
+if($view -and !($deleteView -or $refreshView)){
+    Write-Host "View $viewName already exists" -ForegroundColor Yellow
+    exit 1
 }
 
 if(!$sqlServer){
