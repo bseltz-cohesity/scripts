@@ -109,10 +109,10 @@ function apiauth($vip, $username='helios', $domain='local', $passwd=$null, $pass
         $global:AUTHORIZED = $true
         $global:CLUSTERSELECTED = $true
         $cluster = api get cluster -quiet
-        write-host "hello"
         if($cluster){
             if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
         }else{
+            if(!$quiet){ Write-Host "API Key authentication Failed" -ForegroundColor Yellow}
             $global:AUTHORIZED = $false
         }
     }elseif($vip -eq 'helios.cohesity.com' -or $helios){
