@@ -1,14 +1,14 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2020.12.22 - Brian Seltzer
+#  Version 2020.10.20 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2020.10.16 - added password parameter to storePasswordInFile function
 # 2020.10.20 - code cleanup (moved old version history to end of file)
-# 2020.12.22 - added v2 support for file download
+# 2021.04.30 - quieted bad API key response
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
-$versionCohesityAPI = '2020.12.22'
+$versionCohesityAPI = '2021.04.30'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -108,7 +108,8 @@ function apiauth($vip, $username='helios', $domain='local', $passwd=$null, $pass
         $global:HEADER = $HEADER
         $global:AUTHORIZED = $true
         $global:CLUSTERSELECTED = $true
-        $cluster = api get cluster
+        $cluster = api get cluster -quiet
+        write-host "hello"
         if($cluster){
             if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
         }else{
@@ -228,7 +229,7 @@ function apidrop([switch] $quiet){
 # api call functions ==============================================================================
 
 $methods = 'get', 'post', 'put', 'delete'
-function api($method, $uri, $data, $version=1, [switch]$v2){
+function api($method, $uri, $data, $version=1, [switch]$v2, [switch]$quiet){
     if (-not $global:AUTHORIZED){ 
         if($REPORTAPIERRORS){
             Write-Host 'Not authenticated to a cohesity cluster' -foregroundcolor yellow
@@ -236,6 +237,10 @@ function api($method, $uri, $data, $version=1, [switch]$v2){
                 exit 1
             }
         }
+    # }elseif(-not $global:CLUSTERSELECTED){
+    #     if($REPORTAPIERRORS){
+    #         Write-Host 'Please use heliosCluster to connect to a cohesity cluster' -ForegroundColor Yellow
+    #     }
     }else{
         if($method -ne 'get' -and $global:CLUSTERREADONLY -eq $true){
             Write-Host "Cluster connection is READ-ONLY" -ForegroundColor Yellow
@@ -268,7 +273,7 @@ function api($method, $uri, $data, $version=1, [switch]$v2){
             return $result
         }catch{
             __writeLog $_.ToString()
-            if($REPORTAPIERRORS){
+            if($REPORTAPIERRORS -and !$quiet){
                 if($_.ToString().contains('"message":')){
                     Write-Host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
                 }else{
