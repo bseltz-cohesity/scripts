@@ -104,6 +104,7 @@ To refresh a view (on a schedule):
 * -vip: Cohesity cluster to connect to
 * -username: Cohesity username (e.g. admin)
 * -domain: (optional) Active Directory domain (defaults to 'local')
+* -useApiKey: (optional) use API key for authentication
 * -jobname: (optional) name of SQL protection job
 * -firstRunId: (optional) earliest run to clone (defaults to all)
 * -lastRunId: (optional) most recent run to clone (defaultds to all)
