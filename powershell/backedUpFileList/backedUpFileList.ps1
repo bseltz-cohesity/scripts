@@ -1,4 +1,4 @@
-# version 2021.04.21
+# version 2021.05.03
 # usage: ./backedUpFileList.ps1 -vip mycluster \
 #                               -username myuser \
 #                               -domain mydomain.net \
@@ -47,11 +47,11 @@ if($useApiKey){
 }
 
 function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null){
-    $thisDirPath = [System.Web.HttpUtility]::UrlEncode($dirPath)
+    $thisDirPath = [System.Web.HttpUtility]::UrlEncode($dirPath).Replace('%2f%2f','%2F')
     if($null -ne $volumeName){
-        $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&dirPath=$thisDirPath&statFileEntries=false&volumeInfoCookie=$volumeInfoCookie&volumeName=$volumeName"
+        $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=false&volumeInfoCookie=$volumeInfoCookie&volumeName=$volumeName&dirPath=$thisDirPath"
     }else{
-        $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&dirPath=$thisDirPath&statFileEntries=false"
+        $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=false&dirPath=$thisDirPath"
     }
     if($dirList.PSObject.Properties['entries']){
         foreach($entry in $dirList.entries | Sort-Object -Property name){

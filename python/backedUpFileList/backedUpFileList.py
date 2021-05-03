@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2021.04.21
+# version 2021.05.03
 
 # usage: ./backedUpFileList.py -v mycluster \
 #                              -u myuser \
@@ -67,7 +67,7 @@ apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=
 
 
 def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None):
-    thisDirPath = quote_plus(dirPath)
+    thisDirPath = quote_plus(dirPath).replace('%2F%2F', '%2F')
     if volumeName is not None:
         dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=true&dirPath=%s&volumeInfoCookie=%s&volumeName=%s' % (instance, useLibrarian, thisDirPath, volumeInfoCookie, volumeName))
     else:
