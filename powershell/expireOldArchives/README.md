@@ -4,7 +4,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script expires archives older than x days. This is useful if you want to reduce your long term archive retention to reduce storage consumption in the cloud or other archive target.
 
-## Warning! This script deletes backup data! Make sure you know what you are doing before you run it!
+## Warning! This script deletes backup data! Make sure you know what you are doing before you run it
 
 ## Download the script
 
@@ -58,3 +58,4 @@ Also note that data in the archive target may not be immediately deleted if a ne
 * -target: (optional) narrow scope to a specific archive target
 * -olderThan: show/expire snapshots older than this many days
 * -expire: (optional) expire the snapshots (if omitted, the script will only show what 'would' be expired)
+* -showUnsuccessful: (optional) just display unsuccessful archive runs

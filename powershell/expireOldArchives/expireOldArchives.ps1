@@ -9,7 +9,8 @@ param (
     [Parameter()][string]$jobName, # optional jobName 
     [Parameter()][string]$target, # optional target name
     [Parameter()][string]$olderThan = 0, #archive snapshots older than x days
-    [Parameter()][switch]$expire
+    [Parameter()][switch]$expire,
+    [Parameter()][switch]$showUnsuccessful
 )
 
 ### source the cohesity-api helper code
@@ -47,7 +48,7 @@ foreach ($job in $jobs) {
         ### Display Status of archive task
         foreach ($copyRun in $run.copyRun) {
             if ($copyRun.target.type -eq 'kArchival') {
-                if ($copyRun.status -eq 'kSuccess') {
+                if ($copyRun.status -eq 'kSuccess' -and (! $showUnsuccessful)) {
                     if ($copyRun.expiryTimeUsecs -gt 0) {
                         if( ! $target -or $copyRun.target.archivalTarget.vaultName -eq $target){
                             write-host "$runDate  $jobName" -ForegroundColor Green
@@ -68,6 +69,10 @@ foreach ($job in $jobs) {
                                 api put protectionRuns $expireRun
                             }
                         }
+                    }
+                }else{
+                    if($copyRun.status -ne 'kSuccess' -and $showUnsuccessful){
+                        write-host "$runDate  $jobName $($copyRun.status)" -ForegroundColor Yellow
                     }
                 }
             }
