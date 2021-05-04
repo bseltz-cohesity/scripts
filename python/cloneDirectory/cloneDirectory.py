@@ -1,45 +1,58 @@
 #!/usr/bin/env python
 """Clone a View Directory Using python"""
 
-### usage: ./cloneDirectory.py -s mycluster -u admin -d local -sp /MyView/folder1 -dp /MyView -nd folder2
-### the above example copies /MyView/folder1 to /MyView/folder2
+# usage: ./cloneDirectory.py -s mycluster -u admin -d local -sp /MyView/folder1 -dp /MyView -nd folder2
+# the above example copies /MyView/folder1 to /MyView/folder2
 
-### import pyhesity wrapper module
+# import pyhesity wrapper module
 from pyhesity import *
-import sys
 
-### command line arguments
+# command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-s', '--server', type=str, required=True)
+parser.add_argument('-v', '--vip', type=str, required=True)
 parser.add_argument('-u', '--username', type=str, required=True)
 parser.add_argument('-d', '--domain', type=str, default='local')
-parser.add_argument('-sp', '--sourcepath', type=str, required=True)
-parser.add_argument('-dp', '--destinationpath', type=str, required=True)
-parser.add_argument('-nd', '--newdirectory', type=str, required=True)
+parser.add_argument('-s', '--sourcepath', type=str, required=True)
+parser.add_argument('-t', '--targetpath', type=str, required=True)
 
 args = parser.parse_args()
 
-vip = args.server
+vip = args.vip
 username = args.username
 domain = args.domain
-sourceDirectoryPath = args.sourcepath
-destinationParentDirectoryPath = args.destinationpath
-destinationDirectoryName = args.newdirectory
+sourcepath = args.sourcepath
+targetpath = args.targetpath
 
-### authenticate
+sourcepath = sourcepath.replace('\\', '/').replace('//', '/')
+targetpath = targetpath.replace('\\', '/').replace('//', '/')
+
+if sourcepath[0] == '/':
+    sourcepath = sourcepath[1:]
+
+if targetpath[0] == '/':
+    targetpath = targetpath[1:]
+
+if '/' not in targetpath:
+    print('targetPath must be a new folder name')
+    exit()
+
+(targetview, targetpath) = targetpath.split('/', 2)
+
+if targetpath == '':
+    print('targetPath must be a new folder name')
+    exit()
+
+# authenticate
 apiauth(vip, username, domain)
 
-### clone directory params
+# clone directory params
 CloneDirectoryParams = {
-    'destinationDirectoryName': destinationDirectoryName,
-    'destinationParentDirectoryPath': destinationParentDirectoryPath,
-    'sourceDirectoryPath': sourceDirectoryPath
+    'destinationDirectoryName': targetpath,
+    'destinationParentDirectoryPath': '/%s' % targetview,
+    'sourceDirectoryPath': '/%s' % sourcepath
 }
 
-### clone directory
-print("Cloning directory %s to %s/%s..." % (sourceDirectoryPath, destinationParentDirectoryPath, destinationDirectoryName))
+# clone directory
+print("Cloning %s to %s/%s..." % (sourcepath, targetview, targetpath))
 result = api('post', 'views/cloneDirectory', CloneDirectoryParams)
-if result is not None:
-    if 'errorCode' in result:
-        sys.exit(1)

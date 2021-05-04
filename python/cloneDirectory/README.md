@@ -4,36 +4,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This python script clones a directory within a view.
 
-## Components
-
-* cloneDirectory.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
-
-Place both files in a folder together and run the main script like so:
-
-```bash
-bash:~/python$ ./cloneDirectory.py -s mycluster -u admin -d mydomain -sp /View1/folder1 -dp /View1 -nd folder2
-Connected!
-Cloning directory /View1/folder1 to /View1/folder2...
-```
-
-## The Python Helper Module - pyhesity.py
-
-The helper module provides functions to simplify operations such as authentication, api calls, storing encrypted passwords, and converting date formats. The module requires the requests python module.
-
-### Installing the Prerequisites
-
-```bash
-sudo yum install python-requests
-```
-
-or
-
-```bash
-sudo easy_install requests
-```
-
-### Downloading the Files
+## Download the Files
 
 Go to the folder where you want to download the files, then run the following commands:
 
@@ -42,3 +13,28 @@ curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x cloneDirectory.py
 ```
+
+## Components
+
+* cloneDirectory.py: the main python script
+* pyhesity.py: the Cohesity REST API helper module
+
+Place both files in a folder together and run the main script like so:
+
+```bash
+./cloneDirectory.py -v mycluster \
+                    -u myusername \
+                    -d mydomain.net \
+                    -s view1/myFolder \
+                    -t view2/newFolder
+```
+
+## Parameters
+
+* -v, --vip: DNS or IP of the Cohesity cluster to connect to
+* -u, --username: username to authenticate to Cohesity cluster
+* -d, --domain: (optional) domain of username, defaults to local
+* -s, --sourcepath: view/path of source folder to copy
+* -t, --targetpath: view/path of new folder to create as copy destination
+
+Note: if you use '\' in your paths then the paths must be quoted, like '\\view1\myfolder`
