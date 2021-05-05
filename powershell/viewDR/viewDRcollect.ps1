@@ -20,6 +20,7 @@ $clusterName = (api get cluster).name
 
 ### get views
 $views = api get views
+$jobs = api get protectionJobs
 
 if(test-path $outPath){
     $clusterOutPath = Join-Path -Path $outPath -ChildPath $clusterName
@@ -33,6 +34,14 @@ if(test-path $outPath){
 }
 
 foreach($view in $views.views){
+    $remoteViewName = $False
+    if($view.PSObject.Properties['viewProtection']){
+        $job = $jobs | Where-Object {$_.name -eq $view.viewProtection.protectionJobs[0].jobName}
+        if($job.PSObject.Properties['remoteViewName']){
+            $remoteViewName = $job.remoteViewName
+        }
+    }
+    setApiProperty -object $view -name remoteViewName -value $remoteViewName
     $filePath = Join-Path -Path $clusterOutPath -ChildPath $view.name
     $view | ConvertTo-Json -Depth 99 | Out-File $filePath
 }

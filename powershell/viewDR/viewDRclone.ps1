@@ -41,7 +41,8 @@ if($viewList){
 apiauth -vip $vip -username $username -domain $domain
 
 ### cluster info
-$clusterName = (api get cluster).name
+$cluster = api get cluster
+$clusterName = $cluster.name
 
 ### get view protection jobs
 $jobs = api get protectionJobs?environments=kView
@@ -104,31 +105,62 @@ foreach($viewName in $myViews){
     }
     
     if ($viewResult) {
+        $remoteViewName = $false
         $job = $jobs | Where-Object {$_.name -eq $viewResult.vmDocument.jobName}
+        $job = $job[0]
         if($job.PSObject.Properties['remoteViewName']){
+            $remoteViewName = $job.remoteViewName
             $view = $views | Where-Object {$_.name -eq $job.remoteViewName}
+            $view = $view[0]
+            $cloneTask = @{
+                "name"       = "Clone-View_" + $((get-date).ToString().Replace('/', '_').Replace(':', '_').Replace(' ', '_'));
+                "objects"    = @(
+                    @{
+                        "entity" = @{
+                            "type" = 4;
+                            "viewEntity" = @{
+                                "name" = $view.name;
+                                "uid" = @{
+                                    "clusterId" = $cluster.id;
+                                    "clusterIncarnationId" = $cluster.incarnationId;
+                                    "objectId" = $view.viewId
+                                };
+                                "type" = 1
+                            }
+                        }
+                    }
+                )
+                "viewName"   = $viewName;
+                "action"     = 5;
+                "viewParams" = @{
+                    "sourceViewName"        = $view.name;
+                    "cloneViewName"         = $viewName;
+                    "viewBoxId"             = $view.viewBoxId;
+                    "viewId"                = $view.viewId;
+                }
+            }
         }else{
             $view = $views | Where-Object {$_.name -eq $viewResult.vmDocument.objectName}
-        }
-        $view = $view[0]
-        $cloneTask = @{
-            "name"       = "Clone-View_" + $((get-date).ToString().Replace('/', '_').Replace(':', '_').Replace(' ', '_'));
-            "objects"    = @(
-                @{
-                    "jobUid"         = $viewResult.vmDocument.objectId.jobUid;
-                    "jobId"          = $viewResult.vmDocument.objectId.jobId;
-                    "jobInstanceId"  = $viewResult.vmDocument.versions[0].instanceId.jobInstanceId;
-                    "startTimeUsecs" = $viewResult.vmDocument.versions[0].instanceId.jobStartTimeUsecs;
-                    "entity"         = $viewResult.vmDocument.objectId.entity; 
+            $view = $view[0]
+            $cloneTask = @{
+                "name"       = "Clone-View_" + $((get-date).ToString().Replace('/', '_').Replace(':', '_').Replace(' ', '_'));
+                "objects"    = @(
+                    @{
+                        "jobUid"         = $viewResult.vmDocument.objectId.jobUid;
+                        "jobId"          = $viewResult.vmDocument.objectId.jobId;
+                        "jobInstanceId"  = $viewResult.vmDocument.versions[0].instanceId.jobInstanceId;
+                        "startTimeUsecs" = $viewResult.vmDocument.versions[0].instanceId.jobStartTimeUsecs;
+                        "entity"         = $viewResult.vmDocument.objectId.entity; 
+                    }
+                )
+                "viewName"   = $viewName;
+                "action"     = 5;
+                "viewParams" = @{
+                    "sourceViewName"        = $view.name;
+                    "cloneViewName"         = $viewName;
+                    "viewBoxId"             = $view.viewBoxId;
+                    "viewId"                = $viewResult.vmDocument.objectId.entity.id;
                 }
-            )
-            "viewName"   = $viewName;
-            "action"     = 5;
-            "viewParams" = @{
-                "sourceViewName"        = $view.name;
-                "cloneViewName"         = $viewName;
-                "viewBoxId"             = $view.viewBoxId;
-                "viewId"                = $viewResult.vmDocument.objectId.entity.id;
             }
         }
 
@@ -138,6 +170,9 @@ foreach($viewName in $myViews){
             "Cloned $viewName"
             "$viewName" | Out-File -FilePath $clonedViewList -Append
             "$viewName" | Out-File -FilePath $migratedShares -Append
+            if($remoteViewName){
+                $null = api delete "views/$remoteViewName"
+            }
         }
     }
 }
@@ -195,6 +230,8 @@ foreach($viewName in $myViews){
                     'alertingPolicy' = @(
                         'kFailure'
                     );
+                    'createRemoteView' = $True
+                    'remoteViewName' = "$($viewName)-DR"
                     'timezone' = 'America/New_York';
                     'incrementalProtectionSlaTimeMins' = 60;
                     'fullProtectionSlaTimeMins' = 120;
