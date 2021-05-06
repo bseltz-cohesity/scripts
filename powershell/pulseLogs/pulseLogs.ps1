@@ -39,7 +39,7 @@ foreach($job in $jobs | Where-Object {$_.isActive -ne $False} | Sort-Object -Pro
                 $thisSubTask = $thisTask.subTaskVec | Where-Object {$_.taskPath -eq $taskPath}
                 $events = $thisSubTask.progress.eventVec
                 foreach($event in $events){
-                    "$($event.eventMsg)" | Out-File -FilePath $outFile -Append
+                    "$(usecsToDate ($event.timeStampSecs * 1000000)): $($event.eventMsg)" | Out-File -FilePath $outFile -Append
                 }
             }
         }
