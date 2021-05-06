@@ -1,4 +1,4 @@
-# version 2021.05.03
+# version 2021.05.06
 # usage: ./backedUpFileList.ps1 -vip mycluster \
 #                               -username myuser \
 #                               -domain mydomain.net \
@@ -46,12 +46,20 @@ if($useApiKey){
     apiauth -vip $vip -username $username -domain $domain -password $password
 }
 
-function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null){
+function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null, $cookie=$null){
     $thisDirPath = [System.Web.HttpUtility]::UrlEncode($dirPath).Replace('%2f%2f','%2F')
-    if($null -ne $volumeName){
-        $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=false&volumeInfoCookie=$volumeInfoCookie&volumeName=$volumeName&dirPath=$thisDirPath"
+    if($cookie){
+        if($null -ne $volumeName){
+            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=false&volumeInfoCookie=$volumeInfoCookie&cookie=$cookie&volumeName=$volumeName&dirPath=$thisDirPath"
+        }else{
+            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=false&cookie=$cookie&dirPath=$thisDirPath"
+        }
     }else{
-        $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=false&dirPath=$thisDirPath"
+        if($null -ne $volumeName){
+            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=false&volumeInfoCookie=$volumeInfoCookie&volumeName=$volumeName&dirPath=$thisDirPath"
+        }else{
+            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=false&dirPath=$thisDirPath"
+        }
     }
     if($dirList.PSObject.Properties['entries']){
         foreach($entry in $dirList.entries | Sort-Object -Property name){
@@ -61,6 +69,9 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
                 $entry.fullPath | Tee-Object -FilePath $outputfile -Append  
             }
         }
+    }
+    if($dirlist.PSObject.Properties['cookie']){
+        listdir "$dirPath" $instance $volumeInfoCookie $volumeName $dirlist.cookie
     }
 }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2021.05.03
+# version 2021.05.06
 
 # usage: ./backedUpFileList.py -v mycluster \
 #                              -u myuser \
@@ -66,12 +66,18 @@ else:
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
 
 
-def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None):
+def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None, cookie=None):
     thisDirPath = quote_plus(dirPath).replace('%2F%2F', '%2F')
-    if volumeName is not None:
-        dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=true&dirPath=%s&volumeInfoCookie=%s&volumeName=%s' % (instance, useLibrarian, thisDirPath, volumeInfoCookie, volumeName))
+    if cookie is not None:
+        if volumeName is not None:
+            dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=true&dirPath=%s&volumeInfoCookie=%s&volumeName=%s&cookie=%s' % (instance, useLibrarian, thisDirPath, volumeInfoCookie, volumeName, cookie))
+        else:
+            dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=true&dirPath=%s&cookie=%s' % (instance, useLibrarian, thisDirPath, cookie))
     else:
-        dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=true&dirPath=%s' % (instance, useLibrarian, thisDirPath))
+        if volumeName is not None:
+            dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=true&dirPath=%s&volumeInfoCookie=%s&volumeName=%s' % (instance, useLibrarian, thisDirPath, volumeInfoCookie, volumeName))
+        else:
+            dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=true&dirPath=%s' % (instance, useLibrarian, thisDirPath))
     if dirList and 'entries' in dirList:
         for entry in sorted(dirList['entries'], key=lambda e: e['name']):
             if entry['type'] == 'kDirectory':
@@ -80,6 +86,8 @@ def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None):
                 mtime = usecsToDate(entry['fstatInfo']['mtimeUsecs'])
                 print('%s (%s)' % (entry['fullPath'], mtime))
                 f.write('%s (%s)\n' % (entry['fullPath'], mtime))
+    if dirList and 'cookie' in dirList:
+        listdir('%s' % dirPath, instance, f, volumeInfoCookie, volumeName, dirList['cookie'])
 
 
 def showFiles(doc, version):
