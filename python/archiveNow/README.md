@@ -40,8 +40,10 @@ archiving snapshot from 2019-03-26 14:55:18...
 * -j, --jobname: Name of protection job
 * -r, --rundate: Date and time of protection run to archive, e.g. '2019-03-26 14:37:00'
 * -k, --keepfor: (optional) keepfor X days. Required if there is no archive policy for the job
-* -t, --newtarget: (optional) name of the external target. Required if there is no archive policy for the job
+* -t, --target: (optional) name of the external target. Required if there is no archive policy for the job
 * -f, --fromtoday: (optional) calculate -k from today instead of from snapshot date
+* -l, --listruns: list available runs and exit
+* -n, --newestrun: use latest run
 
 ## Notes
 
