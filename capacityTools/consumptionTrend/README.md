@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This PowerShell script reports per-job and per-view storage consumption trends.
+This PowerShell script reports per-job and per-view storage consumption trends. Output will be saved to an HTML report.
 
 ## Download the script
 
@@ -36,6 +36,11 @@ Place the files in a folder together and run the script like so:
 
 * -vip: name or IP of Cohesity cluster
 * -username: name of user to connect to Cohesity
-* -domain: your AD domain (defaults to local)
+* -domain: (optional) your AD domain (defaults to local)
 * -days: (optional) number of days of statistics to collect (default is 31)
-* -rollup: Daily, Weekly or Monthly (default is daily)
+* -rollup: (optional) Daily, Weekly or Monthly (default is daily)
+* -unit: = (optional) KiB, MiB, GiB or TiB (default is GiB)
+* -smtpServer: (optional) SMTP gateway to forward email through
+* -smtpPort: (optional) SMTP port to use (default is 25)
+* -sendTo: (optional) email addresses to send report to (comma separated)
+* -sendFrom: (optional) email address to show in the from field
