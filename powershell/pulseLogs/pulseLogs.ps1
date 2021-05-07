@@ -7,7 +7,8 @@ param (
     [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
     [Parameter()][string]$domain = 'local',  # local or AD domain
     [Parameter()][string]$outPath = './pulseLogs',
-    [Parameter()][array]$jobName
+    [Parameter()][array]$jobName,
+    [Parameter()][int]$daysBack = 1
 )
 
 $null = New-Item -ItemType Directory -Path $outPath -Force
@@ -18,13 +19,15 @@ $null = New-Item -ItemType Directory -Path $outPath -Force
 # authenticate
 apiauth -vip $vip -username $username -domain $domain -quiet
 
+$daysBackUsecs = timeAgo $daysBack days
+
 $jobs = api get protectionJobs
 
 $lastProgressPath = ''
 foreach($job in $jobs | Where-Object {$_.isActive -ne $False} | Sort-Object -Property name){
     if(! $jobName -or $job.name -in $jobName){
         "$($job.name)"
-        $runs = api get "protectionRuns?jobId=$($job.id)" | Where-Object {$_.backupRun.snapshotsDeleted -eq $false}
+        $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs" | Where-Object {$_.backupRun.snapshotsDeleted -eq $false}
         foreach($run in $runs){
             $runId = $run.backupRun.jobRunId
             $runStatus = $run.backupRun.status

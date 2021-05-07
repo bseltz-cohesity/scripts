@@ -38,3 +38,4 @@ Place both files in a folder together and run the main script like so:
 * -domain: (optional) Active Directory domain of user (defaults to local)
 * -outPath: (optional) defaults to ./pulseLogs
 * -jobName: (optional) comma separated list of job names to include (defaults to all jobs)
+* -daysBack: (optional) default is 1 day
