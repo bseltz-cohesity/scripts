@@ -1,5 +1,3 @@
-### usage: ./upgradeAgents.ps1 -vip 192.168.1.198 -username admin -domain local
-
 ### process commandline arguments
 [CmdletBinding()]
 param (
