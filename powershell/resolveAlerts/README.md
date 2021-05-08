@@ -29,8 +29,7 @@ To list unresolved alerts
 ```powershell
 ./resolveAlerts.ps1 -vip mycluster `
                     -username myusername `
-                    -domain mydomain.net `
-                    -all
+                    -domain mydomain.net
 ```
 
 To filter on a specific severity:
@@ -66,7 +65,6 @@ add -resolution to any of the above to mark them resolved:
 * -vip: name or IP of Cohesity cluster
 * -username: name of user to connect to Cohesity
 * -domain: your AD domain (defaults to local)
-* -severity: kInfo, kCritical, etc.
-* -alertType: 1007, 1024, etc.
-* -all: report or resolve all alerts
+* -severity: filter on severity (kInfo, kCritical, etc.)
+* -alertType: filter on alert type (1007, 1024, etc.)
 * -resolution: text to use for resolution (just report if omitted)

@@ -8,8 +8,7 @@ param (
     [Parameter()][string]$domain = 'local',
     [Parameter()][string]$resolution,
     [Parameter()][string]$alertType,
-    [Parameter()][string]$severity,
-    [Parameter()][switch]$all
+    [Parameter()][string]$severity
 )
 
 # source the cohesity-api helper code
