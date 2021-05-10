@@ -25,7 +25,7 @@ if($severity){
 if($alertType){
     $alerts = $alerts | Where-Object alertType -eq $alertType
 }
-$alerts | Format-Table -Property id, alertType, severity, {$_.alertDocument.alertDescription}
+$alerts | Format-Table -Property @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}
 
 if($resolution){
     $alertResolution = @{
