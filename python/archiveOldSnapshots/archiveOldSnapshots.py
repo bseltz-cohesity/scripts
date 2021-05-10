@@ -83,8 +83,10 @@ else:
 startTimeUsecs = timeAgo(daysback, 'days')
 
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
-    runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s' % (job['id'], startTimeUsecs))
+    runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&excludeTasks=true&numRuns=10000' % (job['id'], startTimeUsecs))
     runs = [r for r in runs if r['backupRun']['snapshotsDeleted'] is not True]
+    runs = [r for r in runs if 'endTimeUsecs' in r['backupRun']['stats']]
+
     if excludelogs is True:
         runs = [r for r in runs if r['backupRun']['runType'] != 'kLog']
     for run in sorted(runs, key=lambda run: run['backupRun']['stats']['startTimeUsecs']):
