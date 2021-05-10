@@ -46,8 +46,8 @@ By default, the script will only show what it would do. To actually execute the 
 * -k, --keepfor: (optional) keep for X days in the archive
 * -t, --target: name of the external target
 * -n, --daysback: (optional) number of days back to look for snapshots to archive (default is 31)
-* -j, --joblist: (optional) text file of job names to include (default is all jobs)
-* -x, --excludelist: (optional) text file of job names to exclude
+* -j, --joblist: (optional) text file of job names to include (one per line) default is all jobs
+* -x, --excludelist: (optional) text file of job names to exclude (one per line)
 * -l, --localonly: (optional) only archive local jobs
 * -r, --replicasonly: (optional) only archive replica jobs
 * -e, --excludelogs: (optional) do not archive database log backups
