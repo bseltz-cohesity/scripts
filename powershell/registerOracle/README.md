@@ -56,6 +56,8 @@ Registering server3.mydomain.net as a Oracle protection source...
 
 * -vip: Cohesity Cluster to connect to
 * -username: Cohesity username
-* -domain: your AD domain (defaults to local)
-* -server: name of a single server to add to the job
-* -serverList: a text file list of servers to add to the job
+* -domain: (optional) your AD domain (defaults to local)
+* -server: (optional) name of a single server to add to the job
+* -serverList: (optional) a text file list of servers to add to the job
+* -dbUser: (optional) username for DB authentication
+* -dbPassword: (optional) password for DB authentication

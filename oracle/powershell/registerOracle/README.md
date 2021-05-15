@@ -59,3 +59,5 @@ Registering server3.mydomain.net as a Oracle protection source...
 * -domain: your AD domain (defaults to local)
 * -server: name of a single server to add to the job
 * -serverList: a text file list of servers to add to the job
+* -dbUser: (optional) username for DB authentication
+* -dbPassword: (optional) password for DB authentication

@@ -5,7 +5,9 @@ param (
     [Parameter(Mandatory = $True)][string]$username, # Cohesity username
     [Parameter()][string]$domain = 'local', # Cohesity user domain name
     [Parameter()][string]$serverList, # file with servers to add as Oracle sources
-    [Parameter()][string]$server # one server to add as an Oracle source
+    [Parameter()][string]$server, # one server to add as an Oracle source
+    [Parameter()][string]$dbUser, # optional username for DB authentication
+    [Parameter()][string]$dbPassword # optional password for DB authentication
 )
 
 # gather server list
@@ -67,7 +69,19 @@ foreach ($server in $servers){
         }
         # register server as Oracle
         "Registering $server as an Oracle protection source..."
+        Start-Sleep 5
         $regOracle = @{"ownerEntity" = @{"id" = $sourceId}; "appEnvVec" = @(19)}
+        if($dbUser -and $dbPassword){
+            $regOracle['appCredentialsVec'] = @(
+                @{
+                    "envType" = 19;
+                    "credentials" = @{
+                        "username" = $dbUser;
+                        "password" = $dbPassword
+                    }
+                }
+            )        
+        }
         $null = api post /applicationSourceRegistration $regOracle
     }
     else {
