@@ -18,8 +18,7 @@ param (
     [Parameter(Mandatory = $True)][string]$daysToKeep,
     [Parameter()][ValidateSet("kRegular","kFull","kLog","kSystem","kAll")][string]$backupType = 'kAll',
     [Parameter()][switch]$expire,
-    [Parameter()][Int64]$numRuns = 1000,
-    [Parameter()][Int64]$daysBack = 180
+    [Parameter()][Int64]$numRuns = 1000
 )
 
 # source the cohesity-api helper code
@@ -39,7 +38,8 @@ if($jobname){
     }
 }
 
-$daysBackUsecs = dateToUsecs (get-date).AddDays(-$daysBack)
+$cluster = api get cluster
+$daysBackUsecs = ($cluster.createdTimeMsecs * 1000)
 
 # find protectionRuns that are older than daysToKeep
 "Searching for old snapshots..."
@@ -73,7 +73,7 @@ foreach ($job in $jobs | Sort-Object -Property name) {
                     $exactRun = api get /backupjobruns?exactMatchStartTimeUsecs=$startdateusecs`&id=$jobId
                     $jobUid = $exactRun[0].backupJobRuns.protectionRuns[0].backupRun.base.jobUid
                     # expire the snapshot
-                    "    Expiring $($job.name) snapshot on $remoteCluster from $startdate"
+                    "    Expiring $($job.name) snapshot from $startdate"
                     $expireRun = @{
                         'jobRuns' = @(
                             @{'expiryTimeUsecs'     = 0;

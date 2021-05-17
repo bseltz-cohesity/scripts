@@ -61,4 +61,3 @@ Also note that if you're waiting for capacity to be freed up, it may take hours 
 * -backupType: (optional) choose one of kRegular, kFull, kLog or kSystem backup types. Default is all
 * -expire: (optional) expire the snapshots (if omitted, the script will only show what 'would' be expired)
 * -numRuns: (optional) page through X runs at a time (default is 1000)
-* -daysBack: (optional) dig back through X days of job run history (default is 180)
