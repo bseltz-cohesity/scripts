@@ -10,6 +10,8 @@ param (
     [Parameter()][int]$strikes = 3
 )
 
+# Install-Module servicenow 
+
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 

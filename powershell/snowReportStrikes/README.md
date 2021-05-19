@@ -4,6 +4,14 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This PowerShell script creates ServiceNow incidents for protection jobs that have failed X times in a row,
 
+## Prerequisits
+
+This script requires the ServiceNow PowerShell modeule. To install it, open PowerShell and run the foollowing command:
+
+```powershell
+Install-Module servicenow 
+```
+
 ## Download the script
 
 Run these commands from PowerShell to download the script(s) into your current directory
