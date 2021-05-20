@@ -40,6 +40,7 @@ Place all files in a folder together. And run the script like so:
 * -vip: name or IP of Cohesity cluster
 * -username: name of user to connect to Cohesity
 * -domain: (optional) your AD domain (defaults to local)
+* -password: (optional) password (default is prompt or use cached password)
 * -sourceName: name of registered O365 protection source
 * -jobname: name of existing protection job to add sites to
 * -sitesToAdd: (optional) number of sites to add (default is 50)
