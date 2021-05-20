@@ -38,17 +38,22 @@ if views['count'] > 0:
 
     for view in sorted(views['views'], key=lambda v: v['name'].lower()):
         consumer = api('get', 'stats/consumers?consumerType=kViews&consumerIdList=%s' % view['viewId'])
-        entityId = consumer['statsList'][0]['groupList'][0]['entityId']
-        folderStats = api('get', 'statistics/timeSeriesStats?startTimeMsecs=%s&schemaName=BookKeeperStats&metricName=NumDirectories&rollupIntervalSecs=21600&rollupFunction=latest&entityIdList=%s&endTimeMsecs=%s' % (startMsecs, entityId, endMsecs))
-        if folderStats is not None and 'dataPointVec' in folderStats and len(folderStats['dataPointVec']) > 0:
-            numDirectories = folderStats['dataPointVec'][0]['data']['int64Value']
-        else:
-            numDirectories = 0
-        fileStats = api('get', 'statistics/timeSeriesStats?startTimeMsecs=%s&schemaName=BookKeeperStats&metricName=NumFiles&rollupIntervalSecs=21600&rollupFunction=latest&entityIdList=%s&endTimeMsecs=%s' % (startMsecs, entityId, endMsecs))
-        if fileStats is not None and 'dataPointVec' in fileStats and len(fileStats['dataPointVec']) > 0:
-            numFiles = fileStats['dataPointVec'][0]['data']['int64Value']
+        if consumer is not None and 'statsList' in consumer and len(consumer['statsList']) > 0 and 'groupList' in consumer['statsList'][0] and len(consumer['statsList'][0]['groupList']) > 0 and 'entityId' in consumer['statsList'][0]['groupList'][0]:
+            entityId = consumer['statsList'][0]['groupList'][0]['entityId']
+            folderStats = api('get', 'statistics/timeSeriesStats?startTimeMsecs=%s&schemaName=BookKeeperStats&metricName=NumDirectories&rollupIntervalSecs=21600&rollupFunction=latest&entityIdList=%s&endTimeMsecs=%s' % (startMsecs, entityId, endMsecs))
+            if folderStats is not None and 'dataPointVec' in folderStats and len(folderStats['dataPointVec']) > 0:
+                numDirectories = folderStats['dataPointVec'][0]['data']['int64Value']
+            else:
+                numDirectories = 0
+            fileStats = api('get', 'statistics/timeSeriesStats?startTimeMsecs=%s&schemaName=BookKeeperStats&metricName=NumFiles&rollupIntervalSecs=21600&rollupFunction=latest&entityIdList=%s&endTimeMsecs=%s' % (startMsecs, entityId, endMsecs))
+            if fileStats is not None and 'dataPointVec' in fileStats and len(fileStats['dataPointVec']) > 0:
+                numFiles = fileStats['dataPointVec'][0]['data']['int64Value']
+            else:
+                numFiles = 0
         else:
             numFiles = 0
+            numDirectories = 0
+
         print('%-25s  %s/%s' % (view['name'], numDirectories, numFiles))
         csv.write('%s,%s,%s\n' % (view['name'], numDirectories, numFiles))
 
