@@ -38,7 +38,7 @@ if views['count'] > 0:
 
     for view in sorted(views['views'], key=lambda v: v['name'].lower()):
         consumer = api('get', 'stats/consumers?consumerType=kViews&consumerIdList=%s' % view['viewId'])
-        if consumer is not None and 'statsList' in consumer and len(consumer['statsList']) > 0 and 'groupList' in consumer['statsList'][0] and len(consumer['statsList'][0]['groupList']) > 0 and 'entityId' in consumer['statsList'][0]['groupList'][0]:
+        if consumer is not None and 'statsList' in consumer and consumer['statsList'] is not None and len(consumer['statsList']) > 0 and 'groupList' in consumer['statsList'][0] and consumer['statsList'][0] is not None and len(consumer['statsList'][0]['groupList']) > 0 and 'entityId' in consumer['statsList'][0]['groupList'][0]:
             entityId = consumer['statsList'][0]['groupList'][0]['entityId']
             folderStats = api('get', 'statistics/timeSeriesStats?startTimeMsecs=%s&schemaName=BookKeeperStats&metricName=NumDirectories&rollupIntervalSecs=21600&rollupFunction=latest&entityIdList=%s&endTimeMsecs=%s' % (startMsecs, entityId, endMsecs))
             if folderStats is not None and 'dataPointVec' in folderStats and len(folderStats['dataPointVec']) > 0:
