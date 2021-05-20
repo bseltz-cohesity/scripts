@@ -40,12 +40,12 @@ if views['count'] > 0:
         consumer = api('get', 'stats/consumers?consumerType=kViews&consumerIdList=%s' % view['viewId'])
         entityId = consumer['statsList'][0]['groupList'][0]['entityId']
         folderStats = api('get', 'statistics/timeSeriesStats?startTimeMsecs=%s&schemaName=BookKeeperStats&metricName=NumDirectories&rollupIntervalSecs=21600&rollupFunction=latest&entityIdList=%s&endTimeMsecs=%s' % (startMsecs, entityId, endMsecs))
-        if 'dataPointVec' in folderStats and len(folderStats['dataPointVec']) > 0:
+        if folderStats is not None and 'dataPointVec' in folderStats and len(folderStats['dataPointVec']) > 0:
             numDirectories = folderStats['dataPointVec'][0]['data']['int64Value']
         else:
             numDirectories = 0
         fileStats = api('get', 'statistics/timeSeriesStats?startTimeMsecs=%s&schemaName=BookKeeperStats&metricName=NumFiles&rollupIntervalSecs=21600&rollupFunction=latest&entityIdList=%s&endTimeMsecs=%s' % (startMsecs, entityId, endMsecs))
-        if 'dataPointVec' in fileStats and len(fileStats['dataPointVec']) > 0:
+        if fileStats is not None and 'dataPointVec' in fileStats and len(fileStats['dataPointVec']) > 0:
             numFiles = fileStats['dataPointVec'][0]['data']['int64Value']
         else:
             numFiles = 0
