@@ -38,6 +38,10 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     $policy = $policies.policies | Where-Object id -eq $job.policyId
     foreach($entity in $lastRun.objects | Sort-Object -Property {$_.object.name}){
         $objectName = $entity.object.name
+        if($entity.object.environment -eq 'kO365' -and $entity.object.type -eq 'kUser'){
+            $source = api get "protectionSources/objects/$($entity.object.sourceId)"
+            $objectName = $source.office365ProtectionSource.primarySMTPAddress
+        }
         if($job.isActive -eq $false){
             $origination = 'replicated'
             $startTimeUsecs = $lastRun.originalBackupInfo.startTimeUsecs
