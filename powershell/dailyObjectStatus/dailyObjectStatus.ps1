@@ -53,6 +53,9 @@ foreach($job in $jobs | Sort-Object -Property name){
         $runStartTimeUsecs = $myRun.backupRun.stats.startTimeUsecs 
         foreach($source in $myRun.backupRun.sourceBackupStatus | Sort-Object -Property {$_.source.name}){
             $sourceName = $source.source.name
+            if($source.source.environment -eq 'kO365' -and $source.source.office365ProtectionSource.PSObject.Properties['primarySMTPAddress']){
+                $sourceName = $source.source.office365ProtectionSource.primarySMTPAddress
+            }
             $status = $source.status.subString(1)
             $message = $source.error
             "  {0} ({1})" -f $sourceName, $status
