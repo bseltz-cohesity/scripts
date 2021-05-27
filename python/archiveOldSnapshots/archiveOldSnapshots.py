@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Archive Now for python - version 2021.05.10"""
+"""Archive Now for python - version 2021.05.27"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -13,15 +13,15 @@ parser.add_argument('-u', '--username', type=str, required=True)  # username
 parser.add_argument('-d', '--domain', type=str, default='local')  # (optional) domain - defaults to local
 parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-p', '--password', type=str, default=None)
-parser.add_argument('-k', '--keepfor', type=int, required=True)    # (optional) will use policy retention if omitted
-parser.add_argument('-t', '--target', type=str, required=True)  # (optional) will use policy target if omitted
-parser.add_argument('-r', '--replicasonly', action='store_true')
-parser.add_argument('-l', '--localonly', action='store_true')
-parser.add_argument('-f', '--force', action='store_true')
-parser.add_argument('-e', '--excludelogs', action='store_true')
-parser.add_argument('-n', '--daysback', type=int, default=31)
-parser.add_argument('-j', '--joblist', type=str, default=None)
-parser.add_argument('-x', '--excludelist', type=str, default=None)
+parser.add_argument('-k', '--keepfor', type=int, required=True)
+parser.add_argument('-t', '--target', type=str, required=True)
+parser.add_argument('-r', '--replicasonly', action='store_true')  # only archive replicated jobs
+parser.add_argument('-l', '--localonly', action='store_true')     # only archive local jobs
+parser.add_argument('-f', '--force', action='store_true')         # perform the archive operation (otherwise show only)
+parser.add_argument('-e', '--excludelogs', action='store_true')   # exclude log backups
+parser.add_argument('-n', '--daysback', type=int, default=31)     # number of days back to search for snapshots to archive
+parser.add_argument('-j', '--joblist', type=str, default=None)    # text file of job names to include (default is all jobs)
+parser.add_argument('-x', '--excludelist', type=str, default=None)  # text file of job names (and strings) to exclude
 args = parser.parse_args()
 
 vip = args.vip
@@ -67,6 +67,8 @@ if excludelist is not None:
     excludejobnames += [s.strip().lower() for s in f.readlines() if s.strip() != '']
     f.close()
     jobs = [j for j in jobs if j['name'].lower() not in excludejobnames]
+    for exclude in excludejobnames:
+        jobs = [j for j in jobs if exclude.lower() not in j['name'].lower()]
 
 vault = [vault for vault in api('get', 'vaults') if vault['name'].lower() == target.lower()]
 if len(vault) > 0:
