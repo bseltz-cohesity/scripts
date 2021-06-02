@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This powershell script expires local snapshots older than x days. This is useful if you have reduced your on-prem retention and want to programatically expire local snapshots older than the new retention period.
+This powershell script will change (increase or decrease) the retention of existing snapshots. Note that if you reduce the retention, older backups might immediately get expired!
 
 ## Warning! This script deletes backup data! Make sure you know what you are doing before you run it
 
