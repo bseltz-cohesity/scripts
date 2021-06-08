@@ -37,3 +37,4 @@ The report will be saved as ClusterName-sqlProtectedObjectReport-date.csv
 * -vip: name or IP of Cohesity cluster
 * -username: name of user to connect to Cohesity
 * -domain: your AD domain (defaults to local)
+* -days: number of days to report (default is 7)

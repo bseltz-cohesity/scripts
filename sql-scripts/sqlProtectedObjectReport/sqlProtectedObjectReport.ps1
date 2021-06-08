@@ -2,7 +2,8 @@
 param (
     [Parameter(Mandatory = $True)][string]$vip,
     [Parameter(Mandatory = $True)][string]$username,
-    [Parameter()][string]$domain = 'local'
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][int]$days = 7
 )
 
 ### source the cohesity-api helper code
@@ -16,7 +17,7 @@ $cluster = api get cluster
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "$($cluster.name)-sqlProtectedObjectReport-$dateString.csv"
 
-"`nCluster Name,Job Name,Environment,Object Name,Object Type,Parent,Policy Name,Frequency (Minutes),Last Backup,Last Status,Start Time,End Time,Duration (Minutes),Job Paused" | Out-File -FilePath $outfileName
+"Cluster Name,Job Name,Environment,Object Name,Object Type,Parent,Policy Name,Frequency (Minutes),Run Type,Status,Start Time,End Time,Duration (Minutes),Job Paused" | Out-File -FilePath $outfileName
 
 $policies = api get -v2 "data-protect/policies"
 $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&environments=kSQL"
@@ -28,18 +29,17 @@ $objects = @{}
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     "    $($job.name)"
     $policy = $policies.policies | Where-Object id -eq $job.policyId
-    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?includeObjectDetails=true&numRuns=7"
+    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?includeObjectDetails=true&startTimeUsecs=$(timeAgo $days days)&numRuns=1000"
     if('kLog' -in $runs.runs.localBackupInfo.runType){
         $runDates = ($runs.runs | Where-Object {$_.localBackupInfo.runType -eq 'kLog'}).localBackupInfo.startTimeUsecs
     }else{
         $runDates = $runs.runs.localBackupInfo.startTimeUsecs
     }
-    $lastStatus = $runs.runs[0].localBackupInfo.status
     foreach($run in $runs.runs){
         foreach($thisobject in $run.objects){
             $object = $thisobject.object
             $localSnapshotInfo = $thisobject.localSnapshotInfo
-            if($object.object.id -notin $objects.Keys){
+            if($object.id -notin $objects.Keys){
                 $objects[$object.id] = @{
                     'name' = $object.name;
                     'id' = $object.id;
@@ -51,15 +51,20 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                     'runDates' = $runDates;
                     'sourceId' = '';
                     'parent' = '';
-                    'lastStatus' = $localSnapshotInfo.snapshotInfo.status;
+                    'runs' = New-Object System.Collections.Generic.List[System.Object];              
                     'jobPaused' = $job.isPaused;
-                    'startTime' = $localSnapshotInfo.snapshotInfo.startTimeUsecs;
-                    'endTime' = $localSnapshotInfo.snapshotInfo.endTimeUsecs
+                    
                 }
                 if($object.PSObject.Properties['sourceId']){
                     $objects[$object.id].sourceId = $object.sourceId
                 }
             }
+            $objects[$object.id].runs.Add(@{
+                'status' = $localSnapshotInfo.snapshotInfo.status; 
+                'startTime' = $localSnapshotInfo.snapshotInfo.startTimeUsecs; 
+                'endTime' = $localSnapshotInfo.snapshotInfo.endTimeUsecs;
+                'runType' = $run.localBackupInfo.runType
+            })
         }
     }
 }
@@ -71,10 +76,6 @@ foreach($id in $objects.Keys){
     $parent = $null
     if($object.sourceId -ne ''){
         $parent = $objects[$object.sourceId]
-        if($object.environment -eq 'kAD'){
-            $object.startTime = $parent.startTime
-            $object.endTime = $parent.endTime
-        }
         if(!$parent){
             $parent = $sources.protectionSource | Where-Object id -eq $object.sourceId
         }
@@ -90,13 +91,19 @@ foreach($id in $objects.Keys){
         if(!$parent){
             $object.parent = '-'
         }
-        $startTime = usecsToDate $object.startTime
-        $endTime = usecsToDate $object.endTime
-        $duration = [math]::Round(($object.endTime - $object.startTime) / (1000000 * 60))
-        $report = @($report + ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13}" -f $cluster.name, $object.jobName, $object.environment.subString(1), $object.name, $object.objectType.subString(1), $object.parent, $object.policyName, $frequency, $lastRunDate, $lastStatus, $startTime, $endTime, $duration, $object.jobPaused))
+        foreach($run in $object.runs){
+            $status = $run.status.subString(1)
+            $startTime = (usecsToDate $run.startTime).ToString('yyyy-MM-dd HH:mm:ss')
+            $endTime = (usecsToDate $run.endTime).ToString('yyyy-MM-dd HH:mm:ss')
+            $duration = [math]::Round(($run.endTime - $run.startTime) / (1000000 * 60))
+            $runType = $run.runType.subString(1)
+            $report = @($report + ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13}" -f $cluster.name, $object.jobName, $object.environment.subString(1), $object.name, $object.objectType.subString(1), $object.parent, $object.policyName, $frequency, $runType, $status, $startTime, $endTime, $duration, $object.jobPaused))
+        }
     }
 }
 
-$report | Sort-Object | Out-File -FilePath $outfileName -Append
+$report | Out-File -FilePath $outfileName -Append
+$report = Import-Csv -Path $outfileName
+$report | Sort-Object -Property 'Cluster Name', 'Job Name', 'Object Name', @{Expression={$_.'Start Time'}; Descending=$True} | Export-Csv -Path $outfileName
 
 "`nOutput saved to $outfilename`n"
