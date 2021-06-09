@@ -72,7 +72,7 @@ function apiauth($vip, $username='helios', $domain='local', $passwd=$null, $pass
         $domain, $username = $username.Split('\')
     }
     if($password){ $passwd = $password }
-    if($updatePassword){
+    if($updatePassword -or $clearPassword){
         $fpasswd = Get-CohesityAPIPasswordFromFile -vip $vip -username $username -domain $domain
         if($fpasswd){
             storePasswordInFile  -vip $vip -username $username -domain $domain
