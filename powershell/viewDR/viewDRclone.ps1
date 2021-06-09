@@ -98,20 +98,19 @@ foreach($viewName in $myViews){
     $searchResults = api get /searchvms?entityTypes=kView`&vmName=$viewName
     $viewResults = $searchResults.vms | Where-Object { $_.vmDocument.objectName -ieq $viewName }
     if($viewResults){
-        $viewResult = ($viewResults | Sort-Object -Property {$_.vmDocument.versions[0].snapshotTimestampUsecs} -Descending)[0]
+        $viewResult = ($viewResults | Sort-Object -Property {$_.vmDocument.versions[0].snapshotTimestampUsecs} -Descending:$True)[0]
     }else{
         Write-Host "$viewName not replicated to this cluster" -ForegroundColor Yellow
         $viewResult = $null
     }
     
     if ($viewResult) {
-        $remoteViewName = $false
         $job = $jobs | Where-Object {$_.name -eq $viewResult.vmDocument.jobName}
         $job = $job[0]
         if($job.PSObject.Properties['remoteViewName']){
-            $remoteViewName = $job.remoteViewName
-            $view = $views | Where-Object {$_.name -eq $job.remoteViewName}
-            $view = $view[0]
+            $remoteViews = $views | Where-Object {$job.name -in $_.viewProtection.protectionJobs.jobName}
+            $remoteView = ($remoteViews | Sort-Object -Property viewId -Descending)[0]
+            $view = $remoteView
             $cloneTask = @{
                 "name"       = "Clone-View_" + $((get-date).ToString().Replace('/', '_').Replace(':', '_').Replace(' ', '_'));
                 "objects"    = @(
@@ -170,8 +169,13 @@ foreach($viewName in $myViews){
             "Cloned $viewName"
             "$viewName" | Out-File -FilePath $clonedViewList -Append
             "$viewName" | Out-File -FilePath $migratedShares -Append
-            if($remoteViewName){
-                $null = api delete "views/$remoteViewName"
+            if($remoteViews){
+                foreach($oldView in $remoteViews){
+                    if($oldView.name -ne $viewName){
+                        $null = api delete "views/$($oldView.name)"
+                    }
+                }
+                $remoteViews = $null
             }
         }
     }
@@ -211,7 +215,7 @@ foreach($viewName in $myViews){
                 foreach($alias in $metadata.aliases){
                     write-host "`t$($alias.aliasName)"
                     $viewPath = $alias.viewPath.trimend("/")
-                    $null = api post viewAliases @{'viewName' = $viewName; 'viewPath' = $viewPath; 'aliasName' = $alias.aliasName}
+                    $null = api post viewAliases @{'viewName' = $viewName; 'viewPath' = $viewPath; 'aliasName' = $alias.aliasName; 'sharePermissions' = $alias.sharePermissions}
                     "$($alias.aliasName)" | Out-File -FilePath $migratedShares -Append
                 }
             }
