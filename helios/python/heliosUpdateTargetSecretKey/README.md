@@ -45,7 +45,7 @@ Please see here for more information: <https://github.com/bseltz-cohesity/script
 Helios uses an API key for authentication. To acquire an API key:
 
 * log onto Helios
-* click the gear icon -> access management -> API Keys
+* click Settings -> Access management -> API Keys
 * click Add API Key
 * enter a name for your key
 * click Save
