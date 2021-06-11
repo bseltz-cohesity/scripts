@@ -1,48 +1,38 @@
-# Monitor Missed SLAs Across Helios Clusters using Python
+# Update Secret Key for External Targets Across Helios Clusters using Python
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This python script finds missed SLAs for recent job runs
+This python script finds external targets that use the specified access key, and updates the secret access key.
 
 ## Components
 
-* heliosSlaMonitor.py: the main python script
+* heliosUpdateTargetSecretKey.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/helios/python/heliosSlaMonitor/heliosSlaMonitor.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/helios/python/heliosUpdateTargetSecretKey/heliosUpdateTargetSecretKey.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-chmod +x heliosSlaMonitor.py
+chmod +x heliosUpdateTargetSecretKey.py
 # end download commands
 ```
 
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./heliosSlaMonitor.py
+./heliosUpdateTargetSecretKey.py -a MYACCESSKEY
 ```
 
-If you'd like to send the report via email, include the mail-related parameters:
-
-```bash
-./heliosSlaMonitor.py -s mysmtpserver -t toaddr@mydomain.net -f fromaddr@mydomain.net
-```
+You will be prompted to enter the secret access key to apply to any external targets that use MYACCESSKEY.
 
 ## Parameters
 
-* -v, --vip: (optional) DNS or IP of the Helios endpoint (defaults to helios.cohesity.com)
 * -u, --username: (optional) username to store helios API key (defaults to helios)
-* -d, --domain: (optional) domain of username to store helios API key (default is local)
-* -s, --mailserver: (optional) SMTP gateway to forward email through
-* -p, --mailport: (optional) defaults to 25
-* -f, --sendfrom: (optional) email address to show in the from field
-* -t, --sendto: (optional) email addresses to send report to (use repeatedly to add recipients)
-* -b, --maxbackuphrs: (optional) defaults to 8
-* -r, --maxreplicationhrs: (optional) defaults to 12
-* -w, --watch: (optional) all, backup or replication (defaults to all)
+* -pwd, --password: (optional) API key to access helios
+* -a, --accesskey: access key to search for
+* -s, --secretkey: (optional) will be prompted by default
 
 ## The Python Helper Module - pyhesity.py
 
