@@ -42,7 +42,7 @@ foreach($job in $jobSummary | Sort-Object -Property { $_.backupJobSummary.jobDes
                 $entityStartTimeUsecs = $task.base.startTimeUsecs
                 $entityStartTime = (usecsToDate $entityStartTimeUsecs).ToString("yyyy-MM-dd HH:mm:ss")
                 write-host "$entityStartTime ($status) $entity"
-                if($status = 'kSuccess'){
+                if($status -eq 'kSuccess' -or $status -eq 'kWarning'){
                     # annotate VM
                     $vm = Get-VM -Name $entity
                     if($vm){
