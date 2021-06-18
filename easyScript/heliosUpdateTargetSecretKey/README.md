@@ -50,5 +50,15 @@ Immediately copy the API key (you only have one chance to copy the key. Once you
 For example: you can have the script send a report via email using the folllowing arguments:
 
 ```bash
--k xxxxxxxxxxxxxxx -s smtp.mydomain.net -t myemail.mydomain.net -f easyscript.mydomain.net
+# Example
+-k xxxxxxxxxxxxxxx -a yyyyyyyyyy -s zzzzzzzzzzzz -m smtp.mydomain.net -t myemail.mydomain.net -f easyscript.mydomain.net
+# End example
+```
+
+To limit the operation to one cluster and one target:
+
+```bash
+# Example
+-c mycluster -n mytarget -k xxxxxxxxxxxxxxx -a yyyyyyyyyy -s zzzzzzzzzzzz -m smtp.mydomain.net -t myemail.mydomain.net -f easyscript.mydomain.net
+# End example
 ```
