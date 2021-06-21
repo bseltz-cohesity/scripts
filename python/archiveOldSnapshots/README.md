@@ -52,3 +52,23 @@ By default, the script will only show what it would do. To actually execute the 
 * -r, --replicasonly: (optional) only archive replica jobs
 * -e, --excludelogs: (optional) do not archive database log backups
 * -f, --force: (optional) perform archives (show only if omitted)
+* -o, --outfolder: (optional) location of output log file (default is current directory)
+* -s, --retentionstring: (optional) substring of job name containing retention days (repeat for multiple)
+
+## Retention String Example
+
+Consider the following example:
+
+```bash
+./archiveOldSnapshots.py -v mycluster \
+                         -u myuser \
+                         -d mydomain.net \
+                         -r \ 
+                         -k 10 \ 
+                         -t myS3target \
+                         -s _90D_ \
+                         -s _365D_ \
+                         -f
+```
+
+In this example, `-r` means that only jobs that have replicated to this cluster will be archive. `-k 10` means that job runs will be retained in the archive for 10 days, with the following exceptions: `-s _90D_` means that any jobs with '_90D_' in the name will be retained for 90 days, and any jobs with '_365_' in the name will be retained for 365 days.
