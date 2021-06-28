@@ -96,60 +96,61 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
 
         # runs
         runs = api('get', 'data-protect/protection-groups/%s/runs?includeObjectDetails=true&numRuns=7' % job['id'], v=2)
-        runDates = [r['localBackupInfo']['startTimeUsecs'] for r in runs['runs'] if r['localBackupInfo']['runType'] == 'kLog']
-        if len(runDates) == 0:
-            runDates = [r['localBackupInfo']['startTimeUsecs'] for r in runs['runs']]
+        if len(runs['runs']) > 0:
+            runDates = [r['localBackupInfo']['startTimeUsecs'] for r in runs['runs'] if r['localBackupInfo']['runType'] == 'kLog']
+            if len(runDates) == 0:
+                runDates = [r['localBackupInfo']['startTimeUsecs'] for r in runs['runs']]
 
-        # status
-        lastStatus = runs['runs'][0]['localBackupInfo']['status']
+            # status
+            lastStatus = runs['runs'][0]['localBackupInfo']['status']
 
-        # QoS Policy
-        qosPolicy = '-'
-        if 'qosPolicy' in job:
-            qosPolicy = job['qosPolicy'][1:]
+            # QoS Policy
+            qosPolicy = '-'
+            if 'qosPolicy' in job:
+                qosPolicy = job['qosPolicy'][1:]
 
-        for run in runs['runs']:
-            for item in run['objects']:
-                object = item['object']
+            for run in runs['runs']:
+                for item in run['objects']:
+                    object = item['object']
 
-                # logical size
-                if 'logicalSizeBytes' in item['localSnapshotInfo']['snapshotInfo']['stats']:
-                    objectMiB = int(item['localSnapshotInfo']['snapshotInfo']['stats']['logicalSizeBytes'] / (1024 * 1024))
-                else:
-                    objectMiB = 0
+                    # logical size
+                    if 'logicalSizeBytes' in item['localSnapshotInfo']['snapshotInfo']['stats']:
+                        objectMiB = int(item['localSnapshotInfo']['snapshotInfo']['stats']['logicalSizeBytes'] / (1024 * 1024))
+                    else:
+                        objectMiB = 0
 
-                if object['id'] not in objects.keys():
-                    objects[object['id']] = {
-                        'name': object['name'],
-                        'id': object['id'],
-                        'objectType': object['objectType'],
-                        'objectMiB': objectMiB,
-                        'environment': object['environment'],
-                        'cloudArchiveDirect': cloudArchiveDirect,
-                        'jobName': job['name'],
-                        'policyName': policy['name'],
-                        'jobEnvironment': job['environment'],
-                        'runDates': runDates,
-                        'sourceId': '',
-                        'parent': '',
-                        'lastStatus': lastStatus,
-                        'lastRunType': run['localBackupInfo']['runType'][1:],
-                        'jobPaused': job['isPaused'],
-                        'indexing': indexing,
-                        'startTime': startTime,
-                        'timeZone': timeZone,
-                        'policyLink': policyLink,
-                        'qosPolicy': qosPolicy,
-                        'priority': job['priority'][1:],
-                        'fullSla': job['sla'][1]['slaMinutes'],
-                        'incrementalSla': job['sla'][0]['slaMinutes'],
-                        'archiveTarget': archiveTarget
-                    }
-                else:
-                    if objects[object['id']]['objectMiB'] == 0:
-                        objects[object['id']]['objectMiB'] = objectMiB
-                if 'sourceId' in object:
-                    objects[object['id']]['sourceId'] = object['sourceId']
+                    if object['id'] not in objects.keys():
+                        objects[object['id']] = {
+                            'name': object['name'],
+                            'id': object['id'],
+                            'objectType': object['objectType'],
+                            'objectMiB': objectMiB,
+                            'environment': object['environment'],
+                            'cloudArchiveDirect': cloudArchiveDirect,
+                            'jobName': job['name'],
+                            'policyName': policy['name'],
+                            'jobEnvironment': job['environment'],
+                            'runDates': runDates,
+                            'sourceId': '',
+                            'parent': '',
+                            'lastStatus': lastStatus,
+                            'lastRunType': run['localBackupInfo']['runType'][1:],
+                            'jobPaused': job['isPaused'],
+                            'indexing': indexing,
+                            'startTime': startTime,
+                            'timeZone': timeZone,
+                            'policyLink': policyLink,
+                            'qosPolicy': qosPolicy,
+                            'priority': job['priority'][1:],
+                            'fullSla': job['sla'][1]['slaMinutes'],
+                            'incrementalSla': job['sla'][0]['slaMinutes'],
+                            'archiveTarget': archiveTarget
+                        }
+                    else:
+                        if objects[object['id']]['objectMiB'] == 0:
+                            objects[object['id']]['objectMiB'] = objectMiB
+                    if 'sourceId' in object:
+                        objects[object['id']]['sourceId'] = object['sourceId']
 
     for id in objects.keys():
         object = objects[id]
