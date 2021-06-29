@@ -4,6 +4,8 @@ param (
     [Parameter(Mandatory = $True)][string]$vip, # Cohesity cluster to connect to
     [Parameter(Mandatory = $True)][string]$username, # Cohesity username
     [Parameter()][string]$domain = 'local', # Cohesity user domain name
+    [Parameter()][switch]$useApiKey, # use API key for authentication
+    [Parameter()][string]$password = $null,
     [Parameter(Mandatory = $True)][string]$sourceVM, # name of source VM
     [Parameter()][string]$targetVM, # name of target VM
     [Parameter()][array]$fileNames, # one or more file paths
@@ -17,14 +19,19 @@ param (
     [Parameter()][string]$runId, # restore from specified run ID
     [Parameter()][string]$olderThan, # restore from latest backup before date
     [Parameter()][int]$daysAgo, # restore from backup X days ago
-    [Parameter()][switch]$noIndex
+    [Parameter()][switch]$noIndex,
+    [Parameter()][switch]$localOnly
 )
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
+}else{
+    apiauth -vip $vip -username $username -domain $domain -password $password
+}
 
 $restoreMethods = @{
     'ExistingAgent' = 'UseExistingAgent';
@@ -63,6 +70,9 @@ if(!$object){
 $objectId = $object[0].id
 $groupId = $object[0].latestSnapshotsInfo[0].protectionGroupId
 $snapshots = api get "data-protect/objects/$objectId/snapshots?protectionGroupIds=$groupId" -v2
+if($localOnly){
+    $snapshots.snapshots = $snapshots.snapshots | Where-Object {$_.snapshotTargetType -eq 'Local'}
+}
 
 # list versions
 if($showVersions){

@@ -54,6 +54,7 @@ Place both files in a folder together and run the main script like so:
 * -runId: (optional) restore specified runId
 * -wait: (optional) wait for completion and report status
 * -noIndex: (optional) use if VM is not indexed, file paths must be exact case
+* -localOnly: (optional) restore from local snapshots only
 
 ## File Names and Paths
 
