@@ -14,7 +14,7 @@ apiauth -vip $vip -username $username -domain $domain
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "heliosProtectedObjectReport-$dateString.csv"
 
-"`nCluster Name,Job Name,Environment,Object Name,Object Type,Parent,Policy Name,Frequency (Minutes),Last Backup,Last Status,Job Paused" | Out-File -FilePath $outfileName
+"`nCluster Name,Job Name,Environment,Object Name,Object Type,Parent,Policy Name,Frequency (Minutes),Last Backup,Last Status,Job Paused,Alert Recipients" | Out-File -FilePath $outfileName
 
 foreach($cluster in heliosClusters){
     heliosCluster $cluster
@@ -52,6 +52,7 @@ foreach($cluster in heliosClusters){
                         'parent' = '';
                         'lastStatus' = $lastStatus;
                         'jobPaused' = $job.isPaused
+                        'jobAlertRecipients' = $job.alertPolicy.alertTargets.emailAddress -join '; '
                     }
                     if($object.PSObject.Properties['sourceId']){
                         $objects[$object.id].sourceId = $object.sourceId
@@ -83,7 +84,7 @@ foreach($cluster in heliosClusters){
             if(!$parent){
                 $object.parent = '-'
             }
-            $report = @($report + ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10}" -f $cluster.name, $object.jobName, $object.environment.subString(1), $object.name, $object.objectType.subString(1), $object.parent, $object.policyName, $frequency, $lastRunDate, $lastStatus, $object.jobPaused))
+            $report = @($report + ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}" -f $cluster.name, $object.jobName, $object.environment.subString(1), $object.name, $object.objectType.subString(1), $object.parent, $object.policyName, $frequency, $lastRunDate, $lastStatus, $object.jobPaused, $object.jobAlertRecipients))
         }
     }
 
