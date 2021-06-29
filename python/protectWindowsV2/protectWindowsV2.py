@@ -35,7 +35,6 @@ parser.add_argument('-n', '--includefile', type=str)
 parser.add_argument('-e', '--exclude', action='append', type=str)
 parser.add_argument('-x', '--excludefile', type=str)
 parser.add_argument('-m', '--skipnestedmountpoints', action='store_true')
-parser.add_argument('-t', '--skipnestedmountpointtypes', action='append', type=str)
 parser.add_argument('-sd', '--storagedomain', type=str, default='DefaultStorageDomain')
 parser.add_argument('-p', '--policyname', type=str, default=None)
 parser.add_argument('-tz', '--timezone', type=str, default='US/Eastern')
@@ -60,8 +59,7 @@ includes = args.include               # include path
 includefile = args.includefile        # file with include paths
 excludes = args.exclude               # exclude path
 excludefile = args.excludefile        # file with exclude paths
-skipmountpoints = args.skipnestedmountpoints                # skip nested mount points (6.3 and below)
-skipnestedmountpointtypes = args.skipnestedmountpointtypes  # skip nester mount point types (6.4 and above)
+skipmountpoints = args.skipnestedmountpoints  # skip nested mount points (6.3 and below)
 storagedomain = args.storagedomain    # storage domain for new job
 policyname = args.policyname          # policy name for new job
 starttime = args.starttime            # start time for new job
@@ -228,11 +226,24 @@ physicalServers = api('get', 'protectionSources?allUnderHierarchy=false&id=%s&in
 
 for servername in servernames:
     # find server
-    physicalServer = [s for s in physicalServers if s['protectionSource']['name'].lower() == servername.lower() and s['protectionSource']['physicalProtectionSource']['hostType'] != 'kWindows']
+    physicalServer = [s for s in physicalServers if s['protectionSource']['name'].lower() == servername.lower() and s['protectionSource']['physicalProtectionSource']['hostType'] == 'kWindows']
     if not physicalServer:
-        print("******** %s is not a registered Linux/AIX/Solaris server ********" % servername)
+        print("******** %s is not a registered Windows server ********" % servername)
     else:
         physicalServer = physicalServer[0]
+        mountPoints = []
+        for volume in physicalServer['protectionSource']['physicalProtectionSource']['volumes']:
+            if 'mountPoints' in volume:
+                for mountPoint in volume['mountPoints']:
+                    mountPoint = '/%s' % mountPoint.replace(':\\', '')
+                    mountPoints.append(mountPoint.lower())
+        theseExcludes = []
+        for exclude in excludes:
+            if exclude[0:2] == '*:':
+                for mountPoint in mountPoints:
+                    theseExcludes.append('%s%s' % (mountPoint[1:], exclude[2:]))
+            else:
+                theseExcludes.append(exclude)
 
         # get sourceSpecialParameters
         existingobject = [o for o in job['physicalParams']['fileProtectionTypeParams']['objects'] if o['id'] == physicalServer['protectionSource']['id']]
@@ -246,10 +257,8 @@ for servername in servernames:
                 "id": physicalServer['protectionSource']['id'],
                 "name": physicalServer['protectionSource']['name'],
                 "filePaths": [],
-                "usesPathLevelSkipNestedVolumeSetting": False,
-                "nestedVolumeTypesToSkip": [
-                    "autofs"
-                ],
+                "usesPathLevelSkipNestedVolumeSetting": True,
+                "nestedVolumeTypesToSkip": [],
                 "followNasSymlinkTarget": False
             }
             print('  adding %s to job %s...' % (servername, jobname))
@@ -260,30 +269,30 @@ for servername in servernames:
         else:
             thisobject['metadataFilePath'] = None
             for include in includes:
-                filePath = {
-                    "includedPath": include,
-                    "excludedPaths": [],
-                    "skipNestedVolumes": skipmountpoints
-                }
-                thisobject['filePaths'].append(filePath)
+                if include != '$ALL_LOCAL_DRIVES':
+                    include = '/%s' % include.replace(':\\', '/').replace('\\', '/')
+                if include[0:2].lower() in mountPoints or include == '$ALL_LOCAL_DRIVES':
+                    filePath = {
+                        "includedPath": include,
+                        "excludedPaths": [],
+                        "skipNestedVolumes": skipmountpoints
+                    }
+                    thisobject['filePaths'].append(filePath)
 
-            for exclude in excludes:
-                thisParent = ''
-                for include in includes:
-                    if include in exclude and '/' in exclude:
-                        if len(include) > len(thisParent):
-                            thisParent = include
-                if alllocaldrives is True:
-                    thisParent = '$ALL_LOCAL_DRIVES'
-                for filePath in thisobject['filePaths']:
-                    if thisParent == '' or filePath['includedPath'] == thisParent:
-                        filePath['excludedPaths'].append(exclude)
-
-        # add mount point type exclusions
-        if skipnestedmountpointtypes is not None and len(skipnestedmountpointtypes) > 0:
-            for mountpointtype in skipnestedmountpointtypes:
-                if mountpointtype not in thisobject['nestedVolumeTypesToSkip']:
-                    thisobject['nestedVolumeTypesToSkip'].append(mountpointtype)
+            for exclude in theseExcludes:
+                exclude = '/%s' % exclude.replace(':\\', '/').replace('\\', '/').replace('//', '/')
+                if exclude[0:2].lower() in mountPoints:
+                    thisParent = ''
+                    for include in includes:
+                        include = '/%s' % include.replace(':\\', '/').replace('\\', '/').replace('//', '/')
+                        if include.lower() in exclude.lower() and '/' in exclude:
+                            if len(include) > len(thisParent):
+                                thisParent = include
+                    if alllocaldrives is True:
+                        thisParent = '$ALL_LOCAL_DRIVES'
+                    for filePath in thisobject['filePaths']:
+                        if filePath['includedPath'].lower() == thisParent.lower():
+                            filePath['excludedPaths'].append(exclude)
 
         # include new parameter
         if newObject is True:

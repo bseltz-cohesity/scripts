@@ -1,8 +1,8 @@
-# Add Physical Linux Servers to File-based Protection Job Using Python
+# Add Physical Windows Servers to File-based Protection Job Using Python
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script adds physical linux servers to a file-based protection job.
+This script adds physical Windows servers to a file-based protection job.
 
 Note: this script is written for Cohesity 6.5.1 and later
 
@@ -12,32 +12,32 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectLinuxV2/protectLinuxV2.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectWindowsV2/protectWindowsV2.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-chmod +x protectLinuxV2.py
+chmod +x protectWindowsV2.py
 # end download commands
 ```
 
 ## Components
 
-* protectLinux.py: the main powershell script
+* protectWindows.py: the main powershell script
 * pyhesity.py: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./protectLinuxV2.py -v mycluster \
-                    -u myuser \
-                    -d mydomain.net \
-                    -j 'My Backup Job' \
-                    -s myserver.mydomain.net \
-                    -l serverlist.txt \
-                    -i /var \
-                    -i /home \
-                    -n includes.txt \
-                    -e /var/log \
-                    -e /home/oracle \
-                    -x excludes.txt
+./protectWindowsV2.py -v mycluster \
+                      -u myuser \
+                      -d mydomain.net \
+                      -j 'My Backup Job' \
+                      -s myserver.mydomain.net \
+                      -l serverlist.txt \
+                      -i 'c:\Users' \
+                      -i 'd:\' \
+                      -n includes.txt \
+                      -e 'c:\Users\Administrator' \
+                      -e '*:\junk' \
+                      -x excludes.txt
 ```
 
 ## Parameters
@@ -57,7 +57,6 @@ Place both files in a folder together and run the main script like so:
 * -x, --exclude: (optional) file path to exclude (use multiple times for multiple paths)
 * -f, --excludefile: (optional) a text file full of exclude file paths
 * -m, --skipnestedmountpoints: (optional - 6.3 and below) if omitted, nested mount paths are not skipped
-* -t, --skipnestedmountpointtypes: (optional - 6.4 and above) repeat for each mount type to exclude (e.g. -t nfs -t xfs)
 * -sd, --storagedomain: (optional) name of storage domain to create job in (default is DefaultStorageDomain)
 * -p, --policyname: (optional) name of protection policy to use for new job (only required for new job)
 * -tz, --timezone: (optional) time zone for new job (default is US/Eastern)
