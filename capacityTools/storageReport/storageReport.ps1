@@ -138,7 +138,7 @@ $html += $title
 $html += '</span>
 <span style="font-size:1em; text-align: right; padding-right: 2px; float: right;">'
 $html += $date
-$html += '</span>
+$html += "</span>
 </p>
 <table>
 <tr>
@@ -146,15 +146,16 @@ $html += '</span>
     <th>Tenant</th>
     <th>Environment</th>
     <th>Local/Replicated</th>
-    <th>GiB Logical</th>
-    <th>GiB Ingested</th>
-    <th>GiB Consumed</th>
+    <th>$unit Logical</th>
+    <th>$unit Ingested</th>
+    <th>$unit Consumed</th>
+    <th>$unit Written</th>
     <th>Dedup Ratio</th>
     <th>Compression</th>
     <th>Reduction</th>
-</tr>'
+</tr>"
 
-"Job/View Name,Tenant,Environment,Local/Replicated,$unit Logical,$unit Ingested,$unit Consumed,Dedup Ratio,Compression,Reduction" | Out-File -FilePath $csvFile
+"Job/View Name,Tenant,Environment,Local/Replicated,$unit Logical,$unit Ingested,$unit Consumed,$unit Written,Dedup Ratio,Compression,Reduction" | Out-File -FilePath $csvFile
 
 $jobs = api get protectionJobs?allUnderHierarchy=true
 
@@ -180,16 +181,18 @@ function processStats($stats, $name, $environment, $location, $tenant){
         $consumption = toUnits $consumedBytes
         $logical = toUnits $logicalBytes
         $dataInUnits = toUnits $dataIn
+        $dataWrittenUnits = toUnits $dataWritten
 
         Write-Host ("{0,35}: {1,11:f2} {2}" -f $name, $consumption, $unit)
 
-        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}""" -f $name,
+        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}""" -f $name,
                                                  $tenant,
                                                  $environment,
                                                  $location,
                                                  $logical,
                                                  $dataInUnits,
                                                  $consumption,
+                                                 $dataWrittenUnits,
                                                  $dedup,
                                                  $compression,
                                                  $reduction | Out-File -FilePath $csvFile -Append
@@ -203,6 +206,7 @@ function processStats($stats, $name, $environment, $location, $tenant){
         <td>{7}</td>
         <td>{8}</td>
         <td>{9}</td>
+        <td>{10}</td>
         </tr>" -f $name,
                   $tenant,
                   $environment,
@@ -210,6 +214,7 @@ function processStats($stats, $name, $environment, $location, $tenant){
                   $logical,
                   $dataInUnits,
                   $consumption,
+                  $dataWrittenUnits,
                   $dedup,
                   $compression,
                   $reduction)
