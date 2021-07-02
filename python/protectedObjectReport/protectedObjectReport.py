@@ -63,8 +63,13 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
             cloudArchiveDirect = True
 
         # policy
-        policy = [p for p in policies if p['id'] == job['policyId']][0]
-        policyLink = 'https://%s/protection-policy/details/%s' % (vip, policy['id'])
+        policy = [p for p in policies if p['id'] == job['policyId']]
+
+        if policy is not None and len(policy) > 0:
+            policy = policy[0]
+            policyLink = 'https://%s/protection-policy/details/%s' % (vip, policy['id'])
+        else:
+            continue
 
         # archive target
         archiveTarget = '-'
