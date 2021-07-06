@@ -75,3 +75,5 @@ For a compound tag (where a VM must have both tags to be included):
 * -fullSlaMinutes: (optional) default is 120
 * -storageDomainName: (optional) default is 'DefaultStorageDomain'
 * -paused: (optional) pause future runs (new job only)
+* -qosPolicy: (optional) kBackupHDD or kBackupSSD (default is kBackupHDD)
+* -disableIndexing: (optional) disable indexing (indexing is enabled by default)

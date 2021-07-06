@@ -15,7 +15,9 @@ param (
     [Parameter()][int]$fullSlaMinutes = 120,  # full SLA minutes
     [Parameter()][string]$storageDomainName = 'DefaultStorageDomain',  # storage domain you want the new job to write to
     [Parameter()][string]$policyName,  # protection policy name
-    [Parameter()][switch]$paused  # pause future runs (new job only)
+    [Parameter()][switch]$paused,  # pause future runs (new job only)
+    [Parameter()][ValidateSet('kBackupHDD', 'kBackupSSD')][string]$qosPolicy = 'kBackupHDD',
+    [Parameter()][switch]$disableIndexing
 )
 
 # source the cohesity-api helper code
@@ -57,6 +59,12 @@ if($paused){
     $isPaused = $True
 }else{
     $isPaused = $false
+}
+
+if($disableIndexing){
+    $enableIndexing = $false
+}else{
+    $enableIndexing = $True
 }
 
 $vCenter = api get protectionSources?environments=kVMware | Where-Object {$_.protectionSource.name -eq $vCenterName}
@@ -175,7 +183,7 @@ if($job){
                 "slaMinutes"    = $incrementalSlaMinutes
             }
         );
-        "qosPolicy"        = "kBackupHDD";
+        "qosPolicy"        = $qosPolicy;
         "vmwareParams"     = @{
             "objects"                           = @();
             "excludeObjectIds"                  = @();
@@ -187,7 +195,7 @@ if($job){
             "leverageStorageSnapshots"          = $false;
             "cloudMigration"                    = $false;
             "indexingPolicy"                    = @{
-                "enableIndexing" = $true;
+                "enableIndexing" = $enableIndexing;
                 "includePaths"   = @(
                     "/"
                 );
