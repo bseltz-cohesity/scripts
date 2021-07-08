@@ -57,7 +57,11 @@ foreach ($job in $jobs | Sort-Object -Property name) {
                 break
             }
             foreach($source in $run.backupRun.sourceBackupStatus){
-                $sourceName = $source.source.name
+                if($source.source.environment -eq 'kO365' -and $source.source.office365ProtectionSource.type -eq 'kUser'){
+                    $sourceName = $source.source.office365ProtectionSource.primarySMTPAddress
+                }else{
+                    $sourceName = $source.source.name
+                }
                 if($sourceName -notin $stats.Keys){
                     $stats[$sourceName] = @()
                 }
