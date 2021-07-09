@@ -34,22 +34,22 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     }else{
         $runDates = $runs.runs.localBackupInfo.startTimeUsecs
     }
-    $lastStatus = $runs.runs[0].localBackupInfo.status
+    # $lastStatus = $runs.runs[0].localBackupInfo.status
     foreach($run in $runs.runs){
-        foreach($object in $run.objects.object){
-            if($object.id -notin $objects.Keys){
-                $objects[$object.id] = @{
-                    'name' = $object.name;
-                    'id' = $object.id;
-                    'objectType' = $object.objectType;
-                    'environment' = $object.environment;
+        foreach($object in $run.objects){
+            if($object.object.id -notin $objects.Keys){
+                $objects[$object.object.id] = @{
+                    'name' = $object.object.name;
+                    'id' = $object.object.id;
+                    'objectType' = $object.object.objectType;
+                    'environment' = $object.object.environment;
                     'jobName' = $job.name;
                     'policyName' = $policy.name;
                     'jobEnvironment' = $job.environment;
                     'runDates' = $runDates;
                     'sourceId' = '';
                     'parent' = '';
-                    'lastStatus' = $lastStatus;
+                    'lastStatus' = $object.localSnapshotInfo.snapshotInfo.status.subString(1);
                     'jobPaused' = $job.isPaused
                 }
                 if($object.PSObject.Properties['sourceId']){
@@ -82,7 +82,7 @@ foreach($id in $objects.Keys){
         if(!$parent){
             $object.parent = '-'
         }
-        $report = @($report + ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10}" -f $cluster.name, $object.jobName, $object.environment.subString(1), $object.name, $object.objectType.subString(1), $object.parent, $object.policyName, $frequency, $lastRunDate, $lastStatus, $object.jobPaused))
+        $report = @($report + ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10}" -f $cluster.name, $object.jobName, $object.environment.subString(1), $object.name, $object.objectType.subString(1), $object.parent, $object.policyName, $frequency, $lastRunDate, $object.lastStatus, $object.jobPaused))
     }
 }
 
