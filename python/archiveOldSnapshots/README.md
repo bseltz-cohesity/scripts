@@ -54,6 +54,7 @@ By default, the script will only show what it would do. To actually execute the 
 * -f, --force: (optional) perform archives (show only if omitted)
 * -o, --outfolder: (optional) location of output log file (default is current directory)
 * -s, --retentionstring: (optional) substring of job name containing retention days (repeat for multiple)
+* -m, --onlymatches: (optional) only include jobs that match one of the retention strings
 
 ## Retention String Example
 

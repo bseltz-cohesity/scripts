@@ -24,8 +24,10 @@ parser.add_argument('-e', '--excludelogs', action='store_true')   # exclude log 
 parser.add_argument('-n', '--daysback', type=int, default=31)     # number of days back to search for snapshots to archive
 parser.add_argument('-j', '--joblist', type=str, default=None)    # text file of job names to include (default is all jobs)
 parser.add_argument('-x', '--excludelist', type=str, default=None)  # text file of job names (and strings) to exclude
-parser.add_argument('-o', '--outfolder', type=str, default='.')  # output folder for log file
+parser.add_argument('-o', '--outfolder', type=str, default='.')   # output folder for log file
 parser.add_argument('-s', '--retentionstring', action='append', type=str)  # strings for special retention
+parser.add_argument('-m', '--onlymatches', action='store_true')   # perform the archive operation (otherwise show only)
+
 args = parser.parse_args()
 
 vip = args.vip
@@ -44,6 +46,7 @@ joblist = args.joblist
 excludelist = args.excludelist
 outfolder = args.outfolder
 retentionstrings = args.retentionstring
+onlymatches = args.onlymatches
 
 nowUsecs = dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 outfileName = '%s/archiveLog-%s-%s.txt' % (outfolder, vip, datetime.now().strftime("%Y-%m"))
@@ -68,6 +71,14 @@ jobnames = []
 excludejobnames = []
 
 jobs = [j for j in api('get', 'protectionJobs') if 'isDirectArchiveEnabled' not in j]
+
+if onlymatches:
+    matchedjobs = []
+    for job in jobs:
+        for retentionString in retentionstrings:
+            if retentionString.lower() in job['name'].lower():
+                matchedjobs.append(job)
+    jobs = matchedjobs
 
 if localonly:
     jobs = [j for j in jobs if 'isActive' not in j or j['isActive'] is True]
