@@ -32,8 +32,8 @@ Place all files in a folder together, then run the main script like so:
                             -o365source mydomain.onmicrosoft.com `
                             -o365user myO365user@mydomain.onmicrosoft.com `
                             -o365pwd mySecretPassword `
-                            -appId abcdef12-3456-7890-abcd-ef1234567890 `
-                            -appSecretKey 'XZww7Y8TBHFNXaLazj8P-tYihCY/Z1=:'
+                            -appId abcdef12-3456-7890-abcd-ef1234567890, abcdef12-3456-7890-abcd-ef1234567891 `
+                            -appSecretKey 'XZww7Y8TBHFNXaLazj8P-tYihCY/Z1=:', 'ZZww7Y8TBHFNXaLazj8P-tYihCY/Z2=:'
 # end example
 ```
 
@@ -45,5 +45,5 @@ Place all files in a folder together, then run the main script like so:
 * -o365source: name of registered O365 source to be updated
 * -o365user: name of O365 user
 * -o365pwd: password for O365 user
-* -appId: App ID for MS Graph API access
-* -appSecretKey: App Secret Key for MS Graph API access
+* -appId: One or more App IDs for MS Graph API access (comma separated)
+* -appSecretKey: One or more App Secret Keys for MS Graph API access (comma separated)

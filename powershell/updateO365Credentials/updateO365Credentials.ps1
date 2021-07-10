@@ -1,15 +1,20 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,
-    [Parameter(Mandatory = $True)][string]$username,
-    [Parameter()][string]$domain = 'local',
+    [Parameter(Mandatory = $True)][string]$vip,  # dns or ip of couhesity
+    [Parameter(Mandatory = $True)][string]$username,  # cohesity username
+    [Parameter()][string]$domain = 'local',      # local or AD domain (fqdn)
     [Parameter(Mandatory = $True)][string]$o365source,
     [Parameter(Mandatory = $True)][string]$o365user,
     [Parameter(Mandatory = $True)][string]$o365pwd,
-    [Parameter(Mandatory = $True)][string]$appId,
-    [Parameter(Mandatory = $True)][string]$appSecretKey
+    [Parameter(Mandatory = $True)][array]$appId,
+    [Parameter(Mandatory = $True)][array]$appSecretKey
 )
+
+if($appId.Count -ne $appSecretKey.Count){
+    Write-Host "must include the same number of appIds and appSecretKeys" -ForegroundColor Yellow
+    exit 1
+}
 
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -33,19 +38,29 @@ $sourceParams = @{
         "credentials"        = @{
             "username"              = $o365user;
             "password"              = $o365pwd;
-            "msGraphCredentialsVec" = @(
-                @{
-                    "clientId"     = $appId;
-                    "grantType"    = $source.registeredEntityInfo.connectorParams.credentials.msGraphCredentialsVec[0].grantType;
-                    "scope"        = $source.registeredEntityInfo.connectorParams.credentials.msGraphCredentialsVec[0].scope;
-                    "clientSecret" = $appSecretKey
-                }
-            )
+            "msGraphCredentialsVec" = @()
         };
         "endpoint"           = $source.registeredEntityInfo.connectorParams.endpoint;
         "useOutlookEwsOauth" = $source.registeredEntityInfo.connectorParams.additionalParams.useOutlookEwsOauth;
         "office365Region"    = "Default"
     }
+}
+
+$i = 0
+foreach($id in $appId){
+    $msGraphCredential = $source.registeredEntityInfo.connectorParams.credentials.msGraphCredentialsVec | Where-Object {$_.clientId -eq $id}
+    if(!$msGraphCredential){
+        Write-Host "appId $id not found"
+        exit 1
+    }else{
+        $sourceParams.entityInfo.credentials.msGraphCredentialsVec += @{
+            "clientId" = $id;
+            "grantType" = $msGraphCredential.grantType;
+            "scope" = $msGraphCredential.scope;
+            "clientSecret" = $appSecretKey[$i]
+        }
+    }
+    $i += 1
 }
 
 Write-Host "Updating O365 credentials..."
