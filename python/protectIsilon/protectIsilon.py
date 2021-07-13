@@ -101,11 +101,19 @@ else:
 
 # get object IDs to protect
 objectids = []
+foundVolumes = []
 for zone in source['nodes']:
     if len(zonenames) == 0 or zone['protectionSource']['name'].lower() in zonenames:
         for volume in zone['nodes']:
             if len(volumenames) == 0 or volume['protectionSource']['name'].lower() in volumenames:
                 objectids.append(volume['protectionSource']['id'])
+                foundVolumes.append(volume['protectionSource']['name'].lower())
+
+# warn on missing volumes
+for volume in volumenames:
+    if volume not in foundVolumes:
+        print('volume %s not found!' % volume)
+        exit(1)
 
 # get job info
 newJob = False
