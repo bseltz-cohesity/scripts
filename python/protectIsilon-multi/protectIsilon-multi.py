@@ -22,7 +22,7 @@ parser.add_argument('-f', '--includefile', type=str)
 parser.add_argument('-e', '--exclude', action='append', type=str)
 parser.add_argument('-x', '--excludefile', type=str)
 parser.add_argument('-sd', '--storagedomain', type=str, default='DefaultStorageDomain')
-parser.add_argument('-p', '--policyname', type=str, default=None)
+parser.add_argument('-p', '--policyname', type=str, required=True)
 parser.add_argument('-tz', '--timezone', type=str, default='US/Eastern')
 parser.add_argument('-st', '--starttime', type=str, default='21:00')
 parser.add_argument('-is', '--incrementalsla', type=int, default=60)    # incremental SLA minutes
@@ -99,14 +99,40 @@ if source is None or len(source) == 0:
 else:
     source = source[0]
 
+# find protectionPolicy
+policy = [p for p in api('get', 'protectionPolicies') if p['name'].lower() == policyname.lower()]
+if len(policy) < 1:
+    print("Policy '%s' not found!" % policyname)
+    exit(1)
+policyid = policy[0]['id']
+
+# find storage domain
+sd = [sd for sd in api('get', 'viewBoxes') if sd['name'].lower() == storagedomain.lower()]
+if len(sd) < 1:
+    print("Storage domain %s not found!" % storagedomain)
+    exit(1)
+sdid = sd[0]['id']
+
+# parse starttime
+try:
+    (hour, minute) = starttime.split(':')
+    hour = int(hour)
+    minute = int(minute)
+    if hour < 0 or hour > 23 or minute < 0 or minute > 59:
+        print('starttime is invalid!')
+        exit(1)
+except Exception:
+    print('starttime is invalid!')
+    exit(1)
+
 # get object IDs to protect
-objectids = []
+objects = {}
 foundVolumes = []
 for zone in source['nodes']:
     if len(zonenames) == 0 or zone['protectionSource']['name'].lower() in zonenames:
         for volume in zone['nodes']:
             if len(volumenames) == 0 or volume['protectionSource']['name'].lower() in volumenames:
-                objectids.append(volume['protectionSource']['id'])
+                objects[volume['protectionSource']['name'].lower()] = volume['protectionSource']['id']
                 foundVolumes.append(volume['protectionSource']['name'].lower())
 
 # warn on missing volumes
@@ -115,127 +141,88 @@ for volume in volumenames:
         print('volume %s not found!' % volume)
         exit(1)
 
-# get job info
-newJob = False
 protectionGroups = api('get', 'data-protect/protection-groups?isDeleted=false&isActive=true', v=2)
 jobs = protectionGroups['protectionGroups']
-job = [job for job in jobs if job['name'].lower() == jobname.lower()]
+for volume in objects:
+    thisjobname = '%s%s' % (jobname, volume.replace('/', '-'))
+    job = [j for j in jobs if j['name'].lower() == thisjobname.lower()]
 
-if not job or len(job) < 1:
-    newJob = True
-    print("Job '%s' not found. Creating new job" % jobname)
+    if not job or len(job) < 1:
+        print("Creating new job %s" % thisjobname)
 
-    # find protectionPolicy
-    if policyname is None:
-        print('Policy name required for new job')
-        exit(1)
-    policy = [p for p in api('get', 'protectionPolicies') if p['name'].lower() == policyname.lower()]
-    if len(policy) < 1:
-        print("Policy '%s' not found!" % policyname)
-        exit(1)
-    policyid = policy[0]['id']
-
-    # find storage domain
-    sd = [sd for sd in api('get', 'viewBoxes') if sd['name'].lower() == storagedomain.lower()]
-    if len(sd) < 1:
-        print("Storage domain %s not found!" % storagedomain)
-        exit(1)
-    sdid = sd[0]['id']
-
-    # parse starttime
-    try:
-        (hour, minute) = starttime.split(':')
-        hour = int(hour)
-        minute = int(minute)
-        if hour < 0 or hour > 23 or minute < 0 or minute > 59:
-            print('starttime is invalid!')
-            exit(1)
-    except Exception:
-        print('starttime is invalid!')
-        exit(1)
-
-    job = {
-        "name": jobname,
-        "environment": "kIsilon",
-        "isPaused": False,
-        "policyId": policyid,
-        "priority": "kMedium",
-        "description": "",
-        "startTime": {
-            "hour": hour,
-            "minute": minute,
-            "timeZone": timezone
-        },
-        "abortInBlackouts": False,
-        "alertPolicy": {
-            "backupRunStatus": [
-                "kFailure"
-            ],
-            "alertTargets": []
-        },
-        "sla": [
-            {
-                "backupRunType": "kFull",
-                "slaMinutes": fullsla
+        job = {
+            "name": thisjobname,
+            "environment": "kIsilon",
+            "isPaused": False,
+            "policyId": policyid,
+            "priority": "kMedium",
+            "description": "",
+            "startTime": {
+                "hour": hour,
+                "minute": minute,
+                "timeZone": timezone
             },
-            {
-                "backupRunType": "kIncremental",
-                "slaMinutes": incrementalsla
-            }
-        ],
-        "qosPolicy": "kBackupHDD",
-        "isilonParams": {
-            "objects": [],
-            "excludeObjectIds": [],
-            "directCloudArchive": cloudarchivedirect,
-            "nativeFormat": True,
-            "indexingPolicy": {
-                "enableIndexing": enableindexing,
-                "includePaths": [
-                    "/"
+            "abortInBlackouts": False,
+            "alertPolicy": {
+                "backupRunStatus": [
+                    "kFailure"
                 ],
-                "excludePaths": []
+                "alertTargets": []
             },
-            "protocol": "kNfs3",
-            "continueOnError": True,
-            "useChangelist": False,
-            "encryptionEnabled": False
+            "sla": [
+                {
+                    "backupRunType": "kFull",
+                    "slaMinutes": fullsla
+                },
+                {
+                    "backupRunType": "kIncremental",
+                    "slaMinutes": incrementalsla
+                }
+            ],
+            "qosPolicy": "kBackupHDD",
+            "isilonParams": {
+                "objects": [
+                    {
+                        "id": objects[volume]
+                    }
+                ],
+                "excludeObjectIds": [],
+                "directCloudArchive": cloudarchivedirect,
+                "nativeFormat": True,
+                "indexingPolicy": {
+                    "enableIndexing": enableindexing,
+                    "includePaths": [
+                        "/"
+                    ],
+                    "excludePaths": []
+                },
+                "protocol": "kNfs3",
+                "continueOnError": True,
+                "useChangelist": False,
+                "encryptionEnabled": False
+            }
         }
-    }
 
-    if not cloudarchivedirect:
-        job['storageDomainId'] = sdid
+        if not cloudarchivedirect:
+            job['storageDomainId'] = sdid
 
-else:
-    print('Updating job %s' % jobname)
-    job = job[0]
+        # add includes and excludes
+        if len(includes) > 0 or len(excludes) > 0:
+            if 'fileFilters' not in job['isilonParams']:
+                job['isilonParams']['fileFilters'] = {}
+            if 'includeList' not in job['isilonParams']['fileFilters']:
+                job['isilonParams']['fileFilters']['includeList'] = []
+                if len(includes) == 0:
+                    job['isilonParams']['fileFilters']['includeList'].append('/')
+            if 'excludeList' not in job['isilonParams']['fileFilters']:
+                job['isilonParams']['fileFilters']['excludeList'] = []
+            for include in includes:
+                if include not in job['isilonParams']['fileFilters']['includeList']:
+                    job['isilonParams']['fileFilters']['includeList'].append(include)
+            for exclude in excludes:
+                if exclude not in job['isilonParams']['fileFilters']['excludeList']:
+                    job['isilonParams']['fileFilters']['excludeList'].append(exclude)
 
-# add objects to job
-existingObjects = [o['id'] for o in job['isilonParams']['objects']]
-for objectid in objectids:
-    if objectid not in existingObjects:
-        job['isilonParams']['objects'].append({"id": objectid})
-        existingObjects.append(objectid)
-
-# add includes and excludes
-if len(includes) > 0 or len(excludes) > 0:
-    if 'fileFilters' not in job['isilonParams']:
-        job['isilonParams']['fileFilters'] = {}
-    if 'includeList' not in job['isilonParams']['fileFilters']:
-        job['isilonParams']['fileFilters']['includeList'] = []
-        if len(includes) == 0:
-            job['isilonParams']['fileFilters']['includeList'].append('/')
-    if 'excludeList' not in job['isilonParams']['fileFilters']:
-        job['isilonParams']['fileFilters']['excludeList'] = []
-    for include in includes:
-        if include not in job['isilonParams']['fileFilters']['includeList']:
-            job['isilonParams']['fileFilters']['includeList'].append(include)
-    for exclude in excludes:
-        if exclude not in job['isilonParams']['fileFilters']['excludeList']:
-            job['isilonParams']['fileFilters']['excludeList'].append(exclude)
-
-# update job
-if newJob is True:
-    result = api('post', 'data-protect/protection-groups', job, v=2)
-else:
-    result = api('put', 'data-protect/protection-groups/%s' % job['id'], job, v=2)
+        result = api('post', 'data-protect/protection-groups', job, v=2)
+    else:
+        print('Job %s already exists' % thisjobname)
