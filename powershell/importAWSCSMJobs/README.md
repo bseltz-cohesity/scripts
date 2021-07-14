@@ -1,12 +1,10 @@
-# Import and Export Cohesity Objects Using PowerShell
+# Import and Export Cohesity AWS CSM Protection Jobs Using PowerShell
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script exports various Cohesity objects to json files, to serve as documentation of cluster state and provide the possibility of re-importing some settings and objects for cluster rebuild or disaster recovery use cases.
+These scripts export and import Cohesity AWS CSM Protection Jobs and sources, to serve as a method of migrating these jobs from one cluster to another.
 
-Note that re-importing objects is non-trivial and requires complex logic for each object type that depends on the use case and the specific situation. Included here are scripts for re-importing storageDomains, protectionPolciies, Generic NAS sources and Generic NAS protection jobs. More to come on an as needed basis.
-
-## Download the script
+## Download the scripts
 
 Run these commands from PowerShell to download the script(s) into your current directory
 
