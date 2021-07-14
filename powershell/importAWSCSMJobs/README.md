@@ -56,4 +56,4 @@ You can run the importAWSCSMJobs.ps1 script like so:
 
 * -policyName: name of protection policy to apply to imported jobs
 * -storageDomain: (optional) name of storage domain for jobs (default is DefaultStorageDomain)
-* -jobNames: (optional) one or more job names (comma separated) to import (default is all jobs) 
+* -jobNames: (optional) one or more job names (comma separated) to import (default is all jobs)
