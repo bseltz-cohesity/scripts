@@ -50,7 +50,15 @@ Place both files in a folder together and run the main script like so:
 
 The script can be run on a schedule so that the number of short term snaps is reduced periodically. Presumably you would run thie script hourly. You can use CRON to schedule the script.
 
-First, create a bash shell script that calls the script, then run the script via CRON like so:
+First, create a bash shell script that calls the script like the following:
+
+```bash
+#!/bin/bash
+cd /home/cohesity/scripts
+./expireShortTermSnaps.py -v mycluster -u myuser -d mydomain.net -j 'My Backup Job 1' -j 'My Backup Job 2' -n 2 -m 120 -e
+```
+
+Then run the script via CRON like so:
 
 ```bash
 0 * * * * /home/cohesity/scripts/myscript.sh >> /home/cohesity/scripts/cron.log 2>&1
