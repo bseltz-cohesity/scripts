@@ -43,3 +43,10 @@ Place both files in a folder together and run the main script like so:
 * -viewName: name of new view to create
 * -aliasName: name of alias (share name) to create
 * -folderPath: (optional) path to share (default is /)
+
+## SMB Share Permissions Parameters
+
+* -fullControl: (optional) list of principals to grant full control (comma separated)
+* -readWrite: (optional) list of principals to grant read write (comma separated)
+* -readOnly: (optional) list of principals to grant read only (comma separated)
+* -modify: (optional) list of principals to grant modify (comma separated)
