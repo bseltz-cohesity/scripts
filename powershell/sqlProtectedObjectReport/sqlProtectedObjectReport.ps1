@@ -17,7 +17,7 @@ $cluster = api get cluster
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "$($cluster.name)-sqlProtectedObjectReport-$dateString.csv"
 
-"Cluster Name,Job Name,Environment,Object Name,Object Type,Parent,Policy Name,Frequency (Minutes),Run Type,Status,Start Time,End Time,Duration (Minutes),Job Paused" | Out-File -FilePath $outfileName
+"Cluster Name,Job Name,Environment,Object Name,Object Type,Parent,Policy Name,Frequency (Minutes),Run Type,Status,Start Time,End Time,Duration (Minutes),Expires,Job Paused" | Out-File -FilePath $outfileName
 
 $policies = api get -v2 "data-protect/policies"
 $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&environments=kSQL"
@@ -63,6 +63,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                 'status' = $localSnapshotInfo.snapshotInfo.status; 
                 'startTime' = $localSnapshotInfo.snapshotInfo.startTimeUsecs; 
                 'endTime' = $localSnapshotInfo.snapshotInfo.endTimeUsecs;
+                'expiry' = $localSnapshotInfo.snapshotInfo.expiryTimeUsecs;
                 'runType' = $run.localBackupInfo.runType
             })
         }
@@ -93,11 +94,12 @@ foreach($id in $objects.Keys){
         }
         foreach($run in $object.runs){
             $status = $run.status.subString(1)
-            $startTime = (usecsToDate $run.startTime).ToString('yyyy-MM-dd HH:mm:ss')
-            $endTime = (usecsToDate $run.endTime).ToString('yyyy-MM-dd HH:mm:ss')
+            $startTime = (usecsToDate $run.startTime).ToString('MM/dd/yyyy HH:mm')
+            $endTime = (usecsToDate $run.endTime).ToString('MM/dd/yyyy HH:mm')
+            $expireTime = (usecsToDate $run.expiry).ToString('MM/dd/yyyy HH:mm')
             $duration = [math]::Round(($run.endTime - $run.startTime) / (1000000 * 60))
             $runType = $run.runType.subString(1)
-            $report = @($report + ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13}" -f $cluster.name, $object.jobName, $object.environment.subString(1), $object.name, $object.objectType.subString(1), $object.parent, $object.policyName, $frequency, $runType, $status, $startTime, $endTime, $duration, $object.jobPaused))
+            $report = @($report + ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14}" -f $cluster.name, $object.jobName, $object.environment.subString(1), $object.name, $object.objectType.subString(1), $object.parent, $object.policyName, $frequency, $runType, $status, $startTime, $endTime, $duration, $expireTime, $object.jobPaused))
         }
     }
 }
