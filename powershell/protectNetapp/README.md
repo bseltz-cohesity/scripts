@@ -68,6 +68,6 @@ Place all files in a folder together. And run the script like so:
 
 In the absense of any volume names or volume list provided in the command line, the entire netapp will be auto protected.
 
-You can auto protect all volumes of an SVM by including it in the list of volumes to protect (e.g. -volumeName SVM0).
+You can auto protect all volumes of an SVM by including it in the list of volumes to protect (e.g. `-volumeName SVM0`).
 
-You can protect individual volumes by specifying SVM:volume (e.g. SVM0:vol1)
+You can protect individual volumes by specifying SVM:volume (e.g. `-volumeName SVM0:vol1`)
