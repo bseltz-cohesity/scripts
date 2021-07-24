@@ -150,13 +150,33 @@ if($volumes.Length -gt 0){
         Write-Host "Cloud Archive Direct jobs are limited to a single volume" -ForegroundColor Yellow
         exit
     }
-    $sourceVolumes = $netapp.nodes | Where-Object {$_.protectionSource.name -in $volumes}
-    $sourceIds += $sourceVolumes.protectionSource.id
-    $missingVolumes = $volumes | Where-Object {$sourceVolumes.protectionSource.name -notcontains $_}
-    if($missingVolumes){
-        Write-Host "Volumes ($($missingVolumes -join ', ')) not found" -ForegroundColor Yellow
-        exit
+    foreach($vol in $volumes){
+        $svmName, $volumeName = $vol -split ':'
+        $svm = $netapp.nodes | Where-Object {$_.protectionSource.name -eq $svmName}
+        if($svm){
+            if($volumeName){
+                $volume = $svm.nodes | Where-Object {$_.protectionSource.name -eq $volumeName}
+                if($volume){
+                    $sourceIds =@($sourceIds + $volume.protectionSource.id)
+                }else{
+                    Write-Host "Volume $volumename not found under SVM $svmName" -ForegroundColor Yellow
+                    exit 1
+                }
+            }else{
+                $sourceIds = @($sourceIds + $svm.protectionSource.id)
+            }
+        }else{
+            Write-Host "SVM $svmName not found" -ForegroundColor Yellow
+            exit
+        }
     }
+    # $sourceVolumes = $netapp.nodes | Where-Object {$_.protectionSource.name -in $volumes}
+    # $sourceIds += $sourceVolumes.protectionSource.id
+    # $missingVolumes = $volumes | Where-Object {$sourceVolumes.protectionSource.name -notcontains $_}
+    # if($missingVolumes){
+    #     Write-Host "Volumes ($($missingVolumes -join ', ')) not found" -ForegroundColor Yellow
+    #     exit
+    # }
 }elseif($cloudArchiveDirect){
     Write-Host "Cloud Archive Direct jobs are limited to a single volume" -ForegroundColor Yellow
     exit
