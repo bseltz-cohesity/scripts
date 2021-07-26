@@ -34,7 +34,7 @@ Place all files in a folder together. And run the script like so:
                     -timeZone 'America/New_York' `
                     -enableIndexing `
                     -netappSource mynetapp `
-                    -volumeName vol2 `
+                    -volumeName SVM0:vol1, SVM1:vol3 `
                     -cloudArchiveDirect
 # end example
 ```
@@ -63,3 +63,11 @@ Place all files in a folder together. And run the script like so:
 * -enableIndexing: (optional) default is disabled
 * -cloudArchiveDirect: (optional) default is false
 * -storageDomainName: (optional) default is 'DefaultStorageDomain' (or 'Direct_Archive_Viewbox' for cloud archive direct jobs)
+
+## Selecting Volumes
+
+In the absense of any volume names or volume list provided in the command line, the entire netapp will be auto protected.
+
+You can auto protect all volumes of an SVM by including it in the list of volumes to protect (e.g. `-volumeName SVM0`).
+
+You can protect individual volumes by specifying SVM:volume (e.g. `-volumeName SVM0:vol1`)
