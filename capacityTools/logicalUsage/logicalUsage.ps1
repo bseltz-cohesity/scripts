@@ -7,8 +7,14 @@ param (
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
     [Parameter()][int]$days = 14,
+    [Parameter()][ValidateSet('KiB','MiB','GiB','TiB')][string]$unit = 'MiB',
     [Parameter()][switch]$localOnly
 )
+
+$conversion = @{'Kib' = 1024; 'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
+function toUnits($val){
+    return "{0:n2}" -f ($val/($conversion[$unit]))
+}
 
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -34,6 +40,7 @@ foreach ($job in (api get protectionJobs?allUnderHierarchy=true)){
                         $report[$sourcename]['size'] = 0
                         $report[$sourcename]['environment'] = $source.source.environment
                     }
+                    "{0}`t{1}`t{2}" -f (usecsToDate $run.backupRun.stats.startTimeUsecs), $sourcename, $source.stats.totalLogicalBackupSizeBytes
                     if($source.stats.totalLogicalBackupSizeBytes -gt $report[$sourcename]['size']){
                         $report[$sourcename]['size'] = $source.stats.totalLogicalBackupSizeBytes
                     }
@@ -60,13 +67,18 @@ foreach($view in $views.views){
 
 $total = 0
 
-"`n{0,15}  {1,10:n0}  {2}" -f ('Environment', 'Size (GB)', 'Name')
-"{0,15}  {1,10:n0}  {2}" -f ('===========', '=========', '====')
-"Environment,Size(GB),Name" | Out-File -FilePath $outFile
+"`n{0,15}  {1,10}  {2}" -f ('Environment', "Size ($unit)", 'Name')
+"{0,15}  {1,10}  {2}" -f ('===========', '=========', '====')
+"Environment,Size($unit),Name" | Out-File -FilePath $outFile
 
 $report.GetEnumerator() | Sort-Object -Property {$_.Value.size} -Descending | ForEach-Object {
-    "{0,15}  {1,10:n0}  {2}" -f ($_.Value.environment, [math]::Round(($_.Value.size/(1024*1024*1024)),2), $_.Name)
-    "{0},{1},{2}" -f ($_.Value.environment, [math]::Round(($_.Value.size/(1024*1024*1024)),2), $_.Name) | Out-File -FilePath $outFile -Append
-    $total += $_.Value.size
+    $item = $_
+    $environment = $item.Value.environment
+    $size = toUnits $item.Value.size
+    $name = $item.Name
+    "{0,15}  {1,10}  {2}" -f $environment, $size, $name
+    "{0},""{1}"",{2}" -f $environment, $size, $name | Out-File -FilePath $outFile -Append
+    $total += $item.Value.size
 }
-"`n    Total Logical Size: {0:n0} GB`n" -f ($total/(1024*1024*1024))
+$total = toUnits $total
+"`n    Total Logical Size: {0} $unit`n" -f $total

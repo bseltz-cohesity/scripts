@@ -67,3 +67,4 @@ By default, the script will search back 90 days to find the peak size of any obj
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -days: (optional) number of days to look back (default is 90 days)
 * -localOnly: (optional) default is to include replicated data
+* -unit: (optional) KiB, MiB, GiB or TiB (default is MiB)
