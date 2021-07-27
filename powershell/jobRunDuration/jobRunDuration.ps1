@@ -26,16 +26,21 @@ foreach($jobName in ($jobNames | Sort-Object -Property name)){
     if(! $job){
         write-host "$jobName not found" -ForegroundColor Yellow
     }else{
-        $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$(timeAgo 24 hours)&runTypes=kRegular"
-        foreach($run in $runs | Where-Object {$_.backupRun.status -eq 'kSuccess'}){
-            $startTimeUsecs = $run.backupRun.stats.startTimeUsecs
-            $startTime = usecsToDate $startTimeUsecs
-            $endTimeUsecs = $run.backupRun.stats.endTimeUsecs
-            $durationUsecs = $endTimeUsecs - $startTimeUsecs
-            $durationSeconds = [math]::Round(($durationUsecs / 1000000),0) 
-            $dataReadMBytes = [math]::Round(($run.backupRun.stats.totalBytesReadFromSource / (1024 * 1024)), 2)
-            "{0}`t{1}`t{2} seconds`t{3} MB read" -f $jobName, $startTime, $durationSeconds, $dataReadMBytes
-            "{0},{1},{2},{3}" -f $jobName, $startTime, $durationSeconds, $dataReadMBytes | out-file -FilePath $outfileName -Append
+        foreach($j in $job){
+            $runs = api get "protectionRuns?jobId=$($j.id)&startTimeUsecs=$(timeAgo 24 hours)&runTypes=kRegular"
+            if(! $runs -or $runs.Count -eq 0){
+                $runs = api get "protectionRuns?jobId=$($j.id)&numRuns=1&runTypes=kRegular"
+            }
+            foreach($run in $runs | Where-Object {$_.backupRun.status -eq 'kSuccess'}){
+                $startTimeUsecs = $run.backupRun.stats.startTimeUsecs
+                $startTime = usecsToDate $startTimeUsecs
+                $endTimeUsecs = $run.backupRun.stats.endTimeUsecs
+                $durationUsecs = $endTimeUsecs - $startTimeUsecs
+                $durationSeconds = [math]::Round(($durationUsecs / 1000000),0) 
+                $dataReadMBytes = [math]::Round(($run.backupRun.stats.totalBytesReadFromSource / (1024 * 1024)), 2)
+                "{0}`t{1}`t{2} seconds`t{3} MB read" -f $jobName, $startTime, $durationSeconds, $dataReadMBytes
+                "{0},{1},{2},{3}" -f $jobName, $startTime, $durationSeconds, $dataReadMBytes | out-file -FilePath $outfileName -Append
+            }
         }
     }
 }
