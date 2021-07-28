@@ -62,8 +62,9 @@ $searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&vmName=$so
 $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer}
 
 ### if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot 
-$dbresults = ($dbresults | Sort-Object -Property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False}) |
-                           Sort-Object -Property @{Expression={$_.vmDocument.objectName}} -Unique
+$dbresults = $dbresults | Sort-Object -Property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False} |
+                          Group-Object -Property @{Expression={$_.vmDocument.objectName}} |
+                          ForEach-Object {$_.Group[0]}
 
 ### narrow by sourceInstance
 if($sourceInstance){
