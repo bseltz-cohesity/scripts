@@ -37,7 +37,7 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain
+apiauth -vip $vip -username $username -domain $domain -quiet
 
 ### gather DB names
 $dbs = @()
@@ -61,9 +61,10 @@ $searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&vmName=$so
 ### narrow to the correct sourceServer
 $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer}
 
-### if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot 
-$dbresults = ($dbresults | Sort-Object -Property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False}) |
-                           Sort-Object -Property @{Expression={$_.vmDocument.objectName}} -Unique
+### if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot
+$dbresults = $dbresults | Sort-Object -Property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False} |
+                          Group-Object -Property @{Expression={$_.vmDocument.objectName}} |
+                          ForEach-Object {$_.Group[0]}
 
 ### narrow by sourceInstance
 if($sourceInstance){
