@@ -156,7 +156,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 #### Other Clean Up <a name="powershell-cleanup"/>
 
 * Expunge Data Spillage: [expungeDataSpillage](./powershell/expungeDataSpillage)
-* Expunge VM Backups: [expungeVM](./powershell/exxpungeVM)
+* Expunge VM Backups: [expungeVM](./powershell/expungeVM)
 
 ### Ransomware and Compliance <a name="powershell-compliance"/>
 
