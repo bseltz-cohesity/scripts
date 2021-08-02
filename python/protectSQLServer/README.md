@@ -29,9 +29,7 @@ Place both files in a folder together and run the main script like so:
                       -d mydomain.net \
                       -j 'My Backup Job' \
                       -s myserver1.mydomain.net \
-                      -s myserver2.mydomain.net \
-                      -l serverlist.txt \
-                      -i MYINSTANCE
+                      -s myserver2.mydomain.net
 ```
 
 ## Parameters
