@@ -36,7 +36,7 @@ if (!$remote) {
 if($jobName){
     $myjob = api get protectionJobs | Where-Object {$_.name -eq $jobName}
     if(!$myjob){
-        Write-Warning "Job $jobName not found!" -ForegroundColor Yellow
+        Write-Warning "Job $jobName not found!"
         exit
     }
 }else{
