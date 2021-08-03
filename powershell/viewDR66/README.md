@@ -14,15 +14,15 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/1-plannedFailoverPrep.ps1).content | Out-File 1-plannedFailoverPrep.ps1; (Get-Content 1-plannedFailoverPrep.ps1) | Set-Content 1-plannedFailoverPrep.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/2-plannedFailover.ps1).content | Out-File 2-plannedFailover.ps1; (Get-Content 2-plannedFailover.ps1) | Set-Content 2-plannedFailover.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/3-plannedFailbackPrep.ps1).content | Out-File 3-plannedFailbackPrep.ps1; (Get-Content 3-plannedFailbackPrep.ps1) | Set-Content 3-plannedFailbackPrep.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/4-plannedFailback.ps1).content | Out-File 4-plannedFailback.ps1; (Get-Content 4-plannedFailback.ps1) | Set-Content 4-plannedFailback.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/a-unplannedFailover.ps1).content | Out-File a-unplannedFailover.ps1; (Get-Content a-unplannedFailover.ps1) | Set-Content a-unplannedFailover.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/b-unplannedFailback.ps1).content | Out-File b-unplannedFailback.ps1; (Get-Content b-unplannedFailback.ps1) | Set-Content b-unplannedFailback.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/viewDR.ps1).content | Out-File viewDR.ps1; (Get-Content viewDR.ps1) | Set-Content viewDR.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/cnameFailover.ps1).content | Out-File cnameFailover.ps1; (Get-Content cnameFailover.ps1) | Set-Content cnameFailover.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/dfsFailover.ps1).content | Out-File dfsFailover.ps1; (Get-Content dfsFailover.ps1) | Set-Content dfsFailover.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/1-plannedFailoverPrep.ps1).content | Out-File 1-plannedFailoverPrep.ps1; (Get-Content 1-plannedFailoverPrep.ps1) | Set-Content 1-plannedFailoverPrep.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/2-plannedFailover.ps1).content | Out-File 2-plannedFailover.ps1; (Get-Content 2-plannedFailover.ps1) | Set-Content 2-plannedFailover.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/3-plannedFailbackPrep.ps1).content | Out-File 3-plannedFailbackPrep.ps1; (Get-Content 3-plannedFailbackPrep.ps1) | Set-Content 3-plannedFailbackPrep.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/4-plannedFailback.ps1).content | Out-File 4-plannedFailback.ps1; (Get-Content 4-plannedFailback.ps1) | Set-Content 4-plannedFailback.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/a-unplannedFailover.ps1).content | Out-File a-unplannedFailover.ps1; (Get-Content a-unplannedFailover.ps1) | Set-Content a-unplannedFailover.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/b-unplannedFailback.ps1).content | Out-File b-unplannedFailback.ps1; (Get-Content b-unplannedFailback.ps1) | Set-Content b-unplannedFailback.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/viewDR.ps1).content | Out-File viewDR.ps1; (Get-Content viewDR.ps1) | Set-Content viewDR.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/cnameFailover.ps1).content | Out-File cnameFailover.ps1; (Get-Content cnameFailover.ps1) | Set-Content cnameFailover.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/dfsFailover.ps1).content | Out-File dfsFailover.ps1; (Get-Content dfsFailover.ps1) | Set-Content dfsFailover.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
