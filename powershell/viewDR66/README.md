@@ -52,6 +52,12 @@ Two clusters (ClusterA and ClusterB) should be configured for replication. Clust
 
 The protection jobs should be configured to create a Remote View (with the same view name) on the replication target. This remote view will be read-only at ClusterB during normal operations and will become read-write during failover.
 
+The following gflag must be set on the clusters to enable the view DR orchestration feature:
+
+```bash
+    bridge_enable_nas_dr_orchestrator: true
+```
+
 ## Authenticating to Helios
 
 The Test/Wrapper scripts can be configured to log onto clusters directly, or log onto Helios.
