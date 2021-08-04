@@ -8,21 +8,43 @@ param (
 )
 
 # source the cohesity-api helper code
-. ./cohesity-api
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
 apiauth -vip $vip -username $username -domain $domain
 
+$sources = api get protectionSources?rootNodes
+
+"Parent,Object,Path" | Out-File -FilePath foundFiles.csv
+
 $results = api get "/searchfiles?filename=$($extension)"
-write-host "`nFound $($results.files.count) results"
-
-if($results.files.count -gt 0){
-    $output = $results.files | where-object { $_.fileDocument.isDirectory -ne $True -and $_.fileDocument.filename -match $extension+'$'} |
-                 Sort-Object -Property {$_.fileDocument.objectId.entity.displayName}, {$_.fileDocument.filename} |
-                 Select-Object -Property @{Label='Server';Expression={$_.fileDocument.objectId.entity.displayName}}, @{Label='Path';Expression={$_.fileDocument.filename}}
-    $output
-    $output | Out-File -FilePath foundFiles.txt
-
-    "`nsaving results to foundFiles.txt"
+$results = api get "restore/files?paginate=true&pageSize=1000&search=$($extension)"
+while($True){
+    if($results.files.count -gt 0){
+        $output = $results.files | where-object { $_.isFolder -ne $True -and $_.filename -match $extension+'$'} |
+                        Sort-Object -Property {$_.protectionSource.name}, {$_.filename} |
+                        ForEach-Object {
+                            $objectName = $_.protectionSource.name
+                            $fileName = $_.filename
+                            $parentName = ''
+                            $parentId = $_.protectionSource.parentId
+                            if($parentId){
+                                $parent = $sources | Where-Object {$_.protectionSource.id -eq $parentId}
+                                if($parent){
+                                    $parentName = $parent.protectionSource.name
+                                }
+                            }
+                            write-host ("{0},{1},{2}" -f $parentName, $objectName, $fileName)
+                            "{0},{1},{2}" -f $parentName, $objectName, $fileName | Out-File -FilePath foundFiles.csv -Append
+                        }
+    }else{
+        break
+    }
+    if($results.paginationCookie){
+        $results = api get "restore/files?paginate=true&pageSize=10&paginationCookie=$($results.paginationCookie)&search=$($extension)"
+    }else{
+        break
+    }
 }
 
+"`nsaving results to foundFiles.csv"
