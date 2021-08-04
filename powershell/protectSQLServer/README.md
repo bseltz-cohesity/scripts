@@ -66,3 +66,4 @@ Or to update an existing job:
 * -incrementalProtectionSlaTimeMins: (optional) default 60
 * -fullProtectionSlaTimeMins: (optional) default is 120
 * -storageDomainName: (optional) default is 'DefaultStorageDomain' (or 'Direct_Archive_Viewbox' for cloud archive direct jobs)
+* -instancesOnly: (optional) auto protect existing instances but not the root of the server (so any new instances will not be protected)

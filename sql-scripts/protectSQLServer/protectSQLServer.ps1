@@ -7,6 +7,7 @@ param (
     [Parameter(Mandatory = $True)][string]$jobname,
     [Parameter(Mandatory = $True)][string]$servername,
     [Parameter()][array]$instanceName,
+    [Parameter()][switch]$instancesOnly,
     [Parameter()][string]$policyname,
     [Parameter()][string]$startTime = '20:00', # e.g. 23:30 for 11:30 PM
     [Parameter()][string]$timeZone = 'America/Los_Angeles', # e.g. 'America/New_York'
@@ -41,14 +42,19 @@ $mySourceParams = @{
     }
 }
 
-foreach($instance in $instanceName){
-    $instanceSource = $serverSource.applicationNodes | Where-Object {$_.protectionSource.name -eq $instance}
-    if(! $instanceSource){
-        Write-Host "Instance $instance not found on server $servername"
-        exit
-    }else{
-        $mySourceParams.sqlSpecialParameters.applicationEntityIds += $instanceSource.protectionSource.id
-        $haveParams = $True
+if($instanceName.Count -eq 0 -and $instancesOnly){
+    $mySourceParams.sqlSpecialParameters.applicationEntityIds = @($serverSource.applicationNodes.protectionSource.id)
+    $haveParams = $True
+}else{
+    foreach($instance in $instanceName){
+        $instanceSource = $serverSource.applicationNodes | Where-Object {$_.protectionSource.name -eq $instance}
+        if(! $instanceSource){
+            Write-Host "Instance $instance not found on server $servername"
+            exit
+        }else{
+            $mySourceParams.sqlSpecialParameters.applicationEntityIds += $instanceSource.protectionSource.id
+            $haveParams = $True
+        }
     }
 }
 
