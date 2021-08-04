@@ -19,6 +19,7 @@ $sources = api get protectionSources?rootNodes
 
 $results = api get "/searchfiles?filename=$($extension)"
 $results = api get "restore/files?paginate=true&pageSize=1000&search=$($extension)"
+$oldcookie = $null
 while($True){
     if($results.files.count -gt 0){
         $output = $results.files | where-object { $_.isFolder -ne $True -and $_.filename -match $extension+'$'} |
@@ -41,7 +42,14 @@ while($True){
         break
     }
     if($results.paginationCookie){
-        $results = api get "restore/files?paginate=true&pageSize=10&paginationCookie=$($results.paginationCookie)&search=$($extension)"
+        $oldcookie = $results.paginationCookie
+        while($results.paginationCookie -eq $oldcookie -and $results){
+                $results = api get "restore/files?paginate=true&pageSize=10&paginationCookie=$($results.paginationCookie)&search=$($extension)"
+                if(! $results){
+                    "retrying..."
+                    Start-Sleep 2
+                }
+        }
     }else{
         break
     }
