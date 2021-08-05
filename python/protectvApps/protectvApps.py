@@ -165,5 +165,6 @@ if newJob is True:
     print("Creating new Job '%s'" % jobname)
     result = api('post', 'protectionJobs', job)
 else:
+    job['sourceIds'] = list(set(job['sourceIds']))
     print("Updating Job '%s'" % jobname)
     result = api('put', 'protectionJobs/%s' % job['id'], job)

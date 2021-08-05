@@ -31,7 +31,6 @@ Place both files in a folder together and run the main script like so:
                   -s myvcloud.mydomain.net \
                   -o myorg \
                   -c myvdc \
-                  -j myjobname \
                   -p mypolicy \
                   -t kvAppTemplate
 ```
