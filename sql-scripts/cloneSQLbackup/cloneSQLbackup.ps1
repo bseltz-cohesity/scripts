@@ -18,6 +18,7 @@ param (
     [Parameter()][string]$viewName,
     [Parameter()][switch]$listRuns,
     [Parameter()][switch]$deleteView,
+    [Parameter()][Int64]$runId,
     [Parameter()][Int64]$firstRunId,
     [Parameter()][Int64]$lastRunId,
     [Parameter()][switch]$refreshView,
@@ -25,7 +26,8 @@ param (
     [Parameter()][switch]$consolidate,
     [Parameter()][string]$targetPath = $null,
     [Parameter()][switch]$dbFolders,
-    [Parameter()][switch]$logsOnly
+    [Parameter()][switch]$logsOnly,
+    [Parameter()][switch]$existingView
 )
 
 # source the cohesity-api helper code
@@ -97,6 +99,10 @@ $storageDomainId = $job.viewBoxId
 # get runs
 $runs = (api get "protectionRuns?jobId=$($job.id)")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
 
+if($runId){
+    $runs = $runs | Where-Object{$_.backupRun.jobRunId -eq $runId}
+}
+
 if($firstRunId){
     $runs = $runs | Where-Object {$_.backupRun.jobRunId -ge $firstRunId}
 }
@@ -113,7 +119,7 @@ if($listRuns){
     exit 0
 }
 
-if($view -and !($deleteView -or $refreshView)){
+if($view -and !($deleteView -or $refreshView) -and (!$existingView)){
     Write-Host "View $viewName already exists" -ForegroundColor Yellow
     exit 1
 }

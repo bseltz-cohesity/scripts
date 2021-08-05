@@ -106,10 +106,12 @@ To refresh a view (on a schedule):
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -useApiKey: (optional) use API key for authentication
 * -jobname: (optional) name of SQL protection job
+* -runId: (optional) clone a specific run (defaults to all)
 * -firstRunId: (optional) earliest run to clone (defaults to all)
 * -lastRunId: (optional) most recent run to clone (defaultds to all)
 * -sqlServer: (optional) name of sqlServer whose backup to clone
 * -viewName: (optional) name of new or existing view to clone backup files to
+* -existingView: (optional) write to existing view (by default the script will exit if view exists)
 * -access: (optional) Active Directory users/groups (comma separated) to add to share permissions (default is everyone)
 * -listRuns: (optional) list available job run IDs and dates
 * -deleteView: (optional) delete view when finished
