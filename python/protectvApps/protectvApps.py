@@ -16,6 +16,7 @@ parser.add_argument('-s', '--sourcename', type=str, required=True)
 parser.add_argument('-o', '--orgname', type=str, required=True)
 parser.add_argument('-c', '--vdcname', type=str, required=True)
 parser.add_argument('-t', '--vapptype', type=str, choices=['all', 'kVirtualApp', 'kvAppTemplate'], default='all')
+parser.add_argument('-n', '--numtoprotect', type=int, default=None)
 parser.add_argument('-j', '--jobname', type=str, required=True)
 parser.add_argument('-sd', '--storagedomain', type=str, default='DefaultStorageDomain')
 parser.add_argument('-p', '--policyname', type=str, default=None)
@@ -35,6 +36,7 @@ sourcename = args.sourcename          # name of vcd source to protect
 orgname = args.orgname                # name of vcd org to protect
 vdcname = args.vdcname                # name of org vdc to protect
 vapptype = args.vapptype              # type to protect
+numtoprotect = args.numtoprotect      # number of vapps to add to the job
 jobname = args.jobname                # name of protection job to add server to
 storagedomain = args.storagedomain    # storage domain for new job
 policyname = args.policyname          # policy name for new job
@@ -45,6 +47,10 @@ fullsla = args.fullsla                # full SLA for new job
 
 # authenticate to Cohesity
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+
+if numtoprotect is not None and numtoprotect < 1:
+    print('-n, --numtoprotect must be greater than zero')
+    exit()
 
 # get VCD registered source
 sources = [s for s in api('get', 'protectionSources?environments=kVMware') if s['protectionSource']['vmWareProtectionSource']['type'] == 'kvCloudDirector' and s['protectionSource']['name'].lower() == sourcename.lower()]
@@ -80,9 +86,12 @@ if len(vappids) == 0:
     print('No vApps found to protect')
     exit(1)
 
+unprotectedvappcount = len(vappids)
+
 # get job info
 newJob = False
-job = [job for job in api('get', 'protectionJobs') if job['name'].lower() == jobname.lower()]
+
+job = [j for j in api('get', 'protectionJobs?environment=kVMware') if j['name'].lower() == jobname.lower()]
 
 if not job or len(job) == 0:
 
@@ -116,6 +125,16 @@ if not job or len(job) == 0:
     except Exception:
         print('starttime is invalid!')
         exit(1)
+
+    print("Creating new Job '%s'" % jobname)
+
+    # limit number of vApps to add to the new job
+    if numtoprotect is not None and numtoprotect > 0:
+        vappids = vappids[0:numtoprotect]
+        unprotectedvappcount = unprotectedvappcount - len(vappids)
+        print('Protecting %s vApps. %s remain unprotected' % (len(vappids), unprotectedvappcount))
+    else:
+        print('Protecting %s vApps' % len(vappids))
 
     job = {
         "policyId": policyid,
@@ -158,13 +177,32 @@ if not job or len(job) == 0:
 
 else:
     job = job[0]
+
+    if job['parentSourceId'] != source['protectionSource']['id']:
+        print('Job %s protects a different vCloud/vCenter' % jobname)
+        exit(1)
+
+    unprotectedvappcount = unprotectedvappcount - len(job['sourceIds'])
+
+    # limit number of vApps to add to the new job
+    if numtoprotect is not None and numtoprotect > 0:
+        vappids = [i for i in vappids if i not in job['sourceIds']]
+        if vappids is not None and len(vappids) > 0:
+            vappids = vappids[0:numtoprotect]
+            unprotectedvappcount = unprotectedvappcount - len(vappids)
+            print('Protecting %s vApps. %s remain unprotected' % (len(vappids), unprotectedvappcount))
+        else:
+            print('All vApps are already protected')
+            exit()
+    else:
+        print('Protecting %s vApps' % len(vappids))
+
     job['sourceIds'] += vappids
 
 # update job
 if newJob is True:
-    print("Creating new Job '%s'" % jobname)
     result = api('post', 'protectionJobs', job)
 else:
-    job['sourceIds'] = list(set(job['sourceIds']))
     print("Updating Job '%s'" % jobname)
+    job['sourceIds'] = list(set(job['sourceIds']))
     result = api('put', 'protectionJobs/%s' % job['id'], job)

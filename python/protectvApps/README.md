@@ -32,21 +32,29 @@ Place both files in a folder together and run the main script like so:
                   -o myorg \
                   -c myvdc \
                   -p mypolicy \
-                  -t kvAppTemplate
+                  -t kvAppTemplate \
+                  -n 100
 ```
 
-## Parameters
+## Authentication Parameters
 
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
 * -k, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password of API key
+
+## vCloud Parameters
+
+* -j, --jobname: name of the job to add the server to
 * -s, --sourcename: name of registered vCloud source
 * -o, --orgname: name of vCloud organization
 * -c, --vdcname: name of virtual data center
-* -t, --vapptype: (optional) all, kVirtualApp or kvAppTemplate
-* -j, --jobname: name of the job to add the server to
+* -t, --vapptype: (optional) kVirtualApp or kvAppTemplate (defaults to all)
+* -n, --numtoprotect: (optional) add this number of vapps (of selected type) to the protection job
+
+## New Job Parameters
+
 * -sd, --storagedomain: (optional) name of storage domain to create job in (default is DefaultStorageDomain)
 * -p, --policyname: (optional) name of protection policy to use for new job (only required for new job)
 * -tz, --timezone: (optional) time zone for new job (default is US/Eastern)
