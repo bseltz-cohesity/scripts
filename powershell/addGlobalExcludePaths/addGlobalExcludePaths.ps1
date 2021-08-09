@@ -68,9 +68,9 @@ if($missingJobs.Length -gt 0){
 foreach($job in $jobs){
     $globalExcludePaths = $job.physicalParams.fileProtectionTypeParams.globalExcludePaths
     if($null -eq $globalExcludePaths -or $overwrite){
-        $job.physicalParams.fileProtectionTypeParams.globalExcludePaths = @($excludePaths)
+        $job.physicalParams.fileProtectionTypeParams.globalExcludePaths = @($excludePaths | Sort-Object -Unique)
     }else{
-        $job.physicalParams.fileProtectionTypeParams.globalExcludePaths = @($globalExcludePaths + $excludePaths)
+        $job.physicalParams.fileProtectionTypeParams.globalExcludePaths = @($globalExcludePaths + $excludePaths | Sort-Object -Unique)
     }
     Write-Host "Updating job $($job.name)"
     $null = api put "data-protect/protection-groups/$($job.id)" $job -v2
