@@ -13,6 +13,7 @@ param (
     [Parameter()][switch]$useApiKey,      # use API key for authentication
     [Parameter()][string]$clusterName,    # helios cluster to access 
     [Parameter(Mandatory = $True)][string]$jobName,  # job to run
+    [Parameter()][switch]$usePolicy,      # deprecated (does nothibng)
     [Parameter()][switch]$localOnly,      # perform local backup only
     [Parameter()][switch]$noReplica,      # skip replication
     [Parameter()][switch]$noArchive,      # skip archival
