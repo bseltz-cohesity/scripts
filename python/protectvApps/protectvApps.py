@@ -17,6 +17,8 @@ parser.add_argument('-o', '--orgname', type=str, required=True)
 parser.add_argument('-c', '--vdcname', type=str, required=True)
 parser.add_argument('-t', '--vapptype', type=str, choices=['all', 'kVirtualApp', 'kvAppTemplate'], default='all')
 parser.add_argument('-n', '--numtoprotect', type=int, default=None)
+parser.add_argument('-i', '--includeprefix', action='append', type=str)
+parser.add_argument('-e', '--excludeprefix', action='append', type=str)
 parser.add_argument('-j', '--jobname', type=str, required=True)
 parser.add_argument('-sd', '--storagedomain', type=str, default='DefaultStorageDomain')
 parser.add_argument('-p', '--policyname', type=str, default=None)
@@ -37,6 +39,8 @@ orgname = args.orgname                # name of vcd org to protect
 vdcname = args.vdcname                # name of org vdc to protect
 vapptype = args.vapptype              # type to protect
 numtoprotect = args.numtoprotect      # number of vapps to add to the job
+includeprefix = args.includeprefix    # only include vapps that start with this prefix
+excludeprefix = args.excludeprefix    # exclude vapps that start with this prefix
 jobname = args.jobname                # name of protection job to add server to
 storagedomain = args.storagedomain    # storage domain for new job
 policyname = args.policyname          # policy name for new job
@@ -60,6 +64,12 @@ if not sources or len(sources) == 0:
 else:
     source = sources[0]
 
+# gather already protected sourceids
+jobs = [j for j in api('get', 'protectionJobs?environment=kVMware') if j['parentSourceId'] in [s['protectionSource']['id'] for s in sources]]
+protectedsourceids = []
+for j in jobs:
+    protectedsourceids = protectedsourceids + j['sourceIds']
+
 # get VCD Organization
 orgs = [o for o in source['nodes'] if o['protectionSource']['vmWareProtectionSource']['type'] == 'kOrganization' and o['protectionSource']['name'].lower() == orgname.lower()]
 if not orgs or len(orgs) == 0:
@@ -81,7 +91,13 @@ vapps = vdc['nodes']
 if vapptype != 'all':
     vapps = [v for v in vapps if v['protectionSource']['vmWareProtectionSource']['type'].lower() == vapptype.lower()]
 
-vappids = [v['protectionSource']['id'] for v in vapps]
+if includeprefix and len(includeprefix) > 0:
+    vapps = [v for v in vapps if len([f for f in includeprefix if v['protectionSource']['name'].lower().startswith(f.lower())]) > 0]
+
+if excludeprefix and len(excludeprefix) > 0:
+    vapps = [v for v in vapps if len([f for f in excludeprefix if not v['protectionSource']['name'].lower().startswith(f.lower())]) > 0]
+
+vappids = [v['protectionSource']['id'] for v in vapps if v['protectionSource']['id'] not in protectedsourceids]
 if len(vappids) == 0:
     print('No vApps found to protect')
     exit(1)
@@ -182,7 +198,7 @@ else:
         print('Job %s protects a different vCloud/vCenter' % jobname)
         exit(1)
 
-    unprotectedvappcount = unprotectedvappcount - len(job['sourceIds'])
+    # unprotectedvappcount = unprotectedvappcount - len(vappids)
 
     # limit number of vApps to add to the new job
     if numtoprotect is not None and numtoprotect > 0:
@@ -190,6 +206,7 @@ else:
         if vappids is not None and len(vappids) > 0:
             vappids = vappids[0:numtoprotect]
             unprotectedvappcount = unprotectedvappcount - len(vappids)
+            print("Updating Job '%s'" % jobname)
             print('Protecting %s vApps. %s remain unprotected' % (len(vappids), unprotectedvappcount))
         else:
             print('All vApps are already protected')
@@ -203,6 +220,5 @@ else:
 if newJob is True:
     result = api('post', 'protectionJobs', job)
 else:
-    print("Updating Job '%s'" % jobname)
     job['sourceIds'] = list(set(job['sourceIds']))
     result = api('put', 'protectionJobs/%s' % job['id'], job)

@@ -52,6 +52,8 @@ Place both files in a folder together and run the main script like so:
 * -c, --vdcname: name of virtual data center
 * -t, --vapptype: (optional) kVirtualApp or kvAppTemplate (defaults to all)
 * -n, --numtoprotect: (optional) add this number of vapps (of selected type) to the protection job
+* -i, --includeprefix: (optional) only include vapps with this name prefix (e.g. 'cat-') repeat for multiple prefixes
+* -e, --excludeprefix: (optional) exclude vapps with this name prefix (e.g. 'dog-') repeat for multiple prefixes
 
 ## New Job Parameters
 
