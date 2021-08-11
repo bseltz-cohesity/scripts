@@ -39,20 +39,22 @@ Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/prote
 
 * -v, --vip: name of Cohesity cluster to connect to (default is helios.cohesity.com)
 * -u, --username: short username to authenticate to the cluster (default is helios)
-* -d, --domain: active directory domain of user (default is local)
-* -i, --useApiKey: use API key for authentication
+* -d, --domain: (optional) active directory domain of user (default is local)
+* -i, --useApiKey: (optional) use API key for authentication
 * -j, --jobname: name of protection job to run
-* -o, --objectname: name of object to backup (repeat this parameter for multiple objects)
-* -y, --usepolicy: use base retention and copy targets from protection policy
-* -k, --keepLocalFor: days to keep local snapshot (default is 5 days)
-* -a, --archiveTo: name of archival target to archive to
-* -ka, --keepArchiveFor: days to keep in archive (default is 5 days)
-* -r, --replicateTo: name of remote cluster to replicate to
-* -kr, --keepReplicaFor: days to keep replica for (default is 5 days)
-* -e, --enable: enable a paused job before running, then disable when done
-* -w, --wait: wait for backup run to complete and report result
-* -t, --backupType: choose one of kRegular, kFull or kLog backup types. Default is kRegular (incremental)
-* -x, --abortifrunning: exit if job is already running (default is to wait and run after existing run is finished)
+* -o, --objectname: (optional) name of object to backup (repeat this parameter for multiple objects)
+* -l, --localonly: (optional) skip replicas and archivals
+* -nr, --noreplica: (optional) skip replicas
+* -na, --noarchive: (optional) skip archives
+* -k, --keepLocalFor: (optional) days to keep local snapshot (defaults to policy settings)
+* -a, --archiveTo: (optional) name of archival target to archive to (defaults to policy settings)
+* -ka, --keepArchiveFor: (optional) days to keep in archive (defaults to policy settings)
+* -r, --replicateTo: (optional) name of remote cluster to replicate to (defaults to policy settings)
+* -kr, --keepReplicaFor: (optional) days to keep replica for (defaults to policy settings)
+* -e, --enable: (optional) enable a paused job before running, then disable when done
+* -w, --wait: (optional) wait for backup run to complete and report result
+* -t, --backupType: (optional) choose one of kRegular, kFull or kLog backup types. Default is kRegular (incremental)
+* -x, --abortifrunning: (optional) exit if job is already running (default is to wait and run after existing run is finished)
 
 ## Using -o (--objectname) Parameter
 

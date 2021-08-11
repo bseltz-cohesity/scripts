@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2021.04.14
+# version 2021.08.11
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -21,11 +21,14 @@ parser.add_argument('-p', '--password', type=str, default=None)
 parser.add_argument('-j', '--jobName', type=str, required=True)
 parser.add_argument('-j2', '--jobName2', type=str, default=None)
 parser.add_argument('-y', '--usepolicy', action='store_true')
-parser.add_argument('-k', '--keepLocalFor', type=int, default=5)
+parser.add_argument('-l', '--localonly', action='store_true')
+parser.add_argument('-nr', '--noreplica', action='store_true')
+parser.add_argument('-na', '--noarchive', action='store_true')
+parser.add_argument('-k', '--keepLocalFor', type=int, default=None)
 parser.add_argument('-r', '--replicateTo', type=str, default=None)
-parser.add_argument('-kr', '--keepReplicaFor', type=int, default=5)
+parser.add_argument('-kr', '--keepReplicaFor', type=int, default=None)
 parser.add_argument('-a', '--archiveTo', type=str, default=None)
-parser.add_argument('-ka', '--keepArchiveFor', type=int, default=5)
+parser.add_argument('-ka', '--keepArchiveFor', type=int, default=None)
 parser.add_argument('-e', '--enable', action='store_true')
 parser.add_argument('-w', '--wait', action='store_true')
 parser.add_argument('-t', '--backupType', type=str, choices=['kLog', 'kRegular', 'kFull'], default='kRegular')
@@ -53,6 +56,9 @@ backupType = args.backupType
 objectnames = args.objectname
 useApiKey = args.useApiKey
 usepolicy = args.usepolicy
+localonly = args.localonly
+noreplica = args.noreplica
+noarchive = args.noarchive
 metadatafile = args.metadatafile
 abortIfRunning = args.abortifrunning
 
@@ -248,59 +254,74 @@ if len(runNowParameters) > 0:
     jobData['runNowParameters'] = runNowParameters
 
 # use base retention and copy targets from policy
-if usepolicy:
-    policy = api('get', 'protectionPolicies/%s' % job['policyId'])
+policy = api('get', 'protectionPolicies/%s' % job['policyId'])
+if keepLocalFor is None:
     jobData['copyRunTargets'][0]['daysToKeep'] = policy['daysToKeep']
-    if 'snapshotReplicationCopyPolicies' in policy:
+
+# replication
+if localonly is not True and noreplica is not True:
+    if 'snapshotReplicationCopyPolicies' in policy and replicateTo is None:
         for replica in policy['snapshotReplicationCopyPolicies']:
             if replica['target'] not in [p.get('replicationTarget', None) for p in jobData['copyRunTargets']]:
+                if keepReplicaFor is not None:
+                    replica['daysToKeep'] = keepReplicaFor
                 jobData['copyRunTargets'].append({
                     "daysToKeep": replica['daysToKeep'],
                     "replicationTarget": replica['target'],
                     "type": "kRemote"
                 })
-    if 'snapshotArchivalCopyPolicies' in policy:
+# archival
+if localonly is not True and noarchive is not True:
+    if 'snapshotArchivalCopyPolicies' in policy and archiveTo is None:
         for archive in policy['snapshotArchivalCopyPolicies']:
             if archive['target'] not in [p.get('archivalTarget', None) for p in jobData['copyRunTargets']]:
+                if keepArchiveFor is not None:
+                    archive['daysToKeep'] = keepArchiveFor
                 jobData['copyRunTargets'].append({
                     "archivalTarget": archive['target'],
                     "daysToKeep": archive['daysToKeep'],
                     "type": "kArchival"
                 })
-else:
-    # or use retention and copy targets specified at the command line
-    if replicateTo is not None:
-        remote = [remote for remote in api('get', 'remoteClusters') if remote['name'].lower() == replicateTo.lower()]
-        if len(remote) > 0:
-            remote = remote[0]
-            jobData['copyRunTargets'].append({
-                "type": "kRemote",
-                "daysToKeep": keepReplicaFor,
-                "replicationTarget": {
-                    "clusterId": remote['clusterId'],
-                    "clusterName": remote['name']
-                }
-            })
-        else:
-            print("Remote Cluster %s not found!" % replicateTo)
-            exit(1)
 
-    if archiveTo is not None:
-        vault = [vault for vault in api('get', 'vaults') if vault['name'].lower() == archiveTo.lower()]
-        if len(vault) > 0:
-            vault = vault[0]
-            jobData['copyRunTargets'].append({
-                "archivalTarget": {
-                    "vaultId": vault['id'],
-                    "vaultName": vault['name'],
-                    "vaultType": "kCloud"
-                },
-                "daysToKeep": keepArchiveFor,
-                "type": "kArchival"
-            })
-        else:
-            print("Archive target %s not found!" % archiveTo)
-            exit(1)
+# use copy targets specified at the command line
+if replicateTo is not None:
+    if keepReplicaFor is None:
+        print("--keepReplicaFor is required")
+        exit(1)
+    remote = [remote for remote in api('get', 'remoteClusters') if remote['name'].lower() == replicateTo.lower()]
+    if len(remote) > 0:
+        remote = remote[0]
+        jobData['copyRunTargets'].append({
+            "type": "kRemote",
+            "daysToKeep": keepReplicaFor,
+            "replicationTarget": {
+                "clusterId": remote['clusterId'],
+                "clusterName": remote['name']
+            }
+        })
+    else:
+        print("Remote Cluster %s not found!" % replicateTo)
+        exit(1)
+
+if archiveTo is not None:
+    if keepArchiveFor is None:
+        print("--keepArchiveFor is required")
+        exit(1)
+    vault = [vault for vault in api('get', 'vaults') if vault['name'].lower() == archiveTo.lower()]
+    if len(vault) > 0:
+        vault = vault[0]
+        jobData['copyRunTargets'].append({
+            "archivalTarget": {
+                "vaultId": vault['id'],
+                "vaultName": vault['name'],
+                "vaultType": "kCloud"
+            },
+            "daysToKeep": keepArchiveFor,
+            "type": "kArchival"
+        })
+    else:
+        print("Archive target %s not found!" % archiveTo)
+        exit(1)
 
 ### enable the job
 if enable:
@@ -310,6 +331,8 @@ if enable:
 print("Running %s..." % jobName)
 
 runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData)
+if runNow == 'error':
+    exit(1)
 
 # wait for new job run to appear
 if wait is True:
@@ -360,7 +383,7 @@ if enable:
 
 # return exit code
 if wait is True:
-    if runs[0]['backupRun']['status'] == 'kSuccess':
+    if runs[0]['backupRun']['status'] == 'kSuccess' or runs[0]['backupRun']['status'] == 'kWarning':
         exit(0)
     else:
         exit(1)
