@@ -45,15 +45,15 @@ Job finished with status: kSuccess
 
 * -vip: DNS or IP of the Cohesity Cluster
 * -username: Cohesity User Name
-* -domain: - defaults to 'local'
-* -useApiKey: Use API key for authentication
+* -domain: (optional) defaults to 'local'
+* -useApiKey: (optional) Use API key for authentication
 * -jobName: name of protection job to run
-* -usePolicy: use base retention and copy targets from protection policy
-* -keepLocalFor: days to keep local snapshot (default is 5 days)
-* -archiveTo: name of archival target to archive to
-* -keepArchiveFor: days to keep in archive (default is 5 days)
-* -replicateTo: name of remote cluster to replicate to
-* -keepReplicaFor: days to keep replica for (default is 5 days)
+* -localOnly: (optional) skip replicas and archivals
+* -keepLocalFor: (optional) days to keep local snapshot (default is to use policy setting)
+* -archiveTo: (optional) name of archival target to archive to (override policy settings)
+* -keepArchiveFor: (optional) days to keep in archive (override policy settings)
+* -replicateTo: (optional) name of remote cluster to replicate to (override policy settings)
+* -keepReplicaFor: (optional) days to keep replica for (override policy settings)
 * -enable: enable a paused job before running, then disable when done
 * -backupType: choose one of kRegular, kFull, kLog or kSystem backup types. Default is kRegular (incremental)
 * -objects: comma separated list of object names to include in the job run. For VMs, simply include the VM name. For SQL databases, object names should be in the form of server.mydomain.net/instanceName/dbName. For Oracle databases, object names should be in the form of server.mydomain.net/dbName

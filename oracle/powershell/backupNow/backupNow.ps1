@@ -5,30 +5,33 @@
 [CmdletBinding()]
 param (
     [Parameter()][string]$vip = 'helios.cohesity.com',  # the cluster to connect to (DNS name or IP)
-    [Parameter()][string]$vip2,        # alternate cluster to connect to
+    [Parameter()][string]$vip2,                 # alternate cluster to connect to
     [Parameter()][string]$username = 'helios',  # username (local or AD)
     [Parameter()][string]$domain = 'local',     # local or AD domain
-    [Parameter()][string]$password = $null,     # optional password
-    [Parameter()][switch]$useApiKey,   # use API key for authentication
-    [Parameter()][string]$clusterName = $null,  # helios cluster to access 
+    [Parameter()][string]$tenant,         # tenant org name
+    [Parameter()][string]$password,       # optional password
+    [Parameter()][switch]$useApiKey,      # use API key for authentication
+    [Parameter()][string]$clusterName,    # helios cluster to access 
     [Parameter(Mandatory = $True)][string]$jobName,  # job to run
-    [Parameter()][switch]$usePolicy,   # honor basic policy elements
-    [Parameter()][string]$jobName2,             # alternate jobName to run
-    [Parameter()][int]$keepLocalFor = 5,        # keep local snapshot for x days
-    [Parameter()][string]$replicateTo = $null,  # optional - remote cluster to replicate to
-    [Parameter()][int]$keepReplicaFor = 5,      # keep replica for x days
-    [Parameter()][string]$archiveTo = $null,    # optional - target to archive to
-    [Parameter()][int]$keepArchiveFor = 5,      # keep archive for x days
-    [Parameter()][switch]$enable,      # enable a disabled job, run it, then disable when done
+    [Parameter()][switch]$localOnly,      # perform local backup only
+    [Parameter()][switch]$noReplica,      # skip replication
+    [Parameter()][switch]$noArchive,      # skip archival
+    [Parameter()][string]$jobName2,       # alternate jobName to run
+    [Parameter()][int]$keepLocalFor,      # keep local snapshot for x days
+    [Parameter()][string]$replicateTo,    # optional - remote cluster to replicate to
+    [Parameter()][int]$keepReplicaFor,    # keep replica for x days
+    [Parameter()][string]$archiveTo,      # optional - target to archive to
+    [Parameter()][int]$keepArchiveFor,    # keep archive for x days
+    [Parameter()][switch]$enable,         # enable a disabled job, run it, then disable when done
     [Parameter()][ValidateSet('kRegular','kFull','kLog','kSystem')][string]$backupType = 'kRegular',
-    [Parameter()][array]$objects,      # list of objects to include in run
-    [Parameter()][switch]$progress,    # display progress percent
-    [Parameter()][switch]$wait,        # wait for completion and report end status
-    [Parameter()][switch]$helios,      # use helios on-prem
-    [Parameter()][string]$logfile,     # name of log file
-    [Parameter()][switch]$outputlog,   # enable logging
-    [Parameter()][string]$metaDataFile, # backup file list
-    [Parameter()][switch]$abortIfRunning
+    [Parameter()][array]$objects,         # list of objects to include in run
+    [Parameter()][switch]$progress,       # display progress percent
+    [Parameter()][switch]$wait,           # wait for completion and report end status
+    [Parameter()][switch]$helios,         # use helios on-prem
+    [Parameter()][string]$logfile,        # name of log file
+    [Parameter()][switch]$outputlog,      # enable logging
+    [Parameter()][string]$metaDataFile,   # backup file list
+    [Parameter()][switch]$abortIfRunning  # exit if job is already running
 )
 
 # source the cohesity-api helper code
@@ -66,14 +69,14 @@ if($outputlog){
 }
 
 if($useApiKey){
-    apiauth -vip $vip -username $username -domain $domain -password $password -useApiKey
+    apiauth -vip $vip -username $username -domain $domain -password $password -useApiKey -tenant $tenant
     if((! $AUTHORIZED -and ! $cohesity_api.authorized) -and $vip2){
         output "Failed to connect to $vip. Trying $vip2..." -warn
         apiauth -vip2 $vip -username $username -domain $domain -password $password -useApiKey
         $jobName = $jobName2
     }
 }else{
-    apiauth -vip $vip -username $username -domain $domain -password $password
+    apiauth -vip $vip -username $username -domain $domain -password $password -tenant $tenant
     if((! $AUTHORIZED -and ! $cohesity_api.authorized) -and $vip2){
         output "Failed to connect to $vip. Trying $vip2..." -warn
         $jobName = $jobName2
@@ -256,10 +259,14 @@ $copyRunTargets = @(
 )
 
 # retrieve policy settings
-if($usePolicy){
-    $policy = api get "protectionPolicies/$policyId"
+$policy = api get "protectionPolicies/$policyId"
+if(! $keepLocalFor){
     $copyRunTargets[0].daysToKeep = $policy.daysToKeep
-    if($policy.PSObject.Properties['snapshotReplicationCopyPolicies']){
+}
+
+# replication
+if((! $localOnly) -and (! $noReplica)){
+    if($policy.PSObject.Properties['snapshotReplicationCopyPolicies'] -and (! $replicateTo)){
         foreach($replica in $policy.snapshotReplicationCopyPolicies){
             if(!($copyRunTargets | Where-Object {$_.replicationTarget.clusterName -eq $replica.target.clusterName})){
                 $copyRunTargets = $copyRunTargets + @{
@@ -267,10 +274,18 @@ if($usePolicy){
                     "replicationTarget" = $replica.target;
                     "type"              = "kRemote"
                 }
+                if($keepReplicaFor){
+                    $copyRunTargets[-1].daysToKeep = $keepReplicaFor
+                }
             }
         }
     }
-    if($policy.PSObject.Properties['snapshotArchivalCopyPolicies']){
+}
+
+
+# archival
+if((! $localOnly) -and (! $noArchive)){
+    if($policy.PSObject.Properties['snapshotArchivalCopyPolicies'] -and (! $archiveTo)){
         foreach($archive in $policy.snapshotArchivalCopyPolicies){
             if(!($copyRunTargets | Where-Object {$_.archivalTarget.vaultName -eq $archive.target.vaultName})){
                 $copyRunTargets = $copyRunTargets + @{
@@ -278,12 +293,22 @@ if($usePolicy){
                     "daysToKeep"     = $archive.daysToKeep;
                     "type"           = "kArchival"
                 }
+                if($keepArchiveFor){
+                    $copyRunTargets[-1].daysToKeep = $keepArchiveFor
+                }
             }
         }
     }
-}else{
-    # add replication target and retention
+}
+
+# }else{
+# add replication target and retention
+if((! $localOnly) -and (! $noReplica)){
     if ($replicateTo) {
+        if(! $keepReplicaFor){
+            Write-Host "-keepReplicaFor is required" -ForegroundColor Yellow
+            exit 1
+        }
         $remote = api get remoteClusters | Where-Object {$_.name -eq $replicateTo}
         if ($remote) {
             $copyRunTargets = $copyRunTargets + @{
@@ -300,9 +325,15 @@ if($usePolicy){
             exit 1
         }
     }
+}
 
-    # add archival target and retention
+# add archival target and retention
+if((! $localOnly) -and (! $noArchive)){
     if($archiveTo){
+        if(! $keepArchiveFor){
+            Write-Host "-keepArchiveFor is required" -ForegroundColor Yellow
+            exit 1
+        }
         $vault = api get vaults | Where-Object {$_.name -eq $archiveTo}
         if($vault){
             $copyRunTargets = $copyRunTargets + @{
@@ -354,7 +385,6 @@ if($enable){
 
 # run job
 output "Running $jobName..."
-
 $null = api post ('protectionJobs/run/' + $jobID) $jobdata
 
 # wait for new job run to appear
@@ -385,6 +415,7 @@ if($wait -or $enable){
         }
         $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
     }
+    # $progressMonitor.resultGroupVec[0].taskVec[0].subTaskVec.progress.eventVec.eventMsg
 }
 
 # disable job
