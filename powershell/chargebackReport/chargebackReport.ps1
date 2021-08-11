@@ -206,7 +206,7 @@ foreach($job in $jobs){
         # walk through date range looking for eneties and their sizes
         $thisDate = $startingDate
         while($thisDate -ne $endingDate){
-            $runs = api get "/backupjobruns?id=$($job.id)&numRuns=1&startTimeUsecs=$(dateToUsecs $thisDate)"
+            $runs = api get "/backupjobruns?id=$($job.id)&numRuns=1&startTimeUsecs=$(dateToUsecs $thisDate)&runTypes=kRegular,kFull"
             foreach($run in $runs){
                 foreach($task in $run.backupJobRuns.protectionRuns.backupRun.latestFinishedTasks){
                     if($task){
