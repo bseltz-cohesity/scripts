@@ -65,7 +65,7 @@ else:
     source = sources[0]
 
 # gather already protected sourceids
-jobs = [j for j in api('get', 'protectionJobs?environment=kVMware') if j['parentSourceId'] in [s['protectionSource']['id'] for s in sources]]
+jobs = [j for j in api('get', 'protectionJobs?environment=kVMware&isDeleted=false') if j['parentSourceId'] in [s['protectionSource']['id'] for s in sources]]
 protectedsourceids = []
 for j in jobs:
     protectedsourceids = protectedsourceids + j['sourceIds']
