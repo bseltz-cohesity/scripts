@@ -18,7 +18,7 @@ apiauth -vip $vip -username $username -domain $domain
 
 # gather job names
 $myjobs = @()
-if(Test-Path $joblist -PathType Leaf){
+if($null -ne $joblist -and (Test-Path $joblist -PathType Leaf)){
     $myjobs += Get-Content $joblist | Where-Object {$_ -ne ''}
 }elseif($jobList){
     Write-Warning "File $joblist not found!"
