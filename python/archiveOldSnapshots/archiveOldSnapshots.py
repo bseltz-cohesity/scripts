@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Archive Now for python - version 2021.06.19"""
+"""Archive Now for python - version 2021.08.17"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -48,12 +48,15 @@ outfolder = args.outfolder
 retentionstrings = args.retentionstring
 onlymatches = args.onlymatches
 
+if retentionstrings is None:
+    retentionstrings = []
+
 nowUsecs = dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 outfileName = '%s/archiveLog-%s-%s.txt' % (outfolder, vip, datetime.now().strftime("%Y-%m"))
 f = codecs.open(outfileName, 'a', 'utf-8')
 
 f.write('\n----------------\nArchiver started: %s\n----------------\n' % datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
-f.write('\nCommand line options used: \n%s\n\n' % json.dumps(vars(args), sort_keys=True, indent=4, separators=(', ', ': ')))
+f.write('\nCommand line options used: \n%s\n\n' % json.dumps([a for a in vars(args) if a not in ['domain', 'username', 'password']], sort_keys=True, indent=4, separators=(', ', ': ')))
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
@@ -116,6 +119,8 @@ else:
 
 startTimeUsecs = timeAgo(daysback, 'days')
 
+dontrunstates = ['kAccepted', 'kRunning', 'kCanceling', 'kSuccess']
+
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
     runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&excludeTasks=true&numRuns=10000' % (job['id'], startTimeUsecs))
     runs = [r for r in runs if r['backupRun']['snapshotsDeleted'] is not True]
@@ -137,7 +142,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                 thistarget = copyRun['target']['archivalTarget']
                 thisstatus = copyRun['status']
                 if thistarget['vaultName'].lower() == target['vaultName'].lower():
-                    if thisstatus == 'kSuccess':
+                    if thisstatus in dontrunstates:
                         thisRunArchived = True
                     else:
                         f.write('Warning: %s (%s) -> %s previously ended with status: %s\n' % (job['name'], usecsToDate(run['copyRun'][0]['runStartTimeUsecs']), target['vaultName'], thisstatus))
