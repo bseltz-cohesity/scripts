@@ -66,3 +66,4 @@ vCenter6 lvol_1/opt/vmware/share/htdocs/libs/img/loader-spinner.gif
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -extension: last few characters of the file extention you are looking for
+* -getMtime: get last modified date of each file
