@@ -44,7 +44,7 @@ while($True){
     if($results.paginationCookie){
         $oldcookie = $results.paginationCookie
         while($results.paginationCookie -eq $oldcookie -and $results){
-                $results = api get "restore/files?paginate=true&pageSize=10&paginationCookie=$($results.paginationCookie)&search=$($extension)"
+                $results = api get "restore/files?paginate=true&pageSize=1000&paginationCookie=$($results.paginationCookie)&search=$($extension)"
                 if(! $results){
                     "retrying..."
                     Start-Sleep 2
