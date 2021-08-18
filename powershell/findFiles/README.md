@@ -25,39 +25,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./findFiles.ps1 -vip mycluster -username myusername -domain mydomain.net -extension gif
-```
-
-```text
-Found 25 results
-
-Server   Path
-------   ----
-vCenter6 lvol_1/opt/vmware/lib/python2.7/email/test/data/PyBanner048.gif
-vCenter6 lvol_1/opt/vmware/lib/python2.7/idlelib/Icons/folder.gif
-vCenter6 lvol_1/opt/vmware/lib/python2.7/idlelib/Icons/idle_16.gif
-vCenter6 lvol_1/opt/vmware/lib/python2.7/idlelib/Icons/idle_32.gif
-vCenter6 lvol_1/opt/vmware/lib/python2.7/idlelib/Icons/idle_48.gif
-vCenter6 lvol_1/opt/vmware/lib/python2.7/idlelib/Icons/minusnode.gif
-vCenter6 lvol_1/opt/vmware/lib/python2.7/idlelib/Icons/openfolder.gif
-vCenter6 lvol_1/opt/vmware/lib/python2.7/idlelib/Icons/plusnode.gif
-vCenter6 lvol_1/opt/vmware/lib/python2.7/idlelib/Icons/python.gif
-vCenter6 lvol_1/opt/vmware/lib/python2.7/idlelib/Icons/tk.gif
-vCenter6 lvol_1/opt/vmware/lib/python2.7/test/imghdrdata/python.gif
-vCenter6 lvol_1/opt/vmware/share/htdocs/css/img/leftArrow.gif
-vCenter6 lvol_1/opt/vmware/share/htdocs/css/img/rightArrow.gif
-vCenter6 lvol_1/opt/vmware/share/htdocs/img/indeterminate.gif
-vCenter6 lvol_1/opt/vmware/share/htdocs/img/leftArrow.gif
-vCenter6 lvol_1/opt/vmware/share/htdocs/img/loader-spinner.gif
-vCenter6 lvol_1/opt/vmware/share/htdocs/img/loading_2x.gif
-vCenter6 lvol_1/opt/vmware/share/htdocs/img/loading-image.gif
-vCenter6 lvol_1/opt/vmware/share/htdocs/img/loading.gif
-vCenter6 lvol_1/opt/vmware/share/htdocs/img/Marge-anim-progressbar.gif
-vCenter6 lvol_1/opt/vmware/share/htdocs/img/rightArrow.gif
-vCenter6 lvol_1/opt/vmware/share/htdocs/img/slider-h.gif
-vCenter6 lvol_1/opt/vmware/share/htdocs/img/slider-v.gif
-vCenter6 lvol_1/opt/vmware/share/htdocs/img/whiteSpinner.gif
-vCenter6 lvol_1/opt/vmware/share/htdocs/libs/img/loader-spinner.gif
+./findFiles.ps1 -vip mycluster -username myusername -domain mydomain.net -searchString gif -extensionOnly
 ```
 
 ## Parameters
@@ -65,5 +33,8 @@ vCenter6 lvol_1/opt/vmware/share/htdocs/libs/img/loader-spinner.gif
 * -vip: Cohesity cluster to connect to
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain (defaults to 'local')
-* -extension: last few characters of the file extention you are looking for
-* -getMtime: get last modified date of each file
+* -searchString: last few characters of the file extention you are looking for
+* -getMtime: (optional) get last modified date of each file
+* -extensionOnly: (optional) only return results where the searchString is the file extension
+* -throttle: (optional) pause for X seconds between paged results
+* -pageSize: (optional) 1000 or less (default is 1000)
