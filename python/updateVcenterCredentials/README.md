@@ -34,7 +34,9 @@ The script takes the following parameters:
 
 * -v, --vip: Cohesity cluster name or IP
 * -u, --username: Cohesity Username
-* -d, --domain: Cohesity User Domain
+* -d, --domain: (optional) Cohesity User Domain (default is local)
+* -i, --useApiKey: (optional) use API key for authentication
+* -p, --password: (optional) cohesity user password or API key
 * -sn, --sourcename: vcenter source name
 * -su, --sourceuser: vcenter username
 * -sp, --sourcepassword: vcenter password
