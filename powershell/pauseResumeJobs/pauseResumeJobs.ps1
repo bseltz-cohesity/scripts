@@ -5,7 +5,7 @@ param (
     [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
     [Parameter()][string]$domain = 'local',
     [Parameter()][array]$jobname,
-    [Parameter()][string]$joblist,
+    [Parameter()][string]$joblist = '',
     [Parameter()][switch]$pause,
     [Parameter()][switch]$resume
 )
@@ -18,7 +18,7 @@ apiauth -vip $vip -username $username -domain $domain
 
 # gather job names
 $myjobs = @()
-if($null -ne $joblist -and (Test-Path $joblist -PathType Leaf)){
+if($joblist -ne '' -and (Test-Path $joblist -PathType Leaf)){
     $myjobs += Get-Content $joblist | Where-Object {$_ -ne ''}
 }elseif($jobList){
     Write-Warning "File $joblist not found!"
