@@ -5,6 +5,9 @@ param (
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
     [Parameter(Mandatory = $True)][string]$searchString,
+    [Parameter()][string]$objectName = '',
+    [Parameter()][string]$objectType = '',
+    [Parameter()][string]$jobName = '',
     [Parameter()][switch]$extensionOnly,
     [Parameter()][switch]$getMtime,
     [Parameter()][int]$throttle = 0,
@@ -17,13 +20,66 @@ param (
 # authenticate
 apiauth -vip $vip -username $username -domain $domain
 
-$sources = api get protectionSources?rootNodes
-
+$rootNodes = api get protectionSources?rootNodes
+$sources = api get protectionSources
 $jobs = api get protectionJobs
+
+
+function getObjectId($objectName){
+    $global:_object_id = $null
+
+    function get_nodes($obj){
+        if($obj.protectionSource.name -eq $objectName){
+            $global:_object_id = $obj.protectionSource.id
+            break
+        }
+        if($obj.name -eq $objectName){
+            $global:_object_id = $obj.id
+            break
+        }        
+        if($obj.PSObject.Properties['nodes']){
+            foreach($node in $obj.nodes){
+                if($null -eq $global:_object_id){
+                    get_nodes $node
+                }
+            }
+        }
+    }
+    
+    foreach($source in $sources){
+        if($null -eq $global:_object_id){
+            get_nodes $source
+        }
+    }
+    return $global:_object_id
+}
+
 
 "JobName,Parent,Object,Path,Last Modified" | Out-File -FilePath foundFiles.csv
 
-$results = api get "restore/files?paginate=true&pageSize=$pageSize&search=$($searchString)"
+$query = ""
+if($objectType){
+    $query = $query + "&environments=$objectType"
+}
+if($jobName){
+    $job = $jobs | Where-Object name -eq $jobName
+    if(!$job){
+        Write-Host "Job $jobName not found" -ForegroundColor Yellow
+        exit 1
+    }
+    $query = $query + "&jobIds=$($job[0].id)"
+}
+if($objectName){
+    $sourceId = getObjectId $objectName
+    if(!$sourceId){
+        Write-Host "Object $objectName not found" -ForegroundColor Yellow
+        exit 1
+    }
+    $query = $query + "&sourceIds=$($sourceId)"
+}
+
+$results = api get "restore/files?paginate=true&pageSize=$pageSize&search=$($searchString)$query"
+
 $oldcookie = $null
 while($True){
     if($results.files.count -gt 0){
@@ -42,14 +98,14 @@ while($True){
             $sourceId = $result.protectionSource.id
             $jobName = ($jobs | Where-Object id -eq $jobId).name
             if($parentId){
-                $parent = $sources | Where-Object {$_.protectionSource.id -eq $parentId}
+                $parent = $rootNodes | Where-Object {$_.protectionSource.id -eq $parentId}
                 if($parent){
                     $parentName = $parent.protectionSource.name
                 }
             }
             if($getMtime){
                 $mtime = ''
-                $thisFileName = [System.Web.HttpUtility]::UrlEncode($result.fileName).Replace('%2f%2f','%2F')
+                $thisFileName = [System.Web.HttpUtility]::UrlEncode($result.fileName)  # [System.Web.HttpUtility]::UrlEncode($result.fileName).Replace('%2f%2f','%2F')
                 $snapshots = api get -v2 "data-protect/objects/$sourceId/protection-groups/$clusterId`:$clusterIncarnationId`:$jobId/indexed-objects/snapshots?indexedObjectName=$thisFileName&includeIndexedSnapshotsOnly=true"
                 if($snapshots.snapshots.Count -gt 0){
                     $mtimeUsecs = $snapshots.snapshots[0].lastModifiedTimeUsecs
@@ -70,7 +126,7 @@ while($True){
         }
         $oldcookie = $results.paginationCookie
         while($results.paginationCookie -eq $oldcookie -and $results){
-                $results = api get "restore/files?paginate=true&pageSize=$pageSize&paginationCookie=$($results.paginationCookie)&search=$($searchString)"
+                $results = api get "restore/files?paginate=true&pageSize=$pageSize&paginationCookie=$($results.paginationCookie)&search=$($searchString)$query"
                 if(! $results){
                     "retrying..."
                     Start-Sleep 2

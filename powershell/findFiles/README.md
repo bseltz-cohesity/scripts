@@ -34,6 +34,9 @@ Place both files in a folder together and run the main script like so:
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -searchString: last few characters of the file extention you are looking for
+* -jobName: (optional) filter results by jobName
+* -objectName: (optional) filter results by objectName
+* -objectType: (optional) filter results by objectType (e.g. kVMware)
 * -getMtime: (optional) get last modified date of each file
 * -extensionOnly: (optional) only return results where the searchString is the file extension
 * -throttle: (optional) pause for X seconds between paged results
