@@ -39,5 +39,6 @@ Place both files in a folder together and run the main script like so:
 * -objectType: (optional) filter results by objectType (e.g. kVMware)
 * -getMtime: (optional) get last modified date of each file
 * -extensionOnly: (optional) only return results where the searchString is the file extension
+* -localOnly: (optional) only show rsults from local jobs
 * -throttle: (optional) pause for X seconds between paged results
 * -pageSize: (optional) 1000 or less (default is 1000)

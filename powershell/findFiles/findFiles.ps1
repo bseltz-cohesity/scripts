@@ -9,6 +9,7 @@ param (
     [Parameter()][string]$objectType = '',
     [Parameter()][string]$jobName = '',
     [Parameter()][switch]$extensionOnly,
+    [Parameter()][switch]$localOnly,
     [Parameter()][switch]$getMtime,
     [Parameter()][int]$throttle = 0,
     [Parameter()][int]$pageSize = 1000
@@ -23,7 +24,7 @@ apiauth -vip $vip -username $username -domain $domain
 $rootNodes = api get protectionSources?rootNodes
 $sources = api get protectionSources
 $jobs = api get protectionJobs
-
+$cluster = api get cluster
 
 function getObjectId($objectName){
     $global:_object_id = $null
@@ -94,28 +95,30 @@ while($True){
             $parentId = $result.protectionSource.parentId
             $jobId = $result.jobUid.id
             $clusterId = $result.jobUid.clusterId
-            $clusterIncarnationId = $result.jobUid.clusterIncarnationId
-            $sourceId = $result.protectionSource.id
-            $jobName = ($jobs | Where-Object id -eq $jobId).name
-            if($parentId){
-                $parent = $rootNodes | Where-Object {$_.protectionSource.id -eq $parentId}
-                if($parent){
-                    $parentName = $parent.protectionSource.name
-                }
-            }
-            if($getMtime){
-                $mtime = ''
-                $thisFileName = [System.Web.HttpUtility]::UrlEncode($result.fileName)  # [System.Web.HttpUtility]::UrlEncode($result.fileName).Replace('%2f%2f','%2F')
-                $snapshots = api get -v2 "data-protect/objects/$sourceId/protection-groups/$clusterId`:$clusterIncarnationId`:$jobId/indexed-objects/snapshots?indexedObjectName=$thisFileName&includeIndexedSnapshotsOnly=true"
-                if($snapshots.snapshots.Count -gt 0){
-                    $mtimeUsecs = $snapshots.snapshots[0].lastModifiedTimeUsecs
-                    if($mtimeUsecs){
-                        $mtime = usecsToDate $mtimeUsecs
+            if(!$localOnly -or $clusterId -eq $cluster.id){
+                $clusterIncarnationId = $result.jobUid.clusterIncarnationId
+                $sourceId = $result.protectionSource.id
+                $jobName = ($jobs | Where-Object id -eq $jobId).name
+                if($parentId){
+                    $parent = $rootNodes | Where-Object {$_.protectionSource.id -eq $parentId}
+                    if($parent){
+                        $parentName = $parent.protectionSource.name
                     }
                 }
-            } 
-            write-host ("{0},{1},{2},{3}" -f $parentName, $objectName, $fileName, $mtime)
-            "{0},{1},{2},{3},{4}" -f $jobName, $parentName, $objectName, $fileName, $mtime | Out-File -FilePath foundFiles.csv -Append
+                if($getMtime){
+                    $mtime = ''
+                    $thisFileName = [System.Web.HttpUtility]::UrlEncode($result.fileName)  # [System.Web.HttpUtility]::UrlEncode($result.fileName).Replace('%2f%2f','%2F')
+                    $snapshots = api get -v2 "data-protect/objects/$sourceId/protection-groups/$clusterId`:$clusterIncarnationId`:$jobId/indexed-objects/snapshots?indexedObjectName=$thisFileName&includeIndexedSnapshotsOnly=true"
+                    if($snapshots.snapshots.Count -gt 0){
+                        $mtimeUsecs = $snapshots.snapshots[0].lastModifiedTimeUsecs
+                        if($mtimeUsecs){
+                            $mtime = usecsToDate $mtimeUsecs
+                        }
+                    }
+                } 
+                write-host ("{0},{1},{2},{3}" -f $parentName, $objectName, $fileName, $mtime)
+                "{0},{1},{2},{3},{4}" -f $jobName, $parentName, $objectName, $fileName, $mtime | Out-File -FilePath foundFiles.csv -Append    
+            }
         }
     }else{
         break
