@@ -1,0 +1,248 @@
+### usage: ./restoreVMs.ps1 -vip mycluster -username myusername -domain mydomain.net -vmlist ./vmlist.txt
+
+### process commandline arguments
+[CmdletBinding()]
+param (
+    [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
+    [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
+    [Parameter()][string]$domain = 'local', # local or AD domain
+    [Parameter()][string]$vmlist = './vmlist.txt', # list of VMs to recover
+    [Parameter()][string]$vCenterName,
+    [Parameter()][string]$datacenterName,
+    [Parameter()][string]$hostName,
+    [Parameter()][string]$folderName,
+    [Parameter()][string]$networkName,
+    [Parameter()][string]$datastoreName,
+    [Parameter()][string]$prefix = '',
+    [Parameter()][switch]$preserveMacAddress,
+    [Parameter()][switch]$detachNetwork,
+    [Parameter()][switch]$poweron, # leave powered off by default
+    [Parameter()][switch]$wait, # wait for restore tasks to complete
+    [Parameter()][ValidateSet('InstantRecovery','CopyRecovery')][string]$recoveryType = 'InstantRecovery'
+)
+
+### source the cohesity-api helper code
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+
+### authenticate
+apiauth -vip $vip -username $username -domain $domain
+
+if (!(Test-Path -Path $vmlist)) {
+    Write-Host "vmlist file $vmlist not found" -ForegroundColor Yellow
+    exit
+}
+
+$restores = @()
+$restoreParams = @{}
+
+$recoverDate = (get-date).ToString('yyyy-MM-dd_hh-mm-ss')
+
+$restoreParams = @{
+    "name"                = "Recover_VM_$recoverDate";
+    "snapshotEnvironment" = "kVMware";
+    "vmwareParams"        = @{
+        "objects"         = @();
+        "recoveryAction"  = "RecoverVMs";
+        "recoverVmParams" = @{
+            "targetEnvironment"                = "kVMware";
+            "recoverProtectionGroupRunsParams" = @();
+            "vmwareTargetParams"               = @{
+                "recoveryTargetConfig"       = @{
+                    "recoverToNewSource"   = $false;
+                    "originalSourceConfig" = @{
+                        "networkConfig" = @{
+                            "detachNetwork"  = $false;
+                            "disableNetwork" = $false
+                        }
+                    }
+                };
+                "renameRecoveredVmsParams"   = @{
+                    "prefix" = $null;
+                    "suffix" = $null
+                };
+                "renameRecoveredVAppsParams" = $null;
+                "powerOnVms"                 = $false;
+                "continueOnError"            = $false;
+                "recoveryProcessType"        = "InstantRecovery"
+            }
+        }
+    }
+}
+
+# alternate restore location params
+if($vCenterName){
+    # require alternate location params
+    if(!$datacenterName){
+        Write-Host "datacenterName required" -ForegroundColor Yellow
+        exit
+    }
+    if(!$hostName){
+        Write-Host "hostName required" -ForegroundColor Yellow
+        exit
+    }
+    if(!$datastoreName){
+        Write-Host "datastoreName required" -ForegroundColor Yellow
+        exit
+    }
+    if(!$folderName){
+        Write-Host "folderName required" -ForegroundColor Yellow
+        exit
+    }
+
+    # select vCenter
+    $vCenterSource = api get protectionSources?environments=kVMware | Where-Object {$_.protectionSource.name -eq $vCenterName}
+    $vCenterList = api get /entitiesOfType?environmentTypes=kVMware`&vmwareEntityTypes=kVCenter`&vmwareEntityTypes=kStandaloneHost
+    $vCenter = $vCenterList | Where-Object { $_.displayName -ieq $vCenterName }
+    $vCenterId = $vCenter.id
+
+    if(! $vCenter){
+        write-host "vCenter Not Found" -ForegroundColor Yellow
+        exit
+    }
+
+    # select data center
+    $dataCenterSource = $vCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $datacenterName}
+    if(!$dataCenterSource){
+        Write-Host "Datacenter $datacenterName not found" -ForegroundColor Yellow
+        exit
+    }
+
+    # select host
+    $hostSource = $dataCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $hostName}
+    if(!$dataCenterSource){
+        Write-Host "Datacenter $datacenterName not found" -ForegroundColor Yellow
+        exit
+    }
+
+    # select resource pool
+    $resourcePoolSource = $hostSource.nodes | Where-Object {$_.protectionSource.vmWareProtectionSource.type -eq 'kResourcePool'}
+    $resourcePoolId = $resourcePoolSource.protectionSource.id
+    $resourcePool = api get /resourcePools?vCenterId=$vCenterId | Where-Object {$_.resourcePool.id -eq $resourcePoolId}
+
+    # select datastore
+    $datastores = api get "/datastores?resourcePoolId=$resourcePoolId&vCenterId=$vCenterId" | Where-Object { $_.vmWareEntity.name -eq $datastoreName }
+    if(!$datastores){
+        Write-Host "Datastore $datastoreName not found" -ForegroundColor Yellow
+        exit
+    }
+
+    # select VM folder
+    $vmFolders = api get /vmwareFolders?resourcePoolId=$resourcePoolId`&vCenterId=$vCenterId
+    $vmFolder = $vmFolders.vmFolders | Where-Object displayName -eq $folderName
+    if(! $vmFolder){
+        write-host "folder $folderName not found" -ForegroundColor Yellow
+        exit
+    }
+
+    $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.recoveryTargetConfig.recoverToNewSource = $True
+    $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.recoveryTargetConfig["newSourceConfig"] = @{
+        "sourceType"    = "kVCenter";
+        "vCenterParams" = @{
+            "source"        = @{
+                "id" = $vCenterId
+            };
+            "networkConfig" = @{
+                "detachNetwork" = $False;
+            };
+            "datastores"    = @(
+                $datastores[0]
+            );
+            "resourcePool"  = @{
+                "id" = $resourcePoolId
+            };
+            "vmFolder"      = @{
+                "id" = $vmFolder.id
+            }
+        }
+    }
+
+    if(!$detachNetwork){
+        # select network
+        if(! $networkName){
+            Write-Host "network name required" -ForegroundColor Yellow
+            exit
+        }
+        $networks = api get "/networkEntities?resourcePoolId=$resourcePoolId&vCenterId=$vCenterId"
+        $network = $networks | Where-Object displayName -eq $networkName
+
+        if(! $network){
+            Write-Host "network $networkName not found" -ForegroundColor Yellow
+            exit
+        }
+        $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.recoveryTargetConfig.newSourceConfig.vCenterParams.networkConfig["newNetworkConfig"] = @{
+            "networkPortGroup"   = @{
+                "id" = $network.id
+            };
+            "disableNetwork"     = $False;
+            "preserveMacAddress" = $False
+        }
+        if($preserveMacAddress){
+            $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.recoveryTargetConfig.newSourceConfig.vCenterParams.networkConfig.newNetworkConfig.preserveMacAddress = $True
+        }
+    }
+}else{
+    $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.recoveryTargetConfig["originalSourceConfig"] = @{
+        "networkConfig" = @{
+            "detachNetwork"  = $False;
+            "disableNetwork" = $False
+        }
+    }
+    if($detachNetwork){
+        $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.recoveryTargetConfig.originalSourceConfig.networkConfig = @{
+            "detachNetwork"  = $True;
+            "disableNetwork" = $True
+        }
+    }
+}
+
+if($poweron){
+    $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.powerOnVms = $True
+}
+
+if($prefix -ne ''){
+    $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.renameRecoveredVmsParams.prefix = "$prefix-"
+}
+
+$restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.recoveryProcessType = $recoveryType
+
+# get list of VM backups
+
+foreach($vm in get-content -Path $vmlist){
+    $vmName = [string]$vm
+    $vms = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverVMs,RecoverVApps,RecoverVAppTemplates&searchString=$vmName&environments=kVMware"
+    $exactVMs = $vms.objects | Where-Object name -eq $vmName
+    $latestsnapshot = ($exactVMs | Sort-Object -Property @{Expression={$_.latestSnapshotsInfo[0].protectionRunStartTimeUsecs}; Ascending = $False})[0]
+
+    if($latestsnapshot){
+        write-host "restoring $vmName"
+        if($latestsnapshot.id -notin $restores){
+            $restores += $latestsnapshot.id
+            $restoreParams.vmwareParams.objects += @{
+                "snapshotId" = $latestsnapshot.latestSnapshotsInfo[0].localSnapshotInfo.snapshotId
+            }
+        }
+    }else{
+        write-host "skipping $vmName (not protected)"
+    }
+}
+
+if($restoreParams.vmwareParams.objects.Count -gt 0){
+    $recovery = api post -v2 data-protect/recoveries $restoreParams
+}else{
+    Write-Host "No VMs to restore" -ForegroundColor Yellow
+    exit
+}
+
+# wait for restores to complete
+if($wait){
+    "Waiting for restores to complete..."
+    $finishedStates = @('Canceled', 'Succeeded', 'kFailed')
+    $pass = 0
+    do{
+        Start-Sleep 10
+        $recoveryTask = api get -v2 data-protect/recoveries/$($recovery.id)?includeTenants=true
+        $status = $recoveryTask.status
+
+    } until ($status -in $finishedStates)
+    write-host "Restore task finished with status: $status"
+}
