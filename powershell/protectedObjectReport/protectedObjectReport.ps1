@@ -52,8 +52,8 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                     'lastStatus' = $object.localSnapshotInfo.snapshotInfo.status.subString(1);
                     'jobPaused' = $job.isPaused
                 }
-                if($object.PSObject.Properties['sourceId']){
-                    $objects[$object.id].sourceId = $object.sourceId
+                if($object.object.PSObject.Properties['sourceId']){
+                    $objects[$object.object.id].sourceId = $object.object.sourceId
                 }
             }
         }
