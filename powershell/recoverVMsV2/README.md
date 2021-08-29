@@ -46,6 +46,7 @@ Place the files in a folder together and run the main script like so:
 * -vip: Cohesity cluster to connect to
 * -username: Cohesity username (e.g. admin)
 * -domain: (optional) Active Directory domain (defaults to 'local')
+* -tenant: (optional) tenant name to impersonate
 * -vmList: text file of vms to recover (one VM per line)
 * -prefix: (optional) add a prefix to the VM name during restore
 * -vCenterName: (optional)vCenter protection source to recover to

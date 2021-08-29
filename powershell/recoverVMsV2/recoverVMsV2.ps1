@@ -6,6 +6,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
     [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
     [Parameter()][string]$domain = 'local', # local or AD domain
+    [Parameter()][string]$tenant = $null,
     [Parameter()][string]$vmlist = './vmlist.txt', # list of VMs to recover
     [Parameter()][string]$vCenterName,
     [Parameter()][string]$datacenterName,
@@ -25,7 +26,7 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain
+apiauth -vip $vip -username $username -domain $domain -tenant $tenant
 
 if (!(Test-Path -Path $vmlist)) {
     Write-Host "vmlist file $vmlist not found" -ForegroundColor Yellow
