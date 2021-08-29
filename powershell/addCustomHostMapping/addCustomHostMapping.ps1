@@ -19,13 +19,13 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain
+apiauth -vip $vip -username $username -domain $domain -quiet
 
 ### get host mappings
 $hosts = api get /nexus/cluster/get_hosts_file
 
 if(! $hosts){
-    $hosts = @{'hosts' = @()}
+    $hosts = @{'hosts' = @(); 'version' = 1}
 }
 if(! $hosts.hosts){
     $hosts.hosts = @()
@@ -131,6 +131,8 @@ $hosts | setApiProperty 'validate' $True
 if($changesMade){
     if($hosts.PSObject.Properties['version']){
         $hosts.version += 1
+    }else{
+        setApiProperty -object $hosts -name version -value 2
     }
     $result = api put /nexus/cluster/upload_hosts_file $hosts
     if(!$quiet){
