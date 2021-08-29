@@ -15,7 +15,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 # End Download Commands
 ```
 
-## Function library - cohesity-api.ps1
+## Function library: cohesity-api.ps1
 
 The function library, cohesity-api.ps1 provides a suite of functions to make it easier to use the Cohesity api. To use the library, we can source (otherwise known as dot sourcing) the library within a PowerShell session or within a script, like so:
 
