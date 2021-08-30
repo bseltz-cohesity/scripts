@@ -56,6 +56,9 @@ foreach($job in $jobs | Sort-Object -Property name){
             if($source.source.environment -eq 'kO365' -and $source.source.office365ProtectionSource.PSObject.Properties['primarySMTPAddress']){
                 $sourceName = $source.source.office365ProtectionSource.primarySMTPAddress
             }
+            if($source.source.environment -eq 'kO365' -and $source.source.office365ProtectionSource.PSObject.Properties['webUrl']){
+                $sourceName = $source.source.office365ProtectionSource.webUrl
+            }
             $status = $source.status.subString(1)
             $message = $source.error
             "  {0} ({1})" -f $sourceName, $status
