@@ -71,6 +71,12 @@ foreach($vip in $vips){
                 $runStartTimeUsecs = $myRun.backupRun.stats.startTimeUsecs 
                 foreach($source in $myRun.backupRun.sourceBackupStatus | Sort-Object -Property {$_.source.name}){
                     $sourceName = $source.source.name
+                    if($source.source.environment -eq 'kO365' -and $source.source.office365ProtectionSource.PSObject.Properties['primarySMTPAddress']){
+                        $sourceName = $source.source.office365ProtectionSource.primarySMTPAddress
+                    }
+                    if($source.source.environment -eq 'kO365' -and $source.source.office365ProtectionSource.PSObject.Properties['webUrl']){
+                        $sourceName = $source.source.office365ProtectionSource.webUrl
+                    }
                     $status = $source.status.subString(1)
                     if($source.error.Length -gt 0){
                         $message = $source.error
