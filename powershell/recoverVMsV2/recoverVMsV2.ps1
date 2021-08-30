@@ -8,6 +8,7 @@ param (
     [Parameter()][string]$domain = 'local', # local or AD domain
     [Parameter()][string]$tenant = $null,
     [Parameter()][string]$vmlist = './vmlist.txt', # list of VMs to recover
+    [Parameter()][datetime]$recoverDate,
     [Parameter()][string]$vCenterName,
     [Parameter()][string]$datacenterName,
     [Parameter()][string]$hostName,
@@ -36,10 +37,10 @@ if (!(Test-Path -Path $vmlist)) {
 $restores = @()
 $restoreParams = @{}
 
-$recoverDate = (get-date).ToString('yyyy-MM-dd_hh-mm-ss')
+$recoverDateString = (get-date).ToString('yyyy-MM-dd_hh-mm-ss')
 
 $restoreParams = @{
-    "name"                = "Recover_VM_$recoverDate";
+    "name"                = "Recover_VM_$recoverDateString";
     "snapshotEnvironment" = "kVMware";
     "vmwareParams"        = @{
         "objects"         = @();
@@ -214,16 +215,32 @@ foreach($vm in get-content -Path $vmlist){
     $exactVMs = $vms.objects | Where-Object name -eq $vmName
     $latestsnapshot = ($exactVMs | Sort-Object -Property @{Expression={$_.latestSnapshotsInfo[0].protectionRunStartTimeUsecs}; Ascending = $False})[0]
 
-    if($latestsnapshot){
+    if($recoverDate){
+        $recoverDateUsecs = dateToUsecs ($recoverDate.AddMinutes(1))
+    
+        $snapshots = api get -v2 "data-protect/objects/$($latestsnapshot.id)/snapshots?protectionGroupIds=$($latestsnapshot.latestSnapshotsInfo.protectionGroupId)"
+        $snapshots = $snapshots.snapshots | Sort-Object -Property runStartTimeUsecs -Descending | Where-Object runStartTimeUsecs -lt $recoverDateUsecs
+        if($snapshots -and $snapshots.Count -gt 0){
+            $snapshot = $snapshots[0]
+            $snapshotId = $snapshot.id
+        }else{
+            Write-Host "No snapshots available for $vmName"
+        }
+    }else{
+        $snapshot = $latestsnapshot.latestSnapshotsInfo[0].localSnapshotInfo
+        $snapshotId = $snapshot.snapshotId
+    }
+
+    if($snapshotId){
         write-host "restoring $vmName"
-        if($latestsnapshot.id -notin $restores){
-            $restores += $latestsnapshot.id
+        if($snapshotId -notin $restores){
+            $restores += $snapshotId
             $restoreParams.vmwareParams.objects += @{
-                "snapshotId" = $latestsnapshot.latestSnapshotsInfo[0].localSnapshotInfo.snapshotId
+                "snapshotId" = $snapshotId
             }
         }
     }else{
-        write-host "skipping $vmName (not protected)"
+        write-host "skipping $vmName no snapshot available"
     }
 }
 

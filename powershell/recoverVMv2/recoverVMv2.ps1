@@ -5,6 +5,7 @@ param (
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
     [Parameter(Mandatory = $True)][string]$vmName,
+    [Parameter()][datetime]$recoverDate,
     [Parameter()][string]$vCenterName,
     [Parameter()][string]$datacenterName,
     [Parameter()][string]$hostName,
@@ -29,16 +30,33 @@ $vms = api get -v2 "data-protect/search/protected-objects?snapshotActions=Recove
 $exactVMs = $vms.objects | Where-Object name -eq $vmName
 $latestsnapshot = ($exactVMs | Sort-Object -Property @{Expression={$_.latestSnapshotsInfo[0].protectionRunStartTimeUsecs}; Ascending = $False})[0]
 
+if($recoverDate){
+    $recoverDateUsecs = dateToUsecs ($recoverDate.AddMinutes(1))
+
+    $snapshots = api get -v2 "data-protect/objects/$($latestsnapshot.id)/snapshots?protectionGroupIds=$($latestsnapshot.latestSnapshotsInfo.protectionGroupId)"
+    $snapshots = $snapshots.snapshots | Sort-Object -Property runStartTimeUsecs -Descending | Where-Object runStartTimeUsecs -lt $recoverDateUsecs
+    if($snapshots -and $snapshots.Count -gt 0){
+        $snapshot = $snapshots[0]
+        $snapshotId = $snapshot.id
+    }else{
+        Write-Host "No snapshots available for $vmName"
+        exit 1
+    }
+}else{
+    $snapshot = $latestsnapshot.latestSnapshotsInfo[0].localSnapshotInfo
+    $snapshotId = $snapshot.snapshotId
+}
+
 ### build recovery task
-$recoverDate = (get-date).ToString('yyyy-MM-dd_hh-mm-ss')
+$recoverDateString = (get-date).ToString('yyyy-MM-dd_hh-mm-ss')
 
 $restoreParams = @{
-    "name"                = "Recover_VM_$recoverDate";
+    "name"                = "Recover_VM_$recoverDateString";
     "snapshotEnvironment" = "kVMware";
     "vmwareParams"        = @{
         "objects"         = @(
             @{
-                "snapshotId" = $latestsnapshot.latestSnapshotsInfo[0].localSnapshotInfo.snapshotId
+                "snapshotId" = $snapshotId
             }
         );
         "recoveryAction"  = "RecoverVMs";
@@ -188,7 +206,7 @@ if($powerOn){
 }
 
 if ($prefix -ne '') {
-    $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams['renameRestoredObjectParam'] = @{
+    $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams['renameRecoveredVmsParams'] = @{
         'prefix' = [string]$prefix + '-';
     }
     "Recovering $vmName as $prefix-$vmName..."
