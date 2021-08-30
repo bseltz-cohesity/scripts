@@ -47,6 +47,7 @@ Place the files in a folder together and run the main script like so:
 * -username: Cohesity username (e.g. admin)
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -vmName: Name of VM to recover
+* -recoverDate: (optional) e.g. '2021-08-18 23:30:00' (will use most recent at or before this date)
 * -prefix: (optional) add a prefix to the VM name during restore
 * -vCenterName: (optional)vCenter protection source to recover to
 * -datacenterName: (optional) name of vSphere data center to recover to

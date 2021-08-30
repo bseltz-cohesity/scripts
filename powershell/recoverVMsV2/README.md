@@ -48,6 +48,7 @@ Place the files in a folder together and run the main script like so:
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -tenant: (optional) tenant name to impersonate
 * -vmList: text file of vms to recover (one VM per line)
+* -recoverDate: (optional) e.g. '2021-08-18 23:30:00' (will use most recent at or before this date)
 * -prefix: (optional) add a prefix to the VM name during restore
 * -vCenterName: (optional)vCenter protection source to recover to
 * -datacenterName: (optional) name of vSphere data center to recover to
