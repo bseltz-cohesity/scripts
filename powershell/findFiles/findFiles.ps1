@@ -56,7 +56,7 @@ function getObjectId($objectName){
 }
 
 
-"JobName,Parent,Object,Path,Last Modified" | Out-File -FilePath foundFiles.csv
+"JobName`tParent`tObject`tPath`tLast Modified" | Out-File -FilePath foundFiles.tsv
 
 $query = ""
 if($objectType){
@@ -117,7 +117,7 @@ while($True){
                     }
                 } 
                 write-host ("{0},{1},{2},{3}" -f $parentName, $objectName, $fileName, $mtime)
-                "{0},{1},{2},{3},{4}" -f $jobName, $parentName, $objectName, $fileName, $mtime | Out-File -FilePath foundFiles.csv -Append    
+                "{0}`t{1}`t{2}`t{3}`t{4}" -f $jobName, $parentName, $objectName, $fileName, $mtime | Out-File -FilePath foundFiles.tsv -Append    
             }
         }
     }else{
