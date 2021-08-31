@@ -13,7 +13,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 $scriptName = 'copyPolicy'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
 (Invoke-WebRequest -Uri "$repoUrl/$scriptName/copyPolicy.ps1").content | Out-File "copyPolicy.ps1"; (Get-Content "copyPolicy.ps1") | Set-Content "copyPolicy.ps1"
-Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
 
