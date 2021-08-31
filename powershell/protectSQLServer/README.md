@@ -53,9 +53,10 @@ Or to update an existing job:
 
 * -vip: name or IP of Cohesity cluster
 * -username: name of user to connect to Cohesity
-* -domain: your AD domain (defaults to local)
+* -domain: (optional) your AD domain (defaults to local)
 * -jobname: name of protection job
-* -servername: name of registered SQL server to protect
+* -servername: (optional) name of one or more registered SQL servers to protect (comma seaparated)
+* -serverList: (optional) text file of registered SQL servers to protect (one per line)
 
 ## Optional Prameters
 
