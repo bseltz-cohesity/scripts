@@ -25,7 +25,8 @@ param (
     [Parameter()][switch]$consolidate,
     [Parameter()][string]$targetPath = $null,
     [Parameter()][switch]$dbFolders,
-    [Parameter()][switch]$logsOnly
+    [Parameter()][switch]$logsOnly,
+    [Parameter()][switch]$lastRunOnly
 )
 
 # source the cohesity-api helper code
@@ -97,6 +98,10 @@ $storageDomainId = $job.viewBoxId
 # get runs
 $runs = (api get "protectionRuns?jobId=$($job.id)")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
 
+if($lastRunOnly -and $runs.Count -gt 0){
+    $runs = $runs[0]
+}
+
 if($firstRunId){
     $runs = $runs | Where-Object {$_.backupRun.jobRunId -ge $firstRunId}
 }
@@ -115,11 +120,6 @@ if($listRuns){
 
 if($view -and !($deleteView -or $refreshView)){
     Write-Host "View $viewName already exists" -ForegroundColor Yellow
-    exit 1
-}
-
-if(!$objectName){
-    Write-Host "-object parameter required" -ForegroundColor Yellow
     exit 1
 }
 
@@ -198,41 +198,47 @@ $view = (api get views).views | Where-Object {$_.name -eq $viewName}
 
 $paths = @()
 foreach($run in $runs){
-    # get snapshot path
-    $sourceInfo = $run.backupRun.sourceBackupStatus | Where-Object {$_.source.name -eq $objectName}
-    if(!$sourceInfo){ 
-        write-host "$objectName not found in job run" -ForegroundColor Yellow
-    }else{
-        if($sourceInfo.status -in @('kSuccess', 'kWarning')){
-            $sourceView = $sourceInfo.currentSnapshotInfo.viewName
-            $x = $attemptNum = 1
-            if($sourceInfo.currentSnapshotInfo.PSObject.Properties['relativeSnapshotDirectory']){
-                $sourcePath = $sourceInfo.currentSnapshotInfo.relativeSnapshotDirectory
-                $sourcePathPrefix = $sourcePath.Substring(0,$sourcePath.length - $sourcePath.split('-')[-1].length)
-                $attemptnum = $sourcePath.split('-')[-1]
-            }else{
-                $sourcePath = '/'
-            }
-            while($x -le $attemptnum){
+    if($objectName){
+        $sourceInfo = $run.backupRun.sourceBackupStatus | Where-Object {$_.source.name -eq $objectName}
+        if(!$sourceInfo){ 
+            write-host "$objectName not found in job run" -ForegroundColor Yellow
+        }
+    }
+
+    foreach($sourceInfo in $run.backupRun.sourceBackupStatus){
+        if(!$objectName -or $sourceInfo.source.name -eq $objectName){
+            $thisObjectName = $sourceInfo.source.name
+            if($sourceInfo.status -in @('kSuccess', 'kWarning')){
+                $sourceView = $sourceInfo.currentSnapshotInfo.viewName
+                $x = $attemptNum = 1
                 if($sourceInfo.currentSnapshotInfo.PSObject.Properties['relativeSnapshotDirectory']){
-                    $sourcePath = "$sourcePathPrefix$($x)"
+                    $sourcePath = $sourceInfo.currentSnapshotInfo.relativeSnapshotDirectory
+                    $sourcePathPrefix = $sourcePath.Substring(0,$sourcePath.length - $sourcePath.split('-')[-1].length)
+                    $attemptnum = $sourcePath.split('-')[-1]
+                }else{
+                    $sourcePath = '/'
                 }
-                # $sourcePath
-                $destinationPath = "$objectName-$((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss"))-$($run.backupRun.runType.substring(1))-$x"
-                $runDate = (usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss")
-            
-                # clone snapshot directory
-                $CloneDirectoryParams = @{
-                    'destinationDirectoryName' = $destinationPath;
-                    'destinationParentDirectoryPath' = "/$viewName";
-                    'sourceDirectoryPath' = "/$sourceView/$SourcePath"
+                while($x -le $attemptnum){
+                    if($sourceInfo.currentSnapshotInfo.PSObject.Properties['relativeSnapshotDirectory']){
+                        $sourcePath = "$sourcePathPrefix$($x)"
+                    }
+                    # $sourcePath
+                    $destinationPath = "$thisObjectName-$((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss"))-$($run.backupRun.runType.substring(1))-$x"
+                    $runDate = (usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss")
+                
+                    # clone snapshot directory
+                    $CloneDirectoryParams = @{
+                        'destinationDirectoryName' = $destinationPath;
+                        'destinationParentDirectoryPath' = "/$viewName";
+                        'sourceDirectoryPath' = "/$sourceView/$SourcePath"
+                    }
+                
+                    $folderPath = "\\$vip\$viewName\$destinationPath"
+                    Write-Host "Cloning $thisObjectName backup files to $folderPath"
+                    $null = api post views/cloneDirectory $CloneDirectoryParams
+                    $paths += @{'path' = $folderPath; 'runDate' = $runDate; 'runType' = $run.backupRun.runType}
+                    $x = $x + 1
                 }
-            
-                $folderPath = "\\$vip\$viewName\$destinationPath"
-                # Write-Host "Cloning $objectName backup files to $folderPath"
-                $null = api post views/cloneDirectory $CloneDirectoryParams
-                $paths += @{'path' = $folderPath; 'runDate' = $runDate; 'runType' = $run.backupRun.runType}
-                $x = $x + 1
             }
         }
     }
