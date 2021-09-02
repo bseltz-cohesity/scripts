@@ -27,7 +27,8 @@ param (
     [Parameter()][string]$targetPath = $null,
     [Parameter()][switch]$dbFolders,
     [Parameter()][switch]$logsOnly,
-    [Parameter()][switch]$existingView
+    [Parameter()][switch]$existingView,
+    [Parameter()][Int64]$numRuns = 100
 )
 
 # source the cohesity-api helper code
@@ -97,7 +98,7 @@ $job = ($job | Sort-Object id)[-1]
 $storageDomainId = $job.viewBoxId
 
 # get runs
-$runs = (api get "protectionRuns?jobId=$($job.id)")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
+$runs = (api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns") | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
 
 if($runId){
     $runs = $runs | Where-Object{$_.backupRun.jobRunId -eq $runId}

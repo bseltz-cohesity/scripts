@@ -121,3 +121,4 @@ To refresh a view (on a schedule):
 * -targetPath: (optional) move all files to this directory (e.g. \test\folder)
 * -dbFolders: (optional) move files into db-named folders
 * -logsOnly: (optional) only consolidate log files
+* -numRuns: (optional) max number of runs to clone (default is 100)
