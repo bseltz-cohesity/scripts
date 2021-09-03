@@ -33,6 +33,16 @@ Place both files in a folder together and run the main script like so:
                        -w 192.168.2.23
 ```
 
+To delete the view after you're done with it:
+
+```bash
+./cloneBackupToView.py -v mycluster \
+                       -u myuser \
+                       -d mydomain.net \
+                       -n myviewname \
+                       -x
+```
+
 ## Parameters
 
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
