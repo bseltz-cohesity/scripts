@@ -25,7 +25,15 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./protectViewList.ps1 -vip mycluster -username admin -viewList ./viewlist.txt -policyName 'Standard Protection'
+./protectViewList.ps1 -vip mycluster `
+                      -username myusername `
+                      -domain mydomain.net `
+                      -viewList ./viewlist.txt `
+                      -policyName 'Standard Protection' `
+                      -createDRview `
+                      -drSuffix '-DR' `
+                      -startTime '23:55' `
+                      -timeZone 'America/New_York'
 ```
 
 ## Parameters
@@ -35,4 +43,8 @@ Place both files in a folder together and run the main script like so:
 * -domain: your AD domain (defaults to local)
 * -viewList: text file of view names to protect
 * -policyName: name of protection policy to apply to the new job
+* -startTime: (optional) e.g. 23:30 (default is 20:00)
+* -timeZone: (optional) e.g. 'America/New_York' (default is 'America/Los_Angeles')
 * -pause: leave the new job paused so it won't start
+* -createDRview: (optional) create remote view during replication
+* -drSuffix: (optional) e.g. '-DR'
