@@ -44,8 +44,6 @@ The following python modules are required to be installed on the computer runnin
 * pandas
 * matplotlib
 
-See [Run Python scripts in Power BI Desktop (docs.microsoft.com)](https://docs.microsoft.com/en-us/power-bi/connect-data/desktop-python-scripts) for more instructions on setting up Power BI to run python scripts.
-
 ## Copy pyhesity.py into the Python Module Path
 
 Find out where your user site directory location using the following command:
@@ -63,6 +61,8 @@ mkdir -p <user-site-location>
 Finally, copy the pyhesity.py file to that location
 
 ## Setup the Data Source in Power BI
+
+See [Run Python scripts in Power BI Desktop (docs.microsoft.com)](https://docs.microsoft.com/en-us/power-bi/connect-data/desktop-python-scripts) for more instructions on setting up Power BI to run python scripts.
 
 * In Power BI, click 'Get Data', select 'Python Script' and click connect.
 * Paste the modified contents of the powerBI-helios-externalTargetUsage.py script into the script box, and click OK.
