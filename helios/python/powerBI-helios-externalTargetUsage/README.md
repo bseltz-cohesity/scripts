@@ -23,12 +23,12 @@ chmod +x powerBI-helios-externalTargetUsage
 
 Helios uses an API key for authentication. To acquire an API key:
 
-* log onto Helios
-* select 'All Clusters'
-* click settings -> access management -> API Keys
-* click Add API Key
-* enter a name for your key
-* click Save
+1. log onto Helios
+2. select 'All Clusters'
+3. click settings -> access management -> API Keys
+4. click Add API Key
+5. enter a name for your key
+6. click Save
 
 Immediately copy the API key (you only have one chance to copy the key. Once you leave the screen, you can not access it again).
 
@@ -64,6 +64,6 @@ Finally, copy the pyhesity.py file to that location
 
 See [Run Python scripts in Power BI Desktop (docs.microsoft.com)](https://docs.microsoft.com/en-us/power-bi/connect-data/desktop-python-scripts) for more instructions on setting up Power BI to run python scripts.
 
-* In Power BI, click 'Get Data', select 'Python Script' and click connect.
-* Paste the modified contents of the powerBI-helios-externalTargetUsage.py script into the script box, and click OK.
-* Select the df element and click Load.
+1. In Power BI, click 'Get Data', select 'Python Script' and click connect.
+2. Paste the modified contents of the powerBI-helios-externalTargetUsage.py script into the script box, and click OK.
+3. Select the df element and click Load.
