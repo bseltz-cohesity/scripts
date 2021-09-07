@@ -158,6 +158,7 @@ else:
         print('Job %s protects a different AHV cluster' % jobname)
         exit(1)
 
+    print("Updating Job '%s'" % jobname)
     job['sourceIds'] += sourceIds
 
 if newJob is True:
