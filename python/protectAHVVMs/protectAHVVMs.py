@@ -71,6 +71,7 @@ for vmname in vmnames:
     if not vm or len(vm) == 0:
         print('VM %s not found' % vmname)
     else:
+        print('protecting vm %s' % vmname)
         sourceIds.append(vm[0]['protectionSource']['id'])
 
 # get job info
