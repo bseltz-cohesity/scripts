@@ -34,8 +34,6 @@ $sources = api get protectionSources?environments=kPhysical
 $jobs = api get protectionJobs?environments=kPhysicalFiles
 
 $cluster = api get cluster
-if($cluster.clusterSoftwareVersion -gt '6.5'){
- }
 
 foreach($job in $jobs){
     $saveJob = $false
