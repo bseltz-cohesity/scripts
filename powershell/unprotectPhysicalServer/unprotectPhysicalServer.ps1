@@ -33,6 +33,10 @@ if($servers.Length -eq 0){
 $sources = api get protectionSources?environments=kPhysical
 $jobs = api get protectionJobs?environments=kPhysicalFiles
 
+$cluster = api get cluster
+if($cluster.clusterSoftwareVersion -gt '6.5'){
+ }
+
 foreach($job in $jobs){
     $saveJob = $false
     foreach($server in $servers){
@@ -48,10 +52,23 @@ foreach($job in $jobs){
         }
     }
     if($saveJob){
+        if($cluster.clusterSoftwareVersion -gt '6.5'){
+            $protectionGroups = api get "data-protect/protection-groups?isDeleted=false&includeTenants=true&includeLastRunInfo=true" -v2
+            $protectionGroup = $protectionGroups.protectionGroups | Where-Object name -eq $job.name
+            $globalExcludePaths = $protectionGroup.physicalParams.fileProtectionTypeParams.globalExcludePaths
+        }
         if($job.sourceIds.Length -gt 0){
             $null = api put protectionJobs/$($job.id) $job
         }else{
             $null = api delete protectionJobs/$($job.id)
         }
+        if($cluster.clusterSoftwareVersion -gt '6.5'){
+            if($globalExcludePaths){
+                $protectionGroups = api get "data-protect/protection-groups?isDeleted=false&includeTenants=true&includeLastRunInfo=true" -v2
+                $protectionGroup = $protectionGroups.protectionGroups | Where-Object name -eq $job.name
+                setApiProperty -object $protectionGroup.physicalParams.fileProtectionTypeParams -name 'globalExcludePaths' -value $globalExcludePaths
+                $null = api put "data-protect/protection-groups/$($protectionGroup.id)" $protectionGroup -v2
+            }
+        }        
     }
 }
