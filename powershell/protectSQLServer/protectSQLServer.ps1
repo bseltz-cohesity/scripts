@@ -9,6 +9,7 @@ param (
     [Parameter()][string]$serverList = '',  # optional textfile of servers to protect
     [Parameter()][array]$instanceName,
     [Parameter()][switch]$instancesOnly,
+    [Parameter()][switch]$volumeBackup,
     [Parameter()][string]$policyname,
     [Parameter()][string]$startTime = '20:00', # e.g. 23:30 for 11:30 PM
     [Parameter()][string]$timeZone = 'America/Los_Angeles', # e.g. 'America/New_York'
@@ -119,6 +120,9 @@ if(! $job){
             }
         }
     }
+    if($volumeBackup){
+        $job.environmentParameters.sqlParameters.backupType = "kSqlVSSVolume"
+    }
 
 }else{
     Write-Host "Updating job $jobname..."
@@ -128,7 +132,7 @@ if(! $job){
 foreach($servername in $serversToAdd){
     $serverSource = $sources[0].nodes | Where-Object {$_.protectionSource.name -eq $servername}
     if(! $serverSource){
-        Write-Host "Server $serverSource not found!" -ForegroundColor
+        Write-Host "Server $servername not found!" -ForegroundColor Yellow
         Write-Host "Make sure to enter the server name exactly as listed in Cohesity" -ForegroundColor Yellow
         exit 1
     }

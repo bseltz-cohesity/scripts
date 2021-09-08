@@ -60,6 +60,7 @@ Or to update an existing job:
 
 ## Optional Prameters
 
+* -volumeBackup: (optional) set new job to volume-based (file-based is the default)
 * -instanceName: (optional) one or more instance names to protect (comma separated)
 * -policyName: (optional) name of the protection policy to use
 * -startTime: (optional) e.g. '18:30' (defaults to 8PM)
