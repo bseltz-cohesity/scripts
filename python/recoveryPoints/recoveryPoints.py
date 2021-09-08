@@ -5,7 +5,8 @@
 
 ### import pyhesity wrapper module
 from pyhesity import *
-import datetime
+from datetime import datetime
+import codecs
 
 ### command line arguments
 import argparse
@@ -13,6 +14,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, required=True)
 parser.add_argument('-u', '--username', type=str, required=True)
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str)
+parser.add_argument('-of', '--outfolder', type=str, default='.')
 parser.add_argument('-j', '--jobname', type=str, default=None)
 parser.add_argument('-o', '--objectname', type=str, default=None)
 
@@ -21,16 +25,22 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
+password = args.password
+folder = args.outfolder
+useApiKey = args.useApiKey
 jobname = args.jobname
 objectname = args.objectname
 
 ### authenticate
-apiauth(vip, username, domain)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
 
-dateString = datetime.datetime.now().strftime("%c").replace(':', '-').replace(' ', '_')
-outfileName = 'RecoverPoints-%s.csv' % dateString
-f = open(outfileName, "w")
-f.write("jobName,objType,objName,startTime,runURL\n")
+cluster = api('get', 'cluster')
+now = datetime.now()
+nowstring = now.strftime("%Y-%m-%d")
+outfileName = '%s/RecoverPoints-%s-%s.csv' % (folder, cluster['name'], nowstring)
+
+f = codecs.open(outfileName, 'w', 'utf-8')
+f.write("Job Name,Object Type,Object Name,Start Time,Local Expiry,Archive Target,Archive Expiry\n")
 
 jobtail = ''
 if jobname is not None:
@@ -84,9 +94,28 @@ if len(ro) > 0:
             objName = objName + " on " + objAlias
         print("%s(%s) %s" % (jobName, objType, objName))
         for version in doc['versions']:
+            archiveTarget = '-'
+            archive = 0
+            local = 0
             runId = version['instanceId']['jobInstanceId']
-            startTime = version['instanceId']['jobStartTimeUsecs']
-            runURL = "https://%s/protection/job/%s/run/%s/%s/protection" % (vip, jobId, runId, startTime)
-            print("\t%s\t%s" % (usecsToDate(startTime), runURL))
-            f.write("%s,%s,%s,%s,%s\n" % (jobName, objType, objName, usecsToDate(startTime), runURL))
+            startTime = usecsToDate(version['instanceId']['jobStartTimeUsecs'])
+            print("\t%s" % startTime)
+            for replica in version['replicaInfo']['replicaVec']:
+                if replica['target']['type'] == 1:
+                    if replica['expiryTimeUsecs'] > 0:
+                        local = replica['expiryTimeUsecs']
+                if replica['target']['type'] == 3:
+                    if replica['expiryTimeUsecs'] > archive:
+                        archive = replica['expiryTimeUsecs']
+                        archiveTarget = replica['target']['archivalTarget']['name']
+            if local > 0:
+                localExpiry = usecsToDate(local)
+            else:
+                localExpiry = '-'
+            if archive > 0:
+                archiveExpiry = usecsToDate(archive)
+            else:
+                archiveExpiry = '-'
+
+            f.write("%s,%s,%s,%s,%s,%s,%s\n" % (jobName, objType, objName, startTime, localExpiry, archiveTarget, archiveExpiry))
 f.close()

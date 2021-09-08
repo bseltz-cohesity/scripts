@@ -34,5 +34,8 @@ Place both files in a folder together and run the main script like so:
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
+* -i, --useApiKey: (optional) use API Key authentication
+* -pwd, --password: (optional) specify password or API key
+* -of, --outfolder: (optional) location to write output CSV file (default is '.')
 * -j, --jobname: (optional) filter by job name
 * -o, --objectname: (optional) filter by object name
