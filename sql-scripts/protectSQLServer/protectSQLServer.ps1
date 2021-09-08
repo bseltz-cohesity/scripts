@@ -15,7 +15,8 @@ param (
     [Parameter()][string]$timeZone = 'America/Los_Angeles', # e.g. 'America/New_York'
     [Parameter()][int]$incrementalProtectionSlaTimeMins = 60,
     [Parameter()][int]$fullProtectionSlaTimeMins = 120,
-    [Parameter()][string]$storageDomainName = 'DefaultStorageDomain' #storage domain you want the new job to write to
+    [Parameter()][string]$storageDomainName = 'DefaultStorageDomain', #storage domain you want the new job to write to
+    [Parameter()][switch]$paused
 )
 
 # gather list of servers to add to job
@@ -180,7 +181,10 @@ foreach($servername in $serversToAdd){
 }
 
 if($newJob -eq $True){
-    $null = api post protectionJobs $job
+    $createdJob = api post protectionJobs $job
+    if($paused){
+        $null = api post protectionJobState/$($createdJob.id) @{ 'pause'= $true }
+    }
 }else{
     $null = api put protectionJobs/$($job.id) $job 
 }
