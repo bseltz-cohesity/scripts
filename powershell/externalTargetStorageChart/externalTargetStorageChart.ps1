@@ -37,9 +37,6 @@ if(! $vault){
 ### collect $days of write throughput stats
 write-host "Gathering Storage Statistics..." -ForegroundColor Green
 $stats = api get "statistics/timeSeriesStats?entityId=$($vault.id)&metricName=kMorphedUsageBytes&metricUnitType=0&range=month&rollupFunction=max&rollupIntervalSecs=86400&schemaName=kIceboxVaultStats&startTimeMsecs=$startTimeMsecs"
-if($showCapacity){
-	$stats2 = api get statistics/timeSeriesStats?schemaName=kBridgeClusterStats`&entityId=$clusterId`&metricName=kCapacityBytes`&startTimeMsecs=$startTimeMsecs`&rollupFunction=average`&rollupIntervalSecs=86400
-}
 
 # usage stats
 $statDays = @()
@@ -49,18 +46,6 @@ foreach ($stat in $stats.dataPointVec){
     $consumed = $stat.data.int64Value/$GB
     $statDays += $dt
     $statConsumed +=  [math]::Round($consumed)
-}
-
-if($showCapacity){
-	# capacity stats
-	$stat2Days = @()
-	$stat2Consumed = @()
-	foreach ($stat in $stats2.dataPointVec){
-		$dt = usecsToDate (($stat.timestampMsecs)*1000)
-		$consumed = $stat.data.int64Value/$GB
-		$stat2Days += $dt
-		$stat2Consumed +=  [math]::Round($consumed)
-	}
 }
 
 $html = '<!DOCTYPE HTML>
@@ -99,22 +84,6 @@ var options1 = {
 $html += '
 		]
 	}'
-
-if($showCapacity){
-	$html += '
-		,{
-		yValueFormatString: "#,### GB",
-		xValueFormatString: "YYYY-MM-DD",
-		type: "spline", //change it to line, area, bar, pie, etc
-		dataPoints: ['
-		0..($stat2Consumed.Length -1) | ForEach-Object{
-			$idx = $_
-			$html += "{x: new Date($($stat2Days[$idx].year), $($stat2Days[$idx].month - 1), $($stat2Days[$idx].day)), y: $($stat2Consumed[$idx])},"
-		}
-		$html += '
-		]
-	}'
-}
 
 $html += ']};
 $("#tabs").tabs({
