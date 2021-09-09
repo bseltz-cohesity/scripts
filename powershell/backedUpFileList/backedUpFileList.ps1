@@ -1,4 +1,4 @@
-# version 2021.05.06
+# version 2021.09.09
 # usage: ./backedUpFileList.ps1 -vip mycluster \
 #                               -username myuser \
 #                               -domain mydomain.net \
@@ -50,15 +50,15 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
     $thisDirPath = [System.Web.HttpUtility]::UrlEncode($dirPath).Replace('%2f%2f','%2F')
     if($cookie){
         if($null -ne $volumeName){
-            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=false&volumeInfoCookie=$volumeInfoCookie&cookie=$cookie&volumeName=$volumeName&dirPath=$thisDirPath"
+            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=true&volumeInfoCookie=$volumeInfoCookie&cookie=$cookie&volumeName=$volumeName&dirPath=$thisDirPath"
         }else{
-            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=false&cookie=$cookie&dirPath=$thisDirPath"
+            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=true&cookie=$cookie&dirPath=$thisDirPath"
         }
     }else{
         if($null -ne $volumeName){
-            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=false&volumeInfoCookie=$volumeInfoCookie&volumeName=$volumeName&dirPath=$thisDirPath"
+            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=true&volumeInfoCookie=$volumeInfoCookie&volumeName=$volumeName&dirPath=$thisDirPath"
         }else{
-            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=false&dirPath=$thisDirPath"
+            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=true&dirPath=$thisDirPath"
         }
     }
     if($dirList.PSObject.Properties['entries']){
@@ -66,7 +66,9 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
             if($entry.type -eq 'kDirectory'){
                 listdir "$dirPath/$($entry.name)" $instance $volumeInfoCookie $volumeName
             }else{
-                $entry.fullPath | Tee-Object -FilePath $outputfile -Append  
+                $filesize = $entry.fstatInfo.size
+                $mtime = usecsToDate $entry.fstatInfo.mtimeUsecs
+                "{0} ({1}) [{2} bytes]" -f $entry.fullPath, $mtime, $filesize | Tee-Object -FilePath $outputfile -Append  
             }
         }
     }

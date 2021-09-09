@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2021.05.06
+# version 2021.09.09
 
 # usage: ./backedUpFileList.py -v mycluster \
 #                              -u myuser \
@@ -83,9 +83,10 @@ def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None, cookie
             if entry['type'] == 'kDirectory':
                 listdir('%s/%s' % (dirPath, entry['name']), instance, f, volumeInfoCookie, volumeName)
             else:
+                filesize = entry['fstatInfo']['size']
                 mtime = usecsToDate(entry['fstatInfo']['mtimeUsecs'])
-                print('%s (%s)' % (entry['fullPath'], mtime))
-                f.write('%s (%s)\n' % (entry['fullPath'], mtime))
+                print('%s (%s) [%s bytes]' % (entry['fullPath'], mtime, filesize))
+                f.write('%s (%s) [%s bytes]\n' % (entry['fullPath'], mtime, filesize))
     if dirList and 'cookie' in dirList:
         listdir('%s' % dirPath, instance, f, volumeInfoCookie, volumeName, dirList['cookie'])
 
