@@ -26,6 +26,7 @@ parser.add_argument('-tz', '--timezone', type=str, default='US/Eastern')
 parser.add_argument('-st', '--starttime', type=str, default='21:00')
 parser.add_argument('-is', '--incrementalsla', type=int, default=60)    # incremental SLA minutes
 parser.add_argument('-fs', '--fullsla', type=int, default=120)          # full SLA minutes
+parser.add_argument('-z', '--pause', action='store_true')
 
 args = parser.parse_args()
 
@@ -48,6 +49,7 @@ starttime = args.starttime            # start time for new job
 timezone = args.timezone              # time zone for new job
 incrementalsla = args.incrementalsla  # incremental SLA for new job
 fullsla = args.fullsla                # full SLA for new job
+pause = args.pause                    # pause new job
 
 # authenticate to Cohesity
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
@@ -218,7 +220,9 @@ else:
 
 # update job
 if newJob is True:
-    result = api('post', 'protectionJobs', job)
+    createdjob = api('post', 'protectionJobs', job)
+    if(pause is True):
+        result = api('post', 'protectionJobs/states', {"action": "kPause", "jobIds": [createdjob['id']]})
 else:
     job['sourceIds'] = list(set(job['sourceIds']))
     result = api('put', 'protectionJobs/%s' % job['id'], job)
