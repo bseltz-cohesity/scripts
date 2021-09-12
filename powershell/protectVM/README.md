@@ -36,4 +36,17 @@ Place both files in a folder together and run the main script like so:
 * -vmName: one or more VMs (comma separated) to add to the proctection job
 * -vmList: file containing list of VMs to add
 * -jobName: name of protection job
+
+## Optional Parameters for New Jobs Only
+
+* -vCenterName: name of registered vCenter source
+* -policyName: (optional) name of the protection policy to use
+* -startTime: (optional) e.g. '18:30' (defaults to 8PM)
+* -timeZone: (optional) e.g. 'America/New_York' (default is 'America/Los_Angeles')
+* -incrementalSlaMinutes: (optional) default 60
+* -fullSlaMinutes: (optional) default is 120
+* -storageDomainName: (optional) default is 'DefaultStorageDomain'
+* -paused: (optional) pause future runs (new job only)
+* -qosPolicy: (optional) kBackupHDD or kBackupSSD (default is kBackupHDD)
+* -disableIndexing: (optional) disable indexing (indexing is enabled by default)
 * -excludeDisk: one of more disks to include (comma separated), e.g. 0:1, 0:2

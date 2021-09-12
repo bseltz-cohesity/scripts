@@ -169,7 +169,7 @@ if($job){
 }
 
 foreach($vm in $vms){
-    if($vm.id -notin $job.vmwareParams.objects.name){
+    if($vm.id -notin $job.vmwareParams.objects.id){
         $job.vmwareParams.objects += @{
             'excludeDisks' = $null;
             'id' = $vm.id;
