@@ -15,58 +15,46 @@ param (
 apiauth -vip $vip -username $username -domain $domain
 
 # gather server names
-$servers = @()
-if(Test-Path $serverlist -PathType Leaf){
-    $servers += Get-Content $serverlist | Where-Object {$_ -ne ''}
-}elseif($serverList){
-    Write-Warning "File $serverlist not found!"
-    exit 1
+$serversToRemove = @()
+foreach($server in $servername){
+    $serversToRemove += $server
 }
-if($servername){
-    $servers += $servername
+if ('' -ne $serverList){
+    if(Test-Path -Path $serverList -PathType Leaf){
+        $servers = Get-Content $serverList
+        foreach($server in $servers){
+            $serversToRemove += [string]$server
+        }
+    }else{
+        Write-Warning "Server list $serverList not found!"
+        exit
+    }
 }
-if($servers.Length -eq 0){
-    Write-Host "No servers selected"
-    exit 1
+if($serversToRemove.Length -eq 0){
+    Write-Host "No servers to unprotect" -ForegroundColor Yellow
+    exit
 }
 
-$sources = api get protectionSources?environments=kPhysical
-$jobs = api get protectionJobs?environments=kPhysicalFiles
+$jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true&includeLastRunInfo=true&environments=kPhysical"
+$paramPaths = @{'kFile' = 'fileProtectionTypeParams'; 'kVolume' = 'volumeProtectionTypeParams'}
 
-$cluster = api get cluster
-
-foreach($job in $jobs){
+foreach($job in $jobs.protectionGroups){
     $saveJob = $false
-    foreach($server in $servers){
-        $serverSource = $sources[0].nodes | Where-Object {$_.protectionSource.name -eq $server}
-        if($serverSource){
-            $serverId = $serverSource.protectionSource.id
-            if($serverId -in $job.sourceIds){
-                "Removing {0} from job {1}" -f $server, $job.name
-                $job.sourceIds = @($job.sourceIds | Where-Object {$_ -ne $serverId})
-                $job.sourceSpecialParameters = @($job.sourceSpecialParameters | Where-Object {$_.sourceId -ne $serverId })
-                $saveJob = $True
-            }
+    foreach($server in $serversToRemove){
+        $paramPath = $paramPaths[$job.physicalParams.protectionType]
+        $protectedObjectCount = $job.physicalParams.$paramPath.objects.Count
+        $job.physicalParams.$paramPath.objects = @($job.physicalParams.$paramPath.objects | Where-Object {$_.name -ne $server})
+        if($job.physicalParams.$paramPath.objects.Count -lt $protectedObjectCount){
+            Write-Host "Removing $server from $($job.name)"
+            $saveJob = $True
         }
     }
     if($saveJob){
-        if($cluster.clusterSoftwareVersion -gt '6.5'){
-            $protectionGroups = api get "data-protect/protection-groups?isDeleted=false&includeTenants=true&includeLastRunInfo=true" -v2
-            $protectionGroup = $protectionGroups.protectionGroups | Where-Object name -eq $job.name
-            $globalExcludePaths = $protectionGroup.physicalParams.fileProtectionTypeParams.globalExcludePaths
-        }
-        if($job.sourceIds.Length -gt 0){
-            $null = api put protectionJobs/$($job.id) $job
+        if($job.physicalParams.$paramPath.objects.Count -gt 0){
+            $null = api put "data-protect/protection-groups/$($job.id)" $job -v2
         }else{
-            $null = api delete protectionJobs/$($job.id)
-        }
-        if($cluster.clusterSoftwareVersion -gt '6.5'){
-            if($globalExcludePaths){
-                $protectionGroups = api get "data-protect/protection-groups?isDeleted=false&includeTenants=true&includeLastRunInfo=true" -v2
-                $protectionGroup = $protectionGroups.protectionGroups | Where-Object name -eq $job.name
-                setApiProperty -object $protectionGroup.physicalParams.fileProtectionTypeParams -name 'globalExcludePaths' -value $globalExcludePaths
-                $null = api put "data-protect/protection-groups/$($protectionGroup.id)" $protectionGroup -v2
-            }
+            Write-Host "No objects left in $($job.name). Deleting..."
+            $null = api delete "data-protect/protection-groups/$($job.id)" -v2
         }        
     }
 }
