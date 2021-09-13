@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This powershell script removes a server from physcal file-based protection jobs.
+This powershell script removes a server from physical protection jobs.
 
 Note: if the server is the last remaining server in a protection job, the job will be deleted.
 
@@ -28,14 +28,9 @@ Place both files in a folder together and run the main script like so:
 
 ```powershell
 ./unprotectPhysicalServer.ps1 -vip mycluster `
-                             -username myusername `
-                             -domain mydomain.net `
-                             -servername myserver.mydomain.net
-```
-
-```text
-Connected!
-Removing myserver.mydomain.net from job My Protection Job
+                              -username myusername `
+                              -domain mydomain.net `
+                              -servername myserver.mydomain.net
 ```
 
 Note: server names must exactly match what is shown in protection sources.
