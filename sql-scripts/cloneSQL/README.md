@@ -50,3 +50,7 @@ Clone task completed with status: kSuccess
 * -latest (optional - replay the logs to the latest point in time available)
 
 To specify a source instance, include the instance name in the sourceDB name, like MYINSTANCE/MyDB
+
+## Always On Availability Groups
+
+Use the **AAG name** as the **-sourceServer** when cloning from an AAG backup (e.g. -sourceServer myAAG1)
