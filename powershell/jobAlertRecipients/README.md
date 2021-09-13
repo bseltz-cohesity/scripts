@@ -2,7 +2,9 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script adds and removes alert email recipients from all protection jobs/groups on a cluster. 
+Note: This script requires Cohesity 6.5 or later.
+
+This script adds and removes alert email recipients from all protection jobs/groups on a cluster.
 
 ## Download the script
 
@@ -27,10 +29,10 @@ Place the files in a folder together and run the main script like so:
 ```powershell
 # Command line example
 ./jobAlertRecipients.ps1 -vip mycluster `
-                         -username myuser `
-                         -domain mydomain.net `
-                         -addAddress myuser1@mydomain.net, myuser2@mydomain.net `
-                         -removeAddress myuser3@mydomain.net, myuser4@mydomain.net
+                           -username myuser `
+                           -domain mydomain.net `
+                           -addAddress myuser1@mydomain.net, myuser2@mydomain.net `
+                           -removeAddress myuser3@mydomain.net, myuser4@mydomain.net
 # End example
 ```
 
@@ -39,5 +41,8 @@ Place the files in a folder together and run the main script like so:
 * -vip: Cohesity Cluster to connect to
 * -username: Cohesity username
 * -domain: (optional) Cohesity logon domain (defaults to local)
+* -jobName: (optional) One or more job names to include (comma separated)
+* -jobList: (optional) text file of job names to include (one per line)
+* -jobType: (optional) filter on job type (e.g. GenericNas, O365, VMware)
 * -addAddress: (optional) one or more email addresses to add (comma separated)
 * -removeAddress: (optional) one or more email addresses to add (comma separated)
