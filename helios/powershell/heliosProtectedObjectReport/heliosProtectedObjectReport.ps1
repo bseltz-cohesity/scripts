@@ -84,7 +84,7 @@ foreach($cluster in heliosClusters){
             if(!$parent){
                 $object.parent = '-'
             }
-            $report = @($report + ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}" -f $cluster.name, $object.jobName, $object.environment.subString(1), $object.name, $object.objectType.subString(1), $object.parent, $object.policyName, $frequency, $lastRunDate, $lastStatus, $object.jobPaused, $object.jobAlertRecipients))
+            $report = @($report + ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}" -f $cluster.name, $object.jobName, $object.environment.subString(1), $object.name, $object.objectType.subString(1), $object.parent, $object.policyName, $frequency, $lastRunDate, $object.lastStatus, $object.jobPaused, $object.jobAlertRecipients))
         }
     }
 
