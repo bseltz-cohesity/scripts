@@ -51,12 +51,12 @@ if apiconnected() is False:
     print('\nFailed to connect to Cohesity cluster')
     exit(1)
 
-jobs = api('get', 'protectionJobs')
+jobs = api('get', 'data-protect/protection-groups', v=2)
 
 for rename in renames:
     jobName = rename['jobName']
     newName = rename['newName']
-    job = [job for job in api('get', 'protectionJobs') if job['name'].lower() == jobName.lower()]
+    job = [job for job in jobs['protectionGroups'] if job['name'].lower() == jobName.lower()]
     if not job:
         print("Job '%s' not found" % jobName)
     else:
@@ -64,4 +64,4 @@ for rename in renames:
         print("Renaming '%s' to '%s'" % (job['name'], newName))
         job['name'] = newName
         if commit is True:
-            result = api('put', 'protectionJobs/%s' % job['id'], job)
+            result = api('put', 'data-protect/protection-groups/%s' % job['id'], job, v=2)
