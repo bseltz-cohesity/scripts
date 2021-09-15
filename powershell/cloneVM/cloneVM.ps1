@@ -54,7 +54,7 @@ if(! $vCenter){
 }
 
 ### select resource pool
-$vCenterSource = api get protectionSources?environments=kVMware | Where-Object {$_.protectionSource.name -eq $vCenterName}
+$vCenterSource = api get protectionSources?environments=kVMware`&includeVMFolders=true`&excludeTypes=kVirtualMachine | Where-Object {$_.protectionSource.name -eq $vCenterName}
 $dataCenterSource = $vCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $dataCenterName}
 $hostSource = $dataCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $hostName}
 $resourcePoolSource = $hostSource.nodes | Where-Object {$_.protectionSource.vmWareProtectionSource.type -eq 'kResourcePool'}
@@ -62,9 +62,32 @@ $resourcePoolId = $resourcePoolSource.protectionSource.id
 $resourcePool = api get /resourcePools?vCenterId=$vCenterId | Where-Object {$_.resourcePool.id -eq $resourcePoolId}
 
 ### select VM folder
-$vmFolders = api get /vmwareFolders?resourcePoolId=$resourcePoolId`&vCenterId=$vCenterId
-$vmFolder = $vmFolders.vmFolders | Where-Object displayName -eq $folderName
+$vmfolderId = @{}
 
+function walkVMFolders($node, $parent=$null, $fullPath=''){
+    $fullPath = "{0}/{1}" -f $fullPath, $node.protectionSource.name
+    $relativePath = $fullPath.split('vm/', 2)[1]
+    if($relativePath){
+        $vmFolderId[$relativePath] = $node.protectionSource.id
+    }
+    if($node.PSObject.Properties['nodes']){
+        foreach($subnode in $node.nodes){
+            walkVMFolders $subnode $node $fullPath
+        }
+    }
+}
+
+walkVMFolders $vCenterSource
+
+$folderId = $vmfolderId[$folderName]
+if(! $folderId){
+    write-host "folder $folderName not found" -ForegroundColor Yellow
+    exit
+}
+
+$vmFolders = api get /vmwareFolders?resourcePoolId=$resourcePoolId`&vCenterId=$vCenterId
+
+$vmFolder = $vmFolders.vmFolders | Where-Object id -eq $folderId
 if(! $vmFolder){
     write-host "folder $folderName not found" -ForegroundColor Yellow
     exit

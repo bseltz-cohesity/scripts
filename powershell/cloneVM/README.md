@@ -49,6 +49,6 @@ Place the files in a folder together and run the main script like so:
 * -datacenterName: (optional) name of vSphere data center to recover to
 * -hostName: (optional) name of vSphere host to recover to
 * -folderName: (optional) name of vSphere folder to recover to
-* -networkName: (optional) VM Network to attach the VM to
+* -networkName: (optional) VM Network to attach the VM
 * -poweron: (optional) power on the VMs during restore (default is false)
 * -detachNetwork: (optional) leave VM network disconnected (default is false)
