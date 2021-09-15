@@ -60,6 +60,10 @@ $hostSource = $dataCenterSource.nodes[0].nodes | Where-Object {$_.protectionSour
 $resourcePoolSource = $hostSource.nodes | Where-Object {$_.protectionSource.vmWareProtectionSource.type -eq 'kResourcePool'}
 $resourcePoolId = $resourcePoolSource.protectionSource.id
 $resourcePool = api get /resourcePools?vCenterId=$vCenterId | Where-Object {$_.resourcePool.id -eq $resourcePoolId}
+if(! $resourcePoolId){
+    Write-Host "host/cluster $hostName not found" -ForegroundColor Yellow
+    exit
+}
 
 ### select VM folder
 $vmfolderId = @{}
