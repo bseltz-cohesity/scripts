@@ -1,8 +1,8 @@
-# usage: ./cloneSQLbackup.ps1 -vip mycluster `
+# usage: ./cloneBackupToView.ps1 -vip mycluster `
 #                                -username myuser `
 #                                -domain mydomain.net
 #                                -jobName 'My SQL VDI Job' `
-#                                -sqlServer mysqlserver.mydomain.net `
+#                                -object myobject.mydomain.net `
 #                                -viewName cloned
 
 # process commandline arguments
@@ -13,12 +13,11 @@ param (
     [Parameter()][string]$domain = 'local',
     [Parameter()][switch]$useApiKey,
     [Parameter()][array]$access,
-    [Parameter()][string]$sqlServer,
+    [Parameter()][string]$objectName,
     [Parameter()][string]$jobName,
     [Parameter()][string]$viewName,
     [Parameter()][switch]$listRuns,
     [Parameter()][switch]$deleteView,
-    [Parameter()][Int64]$runId,
     [Parameter()][Int64]$firstRunId,
     [Parameter()][Int64]$lastRunId,
     [Parameter()][switch]$refreshView,
@@ -27,7 +26,7 @@ param (
     [Parameter()][string]$targetPath = $null,
     [Parameter()][switch]$dbFolders,
     [Parameter()][switch]$logsOnly,
-    [Parameter()][switch]$existingView,
+    [Parameter()][switch]$lastRunOnly,
     [Parameter()][Int64]$numRuns = 100
 )
 
@@ -50,7 +49,6 @@ if(!$deleteView){
 if(!$viewName){
     $viewName = "$jobName".Replace(' ','-')
 }
-
 
 $view = (api get views).views | Where-Object {$_.name -eq $viewName}
 
@@ -98,10 +96,10 @@ $job = ($job | Sort-Object id)[-1]
 $storageDomainId = $job.viewBoxId
 
 # get runs
-$runs = (api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns") | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
+$runs = (api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
 
-if($runId){
-    $runs = $runs | Where-Object{$_.backupRun.jobRunId -eq $runId}
+if($lastRunOnly -and $runs.Count -gt 0){
+    $runs = $runs[0]
 }
 
 if($firstRunId){
@@ -120,40 +118,30 @@ if($listRuns){
     exit 0
 }
 
-if($view -and !($deleteView -or $refreshView) -and (!$existingView)){
-    Write-Host "View $viewName already exists" -ForegroundColor Yellow
-    exit 1
-}
-
-if(!$sqlServer){
-    Write-Host "-sqlServer parameter required" -ForegroundColor Yellow
-    exit 1
-}
-
 if(!$view){
 
     $newView = @{
         "enableSmbAccessBasedEnumeration" = $false;
-        "enableSmbViewDiscovery" = $true;
-        "fileDataLock" = @{
-          "lockingProtocol" = "kSetReadOnly"
+        "enableSmbViewDiscovery"          = $true;
+        "fileDataLock"                    = @{
+            "lockingProtocol" = "kSetReadOnly"
         };
-        "fileExtensionFilter" = @{
-          "isEnabled" = $false;
-          "mode" = "kBlacklist";
-          "fileExtensionsList" = @()
+        "fileExtensionFilter"             = @{
+            "isEnabled"          = $false;
+            "mode"               = "kBlacklist";
+            "fileExtensionsList" = @()
         };
-        "securityMode" = "kNativeMode";
-        "sharePermissions" = @();
-        "smbPermissionsInfo" = @{
-          "ownerSid" = "S-1-5-32-544";
-          "permissions" = @()
+        "securityMode"                    = "kNativeMode";
+        "sharePermissions"                = @();
+        "smbPermissionsInfo"              = @{
+            "ownerSid"    = "S-1-5-32-544";
+            "permissions" = @()
         };
-        "protocolAccess" = "kSMBOnly";
-        "subnetWhitelist" = @();
-        "caseInsensitiveNamesEnabled" = $true;
-        "storagePolicyOverride" = @{
-          "disableInlineDedupAndCompression" = $false
+        "protocolAccess"                  = "kSMBOnly";
+        "subnetWhitelist"                 = @();
+        "caseInsensitiveNamesEnabled"     = $true;
+        "storagePolicyOverride"           = @{
+            "disableInlineDedupAndCompression" = $false
         };
         "qos"                             = @{
             "principalName" = "TestAndDev High"
@@ -205,34 +193,45 @@ $view = (api get views).views | Where-Object {$_.name -eq $viewName}
 
 $paths = @()
 foreach($run in $runs){
-    # get snapshot path
-    $sourceInfo = $run.backupRun.sourceBackupStatus | Where-Object {$_.source.name -eq $sqlServer}
-    if(!$sourceInfo){ 
-        write-host "$sqlServer not found in job run" -ForegroundColor Yellow
-    }else{
-        if($sourceInfo.status -in @('kSuccess', 'kWarning')){
-            $sourceView = $sourceInfo.currentSnapshotInfo.viewName
-            $sourcePath = $sourceInfo.currentSnapshotInfo.relativeSnapshotDirectory
-            $sourcePathPrefix = $sourcePath.Substring(0,$sourcePath.length - $sourcePath.split('-')[-1].length)
-            $x = 1
-            $attemptnum = $sourcePath.split('-')[-1]
-            while($x -le $attemptnum){
-                $sourcePath = "$sourcePathPrefix$($x)"
-                $destinationPath = "$sqlServer-$((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss"))-$($run.backupRun.runType.substring(1))-$x"
-                $runDate = (usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss")
-            
-                # clone snapshot directory
-                $CloneDirectoryParams = @{
-                    'destinationDirectoryName' = $destinationPath;
-                    'destinationParentDirectoryPath' = "/$viewName";
-                    'sourceDirectoryPath' = "/$sourceView/$SourcePath"
+    if($objectName){
+        $sourceInfo = $run.backupRun.sourceBackupStatus | Where-Object {$_.source.name -eq $objectName}
+        if(!$sourceInfo){ 
+            write-host "$objectName not found in job run" -ForegroundColor Yellow
+        }
+    }
+
+    foreach($sourceInfo in $run.backupRun.sourceBackupStatus){
+        if(!$objectName -or $sourceInfo.source.name -eq $objectName){
+            $thisObjectName = $sourceInfo.source.name
+            if($sourceInfo.status -in @('kSuccess', 'kWarning')){
+                $sourceView = $sourceInfo.currentSnapshotInfo.viewName
+                $x = $attemptNum = 1
+                if($sourceInfo.currentSnapshotInfo.PSObject.Properties['relativeSnapshotDirectory']){
+                    $sourcePath = $sourceInfo.currentSnapshotInfo.relativeSnapshotDirectory
+                    $sourcePathPrefix = $sourcePath.Substring(0,$sourcePath.length - $sourcePath.split('-')[-1].length)
+                    $attemptnum = $sourcePath.split('-')[-1]
+                }else{
+                    $sourcePath = '/'
                 }
-            
-                $folderPath = "\\$vip\$viewName\$destinationPath"
-                # Write-Host "Cloning $sqlServer backup files to $folderPath"
-                $null = api post views/cloneDirectory $CloneDirectoryParams
-                $paths += @{'path' = $folderPath; 'runDate' = $runDate; 'runType' = $run.backupRun.runType}
-                $x = $x + 1
+                while($x -le $attemptnum){
+                    if($sourceInfo.currentSnapshotInfo.PSObject.Properties['relativeSnapshotDirectory']){
+                        $sourcePath = "$sourcePathPrefix$($x)"
+                    }
+                    $destinationPath = "$thisObjectName-$((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss"))-$($run.backupRun.runType.substring(1))-$x"
+                    $runDate = (usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss")
+                
+                    # clone snapshot directory
+                    $CloneDirectoryParams = @{
+                        'destinationDirectoryName' = $destinationPath;
+                        'destinationParentDirectoryPath' = "/$viewName";
+                        'sourceDirectoryPath' = "/$sourceView/$SourcePath"
+                    }
+                    $folderPath = "\\$vip\$viewName\$destinationPath"
+                    Write-Host "Cloning $thisObjectName backup files to $folderPath"
+                    $null = api post views/cloneDirectory $CloneDirectoryParams
+                    $paths += @{'path' = $folderPath; 'runDate' = $runDate; 'runType' = $run.backupRun.runType}
+                    $x = $x + 1
+                }
             }
         }
     }
@@ -279,7 +278,6 @@ if($consolidate -or $targetPath){
                         $newName = "$($runDate)_$($dbname)_$($file.Name)"
                     }
                     if($runType -eq 'kLog' -or !$logsOnly){
-                        # $newName
                         $fileDestination = "$backupFolderPath\$newName"
                         if($dbFolders){
                             $null = New-Item -Path "$backupFolderPath\$dbName" -ItemType Directory -Force
