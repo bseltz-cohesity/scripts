@@ -1,10 +1,8 @@
-# Cohesity PowerShell Scripts
+# Cohesity API Function Library for PowerShell (roll-back version)
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This us the latest (you might call it beta) version of the cohesit-api function library.
-
-It's well tested (I use it every day) but has some minor differences and has been simplified and refactored. The main behavioral difference is that the password file is now the only way passwords are stored. Passwords are no longer stored in per user registry or homedir locations.
+This repository contains many examples of how to automate Cohesity using PowerShell. Common to each example is a function library that makes it easy to authenticate and make api calls. Below are details of this library.
 
 ## Download the script
 
@@ -13,7 +11,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 ```powershell
 # Download Commands
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
-(Invoke-WebRequest -Uri "https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api-next/cohesity-api.ps1").content | Out-File -Force cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api-old/cohesity-api.ps1").content | Out-File -Force cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
 
