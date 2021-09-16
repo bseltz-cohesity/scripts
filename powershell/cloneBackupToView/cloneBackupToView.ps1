@@ -1,4 +1,4 @@
-# usage: ./cloneSQLbackup.ps1 -vip mycluster `
+# usage: ./cloneBackupToView.ps1 -vip mycluster `
 #                                -username myuser `
 #                                -domain mydomain.net
 #                                -jobName 'My SQL VDI Job' `
@@ -26,7 +26,8 @@ param (
     [Parameter()][string]$targetPath = $null,
     [Parameter()][switch]$dbFolders,
     [Parameter()][switch]$logsOnly,
-    [Parameter()][switch]$lastRunOnly
+    [Parameter()][switch]$lastRunOnly,
+    [Parameter()][Int64]$numRuns = 100
 )
 
 # source the cohesity-api helper code
@@ -48,7 +49,6 @@ if(!$deleteView){
 if(!$viewName){
     $viewName = "$jobName".Replace(' ','-')
 }
-
 
 $view = (api get views).views | Where-Object {$_.name -eq $viewName}
 
@@ -96,7 +96,7 @@ $job = ($job | Sort-Object id)[-1]
 $storageDomainId = $job.viewBoxId
 
 # get runs
-$runs = (api get "protectionRuns?jobId=$($job.id)")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
+$runs = (api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
 
 if($lastRunOnly -and $runs.Count -gt 0){
     $runs = $runs[0]
@@ -118,35 +118,30 @@ if($listRuns){
     exit 0
 }
 
-if($view -and !($deleteView -or $refreshView)){
-    Write-Host "View $viewName already exists" -ForegroundColor Yellow
-    exit 1
-}
-
 if(!$view){
 
     $newView = @{
         "enableSmbAccessBasedEnumeration" = $false;
-        "enableSmbViewDiscovery" = $true;
-        "fileDataLock" = @{
-          "lockingProtocol" = "kSetReadOnly"
+        "enableSmbViewDiscovery"          = $true;
+        "fileDataLock"                    = @{
+            "lockingProtocol" = "kSetReadOnly"
         };
-        "fileExtensionFilter" = @{
-          "isEnabled" = $false;
-          "mode" = "kBlacklist";
-          "fileExtensionsList" = @()
+        "fileExtensionFilter"             = @{
+            "isEnabled"          = $false;
+            "mode"               = "kBlacklist";
+            "fileExtensionsList" = @()
         };
-        "securityMode" = "kNativeMode";
-        "sharePermissions" = @();
-        "smbPermissionsInfo" = @{
-          "ownerSid" = "S-1-5-32-544";
-          "permissions" = @()
+        "securityMode"                    = "kNativeMode";
+        "sharePermissions"                = @();
+        "smbPermissionsInfo"              = @{
+            "ownerSid"    = "S-1-5-32-544";
+            "permissions" = @()
         };
-        "protocolAccess" = "kSMBOnly";
-        "subnetWhitelist" = @();
-        "caseInsensitiveNamesEnabled" = $true;
-        "storagePolicyOverride" = @{
-          "disableInlineDedupAndCompression" = $false
+        "protocolAccess"                  = "kSMBOnly";
+        "subnetWhitelist"                 = @();
+        "caseInsensitiveNamesEnabled"     = $true;
+        "storagePolicyOverride"           = @{
+            "disableInlineDedupAndCompression" = $false
         };
         "qos"                             = @{
             "principalName" = "TestAndDev High"
@@ -222,7 +217,6 @@ foreach($run in $runs){
                     if($sourceInfo.currentSnapshotInfo.PSObject.Properties['relativeSnapshotDirectory']){
                         $sourcePath = "$sourcePathPrefix$($x)"
                     }
-                    # $sourcePath
                     $destinationPath = "$thisObjectName-$((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss"))-$($run.backupRun.runType.substring(1))-$x"
                     $runDate = (usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss")
                 
@@ -232,7 +226,6 @@ foreach($run in $runs){
                         'destinationParentDirectoryPath' = "/$viewName";
                         'sourceDirectoryPath' = "/$sourceView/$SourcePath"
                     }
-                
                     $folderPath = "\\$vip\$viewName\$destinationPath"
                     Write-Host "Cloning $thisObjectName backup files to $folderPath"
                     $null = api post views/cloneDirectory $CloneDirectoryParams
@@ -285,7 +278,6 @@ if($consolidate -or $targetPath){
                         $newName = "$($runDate)_$($dbname)_$($file.Name)"
                     }
                     if($runType -eq 'kLog' -or !$logsOnly){
-                        # $newName
                         $fileDestination = "$backupFolderPath\$newName"
                         if($dbFolders){
                             $null = New-Item -Path "$backupFolderPath\$dbName" -ItemType Directory -Force

@@ -106,17 +106,27 @@ To refresh a view (on a schedule):
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -useApiKey: (optional) use API key for authentication
 * -jobname: (optional) name of SQL protection job
-* -firstRunId: (optional) earliest run to clone (defaults to all)
-* -lastRunId: (optional) most recent run to clone (defaultds to all)
 * -objectName: (optional) name of sqlServer whose backup to clone
 * -viewName: (optional) name of new or existing view to clone backup files to
-* -access: (optional) Active Directory users/groups (comma separated) to add to share permissions (default is everyone)
+
+## Parameters for Run Selection
+
 * -listRuns: (optional) list available job run IDs and dates
+* -lastRunOnly: (optional) only clone latest run
+* -numRuns: (opyional) max number of runs to clone (default is 100)
+* -firstRunId: (optional) earliest run to clone (defaults to all)
+* -lastRunId: (optional) most recent run to clone (defaultds to all)
+
+## Parameters for View Manipulation
+
+* -access: (optional) Active Directory users/groups (comma separated) to add to share permissions (default is everyone)
 * -deleteView: (optional) delete view when finished
 * -refreshView: (optional) delete existing files in view
 * -force: (optional) do not prompt for confirmation when refreshing or deleting view (DANGEROUS!)
+
+## Parameters for Folder Manipulation
+
 * -consolidate: (optional) move all files to root of view
 * -targetPath: (optional) move all files to this directory (e.g. \test\folder)
 * -dbFolders: (optional) move files into db-named folders
 * -logsOnly: (optional) only consolidate log files
-* -lastRunOnly: (optional) only clone latest run
