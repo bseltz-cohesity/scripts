@@ -106,7 +106,32 @@ if($null -eq $latestdb){
 
 
 if($showPaths){
+
     $latestdb.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec | Format-Table -Property logicalName, @{l='Size (MiB)'; e={$_.sizeBytes / (1024 * 1024)}}, fullPath
+
+    Write-Host "Example Restore Path Parameters:`n"
+
+    $ndfFolderExample = '@{'
+    $mdfFolderExample = ''
+    $ldfFolderExample = ''
+    foreach($file in $latestdb.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec){
+        if($file.type -eq 0){
+            $fileName = Split-Path -Path $file.fullPath -Leaf
+            $filePath = (Split-Path -Path $file.fullPath).replace('/', '\')
+            if($mdfFolderExample -eq ''){
+                $mdfFolderExample = $filePath
+            }else{
+                $ndfFolderExample += "'.*$fileName' = '$filePath'; "
+            }
+        }else{
+            if($ldfFolderExample -eq ''){
+                $ldfFolderExample = $filePath
+            }
+        }
+    }
+    $ndfFolderExample += "}"
+    Write-Host "-mdfFolder $mdfFolderExample`n-ldfFolder $ldfFolderExample`n-ndfFolders $ndfFolderExample`n"
+
     exit
 }
 
@@ -268,7 +293,7 @@ if($targetDB -ne $sourceDB -or $targetServer -ne $sourceServer -or $differentIns
         $ldfFolderFound = $False
         foreach($datafile in $latestdb.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec){
             $path = $datafile.fullPath.subString(0, $datafile.fullPath.LastIndexOf('\'))
-            # $fileName = $datafile.fullPath.subString($datafile.fullPath.LastIndexOf('\') + 1)
+            $fileName = $datafile.fullPath.subString($datafile.fullPath.LastIndexOf('\') + 1)
             if($datafile.type -eq 0){
                 if($mdfFolderFound -eq $False){
                     $mdfFolder = $path
@@ -382,18 +407,10 @@ if($wait -or $progress){
         $status = (api get /restoretasks/$taskId).restoreTask.performRestoreTaskState.base.publicStatus
         if($progress){
             $progressMonitor = api get "/progressMonitors?taskPathVec=restore_sql_$($taskId)&includeFinishedTasks=true&excludeSubTasks=false"
-            if($progressMonitor.PSObject.Properties['resultGroupVec']){
-                if($progressMonitor.resultGroupVec.Count -gt 0){
-                    if($progressMonitor.resultGroupVec[0].PSObject.Properties['taskVec']){
-                        if($progressMonitor.resultGroupVec[0].taskVec.Count -gt 0){
-                            $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
-                            if($percentComplete -gt $lastProgress){
-                                "{0} percent complete" -f [math]::Round($percentComplete, 0)
-                                $lastProgress = $percentComplete
-                            }
-                        }
-                    }
-                }
+            $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
+            if($percentComplete -gt $lastProgress){
+                "{0} percent complete" -f [math]::Round($percentComplete, 0)
+                $lastProgress = $percentComplete
             }
         }
         if ($status -in $finishedStates){
