@@ -31,7 +31,7 @@ Place the files in a folder together and run the main script like so:
               -vmName myvm `
               -vCenterName myvcenter.mydomain.net `
               -datacenterName mydatacenter `
-              -computeResource esx1 `
+              -computeResource vSphereCluster1 `
               -folderName myFolder `
               -networkName 'VM Network' `
               -poweron `
@@ -58,13 +58,13 @@ Place the files in a folder together and run the main script like so:
 If your vSphere environment contains HA clusters (most environments do), then use the name of the HA cluster as the computeResource, for example:
 
 ```powershell
--computeResource CLUSTER1
+-computeResource vSphereCluster1
 ```
 
 or if your vShere environment contains stand-alone ESX hosts, then use the name of the host as the computeResource:
 
 ```powershell
--computeResource HOST1
+-computeResource EsxHost1
 ```
 
 ## Specifying a Folder
