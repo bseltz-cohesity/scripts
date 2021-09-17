@@ -80,7 +80,7 @@ Including the **-overwrite** parameter will overwrite an existing database. Use 
 ## Multiple Folders for Secondary NDF Files
 
 ```powershell
--ndfFolders @{'*1.ndf'='E:\sqlrestore\ndf1'; '*2.ndf'='E:\sqlrestore\ndf2'}
+-ndfFolders @{ '.*DataFile1.ndf' = 'E:\SQLData'; '.*DataFile2.ndf' = 'F:\SQLData'; }
 ```
 
 ## Point in Time Recovery
