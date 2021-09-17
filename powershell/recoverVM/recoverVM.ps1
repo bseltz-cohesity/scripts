@@ -1,8 +1,3 @@
-### recover all VMs from a proptectino job
-
-### usage: ./recoverVMJob.ps1 -vip mycluster -username admin [ -domain local ] -jobName myVMJob -vCenter myvcenter.mydomain.net -vmNetwork 'VM Network' -vmDatastore datastore1 [ -vmResourcePool resgroup1 ] [ -vmFolder folder1 ]
-### example: ./recoverVMJob.ps1 -vip 192.168.1.199 -username admin -jobName GarrisonToVE1 -vCenter vCenter6-B.seltzer.net -vmNetwork 'VM Network' -vmDatastore 450GB
-
 ### process commandline arguments
 [CmdletBinding()]
 param (
@@ -12,7 +7,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vmName,
     [Parameter()][string]$vCenterName,
     [Parameter()][string]$datacenterName,
-    [Parameter()][string]$hostName,
+    [Parameter()][string]$computeResource,
     [Parameter()][string]$folderName,
     [Parameter()][string]$networkName,
     [Parameter()][string]$datastoreName,
@@ -76,8 +71,8 @@ if($vCenterName){
         Write-Host "datacenterName required" -ForegroundColor Yellow
         exit
     }
-    if(!$hostName){
-        Write-Host "hostName required" -ForegroundColor Yellow
+    if(!$computeResource){
+        Write-Host "computeResource required" -ForegroundColor Yellow
         exit
     }
     if(!$datastoreName){
@@ -108,7 +103,7 @@ if($vCenterName){
     }
 
     # select host
-    $hostSource = $dataCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $hostName}
+    $hostSource = $dataCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $computeResource}
     if(!$dataCenterSource){
         Write-Host "Datacenter $datacenterName not found" -ForegroundColor Yellow
         exit
@@ -133,7 +128,10 @@ if($vCenterName){
         $fullPath = "{0}/{1}" -f $fullPath, $node.protectionSource.name
         $relativePath = $fullPath.split('vm/', 2)[1]
         if($relativePath){
+            $vmFolderId[$fullPath] = $node.protectionSource.id
             $vmFolderId[$relativePath] = $node.protectionSource.id
+            $vmFolderId["/$relativePath"] = $node.protectionSource.id
+            $vmFolderId["$($fullPath.Substring(1))"] = $node.protectionSource.id
         }
         if($node.PSObject.Properties['nodes']){
             foreach($subnode in $node.nodes){
@@ -193,9 +191,9 @@ if($detachNetwork){
 
 if ($prefix -ne '') {
     $restoreParams['renameRestoredObjectParam'] = @{
-        'prefix' = [string]$prefix + '-';
+        'prefix' = [string]$prefix;
     }
-    "Recovering $vmName as $prefix-$vmName..."
+    "Recovering $vmName as $prefix$vmName..."
 }else{
     "Recovering $vmName..."
 }

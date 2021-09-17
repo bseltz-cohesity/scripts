@@ -58,3 +58,26 @@ Place the files in a folder together and run the main script like so:
 * -preserveMacAddress: (optional) maintain original Mac address (default is false)
 * -showVersions: (optional) show available recovery dates and exit
 * -version: (optional) use version number listed in showVersions (default is 0 - latest backup)
+
+## Specifying a Compute Resource
+
+If your vSphere environment contains HA clusters (most environments do), then use the name of the HA cluster as the computeResource, for example:
+
+```powershell
+-computeResource vSphereCluster1
+```
+
+or if your vShere environment contains stand-alone ESX hosts, then use the name of the host as the computeResource:
+
+```powershell
+-computeResource EsxHost1
+```
+
+## Specifying a Folder
+
+You can specify a folder to restore to using any of the following formats:
+
+* /vCenter.mydomain.net/Datacenters/DataCenter1/vm/MyFolder/MySubFolder
+* vCenter.mydomain.net/Datacenters/DataCenter1/vm/MyFolder/MySubFolder
+* /MyFolder/MySubFolder
+* MyFolder/MySubFolder
