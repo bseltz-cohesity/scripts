@@ -71,8 +71,11 @@ $vmfolderId = @{}
 function walkVMFolders($node, $parent=$null, $fullPath=''){
     $fullPath = "{0}/{1}" -f $fullPath, $node.protectionSource.name
     $relativePath = $fullPath.split('vm/', 2)[1]
-    if($relativePath){
+    if($relativePath -and $node.protectionSource.vmWareProtectionSource.type -eq 'kFolder'){
+        $vmFolderId[$fullPath] = $node.protectionSource.id
         $vmFolderId[$relativePath] = $node.protectionSource.id
+        $vmFolderId["/$relativePath"] = $node.protectionSource.id
+        $vmFolderId[$fullPath.Substring(1)] = $node.protectionSource.id
     }
     if($node.PSObject.Properties['nodes']){
         foreach($subnode in $node.nodes){
