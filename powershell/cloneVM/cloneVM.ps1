@@ -75,7 +75,7 @@ function walkVMFolders($node, $parent=$null, $fullPath=''){
         $vmFolderId[$fullPath] = $node.protectionSource.id
         $vmFolderId[$relativePath] = $node.protectionSource.id
         $vmFolderId["/$relativePath"] = $node.protectionSource.id
-        $vmFolderId[$fullPath.Substring(1)] = $node.protectionSource.id
+        $vmFolderId["$($fullPath.Substring(1))"] = $node.protectionSource.id
     }
     if($node.PSObject.Properties['nodes']){
         foreach($subnode in $node.nodes){
