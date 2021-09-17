@@ -126,6 +126,7 @@ foreach($volumeName in $volumesToRecover){
         # migrate the netapp volume
         $searchResult = api get "/searchvms?entityTypes=kNetapp&vmName=$volumeName"
         $viewResult = $searchResult.vms | Where-Object {$_.vmDocument.objectName -eq $volumeName -and $_.vmDocument.registeredSource.displayName -eq $netappSource}
+        $viewResult = $viewResult | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False}
         if($viewResult){
             $v = $viewResult[0].vmDocument
             $restoreParams = @{
