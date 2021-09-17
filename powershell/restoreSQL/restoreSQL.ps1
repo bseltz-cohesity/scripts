@@ -121,7 +121,7 @@ if($showPaths){
             if($mdfFolderExample -eq ''){
                 $mdfFolderExample = $filePath
             }else{
-                $ndfFolderExample += "'.*$fileName' = '$filePath'; "
+                $ndfFolderExample += "`n              '.*$fileName' = '$filePath'; "
             }
         }else{
             if($ldfFolderExample -eq ''){
@@ -129,8 +129,8 @@ if($showPaths){
             }
         }
     }
-    $ndfFolderExample += "}"
-    Write-Host "-mdfFolder $mdfFolderExample`n-ldfFolder $ldfFolderExample`n-ndfFolders $ndfFolderExample`n"
+    $ndfFolderExample += "`n            }"
+    Write-Host "-mdfFolder $mdfFolderExample ```n-ldfFolder $ldfFolderExample ```n-ndfFolders $ndfFolderExample`n"
 
     exit
 }
