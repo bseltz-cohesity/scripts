@@ -71,7 +71,9 @@ or if your vShere environment contains stand-alone ESX hosts, then use the name 
 
 You can specify a folder to restore to using any of the following formats:
 
+```text
 /vCenter.mydomain.net/Datacenters/DataCenter1/vm/MyFolder/MySubFolder
 vCenter.mydomain.net/Datacenters/DataCenter1/vm/MyFolder/MySubFolder
 /MyFolder/MySubFolder
 MyFolder/MySubFolder
+```
