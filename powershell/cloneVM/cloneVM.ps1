@@ -1,14 +1,3 @@
-# usage: ./cloneVM.ps1 -vip mycluster `
-#                      -username myusername `
-#                      -domain mydomain.net `
-#                      -vmName myvm `
-#                      -vCenterName vCenter1.mydomain.net `
-#                      -dataCenterName mydc `
-#                      -hostName esx1 `
-#                      -folderName mydfolder `
-#                      -networkName 'vm network' `
-#                      -powerOn
-
 ### process commandline arguments
 [CmdletBinding()]
 param (
@@ -18,7 +7,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vmName,
     [Parameter(Mandatory = $True)][string]$vCenterName,
     [Parameter(Mandatory = $True)][string]$dataCenterName,
-    [Parameter(Mandatory = $True)][string]$hostName,
+    [Parameter(Mandatory = $True)][string]$computeResource,
     [Parameter(Mandatory = $True)][string]$folderName,
     [Parameter()][string]$networkName,
     [Parameter()][string]$viewName = 'cloneVMs',
@@ -56,12 +45,12 @@ if(! $vCenter){
 ### select resource pool
 $vCenterSource = api get protectionSources?environments=kVMware`&includeVMFolders=true`&excludeTypes=kVirtualMachine | Where-Object {$_.protectionSource.name -eq $vCenterName}
 $dataCenterSource = $vCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $dataCenterName}
-$hostSource = $dataCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $hostName}
+$hostSource = $dataCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $computeResource}
 $resourcePoolSource = $hostSource.nodes | Where-Object {$_.protectionSource.vmWareProtectionSource.type -eq 'kResourcePool'}
 $resourcePoolId = $resourcePoolSource.protectionSource.id
 $resourcePool = api get /resourcePools?vCenterId=$vCenterId | Where-Object {$_.resourcePool.id -eq $resourcePoolId}
 if(! $resourcePoolId){
-    Write-Host "host/cluster $hostName not found" -ForegroundColor Yellow
+    Write-Host "host/cluster $computeResource not found" -ForegroundColor Yellow
     exit
 }
 

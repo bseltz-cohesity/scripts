@@ -31,7 +31,7 @@ Place the files in a folder together and run the main script like so:
               -vmName myvm `
               -vCenterName myvcenter.mydomain.net `
               -datacenterName mydatacenter `
-              -hostName esx1 `
+              -computeResource esx1 `
               -folderName myFolder `
               -networkName 'VM Network' `
               -poweron `
@@ -47,8 +47,31 @@ Place the files in a folder together and run the main script like so:
 * -prefix: (optional) add a prefix to the VM name during restore
 * -vCenterName: (optional)vCenter protection source to recover to
 * -datacenterName: (optional) name of vSphere data center to recover to
-* -hostName: (optional) name of vSphere host to recover to
+* -computeResource: (optional) name of vSphere cluster or stand-alone host to recover to
 * -folderName: (optional) name of vSphere folder to recover to
 * -networkName: (optional) VM Network to attach the VM
 * -poweron: (optional) power on the VMs during restore (default is false)
 * -detachNetwork: (optional) leave VM network disconnected (default is false)
+
+## Specifying a Compute Resource
+
+If your vSphere environment contains HA clusters (most environments do), then use the name of the HA cluster as the computeResource, for example:
+
+```powershell
+-computeResource CLUSTER1
+```
+
+or if your vShere environment contains stand-alone ESX hosts, then use the name of the host as the computeResource:
+
+```powershell
+-computeResource HOST1
+```
+
+## Specifying a Folder
+
+You can specify a folder to restore to using any of the following formats:
+
+/vCenter.mydomain.net/Datacenters/DataCenter1/vm/MyFolder/MySubFolder
+vCenter.mydomain.net/Datacenters/DataCenter1/vm/MyFolder/MySubFolder
+/MyFolder/MySubFolder
+MyFolder/MySubFolder
