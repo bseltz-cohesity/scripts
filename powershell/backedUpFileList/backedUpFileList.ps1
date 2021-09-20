@@ -1,4 +1,4 @@
-# version 2021.09.09
+# version 2021.09.20
 # usage: ./backedUpFileList.ps1 -vip mycluster \
 #                               -username myuser \
 #                               -domain mydomain.net \
@@ -62,6 +62,7 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
         }
     }
     if($dirList.PSObject.Properties['entries']){
+        $filesFound = $True
         foreach($entry in $dirList.entries | Sort-Object -Property name){
             if($entry.type -eq 'kDirectory'){
                 listdir "$dirPath/$($entry.name)" $instance $volumeInfoCookie $volumeName
@@ -154,6 +155,8 @@ if($showVersions -or $start -or $end -or $listFiles){
     exit 0
 }
 
+$filesFound = $False
+
 # select version
 if($runId){
     # select version with matching runId
@@ -174,4 +177,8 @@ if($runId){
     # just use latest version
     $version = $doc.versions[0]
     showFiles $doc $version
+}
+
+if($filesFound -eq $False){
+    write-host "No files found"
 }
