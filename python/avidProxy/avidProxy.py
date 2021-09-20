@@ -17,7 +17,7 @@ parser.add_argument('-d', '--domain', type=str, default='local')
 parser.add_argument('-n', '--proxyname', action='append', type=str)
 parser.add_argument('-l', '--proxylist', type=str)
 parser.add_argument('-j', '--jobprefix', type=str, required=True)
-parser.add_argument('-r', '--avidroot', type=str, required=True)
+parser.add_argument('-r', '--avidroot', type=str, default=None)
 parser.add_argument('-p', '--policyname', type=str, required=True)
 parser.add_argument('-m', '--mountpoint', type=str, required=True)
 parser.add_argument('-s', '--showdelimiter', type=str, default='_')
@@ -43,6 +43,9 @@ policyname = args.policyname          # policy name for new job
 starttime = args.starttime            # start time for new job
 timezone = args.timezone              # time zone for new job
 maxlogfilesize = args.maxlogfilesize  # max size to truncate log
+
+if avidroot is None:
+    avidroot = mountpoint
 
 # truncate log file
 try:

@@ -30,7 +30,6 @@ Place both files in a folder together and run the main script like so:
                -j avid-backup \
                -n avidproxy1 \
                -n avidproxy2 \
-               -r /mnt/avid \
                -m /mnt/avid \
                -p 'my policy'
 ```
@@ -43,8 +42,8 @@ Place both files in a folder together and run the main script like so:
 * -n, --proxyname: (optional) name of proxy to protect (use multiple times for multiple)
 * -l, --proxylist: (optional) text file containing proxy names 9one per line)
 * -j, --jobprefix: prefix of job name to create
-* -r, --avidroot: path of avid root (e.g. /mnt/avid)
 * -m, --mountpoint: path of expirted avid root (e.g. /mnt/avid)
+* -r, --avidroot: (optional) path of avid root if different then mountpoint (e.g. /mnt/avid)
 * -s, --showdelimiter: (optional) default is '_' (underscore)
 * -p, --policyname: name of protection policy to use for new job (only required for new job)
 * -sd, --storagedomain: (optional) name of storage domain to create job in (default is DefaultStorageDomain)
