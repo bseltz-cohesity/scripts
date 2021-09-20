@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Archive Now for python - version 2021.08.17"""
+"""Archive Now for python - version 2021.09.20"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -53,22 +53,22 @@ if retentionstrings is None:
 
 nowUsecs = dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 outfileName = '%s/archiveLog-%s-%s.txt' % (outfolder, vip, datetime.now().strftime("%Y-%m"))
-f = codecs.open(outfileName, 'a', 'utf-8')
+log = codecs.open(outfileName, 'a', 'utf-8')
 
-f.write('\n----------------\nArchiver started: %s\n----------------\n' % datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
-f.write('\nCommand line options used: \n%s\n\n' % json.dumps([a for a in vars(args) if a not in ['domain', 'username', 'password']], sort_keys=True, indent=4, separators=(', ', ': ')))
+log.write('\n----------------\nArchiver started: %s\n----------------\n' % datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
+log.write('\nCommand line options used: \n%s\n\n' % json.dumps([a for a in vars(args) if a not in ['domain', 'username', 'password']], sort_keys=True, indent=4, separators=(', ', ': ')))
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
 if apiconnected() is False:
     print('\nFailed to connect to Cohesity cluster')
-    f.write('\nError: Failed to connect to Cohesity cluster\n')
-    f.close()
+    log.write('\nError: Failed to connect to Cohesity cluster\n')
+    log.close()
     exit(1)
 
 if force is False:
     print('\nRunning in test mode - will not archive\n')
-    f.write('Running in test mode - will not archive\n\n')
+    log.write('Running in test mode - will not archive\n\n')
 
 jobnames = []
 excludejobnames = []
@@ -94,6 +94,12 @@ if joblist is not None:
     jobnames += [s.strip().lower() for s in f.readlines() if s.strip() != '']
     f.close()
     jobs = [j for j in jobs if j['name'].lower() in jobnames]
+    foundjobnames = [j['name'].lower() for j in jobs]
+    missingjobs = [j for j in jobnames if j.lower() not in foundjobnames]
+    if missingjobs is not None and len(missingjobs) > 0:
+        for j in missingjobs:
+            print('Warning: job "%s" not found. Skipping...\n' % j)
+            log.write('Warning: job "%s" not found. Skipping...\n' % j)
 
 if excludelist is not None:
     f = open(excludelist, 'r')
@@ -113,13 +119,14 @@ if len(vault) > 0:
     }
 else:
     print('external target %s not found' % target)
-    f.write('\nError: external target %s not found\n' % target)
-    f.close()
+    log.write('\nError: external target %s not found\n' % target)
+    log.close()
     exit(1)
 
 startTimeUsecs = timeAgo(daysback, 'days')
 
-dontrunstates = ['kAccepted', 'kRunning', 'kCanceling', 'kSuccess']
+busystates = ['kAccepted', 'kRunning', 'kCanceling']
+completedstates = ['kSuccess']
 
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
     runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&excludeTasks=true&numRuns=10000' % (job['id'], startTimeUsecs))
@@ -130,83 +137,89 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
         runs = [r for r in runs if r['backupRun']['runType'] != 'kLog']
     for run in sorted(runs, key=lambda run: run['backupRun']['stats']['startTimeUsecs']):
         daysToKeep = keepfor
-        thisrun = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&excludeTasks=true&id=%s' % (run['backupRun']['stats']['startTimeUsecs'], run['jobId']))
-        jobUid = thisrun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']
-        expiryTimeUsecs = run['copyRun'][0]['expiryTimeUsecs']
 
-        thisRunArchived = False
-        for copyRun in run['copyRun']:
+        if 'expiryTimeUsecs' in run['copyRun'][0]:
+            expiryTimeUsecs = run['copyRun'][0]['expiryTimeUsecs']
 
-            # resync existing archive run
-            if copyRun['target']['type'] == 'kArchival':
-                thistarget = copyRun['target']['archivalTarget']
-                thisstatus = copyRun['status']
-                if thistarget['vaultName'].lower() == target['vaultName'].lower():
-                    if thisstatus in dontrunstates:
-                        thisRunArchived = True
-                    else:
-                        f.write('Warning: %s (%s) -> %s previously ended with status: %s\n' % (job['name'], usecsToDate(run['copyRun'][0]['runStartTimeUsecs']), target['vaultName'], thisstatus))
-                        if (expiryTimeUsecs - nowUsecs) < 86400000000:
-                            # update retention of job run
-                            f.write('         extending local snapshot retention\n')
-                            runParameters = {
-                                "jobRuns": [
+            archiveThisRun = True
+
+            # busy copyRuns
+            busyCopyRuns = [c for c in run['copyRun'] if c['status'] in busystates]
+            if busyCopyRuns is not None and len(busyCopyRuns) > 0:
+                archiveThisRun = False
+
+            # this run already archived to our target
+            successfulArchives = [c for c in run['copyRun'] if c['target']['type'] == 'kArchival' and c['target']['archivalTarget']['vaultName'].lower() == target['vaultName'].lower() and c['status'] in completedstates]
+            if successfulArchives is not None and len(successfulArchives) > 0:
+                archiveThisRun = False
+
+            if archiveThisRun is True:
+                thisrun = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&excludeTasks=true&id=%s' % (run['backupRun']['stats']['startTimeUsecs'], run['jobId']))
+                jobUid = thisrun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']
+
+                # see if we need to extend the local snapshot due to failing archive attempts
+                unsuccessfulArchives = [c for c in run['copyRun'] if c['target']['type'] == 'kArchival' and c['target']['archivalTarget']['vaultName'].lower() == target['vaultName'].lower() and c['status'] not in completedstates]
+                if unsuccessfulArchives is not None and len(unsuccessfulArchives) > 0:
+                    log.write('Warning: %s (%s) -> %s previously ended with status: %s\n' % (job['name'], usecsToDate(run['copyRun'][0]['runStartTimeUsecs']), target['vaultName'], unsuccessfulArchives[0]['status']))
+                    # extend retention of local snapshot for one day
+                    runParameters = {
+                        "jobRuns": [
+                            {
+                                "jobUid": {
+                                    "clusterId": jobUid['clusterId'],
+                                    "clusterIncarnationId": jobUid['clusterIncarnationId'],
+                                    "id": jobUid['objectId']
+                                },
+                                "runStartTimeUsecs": run['copyRun'][0]['runStartTimeUsecs'],
+                                "copyRunTargets": [
                                     {
-                                        "jobUid": {
-                                            "clusterId": jobUid['clusterId'],
-                                            "clusterIncarnationId": jobUid['clusterIncarnationId'],
-                                            "id": jobUid['objectId']
-                                        },
-                                        "runStartTimeUsecs": run['copyRun'][0]['runStartTimeUsecs'],
-                                        "copyRunTargets": [
-                                            {
-                                                "daysToKeep": 1,
-                                                "type": "kLocal"
-                                            }
-                                        ]
+                                        "daysToKeep": 1,
+                                        "type": "kLocal"
                                     }
                                 ]
                             }
-                            api('put', 'protectionRuns', runParameters)
-
-        if thisRunArchived is False:
-            # configure archive task
-            archiveTask = {
-                "jobRuns": [
-                    {
-                        "copyRunTargets": [
-                            {
-                                "archivalTarget": target,
-                                "type": "kArchival"
-                            }
-                        ],
-                        "runStartTimeUsecs": run['copyRun'][0]['runStartTimeUsecs'],
-                        "jobUid": {
-                            "clusterId": jobUid['clusterId'],
-                            "clusterIncarnationId": jobUid['clusterIncarnationId'],
-                            "id": jobUid['objectId']
-                        }
+                        ]
                     }
-                ]
-            }
+                    api('put', 'protectionRuns', runParameters)
 
-            thisDaysToKeep = daysToKeep
-            for retentionString in retentionstrings:
-                if retentionString.lower() in job['name'].lower():
-                    retentionString = ''.join([i for i in retentionString if i.isdigit()])
-                    if retentionString.isdigit():
-                        thisDaysToKeep = int(retentionString)
+                # configure archive task
+                archiveTask = {
+                    "jobRuns": [
+                        {
+                            "copyRunTargets": [
+                                {
+                                    "archivalTarget": target,
+                                    "type": "kArchival"
+                                }
+                            ],
+                            "runStartTimeUsecs": run['copyRun'][0]['runStartTimeUsecs'],
+                            "jobUid": {
+                                "clusterId": jobUid['clusterId'],
+                                "clusterIncarnationId": jobUid['clusterIncarnationId'],
+                                "id": jobUid['objectId']
+                            }
+                        }
+                    ]
+                }
 
-            thisDaysToKeep = thisDaysToKeep - dayDiff(dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S")), run['copyRun'][0]['runStartTimeUsecs'])
-            archiveTask['jobRuns'][0]['copyRunTargets'][0]['daysToKeep'] = int(thisDaysToKeep)
+                # calculate days to keep
+                thisDaysToKeep = daysToKeep
+                for retentionString in retentionstrings:
+                    if retentionString.lower() in job['name'].lower():
+                        retentionString = ''.join([i for i in retentionString if i.isdigit()])
+                        if retentionString.isdigit():
+                            thisDaysToKeep = int(retentionString)
 
-            # perform archive
-            if force:
-                print('archiving %s (%s) -> %s for %s days' % (job['name'], usecsToDate(run['copyRun'][0]['runStartTimeUsecs']), target['vaultName'], thisDaysToKeep))
-                f.write('archiving %s (%s) -> %s for %s days\n' % (job['name'], usecsToDate(run['copyRun'][0]['runStartTimeUsecs']), target['vaultName'], thisDaysToKeep))
-                result = api('put', 'protectionRuns', archiveTask)
-            else:
-                print('%s (%s) -> %s for %s days' % (job['name'], usecsToDate(run['copyRun'][0]['runStartTimeUsecs']), target['vaultName'], thisDaysToKeep))
-                f.write('would archive %s (%s) -> %s for %s days\n' % (job['name'], usecsToDate(run['copyRun'][0]['runStartTimeUsecs']), target['vaultName'], thisDaysToKeep))
-f.write('\n')
-f.close()
+                thisDaysToKeep = thisDaysToKeep - dayDiff(dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S")), run['copyRun'][0]['runStartTimeUsecs'])
+                archiveTask['jobRuns'][0]['copyRunTargets'][0]['daysToKeep'] = int(thisDaysToKeep)
+
+                # perform archive
+                if force and int(thisDaysToKeep) > 0:
+                    print('archiving %s (%s) -> %s for %s days' % (job['name'], usecsToDate(run['copyRun'][0]['runStartTimeUsecs']), target['vaultName'], thisDaysToKeep))
+                    log.write('archiving %s (%s) -> %s for %s days\n' % (job['name'], usecsToDate(run['copyRun'][0]['runStartTimeUsecs']), target['vaultName'], thisDaysToKeep))
+                    result = api('put', 'protectionRuns', archiveTask)
+                else:
+                    print('%s (%s) -> %s for %s days' % (job['name'], usecsToDate(run['copyRun'][0]['runStartTimeUsecs']), target['vaultName'], thisDaysToKeep))
+                    log.write('would archive %s (%s) -> %s for %s days\n' % (job['name'], usecsToDate(run['copyRun'][0]['runStartTimeUsecs']), target['vaultName'], thisDaysToKeep))
+log.write('\n')
+log.close()
