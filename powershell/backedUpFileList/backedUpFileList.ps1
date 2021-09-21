@@ -61,8 +61,8 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
             $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=true&dirPath=$thisDirPath"
         }
     }
-    if($dirList.PSObject.Properties['entries']){
-        $filesFound = $True
+    if($dirList.PSObject.Properties['entries'] -and $dirList.entries.Count -gt 0){
+        $Global:filesFound = $True
         foreach($entry in $dirList.entries | Sort-Object -Property name){
             if($entry.type -eq 'kDirectory'){
                 listdir "$dirPath/$($entry.name)" $instance $volumeInfoCookie $volumeName
@@ -101,7 +101,6 @@ function showFiles($doc, $version){
             $volumeInfoCookie = $volumeList.volumeInfoCookie
             foreach($volume in $volumeList.volumeInfos | Sort-Object -Property name){
                 $volumeName = [System.Web.HttpUtility]::UrlEncode($volume.name)
-                # $volumeName = $volume.name
                 listdir $startPath $instance $volumeInfoCookie $volumeName
             }
         }
@@ -147,6 +146,9 @@ if($showVersions -or $start -or $end -or $listFiles){
             Write-Host "   runId: $($version.instanceId.jobInstanceId)"
             write-host " runDate: $(usecsToDate $version.instanceId.jobStartTimeUsecs)"
             Write-Host "==============================`n"
+            if($version.numEntriesIndexed -eq 0){
+                $useLibrarian = $False
+            }
             showFiles $doc $version
         }
     }else{
@@ -155,7 +157,7 @@ if($showVersions -or $start -or $end -or $listFiles){
     exit 0
 }
 
-$filesFound = $False
+$Global:filesFound = $False
 
 # select version
 if($runId){
@@ -165,6 +167,9 @@ if($runId){
         Write-Host "Job run ID $runId not found" -ForegroundColor Yellow
         exit 1
     }
+    if($version.numEntriesIndexed -eq 0){
+        $useLibrarian = $False
+    }
     showFiles $doc $version
 }elseif($fileDate){
     # select version just after requested date
@@ -172,13 +177,19 @@ if($runId){
     if(! $version){
         $version = $doc.versions[0]
     }
+    if($version.numEntriesIndexed -eq 0){
+        $useLibrarian = $False
+    }
     showFiles $doc $version
 }else{
     # just use latest version
     $version = $doc.versions[0]
+    if($version.numEntriesIndexed -eq 0){
+        $useLibrarian = $False
+    }
     showFiles $doc $version
 }
 
-if($filesFound -eq $False){
+if($Global:filesFound -eq $False){
     write-host "No files found"
 }
