@@ -6,7 +6,7 @@ param (
     [Parameter()][string]$domain = 'local',
     [Parameter(Mandatory = $True)][string]$newStorageDomain,
     [Parameter()][array]$jobname,
-    [Parameter()][string]$joblist,
+    [Parameter()][string]$joblist = '',
     [Parameter()][string]$prefix = '',
     [Parameter()][string]$suffix = '',
     [Parameter()][switch]$pauseNewJob,
@@ -31,9 +31,9 @@ if(! $storageDomain){
 
 # gather job names
 $myjobs = @()
-if(Test-Path $joblist -PathType Leaf){
+if($joblist -ne '' -and (Test-Path $joblist -PathType Leaf)){
     $myjobs += Get-Content $joblist | Where-Object {$_ -ne ''}
-}elseif($jobList){
+}elseif($jobList -ne ''){
     Write-Warning "File $joblist not found!"
     exit 1
 }
@@ -55,55 +55,50 @@ foreach($badjob in $badjobs | sort){
 # clone jobs
 foreach($job in $jobs){
 
-    if($job.viewBoxId -eq $storageDomain.id){
-        "Job $($job.name) is already on storage domain $newStorageDomain"
-    }else{
+    # set new job name
+    $renaming = $True
+    $newJobName = "{0}{1}{2}" -f $prefix, $job.name, $suffix
+    if($newJobName -eq $job.name){
+        $renaming = $false
+    }
 
-        # set new job name
-        $renaming = $True
-        $newJobName = "{0}{1}{2}" -f $prefix, $job.name, $suffix
-        if($newJobName -eq $job.name){
-            $renaming = $false
-        }
-    
-        # must rename old job if we're not renaming new job or deleting old job
-        if($false -eq $renaming -and (! $deleteOldJob) -and (! $deleteOldSnapshots)){
-            "Renaming old job: $($job.name) -> Old-$($job.name)"
-            $job.name = "Old-{0}" -f $job.name
-            $job.name
-            $null = api put "protectionJobs/$($job.id)" $job
-        }
-    
-        if($deleteOldSnapshots -or $deleteOldJob){
-            # save backup of job
-            $job | ConvertTo-Json -Depth 99 | Out-File -FilePath "$($job.name).json"
-    
-            # delete old job
-            if($deleteOldSnapshots){
-                "Deleting old job: $($job.name) (and existing snapshots)"
-                $null = api delete "protectionJobs/$($job.id)" @{'deleteSnapshots'= $True}
-            }else{
-                "Deleting old job: $($job.name)"
-                $null = api delete "protectionJobs/$($job.id)" @{'deleteSnapshots'= $false}
-            }
+    # must rename old job if we're not renaming new job or deleting old job
+    if($false -eq $renaming -and (! $deleteOldJob) -and (! $deleteOldSnapshots)){
+        "Renaming old job: $($job.name) -> Old-$($job.name)"
+        $job.name = "Old-{0}" -f $job.name
+        $job.name
+        $null = api put "protectionJobs/$($job.id)" $job
+    }
+
+    if($deleteOldSnapshots -or $deleteOldJob){
+        # save backup of job
+        $job | ConvertTo-Json -Depth 99 | Out-File -FilePath "$($job.name).json"
+
+        # delete old job
+        if($deleteOldSnapshots){
+            "Deleting old job: $($job.name) (and existing snapshots)"
+            $null = api delete "protectionJobs/$($job.id)" @{'deleteSnapshots'= $True}
         }else{
-            # pause old job
-            if($pauseOldJob){
-                "Pausing old job: $($job.name)"
-                $null = api post protectionJobState/$($job.id) @{ "pause" = $true; "pauseReason" = 0 }
-            }
+            "Deleting old job: $($job.name)"
+            $null = api delete "protectionJobs/$($job.id)" @{'deleteSnapshots'= $false}
         }
-    
-        # Create new job
-        "Creating new job: $newJobName"
-        $job.name = $newJobName
-        $job.viewBoxId = $storageDomain.id
-        $newJob = api post protectionJobs $job
-    
-        # Pause new job
-        if($pauseNewJob){
-            "Pausing new job: $newJobName"
-            $null = api post "protectionJobState/$($newJob.id)" @{'pause' = $True}
-        }   
+    }else{
+        # pause old job
+        if($pauseOldJob){
+            "Pausing old job: $($job.name)"
+            $null = api post protectionJobState/$($job.id) @{ "pause" = $true; "pauseReason" = 0 }
+        }
+    }
+
+    # Create new job
+    "Creating new job: $newJobName"
+    $job.name = $newJobName
+    $job.viewBoxId = $storageDomain.id
+    $newJob = api post protectionJobs $job
+
+    # Pause new job
+    if($pauseNewJob){
+        "Pausing new job: $newJobName"
+        $null = api post "protectionJobState/$($newJob.id)" @{'pause' = $True}
     }
 }
