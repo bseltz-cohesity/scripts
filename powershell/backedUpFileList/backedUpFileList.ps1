@@ -79,6 +79,7 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
 }
 
 function showFiles($doc, $version){
+    $Global:filesFound = $False
     $versionDate = (usecsToDate $version.instanceId.jobStartTimeUsecs).ToString('yyyy-MM-dd_hh-mm-ss')
     $sourceServerString = $sourceServer.Replace('\','-').Replace('/','-')
     $outputfile = $(Join-Path -Path $PSScriptRoot -ChildPath "backedUpFiles-$($version.instanceId.jobInstanceId)-$($sourceServerString)-$versionDate.txt")
@@ -107,7 +108,9 @@ function showFiles($doc, $version){
     }else{
         listdir $startPath $instance
     }
-    
+    if($Global:filesFound -eq $False){
+        "No Files Found" | Tee-Object -FilePath $outputfile -Append
+    }
 }
 
 $searchResults = api get "/searchvms?entityTypes=kView&entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAWSSnapshotManager&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kFlashBlade&entityTypes=kGCP&entityTypes=kGenericNas&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kIsilon&entityTypes=kKVM&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware&vmName=$sourceserver"
@@ -188,8 +191,4 @@ if($runId){
         $useLibrarian = $False
     }
     showFiles $doc $version
-}
-
-if($Global:filesFound -eq $False){
-    write-host "No files found"
 }
