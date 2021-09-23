@@ -34,3 +34,4 @@ Place both files in a folder together and run the main script like so:
 * -username: the cohesity user to login with
 * -domain: (optional) domain of the Cohesity user (defaults to local)
 * -outPath: (optional) write CSV output to this folder (default is '.')
+* -last24hours: (optional) show all runs from the last 24 hours (only shows latest run by default)
