@@ -28,35 +28,46 @@ Place all files in a folder together. then, run the main script like so:
 ./backupNow.ps1 -vip mycluster `
                 -username myusername `
                 -domain mydomain.net `
-                -jobName 'My Job' `
-                -keepLocalFor 7 `
-                -replicateTo anothercluster `
-                -keepReplicaFor 10 `
-                -backupType kRegular
+                -jobName 'My Job'
 ```
 
-```text
-Connected!
-Running My Job...
-Job finished with status: kSuccess
-```
-
-## Parameters
+## Authentication Parameters
 
 * -vip: DNS or IP of the Cohesity Cluster
 * -username: Cohesity User Name
 * -domain: (optional) defaults to 'local'
 * -useApiKey: (optional) Use API key for authentication
+* -password: (optional) password or API key (will use stored password by default)
+* -tenant: (optional) org tenant to impersonate
+* -clusterName: (optional) cluster to access (when connecting via Helios)
+
+## Job Run Parameters
+
 * -jobName: name of protection job to run
+* -backupType: (optional) choose one of kRegular, kFull, kLog or kSystem backup types. Default is kRegular (incremental)
+* -metaDataFile: (optional) path of directive file to use on server
+* -objects: (optional) comma separated list of object names to include in the job run. For VMs, simply include the VM name. For SQL databases, object names should be in the form of server.mydomain.net/instanceName/dbName. For Oracle databases, object names should be in the form of server.mydomain.net/dbName
+
+## Copy Retention Parameters
+
 * -localOnly: (optional) skip replicas and archivals
 * -keepLocalFor: (optional) days to keep local snapshot (default is to use policy setting)
-* -archiveTo: (optional) name of archival target to archive to (override policy settings)
-* -keepArchiveFor: (optional) days to keep in archive (override policy settings)
-* -replicateTo: (optional) name of remote cluster to replicate to (override policy settings)
-* -keepReplicaFor: (optional) days to keep replica for (override policy settings)
-* -enable: enable a paused job before running, then disable when done
-* -backupType: choose one of kRegular, kFull, kLog or kSystem backup types. Default is kRegular (incremental)
-* -objects: comma separated list of object names to include in the job run. For VMs, simply include the VM name. For SQL databases, object names should be in the form of server.mydomain.net/instanceName/dbName. For Oracle databases, object names should be in the form of server.mydomain.net/dbName
-* -progress: display percent complete
-* -wait: wait for job to complete and return exit code, otherwise exit immediately after starting the job
-* -abortIfRunning: exit if job is already running (default is to wait and run when existing run is finished)
+* -noArchive: (optional) skip archive tasks
+* -archiveTo: (optional) name of archival target to archive to (default is to use policy setting)
+* -keepArchiveFor: (optional) days to keep in archive (default is to use policy setting)
+* -noReplica: (optional) skip replication tasks
+* -replicateTo: (optional) name of remote cluster to replicate to (default is to use policy setting)
+* -keepReplicaFor: (optional) days to keep replica for (default is to use policy setting)
+
+## Other Runtime Parameters
+
+* -progress: (optional) display percent complete
+* -wait: (optional) wait for job to complete and return exit code, otherwise exit immediately after starting the job
+* -abortIfRunning: (optional) exit if job is already running (default is to wait and run when existing run is finished)
+* -outputlog: (optional) enable output logging
+* -logfile: (optional) path/name of log file (default is ./log-backupNow.log)
+
+## Outdated Parameters
+
+* -usePolicy: (optional) deprecated (this is the default behavior)
+* -enable: (optional) enable a paused job before running, then disable when done (not needed post 6.5)
