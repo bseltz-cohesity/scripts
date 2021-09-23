@@ -27,7 +27,7 @@ $outFile = $(Join-Path -Path $outPath -ChildPath "slaStatus-$($cluster.name)-$da
 $missesRecorded = $false
 $message = ""
 
-"jobName,Last Run,Status,Duration,SLA Setting,SLA Status" | Out-File -FilePath $outFile
+"Job Name,Last Run,Status,Run Minutes,SLA Minutes,SLA Status" | Out-File -FilePath $outFile
 
 "`nCollecting Job Stats...`n"
 foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -and $_.isActive -ne $false} | Sort-Object -Property name)){
