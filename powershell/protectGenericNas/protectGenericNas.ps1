@@ -147,7 +147,7 @@ $parentSourceId = $sources[0].protectionSource.id
 
 $sourceIds = @()
 foreach($mountPath in $mountPaths){
-    $source = $sources.nodes | Where-Object {$_.protectionSource.name -eq $mountPaths}
+    $source = $sources.nodes | Where-Object {$_.protectionSource.name -eq $mountPath}
     if(! $source){
         Write-Host "Mount Path $mountPath is not registered in Cohesity" -ForegroundColor Yellow
         exit
