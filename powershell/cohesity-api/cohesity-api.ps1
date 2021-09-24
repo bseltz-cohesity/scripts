@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2021.08.16 - Brian Seltzer
+#  Version 2021.09.23 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2020.11.06 - refactor and simplify
@@ -12,9 +12,10 @@
 # 2021.02.10 - fixed empty body issue
 # 2021.03.26 - added apiKey unique password storage
 # 2021.08.16 - revamped passwd storage, auto prompt for invalid password
+# 2021.09.23 - added support for DMaaS
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2021.08.16'
+$versionCohesityAPI = '2021.09.23'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -29,7 +30,9 @@ $cohesity_api = @{
     'authorized' = $false;
     'apiRoot' = '';
     'apiRootv2' = '';
+    'regionid' = '';
     'apiRootmcm' = 'https://helios.cohesity.com/mcm/';
+    'apiRootmcmV2' = 'https://helios.cohesity.com/v2/mcm/'
     'apiRootReportingV2' = 'https://helios.cohesity.com/heliosreporting/api/v1/public/';
     'header' = @{'accept' = 'application/json'; 'content-type' = 'application/json'};
     'clusterReadOnly' = $false;
@@ -84,6 +87,7 @@ function apiauth($vip='helios.cohesity.com',
                  $passwd = $null,
                  $password = $null,
                  $tenant = $null,
+                 $regionid = $null,
                  [switch] $quiet, 
                  [switch] $noprompt, 
                  [switch] $updatePassword, 
@@ -127,6 +131,10 @@ function apiauth($vip='helios.cohesity.com',
     $cohesity_api.version = 1
     if($v2){
         $cohesity_api.version = 2
+    }
+
+    if($regionid){
+        $cohesity_api.header['regionid'] = $regionid
     }
 
     if($useApiKey -or ($vip -eq 'helios.cohesity.com')){
@@ -310,6 +318,7 @@ function api($method,
              [switch]$v1, 
              [switch]$v2,
              [switch]$mcm,
+             [switch]$mcmv2,
              [switch]$reportingV2,
              [switch]$quiet){
 
@@ -349,6 +358,8 @@ function api($method,
             $url = $cohesity_api.apiRootv2 + $uri
         }elseif($mcm){
             $url = $cohesity_api.apiRootmcm + $uri
+        }elseif($mcmv2){
+            $url = $cohesity_api.apiRootmcmV2 + $uri
         }elseif($reportingV2){
             $url = $cohesity_api.apiRootReportingV2 + $uri            
         }else{
