@@ -41,7 +41,7 @@ Place both files in a folder together and run the main script like so:
 * -mailboxes: (optional) one or more mailbox names or SMTP addresses (comma separated)
 * -mailboxList: (optional) text file of mailbox names or SMTP addresses (one per line)
 * -startTime: (optional) e.g. '18:30' (defaults to 8PM)
-* -timeZone: (optional) e.g. 'America/New_York' (default is 'America/Los_Angeles')
+* -timeZone: (optional) e.g. 'America/New_York' (default is 'America/New_York')
 * -incrementalSlaMinutes: (optional) default 60
 * -fullSlaMinutes: (optional) default is 120
 
