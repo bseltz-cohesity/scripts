@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2021.02.16"""
+"""Cohesity Python REST API Wrapper Module - 2021.04.20"""
 
 ##########################################################################################
 # Change Log
@@ -34,6 +34,10 @@
 # 2020.09.09 - fixed invalid password loop for PWFILE
 # 2020.10.01 - added noretry for password checking
 # 2021.02.16 - added V2 API support
+# 2021.04.04 - added usecsToDateTime and fixed dateToUsecs to support datetime object as input
+# 2021.04.08 - added support for readonly home dir
+# 2021.04.20 - added error return from api function
+# 2021.09.25 - added support for DMaaS
 #
 ##########################################################################################
 # Install Notes
@@ -66,6 +70,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 __all__ = ['apiauth',
            'api',
            'usecsToDate',
+           'usecsToDateTime',
            'dateToUsecs',
            'timeAgo',
            'dayDiff',
@@ -91,10 +96,11 @@ SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
 PWFILE = os.path.join(SCRIPTDIR, 'YWRtaW4')
 LOGFILE = os.path.join(SCRIPTDIR, 'pyhesity-debug.log')
 APIROOTMCM = 'https://helios.cohesity.com/mcm/'
+APIROOTMCMv2 = 'https://helios.cohesity.com/v2/mcm/'
 
 
 ### authentication
-def apiauth(vip='helios.cohesity.com', username='helios', domain='local', password=None, updatepw=None, prompt=None, quiet=None, helios=False, useApiKey=False, tenantId=None, noretry=False):
+def apiauth(vip='helios.cohesity.com', username='helios', domain='local', password=None, updatepw=None, prompt=None, quiet=None, helios=False, useApiKey=False, tenantId=None, noretry=False, regionid=None):
     """authentication function"""
     global APIROOT
     global APIROOTv2
@@ -113,13 +119,31 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
     APIROOTv2 = 'https://' + vip + '/v2/'
     if vip == 'helios.cohesity.com':
         HEADER = {'accept': 'application/json', 'content-type': 'application/json', 'apiKey': pwd}
+        if regionid is not None:
+            HEADER['regionid'] = regionid
         URL = 'https://helios.cohesity.com/mcm/clusters/connectionStatus'
         try:
             HELIOSCLUSTERS = (requests.get(URL, headers=HEADER, verify=False)).json()
-            CONNECTEDHELIOSCLUSTERS = [cluster for cluster in HELIOSCLUSTERS if cluster['connectedToCluster'] is True]
-            AUTHENTICATED = True
-            if(quiet is None):
-                print("Connected!")
+            if HELIOSCLUSTERS is not None and 'message' in HELIOSCLUSTERS:
+                print(HELIOSCLUSTERS['message'])
+                AUTHENTICATED = False
+                return None
+            if HELIOSCLUSTERS is not None and 'errorCode' not in HELIOSCLUSTERS:
+                CONNECTEDHELIOSCLUSTERS = [cluster for cluster in HELIOSCLUSTERS if cluster['connectedToCluster'] is True]
+                AUTHENTICATED = True
+                if(quiet is None):
+                    print("Connected!")
+            else:
+                URL = 'https://helios.cohesity.com/v2/mcm/dms/regions'
+                REGIONS = (requests.get(URL, headers=HEADER, verify=False)).json()
+                if REGIONS is not None and 'message' in REGIONS:
+                    print(REGIONS['message'])
+                    AUTHENTICATED = False
+                    return None
+                if REGIONS is not None and 'errorCode' not in REGIONS:
+                    AUTHENTICATED = True
+                    if(quiet is None):
+                        print("Connected!")
         except requests.exceptions.RequestException as e:
             AUTHENTICATED = False
             if quiet is None:
@@ -202,7 +226,7 @@ def heliosClusters():
 
 
 ### api call function
-def api(method, uri, data=None, quiet=None, mcm=None, v=1):
+def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1):
     """api call function"""
     if AUTHENTICATED is False:
         print('Not Connected')
@@ -210,6 +234,8 @@ def api(method, uri, data=None, quiet=None, mcm=None, v=1):
     response = ''
     if mcm is not None:
         url = APIROOTMCM + uri
+    elif mcmv2 is not None:
+        url = APIROOTMCMv2 + uri
     else:
         if v == 2:
             url = APIROOTv2 + uri
@@ -253,8 +279,10 @@ def api(method, uri, data=None, quiet=None, mcm=None, v=1):
                     if quiet is None:
                         if 'message' in responsejson:
                             print(responsejson['errorCode'][1:] + ': ' + responsejson['message'])
+                            return('error')
                         else:
                             print(responsejson)
+                            return('error')
                     return None
                 else:
                     return responsejson
@@ -270,10 +298,18 @@ def usecsToDate(uedate):
     return datetime.fromtimestamp(uedate).strftime('%Y-%m-%d %H:%M:%S')
 
 
+### convert usecs to date
+def usecsToDateTime(uedate):
+    """Convert Unix Epoc Microseconds to Date String"""
+    uedate = int(uedate) / 1000000
+    return datetime.fromtimestamp(uedate)
+
+
 ### convert date to usecs
-def dateToUsecs(datestring):
+def dateToUsecs(dt):
     """Convert Date String to Unix Epoc Microseconds"""
-    dt = datetime.strptime(datestring, "%Y-%m-%d %H:%M:%S")
+    if isinstance(dt, str):
+        dt = datetime.strptime(dt, "%Y-%m-%d %H:%M:%S")
     return int(time.mktime(dt.timetuple())) * 1000000
 
 
@@ -333,11 +369,15 @@ def __getpassword(vip, username, password, domain, updatepw, prompt):
     except Exception:
         __writelog('prompting for password...')
         pwd = getpass.getpass("Enter your password: ")
-        pwdfile = open(pwpath, 'w')
-        opwd = base64.b64encode(pwd.encode('utf-8')).decode('utf-8')
-        pwdfile.write(opwd)
-        pwdfile.close()
-        return pwd
+        try:
+            pwdfile = open(pwpath, 'w')
+            opwd = base64.b64encode(pwd.encode('utf-8')).decode('utf-8')
+            pwdfile.write(opwd)
+            pwdfile.close()
+            return pwd
+        except Exception:
+            print('error storing password')
+            return pwd
 
 
 # store password in PWFILE
@@ -389,10 +429,13 @@ def storePasswordFromInput(vip, username, password, domain):
         pwpath = os.path.join(CONFIGDIR, vip + '-' + username)
     else:
         pwpath = os.path.join(CONFIGDIR, domain + '-' + username)
-    pwdfile = open(pwpath, 'w')
-    opwd = base64.b64encode(password.encode('utf-8')).decode('utf-8')
-    pwdfile.write(opwd)
-    pwdfile.close()
+    try:
+        pwdfile = open(pwpath, 'w')
+        opwd = base64.b64encode(password.encode('utf-8')).decode('utf-8')
+        pwdfile.write(opwd)
+        pwdfile.close()
+    except Exception:
+        print('error trying to store password')
 
 
 ### debug log
@@ -442,12 +485,13 @@ def showProps(obj, parent='myobject', search=None):
         if search is not None:
             if search.lower() in parent.lower():
                 print("%s = %s" % (parent, obj))
-            elif isinstance(obj, unicode) and search.lower() in obj.lower():
-                print("%s = %s" % (parent, obj))
         else:
             print("%s = %s" % (parent, obj))
 
 
 ### create CONFIGDIR if it doesn't exist
 if os.path.isdir(CONFIGDIR) is False:
-    os.mkdir(CONFIGDIR)
+    try:
+        os.mkdir(CONFIGDIR)
+    except Exception:
+        pass
