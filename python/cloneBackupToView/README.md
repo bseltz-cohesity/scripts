@@ -49,10 +49,12 @@ To delete the view after you're done with it:
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
 * -j, --jobname: (optional) name of the job to clone
+* -o, --objectname: (optional) name of object from job to clone
+* -a, --allruns: (optional) clone all available runs (default is latest run only)
 * -n, --viewname: name of view to use or create
 * -q, --qospolicy: (optional) 'Backup Target Low', 'Backup Target High', 'TestAndDev High' or 'TestAndDev Low' (default is 'TestAndDev High')
 * -w, --whitelist: (optional) e.g. '192.168.1.0,255.255.255.0' or '192.168.2.23' (repeast for multiple entries)
-* -x, --deleteview: (optional) delext existing view and exit
+* -x, --deleteview: (optional) delete existing view and exit
 
 ## Note
 

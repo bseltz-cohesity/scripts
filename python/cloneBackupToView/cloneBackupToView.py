@@ -17,6 +17,8 @@ parser.add_argument('-q', '--qospolicy', type=str, choices=['Backup Target Low',
 parser.add_argument('-w', '--whitelist', action='append', default=[])  # ip to whitelist
 parser.add_argument('-x', '--deleteview', action='store_true')  # delete existing view
 parser.add_argument('-j', '--jobname', type=str, default=None)  # name job to clone
+parser.add_argument('-o', '--objectname', type=str, default=None)  # name job to clone
+parser.add_argument('-a', '--allruns', action='store_true')  # delete existing view
 
 args = parser.parse_args()
 
@@ -28,6 +30,8 @@ qosPolicy = args.qospolicy
 whitelist = args.whitelist
 deleteview = args.deleteview
 jobname = args.jobname
+objectname = args.objectname
+allruns = args.allruns
 
 
 # netmask2cidr
@@ -137,29 +141,34 @@ else:
 successStates = ['kSuccess', 'kWarning']
 
 # get runs
+thisObjectFound = False
 runs = [r for r in api('get', 'protectionRuns?jobId=%s' % job['id']) if r['backupRun']['snapshotsDeleted'] is False and r['backupRun']['status'] in successStates]
 if len(runs) > 0:
-    run = runs[0]
+    for run in runs:
+        runType = run['backupRun']['runType'][1:]
+        for sourceInfo in run['backupRun']['sourceBackupStatus']:
+            thisObjectName = sourceInfo['source']['name']
+            if objectname is None or thisObjectName.lower() == objectname.lower():
+                if sourceInfo['status'] in successStates:
+                    thisObjectFound = True
+                    sourceView = sourceInfo['currentSnapshotInfo']['viewName']
+                    if 'relativeSnapshotDirectory' in sourceInfo['currentSnapshotInfo']:
+                        sourcePath = sourceInfo['currentSnapshotInfo']['relativeSnapshotDirectory']
+                    else:
+                        sourcePath = ''
+
+                    starttimeString = datetime.strptime(usecsToDate(run['backupRun']['stats']['startTimeUsecs']), '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d_%H-%M-%S')
+                    destinationPath = "%s-%s-%s" % (thisObjectName, starttimeString, runType)
+                    CloneDirectoryParams = {
+                        'destinationDirectoryName': destinationPath,
+                        'destinationParentDirectoryPath': '/%s' % view['name'],
+                        'sourceDirectoryPath': '/%s/%s' % (sourceView, sourcePath),
+                    }
+                    folderPath = "%s:/%s/%s" % (vip, viewName, destinationPath)
+                    print("Cloning %s backup files to %s" % (thisObjectName, folderPath))
+                    result = api('post', 'views/cloneDirectory', CloneDirectoryParams)
+    if thisObjectFound is False:
+        print('No runs found containing %s' % objectname)
 else:
     print('No runs found for job %s' % jobname)
     exit(1)
-
-for sourceInfo in run['backupRun']['sourceBackupStatus']:
-    thisObjectName = sourceInfo['source']['name']
-    if sourceInfo['status'] in successStates:
-        sourceView = sourceInfo['currentSnapshotInfo']['viewName']
-        if 'relativeSnapshotDirectory' in sourceInfo['currentSnapshotInfo']:
-            sourcePath = sourceInfo['currentSnapshotInfo']['relativeSnapshotDirectory']
-        else:
-            sourcePath = ''
-
-        starttimeString = datetime.strptime(usecsToDate(run['backupRun']['stats']['startTimeUsecs']), '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d_%H-%M-%S')
-        destinationPath = "%s-%s" % (thisObjectName, starttimeString)
-        CloneDirectoryParams = {
-            'destinationDirectoryName': destinationPath,
-            'destinationParentDirectoryPath': '/%s' % view['name'],
-            'sourceDirectoryPath': '/%s/%s' % (sourceView, sourcePath),
-        }
-        folderPath = "%s:/%s/%s" % (vip, viewName, destinationPath)
-        print("Cloning %s backup files to %s" % (thisObjectName, folderPath))
-        result = api('post', 'views/cloneDirectory', CloneDirectoryParams)
