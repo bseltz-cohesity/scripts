@@ -115,10 +115,10 @@ if($showPaths){
     $mdfFolderExample = ''
     $ldfFolderExample = ''
     foreach($file in $latestdb.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec){
+        $fileName = Split-Path -Path $file.fullPath -Leaf
+        $filePath = (Split-Path -Path $file.fullPath).replace('/', '\')
+        $extension = Split-Path -Path $file.fullPath -Extension
         if($file.type -eq 0){
-            $fileName = Split-Path -Path $file.fullPath -Leaf
-            $filePath = (Split-Path -Path $file.fullPath).replace('/', '\')
-            $extension = Split-Path -Path $file.fullPath -Extension
             if($mdfFolderExample -eq '' -and $extension -eq '.mdf'){
                 $mdfFolderExample = $filePath
             }else{
