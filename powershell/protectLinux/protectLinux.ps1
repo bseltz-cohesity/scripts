@@ -93,6 +93,8 @@ if(!$job){
     exit
 }
 
+$cluster = api get cluster
+
 if($cluster.clusterSoftwareVersion -gt '6.5'){
     $protectionGroups = api get "data-protect/protection-groups?isDeleted=false&includeTenants=true&includeLastRunInfo=true" -v2
     $protectionGroup = $protectionGroups.protectionGroups | Where-Object name -eq $jobName
@@ -130,18 +132,25 @@ foreach($sourceId in $sourceIds){
     $source = $sources.nodes | Where-Object {$_.protectionSource.id -eq $sourceId}
     $newServer = $sourceId -in $newSourceIds
 
-    $newParam = @{
-        "sourceId" = $sourceId;
-        "physicalSpecialParameters" = @{
-            "filePaths" = @()
+    $theseParams = $existingParams | Where-Object {$_.sourceId -eq $sourceId}
+
+    if($newServer){
+        $newParam = @{
+            "sourceId" = $sourceId;
+            "physicalSpecialParameters" = @{
+                "filePaths" = @()
+            }
         }
+    }else{
+        $newParam = $theseParams
     }
+
 
     $includePathsToProcess = @()
     $excludePathsToProcess = @()
 
     # get existing rules
-    $theseParams = $existingParams | Where-Object {$_.sourceId -eq $sourceId}
+    
     if($theseParams){
         if(($newServer -and (! $replaceRules)) -or
             ((! $newServer) -and (! ($replaceRules -and $allServers)))){
@@ -169,6 +178,7 @@ foreach($sourceId in $sourceIds){
             "skipNestedVolumes" = $skip;
             "excludedFilePaths" = @()
         }
+        $newParam.physicalSpecialParameters.filePaths = @($newParam.physicalSpecialParameters.filePaths | Where-Object backupFilePath -ne $includePath)
         $newParam.physicalSpecialParameters.filePaths += $filePath
     }
 
