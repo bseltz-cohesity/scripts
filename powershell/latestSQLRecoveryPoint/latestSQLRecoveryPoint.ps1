@@ -14,6 +14,12 @@ param (
     [Parameter(Mandatory = $True)][string]$dbName
 )
 
+### source the cohesity-api helper code
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+
+### authenticate
+apiauth -vip $vip -username $username -domain $domain -password $password -quiet
+
 $searchresults = api get /searchvms?environment=SQL`&entityTypes=kSQL`&entityTypes=kVMware`&vmName=$dbName
 
 $dbresults = $searchresults.vms | Where-Object {$serverName -in $_.vmDocument.objectAliases } |
