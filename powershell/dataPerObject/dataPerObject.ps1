@@ -77,9 +77,9 @@ foreach ($job in $jobs | Sort-Object -Property name) {
 
         # logical size
         $logicalSize = $stats[$sourceName][0].logicalSize
-
+        
         # last 24 hours
-        $last24Hours = dateToUsecs ((get-date).AddDays(-1))
+        $last24Hours = dateToUsecs ((get-date -Hour 0 -Minute 0).AddDays(-1))
         $last24HourStats = $stats[$sourceName] | Where-Object {$_.startTimeUsecs -ge $last24Hours}
         $last24HoursDataRead = 0
         $last24HourStats.dataRead | foreach-object{ $last24HoursDataRead += $_ }
@@ -87,7 +87,7 @@ foreach ($job in $jobs | Sort-Object -Property name) {
         $last24HourStats.dataWritten | ForEach-Object{ $last24HoursDataWritten += $_}
 
         # last X days
-        $lastXDays = dateToUsecs ((get-date).AddDays(-$daysBack))
+        $lastXDays = dateToUsecs ((get-date -Hour 0 -Minute 0).AddDays(-$daysBack))
         $lastXDaysStats = $stats[$sourceName] | Where-Object {$_.startTimeUsecs -ge $lastXDays}
         $lastXDaysDataRead = 0
         $lastXDaysStats.dataRead | foreach-object{ $lastXDaysDataRead += $_ }
