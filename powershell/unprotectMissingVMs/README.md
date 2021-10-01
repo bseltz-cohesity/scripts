@@ -37,11 +37,11 @@ To operate on specific jobs, you can use the -jobName and or -jobList parameters
 
 ```powershell
 ./unprotectMissingVMs.ps1 -vip mycluster `
-                      -username myusername `
-                      -domain mydomain.net `
-                      -jobName 'My Job1', 'My Job 2' `
-                      -jobList ./myjoblist.txt `
-                      -commit
+                          -username myusername `
+                          -domain mydomain.net `
+                          -jobName 'My Job1', 'My Job 2' `
+                          -jobList ./myjoblist.txt `
+                          -commit
 ```
 
 ## Parameters
