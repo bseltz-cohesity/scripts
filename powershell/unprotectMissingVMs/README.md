@@ -49,6 +49,6 @@ To operate on specific jobs, you can use the -jobName and or -jobList parameters
 * -vip: name or IP of Cohesity cluster
 * -username: name of user to connect to Cohesity
 * -domain: (optional) your AD domain (defaults to local)
-* -jobname: (optional) one or more job names (comma separated)
-* -joblist: (optional) text file containing job names (one per line)
+* -jobName: (optional) one or more job names (comma separated)
+* -jobList: (optional) text file containing job names (one per line)
 * -commit: (optional) update the jobs (default is test mode only)
