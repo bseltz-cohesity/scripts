@@ -29,7 +29,7 @@ $outFile = $(Join-Path -Path $outPath -ChildPath "slaStatus-$($cluster.name)-$da
 $missesRecorded = $false
 $message = ""
 
-"Job Name,Last Run,Run Type,Status,Run Minutes,SLA Minutes,SLA Status" | Out-File -FilePath $outFile
+"Job Name,Last Run,Run Type,Status,Run Minutes,SLA Minutes,SLA Status,Replication Minutes" | Out-File -FilePath $outFile
 
 "`nCollecting Job Stats...`n"
 foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -and $_.isActive -ne $false} | Sort-Object -Property name)){
@@ -54,6 +54,14 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -
             $slaPass = "Miss"
         }
         $runTimeMinutes = [math]::Round(($runTimeUsecs / 60000000),0)
+        $replicationMinutes = 'N/A'
+        $replicationRun = $run.copyRun | Where-Object {$_.target.type -eq 'kRemote'}
+        if($replicationRun){
+            if($replicationRun[0].status -in $finishedStates){
+                $replicationUsecs = $replicationRun[0].stats.endTimeUsecs - $replicationRun[0].stats.startTimeUsecs
+                $replicationMinutes = [math]::Round(($replicationUsecs / 60000000),0)
+            }
+        }
         if($slaPass -eq "Miss"){
             $missesRecorded = $True
             if($run.backupRun.status -in $finishedStates){
@@ -65,7 +73,7 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -
             $messageLine
             $message += "$messageLine`n"
         }
-        "{0},{1},{2},{3},{4},{5},{6}" -f $jobName, (usecsToDate $startTimeUsecs), $runType.subString(1), $status.subString(1), $runTimeMinutes, $sla, $slaPass  | Out-File -FilePath $outFile -Append
+        "{0},{1},{2},{3},{4},{5},{6},{7}" -f $jobName, (usecsToDate $startTimeUsecs), $runType.subString(1), $status.subString(1), $runTimeMinutes, $sla, $slaPass, $replicationMinutes | Out-File -FilePath $outFile -Append
         if(!$last24Hours -and $run.backupRun.status -in $finishedStates){
             break
         }
