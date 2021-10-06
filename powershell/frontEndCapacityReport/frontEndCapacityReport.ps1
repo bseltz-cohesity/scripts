@@ -40,7 +40,7 @@ function toUnits($val){
     return "{0:n2}" -f ($val/($conversion[$unit]))
 }
 
-"Job Name,Tenant,Object Name,Object Type,Logical Size ($unit),Unique Size ($unit)" | Out-File -FilePath $outfileName
+"Job Name,Location,Tenant,Object Name,Object Type,Logical Size ($unit),Unique Size ($unit)" | Out-File -FilePath $outfileName
 
 $uniqueBytesTable = @{}
 $entityLogical = @{}
@@ -73,6 +73,11 @@ foreach($job in $jobs){
     }else{
         $tenant = ''
     }
+    if($True -eq $job.isActive){
+        $jobLocation = 'local'
+    }else{
+        $jobLocation = 'replicated'
+    }
     $jobType = $job.environment.Substring(1)
     $runs = api get -v2 "data-protect/protection-groups/$jobId/runs?includeTenants=true&includeObjectDetails=true&numRuns=5"
 
@@ -91,7 +96,7 @@ foreach($job in $jobs){
             }
             if($serverName -notin $entityLogical.Keys){
                 $entityLogical[$serverName] = $logicalBytes
-                """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}""" -f $jobName, $tenant, $serverName, $jobType, (toUnits $logicalBytes), (toUnits $uniqueBytes) | Tee-Object -FilePath $outfileName -Append
+                """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}""" -f $jobName, $jobLocation, $tenant, $serverName, $jobType, (toUnits $logicalBytes), (toUnits $uniqueBytes) | Tee-Object -FilePath $outfileName -Append
             }
         }
     }
@@ -109,12 +114,19 @@ foreach($view in $views.views | Sort-Object -Property name){
     $logicalBytes = $view.logicalUsageBytes
     if($view.PSObject.Properties['viewProtection']){
         $jobName = $view.viewProtection.protectionJobs[0].jobName
+        $job = $jobs | Where-Object name -eq $jobName
+        if($True -eq $job.isActive){
+            $jobLocation = 'local'
+        }else{
+            $jobLocation = 'replicated'
+        }
     }else{
         $jobName = '-'
+        $jobLocation = 'local'
     }
     if($viewName -notin $entityLogical.Keys){
         $entityLogical[$viewName] = $logicalBytes
-        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"""-f $jobName, $tenant, $viewName, 'View', (toUnits $logicalBytes), (toUnits $logicalBytes) | Tee-Object -FilePath $outfileName -Append
+        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"""-f $jobName, $jobLocation, $tenant, $viewName, 'View', (toUnits $logicalBytes), (toUnits $logicalBytes) | Tee-Object -FilePath $outfileName -Append
     }
 }
 
