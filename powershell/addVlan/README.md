@@ -50,6 +50,7 @@ Place the files in a folder together and run the main script like so:
 * -gateway: (Optional) default gateway for new VLAN
 * -hostname: (Optional) custom hostname for cluster on new VLAN
 * -configFile: (Optional) provide the above parameters in a config file
+* -delete: (optional) delete an existing VLAN
 
 ## Using a Config File
 
