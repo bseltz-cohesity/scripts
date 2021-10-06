@@ -19,7 +19,8 @@ param (
     [Parameter()][array]$vip = $null,                 # List of VIPs to add for new VLAN
     [Parameter()][string]$hostname = $null,           # Optional hostname of cluster on new VLAN
     [Parameter()][string]$gateway = $null,            # Optional gateway on new VLAN
-    [Parameter()][string]$configFile = $null          # Optional config file to provide parameters
+    [Parameter()][string]$configFile = $null,         # Optional config file to provide parameters
+    [Parameter()][switch]$delete                      # remove the vlan and vips
 )
 
 # read config file if specified
@@ -30,16 +31,6 @@ if($configFile -and (Test-Path $configFile -PathType Leaf)){
 # confirm all required inputs
 if(! $vlanId){
     write-host "vlanId required!" -ForegroundColor Yellow
-    exit
-}
-
-if(! $cidr){
-    write-host "cidr required!" -ForegroundColor Yellow
-    exit
-}
-
-if(! $vip){
-    write-host "at least one vip required!" -ForegroundColor Yellow
     exit
 }
 
@@ -54,6 +45,31 @@ $iflist = api get /nexus/node/list_network_interfaces
 $iface = $iflist.networkInterfaces | Where-Object ifaceName -eq $interface
 if(!$iface){
     Write-Host "Interface $interface not found!" -ForegroundColor Yellow
+    exit
+}
+
+if($delete){
+    if($iface.PSObject.properties['ifaceGroup']){
+        $deleteParams = @{
+            "ifaceGroupName" = "$($iface.ifaceGroup).$vlanId"
+        }
+    }else{
+        $deleteParams = @{
+            "ifaceGroupName" = "$($iface.ifaceName).$vlanId"
+        }
+    }
+    Write-Host "Deleting vlan $vlanId"
+    $null = api delete vlans/$vlanId $deleteParams
+    exit
+}
+
+if(! $cidr){
+    write-host "cidr required!" -ForegroundColor Yellow
+    exit
+}
+
+if(! $vip){
+    write-host "at least one vip required!" -ForegroundColor Yellow
     exit
 }
 
@@ -116,3 +132,4 @@ if($addToPartition -eq $True){
     }
     $null = api put "/clusterPartitions/$($partitions[0].id)" $partitions[0]
 }
+
