@@ -68,6 +68,7 @@ To specify a source instance, include the instance name in the sourceDB name, li
 * -resume: Resume recovery of previously restored database (left in NORECOVERY mode)
 * -progress: display percent complete
 * -helios: use on-prem helios
+* -update: short hand for -resume -noRecovery -latest
 
 ## Always On Availability Groups
 

@@ -40,7 +40,8 @@ param (
     [Parameter()][switch]$resume,                        # resume recovery of previously restored DB
     [Parameter()][switch]$keepCdc,                       # keepCDC
     [Parameter()][switch]$showPaths,                     # show data file paths and exit
-    [Parameter()][switch]$useSourcePaths                 # use same paths from source server for target server
+    [Parameter()][switch]$useSourcePaths,                # use same paths from source server for target server
+    [Parameter()][switch]$update
 )
 
 # handle alternate secondary data file locations
@@ -51,6 +52,12 @@ if($ndfFolders){
             $secondaryFileLocation += @{'filePattern' = $key; 'targetDirectory' = $ndfFolders[$key]}
         }
     }
+}
+
+if($update){
+    $resume = $True
+    $noRecovery = $True
+    $latest = $True
 }
 
 # source the cohesity-api helper code
