@@ -4,23 +4,6 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script monitors replication tasks.
 
-## Components
-
-* monitorReplicationTasks.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module
-
-Place both files in a folder together, then we can run the script.
-
-```powershell
-./monitorReplicationTasks.ps1 -vip mycluster -username myusername -domain mydomain.net
-```
-
-```text
-Connected!
-Looking for Replication Tasks...
-04/16/2019 05:24:04  Ubuntu  -> kAccepted
-```
-
 ## Download the script
 
 Run these commands from PowerShell to download the script(s) into your current directory
@@ -33,3 +16,24 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 (Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
+
+## Components
+
+* monitorReplicationTasks.ps1: the main powershell script
+* cohesity-api.ps1: the Cohesity REST API helper module
+
+Place both files in a folder together, then we can run the script.
+
+```powershell
+./monitorReplicationTasks.ps1 -vip mycluster -username myusername -domain mydomain.net
+```
+
+## Parameters
+
+* -vip: Cohesity Cluster to connect to
+* -username: Cohesity username
+* -domain: (optional) Active Directory domain of user (defaults to local)
+* -daysBack: (optional) Default is 7 days
+* -numRuns: (optional) Default is 9999
+* -lastOnly: (optional) show only last run per job
+* -runningOnly: (optional) show only running replication tasks
