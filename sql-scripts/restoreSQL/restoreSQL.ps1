@@ -373,7 +373,7 @@ if($targetInstance -eq ''){
 # resume only if newer point in time available
 if($resume){
     $previousRestoreUsecs = 0
-    $uStart = dateToUsecs ($today.AddDays(-32))
+    $uStart = dateToUsecs ((get-date).AddDays(-32))
     $restores = api get "/restoretasks?_includeTenantInfo=true&restoreTypes=kRecoverApp&startTimeUsecs=$uStart&targetType=kLocal"
     $restores = $restores | Where-Object{($_.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].appEntity.displayName -eq "$targetDB" -or 
                                           $_.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.newDatabaseName -eq "$targetDB") -and 
