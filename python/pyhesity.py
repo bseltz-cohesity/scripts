@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2021.04.20"""
+"""Cohesity Python REST API Wrapper Module - 2021.10.13"""
 
 ##########################################################################################
 # Change Log
@@ -38,6 +38,7 @@
 # 2021.04.08 - added support for readonly home dir
 # 2021.04.20 - added error return from api function
 # 2021.09.25 - added support for DMaaS
+# 2021.10.13 - modified setpwd function
 #
 ##########################################################################################
 # Install Notes
@@ -405,7 +406,6 @@ def setpwd(v='helios.cohesity.com', u='helios', d='local', password=None):
     if foundPwd is False:
         f.write('%s:%s:%s:%s\n' % (v, d, u, opwd))
     f.close()
-    print("Password stored!")
 
 
 ### pwstore for alternate infrastructure
