@@ -13,6 +13,7 @@
 # 2021.03.26 - added apiKey unique password storage
 # 2021.08.16 - revamped passwd storage, auto prompt for invalid password
 # 2021.09.23 - added support for DMaaS
+# 2021.10.14 - added storePasswordForUser and importStoredPassword
 #
 # . . . . . . . . . . . . . . . . . . .
 $versionCohesityAPI = '2021.09.23'
@@ -631,6 +632,40 @@ function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
 function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $domain='local', $passwd=$null, [switch]$useApiKey){
     $cohesity_api.pwscope = 'file'
     $null = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -useApiKey $useApiKey
+}
+
+function storePasswordForUser($vip='helios.cohesity.com', $username='helios', $domain='local', $passwd=$null){
+    $userFile = $(Join-Path -Path $PSScriptRoot -ChildPath "pw-$vip-$username-$domain.txt")
+    $keyString = (Get-Random -Minimum 10000000000000 -Maximum 99999999999999).ToString()
+    $keyBytes = [byte[]]($keyString -split(''))
+    if($null -eq $passwd){
+        $secureString = Read-Host -Prompt "Enter password for $username at $vip" -AsSecureString
+        $passwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
+        $secureString = Read-Host -Prompt "Confirm password for $username at $vip" -AsSecureString
+        $passwd2 = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
+        if($passwd -ne $passwd2){
+            Write-Host "Passwords do not match" -ForegroundColor Yellow
+        }else{
+            $secureString = $passwd | ConvertTo-SecureString -AsPlainText -Force
+            $secureString | ConvertFrom-SecureString -key $keyBytes | Out-File $userFile
+            Write-Host "`nPassword stored. Use key $keyString to unlock`n"
+        }
+    }
+}
+
+function importStoredPassword($vip='helios.cohesity.com', $username='helios', $domain='local', $key, $useApiKey=$false){
+    $userFile = $(Join-Path -Path $PSScriptRoot -ChildPath "pw-$vip-$username-$domain.txt")
+    $keyBytes = [byte[]]($key -split(''))
+    $securePassword = Get-Content $userFile -ErrorAction SilentlyContinue | ConvertTo-SecureString -Key $keyBytes -ErrorAction SilentlyContinue
+    $passwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $securePassword ))
+    if($passwd){
+        $cohesity_api.pwscope = 'user'
+        $null = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -useApiKey $useApiKey -quiet
+        Remove-Item -Path $userFile -Force
+        Write-Host "Password imported successfully" -ForegroundColor Green
+    }else{
+        Write-Host "Password not accessible!" -ForegroundColor Yellow
+    }
 }
 
 # developer tools =================================================================================

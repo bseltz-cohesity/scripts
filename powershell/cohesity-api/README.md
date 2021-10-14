@@ -215,10 +215,30 @@ In some cases it can be challenging to store the API password for a service acco
 
 ```powershell
 . ./cohesity-api.ps1
-storePasswordInFile -vip ve2 -username myusername -domain mydomain.net
+storePasswordInFile -vip mycluster -username myusername -domain mydomain.net
 ```
 
 The password will be stored (obfuscated) in a file in the current folder.
+
+### Storing a Password for a User
+
+A more secure way to store a password for another user is to use the store/import method. First, the interactive user can store the password:
+
+```powershell
+. ./cohesity-api.ps1
+storePasswordForUser -vip mycluster -username myusername -domain mydomain.net
+Enter password for myuser at mycluster: *********
+Confirm password for myuser at mycluster: *********
+Password stored. Use key 16274172605783 to unlock
+```
+
+Then the non-interactive user can import the password into their personal password storage:
+
+```powershell
+. ./cohesity-api.ps1
+importStoredPassword -vip mycluster -username myusername -domain mydomain.net -key 16274172605783
+Password successfully imported
+```
 
 ### Self Updater
 
