@@ -36,8 +36,8 @@ if targetpath[0] == '/':
 if '/' not in targetpath:
     print('targetPath must be a new folder name')
     exit()
-
-(targetview, targetpath) = targetpath.split('/', 2)
+# print(targetpath.split('/',2))
+(targetview, targetpath) = targetpath.rsplit('/', 1)
 
 if targetpath == '':
     print('targetPath must be a new folder name')
