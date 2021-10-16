@@ -116,7 +116,7 @@ if($job){
             $serversToMigrate = @($serversToMigrate + $serverName | Sort-Object -Unique)
         }
         foreach($instance in $server.applicationNodes){
-            $instanceName = $instance.protecitonSource.name
+            $instanceName = $instance.protectionSource.name
             if($instance.protectionSource.id -in $objectList.id){
                 if($serverType -ne 'kPhysical'){
                     Write-Host "This script does not support SQL servers registered as VMs" -ForegroundColor Yellow
@@ -141,6 +141,9 @@ if($job){
 
     # clean up source cluster
     if($cleanupSourceObjects -or $cleanupSourceObjectsAndExit){
+        if($cleanupSourceObjectsAndExit){
+            ""
+        }
         "    Deleting old protection group..."
         if($deleteOldSnapshots){
             $delete = 'true'
@@ -172,13 +175,6 @@ if($job){
 
     # connect to target cluster
     apiauth -vip $targetCluster -username $targetUser -domain $targetDomain -quiet
-    
-    # check for existing job
-    # $existingJob = (api get -v2 'data-protect/protection-groups').protectionGroups | Where-Object name -eq $newJobName
-    # if($existingJob){
-    #     Write-Host "job '$newJobName' already exists on target cluster" -ForegroundColor Yellow
-    #     exit
-    # }
 
     # register servers
     foreach($server in $serversToMigrate){
@@ -248,26 +244,7 @@ if($job){
         $job.mssqlParams.nativeProtectionTypeParams.objects  = $newObjectList
     }
 
-    # update storage domain id
-    # if($newStorageDomainName){
-    #     $oldStorageDomain.name = $newStorageDomainName
-    # }
-    # $newStorageDomain = api get viewBoxes | Where-Object name -eq $oldStorageDomain.name
-    # if(!$newStorageDomain){
-    #     Write-Host "Storage Domain $($oldStorageDomain.name) not found" -ForegroundColor Yellow
-    #     exit
-    # }
     $job.storageDomainId = $newStorageDomain.id
-    
-    # update policy id
-    # if($newPolicyName){
-    #     $oldPolicy.name -eq $newPolicyName
-    # }
-    # $newPolicy = (api get -v2 data-protect/policies).policies | Where-Object name -eq $oldPolicy.name
-    # if(!$newPolicy){
-    #     Write-Host "Policy $($oldPolicy.name) not found" -ForegroundColor Yellow
-    #     exit
-    # }
     $job.policyId = $newPolicy.id
 
     # pause new job
