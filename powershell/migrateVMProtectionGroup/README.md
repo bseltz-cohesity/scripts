@@ -6,7 +6,7 @@ This PowerShell script migrates a VMware protection group from one Cohesity clus
 
 ## Notes and Warnings
 
-If you omit the `-deleteOldJob` and `-deleteOldJobAndExit` switches, the job will be left behind on the source cluster, and this is recommended in case the script fails to migrate the job to the target cluster for some reason. If a failure occurs, the script can be run again after the issue has been figured out.
+If you omit the `-deleteOldJob` and `-deleteOldJobAndExit` switches, the job will be paused but left behind on the source cluster, and this is recommended in case the script fails to migrate the job to the target cluster for some reason. If a failure occurs, the script can be run again after the issue has been figured out.
 
 After the migration is successful, you can rerun the script using the `-deleteOldJobAndExit` parameter to delete the old job from the source cluster. Add `-deleteOldSnapshots` if you want to delete the existing backups on the source cluster.
 
