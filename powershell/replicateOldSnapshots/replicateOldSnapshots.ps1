@@ -13,7 +13,8 @@ param (
     [Parameter()][string]$keepFor = 0, # set archive retention to x days from original backup date
     [Parameter()][switch]$replicate, # actually replicate (otherwise test run)
     [Parameter()][int]$newerThan,
-    [Parameter()][switch]$resync
+    [Parameter()][switch]$resync,
+    [Parameter()][switch]$includeLogs
 )
 
 ### source the cohesity-api helper code
@@ -43,14 +44,13 @@ if($jobName){
     $myjob = $null
 }
 
-
 ### olderThan days in usecs
 $olderThanUsecs = timeAgo $olderThan days
 $newerThanUsecs = timeAgo $newerThan days
 
 ### find protectionRuns with old local snapshots that are not archived yet and sort oldest to newest
 "searching for old snapshots..."
-foreach ($job in ((api get protectionJobs) | Where-Object{ $_.policyId.split(':')[0] -eq $clusterId })) {
+foreach ($job in (api get protectionJobs)) {
     if (!$myjob -or ($myjob.name -eq $job.name)){
         $runs = (api get protectionRuns?jobId=$($job.id)`&numRuns=999999`&runTypes=kRegular`&excludeTasks=true`&excludeNonRestoreableRuns=true) | `
             Where-Object { $_.backupRun.snapshotsDeleted -eq $false } | `
@@ -60,6 +60,11 @@ foreach ($job in ((api get protectionJobs) | Where-Object{ $_.policyId.split(':'
         if($newerThan){
             $runs = $runs | Where-Object {$_.copyRun[0].runStartTimeUsecs -ge $newerThanUsecs}
         }
+
+        if(!$includeLogs){
+            $runs = $runs | Where-Object {$_.backupRun.runType -ne 'kLog'}
+        }
+
         foreach ($run in $runs) {
             ### determine if replica already exists
             $alreadyReplicated = $false
@@ -79,7 +84,8 @@ foreach ($job in ((api get protectionJobs) | Where-Object{ $_.policyId.split(':'
             if($alreadyReplicated -eq $false){
 
                 ### calculate daysToKeep
-                $startTimeUsecs = $run.copyRun[0].runStartTimeUsecs
+                $startTimeUsecs = $run.backupRun.stats.startTimeUsecs
+
                 if($keepFor -gt 0){
                     $expireTimeUsecs = $startTimeUsecs + ([int]$keepFor * 86400000000)
                 }else{
