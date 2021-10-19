@@ -102,7 +102,7 @@ if($job){
         if($existingJob){
             if($existingJob.isActive -eq $false -and $deleteReplica){
                 "    Deleting existing replica job..."
-                api delete -v2 data-protect/protection-groups/$($existingJob.id)
+                $null = api delete -v2 data-protect/protection-groups/$($existingJob.id)
             }else{
                 Write-Host "job '$newJobName' already exists on target cluster" -ForegroundColor Yellow
                 exit
@@ -141,7 +141,7 @@ if($job){
 
     # gather old job details
     if(!$deleteOldJobAndExit){
-        "Migrating '$jobName' from $sourceCluster to $targetCluster...`n"
+        "    Migrating '$jobName' from $sourceCluster to $targetCluster...`n"
         $oldVCenter = api get "protectionSources?id=$($job.vmwareParams.sourceId)&environments=kVMware&includeVMFolders=true"
     }
 

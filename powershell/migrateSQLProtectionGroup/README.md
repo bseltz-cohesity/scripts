@@ -81,9 +81,11 @@ Note that if you want to delete existing snapshots when cleaning up, use the `-d
 * -sourceCluster: name of source cluster to connect to
 * -sourceUser: username for source cluster
 * -sourceDomain: (optional) domain for source cluster user (defaults to local)
+* -sourcePassword: (optional) password for source user
 * -targetCluster: name of target cluster to connect to
 * -targetUser: (optional) username for target cluster (defaults to sourceUser)
 * -targetDomain: (optional) domain for target cluster user (defaults to sourceDomain)
+* -targetPassword: (optional) password for target user
 * -jobName: name of job to migrate
 
 ## Target Job Parameters
@@ -94,6 +96,7 @@ Note that if you want to delete existing snapshots when cleaning up, use the `-d
 * -newPolicyName: (optional) new policy name (defaults to same policy name as source job)
 * -newStorageDomainName: (optional) new storage domain name (defaults to same storage domain name as source job)
 * -pauseNewJob: (optional) pause new job
+* -deleteReplica: (optional) delete old replica of protection group on target cluster (will not delete the snapshots)
 
 ## Cleanup Parameters
 

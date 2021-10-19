@@ -8,7 +8,7 @@ This PowerShell script migrates a SQL protection group from one Cohesity cluster
 
 This script will only work for SQL servers registered as Physical (not VMs). The script will force-register SQL servers to the target cluster, thus rendering the source registrations on the source cluster broken, so there's no easy way to undo this.
 
-If you omit the `-cleanupSourceObjects` and `-cleanupSourceObjectsAndExit` switches, the job and (broken) source registrations will be left behind on the source cluster, and this is recommended in case the script fails to migrate the job to the target cluster for some reason. If a failure occurs, the script can be run again after the issue has been figured out.
+If you omit the `-cleanupSourceObjects` and `-cleanupSourceObjectsAndExit` switches, the job and (broken) source registrations will be paused but left behind on the source cluster, and this is recommended in case the script fails to migrate the job to the target cluster for some reason. If a failure occurs, the script can be run again after the issue has been figured out.
 
 After the migration is successful, you can rerun the script using the `-cleanupSourceObjectsAndExit` parameter to delete the old job and old source registrations from the source cluster. Add `-deleteOldSnapshots` if you want to delete the existing backups on the source cluster.
 
@@ -81,9 +81,11 @@ Note that if you want to delete existing snapshots when cleaning up, use the `-d
 * -sourceCluster: name of source cluster to connect to
 * -sourceUser: username for source cluster
 * -sourceDomain: (optional) domain for source cluster user (defaults to local)
+* -sourcePassword: (optional) password for source user
 * -targetCluster: name of target cluster to connect to
 * -targetUser: (optional) username for target cluster (defaults to sourceUser)
 * -targetDomain: (optional) domain for target cluster user (defaults to sourceDomain)
+* -targetPassword: (optional) password for target user
 * -jobName: name of job to migrate
 
 ## Target Job Parameters
@@ -94,6 +96,7 @@ Note that if you want to delete existing snapshots when cleaning up, use the `-d
 * -newPolicyName: (optional) new policy name (defaults to same policy name as source job)
 * -newStorageDomainName: (optional) new storage domain name (defaults to same storage domain name as source job)
 * -pauseNewJob: (optional) pause new job
+* -deleteReplica: (optional) delete old replica of protection group on target cluster (will not delete the snapshots)
 
 ## Cleanup Parameters
 
