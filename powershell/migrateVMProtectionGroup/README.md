@@ -51,9 +51,11 @@ To update all VMware protection jobs:
 * -sourceCluster: name of source cluster to connect to
 * -sourceUser: username for source cluster
 * -sourceDomain: (optional) domain for source cluster user (defaults to local)
+* -sourcePassword: (optional) password for source user
 * -targetCluster: name of target cluster to connect to
 * -targetUser: (optional) username for target cluster (defaults to sourceUser)
 * -targetDomain: (optional) domain for target cluster user (defaults to sourceDomain)
+* -targetPassword: (optional) password for target user
 * -jobName: name of job to migrate
 
 ## Target Job Parameters
