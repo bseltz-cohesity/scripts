@@ -64,6 +64,7 @@ To update all VMware protection jobs:
 * -newPolicyName: (optional) new policy name (defaults to same policy name as source job)
 * -newStorageDomainName: (optional) new storage domain name (defaults to same storage domain name as source job)
 * -pauseNewJob: (optional) pause new job
+* -deleteReplica: (optional) delete old replica of protection group on target cluster (will not delete the snapshots)
 
 ## Cleanup Parameters
 

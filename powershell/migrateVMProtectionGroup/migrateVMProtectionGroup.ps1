@@ -4,9 +4,11 @@ param (
     [Parameter(Mandatory = $True)][string]$sourceCluster,
     [Parameter(Mandatory = $True)][string]$sourceUser,
     [Parameter()][string]$sourceDomain = 'local',
+    [Parameter()][string]$sourcePassword = $null,
     [Parameter(Mandatory = $True)][string]$targetCluster,
     [Parameter()][string]$targetUser = $sourceUser,
     [Parameter()][string]$targetDomain = $sourceDomain,
+    [Parameter()][string]$targetPassword = $null,
     [Parameter(Mandatory = $True)][string]$jobName,
     [Parameter()][string]$prefix = '',
     [Parameter()][string]$suffix = '',
@@ -16,7 +18,8 @@ param (
     [Parameter()][switch]$pauseNewJob,
     [Parameter()][switch]$deleteOldJob,
     [Parameter()][switch]$deleteOldJobAndExit,
-    [Parameter()][switch]$deleteOldSnapshots
+    [Parameter()][switch]$deleteOldSnapshots,
+    [Parameter()][switch]$deleteReplica
 )
 
 
@@ -72,7 +75,7 @@ function getObjectByMoRef($moRef, $source){
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 "`nConnecting to source cluster..."
-apiauth -vip $sourceCluster -username $sourceUser -domain $sourceDomain -quiet
+apiauth -vip $sourceCluster -username $sourceUser -domain $sourceDomain -passwd $sourcePassword -quiet
 
 if($prefix){
     $newJobName = "$prefix-$newJobName"
@@ -92,13 +95,18 @@ if($job){
     # connect to target cluster for sanity check
     if(!$deleteOldJobAndExit){
         "Connecting to target cluster..."
-        apiauth -vip $targetCluster -username $targetUser -domain $targetDomain -quiet
+        apiauth -vip $targetCluster -username $targetUser -domain $targetDomain -passwd $targetPassword -quiet
 
         # check for existing job
         $existingJob = (api get -v2 'data-protect/protection-groups').protectionGroups | Where-Object name -eq $newJobName
         if($existingJob){
-            Write-Host "job '$newJobName' already exists on target cluster" -ForegroundColor Yellow
-            exit
+            if($existingJob.isActive -eq $false -and $deleteReplica){
+                "    Deleting existing replica job..."
+                api delete -v2 data-protect/protection-groups/$($existingJob.id)
+            }else{
+                Write-Host "job '$newJobName' already exists on target cluster" -ForegroundColor Yellow
+                exit
+            }
         }
 
         # check for vCenter
@@ -120,14 +128,15 @@ if($job){
 
         # check for policy
         if($newPolicyName){
-            $oldPolicy.name -eq $newPolicyName
+            $oldPolicy.name = $newPolicyName
         }
+
         $newPolicy = (api get -v2 data-protect/policies).policies | Where-Object name -eq $oldPolicy.name
         if(!$newPolicy){
             Write-Host "Policy $($oldPolicy.name) not found" -ForegroundColor Yellow
             exit
         }
-        apiauth -vip $sourceCluster -username $sourceUser -domain $sourceDomain -quiet
+        apiauth -vip $sourceCluster -username $sourceUser -domain $sourceDomain -passwd $sourcePassword -quiet
     }
 
     # gather old job details
@@ -165,7 +174,7 @@ if($job){
     }
 
     # connect to target cluster
-    apiauth -vip $targetCluster -username $targetUser -domain $targetDomain -quiet
+    apiauth -vip $targetCluster -username $targetUser -domain $targetDomain -passwd $targetPassword -quiet
 
     $job.storageDomainId = $newStorageDomain.id
     $job.policyId = $newPolicy.id
