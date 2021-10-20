@@ -236,8 +236,8 @@ function restoreDB($db){
                 "ownerObject" = @{
                     "jobUid" = $db.vmDocument.objectId.jobUid;
                     "jobId" = $db.vmDocument.objectId.jobId;
-                    "jobInstanceId" = $db.vmDocument.versions[$versionNum].instanceId.jobInstanceId;
-                    "startTimeUsecs" = $db.vmDocument.versions[$versionNum].instanceId.jobStartTimeUsecs;
+                    "jobInstanceId" = $dbVersions[$versionNum].instanceId.jobInstanceId;
+                    "startTimeUsecs" = $dbVersions[$versionNum].instanceId.jobStartTimeUsecs;
                     "entity" = @{
                         "id" = $ownerId
                     }
