@@ -10,7 +10,8 @@ param (
     [Parameter()][string]$viewList,
     [Parameter()][switch]$all,
     [Parameter()][string]$policyName = $null,
-    [Parameter(Mandatory = $True)][string]$inPath
+    [Parameter(Mandatory = $True)][string]$inPath,
+    [Parameter()][string]$snapshotDate = $null
 )
 
 # gather view list
@@ -105,9 +106,10 @@ foreach($viewName in $myViews){
     }
     
     if ($viewResult) {
+        $processView = $True
         $job = $jobs | Where-Object {$_.name -eq $viewResult.vmDocument.jobName}
         $job = $job[0]
-        if($job.PSObject.Properties['remoteViewName']){
+        if($job.PSObject.Properties['remoteViewName'] -and !$snapshotDate){
             $remoteViews = $views | Where-Object {$job.name -in $_.viewProtection.protectionJobs.jobName}
             $remoteView = ($remoteViews | Sort-Object -Property viewId -Descending)[0]
             $view = $remoteView
@@ -138,44 +140,62 @@ foreach($viewName in $myViews){
                     "viewId"                = $view.viewId;
                 }
             }
+            $version =  $viewResult.vmDocument.versions[0]
         }else{
-            $view = $views | Where-Object {$_.name -eq $viewResult.vmDocument.objectName}
-            $view = $view[0]
-            $cloneTask = @{
-                "name"       = "Clone-View_" + $((get-date).ToString().Replace('/', '_').Replace(':', '_').Replace(' ', '_'));
-                "objects"    = @(
-                    @{
-                        "jobUid"         = $viewResult.vmDocument.objectId.jobUid;
-                        "jobId"          = $viewResult.vmDocument.objectId.jobId;
-                        "jobInstanceId"  = $viewResult.vmDocument.versions[0].instanceId.jobInstanceId;
-                        "startTimeUsecs" = $viewResult.vmDocument.versions[0].instanceId.jobStartTimeUsecs;
-                        "entity"         = $viewResult.vmDocument.objectId.entity; 
+            $version = $null
+            if($snapshotDate){
+                $snapshotUsecs = dateToUsecs $snapshotDate
+                $versions = $viewResult.vmDocument.versions | Where-Object {$_.instanceId.jobStartTimeUsecs -le ($snapshotUsecs + 60000000)}
+                if($versions.Count -gt 0){
+                    $version = $versions[0]
+                }else{
+                    $processView = $false
+                    Write-Host "No backups for $viewName available from $snapshotDate" -ForegroundColor Yellow
+                }
+            }else{
+                $version = $viewResult.vmDocument.versions[0]
+            }
+
+            if($version){
+                $view = $views | Where-Object {$_.name -eq $viewResult.vmDocument.objectName}
+                $view = $view[0]
+                $cloneTask = @{
+                    "name"       = "Clone-View_" + $((get-date).ToString().Replace('/', '_').Replace(':', '_').Replace(' ', '_'));
+                    "objects"    = @(
+                        @{
+                            "jobUid"         = $viewResult.vmDocument.objectId.jobUid;
+                            "jobId"          = $viewResult.vmDocument.objectId.jobId;
+                            "jobInstanceId"  = $version.instanceId.jobInstanceId;
+                            "startTimeUsecs" = $version.instanceId.jobStartTimeUsecs;
+                            "entity"         = $viewResult.vmDocument.objectId.entity; 
+                        }
+                    )
+                    "viewName"   = $viewName;
+                    "action"     = 5;
+                    "viewParams" = @{
+                        "sourceViewName"        = $view.name;
+                        "cloneViewName"         = $viewName;
+                        "viewBoxId"             = $view.viewBoxId;
+                        "viewId"                = $viewResult.vmDocument.objectId.entity.id;
                     }
-                )
-                "viewName"   = $viewName;
-                "action"     = 5;
-                "viewParams" = @{
-                    "sourceViewName"        = $view.name;
-                    "cloneViewName"         = $viewName;
-                    "viewBoxId"             = $view.viewBoxId;
-                    "viewId"                = $viewResult.vmDocument.objectId.entity.id;
                 }
             }
         }
+        if($processView){
+            $cloneOp = api post /clone $cloneTask
 
-        $cloneOp = api post /clone $cloneTask
-
-        if ($cloneOp) {
-            "Cloned $viewName"
-            "$viewName" | Out-File -FilePath $clonedViewList -Append
-            "$viewName" | Out-File -FilePath $migratedShares -Append
-            if($remoteViews){
-                foreach($oldView in $remoteViews){
-                    if($oldView.name -ne $viewName){
-                        $null = api delete "views/$($oldView.name)"
+            if ($cloneOp) {
+                Write-Host "Cloned $viewName from $(usecsToDate $version.instanceId.jobStartTimeUsecs)"
+                "$viewName" | Out-File -FilePath $clonedViewList -Append
+                "$viewName" | Out-File -FilePath $migratedShares -Append
+                if($remoteViews){
+                    foreach($oldView in $remoteViews){
+                        if($oldView.name -ne $viewName){
+                            $null = api delete "views/$($oldView.name)"
+                        }
                     }
+                    $remoteViews = $null
                 }
-                $remoteViews = $null
             }
         }
     }

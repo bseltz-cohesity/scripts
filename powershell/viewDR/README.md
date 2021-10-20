@@ -91,6 +91,7 @@ Depending on your environment, you may be using DFS or DNS cnames to direct your
 * -all: (optional) clone all available views
 * -policyName: (optional) protect cloned view with this policy
 * -inPath: path to output files from the collector script
+* -snapshotDate: (optional) choose the latest backup from on or before this date (e.g. '2021-10-20 23:59:00')
 
 ## Delete Script Parameters
 
