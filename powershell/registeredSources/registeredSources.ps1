@@ -29,7 +29,11 @@ foreach($source in $sources.rootNodes){
     $lastError = $source.registrationInfo.refreshErrorMessage
     $protected = $source.stats.protectedCount
     $unprotected = $source.stats.unprotectedCount
-    $authstatus = $source.registrationInfo.authenticationStatus.subString(1)
+    if($source.registrationInfo.PSObject.Properties['authenticationStatus']){
+        $authstatus = $source.registrationInfo.authenticationStatus.subString(1)
+    }else{
+        $authstatus = ''
+    }
     "{0},{1},{2},{3},{4},{5},""{6}""" -f $sourceName, $sourceType, $protected, $unprotected, $authstatus, (usecsToDate $lastRefreshUsecs), $lastError | Tee-Object -FilePath $outFile -Append
 }
 
