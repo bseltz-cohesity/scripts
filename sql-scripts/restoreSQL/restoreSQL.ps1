@@ -170,7 +170,7 @@ if ($logTime -or $latest){
         $logUsecsDayEnd = [int64]( dateToUsecs (get-date))
     }
     if($logTime){
-        $dbVersions = $dbVersions | Where-Object {$_.snapshotTimestampUsecs -lt $logUsecs}
+        $dbVersions = $dbVersions | Where-Object {$_.snapshotTimestampUsecs -lt ($logUsecs + 60000000)}
     }
     foreach ($version in $dbVersions) {
         $snapshotTimestampUsecs = $version.snapshotTimestampUsecs
@@ -218,6 +218,7 @@ if ($logTime -or $latest){
                 }
                 if($logTime){
                     if($snapshotTimestampUsecs -le ($logUsecs + 60000000)){
+
                         $validLogTime = $True
                         $useLogTime = $False
                         break
@@ -257,8 +258,8 @@ $restoreTask = @{
             "ownerObject" = @{
                 "jobUid" = $latestdb.vmDocument.objectId.jobUid;
                 "jobId" = $latestdb.vmDocument.objectId.jobId;
-                "jobInstanceId" = $latestdb.vmDocument.versions[$versionNum].instanceId.jobInstanceId;
-                "startTimeUsecs" = $latestdb.vmDocument.versions[$versionNum].instanceId.jobStartTimeUsecs;
+                "jobInstanceId" = $dbversions[$versionNum].instanceId.jobInstanceId;
+                "startTimeUsecs" = $dbversions[$versionNum].instanceId.jobStartTimeUsecs;
                 "entity" = @{
                     "id" = $ownerId
                 }
