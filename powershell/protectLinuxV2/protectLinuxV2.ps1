@@ -110,11 +110,15 @@ foreach($server in $serversToAdd | Where-Object {$_ -ne ''}){
     $server = $server.ToString()
     $node = $sources.nodes | Where-Object { $_.protectionSource.name -eq $server }
     if($node){
-        if($node.protectionSource.physicalProtectionSource.hostType -ne 'kWindows'){
-            $sourceId = $node.protectionSource.id
-            $newSourceIds += $sourceId
+        if($node.registrationInfo.refreshErrorMessage){
+            Write-Warning "$server has source registration errors"
         }else{
-            Write-Warning "$server is a Windows host"
+            if($node.protectionSource.physicalProtectionSource.hostType -ne 'kWindows'){
+                $sourceId = $node.protectionSource.id
+                $newSourceIds += $sourceId
+            }else{
+                Write-Warning "$server is a Windows host"
+            }
         }
     }else{
         Write-Warning "$server is not a registered source"
