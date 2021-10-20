@@ -25,7 +25,7 @@ function toUnits($val){
 $cluster = api get cluster
 $dateString = get-date -UFormat '%Y-%m-%d'
 $outputfile = $(Join-Path -Path $PSScriptRoot -ChildPath "dataPerObject-$($cluster.name)-$dateString.csv")
-"Job Name,Object Name,Logical Size,Read Last 24 Hours ($unit),Read Last $daysBack Days ($unit),Written Last 24 Hours ($unit),Written Last $daysBack Days ($unit),Days Gathered" | Out-File -FilePath $outputfile
+"Job Name,Environment,Object Name,Logical Size,Read Last 24 Hours ($unit),Read Last $daysBack Days ($unit),Written Last 24 Hours ($unit),Written Last $daysBack Days ($unit),Days Gathered" | Out-File -FilePath $outputfile
 
 $jobs = api get protectionJobs | Where-Object {$_.isActive -ne $False -and $_.isDeleted -ne $True}
 $today = Get-Date
@@ -98,7 +98,7 @@ foreach ($job in $jobs | Sort-Object -Property name) {
         $oldestStat = usecsToDate $stats[$sourceName][-1]['startTimeUsecs']
         $numDays = ($today - $oldestStat).Days + 1
 
-        "{0},{1},""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",{7}" -f $job.name, $sourceName, $(toUnits $logicalSize), $(toUnits $last24HoursDataRead), $(toUnits $lastXDaysDataRead), $(toUnits $last24HoursDataWritten), $(toUnits $lastXDaysDataWritten), $numDays | Out-File -FilePath $outputfile -Append
+        "{0},{1},{2},""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",{8}" -f $job.name, $job.environment, $sourceName, $(toUnits $logicalSize), $(toUnits $last24HoursDataRead), $(toUnits $lastXDaysDataRead), $(toUnits $last24HoursDataWritten), $(toUnits $lastXDaysDataWritten), $numDays | Out-File -FilePath $outputfile -Append
     }
 }
 
