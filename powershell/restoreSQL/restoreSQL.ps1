@@ -124,7 +124,7 @@ if($showPaths){
     foreach($file in $latestdb.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec){
         $fileName = Split-Path -Path $file.fullPath -Leaf
         $filePath = (Split-Path -Path $file.fullPath).replace('/', '\')
-        $extension = Split-Path -Path $file.fullPath -Extension
+        $extension = ".$((Split-Path -Path $file.fullPath -Leaf).Split('.')[-1])"
         if($file.type -eq 0){
             if($mdfFolderExample -eq '' -and $extension -eq '.mdf'){
                 $mdfFolderExample = $filePath
@@ -425,7 +425,7 @@ if($wait -or $progress){
         if ($status -in $finishedStates){
             break
         }
-        sleep 5
+        Start-Sleep 5
     }
     "restore ended with $status"
     if($status -eq 'kSuccess'){
