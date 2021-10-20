@@ -54,7 +54,7 @@ if($viewName){
     $views.views = $views.views | Where-Object name -eq $viewName
 }
 
-foreach($view in ($views.views | Where-Object {'SMB' -in $_.protocolAccess.type})){
+foreach($view in ($views.views | Where-Object {'SMB' -in $_.protocolAccess.type} | Sort-Object -Property name)){
     "`n$($view.name)" | Tee-Object -FilePath $outFile -Append
     $thisView = api get views/$($view.name)
     "`n    Share Permissions:" | Tee-Object -FilePath $outFile -Append
