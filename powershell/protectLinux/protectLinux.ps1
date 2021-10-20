@@ -111,7 +111,7 @@ foreach($server in $serversToAdd | Where-Object {$_ -ne ''}){
     $server = $server.ToString()
     $node = $sources.nodes | Where-Object { $_.protectionSource.name -eq $server }
     if($node){
-        if($node.registrationInfo.refreshErrorMessage){
+        if($node.registrationInfo.refreshErrorMessage -or $node.registrationInfo.authenticationStatus -ne 'kFinished'){
             Write-Warning "$server has source registration errors"
         }else{
             if($node.protectionSource.physicalProtectionSource.hostType -ne 'kWindows'){

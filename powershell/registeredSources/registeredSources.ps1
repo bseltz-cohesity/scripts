@@ -18,7 +18,7 @@ $dateString = $now.ToString('yyyy-MM-dd')
 $cluster = api get cluster
 $outFile = Join-Path -Path $PSScriptRoot -ChildPath "registeredSources-$($cluster.name)-$dateString.csv"
 
-"Source Name, Environment,Protected,Unprotected,Last Refresh,Error" | Out-File -FilePath $outFile
+"Source Name, Environment,Protected,Unprotected,Auth Status,Last Refresh,Error" | Out-File -FilePath $outFile
 
 $sources = api get protectionSources/registrationInfo?includeApplicationsTreeInfo=false
 
@@ -29,7 +29,8 @@ foreach($source in $sources.rootNodes){
     $lastError = $source.registrationInfo.refreshErrorMessage
     $protected = $source.stats.protectedCount
     $unprotected = $source.stats.unprotectedCount
-    "{0},{1},{2},{3},{4},""{5}""" -f $sourceName, $sourceType, $protected, $unprotected, (usecsToDate $lastRefreshUsecs), $lastError | Tee-Object -FilePath $outFile -Append
+    $authstatus = $source.registrationInfo.authenticationStatus.subString(1)
+    "{0},{1},{2},{3},{4},{5},""{6}""" -f $sourceName, $sourceType, $protected, $unprotected, $authstatus, (usecsToDate $lastRefreshUsecs), $lastError | Tee-Object -FilePath $outFile -Append
 }
 
 "`nOutput saved to $outfile`n"
