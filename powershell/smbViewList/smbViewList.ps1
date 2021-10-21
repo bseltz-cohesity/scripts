@@ -49,6 +49,7 @@ foreach($principal in $groups){
 "$dateString" | Out-File -FilePath $outFile
 
 $views = api get -v2 file-services/views
+$shares = (api get shares).sharesList | Where-Object {$_.shareName -ne $_.viewName}
 
 if($viewName){
     $views.views = $views.views | Where-Object name -eq $viewName
@@ -70,6 +71,18 @@ foreach($view in ($views.views | Where-Object {'SMB' -in $_.protocolAccess.type}
     foreach($permission in $thisView.smbPermissionsInfo.permissions){
         $principalName = principalName $permission.sid
         "        {0}: {1} {2} on {3}" -f $principalName, $permission.type.subString(1), $permission.access.subString(1), $permission.mode.subString(1) | Tee-Object -FilePath $outFile -Append
+    }
+    $childShares = $shares | Where-Object {$_.viewName -eq $view.name}
+    if($childShares){
+        "`n    Child Shares:" | Tee-Object -FilePath $outFile -Append
+    }
+    foreach($childShare in $childShares){
+        "`n        {0} - {1} - Share Permissions:" -f $childShare.shareName, "/$($view.name)/$($childShare.path)"
+        foreach($permission in $childShare.sharePermissions){
+            $principalName = principalName $permission.sid
+            "            {0}: {1} {2}" -f $principalName, $permission.type.subString(1), $permission.access.subString(1) | Tee-Object -FilePath $outFile -Append
+        }
+
     }
 }
 
