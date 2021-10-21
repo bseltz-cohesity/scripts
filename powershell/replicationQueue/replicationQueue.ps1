@@ -5,7 +5,8 @@ param (
    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
    [Parameter()][string]$domain = 'local', #local or AD domain
    [Parameter()][int]$numRuns = 999,
-   [Parameter()][switch]$cancelAll
+   [Parameter()][switch]$cancelAll,
+   [Parameter()][switch]$cancelOutdated
 )
 
 ### source the cohesity-api helper code
@@ -75,7 +76,7 @@ if($runningTasks.Keys.Count -gt 0){
                         "                       {0} ({1})`t{2}" -f $subTask.publicStatus, $pct, $subTask.entity.displayName
                     }
                 }
-                if($cancelAll){
+                if($cancelAll -or ($cancelOutdated -and ($noLongerNeeded -eq "NO LONGER NEEDED"))){
                     $cancelTaskParams = @{
                         "jobId"       = $t.jobId;
                         "copyTaskUid" = @{
