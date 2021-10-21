@@ -46,10 +46,11 @@ if($suffix){
     $newJobName = "$newJobName-$suffix"
 }
 
-$job = (api get -v2 'data-protect/protection-groups').protectionGroups | Where-Object name -eq $jobName
+$job = (api get -v2 'data-protect/protection-groups?environments=kPhysical').protectionGroups | Where-Object name -eq $jobName
 
 if($job){
 
+    # gather old job info
     $oldPolicy = (api get -v2 data-protect/policies).policies | Where-Object id -eq $job.policyId
     $oldStorageDomain = api get viewBoxes | Where-Object id -eq $job.storageDomainId
 
@@ -70,7 +71,7 @@ if($job){
             }
         }
 
-        # check for storage domain
+        # check for target storage domain
         if($newStorageDomainName){
             $oldStorageDomain.name = $newStorageDomainName
         }
@@ -80,7 +81,7 @@ if($job){
             exit
         }
 
-        # check for policy
+        # check for target policy
         if($newPolicyName){
             $oldPolicy.name = $newPolicyName
         }
@@ -92,20 +93,18 @@ if($job){
         apiauth -vip $sourceCluster -username $sourceUser -domain $sourceDomain -passwd $sourcePassword -quiet
     }
 
-    # gather old job details
+    # gather more old job details
     if(!$cleanupSourceObjectsAndExit){
         "Migrating '$jobName' from $sourceCluster to $targetCluster...`n"
     }
-    $oldSources = api get protectionSources?environments=kSQL
+    $oldSources = api get protectionSources?environments=kPhysical
 
-    # identify SQL job type
-    $jobType = $job.mssqlParams.protectionType
+    # identify physical job type
+    $jobType = $job.physicalParams.protectionType
     if($jobType -eq 'kFile'){
-        $objectList = $job.mssqlParams.fileProtectionTypeParams.objects
+        $objectList = $job.physicalParams.fileProtectionTypeParams.objects
     }elseif($jobType -eq 'kVolume'){
-        $objectList = $job.mssqlParams.volumeProtectionTypeParams.objects
-    }elseif ($jobType -eq 'kNative'){
-        $objectList = $job.mssqlParams.nativeProtectionTypeParams.objects        
+        $objectList = $job.physicalParams.volumeProtectionTypeParams.objects
     }
 
     # identify servers to migrate
@@ -116,34 +115,9 @@ if($job){
         $serverName = $server.protectionSource.name
         $serverType = $server.protectionSource.environment
         if($server.protectionSource.id -in $objectList.id){
-            if($serverType -ne 'kPhysical'){
-                Write-Host "This script does not support SQL servers registered as VMs" -ForegroundColor Yellow
-                exit
-            }
+
             $objectsToMigrate[$server.protectionSource.id] = @{'name' = "$serverName"; 'type' = 'server'}
             $serversToMigrate = @($serversToMigrate + $serverName | Sort-Object -Unique)
-        }
-        foreach($instance in $server.applicationNodes){
-            $instanceName = $instance.protectionSource.name
-            if($instance.protectionSource.id -in $objectList.id){
-                if($serverType -ne 'kPhysical'){
-                    Write-Host "This script does not support SQL servers registered as VMs" -ForegroundColor Yellow
-                    exit
-                }
-                $objectsToMigrate[$instance.protectionSource.id] = @{'name' = "$serverName/$instanceName"; 'type' = 'instance'}
-                $serversToMigrate = @($serversToMigrate + $serverName | Sort-Object -Unique)
-            }
-            foreach($database in $instance.nodes){
-                $databaseName = $database.protectionSource.name
-                if($database.protectionSource.id -in $objectList.id){
-                    if($serverType -ne 'kPhysical'){
-                        Write-Host "This script does not support SQL servers registered as VMs" -ForegroundColor Yellow
-                        exit
-                    }
-                    $objectsToMigrate[$database.protectionSource.id] = @{'name' = "$serverName/$databaseName"; 'type' = 'database'}
-                    $serversToMigrate = @($serversToMigrate + $serverName | Sort-Object -Unique)
-                }
-            }
         }
     }
 
@@ -210,16 +184,10 @@ if($job){
         $null = api post /backupsources $newSource
 
         $entityId = waitForRefresh $server
-
-        $regSQL = @{"ownerEntity" = @{"id" = $entityId}; "appEnvVec" = @(3)}
-        $null = api post /applicationSourceRegistration $regSQL
-        $null = api post protectionSources/refresh/$entityId
-        $entityId = waitForRefresh $server
-
     }
 
     # update object IDs
-    $newSources = api get protectionSources?environments=kSQL
+    $newSources = api get protectionSources?environments=kPhysical
     $newObjectList = @()
     foreach($objectItem in $objectList){
         $newItem = $objectItem
@@ -229,27 +197,15 @@ if($job){
             if($oldInfo.type -eq 'server' -and $oldInfo.name -eq $serverName){
                 $newItem.id = $server.protectionSource.id
             }
-            foreach($instance in $server.applicationNodes){
-                $instanceName = $instance.protectionSource.name
-                if($oldInfo.type -eq 'instance' -and $oldInfo.name -eq "$serverName/$instanceName"){
-                    $newItem.id = $instance.protectionSource.id
-                }
-                foreach($database in $instance.nodes){
-                    $databaseName = $database.protectionSource.name
-                    if($oldInfo.type -eq 'database' -and $oldInfo.name -eq "$serverName/$databaseName"){
-                        $newItem.id = $database.protectionSource.id
-                    }
-                }
-            }
         }
         $newObjectList = @($newObjectList + $newItem)
     }
     if($jobType -eq 'kFile'){
-        $job.mssqlParams.fileProtectionTypeParams.objects = $newObjectList
+        $job.physicalParams.fileProtectionTypeParams.objects = $newObjectList
     }elseif ($jobType -eq 'kVolume'){
-        $job.mssqlParams.volumeProtectionTypeParams.objects = $newObjectList
+        $job.physicalParams.volumeProtectionTypeParams.objects = $newObjectList
     }elseif($jobType -eq 'kNative'){
-        $job.mssqlParams.nativeProtectionTypeParams.objects  = $newObjectList
+        $job.physicalParams.nativeProtectionTypeParams.objects  = $newObjectList
     }
 
     $job.storageDomainId = $newStorageDomain.id
