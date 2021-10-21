@@ -196,9 +196,10 @@ $html += '</span>
     <th>Policy</th>
     <th>Storage Domain</th>
     <th>Encrypted</th>
+    <th>Start Time</th>
 </tr>'
 
-"Job Name,Environment,Local/Replicated,Policy,Storage Domain,Encrypted" | Out-File -FilePath $csvFile
+"Job Name,Environment,Local/Replicated,Policy,Storage Domain,Encrypted,Start Time" | Out-File -FilePath $csvFile
 
 $storageDomains = api get viewBoxes
 $jobs = api get protectionJobs?allUnderHierarchy=true
@@ -208,7 +209,8 @@ foreach($job in $jobs | Sort-Object -Property name){
     $encrypted = 'n/a'
     $jobName = $job.name
     $jobName
-    $jobType = $job.environment.subString(1) 
+    $jobType = $job.environment.subString(1)
+    $startTime =  "{0:d2}:{1:d2}" -f $job.startTime.hour, $job.startTime.minute 
     $policyId = $job.policyId
     $local = $($job.policyId.split(':')[0] -eq $cluster.id)
     if($local){
@@ -230,8 +232,9 @@ foreach($job in $jobs | Sort-Object -Property name){
               <td>{2}</td>
               <td>{3}</td>
               <td>{4}</td>
-              <td>{5}</td></tr>" -f $jobName, $jobType, $isReplicated, $policyName, $storageDomain.name, $encrypted
-    "{0},{1},{2},{3},{4},{5}" -f $jobName, $jobType, $isReplicated, $policyName, $storageDomain.name, $encrypted | Out-File -FilePath $csvFile -Append
+              <td>{5}</td>
+              <td>{6}</td></tr>" -f $jobName, $jobType, $isReplicated, $policyName, $storageDomain.name, $encrypted, $startTime
+    "{0},{1},{2},{3},{4},{5},{6}" -f $jobName, $jobType, $isReplicated, $policyName, $storageDomain.name, $encrypted, $startTime | Out-File -FilePath $csvFile -Append
 }
 
 $html += "</table>                
