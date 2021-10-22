@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2021.09.23 - Brian Seltzer
+#  Version 2021.10.22 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2020.11.06 - refactor and simplify
@@ -14,9 +14,10 @@
 # 2021.08.16 - revamped passwd storage, auto prompt for invalid password
 # 2021.09.23 - added support for DMaaS
 # 2021.10.14 - added storePasswordForUser and importStoredPassword
+# 2021.10.22 - fixed json2code and py functions and added toJson function
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2021.09.23'
+$versionCohesityAPI = '2021.10.22'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -49,12 +50,12 @@ $apilogfile = $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api-debug.log)
 
 # platform detection ==========================================================================
 
-if ($PSVersionTable.Platform -ne 'Unix') {
+if($PSVersionTable.Platform -ne 'Unix'){
     $cohesity_api.webcli = New-Object System.Net.webclient;
     $registryPath = 'HKCU:\Software\Cohesity-API' 
 }else{
     $CONFDIR = '~/.cohesity-api'
-    if ($(Test-Path $CONFDIR) -eq $false) { $null = New-Item -Type Directory -Path $CONFDIR}
+    if($(Test-Path $CONFDIR) -eq $false){ $null = New-Item -Type Directory -Path $CONFDIR}
 }
 
 if($PSVersionTable.PSEdition -eq 'Desktop'){
@@ -257,7 +258,7 @@ function heliosCluster($clusterName){
         $cohesity_api.heliosConnectedClusters | Sort-Object -Property name | Select-Object -Property name, clusterId, softwareVersion
         "`ntype heliosCluster <clustername> to connect to a cluster"
     }
-    if (-not $cohesity_api.authorized){ 
+    if(-not $cohesity_api.authorized){ 
         if($cohesity_api.reportApiErrors){
             Write-Host 'Please use apiauth to connect to helios' -foregroundcolor yellow
         }
@@ -288,7 +289,7 @@ function apidrop([switch] $quiet){
 }
 
 function impersonate($tenant){
-    if ($cohesity_api.authorized){ 
+    if($cohesity_api.authorized){ 
         $thisTenant = api get tenants -version 1 | Where-Object {$_.name -eq $tenant}
         if($thisTenant){
             $cohesity_api.header['x-impersonate-tenant-id'] = $thisTenant.tenantId
@@ -323,7 +324,7 @@ function api($method,
              [switch]$reportingV2,
              [switch]$quiet){
 
-    if (-not $cohesity_api.authorized){ 
+    if(-not $cohesity_api.authorized){ 
         if($cohesity_api.reportApiErrors){
             Write-Host 'Not authenticated to a cohesity cluster' -foregroundcolor yellow
             if($MyInvocation.PSCommandPath){
@@ -335,7 +336,7 @@ function api($method,
             Write-Host "Cluster connection is READ-ONLY" -ForegroundColor Yellow
             break
         }
-        if (-not $methods.Contains($method)){
+        if(-not $methods.Contains($method)){
             if($cohesity_api.reportApiErrors){
                 Write-Host "invalid api method: $method" -foregroundcolor yellow
             }
@@ -364,7 +365,7 @@ function api($method,
         }elseif($reportingV2){
             $url = $cohesity_api.apiRootReportingV2 + $uri            
         }else{
-            if ($uri[0] -ne '/'){ $uri = '/public/' + $uri}
+            if($uri[0] -ne '/'){ $uri = '/public/' + $uri}
             $url = $cohesity_api.apiRoot + $uri
         }
         if($url -match ' ' -and $url -notmatch '%'){
@@ -374,7 +375,7 @@ function api($method,
             if($data){
                 $body = ConvertTo-Json -Compress -Depth 99 $data
             }
-            if ($PSVersionTable.PSEdition -eq 'Core'){
+            if($PSVersionTable.PSEdition -eq 'Core'){
                 if($body){
                     $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $cohesity_api.header -SkipCertificateCheck
                 }else{
@@ -401,15 +402,15 @@ function api($method,
 
 function fileDownload($uri, $fileName, $version=1, [switch]$v2){
 
-    if (-not $cohesity_api.authorized){ Write-Host 'Please use apiauth to connect to a cohesity cluster' -foregroundcolor yellow; break }
+    if(-not $cohesity_api.authorized){ Write-Host 'Please use apiauth to connect to a cohesity cluster' -foregroundcolor yellow; break }
     try {
         if($version -eq 2 -or $v2){
             $url = $cohesity_api.apiRootv2 + $uri
         }else{
-            if ($uri[0] -ne '/'){ $uri = '/public/' + $uri}
+            if($uri[0] -ne '/'){ $uri = '/public/' + $uri}
             $url = $cohesity_api.apiRoot + $uri
         }
-        if ($PSVersionTable.Platform -eq 'Unix'){
+        if($PSVersionTable.Platform -eq 'Unix'){
             $ch = ''
             foreach($h in $cohesity_api.curlHeader){
                 $ch += '-H "' + $h + '" '
@@ -471,14 +472,14 @@ function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
     if($PSVersionTable.Platform -eq 'Unix'){
         # Unix
         $keyFile = "$CONFDIR/$keyName"
-        if (Test-Path $keyFile) {
+        if(Test-Path $keyFile){
             $cohesity_api.pwscope = 'user'
             $cpwd = Get-Content $keyFile
             return [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($cpwd))
         }
         # old format
         $altKeyFile = "$CONFDIR/$altKeyName"
-        if (Test-Path $altKeyFile) {
+        if(Test-Path $altKeyFile){
             $cohesity_api.pwscope = 'user'
             $cpwd = Get-Content $altKeyFile
             return [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($cpwd))
@@ -487,10 +488,10 @@ function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
         # Windows
         $storedPassword = Get-ItemProperty -Path "$registryPath" -Name "$keyName" -ErrorAction SilentlyContinue
         # old format
-        If (($null -eq $storedPassword) -or ($storedPassword.Length -eq 0)) {
+        if(($null -eq $storedPassword) -or ($storedPassword.Length -eq 0)){
             $storedPassword = Get-ItemProperty -Path "$registryPath" -Name "$altKeyName" -ErrorAction SilentlyContinue
         }
-        If (($null -ne $storedPassword) -and ($storedPassword.Length -ne 0)) {
+        if(($null -ne $storedPassword) -and ($storedPassword.Length -ne 0)){
             $cohesity_api.pwscope = 'user'
             if( $null -ne $storedPassword.$keyName -and $storedPassword.$keyName -ne ''){
                 $securePassword = $storedPassword.$keyName  | ConvertTo-SecureString
@@ -683,13 +684,13 @@ function json2code($json = '', $jsonFile = '', $psFile = 'myObject.ps1'){
     if($jsonFile -ne ''){
         $json = (Get-Content $jsonFile) -join "`n"
     }
-    $json = $json | ConvertFrom-Json | ConvertTo-Json -Depth 99
+    $json = ($json | ConvertFrom-Json | ConvertTo-Json -Depth 99).replace('  ', '    ')
     $pscode = ''
-    foreach ($line in $json.split("`n")) {
+    foreach ($line in $json.split("`n")){
         $line = $line.TrimEnd()
         # preserve end of line character
         $finalEntry = $true
-        if ($line[-1] -eq ',') {
+        if($line[-1] -eq ','){
             $finalEntry = $false
             $line = $line -replace ".$"
         }        
@@ -697,51 +698,51 @@ function json2code($json = '', $jsonFile = '', $psFile = 'myObject.ps1'){
         $key, $value = $line.split(':', 2)
         # line is braces only
         $key = $key.Replace('{', '@{').Replace('[','@(').Replace(']', ')')
-        if ($value) {
+        if($value){
             $value = $value.trim()
         # value is quoted text
-            if ($value[0] -eq '"') {
+            if($value[0] -eq '"'){
                 $line = "$key = $value"
             }
         # value is opening { brace
-            elseif ('{' -eq $value) {
+            elseif('{' -eq $value){
                 $value = $value.Replace('{', '@{')
                 $line = "$key = $value"
             }
         # value is opening [ list
-            elseif ('[' -eq $value) {
+            elseif('[' -eq $value){
                 $value = $value.Replace('[', '@(')
                 $line = "$key = $value"                  
             }
         # empty braces
-            elseif ('{}' -eq $value) {
+            elseif('{}' -eq $value){
                 $value = '@{}'
                 $line = "$key = $value"
             }
         # empty list
-            elseif ('[]' -eq $value) {
+            elseif('[]' -eq $value){
                 $value = '@()'
                 $line = "$key = $value"
             }
         # value is opening ( list
-            elseif ('[' -eq $value) {
+            elseif('[' -eq $value){
                 $value = $value.Replace('[', '@(')
                 $line = "$key = $value"
             }
         # value is a boolean
-            elseif ($value -eq 'true') {
+            elseif($value -eq 'true'){
                 $line = "$key = " + '$true'
             }
-            elseif ($value -eq 'false') {
+            elseif($value -eq 'false'){
                 $line = "$key = " + '$false'
             }
         # null
-            elseif ($value -eq 'null') {
+            elseif($value -eq 'null'){
                 $line = "$key = " + '$null'
             }
             else {
         # value is numeric
-                if ($value -as [long] -or $value -eq '0') {
+                if($value -as [long] -or $value -eq '0'){
                     $line = "$($key) = $value"
                 }
                 else {
@@ -755,7 +756,7 @@ function json2code($json = '', $jsonFile = '', $psFile = 'myObject.ps1'){
             $line = $key
         }
         # replace end of line character ;
-        if (! $finalEntry) {
+        if(! $finalEntry){
             $line = "$line;"
         }
         $pscode += "$line`n"
@@ -792,7 +793,7 @@ function delApiProperty{
 
 # show properties of an object
 function showProps{
-    param (
+    param(
         [Parameter(Mandatory = $True)]$obj,
         [Parameter()]$parent = 'myobject',
         [Parameter()]$search = $null
@@ -833,7 +834,7 @@ function showProps{
 }
 
 function getProp{
-    param (
+    param(
         [Parameter(Mandatory = $True)]$obj,
         [Parameter(Mandatory = $True)]$search
     )
@@ -845,13 +846,32 @@ function getProp{
     }
 }
 
+
 # convert syntax to python
 function py($p){
-    $py = $p.replace("$","").replace("].","]['").replace(".","']['")
-    if($py[-1] -ne ']'){
-        $py += "']"
+    $parts = $p.split('.',2)
+    $py = $parts[0].replace("$","")
+    if($parts.Count -gt 1){
+        foreach($part in $parts[1].split('.')){
+            if($part.Contains('[')){
+                $part, $enum = $part.split('[')
+                $py = $py + "['$part'][$enum"
+            }else{
+                $py = $py + "['$part']"
+            }
+        }
     }
     $py
+}
+
+
+# convert to properly formatted json
+function toJson(){
+    [CmdletBinding()]
+    Param(
+        [Parameter(ValueFromPipeline)]$j
+    )
+    ($j | ConvertTo-Json -Depth 99).replace('  ','    ')
 }
 
 
