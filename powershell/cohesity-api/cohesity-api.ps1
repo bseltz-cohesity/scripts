@@ -684,7 +684,10 @@ function json2code($json = '', $jsonFile = '', $psFile = 'myObject.ps1'){
     if($jsonFile -ne ''){
         $json = (Get-Content $jsonFile) -join "`n"
     }
-    $json = ($json | ConvertFrom-Json | ConvertTo-Json -Depth 99).replace('  ', '    ')
+    $json = $json | ConvertFrom-Json | ConvertTo-Json -Depth 99
+    if(! $json.split("`n")[1].startsWith('    ')){
+        $json = $json.replace('  ', '    ')
+    }
     $pscode = ''
     foreach ($line in $json.split("`n")){
         $line = $line.TrimEnd()
