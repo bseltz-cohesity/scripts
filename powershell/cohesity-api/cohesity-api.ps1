@@ -871,7 +871,12 @@ function toJson(){
     Param(
         [Parameter(ValueFromPipeline)]$j
     )
-    ($j | ConvertTo-Json -Depth 99).replace('  ','    ')
+    $out = $j | ConvertTo-Json -Depth 99
+    if($out.split("`n")[1].startsWith('    ')){
+        $out
+    }else{
+        $out.replace('  ','    ')
+    }
 }
 
 
