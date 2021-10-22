@@ -38,7 +38,7 @@ $outputfile = $(Join-Path -Path $PSScriptRoot -ChildPath "externalTargetStorageS
 "Date,Archived GiB,Used GiB,Garbage Collected GiB" | Out-File -FilePath $outputfile
 
 # morphed usage
-$stats = api get "statistics/timeSeriesStats?entityId=$($vault.id)&metricName=kMorphedUsageBytes&metricUnitType=0&range=month&rollupFunction=max&rollupIntervalSecs=86400&schemaName=kIceboxVaultStats&startTimeMsecs=$startTimeMsecs"
+$stats = api get "statistics/timeSeriesStats?entityId=$($vault.id)&metricName=kMorphedUsageBytes&metricUnitType=0&range=month&rollupFunction=latest&rollupIntervalSecs=86400&schemaName=kIceboxVaultStats&startTimeMsecs=$startTimeMsecs"
 $statConsumed = @{}
 foreach ($stat in $stats.dataPointVec){
 	$dt = usecsToDate (($stat.timestampMsecs)*1000)
@@ -48,7 +48,7 @@ foreach ($stat in $stats.dataPointVec){
 }
 
 # morphed garbage collected
-$stats = api get "statistics/timeSeriesStats?entityId=$($vault.id)&metricName=kUnmorphedBytesGCed&metricUnitType=0&range=month&rollupFunction=max&rollupIntervalSecs=86400&schemaName=kIceboxVaultStats&startTimeMsecs=$startTimeMsecs"
+$stats = api get "statistics/timeSeriesStats?entityId=$($vault.id)&metricName=kUnmorphedBytesGCed&metricUnitType=0&range=month&rollupFunction=latest&rollupIntervalSecs=86400&schemaName=kIceboxVaultStats&startTimeMsecs=$startTimeMsecs"
 $statCollected = @{}
 foreach ($stat in $stats.dataPointVec){
 	$dt = usecsToDate (($stat.timestampMsecs)*1000)
@@ -58,7 +58,7 @@ foreach ($stat in $stats.dataPointVec){
 }
 
 # morphed data archived
-$stats = api get "statistics/timeSeriesStats?entityId=$($vault.id)&metricName=kMorphedBytesArchived&metricUnitType=0&range=month&rollupFunction=max&rollupIntervalSecs=86400&schemaName=kIceboxVaultStats&startTimeMsecs=$startTimeMsecs"
+$stats = api get "statistics/timeSeriesStats?entityId=$($vault.id)&metricName=kMorphedBytesArchived&metricUnitType=0&range=month&rollupFunction=latest&rollupIntervalSecs=86400&schemaName=kIceboxVaultStats&startTimeMsecs=$startTimeMsecs"
 $statArchived = @{}
 foreach ($stat in $stats.dataPointVec){
 	$dt = usecsToDate (($stat.timestampMsecs)*1000)
