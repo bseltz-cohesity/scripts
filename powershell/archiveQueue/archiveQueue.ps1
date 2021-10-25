@@ -7,6 +7,7 @@ param (
    [Parameter()][switch]$cancelOutdated,
    [Parameter()][switch]$cancelQueued,
    [Parameter()][switch]$cancelAll,
+   [Parameter()][switch]$showFinished,
    [Parameter()][int]$numRuns = 9999,
    [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB'
 )
@@ -73,7 +74,7 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -
                         # cancel archive task
                         if($cancel -eq $True){
                             $cancelTaskParams = @{
-                                "jobId"       = $t.jobId;
+                                "jobId"       = $jobId;
                                 "copyTaskUid" = @{
                                     "id"                   = $task.taskUid.objectId;
                                     "clusterId"            = $task.taskUid.clusterId;
