@@ -47,7 +47,7 @@ Then, if you're happy with the list of snapshots that will be processed, run the
 * -daysToKeep: retention days (from original backup date)
 * -commit: (optional) perform extensions (otherwise test run only)
 
-## Job Selection Parameters (dfault is all local jobs)
+## Job Selection Parameters (default is all local jobs)
 
 * -jobName: (optional) one or more job names (comma separated)
 * -jobList: (optional) text file of job names (one per line)
