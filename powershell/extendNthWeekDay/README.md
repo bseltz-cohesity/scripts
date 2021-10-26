@@ -57,4 +57,6 @@ Then, if you're happy with the list of snapshots that will be processed, run the
 
 ## Note
 
-If `-poliyName` or `-policyList` are used, then only local jobs can be processed.
+If `-policyName` or `-policyList` are used, then only local jobs can be processed.
+
+To select the last occurence of a week day of the month, use `-nth -1`
