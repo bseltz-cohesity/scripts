@@ -60,6 +60,10 @@ if ('' -ne $policyList){
 apiauth -vip $vip -username $username -domain $domain
 
 $jobs = (api get -v2 data-protect/protection-groups).protectionGroups | Where-Object isDeleted -ne $True
+if($jobsToUpdate.Length -gt 0){
+    $jobs = $jobs | Where-Object name -in $jobsToUpdate
+}
+
 if(!$includeReplicas){
     $jobs = $jobs | Where-Object isActive -eq $True
 }
