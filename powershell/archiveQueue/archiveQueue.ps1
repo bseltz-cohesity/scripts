@@ -81,7 +81,7 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -
                                     "clusterIncarnationId" = $task.taskUid.clusterIncarnationId
                                 }
                             }
-                            $null = api post "protectionRuns/cancel/$($t.jobId)" $cancelTaskParams 
+                            $null = api post "protectionRuns/cancel/$($jobId)" $cancelTaskParams 
                         }
                     }
                 }
