@@ -52,6 +52,15 @@ function newPermission($user, $perms, $view){
 $thisView = api get views/$($view.name)
 
 if($thisView){
+
+    if(!$thisView.PSObject.Properties['smbPermissionsInfo']){
+        setApiProperty -object $thisView -name 'smbPermissionsInfo' -value  @{"ownerSid" = "S-1-5-32-544"}        
+    }
+
+    if(!$thisView.smbPermissionsInfo.PSObject.Properties['permissions']){
+        setApiProperty -object $thisView.smbPermissionsInfo -name 'permissions' -value @()
+    }
+
     foreach($user in $readWrite){
         $permission = newPermission $user 'kReadWrite' $thisView
         if($permission){
