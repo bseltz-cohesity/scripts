@@ -49,7 +49,7 @@ function newPermission($user, $perms, $view){
     }    
 }
 
-$thisView = api get views/$($view.name)
+$thisView = api get views/$viewName
 
 if($thisView){
 
