@@ -7,18 +7,29 @@ param (
     [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
     [Parameter()][string]$domain = 'local',  # local or AD domain
     [Parameter(Mandatory = $True)][string]$jobName,  # name of the job to exclude mailboxes from
-    [Parameter()][string]$exclusionList = './excludedMailboxes.txt'  # list of user names who's mailboxes to exclude
+    [Parameter()][array]$users = $null,  # comma separated list of users to exclude
+    [Parameter()][string]$userList = ''  # text file of users to exclude
 )
 
-if(Test-Path -Path $exclusionList -PathType Leaf){
-    $exclusions = Get-Content $exclusionList
-}else{
-    write-host "Can't find file $exclusionList" -ForegroundColor Yellow
-    exit
+# gather list of users to add to job
+$exclusions = @()
+foreach($user in $users){
+    $exclusions += $user
+}
+if ('' -ne $userList){
+    if(Test-Path -Path $userList -PathType Leaf){
+        $users = Get-Content $userList
+        foreach($user in $users){
+            $exclusions += $user
+        }
+    }else{
+        Write-Warning "User list $userList not found!"
+        exit
+    }
 }
 
 # source the cohesity-api helper code
-. ./cohesity-api
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
 apiauth -vip $vip -username $username -domain $domain
