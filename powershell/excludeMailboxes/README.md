@@ -52,4 +52,5 @@ Can't find user Joey Bagadonuts - skipping
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain of user (defaults to local)
 * -jobName: name of the O365 protection job to exclude mailboxes from
-* -exclusionList: a text file list of user names or SMTP addresses to exclude
+* -users: (optional) user names or SMTP addresses to exclude (comma separated)
+* -userList: (optional) a text file list of user names or SMTP addresses to exclude (one per line)
