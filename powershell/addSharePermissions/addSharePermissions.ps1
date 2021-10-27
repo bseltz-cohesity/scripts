@@ -47,7 +47,7 @@ $isView = $false
 if($share.shareName -eq $share.viewName){
     $isView = $True
     $thisView = api get views/$($share.viewName)
-    if(!$thisView.Properties['sharePermissions']){
+    if(!$thisView.PSObject.Properties['sharePermissions']){
         setApiProperty -object $thisView -name 'permissions' -value @()
     }
 }else{
