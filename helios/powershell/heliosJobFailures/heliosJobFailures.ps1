@@ -24,6 +24,10 @@ param (
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
 
+$dateString = (Get-Date).ToString('yyyy-MM-dd')
+$outfile = "heliosJobFailures-$dateString.csv"
+"ClusterName,Job Name,Job Type,Run Date,Status,Object,Error" | Out-File -FilePath $outfile
+
 $consoleWidth = $Host.UI.RawUI.WindowSize.Width
 
 $title = 'Cohesity Helios Failure Report'
@@ -159,7 +163,7 @@ foreach($cluster in heliosClusters){
                             $msgType = 'Warning'
                         }
                         $objectReport = "      {0} ({1}): {2}" -f $source.source.name.ToUpper(), $msgType, $msg
-            
+                        "{0},{1},{2},{3},{4},""{5}""" -f $cluster.name, $job.name, $job.environment.substring(1), (usecsToDate $run.backupRun.stats.startTimeUsecs), $msgType, $msg | Out-File -FilePath $outfile -Append
                         if($objectReport.ToString().length -gt ($consoleWidth-5)){
                             $objectReport = "$($objectReport.substring(0,($consoleWidth-6)))..."
                         }
@@ -175,6 +179,8 @@ foreach($cluster in heliosClusters){
 
 $message += '</div></body></html>'
 $message | out-file -FilePath "heliosJobFailures.html"
+
+Write-Host "`nOutput saved to $outfile`n"
 
 if($failureCount -and $smtpServer -and $sendTo -and $sendFrom){
     write-host "`nsending report to $([string]::Join(", ", $sendTo))"
