@@ -228,7 +228,7 @@ function restoreDB($db){
 
     ### create new clone task (RestoreAppArg Object)
     $restoreTask = @{
-        "name" = "dbRestore-$(dateToUsecs (get-date))";
+        "name" = "$($sourceServer)_$($targetServer)_$($sourceDBname)_$((get-date))";
         'action' = 'kRecoverApp';
         'restoreAppParams' = @{
             'type' = 3;
