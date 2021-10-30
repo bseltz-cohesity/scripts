@@ -10,7 +10,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-$scriptName = 'logicalSizeReport'
+$scriptName = 'logicalSizeGrowth'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
 (Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
@@ -19,13 +19,13 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* logicalSizeReport.ps1: the main PowerShell script
+* logicalSizeGrowth.ps1: the main PowerShell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place all files in a folder together. then, run the main script like so:
 
 ```powershell
-.\logicalSizeReport.ps1 -vip mycluster -username myuser -domain mydomain.net -jobName 'RMAN Dump' -numRuns 7
+.\logicalSizeGrowth.ps1 -vip mycluster -username myuser -domain mydomain.net -jobName 'RMAN Dump' -numRuns 7
 Connected!
 
 Logical Size History for RMAN Backup
