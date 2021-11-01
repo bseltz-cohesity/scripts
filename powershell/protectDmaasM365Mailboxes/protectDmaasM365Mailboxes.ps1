@@ -5,7 +5,7 @@ param (
     [Parameter(Mandatory = $True)][string]$region,  # DMaaS region
     [Parameter(Mandatory = $True)][string]$policyName = '',  # protection policy name
     [Parameter(Mandatory = $True)][string]$sourceName,  # name of registered O365 source
-    [Parameter()][array]$mailboxes = '',  # optional names of mailboxes protect
+    [Parameter()][array]$mailboxes,  # optional names of mailboxes protect
     [Parameter()][string]$mailboxList = '',  # optional textfile of mailboxes to protect
     [Parameter()][string]$startTime = '20:00',  # e.g. 23:30 for 11:30 PM
     [Parameter()][string]$timeZone = 'America/New_York', # e.g. 'America/New_York'
@@ -29,6 +29,8 @@ if ('' -ne $mailboxList){
         exit
     }
 }
+
+$mailboxesToAdd = @($mailboxesToAdd | Where-Object {$_ -ne ''})
 
 if($mailboxesToAdd.Count -eq 0){
     Write-Host "No mailboxes specified" -ForegroundColor Yellow
