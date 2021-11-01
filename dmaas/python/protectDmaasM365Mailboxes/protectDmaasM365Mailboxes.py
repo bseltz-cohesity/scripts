@@ -113,7 +113,7 @@ for mailbox in mailboxnames:
     else:
         user = user[0]
         protectionParams['objects'].append({
-            "environment": "kO365",
+            "environment": "kO365Exchange",
             "office365Params": {
                 "objectProtectionType": "kMailbox",
                 "userMailboxObjectProtectionParams": {

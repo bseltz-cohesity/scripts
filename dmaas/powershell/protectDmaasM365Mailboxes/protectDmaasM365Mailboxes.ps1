@@ -98,7 +98,7 @@ foreach($mailbox in $mailboxesToAdd){
     $user = $users.nodes | Where-Object {$_.protectionSource.name -eq $mailbox -or $_.protectionSource.office365ProtectionSource.primarySMTPAddress -eq $mailbox}
     if($user){
         $protectionParams.objects += @{
-            "environment"     = "kO365";
+            "environment"     = "kO365Exchange";
             "office365Params" = @{
                 "objectProtectionType"              = "kMailbox";
                 "userMailboxObjectProtectionParams" = @{
