@@ -2,7 +2,7 @@
 [CmdletBinding()]
 param (
     [Parameter()][string]$username = 'DMaaS',
-    [Parameter()][string]$region,  # DMaaS region
+    [Parameter(Mandatory = $True)][string]$region,  # DMaaS region
     [Parameter(Mandatory = $True)][string]$policyName = '',  # protection policy name
     [Parameter(Mandatory = $True)][string]$sourceName,  # name of registered O365 source
     [Parameter()][array]$mailboxes = '',  # optional names of mailboxes protect
@@ -22,7 +22,7 @@ if ('' -ne $mailboxList){
     if(Test-Path -Path $mailboxList -PathType Leaf){
         $mailboxes = Get-Content $mailboxList
         foreach($mailbox in $mailboxes){
-            $mailboxesToAdd += $mailbox
+            $mailboxesToAdd += [string]$mailbox
         }
     }else{
         Write-Host "mailbox list $mailboxList not found!" -ForegroundColor Yellow
@@ -56,6 +56,7 @@ if(!$policy){
 }
 
 # find O365 source
+$cohesity_api.header['regionid'] = $region
 $source = (api get protectionSources?environments=kO365) | Where-Object {$_.protectionSource.name -eq $sourceName}
 if(!$source){
     Write-Host "O365 Source $sourceName not found" -ForegroundColor Yellow
