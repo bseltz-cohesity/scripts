@@ -56,7 +56,6 @@ if(!$policy){
 }
 
 # find O365 source
-$cohesity_api.header['regionid'] = $region
 $source = (api get protectionSources?environments=kO365) | Where-Object {$_.protectionSource.name -eq $sourceName}
 if(!$source){
     Write-Host "O365 Source $sourceName not found" -ForegroundColor Yellow
