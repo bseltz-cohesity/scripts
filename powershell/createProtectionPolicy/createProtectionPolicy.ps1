@@ -18,7 +18,7 @@ param (
 apiauth -vip $vip -username $username -domain $domain
 
 ### get existing policies
-$policies = api get protectionPolicies?names=$policyName
+$policies = api get protectionPolicies | Where-Object name -eq $policyName
 
 ### get remote clusters
 $remotes = api get remoteClusters
@@ -63,4 +63,3 @@ if($policies){
     "creating policy $policyName..."
     $null = api post protectionPolicies $newPolicy
 }
-
