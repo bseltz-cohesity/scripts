@@ -60,6 +60,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                 }
             }
             $objects[$object.id].runs.Add(@{
+                'protectionGroupName' = $run.protectionGroupName;
                 'status' = $localSnapshotInfo.snapshotInfo.status; 
                 'startTime' = $localSnapshotInfo.snapshotInfo.startTimeUsecs; 
                 'endTime' = $localSnapshotInfo.snapshotInfo.endTimeUsecs;
@@ -99,7 +100,7 @@ foreach($id in $objects.Keys){
             $expireTime = (usecsToDate $run.expiry).ToString('MM/dd/yyyy HH:mm')
             $duration = [math]::Round(($run.endTime - $run.startTime) / (1000000 * 60))
             $runType = $run.runType.subString(1)
-            $report = @($report + ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14}" -f $cluster.name, $object.jobName, $object.environment.subString(1), $object.name, $object.objectType.subString(1), $object.parent, $object.policyName, $frequency, $runType, $status, $startTime, $endTime, $duration, $expireTime, $object.jobPaused))
+            $report = @($report + ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14}" -f $cluster.name, $run.protectionGroupName, $object.environment.subString(1), $object.name, $object.objectType.subString(1), $object.parent, $object.policyName, $frequency, $runType, $status, $startTime, $endTime, $duration, $expireTime, $object.jobPaused))
         }
     }
 }
