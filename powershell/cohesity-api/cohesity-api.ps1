@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2021.10.22 - Brian Seltzer
+#  Version 2021.11.03 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2020.11.06 - refactor and simplify
@@ -15,9 +15,10 @@
 # 2021.09.23 - added support for DMaaS
 # 2021.10.14 - added storePasswordForUser and importStoredPassword
 # 2021.10.22 - fixed json2code and py functions and added toJson function
+# 2021.11.03 - fixed 'Cannot send a content-body with this verb-type' message in debug log
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2021.10.22'
+$versionCohesityAPI = '2021.11.03'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -150,7 +151,7 @@ function apiauth($vip='helios.cohesity.com',
         }
         # validate cluster authorization
         if($useApiKey -and ($vip -ne 'helios.cohesity.com')){
-            $cluster = api get cluster -quiet -version 1
+            $cluster = api get cluster -quiet -version 1 -data $null
             if($cluster.clusterSoftwareVersion -lt '6.4'){
                 $cohesity_api.version = 1
             }
@@ -204,7 +205,7 @@ function apiauth($vip='helios.cohesity.com',
                 'content-type' = 'application/json'; 
                 'authorization' = $auth.tokenType + ' ' + $auth.accessToken
             }
-            $cluster = api get cluster -quiet -version 1
+            $cluster = api get cluster -quiet -version 1 -data $null
             if($cluster.clusterSoftwareVersion -lt '6.4'){
                 $cohesity_api.version = 1
             }
@@ -382,7 +383,11 @@ function api($method,
                     $result = Invoke-RestMethod -Method $method -Uri $url -header $cohesity_api.header -SkipCertificateCheck
                 }
             }else{
-                $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $cohesity_api.header
+                if($body){
+                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $cohesity_api.header
+                }else{
+                    $result = Invoke-RestMethod -Method $method -Uri $url -header $cohesity_api.header
+                }
             }
             return $result
         }catch{
