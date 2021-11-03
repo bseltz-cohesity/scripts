@@ -144,5 +144,5 @@ $("#tabs").tabs({
 $outFilePath = join-path -Path $PSScriptRoot -ChildPath 'storageGrowth.html'
 
 write-host "Writing Output to $outFilePath" -ForegroundColor Green
-$html | Out-File -FilePath 'storageGrowth.html' -Encoding ascii
+$html | Out-File -FilePath $outFilePath -Encoding ascii
 .$outFilePath
