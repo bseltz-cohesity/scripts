@@ -325,6 +325,11 @@ function api($method,
              [switch]$reportingV2,
              [switch]$quiet){
 
+    if($method -eq 'get'){
+        $body = $null
+        $data = $null
+    }
+
     if(-not $cohesity_api.authorized){ 
         if($cohesity_api.reportApiErrors){
             Write-Host 'Not authenticated to a cohesity cluster' -foregroundcolor yellow
