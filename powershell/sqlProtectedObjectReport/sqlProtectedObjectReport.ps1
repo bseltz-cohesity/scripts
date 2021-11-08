@@ -3,7 +3,8 @@ param (
     [Parameter(Mandatory = $True)][string]$vip,
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
-    [Parameter()][int]$days = 7
+    [Parameter()][int]$days = 7,
+    [Parameter()][switch]$includeLogs
 )
 
 ### source the cohesity-api helper code
@@ -29,7 +30,11 @@ $objects = @{}
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     "    $($job.name)"
     $policy = $policies.policies | Where-Object id -eq $job.policyId
-    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?includeObjectDetails=true&startTimeUsecs=$(timeAgo $days days)&numRuns=1000"
+    if($includeLogs){
+        $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?includeObjectDetails=true&startTimeUsecs=$(timeAgo $days days)&numRuns=1000"
+    }else{
+        $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?runTypes=kIncremental,kFull&includeObjectDetails=true&startTimeUsecs=$(timeAgo $days days)&numRuns=1000"
+    }
     if('kLog' -in $runs.runs.localBackupInfo.runType){
         $runDates = ($runs.runs | Where-Object {$_.localBackupInfo.runType -eq 'kLog'}).localBackupInfo.startTimeUsecs
     }else{
