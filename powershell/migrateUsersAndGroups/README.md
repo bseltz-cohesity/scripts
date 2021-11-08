@@ -12,7 +12,7 @@ As additional protection groups are migrated, the script can be run again, and t
 
 Since cleanup may have occurred on the source cluster (protection sources and views may have been remoted) as the migration progresses, it's important to make a cache of the source cluster's state (users, groups, roles, sources and restrictions) at the beginning of the migration, by using the `-makeCache` parameter. We can then use the cache later in the migration by using the `-useCache` parameter.
 
-Also note that any local users will have a default password set during migration. You can specify the default password by using the `-defaultPassword` parameter.
+Also note that any local users will have a default password set during migration. You can use the `-defaultPassword` parameter to specify the default password.
 
 ## Download the script
 
