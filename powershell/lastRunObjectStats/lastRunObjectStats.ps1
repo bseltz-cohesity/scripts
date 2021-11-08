@@ -34,6 +34,7 @@ $policies = api get -v2 "data-protect/policies?includeTenants=true&excludeLinked
 
 $o365Sources = api get protectionSources?environments=kO365
 $o365Node = $o365Sources.nodes | Where-Object {$_.protectionSource.office365ProtectionSource.type -eq 'kUsers'}
+$o365SharepointNode = $o365Sources.nodes | Where-Object {$_.protectionSource.office365ProtectionSource.type -eq 'kSites'}
 
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     "{0}" -f $job.name
@@ -44,6 +45,12 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         if($entity.object.environment -eq 'kO365' -and $entity.object.objectType -eq 'kUser'){
             $source = $o365Node.nodes | Where-Object {$_.protectionSource.id -eq $entity.object.id}
             $objectName = $source.protectionSource.office365ProtectionSource.primarySMTPAddress
+        }
+        if($entity.object.environment -eq 'kO365' -and $entity.object.objectType -eq 'kSite'){
+            $source = $o365SharePointNode.nodes | Where-Object {$_.protectionSource.id -eq $entity.object.id}
+            if($source.protectionSource.office365ProtectionSource.PSObject.Properties['webUrl']){
+                $objectName = "$objectName ($($source.protectionSource.office365ProtectionSource.webUrl))"
+            }
         }
         if($job.isActive -eq $false){
             $origination = 'replicated'
