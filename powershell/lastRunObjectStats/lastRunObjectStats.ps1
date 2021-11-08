@@ -47,8 +47,8 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
             $objectName = $source.protectionSource.office365ProtectionSource.primarySMTPAddress
         }
         if($entity.object.environment -eq 'kO365' -and $entity.object.objectType -eq 'kSite'){
-            $source = $o365SharePointNode.nodes | Where-Object {$_.protectionSource.id -eq $entity.object.id}
-            if($source.protectionSource.office365ProtectionSource.PSObject.Properties['webUrl']){
+            $source = $o365SharepointNode.nodes | Where-Object {$_.protectionSource.id -eq $entity.object.id}
+            if($source -and $source.protectionSource.office365ProtectionSource.PSObject.Properties['webUrl']){
                 $objectName = "$objectName ($($source.protectionSource.office365ProtectionSource.webUrl))"
             }
         }
