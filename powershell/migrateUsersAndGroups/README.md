@@ -10,7 +10,7 @@ This script is part of a suite of scripts to help migrate protection groups from
 
 As additional protection groups are migrated, the script can be run again, and the object restrictions will be updated for any protection sources and views that were missing but are now present.
 
-Since cleanup may have occurred on the source cluster (protection sources and views may have been remoted) as the migration progresses, it's important to make a cache of the source cluster's state (users, groups, roles, sources and restrictions) at the beginning of the migration, by using the `-makeCache` parameter. We can then use the cache later in the migration by using the `-useCache` parameter.
+Since cleanup may have occurred on the source cluster as the migration progresses (protection sources and views may have been removed), it's important to make a cache of the source cluster's state (users, groups, roles, sources and restrictions) at the beginning of the migration, by using the `-makeCache` parameter. We can then use the cache later in the migration by using the `-useCache` parameter.
 
 Also note that any local users will have a default password set during migration. You can use the `-defaultPassword` parameter to specify the default password.
 
