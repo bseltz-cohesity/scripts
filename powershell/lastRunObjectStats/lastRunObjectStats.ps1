@@ -33,7 +33,11 @@ if($localOnly){
 $policies = api get -v2 "data-protect/policies?includeTenants=true&excludeLinkedPolicies=false"
 
 $o365Sources = api get protectionSources?environments=kO365
-$o365Node = $o365Sources.nodes | Where-Object {$_.protectionSource.office365ProtectionSource.type -eq 'kUsers'}
+$o365Users = ($o365Sources.nodes | Where-Object {$_.protectionSource.office365ProtectionSource.type -eq 'kUsers'}).nodes | Select-Object -Property @{l='id'; e={$_.protectionSource.id}}, @{l='smtpAddress'; e={$_.protectionSource.office365ProtectionSource.primarySMTPAddress}}
+$o365Index = @{}
+$o365Users | ForEach-Object {
+    $o365Index[$_.id] = $_.smtpAddress
+}
 
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     "{0}" -f $job.name
@@ -42,8 +46,10 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     foreach($entity in $lastRun.objects | Sort-Object -Property {$_.object.name}){
         $objectName = $entity.object.name
         if($entity.object.environment -eq 'kO365' -and $entity.object.objectType -eq 'kUser'){
-            $source = $o365Node.nodes | Where-Object {$_.protectionSource.id -eq $entity.object.id}
-            $objectName = $source.protectionSource.office365ProtectionSource.primarySMTPAddress
+            $altObjectName = $o365Index[$entity.object.id]
+            if($altObjectName -and $altObjectName -ne ''){
+                $objectName = $altObjectName
+            }
         }
         if($entity.object.environment -eq 'kO365' -and $entity.object.objectType -eq 'kSite'){
             $objectName = "$objectName ($($entity.object.sharepointSiteSummary.siteWebUrl))"
