@@ -14,71 +14,35 @@ param (
     [Parameter()][string]$defaultPassword = 'Pa$$w0rd'
 )
 
-function getObjectByName($sources, $objectName, $parentId=$null){
-    $global:_object_id = $null
-    $global:object = $null
+function indexObjects($sources, $objectName){
+    $global:indexByName = @{}
+    $global:indexById = @{}
 
-    function get_nodes($obj, $parentId=$null){
-        if($obj.protectionSource.name -eq $objectName){
-            if($null -eq $parentId -or $obj.protectionSource.parentId -eq $parentId){
-                $global:_object_id = $obj.protectionSource.id
-                $global:object = $obj
-                break
+    function get_nodes($obj){
+        $global:indexById[[string]$obj.protectionSource.id] = $obj.protectionSource
+        if($obj.protectionSource.name -notin $global:indexByName.Keys){
+            $global:indexByName[$obj.protectionSource.name] = @($obj.protectionSource)
+        }else{
+            if($obj.protectionSource.id -notin $global:indexByName[$obj.protectionSource.name].id){
+                $global:indexByName[$obj.protectionSource.name] = @($global:indexByName[$obj.protectionSource.name] + $obj.protectionSource)
             }
-        }
-        if($obj.name -eq $objectName){
-            if($null -eq $parentId -or $obj.protectionSource.parentId -eq $parentId){
-                $global:_object_id = $obj.id
-                $global:object = $obj
-                break
-            }
-        }
-        if($obj.PSObject.Properties['nodes'] -and $obj.protectionSource.name -ne 'Registered Agents'){
+        }     
+        if($obj.PSObject.Properties['nodes']){
             foreach($node in $obj.nodes){
-                if($null -eq $global:_object_id){
-                    get_nodes $node -parentId $parentId
-                }
+                get_nodes $node
             }
         }
         if($obj.PSObject.Properties['applicationNodes']){
             foreach($node in $obj.applicationNodes){
-                if($null -eq $global:_object_id){
-                    get_nodes $node -parentId $parentId
-                }
+                get_nodes $node
             }
         }
     }
     
     foreach($source in $sources){
-        if($null -eq $global:_object_id){
-            get_nodes $source -parentId $parentId
-        }
-    }
-    return $global:object
-}
-
-function getObjectById($objectId, $sources){
-    $global:_object = $null
-    function get_nodes($obj){
-        if($obj.protectionSource.id -eq $objectId){
-            $global:_object = $obj
-            break
-        }
-        if($obj.PSObject.Properties['nodes']){
-            foreach($node in $obj.nodes){
-                if($null -eq $global:_object){
-                    get_nodes $node
-                }
-            }
-        }
-    }
-
-    foreach($source in $sources){
-        if($null -eq $global:_object){
             get_nodes $source
-        }
     }
-    return $global:_object
+    return $global:indexByName, $global:indexById
 }
 
 # source the cohesity-api helper code
@@ -137,6 +101,8 @@ if(!$useCache -or $makeCache){
     }
 }
 
+$sourceNameIndex, $sourceIdIndex = indexObjects $sourceProtectionSources
+
 "Connecting to target cluster..."
 apiauth -vip $targetCluster -username $targetUser -domain $targetDomain -passwd $targetPassword -quiet
 
@@ -145,6 +111,8 @@ $targetUsers = api get users
 $targetGroups = api get groups
 $targetProtectionSources = api get protectionSources
 $targetViews = api get views
+
+$targetNameIndex, $targetIdIndex = indexObjects $targetProtectionSources
 
 # migrate roles
 Write-Host "`nMigrating roles..."
@@ -217,17 +185,17 @@ function processRestriction($sid, $restriction){
         $targetParentSource = $null
         $targetParentSourceId = $null
         if($protectionSource.PSObject.Properties['parentId']){
-            $parentSource = getObjectById -objectId $protectionSource.parentId -sources $sourceProtectionSources
-            $targetParentSource = getObjectByName -sources $targetProtectionSources -objectName $parentSource.protectionSource.name
-            $targetParentSourceId = $targetParentSource.protectionSource.id
-            $targetSource = getObjectByName -sources $targetProtectionSources -objectName $protectionSource.name -parentId $targetParentSourceId
+            $parentSource = $sourceIdIndex[[string]($protectionSource.parentId)]
+            $targetParentSource = $targetNameIndex[$parentSource.name][0]
+            $targetParentSourceId = $targetParentSource.id
+            $targetSource = $targetNameIndex[$protectionSource.name] | Where-Object parentId -eq $targetParentSourceId
             if($targetSource){
-                $newAccess.sourcesForPrincipals[0].protectionSourceIds = @($newAccess.sourcesForPrincipals[0].protectionSourceIds + $targetSource.protectionSource.id)
+                $newAccess.sourcesForPrincipals[0].protectionSourceIds = @($newAccess.sourcesForPrincipals[0].protectionSourceIds + $targetSource.id)
             }
         }else{
-            $targetSource = getObjectByName -sources $targetProtectionSources -objectName $protectionSource.name
+            $targetSource = $targetNameIndex[$protectionSource.name]
             if($targetSource){
-                $newAccess.sourcesForPrincipals[0].protectionSourceIds = @($newAccess.sourcesForPrincipals[0].protectionSourceIds + $targetSource.protectionSource.id)
+                $newAccess.sourcesForPrincipals[0].protectionSourceIds = @($newAccess.sourcesForPrincipals[0].protectionSourceIds + $targetSource.id)
             }
         }
     }
