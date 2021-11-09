@@ -3,9 +3,23 @@ param (
     [Parameter(Mandatory = $True)][string]$vip,
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
+    [Parameter()][array]$jobname,
+    [Parameter()][string]$joblist = '',
     [Parameter()][int]$days = 7,
     [Parameter()][switch]$includeLogs
 )
+
+# gather job names
+$myjobs = @()
+if($joblist -ne '' -and (Test-Path $joblist -PathType Leaf)){
+    $myjobs += Get-Content $joblist | Where-Object {$_ -ne ''}
+}elseif($jobList){
+    Write-Warning "File $joblist not found!"
+    exit 1
+}
+if($jobname){
+    $myjobs += $jobname
+}
 
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -21,13 +35,18 @@ $outfileName = "$($cluster.name)-sqlProtectedObjectReport-$dateString.csv"
 "Cluster Name,Job Name,Environment,Object Name,Object Type,Parent,Policy Name,Frequency (Minutes),Run Type,Status,Start Time,End Time,Duration (Minutes),Expires,Job Paused" | Out-File -FilePath $outfileName
 
 $policies = api get -v2 "data-protect/policies"
-$jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&environments=kSQL"
+$jobs = (api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&environments=kSQL").protectionGroups
+
+if($myjobs.Length -gt 0){
+    $jobs = $jobs | Where-Object name -in $myjobs
+}
+
 $sources = api get protectionSources
 
 $objects = @{}
 
 "`nGathering Job Info from $($cluster.name)..."
-foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
+foreach($job in $jobs | Sort-Object -Property name){
     "    $($job.name)"
     $policy = $policies.policies | Where-Object id -eq $job.policyId
     if($includeLogs){
