@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2021.11.03 - Brian Seltzer
+#  Version 2021.11.10 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2020.11.06 - refactor and simplify
@@ -16,9 +16,10 @@
 # 2021.10.14 - added storePasswordForUser and importStoredPassword
 # 2021.10.22 - fixed json2code and py functions and added toJson function
 # 2021.11.03 - fixed 'Cannot send a content-body with this verb-type' message in debug log
+# 2021.11.10 - added getContext, setContext
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2021.11.03'
+$versionCohesityAPI = '2021.11.10'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -309,6 +310,14 @@ function impersonate($tenant){
 
 function switchback(){
     $cohesity_api.header.Remove('x-impersonate-tenant-id')
+}
+
+function getContext(){
+    return $cohesity_api.Clone()
+}
+
+function setContext($context){
+    $Global:cohesity_api = $context.Clone()
 }
 
 # api call function ==============================================================================
