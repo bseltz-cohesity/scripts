@@ -76,7 +76,7 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -
                         $status = $task.publicStatus.subString(1)
                         $target = $task.snapshotTarget.archivalTarget.name
                         "        {0,25}:    ({1} $unit)    {2}  {3}" -f (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $noLongerNeeded, $cancelling
-                        "{0},{1},{2},{3},{4},{5},{6},{7}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status, $target, (usecsToDate $startTimeUsecs) | Out-File -FilePath $outfileName -Append
+                        "{0},{1},{2},{3},{4},{5},{6}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status, $target, (usecsToDate $startTimeUsecs) | Out-File -FilePath $outfileName -Append
                         # cancel archive task
                         if($cancel -eq $True){
                             $cancelTaskParams = @{
@@ -100,7 +100,7 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -
                             $startTimeUsecs = $task.archivalInfo.startTimeUsecs
                             $endTimeUsecs = $task.archivalInfo.endTimeUsecs
                             "        {0,25}:    ({1} $unit)    {2}" -f (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status
-                            "{0},{1},{2},{3},{4},{5},{6}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status, $target, (usecsToDate $startTimeUsecs), (usecsToDate $endTimeUsecs) | Out-File -FilePath $outfileName -Append
+                            "{0},{1},{2},{3},{4},{5},{6},{7}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status, $target, (usecsToDate $startTimeUsecs), (usecsToDate $endTimeUsecs) | Out-File -FilePath $outfileName -Append
                         }
                     }
                 }
