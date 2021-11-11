@@ -97,10 +97,6 @@ COHESITY_API = {
     'AUTHENTICATED': False
 }
 
-# APIROOT = ''
-# APIROOTv2 = ''
-# HEADER = ''
-# AUTHENTICATED = False
 APIMETHODS = ['get', 'post', 'put', 'delete']
 CONFIGDIR = expanduser("~") + '/.pyhesity'
 SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
@@ -114,10 +110,6 @@ APIROOTMCMv2 = 'https://helios.cohesity.com/v2/mcm/'
 def apiauth(vip='helios.cohesity.com', username='helios', domain='local', password=None, updatepw=None, prompt=None, quiet=None, helios=False, useApiKey=False, tenantId=None, noretry=False, regionid=None):
     """authentication function"""
     global COHESITY_API
-    # global APIROOT
-    # global APIROOTv2
-    # global HEADER
-    # global AUTHENTICATED
     global HELIOSCLUSTERS
     global CONNECTEDHELIOSCLUSTERS
 
