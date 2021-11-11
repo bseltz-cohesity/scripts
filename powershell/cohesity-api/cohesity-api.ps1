@@ -317,7 +317,11 @@ function getContext(){
 }
 
 function setContext($context){
-    $Global:cohesity_api = $context.Clone()
+    if($context['header'] -and $context['apiRoot'] -and $context['apiRootv2']){
+        $Global:cohesity_api = $context.Clone()
+    }else{
+        Write-Host "Invalid context" -ForegroundColor Yellow
+    }
 }
 
 # api call function ==============================================================================
