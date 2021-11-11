@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2021.10.13"""
+"""Cohesity Python REST API Wrapper Module - 2021.11.10"""
 
 ##########################################################################################
 # Change Log
@@ -39,6 +39,7 @@
 # 2021.04.20 - added error return from api function
 # 2021.09.25 - added support for DMaaS
 # 2021.10.13 - modified setpwd function
+# 2021.11.10 - added setContext and getContext functions
 #
 ##########################################################################################
 # Install Notes
@@ -85,12 +86,21 @@ __all__ = ['apiauth',
            'showProps',
            'storePasswordFromInput',
            'heliosCluster',
-           'heliosClusters']
+           'heliosClusters',
+           'getContext',
+           'setContext']
 
-APIROOT = ''
-APIROOTv2 = ''
-HEADER = ''
-AUTHENTICATED = False
+COHESITY_API = {
+    'APIROOT': '',
+    'APIROOTv2': '',
+    'HEADER': {},
+    'AUTHENTICATED': False
+}
+
+# APIROOT = ''
+# APIROOTv2 = ''
+# HEADER = ''
+# AUTHENTICATED = False
 APIMETHODS = ['get', 'post', 'put', 'delete']
 CONFIGDIR = expanduser("~") + '/.pyhesity'
 SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
@@ -103,10 +113,11 @@ APIROOTMCMv2 = 'https://helios.cohesity.com/v2/mcm/'
 ### authentication
 def apiauth(vip='helios.cohesity.com', username='helios', domain='local', password=None, updatepw=None, prompt=None, quiet=None, helios=False, useApiKey=False, tenantId=None, noretry=False, regionid=None):
     """authentication function"""
-    global APIROOT
-    global APIROOTv2
-    global HEADER
-    global AUTHENTICATED
+    global COHESITY_API
+    # global APIROOT
+    # global APIROOTv2
+    # global HEADER
+    # global AUTHENTICATED
     global HELIOSCLUSTERS
     global CONNECTEDHELIOSCLUSTERS
 
@@ -115,68 +126,68 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
     pwd = password
     if password is None:
         pwd = __getpassword(vip, username, password, domain, updatepw, prompt)
-    HEADER = {'accept': 'application/json', 'content-type': 'application/json'}
-    APIROOT = 'https://' + vip + '/irisservices/api/v1'
-    APIROOTv2 = 'https://' + vip + '/v2/'
+    COHESITY_API['HEADER'] = {'accept': 'application/json', 'content-type': 'application/json'}
+    COHESITY_API['APIROOT'] = 'https://' + vip + '/irisservices/api/v1'
+    COHESITY_API['APIROOTv2'] = 'https://' + vip + '/v2/'
     if vip == 'helios.cohesity.com':
-        HEADER = {'accept': 'application/json', 'content-type': 'application/json', 'apiKey': pwd}
+        COHESITY_API['HEADER'] = {'accept': 'application/json', 'content-type': 'application/json', 'apiKey': pwd}
         if regionid is not None:
-            HEADER['regionid'] = regionid
+            COHESITY_API['HEADER']['regionid'] = regionid
         URL = 'https://helios.cohesity.com/mcm/clusters/connectionStatus'
         try:
-            HELIOSCLUSTERS = (requests.get(URL, headers=HEADER, verify=False)).json()
+            HELIOSCLUSTERS = (requests.get(URL, headers=COHESITY_API['HEADER'], verify=False)).json()
             if HELIOSCLUSTERS is not None and 'message' in HELIOSCLUSTERS:
                 print(HELIOSCLUSTERS['message'])
-                AUTHENTICATED = False
+                COHESITY_API['AUTHENTICATED'] = False
                 return None
             if HELIOSCLUSTERS is not None and 'errorCode' not in HELIOSCLUSTERS:
                 CONNECTEDHELIOSCLUSTERS = [cluster for cluster in HELIOSCLUSTERS if cluster['connectedToCluster'] is True]
-                AUTHENTICATED = True
+                COHESITY_API['AUTHENTICATED'] = True
                 if(quiet is None):
                     print("Connected!")
             else:
                 URL = 'https://helios.cohesity.com/v2/mcm/dms/regions'
-                REGIONS = (requests.get(URL, headers=HEADER, verify=False)).json()
+                REGIONS = (requests.get(URL, headers=COHESITY_API['HEADER'], verify=False)).json()
                 if REGIONS is not None and 'message' in REGIONS:
                     print(REGIONS['message'])
-                    AUTHENTICATED = False
+                    COHESITY_API['AUTHENTICATED'] = False
                     return None
                 if REGIONS is not None and 'errorCode' not in REGIONS:
-                    AUTHENTICATED = True
+                    COHESITY_API['AUTHENTICATED'] = True
                     if(quiet is None):
                         print("Connected!")
         except requests.exceptions.RequestException as e:
-            AUTHENTICATED = False
+            COHESITY_API['AUTHENTICATED'] = False
             if quiet is None:
                 __writelog(e)
                 print(e)
     elif useApiKey is True:
-        HEADER = {'accept': 'application/json', 'content-type': 'application/json', 'apiKey': pwd}
+        COHESITY_API['HEADER'] = {'accept': 'application/json', 'content-type': 'application/json', 'apiKey': pwd}
         if tenantId is not None:
-            HEADER['x-impersonate-tenant-id'] = '%s/' % tenantId
-        AUTHENTICATED = True
+            COHESITY_API['HEADER']['x-impersonate-tenant-id'] = '%s/' % tenantId
+        COHESITY_API['AUTHENTICATED'] = True
         cluster = api('get', 'cluster')
         if cluster is not None:
             if(quiet is None):
                 print("Connected!")
         else:
-            AUTHENTICATED = False
+            COHESITY_API['AUTHENTICATED'] = False
     else:
         creds = json.dumps({"domain": domain, "password": pwd, "username": username})
 
-        url = APIROOT + '/public/accessTokens'
+        url = COHESITY_API['APIROOT'] + '/public/accessTokens'
         try:
-            response = requests.post(url, data=creds, headers=HEADER, verify=False)
+            response = requests.post(url, data=creds, headers=COHESITY_API['HEADER'], verify=False)
             if response != '':
                 if response.status_code == 201:
                     accessToken = response.json()['accessToken']
                     tokenType = response.json()['tokenType']
-                    HEADER = {'accept': 'application/json',
-                              'content-type': 'application/json',
-                              'authorization': tokenType + ' ' + accessToken}
+                    COHESITY_API['HEADER'] = {'accept': 'application/json',
+                                              'content-type': 'application/json',
+                                              'authorization': tokenType + ' ' + accessToken}
                     if tenantId is not None:
-                        HEADER['x-impersonate-tenant-id'] = '%s/' % tenantId
-                    AUTHENTICATED = True
+                        COHESITY_API['HEADER']['x-impersonate-tenant-id'] = '%s/' % tenantId
+                    COHESITY_API['AUTHENTICATED'] = True
                     if(quiet is None):
                         print("Connected!")
                 else:
@@ -189,22 +200,22 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
 
         except requests.exceptions.RequestException as e:
             __writelog(e)
-            AUTHENTICATED = False
+            COHESITY_API['AUTHENTICATED'] = False
             if quiet is None:
                 print(e)
 
 
 def apiconnected():
-    return AUTHENTICATED
+    return COHESITY_API['AUTHENTICATED']
 
 
 def apidrop():
-    global AUTHENTICATED
-    AUTHENTICATED = False
+    global COHESITY_API
+    COHESITY_API['AUTHENTICATED'] = False
 
 
 def heliosCluster(clusterName=None, verbose=False):
-    global HEADER
+    global COHESITY_API
     if clusterName is not None:
         if isinstance(clusterName, dict) is True:
             clusterName = clusterName['name']
@@ -212,7 +223,7 @@ def heliosCluster(clusterName=None, verbose=False):
         if not accessCluster:
             print('Cluster %s not connected to Helios' % clusterName)
         else:
-            HEADER['accessClusterId'] = str(accessCluster[0]['clusterId'])
+            COHESITY_API['HEADER']['accessClusterId'] = str(accessCluster[0]['clusterId'])
             if verbose is True:
                 print('Using %s' % clusterName)
     else:
@@ -229,7 +240,7 @@ def heliosClusters():
 ### api call function
 def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1):
     """api call function"""
-    if AUTHENTICATED is False:
+    if COHESITY_API['AUTHENTICATED'] is False:
         print('Not Connected')
         return None
     response = ''
@@ -239,22 +250,22 @@ def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1):
         url = APIROOTMCMv2 + uri
     else:
         if v == 2:
-            url = APIROOTv2 + uri
+            url = COHESITY_API['APIROOTv2'] + uri
         else:
             if uri[0] != '/':
                 uri = '/public/' + uri
-            url = APIROOT + uri
+            url = COHESITY_API['APIROOT'] + uri
 
     if method in APIMETHODS:
         try:
             if method == 'get':
-                response = requests.get(url, headers=HEADER, verify=False)
+                response = requests.get(url, headers=COHESITY_API['HEADER'], verify=False)
             if method == 'post':
-                response = requests.post(url, headers=HEADER, json=data, verify=False)
+                response = requests.post(url, headers=COHESITY_API['HEADER'], json=data, verify=False)
             if method == 'put':
-                response = requests.put(url, headers=HEADER, json=data, verify=False)
+                response = requests.put(url, headers=COHESITY_API['HEADER'], json=data, verify=False)
             if method == 'delete':
-                response = requests.delete(url, headers=HEADER, json=data, verify=False)
+                response = requests.delete(url, headers=COHESITY_API['HEADER'], json=data, verify=False)
         except requests.exceptions.RequestException as e:
             __writelog(e)
             if quiet is None:
@@ -460,11 +471,11 @@ def display(myjson):
 
 def fileDownload(uri, fileName):
     """download file"""
-    if AUTHENTICATED is False:
+    if COHESITY_API['AUTHENTICATED'] is False:
         return "Not Connected"
     if uri[0] != '/':
         uri = '/public/' + uri
-    response = requests.get(APIROOT + uri, headers=HEADER, verify=False, stream=True)
+    response = requests.get(COHESITY_API['APIROOT'] + uri, headers=COHESITY_API['HEADER'], verify=False, stream=True)
     f = open(fileName, 'wb')
     for chunk in response.iter_content(chunk_size=1048576):
         if chunk:
@@ -487,6 +498,18 @@ def showProps(obj, parent='myobject', search=None):
                 print("%s = %s" % (parent, obj))
         else:
             print("%s = %s" % (parent, obj))
+
+
+def getContext():
+    return COHESITY_API.copy()
+
+
+def setContext(context):
+    global COHESITY_API
+    if isinstance(context, dict) and 'HEADER' in context and 'APIROOT' in context and 'APIROOTv2' in context:
+        COHESITY_API = context.copy()
+    else:
+        print('Invalid context')
 
 
 ### create CONFIGDIR if it doesn't exist
