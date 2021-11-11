@@ -73,11 +73,11 @@ if($includeLogs){
 
 $dontrunstates = @('kAccepted', 'kRunning', 'kCanceling', 'kSuccess')
 
-foreach($jobname in $jobNames | Sort-Object -Unique){
-    $job = $jobs | Where-Object name -eq $jobname
+foreach($jobName in $jobNames | Sort-Object -Unique){
+    $job = $jobs | Where-Object name -eq $jobName
     if($job){
 
-        "searching for old $($job.name) snapshots..."
+        "searching for old $jobName snapshots..."
 
         # find local snapshots that are older than X days that have not been archived yet
         $runs = (api get "protectionRuns?jobId=$($job.id)&numRuns=999999&$($runTypes)excludeTasks=true&excludeNonRestoreableRuns=true") | `
@@ -100,23 +100,28 @@ foreach($jobname in $jobNames | Sort-Object -Unique){
             $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
             $runDateShort = $runDate.ToString("yyyy-MM-dd")
 
+            # local snapshots stats
+            $now = dateToUsecs $(get-date)
+            $startTimeUsecs = $run.copyRun[0].runStartTimeUsecs
+            $expireTimeUsecs = $run.copyRun[0].expiryTimeUsecs
+            $daysToExpire = [math]::Round(($expireTimeUsecs - $now) / 86400000000)
+
+            # calculate archive expire time
+            if($keepFor -gt 0){
+                $newExpireTimeUsecs = $startTimeUsecs + ([int]$keepFor * 86400000000)
+            }else{
+                $newExpireTimeUsecs = $expireTimeUsecs
+            }
+            $daysToKeep = [math]::Round(($newExpireTimeUsecs - $now) / 86400000000)
+
+            if($daysToKeep -lt 1){
+                $needsArchive -eq $false
+            }
+
             if($needsArchive){
-                $jobName = $run.jobName
-                $now = dateToUsecs $(get-date)
-    
-                # local snapshots stats
-                $startTimeUsecs = $run.copyRun[0].runStartTimeUsecs
-                $expireTimeUsecs = $run.copyRun[0].expiryTimeUsecs
-                $daysToExpire = [math]::Round(($expireTimeUsecs - $now) / 86400000000)
-    
-                # calculate archive expire time
-                if($keepFor -gt 0){
-                    $newExpireTimeUsecs = $startTimeUsecs + ([int]$keepFor * 86400000000)
-                }else{
-                    $newExpireTimeUsecs = $expireTimeUsecs
-                }
-                $daysToKeep = [math]::Round(($newExpireTimeUsecs - $now) / 86400000000) 
-    
+
+                $thisrun = api get "/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=$startTimeUsecs&excludeTasks=true&id=$($job.id)"
+                $jobUid = $thisrun.backupJobRuns.protectionRuns[0].backupRun.base.jobUid
                 # create archive task definition
                 $archiveTask = @{
                     'jobRuns' = @(
@@ -132,37 +137,40 @@ foreach($jobname in $jobNames | Sort-Object -Unique){
                                     'type'           = 'kArchival'
                                 }
                             );
-                            'runStartTimeUsecs' = $run.copyRun[0].runStartTimeUsecs;
-                            'jobUid'            = $run.jobUid
+                            'runStartTimeUsecs' = $startTimeUsecs;
+                            'jobUid'            = @{
+                                "clusterId" = $jobUid.clusterId;
+                                "clusterIncarnationId" = $jobUid.clusterIncarnationId;
+                                "id" = $jobUid.objectId
+                            }
                         }
                     )
                 }
-    
                 # If the Local Snapshot is not expiring soon...
                 if($dates.Length -eq 0 -or $runDateShort -in $dates){
                     if ($daysToExpire -gt $ifExpiringAfter) {
                         $newExpireDate = (get-date).AddDays($daysToKeep).ToString('yyyy-MM-dd')
                         if ($archive) {
-                            write-host "$($jobName): archiving $runDate until $newExpireDate" -ForegroundColor Green
+                            Write-Host "$($jobName): archiving $runDate until $newExpireDate" -ForegroundColor Green
                             # execute archive task if arcvhive swaitch is set
                             $null = api put protectionRuns $archiveTask
                         }
                         else {
                             # or just display what we would do if archive switch is not set
-                            write-host "$($jobName): would archive $runDate until $newExpireDate" -ForegroundColor Green
+                            Write-Host "$($jobName): would archive $runDate until $newExpireDate" -ForegroundColor Green
                         }
                     }
                     # otherwise tell us that we're not archiving since the snapshot is expiring soon
                     else {
-                        write-host "$($jobName): skipping $runDate (expiring in $daysToExpire days)" -ForegroundColor Gray
+                        Write-Host "$($jobName): skipping $runDate (expiring in $daysToExpire days)" -ForegroundColor Gray
                     }
                 }
             }else{
-                Write-host "$($jobName): $runDate already archived or archiving..." -ForegroundColor Magenta
+                Write-Host "$($jobName): $runDate already archived or archiving..." -ForegroundColor Magenta
             }
         }
     }else{
         # report job not found
-        write-host "$($jobname): not found" -ForegroundColor Yellow
+        Write-Host "$($jobName): not found" -ForegroundColor Yellow
     }
 }
