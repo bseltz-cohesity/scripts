@@ -8,7 +8,7 @@ param (
    [Parameter()][switch]$cancelQueued,
    [Parameter()][switch]$cancelAll,
    [Parameter()][switch]$showFinished,
-   [Parameter()][int]$numRuns = 9999,
+   [Parameter()][int]$numRuns = 99999,
    [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB'
 )
 
@@ -24,11 +24,14 @@ function toUnits($val){
 apiauth -vip $vip -username $username -domain $domain
 
 $finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')
+if($showFinished){
+    $finishedStates = @()
+}
 
 $cluster = api get cluster
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "ArchiveQueue-$($cluster.name)-$dateString.csv"
-"JobName,RunDate,$unit Transferred" | Out-File -FilePath $outfileName
+"Job ID,Job Name,Run Date,Logical $unit,Status,Target,Start Time,End Time" | Out-File -FilePath $outfileName
 
 $nowUsecs = dateToUsecs (get-date)
 
@@ -37,7 +40,7 @@ $runningTasks = 0
 foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -and $_.isActive -ne $false} | Sort-Object -Property name)){
     $jobId = $job.id
     $jobName = $job.name
-    "Getting tasks for $jobName"
+    "$jobName ($jobId)"
     $runs = api get "protectionRuns?jobId=$jobId&numRuns=$numRuns&excludeTasks=true" | Where-Object {$_.copyRun.status -notin $finishedStates } | Sort-Object -Property {$_.backupRun.stats.startTimeUsecs}
     foreach($run in $runs){
         $runStartTimeUsecs = $run.backupRun.stats.startTimeUsecs
@@ -69,8 +72,11 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -
                             $cancel = $True
                             $cancelling = '(Cancelling)'
                         }
-                        "                       {0,20}:  {1} $unit transferred {2}  {3}" -f (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $noLongerNeeded, $cancelling
-                        "{0},{1},{2}" -f $jobName, (usecsToDate $runStartTimeUsecs), (toUnits $transferred) | Out-File -FilePath $outfileName -Append
+                        $startTimeUsecs = $task.archivalInfo.startTimeUsecs
+                        $status = $task.publicStatus.subString(1)
+                        $target = $task.snapshotTarget.archivalTarget.name
+                        "        {0,25}:    ({1} $unit)    {2}  {3}" -f (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $noLongerNeeded, $cancelling
+                        "{0},{1},{2},{3},{4},{5},{6},{7}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status, $target, (usecsToDate $startTimeUsecs) | Out-File -FilePath $outfileName -Append
                         # cancel archive task
                         if($cancel -eq $True){
                             $cancelTaskParams = @{
@@ -82,6 +88,19 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -
                                 }
                             }
                             $null = api post "protectionRuns/cancel/$($jobId)" $cancelTaskParams 
+                        }
+                    }
+                }
+                if($showFinished){
+                    foreach($task in $run.backupJobRuns.protectionRuns[0].copyRun.finishedTasks){
+                        if($task.snapshotTarget.type -eq 3){
+                            $status = $task.publicStatus.subString(1)
+                            $target = $task.snapshotTarget.archivalTarget.name
+                            $transferred = $task.archivalInfo.logicalBytesTransferred
+                            $startTimeUsecs = $task.archivalInfo.startTimeUsecs
+                            $endTimeUsecs = $task.archivalInfo.endTimeUsecs
+                            "        {0,25}:    ({1} $unit)    {2}" -f (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status
+                            "{0},{1},{2},{3},{4},{5},{6}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status, $target, (usecsToDate $startTimeUsecs), (usecsToDate $endTimeUsecs) | Out-File -FilePath $outfileName -Append
                         }
                     }
                 }
