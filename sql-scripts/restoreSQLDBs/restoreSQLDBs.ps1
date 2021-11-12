@@ -16,7 +16,7 @@ param (
     [Parameter(Mandatory = $True)][string]$sourceServer,   # protection source where the DB was backed up
     [Parameter()][string]$sourceInstance = $null,          # source instance name
     [Parameter()][array]$sourceDBnames,                    # names of the source DBs we want to restore
-    [Parameter()][string]$sourceDBList,                    # text file containing DB names
+    [Parameter()][string]$sourceDBList = '',               # text file containing DB names
     [Parameter()][switch]$allDBs,                          # restore all DBs
     [Parameter()][string]$targetServer = $sourceServer,    # where to restore the DB to
     [Parameter()][string]$prefix = $null,                  # prefix to add to DB names
@@ -41,9 +41,9 @@ apiauth -vip $vip -username $username -domain $domain -quiet
 
 ### gather DB names
 $dbs = @()
-if($sourceDBList -and (Test-Path $sourceDBList -PathType Leaf)){
+if($sourceDBList -ne '' -and (Test-Path $sourceDBList -PathType Leaf)){
     $dbs += Get-Content $sourceDBList | Where-Object {$_ -ne ''}
-}elseif($sourceDBList){
+}elseif($sourceDBList -ne ''){
     Write-Warning "File $sourceDBList not found!"
     exit 1
 }
