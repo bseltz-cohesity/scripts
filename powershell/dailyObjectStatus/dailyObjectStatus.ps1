@@ -30,7 +30,7 @@ if($yesterdayOnly){
 $cluster = api get cluster
 $dateString = get-date -UFormat '%Y-%m-%d'
 $outputfile = $(Join-Path -Path $PSScriptRoot -ChildPath "dailyObjectStatus-$($cluster.name)-$dateString.csv")
-"Job Name,Job Type,Object Name,Status,Last Run,Message" | Out-File -FilePath $outputfile
+"Job Name,Job Type,Object Name,Status,Last Run,Duration (Seconds),Message" | Out-File -FilePath $outputfile
 
 $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true&includeLastRunInfo=false"
 
@@ -61,6 +61,9 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                 }
             }
             $startTimeUsecs = $lastRun.localBackupInfo.startTimeUsecs
+            $entityStartTimeUsecs = $entity.localSnapshotInfo.snapshotInfo.startTimeUsecs
+            $entityEndTimeUsecs = $entity.localSnapshotInfo.snapshotInfo.endTimeUsecs
+            $durationSecs = [math]::Round(($entityEndTimeUsecs - $entityStartTimeUsecs) / 1000000,0)
             $status = $entity.localSnapshotInfo.snapshotInfo.status.Substring(1)
             if($status -eq 'Failed'){
                 $message = $entity.localSnapshotInfo.failedAttempts[-1].message.replace("`n", " ")
@@ -70,7 +73,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                 $message = ""
             }
             "    {0}" -f $objectName
-            """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}""" -f $job.name, $job.environment.Substring(1), $objectName, (usecsToDate $startTimeUsecs), $status, $message | Out-File -FilePath $outputfile -Append
+            """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}""" -f $job.name, $job.environment.Substring(1), $objectName, (usecsToDate $startTimeUsecs), $status, $durationSecs, $message | Out-File -FilePath $outputfile -Append
         }
     }
 }
