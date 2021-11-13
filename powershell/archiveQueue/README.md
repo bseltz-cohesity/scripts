@@ -33,6 +33,7 @@ Place both files in a folder together and run the main script like so:
 * -vip: the Cohesity cluster to connect to
 * -username: the cohesity user to login with
 * -domain: (optional) domain of the Cohesity user (defaults to local)
+* -showFinished: (optional) show finished archive tasks
 * -cancelAll: (optional) cancel all archive tasks
 * -cancelOutdated: (optional) cancel archive tasks that should be expired anyway
 * -cancelQueued: (optional) cancel archive tasks that haven't moved any data yet
