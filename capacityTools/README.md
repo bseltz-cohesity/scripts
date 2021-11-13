@@ -10,7 +10,7 @@ Here are some sample reports available to help analyze and monitor storage consu
 
 ## Storage Report
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/powershell/storageReport>
+<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storageReport>
 
 This script generates HTML and CSV showing storage per job and per view
 
