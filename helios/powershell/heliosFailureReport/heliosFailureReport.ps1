@@ -8,6 +8,10 @@ param (
     [Parameter()][int]$days = 0
 )
 
+$filePrefix = "heliosFailureReport"
+$title = "Helios Failure Report"
+$reportNumber = 900
+
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
@@ -36,7 +40,6 @@ if($startDate -ne '' -and $endDate -ne ''){
 
 $start = (usecsToDate $uStart).ToString('yyyy-MM-dd')
 $end = (usecsToDate $uEnd).ToString('yyyy-MM-dd')
-
 $dateString = (get-date).ToString('yyyy-MM-dd')
 
 $headings = "Cluster Name
@@ -54,13 +57,11 @@ $csvHeadings = $headings -join ','
 $htmlHeadings = $htmlHeadings = ($headings | ForEach-Object {"<th>$_</th>"}) -join "`n"
 
 # CSV output
-$csvFileName = "heliosFailureReport_$start_$end.csv"
+$csvFileName = "$($filePrefix)_$($start)_$($end).csv"
 $csvHeadings | Out-File -FilePath $csvFileName
 
 # HTML output
-$htmlFileName = "heliosFailureReport_$start_$end.html"
-
-$title = "Helios Failure Report"
+$htmlFileName = "$($filePrefix)_$($start)_$($end).html"
 
 $trColors = @('#FFFFFF;', '#F1F1F1;')
 
@@ -207,20 +208,9 @@ $reportParams = @{
 }
 
 Write-Host "Retrieving report data..."
-$preview = api post -reportingV2 components/900/preview $reportParams
+$preview = api post -reportingV2 "components/$reportNumber/preview" $reportParams
 
 $clusters = $preview.component.data.system | Sort-Object -Unique
-
-"Cluster Name
-Group Name
-Source
-Object
-Environment
-Policy
-Last Failure
-Failed Backups
-Strikes
-Last Error"
 
 foreach($cluster in $clusters){
     foreach($object in $preview.component.data | Where-Object system -eq $cluster | Sort-Object -Property objectName){
