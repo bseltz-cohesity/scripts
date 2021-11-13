@@ -39,9 +39,24 @@ $end = (usecsToDate $uEnd).ToString('yyyy-MM-dd')
 
 $dateString = (get-date).ToString('yyyy-MM-dd')
 
+$headings = "Cluster Name
+Protection Group
+Source
+Environment
+Policy
+Last Result
+Last Run
+Successful
+Unsuccessful
+Success Rate
+SLA" -split "`n"
+
+$csvHeadings = $headings -join ','
+$htmlHeadings = $htmlHeadings = ($headings | ForEach-Object {"<th>$_</th>"}) -join "`n"
+
 # CSV output
 $csvFileName = "heliosProtectionGoupSummary_$start_$end.csv"
-"Cluster Name,Protection Group,Source,Environment,Policy,Last Result,Last Run,Successful,Unsuccessful,Success Rate,SLA" | Out-File -FilePath $csvFileName
+$csvHeadings | Out-File -FilePath $csvFileName
 
 # HTML output
 $htmlFileName = "heliosProtectionGoupSummary_$start_$end.html"
@@ -169,20 +184,11 @@ $Global:html += "$start to $end"
 $Global:html += '</span>
 </p>
 <table>
-<tr style="background-color: #F1F1F1;">
-    <th>Cluster Name</th>
-    <th>Protection Group</th>
-    <th>Source</th>
-    <th>Environment</th>
-    <th>Policy</th>
-    <th>Last Result</th>
-    <th>Last Run</th>
-    <th>Successful</th>
-    <th>Unsuccessful</th>
-    <th>Sucess Rate</th>
-    <th>SLA</th>
-</tr>'
+<tr style="background-color: #F1F1F1;">'
+$Global:html += $htmlHeadings
+$Global:html += '</tr>'
 
+# report parameters
 $reportParams = @{
     "filters"  = @(
         @{
