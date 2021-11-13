@@ -1,8 +1,8 @@
-# Report Protected Objects using PowerShell
+# Generate Helios Protection Group Summary Report using PowerShell
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This PowerShell script creates a protection summary report by cluster and outputs to a CSV file.
+This PowerShell script creates a protection group summary report and outputs to HTML and CSV files.
 
 ## Download the script
 
@@ -10,35 +10,32 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-$scriptName = 'heliosProtectionSummaryReport'
+$scriptName = 'heliosProtectionGroupSummary'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
-(Invoke-WebRequest -Uri "$repoUrl/helios/powershell/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$repoUrl/reports/heliosV2/powershell/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
 
 ## Components
 
-* heliosProtectionSummaryReport.ps1: the main PowerShell script
+* heliosProtectionGroupSummary.ps1: the main PowerShell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place all files in a folder together, then run the main script like so:
 
 ```powershell
-./heliosProtectionSummaryReport.ps1 -username myusername@mydomain.net
+./heliosProtectionGroupSummary.ps1 -username myusername@mydomain.net
 ```
 
 ## Parameters
 
-* -vip: (optional) defaults to helios.cohesity.com
 * -username: (optional) defaults to helios
-* -domain: (optional) domain of the Cohesity user (defaults to local)
-* -daysBack: (optional) number of days to include in the report (default is 7 days)
-* -smtpServer: (optional) SMTP gateway to forward email through
-* -smtpPort: (optional) SMTP port to use (default is 25)
-* -sendTo: (optional) email addresses to send report to (comma separated)
-* -sendFrom: (optional) email address to show in the from field
-* -outPath: (optional) folder to write output files
+* -startDate: (optional) specify start of date range
+* -endDate: (optional) specify end of date range
+* -thisCalendarMonth: (optional) set date range to this month
+* -lastCalendarMonth: (optional) set date range to last month
+* -days: (optional) set date range to last X days (default is 31)
 
 ## Authenticating to Helios
 
