@@ -10,7 +10,7 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/licenseReport/licenseReport.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/python/licenseReport/licenseReport.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x licenseReport.py
 # end download commands
