@@ -12,6 +12,17 @@ $filePrefix = "heliosFailureReport"
 $title = "Helios Failure Report"
 $reportNumber = 900
 
+$headings = "Cluster Name
+Group Name
+Source
+Object
+Environment
+Policy
+Last Failure
+Failed Backups
+Strikes
+Last Error" -split "`n"
+
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
@@ -41,17 +52,6 @@ if($startDate -ne '' -and $endDate -ne ''){
 $start = (usecsToDate $uStart).ToString('yyyy-MM-dd')
 $end = (usecsToDate $uEnd).ToString('yyyy-MM-dd')
 $dateString = (get-date).ToString('yyyy-MM-dd')
-
-$headings = "Cluster Name
-Group Name
-Source
-Object
-Environment
-Policy
-Last Failure
-Failed Backups
-Strikes
-Last Error" -split "`n"
 
 $csvHeadings = $headings -join ','
 $htmlHeadings = $htmlHeadings = ($headings | ForEach-Object {"<th>$_</th>"}) -join "`n"
@@ -213,21 +213,20 @@ $preview = api post -reportingV2 "components/$reportNumber/preview" $reportParam
 $clusters = $preview.component.data.system | Sort-Object -Unique
 
 foreach($cluster in $clusters){
-    foreach($object in $preview.component.data | Where-Object system -eq $cluster | Sort-Object -Property objectName){
-        $clusterName = $object.system
-        $jobName = $object.groupName
-        $sourceName = $object.sourceName
-        $objectName = $object.objectName
-        $environment = $object.environment.subString(1)
-        $policy = $object.policyName
-        $lastFailure = (usecsToDate $object.lastFailedRunUsecs).ToSTring('yyyy-MM-dd hh:mm')
-        $failedBackups = $object.failedBackups
-        $strikes = $object.strikeCount
-        $lastError = $object.lastFailedRunErrorMsg
+    foreach($i in $preview.component.data | Where-Object system -eq $cluster | Sort-Object -Property objectName){
+        $clusterName = $i.system
+        $jobName = $i.groupName
+        $sourceName = $i.sourceName
+        $objectName = $i.objectName
+        $environment = $i.environment.subString(1)
+        $policy = $i.policyName
+        $lastFailure = (usecsToDate $i.lastFailedRunUsecs).ToSTring('yyyy-MM-dd hh:mm')
+        $failedBackups = $i.failedBackups
+        $strikes = $i.strikeCount
+        $lastError = $i.lastFailedRunErrorMsg
         if($lastError.length -gt 301){
             $lastError = $lastError.subString(0,300)
         }
-
         """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}""" -f $clusterName, $jobName, $sourceName, $objectName, $environment, $policy, $lastFailure, $failedBackups, $strikes, $lastError | Tee-Object -FilePath $csvFileName -Append
         $Global:html += '<tr style="border: 1px solid {10} background-color: {10}">
             <td>{0}</td>
