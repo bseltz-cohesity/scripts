@@ -5,9 +5,12 @@ param (
    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
    [Parameter()][string]$domain = 'local', #local or AD domain
    [Parameter()][string]$jobName,  #optional jobname filter
+   [Parameter()][switch]$cancelOutdated,
    [Parameter()][switch]$cancelQueued,
    [Parameter()][switch]$cancelAll,
-   [Parameter()][int]$daysBack = 31
+   [Parameter()][switch]$showFinished,
+   [Parameter()][int]$numRuns = 1000,
+   [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB'
 )
 
 ### source the cohesity-api helper code
@@ -26,7 +29,7 @@ $finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning')
 $cluster = api get cluster
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "ArchiveQueue-$($cluster.name)-$dateString.csv"
-"JobName,RunDate,$unit Transferred" | Out-File -FilePath $outfileName
+"JobName,RunDate,Status,$unit Transferred" | Out-File -FilePath $outfileName
 
 $nowUsecs = dateToUsecs (get-date)
 
@@ -34,7 +37,6 @@ $runningTasks = 0
 
 $now = Get-Date
 $nowUsecs = dateToUsecs $now
-$daysBackUsecs = dateToUsecs $now.AddDays(-$daysBack)
 
 $jobs = (api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true").protectionGroups | Sort-Object -Property name
 if($jobName){
@@ -45,12 +47,9 @@ foreach($job in $jobs){
     $jobId = $job.id
     $thisJobName = $job.name
     "Getting tasks for $thisJobName"
-    $endUsecs = dateToUsecs (Get-Date)
+    $endUsecs = $nowUsecs
     while($True){
-        if($endUsecs -le $daysBackUsecs){
-            break
-        }
-        $runs = api get -v2 "data-protect/protection-groups/$jobId/runs?endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=false"
+        $runs = api get -v2 "data-protect/protection-groups/$jobId/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=false"
         if($runs.runs.Count -gt 0){
             $endUsecs = $runs.runs[-1].localBackupInfo.startTimeUsecs - 1
         }else{
@@ -62,15 +61,28 @@ foreach($job in $jobs){
             foreach($archivalInfo in $run.archivalInfo.archivalTargetResults){
                 $taskId = $archivalInfo.archivalTaskId
                 $status = $archivalInfo.status
+                $transferred = toUnits $archivalInfo.stats.logicalBytesTransferred
+                $referenceFull = ''
+                if($archivalInfo.isIncremental -eq $false){
+                    $referenceFull = '(Reference Full)'
+                }
                 if($status -notin $finishedStates){
                     $cancelling = ''
+                    $reason = ''
+                    if($archivalInfo.expiryTimeUsecs -and $nowUsecs -gt $archivalInfo.expiryTimeUsecs){
+                        $reason = '(Outdated)'
+                        if($cancelOutdated){
+                            $cancelling = '(Cancelling)'
+                        }
+                    }
                     if($cancelQueued -and $status -eq 'Accepted'){
+                        $reason = '(Queued)'
                         $cancelling = '(Cancelling)'
                     }
                     if($cancelAll){
                         $cancelling = '(Cancelling)'
                     }
-                    "  $status $(usecsToDate $startTimeUsecs) $cancelling"
+                    "    $status $(usecsToDate $startTimeUsecs) ($transferred) $referenceFull $reason $cancelling"
                     if($cancelling -ne ''){
                         $cancelParams = @{
                             "archivalTaskId" = @(
@@ -79,9 +91,12 @@ foreach($job in $jobs){
                         }
                         $null = api post -v2 "data-protect/protection-groups/$jobId/runs/$runId/cancel" $cancelParams
                     }
+                }else{
+                    if($showFinished){
+                        "    $status $(usecsToDate $startTimeUsecs) ($transferred) $referenceFull"
+                    }
                 }
             }
         }
-    } 
-
+    }
 }
