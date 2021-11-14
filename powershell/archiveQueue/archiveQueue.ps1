@@ -1,16 +1,35 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-   [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
-   [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
-   [Parameter()][string]$domain = 'local', #local or AD domain
-   [Parameter()][switch]$cancelOutdated,
-   [Parameter()][switch]$cancelQueued,
-   [Parameter()][switch]$cancelAll,
-   [Parameter()][switch]$showFinished,
-   [Parameter()][int]$numRuns = 99999,
+   [Parameter(Mandatory = $True)][string]$vip,  # the cluster to connect to (DNS name or IP)
+   [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
+   [Parameter()][string]$domain = 'local',      # local or AD domain
+   [Parameter()][array]$jobName,          # filter on job names
+   [Parameter()][string]$jobList = '',    # filter on job names from text file
+   [Parameter()][switch]$cancelOutdated,  # cancel if archive is already due to expire
+   [Parameter()][switch]$cancelQueued,    # cancel if archive hasn't transferred any data yet
+   [Parameter()][switch]$cancelAll,       # cancel all archives
+   [Parameter()][switch]$showFinished,    # show completed archives
+   [Parameter()][int]$numRuns = 1000,
    [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB'
 )
+
+# gather list of jobs
+$jobNames = @()
+foreach($j in $jobName){
+    $jobNames += $j
+}
+if ('' -ne $jobList){
+    if(Test-Path -Path $jobList -PathType Leaf){
+        $jobs = Get-Content $jobList
+        foreach($j in $jobs){
+            $jobNames += [string]$j
+        }
+    }else{
+        Write-Host "Job list $jobList not found!" -ForegroundColor Yellow
+        exit
+    }
+}
 
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -38,73 +57,86 @@ $nowUsecs = dateToUsecs (get-date)
 $runningTasks = 0
 
 foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -and $_.isActive -ne $false} | Sort-Object -Property name)){
+
     $jobId = $job.id
     $jobName = $job.name
-    "$jobName ($jobId)"
-    $runs = api get "protectionRuns?jobId=$jobId&numRuns=$numRuns&excludeTasks=true" | Where-Object {$_.copyRun.status -notin $finishedStates } | Sort-Object -Property {$_.backupRun.stats.startTimeUsecs}
-    foreach($run in $runs){
-        $runStartTimeUsecs = $run.backupRun.stats.startTimeUsecs
-        foreach($copyRun in $($run.copyRun | Where-Object {$_.status -notin $finishedStates})){
-            $copyType = $copyRun.target.type
-            if($copyType -eq 'kArchival'){
-                $run = api get "/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=$($runStartTimeUsecs)&id=$($jobId)"
-                foreach($task in $run.backupJobRuns.protectionRuns[0].copyRun.activeTasks){
-                    if($task.snapshotTarget.type -eq 3){
-                        $noLongerNeeded = ''
-                        $cancelling = ''
-                        $cancel = $false
-                        $daysToKeep = $task.retentionPolicy.numDaysToKeep
-                        $usecsToKeep = $daysToKeep * 1000000 * 86400
-                        $timePassed = $nowUsecs - $runStartTimeUsecs
-                        if($timePassed -gt $usecsToKeep){
-                            $noLongerNeeded = "(NO LONGER NEEDED)"
-                            if($cancelOutdated -or $cancelAll){
-                                $cancel = $True
-                                $cancelling = '(Cancelling)'
-                            }
-                        }
-                        if($task.archivalInfo.logicalBytesTransferred){
-                            $transferred = $task.archivalInfo.logicalBytesTransferred
-                        }else{
-                            $transferred = 0
-                        }
-                        if($transferred -eq 0 -and ($cancelQueued -or $cancelAll)){
-                            $cancel = $True
-                            $cancelling = '(Cancelling)'
-                        }
-                        $startTimeUsecs = $task.archivalInfo.startTimeUsecs
-                        $status = $task.publicStatus.subString(1)
-                        $target = $task.snapshotTarget.archivalTarget.name
-                        "        {0,25}:    ({1} $unit)    {2}  {3}" -f (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $noLongerNeeded, $cancelling
-                        "{0},{1},{2},{3},{4},{5},{6}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status, $target, (usecsToDate $startTimeUsecs) | Out-File -FilePath $outfileName -Append
-                        # cancel archive task
-                        if($cancel -eq $True){
-                            $cancelTaskParams = @{
-                                "jobId"       = $jobId;
-                                "copyTaskUid" = @{
-                                    "id"                   = $task.taskUid.objectId;
-                                    "clusterId"            = $task.taskUid.clusterId;
-                                    "clusterIncarnationId" = $task.taskUid.clusterIncarnationId
+
+    if($jobNames.Length -eq 0 -or $jobName -in $jobNames){
+        "$jobName ($jobId)"
+        $endUsecs = dateToUsecs (Get-Date)
+        while($True){
+            $runs = api get "protectionRuns?jobId=$jobId&numRuns=$numRuns&endTimeUsecs=$endUsecs&excludeTasks=true"
+            if($runs){
+                $endUsecs = $runs[-1].backupRun.stats.startTimeUsecs - 1
+            }else{
+                break
+            }
+            $runs = $runs | Where-Object {$_.copyRun.status -notin $finishedStates } # | Sort-Object -Property {$_.backupRun.stats.startTimeUsecs}
+            foreach($run in $runs){
+                $runStartTimeUsecs = $run.backupRun.stats.startTimeUsecs
+                foreach($copyRun in $($run.copyRun | Where-Object {$_.status -notin $finishedStates})){
+                    $copyType = $copyRun.target.type
+                    if($copyType -eq 'kArchival'){
+                        $run = api get "/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=$($runStartTimeUsecs)&id=$($jobId)"
+                        foreach($task in $run.backupJobRuns.protectionRuns[0].copyRun.activeTasks){
+                            if($task.snapshotTarget.type -eq 3){
+                                $noLongerNeeded = ''
+                                $cancelling = ''
+                                $cancel = $false
+                                $daysToKeep = $task.retentionPolicy.numDaysToKeep
+                                $usecsToKeep = $daysToKeep * 1000000 * 86400
+                                $timePassed = $nowUsecs - $runStartTimeUsecs
+                                if($timePassed -gt $usecsToKeep){
+                                    $noLongerNeeded = "(NO LONGER NEEDED)"
+                                    if($cancelOutdated -or $cancelAll){
+                                        $cancel = $True
+                                        $cancelling = '(Cancelling)'
+                                    }
+                                }
+                                if($task.archivalInfo.logicalBytesTransferred){
+                                    $transferred = $task.archivalInfo.logicalBytesTransferred
+                                }else{
+                                    $transferred = 0
+                                }
+                                if($transferred -eq 0 -and ($cancelQueued -or $cancelAll)){
+                                    $cancel = $True
+                                    $cancelling = '(Cancelling)'
+                                }
+                                $startTimeUsecs = $task.archivalInfo.startTimeUsecs
+                                $status = $task.publicStatus.subString(1)
+                                $target = $task.snapshotTarget.archivalTarget.name
+                                "        {0,25}:    ({1} $unit)    {2}  {3}" -f (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $noLongerNeeded, $cancelling
+                                "{0},{1},{2},{3},{4},{5},{6}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status, $target, (usecsToDate $startTimeUsecs) | Out-File -FilePath $outfileName -Append
+                                # cancel archive task
+                                if($cancel -eq $True){
+                                    $cancelTaskParams = @{
+                                        "jobId"       = $jobId;
+                                        "copyTaskUid" = @{
+                                            "id"                   = $task.taskUid.objectId;
+                                            "clusterId"            = $task.taskUid.clusterId;
+                                            "clusterIncarnationId" = $task.taskUid.clusterIncarnationId
+                                        }
+                                    }
+                                    $null = api post "protectionRuns/cancel/$($jobId)" $cancelTaskParams 
                                 }
                             }
-                            $null = api post "protectionRuns/cancel/$($jobId)" $cancelTaskParams 
                         }
+                        if($showFinished){
+                            foreach($task in $run.backupJobRuns.protectionRuns[0].copyRun.finishedTasks){
+                                if($task.snapshotTarget.type -eq 3){
+                                    $status = $task.publicStatus.subString(1)
+                                    $target = $task.snapshotTarget.archivalTarget.name
+                                    $transferred = $task.archivalInfo.logicalBytesTransferred
+                                    $startTimeUsecs = $task.archivalInfo.startTimeUsecs
+                                    $endTimeUsecs = $task.archivalInfo.endTimeUsecs
+                                    "        {0,25}:    ({1} $unit)    {2}" -f (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status
+                                    "{0},{1},{2},{3},{4},{5},{6},{7}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status, $target, (usecsToDate $startTimeUsecs), (usecsToDate $endTimeUsecs) | Out-File -FilePath $outfileName -Append
+                                }
+                            }
+                        }
+                        $runningTasks += 1
                     }
                 }
-                if($showFinished){
-                    foreach($task in $run.backupJobRuns.protectionRuns[0].copyRun.finishedTasks){
-                        if($task.snapshotTarget.type -eq 3){
-                            $status = $task.publicStatus.subString(1)
-                            $target = $task.snapshotTarget.archivalTarget.name
-                            $transferred = $task.archivalInfo.logicalBytesTransferred
-                            $startTimeUsecs = $task.archivalInfo.startTimeUsecs
-                            $endTimeUsecs = $task.archivalInfo.endTimeUsecs
-                            "        {0,25}:    ({1} $unit)    {2}" -f (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status
-                            "{0},{1},{2},{3},{4},{5},{6},{7}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status, $target, (usecsToDate $startTimeUsecs), (usecsToDate $endTimeUsecs) | Out-File -FilePath $outfileName -Append
-                        }
-                    }
-                }
-                $runningTasks += 1
             }
         }
     }
