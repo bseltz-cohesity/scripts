@@ -10,7 +10,7 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/registeredSources/registeredSources.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/python/registeredSources/registeredSources.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x registeredSources.py
 # end download commands

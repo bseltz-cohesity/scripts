@@ -1,8 +1,8 @@
-# Generate a Cluster Wide Capacity Report Using Python
+# List Recovery Points Per Protected Object
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script reports cluster-wide storage growth over time.
+This python script lists available recovery points for every protected object in Cohesity.
 
 ## Download the script
 
@@ -10,23 +10,23 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/storageGrowth/storageGrowth.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/python/recoveryPoints/recoveryPoints.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-chmod +x storageGrowth.py
+chmod +x recoveryPoints.py
 # end download commands
 ```
 
 ## Components
 
-* storageGrowth.py: the main powershell script
+* recoveryPoints.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./storageGrowth.py -v mycluster \
-                   -u myusername \
-                   -d mydomain.net
+# example
+./recoveryPoints.py -v mycluster -u myusername -d mydomain.net
+# end example
 ```
 
 ## Parameters
@@ -34,7 +34,8 @@ Place both files in a folder together and run the main script like so:
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
-* -i, --useApiKey: (optional) use API key for authentication
-* -pwd: --password: (optional) use password from command line instead of stored password
-* -of: --outfolder: (optional) where to write report html (default is current directory)
-* -x: --days: (optional) limit report to the last X days (default is since cluster creation)
+* -i, --useApiKey: (optional) use API Key authentication
+* -pwd, --password: (optional) specify password or API key
+* -of, --outfolder: (optional) location to write output CSV file (default is '.')
+* -j, --jobname: (optional) filter by job name
+* -o, --objectname: (optional) filter by object name
