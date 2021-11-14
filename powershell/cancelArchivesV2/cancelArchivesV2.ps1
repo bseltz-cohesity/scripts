@@ -48,6 +48,7 @@ foreach($job in $jobs){
     $thisJobName = $job.name
     "Getting tasks for $thisJobName"
     $endUsecs = $nowUsecs
+    $runInfo = @()
     while($True){
         $runs = api get -v2 "data-protect/protection-groups/$jobId/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=false"
         if($runs.runs.Count -gt 0){
@@ -62,39 +63,57 @@ foreach($job in $jobs){
                 $taskId = $archivalInfo.archivalTaskId
                 $status = $archivalInfo.status
                 $transferred = toUnits $archivalInfo.stats.logicalBytesTransferred
-                $referenceFull = ''
-                if($archivalInfo.isIncremental -eq $false){
-                    $referenceFull = '(Reference Full)'
+                $expiryTime = $archivalInfo.expiryTimeUsecs
+                $isIncremental = $archivalInfo.isIncremental
+                $runInfo = @($runInfo + @{
+                    'runId' = $runId;
+                    'taskId' = $taskId;
+                    'status' = $status;
+                    'transferred' = $transferred;
+                    'expiryTime' = $expiryTime;
+                    'isIncremental' = $isIncremental;
+                    'startTimeUsecs' = $startTimeUsecs;
+                })
+            }
+        }
+
+        if($cancelQueued){
+            $runInfo = @($runInfo | Where-Object {$_.status -notin $finishedStates})
+            $runInfo = $runInfo[0..$($runInfo.Length-2)]
+        }
+        foreach($run in $runInfo){
+            $referenceFull = ''
+            if($run.isIncremental -eq $false){
+                $referenceFull = '(Reference Full)'
+            }
+            if($run.status -notin $finishedStates){
+                $cancelling = ''
+                $reason = ''
+                if($run.expiryTimeUsecs -and $nowUsecs -gt $run.expiryTimeUsecs){
+                    $reason = '(Outdated)'
+                    if($cancelOutdated){
+                        $cancelling = '(Cancelling)'
+                    }
                 }
-                if($status -notin $finishedStates){
-                    $cancelling = ''
-                    $reason = ''
-                    if($archivalInfo.expiryTimeUsecs -and $nowUsecs -gt $archivalInfo.expiryTimeUsecs){
-                        $reason = '(Outdated)'
-                        if($cancelOutdated){
-                            $cancelling = '(Cancelling)'
-                        }
+                if($cancelQueued){
+                    $reason = '(Queued)'
+                    $cancelling = '(Cancelling)'
+                }
+                if($cancelAll){
+                    $cancelling = '(Cancelling)'
+                }
+                "    $($run.status)  $(usecsToDate $($run.startTimeUsecs))  ($($run.transferred))  $referenceFull  $reason  $cancelling"
+                if($cancelling -ne ''){
+                    $cancelParams = @{
+                        "archivalTaskId" = @(
+                                $run.taskId
+                        )
                     }
-                    if($cancelQueued -and $status -eq 'Accepted'){
-                        $reason = '(Queued)'
-                        $cancelling = '(Cancelling)'
-                    }
-                    if($cancelAll){
-                        $cancelling = '(Cancelling)'
-                    }
-                    "    $status $(usecsToDate $startTimeUsecs) ($transferred) $referenceFull $reason $cancelling"
-                    if($cancelling -ne ''){
-                        $cancelParams = @{
-                            "archivalTaskId" = @(
-                                    $taskId
-                            )
-                        }
-                        $null = api post -v2 "data-protect/protection-groups/$jobId/runs/$runId/cancel" $cancelParams
-                    }
-                }else{
-                    if($showFinished){
-                        "    $status $(usecsToDate $startTimeUsecs) ($transferred) $referenceFull"
-                    }
+                    $null = api post -v2 "data-protect/protection-groups/$jobId/runs/$($run.runId)/cancel" $cancelParams
+                }
+            }else{
+                if($showFinished){
+                    "    $($run.status)  $(usecsToDate $($run.startTimeUsecs))  ($($run.transferred))  $referenceFull"
                 }
             }
         }
