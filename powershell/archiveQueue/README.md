@@ -33,9 +33,11 @@ Place both files in a folder together and run the main script like so:
 * -vip: the Cohesity cluster to connect to
 * -username: the cohesity user to login with
 * -domain: (optional) domain of the Cohesity user (defaults to local)
+* -jobName: (optional) one or more job names to include (comma separated)
+* -jobList: (optional) text file of job names to include (one per line)
 * -showFinished: (optional) show finished archive tasks
 * -cancelAll: (optional) cancel all archive tasks
 * -cancelOutdated: (optional) cancel archive tasks that should be expired anyway
 * -cancelQueued: (optional) cancel archive tasks that haven't moved any data yet
-* -numRuns: (optional) number of runs per job to inspect (defaults to 9999)
+* -numRuns: (optional) number of runs to request per API call (defaults to 1000)
 * -unit: (optional) MiB, GiB or TiB (default is MiB)
