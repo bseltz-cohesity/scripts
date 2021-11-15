@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2021.11.10"""
+"""Cohesity Python REST API Wrapper Module - 2021.11.15"""
 
 ##########################################################################################
 # Change Log
@@ -40,6 +40,7 @@
 # 2021.09.25 - added support for DMaaS
 # 2021.10.13 - modified setpwd function
 # 2021.11.10 - added setContext and getContext functions
+# 2021.11.15 - added dateToString function, usecsToDate formatting, Helios Reporting v2, Helio On Prem
 #
 ##########################################################################################
 # Install Notes
@@ -74,6 +75,7 @@ __all__ = ['apiauth',
            'usecsToDate',
            'usecsToDateTime',
            'dateToUsecs',
+           'dateToString',
            'timeAgo',
            'dayDiff',
            'display',
@@ -102,8 +104,6 @@ CONFIGDIR = expanduser("~") + '/.pyhesity'
 SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
 PWFILE = os.path.join(SCRIPTDIR, 'YWRtaW4')
 LOGFILE = os.path.join(SCRIPTDIR, 'pyhesity-debug.log')
-APIROOTMCM = 'https://helios.cohesity.com/mcm/'
-APIROOTMCMv2 = 'https://helios.cohesity.com/v2/mcm/'
 
 
 ### authentication
@@ -113,19 +113,21 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
     global HELIOSCLUSTERS
     global CONNECTEDHELIOSCLUSTERS
 
-    if helios is True:
-        vip = 'helios.cohesity.com'
+    COHESITY_API['APIROOTMCM'] = 'https://%s/mcm/' % vip
+    COHESITY_API['APIROOTMCMv2'] = 'https://%s/v2/mcm/' % vip
+    COHESITY_API['APIROOTREPORTINGv2'] = 'https://%s/heliosreporting/api/v1/public/' % vip
+
     pwd = password
     if password is None:
         pwd = __getpassword(vip, username, password, domain, updatepw, prompt)
     COHESITY_API['HEADER'] = {'accept': 'application/json', 'content-type': 'application/json'}
     COHESITY_API['APIROOT'] = 'https://' + vip + '/irisservices/api/v1'
     COHESITY_API['APIROOTv2'] = 'https://' + vip + '/v2/'
-    if vip == 'helios.cohesity.com':
+    if vip == 'helios.cohesity.com' or helios is not None:
         COHESITY_API['HEADER'] = {'accept': 'application/json', 'content-type': 'application/json', 'apiKey': pwd}
         if regionid is not None:
             COHESITY_API['HEADER']['regionid'] = regionid
-        URL = 'https://helios.cohesity.com/mcm/clusters/connectionStatus'
+        URL = COHESITY_API['APIROOTMCM'] + 'clusters/connectionStatus'
         try:
             HELIOSCLUSTERS = (requests.get(URL, headers=COHESITY_API['HEADER'], verify=False)).json()
             if HELIOSCLUSTERS is not None and 'message' in HELIOSCLUSTERS:
@@ -138,7 +140,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                 if(quiet is None):
                     print("Connected!")
             else:
-                URL = 'https://helios.cohesity.com/v2/mcm/dms/regions'
+                URL = COHESITY_API['APIROOTMCMv2'] + 'dms/regions'
                 REGIONS = (requests.get(URL, headers=COHESITY_API['HEADER'], verify=False)).json()
                 if REGIONS is not None and 'message' in REGIONS:
                     print(REGIONS['message'])
@@ -230,16 +232,18 @@ def heliosClusters():
 
 
 ### api call function
-def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1):
+def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1, reportingv2=None):
     """api call function"""
     if COHESITY_API['AUTHENTICATED'] is False:
         print('Not Connected')
         return None
     response = ''
     if mcm is not None:
-        url = APIROOTMCM + uri
+        url = COHESITY_API['APIROOTMCM'] + uri
     elif mcmv2 is not None:
-        url = APIROOTMCMv2 + uri
+        url = COHESITY_API['APIROOTMCMv2'] + uri
+    elif reportingv2 is not None:
+        url = COHESITY_API['APIROOTREPORTINGv2'] + uri
     else:
         if v == 2:
             url = COHESITY_API['APIROOTv2'] + uri
@@ -295,14 +299,14 @@ def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1):
             print("invalid api method")
 
 
-### convert usecs to date
-def usecsToDate(uedate):
+### convert usecs to date string
+def usecsToDate(uedate, fmt='%Y-%m-%d %H:%M:%S'):
     """Convert Unix Epoc Microseconds to Date String"""
     uedate = int(uedate) / 1000000
-    return datetime.fromtimestamp(uedate).strftime('%Y-%m-%d %H:%M:%S')
+    return datetime.fromtimestamp(uedate).strftime(fmt)
 
 
-### convert usecs to date
+### convert usecs to datetime object
 def usecsToDateTime(uedate):
     """Convert Unix Epoc Microseconds to Date String"""
     uedate = int(uedate) / 1000000
@@ -315,6 +319,12 @@ def dateToUsecs(dt):
     if isinstance(dt, str):
         dt = datetime.strptime(dt, "%Y-%m-%d %H:%M:%S")
     return int(time.mktime(dt.timetuple())) * 1000000
+
+
+### convert date to string
+def dateToString(dt, fmt='%Y-%m-%d %H:%M:%S'):
+    """Convert date to date string"""
+    return dt.strftime(fmt)
 
 
 ### convert date difference to usecs
