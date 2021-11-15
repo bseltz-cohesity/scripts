@@ -5,28 +5,6 @@
 # Change Log
 # ==========
 #
-# 1.1 - added encrypted password storage - August 2017
-# 1.2 - added date functions and private api access - April 2018
-# 1.3 - simplified password encryption (weak!) to remove pycrypto dependency - April 2018
-# 1.4 - improved error handling, added display function - May 2018
-# 1.5 - added no content return - May 2018
-# 1.6 - added dayDiff function - May 2018
-# 1.7 - added password update feature - July 2018
-# 1.8 - added support for None JSON returned - Jan 2019
-# 1.9 - supressed HTTPS warning in Linux and PEP8 compliance - Feb 2019
-# 1.9.1 - added support for interactive password prompt - Mar 2019
-# 2.0 - python 3 compatibility - Mar 2019
-# 2.0.1 - fixed date functions for pythion 3 - Mar 2019
-# 2.0.2 - added file download - Jun 2019
-# 2.0.3 - added silent error handling, apdrop(), apiconnected() - Jun 2019
-# 2.0.4 - added pw and storepw - Aug 2019
-# 2.0.5 - added showProps - Nov 2019
-# 2.0.6 - handle another None return condition - Dec 2019
-# 2.0.7 - added storePasswordFromInput function - Feb 2020
-# 2.0.8 - added helios support - Mar 2020
-# 2.0.9 - helios and error handling changes - Mar 2020
-# 2.1.0 - added support for Iris API Key - May 2020
-# 2.1.1 - added support for PWFILE - May 2020
 # 2020.05.29 - added re-prompt for bad password, debug log, password storage changes
 # 2020.06.04 - bumping version (no reason)
 # 2020.06.16 - removed ansi codes from error message (Windows didn't display them correctly)
@@ -123,7 +101,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
     COHESITY_API['HEADER'] = {'accept': 'application/json', 'content-type': 'application/json'}
     COHESITY_API['APIROOT'] = 'https://' + vip + '/irisservices/api/v1'
     COHESITY_API['APIROOTv2'] = 'https://' + vip + '/v2/'
-    if vip == 'helios.cohesity.com' or helios is not None:
+    if vip == 'helios.cohesity.com' or helios is not False:
         COHESITY_API['HEADER'] = {'accept': 'application/json', 'content-type': 'application/json', 'apiKey': pwd}
         if regionid is not None:
             COHESITY_API['HEADER']['regionid'] = regionid
@@ -520,3 +498,31 @@ if os.path.isdir(CONFIGDIR) is False:
         os.mkdir(CONFIGDIR)
     except Exception:
         pass
+
+##########################################################################################
+# Old Change Log
+# ==============
+#
+# 1.1 - added encrypted password storage - August 2017
+# 1.2 - added date functions and private api access - April 2018
+# 1.3 - simplified password encryption (weak!) to remove pycrypto dependency - April 2018
+# 1.4 - improved error handling, added display function - May 2018
+# 1.5 - added no content return - May 2018
+# 1.6 - added dayDiff function - May 2018
+# 1.7 - added password update feature - July 2018
+# 1.8 - added support for None JSON returned - Jan 2019
+# 1.9 - supressed HTTPS warning in Linux and PEP8 compliance - Feb 2019
+# 1.9.1 - added support for interactive password prompt - Mar 2019
+# 2.0 - python 3 compatibility - Mar 2019
+# 2.0.1 - fixed date functions for pythion 3 - Mar 2019
+# 2.0.2 - added file download - Jun 2019
+# 2.0.3 - added silent error handling, apdrop(), apiconnected() - Jun 2019
+# 2.0.4 - added pw and storepw - Aug 2019
+# 2.0.5 - added showProps - Nov 2019
+# 2.0.6 - handle another None return condition - Dec 2019
+# 2.0.7 - added storePasswordFromInput function - Feb 2020
+# 2.0.8 - added helios support - Mar 2020
+# 2.0.9 - helios and error handling changes - Mar 2020
+# 2.1.0 - added support for Iris API Key - May 2020
+# 2.1.1 - added support for PWFILE - May 2020
+##########################################################################################
