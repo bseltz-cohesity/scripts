@@ -37,7 +37,7 @@ f = codecs.open(outfile, 'w')
 # gather info
 sources = api('get', 'protectionSources?includeVMFolders=true')
 policies = api('get', 'data-protect/policies', v=2)['policies']
-jobs = api('get', 'data-protect/protection-groups', v=2)
+jobs = api('get', 'data-protect/protection-groups?includeTenants=true', v=2)
 
 # headings
 f.write('Cluster Name,Job Name,Environment,Object Name,Object Type,Object Size (MiB),Parent,Policy Name,Policy Link,Archive Target,Direct Archive,Frequency (Minutes),Last Backup,Last Status,Last Run Type,Job Paused,Indexed,Start Time,Time Zone,QoS Policy,Priority,Full SLA,Incremental SLA\n')
