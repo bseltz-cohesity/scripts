@@ -1,14 +1,8 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2021.11.10 - Brian Seltzer
+#  Version 2021.11.15 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
-# 2020.11.06 - refactor and simplify
-# 2020.11.23 - fix org support, password storage
-# 2020.11.26 - added legacy state vars
-# 2020.12.04 - added tenant impersonate / switchback
-# 2020.12.05 - improved cohesity_api.version and tenant handling
-# 2020.12.20 - added JSON compression
 # 2021.02.10 - fixed empty body issue
 # 2021.03.26 - added apiKey unique password storage
 # 2021.08.16 - revamped passwd storage, auto prompt for invalid password
@@ -17,9 +11,10 @@
 # 2021.10.22 - fixed json2code and py functions and added toJson function
 # 2021.11.03 - fixed 'Cannot send a content-body with this verb-type' message in debug log
 # 2021.11.10 - added getContext, setContext
+# 2021.11.15 - added support for helios on prem
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2021.11.10'
+$versionCohesityAPI = '2021.11.15'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -35,9 +30,9 @@ $cohesity_api = @{
     'apiRoot' = '';
     'apiRootv2' = '';
     'regionid' = '';
-    'apiRootmcm' = 'https://helios.cohesity.com/mcm/';
-    'apiRootmcmV2' = 'https://helios.cohesity.com/v2/mcm/'
-    'apiRootReportingV2' = 'https://helios.cohesity.com/heliosreporting/api/v1/public/';
+    'apiRootmcm' = '';
+    'apiRootmcmV2' = ''
+    'apiRootReportingV2' = '';
     'header' = @{'accept' = 'application/json'; 'content-type' = 'application/json'};
     'clusterReadOnly' = $false;
     'heliosConnectedClusters' = $null;
@@ -92,6 +87,7 @@ function apiauth($vip='helios.cohesity.com',
                  $password = $null,
                  $tenant = $null,
                  $regionid = $null,
+                 [switch] $helios,
                  [switch] $quiet, 
                  [switch] $noprompt, 
                  [switch] $updatePassword, 
@@ -132,6 +128,10 @@ function apiauth($vip='helios.cohesity.com',
 
     $cohesity_api.apiRoot = 'https://' + $vip + '/irisservices/api/v1'
     $cohesity_api.apiRootv2 = 'https://' + $vip + '/v2/'
+    $cohesity_api.apiRootmcm = "https://$vip/mcm/"
+    $cohesity_api.apiRootmcmV2 = "https://$vip/v2/mcm/"
+    $cohesity_api.apiRootReportingV2 = "https://$vip/heliosreporting/api/v1/public/"
+
     $cohesity_api.version = 1
     if($v2){
         $cohesity_api.version = 2
@@ -141,7 +141,7 @@ function apiauth($vip='helios.cohesity.com',
         $cohesity_api.header['regionid'] = $regionid
     }
 
-    if($useApiKey -or ($vip -eq 'helios.cohesity.com')){
+    if($useApiKey -or $helios -or ($vip -eq 'helios.cohesity.com')){
         $cohesity_api.header['apiKey'] = $passwd
         $cohesity_api.authorized = $true
         # set file transfer details
@@ -151,7 +151,7 @@ function apiauth($vip='helios.cohesity.com',
             $cohesity_api.webcli.headers['apiKey'] = $passwd;
         }
         # validate cluster authorization
-        if($useApiKey -and ($vip -ne 'helios.cohesity.com')){
+        if($useApiKey -and (($vip -ne 'helios.cohesity.com') -and $helios -ne $True)){
             $cluster = api get cluster -quiet -version 1 -data $null
             if($cluster.clusterSoftwareVersion -lt '6.4'){
                 $cohesity_api.version = 1
@@ -165,10 +165,10 @@ function apiauth($vip='helios.cohesity.com',
             }
         }
         # validate helios authorization
-        if($vip -eq 'helios.cohesity.com'){
+        if($vip -eq 'helios.cohesity.com' -or $helios){
             try{
                 $URL = $cohesity_api.apiRootmcm + 'clusters/connectionStatus'
-                if($PSVersionTable.Edition -eq 'Core'){
+                if($PSVersionTable.PSEdition -eq 'Core'){
                     $heliosAllClusters = Invoke-RestMethod -Method get -Uri $URL -header $cohesity_api.header -SkipCertificateCheck
                 }else{
                     $heliosAllClusters = Invoke-RestMethod -Method get -Uri $URL -header $cohesity_api.header
@@ -946,3 +946,16 @@ function getViews([switch]$includeInactive){
     }
     return $myViews
 }
+
+# . . . . . . . . . . . . . . . . . . .
+#  Previous Updates
+# . . . . . . . . . . . . . . . . . . .
+#
+# 2020.11.06 - refactor and simplify
+# 2020.11.23 - fix org support, password storage
+# 2020.11.26 - added legacy state vars
+# 2020.12.04 - added tenant impersonate / switchback
+# 2020.12.05 - improved cohesity_api.version and tenant handling
+# 2020.12.20 - added JSON compression
+#
+# . . . . . . . . . . . . . . . . . . .
