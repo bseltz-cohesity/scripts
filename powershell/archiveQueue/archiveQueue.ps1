@@ -12,6 +12,7 @@ param (
    [Parameter()][switch]$firstOnly,       # show oldest archive task only 
    [Parameter()][switch]$showFinished,    # show completed archives
    [Parameter()][int]$daysAtATime = 10,
+   [Parameter()][int]$daysTilExpire = 0,
    [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB'
 )
 
@@ -103,11 +104,23 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -
                     }
 
                     if($copyRun.status -notin $finishedStates){
-                        if($expiryTimeUsecs -and $nowUsecs -gt $expiryTimeUsecs){
-                            $noLongerNeeded = "(NO LONGER NEEDED)"
-                            if($cancelOutdated -or $cancelAll){
-                                $cancel = $True
-                                $cancelling = '(Cancelling)'
+                        $thenUsecs = [int64]($nowUsecs + ($daysTilExpire * 24 * 60 * 60 * 1000000))
+                        # cancel outdates
+                        if($cancelOutdated){
+                            $thisrun = api get "/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=$($runStartTimeUsecs)&id=$($jobId)"
+                            foreach($task in $thisrun.backupJobRuns.protectionRuns[0].copyRun.activeTasks){
+                                if($task.snapshotTarget.type -eq 3){
+                                    $daysToKeep = $task.retentionPolicy.numDaysToKeep - $daysTilExpire
+                                    $usecsToKeep = $daysToKeep * 1000000 * 86400
+                                    $timePassed = $nowUsecs - $runStartTimeUsecs
+                                    if($timePassed -gt $usecsToKeep){
+                                        $noLongerNeeded = "(NO LONGER NEEDED)"
+                                        if($cancelOutdated -or $cancelAll){
+                                            $cancel = $True
+                                            $cancelling = '(Cancelling)'
+                                        }
+                                    }
+                                }
                             }
                         }
 

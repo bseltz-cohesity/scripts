@@ -41,4 +41,5 @@ Place both files in a folder together and run the main script like so:
 * -cancelOutdated: (optional) cancel archive tasks that should be expired anyway
 * -cancelQueued: (optional) cancel archive tasks that haven't moved any data yet
 * -numRuns: (optional) number of runs to request per API call (defaults to 1000)
+* -daysTilExpire: (optional) cancel archives that will expire within X days (use with -cancelOutdated)
 * -unit: (optional) MiB, GiB or TiB (default is MiB)
