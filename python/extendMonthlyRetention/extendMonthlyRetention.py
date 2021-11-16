@@ -108,25 +108,27 @@ alternateRun = None
 for run in api('get', 'protectionRuns?jobId=%s&runTypes=kRegular&runTypes=kFull' % job[0]['id']):
     if foundMonthly is True:
         exit()
-    # get run date
-    runStartTimeUsecs = run['copyRun'][0]['runStartTimeUsecs']
-    runStartTime = datetime.strptime(usecsToDate(runStartTimeUsecs), '%Y-%m-%d %H:%M:%S')
 
-    # calculate days to extend run
-    currentExpireTimeUsecs = run['copyRun'][0]['expiryTimeUsecs']
-    newExpireTimeUsecs = runStartTimeUsecs + (daysToKeep * 86400000000)
-    extendByDays = dayDiff(newExpireTimeUsecs, currentExpireTimeUsecs)
-    status = run['copyRun'][0]['status']
+    status = run['backupRun']['status']
+    if status in ['kSuccess', 'kWarning'] and 'copyRun' in run and len(run['copyRun']) > 0 and 'expiryTimeUsecs' in run['copyRun'][0]:
+        # get run date
+        runStartTimeUsecs = run['copyRun'][0]['runStartTimeUsecs']
+        runStartTime = datetime.strptime(usecsToDate(runStartTimeUsecs), '%Y-%m-%d %H:%M:%S')
 
-    # confirm run hasn't expired yet and was successful
-    if currentExpireTimeUsecs > nowUsecs and (status == 'kSuccess' or status == 'kWarning'):
-        if runStartTime.day == dayOfMonth:
-            extendRun(run, extendByDays)
+        # calculate days to extend run
+        currentExpireTimeUsecs = run['copyRun'][0]['expiryTimeUsecs']
+        newExpireTimeUsecs = runStartTimeUsecs + (daysToKeep * 86400000000)
+        extendByDays = dayDiff(newExpireTimeUsecs, currentExpireTimeUsecs)
 
-        # store following run as alternate if specified date didn't run
-        if foundMonthly is False and runStartTime > targetDate:
-            alternateRun = run
-            alternateExtendByDays = extendByDays
+        # confirm run hasn't expired yet and was successful
+        if currentExpireTimeUsecs > nowUsecs and (status == 'kSuccess' or status == 'kWarning'):
+            if runStartTime.day == dayOfMonth:
+                extendRun(run, extendByDays)
+
+            # store following run as alternate if specified date didn't run
+            if foundMonthly is False and runStartTime > targetDate:
+                alternateRun = run
+                alternateExtendByDays = extendByDays
 
 # extend alternate run if specified run wan't found
 if foundMonthly is False:
