@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2021.11.15 - Brian Seltzer
+#  Version 2021.11.18 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2021.02.10 - fixed empty body issue
@@ -12,9 +12,10 @@
 # 2021.11.03 - fixed 'Cannot send a content-body with this verb-type' message in debug log
 # 2021.11.10 - added getContext, setContext
 # 2021.11.15 - added support for helios on prem
+# 2021.11.18 - added support for multifactor authentication
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2021.11.15'
+$versionCohesityAPI = '2021.11.18'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -87,6 +88,8 @@ function apiauth($vip='helios.cohesity.com',
                  $password = $null,
                  $tenant = $null,
                  $regionid = $null,
+                 $mfaType = 'Totp',
+                 [string] $mfaCode = $null,
                  [switch] $helios,
                  [switch] $quiet, 
                  [switch] $noprompt, 
@@ -123,7 +126,9 @@ function apiauth($vip='helios.cohesity.com',
     $body = ConvertTo-Json @{
         'domain' = $domain;
         'username' = $username;
-        'password' = $passwd
+        'password' = $passwd;
+        'otpType' = $mfaType;
+        'otpCode' = $mfaCode
     }
 
     $cohesity_api.apiRoot = 'https://' + $vip + '/irisservices/api/v1'
