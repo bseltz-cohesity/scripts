@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2021.11.15"""
+"""Cohesity Python REST API Wrapper Module - 2021.11.18"""
 
 ##########################################################################################
 # Change Log
@@ -19,6 +19,7 @@
 # 2021.10.13 - modified setpwd function
 # 2021.11.10 - added setContext and getContext functions
 # 2021.11.15 - added dateToString function, usecsToDate formatting, Helios Reporting v2, Helio On Prem
+# 2021.11.18 - added support for multifactor authentication
 #
 ##########################################################################################
 # Install Notes
@@ -85,7 +86,7 @@ LOGFILE = os.path.join(SCRIPTDIR, 'pyhesity-debug.log')
 
 
 ### authentication
-def apiauth(vip='helios.cohesity.com', username='helios', domain='local', password=None, updatepw=None, prompt=None, quiet=None, helios=False, useApiKey=False, tenantId=None, noretry=False, regionid=None):
+def apiauth(vip='helios.cohesity.com', username='helios', domain='local', password=None, updatepw=None, prompt=None, quiet=None, helios=False, useApiKey=False, tenantId=None, noretry=False, regionid=None, mfaType='Totp', mfaCode=None):
     """authentication function"""
     global COHESITY_API
     global HELIOSCLUSTERS
@@ -145,7 +146,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
         else:
             COHESITY_API['AUTHENTICATED'] = False
     else:
-        creds = json.dumps({"domain": domain, "password": pwd, "username": username})
+        creds = json.dumps({"domain": domain, "password": pwd, "username": username, "otpType": mfaType, "otpCode": mfaCode})
 
         url = COHESITY_API['APIROOT'] + '/public/accessTokens'
         try:
