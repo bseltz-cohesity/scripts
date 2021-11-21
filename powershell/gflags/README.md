@@ -62,6 +62,7 @@ To import a list of gflags (csv file must be in the format 'serviceName,flagName
 * -username: Cohesity username (e.g. admin)
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -set: (optional) set a gflag
+* -effectiveNow: (optional) set gflag effective now on all nodes
 * -import: (optional) CSV file to import
 * -servicename: (optional) service name (required for -set)
 * -flagname: (optional) flag name (required for -set)
