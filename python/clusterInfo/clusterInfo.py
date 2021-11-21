@@ -1,18 +1,14 @@
 #!/usr/bin/env python
 """Cluster Info for python"""
 
-# version 2021-03-29
+# version 2021-11-21
 
 ### import pyhesity wrapper module
 from pyhesity import *
 import datetime
 import requests
-import smtplib
 import codecs
 import os.path
-from email.mime.multipart import MIMEMultipart
-from email.MIMEBase import MIMEBase
-from email import Encoders
 
 ### command line arguments
 import argparse
@@ -24,10 +20,6 @@ parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-l', '--listgflags', action='store_true')
 parser.add_argument('-of', '--outfolder', type=str, default='.')
-parser.add_argument('-s', '--mailserver', type=str)
-parser.add_argument('-p', '--mailport', type=int, default=25)
-parser.add_argument('-t', '--sendto', action='append', type=str)
-parser.add_argument('-f', '--sendfrom', type=str)
 
 args = parser.parse_args()
 
@@ -37,11 +29,9 @@ domain = args.domain
 password = args.password
 listgflags = args.listgflags
 folder = args.outfolder
-mailserver = args.mailserver
-mailport = args.mailport
-sendto = args.sendto
-sendfrom = args.sendfrom
 useApiKey = args.useApiKey
+
+GiB = 1024 * 1024 * 1024
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
@@ -49,7 +39,7 @@ apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=
 if password is None:
     password = pw(vip=vip, username=username, domain=domain)
 
-cluster = api('get', 'cluster')
+cluster = api('get', 'cluster?fetchStats=true')
 version = cluster['clusterSoftwareVersion'].split('_')[0]
 
 dateString = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -58,32 +48,69 @@ f = codecs.open(outfileName, 'w', 'utf-8')
 
 status = api('get', '/nexus/cluster/status')
 config = status['clusterConfig']['proto']
-chassisList = config['chassisVec']
-nodeList = config['nodeVec']
 nodeStatus = status['nodeStatus']
-diskList = config['diskVec']
+if config is not None:
+    chassisList = config['chassisVec']
+    nodeList = config['nodeVec']
+    hostName = status['clusterConfig']['proto']['clusterPartitionVec'][0]['hostName']
+else:
+    chassisList = (api('get', 'chassis', v=2))['chassis']
+    nodes = api('get', 'nodes')
+    partition = api('get', 'clusterPartitions')
+    hostName = partition[0]['hostName']
 
 title = 'clusterInfo: %s (%s)' % (cluster['name'], dateString)
-emailtext = '%s\n\n' % title
 
 
 def output(mystring):
-    global emailtext
     print(mystring)
     f.write(mystring + '\n')
-    emailtext += '%s\n' % mystring
 
+
+physicalCapacity = round((float(cluster['stats']['usagePerfStats']['physicalCapacityBytes']) / GiB), 1)
+usedCapacity = round((float(cluster['stats']['usagePerfStats']['totalPhysicalUsageBytes'] / GiB)), 1)
+usedPct = int(round((100 * usedCapacity / physicalCapacity), 0))
 
 # cluster info
 output('\n------------------------------------')
-output('     Cluster Name: %s' % status['clusterConfig']['proto']['clusterPartitionVec'][0]['hostName'])
-output('       Cluster ID: %s' % status['clusterId'])
+output('     Cluster Name: %s' % hostName)
+output('       Cluster ID: %s' % cluster['id'])
 output('   Healing Status: %s' % status['healingStatus'])
 output('     Service Sync: %s' % status['isServiceStateSynced'])
 output(' Stopped Services: %s' % status['bulletinState']['stoppedServices'])
+output('Physical Capacity: %s GiB' % physicalCapacity)
+output('    Used Capacity: %s GiB' % usedCapacity)
+output('     Used Percent: %s%%' % usedPct)
 output('------------------------------------')
 
-if version > '6.3.1f':
+if version >= '6.6.0d':
+    for chassis in chassisList:
+        # chassis info
+        if 'name' in chassis:
+            chassisname = chassis['name']
+        else:
+            chassisname = chassis['serial']
+        output('\n   Chassis Name: %s' % chassisname)
+        output('     Chassis ID: %s' % chassis['id'])
+        output('       Hardware: %s' % chassis.get('hardwareModel', 'VirtualEdition'))
+        output(' Chassis Serial: %s' % chassis['serialNumber'])
+        nodeIds = chassis['nodeIds']
+        for nodeId in nodeIds:
+            node = [n for n in nodes if n['id'] == nodeId][0]
+            # node info
+            apiauth(node['ip'].split(':')[-1], username, domain, password=password, quiet=True, useApiKey=useApiKey)
+            nodeInfo = api('get', '/nexus/node/hardware_info')
+            output('\n            Node ID: %s' % node['id'])
+            output('            Node IP: %s' % node['ip'].split(':')[-1])
+            output('            IPMI IP: %s' % node.get('ipmiIp', 'n/a'))
+            output('            Slot No: %s' % node.get('slotNumber', 0))
+            output('          Serial No: %s' % nodeInfo.get('cohesityNodeSerial', 'VirtualEdition'))
+            output('      Product Model: %s' % nodeInfo['productModel'])
+            output('         SW Version: %s' % node['nodeSoftwareVersion'])
+            for stat in nodeStatus:
+                if stat['nodeId'] == node['id']:
+                    output('             Uptime: %s' % stat['uptime'])
+elif version > '6.3.1f':
     for chassis in chassisList:
         # chassis info
         if 'name' in chassis:
@@ -141,7 +168,6 @@ else:
                         output('            Uptime: %s\n' % stat['uptime'])
 
 if listgflags:
-    # gDateString = datetime.datetime.now().strftime("%Y-%m-%d")
     gflagfileName = '%s/%s-gflags.csv' % (folder, dateString)
     writeheader = True
     if os.path.exists(gflagfileName):
@@ -166,19 +192,3 @@ if listgflags:
 
 output('')
 f.close()
-
-# email report
-if mailserver is not None:
-    print('Sending report to %s...' % ', '.join(sendto))
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = title
-    msg['From'] = sendfrom
-    msg['To'] = ','.join(sendto)
-    part = MIMEBase('application', "octet-stream")
-    part.set_payload(open(outfileName, "rb").read())
-    Encoders.encode_base64(part)
-    part.add_header('Content-Disposition', 'attachment; filename="%s"' % outfileName)
-    msg.attach(part)
-    smtpserver = smtplib.SMTP(mailserver, mailport)
-    smtpserver.sendmail(sendfrom, sendto, msg.as_string())
-    smtpserver.quit()
