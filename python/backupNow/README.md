@@ -55,6 +55,7 @@ Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/prote
 * -w, --wait: (optional) wait for backup run to complete and report result
 * -t, --backupType: (optional) choose one of kRegular, kFull or kLog backup types. Default is kRegular (incremental)
 * -x, --abortifrunning: (optional) exit if job is already running (default is to wait and run after existing run is finished)
+* -f, --logfile: (optional) filename to log output
 
 ## Using -o (--objectname) Parameter
 
