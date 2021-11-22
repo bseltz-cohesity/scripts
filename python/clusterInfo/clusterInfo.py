@@ -84,6 +84,7 @@ output('     Used Percent: %s%%' % usedPct)
 output('------------------------------------')
 
 if version >= '6.6.0d':
+    ipmi = api('get', '/nexus/ipmi/cluster_get_lan_info')
     for chassis in chassisList:
         # chassis info
         if 'name' in chassis:
@@ -97,12 +98,13 @@ if version >= '6.6.0d':
         nodeIds = chassis['nodeIds']
         for nodeId in nodeIds:
             node = [n for n in nodes if n['id'] == nodeId][0]
+            nodeipmi = [i for i in ipmi['nodesIpmiInfo'] if i['nodeIp'] == node['ip'].split(':')[-1]]
             # node info
             apiauth(node['ip'].split(':')[-1], username, domain, password=password, quiet=True, useApiKey=useApiKey)
             nodeInfo = api('get', '/nexus/node/hardware_info')
             output('\n            Node ID: %s' % node['id'])
             output('            Node IP: %s' % node['ip'].split(':')[-1])
-            output('            IPMI IP: %s' % node.get('ipmiIp', 'n/a'))
+            output('            IPMI IP: %s' % nodeipmi[0].get('nodeIpmiIp', 'n/a'))
             output('            Slot No: %s' % node.get('slotNumber', 0))
             output('          Serial No: %s' % nodeInfo.get('cohesityNodeSerial', 'VirtualEdition'))
             output('      Product Model: %s' % nodeInfo['productModel'])
