@@ -5,7 +5,6 @@ param (
     [Parameter()][string]$username='helios',           # username (local or AD)
     [Parameter()][string]$domain = 'local',            # domain (local or AD FQDN)
     [Parameter()][string]$accessCluster,               # access cluster (if connectig to helios)
-    [Parameter()][switch]$set,                         # switch so set a gflag
     [Parameter()][switch]$clear,                       # switch to clear a gflag
     [Parameter()][string]$import = '',                 # import from an export file
     [Parameter()][string]$servicename = $null,         # service name to set gflag
@@ -129,7 +128,7 @@ function setGflag($servicename, $flagname, $flagvalue, $reason){
 $restartServices = @()
 
 # set a gflag
-if($set){
+if($flagvalue){
     if($servicename -and $flagname -and $flagvalue -and $reason){
         setGflag -servicename $servicename -flagname $flagname -flagvalue $flagvalue -reason $reason
         $restartServices += $servicename
