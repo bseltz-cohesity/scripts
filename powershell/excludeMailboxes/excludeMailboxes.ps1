@@ -20,7 +20,7 @@ if ('' -ne $userList){
     if(Test-Path -Path $userList -PathType Leaf){
         $users = Get-Content $userList
         foreach($user in $users){
-            $exclusions += $user
+            $exclusions += [string]$user
         }
     }else{
         Write-Warning "User list $userList not found!"
