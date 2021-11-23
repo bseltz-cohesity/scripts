@@ -45,6 +45,7 @@ $port = @{
     'rtclient' = '12321';
     'keychain' = '22000';
     'apollo' = '24680';
+    'bifrost' = '29994';
     'bifrost_broker' = '29992';
     'bridge' = '11111';
     'eagle_agent' = '23460';
@@ -59,7 +60,17 @@ $port = @{
     'bridge_proxy' = '11116';
     'athena' = '25681';
     'atom' = '20005';
-    'patch' = '30000'
+    'patch' = '30000';
+    'janus' = '64001';
+    'pushclient' = '64002';
+    'nfs_proxy' = '20010';
+    'icebox' = '29999';
+    'throttler' = '20008';
+    'elrond' = '26002';
+    'heimdall' = '26200';
+    'node_exporter' = '9100';
+    'compass' = '25555';
+    'etl_server' = '23462'
 }
 
 $cluster = api get cluster

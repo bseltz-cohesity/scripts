@@ -64,6 +64,7 @@ port = {
     "atom": "20005",
     "smb2_proxy": "20007",
     "bifrost_broker": "29992",
+    "bifrost": "29994",
     "alerts": "21111",
     "bridge": "11111",
     "keychain": "22000",
@@ -82,7 +83,17 @@ port = {
     "storage_proxy": "20001",
     "statscollector": "25680",
     "newscribe": "12222",
-    "icebox": "29999"
+    "icebox": "29999",
+    "janus": "64001",
+    "pushclient": "64002",
+    "nfs_proxy": "20010",
+    "icebox": "29999",
+    "throttler": "20008",
+    "elrond": "26002",
+    "heimdall": "26200",
+    "node_exporter": "9100",
+    "compass": "25555",
+    "etl_server": "23462"
 }
 
 # authenticate
