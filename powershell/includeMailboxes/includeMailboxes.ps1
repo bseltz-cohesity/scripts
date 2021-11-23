@@ -1,4 +1,4 @@
-# usage: ./protectMailboxes.ps1 -vip mycluster -username myusername -jobName 'My Job' [ -users 'jbrown@mydomain.net', 'ksmith@mydomain.net' ] [ -userList ./usersToAdd.txt ]
+# usage: ./includeMailboxes.ps1 -vip mycluster -username myusername -jobName 'My Job' [ -users 'jbrown@mydomain.net', 'ksmith@mydomain.net' ] [ -userList ./usersToAdd.txt ]
 
 # process commandline arguments
 [CmdletBinding()]
