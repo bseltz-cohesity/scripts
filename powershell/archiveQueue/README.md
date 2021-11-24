@@ -36,6 +36,7 @@ Place both files in a folder together and run the main script like so:
 * -jobName: (optional) one or more job names to include (comma separated)
 * -jobList: (optional) text file of job names to include (one per line)
 * -showFinished: (optional) show finished archive tasks
+* -quickScan: (optional) stop scannning job after a completed archive or no archives are found
 * -cancelAll: (optional) cancel all archive tasks
 * -cancelOutdated: (optional) cancel archive tasks that should be expired anyway
 * -cancelQueued: (optional) cancel archive tasks that haven't moved any data yet
