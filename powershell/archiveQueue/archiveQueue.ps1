@@ -9,7 +9,6 @@ param (
    [Parameter()][switch]$cancelOutdated,  # cancel if archive is already due to expire
    [Parameter()][switch]$cancelQueued,    # cancel if archive hasn't transferred any data yet
    [Parameter()][switch]$cancelAll,       # cancel all archives
-   [Parameter()][switch]$firstOnly,       # show oldest archive task only 
    [Parameter()][switch]$showFinished,    # show completed archives
    [Parameter()][int]$daysAtATime = 10,
    [Parameter()][int]$daysTilExpire = 0,
@@ -63,14 +62,10 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -
     $jobName = $job.name
 
     if($jobNames.Length -eq 0 -or $jobName -in $jobNames){
-        $foundTask = $false
         "$jobName ($jobId)"
         $startUsecs = [int64]$createdTimeUsecs
         $endUsecs = [int64]($createdTimeUsecs + $usecsAtATime)
         while($True){
-            if($foundTask -eq $True -and $firstOnly){
-                break
-            }
             $runs = api get "protectionRuns?jobId=$jobId&startTimeUsecs=$startUsecs&endTimeUsecs=$endUsecs&excludeTasks=true"
             if($runs){
                 $startUsecs = $runs[0].backupRun.stats.startTimeUsecs + 1
@@ -80,9 +75,6 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -
             }
             $runs = $runs | Sort-Object -Property {$_.backupRun.stats.startTimeUsecs}
             foreach($run in $runs){
-                if($foundTask -eq $True -and $firstOnly){
-                    break
-                }
                 $runStartTimeUsecs = $run.backupRun.stats.startTimeUsecs
                 foreach($copyRun in ($run.copyRun | Where-Object {$_.target.type -eq 'kArchival'})){
                     $target = $copyRun.target.archivalTarget.vaultName
@@ -131,7 +123,7 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -
 
                         "        {0,25}:    ({1} $unit)    {2}  {3}  {4}" -f (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $referenceFull, $noLongerNeeded, $cancelling
                         "{0},{1},{2},{3},{4},{5},{6}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status, $target, (usecsToDate $startTimeUsecs) | Out-File -FilePath $outfileName -Append
-                        $foundTask = $True
+                        $runningTasks += 1
                         # cancel archive task
                         if($cancel -eq $True){
                             $cancelTaskParams = @{
@@ -145,10 +137,6 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -
                             "        {0,25}:    ({1} $unit)    {2}  {3}" -f (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status, $referenceFull
                             "{0},{1},{2},{3},{4},{5},{6},{7}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status, $target, (usecsToDate $startTimeUsecs), (usecsToDate $endTimeUsecs) | Out-File -FilePath $outfileName -Append
                         }
-                    }
-                    $runningTasks += 1
-                    if($foundTask -eq $True -and $firstOnly){
-                        break
                     }
                 }
             }
