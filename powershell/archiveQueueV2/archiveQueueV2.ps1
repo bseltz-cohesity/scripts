@@ -11,8 +11,14 @@ param (
    [Parameter()][switch]$cancelAll,       # cancel all archives
    [Parameter()][switch]$showFinished,    # show completed archives
    [Parameter()][int]$numRuns = 100,
-   [Parameter()][int]$daysBack
+   [Parameter()][int]$daysBack,
+   [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB'
 )
+
+$conversion = @{'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
+function toUnits($val){
+    return "{0:n2}" -f ($val/($conversion[$unit]))
+}
 
 # gather list of jobs
 $jobNames = @()
@@ -81,7 +87,7 @@ if($daysBack){
 }
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "ArchiveQueue-$($cluster.name)-$dateString.csv"
-"Job ID,Job Name,Run Date,Status,Target,Start Time,End Time" | Out-File -FilePath $outfileName
+"Job ID,Job Name,Run Date,Status,Target,Reference Full,Start Time,End Time,Transferred $unit" | Out-File -FilePath $outfileName
 
 $nowUsecs = dateToUsecs (get-date)
 $thenUsecs = [int64]($nowUsecs + ($daysTilExpire * 24 * 60 * 60 * 1000000))
@@ -125,6 +131,7 @@ foreach($job in (api get protectionJobs?allUnderHierarchy=true | Where-Object {$
                     $status = $copyRun.status.subString(1)
                     $startTimeUsecs = $copyRun.stats.startTimeUsecs
                     $endTimeUsecs = $copyRun.stats.endTimeUsecs
+                    $transferred = $copyRun.stats.logicalBytesTransferred
                     $noLongerNeeded = ''
                     $cancelling = ''
                     $cancel = $false
@@ -164,7 +171,7 @@ foreach($job in (api get protectionJobs?allUnderHierarchy=true | Where-Object {$
                             $cancelling = '(Cancelling)'
                         }
                         "        {0,25} -> {1}  {2}  {3}  {4}" -f (usecsToDate $runStartTimeUsecs), $target, $referenceFull, $noLongerNeeded, $cancelling
-                        "{0},{1},{2},{3},{4}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), $status, $target | Out-File -FilePath $outfileName -Append
+                        "{0},{1},{2},{3},{4},{5}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), $status, $target, $referenceFull | Out-File -FilePath $outfileName -Append
                         $runningTasks += 1
                         # cancel archive task
                         if($cancel -eq $True){
@@ -180,8 +187,8 @@ foreach($job in (api get protectionJobs?allUnderHierarchy=true | Where-Object {$
                         }
                     }else{
                         if($showFinished){
-                            "        {0,25}: -> {1}  {2}  {3}" -f (usecsToDate $runStartTimeUsecs), $target, $status, $referenceFull
-                            "{0},{1},{2},{3},{4},{5},{6}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), $status, $target, (usecsToDate $startTimeUsecs), (usecsToDate $endTimeUsecs) | Out-File -FilePath $outfileName -Append
+                            "        {0,25}: -> {1}  {2}  {3}  {4}" -f (usecsToDate $runStartTimeUsecs), $target, $status, (toUnits $transferred),$referenceFull
+                            "{0},{1},{2},{3},{4},{5},{6},{7},{8}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), $status, $target, $referenceFull, (usecsToDate $startTimeUsecs), (usecsToDate $endTimeUsecs), (toUnits $transferred) | Out-File -FilePath $outfileName -Append
                         }
                     }
                 }
