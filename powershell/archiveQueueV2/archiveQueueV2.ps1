@@ -171,7 +171,7 @@ foreach($job in (api get protectionJobs?allUnderHierarchy=true | Where-Object {$
                             $cancelling = '(Cancelling)'
                         }
                         "        {0,25} -> {1}  {2}  {3}  {4}" -f (usecsToDate $runStartTimeUsecs), $target, $referenceFull, $noLongerNeeded, $cancelling
-                        "{0},{1},{2},{3},{4},{5}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), $status, $target, $referenceFull | Out-File -FilePath $outfileName -Append
+                        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}""" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), $status, $target, $referenceFull | Out-File -FilePath $outfileName -Append
                         $runningTasks += 1
                         # cancel archive task
                         if($cancel -eq $True){
@@ -188,7 +188,7 @@ foreach($job in (api get protectionJobs?allUnderHierarchy=true | Where-Object {$
                     }else{
                         if($showFinished){
                             "        {0,25}: -> {1}  {2}  {3}  {4}" -f (usecsToDate $runStartTimeUsecs), $target, $status, (toUnits $transferred),$referenceFull
-                            "{0},{1},{2},{3},{4},{5},{6},{7},{8}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), $status, $target, $referenceFull, (usecsToDate $startTimeUsecs), (usecsToDate $endTimeUsecs), (toUnits $transferred) | Out-File -FilePath $outfileName -Append
+                            """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}""" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), $status, $target, $referenceFull, (usecsToDate $startTimeUsecs), (usecsToDate $endTimeUsecs), (toUnits $transferred) | Out-File -FilePath $outfileName -Append
                         }
                     }
                 }
