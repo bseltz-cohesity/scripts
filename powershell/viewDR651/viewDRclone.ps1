@@ -48,6 +48,9 @@ $clusterName = $cluster.name
 
 ### get view protection jobs
 $jobs = api get protectionJobs?environments=kView
+if($cluster.clusterSoftwareVersion -ge '6.6'){
+    $protectionGroups = api get -v2 data-protect/protection-groups?environments=kView
+}
 
 ### policy info
 if($policyName){
@@ -245,33 +248,71 @@ foreach($viewName in $myViews){
                 $searchResults = api get /searchvms?entityTypes=kView`&vmName=$viewName
                 $viewResults = $searchResults.vms | Where-Object { $_.vmDocument.objectName -ieq $viewName }
                 $viewResult = ($viewResults | Sort-Object -Property {$_.vmDocument.versions[0].snapshotTimestampUsecs} -Descending:$True)[0]
-                $job = $jobs | Where-Object {$_.name -eq $viewResult.vmDocument.jobName}
-                $job = $job[0]
-                $protectionJob = @{
-                    'name' = "$clusterName $($newView.name) backup";
-                    'environment' = 'kView';
-                    'viewBoxId' = $newView.viewBoxId;
-                    'sourceIds' = @();
-                    'excludeSourceIds' = @();
-                    'vmTagIds' = @();
-                    'excludeVmTagIds' = @();
-                    'policyId' = $policy.id;
-                    'priority' = 'kMedium';
-                    'alertingPolicy' = $job.alertingPolicy;
-                    'createRemoteView' = $True
-                    'remoteViewName' = "$($viewName)-DR"
-                    'timezone' = $job.timezone;
-                    'incrementalProtectionSlaTimeMins' = $job.incrementalProtectionSlaTimeMins;
-                    'fullProtectionSlaTimeMins' = $job.fullProtectionSlaTimeMins;
-                    'qosType' = $job.qosType;
-                    'viewName' = $newView.name;
-                    'isActive' = $true;
-                    'sourceSpecialParameters' = @();
-                    'indexingPolicy' = $job.indexingPolicy;
-                    'startTime' = $job.startTime
+                if($cluster.clusterSoftwareVersion -lt '6.6'){
+                    $job = $jobs | Where-Object {$_.name -eq $viewResult.vmDocument.jobName}
+                    $job = $job[0]
+                    $protectionJob = @{
+                        'name' = "$clusterName $($newView.name) backup";
+                        'environment' = 'kView';
+                        'viewBoxId' = $newView.viewBoxId;
+                        'sourceIds' = @();
+                        'excludeSourceIds' = @();
+                        'vmTagIds' = @();
+                        'excludeVmTagIds' = @();
+                        'policyId' = $policy.id;
+                        'priority' = 'kMedium';
+                        'alertingPolicy' = $job.alertingPolicy;
+                        'createRemoteView' = $True
+                        'remoteViewName' = "$($viewName)-DR"
+                        'timezone' = $job.timezone;
+                        'incrementalProtectionSlaTimeMins' = $job.incrementalProtectionSlaTimeMins;
+                        'fullProtectionSlaTimeMins' = $job.fullProtectionSlaTimeMins;
+                        'qosType' = $job.qosType;
+                        'viewName' = $newView.name;
+                        'isActive' = $true;
+                        'sourceSpecialParameters' = @();
+                        'indexingPolicy' = $job.indexingPolicy;
+                        'startTime' = $job.startTime
+                    }
+                    "Creating Protection Job for $($newView.name)..."
+                    $null = api post protectionJobs $protectionJob
+                }else{
+                    $job = $protectionGroups.protectionGroups | Where-Object {$_.name -eq $viewResult.vmDocument.jobName}
+                    $job = $job[0]
+                    $protectionGroup = @{
+                        "policyId" = $policy.id;
+                        "startTime" = $job.startTime;
+                        "priority" = "kMedium";
+                        "sla" = $job.sla;
+                        "abortInBlackouts" = $job.abortInBlackouts;
+                        "storageDomainId" = 5;
+                        "name" = "$clusterName $($newView.name) backup";
+                        "environment" = "kView";
+                        "isPaused" = $false;
+                        "description" = "";
+                        "alertPolicy" = $job.alertPolicy;
+                        "viewParams" = @{
+                            "indexingPolicy" = $job.viewParams.indexingPolicy;
+                            "replicationParams" = @{
+                                "viewNameConfigList" = @(
+                                    @{
+                                        "sourceViewId" = $newView.viewId;
+                                        "useSameViewName" = $false;
+                                        "viewName" = "$viewName-DR"
+                                    }
+                                )
+                            };
+                            "objects" = @(
+                                @{
+                                    "id" = $newView.viewId
+                                }
+                            );
+                            "externallyTriggeredJobParams" = @{}
+                        }
+                    }
+                    "Creating Protection Job for $($newView.name)..."
+                    $null = api post -v2 data-protect/protection-groups $protectionGroup                    
                 }
-                "Creating Protection Job for $($newView.name)..."
-                $null = api post protectionJobs $protectionJob
             }
         }
     }
