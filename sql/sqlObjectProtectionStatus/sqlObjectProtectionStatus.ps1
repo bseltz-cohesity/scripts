@@ -30,7 +30,7 @@ foreach($sqlServer in $rootSource.nodes | Sort-Object -Property {$_.protectionSo
         foreach($db in $instance.nodes | Sort-Object -Property {$_.protectionSource.name}){
             $aagName = ''
             $aagName = $db.protectionSource.sqlProtectionSource.dbAagName
-            $recoveryModel = $db.protectionSource.sqlProtectionSource.recoveryModel.subString(1).split('RecoveryModel')[0]
+            $recoveryModel = ($db.protectionSource.sqlProtectionSource.recoveryModel.subString(1) -split "RecoveryModel")[0]
             $protectionStatus = 'FALSE'
             $dbName = $db.protectionSource.name
             $dbShortName = $dbName.split('/')[-1]
