@@ -18,7 +18,7 @@ $cluster = api get cluster
 $nowUsecs = dateToUsecs (Get-Date)
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "$($cluster.name)-sqlObjectProtectionStatus-$dateString.csv"
-"SQL Server,Database,AAG Name,Protected,Job Name,Policy Name,Last DB Backup,Last PIT,Latest Expiry,Last DB Status,Last Log Status" | Out-File -FilePath $outfileName
+"SQL Server,Database,Recovery Model,AAG Name,Protected,Job Name,Policy Name,Last DB Backup,Last PIT,Latest Expiry,Last DB Status,Last Log Status" | Out-File -FilePath $outfileName
 $rootSource = api get protectionSources?environment=kSQL
 
 foreach($sqlServer in $rootSource.nodes | Sort-Object -Property {$_.protectionSource.name}){
@@ -30,6 +30,7 @@ foreach($sqlServer in $rootSource.nodes | Sort-Object -Property {$_.protectionSo
         foreach($db in $instance.nodes | Sort-Object -Property {$_.protectionSource.name}){
             $aagName = ''
             $aagName = $db.protectionSource.sqlProtectionSource.dbAagName
+            $recoveryModel = $db.protectionSource.sqlProtectionSource.recoveryModel.subString(1).split('RecoveryModel')[0]
             $protectionStatus = 'FALSE'
             $dbName = $db.protectionSource.name
             $dbShortName = $dbName.split('/')[-1]
@@ -108,10 +109,10 @@ foreach($sqlServer in $rootSource.nodes | Sort-Object -Property {$_.protectionSo
                     }
                 }
                 "{0}  {1} (protected)" -f $serverName, $dbName
-                """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}""" -f $serverName, $dbName, $aagName, $protectionStatus, $jobName, $policyName, $newestBackupDateTime, $newestPointInTime, $newestExpiry, $lastRunDBStatus, $lastLogrunDBStatus | Out-File -FilePath $outfileName -Append       
+                """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}""" -f $serverName, $dbName, $recoveryModel, $aagName, $protectionStatus, $jobName, $policyName, $newestBackupDateTime, $newestPointInTime, $newestExpiry, $lastRunDBStatus, $lastLogrunDBStatus | Out-File -FilePath $outfileName -Append       
             }else{
                 "{0}  {1}" -f $serverName, $dbName
-                """{0}"",""{1}"",""{2}"",""{3}""" -f $serverName, $dbName, $aagName, $protectionStatus | Out-File -FilePath $outfileName -Append
+                """{0}"",""{1}"",""{2}"",""{3}"",""{4}""" -f $serverName, $dbName, $recoveryModel, $aagName, $protectionStatus | Out-File -FilePath $outfileName -Append
             }
         }
     }
