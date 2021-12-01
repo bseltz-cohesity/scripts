@@ -10,8 +10,8 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -Ok https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/clusterInfo/clusterInfo.py
-curl -Ok https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/clusterInfo/clusterInfo.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x clusterInfo.py
 # end download commands
 ```
