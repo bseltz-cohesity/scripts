@@ -15,7 +15,7 @@ $cluster = api get cluster
 
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "$($cluster.name)-sqlObjectProtectionStatus-$dateString.csv"
-"SQL Server,Database,Protected,Job Name,Policy Name" | Out-File -Path $outfileName
+"SQL Server,Database,Protected,Job Name,Policy Name" | Out-File -FilePath $outfileName
 $rootSource = api get protectionSources?environment=kSQL
 
 foreach($sqlServer in $rootSource.nodes | Sort-Object -Property {$_.protectionSource.name}){
@@ -36,10 +36,10 @@ foreach($sqlServer in $rootSource.nodes | Sort-Object -Property {$_.protectionSo
                 $policy = $protectedDb.protectionPolicies | Where-Object id -eq $job.policyId
                 $policyName = $policy.name
                 "{0}  {1} (protected)" -f $serverName, $dbName
-                """{0}"",""{1}"",""{2}"",""{3}"",""{4}""" -f $serverName, $dbName, $protectionStatus, $jobName, $policyName | Out-File -Path $outfileName -Append
+                """{0}"",""{1}"",""{2}"",""{3}"",""{4}""" -f $serverName, $dbName, $protectionStatus, $jobName, $policyName | Out-File -FilePath $outfileName -Append
             }else{
                 "{0}  {1}" -f $serverName, $dbName
-                """{0}"",""{1}"",""{2}""" -f $serverName, $dbName, $protectionStatus | Out-File -Path $outfileName -Append
+                """{0}"",""{1}"",""{2}""" -f $serverName, $dbName, $protectionStatus | Out-File -FilePath $outfileName -Append
             }
         }
     }
