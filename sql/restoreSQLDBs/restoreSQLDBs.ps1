@@ -282,7 +282,7 @@ function restoreDB($db){
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['restoreTimeSecs'] = $([int64]($logUsecs/1000000))
     }
     ### search for target server
-    if($targetServer -ne $sourceServer -or $targetInstance){
+    if($targetServer -ne $sourceServer -or $differentInstance){
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams['targetHost'] = $targetEntity.appEntity.entity;
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams['targetHostParentSource'] = @{ 'id' = $targetEntity.appEntity.entity.parentId }
         if($targetInstance){
