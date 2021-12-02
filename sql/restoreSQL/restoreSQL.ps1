@@ -347,7 +347,7 @@ if($useLogTime -eq $True){
 }
 
 # search for target server
-if($targetServer -ne $sourceServer -or $targetInstance){
+if($targetServer -ne $sourceServer -or $differentInstance){
     $targetEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $targetServer }
     if($null -eq $targetEntity){
         Write-Host "Target Server Not Found" -ForegroundColor Yellow
