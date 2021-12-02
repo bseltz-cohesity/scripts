@@ -13,6 +13,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vip,            # the cluster to connect to (DNS name or IP)
     [Parameter(Mandatory = $True)][string]$username,       # username (local or AD)
     [Parameter()][string]$domain = 'local',                # local or AD domain
+    [Parameter()][string]$password,                        # optional password
     [Parameter(Mandatory = $True)][string]$sourceServer,   # protection source where the DB was backed up
     [Parameter()][string]$sourceInstance = $null,          # source instance name
     [Parameter()][array]$sourceDBnames,                    # names of the source DBs we want to restore
@@ -37,7 +38,7 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain -quiet
+apiauth -vip $vip -username $username -domain $domain -password $password -quiet
 
 ### gather DB names
 $dbs = @()
