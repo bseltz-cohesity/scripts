@@ -88,7 +88,7 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
             indexing = 'Disabled'
 
         # start time
-        if 'startTime' in job and 'hour' in job['startTime']:
+        if 'startTime' in job and 'hour' in job['startTime'] and 'minute' in job['startTime']:
             startTime = '%02d:%02d' % (job['startTime']['hour'], job['startTime']['minute'])
         else:
             startTime = 'N/A'
