@@ -18,7 +18,7 @@ $cluster = api get cluster
 $nowUsecs = dateToUsecs (Get-Date)
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "$($cluster.name)-sqlObjectProtectionStatus-$dateString.csv"
-"SQL Server,Database,Recovery Model,AAG Name,Protected,Job Name,Policy Name,Last DB Backup,Last PIT,Latest Expiry,Last DB Status,Last Log Status" | Out-File -FilePath $outfileName
+"SQL Server,Instance,Database,Recovery Model,AAG Name,Protected,Job Name,Policy Name,Last DB Backup,Last PIT,Latest Expiry,Last DB Status,Last Log Status,Message" | Out-File -FilePath $outfileName
 $rootSource = api get protectionSources?environment=kSQL
 
 foreach($sqlServer in $rootSource.nodes | Sort-Object -Property {$_.protectionSource.name}){
@@ -84,9 +84,27 @@ foreach($sqlServer in $rootSource.nodes | Sort-Object -Property {$_.protectionSo
                 if($runs.Count -gt 0){
                     $sourceStatus = $runs[0].backupRun.sourceBackupStatus | Where-Object {$_.source.name -eq $serverName}
                     if($sourceStatus){
+                        $message = ''
+                        if($sourceStatus.PSObject.Properties['error']){
+                            $message = $sourceStatus.error
+                        }elseif($sourceStatus.PSObject.Properties['warnings']){
+                            $message = $sourceStatus.warnings[0]
+                        }
                         $appStatus = $sourceStatus.appsBackupStatus | where-object {$_.name -eq $dbName -and $_.ownerId -eq $sourceStatus.source.id}
                         if($appStatus){
-                            $lastRunDBStatus = $appStatus.status.subString(1)
+                            $lastRunDBStatus = ''
+                            if($appStatus.status){
+                                $lastRunDBStatus = $appStatus.status.subString(1)
+                            }
+                            if($lastRunDBStatus -eq 'Success'){
+                                $message = ''
+                            }else{
+                                if($appStatus.PSObject.Properties['error']){
+                                    $message = $appStatus.error
+                                }elseif($appStatus.PSObject.Properties['warnings']){
+                                    $message = $appStatus.warnings[0]
+                                }
+                            }
                             if($lastRunDBStatus -eq 'Success' -and $newestBackupDateTime -eq ''){
                                 $newestBackupDateTime = usecsToDate $runs[0].backupRun.stats.startTimeUsecs
                                 $newestExpiry = usecsToDate (($runs[0].copyRun | Where-Object {$_.target.type -eq 'kLocal'}).expiryTimeUsecs)
@@ -99,8 +117,22 @@ foreach($sqlServer in $rootSource.nodes | Sort-Object -Property {$_.protectionSo
                 if($logruns.Count -gt 0){
                     $sourceStatus = $logruns[0].backupRun.sourceBackupStatus | Where-Object {$_.source.name -eq $serverName}
                     if($sourceStatus){
+                        if($message -ne ''){
+                            if($sourceStatus.PSObject.Properties['error']){
+                                $message = $sourceStatus.error
+                            }elseif($sourceStatus.PSObject.Properties['warnings']){
+                                $message = $sourceStatus.warnings[0]
+                            }
+                        }
                         $appStatus = $sourceStatus.appsBackupStatus | where-object {$_.name -eq $dbName}
                         if($appStatus){
+                            if($appStatus.status -ne 'kSuccess'){
+                                if($appStatus.PSObject.Properties['error']){
+                                    $message = $appStatus.error
+                                }elseif($appStatus.PSObject.Properties['warnings']){
+                                    $message = $appStatus.warnings[0]
+                                }
+                            }
                             $lastLogrunDBStatus = $appStatus.status.subString(1)
                             if($lastLogrunDBStatus -eq 'Success' -and $newestPointInTime -eq ''){
                                 $newestPointInTime = usecsToDate $run.backupRun.stats.startTimeUsecs
@@ -108,11 +140,11 @@ foreach($sqlServer in $rootSource.nodes | Sort-Object -Property {$_.protectionSo
                         }
                     }
                 }
-                "{0}  {1} (protected)" -f $serverName, $dbName
-                """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}""" -f $serverName, $dbName, $recoveryModel, $aagName, $protectionStatus, $jobName, $policyName, $newestBackupDateTime, $newestPointInTime, $newestExpiry, $lastRunDBStatus, $lastLogrunDBStatus | Out-File -FilePath $outfileName -Append       
+                "{0}  {1}  (protected)" -f $serverName, $dbName
+                """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}"",""{13}""" -f $serverName, $instanceName, $dbShortName, $recoveryModel, $aagName, $protectionStatus, $jobName, $policyName, $newestBackupDateTime, $newestPointInTime, $newestExpiry, $lastRunDBStatus, $lastLogrunDBStatus, $message | Out-File -FilePath $outfileName -Append       
             }else{
                 "{0}  {1}" -f $serverName, $dbName
-                """{0}"",""{1}"",""{2}"",""{3}"",""{4}""" -f $serverName, $dbName, $recoveryModel, $aagName, $protectionStatus | Out-File -FilePath $outfileName -Append
+                """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}""" -f $serverName, $instanceName, $dbShortName, $recoveryModel, $aagName, $protectionStatus | Out-File -FilePath $outfileName -Append
             }
         }
     }
