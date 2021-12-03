@@ -10,26 +10,26 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/unprotectPhysical/unprotectPhysical.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/unprotectPhysicalServer/unprotectPhysicalServer.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-chmod +x unprotectPhysical.py
+chmod +x unprotectPhysicalServer.py
 # end download commands
 ```
 
 ## Components
 
-* unprotectPhysical.py: the main powershell script
+* unprotectPhysicalServer.py: the main powershell script
 * pyhesity.py: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./unprotectPhysical.py -v mycluster \
-                       -u myuser \
-                       -d mydomain.net \
-                       -s server1.mydomain.net \
-                       -s server2.mydomain.net \
-                       -l serverlist.txt
+./unprotectPhysicalServer.py -v mycluster \
+                             -u myuser \
+                             -d mydomain.net \
+                             -s server1.mydomain.net \
+                             -s server2.mydomain.net \
+                             -l serverlist.txt
 ```
 
 ## Parameters
