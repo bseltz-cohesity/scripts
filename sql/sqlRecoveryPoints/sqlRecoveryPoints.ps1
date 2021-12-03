@@ -25,7 +25,7 @@ $ro = api get "/searchvms?environment=SQL&size=$pageSize&from=$from"
 if($ro.count -gt 0){
 
     while($True){
-        $ro.vms | Sort-Object -Property {$_.vmDocument.jobName}, {$_.vmDocument.objectName } | ForEach-Object {
+        $ro.vms | Where-Object {$_.vmDocument.objectId.entity.type -eq 3} | Sort-Object -Property {$_.vmDocument.jobName}, {$_.vmDocument.objectName } | ForEach-Object {
             $doc = $_.vmDocument
             $jobId = $doc.objectId.jobId
             $jobName = $doc.jobName
