@@ -39,5 +39,5 @@ Place both files in a folder together and run the main script like so:
 * -d, --domain: (optional) domain of username, defaults to local
 * -k, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password of API key
-* -s, --servername: (optional) name of server to add to the job (use multiple times for multiple)
+* -n, --servername: (optional) name of server to add to the job (use multiple times for multiple)
 * -l, --serverlist: (optional) list of server names in a text file (one per line)

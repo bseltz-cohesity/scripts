@@ -14,7 +14,7 @@ parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
 parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
-parser.add_argument('-s', '--servername', action='append', type=str)
+parser.add_argument('-n', '--servername', action='append', type=str)
 parser.add_argument('-l', '--serverlist', type=str)
 
 args = parser.parse_args()
