@@ -22,7 +22,8 @@ param (
     [Parameter()][string]$keepFor = 0, #set archive retention to x days from original backup date
     [Parameter()][switch]$archive,
     [Parameter()][switch]$includeLogs,
-    [Parameter()][array]$dates
+    [Parameter()][array]$dates,
+    [Parameter()][ValidateSet('kCloud','kTape','kNas')][string]$vaultType = 'kCloud'
 )
 
 # source the cohesity-api helper code
@@ -131,7 +132,7 @@ foreach($jobName in $jobNames | Sort-Object -Unique){
                                     'archivalTarget' = @{
                                         'vaultId'   = $vaultId;
                                         'vaultName' = $vaultName;
-                                        'vaultType' = 'kCloud'
+                                        'vaultType' = $vaultType
                                     };
                                     'daysToKeep'     = [int] $daysToKeep;
                                     'type'           = 'kArchival'
