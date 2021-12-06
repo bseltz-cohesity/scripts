@@ -73,6 +73,7 @@ Then, if you're happy with the list of snapshots that will be archived, run the 
 * -archive: (optional) if excluded script will only report what it would do (test run mode)
 * -includeLogs: (optional) also archive log backups (default is to only archive full and incremental backups)
 * -dates: (optional) one or more dates to archive, comma separated (e.g. 2021-04-23, 2021-04-24)
+* -vaultType: (optional) kCloud, kTape or kNas (default is kCloud)
 
 To monitor the archive tasks, see the script 'monitorArchiveTasks'
 
