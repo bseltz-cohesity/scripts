@@ -115,8 +115,8 @@ if($vCenterName){
 
     # select host
     $hostSource = $dataCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $hostName}
-    if(!$dataCenterSource){
-        Write-Host "Datacenter $datacenterName not found" -ForegroundColor Yellow
+    if(!$hostSource){
+        Write-Host "Host $hostName not found" -ForegroundColor Yellow
         exit
     }
 
