@@ -86,7 +86,7 @@ foreach($job in (api get protectionJobs | Where-Object isDeleted -ne $True | Sor
         "  $sourceName"
         $isLocal = $areLocal[$sourceName]
         # logical size
-        $logicalSize = $stats[$sourceName][0].logicalSize
+        $logicalSize = ($stats[$sourceName].logicalSize | Measure-Object -Maximum).Maximum
         
         # last 24 hours
         $midnight = get-date -Hour 0 -Minute 0
