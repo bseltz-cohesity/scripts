@@ -67,34 +67,37 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
             }
             foreach($server in ($run.objects | Sort-Object -Property {$_.object.name})){
                 $sourceName = $server.object.name
-                if($server.PSObject.Properties['originalBackupInfo']){
-                    $logicalBytes = $server.originalBackupInfo.snapshotInfo.stats.logicalSizeBytes
-                    $bytesRead = $server.originalBackupInfo.snapshotInfo.stats.bytesRead
-                    $bytesWritten = 0
-                    $owner = $run.originClusterIdentifier.clusterName
-                }else{
-                    $logicalBytes = $server.localSnapshotInfo.snapshotInfo.stats.logicalSizeBytes
-                    $bytesRead = $server.localSnapshotInfo.snapshotInfo.stats.bytesRead
-                    $bytesWritten = $server.localSnapshotInfo.snapshotInfo.stats.bytesWritten
-                    $owner = $cluster.name
+                if(!($run.environment -eq 'kAD' -and $server.object.objectType -eq 'kDomainController')){
+                    if($server.PSObject.Properties['originalBackupInfo']){
+                        $logicalBytes = $server.originalBackupInfo.snapshotInfo.stats.logicalSizeBytes
+                        $bytesRead = $server.originalBackupInfo.snapshotInfo.stats.bytesRead
+                        $bytesWritten = 0
+                        $owner = $run.originClusterIdentifier.clusterName
+                    }else{
+                        $logicalBytes = $server.localSnapshotInfo.snapshotInfo.stats.logicalSizeBytes
+                        $bytesRead = $server.localSnapshotInfo.snapshotInfo.stats.bytesRead
+                        $bytesWritten = $server.localSnapshotInfo.snapshotInfo.stats.bytesWritten
+                        $owner = $cluster.name
+                    }
+                    if($sourceName -notin $stats.Keys){
+                        $stats[$sourceName] = @()
+                    }
+                    $stats[$sourceName] += @{'startTimeUsecs' = $runStartTimeUsecs;
+                                             'dataRead' = $bytesRead;
+                                             'dataWritten' = $bytesWritten;
+                                             'logicalSize' = $logicalBytes}
+                    $owners[$sourceName] = $owner
                 }
-                if($sourceName -notin $stats.Keys){
-                    $stats[$sourceName] = @()
-                }
-                $stats[$sourceName] += @{'startTimeUsecs' = $runStartTimeUsecs;
-                                         'dataRead' = $bytesRead;
-                                         'dataWritten' = $bytesWritten;
-                                         'logicalSize' = $logicalBytes}
-                $owners[$sourceName] = $owner
             }
         }
     }
     foreach($sourceName in ($stats.Keys | sort)){
         "  $sourceName"
         $owner = $owners[$sourceName]
+
         # logical size
-        $logicalSize = $stats[$sourceName][0].logicalSize
-        
+        $logicalSize = ($stats[$sourceName].logicalSize | Measure-Object -Maximum).Maximum
+
         # last 24 hours
         $midnight = get-date -Hour 0 -Minute 0
         $midnightUsecs = dateToUsecs $midnight
@@ -118,11 +121,8 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
         $oldestStat = usecsToDate $stats[$sourceName][-1]['startTimeUsecs']
         $numDays = ($today - $oldestStat).Days + 1
         if($logicalSize -gt 0){
-            $changeRate = 100 * [math]::Round(($lastXDaysDataRead / $logicalSize) / $numDays, 2)
-            # if($changeRate -gt 100){
-            #     $changeRate = '-'
-            # }
-            $writeChangeRate = 100 * [math]::Round(($lastXDaysDataWritten/ $logicalSize) / $numDays, 2)
+            $changeRate = 100 * [math]::Round(($lastXDaysDataRead / $logicalSize) / $daysBack, 2)
+            $writeChangeRate = 100 * [math]::Round(($lastXDaysDataWritten/ $logicalSize) / $daysBack, 2)
         }else{
             $changeRate = '-'
             $writeChangeRate = '-'
