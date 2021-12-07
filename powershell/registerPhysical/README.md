@@ -35,3 +35,11 @@ or if you want to register a list of servers:
 ```
 
 Note that the Cohesity agent must be installed on the host and that firewall port 50051/tcp on the host must be accessible by the Cohesity cluster.
+
+## Parameters
+
+* -vip: name or IP of Cohesity cluster
+* -username: name of user to connect to Cohesity
+* -domain: your AD domain (defaults to local)
+* -serverName: name of server to register
+* -serverList: text file containing list of servers to register (one per line)
