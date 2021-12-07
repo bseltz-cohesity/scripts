@@ -319,14 +319,21 @@ function restoreDB($db){
             $status = (api get /restoretasks/$taskId).restoreTask.performRestoreTaskState.base.publicStatus
             if($progress){
                 $progressMonitor = api get "/progressMonitors?taskPathVec=restore_sql_$($taskId)&includeFinishedTasks=true&excludeSubTasks=false"
-                $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
-                if($percentComplete -gt $lastProgress){
-                    "{0} percent complete" -f [math]::Round($percentComplete, 0)
-                    $lastProgress = $percentComplete
-                    if($percentComplete -eq 100){
-                        break
+                try{
+                    $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
+                    if($percentComplete -gt $lastProgress){
+                        "{0} percent complete" -f [math]::Round($percentComplete, 0)
+                        $lastProgress = $percentComplete
+                        if($percentComplete -eq 100){
+                            break
+                        }
                     }
+                }catch{
+                    $percentComplete = 0
+                    "{0} percent complete" -f [math]::Round($percentComplete, 0)
+                    $lastProgress = 0
                 }
+
             }
             if ($status -in $finishedStates){
                 break
