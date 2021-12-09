@@ -116,7 +116,7 @@ for entity in entities:
     if entity['appEntity']['entity']['displayName'].lower() == targetserver.lower():
         targetEntity = entity
 if targetEntity is None:
-    print "target server not found"
+    print("target server not found")
     exit()
 
 # version
@@ -238,6 +238,14 @@ restoreParams = {
     }
 }
 
+# allow cloud retrieve
+localreplica = [v for v in version['replicaInfo']['replicaVec'] if v['target']['type'] == 1]
+archivereplica = [v for v in version['replicaInfo']['replicaVec'] if v['target']['type'] == 3]
+
+if localreplica is None or len(localreplica) == 0:
+    if archivereplica is not None and len(archivereplica) > 0:
+        restoreParams['restoreAppParams']['ownerRestoreInfo']['ownerObject']['archivalTarget'] = archivereplica[0]['target']['archivalTarget']
+
 # configure channels
 if channels is not None:
     restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['oracleTargetParams'] = {
@@ -309,6 +317,8 @@ if norecovery is True:
     restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['noOpenMode'] = True
 
 # perform restore
+# display(restoreParams)
+# exit()
 response = api('post', '/recoverApplication', restoreParams)
 
 if 'errorCode' in response:
