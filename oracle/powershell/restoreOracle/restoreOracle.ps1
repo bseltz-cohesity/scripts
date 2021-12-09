@@ -211,6 +211,14 @@ $restoreParams = @{
     }
 }
 
+# allow cloudRetrieve
+$localreplica = $version.replicaInfo.replicaVec | Where-Object {$_.target.type -eq 1}
+$archivereplica = $version.replicaInfo.replicaVec | Where-Object {$_.target.type -eq 3}
+
+if(! $localreplica -and $archivereplica){
+    $restoreParams.restoreAppParams.ownerRestoreInfo.ownerObject['archivalTarget'] = $archivereplica[0].target.archivalTarget
+}
+
 ### configure channels
 if($channels){
     $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams['oracleTargetParams'] = @{
