@@ -7,7 +7,9 @@ param (
     [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
     [Parameter()][string]$domain = 'local', # local or AD domain
     [Parameter()][string]$tenant = $null,
-    [Parameter()][string]$vmlist = './vmlist.txt', # list of VMs to recover
+    [Parameter()][string]$vmTag = $null,
+    [Parameter()][array]$vmName,
+    [Parameter()][string]$vmlist = '', # list of VMs to recover
     [Parameter()][datetime]$recoverDate,
     [Parameter()][string]$vCenterName,
     [Parameter()][string]$datacenterName,
@@ -23,14 +25,44 @@ param (
     [Parameter()][ValidateSet('InstantRecovery','CopyRecovery')][string]$recoveryType = 'InstantRecovery'
 )
 
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
+        }
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
+        exit
+    }
+    return ($items | Sort-Object -Unique)
+}
+
+$vmNames = gatherList -Param $vmName -FilePath $vmList -Name 'vms' -Required $false
+
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain -tenant $tenant
 
-if (!(Test-Path -Path $vmlist)) {
-    Write-Host "vmlist file $vmlist not found" -ForegroundColor Yellow
+# search for vm tags
+if($vmTag){
+    $taggedVMlist = api get "/searchvms?entityTypes=kVMware&vmName=$vmTag"
+    $taggedVMs = $taggedVMlist.vms | Where-Object  {$vmTag -in $_.vmDocument.objectId.entity.vmwareEntity.tagAttributesVec.name} 
+    $vmNames = @($vmNames + $taggedVMs.vmDocument.objectName)
+}
+
+if($vmNames.Count -eq 0){
+    Write-Host "No VMs specified for restore" -ForegroundColor Yellow
     exit
 }
 
@@ -209,7 +241,7 @@ $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.recoveryProcessTy
 
 # get list of VM backups
 
-foreach($vm in get-content -Path $vmlist){
+foreach($vm in $vmNames){
     $vmName = [string]$vm
     $vms = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverVMs,RecoverVApps,RecoverVAppTemplates&searchString=$vmName&environments=kVMware"
     $exactVMs = $vms.objects | Where-Object name -eq $vmName
