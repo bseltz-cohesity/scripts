@@ -70,7 +70,7 @@ if($vmTag){
 
 # prompt for confirmation
 if(!$noPrompt){
-    Write-Host "Ready to restore:`n   "$($vmNames -join "`n    ") 
+    Write-Host "Ready to restore:`n    $prefix$($vmNames -join "`n    $prefix")" 
     $confirm = Read-Host -Prompt "Are you sure? Yes(No)"
     if($confirm.ToLower() -ne 'yes' -and $confirm.ToLower() -ne 'y'){
         exit
