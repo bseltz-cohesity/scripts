@@ -62,3 +62,4 @@ Place the files in a folder together and run the main script like so:
 * -detachNetwork: (optional) leave VM network disconnected (default is false)
 * -preserveMacAddress: (optional) maintain original Mac address (default is false)
 * -recoveryType: (optional) InstantRecovery or CopyRecovery (default is InstantRecovery)
+* -noPrompt: (optional) Don't prompt to confirm

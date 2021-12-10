@@ -6,6 +6,8 @@ param (
     [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
     [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
     [Parameter()][string]$domain = 'local', # local or AD domain
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password = $null,
     [Parameter()][string]$tenant = $null,
     [Parameter()][string]$vmTag = $null,
     [Parameter()][array]$vmName,
@@ -22,6 +24,7 @@ param (
     [Parameter()][switch]$detachNetwork,
     [Parameter()][switch]$poweron, # leave powered off by default
     [Parameter()][switch]$wait, # wait for restore tasks to complete
+    [Parameter()][switch]$noPrompt,
     [Parameter()][ValidateSet('InstantRecovery','CopyRecovery')][string]$recoveryType = 'InstantRecovery'
 )
 
@@ -43,22 +46,35 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
         Write-Host "No $Name specified" -ForegroundColor Yellow
         exit
     }
-    return ($items | Sort-Object -Unique)
+    return $items | Sort-Object -Unique
 }
 
-$vmNames = gatherList -Param $vmName -FilePath $vmList -Name 'vms' -Required $false
+$vmNames = @(gatherList -Param $vmName -FilePath $vmList -Name 'vms' -Required $false)
 
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain -tenant $tenant
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
+}else{
+    apiauth -vip $vip -username $username -domain $domain -password $password
+}
 
 # search for vm tags
 if($vmTag){
     $taggedVMlist = api get "/searchvms?entityTypes=kVMware&vmName=$vmTag"
     $taggedVMs = $taggedVMlist.vms | Where-Object  {$vmTag -in $_.vmDocument.objectId.entity.vmwareEntity.tagAttributesVec.name} 
-    $vmNames = @($vmNames + $taggedVMs.vmDocument.objectName)
+    $vmNames = $vmNames + @($taggedVMs.vmDocument.objectName) | Sort-Object -Unique
+}
+
+# prompt for confirmation
+if(!$noPrompt){
+    Write-Host "Ready to restore:`n   "$($vmNames -join "`n    ") 
+    $confirm = Read-Host -Prompt "Are you sure? Yes(No)"
+    if($confirm.ToLower() -ne 'yes' -and $confirm.ToLower() -ne 'y'){
+        exit
+    }
 }
 
 if($vmNames.Count -eq 0){
