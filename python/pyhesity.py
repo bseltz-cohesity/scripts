@@ -21,7 +21,7 @@
 # 2021.11.15 - added dateToString function, usecsToDate formatting, Helios Reporting v2, Helio On Prem
 # 2021.11.18 - added support for multifactor authentication
 # 2021.12.07 - added support for email multifactor authentication
-# 2021.12.11 - dateToUsecs defaults to now
+# 2021.12.11 - dateToUsecs defaults to now, added getDate()
 #
 ##########################################################################################
 # Install Notes
@@ -71,7 +71,8 @@ __all__ = ['apiauth',
            'heliosCluster',
            'heliosClusters',
            'getContext',
-           'setContext']
+           'setContext',
+           'getDate']
 
 COHESITY_API = {
     'APIROOT': '',
@@ -313,6 +314,12 @@ def dateToUsecs(dt=datetime.now()):
 def dateToString(dt, fmt='%Y-%m-%d %H:%M:%S'):
     """Convert date to date string"""
     return dt.strftime(fmt)
+
+
+### get current date
+def getDate():
+    """get current date time"""
+    return datetime.now()
 
 
 ### convert date difference to usecs
