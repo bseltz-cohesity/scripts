@@ -57,6 +57,18 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
         paramsKey = [k for k in job.keys() if 'Params' in k][0]
         environmentParams = job[paramsKey]
 
+        if 'priority' in job:
+            jobPriority = job['priority'][1:]
+        else:
+            jobPriority = ''
+
+        if 'sla' in job:
+            fullSla = job['sla'][1]['slaMinutes']
+            incrementalSla = job['sla'][0]['slaMinutes']
+        else:
+            fullSla = ''
+            incrementalSla = ''
+
         # cloud archive direct
         cloudArchiveDirect = False
         if 'directCloudArchive' in environmentParams and environmentParams['directCloudArchive'] is True:
@@ -117,7 +129,7 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
             for run in runs['runs']:
                 for item in run['objects']:
                     object = item['object']
-
+                    lastStatus = item['localSnapshotInfo']['snapshotInfo']['status'][1:]
                     # logical size
                     if 'logicalSizeBytes' in item['localSnapshotInfo']['snapshotInfo']['stats']:
                         objectMiB = int(item['localSnapshotInfo']['snapshotInfo']['stats']['logicalSizeBytes'] / (1024 * 1024))
@@ -146,9 +158,9 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
                             'timeZone': timeZone,
                             'policyLink': policyLink,
                             'qosPolicy': qosPolicy,
-                            'priority': job['priority'][1:],
-                            'fullSla': job['sla'][1]['slaMinutes'],
-                            'incrementalSla': job['sla'][0]['slaMinutes'],
+                            'priority': jobPriority,
+                            'fullSla': fullSla,
+                            'incrementalSla': incrementalSla,
                             'archiveTarget': archiveTarget
                         }
                     else:
