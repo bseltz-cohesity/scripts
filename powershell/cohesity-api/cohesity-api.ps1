@@ -1,21 +1,23 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2021.11.18 - Brian Seltzer
+#  Version 2021.12.11 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2021.02.10 - fixed empty body issue
 # 2021.03.26 - added apiKey unique password storage
 # 2021.08.16 - revamped passwd storage, auto prompt for invalid password
-# 2021.09.23 - added support for DMaaS
+# 2021.09.23 - added support for DMaaS, Helios Reporting V2
 # 2021.10.14 - added storePasswordForUser and importStoredPassword
 # 2021.10.22 - fixed json2code and py functions and added toJson function
 # 2021.11.03 - fixed 'Cannot send a content-body with this verb-type' message in debug log
 # 2021.11.10 - added getContext, setContext
 # 2021.11.15 - added support for helios on prem
 # 2021.11.18 - added support for multifactor authentication
+# 2021.12.07 - added support for email multifactor authentication
+# 2021.12.11 - added date formatting to usecsToDate function and dateToUsecs defaults to now
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2021.11.18'
+$versionCohesityAPI = '2021.12.11'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -90,6 +92,7 @@ function apiauth($vip='helios.cohesity.com',
                  $regionid = $null,
                  $mfaType = 'Totp',
                  [string] $mfaCode = $null,
+                 [switch] $emailMfaCode,
                  [switch] $helios,
                  [switch] $quiet, 
                  [switch] $noprompt, 
@@ -129,6 +132,12 @@ function apiauth($vip='helios.cohesity.com',
         'password' = $passwd;
         'otpType' = $mfaType;
         'otpCode' = $mfaCode
+    }
+
+    $emailMfaBody = ConvertTo-Json @{
+        'domain' = $domain;
+        'username' = $username;
+        'password' = $passwd;
     }
 
     $cohesity_api.apiRoot = 'https://' + $vip + '/irisservices/api/v1'
@@ -192,6 +201,22 @@ function apiauth($vip='helios.cohesity.com',
     }else{
         $url = $cohesity_api.apiRoot + '/public/accessTokens'
         try {
+            if($emailMfaCode){
+                $emailUrl = $cohesity_api.apiRootv2 + 'email-otp'
+                if($PSVersionTable.PSEdition -eq 'Core'){
+                    $email = Invoke-RestMethod -Method Post -Uri $emailUrl -header $cohesity_api.header -Body $emailMfaBody -SkipCertificateCheck
+                }else{
+                    $email = Invoke-RestMethod -Method Post -Uri $emailUrl -header $cohesity_api.header -Body $emailMfaBody
+                }
+                $mfaCode = Read-Host -Prompt "Enter emailed MFA code"
+                $body = ConvertTo-Json @{
+                    'domain' = $domain;
+                    'username' = $username;
+                    'password' = $passwd;
+                    'otpType' = 'Email';
+                    'otpCode' = $mfaCode
+                }
+            }
             # authenticate
             if($PSVersionTable.PSEdition -eq 'Core'){
                 $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck
@@ -476,13 +501,17 @@ function timeAgo([int64] $age, [string] $units){
     return [int64] ($currentTime - $age)
 }
 
-function usecsToDate($usecs){
+function usecsToDate($usecs, $format=$null){
     $unixTime=$usecs/1000000
     $origin = ([datetime]'1970-01-01 00:00:00')
-    return $origin.AddSeconds($unixTime).ToLocalTime()
+    if($format){
+        return $origin.AddSeconds($unixTime).ToLocalTime().ToString($format)
+    }else{
+        return $origin.AddSeconds($unixTime).ToLocalTime()
+    }
 }
 
-function dateToUsecs($datestring){
+function dateToUsecs($datestring=(Get-Date)){
     if($datestring -isnot [datetime]){ $datestring = [datetime] $datestring }
     $usecs = [int64](($datestring.ToUniversalTime())-([datetime]"1970-01-01 00:00:00")).TotalSeconds*1000000
     $usecs

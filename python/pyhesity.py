@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2021.11.18"""
+"""Cohesity Python REST API Wrapper Module - 2021.12.11"""
 
 ##########################################################################################
 # Change Log
@@ -20,6 +20,8 @@
 # 2021.11.10 - added setContext and getContext functions
 # 2021.11.15 - added dateToString function, usecsToDate formatting, Helios Reporting v2, Helio On Prem
 # 2021.11.18 - added support for multifactor authentication
+# 2021.12.07 - added support for email multifactor authentication
+# 2021.12.11 - dateToUsecs defaults to now
 #
 ##########################################################################################
 # Install Notes
@@ -86,7 +88,7 @@ LOGFILE = os.path.join(SCRIPTDIR, 'pyhesity-debug.log')
 
 
 ### authentication
-def apiauth(vip='helios.cohesity.com', username='helios', domain='local', password=None, updatepw=None, prompt=None, quiet=None, helios=False, useApiKey=False, tenantId=None, noretry=False, regionid=None, mfaType='Totp', mfaCode=None):
+def apiauth(vip='helios.cohesity.com', username='helios', domain='local', password=None, updatepw=None, prompt=None, quiet=None, helios=False, useApiKey=False, tenantId=None, noretry=False, regionid=None, mfaType='Totp', mfaCode=None, emailMfaCode=False):
     """authentication function"""
     global COHESITY_API
     global HELIOSCLUSTERS
@@ -147,9 +149,16 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
             COHESITY_API['AUTHENTICATED'] = False
     else:
         creds = json.dumps({"domain": domain, "password": pwd, "username": username, "otpType": mfaType, "otpCode": mfaCode})
+        emailcreds = json.dumps({"domain": domain, "password": pwd, "username": username})
 
         url = COHESITY_API['APIROOT'] + '/public/accessTokens'
         try:
+            if emailMfaCode is True:
+                emailurl = COHESITY_API['APIROOTv2'] + 'email-otp'
+                response = requests.post(emailurl, data=emailcreds, headers=COHESITY_API['HEADER'], verify=False)
+                mfaCode = getpass.getpass("Enter emailed MFA code: ")
+                creds = json.dumps({"domain": domain, "password": pwd, "username": username, "otpType": 'Email', "otpCode": mfaCode})
+
             response = requests.post(url, data=creds, headers=COHESITY_API['HEADER'], verify=False)
             if response != '':
                 if response.status_code == 201:
@@ -293,7 +302,7 @@ def usecsToDateTime(uedate):
 
 
 ### convert date to usecs
-def dateToUsecs(dt):
+def dateToUsecs(dt=datetime.now()):
     """Convert Date String to Unix Epoc Microseconds"""
     if isinstance(dt, str):
         dt = datetime.strptime(dt, "%Y-%m-%d %H:%M:%S")
