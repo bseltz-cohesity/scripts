@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This python script performs an adHovc backup of a new VM. It refreshes a vCenter source, adds a new VM to a protection job, backs up the VM, waits for the backup to finish, then removes the VM from the job.
+This python script performs an ad hoc backup of a new VM. It refreshes a vCenter source, adds a new VM to a protection job, backs up the VM, waits for the backup to finish, then removes the VM from the job.
 
 ## Components
 
