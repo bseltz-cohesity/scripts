@@ -2,20 +2,20 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This python script imports external target storage consumption from all Helios connected clusters into Power BI
+This python script imports protection policy datalock status from all Helios connected clusters into Power BI
 
 ## Components
 
-* powerBI-helios-externalTargetUsage.py: the main python script
+* powerBI-helios-policyDataLockStatus.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerBI-helios-externalTargetUsage/powerBI-helios-externalTargetUsage.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/powerBI/python/powerBI-helios-policyDataLockStatus/powerBI-helios-policyDataLockStatus.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-chmod +x powerBI-helios-externalTargetUsage
+chmod +x powerBI-helios-policyDataLockStatus
 # end download commands
 ```
 
@@ -34,7 +34,7 @@ Immediately copy the API key (you only have one chance to copy the key. Once you
 
 ## Modify the Script
 
-Edit the powerBI-helios-externalTargetUsage.py script and set the apiKey value to your Heios API key.
+Edit the powerBI-helios-policyDataLockStatus.py script and set the apiKey value to your Heios API key.
 
 ## Python Requirements
 
@@ -65,5 +65,5 @@ Finally, copy the pyhesity.py file to that location
 See [Run Python scripts in Power BI Desktop (docs.microsoft.com)](https://docs.microsoft.com/en-us/power-bi/connect-data/desktop-python-scripts) for more instructions on setting up Power BI to run python scripts.
 
 1. In Power BI, click 'Get Data', select 'Python Script' and click connect.
-2. Paste the modified contents of the powerBI-helios-externalTargetUsage.py script into the script box, and click OK.
+2. Paste the modified contents of the powerBI-helios-policyDataLockStatus.py script into the script box, and click OK.
 3. Select the df element and click Load.
