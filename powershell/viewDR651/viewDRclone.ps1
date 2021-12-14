@@ -285,7 +285,7 @@ foreach($viewName in $myViews){
                         "priority" = "kMedium";
                         "sla" = $job.sla;
                         "abortInBlackouts" = $job.abortInBlackouts;
-                        "storageDomainId" = 5;
+                        "storageDomainId" = $newView.viewBoxId;
                         "name" = "$clusterName $($newView.name) backup";
                         "environment" = "kView";
                         "isPaused" = $false;
