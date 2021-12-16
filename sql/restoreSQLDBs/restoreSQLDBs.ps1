@@ -289,6 +289,9 @@ function restoreDB($db){
     ### apply log replay time
     if($useLogTime -eq $True){
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['restoreTimeSecs'] = $([int64]($logUsecs/1000000))
+        $restoreTime = usecsToDate $logUsecs
+    }else{
+        $restoreTime = usecsToDate $dbVersions[$versionNum].instanceId.jobStartTimeUsecs
     }
     ### search for target server
     if($targetServer -ne $sourceServer -or $differentInstance){
@@ -316,7 +319,7 @@ function restoreDB($db){
     }
 
     if($response){
-        "Restoring $sourceInstance/$sourceDBname to $targetServer/$targetInstance as $targetDBname"
+        "Restoring $sourceInstance/$sourceDBname to $targetServer/$targetInstance as $targetDBname (Point in time: $restoreTime)"
     }
 
     if($wait -or $progress){
