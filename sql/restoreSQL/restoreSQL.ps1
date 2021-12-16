@@ -20,6 +20,8 @@ param (
     [Parameter()][string]$vip = 'helios.cohesity.com',   # the cluster to connect to (DNS name or IP)
     [Parameter()][string]$username = 'helios',           # username (local or AD)
     [Parameter()][string]$domain = 'local',              # local or AD domain
+    [Parameter()][switch]$useApiKey,                       # use API key for authentication
+    [Parameter()][string]$password,                        # optional password
     [Parameter()][string]$clusterName = $null,           # helios cluster to access 
     [Parameter(Mandatory = $True)][string]$sourceServer, # protection source where the DB was backed up
     [Parameter(Mandatory = $True)][string]$sourceDB,     # name of the source DB we want to restore
@@ -64,7 +66,11 @@ if($update){
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
+}else{
+    apiauth -vip $vip -username $username -domain $domain -password $password
+}
 
 if($USING_HELIOS){
     if($clusterName){

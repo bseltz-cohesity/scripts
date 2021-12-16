@@ -42,6 +42,8 @@ Restoring cohesitydb to sqldev01 as restoreTest
 * -vip: Cohesity Cluster to connect to
 * -username: Cohesity username
 * -domain: Active Directory domain of user (defaults to local)
+* -useApiKey: (optional) Use API key for authentication
+* -password: (optional) will use stored password by default
 * -sourceServer: Server name (or AAG name) where the database was backed up
 * -sourceDB: Original database name
 * -mdfFolder: Location to place the primary data file (e.g. C:\SQLData)
