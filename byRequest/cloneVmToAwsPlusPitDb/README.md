@@ -47,3 +47,5 @@ This wrapper script calls various scripts to do the following:
 * Add a customer host mapping to Cohesity for the new VM
 * Register the new VM as a physical SQL protection source
 * Restore SQL databases to the latest point in time available from a SQL backup
+
+Edit the cloneVmToAwsPlusPitDb.ps1 and populate the parameters at the top of the file, then run .\cloneVmToAwsPlusPitDb.ps1 to start the process.
