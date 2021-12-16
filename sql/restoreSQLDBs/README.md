@@ -45,6 +45,7 @@ Place both files in a folder together and run the main script like so:
 * -vip: Cohesity Cluster to connect to
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain of user (defaults to local)
+* -useApiKey: (optional) Use API key for authentication
 * -password: (optional) will use stored password by default
 * -sourceServer: Server name (or AAG name) where the database was backed up
 

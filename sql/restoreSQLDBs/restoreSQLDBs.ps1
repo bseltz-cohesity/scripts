@@ -14,6 +14,7 @@ param (
     [Parameter(Mandatory = $True)][string]$username,       # username (local or AD)
     [Parameter()][string]$domain = 'local',                # local or AD domain
     [Parameter()][string]$password,                        # optional password
+    [Parameter()][switch]$useApiKey,                       # use API key for authentication
     [Parameter(Mandatory = $True)][string]$sourceServer,   # protection source where the DB was backed up
     [Parameter()][string]$sourceInstance = $null,          # source instance name
     [Parameter()][array]$sourceDBnames,                    # names of the source DBs we want to restore
@@ -38,7 +39,11 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain -password $password -quiet
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
+}else{
+    apiauth -vip $vip -username $username -domain $domain -password $password
+}
 
 ### gather DB names
 $dbs = @()
@@ -143,6 +148,8 @@ function restoreDB($db){
     $latestUsecs = 0
     $oldestUsecs = 0
 
+    $dbVersions = $db.vmDocument.versions
+
     if ($logTime -or $latest){
         if($logTime){
             $logUsecs = dateToUsecs $logTime
@@ -152,8 +159,7 @@ function restoreDB($db){
             $logUsecsDayStart = [int64]( dateToUsecs (get-date).AddDays(-3))
             $logUsecsDayEnd = [int64]( dateToUsecs (get-date))
         }
-        $dbVersions = $db.vmDocument.versions
-    
+        
         foreach ($version in $dbVersions) {
             $snapshotTimestampUsecs = $version.snapshotTimestampUsecs
             $oldestUsecs = $snapshotTimestampUsecs
@@ -228,8 +234,10 @@ function restoreDB($db){
     }
 
     ### create new clone task (RestoreAppArg Object)
+    $taskDate = (get-date).ToString('yyyy-MM-dd_HH-mm-ss')
+    $taskName = "$($sourceServer)_$($targetServer)_$($sourceDBname)_$($taskDate)"
     $restoreTask = @{
-        "name" = "$($sourceServer)_$($targetServer)_$($sourceDBname)_$((get-date))";
+        'name' = $taskName;
         'action' = 'kRecoverApp';
         'restoreAppParams' = @{
             'type' = 3;
