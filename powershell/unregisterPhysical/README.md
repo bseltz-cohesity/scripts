@@ -1,0 +1,45 @@
+# Unregister a Physical Protection Source using PowerShell
+
+Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
+
+This powershell script registers new physical host(s) as a Cohesity protection source.
+
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download Commands
+$scriptName = 'unregisterPhysical'
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
+```
+
+## Components
+
+* unregisterPhysical.ps1: the main powershell script
+* cohesity-api.ps1: the Cohesity REST API helper module
+
+Place both files in a folder together, then run the script like so.
+
+```powershell
+./unregisterPhysical.ps1 -vip mycluster -username myusername -domain mydomain.net -serverName w2016.mydomin.net
+```
+
+or if you want to register a list of servers:
+
+```powershell
+./unregisterPhysical.ps1 -vip mycluster -username myusername -domain mydomain.net -serverList ./servers.txt
+```
+
+Note that the Cohesity agent must be installed on the host and that firewall port 50051/tcp on the host must be accessible by the Cohesity cluster.
+
+## Parameters
+
+* -vip: name or IP of Cohesity cluster
+* -username: name of user to connect to Cohesity
+* -domain: your AD domain (defaults to local)
+* -serverName: name of server to register
+* -serverList: text file containing list of servers to register (one per line)
