@@ -319,7 +319,7 @@ function restoreDB($db){
     }
 
     if($response){
-        "Restoring $sourceInstance/$sourceDBname to $targetServer/$targetInstance as $targetDBname (Point in time: $restoreTime)"
+        "Restoring $sourceInstance/$sourceDBname to $targetServer/$targetInstance/$targetDBname (Point in time: $restoreTime)"
     }
 
     if($wait -or $progress){
