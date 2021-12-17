@@ -43,7 +43,8 @@ param (
     [Parameter()][switch]$keepCdc,                       # keepCDC
     [Parameter()][switch]$showPaths,                     # show data file paths and exit
     [Parameter()][switch]$useSourcePaths,                # use same paths from source server for target server
-    [Parameter()][switch]$update
+    [Parameter()][switch]$update,
+    [Parameter()][switch]$noStop
 )
 
 # handle alternate secondary data file locations
@@ -166,12 +167,12 @@ $oldestUsecs = 0
 
 $dbVersions = $latestdb.vmDocument.versions
 
-if ($logTime -or $latest){
+if ($logTime -or $latest -or $noStop){
     if($logTime){
         $logUsecs = dateToUsecs $logTime
         $logUsecsDayStart = $dbVersions[-1].instanceId.jobStartTimeUsecs
         $logUsecsDayEnd = [int64] (dateToUsecs (get-date $logTime).Date.AddDays(1).AddSeconds(-1))
-    }elseif($latest){
+    }elseif($latest -or $noStop){
         $logUsecsDayStart = [int64]( dateToUsecs (get-date).AddDays(-3))
         $logUsecsDayEnd = [int64]( dateToUsecs (get-date))
     }
@@ -203,8 +204,8 @@ if ($logTime -or $latest){
                 if($latestUsecs -eq 0){
                     $latestUsecs = $logEnd # - 1000000
                 }
-                if($latest){
-                    $logUsecs = $logEnd - 1000000
+                if($latest -or $noStop){
+                    $logUsecs = $logEnd # - 1000000
                 }
                 if((($logUsecs - 1000000) -le $snapshotTimestampUsecs -or $snapshotTimestampUsecs -ge ($logUsecs + 1000000)) -and !$resume){
                     $validLogTime = $True
@@ -229,7 +230,7 @@ if ($logTime -or $latest){
                         $useLogTime = $False
                         break
                     }
-                }elseif ($latest) {
+                }elseif($latest -or $noStop) {
                     $validLogTime = $True
                     $useLogTime = $False
                     break
@@ -352,6 +353,11 @@ if($useLogTime -eq $True){
     $newRestoreUsecs = $dbVersions[$versionNum].instanceId.jobStartTimeUsecs
 }
 $restoreTime = usecsToDate $newRestoreUsecs
+
+if($noStop -and $useLogTime){
+    # replay logs to one day in the future to ensure no STOPAT
+    $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['restoreTimeSecs'] = (3600 + (datetousecs (Get-Date)) / 1000000)
+}
 
 # search for target server
 if($targetServer -ne $sourceServer -or $differentInstance){
