@@ -201,7 +201,7 @@ if ($logTime -or $latest){
                 $logStart = $timeRange.startTimeUsecs
                 $logEnd = $timeRange.endTimeUsecs
                 if($latestUsecs -eq 0){
-                    $latestUsecs = $logEnd - 1000000
+                    $latestUsecs = $logEnd # - 1000000
                 }
                 if($latest){
                     $logUsecs = $logEnd - 1000000
