@@ -1,4 +1,4 @@
-# version 2021-04-22
+# version 2021-12-17
 # usage: ./restore-SQL.ps1 -vip mycluster `
 #                          -username myusername `
 #                          -domain mydomain.net `
