@@ -351,6 +351,7 @@ if($useLogTime -eq $True){
 }else{
     $newRestoreUsecs = $latestdb.vmDocument.versions[$versionNum].instanceId.jobStartTimeUsecs
 }
+$restoreTime = usecsToDate $newRestoreUsecs
 
 # search for target server
 if($targetServer -ne $sourceServer -or $differentInstance){
@@ -411,7 +412,7 @@ if($resume){
 $response = api post /recoverApplication $restoreTask
 
 if($response){
-    "Restoring $sourceInstance/$sourceDB to $targetServer/$targetInstance as $targetDB"
+    "Restoring $sourceInstance/$sourceDB to $targetServer/$targetInstance/$targetDB (Point in time: $restoreTime)"
 }
 
 if($wait -or $progress){
