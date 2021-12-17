@@ -264,8 +264,8 @@ $restoreTask = @{
             "ownerObject" = @{
                 "jobUid" = $latestdb.vmDocument.objectId.jobUid;
                 "jobId" = $latestdb.vmDocument.objectId.jobId;
-                "jobInstanceId" = $dbversions[$versionNum].instanceId.jobInstanceId;
-                "startTimeUsecs" = $dbversions[$versionNum].instanceId.jobStartTimeUsecs;
+                "jobInstanceId" = $dbVersions[$versionNum].instanceId.jobInstanceId;
+                "startTimeUsecs" = $dbVersions[$versionNum].instanceId.jobStartTimeUsecs;
                 "entity" = @{
                     "id" = $ownerId
                 }
@@ -349,7 +349,7 @@ if($useLogTime -eq $True){
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['restoreTimeSecs'] = $([int64]($logUsecs/1000000))
     $newRestoreUsecs = $logUsecs
 }else{
-    $newRestoreUsecs = $latestdb.vmDocument.versions[$versionNum].instanceId.jobStartTimeUsecs
+    $newRestoreUsecs = $dbVersions[$versionNum].instanceId.jobStartTimeUsecs
 }
 $restoreTime = usecsToDate $newRestoreUsecs
 
