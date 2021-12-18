@@ -32,7 +32,8 @@ param (
     [Parameter()][string]$targetInstance,                  # SQL instance name on the targetServer
     [Parameter()][switch]$latest,                          # replay logs to loatest available point in time
     [Parameter()][switch]$noRecovery,                      # leave DB in restore mode
-    [Parameter()][switch]$progress                         # show progress
+    [Parameter()][switch]$progress,                        # show progress
+    [Parameter()][switch]$noStop
 )
 
 ### source the cohesity-api helper code
@@ -150,12 +151,12 @@ function restoreDB($db){
 
     $dbVersions = $db.vmDocument.versions
 
-    if ($logTime -or $latest){
+    if ($logTime -or $latest -or $noStop){
         if($logTime){
             $logUsecs = dateToUsecs $logTime
             $logUsecsDayStart = [int64] (dateToUsecs (get-date $logTime).Date) 
             $logUsecsDayEnd = [int64] (dateToUsecs (get-date $logTime).Date.AddDays(1).AddSeconds(-1))
-        }elseif($latest){
+        }elseif($latest -or $noStop){
             $logUsecsDayStart = [int64]( dateToUsecs (get-date).AddDays(-3))
             $logUsecsDayEnd = [int64]( dateToUsecs (get-date))
         }
@@ -183,10 +184,10 @@ function restoreDB($db){
                     $logStart = $timeRange.startTimeUsecs
                     $logEnd = $timeRange.endTimeUsecs
                     if($latestUsecs -eq 0){
-                        $latestUsecs = $logEnd - 1000000
+                        $latestUsecs = $logEnd # - 1000000
                     }
-                    if($latest){
-                        $logUsecs = $logEnd - 1000000
+                    if($latest -or $noStop){
+                        $logUsecs = $logEnd # - 1000000
                     }
                     if(($logUsecs - 1000000) -le $snapshotTimestampUsecs -or $snapshotTimestampUsecs -ge ($logUsecs + 1000000)){
                         $validLogTime = $True
@@ -210,7 +211,7 @@ function restoreDB($db){
                             $useLogTime = $False
                             break
                         }
-                    }elseif ($latest) {
+                    }elseif($latest -or $noStop) {
                         $validLogTime = $True
                         $useLogTime = $False
                         break
@@ -293,6 +294,12 @@ function restoreDB($db){
     }else{
         $restoreTime = usecsToDate $dbVersions[$versionNum].instanceId.jobStartTimeUsecs
     }
+
+    if($noStop -and $useLogTime){
+        # replay logs to one hour in the future to ensure no STOPAT
+        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['restoreTimeSecs'] = (3600 + (datetousecs (Get-Date)) / 1000000)
+    }
+
     ### search for target server
     if($targetServer -ne $sourceServer -or $differentInstance){
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams['targetHost'] = $targetEntity.appEntity.entity;

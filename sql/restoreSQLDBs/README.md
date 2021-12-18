@@ -59,7 +59,8 @@ Place both files in a folder together and run the main script like so:
 ### Point in Time Selections
 
 * -logTime: Point in time to replay the logs to during the restore (e.g. '2019-04-10 22:31:05')
-* -latest: Replay the logs to the latest point in time available
+* -latest: Replay the logs to the latest log backup date
+* -noStop: Replay the logs to the last transaction available
 
 ### Target Parameters
 
