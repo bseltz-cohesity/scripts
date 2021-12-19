@@ -18,6 +18,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR651/2-failback.ps1).content | Out-File 2-failback.ps1; (Get-Content 2-failback.ps1) | Set-Content 2-failback.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR651/3-failoverTest.ps1).content | Out-File 3-failoverTest.ps1; (Get-Content 3-failoverTest.ps1) | Set-Content 3-failoverTest.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR651/4-endFailoverTest.ps1).content | Out-File 4-endFailoverTest.ps1; (Get-Content 4-endFailoverTest.ps1) | Set-Content 4-endFailoverTest.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR651/5-perVipFailover.ps1).content | Out-File 5-perVipFailover.ps1; (Get-Content 5-perVipFailover.ps1) | Set-Content 5-perVipFailover.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR651/cnameFailover.ps1).content | Out-File cnameFailover.ps1; (Get-Content cnameFailover.ps1) | Set-Content cnameFailover.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR651/dfsFailover.ps1).content | Out-File dfsFailover.ps1; (Get-Content dfsFailover.ps1) | Set-Content dfsFailover.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
@@ -36,6 +37,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 * 2-failback.ps1: wrapper for failback
 * 3-failoverTest.ps1: wrapper script for quick DR test
 * 4-endFailoverTest.ps1: wrapper script to clean up after quick DR test
+* 5-perVipFailover.ps1 wrapper script to failover individual VIPs (e.g. for SQL dump views)
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 First, create a location to store view metadata that will be reachable from both the primary and DR sites. It is strongly recommended that this location be at the DR site so that it will be available at time of recovery. This could be a view on the DR cluster (e.g. \\\\myDRcluster\viewDR)
