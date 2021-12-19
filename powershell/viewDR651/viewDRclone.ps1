@@ -81,10 +81,9 @@ function getViews(){
     return $myViews
 }
 
-"Gathering Views..."
+"Gathering Views...`n"
 $views = getViews
 
-$clonedViewList = "clonedViews-{0}" -f (get-date).ToString('yyyy-MM-dd_hh-mm-ss')
 $migratedShares = "migratedShares.txt"
 $null = Remove-Item -Path $migratedShares -Force -ErrorAction SilentlyContinue
 
@@ -189,8 +188,8 @@ foreach($viewName in $myViews){
             $cloneOp = api post /clone $cloneTask
 
             if ($cloneOp) {
-                Write-Host "Cloned $viewName from $(usecsToDate $version.instanceId.jobStartTimeUsecs)"
-                "$viewName" | Out-File -FilePath $clonedViewList -Append
+                Write-Host "Cloning $viewName from $(usecsToDate $version.instanceId.jobStartTimeUsecs)"
+                # "$viewName" | Out-File -FilePath $clonedViewList -Append
                 "$viewName" | Out-File -FilePath $migratedShares -Append
                 if($remoteViews){
                     foreach($oldView in $remoteViews){
@@ -235,7 +234,7 @@ foreach($viewName in $myViews){
             }
             $null = api put views $newView
             if($metadata.PSObject.Properties['aliases']){
-                write-host "Creating Shares..."
+                write-host "`nCreating Shares..."
                 foreach($alias in $metadata.aliases){
                     write-host "`t$($alias.aliasName)"
                     $viewPath = $alias.viewPath.trimend("/")
@@ -285,7 +284,7 @@ foreach($viewName in $myViews){
                         "priority" = "kMedium";
                         "sla" = $job.sla;
                         "abortInBlackouts" = $job.abortInBlackouts;
-                        "storageDomainId" = $newView.viewBoxId;
+                        "storageDomainId" = 5;
                         "name" = "$clusterName $($newView.name) backup";
                         "environment" = "kView";
                         "isPaused" = $false;

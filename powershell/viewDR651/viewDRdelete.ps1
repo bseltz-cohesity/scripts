@@ -40,7 +40,7 @@ if($viewList){
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain
+apiauth -vip $vip -username $username -domain $domain -quiet
 
 ### get views
 function getViews(){
@@ -80,18 +80,19 @@ foreach($viewName in $myviews){
             }
         }
         if($confirmed -eq $True){
+            ""
             if($view.viewProtection){
-                "deleting protection job $($view.viewProtection.protectionJobs[0].jobName)..."
+                "    deleting protection job $($view.viewProtection.protectionJobs[0].jobName)..."
                 if($deleteSnapshots){
                     $null = api delete "protectionJobs/$($view.viewProtection.protectionJobs[0].jobId)" @{'deleteSnapshots' = $True}
                 }else{
                     $null = api delete "protectionJobs/$($view.viewProtection.protectionJobs[0].jobId)"
                 }
-                "Deleting $viewName"
+                "    deleting view $viewName"
                 $null = api delete "views/$viewName"
             }else{
                 if(! $all){
-                    "Deleting $viewName"
+                    "    deleting view $viewName"
                     $null = api delete "views/$viewName"
                 }
             }

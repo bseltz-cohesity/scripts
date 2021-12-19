@@ -45,4 +45,3 @@ foreach($view in $views.views){
     $filePath = Join-Path -Path $clusterOutPath -ChildPath $view.name
     $view | ConvertTo-Json -Depth 99 | Out-File $filePath
 }
-
