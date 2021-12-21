@@ -202,10 +202,10 @@ if ($logTime -or $latest -or $noStop){
                 $logStart = $timeRange.startTimeUsecs
                 $logEnd = $timeRange.endTimeUsecs
                 if($latestUsecs -eq 0){
-                    $latestUsecs = $logEnd # - 1000000
+                    $latestUsecs = $logEnd - 1000000
                 }
                 if($latest -or $noStop){
-                    $logUsecs = $logEnd # - 1000000
+                    $logUsecs = $logEnd - 1000000
                 }
                 if((($logUsecs - 1000000) -le $snapshotTimestampUsecs -or $snapshotTimestampUsecs -ge ($logUsecs + 1000000)) -and !$resume){
                     $validLogTime = $True
