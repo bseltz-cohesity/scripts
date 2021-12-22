@@ -37,6 +37,22 @@ if($startDate -ne '' -and $endDate -ne ''){
 $start = (usecsToDate $uStart).ToString('yyyy-MM-dd')
 $end = (usecsToDate $uEnd).ToString('yyyy-MM-dd')
 
+# build 180 day time ranges
+$ranges = @()
+$gotAllRanges = $False
+$thisUend = $uEnd
+$thisUstart = $uStart
+while($gotAllRanges -eq $False){
+    if(($thisUend - $uStart) -gt 15552000000000){
+        $thisUstart = $thisUend - 15552000000000
+        $ranges = @($ranges + @{'start' = $thisUstart; 'end' = $thisUend})
+        $thisUend = $thisUstart - 1
+    }else{
+        $ranges = @($ranges + @{'start' = $uStart; 'end' = $thisUend})
+        $gotAllRanges = $True
+    }
+}
+
 $dateString = (get-date).ToString('yyyy-MM-dd')
 
 $headings = "Cluster Name
@@ -188,59 +204,101 @@ $Global:html += '</span>
 $Global:html += $htmlHeadings
 $Global:html += '</tr>'
 
-# report parameters
-$reportParams = @{
-    "filters"  = @(
-        @{
-            "attribute"             = "date";
-            "filterType"            = "TimeRange";
-            "timeRangeFilterParams" = @{
-                "lowerBound" = $uStart;
-                "upperBound" = $uEnd
+$stats = @{}
+
+Write-Host "Retrieving report data..."
+
+foreach($range in $ranges){
+
+    # report parameters
+    $reportParams = @{
+        "filters"  = @(
+            @{
+                "attribute"             = "date";
+                "filterType"            = "TimeRange";
+                "timeRangeFilterParams" = @{
+                    "lowerBound" = $range.start;
+                    "upperBound" = $range.end
+                }
             }
+        );
+        "sort"     = $null;
+        "timezone" = "America/New_York";
+        "limit"    = @{
+            "size" = 10000
         }
-    );
-    "sort"     = $null;
-    "timezone" = "America/New_York";
-    "limit"    = @{
-        "size" = 10000
+    }
+
+    $preview = api post -reportingV2 components/200/preview $reportParams
+
+    $clusters = $preview.component.data.system | Sort-Object -Unique
+
+    foreach($cluster in $clusters){
+        foreach($object in $preview.component.data | Where-Object system -eq $cluster | Sort-Object -Property objectName){
+            $clusterName = $object.system
+            $jobName = $object.groupName
+            $sourceName = $object.sourceNames[0]
+            $environment = $object.environment.subString(1)
+            $policy = $object.policyName
+            $lastResult = $object.lastRunStatus.subString(1)
+            $lastRunDate = usecsToDate $object.lastRunTimeUsecs
+            $successful = $object.successfulBackups
+            # $unsuccessful = $object.totalBackups - $successful
+            $totalBackups = $object.totalBackups
+            # $successRate = [math]::Round($object.successRate, 0)
+            $slaStatus = $object.slaStatus
+            $uniqueKey = "{0}:{1}:{2}:{3}" -f $clusterName, $jobName, $sourceName, $environment
+            if($uniqueKey -notin $stats.Keys){
+                $stats[$uniqueKey] = @{
+                    'clusterName' = $clusterName;
+                    'jobName' = $jobName;
+                    'sourceName' = $sourceName;
+                    'environment' = $environment;
+                    'policy' = $policy;
+                    'lastResult' = $lastResult;
+                    'lastRunDate' = $lastRunDate;
+                    'successful' = $successful;
+                    'totalBackups' = $totalBackups;
+                    'slaStatus' = $slaStatus
+                }
+            }else{
+                $stats[$uniqueKey].successful += $successful
+                $stats[$uniqueKey].totalBackups += $totalBackups
+            }
+            """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}""" -f $clusterName, $jobName, $sourceName, $environment, $policy, $lastResult, $lastRunDate, $successful, $slaStatus
+        }
     }
 }
 
-Write-Host "Retrieving report data..."
-$preview = api post -reportingV2 components/200/preview $reportParams
+foreach($uniqueKey in $stats.Keys | Sort-Object){
 
-$clusters = $preview.component.data.system | Sort-Object -Unique
+    $clusterName = $stats[$uniqueKey].clusterName
+    $sourceName = $stats[$uniqueKey].sourceName
+    $jobName = $stats[$uniqueKey].jobName
+    $environment = $stats[$uniqueKey].environment
+    $policy = $stats[$uniqueKey].policy
+    $lastResult = $stats[$uniqueKey].lastResult
+    $lastRunDate = $stats[$uniqueKey].lastRunDate
+    $successful = $stats[$uniqueKey].successful
+    $totalBackups = $stats[$uniqueKey].totalBackups
+    $slaStatus = $stats[$uniqueKey].slaStatus
+    $unsuccessful = $totalBackups - $successful
+    $successRate = [math]::Round((100 * $successful / $totalBackups), 0)
 
-foreach($cluster in $clusters){
-    foreach($object in $preview.component.data | Where-Object system -eq $cluster | Sort-Object -Property objectName){
-        $clusterName = $object.system
-        $jobName = $object.groupName
-        $sourceName = $object.sourceNames[0]
-        $environment = $object.environment.subString(1)
-        $policy = $object.policyName
-        $lastResult = $object.lastRunStatus.subString(1)
-        $lastRunDate = usecsToDate $object.lastRunTimeUsecs
-        $successful = $object.successfulBackups
-        $unsuccessful = $object.totalBackups - $successful
-        $successRate = [math]::Round($object.successRate, 0)
-        $slaStatus = $object.slaStatus
-
-        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}""" -f $clusterName, $jobName, $sourceName, $environment, $policy, $lastResult, $lastRunDate, $successful, $unsuccessful, $successRate, $slaStatus | Tee-Object -FilePath $csvFileName -Append
-        $Global:html += '<tr style="border: 1px solid {10} background-color: {10}">
-            <td>{0}</td>
-            <td>{1}</td>
-            <td>{2}</td>
-            <td>{3}</td>
-            <td>{4}</td>
-            <td>{5}</td>
-            <td>{6}</td>
-            <td>{7}</td>
-            <td>{8}</td>
-            <td>{9}</td>
-            <td>{10}</td>
-            </tr>' -f $clusterName, $jobName, $sourceName, $environment, $policy, $lastResult, $lastRunDate, $successful, $unsuccessful, $successRate, $slaStatus, $Global:trColor
-    }
+    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}""" -f $clusterName, $jobName, $sourceName, $environment, $policy, $lastResult, $lastRunDate, $successful, $unsuccessful, $successRate, $slaStatus | Out-File -FilePath $csvFileName -Append
+    $Global:html += '<tr style="border: 1px solid {10} background-color: {10}">
+        <td>{0}</td>
+        <td>{1}</td>
+        <td>{2}</td>
+        <td>{3}</td>
+        <td>{4}</td>
+        <td>{5}</td>
+        <td>{6}</td>
+        <td>{7}</td>
+        <td>{8}</td>
+        <td>{9}</td>
+        <td>{10}</td>
+        </tr>' -f $clusterName, $jobName, $sourceName, $environment, $policy, $lastResult, $lastRunDate, $successful, $unsuccessful, $successRate, $slaStatus, $Global:trColor
 }
 
 $Global:html += "</table>                
