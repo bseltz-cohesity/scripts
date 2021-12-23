@@ -29,9 +29,9 @@ Protection Group
 Environment
 Source
 Snapshot Status
-Logical Data
-Data Read
-Data Written" -split "`n"
+Logical Data ($unit)
+Data Read ($unit)
+Data Written ($unit)" -split "`n"
 
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
