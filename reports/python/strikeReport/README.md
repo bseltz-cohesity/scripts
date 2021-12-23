@@ -35,7 +35,7 @@ Place both files in a folder together and run the main script like so:
 
 ## Parameters
 
-* -v, --vip: DNS or IP of the Cohesity cluster to connect to
+* -v, --vip: DNS or IP of the Cohesity cluster to connect to (repeat for multiple clusters)
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
 * -i, --useApiKey: (optional) use API key for authentication
