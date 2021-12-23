@@ -66,6 +66,20 @@ else:
 start = usecsToDate(uStart, '%Y-%m-%d')
 end = usecsToDate(uEnd, '%Y-%m-%d')
 
+# build 180 day time ranges
+ranges = []
+gotAllRanges = False
+thisUend = uEnd
+thisUstart = uStart
+while gotAllRanges is False:
+    if (thisUend - uStart) > 15552000000000:
+        thisUstart = thisUend - 15552000000000
+        ranges.append({'start': thisUstart, 'end': thisUend})
+        thisUend = thisUstart - 1
+    else:
+        ranges.append({'start': uStart, 'end': thisUend})
+        gotAllRanges = True
+
 csvHeadings = ','.join(headings)
 htmlHeadings = ''.join(['<th>%s</th>' % h for h in headings])
 
@@ -202,60 +216,92 @@ html += '''</span>
 html += htmlHeadings
 html += '</tr>'
 
-reportParams = {
-    "filters": [
-        {
-            "attribute": "date",
-            "filterType": "TimeRange",
-            "timeRangeFilterParams": {
-                "lowerBound": uStart,
-                "upperBound": uEnd
-            }
-        }
-    ],
-    "sort": None,
-    "timezone": "America/New_York",
-    "limit": {
-        "size": 10000
-    }
-}
+stats = {}
 
 print('\nRetrieving report data...')
 
-preview = api('post', 'components/%s/preview' % reportNumber, reportParams, reportingv2=True)
+for range in ranges:
 
-clusters = list(set([c['system'] for c in preview['component']['data']]))
+    reportParams = {
+        "filters": [
+            {
+                "attribute": "date",
+                "filterType": "TimeRange",
+                "timeRangeFilterParams": {
+                    "lowerBound": range['start'],
+                    "upperBound": range['end']
+                }
+            }
+        ],
+        "sort": None,
+        "timezone": "America/New_York",
+        "limit": {
+            "size": 10000
+        }
+    }
 
-for cluster in clusters:
-    data = [d for d in preview['component']['data'] if d['system'] == cluster]
-    for i in data:
-        clusterName = i['system']
-        jobName = i['groupName']
-        sourceName = i['sourceName']
-        objectName = i['objectName']
-        environment = i['environment'][1:]
-        policy = i['policyName']
-        lastFailure = usecsToDate(i['lastFailedRunUsecs'], '%Y-%m-%d %H:%M')
-        failedBackups = i['failedBackups']
-        strikes = i['strikeCount']
-        lastError = i['lastFailedRunErrorMsg']
-        if len(lastError) > 301:
-            lastError = lastError[0:300]
+    preview = api('post', 'components/%s/preview' % reportNumber, reportParams, reportingv2=True)
 
-        csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, jobName, sourceName, objectName, environment, policy, lastFailure, failedBackups, strikes, lastError))
+    clusters = list(set([c['system'] for c in preview['component']['data']]))
 
-        html += '''<tr style="border: 1px solid #FFFFFF background-color: #FFFFFF">
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            </tr>''' % (clusterName, jobName, sourceName, objectName, environment, policy, lastFailure, failedBackups, strikes, lastError)
+    for cluster in clusters:
+        data = [d for d in preview['component']['data'] if d['system'] == cluster]
+        for i in data:
+            clusterName = i['system']
+            jobName = i['groupName']
+            sourceName = i['sourceName']
+            objectName = i['objectName']
+            environment = i['environment'][1:]
+            uniqueKey = "%s:%s:%s:%s" % (clusterName, sourceName, objectName, environment)
+            policy = i['policyName']
+            lastFailure = usecsToDate(i['lastFailedRunUsecs'], '%Y-%m-%d %H:%M')
+            failedBackups = i['failedBackups']
+            strikes = i['strikeCount']
+            lastError = i['lastFailedRunErrorMsg']
+            if len(lastError) > 301:
+                lastError = lastError[0:300]
+
+            if uniqueKey not in stats:
+                stats[uniqueKey] = {
+                    'clusterName': clusterName,
+                    'sourceName': sourceName,
+                    'objectName': objectName,
+                    'environment': environment,
+                    'jobName': jobName,
+                    'policy': policy,
+                    'lastFailure': lastFailure,
+                    'failedBackups': failedBackups,
+                    'strikes': strikes,
+                    'lastError': lastError
+                }
+            else:
+                stats[uniqueKey]['failedBackups'] += failedBackups
+
+for uniqueKey in sorted(stats.keys()):
+    clusterName = stats[uniqueKey]['clusterName']
+    sourceName = stats[uniqueKey]['sourceName']
+    objectName = stats[uniqueKey]['objectName']
+    environment = stats[uniqueKey]['environment']
+    jobName = stats[uniqueKey]['jobName']
+    policy = stats[uniqueKey]['policy']
+    lastFailure = stats[uniqueKey]['lastFailure']
+    failedBackups = stats[uniqueKey]['failedBackups']
+    strikes = stats[uniqueKey]['strikes']
+    lastError = stats[uniqueKey]['lastError']
+
+    csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, jobName, sourceName, objectName, environment, policy, lastFailure, failedBackups, strikes, lastError))
+    html += '''<tr style="border: 1px solid #FFFFFF background-color: #FFFFFF">
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        </tr>''' % (clusterName, jobName, sourceName, objectName, environment, policy, lastFailure, failedBackups, strikes, lastError)
 
 html += '''</table>
 </div>
