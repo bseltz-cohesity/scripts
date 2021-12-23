@@ -1,20 +1,9 @@
 #!/usr/bin/env python
 """Backup Strike Report v3.0"""
 
-# usage: ./strikeReport.py -v mycluster \
-#                          -u myusername \
-#                          -d mydomain.net \
-#                          -t myuser@mydomain.net \
-#                          -s 192.168.1.95 \
-#                          -f backupreport@mydomain.net
-
 # import pyhesity wrapper module
 from pyhesity import *
 from datetime import datetime
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-import re
 import codecs
 
 # command line arguments
@@ -26,10 +15,6 @@ parser.add_argument('-d', '--domain', type=str, default='local')
 parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str)
 parser.add_argument('-of', '--outfolder', type=str, default='.')
-parser.add_argument('-s', '--mailserver', type=str)
-parser.add_argument('-p', '--mailport', type=int, default=25)
-parser.add_argument('-t', '--sendto', action='append', type=str)
-parser.add_argument('-f', '--sendfrom', type=str)
 parser.add_argument('-dy', '--days', type=int, default=31)
 
 args = parser.parse_args()
@@ -39,19 +24,8 @@ username = args.username
 domain = args.domain
 password = args.password
 folder = args.outfolder
-mailserver = args.mailserver
-mailport = args.mailport
-sendto = args.sendto
-sendfrom = args.sendfrom
 days = args.days
 useApiKey = args.useApiKey
-
-
-def cleanhtml(raw_html):
-    cleanr = re.compile('<.*?>')
-    cleantext = re.sub(cleanr, '', raw_html)
-    return cleantext
-
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
@@ -63,6 +37,10 @@ cluster = api('get', 'cluster')
 title = 'Backup Strike Report (%s)' % cluster['name']
 now = datetime.now()
 date = now.strftime("%m/%d/%Y %H:%M:%S")
+datestring = now.strftime("%Y-%m-%d")
+htmlfileName = '%s/%s-%s-strikeReport.html' % (folder, datestring, cluster['name'])
+csvfileName = '%s/%s-%s-strikeReport.csv' % (folder, datestring, cluster['name'])
+csv = codecs.open(csvfileName, 'w', 'utf-8')
 
 html = '''<html>
 <head>
@@ -181,6 +159,8 @@ html += '''</span>
     <th>Error Message</th>
 </tr>'''
 
+csv.write('Object Name,Type,Job Name,Failure Count,Last Good Backup,Error Message\n')
+
 objectStatus = {}
 totalObjects = 0
 
@@ -233,8 +213,6 @@ for entity in objectStatus:
         lastSuccess = '-'
     else:
         lastSuccess = usecsToDate(objectStatus[entity]['latestSnapshotUsecs'])
-    jobUrl = 'https://%s/protection/job/%s/details' % (vip, objectStatus[entity]['jobId'])
-    jobEntry = '<a href=%s target="_blank">%s</a>' % (jobUrl, objectStatus[entity]['jobName'])
     row = '''<tr>
                 <td>%s</td>
                 <td>%s</td>
@@ -242,9 +220,9 @@ for entity in objectStatus:
                 <td>%s</td>
                 <td>%s</td>
                 <td>%s</td>
-            </tr>''' % (entity, objectStatus[entity]['jobType'], jobEntry, objectStatus[entity]['numErrors'], lastSuccess, objectStatus[entity]['message'][:99])
+            </tr>''' % (entity, objectStatus[entity]['jobType'], objectStatus[entity]['jobName'], objectStatus[entity]['numErrors'], lastSuccess, objectStatus[entity]['message'][:99])
     html += row
-
+    csv.write('"%s","%s","%s","%s","%s","%s"\n' % (entity, objectStatus[entity]['jobType'], objectStatus[entity]['jobName'], objectStatus[entity]['numErrors'], lastSuccess, objectStatus[entity]['message'][:99]))
 totalFailedObjects = len(objectStatus)
 if totalObjects != 0:
     percentFailed = round((100 * (float(totalObjects - totalFailedObjects)) / float(totalObjects)), 2)
@@ -258,26 +236,10 @@ html += '''</table>
 </html>
 ''' % (totalFailedObjects, totalObjects, percentFailed)
 
-now = datetime.now()
-nowstring = now.strftime("%Y-%m-%d-%H-%M-%S")
-outfileName = '%s/%s-%s-strikeReport.html' % (folder, nowstring, cluster['name'])
+print('saving report as %s' % htmlfileName)
+print('also saving as %s' % csvfileName)
 
-print('saving report as %s' % outfileName)
-
-f = codecs.open(outfileName, 'w', 'utf-8')
+f = codecs.open(htmlfileName, 'w', 'utf-8')
 f.write(html)
 f.close()
-
-# email report
-if mailserver is not None:
-    print('Sending report to %s...' % ', '.join(sendto))
-    emailhtml = MIMEText(html, 'html', 'utf-8')
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = title
-    msg['From'] = sendfrom
-    msg['To'] = ','.join(sendto)
-    msg.attach(emailhtml)
-    msg['Content-Transfer-Encoding'] = '8bit'
-    smtpserver = smtplib.SMTP(mailserver, mailport)
-    smtpserver.sendmail(sendfrom, sendto, msg.as_string())
-    smtpserver.quit()
+csv.close()
