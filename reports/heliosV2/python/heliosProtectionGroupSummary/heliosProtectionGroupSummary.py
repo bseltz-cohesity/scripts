@@ -57,6 +57,20 @@ else:
 start = usecsToDate(uStart, '%Y-%m-%d')
 end = usecsToDate(uEnd, '%Y-%m-%d')
 
+# build 180 day time ranges
+ranges = []
+gotAllRanges = False
+thisUend = uEnd
+thisUstart = uStart
+while gotAllRanges is False:
+    if (thisUend - uStart) > 15552000000000:
+        thisUstart = thisUend - 15552000000000
+        ranges.append({'start': thisUstart, 'end': thisUend})
+        thisUend = thisUstart - 1
+    else:
+        ranges.append({'start': uStart, 'end': thisUend})
+        gotAllRanges = True
+
 csvHeadings = ','.join(headings)
 htmlHeadings = ''.join(['<th>%s</th>' % h for h in headings])
 
@@ -95,14 +109,14 @@ html = '''<html>
         }
 
         td {
-            width: 15%;
+            width: 6%;
             text-align: left;
             padding: 6px;
             overflow-wrap: anywhere;
         }
 
         th {
-            width: 5%;
+            width: 6%;
             text-align: left;
             padding: 6px;
         }
@@ -199,64 +213,96 @@ html += '''</span>
 html += htmlHeadings
 html += '</tr>'
 
-reportParams = {
-    "filters": [
-        {
-            "attribute": "date",
-            "filterType": "TimeRange",
-            "timeRangeFilterParams": {
-                "lowerBound": uStart,
-                "upperBound": uEnd
-            }
-        }
-    ],
-    "sort": None,
-    "timezone": "America/New_York",
-    "limit": {
-        "size": 10000
-    }
-}
-
 print('\nRetrieving report data...')
 
-preview = api('post', 'components/%s/preview' % reportNumber, reportParams, reportingv2=True)
+stats = {}
 
-clusters = list(set([c['system'] for c in preview['component']['data']]))
+for range in ranges:
 
-# 'Cluster Name', 'Protection Group', 'Source', 'Environment', 'Policy', 'Last Result', 'Last Run', 'Successful', 'Unsuccessful', 'Success Rate', 'SLA'
+    reportParams = {
+        "filters": [
+            {
+                "attribute": "date",
+                "filterType": "TimeRange",
+                "timeRangeFilterParams": {
+                    "lowerBound": range['start'],
+                    "upperBound": range['end']
+                }
+            }
+        ],
+        "sort": None,
+        "timezone": "America/New_York",
+        "limit": {
+            "size": 10000
+        }
+    }
 
-for cluster in clusters:
-    heliosCluster(cluster)
+    preview = api('post', 'components/%s/preview' % reportNumber, reportParams, reportingv2=True)
 
-    data = [d for d in preview['component']['data'] if d['system'] == cluster]
-    for i in data:
-        clusterName = i['system']
-        jobName = i['groupName']
-        sourceName = i['sourceNames'][0]
-        environment = i['environment'][1:]
-        policy = i['policyName']
-        lastResult = i['lastRunStatus'][1:]
-        lastRunDate = usecsToDate(i['lastRunTimeUsecs'])
-        successful = i['successfulBackups']
-        unsuccessful = i['totalBackups'] - successful
-        successRate = int(i['successRate'])
-        slaStatus = i['slaStatus']
+    clusters = list(set([c['system'] for c in preview['component']['data']]))
 
-        csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, jobName, sourceName, environment, policy, lastResult, lastRunDate, successful, unsuccessful, successRate, slaStatus))
+    for cluster in clusters:
 
-        html += '''<tr style="border: 1px solid #FFFFFF background-color: #FFFFFF">
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            </tr>''' % (clusterName, jobName, sourceName, environment, policy, lastResult, lastRunDate, successful, unsuccessful, successRate, slaStatus)
+        data = [d for d in preview['component']['data'] if d['system'] == cluster]
+        for i in data:
+            if 'sourceNames' in i and i['sourceNames'] is not None and len(i['sourceNames']) > 0:
+                clusterName = i['system']
+                jobName = i['groupName']
+                sourceName = i['sourceNames'][0]
+                environment = i['environment'][1:]
+                uniqueKey = "%s:%s:%s" % (clusterName, sourceName, environment)
+                policy = i['policyName']
+                lastResult = i['lastRunStatus'][1:]
+                lastRunDate = usecsToDate(i['lastRunTimeUsecs'])
+                successful = i['successfulBackups']
+                unsuccessful = i['totalBackups'] - successful
+                successRate = int(i['successRate'])
+                slaStatus = i['slaStatus']
+                totalBackups = i['totalBackups']
+                if uniqueKey not in stats:
+                    stats[uniqueKey] = {
+                        'clusterName': clusterName,
+                        'sourceName': sourceName,
+                        'environment': environment,
+                        'policy': policy,
+                        'lastResult': lastResult,
+                        'lastRunDate': lastRunDate,
+                        'successful': successful,
+                        'totalBackups': i['totalBackups'],
+                        'slaStatus': slaStatus
+                    }
+                else:
+                    stats[uniqueKey]['successful'] += successful
+                    stats[uniqueKey]['totalBackups'] += totalBackups
+
+for uniqueKey in sorted(stats.keys()):
+    clusterName = stats[uniqueKey]['clusterName']
+    sourceName = stats[uniqueKey]['sourceName']
+    environment = stats[uniqueKey]['environment']
+    policy = stats[uniqueKey]['policy']
+    lastResult = stats[uniqueKey]['lastResult']
+    lastRunDate = stats[uniqueKey]['lastRunDate']
+    successful = stats[uniqueKey]['successful']
+    totalBackups = stats[uniqueKey]['totalBackups']
+    slaStatus = stats[uniqueKey]['slaStatus']
+    unsuccessful = totalBackups - successful
+    successRate = round(100 * successful / totalBackups, 0)
+
+    csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, jobName, sourceName, environment, policy, lastResult, lastRunDate, successful, unsuccessful, successRate, slaStatus))
+
+    html += '''<tr style="border: 1px solid #FFFFFF background-color: #FFFFFF">
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        </tr>''' % (clusterName, jobName, sourceName, environment, policy, lastResult, lastRunDate, successful, unsuccessful, successRate, slaStatus)
 
 html += '''</table>
 </div>
