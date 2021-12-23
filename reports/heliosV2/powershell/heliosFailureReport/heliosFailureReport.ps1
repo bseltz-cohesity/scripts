@@ -23,6 +23,10 @@ Failed Backups
 Strikes
 Last Error" -split "`n"
 
+function getReport($reportNumber, $reportParams){
+   
+}
+
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
@@ -51,6 +55,23 @@ if($startDate -ne '' -and $endDate -ne ''){
 
 $start = (usecsToDate $uStart).ToString('yyyy-MM-dd')
 $end = (usecsToDate $uEnd).ToString('yyyy-MM-dd')
+
+# build 180 day time ranges
+$ranges = @()
+$gotAllRanges = $False
+$thisUend = $uEnd
+$thisUstart = $uStart
+while($gotAllRanges -eq $False){
+    if(($thisUend - $uStart) -gt 15552000000000){
+        $thisUstart = $thisUend - 15552000000000
+        $ranges = @($ranges + @{'start' = $thisUstart; 'end' = $thisUend})
+        $thisUend = $thisUstart - 1
+    }else{
+        $ranges = @($ranges + @{'start' = $uStart; 'end' = $thisUend})
+        $gotAllRanges = $True
+    }
+}
+
 $dateString = (get-date).ToString('yyyy-MM-dd')
 
 $csvHeadings = $headings -join ','
@@ -188,59 +209,99 @@ $Global:html += '</span>
 $Global:html += $htmlHeadings
 $Global:html += '</tr>'
 
-# report parameters
-$reportParams = @{
-    "filters"  = @(
-        @{
-            "attribute"             = "date";
-            "filterType"            = "TimeRange";
-            "timeRangeFilterParams" = @{
-                "lowerBound" = $uStart;
-                "upperBound" = $uEnd
+$stats = @{}
+
+Write-Host "Retrieving report data..."
+
+foreach($range in $ranges){
+
+    # report parameters
+    $reportParams = @{
+        "filters"  = @(
+            @{
+                "attribute"             = "date";
+                "filterType"            = "TimeRange";
+                "timeRangeFilterParams" = @{
+                    "lowerBound" = $range.start;
+                    "upperBound" = $range.end
+                }
+            }
+        );
+        "sort"     = $null;
+        "timezone" = "America/New_York";
+        "limit"    = @{
+            "size" = 10000
+        }
+    }
+
+    $preview = api post -reportingV2 "components/$reportNumber/preview" $reportParams
+
+    $clusters = $preview.component.data.system | Sort-Object -Unique
+    
+    foreach($cluster in $clusters){
+        foreach($i in $preview.component.data | Where-Object system -eq $cluster | Sort-Object -Property objectName){
+            $clusterName = $i.system
+            $jobName = $i.groupName
+            $sourceName = $i.sourceName
+            $objectName = $i.objectName
+            if($i.PSObject.Properties['environment'] -and $i.environment.length -gt 0){
+                $environment = $i.environment.subString(1)
+                $uniqueKey = "{0}:{1}:{2}:{3}" -f $clusterName, $sourceName, $objectName, $environment
+                $policy = $i.policyName
+                $lastFailure = (usecsToDate $i.lastFailedRunUsecs).ToSTring('yyyy-MM-dd hh:mm')
+                $failedBackups = $i.failedBackups
+                $strikes = $i.strikeCount
+                $lastError = $i.lastFailedRunErrorMsg
+                if($lastError.length -gt 301){
+                    $lastError = $lastError.subString(0,300)
+                }
+                if($uniqueKey -notin $stats.Keys){
+                    $stats[$uniqueKey] = @{
+                        'clusterName' = $clusterName;
+                        'sourceName' = $sourceName;
+                        'objectName' = $objectName;
+                        'jobName' = $jobName;
+                        'environment' = $environment;
+                        'policy' = $policy;
+                        'lastFailure' = $lastFailure;
+                        'failedBackups' = $failedBackups;
+                        'strikes' = $strikes;
+                        'lastError' = $lastError
+                    }
+                }else{
+                    $stats[$uniqueKey].failedBackups += $failedBackups
+                }
+                """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}""" -f $clusterName, $jobName, $sourceName, $objectName, $environment, $policy, $lastFailure, $failedBackups, $strikes, $lastError
             }
         }
-    );
-    "sort"     = $null;
-    "timezone" = "America/New_York";
-    "limit"    = @{
-        "size" = 10000
     }
 }
 
-Write-Host "Retrieving report data..."
-$preview = api post -reportingV2 "components/$reportNumber/preview" $reportParams
+foreach($uniqueKey in $stats.Keys | Sort-Object){
 
-$clusters = $preview.component.data.system | Sort-Object -Unique
+    $clusterName = $stats[$uniqueKey].clusterName
+    $sourceName = $stats[$uniqueKey].sourceName
+    $jobName = $stats[$uniqueKey].jobName
+    $environment = $stats[$uniqueKey].environment
+    $policy = $stats[$uniqueKey].policy
+    $lastFailure = $stats[$uniqueKey].lastFailure
+    $failedBackups = $stats[$uniqueKey].failedBackups
+    $strikes = $stats[$uniqueKey].strikes
+    $lastError = $stats[$uniqueKey].lastError
 
-foreach($cluster in $clusters){
-    foreach($i in $preview.component.data | Where-Object system -eq $cluster | Sort-Object -Property objectName){
-        $clusterName = $i.system
-        $jobName = $i.groupName
-        $sourceName = $i.sourceName
-        $objectName = $i.objectName
-        $environment = $i.environment.subString(1)
-        $policy = $i.policyName
-        $lastFailure = (usecsToDate $i.lastFailedRunUsecs).ToSTring('yyyy-MM-dd hh:mm')
-        $failedBackups = $i.failedBackups
-        $strikes = $i.strikeCount
-        $lastError = $i.lastFailedRunErrorMsg
-        if($lastError.length -gt 301){
-            $lastError = $lastError.subString(0,300)
-        }
-        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}""" -f $clusterName, $jobName, $sourceName, $objectName, $environment, $policy, $lastFailure, $failedBackups, $strikes, $lastError | Tee-Object -FilePath $csvFileName -Append
-        $Global:html += '<tr style="border: 1px solid {10} background-color: {10}">
-            <td>{0}</td>
-            <td>{1}</td>
-            <td>{2}</td>
-            <td>{3}</td>
-            <td>{4}</td>
-            <td>{5}</td>
-            <td>{6}</td>
-            <td>{7}</td>
-            <td>{8}</td>
-            <td>{9}</td>
-            </tr>' -f $clusterName, $jobName, $sourceName, $objectName, $environment, $policy, $lastFailure, $failedBackups, $strikes, $lastError, $Global:trColor
-    }
+    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}""" -f $clusterName, $jobName, $sourceName, $objectName, $environment, $policy, $lastFailure, $failedBackups, $strikes, $lastError | Out-File -FilePath $csvFileName -Append
+    $Global:html += '<tr style="border: 1px solid {10} background-color: {10}">
+        <td>{0}</td>
+        <td>{1}</td>
+        <td>{2}</td>
+        <td>{3}</td>
+        <td>{4}</td>
+        <td>{5}</td>
+        <td>{6}</td>
+        <td>{7}</td>
+        <td>{8}</td>
+        <td>{9}</td>
+        </tr>' -f $clusterName, $jobName, $sourceName, $objectName, $environment, $policy, $lastFailure, $failedBackups, $strikes, $lastError, $Global:trColor
 }
 
 $Global:html += "</table>                
