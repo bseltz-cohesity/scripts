@@ -1,46 +1,56 @@
-[CmdletBinding()]
-param (
-    [Parameter()][string]$username='helios',
-    [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'GiB'
-)
+#!/usr/bin/env python
+"""Helios v2 Protected/Unprotected Object Report"""
 
-$conversion = @{'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
-function toUnits($val){
-    return "{0:n1}" -f ($val/($conversion[$unit]))
-}
+# import pyhesity wrapper module
+from pyhesity import *
+from datetime import datetime
+import codecs
 
-$filePrefix = "heliosProtectionStatusReport"
-$title = "Helios Protection Status Report"
-$reportNumber = 100
+# command line arguments
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('-u', '--username', type=str, default='helios')
+parser.add_argument('-n', '--units', type=str, choices=['MiB', 'GiB'], default='GiB')
 
-$headings = "Object
+args = parser.parse_args()
+
+username = args.username
+units = args.units
+
+multiplier = 1024 * 1024
+if units.lower() == 'gib':
+    multiplier = 1024 * 1024 * 1024
+
+filePrefix = "heliosProtectionStatusReport"
+title = "Helios Protection Status Report"
+reportNumber = 100
+
+headings = ('''Object
 Environment
 Status
 Source
 Cluster
-Logical Data ($unit)" -split "`n"
+Logical Data (%s)''' % units).split('\n')
 
-### source the cohesity-api helper code
-. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+# authenticate
+apiauth(vip='helios.cohesity.com', username=username, domain='local')
 
-### authenticate
-apiauth -vip 'helios.cohesity.com' -username $username -domain 'local'
+now = datetime.now()
+dateString = dateToString(now, "%Y-%m-%d")
 
-$dateString = (get-date).ToString('yyyy-MM-dd')
-
-$csvHeadings = $headings -join ','
-$htmlHeadings = $htmlHeadings = ($headings | ForEach-Object {"<th>$_</th>"}) -join "`n"
+csvHeadings = ','.join(headings)
+htmlHeadings = ''.join(['<th>%s</th>' % h for h in headings])
 
 # CSV output
-$csvFileName = "$($filePrefix)_$($dateString).csv"
-$csvHeadings | Out-File -FilePath $csvFileName
+csvFileName = "%s_%s.csv" % (filePrefix, dateString)
+csv = codecs.open(csvFileName, 'w', 'utf-8')
+csv.write('%s\n' % csvHeadings)
 
 # HTML output
-$htmlFileName = "$($filePrefix)_$($dateString).html"
+htmlFileName = "%s_%s.html" % (filePrefix, dateString)
+htmlFile = codecs.open(htmlFileName, 'w', 'utf-8')
 
-$trColors = @('#FFFFFF;', '#F1F1F1;')
-
-$Global:html = '<html>
+html = '''<html>
 <head>
     <style>
         p {
@@ -51,7 +61,6 @@ $Global:html = '<html>
             color: #555555;
             font-family:Arial, Helvetica, sans-serif;
         }
-        
 
         table {
             font-family: Arial, Helvetica, sans-serif;
@@ -75,7 +84,7 @@ $Global:html = '<html>
     </style>
 </head>
 <body>
-    
+
     <div style="margin:15px;">
             <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAAaCAYAAAA
             e23asAAAACXBIWXMAABcRAAAXEQHKJvM/AAABmWlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAA
@@ -149,66 +158,61 @@ $Global:html = '<html>
             9NHjOxuYiP0uIhr42INt/t5T9xvEOSjz5yNlck0YmWtHXKo1oP7rs8RLSeS2KOrkPj9tI93
             HvKnRoRnv0F/RyHXw0I9vffewQov9sqEf8D1JlEi06AzkDAAAAAElFTkSuQmCC" style="width:180px">
         <p style="margin-top: 15px; margin-bottom: 15px;">
-            <span style="font-size:1.3em;">'
+            <span style="font-size:1.3em;">'''
 
-$Global:html += $title
-$Global:html += '</span>
-<span style="font-size:1em; text-align: right; padding-right: 2px; float: right;">'
-$Global:html += "$dateString"
+html += title
 
-$Global:html += '</span>
+html += '''</span>
+<span style="font-size:1em; text-align: right; padding-right: 2px; float: right;">'''
+
+html += '%s' % (dateString)
+
+html += '''</span>
 </p>
 <table>
-<tr style="background-color: #F1F1F1;">'
-$Global:html += $htmlHeadings
-$Global:html += '</tr>'
+<tr style="background-color: #F1F1F1;">'''
+html += htmlHeadings
+html += '</tr>'
 
-$stats = @{}
+stats = {}
 
-Write-Host "Retrieving report data..."
+print('\nRetrieving report data...')
 
-# report parameters
-$reportParams = @{
-    "filters"  = @();
-    "sort"     = $null;
-    "timezone" = "America/New_York";
-    "limit"    = @{
-        "size" = 10000
+reportParams = {
+    "filters": [],
+    "sort": None,
+    "timezone": "America/New_York",
+    "limit": {
+        "size": 10000
     }
 }
 
-$preview = api post -reportingV2 "components/$reportNumber/preview" $reportParams
+preview = api('post', 'components/%s/preview' % reportNumber, reportParams, reportingv2=True)
 
-$headings = "Object
-Environment
-Status
-Source
-Cluster
-Logical Data ($unit)" -split "`n"
+for i in sorted(preview['component']['data'], key=lambda d: (d['sourceName'].lower(), d['objectName'].lower())):
+    objectName = i['objectName']
+    environment = i['environment']
+    protectionStatus = i['protectionStatus']
+    sourceName = i['sourceName']
+    clusterName = ', '.join(i['systems'])
+    logicalSize = round(float(i['logicalSize']) / multiplier, 1)
+    csv.write('"%s","%s","%s","%s","%s","%s"\n' % (objectName, environment, protectionStatus, sourceName, clusterName, logicalSize))
+    html += '''<tr>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        </tr>''' % (objectName, environment, protectionStatus, sourceName, clusterName, logicalSize)
 
-foreach($i in $preview.component.data | Sort-Object -Property {$_.sourceName}, {$_.objectName}){
-    $objectName = $i.objectName
-    $environment = $i.environment
-    $protectionStatus = $i.protectionStatus
-    $sourceName = $i.sourceName
-    $clusterName = $i.systems -join ", "
-    $logicalSize = toUnits $i.logicalSize
-    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}""" -f $objectName, $environment, $protectionStatus, $sourceName, $clusterName, $logicalSize | Out-File -FilePath $csvFileName -Append
-    $Global:html += '<tr>
-        <td>{0}</td>
-        <td>{1}</td>
-        <td>{2}</td>
-        <td>{3}</td>
-        <td>{4}</td>
-        <td>{5}</td>
-        </tr>' -f $objectName, $environment, $protectionStatus, $sourceName, $clusterName, $logicalSize            
-}
-
-$Global:html += "</table>                
+html += '''</table>
 </div>
 </body>
-</html>"
+</html>'''
 
-$Global:html | Out-File -FilePath $htmlFileName
+htmlFile.write(html)
+htmlFile.close()
+csv.close()
 
-Write-Host "`nOutput saved to $csvFileName`nAlso saved as $htmlFileName`n"
+print('\nOutput saved to %s\nAlso saved to %s\n' % (htmlFileName, csvFileName))
