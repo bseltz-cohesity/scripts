@@ -93,16 +93,31 @@ $Global:html = '<html>
             width: 100%;
         }
 
-        tr {
-            border: 1px solid #F8F8F8;
-            background-color: #F8F8F8;
+        td {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            word-wrap:break-word;
+            white-space:normal;
         }
 
-        td,
+        td.nowrap {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            padding-right: 15px;
+            word-wrap:break-word;
+            white-space:nowrap;
+        }
+
         th {
-            width: 6%;
+            width: 25ch;
+            max-width: 250px;
             text-align: left;
             padding: 6px;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -231,7 +246,7 @@ foreach($range in $ranges){
     foreach($cluster in $clusters | Where-Object {$_ -ne ''}){
     
         foreach($object in $preview.component.data | Where-Object system -eq $cluster | Sort-Object -Property objectName){
-            $clusterName = $object.system
+            $clusterName = $object.system.ToUpper()
             $sourceName = $object.sourceName
             $objectName = $object.objectName
             if($objectName){
@@ -263,7 +278,6 @@ foreach($range in $ranges){
                         $stats[$uniqueKey].dataRead += $dataRead
                         $stats[$uniqueKey].dataWritten += $dataWritten
                     }
-                    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}""" -f $clusterName, $sourceName, $objectName, $objectType, $snapshots, $logicalSize, (toUnits $dataRead), (toUnits $dataWritten), (toUnits $changeRate)
                 }
             }
         }
@@ -284,7 +298,7 @@ foreach($uniqueKey in $stats.Keys | Sort-Object){
 
     """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}""" -f $clusterName, $sourceName, $objectName, $objectType, $snapshots, $logicalSize, $dataRead, $dataWritten, $changeRate | Out-File -FilePath $csvFileName -Append
     $Global:html += '<tr style="border: 1px solid {9} background-color: {9}">
-        <td>{0}</td>
+        <td class="nowrap">{0}</td>
         <td>{1}</td>
         <td>{2}</td>
         <td>{3}</td>
