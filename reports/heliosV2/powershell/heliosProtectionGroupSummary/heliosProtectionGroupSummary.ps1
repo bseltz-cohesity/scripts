@@ -107,11 +107,31 @@ $Global:html = '<html>
             background-color: #F8F8F8;
         }
 
-        td,
+        td {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            word-wrap:break-word;
+            white-space:normal;
+        }
+
+        td.nowrap {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            padding-right: 15px;
+            word-wrap:break-word;
+            white-space:nowrap;
+        }
+
         th {
-            width: 5%;
+            width: 25ch;
+            max-width: 250px;
             text-align: left;
             padding: 6px;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -235,17 +255,15 @@ foreach($range in $ranges){
 
     foreach($cluster in $clusters){
         foreach($object in $preview.component.data | Where-Object system -eq $cluster | Sort-Object -Property objectName){
-            $clusterName = $object.system
+            $clusterName = $object.system.ToUpper()
             $jobName = $object.groupName
             $sourceName = $object.sourceNames[0]
             $environment = $object.environment.subString(1)
             $policy = $object.policyName
             $lastResult = $object.lastRunStatus.subString(1)
-            $lastRunDate = usecsToDate $object.lastRunTimeUsecs
+            $lastRunDate = usecsToDate $object.lastRunTimeUsecs -format 'yyyy-MM-dd hh:mm'
             $successful = $object.successfulBackups
-            # $unsuccessful = $object.totalBackups - $successful
             $totalBackups = $object.totalBackups
-            # $successRate = [math]::Round($object.successRate, 0)
             $slaStatus = $object.slaStatus
             $uniqueKey = "{0}:{1}:{2}:{3}" -f $clusterName, $jobName, $sourceName, $environment
             if($uniqueKey -notin $stats.Keys){
@@ -265,7 +283,6 @@ foreach($range in $ranges){
                 $stats[$uniqueKey].successful += $successful
                 $stats[$uniqueKey].totalBackups += $totalBackups
             }
-            """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}""" -f $clusterName, $jobName, $sourceName, $environment, $policy, $lastResult, $lastRunDate, $successful, $slaStatus
         }
     }
 }
@@ -286,19 +303,19 @@ foreach($uniqueKey in $stats.Keys | Sort-Object){
     $successRate = [math]::Round((100 * $successful / $totalBackups), 0)
 
     """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}""" -f $clusterName, $jobName, $sourceName, $environment, $policy, $lastResult, $lastRunDate, $successful, $unsuccessful, $successRate, $slaStatus | Out-File -FilePath $csvFileName -Append
-    $Global:html += '<tr style="border: 1px solid {10} background-color: {10}">
-        <td>{0}</td>
+    $Global:html += '<tr>
+        <td class="nowrap">{0}</td>
         <td>{1}</td>
         <td>{2}</td>
         <td>{3}</td>
         <td>{4}</td>
         <td>{5}</td>
-        <td>{6}</td>
+        <td class="nowrap">{6}</td>
         <td>{7}</td>
         <td>{8}</td>
         <td>{9}</td>
         <td>{10}</td>
-        </tr>' -f $clusterName, $jobName, $sourceName, $environment, $policy, $lastResult, $lastRunDate, $successful, $unsuccessful, $successRate, $slaStatus, $Global:trColor
+        </tr>' -f $clusterName, $jobName, $sourceName, $environment, $policy, $lastResult, $lastRunDate, $successful, $unsuccessful, $successRate, $slaStatus
 }
 
 $Global:html += "</table>                
