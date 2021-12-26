@@ -112,11 +112,31 @@ $Global:html = '<html>
             background-color: #F8F8F8;
         }
 
-        td,
+        td {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            word-wrap:break-word;
+            white-space:normal;
+        }
+
+        td.nowrap {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            padding-right: 15px;
+            word-wrap:break-word;
+            white-space:nowrap;
+        }
+
         th {
-            width: 5%;
+            width: 25ch;
+            max-width: 250px;
             text-align: left;
             padding: 6px;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -240,7 +260,7 @@ foreach($range in $ranges){
     
     foreach($cluster in $clusters){
         foreach($i in $preview.component.data | Where-Object system -eq $cluster | Sort-Object -Property objectName){
-            $clusterName = $i.system
+            $clusterName = $i.system.ToUpper()
             $jobName = $i.groupName
             $sourceName = $i.sourceName
             $objectName = $i.objectName
@@ -271,7 +291,6 @@ foreach($range in $ranges){
                 }else{
                     $stats[$uniqueKey].failedBackups += $failedBackups
                 }
-                """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}""" -f $clusterName, $jobName, $sourceName, $objectName, $environment, $policy, $lastFailure, $failedBackups, $strikes, $lastError
             }
         }
     }
@@ -290,18 +309,18 @@ foreach($uniqueKey in $stats.Keys | Sort-Object){
     $lastError = $stats[$uniqueKey].lastError
 
     """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}""" -f $clusterName, $jobName, $sourceName, $objectName, $environment, $policy, $lastFailure, $failedBackups, $strikes, $lastError | Out-File -FilePath $csvFileName -Append
-    $Global:html += '<tr style="border: 1px solid {10} background-color: {10}">
-        <td>{0}</td>
+    $Global:html += '<tr>
+        <td class="nowrap">{0}</td>
         <td>{1}</td>
         <td>{2}</td>
         <td>{3}</td>
         <td>{4}</td>
         <td>{5}</td>
-        <td>{6}</td>
+        <td class="nowrap">{6}</td>
         <td>{7}</td>
         <td>{8}</td>
         <td>{9}</td>
-        </tr>' -f $clusterName, $jobName, $sourceName, $objectName, $environment, $policy, $lastFailure, $failedBackups, $strikes, $lastError, $Global:trColor
+        </tr>' -f $clusterName, $jobName, $sourceName, $objectName, $environment, $policy, $lastFailure, $failedBackups, $strikes, $lastError
 }
 
 $Global:html += "</table>                
