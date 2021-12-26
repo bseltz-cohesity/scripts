@@ -286,20 +286,6 @@ foreach($range in $ranges){
         $dataRead = toUnits $i.dataRead
         $dataWritten = toUnits $i.dataWritten
 
-        $headings = "Cluster
-        Status
-        Start Time
-        Duration
-        Seconds
-        End Time
-        Protection Group
-        Environment
-        Policy
-        Activity
-        SLA
-        Data Read ($unit)
-        Data Written ($unit)" -split "`n"
-
         """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}""" -f $clusterName, $status, $startTime, $duration, $durationSecs, $endTime, $jobName, $environment, $policy, $activityType, $slaStatus, $dataRead, $dataWritten | Out-File -FilePath $csvFileName -Append
         $Global:html += '<tr>
             <td class="nowrap">{0}</td>
