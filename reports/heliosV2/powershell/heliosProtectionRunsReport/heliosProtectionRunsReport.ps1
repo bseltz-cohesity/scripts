@@ -118,11 +118,31 @@ $Global:html = '<html>
             background-color: #F8F8F8;
         }
 
-        td,
+        td {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            word-wrap:break-word;
+            white-space:normal;
+        }
+
+        td.nowrap {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            padding-right: 15px;
+            word-wrap:break-word;
+            white-space:nowrap;
+        }
+
         th {
-            width: 5%;
+            width: 25ch;
+            max-width: 250px;
             text-align: left;
             padding: 6px;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -246,7 +266,7 @@ foreach($range in $ranges){
 
     foreach($cluster in $clusters){
         foreach($i in $preview.component.data | Where-Object system -eq $cluster | Sort-Object -Property groupName, sourceName){
-            $clusterName = $i.system
+            $clusterName = $i.system.ToUpper()
             $jobName = $i.groupName
             $sourceName = $i.sourceName
             if($i.PSObject.Properties['environment'] -and $i.environment.length -gt 0){
@@ -274,12 +294,12 @@ foreach($range in $ranges){
                 
                 """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}"",""{13}""" -f $clusterName, $policy, $status, $startTime, $endTime, $duration, $durationSecs, $jobName, $environment, $sourceName, $snapshotStatus, $logicalSize, $dataRead, $dataWritten | Out-File -FilePath $csvFileName -Append
                 $Global:html += '<tr style="border: 1px solid {14} background-color: {14}">
-                    <td>{0}</td>
+                    <td class="nowrap">{0}</td>
                     <td>{1}</td>
                     <td>{2}</td>
-                    <td>{3}</td>
-                    <td>{4}</td>
-                    <td>{5}</td>
+                    <td class="nowrap">{3}</td>
+                    <td class="nowrap">{4}</td>
+                    <td class="nowrap">{5}</td>
                     <td>{6}</td>
                     <td>{7}</td>
                     <td>{8}</td>
