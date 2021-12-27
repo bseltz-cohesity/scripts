@@ -109,16 +109,30 @@ html = '''<html>
         }
 
         td {
-            width: 6%;
+            width: 25ch;
+            max-width: 250px;
             text-align: left;
-            padding: 6px;
-            overflow-wrap: anywhere;
+            padding: 10px;
+            word-wrap:break-word;
+            white-space:normal;
+        }
+
+        td.nowrap {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            padding-right: 15px;
+            word-wrap:break-word;
+            white-space:nowrap;
         }
 
         th {
-            width: 6%;
+            width: 25ch;
+            max-width: 250px;
             text-align: left;
             padding: 6px;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -246,7 +260,7 @@ for range in ranges:
         data = [d for d in preview['component']['data'] if d['system'] == cluster]
         for i in data:
             if 'sourceNames' in i and i['sourceNames'] is not None and len(i['sourceNames']) > 0:
-                clusterName = i['system']
+                clusterName = i['system'].upper()
                 jobName = i['groupName']
                 sourceName = i['sourceNames'][0]
                 environment = i['environment'][1:]
@@ -290,14 +304,14 @@ for uniqueKey in sorted(stats.keys()):
 
     csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, jobName, sourceName, environment, policy, lastResult, lastRunDate, successful, unsuccessful, successRate, slaStatus))
 
-    html += '''<tr style="border: 1px solid #FFFFFF background-color: #FFFFFF">
+    html += '''<tr>
+        <td class="nowrap">%s</td>
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
-        <td>%s</td>
-        <td>%s</td>
+        <td class="nowrap">%s</td>
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
