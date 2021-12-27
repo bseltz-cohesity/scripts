@@ -127,11 +127,31 @@ html = '''<html>
             background-color: #F8F8F8;
         }
 
-        td,
+        td {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            word-wrap:break-word;
+            white-space:normal;
+        }
+
+        td.nowrap {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            padding-right: 15px;
+            word-wrap:break-word;
+            white-space:nowrap;
+        }
+
         th {
-            width: 5%;
+            width: 25ch;
+            max-width: 250px;
             text-align: left;
             padding: 6px;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -257,7 +277,7 @@ for range in ranges:
     for cluster in clusters:
         data = [d for d in preview['component']['data'] if d['system'] == cluster]
         for i in data:
-            clusterName = i['system']
+            clusterName = i['system'].upper()
             jobName = i['groupName']
             sourceName = i['sourceName']
             environment = i['environment'][1:]
@@ -265,13 +285,13 @@ for range in ranges:
             status = i['status'][1:]
             startTime = usecsToDate(i['runStartTimeUsecs'], '%Y-%m-%d %H:%M')
             endTime = usecsToDate(i['endTimeUsecs'], '%Y-%m-%d %H:%M')
-            durationSecs = round(i['durationUsecs'] / 1000000, 0)
+            durationSecs = int(round(i['durationUsecs'] / 1000000, 0))
             timeSpan = timedelta(seconds=durationSecs)
             timedays = timeSpan.days
             timehours = timeSpan.seconds // 3600
             timeminutes = (timeSpan.seconds // 60) % 60
             timesecs = (timeSpan.seconds) % 60
-            duration = "%s" % timesecs
+            duration = "%ss" % timesecs
             if timeminutes > 0:
                 duration = "%sm %s" % (timeminutes, duration)
             if timehours > 0:
@@ -283,13 +303,13 @@ for range in ranges:
             dataRead = round(float(i['dataRead']) / multiplier, 1)
             dataWritten = round(float(i['dataWritten']) / multiplier, 1)
             csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, policy, status, startTime, endTime, duration, durationSecs, jobName, environment, sourceName, snapshotStatus, logicalSize, dataRead, dataWritten))
-            html += '''<tr style="border: 1px solid #FFFFFF background-color: #FFFFFF">
+            html += '''<tr>
+                <td class="nowrap">%s</td>
                 <td>%s</td>
                 <td>%s</td>
-                <td>%s</td>
-                <td>%s</td>
-                <td>%s</td>
-                <td>%s</td>
+                <td class="nowrap">%s</td>
+                <td class="nowrap">%s</td>
+                <td class="nowrap">%s</td>
                 <td>%s</td>
                 <td>%s</td>
                 <td>%s</td>
