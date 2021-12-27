@@ -117,11 +117,31 @@ html = '''<html>
             background-color: #F8F8F8;
         }
 
-        td,
+        td {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            word-wrap:break-word;
+            white-space:normal;
+        }
+
+        td.nowrap {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            padding-right: 15px;
+            word-wrap:break-word;
+            white-space:nowrap;
+        }
+
         th {
-            width: 5%;
+            width: 25ch;
+            max-width: 250px;
             text-align: left;
             padding: 6px;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -247,7 +267,7 @@ for range in ranges:
     for cluster in clusters:
         data = [d for d in preview['component']['data'] if d['system'] == cluster]
         for i in data:
-            clusterName = i['system']
+            clusterName = i['system'].upper()
             jobName = i['groupName']
             sourceName = i['sourceName']
             objectName = i['objectName']
@@ -290,14 +310,14 @@ for uniqueKey in sorted(stats.keys()):
     lastError = stats[uniqueKey]['lastError']
 
     csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, jobName, sourceName, objectName, environment, policy, lastFailure, failedBackups, strikes, lastError))
-    html += '''<tr style="border: 1px solid #FFFFFF background-color: #FFFFFF">
+    html += '''<tr>
+        <td class="nowrap">%s</td>
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
-        <td>%s</td>
-        <td>%s</td>
+        <td class="nowrap">%s</td>
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
