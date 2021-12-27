@@ -113,11 +113,31 @@ html = '''<html>
             background-color: #F8F8F8;
         }
 
-        td,
+        td {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            word-wrap:break-word;
+            white-space:normal;
+        }
+
+        td.nowrap {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            padding-right: 15px;
+            word-wrap:break-word;
+            white-space:nowrap;
+        }
+
         th {
-            width: 5%;
+            width: 25ch;
+            max-width: 250px;
             text-align: left;
             padding: 6px;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -248,7 +268,7 @@ for i in sorted(preview['component']['data'], key=lambda d: d['systemName'].lowe
     dailyPctGrowth = round(i['avgDailyGrowthRatePercent'], 1)
     csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, capacity, used, pctUsed, logicalData, reduction, growth, dailyGrowth, dailyPctGrowth))
     html += '''<tr>
-        <td>%s</td>
+        <td class="nowrap">%s</td>
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
