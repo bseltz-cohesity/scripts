@@ -121,17 +121,27 @@ html = '''<html>
         }
 
         td {
-            width: 5%;
+            width: 25ch;
             max-width: 250px;
-            min-width: 60px;
             text-align: left;
-            padding: 6px;
-            word-wrap: break-word;
+            padding: 10px;
+            word-wrap:break-word;
+            white-space:normal;
+        }
+
+        td.nowrap {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            padding-right: 15px;
+            word-wrap:break-word;
+            white-space:nowrap;
         }
 
         th {
-            width: 5%;
-            max-width: 200px;
+            width: 25ch;
+            max-width: 250px;
             text-align: left;
             padding: 6px;
             white-space: nowrap;
@@ -261,7 +271,7 @@ for range in ranges:
         data = [d for d in preview['component']['data'] if d['system'] == cluster]
         for i in data:
             protected = i['protectionStatus']
-            clusterName = i['system']
+            clusterName = i['system'].upper()
             jobName = i['groupName']
             sourceName = i['sourceName']
             objectName = i['objectName']
@@ -319,15 +329,15 @@ for uniqueKey in sorted(stats.keys()):
     csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (protected, clusterName, sourceName, objectName, environment, jobName, policy, lastResult, lastRunDate, lastSuccess, numSnapshots, successful, unsuccessful))
     html += '''<tr>
         <td>%s</td>
+        <td class="nowrap">%s</td>
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
-        <td>%s</td>
-        <td>%s</td>
-        <td>%s</td>
+        <td class="nowrap">%s</td>
+        <td class="nowrap">%s</td>
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
