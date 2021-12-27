@@ -114,11 +114,31 @@ html = '''<html>
             background-color: #F8F8F8;
         }
 
-        td,
+        td {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            word-wrap:break-word;
+            white-space:normal;
+        }
+
+        td.nowrap {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            padding-right: 15px;
+            word-wrap:break-word;
+            white-space:nowrap;
+        }
+
         th {
-            width: 5%;
+            width: 25ch;
+            max-width: 250px;
             text-align: left;
             padding: 6px;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -244,7 +264,7 @@ for range in ranges:
     for cluster in clusters:
         data = [d for d in preview['component']['data'] if d['system'] == cluster]
         for i in data:
-            clusterName = i['system']
+            clusterName = i['system'].upper()
             sourceName = i['sourceName']
             objectName = i['objectName']
             if objectName is not None and objectName != '':
@@ -287,8 +307,8 @@ for uniqueKey in sorted(stats.keys()):
 
     csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, sourceName, objectName, environment, snapshots, logicalSize, dataRead, dataWritten, changeRate))
 
-    html += '''<tr style="border: 1px solid #FFFFFF background-color: #FFFFFF">
-        <td>%s</td>
+    html += '''<tr>
+        <td class="nowrap">%s</td>
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
@@ -298,7 +318,6 @@ for uniqueKey in sorted(stats.keys()):
         <td>%s</td>
         <td>%s</td>
         </tr>''' % (clusterName, sourceName, objectName, environment, snapshots, logicalSize, dataRead, dataWritten, changeRate)
-
 
 html += '''</table>
 </div>
