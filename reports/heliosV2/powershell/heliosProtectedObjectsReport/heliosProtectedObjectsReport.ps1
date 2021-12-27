@@ -112,18 +112,30 @@ $Global:html = '<html>
         }
 
         td {
-            width: 5%;
-            max-width: 200px;
+            width: 25ch;
+            max-width: 250px;
             text-align: left;
-            padding: 6px;
-            word-wrap: break-word;
+            padding: 10px;
+            word-wrap:break-word;
+            white-space:normal;
         }
-        
+
+        td.nowrap {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            padding-right: 15px;
+            word-wrap:break-word;
+            white-space:nowrap;
+        }
+
         th {
-            width: 5%;
-            max-width: 200px;
+            width: 25ch;
+            max-width: 250px;
             text-align: left;
             padding: 6px;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -248,7 +260,7 @@ foreach($range in $ranges){
     foreach($cluster in $clusters){
         foreach($i in $preview.component.data | Where-Object system -eq $cluster | Sort-Object -Property objectName){
 
-            $clusterName = $i.system
+            $clusterName = $i.system.ToUpper()
             $jobName = $i.groupName
             $sourceName = $i.sourceName
             $objectName = $i.objectName
@@ -321,19 +333,19 @@ foreach($uniqueKey in $stats.Keys | Sort-Object){
     """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}""" -f $protected, $clusterName, $sourceName, $objectName, $environment, $jobName, $policy, $lastResult, $lastRunDate, $lastSuccess, $numSnapshots, $successful, $unsuccessful | Out-File -FilePath $csvFileName -Append
     $Global:html += '<tr>
         <td>{0}</td>
-        <td>{1}</td>
+        <td class="nowrap">{1}</td>
         <td>{2}</td>
         <td>{3}</td>
         <td>{4}</td>
         <td>{5}</td>
         <td>{6}</td>
         <td>{7}</td>
-        <td>{8}</td>
-        <td>{9}</td>
+        <td class="nowrap">{8}</td>
+        <td class="nowrap">{9}</td>
         <td>{10}</td>
         <td>{11}</td>
         <td>{12}</td>
-        </tr>' -f $protected, $clusterName, $sourceName, $objectName, $environment, $jobName, $policy, $lastResult, $lastRunDate, $lastSuccess, $numSnapshots, $successful, $unsuccessful, $Global:trColor
+        </tr>' -f $protected, $clusterName, $sourceName, $objectName, $environment, $jobName, $policy, $lastResult, $lastRunDate, $lastSuccess, $numSnapshots, $successful, $unsuccessful
 }
 
 $Global:html += "</table>                

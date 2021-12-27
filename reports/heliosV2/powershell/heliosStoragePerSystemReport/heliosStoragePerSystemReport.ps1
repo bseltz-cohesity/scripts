@@ -104,11 +104,31 @@ $Global:html = '<html>
             background-color: #F8F8F8;
         }
 
-        td,
+        td {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            word-wrap:break-word;
+            white-space:normal;
+        }
+
+        td.nowrap {
+            width: 25ch;
+            max-width: 250px;
+            text-align: left;
+            padding: 10px;
+            padding-right: 15px;
+            word-wrap:break-word;
+            white-space:nowrap;
+        }
+
         th {
-            width: 5%;
+            width: 25ch;
+            max-width: 250px;
             text-align: left;
             padding: 6px;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -227,7 +247,7 @@ $reportParams = @{
 $preview = api post -reportingV2 "components/$reportNumber/preview" $reportParams
 
 foreach($i in $preview.component.data | Sort-Object -Property systemName){
-    $clusterName = $i.systemName
+    $clusterName = $i.systemName.ToUpper()
     $capacity = toUnits $i.totalCapacityBytes
     $used = toUnits $i.physicalUsageBytes
     $pctUsed = [math]::round($i.usagePercent, 1)
@@ -239,7 +259,7 @@ foreach($i in $preview.component.data | Sort-Object -Property systemName){
 
     """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}""" -f $clusterName, $capacity, $used, $pctUsed, $logicalData, $reduction, $growth, $dailyGrowth, $dailyPctGrowth | Out-File -FilePath $csvFileName -Append
     $Global:html += '<tr>
-        <td>{0}</td>
+        <td class="nowrap">{0}</td>
         <td>{1}</td>
         <td>{2}</td>
         <td>{3}</td>
