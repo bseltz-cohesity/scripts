@@ -45,14 +45,13 @@ dateString = dateToString(now, "%Y-%m-%d")
 thisCalendarMonth = now.replace(day=1, hour=0, minute=0, second=0)
 endofLastMonth = thisCalendarMonth - timedelta(seconds=1)
 lastCalendarMonth = endofLastMonth.replace(day=1, hour=0, minute=0, second=0)
-endOfToday = now.replace(hour=23, minute=59, second=59)
 
 if startdate != '' and enddate != '':
     uStart = dateToUsecs(startdate)
     uEnd = dateToUsecs(enddate)
 elif thismonth:
     uStart = dateToUsecs(thisCalendarMonth)
-    uEnd = dateToUsecs(endOfToday)
+    uEnd = dateToUsecs(now)
 elif lastmonth:
     uStart = dateToUsecs(lastCalendarMonth)
     uEnd = dateToUsecs(endofLastMonth)

@@ -51,9 +51,9 @@ apiauth(vip='helios.cohesity.com', username=username, domain='local')
 now = datetime.now()
 dateString = dateToString(now, "%Y-%m-%d")
 
-thisCalendarMonth = now.replace(day=1)
-endofLastMonth = thisCalendarMonth - timedelta(days=1)
-lastCalendarMonth = endofLastMonth.replace(day=1)
+thisCalendarMonth = now.replace(day=1, hour=0, minute=0, second=0)
+endofLastMonth = thisCalendarMonth - timedelta(seconds=1)
+lastCalendarMonth = endofLastMonth.replace(day=1, hour=0, minute=0, second=0)
 
 if startdate != '' and enddate != '':
     uStart = dateToUsecs(startdate)
