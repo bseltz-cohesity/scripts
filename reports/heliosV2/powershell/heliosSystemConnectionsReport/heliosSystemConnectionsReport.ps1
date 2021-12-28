@@ -5,7 +5,7 @@ param (
     [Parameter()][string]$endDate = '',
     [Parameter()][switch]$thisCalendarMonth,
     [Parameter()][switch]$lastCalendarMonth,
-    [Parameter()][int]$days = 0
+    [Parameter()][int]$days = 31
 )
 
 $filePrefix = "heliosSystemConnectionsReport"
@@ -31,18 +31,15 @@ $today = Get-Date
 if($startDate -ne '' -and $endDate -ne ''){
     $uStart = dateToUsecs $startDate
     $uEnd = dateToUsecs $endDate
-}elseif ($days -ne 0) {
-    $uStart = dateToUsecs ($today.Date.AddDays(-$days))
-    $uEnd = dateToUsecs $today.Date.AddSeconds(-1)
 }elseif ($thisCalendarMonth) {
     $uStart = dateToUsecs ($today.Date.AddDays(-($today.day-1)))
-    $uEnd = dateToUsecs ($today.Date.AddDays(1).AddSeconds(-1))
+    $uEnd = dateToUsecs ($today)
 }elseif ($lastCalendarMonth) {
     $uStart = dateToUsecs ($today.Date.AddDays(-($today.day-1)).AddMonths(-1))
     $uEnd = dateToUsecs ($today.Date.AddDays(-($today.day-1)).AddSeconds(-1))
 }else{
-    $uStart = dateToUsecs ($today.Date.AddDays(-31))
-    $uEnd = dateToUsecs $today.Date.AddSeconds(-1)
+    $uStart = timeAgo $days 'days'
+    $uEnd = dateToUsecs ($today)
 }
 
 if(($uEnd - $uStart) -gt 15552000000000){
@@ -211,8 +208,6 @@ $Global:html += '</span>
 <tr style="background-color: #F1F1F1;">'
 $Global:html += $htmlHeadings
 $Global:html += '</tr>'
-
-$stats = @{}
 
 Write-Host "Retrieving report data..."
 

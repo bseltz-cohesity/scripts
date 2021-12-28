@@ -10,7 +10,7 @@ param (
     [Parameter()][string]$endDate = '',
     [Parameter()][switch]$thisCalendarMonth,
     [Parameter()][switch]$lastCalendarMonth,
-    [Parameter()][int]$days = 0
+    [Parameter()][int]$days = 31
 )
 
 ### source the cohesity-api helper code
@@ -25,18 +25,15 @@ $today = Get-Date
 if($startDate -ne '' -and $endDate -ne ''){
     $uStart = dateToUsecs $startDate
     $uEnd = dateToUsecs $endDate
-}elseif ($days -ne 0) {
-    $uStart = dateToUsecs ($today.Date.AddDays(-$days))
-    $uEnd = dateToUsecs $today.Date.AddSeconds(-1)
 }elseif ($thisCalendarMonth) {
     $uStart = dateToUsecs ($today.Date.AddDays(-($today.day-1)))
-    $uEnd = dateToUsecs ($today.Date.AddDays(-($today.day-1)).AddMonths(1).AddSeconds(-1))    
+    $uEnd = dateToUsecs ($today)
 }elseif ($lastCalendarMonth) {
     $uStart = dateToUsecs ($today.Date.AddDays(-($today.day-1)).AddMonths(-1))
     $uEnd = dateToUsecs ($today.Date.AddDays(-($today.day-1)).AddSeconds(-1))
 }else{
-    $uStart = dateToUsecs ($today.Date.AddDays(-31))
-    $uEnd = dateToUsecs $today.Date.AddSeconds(-1)
+    $uStart = timeAgo $days 'days'
+    $uEnd = dateToUsecs ($today)
 }
 
 $start = (usecsToDate $uStart).ToString('yyyy-MM-dd')
@@ -46,7 +43,7 @@ $outfile = "protectionDetailsPerObject--$start--$end.csv"
 
 $MiB = 1024 * 1024
 
-"Cluster,Object,Type,StartTime,JobName,Status,RunType,MB Read,MB Logical" | Out-File -FilePath $outfile
+"Cluster,Object,Type,StartTime,JobName,Status,RunType,MB Read,MB Logical,Message" | Out-File -FilePath $outfile
 
 foreach($cluster in heliosClusters){
     heliosCluster $cluster
@@ -68,15 +65,21 @@ foreach($cluster in heliosClusters){
         $report = api get $uri
         foreach($source in $report.protectionSourceJobRuns){
             foreach($snapshot in $source.snapshotsInfo){
-                "{0},{1},{2},{3},{4},{5},{6},{7},{8}" -f $cluster.name,
-                                                         $source.protectionSource.name,
-                                                         $source.protectionSource.environment.subString(1),
-                                                         (usecsToDate $snapshot.jobRunStartTimeUsecs),
-                                                         $snapshot.jobName,
-                                                         $snapshot.runStatus.subString(1),
-                                                         $snapshot.runType.subString(1).replace('Regular', 'Incremental'),
-                                                         [math]::Round(($snapshot.numBytesRead / $MiB), 2),
-                                                         [math]::Round(($snapshot.numLogicalBytesProtected / $MiB), 2) | Tee-Object -FilePath $outfile -Append | Write-Host
+                if($snapshot.PSObject.Properties['message']){
+                    $message = $snapshot.message.replace(',',';').replace("`n",' - ')
+                }else{
+                    $message = ""
+                }
+                "{0},{1},{2},{3},{4},{5},{6},{7},{8},{9}" -f $cluster.name,
+                                                             $source.protectionSource.name,
+                                                             $source.protectionSource.environment.subString(1),
+                                                             (usecsToDate $snapshot.jobRunStartTimeUsecs),
+                                                             $snapshot.jobName,
+                                                             $snapshot.runStatus.subString(1),
+                                                             $snapshot.runType.subString(1).replace('Regular', 'Incremental'),
+                                                             [math]::Round(($snapshot.numBytesRead / $MiB), 2),
+                                                             [math]::Round(($snapshot.numLogicalBytesProtected / $MiB), 2),
+                                                             $message | Tee-Object -FilePath $outfile -Append | Write-Host
             }
         }
         $i += $slurp

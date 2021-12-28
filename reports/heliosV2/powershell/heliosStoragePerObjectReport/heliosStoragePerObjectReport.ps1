@@ -5,7 +5,7 @@ param (
     [Parameter()][string]$endDate = '',
     [Parameter()][switch]$thisCalendarMonth,
     [Parameter()][switch]$lastCalendarMonth,
-    [Parameter()][int]$days = 0,
+    [Parameter()][int]$days = 31,
     [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'GiB'
 )
 
@@ -26,18 +26,15 @@ $today = Get-Date
 if($startDate -ne '' -and $endDate -ne ''){
     $uStart = dateToUsecs $startDate
     $uEnd = dateToUsecs $endDate
-}elseif ($days -ne 0) {
-    $uStart = dateToUsecs ($today.Date.AddDays(-$days))
-    $uEnd = dateToUsecs $today.Date.AddHours(-1)
 }elseif ($thisCalendarMonth) {
     $uStart = dateToUsecs ($today.Date.AddDays(-($today.day-1)))
-    $uEnd = dateToUsecs ($today.Date.AddDays(-($today.day-1)).AddMonths(1).AddSeconds(-1))    
+    $uEnd = dateToUsecs ($today)
 }elseif ($lastCalendarMonth) {
     $uStart = dateToUsecs ($today.Date.AddDays(-($today.day-1)).AddMonths(-1))
     $uEnd = dateToUsecs ($today.Date.AddDays(-($today.day-1)).AddSeconds(-1))
 }else{
-    $uStart = dateToUsecs ($today.Date.AddDays(-31))
-    $uEnd = dateToUsecs $today.Date.AddSeconds(-1)
+    $uStart = timeAgo $days 'days'
+    $uEnd = dateToUsecs ($today)
 }
 
 $start = (usecsToDate $uStart).ToString('yyyy-MM-dd')
