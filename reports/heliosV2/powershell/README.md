@@ -157,6 +157,21 @@
 * Daily Growth
 * Daily Growth %
 
+## Helios Storage Per View
+
+<https://github.com/bseltz-cohesity/scripts/tree/master/reports/heliosV2/powershell/heliosStoragePerViewReport>
+
+* Cluster
+* View Name
+* Logical Data
+* Data In
+* Data Written
+* Consumed
+* Reduction
+* Growth
+* Daily Growth
+* Daily Growth %
+
 ## Helios System Connections Report
 
 <https://github.com/bseltz-cohesity/scripts/tree/master/reports/heliosV2/powershell/heliosSystemConnectionsReport>
