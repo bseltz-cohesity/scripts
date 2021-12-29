@@ -36,7 +36,7 @@ Place all files in a folder together, then run the main script like so:
 * -thisCalendarMonth: (optional) set date range to this month
 * -lastCalendarMonth: (optional) set date range to last month
 * -days: (optional) set date range to last X days (default is 31)
-* -unit: (optional) MiB, GiB or TiB (default is MiB)
+* -unit: (optional) MiB, GiB or TiB (default is GiB)
 
 ## Authenticating to Helios
 
