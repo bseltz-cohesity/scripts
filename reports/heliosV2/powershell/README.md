@@ -86,7 +86,7 @@
 * Data Read
 * Data Written
 
-## HElios Protection Status Report
+## Helios Protection Status Report
 
 <https://github.com/bseltz-cohesity/scripts/tree/master/reports/heliosV2/powershell/heliosProtectionStatusReport>
 
