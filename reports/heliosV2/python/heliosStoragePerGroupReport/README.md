@@ -33,6 +33,7 @@ Place both files in a folder together and run the main script like so:
 * -t, --thismonth: (optional) set date range to this month
 * -l, --lastmonth: (optional) set date range to last month
 * -y, --days: (optional) set date range to last X days (default is 31)
+* -n, --units: (optional) MiB or GiB (default is GiB)
 
 ## The Python Helper Module - pyhesity.py
 

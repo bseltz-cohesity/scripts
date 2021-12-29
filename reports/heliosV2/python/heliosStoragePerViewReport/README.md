@@ -1,28 +1,28 @@
-# Generate Helios Storage Per System Report using Python
+# Generate Helios Storage Per View Report using Python
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This python script creates a helios storage per system report and outputs to HTML and CSV files.
+This python script creates a helios storage per view report and outputs to HTML and CSV files.
 
 ## Components
 
-* heliosStoragePerSystem.py: the main python script
+* heliosStoragePerViewReport.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/heliosV2/python/heliosStoragePerSystem/heliosStoragePerSystem.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/heliosV2/python/heliosStoragePerViewReport/heliosStoragePerViewReport.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-chmod +x heliosStoragePerSystem.py
+chmod +x heliosStoragePerViewReport.py
 # end download commands
 ```
 
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./heliosStoragePerSystem.py  -u myusername@mydomain.net
+./heliosStoragePerViewReport.py  -u myusername@mydomain.net
 ```
 
 ## Parameters
