@@ -143,6 +143,21 @@
 * Written
 * Daily Change
 
+## Helios Storage Per Storage Domain
+
+<https://github.com/bseltz-cohesity/scripts/tree/master/reports/heliosV2/powershell/heliosStoragePerStorageDomainReport>
+
+* Cluster
+* Storage Domain
+* Logical Data
+* Data In
+* Data Written
+* Consumed
+* Reduction
+* Growth
+* Daily Growth
+* Daily Growth %
+
 ## Helios Storage Per System
 
 <https://github.com/bseltz-cohesity/scripts/tree/master/reports/heliosV2/powershell/heliosStoragePerSystemReport>
