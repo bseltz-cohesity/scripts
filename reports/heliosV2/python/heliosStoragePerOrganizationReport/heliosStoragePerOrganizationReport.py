@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Helios v2 Storage Per View Report"""
+"""Helios v2 Storage Per Organization Report"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -31,12 +31,11 @@ multiplier = 1024 * 1024
 if units.lower() == 'gib':
     multiplier = 1024 * 1024 * 1024
 
-filePrefix = "heliosStoragePerViewReport"
-title = "Helios Storage Per View Report"
-reportNumber = 1400
+filePrefix = "heliosStoragePerOrganizationReport"
+title = "Helios Storage Per Organization Report"
+reportNumber = 1300
 
-headings = ('''Cluster
-View Name
+headings = ('''Organization
 Logical Data (%s)
 Data In (%s)
 Data Written (%s)
@@ -44,7 +43,8 @@ Consumed (%s)
 Reduction
 Growth (%s)
 Daily Growth (%s)
-Daily Growth %%''' % (units, units, units, units, units, units)).split('\n')
+Daily Growth %%
+Clusters''' % (units, units, units, units, units, units)).split('\n')
 
 # authenticate
 apiauth(vip='helios.cohesity.com', username=username, domain='local')
@@ -258,9 +258,9 @@ reportParams = {
 
 preview = api('post', 'components/%s/preview' % reportNumber, reportParams, reportingv2=True)
 
-for i in sorted(preview['component']['data'], key=lambda d: (d['systemName'].lower(), d['viewName'].lower())):
-    clusterName = i['systemName'].upper()
-    viewName = i['viewName']
+for i in sorted(preview['component']['data'], key=lambda d: d['organizationName'].lower()):
+    clusters = ' '.join(i['systemNames'])
+    orgName = i['organizationName']
     logicalSize = round(float(i['totalLogicalUsageBytes']) / multiplier, 1)
     dataIn = round(float(i['dataInBytes']) / multiplier, 1)
     dataWritten = round(float(i['totalDataWrittenBytes']) / multiplier, 1)
@@ -274,7 +274,7 @@ for i in sorted(preview['component']['data'], key=lambda d: (d['systemName'].low
         dailyPctGrowth = round(-100 * float(i['firstStorageConsumedBytes'] - i['lastStorageConsumedBytes']) / totalDays / i['firstStorageConsumedBytes'], 1)
     else:
         dailyPctGrowth = 0
-    csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, viewName, logicalSize, dataIn, dataWritten, consumed, reduction, growth, dailyGrowth, dailyPctGrowth))
+    csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (orgName, logicalSize, dataIn, dataWritten, consumed, reduction, growth, dailyGrowth, dailyPctGrowth, clusters))
     html += '''<tr>
         <td class="nowrap">%s</td>
         <td>%s</td>
@@ -286,7 +286,7 @@ for i in sorted(preview['component']['data'], key=lambda d: (d['systemName'].low
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
-        </tr>''' % (clusterName, viewName, logicalSize, dataIn, dataWritten, consumed, reduction, growth, dailyGrowth, dailyPctGrowth)
+        </tr>''' % (orgName, logicalSize, dataIn, dataWritten, consumed, reduction, growth, dailyGrowth, dailyPctGrowth, clusters)
 
 html += '''</table>
 </div>
