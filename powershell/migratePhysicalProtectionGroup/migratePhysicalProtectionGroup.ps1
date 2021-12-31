@@ -19,8 +19,23 @@ param (
     [Parameter()][switch]$cleanupSourceObjects,
     [Parameter()][switch]$cleanupSourceObjectsAndExit,
     [Parameter()][switch]$deleteOldSnapshots,
-    [Parameter()][switch]$deleteReplica
+    [Parameter()][switch]$deleteReplica,
+    [Parameter()][switch]$forceRegister,
+    [Parameter()][switch]$dualRegister
 )
+
+if($forceRegister){
+    $force = $True
+}elseif($dualRegister){
+    $force = $false
+}else{
+    Write-Host "`nOne of the following is required: -forceRegister or -dualRegister" -ForegroundColor Yellow
+    Write-Host "`n-forceRegister: forces the protection sources over to the target cluster"
+    Write-Host "                (the source will be broken on the source cluster)"
+    Write-Host "`n -dualRegister: allows the source to be registered with both clusters"
+    Write-Host "                (requires custom gFlags and agent settings)`n"
+    exit
+}
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -179,7 +194,7 @@ if($job){
             'throttlingPolicy' = @{
                 'isThrottlingEnabled' = $false
             };
-            'forceRegister' = $True
+            'forceRegister' = $force
         }
         $null = api post /backupsources $newSource
 

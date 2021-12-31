@@ -45,7 +45,8 @@ The safest way to migrate SQL protection group is to avoid destroying the protec
                                 -targetCluster myNewCluster `
                                 -targetUser myNewUsername `
                                 -sourceDomain myNewDomain.net `
-                                -jobName myjob
+                                -jobName myjob `
+                                -forceRegister
 ```
 
 After the migration, we can rerun the command with the `-cleanupSourceObjectsAndExit` switch to remove the old group and sources.
@@ -58,6 +59,7 @@ After the migration, we can rerun the command with the `-cleanupSourceObjectsAnd
                                 -targetUser myNewUsername `
                                 -sourceDomain myNewDomain.net `
                                 -jobName myjob `
+                                -forceRegister `
                                 -cleanupSourceObjectsAndExit
 ```
 
@@ -71,6 +73,7 @@ Or, if you're comfortable that the script works as expected, you can perform mig
                                 -targetUser myNewUsername `
                                 -sourceDomain myNewDomain.net `
                                 -jobName myjob `
+                                -forceRegister `
                                 -cleanupSourceObjects
 ```
 
@@ -97,6 +100,8 @@ Note that if you want to delete existing snapshots when cleaning up, use the `-d
 * -newStorageDomainName: (optional) new storage domain name (defaults to same storage domain name as source job)
 * -pauseNewJob: (optional) pause new job
 * -deleteReplica: (optional) delete old replica of protection group on target cluster (will not delete the snapshots)
+* -forceRegister: (optional) force register sources onto target cluster (breaks sources on source cluster)
+* -dualRegister: (optional) allow sources to be registered to both clusters (requires custom gFlags)
 
 ## Cleanup Parameters
 

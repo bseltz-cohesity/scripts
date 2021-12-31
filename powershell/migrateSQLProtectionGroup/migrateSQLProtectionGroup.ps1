@@ -19,8 +19,23 @@ param (
     [Parameter()][switch]$cleanupSourceObjects,
     [Parameter()][switch]$cleanupSourceObjectsAndExit,
     [Parameter()][switch]$deleteOldSnapshots,
-    [Parameter()][switch]$deleteReplica
+    [Parameter()][switch]$deleteReplica,
+    [Parameter()][switch]$forceRegister,
+    [Parameter()][switch]$dualRegister
 )
+
+if($forceRegister){
+    $force = $True
+}elseif($dualRegister){
+    $force = $false
+}else{
+    Write-Host "`nOne of the following is required: -forceRegister or -dualRegister" -ForegroundColor Yellow
+    Write-Host "`n-forceRegister: forces the protection sources over to the target cluster"
+    Write-Host "                (the source will be broken on the source cluster)"
+    Write-Host "`n -dualRegister: allows the source to be registered with both clusters"
+    Write-Host "                (requires custom gFlags and agent settings)`n"
+    exit
+}
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -31,6 +46,19 @@ function waitForRefresh($server){
         Start-Sleep 2
         $rootNode = (api get "protectionSources/registrationInfo?includeApplicationsTreeInfo=false&environments=kPhysical").rootNodes | Where-Object {$_.rootNode.name -eq $server}
         $authStatus = $rootNode.registrationInfo.authenticationStatus
+    }
+    return $rootNode.rootNode.id
+}
+
+function waitForAppRefresh($server){
+    $authStatus = ""
+    while($authStatus -ne 'kFinished'){
+        Start-Sleep 2
+        $rootNode = (api get "protectionSources/registrationInfo?includeApplicationsTreeInfo=false&environments=kPhysical").rootNodes | Where-Object {$_.rootNode.name -eq $server}
+        $appNode = $rootNode.registrationInfo.registeredAppsInfo | Where-Object {$_.environment -eq 'kSQL'}
+        if($appNode){
+            $authStatus = $appNode[0].authenticationStatus
+        }
     }
     return $rootNode.rootNode.id
 }
@@ -159,6 +187,7 @@ if($job){
             $delete = 'false'
         }
         $null = api delete -v2 "data-protect/protection-groups/$($job.id)?deleteSnapshots=$delete"
+        Start-Sleep 10
         $rootNodes=api get "protectionSources/registrationInfo?includeApplicationsTreeInfo=false&environments=kPhysical"
         foreach($server in $serversToMigrate){
             "    Unregistering $server..."
@@ -205,7 +234,7 @@ if($job){
             'throttlingPolicy' = @{
                 'isThrottlingEnabled' = $false
             };
-            'forceRegister' = $True
+            'forceRegister' = $force
         }
         $null = api post /backupsources $newSource
 
@@ -213,9 +242,9 @@ if($job){
 
         $regSQL = @{"ownerEntity" = @{"id" = $entityId}; "appEnvVec" = @(3)}
         $null = api post /applicationSourceRegistration $regSQL
+        "    Waiting for SQL source refresh..."
         $null = api post protectionSources/refresh/$entityId
-        $entityId = waitForRefresh $server
-
+        $entityId = waitForAppRefresh $server
     }
 
     # update object IDs
