@@ -182,7 +182,7 @@ if($objects){
                         }
                     }
                     if($instance -or $db){                  
-                        if($environment -eq 'kOracle' -or $job.environmentParameters.sqlParameters.backupType -eq 'kSqlVSSFile' -or $job.environmentParameters.sqlParameters.backupType -eq 'kSqlNative'){
+                        if($environment -eq 'kOracle' -or $job.environmentParameters.sqlParameters.backupType -in @('kSqlVSSFile')){
                             $runNowParameter = $runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId}
                             if(! $runNowParameter.databaseIds){
                                 $runNowParameter.databaseIds = @()
@@ -360,7 +360,7 @@ $jobdata = @{
 
 # add sourceIds if specified
 if($objects){
-    if(($environment -eq 'kSQL' -and $job.environmentParameters.sqlParameters.backupType -eq 'kSqlVSSFile') -or $environment -eq 'kOracle'){
+    if(($environment -eq 'kSQL' -and $job.environmentParameters.sqlParameters.backupType -in @('kSqlVSSFile', 'kSqlNative')) -or $environment -eq 'kOracle'){
         $jobdata['runNowParameters'] = $runNowParameters
     }else{
         if($metaDataFile){
