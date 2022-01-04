@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2021.11.22
+# version 2022.01.04
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -412,6 +412,8 @@ if enable:
 
 # return exit code
 if wait is True:
+    if logfile is not None:
+        log.write('Backup ended %s\n' % usecsToDate(runs[0]['backupRun']['stats']['endTimeUsecs']))
     if runs[0]['backupRun']['status'] == 'kSuccess' or runs[0]['backupRun']['status'] == 'kWarning':
         bail(0)
     else:

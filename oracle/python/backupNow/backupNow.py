@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2021.08.11
+# version 2022.01.04
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
 ### import pyhesity wrapper module
 from pyhesity import *
 from time import sleep
+from datetime import datetime
+import codecs
 
 ### command line arguments
 import argparse
@@ -35,6 +37,7 @@ parser.add_argument('-t', '--backupType', type=str, choices=['kLog', 'kRegular',
 parser.add_argument('-o', '--objectname', action='append', type=str)
 parser.add_argument('-m', '--metadatafile', type=str, default=None)
 parser.add_argument('-x', '--abortifrunning', action='store_true')
+parser.add_argument('-f', '--logfile', type=str, default=None)
 
 args = parser.parse_args()
 
@@ -61,21 +64,47 @@ noreplica = args.noreplica
 noarchive = args.noarchive
 metadatafile = args.metadatafile
 abortIfRunning = args.abortifrunning
+logfile = args.logfile
 
 if enable is True:
     wait = True
 
+if logfile is not None:
+    try:
+        log = codecs.open(logfile, 'w', 'utf-8')
+        log.write('%s: Script started\n\n' % datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        log.write('Command line parameters:\n\n')
+        for arg, value in sorted(vars(args).items()):
+            log.write("    %s: %s\n" % (arg, value))
+        log.write('\n')
+    except Exception:
+        print('Unable to open log file %s' % logfile)
+        exit(1)
+
+
+def out(message):
+    print(message)
+    if logfile is not None:
+        log.write('%s\n' % message)
+
+
+def bail(code=0):
+    if logfile is not None:
+        log.close()
+        exit(code)
+
+
 ### authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
 if apiconnected() is False and vip2 is not None:
-    print('\nFailed to connect to %s. Trying %s...' % (vip, vip2))
+    out('\nFailed to connect to %s. Trying %s...' % (vip, vip2))
     apiauth(vip=vip2, username=username, domain=domain, password=password, useApiKey=useApiKey)
     if jobName2 is not None:
         jobName = jobName2
 
 if apiconnected() is False:
-    print('\nFailed to connect to Cohesity cluster')
-    exit(1)
+    out('\nFailed to connect to Cohesity cluster')
+    bail(1)
 
 sources = {}
 
@@ -111,16 +140,16 @@ def getObjectId(objectName):
 ### find protectionJob
 job = [job for job in api('get', 'protectionJobs') if job['name'].lower() == jobName.lower()]
 if not job:
-    print("Job '%s' not found" % jobName)
-    exit(1)
+    out("Job '%s' not found" % jobName)
+    bail(1)
 else:
     job = job[0]
     environment = job['environment']
     if environment == 'kPhysicalFiles':
         environment = 'kPhysical'
     if environment not in ['kOracle', 'kSQL'] and backupType == 'kLog':
-        print('BackupType kLog not applicable to %s jobs' % environment)
-        exit(1)
+        out('BackupType kLog not applicable to %s jobs' % environment)
+        bail(1)
     if objectnames is not None:
         if 'kAWS' in environment:
             sources = api('get', 'protectionSources?environments=kAWS')
@@ -155,8 +184,8 @@ if objectnames is not None:
             serverObjectId = getObjectId(server)
             if serverObjectId is not None:
                 if serverObjectId not in job['sourceIds']:
-                    print("%s not protected by %s" % (server, jobName))
-                    exit(1)
+                    out("%s not protected by %s" % (server, jobName))
+                    bail(1)
                 if len([obj for obj in runNowParameters if obj['sourceId'] == serverObjectId]) == 0:
                     runNowParameters.append(
                         {
@@ -184,21 +213,21 @@ if objectnames is not None:
                                     for protectedDb in protectedDbList:
                                         runNowParameter['databaseIds'].append(protectedDb['protectionSource']['id'])
                         else:
-                            print('%s not protected by %s' % (objectname, jobName))
-                            exit(1)
+                            out('%s not protected by %s' % (objectname, jobName))
+                            bail(1)
                     else:
-                        print("Job is Volume based. Can not selectively backup instances/databases")
-                        exit(1)
+                        out("Job is Volume based. Can not selectively backup instances/databases")
+                        bail(1)
             else:
-                print('Object %s not found (server name)' % server)
-                exit(1)
+                out('Object %s not found (server name)' % server)
+                bail(1)
         else:
             sourceId = getObjectId(objectname)
             if sourceId is not None:
                 sourceIds.append(sourceId)
             else:
-                print('Object %s not found!' % objectname)
-                exit(1)
+                out('Object %s not found!' % objectname)
+                bail(1)
 
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning']
 runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
@@ -217,13 +246,13 @@ if len(runs) > 0:
                 if status not in finishedStates:
                     if reportedwaiting is False:
                         if abortIfRunning:
-                            print('Job is already running')
-                            exit()
-                        print('Waiting for existing job run to finish...')
+                            out('Job is already running')
+                            bail()
+                        out('Waiting for existing job run to finish...')
                         reportedwaiting = True
                     sleep(5)
             except Exception:
-                print("got an error...")
+                out("got an error...")
                 sleep(2)
 else:
     newRunId = lastRunId = 1
@@ -286,8 +315,8 @@ if localonly is not True and noarchive is not True:
 # use copy targets specified at the command line
 if replicateTo is not None:
     if keepReplicaFor is None:
-        print("--keepReplicaFor is required")
-        exit(1)
+        out("--keepReplicaFor is required")
+        bail(1)
     remote = [remote for remote in api('get', 'remoteClusters') if remote['name'].lower() == replicateTo.lower()]
     if len(remote) > 0:
         remote = remote[0]
@@ -300,13 +329,13 @@ if replicateTo is not None:
             }
         })
     else:
-        print("Remote Cluster %s not found!" % replicateTo)
-        exit(1)
+        out("Remote Cluster %s not found!" % replicateTo)
+        bail(1)
 
 if archiveTo is not None:
     if keepArchiveFor is None:
-        print("--keepArchiveFor is required")
-        exit(1)
+        out("--keepArchiveFor is required")
+        bail(1)
     vault = [vault for vault in api('get', 'vaults') if vault['name'].lower() == archiveTo.lower()]
     if len(vault) > 0:
         vault = vault[0]
@@ -320,19 +349,19 @@ if archiveTo is not None:
             "type": "kArchival"
         })
     else:
-        print("Archive target %s not found!" % archiveTo)
-        exit(1)
+        out("Archive target %s not found!" % archiveTo)
+        bail(1)
 
 ### enable the job
 if enable:
     enabled = api('post', 'protectionJobState/%s' % job['id'], {'pause': False})
 
 ### run protectionJob
-print("Running %s..." % jobName)
+out("Running %s..." % jobName)
 
 runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData)
 if runNow == 'error':
-    exit(1)
+    bail(1)
 
 # wait for new job run to appear
 if wait is True:
@@ -343,7 +372,7 @@ if wait is True:
             newRunId = runs[0]['backupRun']['jobRunId']
         else:
             newRunId = 1
-    print("New Job Run ID: %s" % newRunId)
+    out("New Job Run ID: %s" % newRunId)
 
 # wait for job run to finish and report completion
 if wait is True:
@@ -357,25 +386,25 @@ if wait is True:
             progressMonitor = api('get', '/progressMonitors?taskPathVec=backup_%s_1&includeFinishedTasks=true&excludeSubTasks=false' % newRunId)
             percentComplete = int(round(progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']))
             if percentComplete > lastProgress:
-                print('%s%% completed' % percentComplete)
+                out('%s%% completed' % percentComplete)
                 lastProgress = percentComplete
             if status not in finishedStates:
                 sleep(5)
         except Exception:
-            print("got an error...")
+            out("got an error...")
             sleep(5)
             try:
                 apiauth(vip, username, domain, quiet=True)
             except Exception:
                 sleep(2)
-    print("Job finished with status: %s" % run[0]['backupRun']['status'])
+    out("Job finished with status: %s" % run[0]['backupRun']['status'])
     if run[0]['backupRun']['status'] == 'kFailure':
-        print('Error: %s' % run[0]['backupRun']['error'])
+        out('Error: %s' % run[0]['backupRun']['error'])
     if run[0]['backupRun']['status'] == 'kWarning':
-        print('Warning: %s' % run[0]['backupRun']['warnings'])
+        out('Warning: %s' % run[0]['backupRun']['warnings'])
     runURL = "https://%s/protection/job/%s/run/%s/%s/protection" % \
         (vip, run[0]['jobId'], run[0]['backupRun']['jobRunId'], run[0]['backupRun']['stats']['startTimeUsecs'])
-    print("Run URL: %s" % runURL)
+    out("Run URL: %s" % runURL)
 
 # disable job
 if enable:
@@ -383,9 +412,11 @@ if enable:
 
 # return exit code
 if wait is True:
+    if logfile is not None:
+        log.write('Backup ended %s\n' % usecsToDate(runs[0]['backupRun']['stats']['endTimeUsecs']))
     if runs[0]['backupRun']['status'] == 'kSuccess' or runs[0]['backupRun']['status'] == 'kWarning':
-        exit(0)
+        bail(0)
     else:
-        exit(1)
+        bail(1)
 else:
-    exit(0)
+    bail(0)

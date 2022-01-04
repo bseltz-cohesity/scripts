@@ -1,4 +1,4 @@
-# version 2021.08.11
+# version 2022.01.04
 # usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
@@ -246,7 +246,7 @@ if($runs -and !$metaDataFile){
             output "waiting for existing job run to finish..."
             $alertWaiting = $false
         }
-        sleep 5
+        Start-Sleep 5
         $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
     }    
 }
@@ -302,7 +302,6 @@ if((! $localOnly) -and (! $noArchive)){
     }
 }
 
-# }else{
 # add replication target and retention
 if((! $localOnly) -and (! $noReplica)){
     if ($replicateTo) {
@@ -359,7 +358,7 @@ $jobdata = @{
    "copyRunTargets" = $copyRunTargets
 }
 
-# Add sourceIds if specified
+# add sourceIds if specified
 if($objects){
     if(($environment -eq 'kSQL' -and $job.environmentParameters.sqlParameters.backupType -eq 'kSqlVSSFile') -or $environment -eq 'kOracle'){
         $jobdata['runNowParameters'] = $runNowParameters
@@ -380,7 +379,7 @@ if($enable){
     $lastRunTime = (api get "protectionRuns?jobId=$jobId&numRuns=1").backupRun.stats.startTimeUsecs
     while($True -eq (api get protectionJobs/$jobID).isPaused){
         $null = api post protectionJobState/$jobID @{ 'pause'= $false }
-        sleep 2
+        Start-Sleep 2
     }
 }
 
@@ -391,7 +390,7 @@ $null = api post ('protectionJobs/run/' + $jobID) $jobdata
 # wait for new job run to appear
 $x = 0
 while($newRunId -eq $lastRunId){
-    sleep 2
+    Start-Sleep 2
     $x += 1
     if($x -ge 30){
         output "Timed out waiting for new run" -warn
@@ -405,7 +404,7 @@ while($newRunId -eq $lastRunId){
 if($wait -or $enable){
     $lastProgress = -1
     while ($runs[0].backupRun.status -notin $finishedStates){
-        sleep 5
+        Start-Sleep 5
         if($progress){
             $progressMonitor = api get "/progressMonitors?taskPathVec=backup_$($newRunId)_1&includeFinishedTasks=true&excludeSubTasks=false"
             $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
@@ -416,7 +415,6 @@ if($wait -or $enable){
         }
         $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
     }
-    # $progressMonitor.resultGroupVec[0].taskVec[0].subTaskVec.progress.eventVec.eventMsg
 }
 
 # disable job
@@ -425,14 +423,16 @@ if($enable){
         if($lastRunTime -lt (api get "protectionRuns?jobId=$jobId&numRuns=1").backupRun.stats.startTimeUsecs){
             $null = api post protectionJobState/$jobID @{ 'pause'= $true }
         }else{
-            sleep 2
+            Start-Sleep 2
         }
     }
 }
 
 if($wait -or $enable){
     output "Job finished with status: $($runs[0].backupRun.status)"
-
+    if($outputlog){
+        "Backup ended $(usecsToDate $runs[0].backupRun.stats.endTimeUsecs)" | Out-File -FilePath $scriptlog -Append
+    }
     if($runs[0].backupRun.status -eq 'kSuccess'){
         exit 0
     }else{
