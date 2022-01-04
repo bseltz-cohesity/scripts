@@ -182,7 +182,7 @@ if($objects){
                         }
                     }
                     if($instance -or $db){                  
-                        if($environment -eq 'kOracle' -or $job.environmentParameters.sqlParameters.backupType -in @('kSqlVSSFile')){
+                        if($environment -eq 'kOracle' -or $job.environmentParameters.sqlParameters.backupType -in @('kSqlVSSFile', 'kSqlNative')){
                             $runNowParameter = $runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId}
                             if(! $runNowParameter.databaseIds){
                                 $runNowParameter.databaseIds = @()
