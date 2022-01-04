@@ -58,14 +58,14 @@ if($startDate -ne '' -and $endDate -ne ''){
 $start = (usecsToDate $uStart).ToString('yyyy-MM-dd')
 $end = (usecsToDate $uEnd).ToString('yyyy-MM-dd')
 
-# build 7 day time ranges
+# build 3 day time ranges
 $ranges = @()
 $gotAllRanges = $False
 $thisUend = $uEnd
 $thisUstart = $uStart
 while($gotAllRanges -eq $False){
-    if(($thisUend - $uStart) -gt 604800000000){
-        $thisUstart = $thisUend - 604800000000
+    if(($thisUend - $uStart) -gt 259200000000){
+        $thisUstart = $thisUend - 259200000000
         $ranges = @($ranges + @{'start' = $thisUstart; 'end' = $thisUend})
         $thisUend = $thisUstart - 1
     }else{
