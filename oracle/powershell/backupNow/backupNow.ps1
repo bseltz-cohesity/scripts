@@ -1,4 +1,4 @@
-# version 2022.01.04
+# version 2022.01.05
 # usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
@@ -146,6 +146,10 @@ if($job){
     if($environment -eq 'kPhysicalFiles'){
         $environment = 'kPhysical'
     }
+    if($objects -and $environment -in @('kOracle', 'kSQL')){
+        $backupJob = api get "/backupjobs/$jobID"
+        $backupSources = api get "/backupsources?allUnderHierarchy=false&entityId=$($backupJob.backupJob.parentSource.id)&excludeTypes=5&includeVMFolders=true"    
+    }
     if($environment -notin ('kOracle', 'kSQL') -and $backupType -eq 'kLog'){
         output "BackupType kLog not applicable to $environment jobs" -warn
         exit 1
@@ -187,17 +191,31 @@ if($objects){
                             if(! $runNowParameter.databaseIds){
                                 $runNowParameter.databaseIds = @()
                             }
-                            $protectedDbList = api get "protectionSources/protectedObjects?environment=$environment&id=$serverObjectId" | Where-Object {$jobName -in $_.protectionJobs.name}
+                            if($backupJob.backupJob.PSObject.Properties['backupSourceParams']){
+                                $backupJobSourceParams = $backupJob.backupJob.backupSourceParams | Where-Object sourceId -eq $serverObjectId
+                            }else{
+                                $backupJobSourceParams = $null
+                            }
+                            $serverSource = $backupSources.entityHierarchy.children | Where-Object {$_.entity.id -eq $serverObjectId}
                             if($environment -eq 'kSQL'){
-                                $protectedDb = $protectedDbList | Where-Object {$_.protectionSource.name -eq "$instance/$db"}
+                                # SQL
+                                $instanceSource = $serverSource.auxChildren | Where-Object {$_.entity.displayName -eq $instance}
+                                $dbSource = $instanceSource.children | Where-Object {$_.entity.displayName -eq "$instance/$db"}
+                                if($dbSource -and ( $null -eq $backupJobSourceParams -or $dbSource.entity.id -in $backupJobSourceParams.appEntityIdVec)){
+                                    $runNowParameter.databaseIds = @($runNowParameter.databaseIds + $dbSource.entity.id)
+                                }else{
+                                    output "$object not protected by job $jobName" -warn
+                                    exit 1
+                                }
                             }else{
-                                $protectedDb = $protectedDbList | Where-Object {$_.protectionSource.name -eq $db}
-                            }               
-                            if($protectedDb){
-                                $runNowParameter.databaseIds += $protectedDb[0].protectionSource.id
-                            }else{
-                                output "$object not protected by job $jobName" -warn
-                                exit 1
+                                # Oracle
+                                $dbSource = $serverSource.auxChildren | Where-Object {$_.entity.displayName -eq "$db"}
+                                if($dbSource -and ( $null -eq $backupJobSourceParams -or $dbSource.entity.id -in $backupJobSourceParams.appEntityIdVec)){
+                                    $runNowParameter.databaseIds = @($runNowParameter.databaseIds + $dbSource.entity.id)
+                                }else{
+                                    output "$object not protected by job $jobName" -warn
+                                    exit 1
+                                }
                             }
                         }else{
                             output "Job is Volume based. Can not selectively backup instances/databases" -warn
