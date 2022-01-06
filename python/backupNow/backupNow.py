@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2022.01.04
+# version 2022.01.05
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -91,7 +91,7 @@ def out(message):
 def bail(code=0):
     if logfile is not None:
         log.close()
-        exit(code)
+    exit(code)
 
 
 ### authenticate
@@ -151,6 +151,9 @@ else:
         out('BackupType kLog not applicable to %s jobs' % environment)
         bail(1)
     if objectnames is not None:
+        if environment in ['kOracle', 'kSQL']:
+            backupJob = api('get', '/backupjobs/%s' % job['id'])
+            backupSources = api('get', '/backupsources?allUnderHierarchy=false&entityId=%s&excludeTypes=5&includeVMFolders=true' % backupJob[0]['backupJob']['parentSource']['id'])
         if 'kAWS' in environment:
             sources = api('get', 'protectionSources?environments=kAWS')
         else:
@@ -193,28 +196,42 @@ if objectnames is not None:
                         }
                     )
                 if instance is not None or db is not None:
-                    if environment == 'kOracle' or (environment == 'kSQL' and job['environmentParameters']['sqlParameters']['backupType'] == 'kSqlVSSFile'):
+                    if environment == 'kOracle' or (environment == 'kSQL' and job['environmentParameters']['sqlParameters']['backupType'] in ['kSqlVSSFile', 'kSqlNative']):
                         for runNowParameter in runNowParameters:
                             if runNowParameter['sourceId'] == serverObjectId:
                                 if 'databaseIds' not in runNowParameter:
                                     runNowParameter['databaseIds'] = []
-                        protectedDbList = api('get', 'protectionSources/protectedObjects?environment=%s&id=%s' % (environment, serverObjectId))
-                        protectedDbList = [d for d in protectedDbList if jobName.lower() in [j['name'].lower() for j in d['protectionJobs']]]
-                        if environment == 'kSQL':
-                            if db is None:
-                                protectedDbList = [d for d in protectedDbList if d['protectionSource']['name'].lower().split('/')[0] == instance.lower()]
+                        if 'backupSourceParams' in backupJob[0]['backupJob']:
+                            backupJobSourceParams = [p for p in backupJob[0]['backupJob']['backupSourceParams'] if p['sourceId'] == serverObjectId]
+                            if backupJobSourceParams is not None and len(backupJobSourceParams) > 0:
+                                backupJobSourceParams = backupJobSourceParams[0]
                             else:
-                                protectedDbList = [d for d in protectedDbList if d['protectionSource']['name'].lower() == '%s/%s' % (instance.lower(), db.lower())]
+                                backupJobSourceParams = None
                         else:
-                            protectedDbList = [d for d in protectedDbList if d['protectionSource']['name'].lower() == '%s' % instance.lower()]
-                        if len(protectedDbList) > 0:
-                            for runNowParameter in runNowParameters:
-                                if runNowParameter['sourceId'] == serverObjectId:
-                                    for protectedDb in protectedDbList:
-                                        runNowParameter['databaseIds'].append(protectedDb['protectionSource']['id'])
+                            backupJobSourceParams = None
+                        serverSource = [c for c in backupSources['entityHierarchy']['children'] if c['entity']['id'] == serverObjectId][0]
+                        if environment == 'kSQL':
+                            instanceSource = [i for i in serverSource['auxChildren'] if i['entity']['displayName'].lower() == instance.lower()][0]
+                            if db is None:
+                                dbSource = [c for c in instanceSource['children']]
+                            else:
+                                dbSource = [c for c in instanceSource['children'] if c['entity']['displayName'].lower() == '%s/%s' % (instance.lower(), db.lower())]
+                            if dbSource is not None and len(dbSource) > 0:
+                                for db in dbSource:
+                                    if backupJobSourceParams is None or db['entity']['id'] in backupJobSourceParams['appEntityIdVec']:
+                                        runNowParameter['databaseIds'].append(db['entity']['id'])
+                            else:
+                                out('%s not protected by %s' % (objectname, jobName))
+                                bail(1)
                         else:
-                            out('%s not protected by %s' % (objectname, jobName))
-                            bail(1)
+                            dbSource = [c for c in serverSource['auxChildren'] if c['entity']['displayName'].lower() == instance.lower()]
+                            if dbSource is not None and len(dbSource) > 0:
+                                for db in dbSource:
+                                    if backupJobSourceParams is None or db['entity']['id'] in backupJobSourceParams['appEntityIdVec']:
+                                        runNowParameter['databaseIds'].append(db['entity']['id'])
+                            else:
+                                out('%s not protected by %s' % (objectname, jobName))
+                                bail(1)
                     else:
                         out("Job is Volume based. Can not selectively backup instances/databases")
                         bail(1)
@@ -241,6 +258,7 @@ if len(runs) > 0:
     if metadatafile is None:
         while status not in finishedStates:
             try:
+                sleep(5)
                 runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
                 status = runs[0]['backupRun']['status']
                 if status not in finishedStates:
@@ -253,7 +271,6 @@ if len(runs) > 0:
                     sleep(5)
             except Exception:
                 out("got an error...")
-                sleep(2)
 else:
     newRunId = lastRunId = 1
 
@@ -358,7 +375,6 @@ if enable:
 
 ### run protectionJob
 out("Running %s..." % jobName)
-
 runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData)
 if runNow == 'error':
     bail(1)
@@ -366,7 +382,7 @@ if runNow == 'error':
 # wait for new job run to appear
 if wait is True:
     while(newRunId == lastRunId):
-        sleep(1)
+        sleep(5)
         runs = api('get', 'protectionRuns?jobId=%s' % job['id'])
         if len(runs) > 0:
             newRunId = runs[0]['backupRun']['jobRunId']
@@ -380,6 +396,7 @@ if wait is True:
     lastProgress = -1
     while status not in finishedStates:
         try:
+            sleep(5)
             runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
             run = [r for r in runs if r['backupRun']['jobRunId'] == newRunId]
             status = run[0]['backupRun']['status']
@@ -392,7 +409,6 @@ if wait is True:
                 sleep(5)
         except Exception:
             out("got an error...")
-            sleep(5)
             try:
                 apiauth(vip, username, domain, quiet=True)
             except Exception:
