@@ -22,6 +22,7 @@ param (
     [Parameter()][int]$maxDrift = 3,
     [Parameter()][switch]$commit,
     [Parameter()][switch]$localOnly,
+    [Parameter()][switch]$firstOfMonth,
     [Parameter()][ValidateSet('kCloud','kTape','kNas')][string]$vaultType = 'kCloud'
 )
 
@@ -129,7 +130,7 @@ foreach($job in $jobs){
                 }
             }
         }elseif($dayOfWeek -ne 'unselected'){
-            if($runDate.DayOfWeek -eq $dayOfWeek){
+            if($runDate.DayOfWeek -eq $dayOfWeek -and (!$firstOfMonth -or $runDate.Day -le 7)){
                 # drift forward if weekly snapshot failed
                 if($status -ne 'kSuccess'){
                     if($dayOfWeek -eq 'Sunday' -and $weekdayBurn -lt $maxDrift){
