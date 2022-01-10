@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2021.12.11"""
+"""Cohesity Python REST API Wrapper Module - 2022.01.10"""
 
 ##########################################################################################
 # Change Log
@@ -22,6 +22,7 @@
 # 2021.11.18 - added support for multifactor authentication
 # 2021.12.07 - added support for email multifactor authentication
 # 2021.12.11 - dateToUsecs defaults to now, added getDate()
+# 2022.01.10 - updated password storage formats
 #
 ##########################################################################################
 # Install Notes
@@ -101,7 +102,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
 
     pwd = password
     if password is None:
-        pwd = __getpassword(vip, username, password, domain, updatepw, prompt)
+        pwd = __getpassword(vip, username, password, domain, useApiKey, updatepw, prompt)
     COHESITY_API['HEADER'] = {'accept': 'application/json', 'content-type': 'application/json'}
     COHESITY_API['APIROOT'] = 'https://' + vip + '/irisservices/api/v1'
     COHESITY_API['APIROOTv2'] = 'https://' + vip + '/v2/'
@@ -276,7 +277,7 @@ def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1, reporting
                     if quiet is None:
                         if 'message' in responsejson:
                             print(responsejson['errorCode'][1:] + ': ' + responsejson['message'])
-                            return('error')
+                            return({'error': responsejson['errorCode'][1:] + ': ' + responsejson['message']})
                         else:
                             print(responsejson)
                             return('error')
@@ -343,7 +344,7 @@ def dayDiff(newdate, olddate):
 
 
 ### get/store password for future runs
-def __getpassword(vip, username, password, domain, updatepw, prompt):
+def __getpassword(vip, username, password, domain, useApiKey, updatepw, prompt):
     """get/set stored password"""
     if password is not None:
         return password
@@ -355,17 +356,14 @@ def __getpassword(vip, username, password, domain, updatepw, prompt):
         pwdlist = [e.strip() for e in f.readlines() if e.strip() != '']
         f.close()
         for pwditem in pwdlist:
-            v, d, u, opwd = pwditem.split(":", 4)
-            if v.lower() == vip.lower() and d.lower() == domain.lower() and u.lower() == username.lower():
+            v, d, u, k, opwd = pwditem.split(":", 5)
+            if v.lower() == vip.lower() and d.lower() == domain.lower() and u.lower() == username.lower() and k == str(useApiKey):
                 if updatepw is not None:
-                    setpwd(v=vip, u=username, d=domain)
+                    setpwd(v=vip, u=username, d=domain, useApiKey=useApiKey)
                     return pw(vip, username, domain)
                 else:
                     return base64.b64decode(opwd.encode('utf-8')).decode('utf-8')
-    if domain.lower() == 'local':
-        pwpath = os.path.join(CONFIGDIR, vip + '-' + username)
-    else:
-        pwpath = os.path.join(CONFIGDIR, domain + '-' + username)
+    pwpath = os.path.join(CONFIGDIR, vip + '-' + domain + '-' + username + '-' + str(useApiKey))
     if(updatepw is not None):
         if(os.path.isfile(pwpath) is True):
             os.remove(pwpath)
@@ -390,7 +388,7 @@ def __getpassword(vip, username, password, domain, updatepw, prompt):
 
 
 # store password in PWFILE
-def setpwd(v='helios.cohesity.com', u='helios', d='local', password=None):
+def setpwd(v='helios.cohesity.com', u='helios', d='local', useApiKey=False, password=None):
     if password is None:
         pwd = getpass.getpass("Enter password for %s/%s at %s: " % (d, u, v))
     else:
@@ -405,38 +403,35 @@ def setpwd(v='helios.cohesity.com', u='helios', d='local', password=None):
     f = open(PWFILE, 'w')
     foundPwd = False
     for pwditem in pwdlist:
-        vip, domain, username, cpwd = pwditem.split(":", 4)
-        if v.lower() == vip.lower() and d.lower() == domain.lower() and u.lower() == username.lower():
-            f.write('%s:%s:%s:%s\n' % (v, d, u, opwd))
+        vip, domain, username, k, cpwd = pwditem.split(":", 5)
+        if v.lower() == vip.lower() and d.lower() == domain.lower() and u.lower() == username.lower() and k == str(useApiKey):
+            f.write('%s:%s:%s:%s:%s\n' % (v, d, u, useApiKey, opwd))
             foundPwd = True
         else:
             f.write('%s\n' % pwditem)
     if foundPwd is False:
-        f.write('%s:%s:%s:%s\n' % (v, d, u, opwd))
+        f.write('%s:%s:%s:%s:%s\n' % (v, d, u, useApiKey, opwd))
     f.close()
 
 
 ### pwstore for alternate infrastructure
-def pw(vip, username, domain='local', password=None, updatepw=None, prompt=None):
-    return __getpassword(vip, username, password, domain, updatepw, prompt)
+def pw(vip, username, domain='local', password=None, updatepw=None, useApiKey=False, prompt=None):
+    return __getpassword(vip, username, password, domain, useApiKey, updatepw, prompt)
 
 
-def storepw(vip, username, domain='local', password=None, updatepw=True, prompt=None):
+def storepw(vip, username, domain='local', password=None, useApiKey=False, updatepw=True, prompt=None):
     pwd1 = '1'
     pwd2 = '2'
     while(pwd1 != pwd2):
-        pwd1 = __getpassword(vip, username, password, domain, updatepw, prompt)
+        pwd1 = __getpassword(vip, username, password, domain, useApiKey, updatepw, prompt)
         pwd2 = getpass.getpass("Re-enter your password: ")
         if(pwd1 != pwd2):
             print('Passwords do not match! Please re-enter...')
 
 
 ### store password from input
-def storePasswordFromInput(vip, username, password, domain):
-    if domain.lower() == 'local':
-        pwpath = os.path.join(CONFIGDIR, vip + '-' + username)
-    else:
-        pwpath = os.path.join(CONFIGDIR, domain + '-' + username)
+def storePasswordFromInput(vip, username, password, domain='local', useApiKey=False):
+    pwpath = os.path.join(CONFIGDIR, vip + '-' + domain + '-' + username + '-' + str(useApiKey))
     try:
         pwdfile = open(pwpath, 'w')
         opwd = base64.b64encode(password.encode('utf-8')).decode('utf-8')
