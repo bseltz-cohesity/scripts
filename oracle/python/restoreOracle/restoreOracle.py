@@ -111,6 +111,7 @@ latestdb = sorted(searchResults, key=lambda result: result['vmDocument']['versio
 version = latestdb['vmDocument']['versions'][0]
 
 # find target host
+targetEntity = None
 entities = api('get', '/appEntities?appEnvType=19')
 for entity in entities:
     if entity['appEntity']['entity']['displayName'].lower() == targetserver.lower():
