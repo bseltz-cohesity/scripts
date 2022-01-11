@@ -18,7 +18,8 @@ param (
     [Parameter()][string]$oracleHome = $null,            # oracle home location
     [Parameter()][string]$oracleBase = $null,            # oracle base location
     [Parameter()][string]$oracleData = $null,            # destination for data files
-    [Parameter()][int]$channels = $null,              # number of restore channels
+    [Parameter()][int]$channels = $null,                 # number of restore channels
+    [Parameter()][string]$channelNode = $null,           # destination for data files
     [Parameter()][array]$controlfile,                    # alternate ctl file path
     [Parameter()][array]$redologpath,                    # alternate redo log path
     [Parameter()][string]$auditpath = $null,             # alternate audit path
@@ -221,6 +222,37 @@ if(! $localreplica -and $archivereplica){
 
 ### configure channels
 if($channels){
+    if($channelNode){
+        $sourceDatabase = $targetEntity.appEntity.auxChildren | Where-Object {$_.entity.displayName -eq $sourceDB}
+        if($sourceDatabase){
+            $uuid = $sourceDatabase[0].entity.oracleEntity.uuid
+        }else{
+            Write-Host "database not found on source entity" -foregroundcolor Yellow
+            exit 1
+        }
+        $endpoints = $targetEntity.appEntity.entity.physicalEntity.networkingInfo.resourceVec | Where-Object {$_.type -eq 0}
+        foreach($endpoint in $endpoints){
+            $preferredEndPoint = $endpoint.endpointVec | Where-Object isPreferredEndpoint -eq $true
+            if($preferredEndPoint.fqdn -eq $channelNode -or $preferredEndPoint.ipv4Addr -eq $channelNode){
+                $channelNodeObj = $preferredEndPoint
+            }
+        }
+        if($channelNodeObj){
+            $channelNodeAgent = $targetEntity.appEntity.entity.physicalEntity.agentStatusVec | Where-Object {$_.displayName -eq $channelNodeObj.fqdn -or $_.displayName -eq $channelNodeObj.ipv4Addr}
+            if($channelNodeAgent){
+                $channelNodeId = $channelNodeAgent[0].id
+            }else{
+                Write-Host "Channel Node $channelNode not found" -foregroundcolor Yellow
+                exit 1
+            }
+        }else{
+            Write-Host "Channel Node $channelNode not found" -foregroundcolor Yellow
+            exit 1
+        }
+    }else{
+        $channelNodeId = $targetServer
+        $uuid = $latestdb.vmDocument.objectId.entity.oracleEntity.uuid
+    }
     $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams['oracleTargetParams'] = @{
         "additionalOracleDbParamsVec" = @(
             @{
@@ -229,11 +261,11 @@ if($channels){
                     @{
                         "hostInfoVec" = @(
                             @{
-                                "host"        = $targetServer;
+                                "host"        = [string]$channelNodeId;
                                 "numChannels" = $channels;
                             }
                         );
-                        "dbUuid"      = $latestdb.vmDocument.objectId.entity.oracleEntity.uuid
+                        "dbUuid"      = $uuid
                     }
                 )
             }

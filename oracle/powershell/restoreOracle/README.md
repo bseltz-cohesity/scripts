@@ -47,6 +47,7 @@ Place both files in a folder together and run the main script like so:
 * -sourceDB: Original database name
 * -overwrite: Overwrites an existing database (default is no overwrite)
 * -channels: Number of restore channels
+* -channelNode: RAC node to use for channels
 
 ## Point in Time Parameters
 
