@@ -43,6 +43,7 @@ Place both files in a folder together and run the main script like so:
 * -ss, --sourceserver: name of source oracle server
 * -sd, --sourcedb: name of source oracle DB
 * -c, --channels: number of restore channels
+* -cn, --channelnode: rac node for channels
 * -o, --overwrite: overwrite existing database
 * -n, --norecovery: leave database in no recovery mode
 

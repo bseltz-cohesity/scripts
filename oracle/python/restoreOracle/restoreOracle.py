@@ -31,6 +31,7 @@ parser.add_argument('-oh', '--oraclehome', type=str, default=None)  # oracle hom
 parser.add_argument('-ob', '--oraclebase', type=str, default=None)  # oracle base path on target
 parser.add_argument('-od', '--oracledata', type=str, default=None)  # oracle data path on target
 parser.add_argument('-c', '--channels', type=int, default=None)  # number of restore channels
+parser.add_argument('-cn', '--channelnode', type=str, default=None)  # oracle data path on target
 parser.add_argument('-cf', '--controlfile', type=str, action='append')  # alternate ctl file path
 parser.add_argument('-r', '--redologpath', type=str, action='append')  # alternate redo log path
 parser.add_argument('-a', '--auditpath', type=str, default=None)  # alternate audit path
@@ -66,6 +67,7 @@ oraclehome = args.oraclehome
 oraclebase = args.oraclebase
 oracledata = args.oracledata
 channels = args.channels
+channelnode = args.channelnode
 controlfile = args.controlfile
 redologpath = args.redologpath
 auditpath = args.auditpath
@@ -248,7 +250,24 @@ if localreplica is None or len(localreplica) == 0:
         restoreParams['restoreAppParams']['ownerRestoreInfo']['ownerObject']['archivalTarget'] = archivereplica[0]['target']['archivalTarget']
 
 # configure channels
+# uuid = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
 if channels is not None:
+    if channelnode is None:
+        channelnode = targetserver
+        uuid = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
+    else:
+        uuid = [u['entity']['oracleEntity']['uuid'] for u in targetEntity['appEntity']['auxChildren'] if u['entity']['displayName'].lower() == sourcedb.lower()]
+        if uuid is None or len(uuid) == 0:
+            print('database not found on source entity')
+            exit(1)
+        uuid = uuid[0]
+    # display(targetEntity['appEntity']['registeredEntityInfo']['connectorParams']['entity']['physicalEntity']['agentStatusVec'])
+    # exit()
+    channelnodeid = [n['id'] for n in targetEntity['appEntity']['registeredEntityInfo']['connectorParams']['entity']['physicalEntity']['agentStatusVec'] if n['displayName'].lower() == channelnode.lower()]
+    if channelnodeid is None or len(channelnodeid) == 0:
+        print('channelnode %s not found' % channelnode)
+        exit(1)
+
     restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['oracleTargetParams'] = {
         "additionalOracleDbParamsVec": [
             {
@@ -257,11 +276,11 @@ if channels is not None:
                     {
                         "hostInfoVec": [
                             {
-                                "host": targetserver,
+                                "host": str(channelnodeid[0]),
                                 "numChannels": channels
                             }
                         ],
-                        "dbUuid": latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
+                        "dbUuid": uuid
                     }
                 ]
             }
@@ -305,7 +324,6 @@ if targetserver != sourceserver or targetdb != sourcedb:
 
 # apply log replay time
 if validLogTime is True:
-    print(logusecs)
     restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['restoreTimeSecs'] = int(logusecs / 1000000)
 else:
     if logtime is not None:
