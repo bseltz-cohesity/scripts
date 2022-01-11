@@ -356,13 +356,16 @@ def __getpassword(vip, username, password, domain, useApiKey, updatepw, prompt):
         pwdlist = [e.strip() for e in f.readlines() if e.strip() != '']
         f.close()
         for pwditem in pwdlist:
-            v, d, u, k, opwd = pwditem.split(":", 5)
-            if v.lower() == vip.lower() and d.lower() == domain.lower() and u.lower() == username.lower() and k == str(useApiKey):
-                if updatepw is not None:
-                    setpwd(v=vip, u=username, d=domain, useApiKey=useApiKey)
-                    return pw(vip, username, domain)
-                else:
-                    return base64.b64decode(opwd.encode('utf-8')).decode('utf-8')
+            try:
+                v, d, u, k, opwd = pwditem.split(":", 5)
+                if v.lower() == vip.lower() and d.lower() == domain.lower() and u.lower() == username.lower() and k == str(useApiKey):
+                    if updatepw is not None:
+                        setpwd(v=vip, u=username, d=domain, useApiKey=useApiKey)
+                        return pw(vip, username, domain)
+                    else:
+                        return base64.b64decode(opwd.encode('utf-8')).decode('utf-8')
+            except Exception:
+                pass
     pwpath = os.path.join(CONFIGDIR, vip + '-' + domain + '-' + username + '-' + str(useApiKey))
     if(updatepw is not None):
         if(os.path.isfile(pwpath) is True):
@@ -403,12 +406,15 @@ def setpwd(v='helios.cohesity.com', u='helios', d='local', useApiKey=False, pass
     f = open(PWFILE, 'w')
     foundPwd = False
     for pwditem in pwdlist:
-        vip, domain, username, k, cpwd = pwditem.split(":", 5)
-        if v.lower() == vip.lower() and d.lower() == domain.lower() and u.lower() == username.lower() and k == str(useApiKey):
-            f.write('%s:%s:%s:%s:%s\n' % (v, d, u, useApiKey, opwd))
-            foundPwd = True
-        else:
-            f.write('%s\n' % pwditem)
+        try:
+            vip, domain, username, k, cpwd = pwditem.split(":", 5)
+            if v.lower() == vip.lower() and d.lower() == domain.lower() and u.lower() == username.lower() and k == str(useApiKey):
+                f.write('%s:%s:%s:%s:%s\n' % (v, d, u, useApiKey, opwd))
+                foundPwd = True
+            else:
+                f.write('%s\n' % pwditem)
+        except Exception:
+            pass
     if foundPwd is False:
         f.write('%s:%s:%s:%s:%s\n' % (v, d, u, useApiKey, opwd))
     f.close()
