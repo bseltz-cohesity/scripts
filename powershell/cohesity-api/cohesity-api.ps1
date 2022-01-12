@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2021.12.11 - Brian Seltzer
+#  Version 2022.01.12 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2021.02.10 - fixed empty body issue
@@ -15,9 +15,12 @@
 # 2021.11.18 - added support for multifactor authentication
 # 2021.12.07 - added support for email multifactor authentication
 # 2021.12.11 - added date formatting to usecsToDate function and dateToUsecs defaults to now
+# 2021.12.17 - auto import shared password into user password storage
+# 2021.12.21 - fixed USING_HELIOS status flag
+# 2022.01.12 - fixed storePasswordForUser
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2021.12.11'
+$versionCohesityAPI = '2021.12.21'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -199,6 +202,8 @@ function apiauth($vip='helios.cohesity.com',
             }
         }
     }else{
+        $Global:USING_HELIOS = $false
+        $Global:USING_HELIOS | Out-Null
         $url = $cohesity_api.apiRoot + '/public/accessTokens'
         try {
             if($emailMfaCode){
@@ -552,7 +557,7 @@ function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
             $cohesity_api.pwscope = 'user'
             if( $null -ne $storedPassword.$keyName -and $storedPassword.$keyName -ne ''){
                 $securePassword = $storedPassword.$keyName  | ConvertTo-SecureString
-                return [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $securePassword ))    
+                return [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $securePassword ))
             }
         }
     }
@@ -573,7 +578,10 @@ function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
         # $v, $d, $u, $i, $cpwd = $pwitem.split(";", 5)
         if($v -eq $vip -and $d -eq $domain -and $u -eq $username -and $i -eq $useApiKey){
             $cohesity_api.pwscope = 'file'
-            return [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($cpwd))
+            $pwd = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($cpwd))
+            $cohesity_api.pwscope = 'user'
+            $null = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -useApiKey $useApiKey -passwd $pwd -quiet
+            return $pwd
         }
     }
     return $null
@@ -708,6 +716,10 @@ function storePasswordForUser($vip='helios.cohesity.com', $username='helios', $d
             $secureString | ConvertFrom-SecureString -key $keyBytes | Out-File $userFile
             Write-Host "`nPassword stored. Use key $keyString to unlock`n"
         }
+    }else{
+        $secureString = $passwd | ConvertTo-SecureString -AsPlainText -Force
+        $secureString | ConvertFrom-SecureString -key $keyBytes | Out-File $userFile
+        Write-Host "`nPassword stored. Use key $keyString to unlock`n"
     }
 }
 
