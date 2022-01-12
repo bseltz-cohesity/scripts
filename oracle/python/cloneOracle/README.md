@@ -45,6 +45,8 @@ The script takes the following parameters:
 * -td, --targetdb: name of target oracle DB
 * -oh, --oraclehome: oracle home path on target
 * -ob, --oraclebase: oracle base path on target
+* -c, --channels: number of restore channels
+* -cn, --channelnode: rac node for channels
 * -lt, --logtime: point in time to replay the logs to
 * -l, --latest: replay logs to latest available point in time
 * -w, --wait: wait for completion
