@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """restore files using python"""
 
-# version 2021.02.08
+# version 2021.11.12
 
 # usage: ./restoreFiles.py -v mycluster \
 #                          -u myusername \
@@ -95,7 +95,7 @@ if apiconnected() is False:
     exit(1)
 
 # find target server
-physicalEntities = api('get', '/entitiesOfType?environmentTypes=kPhysical&physicalEntityTypes=kHost')
+physicalEntities = api('get', '/entitiesOfType?environmentTypes=kPhysical&physicalEntityTypes=kHost&physicalEntityTypes=kOracleAPCluster')
 targetEntity = [e for e in physicalEntities if e['displayName'].lower() == targetserver.lower()]
 
 if len(targetEntity) == 0:
@@ -122,6 +122,9 @@ if len(searchResults) == 0:
 searchResult = sorted(searchResults, key=lambda result: result['vmDocument']['versions'][0]['snapshotTimestampUsecs'], reverse=True)[0]
 
 doc = searchResult['vmDocument']
+# new
+sourceEntity = doc['objectId']['entity']
+volumeTypes = [1, 6]
 
 independentRestores = True
 if runid is not None:
@@ -152,7 +155,7 @@ if newonly:
     try:
         f = open('lastrestorepoint', 'r')
         lastrestorepoint = long(f.read())
-    except Exception as e:
+    except Exception:
         lastrestorepoint = 0
     if version['instanceId']['jobStartTimeUsecs'] > lastrestorepoint:
         print('found newer version to restore')
@@ -164,7 +167,8 @@ if newonly:
 def restore(thesefiles, doc, version, targetEntity, singleFile):
     restoreTaskName = "Recover-Files_%s" % datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     if singleFile is True:
-        shortfile = thesefiles.split('/')[-1]
+        fileparts = [p for p in thesefiles.split('/') if p is not None and p != '']
+        shortfile = fileparts[-1]
         restoreTaskName = "Recover-Files_%s_%s" % (datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), shortfile)
         thesefiles = [thesefiles]
 
@@ -244,34 +248,99 @@ def restore(thesefiles, doc, version, targetEntity, singleFile):
             exit(1)
 
 
+def listdir(searchPath, dirPath, instance, volumeInfoCookie=None, volumeName=None, cookie=None):
+    global foundFile
+    thisDirPath = quote_plus(dirPath).replace('%2F%2F', '%2F')
+    if cookie is not None:
+        if volumeName is not None:
+            dirList = api('get', '/vm/directoryList?%s&useLibrarian=false&statFileEntries=false&dirPath=%s&volumeInfoCookie=%s&volumeName=%s&cookie=%s' % (instance, thisDirPath, volumeInfoCookie, volumeName, cookie))
+        else:
+            dirList = api('get', '/vm/directoryList?%s&useLibrarian=false&statFileEntries=false&dirPath=%s&cookie=%s' % (instance, thisDirPath, cookie))
+    else:
+        if volumeName is not None:
+            dirList = api('get', '/vm/directoryList?%s&useLibrarian=false&statFileEntries=false&dirPath=%s&volumeInfoCookie=%s&volumeName=%s' % (instance, thisDirPath, volumeInfoCookie, volumeName))
+        else:
+            dirList = api('get', '/vm/directoryList?%s&useLibrarian=false&statFileEntries=false&dirPath=%s' % (instance, thisDirPath))
+    if dirList and 'entries' in dirList:
+        for entry in sorted(dirList['entries'], key=lambda e: e['name']):
+            if entry['fullPath'].lower() == searchPath.lower():
+                foundFile = entry['fullPath']
+                break
+            if entry['type'] == 'kDirectory' and entry['fullPath'].lower() in searchPath.lower():
+                listdir(searchPath, '%s/%s' % (dirPath, entry['name']), instance, volumeInfoCookie, volumeName)
+    if dirList and 'cookie' in dirList:
+        listdir(searchPath, '%s' % dirPath, instance, volumeInfoCookie, volumeName, dirList['cookie'])
+
+
 if independentRestores is False:
     restore(files, doc, version, targetEntity, False)
 else:
+    unindexedSnapshots = [s for s in doc['versions'] if s['numEntriesIndexed'] == 0]
+    if unindexedSnapshots is not None and len(unindexedSnapshots) > 0:
+        print('Crawling for files...')
     for file in files:
         encodedFile = quote_plus(file)
-        fileSearch = api('get', '/searchfiles?filename=%s' % encodedFile)
-        if 'files' not in fileSearch:
-            print("file %s not found" % file)
+        fileRestored = False
+        if unindexedSnapshots is not None and len(unindexedSnapshots) > 0:
+            foundFile = None
+            for version in doc['versions']:
+                if foundFile is None:
+                    instance = ("attemptNum=%s&clusterId=%s&clusterIncarnationId=%s&entityId=%s&jobId=%s&jobInstanceId=%s&jobStartTimeUsecs=%s&jobUidObjectId=%s" %
+                                (version['instanceId']['attemptNum'],
+                                    doc['objectId']['jobUid']['clusterId'],
+                                    doc['objectId']['jobUid']['clusterIncarnationId'],
+                                    doc['objectId']['entity']['id'],
+                                    doc['objectId']['jobId'],
+                                    version['instanceId']['jobInstanceId'],
+                                    version['instanceId']['jobStartTimeUsecs'],
+                                    doc['objectId']['jobUid']['objectId']))
+                    # perform quick case sensitive exact match
+                    thisFile = api('get', '/vm/directoryList?%s&statFileEntries=false&dirPath=%s' % (instance, encodedFile), quiet=True)
+                    if thisFile is not None and thisFile != "error":
+                        foundFile = file
+                    if foundFile is None:
+                        # perform recursive directory walk (deep search)
+                        backupType = doc['backupType']
+                        if backupType in volumeTypes:
+                            volumeList = api('get', '/vm/volumeInfo?%s&statFileEntries=false' % instance)
+                            if 'volumeInfos' in volumeList:
+                                volumeInfoCookie = volumeList['volumeInfoCookie']
+                                for volume in sorted(volumeList['volumeInfos'], key=lambda v: v['name']):
+                                    volumeName = quote_plus(volume['name'])
+                                    listdir(file, '/', instance, volumeInfoCookie, volumeName)
+                        else:
+                            listdir(file, '/', instance)
+                if foundFile is not None:
+                    restore(foundFile, doc, version, targetEntity, True)
+                    fileRestored = True
+                    break
+            if foundFile is None:
+                print('%s not found on server %s (or not available in the specified versions)' % (file, sourceserver))
         else:
-            fileSearch['files'] = [n for n in fileSearch['files'] if n['fileDocument']['objectId']['entity']['displayName'].lower() == sourceserver and n['fileDocument']['filename'].lower() == file.lower()]
-            if len(fileSearch['files']) == 0:
-                print("file %s not found on server %s" % (file, sourceserver))
+            fileSearch = api('get', '/searchfiles?filename=%s' % encodedFile)
+            if 'files' not in fileSearch:
+                print("file %s not found" % file)
             else:
-                if jobname is not None:
-                    fileSearch['files'] = [n for n in fileSearch['files'] if doc['objectId']['jobId'] == n['fileDocument']['objectId']['jobId']]
+                fileSearch['files'] = [n for n in fileSearch['files'] if n['fileDocument']['objectId']['entity']['displayName'].lower() == sourceserver and n['fileDocument']['filename'].lower() == file.lower()]
                 if len(fileSearch['files']) == 0:
-                    print("file %s not found on server %s protected by %s" % (file, sourceserver, jobname))
+                    print("file %s not found on server %s" % (file, sourceserver))
                 else:
-                    doc = fileSearch['files'][0]['fileDocument']
-                    versions = api('get', '/file/versions?clusterId=%s&clusterIncarnationId=%s&entityId=%s&filename=%s&fromObjectSnapshotsOnly=false&jobId=%s' % (doc['objectId']['jobUid']['clusterId'], doc['objectId']['jobUid']['clusterIncarnationId'], doc['objectId']['entity']['id'], encodedFile, doc['objectId']['jobId']))
-                    if start is not None:
-                        startusecs = dateToUsecs(start)
-                        versions['versions'] = [v for v in versions['versions'] if startusecs <= v['instanceId']['jobStartTimeUsecs']]
-                    if end is not None:
-                        endusecs = dateToUsecs(end)
-                        versions['versions'] = [v for v in versions['versions'] if endusecs >= v['instanceId']['jobStartTimeUsecs']]
-                    if 'versions' not in versions or versions['versions'] == 0:
-                        print('no versions available for %s' % file)
+                    if jobname is not None:
+                        fileSearch['files'] = [n for n in fileSearch['files'] if doc['objectId']['jobId'] == n['fileDocument']['objectId']['jobId']]
+                    if len(fileSearch['files']) == 0:
+                        print("file %s not found on server %s protected by %s" % (file, sourceserver, jobname))
                     else:
-                        version = versions['versions'][0]
-                        restore(file, doc, version, targetEntity, True)
+                        filedoc = fileSearch['files'][0]['fileDocument']
+                        encodedFile = quote_plus(filedoc['filename'])
+                        versions = api('get', '/file/versions?clusterId=%s&clusterIncarnationId=%s&entityId=%s&filename=%s&fromObjectSnapshotsOnly=false&jobId=%s' % (doc['objectId']['jobUid']['clusterId'], doc['objectId']['jobUid']['clusterIncarnationId'], doc['objectId']['entity']['id'], encodedFile, doc['objectId']['jobUid']['objectId']))
+                        if start is not None:
+                            startusecs = dateToUsecs(start)
+                            versions['versions'] = [v for v in versions['versions'] if startusecs <= v['instanceId']['jobStartTimeUsecs']]
+                        if end is not None:
+                            endusecs = dateToUsecs(end)
+                            versions['versions'] = [v for v in versions['versions'] if endusecs >= v['instanceId']['jobStartTimeUsecs']]
+                        if 'versions' not in versions or versions['versions'] == 0:
+                            print('no versions available for %s' % file)
+                        else:
+                            version = versions['versions'][0]
+                            restore(file, doc, version, targetEntity, True)
