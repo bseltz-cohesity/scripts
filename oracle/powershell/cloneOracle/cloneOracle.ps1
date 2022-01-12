@@ -11,14 +11,16 @@ param (
     [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
     [Parameter()][string]$domain = 'local', # local or AD domain
     [Parameter(Mandatory = $True)][string]$sourceServer, # protection source where the DB was backed up
-    [Parameter(Mandatory = $True)][string]$sourceDB, # name of the source DB we want to clone
-    [Parameter()][string]$targetServer = $sourceServer, # where to attach the clone DB
-    [Parameter()][string]$targetDB = $sourceDB, # desired clone DB name
+    [Parameter(Mandatory = $True)][string]$sourceDB,     # name of the source DB we want to clone
+    [Parameter()][string]$targetServer = $sourceServer,  # where to attach the clone DB
+    [Parameter()][string]$targetDB = $sourceDB,          # desired clone DB name
     [Parameter(Mandatory = $True)][string]$oracleHome,
     [Parameter(Mandatory = $True)][string]$oracleBase,
-    [Parameter()][switch]$wait, # wait for clone to finish
+    [Parameter()][int]$channels = $null,                 # number of restore channels
+    [Parameter()][string]$channelNode = $null,           # destination for data files
+    [Parameter()][switch]$wait,    # wait for clone to finish
     [Parameter()][string]$logTime, # PIT to replay logs to e.g. '2019-01-20 02:01:47'
-    [Parameter()][switch]$latest, # replay to latest available log PIT
+    [Parameter()][switch]$latest,  # replay to latest available log PIT
     [Parameter()][string]$password = $null, # optional! clear text password
     [Parameter()][array]$pfileParameterName,
     [Parameter()][array]$pfileParameterValue,
@@ -191,6 +193,59 @@ $cloneParams = @{
                         "id" = $targetEntity[0].appEntity.entity.id
                     }
                 }
+            }
+        )
+    }
+}
+
+### configure channels
+if($channels){
+    if($channelNode){
+        $sourceDatabase = $targetEntity.appEntity.auxChildren | Where-Object {$_.entity.displayName -eq $sourceDB}
+        if($sourceDatabase){
+            $uuid = $sourceDatabase[0].entity.oracleEntity.uuid
+        }else{
+            Write-Host "database not found on source entity" -foregroundcolor Yellow
+            exit 1
+        }
+        $endpoints = $targetEntity.appEntity.entity.physicalEntity.networkingInfo.resourceVec | Where-Object {$_.type -eq 0}
+        foreach($endpoint in $endpoints){
+            $preferredEndPoint = $endpoint.endpointVec | Where-Object isPreferredEndpoint -eq $true
+            if($preferredEndPoint.fqdn -eq $channelNode -or $preferredEndPoint.ipv4Addr -eq $channelNode){
+                $channelNodeObj = $preferredEndPoint
+            }
+        }
+        if($channelNodeObj){
+            $channelNodeAgent = $targetEntity.appEntity.entity.physicalEntity.agentStatusVec | Where-Object {$_.displayName -eq $channelNodeObj.fqdn -or $_.displayName -eq $channelNodeObj.ipv4Addr}
+            if($channelNodeAgent){
+                $channelNodeId = $channelNodeAgent[0].id
+            }else{
+                Write-Host "Channel Node $channelNode not found" -foregroundcolor Yellow
+                exit 1
+            }
+        }else{
+            Write-Host "Channel Node $channelNode not found" -foregroundcolor Yellow
+            exit 1
+        }
+    }else{
+        $channelNodeId = $targetServer
+        $uuid = $latestdb.vmDocument.objectId.entity.oracleEntity.uuid
+    }
+    $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams['oracleTargetParams'] = @{
+        "additionalOracleDbParamsVec" = @(
+            @{
+                "appEntityId"      = $latestdb.vmDocument.objectId.entity.id;
+                "dbInfoChannelVec" = @(
+                    @{
+                        "hostInfoVec" = @(
+                            @{
+                                "host"        = [string]$channelNodeId;
+                                "numChannels" = $channels;
+                            }
+                        );
+                        "dbUuid"      = $uuid
+                    }
+                )
             }
         )
     }

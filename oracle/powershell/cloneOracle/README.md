@@ -44,6 +44,8 @@ The script takes the following parameters:
 * -targetServer: (optional) Oracle Server to attach clone to, defaults to same as sourceServer
 * -targetDB: (optional) target Database Name, defaults to same as sourceDB
 * -logTime: (optional) point in time to replay the logs to. If omitted will default to time of latest DB backup
+* -channels: (optional) Number of restore channels
+* -channelNode: (optional) RAC node to use for channels
 * -latest: (optional) replay the logs to the latest point in time available
 * -wait: (optional) wait for completion and report end status
 * -pfileParameterName: (optional) one or more parameter names to include in pfile (comma seaparated)
