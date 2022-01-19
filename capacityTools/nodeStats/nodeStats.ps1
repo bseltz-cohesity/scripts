@@ -30,7 +30,10 @@ $nodes = api get nodes?fetchStats=true
 foreach($node in $nodes){
     $used = $node.stats.usagePerfStats.totalPhysicalUsageBytes | %{ $_/(1024*1024*1024*1024)}
     $pctUsed = 100 * $node.stats.usagePerfStats.totalPhysicalUsageBytes / $node.stats.usagePerfStats.physicalCapacityBytes
-    """{0}"",""{1}"",""{2:n2}"",""{3:n1}""" -f $node.id, $node.productModel, $used, $pctUsed
+    $cohesity_api.apiRoot = "https://$($node.ip)/irisservices/api/v1"
+    $nodeInfo = api get /nexus/node/hardware_info
+    $productModel = $nodeInfo.productModel
+    """{0}"",""{1}"",""{2:n2}"",""{3:n1}""" -f $node.id, $productModel, $used, $pctUsed
 }
 
 "`nOutput saved to $outfilename`n"
