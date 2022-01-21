@@ -30,6 +30,7 @@ Place both files in a folder together, then we can run the script.
 
 ## Parameters
 
-* -vip: DNS or IP of the Cohesity Cluster
+* -vip: (optional) DNS or IP of the Cohesity Cluster (default is helios.cohesity.com)
 * -username: Cohesity User Name
 * -domain: (optional) defaults to 'local'
+* -heliosAccessCluster: (optional) if vip is helios.cohesity.com then connect to this cluster name through helios
