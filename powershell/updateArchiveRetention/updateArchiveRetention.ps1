@@ -7,7 +7,6 @@ param (
     [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
     [Parameter()][string]$domain = 'local', #local or AD domain
     [Parameter()][array]$jobNames,  # comma separated list of job names to include
-    [Parameter()][array]$policyNames,  # comma separated list of policy names to include
     [Parameter()][switch]$allowReduction,  # if omitted, no shortening of retention will occur
     [Parameter()][string]$target, # optional target name
     [Parameter(Mandatory)][int64]$daysToKeep, #new retention (from backup date)
@@ -32,58 +31,51 @@ $policies = api get protectionPolicies
 ### find protectionRuns with old local snapshots with archive tasks and sort oldest to newest
 "searching for archives..."
 
-$jobs = api get protectionJobs | Where-Object { $_.policyId.split(':')[0] -eq $clusterId }
+$jobs = api get protectionJobs
 
 foreach ($job in $jobs | Sort-Object -Property name) {
     $jobName = $job.name
-    $policy = $policies | Where-Object id -eq $job.policyId
-    if(!$policyNames -or $policy.name -in $policyNames){
-        if(!$jobNames -or $job.name -in $jobNames){
-            $jobName
-            $runs = (api get protectionRuns?jobId=$($job.id)`&excludeTasks=true`&excludeNonRestoreableRuns=true`&numRuns=999999`&runTypes=kRegular) | `
-                Where-Object { 'kArchival' -in $_.copyRun.target.type } | `
-                Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
+    if(!$jobNames -or $job.name -in $jobNames){
+        $jobName
+        $runs = (api get protectionRuns?jobId=$($job.id)`&excludeTasks=true`&excludeNonRestoreableRuns=true`&numRuns=999999`&runTypes=kRegular) | `
+            Where-Object { 'kArchival' -in $_.copyRun.target.type } | `
+            Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
 
-            foreach ($run in $runs) {
+        foreach ($run in $runs) {
 
-                $localCopy = $run.copyRun | Where-Object {$_.target.type -eq 'kLocal'}
-                $runDate = usecsToDate $localCopy.runStartTimeUsecs
-                $localExpiry = $localCopy.expiryTimeUsecs
-                if($localExpiry -gt (dateToUsecs (get-date)) -or $True -eq $modernVersion){
+            $localCopy = $run.copyRun | Where-Object {$_.target.type -eq 'kLocal'}
+            $runDate = usecsToDate $localCopy.runStartTimeUsecs
+            $localExpiry = $localCopy.expiryTimeUsecs
+            if($localExpiry -gt (dateToUsecs (get-date)) -or $True -eq $modernVersion){
 
-                    foreach ($copyRun in $run.copyRun) {
-                        if ($copyRun.target.type -eq 'kArchival') {
-                            # if ($copyRun.status -eq 'kSuccess') {
-                                if ($copyRun.expiryTimeUsecs -gt 0) {
-                                    if( ! $target -or $copyRun.target.archivalTarget.vaultName -eq $target){
-                                        $startTimeUsecs = $copyRun.runStartTimeUsecs
-                                        $newExpireTimeUsecs = $startTimeUsecs + ($daysToKeep * 86400000000)
-                                        $currentExpireTimeUsecs = $copyRun.expiryTimeUsecs
-                                        $daysToExtend = [int64][math]::Round(($newExpireTimeUsecs - $currentExpireTimeUsecs) / 86400000000)
-                                        if(!($daysToExtend -lt 0) -or $allowReduction){
-                                            if($daysToExtend -ne 0){
-                                                write-host "    $($runDate): adjusting by $daysToExtend day(s)" -ForegroundColor Green
-                                                $expireRun = @{'jobRuns' = @(
-                                                        @{
-                                                            'jobUid'            = $run.jobUid;
-                                                            'runStartTimeUsecs' = $run.backupRun.stats.startTimeUsecs;
-                                                            'copyRunTargets'    = @(
-                                                                @{'daysToKeep'       = $daysToExtend;
-                                                                    'type'           = 'kArchival';
-                                                                    'archivalTarget' = $copyRun.target.archivalTarget
-                                                                }
-                                                            )
-                                                        }
-                                                    )
-                                                }
-                                                if ($commit) {
-                                                    $null = api put protectionRuns $expireRun
-                                                }
+                foreach ($copyRun in $run.copyRun | Where-Object {$_.target.type -eq 'kArchival' -and $_.status -eq 'kSuccess'}) {
+                    if ($copyRun.expiryTimeUsecs -gt 0) {
+                        if( ! $target -or $copyRun.target.archivalTarget.vaultName -eq $target){
+                            $startTimeUsecs = $copyRun.runStartTimeUsecs
+                            $newExpireTimeUsecs = $startTimeUsecs + ($daysToKeep * 86400000000)
+                            $currentExpireTimeUsecs = $copyRun.expiryTimeUsecs
+                            $daysToExtend = [int64][math]::Round(($newExpireTimeUsecs - $currentExpireTimeUsecs) / 86400000000)
+                            if(!($daysToExtend -lt 0) -or $allowReduction){
+                                if($daysToExtend -ne 0){
+                                    write-host "    $($runDate): adjusting by $daysToExtend day(s)" -ForegroundColor Green
+                                    $expireRun = @{'jobRuns' = @(
+                                            @{
+                                                'jobUid'            = $run.jobUid;
+                                                'runStartTimeUsecs' = $run.backupRun.stats.startTimeUsecs;
+                                                'copyRunTargets'    = @(
+                                                    @{'daysToKeep'       = $daysToExtend;
+                                                        'type'           = 'kArchival';
+                                                        'archivalTarget' = $copyRun.target.archivalTarget
+                                                    }
+                                                )
                                             }
-                                        }
+                                        )
+                                    }
+                                    if ($commit) {
+                                        $null = api put protectionRuns $expireRun
                                     }
                                 }
-                            # }
+                            }
                         }
                     }
                 }
@@ -91,4 +83,3 @@ foreach ($job in $jobs | Sort-Object -Property name) {
         }
     }
 }
-
