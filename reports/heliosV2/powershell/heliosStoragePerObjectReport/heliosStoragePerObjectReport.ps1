@@ -218,13 +218,12 @@ $Global:html += '</span>
 
 $stats = @{}
 
-# paging
-$startfrom = 0
 $sortAttribute = 'objectUuid'
 
 Write-Host "`nRetrieving report data..."
 
 foreach($range in $ranges){
+    $startfrom = 0
     $moreRecords = $True
     while($moreRecords){
         $reportParams = @{
