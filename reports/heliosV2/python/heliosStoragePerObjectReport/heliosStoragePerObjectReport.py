@@ -15,6 +15,7 @@ parser.add_argument('-e', '--enddate', type=str, default='')
 parser.add_argument('-t', '--thismonth', action='store_true')
 parser.add_argument('-l', '--lastmonth', action='store_true')
 parser.add_argument('-y', '--days', type=int, default=31)
+parser.add_argument('-p', '--pagesize', type=int, default=10000)
 parser.add_argument('-n', '--units', type=str, choices=['MiB', 'GiB'], default='GiB')
 
 args = parser.parse_args()
@@ -25,6 +26,7 @@ enddate = args.enddate
 thismonth = args.thismonth
 lastmonth = args.lastmonth
 days = args.days
+pagesize = args.pagesize
 units = args.units
 
 filePrefix = "heliosStoragePerObjectReport"
@@ -235,64 +237,79 @@ html += '</tr>'
 
 stats = {}
 
+# paging
+startfrom = 0
+sortAttribute = 'objectUuid'
+
 print('\nRetrieving report data...')
 
 for range in ranges:
-
-    reportParams = {
-        "filters": [
-            {
-                "attribute": "date",
-                "filterType": "TimeRange",
-                "timeRangeFilterParams": {
-                    "lowerBound": range['start'],
-                    "upperBound": range['end']
-                }
-            }
-        ],
-        "sort": None,
-        "timezone": "America/New_York",
-        "limit": {
-            "size": 10000
-        }
-    }
-
-    preview = api('post', 'components/%s/preview' % reportNumber, reportParams, reportingv2=True)
-
-    clusters = list(set([c['system'] for c in preview['component']['data']]))
-
-    for cluster in clusters:
-        data = [d for d in preview['component']['data'] if d['system'] == cluster]
-        for i in data:
-            clusterName = i['system'].upper()
-            sourceName = i['sourceName']
-            objectName = i['objectName']
-            if objectName is not None and objectName != '':
-                environment = i['environment'][1:]
-                uniqueKey = "%s:%s:%s:%s" % (clusterName, sourceName, objectName, environment)
-                uuid = i['objectUuid']
-                logicalSize = round(float(i['maxSourceLogicalSizeBytes']) / multiplier, 1)
-                dataRead = i['sumSourceDeltaSizeBytes']
-                dataWritten = i['sumDataWrittenSizeBytes']
-                changeRate = round(float(i['dailyChangeRate']) / multiplier, 1)
-                snapshots = i['snapshots']
-
-                if uniqueKey not in stats:
-                    stats[uniqueKey] = {
-                        'clusterName': clusterName,
-                        'sourceName': sourceName,
-                        'objectName': objectName,
-                        'environment': environment,
-                        'logicalSize': logicalSize,
-                        'dataRead': dataRead,
-                        'dataWritten': dataWritten,
-                        'changeRate': changeRate,
-                        'snapshots': snapshots
+    moreRecords = True
+    while moreRecords is True:
+        reportParams = {
+            "filters": [
+                {
+                    "attribute": "date",
+                    "filterType": "TimeRange",
+                    "timeRangeFilterParams": {
+                        "lowerBound": range['start'],
+                        "upperBound": range['end']
                     }
-                else:
-                    stats[uniqueKey]['dataRead'] += dataRead
-                    stats[uniqueKey]['dataWritten'] += dataWritten
-                    stats[uniqueKey]['snapshots'] += snapshots
+                }
+            ],
+            "sort": [
+                {
+                    "attribute": sortAttribute,
+                }
+            ],
+            "timezone": "America/New_York",
+            "limit": {
+                "size": pagesize,
+                "from": startfrom
+            }
+        }
+
+        preview = api('post', 'components/%s/preview' % reportNumber, reportParams, reportingv2=True)
+
+        clusters = list(set([c['system'] for c in preview['component']['data']]))
+
+        for cluster in clusters:
+            data = [d for d in preview['component']['data'] if d['system'] == cluster]
+            for i in data:
+                clusterName = i['system'].upper()
+                sourceName = i['sourceName']
+                objectName = i['objectName']
+                if objectName is not None and objectName != '':
+                    environment = i['environment'][1:]
+                    uniqueKey = "%s:%s:%s:%s:%s:%s" % (clusterName, sourceName, objectName, environment, i['systemId'], i['objectUuid'])
+                    uuid = i['objectUuid']
+                    logicalSize = round(float(i['maxSourceLogicalSizeBytes']) / multiplier, 1)
+                    dataRead = i['sumSourceDeltaSizeBytes']
+                    dataWritten = i['sumDataWrittenSizeBytes']
+                    changeRate = round(float(i['dailyChangeRate']) / multiplier, 1)
+                    snapshots = i['snapshots']
+
+                    if uniqueKey not in stats:
+                        stats[uniqueKey] = {
+                            'clusterName': clusterName,
+                            'sourceName': sourceName,
+                            'objectName': objectName,
+                            'environment': environment,
+                            'logicalSize': logicalSize,
+                            'dataRead': dataRead,
+                            'dataWritten': dataWritten,
+                            'changeRate': changeRate,
+                            'snapshots': snapshots
+                        }
+                    else:
+                        stats[uniqueKey]['dataRead'] += dataRead
+                        stats[uniqueKey]['dataWritten'] += dataWritten
+                        stats[uniqueKey]['snapshots'] += snapshots
+
+        if preview['component']['data'] is None or len(preview['component']['data']) == 0:
+            moreRecords = False
+        else:
+            startfrom += pagesize
 
 for uniqueKey in sorted(stats.keys()):
     clusterName = stats[uniqueKey]['clusterName']
