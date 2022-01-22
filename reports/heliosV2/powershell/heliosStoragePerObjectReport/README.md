@@ -37,6 +37,7 @@ Place all files in a folder together, then run the main script like so:
 * -lastCalendarMonth: (optional) set date range to last month
 * -days: (optional) set date range to last X days (default is 31)
 * -unit: (optional) MiB, GiB or TiB (default is GiB)
+* -pageSize: (optional) maximum number of records per query (default is 10000)
 
 ## Authenticating to Helios
 

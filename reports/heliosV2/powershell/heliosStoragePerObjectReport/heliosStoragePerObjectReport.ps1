@@ -6,6 +6,7 @@ param (
     [Parameter()][switch]$thisCalendarMonth,
     [Parameter()][switch]$lastCalendarMonth,
     [Parameter()][int]$days = 31,
+    [Parameter()][int]$pageSize = 10000,
     [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'GiB'
 )
 
@@ -217,32 +218,41 @@ $Global:html += '</span>
 
 $stats = @{}
 
+# paging
+$startfrom = 0
+$sortAttribute = 'objectUuid'
+
+Write-Host "`nGathering report data..."
+
 foreach($range in $ranges){
-    $reportParams = @{
-        "filters"  = @(
-            @{
-                "attribute"             = "date";
-                "filterType"            = "TimeRange";
-                "timeRangeFilterParams" = @{
-                    "lowerBound" = [int64]$range.start;
-                    "upperBound" = [int64]$range.end
+    $moreRecords = $True
+    while($moreRecords){
+        $reportParams = @{
+            "filters"  = @(
+                @{
+                    "attribute"             = "date";
+                    "filterType"            = "TimeRange";
+                    "timeRangeFilterParams" = @{
+                        "lowerBound" = [int64]$range.start;
+                        "upperBound" = [int64]$range.end
+                    }
                 }
+            );
+            "sort"     = @(
+                @{
+                    "attribute" = $sortAttribute;
+                }
+            );
+            "timezone" = "America/New_York";
+            "limit"    = @{
+                "size" = $pageSize;
+                "from" = $startfrom
             }
-        );
-        "sort"     = $null;
-        "timezone" = "America/New_York";
-        "limit"    = @{
-            "size" = 10000
         }
-    }
-    
-    $preview = api post -reportingV2 components/300/preview $reportParams
-    
-    $clusters = $preview.component.data.system | Sort-Object -Unique
-    
-    foreach($cluster in $clusters | Where-Object {$_ -ne ''}){
-    
-        foreach($object in $preview.component.data | Where-Object system -eq $cluster | Sort-Object -Property objectName){
+        
+        $preview = api post -reportingV2 components/300/preview $reportParams
+        $clusters = $preview.component.data.system | Sort-Object -Unique
+        foreach($object in $preview.component.data | Sort-Object -Property {$_.system}, {$_.objectName}){
             $clusterName = $object.system.ToUpper()
             $sourceName = $object.sourceName
             $objectName = $object.objectName
@@ -256,8 +266,9 @@ foreach($range in $ranges){
                 $dataWritten = $object.sumDataWrittenSizeBytes
                 $changeRate = $object.dailyChangeRate
                 $snapshots = $object.snapshots
+
                 if($snapshots -gt 0){
-                    $uniqueKey = "{0}:{1}:{2}:{3}" -f $clusterName, $sourceName, $objectName, $objectType
+                    $uniqueKey = "{0}:{1}:{2}:{3}:{4}:{5}" -f $clusterName, $sourceName, $objectName, $objectType, $object.systemId, $object.objectUuid
                     if($uniqueKey -notin $stats.Keys){
                         $stats[$uniqueKey] = @{
                             'clusterName' = $clusterName;
@@ -271,12 +282,17 @@ foreach($range in $ranges){
                             'changeRate' = $changeRate
                         }
                     }else{
-                        $stats[$uniqueKey].snapshots = $snapshots
+                        $stats[$uniqueKey].snapshots += $snapshots
                         $stats[$uniqueKey].dataRead += $dataRead
                         $stats[$uniqueKey].dataWritten += $dataWritten
                     }
                 }
             }
+        }
+        if($preview.component.data.Count -eq 0){
+            $moreRecords = $False
+        }else{
+            $startfrom += $pagesize
         }
     }
 }
