@@ -15,6 +15,7 @@ parser.add_argument('-e', '--enddate', type=str, default='')
 parser.add_argument('-t', '--thismonth', action='store_true')
 parser.add_argument('-l', '--lastmonth', action='store_true')
 parser.add_argument('-y', '--days', type=int, default=7)
+parser.add_argument('-p', '--pagesize', type=int, default=10000)
 parser.add_argument('-n', '--units', type=str, choices=['MiB', 'GiB'], default='MiB')
 
 args = parser.parse_args()
@@ -25,6 +26,7 @@ enddate = args.enddate
 thismonth = args.thismonth
 lastmonth = args.lastmonth
 days = args.days
+pagesize = args.pagesize
 units = args.units
 
 multiplier = 1024 * 1024
@@ -75,14 +77,14 @@ else:
 start = usecsToDate(uStart, '%Y-%m-%d')
 end = usecsToDate(uEnd, '%Y-%m-%d')
 
-# build 3 day time ranges
+# build 180 day time ranges
 ranges = []
 gotAllRanges = False
 thisUend = uEnd
 thisUstart = uStart
 while gotAllRanges is False:
-    if (thisUend - uStart) > 259200000000:
-        thisUstart = thisUend - 259200000000
+    if (thisUend - uStart) > 15552000000000:
+        thisUstart = thisUend - 15552000000000
         ranges.append({'start': thisUstart, 'end': thisUend})
         thisUend = thisUstart - 1
     else:
@@ -247,71 +249,86 @@ html += '</tr>'
 
 stats = {}
 
+# paging
+sortAttribute = 'runStartTimeUsecs'
+
 print('\nRetrieving report data...')
 
 for range in ranges:
-
-    reportParams = {
-        "filters": [
-            {
-                "attribute": "date",
-                "filterType": "TimeRange",
-                "timeRangeFilterParams": {
-                    "lowerBound": range['start'],
-                    "upperBound": range['end']
+    startfrom = 0
+    moreRecords = True
+    while moreRecords is True:
+        reportParams = {
+            "filters": [
+                {
+                    "attribute": "date",
+                    "filterType": "TimeRange",
+                    "timeRangeFilterParams": {
+                        "lowerBound": range['start'],
+                        "upperBound": range['end']
+                    }
                 }
+            ],
+            "sort": [
+                {
+                    "attribute": sortAttribute,
+                }
+            ],
+            "timezone": "America/New_York",
+            "limit": {
+                "size": pagesize,
+                "from": startfrom
             }
-        ],
-        "sort": None,
-        "timezone": "America/New_York",
-        "limit": {
-            "size": 10000
         }
-    }
 
-    preview = api('post', 'components/%s/preview' % reportNumber, reportParams, reportingv2=True)
+        preview = api('post', 'components/%s/preview' % reportNumber, reportParams, reportingv2=True)
 
-    for i in sorted(preview['component']['data'], key=lambda x: x['runStartTimeUsecs'], reverse=True):
-        clusterName = i['systemName'].upper()
-        jobName = i['groupName']
-        environment = i['environment'][1:]
-        policy = i['policyName']
-        status = i['status'][1:]
-        startTime = usecsToDate(i['runStartTimeUsecs'], '%Y-%m-%d %H:%M')
-        endTime = usecsToDate(i['endTimeUsecs'], '%Y-%m-%d %H:%M')
-        durationSecs = round(i['durationUsecs'] / 1000000, 0)
-        timeSpan = timedelta(seconds=durationSecs)
-        timedays = timeSpan.days
-        timehours = timeSpan.seconds // 3600
-        timeminutes = (timeSpan.seconds // 60) % 60
-        timesecs = (timeSpan.seconds) % 60
-        duration = "%ss" % timesecs
-        if timeminutes > 0:
-            duration = "%sm %s" % (timeminutes, duration)
-        if timehours > 0:
-            duration = "%sh %s" % (timehours, duration)
-        if timedays > 0:
-            duration = "%sd %s" % (timedays, duration)
-        activityType = i['activityType']
-        slaStatus = i['slaStatus']
-        dataRead = round(float(i['dataRead']) / multiplier, 1)
-        dataWritten = round(float(i['dataWritten']) / multiplier, 1)
-        csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, status, startTime, duration, durationSecs, endTime, jobName, environment, policy, activityType, slaStatus, dataRead, dataWritten))
-        html += '''<tr style="border: 1px solid #FFFFFF background-color: #FFFFFF">
-            <td class="nowrap">%s</td>
-            <td>%s</td>
-            <td class="nowrap">%s</td>
-            <td class="nowrap">%s</td>
-            <td>%s</td>
-            <td class="nowrap">%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%s</td>
-            </tr>''' % (clusterName, status, startTime, duration, durationSecs, endTime, jobName, environment, policy, activityType, slaStatus, dataRead, dataWritten)
+        for i in sorted(preview['component']['data'], key=lambda x: x['runStartTimeUsecs'], reverse=True):
+            clusterName = i['systemName'].upper()
+            jobName = i['groupName']
+            environment = i['environment'][1:]
+            policy = i['policyName']
+            status = i['status'][1:]
+            startTime = usecsToDate(i['runStartTimeUsecs'], '%Y-%m-%d %H:%M')
+            endTime = usecsToDate(i['endTimeUsecs'], '%Y-%m-%d %H:%M')
+            durationSecs = round(i['durationUsecs'] / 1000000, 0)
+            timeSpan = timedelta(seconds=durationSecs)
+            timedays = timeSpan.days
+            timehours = timeSpan.seconds // 3600
+            timeminutes = (timeSpan.seconds // 60) % 60
+            timesecs = (timeSpan.seconds) % 60
+            duration = "%ss" % timesecs
+            if timeminutes > 0:
+                duration = "%sm %s" % (timeminutes, duration)
+            if timehours > 0:
+                duration = "%sh %s" % (timehours, duration)
+            if timedays > 0:
+                duration = "%sd %s" % (timedays, duration)
+            activityType = i['activityType']
+            slaStatus = i['slaStatus']
+            dataRead = round(float(i['dataRead']) / multiplier, 1)
+            dataWritten = round(float(i['dataWritten']) / multiplier, 1)
+            csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, status, startTime, duration, durationSecs, endTime, jobName, environment, policy, activityType, slaStatus, dataRead, dataWritten))
+            html += '''<tr style="border: 1px solid #FFFFFF background-color: #FFFFFF">
+                <td class="nowrap">%s</td>
+                <td>%s</td>
+                <td class="nowrap">%s</td>
+                <td class="nowrap">%s</td>
+                <td>%s</td>
+                <td class="nowrap">%s</td>
+                <td>%s</td>
+                <td>%s</td>
+                <td>%s</td>
+                <td>%s</td>
+                <td>%s</td>
+                <td>%s</td>
+                <td>%s</td>
+                </tr>''' % (clusterName, status, startTime, duration, durationSecs, endTime, jobName, environment, policy, activityType, slaStatus, dataRead, dataWritten)
+
+        if preview['component']['data'] is None or len(preview['component']['data']) == 0:
+            moreRecords = False
+        else:
+            startfrom += pagesize
 
 html += '''</table>
 </div>

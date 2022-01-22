@@ -335,7 +335,6 @@ for range in ranges:
         if preview['component']['data'] is None or len(preview['component']['data']) == 0:
             moreRecords = False
         else:
-            print(len(preview['component']['data']))
             startfrom += pagesize
 
 html += '''</table>
