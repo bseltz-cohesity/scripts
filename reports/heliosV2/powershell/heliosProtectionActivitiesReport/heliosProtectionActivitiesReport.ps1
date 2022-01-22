@@ -6,6 +6,7 @@ param (
     [Parameter()][switch]$thisCalendarMonth,
     [Parameter()][switch]$lastCalendarMonth,
     [Parameter()][int]$days = 7,
+    [Parameter()][int]$pageSize = 10000,
     [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB'
 )
 
@@ -58,14 +59,14 @@ if($startDate -ne '' -and $endDate -ne ''){
 $start = (usecsToDate $uStart).ToString('yyyy-MM-dd')
 $end = (usecsToDate $uEnd).ToString('yyyy-MM-dd')
 
-# build 3 day time ranges
+# build 7 day time ranges
 $ranges = @()
 $gotAllRanges = $False
 $thisUend = $uEnd
 $thisUstart = $uStart
 while($gotAllRanges -eq $False){
-    if(($thisUend - $uStart) -gt 259200000000){
-        $thisUstart = $thisUend - 259200000000
+    if(($thisUend - $uStart) -gt 604800000000){
+        $thisUstart = $thisUend - 604800000000
         $ranges = @($ranges + @{'start' = $thisUstart; 'end' = $thisUend})
         $thisUend = $thisUstart - 1
     }else{
@@ -233,72 +234,86 @@ $Global:html += '</tr>'
 
 $stats = @{}
 
+$sortAttribute = 'runStartTimeUsecs'
+
 Write-Host "Retrieving report data..."
 
 foreach($range in $ranges){
-
-    # report parameters
-    $reportParams = @{
-        "filters"  = @(
-            @{
-                "attribute"             = "date";
-                "filterType"            = "TimeRange";
-                "timeRangeFilterParams" = @{
-                    "lowerBound" = $range.start;
-                    "upperBound" = $range.end
+    $startfrom = 0
+    $moreRecords = $True
+    while($moreRecords){
+        $reportParams = @{
+            "filters"  = @(
+                @{
+                    "attribute"             = "date";
+                    "filterType"            = "TimeRange";
+                    "timeRangeFilterParams" = @{
+                        "lowerBound" = [int64]$range.start;
+                        "upperBound" = [int64]$range.end
+                    }
                 }
+            );
+            "sort"     = @(
+                @{
+                    "attribute" = $sortAttribute;
+                }
+            );
+            "timezone" = "America/New_York";
+            "limit"    = @{
+                "size" = $pageSize;
+                "from" = $startfrom
             }
-        );
-        "sort"     = $null;
-        "timezone" = "America/New_York";
-        "limit"    = @{
-            "size" = 10000
         }
-    }
 
-    $preview = api post -reportingV2 "components/$reportNumber/preview" $reportParams
+        $preview = api post -reportingV2 "components/$reportNumber/preview" $reportParams
 
-    foreach($i in $preview.component.data | Where-Object system -eq $cluster | Sort-Object -Property @{Expression = "runStartTimeUsecs"; Ascending = $False}, @{Expression = "groupName"; Ascending = $True}){
-        $clusterName = $i.systemName
-        $jobName = $i.groupName
-        $environment = $i.environment.subString(1)
-        $policy = $i.policyName
-        $status = $i.status.subString(1)
-        $startTime = (usecsToDate $i.runStartTimeUsecs).ToSTring('yyyy-MM-dd hh:mm')
-        $endTime = (usecsToDate $i.endTimeUsecs).ToSTring('yyyy-MM-dd hh:mm')
-        $durationSecs = [math]::Round($i.durationUsecs / 1000000, 0)
-        $timeSpan = [timespan]::fromseconds($durationSecs)
-        $duration = "{0}s" -f $timeSpan.Seconds
-        if($timeSpan.Minutes -gt 0){
-            $duration = "{0}m $duration" -f $timeSpan.Minutes
-        }
-        if($timeSpan.Hours -gt 0){
-            $duration = "{0}h $duration" -f $timeSpan.Hours
-        }
-        if($timeSpan.Days -gt 0){
-            $duration = "{0}d $duration" -f $timeSpan.Days
-        }
-        $activityType = $i.activityType
-        $slaStatus = $i.slaStatus
-        $dataRead = toUnits $i.dataRead
-        $dataWritten = toUnits $i.dataWritten
+        foreach($i in $preview.component.data | Where-Object system -eq $cluster | Sort-Object -Property @{Expression = "runStartTimeUsecs"; Ascending = $False}, @{Expression = "groupName"; Ascending = $True}){
+            $clusterName = $i.systemName
+            $jobName = $i.groupName
+            $environment = $i.environment.subString(1)
+            $policy = $i.policyName
+            $status = $i.status.subString(1)
+            $startTime = (usecsToDate $i.runStartTimeUsecs).ToSTring('yyyy-MM-dd hh:mm')
+            $endTime = (usecsToDate $i.endTimeUsecs).ToSTring('yyyy-MM-dd hh:mm')
+            $durationSecs = [math]::Round($i.durationUsecs / 1000000, 0)
+            $timeSpan = [timespan]::fromseconds($durationSecs)
+            $duration = "{0}s" -f $timeSpan.Seconds
+            if($timeSpan.Minutes -gt 0){
+                $duration = "{0}m $duration" -f $timeSpan.Minutes
+            }
+            if($timeSpan.Hours -gt 0){
+                $duration = "{0}h $duration" -f $timeSpan.Hours
+            }
+            if($timeSpan.Days -gt 0){
+                $duration = "{0}d $duration" -f $timeSpan.Days
+            }
+            $activityType = $i.activityType
+            $slaStatus = $i.slaStatus
+            $dataRead = toUnits $i.dataRead
+            $dataWritten = toUnits $i.dataWritten
 
-        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}""" -f $clusterName, $status, $startTime, $duration, $durationSecs, $endTime, $jobName, $environment, $policy, $activityType, $slaStatus, $dataRead, $dataWritten | Out-File -FilePath $csvFileName -Append
-        $Global:html += '<tr>
-            <td class="nowrap">{0}</td>
-            <td>{1}</td>
-            <td class="nowrap">{2}</td>
-            <td class="nowrap">{3}</td>
-            <td>{4}</td>
-            <td class="nowrap">{5}</td>
-            <td>{6}</td>
-            <td>{7}</td>
-            <td>{8}</td>
-            <td>{9}</td>
-            <td>{10}</td>
-            <td>{11}</td>
-            <td>{12}</td>
-            </tr>' -f $clusterName, $status, $startTime, $duration, $durationSecs, $endTime, $jobName, $environment, $policy, $activityType, $slaStatus, $dataRead, $dataWritten
+            """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}""" -f $clusterName, $status, $startTime, $duration, $durationSecs, $endTime, $jobName, $environment, $policy, $activityType, $slaStatus, $dataRead, $dataWritten | Out-File -FilePath $csvFileName -Append
+            $Global:html += '<tr>
+                <td class="nowrap">{0}</td>
+                <td>{1}</td>
+                <td class="nowrap">{2}</td>
+                <td class="nowrap">{3}</td>
+                <td>{4}</td>
+                <td class="nowrap">{5}</td>
+                <td>{6}</td>
+                <td>{7}</td>
+                <td>{8}</td>
+                <td>{9}</td>
+                <td>{10}</td>
+                <td>{11}</td>
+                <td>{12}</td>
+                </tr>' -f $clusterName, $status, $startTime, $duration, $durationSecs, $endTime, $jobName, $environment, $policy, $activityType, $slaStatus, $dataRead, $dataWritten
+        }
+        if($preview.component.data.Count -eq 0){
+            $moreRecords = $False
+        }else{
+            $startfrom += $pageSize
+        }
     }
 }
 

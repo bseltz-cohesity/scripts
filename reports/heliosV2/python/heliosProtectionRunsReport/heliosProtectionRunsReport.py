@@ -78,14 +78,14 @@ else:
 start = usecsToDate(uStart, '%Y-%m-%d')
 end = usecsToDate(uEnd, '%Y-%m-%d')
 
-# build 180 day time ranges
+# build 7 day time ranges
 ranges = []
 gotAllRanges = False
 thisUend = uEnd
 thisUstart = uStart
 while gotAllRanges is False:
-    if (thisUend - uStart) > 15552000000000:
-        thisUstart = thisUend - 15552000000000
+    if (thisUend - uStart) > 604800000000:
+        thisUstart = thisUend - 604800000000
         ranges.append({'start': thisUstart, 'end': thisUend})
         thisUend = thisUstart - 1
     else:
