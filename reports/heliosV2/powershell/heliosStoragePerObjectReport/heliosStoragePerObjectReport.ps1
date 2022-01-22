@@ -222,7 +222,7 @@ $stats = @{}
 $startfrom = 0
 $sortAttribute = 'objectUuid'
 
-Write-Host "`nGathering report data..."
+Write-Host "`nRetrieving report data..."
 
 foreach($range in $ranges){
     $moreRecords = $True
