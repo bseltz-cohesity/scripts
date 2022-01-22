@@ -238,12 +238,12 @@ html += '</tr>'
 stats = {}
 
 # paging
-startfrom = 0
 sortAttribute = 'objectUuid'
 
 print('\nRetrieving report data...')
 
 for range in ranges:
+    startfrom = 0
     moreRecords = True
     while moreRecords is True:
         reportParams = {
