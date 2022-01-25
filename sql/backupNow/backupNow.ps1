@@ -259,7 +259,7 @@ if($runs -and !$metaDataFile){
         if($alertWaiting){
             if($abortIfRunning){
                 output "job is already running"
-                exit
+                exit 0
             }
             output "waiting for existing job run to finish..."
             $alertWaiting = $false
@@ -411,8 +411,13 @@ while($newRunId -eq $lastRunId){
     Start-Sleep 2
     $x += 1
     if($x -ge 30){
-        output "Timed out waiting for new run" -warn
-        exit 1
+        if(!$metaDataFile){
+            output "Timed out waiting for new run" -warn
+            exit 1
+        }else{
+            output "Already running for this object" -warn
+            exit 0
+        }
     }
     $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
     $newRunId = $runs[0].backupRun.jobRunId
@@ -463,3 +468,5 @@ if($wait -or $enable){
         exit 1
     }
 }
+
+exit 0
