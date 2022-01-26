@@ -1,0 +1,48 @@
+# Get Cluster VIPs by Least Busy CPU
+
+Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
+
+This script gets a list of cluster VIPs sorted by CPU usage
+
+## Download the script
+
+You can download the scripts using the following commands:
+
+```bash
+# download commands
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/onboardADUser/onboardADUser.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+chmod +x onboardADUser.py
+# end download commands
+```
+
+## Components
+
+* onboardADUser.py: the main powershell script
+* pyhesity.py: the Cohesity REST API helper module
+
+Place both files in a folder together and run the main script like so:
+
+```bash
+./onboardADUser.py -v mycluster \
+                   -u myuser \
+                   -d mydomain.net \
+                   -n myaduser \
+                   -a myaddomain.net \
+                   -g
+```
+
+## Parameters
+
+* -v, --vip: DNS or IP of the Cohesity cluster to connect to
+* -u, --username: username to authenticate to Cohesity cluster
+* -d, --domain: (optional) domain of username, defaults to local
+* -i, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: (optional) password of API key
+* -n, --aduser: name of AD user to onboard
+* -a, --addomain: domain of AD user to onboard
+* -m, --moniker: (optional) suffix for API key name (default is key)
+* -r, --role: (optional) Cohesity role to grant to user (default is 'COHESITY_VIEWER')
+* -g, --generateApiKey: (optional) generate new API key for user
+* -s, --storeApiKey: (optional) store new API key in local password storage
+* -o, --overwrite: (optional) overwrite existing API key
