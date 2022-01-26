@@ -124,6 +124,14 @@ To refresh a view (on a schedule):
 * -refreshView: (optional) delete existing files in view
 * -force: (optional) do not prompt for confirmation when refreshing or deleting view (DANGEROUS!)
 
+## Whitelist Overrides
+
+* -ips: (optional) cidrs to add, examples: 192.168.1.3/32, 192.168.2.0/24 (comma separated)
+* -ipList: (optional) text file of cidrs to add (one per line)
+* -readOnly: (optional) readWrite if omitted
+* -rootSquash: (optional) enable root squash
+* -allSquash: (optional) enable all squash
+
 ## Parameters for Folder Manipulation
 
 * -consolidate: (optional) move all files to root of view

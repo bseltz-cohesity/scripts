@@ -27,7 +27,12 @@ param (
     [Parameter()][switch]$dbFolders,
     [Parameter()][switch]$logsOnly,
     [Parameter()][switch]$lastRunOnly,
-    [Parameter()][Int64]$numRuns = 100
+    [Parameter()][Int64]$numRuns = 100,
+    [Parameter()][array]$ips,                         # optional cidrs to add (comma separated)
+    [Parameter()][string]$ipList = '',                # optional textfile of cidrs to add
+    [Parameter()][switch]$rootSquash,                 # whether whitelist entries should use root squash
+    [Parameter()][switch]$allSquash,                  # whether whitelist entries should use all squash
+    [Parameter()][switch]$readOnly                    # grant only read access
 )
 
 # source the cohesity-api helper code
@@ -39,6 +44,66 @@ if($useApiKey){
 }else{
     apiauth -vip $vip -username $username -domain $domain
 }
+
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
+        }
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
+        exit
+    }
+    return ($items | Sort-Object -Unique)
+}
+
+function netbitsToDDN($netBits){
+    $maskBits = '1' * $netBits + '0' * (32 - $netBits)
+    $octet1 = [convert]::ToInt32($maskBits.Substring(0,8),2)
+    $octet2 = [convert]::ToInt32($maskBits.Substring(8,8),2)
+    $octet3 = [convert]::ToInt32($maskBits.Substring(16,8),2)
+    $octet4 = [convert]::ToInt32($maskBits.Substring(24,8),2)
+    return "$octet1.$octet2.$octet3.$octet4"
+}
+
+function newWhiteListEntry($cidr, $perm){
+    $ip, $netbits = $cidr -split '/'
+    if(! $netbits){
+        $netbits = '32'
+    }
+    $maskDDN = netbitsToDDN $netbits
+    $whitelistEntry = @{
+        "nfsAccess" = $perm;
+        "smbAccess" = $perm;
+        "s3Access" = $perm;
+        "ip"            = $ip;
+        "netmaskIp4"    = $maskDDN
+    }
+    if($allSquash){
+        $whitelistEntry['nfsAllSquash'] = $True
+    }
+    if($rootSquash){
+        $whitelistEntry['nfsRootSquash'] = $True
+    }
+    return $whitelistEntry
+}
+
+$ipaddrs = @(gatherList -Param $ips -FilePath $ipList -Name 'whitelist ips' -Required $false)
+
+$perm = 'kReadWrite'
+if($readOnly){
+    $perm = 'kReadOnly'
+}
+
 
 if(!$deleteView){
     if(!$jobName){
@@ -190,6 +255,20 @@ if(!$view){
 Write-Host "Cloning backup files..."
 Start-Sleep 3
 $view = (api get views).views | Where-Object {$_.name -eq $viewName}
+
+# add whitelist entries
+if($ipaddrs.Count -gt 0){
+    if(! $view.PSObject.Properties['subnetWhitelist']){
+        setApiProperty -object $view -name 'subnetWhitelist' -value @()
+    }
+    
+    foreach($cidr in $ipaddrs){
+        $ip, $netbits = $cidr -split '/'
+        $view.subnetWhitelist = @($view.subnetWhiteList | Where-Object ip -ne $ip)
+        $view.subnetWhitelist = @($view.subnetWhiteList +(newWhiteListEntry $cidr $perm))
+    }
+    $null = api put views $view
+}
 
 $paths = @()
 foreach($run in $runs){
