@@ -209,33 +209,38 @@ foreach($vmName in $vmsToAdd){
     if(!$vm){
         Write-Host "VM $vmName not found!" -ForegroundColor Yellow
     }else{
-        if($vm.id -notin $job.vmwareParams.objects.id){
-            write-host "    adding $vmName"
+        write-host "    adding $vmName"
+        $newVMobject = $job.vmwareParams.objects | Where-Object {$_.id -eq $vm.id}
+        $excludedDisks = @()
+        if(!$newVMobject){
             $newVMobject = @{
                 'excludeDisks' = $null;
                 'id' = $vm.id;
                 'name' = $vm.name;
                 'isAutoprotected' = $false
             }
-            $excludedDisks = @()
-            foreach($disk in $excludeDisk){
-                $busNumber, $unitNumber = $disk.split(":")
-                $vdisk = $vm.vmWareProtectionSource.virtualDisks | Where-Object {$_.busNumber -eq $busNumber -and $_.unitNumber -eq $unitNumber}
-                if($vdisk){
-                    $excludedDisks += @{
-                        "controllerType" = $controllerType[$vdisk.controllerType];
-                        "busNumber" = $vdisk.busNumber;
-                        "unitNumber" = $vdisk.unitNumber
-                    }
-                }
-            }
-            if($excludedDisks.count -gt 0){
-                $newVMobject.excludeDisks = $excludedDisks
-            }
-            $job.vmwareParams.objects += $newVMobject
-        }else{
-            write-host "    skipping $vmName (already added)"
         }
+        if($newVMobject.excludeDisks){
+            $excludedDisks = @($newVMobject.excludeDisks)
+        }
+        
+        foreach($disk in $excludeDisk){
+            $busNumber, $unitNumber = $disk.split(":")
+            $vdisk = $vm.vmWareProtectionSource.virtualDisks | Where-Object {$_.busNumber -eq $busNumber -and $_.unitNumber -eq $unitNumber}
+            $existingExcludedDisk = $excludedDisks | Where-Object {$_.busNumber -eq $busNumber -and $_.unitNumber -eq $unitNumber}
+            if($vdisk -and !$existingExcludedDisk){
+                $excludedDisks = @($excludedDisks + @{
+                    "controllerType" = $controllerType[$vdisk.controllerType];
+                    "busNumber" = $vdisk.busNumber;
+                    "unitNumber" = $vdisk.unitNumber
+                })
+            }
+        }
+
+        if($excludedDisks.count -gt 0){
+            $newVMobject.excludeDisks = @($excludedDisks)
+        }
+        $job.vmwareParams.objects = @(@($job.vmwareParams.objects | Where-Object {$_.id -ne $vm.id}) + $newVMobject)
     }
 }
 
