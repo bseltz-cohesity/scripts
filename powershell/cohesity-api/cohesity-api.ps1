@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.01.12 - Brian Seltzer
+#  Version 2022.01.27 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2021.02.10 - fixed empty body issue
@@ -18,9 +18,10 @@
 # 2021.12.17 - auto import shared password into user password storage
 # 2021.12.21 - fixed USING_HELIOS status flag
 # 2022.01.12 - fixed storePasswordForUser
+# 2022.01.27 - changed password storage for non-Windows, added wildcard vip for AD accounts
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2021.12.21'
+$versionCohesityAPI = '2022.01.27'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -198,7 +199,7 @@ function apiauth($vip='helios.cohesity.com',
             }catch{
                 Write-Host "helios authentication failed" -ForegroundColor Yellow
                 apidrop -quiet
-                apiauth -vip $vip -username $username -domain $domain -useApiKey -updatePassword
+                apiauth -vip $vip -username $username -domain $domain -updatePassword
             }
         }
     }else{
@@ -529,8 +530,11 @@ function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
     }
-    $keyName = "$vip`:$domain`:$username`:$useApiKey"
-    $altKeyName = "$vip`:$domain`:$username"
+    if($domain -ne 'local'){
+        $vip = '--'  # wildcard vip for AD accounts
+    }
+    $keyName = "$vip`-$domain`-$username`-$useApiKey"
+    $altKeyName = "$vip`:$domain`:$username`:$useApiKey"
     if($PSVersionTable.Platform -eq 'Unix'){
         # Unix
         $keyFile = "$CONFDIR/$keyName"
@@ -552,6 +556,7 @@ function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
         # old format
         if(($null -eq $storedPassword) -or ($storedPassword.Length -eq 0)){
             $storedPassword = Get-ItemProperty -Path "$registryPath" -Name "$altKeyName" -ErrorAction SilentlyContinue
+            $keyName = $altKeyName
         }
         if(($null -ne $storedPassword) -and ($storedPassword.Length -ne 0)){
             $cohesity_api.pwscope = 'user'
@@ -592,7 +597,10 @@ function Clear-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
     }
-    $keyName = "$vip`:$domain`:$username`:$useApiKey"
+    if($domain -ne 'local'){
+        $vip = '--'  # wildcard vip for AD accounts
+    }
+    $keyName = "$vip`-$domain`-$username`-$useApiKey"
     $altKeyName = "$vip`:$domain`:$username"
 
     # remove old passwords from user scope pw storage
@@ -638,15 +646,17 @@ function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
     }
+    if($domain -ne 'local'){
+        $vip = '--'  # wildcard vip for AD accounts
+    }
     if(!$passwd){
         __writeLog "Prompting for Password"
-        $secureString = Read-Host -Prompt "Enter password for $username at $vip" -AsSecureString
+        $secureString = Read-Host -Prompt "Enter your password" -AsSecureString
         $passwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
     }
     $opwd = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($passwd))
 
-    $keyName = "$vip`:$domain`:$username`:$useApiKey"
-
+    $keyName = "$vip`-$domain`-$username`-$useApiKey"
     if($cohesity_api.pwscope -eq 'user'){
         # write to user-specific storage
         if($PSVersionTable.Platform -eq 'Unix'){
@@ -705,9 +715,9 @@ function storePasswordForUser($vip='helios.cohesity.com', $username='helios', $d
     $keyString = (Get-Random -Minimum 10000000000000 -Maximum 99999999999999).ToString()
     $keyBytes = [byte[]]($keyString -split(''))
     if($null -eq $passwd){
-        $secureString = Read-Host -Prompt "Enter password for $username at $vip" -AsSecureString
+        $secureString = Read-Host -Prompt "Enter your password" -AsSecureString
         $passwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
-        $secureString = Read-Host -Prompt "Confirm password for $username at $vip" -AsSecureString
+        $secureString = Read-Host -Prompt "Confirm password" -AsSecureString
         $passwd2 = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
         if($passwd -ne $passwd2){
             Write-Host "Passwords do not match" -ForegroundColor Yellow
