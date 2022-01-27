@@ -23,6 +23,19 @@ param (
 )
 
 
+function waitForRefresh($objectId){
+    $authStatus = ""
+    while($authStatus -ne 'kFinished'){
+        $rootFinished = $false
+        $appsFinished = $false
+        Start-Sleep 2
+        $rootNode = (api get "protectionSources/registrationInfo?ids=$objectId").rootNodes | Where-Object {$_.rootNode.id -eq $objectId}
+        $authStatus = $rootNode.registrationInfo.authenticationStatus
+    }
+    return $rootNode.rootNode.id
+}
+
+
 function getObjectById($objectId, $source){
     $global:_object = $null
 
@@ -116,6 +129,11 @@ if($job){
             exit
         }
 
+        # refresh new vcenter
+        write-host "refreshing $($newVCenter.protectionSource.name)..."
+        $result = api post protectionSources/refresh/$($newVCenter.protectionSource.id)
+        $result = waitForRefresh($newVCenter.protectionSource.id)
+
         # check for storage domain
         if($newStorageDomainName){
             $oldStorageDomain.name = $newStorageDomainName
@@ -192,6 +210,10 @@ if($job){
         $oldObject = getObjectById $vm.id $oldVCenter
         $newObjectId = getObjectByMoRef $oldObject.protectionSource.vmWareProtectionSource.id.morItem $newVCenter
         $vm.id = $newObjectId
+        if($newObjectId -eq $null){
+            Write-Host "`nSelected objects are missing, please edit and save selections in the old job before migrating" -foregroundcolor Yellow
+            exit
+        }
     }
 
     # exclude objects
@@ -201,6 +223,10 @@ if($job){
             $oldObject = getObjectById $excludeId $oldVCenter
             $newObjectId = getObjectByMoRef $oldObject.protectionSource.vmWareProtectionSource.id.morItem $newVCenter
             $newExcludeIds = @($newExcludeIds + $newObjectId)
+            if($newObjectId -eq $null){
+                Write-Host "`nSelected objects are missing, please edit and save selections in the old job before migrating" -foregroundcolor Yellow
+                exit
+            }
         }
     }
 
@@ -213,6 +239,10 @@ if($job){
                 $oldObject = getObjectById $tagId $oldVCenter
                 $newObjectId = getObjectByMoRef $oldObject.protectionSource.vmWareProtectionSource.id.uuid $newVCenter
                 $newTag = @($newTag + $newObjectId)
+                if($newObjectId -eq $null){
+                    Write-Host "`nSelected objects are missing, please edit and save selections in the old job before migrating" -foregroundcolor Yellow
+                    exit
+                }
             }
             $newTagIds = @($newTagIds + ,$newTag)
         }
@@ -228,6 +258,10 @@ if($job){
                 $oldObject = getObjectById $tagId $oldVCenter
                 $newObjectId = getObjectByMoRef $oldObject.protectionSource.vmWareProtectionSource.id.uuid $newVCenter
                 $newTag = @($newTag + $newObjectId)
+                if($newObjectId -eq $null){
+                    Write-Host "`nSelected objects are missing, please edit and save selections in the old job before migrating" -foregroundcolor Yellow
+                    exit
+                }
             }
             $newTagIds = @($newTagIds + ,$newTag)
         }
