@@ -102,6 +102,11 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
     COHESITY_API['APIROOTMCMv2'] = 'https://%s/v2/mcm/' % vip
     COHESITY_API['APIROOTREPORTINGv2'] = 'https://%s/heliosreporting/api/v1/public/' % vip
 
+    if '\\' in username:
+        (domain, username) = username.split('\\')
+    if '/' in username:
+        (domain, username) = username.split('/')
+
     pwd = password
     if password is None:
         pwd = __getpassword(vip, username, password, domain, useApiKey, updatepw, prompt)
