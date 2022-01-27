@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2022.01.10"""
+"""Cohesity Python REST API Wrapper Module - 2022.01.27"""
 
 ##########################################################################################
 # Change Log
@@ -23,6 +23,8 @@
 # 2021.12.07 - added support for email multifactor authentication
 # 2021.12.11 - dateToUsecs defaults to now, added getDate()
 # 2022.01.10 - updated password storage formats
+# 2022.01.20 - added api context
+# 2022.01.27 - added wildcard password storage for AD credentials
 #
 ##########################################################################################
 # Install Notes
@@ -144,7 +146,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
             COHESITY_API['HEADER']['x-impersonate-tenant-id'] = '%s/' % tenantId
         COHESITY_API['AUTHENTICATED'] = True
         cluster = api('get', 'cluster')
-        if cluster is not None:
+        if cluster is not None and 'id' in cluster:
             if(quiet is None):
                 print("Connected!")
         else:
@@ -222,7 +224,78 @@ def heliosClusters():
 
 
 ### api call function
-def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1, reportingv2=None):
+def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1, reportingv2=None, context=None):
+    """api call function"""
+    if context is not None:
+        THISCONTEXT = context
+    else:
+        THISCONTEXT = COHESITY_API
+    if THISCONTEXT['AUTHENTICATED'] is False:
+        print('Not Connected')
+        return None
+    response = ''
+    if mcm is not None:
+        url = THISCONTEXT['APIROOTMCM'] + uri
+    elif mcmv2 is not None:
+        url = THISCONTEXT['APIROOTMCMv2'] + uri
+    elif reportingv2 is not None:
+        url = THISCONTEXT['APIROOTREPORTINGv2'] + uri
+    else:
+        if v == 2:
+            url = THISCONTEXT['APIROOTv2'] + uri
+        else:
+            if uri[0] != '/':
+                uri = '/public/' + uri
+            url = THISCONTEXT['APIROOT'] + uri
+
+    if method in APIMETHODS:
+        try:
+            if method == 'get':
+                response = requests.get(url, headers=THISCONTEXT['HEADER'], verify=False)
+            if method == 'post':
+                response = requests.post(url, headers=THISCONTEXT['HEADER'], json=data, verify=False)
+            if method == 'put':
+                response = requests.put(url, headers=THISCONTEXT['HEADER'], json=data, verify=False)
+            if method == 'delete':
+                response = requests.delete(url, headers=THISCONTEXT['HEADER'], json=data, verify=False)
+        except requests.exceptions.RequestException as e:
+            __writelog(e)
+            if quiet is None:
+                print(e)
+
+        if isinstance(response, bool):
+            return ''
+        if response != '':
+            if response.status_code == 204:
+                return ''
+            if response.status_code == 404:
+                if quiet is None:
+                    print('Invalid api call: ' + uri)
+                return None
+            try:
+                responsejson = response.json()
+            except ValueError:
+                return ''
+            if isinstance(responsejson, bool):
+                return ''
+            if responsejson is not None:
+                if 'errorCode' in responsejson:
+                    if quiet is None:
+                        if 'message' in responsejson:
+                            print(responsejson['errorCode'][1:] + ': ' + responsejson['message'])
+                            return({'error': responsejson['errorCode'][1:] + ': ' + responsejson['message']})
+                        else:
+                            print(responsejson)
+                            return('error')
+                    return None
+                else:
+                    return responsejson
+    else:
+        if quiet is None:
+            print("invalid api method")
+
+
+def oldapi(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1, reportingv2=None):
     """api call function"""
     if COHESITY_API['AUTHENTICATED'] is False:
         print('Not Connected')
@@ -346,6 +419,8 @@ def dayDiff(newdate, olddate):
 ### get/store password for future runs
 def __getpassword(vip, username, password, domain, useApiKey, updatepw, prompt):
     """get/set stored password"""
+    if domain.lower() != 'local':
+        vip = '--'  # wildcard vip
     if password is not None:
         return password
     if prompt is not None:
@@ -392,6 +467,8 @@ def __getpassword(vip, username, password, domain, useApiKey, updatepw, prompt):
 
 # store password in PWFILE
 def setpwd(v='helios.cohesity.com', u='helios', d='local', useApiKey=False, password=None):
+    if d.lower() != 'local':
+        v = '--'  # wildcard vip
     if password is None:
         pwd = getpass.getpass("Enter password for %s/%s at %s: " % (d, u, v))
     else:
@@ -437,6 +514,8 @@ def storepw(vip, username, domain='local', password=None, useApiKey=False, updat
 
 ### store password from input
 def storePasswordFromInput(vip, username, password, domain='local', useApiKey=False):
+    if domain.lower() != 'local':
+        vip = '--'  # wildcard vip
     pwpath = os.path.join(CONFIGDIR, vip + '-' + domain + '-' + username + '-' + str(useApiKey))
     try:
         pwdfile = open(pwpath, 'w')
