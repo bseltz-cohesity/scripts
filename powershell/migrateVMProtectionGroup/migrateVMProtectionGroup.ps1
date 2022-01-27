@@ -85,7 +85,7 @@ if($suffix){
     $newJobName = "$newJobName-$suffix"
 }
 
-$job = (api get -v2 'data-protect/protection-groups').protectionGroups | Where-Object name -eq $jobName
+$job = (api get -v2 'data-protect/protection-groups?environments=kVMware&isActive=true').protectionGroups | Where-Object name -eq $jobName
 
 if($job){
 
@@ -112,7 +112,7 @@ if($job){
         # check for vCenter
         $newVCenter = api get "protectionSources?environments=kVMware&includeVMFolders=true" | Where-Object {$_.protectionSource.name -eq $job.vmwareParams.sourceName}
         if(!$newVCenter){
-            write-host "vCenter $($newVCenter.protectionSource.name) is not registered" -ForegroundColor Yellow
+            write-host "vCenter $($job.vmwareParams.sourceName) is not registered" -ForegroundColor Yellow
             exit
         }
 
@@ -240,5 +240,5 @@ if($job){
     $newjob = api post -v2 data-protect/protection-groups $job
     "`nMigration Complete`n"
 }else{
-    Write-Host "Job $jobName not found" -ForegroundColor Yellow
+    Write-Host "VMware Job $jobName not found" -ForegroundColor Yellow
 }
