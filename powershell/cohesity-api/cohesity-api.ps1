@@ -105,10 +105,6 @@ function apiauth($vip='helios.cohesity.com',
                  [switch] $useApiKey,
                  [switch] $v2){
 
-    if($helios){
-        $useApiKey = $True
-    }
-
     # parse domain\username or username@domain
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
@@ -116,14 +112,14 @@ function apiauth($vip='helios.cohesity.com',
     if($password){ $passwd = $password }
     # update password
     if($updatePassword -or $clearPassword){
-        $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey
+        $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
     }
     # get stored password
     if(!$passwd){
-        $passwd = Get-CohesityAPIPassword -vip $vip -username $username -domain $domain -useApiKey $useApiKey
+        $passwd = Get-CohesityAPIPassword -vip $vip -username $username -domain $domain -useApiKey $useApiKey -helios $helios
         if(!$passwd -and !$noprompt){
             # prompt for password and store
-            $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -quiet -useApiKey $useApiKey
+            $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -quiet -useApiKey $useApiKey -helios $helios
         }
         if(!$passwd){
             # report no password
@@ -531,12 +527,12 @@ function dateToUsecs($datestring=(Get-Date)){
 
 # password functions ==============================================================================
 
-function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', $useApiKey=$false){
+function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', $useApiKey=$false, $helios=$false){
     # parse domain\username or username@domain
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
     }
-    if($domain -ne 'local'){
+    if($domain -ne 'local' -and $helios -eq $false -and $vip -ne 'helios.cohesity.com' -and $useApiKey -eq $false){
         $vip = '--'  # wildcard vip for AD accounts
     }
     $keyName = "$vip`-$domain`-$username`-$useApiKey"
@@ -591,19 +587,19 @@ function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
             $cohesity_api.pwscope = 'file'
             $pwd = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($cpwd))
             $cohesity_api.pwscope = 'user'
-            $null = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -useApiKey $useApiKey -passwd $pwd -quiet
+            $null = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -useApiKey $useApiKey -helios $helios -passwd $pwd -quiet
             return $pwd
         }
     }
     return $null
 }
 
-function Clear-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', [switch]$quiet, $useApiKey=$false){
+function Clear-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', [switch]$quiet, $useApiKey=$false, $helios=$false){
     # parse domain\username or username@domain
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
     }
-    if($domain -ne 'local'){
+    if($domain -ne 'local' -and !$helios -and $vip -ne 'helios.cohesity.com' -and $useApiKey -eq $false){
         $vip = '--'  # wildcard vip for AD accounts
     }
     $keyName = "$vip`-$domain`-$username`-$useApiKey"
@@ -644,15 +640,15 @@ function Clear-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios
     $updatedContent | out-file -FilePath $pwfile
 }
 
-function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', $passwd=$null, [switch]$quiet, $useApiKey=$false){
+function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', $passwd=$null, [switch]$quiet, $useApiKey=$false, $helios=$false){
 
-    Clear-CohesityAPIPassword -vip $vip -username $username -domain $domain -useApiKey $useApiKey
+    Clear-CohesityAPIPassword -vip $vip -username $username -domain $domain -useApiKey $useApiKey -helios $helios
 
     # parse domain\username or username@domain
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
     }
-    if($domain -ne 'local'){
+    if($domain -ne 'local' -and !$helios -and $vip -ne 'helios.cohesity.com' -and $useApiKey -eq $false){
         $vip = '--'  # wildcard vip for AD accounts
     }
     if(!$passwd){
@@ -713,7 +709,7 @@ function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
 
 function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $domain='local', $passwd=$null, [switch]$useApiKey){
     $cohesity_api.pwscope = 'file'
-    $null = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -useApiKey $useApiKey
+    $null = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -useApiKey $useApiKey -helios $helios
 }
 
 function storePasswordForUser($vip='helios.cohesity.com', $username='helios', $domain='local', $passwd=$null){
@@ -746,7 +742,7 @@ function importStoredPassword($vip='helios.cohesity.com', $username='helios', $d
     $passwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $securePassword ))
     if($passwd){
         $cohesity_api.pwscope = 'user'
-        $null = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -useApiKey $useApiKey -quiet
+        $null = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -useApiKey $useApiKey -helios $helios -quiet
         Remove-Item -Path $userFile -Force
         Write-Host "Password imported successfully" -ForegroundColor Green
     }else{
