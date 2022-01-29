@@ -33,7 +33,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 Place all files in a folder together and run the script like so:
 
-To clone a group to another cluster using the same name:
+To clone a group to another cluster using the same name (and keep the same selections):
 
 ```powershell
 ./cloneVMProtectionGroup.ps1 -sourceCluster myOldCluster `
@@ -43,6 +43,28 @@ To clone a group to another cluster using the same name:
                              -targetUser myNewUsername `
                              -sourceDomain myNewDomain.net `
                              -jobName myjob
+```
+
+To clone a group to another group on the same cluster:
+
+```powershell
+./cloneVMProtectionGroup.ps1 -sourceCluster myOldCluster `
+                             -sourceUser myOldUsername `
+                             -sourceDomain myOldDomain.net `
+                             -jobName myjob `
+                             -suffix clone
+```
+
+To clone a group to another group using a different vCenter `
+
+```powershell
+./cloneVMProtectionGroup.ps1 -sourceCluster myOldCluster `
+                             -sourceUser myOldUsername `
+                             -sourceDomain myOldDomain.net `
+                             -jobName myjob `
+                             -suffix vCenterB `
+                             -vCenterName vCenterB.mydomain.net `
+                             -vmName myvm1
 ```
 
 ## Basic Parameters
