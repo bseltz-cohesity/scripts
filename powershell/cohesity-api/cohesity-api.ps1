@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.01.27 - Brian Seltzer
+#  Version 2022.01.29 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2021.02.10 - fixed empty body issue
@@ -19,9 +19,10 @@
 # 2021.12.21 - fixed USING_HELIOS status flag
 # 2022.01.12 - fixed storePasswordForUser
 # 2022.01.27 - changed password storage for non-Windows, added wildcard vip for AD accounts
+# 2022.01.29 - fixed helios on-prem password storage
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2022.01.27'
+$versionCohesityAPI = '2022.01.29'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -103,6 +104,10 @@ function apiauth($vip='helios.cohesity.com',
                  [switch] $updatePassword, 
                  [switch] $useApiKey,
                  [switch] $v2){
+
+    if($helios){
+        $useApiKey = $True
+    }
 
     # parse domain\username or username@domain
     if($username.Contains('\')){
@@ -287,6 +292,7 @@ function heliosCluster($clusterName){
             }else{
                 $cohesity_api.webcli.headers['accessClusterId'] = $cluster.clusterId;
             }
+            return $cluster
         }else{
             Write-Host "Cluster $clusterName not connected to Helios" -ForegroundColor Yellow
             return $null
