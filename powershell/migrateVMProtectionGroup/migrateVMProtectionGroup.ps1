@@ -228,6 +228,7 @@ if($job){
                 exit
             }
         }
+        $job.vmwareParams.excludeObjectIds = $newExcludeIds
     }
 
     # include tags
