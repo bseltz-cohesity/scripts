@@ -6,10 +6,7 @@ This PowerShell script clones a VMware protection group.
 
 ## Notes
 
-This script can create a copy of a VM protection group:
-
-* On the same cluster, with an alternate name
-* On a different cluster, with or without an alternate name
+This script can create a copy of a VM protection group, on the same cluster, a different cluster, a different storage domain.
 
 If no vCenter name is specified, the source and VM selections will remain the same, otherwise the VM selections will be cleared and you must specify at least one VM name to protect.
 
@@ -71,14 +68,17 @@ To clone a group to another group using a different vCenter `
 
 * -useHelios: connect to helios
 * -heliosURL: (optional) specify DNS name or IP of on-prem Helios (MCM)
+
 * -sourceCluster: name of source cluster to connect to
 * -sourceUser: username for source cluster
 * -sourceDomain: (optional) domain for source cluster user (defaults to local)
 * -sourcePassword: (optional) password for source user
+
 * -targetCluster: (optional) name of target cluster to connect to (defaults to same as sourceCluster)
 * -targetUser: (optional) username for target cluster (defaults to sourceUser)
 * -targetDomain: (optional) domain for target cluster user (defaults to sourceDomain)
 * -targetPassword: (optional) password for target user
+
 * -jobName: name of job to clone
 * -pauseOldJob
 
@@ -87,9 +87,13 @@ To clone a group to another group using a different vCenter `
 * -prefix: (optional) add prefix to target job name
 * -suffix: (optional) add suffic to target job name (defaults to 'clone' when using same cluster)
 * -newJobName: (optional) new name for target job (defaults to jobName)
+
 * -newPolicyName: (optional) new policy name (defaults to same policy name as source job)
 * -newStorageDomainName: (optional) new storage domain name (defaults to same storage domain name as source job)
 * -pauseNewJob: (optional) pause new job
+
+## VM Selections
+
 * -vCenterName: (optional) name of vCenter for new job
 * -clearObjects: (optional) clear object selections
 * -vmName: (optional) names of VMs to add to new job (comma separated)
