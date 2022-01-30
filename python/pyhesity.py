@@ -109,7 +109,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
 
     pwd = password
     if password is None:
-        pwd = __getpassword(vip, username, password, domain, useApiKey, updatepw, prompt)
+        pwd = __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, prompt)
     COHESITY_API['HEADER'] = {'accept': 'application/json', 'content-type': 'application/json'}
     COHESITY_API['APIROOT'] = 'https://' + vip + '/irisservices/api/v1'
     COHESITY_API['APIROOTv2'] = 'https://' + vip + '/v2/'
@@ -422,9 +422,9 @@ def dayDiff(newdate, olddate):
 
 
 ### get/store password for future runs
-def __getpassword(vip, username, password, domain, useApiKey, updatepw, prompt):
+def __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, prompt):
     """get/set stored password"""
-    if domain.lower() != 'local':
+    if domain.lower() != 'local' and helios is False and vip != 'helios.cohesity.com' and useApiKey is False:
         vip = '--'  # wildcard vip
     if password is not None:
         return password
@@ -471,8 +471,8 @@ def __getpassword(vip, username, password, domain, useApiKey, updatepw, prompt):
 
 
 # store password in PWFILE
-def setpwd(v='helios.cohesity.com', u='helios', d='local', useApiKey=False, password=None):
-    if d.lower() != 'local':
+def setpwd(v='helios.cohesity.com', u='helios', d='local', useApiKey=False, helios=False, password=None):
+    if d.lower() != 'local' and helios is False and v != 'helios.cohesity.com' and useApiKey is False:
         v = '--'  # wildcard vip
     if password is None:
         pwd = getpass.getpass("Enter password for %s/%s at %s: " % (d, u, v))
@@ -503,23 +503,23 @@ def setpwd(v='helios.cohesity.com', u='helios', d='local', useApiKey=False, pass
 
 
 ### pwstore for alternate infrastructure
-def pw(vip, username, domain='local', password=None, updatepw=None, useApiKey=False, prompt=None):
-    return __getpassword(vip, username, password, domain, useApiKey, updatepw, prompt)
+def pw(vip, username, domain='local', password=None, updatepw=None, useApiKey=False, helios=False, prompt=None):
+    return __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, prompt)
 
 
-def storepw(vip, username, domain='local', password=None, useApiKey=False, updatepw=True, prompt=None):
+def storepw(vip, username, domain='local', password=None, useApiKey=False, helios=False, updatepw=True, prompt=None):
     pwd1 = '1'
     pwd2 = '2'
     while(pwd1 != pwd2):
-        pwd1 = __getpassword(vip, username, password, domain, useApiKey, updatepw, prompt)
+        pwd1 = __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, prompt)
         pwd2 = getpass.getpass("Re-enter your password: ")
         if(pwd1 != pwd2):
             print('Passwords do not match! Please re-enter...')
 
 
 ### store password from input
-def storePasswordFromInput(vip, username, password, domain='local', useApiKey=False):
-    if domain.lower() != 'local':
+def storePasswordFromInput(vip, username, password, domain='local', useApiKey=False, helios=False):
+    if domain.lower() != 'local' and helios is False and vip != 'helios.cohesity.com' and useApiKey is False:
         vip = '--'  # wildcard vip
     pwpath = os.path.join(CONFIGDIR, vip + '-' + domain + '-' + username + '-' + str(useApiKey))
     try:
