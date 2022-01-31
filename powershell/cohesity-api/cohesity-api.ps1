@@ -597,10 +597,10 @@ function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
         # $v, $d, $u, $i, $cpwd = $pwitem.split(";", 5)
         if($v -eq $vip -and $d -eq $domain -and $u -eq $username -and $i -eq $useApiKey){
             $cohesity_api.pwscope = 'file'
-            $pwd = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($cpwd))
+            $passwd = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($cpwd))
             $cohesity_api.pwscope = 'user'
-            $null = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -useApiKey $useApiKey -helios $helios -passwd $pwd -quiet
-            return $pwd
+            $null = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -useApiKey $useApiKey -helios $helios -passwd $passwd -quiet
+            return $passwd
         }
     }
     return $null
