@@ -436,7 +436,7 @@ if($wait -or $enable){
                 $lastProgress = $percentComplete
             }
         }
-        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
+        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10" | Where-Object {$_.backupRun.jobRunId -eq $newRunId}
     }
 }
 
