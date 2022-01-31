@@ -19,7 +19,7 @@
 # 2021.12.21 - fixed USING_HELIOS status flag
 # 2022.01.12 - fixed storePasswordForUser
 # 2022.01.27 - changed password storage for non-Windows, added wildcard vip for AD accounts
-# 2022.01.29 - fixed helios on-prem password storage
+# 2022.01.29 - fixed helios on-prem password storage, heliosCluster function
 #
 # . . . . . . . . . . . . . . . . . . .
 $versionCohesityAPI = '2022.01.29'
@@ -282,6 +282,7 @@ function heliosCluster($clusterName){
         $cluster = $cohesity_api.heliosConnectedClusters | Where-Object {$_.name -eq $clusterName}
         if($cluster){
             $cohesity_api.header.accessClusterId = $cluster.clusterId
+            $cohesity_api.header.clusterId = $cluster.clusterId
             $cohesity_api.clusterReadOnly = (api get /mcm/config -version 1).mcmReadOnly
             if($PSVersionTable.Platform -eq 'Unix'){
                 $cohesity_api.curlHeader += "accessClusterId: $($cluster.clusterId)"
@@ -291,6 +292,8 @@ function heliosCluster($clusterName){
             return $cluster
         }else{
             Write-Host "Cluster $clusterName not connected to Helios" -ForegroundColor Yellow
+            $cohesity_api.header.remove('accessClusterId')
+            $cohesity_api.header.remove('clusterId')
             return $null
         }
     }else{

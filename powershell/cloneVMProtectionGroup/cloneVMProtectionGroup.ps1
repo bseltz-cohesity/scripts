@@ -118,7 +118,7 @@ $vmNames = @(gatherList -Param $vmName -FilePath $vmList -Name 'jobs' -Required 
 if($useHelios){
     apiauth -vip $heliosURL -username $sourceUser -domain $sourceDomain -helios
     $thisCluster = heliosCluster $sourceCluster
-    if(!$thisCluster){
+    if(! $thisCluster){
         exit
     }
 }else{
@@ -181,7 +181,7 @@ if($job){
         "Connecting to target cluster..."
         if($useHelios){
             $thisCluster = heliosCluster $targetCluster
-            if(!$thisCluster){
+            if(! $thisCluster){
                 exit
             }
         }else{
