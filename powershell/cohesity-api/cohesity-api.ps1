@@ -285,15 +285,24 @@ function heliosCluster($clusterName){
             $cohesity_api.header.clusterId = $cluster.clusterId
             $cohesity_api.clusterReadOnly = (api get /mcm/config -version 1).mcmReadOnly
             if($PSVersionTable.Platform -eq 'Unix'){
+                $cohesity_api.curlHeader = @($cohesity_api.curlHeader | Where-Object {$_.subString(0,9) -ne 'accessClu' -and $_.subString(0,9) -ne 'clusterId'})
                 $cohesity_api.curlHeader += "accessClusterId: $($cluster.clusterId)"
+                $cohesity_api.curlHeader += "clusterId: $($cluster.clusterId)"
             }else{
                 $cohesity_api.webcli.headers['accessClusterId'] = $cluster.clusterId;
+                $cohesity_api.webcli.headers['clusterId'] = $cluster.clusterId;
             }
             return "Connected to $clusterName"
         }else{
             Write-Host "Cluster $clusterName not connected to Helios" -ForegroundColor Yellow
             $cohesity_api.header.remove('accessClusterId')
             $cohesity_api.header.remove('clusterId')
+            if($PSVersionTable.Platform -eq 'Unix'){
+                $cohesity_api.curlHeader = @($cohesity_api.curlHeader | Where-Object {$_.subString(0,9) -ne 'accessClu' -and $_.subString(0,9) -ne 'clusterId'})
+            }else{
+                $cohesity_api.webcli.headers.remove('accessClusterId')
+                $cohesity_api.webcli.headers.remove('clusterId')
+            }
             return $null
         }
     }else{
