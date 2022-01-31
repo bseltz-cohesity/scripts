@@ -289,7 +289,7 @@ function heliosCluster($clusterName){
             }else{
                 $cohesity_api.webcli.headers['accessClusterId'] = $cluster.clusterId;
             }
-            return $cluster
+            return "Connected to $clusterName"
         }else{
             Write-Host "Cluster $clusterName not connected to Helios" -ForegroundColor Yellow
             $cohesity_api.header.remove('accessClusterId')
