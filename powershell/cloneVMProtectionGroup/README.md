@@ -66,7 +66,7 @@ To clone a group to another group using a different vCenter `
 
 ## Basic Parameters
 
-* -useHelios: connect to helios
+* -useHelios: (optional) connect to helios
 * -heliosURL: (optional) specify DNS name or IP of on-prem Helios (MCM)
 
 * -sourceCluster: name of source cluster to connect to
@@ -98,3 +98,23 @@ To clone a group to another group using a different vCenter `
 * -clearObjects: (optional) clear object selections
 * -vmName: (optional) names of VMs to add to new job (comma separated)
 * -vmList: (optional) text file of names of VMs to add to new job (one per line)
+
+## Authenticating to Helios
+
+Helios uses an API key for authentication. To acquire an API key:
+
+* log onto Helios
+* click the gear icon -> access management -> API Keys
+* click Add API Key
+* enter a name for your key
+* click Save
+
+Immediately copy the API key (you only have one chance to copy the key. Once you leave the screen, you can not access it again). When running a Helios compatible script for the first time, you will be prompted for a password. Enter the API key as the password.
+
+If you enter the wrong password, you can re-enter the password like so:
+
+```powershell
+> . .\cohesity-api.ps1
+> apiauth -helios -updatePassword
+Enter your password: *********************
+```
