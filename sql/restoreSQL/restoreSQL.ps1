@@ -419,6 +419,8 @@ $response = api post /recoverApplication $restoreTask
 
 if($response){
     "Restoring $sourceInstance/$sourceDB to $targetServer/$targetInstance/$targetDB (Point in time: $restoreTime)"
+}else{
+    exit 1
 }
 
 if($wait -or $progress){
