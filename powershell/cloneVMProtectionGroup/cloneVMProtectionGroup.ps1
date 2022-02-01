@@ -21,8 +21,8 @@ param (
     [Parameter()][switch]$pauseOldJob,
     [Parameter()][switch]$clearObjects,
     [Parameter()][string]$vCenterName,
-    [Parameter()][array]$vmName,  # name of VM to protect
-    [Parameter()][string]$vmList = ''  # text file of vm names
+    [Parameter()][array]$vmName,
+    [Parameter()][string]$vmList = ''
 )
 
 
