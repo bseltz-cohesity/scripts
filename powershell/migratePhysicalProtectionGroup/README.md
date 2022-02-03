@@ -103,8 +103,10 @@ Note that if you want to delete existing snapshots when cleaning up, use the `-d
 * -forceRegister: (optional) force register sources onto target cluster (breaks sources on source cluster)
 * -dualRegister: (optional) allow sources to be registered to both clusters (requires custom gFlags)
 
-## Cleanup Parameters
+## Cleanup And Source Job Parameters
 
+* -renameOldJob: (optional) add a suffix to the old job name
+* -oldJobSuffix: (optional) specify old job suffix (defaults to current date: yyyy-MM-dd)
 * -cleanupSourceObjects: (optional) delete old job and unregister servers (*destructive!*)
 * -cleanupSourceObjectsAndExit: (optional) delete old job and unregister servers and exit (*destructive!*)
 * -deleteOldSnapshots: (optional) delete existing snapshots when cleaning up old objects (*destrictive!*)

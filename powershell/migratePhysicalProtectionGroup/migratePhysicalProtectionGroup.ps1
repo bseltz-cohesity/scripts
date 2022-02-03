@@ -12,6 +12,7 @@ param (
     [Parameter(Mandatory = $True)][string]$jobName,
     [Parameter()][string]$prefix = '',
     [Parameter()][string]$suffix = '',
+    [Parameter()][string]$oldJobSuffix = $null,
     [Parameter()][string]$newJobName = $jobName,
     [Parameter()][string]$newPolicyName,
     [Parameter()][string]$newStorageDomainName,
@@ -21,7 +22,8 @@ param (
     [Parameter()][switch]$deleteOldSnapshots,
     [Parameter()][switch]$deleteReplica,
     [Parameter()][switch]$forceRegister,
-    [Parameter()][switch]$dualRegister
+    [Parameter()][switch]$dualRegister,
+    [Parameter()][switch]$renameOldJob
 )
 
 if($forceRegister){
@@ -167,7 +169,17 @@ if($job){
                 $job.id
             )
         }
-        $null = api post -v2 data-protect/protection-groups/states $pauseParams  
+        $null = api post -v2 data-protect/protection-groups/states $pauseParams
+        
+        # rename old job
+        if($renameOldJob){
+            if(!$oldJobSuffix){
+                $oldJobSuffix = (Get-Date).ToString('yyyy-MM-dd')
+            }
+            $job.name = "$($job.name)-$oldJobSuffix"
+            "    Renaming old job to ""$($job.name)"""
+            $null = api put -v2 data-protect/protection-groups/$($job.id) $job
+        }
     }
 
     # connect to target cluster

@@ -12,6 +12,7 @@ param (
     [Parameter(Mandatory = $True)][string]$jobName,
     [Parameter()][string]$prefix = '',
     [Parameter()][string]$suffix = '',
+    [Parameter()][string]$oldJobSuffix = $null,
     [Parameter()][string]$newJobName = $jobName,
     [Parameter()][string]$newPolicyName,
     [Parameter()][string]$newStorageDomainName,
@@ -19,7 +20,8 @@ param (
     [Parameter()][switch]$deleteOldJob,
     [Parameter()][switch]$deleteOldJobAndExit,
     [Parameter()][switch]$deleteOldSnapshots,
-    [Parameter()][switch]$deleteReplica
+    [Parameter()][switch]$deleteReplica,
+    [Parameter()][switch]$renameOldJob
 )
 
 
@@ -159,7 +161,7 @@ if($job){
 
     # gather old job details
     if(!$deleteOldJobAndExit){
-        "    Migrating '$jobName' from $sourceCluster to $targetCluster...`n"
+        "    Migrating ""$jobName"" from $sourceCluster to $targetCluster...`n"
         $oldVCenter = api get "protectionSources?id=$($job.vmwareParams.sourceId)&environments=kVMware&includeVMFolders=true"
     }
 
@@ -188,7 +190,17 @@ if($job){
                 $job.id
             )
         }
-        $null = api post -v2 data-protect/protection-groups/states $pauseParams  
+        $null = api post -v2 data-protect/protection-groups/states $pauseParams
+
+        # rename job
+        if($renameOldJob){
+            if(!$oldJobSuffix){
+                $oldJobSuffix = (Get-Date).ToString('yyyy-MM-dd')
+            }
+            $job.name = "$($job.name)-$oldJobSuffix"
+            "    Renaming old job to ""$($job.name)"""
+            $null = api put -v2 data-protect/protection-groups/$($job.id) $job
+        }
     }
 
     # connect to target cluster
@@ -271,7 +283,7 @@ if($job){
 
     # create new job
     $job.name = $newJobName
-    "    Creating job '$newJobName' on $targetCluster..."
+    "    Creating job ""$newJobName"" on $targetCluster..."
     $newjob = api post -v2 data-protect/protection-groups $job
     "`nMigration Complete`n"
 }else{

@@ -68,8 +68,10 @@ To update all VMware protection jobs:
 * -pauseNewJob: (optional) pause new job
 * -deleteReplica: (optional) delete old replica of protection group on target cluster (will not delete the snapshots)
 
-## Cleanup Parameters
+## Cleanup And Source Job Parameters
 
-* -deleteOldJob: (optional) delete old job (*destructive!*)
-* -deleteOldJobAndExit: (optional) delete old job and exit (*destructive!*)
-* -deleteOldSnapshots: (optional) delete existing snapshots when deleting old job (*destrictive!*)
+* -renameOldJob: (optional) add a suffix to the old job name
+* -oldJobSuffix: (optional) specify old job suffix (defaults to current date: yyyy-MM-dd)
+* -cleanupSourceObjects: (optional) delete old job and unregister servers (*destructive!*)
+* -cleanupSourceObjectsAndExit: (optional) delete old job and unregister servers and exit (*destructive!*)
+* -deleteOldSnapshots: (optional) delete existing snapshots when cleaning up old objects (*destrictive!*)
