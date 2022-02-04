@@ -72,7 +72,12 @@ while($gotAllRanges -eq $False){
 $dateString = (get-date).ToString('yyyy-MM-dd')
 
 $csvHeadings = $headings -join ','
+$tsvHeadings = $headings -join "`t"
 $htmlHeadings = $htmlHeadings = ($headings | ForEach-Object {"<th>$_</th>"}) -join "`n"
+
+# TSV output
+$tsvFileName = "$($filePrefix)_$($start)_$($end).txt"
+$tsvHeadings | Out-File -FilePath $tsvFileName
 
 # CSV output
 $csvFileName = "$($filePrefix)_$($start)_$($end).csv"
@@ -268,7 +273,7 @@ foreach($range in $ranges){
                 $lastFailure = (usecsToDate $i.lastFailedRunUsecs).ToSTring('yyyy-MM-dd hh:mm')
                 $failedBackups = $i.failedBackups
                 $strikes = $i.strikeCount
-                $lastError = $i.lastFailedRunErrorMsg
+                $lastError = $i.lastFailedRunErrorMsg.replace("`n", "/").replace("`t", "/")
                 if($lastError.length -gt 301){
                     $lastError = $lastError.subString(0,300)
                 }
@@ -306,6 +311,7 @@ foreach($uniqueKey in $stats.Keys | Sort-Object){
     $lastError = $stats[$uniqueKey].lastError
 
     """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}""" -f $clusterName, $jobName, $sourceName, $objectName, $environment, $policy, $lastFailure, $failedBackups, $strikes, $lastError | Out-File -FilePath $csvFileName -Append
+    "{0}`t{1}`t{2}`t{3}`t{4}`t{5}`t{6}`t{7}`t{8}`t{9}" -f $clusterName, $jobName, $sourceName, $objectName, $environment, $policy, $lastFailure, $failedBackups, $strikes, $lastError | Out-File -FilePath $tsvFileName -Append
     $Global:html += '<tr>
         <td class="nowrap">{0}</td>
         <td>{1}</td>
@@ -327,4 +333,4 @@ $Global:html += "</table>
 
 $Global:html | Out-File -FilePath $htmlFileName
 
-Write-Host "`nOutput saved to $csvFileName`nAlso saved as $htmlFileName`n"
+Write-Host "`nOutput saved to`n    CSV: $csvFileName`n   HTML: $htmlFileName`n    TSV: $tsvFileName`n"
