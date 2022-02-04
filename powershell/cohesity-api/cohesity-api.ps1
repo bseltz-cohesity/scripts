@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.01.29 - Brian Seltzer
+#  Version 2022.02.04 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2021.02.10 - fixed empty body issue
@@ -20,9 +20,10 @@
 # 2022.01.12 - fixed storePasswordForUser
 # 2022.01.27 - changed password storage for non-Windows, added wildcard vip for AD accounts
 # 2022.01.29 - fixed helios on-prem password storage, heliosCluster function
+# 2022.02.04 - added support for V2 session authentiation
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2022.01.29'
+$versionCohesityAPI = '2022.02.04'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -152,9 +153,9 @@ function apiauth($vip='helios.cohesity.com',
     $cohesity_api.apiRootReportingV2 = "https://$vip/heliosreporting/api/v1/public/"
 
     $cohesity_api.version = 1
-    if($v2){
-        $cohesity_api.version = 2
-    }
+    # if($v2){
+    #     $cohesity_api.version = 2
+    # }
 
     if($regionid){
         $cohesity_api.header['regionid'] = $regionid
@@ -249,18 +250,73 @@ function apiauth($vip='helios.cohesity.com',
             }
             if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
         }catch{
+            $thisError = $_
+            # try v2 auth
+            if($thisError.ToString().contains('"message":')){
+                $message = (ConvertFrom-Json $thisError.ToString()).message
+                if($message -eq 'Access denied'){
+                    try{
+                        $url = $cohesity_api.apiRootv2 + 'users/sessions'
+                        $body = ConvertTo-Json @{
+                            'domain' = $domain;
+                            'username' = $username;
+                            'password' = $passwd
+                        }
+                        # authenticate
+                        if($PSVersionTable.PSEdition -eq 'Core'){
+                            $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck
+                        }else{
+                            $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body
+                        }
+                        # set file transfer details
+                        if($PSVersionTable.Platform -eq 'Unix'){
+                            $cohesity_api.curlHeader = @("session-id: $($auth.sessionId)")
+                        }else{
+                            $cohesity_api.webcli.headers['session-id'] = $auth.sessionId;
+                        }
+                        # add token to header
+                        $cohesity_api.authorized = $true
+                        $cohesity_api.clusterReadOnly = $false
+                        $cohesity_api.header = @{'accept' = 'application/json'; 
+                            'content-type' = 'application/json'; 
+                            'session-id' = $auth.sessionId
+                        }
+                        $cluster = api get cluster -quiet -version 1 -data $null
+                        if($cluster.clusterSoftwareVersion -lt '6.4'){
+                            $cohesity_api.version = 1
+                        }
+                        if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
+                        break
+                    }catch{
+                        apidrop -quiet
+                        __writeLog $thisError.ToString()
+                        if($cohesity_api.reportApiErrors){
+                            if($thisError.ToString().contains('"message":')){
+                                $message = (ConvertFrom-Json $_.ToString()).message
+                                Write-Host $message -foregroundcolor yellow
+                                if($message -match 'Invalid Username or Password'){
+                                    apiauth -vip $vip -username $username -domain $domain -updatePassword
+                                }
+                            }else{
+                                Write-Host $thisError.ToString() -foregroundcolor yellow
+                            }
+                        }
+                        break
+                    }
+                }
+            }
             # report authentication error
             apidrop -quiet
-            __writeLog $_.ToString()
+            __writeLog $thisError.ToString()
             if($cohesity_api.reportApiErrors){
-                if($_.ToString().contains('"message":')){
+                if($thisError.ToString().contains('"message":')){
                     $message = (ConvertFrom-Json $_.ToString()).message
                     Write-Host $message -foregroundcolor yellow
                     if($message -match 'Invalid Username or Password'){
                         apiauth -vip $vip -username $username -domain $domain -updatePassword
                     }
                 }else{
-                    Write-Host $_.ToString() -foregroundcolor yellow
+                    Write-Host $thisError.ToString() -foregroundcolor yellow
                 }
             }
         }
