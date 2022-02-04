@@ -80,8 +80,14 @@ while gotAllRanges is False:
         ranges.append({'start': uStart, 'end': thisUend})
         gotAllRanges = True
 
+tsvHeadings = '\t'.join(headings)
 csvHeadings = ','.join(headings)
 htmlHeadings = ''.join(['<th>%s</th>' % h for h in headings])
+
+# TSV output
+tsvFileName = "%s_%s_%s.txt" % (filePrefix, start, end)
+tsv = codecs.open(tsvFileName, 'w', 'utf-8')
+tsv.write('%s\n' % tsvHeadings)
 
 # CSV output
 csvFileName = "%s_%s_%s.csv" % (filePrefix, start, end)
@@ -307,8 +313,9 @@ for uniqueKey in sorted(stats.keys()):
     lastFailure = stats[uniqueKey]['lastFailure']
     failedBackups = stats[uniqueKey]['failedBackups']
     strikes = stats[uniqueKey]['strikes']
-    lastError = stats[uniqueKey]['lastError']
+    lastError = stats[uniqueKey]['lastError'].replace('\n', '/').replace('\t', '/')
 
+    tsv.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (clusterName, jobName, sourceName, objectName, environment, policy, lastFailure, failedBackups, strikes, lastError))
     csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, jobName, sourceName, objectName, environment, policy, lastFailure, failedBackups, strikes, lastError))
     html += '''<tr>
         <td class="nowrap">%s</td>
@@ -330,6 +337,7 @@ html += '''</table>
 
 htmlFile.write(html)
 htmlFile.close()
+tsv.close()
 csv.close()
 
-print('\nOutput saved to %s\nAlso saved to %s\n' % (htmlFileName, csvFileName))
+print('\nOutput saved to\n    CSV: %s\n   HTML: %s\n    TSV: %s\n' % (csvFileName, htmlFileName, tsvFileName))
