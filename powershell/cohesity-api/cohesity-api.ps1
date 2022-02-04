@@ -251,7 +251,7 @@ function apiauth($vip='helios.cohesity.com',
             if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
         }catch{
             $thisError = $_
-            # try v2 auth
+            # try v2 session auth
             if($thisError.ToString().contains('"message":')){
                 $message = (ConvertFrom-Json $thisError.ToString()).message
                 if($message -eq 'Access denied'){
@@ -285,8 +285,9 @@ function apiauth($vip='helios.cohesity.com',
                         if($cluster.clusterSoftwareVersion -lt '6.4'){
                             $cohesity_api.version = 1
                         }
-                        if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
-                        break
+                        if(!$quiet){
+                            Write-Host "Connected!" -foregroundcolor green
+                        }
                     }catch{
                         apidrop -quiet
                         __writeLog $thisError.ToString()
@@ -304,19 +305,20 @@ function apiauth($vip='helios.cohesity.com',
                         break
                     }
                 }
-            }
-            # report authentication error
-            apidrop -quiet
-            __writeLog $thisError.ToString()
-            if($cohesity_api.reportApiErrors){
-                if($thisError.ToString().contains('"message":')){
-                    $message = (ConvertFrom-Json $_.ToString()).message
-                    Write-Host $message -foregroundcolor yellow
-                    if($message -match 'Invalid Username or Password'){
-                        apiauth -vip $vip -username $username -domain $domain -updatePassword
+            }else{
+                # report authentication error
+                apidrop -quiet
+                __writeLog $thisError.ToString()
+                if($cohesity_api.reportApiErrors){
+                    if($thisError.ToString().contains('"message":')){
+                        $message = (ConvertFrom-Json $_.ToString()).message
+                        Write-Host $message -foregroundcolor yellow
+                        if($message -match 'Invalid Username or Password'){
+                            apiauth -vip $vip -username $username -domain $domain -updatePassword
+                        }
+                    }else{
+                        Write-Host $thisError.ToString() -foregroundcolor yellow
                     }
-                }else{
-                    Write-Host $thisError.ToString() -foregroundcolor yellow
                 }
             }
         }
