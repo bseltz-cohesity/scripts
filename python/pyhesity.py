@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2022.01.27"""
+"""Cohesity Python REST API Wrapper Module - 2022.02.04"""
 
 ##########################################################################################
 # Change Log
@@ -25,6 +25,7 @@
 # 2022.01.10 - updated password storage formats
 # 2022.01.20 - added api context
 # 2022.01.27 - added wildcard password storage for AD credentials
+# 2022.02.04 - added support for V2 session authentication
 #
 ##########################################################################################
 # Install Notes
@@ -182,12 +183,44 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                     if(quiet is None):
                         print("Connected!")
                 else:
-                    __writelog(response.json()['message'])
-                    if quiet is None:
-                        print(response.json()['message'])
-                    if 'invalid username' in response.json()['message'].lower():
-                        if noretry is False:
-                            apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
+                    # try session auth
+                    if 'access denied' in response.json()['message'].lower():
+                        try:
+                            url = COHESITY_API['APIROOTv2'] + 'users/sessions'
+                            creds = json.dumps({"domain": domain, "password": pwd, "username": username})
+                            response = requests.post(url, data=creds, headers=COHESITY_API['HEADER'], verify=False)
+                            if response != '':
+                                if response.status_code == 201:
+                                    sessionId = response.json()['sessionId']
+                                    COHESITY_API['HEADER'] = {'accept': 'application/json',
+                                                              'content-type': 'application/json',
+                                                              'session-id': sessionId}
+                                    if tenantId is not None:
+                                        COHESITY_API['HEADER']['x-impersonate-tenant-id'] = '%s/' % tenantId
+                                    COHESITY_API['AUTHENTICATED'] = True
+                                    if(quiet is None):
+                                        print("Connected!")
+                                else:
+                                    COHESITY_API['AUTHENTICATED'] = False
+                                    __writelog(response.json()['message'])
+                                    if quiet is None:
+                                        print(response.json()['message'])
+                                    if 'invalid username' in response.json()['message'].lower():
+                                        if noretry is False:
+                                            apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
+                        except requests.exceptions.RequestException as e2:
+                            __writelog(e2)
+                            COHESITY_API['AUTHENTICATED'] = False
+                            if quiet is None:
+                                print(e2)
+                    else:
+                        COHESITY_API['AUTHENTICATED'] = False
+                        __writelog(response.json()['message'])
+                        if quiet is None:
+                            print(response.json()['message'])
+                        if 'invalid username' in response.json()['message'].lower():
+                            if noretry is False:
+                                apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
 
         except requests.exceptions.RequestException as e:
             __writelog(e)
