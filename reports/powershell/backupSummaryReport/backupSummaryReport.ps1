@@ -37,7 +37,7 @@ $today = Get-Date
 $cluster = api get cluster
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "BackupSummary-$($cluster.name)-$dateString.csv"
-"Protection Group,Type,Source,Successful Runs,Failed Runs,Last Run Successful Objects,Last Run Failed Objects,Data Read Total $unit,Data Written Total $unit,SLA Violation,Last Run Status,Last Run Date,Last Run Copy Status" | Out-File -FilePath $outfileName
+"Protection Group,Type,Source,Successful Runs,Failed Runs,Last Run Successful Objects,Last Run Failed Objects,Data Read Total $unit,Data Written Total $unit,SLA Violation,Last Run Status,Last Run Date,Last Run Copy Status,Message" | Out-File -FilePath $outfileName
 
 $now = Get-Date
 $nowUsecs = dateToUsecs $now
@@ -46,9 +46,16 @@ $daysBackUsecs = dateToUsecs $now.AddDays(-$daysBack)
 $summary = api get "/backupjobssummary?_includeTenantInfo=true&allUnderHierarchy=false&endTimeUsecs=$nowUsecs&onlyReturnJobDescription=false&startTimeUsecs=$daysBackUsecs"
 
 foreach($job in $summary | Sort-Object -Property {$_.backupJobSummary.jobDescription.name}){
+
     $jobName = $job.backupJobSummary.jobDescription.name
     $jobType = $environments[$job.backupJobSummary.jobDescription.type].subString(1)
     $source = $job.backupJobSummary.jobDescription.parentSource.displayName
+    if($jobType -eq 'View'){
+        $source = $job.backupJobSummary.jobDescription.sources[0].entities[0].displayName
+    }
+    if($jobType -eq 'Puppeteer'){
+        $source = $job.backupJobSummary.jobDescription.preScript.remoteHostParams.hostAddress
+    }
     if($job.backupJobSummary.PSObject.Properties['lastProtectionRun']){
         $successfulRuns = 0
         if($job.backupJobSummary.PSObject.Properties['numSuccessfulJobRuns']){
@@ -65,6 +72,16 @@ foreach($job in $summary | Sort-Object -Property {$_.backupJobSummary.jobDescrip
             $slaViolated = $slaViolation[$job.backupJobSummary.lastProtectionRun.backupRun.base.slaViolated]
         }
         $lastRunStatus = $job.backupJobSummary.lastProtectionRun.backupRun.base.publicStatus.subString(1)
+        if($lastRunStatus -eq 'Warning'){
+            $message = $job.backupJobSummary.lastProtectionRun.backupRun.base.warnings[0].errorMsg
+        }elseif($lastRunStatus -eq 'Failure'){
+            $message = $job.backupJobSummary.lastProtectionRun.backupRun.base.error.errorMsg
+        }else{
+            $message = ''
+        }
+        if($message.length -gt 100){
+            $message = $message.subString(0,100)
+        }
         $lastRunDate = usecsToDate $job.backupJobSummary.lastProtectionRun.backupRun.base.startTimeUsecs
         $lastRunSuccessObjects = $job.backupJobSummary.lastProtectionRun.backupRun.numSuccessfulTasks
         $lastRunFailedObjects = $job.backupJobSummary.lastProtectionRun.backupRun.numFailedTasks
@@ -77,7 +94,7 @@ foreach($job in $summary | Sort-Object -Property {$_.backupJobSummary.jobDescrip
                 }
             }
         }
-        "{0},{1},{2},{3},{4},{5},{6},""{7}"",""{8}"",{9},{10},{11},{12}" -f $jobName, $jobType, $source, $successfulRuns, $failedRuns, $lastRunSuccessObjects, $lastRunFailedObjects, (toUnits $dateRead), (toUnits $dataWritten), $slaViolated, $lastRunStatus, $lastRunDate, $copyTaskStatus | Tee-Object -FilePath $outfileName -Append    
+        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}"",""{13}""" -f $jobName, $jobType, $source, $successfulRuns, $failedRuns, $lastRunSuccessObjects, $lastRunFailedObjects, (toUnits $dateRead), (toUnits $dataWritten), $slaViolated, $lastRunStatus, $lastRunDate, $copyTaskStatus, $message | Tee-Object -FilePath $outfileName -Append    
     }
 }
 
