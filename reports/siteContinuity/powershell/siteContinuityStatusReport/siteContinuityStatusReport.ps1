@@ -17,6 +17,8 @@ param (
 # authenticate
 apiauth -vip 'helios.cohesity.com' -username $username -domain 'local'
 
+"`nCollecting Site Continuity Status..."
+
 $filePrefix = "SiteContinuityStatusReport"
 $title = "SiteContinuity Status Report"
 
@@ -87,7 +89,7 @@ $Global:html = '<html>
 
         tr {
             border: 1px solid #F8F8F8;
-            background-color: #F8F8F8;
+            background-color: #F1F1F1;
         }
 
         td {
@@ -124,6 +126,10 @@ $Global:html = '<html>
             text-align: left;
             padding: 6px;
             white-space: nowrap;
+        }
+
+        tr:nth-child(even) {
+            background-color: #F8F8F8;
         }
     </style>
 </head>
@@ -226,36 +232,41 @@ if($drPlanName){
 }
 
 foreach($drPlan in $drPlans | Sort-Object -Property name){
+    $planNameReported = $false
     $planName = $drPlan.name
     $dataPoolNames = ($drPlan.primarySite.resources | Where-Object type -eq 'DataPool').dataPoolConfig.name
     $planStatus = $drPlan.status
     $theseActivities = $activities.activities | Where-Object {$_.drPlanDetails.planId -eq $drPlan.id} | Sort-Object -Property startTimeInUsecs -Descending
     if($theseActivities.Count -gt 0){
-        $activity = $theseActivities[0]
-        $durationMinutes = [int64]($activity.durationInUsecs / 60000000)
-        $activityType = $activity.type
-        $startTime = usecsToDate $activity.startTimeInUsecs
-        $status = $activity.statusDetails.status
-        $message = $activity.statusDetails.message.replace("`n", "/ ")
-        if($message.length -gt 100){
-            $message = $message.subString(0,100).split('.')[0]
-        }
-        if(!$dataPoolName -or $dataPoolName -in $dataPoolNames){
-            "{0} ({1})" -f $planName, $planStatus
-            """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}""" -f $planName, $($dataPoolNames -join '; ') , $startTime, $durationMinutes, $activityType, $status, $planStatus, $message | Out-File -FilePath $csvFileName -Append
-            $Global:html += '<tr>
-                <td class="nowrap">{0}</td>
-                <td class="nowrap">{1}</td>
-                <td class="nowrap">{2}</td>
-                <td class="nowrap">{3}</td>
-                <td class="nowrap">{4}</td>
-                <td class="nowrap">{5}</td>
-                <td class="nowrap">{6}</td>
-                <td class="wide">{7}</td>
-                </tr>' -f $planName, $($dataPoolNames -join '; ') , $startTime, $durationMinutes, $activityType, $status, $planStatus, $message
+        foreach($activity in $theseActivities){
+            $durationMinutes = [int64]($activity.durationInUsecs / 60000000)
+            $activityType = $activity.type
+            $startTime = usecsToDate $activity.startTimeInUsecs
+            $status = $activity.statusDetails.status
+            $message = $activity.statusDetails.message.replace("`n", "/ ")
+            if($message.length -gt 100){
+                $message = $message.subString(0,100).split('.')[0]
+            }
+            if(!$dataPoolName -or $dataPoolName -in $dataPoolNames){
+                if(!$planNameReported){
+                    $planNameReported = $True
+                }else{
+                    $planName = ''
+                }
+                """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}""" -f $planName, $($dataPoolNames -join '; ') , $startTime, $durationMinutes, $activityType, $status, $planStatus, $message | Out-File -FilePath $csvFileName -Append
+                $Global:html += '<tr>
+                    <td class="nowrap">{0}</td>
+                    <td class="nowrap">{1}</td>
+                    <td class="nowrap">{2}</td>
+                    <td class="nowrap">{3}</td>
+                    <td class="nowrap">{4}</td>
+                    <td class="nowrap">{5}</td>
+                    <td class="nowrap">{6}</td>
+                    <td class="wide">{7}</td>
+                    </tr>' -f $planName, $($dataPoolNames -join '; ') , $startTime, $durationMinutes, $activityType, $status, $planStatus, $message
+            }
         }
     }else{
-        "{0} ({1})" -f $planName, $planStatus
         """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}""" -f $planName, '' , '', '', '', '', $planStatus, '' | Out-File -FilePath $csvFileName -Append
         $Global:html += '<tr>
             <td>{0}</td>
