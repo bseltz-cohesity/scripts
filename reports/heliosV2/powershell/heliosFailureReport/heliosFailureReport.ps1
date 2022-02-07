@@ -302,6 +302,7 @@ foreach($uniqueKey in $stats.Keys | Sort-Object){
 
     $clusterName = $stats[$uniqueKey].clusterName
     $sourceName = $stats[$uniqueKey].sourceName
+    $objectName = $stats[$uniqueKey].objectName
     $jobName = $stats[$uniqueKey].jobName
     $environment = $stats[$uniqueKey].environment
     $policy = $stats[$uniqueKey].policy
