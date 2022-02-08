@@ -9,6 +9,7 @@ import codecs
 # command line arguments
 import argparse
 parser = argparse.ArgumentParser()
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
 parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-s', '--startdate', type=str, default='')
 parser.add_argument('-e', '--enddate', type=str, default='')
@@ -18,6 +19,7 @@ parser.add_argument('-y', '--days', type=int, default=31)
 
 args = parser.parse_args()
 
+vip = args.vip
 username = args.username
 startdate = args.startdate
 enddate = args.enddate
@@ -41,7 +43,7 @@ Strikes
 Last Error'''.split('\n')
 
 # authenticate
-apiauth(vip='helios.cohesity.com', username=username, domain='local')
+apiauth(vip=vip, username=username, domain='local', helios=True)
 
 now = datetime.now()
 dateString = dateToString(now, "%Y-%m-%d")
