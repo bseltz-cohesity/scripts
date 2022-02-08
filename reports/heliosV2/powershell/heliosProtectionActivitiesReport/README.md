@@ -32,6 +32,7 @@ Place all files in a folder together, then run the main script like so:
 
 ## Parameters
 
+* -vip: (optional) defaults to helios.cohesity.com
 * -username: (optional) defaults to helios
 * -startDate: (optional) specify start of date range
 * -endDate: (optional) specify end of date range

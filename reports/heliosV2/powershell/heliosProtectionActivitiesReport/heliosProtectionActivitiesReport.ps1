@@ -1,5 +1,6 @@
 [CmdletBinding()]
 param (
+    [Parameter()][string]$vip='helios.cohesity.com',
     [Parameter()][string]$username='helios',
     [Parameter()][string]$startDate = '',
     [Parameter()][string]$endDate = '',
@@ -37,7 +38,7 @@ Data Written ($unit)" -split "`n"
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip 'helios.cohesity.com' -username $username -domain 'local'
+apiauth -vip $vip -username $username -domain 'local' -helios
 
 ### determine start and end dates
 $today = Get-Date

@@ -1,5 +1,6 @@
 [CmdletBinding()]
 param (
+    [Parameter()][string]$vip='helios.cohesity.com',
     [Parameter()][string]$username='helios',
     [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'GiB'
 )
@@ -24,7 +25,7 @@ Logical Data ($unit)" -split "`n"
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip 'helios.cohesity.com' -username $username -domain 'local'
+apiauth -vip $vip -username $username -domain 'local' -helios
 
 $dateString = (get-date).ToString('yyyy-MM-dd')
 

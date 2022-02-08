@@ -1,5 +1,6 @@
 [CmdletBinding()]
 param (
+    [Parameter()][string]$vip='helios.cohesity.com',
     [Parameter()][string]$username='helios',
     [Parameter()][string]$startDate = '',
     [Parameter()][string]$endDate = '',
@@ -29,7 +30,7 @@ Daily Growth ($unit)" -split "`n"
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip 'helios.cohesity.com' -username $username -domain 'local'
+apiauth -vip $vip -username $username -domain 'local' -helios
 
 $conversion = @{'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
 function toUnits($val){
