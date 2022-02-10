@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.02.04 - Brian Seltzer
+#  Version 2022.02.10 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2021.02.10 - fixed empty body issue
@@ -21,9 +21,10 @@
 # 2022.01.27 - changed password storage for non-Windows, added wildcard vip for AD accounts
 # 2022.01.29 - fixed helios on-prem password storage, heliosCluster function
 # 2022.02.04 - added support for V2 session authentiation
+# 2022.02.10 - fixed bad password handling
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2022.02.04'
+$versionCohesityAPI = '2022.02.10'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -153,9 +154,9 @@ function apiauth($vip='helios.cohesity.com',
     $cohesity_api.apiRootReportingV2 = "https://$vip/heliosreporting/api/v1/public/"
 
     $cohesity_api.version = 1
-    # if($v2){
-    #     $cohesity_api.version = 2
-    # }
+    if($v2){
+        $cohesity_api.version = 2
+    }
 
     if($regionid){
         $cohesity_api.header['regionid'] = $regionid
@@ -303,6 +304,17 @@ function apiauth($vip='helios.cohesity.com',
                             }
                         }
                         break
+                    }
+                }else{
+                    # report authentication error
+                    apidrop -quiet
+                    __writeLog $thisError.ToString()
+                    $message = (ConvertFrom-Json $_.ToString()).message
+                    if($cohesity_api.reportApiErrors){
+                        Write-Host $message -foregroundcolor yellow
+                        if($message -match 'Invalid Username or Password'){
+                            apiauth -vip $vip -username $username -domain $domain -updatePassword
+                        }
                     }
                 }
             }else{
