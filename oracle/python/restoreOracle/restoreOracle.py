@@ -85,6 +85,11 @@ latest = args.latest
 norecovery = args.norecovery
 wait = args.wait
 
+if shellvars is None:
+    shellvars = []
+if pfileparams is None:
+    pfileparams = []
+
 # validate arguments
 if targetserver != sourceserver or targetdb != sourcedb:
     if oraclehome is None or oraclebase is None or oracledata is None:
