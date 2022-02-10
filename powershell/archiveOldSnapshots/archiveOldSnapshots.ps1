@@ -73,6 +73,7 @@ if($includeLogs){
 }
 
 $dontrunstates = @('kAccepted', 'kRunning', 'kCanceling', 'kSuccess')
+$finishedStates = @('kSuccess', 'kWarning', 'kFailure')
 
 foreach($jobName in $jobNames | Sort-Object -Unique){
     $job = $jobs | Where-Object name -eq $jobName
@@ -84,17 +85,21 @@ foreach($jobName in $jobNames | Sort-Object -Unique){
         $runs = (api get "protectionRuns?jobId=$($job.id)&numRuns=999999&$($runTypes)excludeTasks=true&excludeNonRestoreableRuns=true") | `
             Where-Object { $_.backupRun.snapshotsDeleted -eq $false } | `
             Where-Object { $_.copyRun[0].runStartTimeUsecs -le $olderThanUsecs } |
+            Where-Object { $_.backupRun.status -in $finishedStates } |
             Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
         
         foreach ($run in $runs) {
             
             $needsArchive = $True
-            
+            $alreadyArchived = $false
+            $wouldExpire = $false
+
             foreach($copyRun in $run.copyRun){
                 if($copyRun.target.type -eq 'kArchival' -and
                        $copyRun.target.archivalTarget.vaultName -eq $vaultName -and
                        $copyRun.status -in $dontrunstates){
                    $needsArchive = $false
+                   $alreadyArchived = $True
                 }
             }
 
@@ -117,6 +122,7 @@ foreach($jobName in $jobNames | Sort-Object -Unique){
 
             if($daysToKeep -lt 1){
                 $needsArchive = $false
+                $wouldExpire = $True
             }
 
             if($needsArchive){
@@ -167,7 +173,11 @@ foreach($jobName in $jobNames | Sort-Object -Unique){
                     }
                 }
             }else{
-                Write-Host "$($jobName): $runDate already archived or archiving..." -ForegroundColor Magenta
+                if($alreadyArchived){
+                    Write-Host "$($jobName): $runDate already archived or archiving..." -ForegroundColor Magenta
+                }elseif($wouldExpire){
+                    Write-Host "$($jobName): skipping $runDate (archive would expire $(-$daysToKeep) days ago)" -ForegroundColor Magenta
+                }
             }
         }
     }else{
