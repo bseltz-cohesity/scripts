@@ -30,7 +30,7 @@ parser.add_argument('-td', '--targetdb', type=str, default=None)  # name of targ
 parser.add_argument('-oh', '--oraclehome', type=str, default=None)  # oracle home path on target
 parser.add_argument('-ob', '--oraclebase', type=str, default=None)  # oracle base path on target
 parser.add_argument('-od', '--oracledata', type=str, default=None)  # oracle data path on target
-parser.add_argument('-c', '--channels', type=int, default=None)  # number of restore channels
+parser.add_argument('-c', '--channels', type=int, default=1)  # number of restore channels
 parser.add_argument('-cn', '--channelnode', type=str, default=None)  # oracle data path on target
 parser.add_argument('-cf', '--controlfile', type=str, action='append')  # alternate ctl file path
 parser.add_argument('-r', '--redologpath', type=str, action='append')  # alternate redo log path
@@ -39,6 +39,8 @@ parser.add_argument('-dp', '--diagpath', type=str, default=None)  # alternate di
 parser.add_argument('-f', '--frapath', type=str, default=None)  # alternate fra path
 parser.add_argument('-fs', '--frasizeMB', type=int, default=None)  # alternate fra path
 parser.add_argument('-b', '--bctfile', type=str, default=None)  # alternate bct file path
+parser.add_argument('-sh', '--shellvariable', type=str, action='append')  # alternate ctl file path
+parser.add_argument('-pf', '--pfileparameter', type=str, action='append')  # alternate ctl file path
 parser.add_argument('-lt', '--logtime', type=str, default=None)  # pit to recover to
 parser.add_argument('-l', '--latest', action='store_true')  # recover to latest available pit
 parser.add_argument('-o', '--overwrite', action='store_true')  # overwrite existing DB
@@ -75,6 +77,8 @@ diagpath = args.diagpath
 frapath = args.frapath
 frasizeMB = args.frasizeMB
 bctfile = args.bctfile
+shellvars = args.shellvariable
+pfileparams = args.pfileparameter
 overwrite = args.overwrite
 logtime = args.logtime
 latest = args.latest
@@ -316,20 +320,59 @@ if targetserver != sourceserver or targetdb != sourcedb:
     }
     restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['targetHost'] = targetEntity['appEntity']['entity']
     if controlfile is not None:
+        if 'oracleDBConfig' not in restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
+            restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig'] = {}
         restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['controlFilePathVec'] = controlfile
     if redologpath is not None:
+        if 'oracleDBConfig' not in restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
+            restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig'] = {}
         restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['redoLogConf']['groupMemberVec'] = redologpath
         restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['redoLogConf']['numGroups'] = len(redologpath)
     if frasizeMB is not None:
+        if 'oracleDBConfig' not in restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
+            restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig'] = {}
         restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['fraSizeMb'] = frasizeMB
     if bctfile is not None:
+        if 'oracleDBConfig' not in restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
+            restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig'] = {}
         restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['bctFilePath'] = bctfile
     if auditpath is not None:
+        if 'oracleDBConfig' not in restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
+            restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig'] = {}
         restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['auditLogDest'] = auditpath
     if diagpath is not None:
+        if 'oracleDBConfig' not in restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
+            restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig'] = {}
         restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['diagDest'] = diagpath
     if frapath is not None:
+        if 'oracleDbConfig' not in restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
+            restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig'] = {}
         restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['fraDest'] = frapath
+    if len(pfileparams) > 0:
+        if 'oracleDbConfig' not in restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
+            restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig'] = {}
+        restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig']['pfileParameterMap'] = []
+    for pfileparam in pfileparams:
+        paramparts = pfileparam.split('=')
+        if len(paramparts) < 2:
+            print('pfile parameter is invalid')
+            exit(1)
+        else:
+            paramname = paramparts[0].strip()
+            paramval = paramparts[1].strip()
+            restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig']['pfileParameterMap'].append({"key": paramname, "value": paramval})
+
+if len(shellvars) > 0:
+    restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['shellEnvironmentVec'] = []
+    for shellvar in shellvars:
+        varparts = shellvar.split('=')
+        if len(varparts) < 2:
+            print('invalid shell variable')
+            exit(1)
+        else:
+            varname = varparts[0].strip()
+            varval = varparts[1].strip()
+            restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['shellEnvironmentVec'].append({"xKey": varname, "xValue": varval})
 
 # apply log replay time
 if validLogTime is True:

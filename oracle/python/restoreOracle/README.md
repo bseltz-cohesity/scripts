@@ -42,10 +42,12 @@ Place both files in a folder together and run the main script like so:
 * -d, --domain: Cohesity User Domain
 * -ss, --sourceserver: name of source oracle server
 * -sd, --sourcedb: name of source oracle DB
-* -c, --channels: number of restore channels
+* -c, --channels: number of restore channels (default is 1)
 * -cn, --channelnode: rac node for channels
 * -o, --overwrite: overwrite existing database
 * -n, --norecovery: leave database in no recovery mode
+* -pf, --pfileparameter: example -pf 'param1=value1' (repeat for multiple variables)
+* -sh, --shellvariable: example -sh 'var1=value1' (repeat for multiple variables)
 
 ## Point in Time Parameters
 
