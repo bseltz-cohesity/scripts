@@ -116,7 +116,7 @@ foreach($jobName in $jobNames | Sort-Object -Unique){
             $daysToKeep = [math]::Round(($newExpireTimeUsecs - $now) / 86400000000)
 
             if($daysToKeep -lt 1){
-                $needsArchive -eq $false
+                $needsArchive = $false
             }
 
             if($needsArchive){
