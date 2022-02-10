@@ -23,7 +23,7 @@ EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'Clone DB',
 		@delete_level=0, 
 		@description=N'No description available.', 
 		@category_name=N'[Uncategorized (Local)]', 
-		@owner_login_name=N'SELTZER\sql', @job_id = @jobId OUTPUT
+		@owner_login_name=N'MYDOMAIN\sqlagent', @job_id = @jobId OUTPUT
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
 /****** Object:  Step [Teardown Old Clone]    Script Date: 2/10/2022 3:43:40 PM ******/
 EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Teardown Old Clone', 
@@ -50,7 +50,7 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Clone Ma
 		@retry_attempts=0, 
 		@retry_interval=0, 
 		@os_run_priority=0, @subsystem=N'CmdExec', 
-		@command=N'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command c:\scripts\powershell\cloneSQL.ps1 -vip mycluster -username myuser -domain mydomain.net -sourceServer sqlprod.mydomain.net -sourceDB proddb -targetServer sqldev.seltzer.net -targetDB clonedb -wait', 
+		@command=N'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command c:\scripts\powershell\cloneSQL.ps1 -vip mycluster -username myuser -domain mydomain.net -sourceServer sqlprod.mydomain.net -sourceDB proddb -targetServer sqldev.mydomain.net -targetDB clonedb -wait', 
 		@flags=0
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
 EXEC @ReturnCode = msdb.dbo.sp_update_job @job_id = @jobId, @start_step_id = 1
