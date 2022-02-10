@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2022.01.05
+# version 2022.01.11
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -409,10 +409,6 @@ if wait is True:
                 sleep(5)
         except Exception:
             out("got an error...")
-            try:
-                apiauth(vip, username, domain, quiet=True)
-            except Exception:
-                sleep(2)
     out("Job finished with status: %s" % run[0]['backupRun']['status'])
     if run[0]['backupRun']['status'] == 'kFailure':
         out('Error: %s' % run[0]['backupRun']['error'])
@@ -429,7 +425,10 @@ if enable:
 # return exit code
 if wait is True:
     if logfile is not None:
-        log.write('Backup ended %s\n' % usecsToDate(runs[0]['backupRun']['stats']['endTimeUsecs']))
+        try:
+            log.write('Backup ended %s\n' % usecsToDate(runs[0]['backupRun']['stats']['endTimeUsecs']))
+        except Exception:
+            log.write('Backup ended')
     if runs[0]['backupRun']['status'] == 'kSuccess' or runs[0]['backupRun']['status'] == 'kWarning':
         bail(0)
     else:
