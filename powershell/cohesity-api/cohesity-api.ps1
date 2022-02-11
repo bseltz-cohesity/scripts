@@ -798,7 +798,7 @@ function storePasswordForUser($vip='helios.cohesity.com', $username='helios', $d
     $userFile = $(Join-Path -Path $PSScriptRoot -ChildPath "pw-$vip-$username-$domain.txt")
     $keyString = (Get-Random -Minimum 10000000000000 -Maximum 99999999999999).ToString()
     $keyBytes = [byte[]]($keyString -split(''))
-    if($null -eq $passwd){
+    if($null -eq $passwd -or $passwd -eq ''){
         $secureString = Read-Host -Prompt "Enter your password" -AsSecureString
         $passwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
         $secureString = Read-Host -Prompt "Confirm password" -AsSecureString
