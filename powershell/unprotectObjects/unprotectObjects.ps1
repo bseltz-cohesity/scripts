@@ -74,6 +74,8 @@ function findObjectParam($o){
     return $objectParam
 }
 
+$idToName = @{}
+
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         $jobChanged = $False
@@ -81,11 +83,29 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         foreach($param in $jobParams){
             if($param.PSObject.Properties['objects']){
                 foreach($objName in $objectNames){
-                    if($objName -in $param.objects.name){
-                        "UNPROTECTING: $($objName) (from $($job.name))" | Tee-Object -FilePath $outfileName -Append
-                        $unprotected[$objName] = 1
-                        $jobChanged = $True
-                        $param.objects = @($param.objects | Where-Object name -ne $objName)
+                    foreach($object in $param.objects){
+                        
+                        if($object.PSObject.Properties['name']){
+                            $thisObjectName = $object.Name
+                        }else{
+                            $objectId = [string]($object.id)
+                            $sourceId = [string]($object.sourceId)
+                            if(!$objectId){
+                                $objectId = $sourceId
+                            }
+                            if($idToName.ContainsKey($objectId)){
+                                $thisObjectName = $idToName[$objectId]
+                            }else{
+                                $thisObjectName = (api get protectionSources/objects/$objectId).name
+                                $idToName[$objectId] = $thisObjectName
+                            }
+                        }
+                        if($objName -eq $thisObjectName){
+                            "UNPROTECTING: $($objName) (from $($job.name))" | Tee-Object -FilePath $outfileName -Append
+                            $unprotected[$objName] = 1
+                            $jobChanged = $True
+                            $param.objects = @($param.objects | Where-Object name -ne $objName)
+                        }
                     }
                 }
                 if($jobChanged){
