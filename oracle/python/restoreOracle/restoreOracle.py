@@ -278,9 +278,9 @@ if channels is not None:
         else:
             print('channelnode %s not found' % channelnode)
             exit(1)
-else:
-    channelNodeId = targetserver
-    uuid = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
+    else:
+        channelNodeId = targetserver
+        uuid = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
 
     restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['oracleTargetParams'] = {
         "additionalOracleDbParamsVec": [
