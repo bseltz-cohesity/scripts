@@ -223,13 +223,7 @@ if(! $localreplica -and $archivereplica){
 ### configure channels
 if($channels){
     if($channelNode){
-        $sourceDatabase = $targetEntity.appEntity.auxChildren | Where-Object {$_.entity.displayName -eq $sourceDB}
-        if($sourceDatabase){
-            $uuid = $sourceDatabase[0].entity.oracleEntity.uuid
-        }else{
-            Write-Host "database not found on source entity" -foregroundcolor Yellow
-            exit 1
-        }
+        $uuid = $latestdb.vmDocument.objectId.entity.oracleEntity.uuid
         $endpoints = $targetEntity.appEntity.entity.physicalEntity.networkingInfo.resourceVec | Where-Object {$_.type -eq 0}
         foreach($endpoint in $endpoints){
             $preferredEndPoint = $endpoint.endpointVec | Where-Object isPreferredEndpoint -eq $true
