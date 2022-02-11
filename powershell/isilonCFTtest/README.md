@@ -67,7 +67,7 @@ When finished, we can clean up the snapshots:
 * -isilon: DNS name or IP of the Isilon to connect to
 * -username: user name to connect to Isilon
 * -password: (optional) will prompt if omitted
-* -path: file system path to monitor (e.g. /ifs/share1)
+* -path: file system path to monitor (e.g. /ifs/share1) required for phase 1 & 2
 * -phase1: perform phase 1
 * -phase2: perform phase 2
 * -phase3: perform phase 3
