@@ -20,9 +20,9 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 The performance test is performed in three phases:
 
-1) An initial snapshot is created
-2) Wait some length of time (usually 24 hours) to allow changed files to accumulate on the file system, then create a second snapshot, and create a change file tracking job between the two snapshots
-3) Wait for the change file tracking job to complete, and report how long the job took to complete 
+* An initial snapshot is created
+* Wait some length of time (usually 24 hours) to allow changed files to accumulate on the file system, then create a second snapshot, and create a change file tracking job between the two snapshots
+* Wait for the change file tracking job to complete, and report job duration
 
 The script has -phase1 -phase2 and -phase3 parameters for each of these phases.
 
