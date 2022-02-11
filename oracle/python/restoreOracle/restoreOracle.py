@@ -261,11 +261,7 @@ if localreplica is None or len(localreplica) == 0:
 # configure channels
 if channels is not None:
     if channelnode is not None:
-        uuid = [d['entity']['oracleEntity']['uuid'] for d in targetEntity['appEntity']['auxChildren'] if d['entity']['displayName'].lower() == sourcedb.lower()]
-        if uuid is None or len(uuid) == 0:
-            print('database not found on source entity')
-            exit(1)
-        uuid = uuid[0]
+        uuid = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
         endpoints = [e for e in targetEntity['appEntity']['entity']['physicalEntity']['networkingInfo']['resourceVec'] if e['type'] == 0]
         channelNodeObj = None
         for endpoint in endpoints:
