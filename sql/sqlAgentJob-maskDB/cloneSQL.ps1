@@ -6,6 +6,8 @@ param (
     [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
     [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
     [Parameter()][string]$domain = 'local', # local or AD domain
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password = $null,
     [Parameter(Mandatory = $True)][string]$sourceServer, # protection source where the DB was backed up
     [Parameter(Mandatory = $True)][string]$sourceDB, # name of the source DB we want to clone
     [Parameter()][string]$targetServer = $sourceServer, # where to attach the clone DB
@@ -13,15 +15,18 @@ param (
     [Parameter()][string]$targetInstance = 'MSSQLSERVER', # SQL instance name on the targetServer
     [Parameter()][string]$logTime, # point in time log replay like '2019-09-29 17:51:01'
     [Parameter()][switch]$wait, # wait for clone to finish
-    [Parameter()][switch]$latest, # very latest point in time log replay
-    [Parameter()][string]$password = $null # optional! clear text password
+    [Parameter()][switch]$latest # very latest point in time log replay
 )
 
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain -password $password
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
+}else{
+    apiauth -vip $vip -username $username -domain $domain -password $password
+}
 
 ### search for database to clone
 $searchresults = api get /searchvms?environment=SQL`&entityTypes=kSQL`&entityTypes=kVMware`&vmName=$sourceDB
@@ -185,7 +190,6 @@ if($validLogTime -eq $True){
         exit 1
     }
 }
-
 ### execute the clone task (post /cloneApplication api call)
 $response = api post /cloneApplication $cloneTask
 
