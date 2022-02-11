@@ -35,7 +35,7 @@ First, we run phase 1 to create the initial snapshot
                     -phase1
 ```
 
-Then after some time, allowing fchanged files to accumulate, we run phase 2 to create the second snapshot and start the CFT job:
+Then after some time, allowing for changed files to accumulate, we run phase 2 to create the second snapshot and start the CFT job:
 
 ```powershell
 ./isilonCFTtest.ps1 -isilon myisilon `
