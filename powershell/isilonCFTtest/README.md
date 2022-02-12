@@ -68,7 +68,7 @@ If the first snapshot does not exist, it will be created, and the script will ex
 
 If the first snapshot already exists, the second snapshot will be created (or existing snapshot used), and the CFT test job will be initiated.
 
-The script will then wait for CFT job completion and report the job duration. At this point you wait for completion (which may take hours, the script will poll the isilon every 15 seconds until completion), or you can press CTRL-C to exit the script, and re-run the script later (with the same parameters) to check the status.
+The script will then wait for CFT job completion and report the job duration (the script will poll the isilon every 15 seconds until completion), or you can press CTRL-C to exit the script, and re-run the script later (with the same parameters) to check the status.
 
 ## Delete the snapshots when finished
 
