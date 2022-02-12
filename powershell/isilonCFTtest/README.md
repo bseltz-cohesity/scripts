@@ -20,55 +20,67 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 The performance test is performed in three phases:
 
-* An initial snapshot is created
+* An initial snapshot is created (or you can choose an existing snapshot that is hours or days old)
 * Wait some length of time (usually 24 hours) to allow changed files to accumulate on the file system, then create a second snapshot, and create a change file tracking job between the two snapshots
 * Wait for the change file tracking job to complete, and report job duration
 
-The script has -phase1 -phase2 and -phase3 parameters for each of these phases.
+## List existing snapshots
 
-First, we run phase 1 to create the initial snapshot
-
-```powershell
-./isilonCFTtest.ps1 -isilon myisilon `
-                    -username myusername `
-                    -path /ifs/share1 `
-                    -phase1
-```
-
-Then after some time, allowing for changed files to accumulate, we run phase 2 to create the second snapshot and start the CFT job:
+If you want to use existing snapshots for the first snapshot, second snapshot or both, you can list the existing snapshots:
 
 ```powershell
 ./isilonCFTtest.ps1 -isilon myisilon `
                     -username myusername `
                     -path /ifs/share1 `
-                    -phase2
+                    -listSnapshots
 ```
 
-Then run phase 3 to check for job completion and report the job duration (this could take hours):
+## Run the test
+
+If there are no existing snapshots, you can simply run the test:
 
 ```powershell
 ./isilonCFTtest.ps1 -isilon myisilon `
                     -username myusername `
-                    -phase3
+                    -path /ifs/share1
 ```
 
-If the job is not yet completed, repeat phase 3 until the job is complete, and then record the duration
-
-When finished, we can clean up the snapshots:
+Or if you wish to use an existing snapshot for the first snapshot (you can specify the snapshot name or ID):
 
 ```powershell
 ./isilonCFTtest.ps1 -isilon myisilon `
                     -username myusername `
-                    -cleanUp
+                    -path /ifs/share1 `
+                    -firstSnapshot 534
 ```
+
+Or you can use existing snapshots for both first and second snapshots:
+
+```powershell
+./isilonCFTtest.ps1 -isilon myisilon `
+                    -username myusername `
+                    -path /ifs/share1 `
+                    -firstSnapshot 534 `
+                    -secondSnapshot 544
+```
+
+If the first snapshot does not exist, it will be created, and the script will exit. You should wait 24 hours (or at least a few hours) for changes to the file system before proceeding to the next step.
+
+If the first snapshot already exists, the second snapshot will be created (or existing snapshot used), and the CFT test job will be initiated.
+
+The script will then wait for CFT job completion and report the job duration. At this point you can press CTRL-C to exit the script if you know it will take a long time, otherwise the script will poll the isilon every 15 seconds until completion.
+
+## Delete the snapshots when finished
+
+If you want to delete the snapshots that were used in the test, re-run the script with the same parameters as before, and append -deleteSnapshots
 
 ## Parameters
 
 * -isilon: DNS name or IP of the Isilon to connect to
 * -username: user name to connect to Isilon
 * -password: (optional) will prompt if omitted
-* -path: file system path to monitor (e.g. /ifs/share1) required for phase 1 & 2
-* -phase1: perform phase 1
-* -phase2: perform phase 2
-* -phase3: perform phase 3
-* -cleanUp: delete old snapshots and exit
+* -path: file system path to monitor (e.g. /ifs/share1) required when creating the first snapshot
+* -listSnapshots: list available snapshots for the specified path
+* -firstSnapshot: name or ID of existing snapshot to use (or name of new snapshot to create)
+* -secondSnapshot: name or ID of existing snapshot to use (or name of new snapshot to create)
+* -deleteSnapshots: delete old snapshots and exit

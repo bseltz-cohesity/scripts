@@ -1,14 +1,14 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$isilon, # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
-    [Parameter()][string]$password = $null,
-    [Parameter()][string]$path = $null,
-    [Parameter()][switch]$phase1,
-    [Parameter()][switch]$phase2,
-    [Parameter()][switch]$phase3,
-    [Parameter()][switch]$cleanUp
+    [Parameter(Mandatory = $True)][string]$isilon,   # the isilon to connect to (DNS name or IP)
+    [Parameter(Mandatory = $True)][string]$username, # username 
+    [Parameter()][string]$password = $null,  # optional, will be prompted if omitted
+    [Parameter()][string]$path = $null,      # optional if listing or deleting snapshots
+    [Parameter()][switch]$listSnapshots,     # list available snapshots and exit
+    [Parameter()][string]$firstSnapshot = 'cohesityCftTestSnap1',   # specify name or id of first snapshot
+    [Parameter()][string]$secondSnapshot = 'cohesityCftTestSnap2',  # specify name or id of second snapshot
+    [Parameter()][switch]$deleteSnapshots    # delete the specified snapshots and exit
 )
 
 function dateToUsecs($datestring=(Get-Date)){
@@ -82,58 +82,67 @@ if(!$license){
     exit
 }
 
-if($phase1 -or $cleanUp){
+# get list of snapshots
+$snapshots = isilonAPI get /platform/1/snapshot/snapshots
+if($path){
+    $snapshots.snapshots = $snapshots.snapshots | Where-Object path -eq $path
+}
+
+# list snapshots and exit
+if($listSnapshots){
+    $snapshots.snapshots | Format-Table -Property id, path, name, @{l='created'; e={usecsToDate ($_.created * 1000000)}}, @{l='age (hours)'; e={[math]::Round(((Get-Date) - (usecsToDate ($_.created * 1000000))).TotalHours)}}
+    exit
+}
+
+$initialSnap = $snapshots.snapshots | Where-Object {$_.name -eq $firstSnapshot -or $_.id -eq $firstSnapshot}
+$finalSnap = $snapshots.snapshots | Where-Object {$_.name -eq $secondSnapshot -or $_.id -eq $secondSnapshot}
+
+# clean up
+if($deleteSnapshots){
     # delete old snapshots
     Write-Host "Cleaing up old snapshots..."
-    Remove-Item -Path ./cftStore.json -Force -ErrorAction SilentlyContinue
-    $snapshots = isilonAPI get /platform/1/snapshot/snapshots
-    $initialSnap = $snapshots.snapshots | Where-Object name -eq 'cohesityCftTestSnap1'
+    Remove-Item -Path ./cftStore.json -Force -ErrorAction SilentlyContinue    
     if($initialSnap){
         $result = isilonAPI delete "/platform/1/snapshot/snapshots/$($initialSnap.id)"
     }
-    $finalSnap = $snapshots.snapshots | Where-Object name -eq 'cohesityCftTestSnap2'
     if($finalSnap){
         $result = isilonAPI delete "/platform/1/snapshot/snapshots/$($finalSnap.id)"
     }
+    exit
 }
 
-if($phase1){
-    # crete initial snapshot
+# phase 1
+if(!$initialSnap){
     if(!$path){
         Write-Host "Path is required" -foregroundcolor Yellow
         exit
     }
-
-    Write-Host "Creating initial snapshot"
-    $initialSnap = isilonAPI post /platform/1/snapshot/snapshots @{"name"= "cohesityCftTestSnap1"; "path"= $path}
+    Write-Host "Creating initial snapshot, please wait for file changes, then re-run the script to calculate CFT performance"
+    $initialSnap = isilonAPI post /platform/1/snapshot/snapshots @{"name"= $firstSnapshot; "path"= $path}
     if($initialSnap){
         Write-Host "New Snap ID: $($initialSnap.id)"
     }
+    Remove-Item -Path ./cftStore.json -Force -ErrorAction SilentlyContinue
     exit
+}
 
-}elseif($phase2){
-    # create second snap and start CFT job
-    if(!$path){
-        Write-Host "Path is required" -foregroundcolor Yellow
-        exit
-    }
-
-    # check for initial snap
-    $snapshots = isilonAPI get /platform/1/snapshot/snapshots
-    $initialSnap = $snapshots.snapshots | Where-Object name -eq 'cohesityCftTestSnap1'
-    if(!$initialSnap){
-        Write-Host "Initial snapshot not found, please run this script with the -phase1 switch first" -foregroundcolor Yellow
-        exit
-    }
-
-    # create second snap
+# create second snapshot
+if(!$finalSnap){
+    $path = $initialSnap.path
     Write-Host "Creating second snapshot"
-    $finalSnap = isilonAPI post /platform/1/snapshot/snapshots @{"name"= "cohesityCftTestSnap2"; "path"= $path}
+    $finalSnap = isilonAPI post /platform/1/snapshot/snapshots @{"name"= $secondSnapshot; "path"= $path}
     if($finalSnap){
         Write-Host "New Snap ID: $($finalSnap.id)"
     }
+    Remove-Item -Path ./cftStore.json -Force -ErrorAction SilentlyContinue
+    if(!$finalSnap){
+        exit
+    }
+}
 
-    # create CFT job
+
+# create CFT job
+if(! (Test-Path -Path 'cftStore.json')){
     $nowMsecs = [int64]((dateToUsecs) / 1000)
     $newCFTjob = @{
         "allow_dup" = $false;
@@ -145,36 +154,42 @@ if($phase1){
             "newer_snapid" = $finalSnap.id
         }
     }
+    Write-Host "Creating CFT Test Job"
     $job = isilonAPI post  "/platform/1/job/jobs?_dc=$nowMsecs" $newCFTjob
     $jobId = $job.id
     $startTimeUsecs = dateToUsecs
-
-    # write job ID and start time to json file
     @{'jobId' = $jobId; 'startTimeUsecs' = $startTimeUsecs} | ConvertTo-Json | Out-File -FilePath cftStore.json
+    # exit
+}
 
-}elseif($phase3){
-    # check if job is complete and display run duration
+# calculate hour different between the tao snapshots
+$initialSnapCreateTime = usecsToDate ($initialSnap.created * 1000000)
+$finalSnapCreateTime = usecsToDate ($finalSnap.created * 1000000)
+$hoursApart = ($finalSnapCreateTime - $initialSnapCreateTime).TotalHours
 
-    # read json file
-    if(! (Test-Path -Path 'cftStore.json')){
-        Write-Host "Please run the script with -phase1 and then with -makeCFT first"
-        exit 
-    }
-    $cftStore = Get-Content cftStore.json | ConvertFrom-Json
-    $jobId = $cftStore.jobId
-    $startTimeUsecs = $cftStore.startTimeUsecs
+# get CFT job status
+$cftStore = Get-Content cftStore.json | ConvertFrom-Json
+$jobId = $cftStore.jobId
+$startTimeUsecs = $cftStore.startTimeUsecs
 
-    # report status or duration of CFT job
+$reportedWaiting = $false
+
+while($True){
     $reports = isilonAPI get /platform/1/job/reports?job_type=ChangelistCreate    
     $reports = $reports.reports | Where-Object job_id -eq $jobId
-    if($reports.count -lt 4){
-        Write-Host $reports
-        Write-Host "CFT job has not completed yet" -foregroundcolor Magenta
-        exit
-    }else{
+    if($reports.count -ge 4){
         $endTimeUsecs = $reports[0].time * 1000000
         $ts = [TimeSpan]::FromSeconds([math]::Round(($endTimeUsecs - $startTimeUsecs) / 1000000))
         $duration = "{0}:{1:d2}:{2:d2}:{3:d2}" -f $ts.Days, $ts.Hours, $ts.Minutes, $ts.Seconds
-        Write-Host "CFT job completion time $duration" -foregroundcolor Green
+        Write-Host "CFT job completion time: $duration" -foregroundcolor Green
+        $24HourEstimate = [math]::Round((24 / $hoursApart) * $ts.TotalHours)
+        Write-Host "Estimated job completion time for daily snapshots: $24HourEstimate hours"  -foregroundcolor Green
+        exit
+    }else{
+        if(!$reportedWaiting){
+            Write-Host "Waiting for CFT job to complete (wait or press CTRL-C to exit and re-run the script later to check status)..."
+            $reportedWaiting = $True
+        }
+        Start-Sleep 15
     }
 }
