@@ -8,7 +8,8 @@ param (
     [Parameter()][switch]$listSnapshots,     # list available snapshots and exit
     [Parameter()][string]$firstSnapshot = 'cohesityCftTestSnap1',   # specify name or id of first snapshot
     [Parameter()][string]$secondSnapshot = 'cohesityCftTestSnap2',  # specify name or id of second snapshot
-    [Parameter()][switch]$deleteSnapshots    # delete the specified snapshots and exit
+    [Parameter()][switch]$deleteSnapshots,    # delete the specified snapshots and exit
+    [Parameter()][string]$deleteThisSnapshot = $null # delete one snapshot and exit
 )
 
 function dateToUsecs($datestring=(Get-Date)){
@@ -96,6 +97,18 @@ if($listSnapshots){
 
 $initialSnap = $snapshots.snapshots | Where-Object {$_.name -eq $firstSnapshot -or $_.id -eq $firstSnapshot}
 $finalSnap = $snapshots.snapshots | Where-Object {$_.name -eq $secondSnapshot -or $_.id -eq $secondSnapshot}
+
+# delete one snapshot
+if($deleteThisSnapshot){
+    $thisSnap = $snapshots.snapshots | Where-Object {$_.name -eq $deleteThisSnapshot -or $_.id -eq $deleteThisSnapshot}
+    if($thisSnap){
+        Write-Host "Deleting snapshot $($thisSnap.id)"
+        $result = isilonAPI delete "/platform/1/snapshot/snapshots/$($thisSnap.id)"
+    }else{
+        Write-Host "No matching snapshot found" -foregroundcolor Yellow
+    }
+    exit
+}
 
 # clean up
 if($deleteSnapshots){

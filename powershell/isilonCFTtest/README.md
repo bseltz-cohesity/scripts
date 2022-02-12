@@ -72,7 +72,33 @@ The script will then wait for CFT job completion and report the job duration (th
 
 ## Delete the snapshots when finished
 
-Re-run the script (with the same parameters as before) and append the `-deleteSnapshots` switch if you want to delete the snapshots that were used in the test.
+Re-run the script (with the same parameters as before) and append the `-deleteSnapshots` switch if you want to delete the snapshots that were used in the test, like:
+
+```powershell
+./isilonCFTtest.ps1 -isilon myisilon `
+                    -username myusername `
+                    -path /ifs/share1 `
+                    -firstSnapshot 534 `
+                    -secondSnapshot 544 `
+                    -deleteSnapshots
+```
+
+Or you can use -listSnapshots as above:
+
+```powershell
+./isilonCFTtest.ps1 -isilon myisilon `
+                    -username myusername `
+                    -path /ifs/share1 `
+                    -listSnapshots
+```
+
+And then delete a specific snapshot, specifying the snapshot name or ID:
+
+```powershell
+./isilonCFTtest.ps1 -isilon myisilon `
+                    -username myusername `
+                    -deleteThisSnapshot 608
+```
 
 ## Parameters
 
@@ -83,4 +109,5 @@ Re-run the script (with the same parameters as before) and append the `-deleteSn
 * -listSnapshots: list available snapshots for the specified path
 * -firstSnapshot: name or ID of existing snapshot to use (or name of new snapshot to create)
 * -secondSnapshot: name or ID of existing snapshot to use (or name of new snapshot to create)
-* -deleteSnapshots: delete old snapshots and exit
+* -deleteSnapshots: delete specified first and second snapshots and exit
+* -deleteThisSnapshot: delete one snapshot and exit
