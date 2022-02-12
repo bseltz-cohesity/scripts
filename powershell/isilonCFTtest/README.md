@@ -64,7 +64,7 @@ Or you can use existing snapshots for both first and second snapshots:
                     -secondSnapshot 544
 ```
 
-If the first snapshot does not exist, it will be created, and the script will exit. You should wait 24 hours (or at least a few hours) for changes to the file system before proceeding to the next step.
+If the first snapshot does not exist, it will be created, and the script will exit. You should wait 24 hours (or at least a few hours) for changes to the file system before re-running the script (with the same parameters) to proceed to the next step.
 
 If the first snapshot already exists, the second snapshot will be created (or existing snapshot used), and the CFT test job will be initiated.
 
