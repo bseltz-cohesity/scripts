@@ -72,7 +72,7 @@ The script will then wait for CFT job completion and report the job duration (th
 
 ## Delete the snapshots when finished
 
-If you want to delete the snapshots that were used in the test, re-run the script (with the same parameters as before) and append the `-deleteSnapshots` switch.
+Re-run the script (with the same parameters as before) and append the `-deleteSnapshots` switch if you want to delete the snapshots that were used in the test.
 
 ## Parameters
 
