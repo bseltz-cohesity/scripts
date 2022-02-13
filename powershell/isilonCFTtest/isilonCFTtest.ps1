@@ -21,18 +21,26 @@ function dateToUsecs($datestring=(Get-Date)){
 function isilonAPI($method, $uri, $data=$null){
     $uri = $baseurl + $uri
     $result = $null
-    if($data){
-        $BODY = ConvertTo-Json $data -Depth 99
-        if($PSVersionTable.PSEdition -eq 'Core'){
-            $result = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers -Body $BODY -SkipCertificateCheck
+    try{
+        if($data){
+            $BODY = ConvertTo-Json $data -Depth 99
+            if($PSVersionTable.PSEdition -eq 'Core'){
+                $result = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers -Body $BODY -SkipCertificateCheck
+            }else{
+                $result = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers -Body $BODY
+            }
         }else{
-            $result = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers -Body $BODY
+            if($PSVersionTable.PSEdition -eq 'Core'){
+                $result = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers -SkipCertificateCheck
+            }else{
+                $result = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers
+            }
         }
-    }else{
-        if($PSVersionTable.PSEdition -eq 'Core'){
-            $result = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers -SkipCertificateCheck
+    }catch{
+        if($_.ToString().contains('"errors" :')){
+            Write-Host (ConvertFrom-Json $_.ToString()).errors[0].message -foregroundcolor Yellow
         }else{
-            $result = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers
+            Write-Host $_.ToString() -foregroundcolor yellow
         }
     }
     return $result
