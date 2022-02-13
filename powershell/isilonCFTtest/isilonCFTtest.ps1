@@ -18,6 +18,16 @@ function dateToUsecs($datestring=(Get-Date)){
     return $usecs
 }
 
+function usecsToDate($usecs, $format=$null){
+    $unixTime=$usecs/1000000
+    $origin = ([datetime]'1970-01-01 00:00:00')
+    if($format){
+        return $origin.AddSeconds($unixTime).ToLocalTime().ToString($format)
+    }else{
+        return $origin.AddSeconds($unixTime).ToLocalTime()
+    }
+}
+
 function isilonAPI($method, $uri, $data=$null){
     $uri = $baseurl + $uri
     $result = $null
