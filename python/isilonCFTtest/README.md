@@ -19,13 +19,13 @@ chmod +x isilonCFTtest.py
 
 The performance test is performed in three phases:
 
-* An initial snapshot is created (or you can choose an existing snapshot that is hours or days old)
+* An initial snapshot is created (or you can choose an existing snapshot)
 * Wait some length of time (usually 24 hours) to allow changed files to accumulate on the file system, then create a second snapshot, and create a change file tracking job between the two snapshots
 * Wait for the change file tracking job to complete, and report job duration
 
 ## List existing snapshots
 
-If you want to use existing snapshots for the first snapshot, second snapshot or both, you can list the existing snapshots:
+If you want to use existing snapshots for the first snapshot, second snapshot, or both, you can list the existing snapshots:
 
 ```bash
 ./isilonCFTtest.py -i myisilon \
@@ -36,7 +36,7 @@ If you want to use existing snapshots for the first snapshot, second snapshot or
 
 ## Run the test
 
-If there are no existing snapshots, you can simply run the test:
+If there are no existing snapshots, you can simply run the test and the first snapshot will be created:
 
 ```bash
 ./isilonCFTtest.py -i myisilon \
@@ -44,7 +44,7 @@ If there are no existing snapshots, you can simply run the test:
                    -p /ifs/share1
 ```
 
-Or if you wish to use an existing snapshot for the first snapshot (you can specify the snapshot name or ID):
+Or if you wish to use an existing snapshot for the first snapshot, you can specify the snapshot name or ID:
 
 ```bash
 ./isilonCFTtest.py -i myisilon \
@@ -63,7 +63,7 @@ Or you can use existing snapshots for both first and second snapshots:
                    -s 544
 ```
 
-If the first snapshot does not exist, it will be created, and the script will exit. You should wait 24 hours (or at least a few hours) for changes to the file system before re-running the script (with the same parameters) to proceed to the next step.
+If the first snapshot does not exist, it will be created and the script will exit. You should wait 24 hours  for changes to the file system before re-running the script (with the same parameters) to proceed to the next step.
 
 If the first snapshot already exists, the second snapshot will be created (or existing snapshot used), and the CFT test job will be initiated.
 
@@ -105,9 +105,9 @@ And then delete a specific snapshot, specifying the snapshot name or ID:
 * -i, --isilon: DNS name or IP of the Isilon to connect to
 * -u, --username: user name to connect to Isilon
 * -pwd, --password: (optional) will prompt if omitted
-* -p, --path: file system path to monitor (e.g. /ifs/share1) required when creating the first snapshot
-* -l, --listsnapshots: list available snapshots for the specified path
-* -f, --firstsnapshot: name or ID of existing snapshot to use (or name of new snapshot to create)
-* -s, --secondsnapshot: name or ID of existing snapshot to use (or name of new snapshot to create)
-* -c, --deletesnapshots: delete specified first and second snapshots and exit
-* -d, --deletethissnapshot: delete one snapshot and exit
+* -p, --path: (optional) file system path (e.g. /ifs/share1) required when creating the first snapshot
+* -l, --listsnapshots: (optional) list available snapshots for the specified path
+* -f, --firstsnapshot: (optional) name or ID of existing snapshot to use (or name of new snapshot to create)
+* -s, --secondsnapshot: (optional) name or ID of existing snapshot to use (or name of new snapshot to create)
+* -c, --deletesnapshots: (optional) delete specified first and second snapshots and exit
+* -d, --deletethissnapshot: (optional) delete one snapshot and exit
