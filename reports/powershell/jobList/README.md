@@ -27,3 +27,11 @@ Place both files in a folder together and run the main script like so:
 ```bash
 ./jobList.ps1 -vip mycluster -username myusername -domain mydomain.net
 ```
+
+## Parameters
+
+* -vip: DNS or IP of the Cohesity Cluster
+* -username: Cohesity User Name
+* -domain: (optional) defaults to 'local'
+* -useApiKey: (optional) Use API key for authentication
+* -password: (optional) password or API key (will use stored password by default)
