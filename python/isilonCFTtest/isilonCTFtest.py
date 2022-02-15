@@ -115,6 +115,16 @@ if license is None or len(license) == 0:
     print('\nThis Isilon is not licensed for SnapshotIQ\n')
     exit()
 
+# check changelistcreate job is enabled and get policy and priority settings
+jobTypes = isilonAPI('get', '/platform/1/job/types')
+jobType = [t for t in jobTypes['types'] if t['id'] == 'ChangelistCreate']
+if jobType is None or len(jobType) == 0 or jobType[0]['enabled'] is not True:
+    print('Change File Tracking is not enabled on this Isilon')
+    exit()
+else:
+    priority = jobType[0]['priority']
+    policy = jobType[0]['policy']
+
 # get list of snapshots
 snapshots = isilonAPI('get', '/platform/1/snapshot/snapshots')
 if path is not None and snapshots is not None and 'snapshots' in snapshots:
@@ -157,6 +167,16 @@ if deletesnapshots:
     if finalSnap is not None:
         result = isilonAPI('delete', '/platform/1/snapshot/snapshots/%s' % finalSnap['id'])
     exit()
+
+# avoid using an older second snapshot
+if initialSnap is not None and finalSnap is not None:
+    if finalSnap['created'] <= initialSnap['created']:
+        if finalSnap['name'] == 'cohesityCftTestSnap2':
+            result = isilonAPI('delete', '/platform/1/snapshot/snapshots/%s' % finalSnap['id'])
+            finalSnap = None
+        else:
+            print('Invalid: second snapshot (%s) is older than the first snapshot (%s)' % (secondsnapshot, firstsnapshot))
+            exit()
 
 # create first snapshot
 if initialSnap is None:

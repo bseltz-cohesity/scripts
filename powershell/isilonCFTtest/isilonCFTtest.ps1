@@ -160,7 +160,7 @@ if($initialSnap -and $finalSnap){
             $result = isilonAPI delete "/platform/1/snapshot/snapshots/$($finalSnap.id)"
             $finalSnap = $null
         }else{
-            Write-Host "Error: second snapshot ($($finalSnap.id): $($finalSnap.name)) is older than the first snapshot" -foregroundcolor Yellow
+            Write-Host "Invalid: second snapshot ($secondSnapshot) is older than the first snapshot ($firstSnapshot)" -foregroundcolor Yellow
             exit
         }
     }
