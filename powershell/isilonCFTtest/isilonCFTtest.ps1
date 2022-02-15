@@ -101,6 +101,17 @@ if(!$license){
     exit
 }
 
+# check changelistcreate job is enabled and get policy and priority settings
+$jobTypes = isilonAPI get /platform/1/job/types
+$jobType = $jobTypes.types | Where-Object id -eq 'ChangelistCreate'
+if(!$jobType -or $jobType.enabled -ne $True){
+    Write-Host "Change File Tracking is not enabled on this Isilon" -foregroundcolor Yellow
+    exit
+}else{
+    $priority = $jobType.priority
+    $policy = $jobType.policy
+}
+
 # get list of snapshots
 $snapshots = isilonAPI get /platform/1/snapshot/snapshots
 if($path){
@@ -142,6 +153,19 @@ if($deleteSnapshots){
     exit
 }
 
+# avoid using an older second snapshot
+if($initialSnap -and $finalSnap){
+    if($finalSnap.created -le $initialSnap.created){
+        if($finalSnap.name -eq "cohesityCftTestSnap2"){
+            $result = isilonAPI delete "/platform/1/snapshot/snapshots/$($finalSnap.id)"
+            $finalSnap = $null
+        }else{
+            Write-Host "Error: second snapshot ($($finalSnap.id): $($finalSnap.name)) is older than the first snapshot" -foregroundcolor Yellow
+            exit
+        }
+    }
+}
+
 # phase 1
 if(!$initialSnap){
     if(!$path){
@@ -177,8 +201,8 @@ if(! (Test-Path -Path 'cftStore.json')){
     $nowMsecs = [int64]((dateToUsecs) / 1000)
     $newCFTjob = @{
         "allow_dup" = $false;
-        "policy" = "LOW";
-        "priority" = 5;
+        "policy" = $policy;
+        "priority" = $priority;
         "type" = "ChangelistCreate";
         "changelistcreate_params" = @{
             "older_snapid" = $initialSnap.id;
@@ -193,7 +217,7 @@ if(! (Test-Path -Path 'cftStore.json')){
     # exit
 }
 
-# calculate hour different between the tao snapshots
+# calculate hour different between the two snapshots
 $initialSnapCreateTime = usecsToDate ($initialSnap.created * 1000000)
 $finalSnapCreateTime = usecsToDate ($finalSnap.created * 1000000)
 $hoursApart = ($finalSnapCreateTime - $initialSnapCreateTime).TotalHours
