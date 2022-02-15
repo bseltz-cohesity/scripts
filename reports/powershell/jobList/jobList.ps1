@@ -2,14 +2,20 @@
 param (
     [Parameter(Mandatory = $True)][string]$vip, # Cohesity cluster to connect to
     [Parameter(Mandatory = $True)][string]$username, #cohesity username
-    [Parameter()][string]$domain = 'local'
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password = $null
 )
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
+}else{
+    apiauth -vip $vip -username $username -domain $domain -password $password
+}
 
 $cluster = api get cluster
 
