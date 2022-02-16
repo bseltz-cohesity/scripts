@@ -90,10 +90,9 @@ if($job){
     foreach($exclusion in $exclusions){
         $ctype, $busNum, $unitNum = $exclusion -split ':'
         $thisControllerType = $controllerType[$ctype]
-        $exclusion
+        "Adding exclusion $exclusion"
         $existingExclusion = $job.vmwareParams.globalExcludeDisks | Where-Object {$_.controllerType -eq $thisControllerType -and $_.busNumber -eq $busNum -and $_.unitNumber -eq $unitNum}
         if(!$existingExclusion){
-            "new"
             $newExclusion = @{
                 "controllerType" = $thisControllerType;
                 "busNumber" = [int64]$busNum;
