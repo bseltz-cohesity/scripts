@@ -6,6 +6,8 @@ This powershell script expires archives older than x days. This is useful if you
 
 ## Warning! This script deletes backup data! Make sure you know what you are doing before you run it
 
+**Also Note**: If the archive target is out of space, please contact Cohesity support before running this script, otherwise expirations may not progress and will require support intervention.
+
 ## Download the script
 
 Run these commands from PowerShell to download the script(s) into your current directory
