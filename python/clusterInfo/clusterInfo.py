@@ -49,13 +49,13 @@ f = codecs.open(outfileName, 'w', 'utf-8')
 status = api('get', '/nexus/cluster/status')
 config = status['clusterConfig']['proto']
 nodeStatus = status['nodeStatus']
+nodes = api('get', 'nodes')
 if config is not None:
     chassisList = config['chassisVec']
     nodeList = config['nodeVec']
     hostName = status['clusterConfig']['proto']['clusterPartitionVec'][0]['hostName']
 else:
     chassisList = (api('get', 'chassis', v=2))['chassis']
-    nodes = api('get', 'nodes')
     partition = api('get', 'clusterPartitions')
     hostName = partition[0]['hostName']
 
@@ -83,10 +83,15 @@ output('    Used Capacity: %s GiB' % usedCapacity)
 output('     Used Percent: %s%%' % usedPct)
 output('------------------------------------')
 
-if version >= '6.6.0d':
+if version >= '6.4':
     ipmi = api('get', '/nexus/ipmi/cluster_get_lan_info')
     for chassis in chassisList:
         # chassis info
+        serial = ''
+        if 'serial' in chassis:
+            serial = chassis['serial']
+        if 'serialNumber' in chassis:
+            serial = chassis['serialNumber']
         if 'name' in chassis:
             chassisname = chassis['name']
         else:
@@ -94,11 +99,17 @@ if version >= '6.6.0d':
         output('\n   Chassis Name: %s' % chassisname)
         output('     Chassis ID: %s' % chassis['id'])
         output('       Hardware: %s' % chassis.get('hardwareModel', 'VirtualEdition'))
-        output(' Chassis Serial: %s' % chassis['serialNumber'])
-        nodeIds = chassis['nodeIds']
+        output(' Chassis Serial: %s' % serial)
+        if 'nodeIds' in chassis:
+            nodeIds = chassis['nodeIds']
+        else:
+            nodeIds = [n['id'] for n in nodes]
         for nodeId in nodeIds:
             node = [n for n in nodes if n['id'] == nodeId][0]
-            nodeipmi = [i for i in ipmi['nodesIpmiInfo'] if i['nodeIp'] == node['ip'].split(':')[-1]]
+            if 'nodesIpmiInfo' in ipmi:
+                nodeipmi = [i for i in ipmi['nodesIpmiInfo'] if i['nodeIp'] == node['ip'].split(':')[-1]]
+            else:
+                nodeipmi = [{}]
             # node info
             apiauth(node['ip'].split(':')[-1], username, domain, password=password, quiet=True, useApiKey=useApiKey)
             nodeInfo = api('get', '/nexus/node/hardware_info')
