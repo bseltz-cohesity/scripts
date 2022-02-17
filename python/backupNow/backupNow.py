@@ -266,6 +266,7 @@ if len(runs) > 0:
             nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
             if nowUsecs >= waitUntil:
                 out('Timed out waiting for existing run to finish')
+                exit(1)
             try:
                 sleep(5)
                 runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
