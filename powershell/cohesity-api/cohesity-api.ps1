@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.02.10 - Brian Seltzer
+#  Version 2022.02.17 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2021.02.10 - fixed empty body issue
@@ -22,9 +22,10 @@
 # 2022.01.29 - fixed helios on-prem password storage, heliosCluster function
 # 2022.02.04 - added support for V2 session authentiation
 # 2022.02.10 - fixed bad password handling
+# 2022.02.17 - disabled pwfile autodeletion
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2022.02.10'
+$versionCohesityAPI = '2022.02.17'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -668,8 +669,8 @@ function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
         if($v -eq $vip -and $d -eq $domain -and $u -eq $username -and $i -eq $useApiKey){
             $cohesity_api.pwscope = 'file'
             $passwd = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($cpwd))
-            $cohesity_api.pwscope = 'user'
-            $null = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -useApiKey $useApiKey -helios $helios -passwd $passwd -quiet
+            # $cohesity_api.pwscope = 'user'
+            # $null = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -useApiKey $useApiKey -helios $helios -passwd $passwd -quiet
             return $passwd
         }
     }
