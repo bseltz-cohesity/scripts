@@ -38,6 +38,7 @@ parser.add_argument('-o', '--objectname', action='append', type=str)
 parser.add_argument('-m', '--metadatafile', type=str, default=None)
 parser.add_argument('-x', '--abortifrunning', action='store_true')
 parser.add_argument('-f', '--logfile', type=str, default=None)
+parser.add_argument('-n', '--waitminutesifrunning', type=int, default=60)
 
 args = parser.parse_args()
 
@@ -65,6 +66,7 @@ noarchive = args.noarchive
 metadatafile = args.metadatafile
 abortIfRunning = args.abortifrunning
 logfile = args.logfile
+waitminutesifrunning = args.waitminutesifrunning
 
 if enable is True:
     wait = True
@@ -253,10 +255,17 @@ if len(runs) > 0:
     newRunId = lastRunId = runs[0]['backupRun']['jobRunId']
 
     # wait for existing job run to finish
+    now = datetime.now()
+    nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
+    waitUntil = nowUsecs + (waitminutesifrunning * 60000000)
     status = 'unknown'
     reportedwaiting = False
     if metadatafile is None:
         while status not in finishedStates:
+            now = datetime.now()
+            nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
+            if nowUsecs >= waitUntil:
+                out('Timed out waiting for existing run to finish')
             try:
                 sleep(5)
                 runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
@@ -374,10 +383,23 @@ if enable:
     enabled = api('post', 'protectionJobState/%s' % job['id'], {'pause': False})
 
 ### run protectionJob
-out("Running %s..." % jobName)
+now = datetime.now()
+nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
+waitUntil = nowUsecs + (waitminutesifrunning * 60000000)
+reportWaiting = True
 runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData)
-if runNow == 'error':
-    bail(1)
+while runNow != "":
+    if reportWaiting is True:
+        out('Waiting for existing run to finish')
+        reportWaiting = False
+    now = datetime.now()
+    nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
+    if nowUsecs >= waitUntil:
+        out('Timed out waiting for existing run')
+        exit(1)
+    sleep(15)
+    runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData, quiet=True)
+out("Running %s..." % jobName)
 
 # wait for new job run to appear
 if wait is True:
