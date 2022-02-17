@@ -1,4 +1,4 @@
-# version 2022.01.31
+# version 2022.02.17
 # usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
@@ -32,7 +32,8 @@ param (
     [Parameter()][string]$logfile,        # name of log file
     [Parameter()][switch]$outputlog,      # enable logging
     [Parameter()][string]$metaDataFile,   # backup file list
-    [Parameter()][switch]$abortIfRunning  # exit if job is already running
+    [Parameter()][switch]$abortIfRunning,  # exit if job is already running
+    [Parameter()][int64]$waitMinutesIfRunning = 60
 )
 
 # source the cohesity-api helper code
@@ -253,9 +254,15 @@ if($runs){
 $finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')
 
 # wait for existing job run to finish
+$now = Get-Date
+$waitUntil = $now.AddMinutes($waitMinutesIfRunning)
 if($runs -and !$metaDataFile){
     $alertWaiting = $True
     while ($runs[0].backupRun.status -notin $finishedStates){
+        if((Get-Date) -gt $waitUntil){
+            output "Timed out waiting for existing run to finish" -warn
+            exit 1
+        }
         if($alertWaiting){
             if($abortIfRunning){
                 output "job is already running"
@@ -402,8 +409,23 @@ if($enable){
 }
 
 # run job
+$result = api post ('protectionJobs/run/' + $jobID) $jobdata
+$reportWaiting = $True
+$now = Get-Date
+$waitUntil = $now.AddMinutes($waitMinutesIfRunning)
+while($result -ne ""){
+    if((Get-Date) -gt $waitUntil){
+        output "Timed out waiting for existing run to finish" -warn
+        exit 1
+    }
+    if($reportWaiting){
+        output "Waiting for existing job run to finish..."
+        $reportWaiting = $false
+    }
+    Start-Sleep 15
+    $result = api post ('protectionJobs/run/' + $jobID) $jobdata -quiet
+}
 output "Running $jobName..."
-$null = api post ('protectionJobs/run/' + $jobID) $jobdata
 
 # wait for new job run to appear
 $x = 0
