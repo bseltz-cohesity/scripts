@@ -57,6 +57,7 @@ Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/prote
 * -x, --abortifrunning: (optional) exit if job is already running (default is to wait and run after existing run is finished)
 * -f, --logfile: (optional) filename to log output
 * -n, --waitminutesifrunning: (optional) exit after X minutes if job is already running (default is 60)
+* -cp, --cancelpreviousrunminutes: (optional) cancel previous job run if it's been running for X minutes
 
 ## Using -o (--objectname) Parameter
 

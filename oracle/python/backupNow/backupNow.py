@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2022.01.11
+# version 2022.02.18
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -39,6 +39,7 @@ parser.add_argument('-m', '--metadatafile', type=str, default=None)
 parser.add_argument('-x', '--abortifrunning', action='store_true')
 parser.add_argument('-f', '--logfile', type=str, default=None)
 parser.add_argument('-n', '--waitminutesifrunning', type=int, default=60)
+parser.add_argument('-cp', '--cancelpreviousrunminutes', type=int, default=0)
 
 args = parser.parse_args()
 
@@ -67,6 +68,7 @@ metadatafile = args.metadatafile
 abortIfRunning = args.abortifrunning
 logfile = args.logfile
 waitminutesifrunning = args.waitminutesifrunning
+cancelpreviousrunminutes = args.cancelpreviousrunminutes
 
 if enable is True:
     wait = True
@@ -137,6 +139,21 @@ def getObjectId(objectName):
             get_nodes(source)
 
     return d['_object_id']
+
+
+def cancelRunningJob(job, durationMinutes):
+    if durationMinutes > 0:
+        durationUsecs = durationMinutes * 60000000
+        nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
+        cancelTime = nowUsecs - durationUsecs
+        runningRuns = api('get', 'protectionRuns?jobId=%s&numRuns=10' % job['id'])
+        if runningRuns is not None and len(runningRuns) > 0:
+            for run in runningRuns:
+                if 'backupRun' in run and 'status' in run['backupRun']:
+                    if run['backupRun']['status'] not in finishedStates and 'stats' in run['backupRun'] and 'startTimeUsecs' in run['backupRun']['stats']:
+                        if run['backupRun']['stats']['startTimeUsecs'] < cancelTime:
+                            result = api('post', 'protectionRuns/cancel/%s' % job['id'], {"jobRunId": run['backupRun']['jobRunId']})
+                            out('Canceling previous job run')
 
 
 ### find protectionJob
@@ -248,7 +265,7 @@ if objectnames is not None:
                 out('Object %s not found!' % objectname)
                 bail(1)
 
-finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning']
+finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning', 'kCanceling']
 runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
 
 if len(runs) > 0:
@@ -268,6 +285,8 @@ if len(runs) > 0:
                 out('Timed out waiting for existing run to finish')
                 exit(1)
             try:
+                if cancelpreviousrunminutes > 0:
+                    cancelRunningJob(job, cancelpreviousrunminutes)
                 sleep(5)
                 runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
                 status = runs[0]['backupRun']['status']
@@ -388,8 +407,10 @@ now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 waitUntil = nowUsecs + (waitminutesifrunning * 60000000)
 reportWaiting = True
-runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData)
+runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData, quiet=True)
 while runNow != "":
+    if cancelpreviousrunminutes > 0:
+        cancelRunningJob(job, cancelpreviousrunminutes)
     if reportWaiting is True:
         out('Waiting for existing run to finish')
         reportWaiting = False

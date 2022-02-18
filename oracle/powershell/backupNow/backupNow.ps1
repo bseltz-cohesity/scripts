@@ -1,4 +1,4 @@
-# version 2022.02.17
+# version 2022.02.18
 # usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
@@ -33,7 +33,8 @@ param (
     [Parameter()][switch]$outputlog,      # enable logging
     [Parameter()][string]$metaDataFile,   # backup file list
     [Parameter()][switch]$abortIfRunning,  # exit if job is already running
-    [Parameter()][int64]$waitMinutesIfRunning = 60
+    [Parameter()][int64]$waitMinutesIfRunning = 60,
+    [Parameter()][int64]$cancelRunningJobMinutes
 )
 
 # source the cohesity-api helper code
@@ -129,6 +130,20 @@ function getObjectId($objectName){
         }
     }
     return $global:_object_id
+}
+
+function cancelRunningJob($job, $durationMinutes){
+    if($durationMinutes -gt 0){
+        $durationUsecs = $durationMinutes * 60000000
+        $cancelTime = (dateToUsecs) - $durationUsecs
+        $runningRuns = api get "protectionRuns?jobId=$($job.id)&numRuns=10" | Where-Object {$_.backupRun.status -notin $finishedStates}
+        foreach($run in $runningRuns){
+            if($run.backupRun.stats.startTimeUsecs -gt 0 -and $run.backupRun.stats.startTimeUsecs -le $cancelTime){
+                $null = api post "protectionRuns/cancel/$($job.id)" @{ "jobRunId" = $run.backupRun.jobRunId }
+                output "Canceling previous job run"
+            }
+        }
+    }
 }
 
 # get cluster id
@@ -271,6 +286,9 @@ if($runs -and !$metaDataFile){
             output "waiting for existing job run to finish..."
             $alertWaiting = $false
         }
+        if($cancelRunningJobMinutes -gt 0){
+            cancelRunningJob $job $cancelRunningJobMinutes
+        }
         Start-Sleep 5
         $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
     }    
@@ -409,7 +427,7 @@ if($enable){
 }
 
 # run job
-$result = api post ('protectionJobs/run/' + $jobID) $jobdata
+$result = api post ('protectionJobs/run/' + $jobID) $jobdata -quiet
 $reportWaiting = $True
 $now = Get-Date
 $waitUntil = $now.AddMinutes($waitMinutesIfRunning)
@@ -417,6 +435,9 @@ while($result -ne ""){
     if((Get-Date) -gt $waitUntil){
         output "Timed out waiting for existing run to finish" -warn
         exit 1
+    }
+    if($cancelRunningJobMinutes -gt 0){
+        cancelRunningJob $job $cancelRunningJobMinutes
     }
     if($reportWaiting){
         output "Waiting for existing job run to finish..."
