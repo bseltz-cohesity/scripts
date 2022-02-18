@@ -34,7 +34,7 @@ param (
     [Parameter()][string]$metaDataFile,   # backup file list
     [Parameter()][switch]$abortIfRunning,  # exit if job is already running
     [Parameter()][int64]$waitMinutesIfRunning = 60,
-    [Parameter()][int64]$cancelRunningJobMinutes
+    [Parameter()][int64]$cancelRunningJobMinutes = 0
 )
 
 # source the cohesity-api helper code
