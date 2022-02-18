@@ -34,7 +34,7 @@ param (
     [Parameter()][string]$metaDataFile,   # backup file list
     [Parameter()][switch]$abortIfRunning,  # exit if job is already running
     [Parameter()][int64]$waitMinutesIfRunning = 60,
-    [Parameter()][int64]$cancelRunningJobMinutes = 0
+    [Parameter()][int64]$cancelPreviousRunMinutes = 0
 )
 
 # source the cohesity-api helper code
@@ -286,8 +286,8 @@ if($runs -and !$metaDataFile){
             output "waiting for existing job run to finish..."
             $alertWaiting = $false
         }
-        if($cancelRunningJobMinutes -gt 0){
-            cancelRunningJob $job $cancelRunningJobMinutes
+        if($cancelPreviousRunMinutes -gt 0){
+            cancelRunningJob $job $cancelPreviousRunMinutes
         }
         Start-Sleep 5
         $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
@@ -436,8 +436,8 @@ while($result -ne ""){
         output "Timed out waiting for existing run to finish" -warn
         exit 1
     }
-    if($cancelRunningJobMinutes -gt 0){
-        cancelRunningJob $job $cancelRunningJobMinutes
+    if($cancelPreviousRunMinutes -gt 0){
+        cancelRunningJob $job $cancelPreviousRunMinutes
     }
     if($reportWaiting){
         output "Waiting for existing job run to finish..."

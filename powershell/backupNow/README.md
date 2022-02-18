@@ -67,7 +67,7 @@ Place all files in a folder together. then, run the main script like so:
 * -outputlog: (optional) enable output logging
 * -logfile: (optional) path/name of log file (default is ./log-backupNow.log)
 * -waitMinutesIfRunning: (optional) exit after X minutes if job is already running (default is 60)
-* -cancelRunningJobMinutes: (optional) cancel previous job run if it has been running for X minutes
+* -cancelPreviousRunMinutes: (optional) cancel previous job run if it has been running for X minutes
 
 ## Outdated Parameters
 
