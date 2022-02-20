@@ -74,7 +74,6 @@ if($null -eq $objects){
 # find best snapshot
 $latestSnapshot = $null
 $latestSnapshotTimeStamp = 0
-# $latestSnapshotJobInfo = $null
 $latestSnapshotObject = $null
 $pit = $null
 if($logTime){
@@ -92,7 +91,6 @@ foreach($object in $objects){
                 $latestSnapshot = $snapshots[0]
                 $latestSnapshotTimeStamp = $snapshots[0].snapshotTimestampUsecs
                 $latestSnapshotObject = $object
-                # $latestSnapshotJobInfo = $jobInfo
             }
         }else{
             if($logTime){
@@ -107,7 +105,6 @@ foreach($object in $objects){
 }
 
 # find log range for desired PIT
-
 if($logTime -or $latest){
     $latestLogPIT = 0
     $logStart = $latestSnapshotTimeStamp
