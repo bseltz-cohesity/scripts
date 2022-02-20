@@ -62,10 +62,6 @@ Place both files in a folder together and run the main script like so:
 * -concurrency: (optional) number of concurrency streams (default is 1)
 * -mounts: (optional) number of mounts (default is 1)
 
-## Overwrite Warning
-
-Including the **-overwrite** parameter will overwrite an existing database. Use this parameter with extreme caution.
-
 ## Point in Time Recovery
 
 By default (if both **-latest** and **-logTime** are omitted), the latest full/incremental snapshot time will be used for the restore.
