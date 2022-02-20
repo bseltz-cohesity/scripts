@@ -70,14 +70,10 @@ Including the **-overwrite** parameter will overwrite an existing database. Use 
 
 By default (if both **-latest** and **-logTime** are omitted), the latest full/incremental snapshot time will be used for the restore.
 
-If you want to replay the logs to the very latest available point in time, use the **-latest** parameter.
-
-Or, if you want to replay logs to a specific point in time, use the **-logTime** parameter and specify a date and time in military format like so:
+If you want to replay the logs to the very latest available point in time, use the **-latest** parameter, or if you want to replay logs to a specific point in time, use the **-logTime** parameter and specify a date and time in military format like so:
 
 ```powershell
 -logTime '2019-01-20 23:47:02'
 ```
 
-Note that when the -logTime parameter is used with databases where no log backups exist, the full/incremental backup that occurred at or before the specified log time will be used.
-
-Also note that if a logtime is specified that is newer than the latest log backup, the latest log backup time will be used.
+Note that when the -logTime parameter is used with databases where no log backups exist, the full/incremental backup that occurred at or before the specified log time will be used. Also note that if a logtime is specified that is newer than the latest log backup, the latest log backup time will be used.
