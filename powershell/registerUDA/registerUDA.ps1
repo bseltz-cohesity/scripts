@@ -1,11 +1,13 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,
-    [Parameter(Mandatory = $True)][string]$username,
+    [Parameter()][string]$vip = 'helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
     [Parameter()][string]$domain = 'local',
     [Parameter()][switch]$useApiKey,
-    [Parameter()][string]$password = $null,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$clusterName = $null,
     [Parameter()][ValidateSet('CockroachDB', 'DB2', 'MySQL', 'Other', 'SapHana', 'SapMaxDB', 'SapOracle', 'SapSybase', 'SapSybaseIQ', 'SapASE')][string]$sourceType='Other',
     [Parameter(Mandatory = $True)][string]$sourceName,
     [Parameter(Mandatory = $True)][string]$scriptDir,
@@ -45,10 +47,24 @@ function waitForRefresh($id){
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-if($useApiKey){
-    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
+if($mcm){
+    apiauth -vip $vip -username $username -domain $domain -helios -password $password
 }else{
-    apiauth -vip $vip -username $username -domain $domain -password $password
+    if($useApiKey){
+        apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
+    }else{
+        apiauth -vip $vip -username $username -domain $domain -password $password
+    }
+}
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    if($clusterName){
+        heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
 }
 
 if(!$appPassword){

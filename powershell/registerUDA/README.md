@@ -39,11 +39,13 @@ To add some exclusions to a job:
 
 ## Parameters
 
-* -vip: Cohesity cluster to connect to
-* -username: Cohesity username (e.g. admin)
-* -domain: (optional) Active Directory domain (defaults to 'local')
-* -useApiKey: (optional) use API Key for authentication
+* -vip: (optional) Cohesity cluster or MCM to connect to (defaults to helios.cohesity.com)
+* -username: (optional) Cohesity username (defaults to helios)
+* -domain: (optional) Active Directory domain of user (defaults to local)
+* -useApiKey: (optional) Use API key for authentication
 * -password: (optional) will use stored password by default
+* -mcm: (optional) connect via MCM
+* -clusterName: (optional) required when connecting through Helios or MCM
 * -sourceName: IP or FQDN of protection source to register
 * -sourceType: Type of UDA database (see list below)
 * -scriptDir: Location of UDA scripts, e.g. /opt/cohesity/postgres/scripts

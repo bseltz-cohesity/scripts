@@ -35,11 +35,13 @@ Place both files in a folder together and run the main script like so:
 
 ## Basic Parameters
 
-* -vip: name or IP of Cohesity cluster
-* -username: name of user to connect to Cohesity
-* -domain: your AD domain (defaults to local)
-* -useApiKey: (optional) use API Key for authentication
+* -vip: (optional) Cohesity cluster or MCM to connect to (defaults to helios.cohesity.com)
+* -username: (optional) Cohesity username (defaults to helios)
+* -domain: (optional) Active Directory domain of user (defaults to local)
+* -useApiKey: (optional) Use API key for authentication
 * -password: (optional) will use stored password by default
+* -mcm: (optional) connect via MCM
+* -clusterName: (optional) required when connecting through Helios or MCM
 * -sourceName: name of the registered UDA source to protect
 * -jobName: name of protection job to create
 * -policyName: name of protection policy to use
