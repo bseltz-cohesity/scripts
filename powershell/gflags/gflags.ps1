@@ -4,6 +4,8 @@ param (
     [Parameter()][string]$vip='helios.cohesity.com',   # the cluster to connect to (DNS name or IP)
     [Parameter()][string]$username='helios',           # username (local or AD)
     [Parameter()][string]$domain = 'local',            # domain (local or AD FQDN)
+    [Parameter()][string]$password,                    # optional password
+    [Parameter()][switch]$useApiKey,                   # use API key for authentication
     [Parameter()][string]$accessCluster,               # access cluster (if connectig to helios)
     [Parameter()][switch]$clear,                       # switch to clear a gflag
     [Parameter()][string]$import = '',                 # import from an export file
@@ -19,7 +21,11 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -password $password -useApiKey 
+}else{
+    apiauth -vip $vip -username $username -domain $domain -password $password 
+}
 
 if($vip -eq 'helios.cohesity.com'){
     if($accessCluster){
