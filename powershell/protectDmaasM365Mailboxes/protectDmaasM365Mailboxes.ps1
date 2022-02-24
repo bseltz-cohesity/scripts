@@ -99,7 +99,7 @@ $mailboxesAdded = 0
 foreach($mailbox in $mailboxesToAdd){
     $user = $users.nodes | Where-Object {$_.protectionSource.name -eq $mailbox -or $_.protectionSource.office365ProtectionSource.primarySMTPAddress -eq $mailbox}
     if($user){
-        $protectionParams.objects += @{
+        $protectionParams.objects = @(@{
             "environment"     = "kO365Exchange";
             "office365Params" = @{
                 "objectProtectionType"              = "kMailbox";
@@ -118,19 +118,11 @@ foreach($mailbox in $mailboxesToAdd){
                     }
                 }
             }
-        }
+        })
         Write-Host "Protecting $mailbox"
-        $mailboxesAdded += 1
+        $response = api post -v2 data-protect/protected-objects $protectionParams
     }else{
         Write-Host "Mailbox $mailbox not found" -ForegroundColor Yellow
     }
 }
 
-if($mailboxesAdded -gt 0){
-    $response = api post -v2 data-protect/protected-objects $protectionParams
-    Write-Host "`nSuccessfully protected:`n"
-    $response.protectedObjects | ForEach-Object{ "    {0}" -f $_.name }
-    ""
-}else{
-    Write-Host "No mailboxes protected"
-}
