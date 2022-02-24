@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2022.02.04"""
+"""Cohesity Python REST API Wrapper Module - 2022.02.24"""
 
 ##########################################################################################
 # Change Log
@@ -26,6 +26,8 @@
 # 2022.01.20 - added api context
 # 2022.01.27 - added wildcard password storage for AD credentials
 # 2022.02.04 - added support for V2 session authentication
+# 2022.02.22 - Password retry for helios/MCM
+# 2022.02.24 - Password retry for cluster ApiKey
 #
 ##########################################################################################
 # Install Notes
@@ -123,8 +125,11 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
             HELIOSCLUSTERS = (requests.get(URL, headers=COHESITY_API['HEADER'], verify=False)).json()
             if HELIOSCLUSTERS is not None and 'message' in HELIOSCLUSTERS:
                 print(HELIOSCLUSTERS['message'])
-                COHESITY_API['AUTHENTICATED'] = False
-                return None
+                if 'Authentication failed' in HELIOSCLUSTERS['message'] and noretry is False:
+                    apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey, quiet=True)
+                else:
+                    COHESITY_API['AUTHENTICATED'] = False
+                    return None
             if HELIOSCLUSTERS is not None and 'errorCode' not in HELIOSCLUSTERS:
                 CONNECTEDHELIOSCLUSTERS = [cluster for cluster in HELIOSCLUSTERS if cluster['connectedToCluster'] is True]
                 COHESITY_API['AUTHENTICATED'] = True
@@ -143,6 +148,8 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                         print("Connected!")
         except requests.exceptions.RequestException as e:
             COHESITY_API['AUTHENTICATED'] = False
+            if 'Authentication failed' in e and noretry is False:
+                apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
             if quiet is None:
                 __writelog(e)
                 print(e)
@@ -157,6 +164,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                 print("Connected!")
         else:
             COHESITY_API['AUTHENTICATED'] = False
+            apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
     else:
         creds = json.dumps({"domain": domain, "password": pwd, "username": username, "otpType": mfaType, "otpCode": mfaCode})
         emailcreds = json.dumps({"domain": domain, "password": pwd, "username": username})
