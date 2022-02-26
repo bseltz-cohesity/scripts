@@ -45,6 +45,7 @@ Place both files in a folder together and run the main script like so:
 * -sourceName: name of the registered UDA source to protect
 * -jobName: name of protection job to create
 * -policyName: name of protection policy to use
+* -objectName: (optional) one or more database names to protect (comma separated)
 
 ## UDA Parameters
 

@@ -10,6 +10,7 @@ param (
     [Parameter()][string]$clusterName = $null,
     [Parameter(Mandatory = $True)][string]$sourceName,
     [Parameter(Mandatory = $True)][string]$jobName,
+    [Parameter()][array]$objectName,
     [Parameter()][int]$concurrency = 1,
     [Parameter()][int]$mounts = 1,
     [Parameter()][string]$fullBackupArgs = "",
@@ -133,17 +134,21 @@ if($job){
         };
         "udaParams" = @{
             "sourceId" = $sourceId;
-            "objects" = @(
-                @{
-                    "name" = $sourceName
-                }
-            );
+            "objects" = @();
             "concurrency" = $concurrency;
             "mounts" = $mounts;
             "fullBackupArgs" = $fullBackupArgs;
             "incrBackupArgs" = $incrBackupArgs;
             "logBackupArgs" = $logBackupArgs
         }
+    }
+
+    if($objectName.Count -eq 0){
+        $objectName = @($sourceName)
+    }
+    
+    foreach($o in $objectName){
+        $jobParams.udaParams.objects = @($jobParams.udaParams.objects + @{"name" = $o})
     }
 
     "Creating protection job '$jobName'..."
