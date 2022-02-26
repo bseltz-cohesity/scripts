@@ -11,7 +11,8 @@ parser.add_argument('-c', '--clustername', type=str, default=None)
 parser.add_argument('-mcm', '--mcm', action='store_true')
 parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
-parser.add_argument('-n', '--sourcename', type=str, required=True)
+parser.add_argument('-s', '--sourcename', type=str, required=True)
+parser.add_argument('-n', '--objectname', action='append', type=str)
 parser.add_argument('-j', '--jobname', type=str, required=True)
 parser.add_argument('-cc', '--concurrency', type=int, default=1)
 parser.add_argument('-m', '--mounts', type=int, default=1)
@@ -36,6 +37,7 @@ mcm = args.mcm
 useApiKey = args.useApiKey
 password = args.password
 sourcename = args.sourcename
+objectnames = args.objectname
 jobname = args.jobname
 concurrency = args.concurrency
 mounts = args.mounts
@@ -78,6 +80,9 @@ if source is None:
 
 sourceId = source['rootNode']['id']
 sourceName = source['rootNode']['name']
+
+if objectnames is None:
+    objectnames = []
 
 # get the protectionJob
 job = [j for j in (api('get', 'data-protect/protection-groups', v=2))['protectionGroups'] if j['name'].lower() == jobname.lower()]
@@ -122,6 +127,9 @@ except Exception:
     print('starttime is invalid!')
     exit(1)
 
+if len(objectnames) == 0:
+    objectnames.append(sourceName)
+
 jobParams = {
     "policyId": policy['id'],
     "startTime": {
@@ -154,11 +162,7 @@ jobParams = {
     },
     "udaParams": {
         "sourceId": sourceId,
-        "objects": [
-            {
-                "name": sourceName
-            }
-        ],
+        "objects": [],
         "concurrency": concurrency,
         "mounts": mounts,
         "fullBackupArgs": fullbackupargs,
@@ -166,6 +170,9 @@ jobParams = {
         "logBackupArgs": logbackupargs
     }
 }
+
+for object in objectnames:
+    jobParams['udaParams']['objects'].append({"name": object})
 
 print('Creating protection job "%s"...' % jobname)
 result = api('post', 'data-protect/protection-groups', jobParams, v=2)

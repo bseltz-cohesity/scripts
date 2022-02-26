@@ -40,7 +40,7 @@ Place both files in a folder together and run the main script like so:
 * -i, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password of API key
 * -mcm, --mcm: (optional) connect through MCM
-* -n, --sourcename: IP or FQDN of protection source to register
+* -s, --sourcename: IP or FQDN of protection source to register
 * -j, --jobname: Name of protection group to create
 * -p, --policyname: Name of protection policy to use
 
@@ -51,6 +51,7 @@ Place both files in a folder together and run the main script like so:
 * -fa, ---fullbackupargs: (optional) default is ""
 * -ia, --incrbackupargs: (optional) default is ""
 * -la, --logbackupargs: (optional) default is ""
+* -n, --objectname: (optional) database names to define (repeat for multiple)
 
 ## Optional Job Parameters
 

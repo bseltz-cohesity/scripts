@@ -15,6 +15,8 @@ parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-s', '--sourceserver', type=str, required=True)
 parser.add_argument('-t', '--targetserver', type=str, default=None)
+parser.add_argument('-n', '--objectname', action='append', type=str)
+parser.add_argument('-p', '--prefix', type=str, default=None)
 parser.add_argument('-o', '--overwrite', action='store_true')
 parser.add_argument('-lt', '--logtime', type=str, default=None)
 parser.add_argument('-l', '--latest', action='store_true')
@@ -34,6 +36,8 @@ useApiKey = args.useApiKey
 password = args.password
 sourceserver = args.sourceserver
 targetserver = args.targetserver
+objectnames = args.objectname
+prefix = args.prefix
 overwrite = args.overwrite
 logtime = args.logtime
 latest = args.latest
@@ -56,11 +60,14 @@ if mcm or vip.lower() == 'helios.cohesity.com':
         print('-clustername is required when connecting to Helios or MCM')
         exit()
 
+if objectnames is None:
+    objectnames = []
+
 if targetserver is None:
     targetserver = sourceserver
 
 # verify overwrite
-if targetserver == sourceserver:
+if targetserver == sourceserver and (len(objectnames) == 0 or prefix is None):
     if overwrite is not True:
         print('-overWrite required if restoring to original location')
         exit()
@@ -168,19 +175,29 @@ restoreParams = {
             "snapshots": [
                 {
                     "snapshotId": latestSnapshot['id'],
-                    "objects": [
-                        {
-                            "objectName": latestSnapshot['objectName'],
-                            "overwrite": True,
-                            "renameTo": None
-                        }
-                    ]
+                    "objects": []
                 }
             ],
             "recoveryArgs": ''
         }
     }
 }
+
+if len(objectnames) == 0:
+    if prefix is not None:
+        renameTo = "%s-%s" % (prefix, latestSnapshot['objectName'])
+    else:
+        renameTo = None
+    objectnames.append(latestSnapshot['objectName'])
+
+for o in objectnames:
+    if prefix is not None:
+        renameTo = "%s-%s" % (prefix, o)
+    else:
+        renameTo = None
+    restoreParams['udaParams']['recoverUdaParams']['snapshots'][0]['objects'].append({"objectName": o,
+                                                                                      "overwrite": True,
+                                                                                      "renameTo": renameTo})
 
 # specify target host ID
 if targetserver != sourceserver:

@@ -48,6 +48,8 @@ Place both files in a folder together and run the main script like so:
 ## Additional Parameters
 
 * -t, --targetserver: (optional) Server name to restore to (defaults to same as sourceserver)
+* -n, --objectname: (optional) name of database to restore (repeat for multiple)
+* -p, --prefix: (optional) apply prefix to restored database (only vaid when using -n, --objectname)
 * -lt, --logtime: (optional) Point in time to replay the logs to during the restore (e.g. '2019-04-10 22:31:05')
 * -l, --latesst: (optional) Replay the logs to the latest log backup date
 * -w, --wait: (optional) Wait for the restore to complete and report end status (e.g. kSuccess)
