@@ -63,11 +63,14 @@ if mcm or vip.lower() == 'helios.cohesity.com':
 if objectnames is None:
     objectnames = []
 
+if recoveryargs is None:
+    recoveryargs = []
+
 if targetserver is None:
     targetserver = sourceserver
 
 # verify overwrite
-if targetserver == sourceserver and (len(objectnames) == 0 or prefix is None):
+if targetserver == sourceserver and (len(objectnames) == 0 and prefix is None):
     if overwrite is not True:
         print('-overWrite required if restoring to original location')
         exit()

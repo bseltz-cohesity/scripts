@@ -48,7 +48,7 @@ if($USING_HELIOS){
 }
 
 # verify overwrite
-if($targetServer -eq $sourceServer -and ($objectName.Count -eq 0 -or $prefix -eq $null)){
+if($targetServer -eq $sourceServer -and ($objectName.Count -eq 0 -and $prefix -eq $null)){
     if(!$overWrite){
         Write-Host "-overWrite required if restoring to original location" -foregroundcolor Yellow
         exit
