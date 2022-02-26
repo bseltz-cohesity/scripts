@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""List Protected Objects for python"""
+"""List Protected Objects 2021-12-11 for python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -13,6 +13,8 @@ parser.add_argument('-v', '--vip', type=str, required=True)       # cluster to c
 parser.add_argument('-u', '--username', type=str, required=True)  # username
 parser.add_argument('-d', '--domain', type=str, default='local')  # (optional) domain - defaults to local
 parser.add_argument('-db', '--showdbs', action='store_true')
+parser.add_argument('-o', '--objectname', action='append', type=str)
+parser.add_argument('-l', '--objectlist', type=str)
 
 args = parser.parse_args()
 
@@ -20,6 +22,27 @@ vip = args.vip
 username = args.username
 domain = args.domain
 showdbs = args.showdbs
+objectnames = args.objectname
+objectlist = args.objectlist
+
+
+# gather server list
+def gatherList(param=None, filename=None, name='items', required=True):
+    items = []
+    if param is not None:
+        for item in param:
+            items.append(item)
+    if filename is not None:
+        f = open(filename, 'r')
+        items += [s.strip() for s in f.readlines() if s.strip() != '']
+        f.close()
+    if required is True and len(items) == 0:
+        print('no %s specified' % name)
+        exit()
+    return items
+
+
+objectnames = gatherList(objectnames, objectlist, name='objects', required=False)
 
 # authenticate
 apiauth(vip, username, domain)
@@ -171,34 +194,34 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
 
     for id in objects.keys():
         object = objects[id]
-
-        # parent
-        parent = None
-        parentName = '-'
-        if object['sourceId'] != '':
-            parent = [s for s in sources if s['protectionSource']['id'] == object['sourceId']]
-
-            if object['sourceId'] in objects.keys():
-                parent = objects[object['sourceId']]
-                parentName = parent['name']
-            else:
+        if len(objectnames) == 0 or object['name'].lower() in [o.lower() for o in objectnames]:
+            # parent
+            parent = None
+            parentName = '-'
+            if object['sourceId'] != '':
                 parent = [s for s in sources if s['protectionSource']['id'] == object['sourceId']]
-                if len(parent) > 0:
-                    parentName = parent[0]['protectionSource']['name']
 
-        if parent is not None or object['environment'] == object['jobEnvironment']:
-            object['parent'] = parentName
+                if object['sourceId'] in objects.keys():
+                    parent = objects[object['sourceId']]
+                    parentName = parent['name']
+                else:
+                    parent = [s for s in sources if s['protectionSource']['id'] == object['sourceId']]
+                    if len(parent) > 0:
+                        parentName = parent[0]['protectionSource']['name']
 
-            # frequency
-            if len(object['runDates']) > 1 and object['jobPaused'] is not True:
-                frequency = int(round((object['runDates'][0] - object['runDates'][-1]) / (len(object['runDates']) - 1) / (1000000 * 60)))  # [math]::Round((($object.runDates[0] - $object.runDates[-1]) / ($object.runDates.count - 1)) / (1000000 * 60))
-            else:
-                frequency = '-'
+            if parent is not None or object['environment'] == object['jobEnvironment']:
+                object['parent'] = parentName
 
-            # last run date
-            lastRunDate = usecsToDate(object['runDates'][0])
+                # frequency
+                if len(object['runDates']) > 1 and object['jobPaused'] is not True:
+                    frequency = int(round((object['runDates'][0] - object['runDates'][-1]) / (len(object['runDates']) - 1) / (1000000 * 60)))  # [math]::Round((($object.runDates[0] - $object.runDates[-1]) / ($object.runDates.count - 1)) / (1000000 * 60))
+                else:
+                    frequency = '-'
 
-            report.append(str('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s' % (cluster['name'], object['jobName'], object['environment'][1:], object['name'], object['objectType'][1:], object['objectMiB'], object['parent'], object['policyName'], object['policyLink'], object['archiveTarget'], object['cloudArchiveDirect'], frequency, lastRunDate, object['lastStatus'], object['lastRunType'], object['jobPaused'], object['indexing'], object['startTime'], object['timeZone'], object['qosPolicy'], object['priority'], object['fullSla'], object['incrementalSla'])))
+                # last run date
+                lastRunDate = usecsToDate(object['runDates'][0])
+
+                report.append(str('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s' % (cluster['name'], object['jobName'], object['environment'][1:], object['name'], object['objectType'][1:], object['objectMiB'], object['parent'], object['policyName'], object['policyLink'], object['archiveTarget'], object['cloudArchiveDirect'], frequency, lastRunDate, object['lastStatus'], object['lastRunType'], object['jobPaused'], object['indexing'], object['startTime'], object['timeZone'], object['qosPolicy'], object['priority'], object['fullSla'], object['incrementalSla'])))
 
 for item in sorted(report):
     f.write('%s\n' % item)

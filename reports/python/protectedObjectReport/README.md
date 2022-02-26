@@ -34,3 +34,6 @@ Place both files in a folder together and run the main script like so:
 * -v, --vip: Cohesity cluster to connect to
 * -u, --username: Cohesity username
 * -d, --domain: (optional) Active Directory domain (defaults to 'local')
+* -db, --showdbs: (optional) include databases in the report
+* -o, --objectname: (optional) individual object name(s) to include (repeat for multiple objects)
+* -l, --objectlist: (optional) text file of object names to include (one per line)
