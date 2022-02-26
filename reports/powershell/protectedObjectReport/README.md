@@ -37,3 +37,7 @@ The report will be saved as ClusterName-protectedObjectReport-date.csv
 * -vip: name or IP of Cohesity cluster
 * -username: name of user to connect to Cohesity
 * -domain: your AD domain (defaults to local)
+* -useApiKey: (optional) use API key authentication
+* -password: (optional) will use stored password or prompt if omitted
+* -objectName: (optional) object names to include (comma separated)
+* -objectList: (optional) text file of object names to include (one per line)

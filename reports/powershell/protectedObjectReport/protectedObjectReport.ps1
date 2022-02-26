@@ -2,14 +2,47 @@
 param (
     [Parameter(Mandatory = $True)][string]$vip,
     [Parameter(Mandatory = $True)][string]$username,
-    [Parameter()][string]$domain = 'local'
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$password,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][array]$objectName,
+    [Parameter()][string]$objectList
 )
 
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
+
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
+        }
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
+        exit
+    }
+    return ($items | Sort-Object -Unique)
+}
+
+$objectNames = @(gatherList -Param $objectName -FilePath $objectList -Name 'objects' -Required $false)
+
+
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -password $password -useApiKey 
+}else{
+    apiauth -vip $vip -username $username -domain $domain -password $password 
+}
 
 $cluster = api get cluster
 
@@ -64,25 +97,27 @@ $report = @()
 
 foreach($id in $objects.Keys){
     $object = $objects[$id]
-    $parent = $null
-    if($object.sourceId -ne ''){
-        $parent = $objects[$object.sourceId]
-        if(!$parent){
-            $parent = $sources.protectionSource | Where-Object id -eq $object.sourceId
+    if($objectNames.Count -eq 0 -or $object.name -in $objectNames){
+        $parent = $null
+        if($object.sourceId -ne ''){
+            $parent = $objects[$object.sourceId]
+            if(!$parent){
+                $parent = $sources.protectionSource | Where-Object id -eq $object.sourceId
+            }
         }
-    }
-    if($parent -or ($object.environment -eq $object.jobEnvironment)){
-        $object.parent = $parent.name
-        if($object.runDates.count -gt 1){
-            $frequency = [math]::Round((($object.runDates[0] - $object.runDates[-1]) / ($object.runDates.count - 1)) / (1000000 * 60))
-        }else{
-            $frequency = '-'
+        if($parent -or ($object.environment -eq $object.jobEnvironment)){
+            $object.parent = $parent.name
+            if($object.runDates.count -gt 1){
+                $frequency = [math]::Round((($object.runDates[0] - $object.runDates[-1]) / ($object.runDates.count - 1)) / (1000000 * 60))
+            }else{
+                $frequency = '-'
+            }
+            $lastRunDate = usecsToDate $object.runDates[0]
+            if(!$parent){
+                $object.parent = '-'
+            }
+            $report = @($report + ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10}" -f $cluster.name, $object.jobName, $object.environment.subString(1), $object.name, $object.objectType.subString(1), $object.parent, $object.policyName, $frequency, $lastRunDate, $object.lastStatus, $object.jobPaused))
         }
-        $lastRunDate = usecsToDate $object.runDates[0]
-        if(!$parent){
-            $object.parent = '-'
-        }
-        $report = @($report + ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10}" -f $cluster.name, $object.jobName, $object.environment.subString(1), $object.name, $object.objectType.subString(1), $object.parent, $object.policyName, $frequency, $lastRunDate, $object.lastStatus, $object.jobPaused))
     }
 }
 
