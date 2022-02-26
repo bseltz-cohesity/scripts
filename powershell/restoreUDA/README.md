@@ -53,6 +53,8 @@ Place both files in a folder together and run the main script like so:
 
 ## Additional Parameters
 
+* -objectName: (optional) database names to restore (comma separated)
+* -prefix: (optional) prefix to apply to database names
 * -targetServer: (optional) Server name to restore to (defaults to same as sourceServer)
 * -logTime: (optional) Point in time to replay the logs to during the restore (e.g. '2019-04-10 22:31:05')
 * -latest: (optional) Replay the logs to the latest log backup date

@@ -11,6 +11,8 @@ param (
     [Parameter()][string]$clusterName = $null,
     [Parameter(Mandatory = $True)][string]$sourceServer,
     [Parameter()][string]$targetServer = $sourceServer,
+    [Parameter()][array]$objectName,
+    [Parameter()][string]$prefix,
     [Parameter()][switch]$overWrite,
     [Parameter()][string]$logTime,
     [Parameter()][switch]$wait,
@@ -46,7 +48,7 @@ if($USING_HELIOS){
 }
 
 # verify overwrite
-if($targetServer -eq $sourceServer){
+if($targetServer -eq $sourceServer -and ($objectName.Count -eq 0 -or $prefix -eq $null)){
     if(!$overWrite){
         Write-Host "-overWrite required if restoring to original location" -foregroundcolor Yellow
         exit
@@ -164,18 +166,28 @@ $restoreParams = @{
             "snapshots" = @(
                 @{
                     "snapshotId" = $latestSnapshot.id;
-                    "objects" = @(
-                        @{
-                            "objectName" = $latestSnapshot.objectName;
-                            "overwrite" = $True;
-                            "renameTo" = $null
-                        }
-                    )
+                    "objects" = @()
                 }
             );
             "recoveryArgs" = $recoveryArgs
         }
     }
+}
+
+# add objects to restore
+if($objectName.Count -eq 0){
+    $objectName = @($latestSnapshot.objectName)
+}
+
+foreach($o in $objectName){
+    if($prefix -ne $null){
+        $renameTo = "{0}-{1}" -f $prefix, $o
+    }else{
+        $renameTo = $null
+    }
+    $restoreParams.udaParams.recoverUdaParams.snapshots[0].objects = @($restoreParams.udaParams.recoverUdaParams.snapshots[0].objects + @{"objectName" = $o;
+                                                                                                        "overwrite" = $True;
+                                                                                                        "renameTo" = $renameTo})
 }
 
 # specify target host ID
