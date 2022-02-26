@@ -12,7 +12,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, required=True)       # cluster to connect to
 parser.add_argument('-u', '--username', type=str, required=True)  # username
 parser.add_argument('-d', '--domain', type=str, default='local')  # (optional) domain - defaults to local
-parser.add_argument('-db', '--showdbs', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-o', '--objectname', action='append', type=str)
 parser.add_argument('-l', '--objectlist', type=str)
 
@@ -21,7 +22,8 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
-showdbs = args.showdbs
+useApiKey = args.useApiKey
+password = args.password
 objectnames = args.objectname
 objectlist = args.objectlist
 
@@ -45,7 +47,7 @@ def gatherList(param=None, filename=None, name='items', required=True):
 objectnames = gatherList(objectnames, objectlist, name='objects', required=False)
 
 # authenticate
-apiauth(vip, username, domain)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
 
 cluster = api('get', 'cluster')
 
