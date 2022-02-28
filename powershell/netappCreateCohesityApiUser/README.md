@@ -4,7 +4,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script creates a NetApp user and role with the required permissions to register a NetApp protection source in Cohesity.
 
-**Note:** This script required NetApp release 9.56 or later.
+**Note:** This script required NetApp release 9.6 or later.
 
 ## Download the script
 
