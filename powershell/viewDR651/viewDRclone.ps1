@@ -141,6 +141,8 @@ foreach($viewName in $myViews){
                     "cloneViewName"         = "$($metadata.name)$suffix";
                     "viewBoxId"             = $view.viewBoxId;
                     "viewId"                = $view.viewId;
+                    "qos"                   = $metadata.qos;
+                    "protocolAccess"        = $metadata.protocolAccess
                 }
             }
             $version =  $viewResult.vmDocument.versions[0]
