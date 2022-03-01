@@ -85,6 +85,8 @@ Depending on your environment, you may be using DFS or DNS cnames to direct your
 * -vip: Cohesity cluster to connect to (primary side)
 * -username: Cohesity username
 * -domain: (optional) AC Domain of Cohesity user (defaults to local)
+* -useApiKey: (optional) use API Key for authentication
+* -password: (optional) will use stored password if omitted
 * -outPath: path to deposit view metadata files (recommend this be an SMB path at the DR site)
 
 ## Clone Script Parameters
@@ -92,6 +94,8 @@ Depending on your environment, you may be using DFS or DNS cnames to direct your
 * -vip: Cohesity cluster to connect to (primary side)
 * -username: Cohesity username
 * -domain: (optional) AC Domain of Cohesity user (defaults to local)
+* -useApiKey: (optional) use API Key for authentication
+* -password: (optional) will use stored password if omitted
 * -viewNames: (optional) comma separated list of view names to clone
 * -viewList: (optional) text file containing view list to clone (one view name per line)
 * -all: (optional) clone all available views
@@ -105,6 +109,8 @@ Depending on your environment, you may be using DFS or DNS cnames to direct your
 * -vip: Cohesity cluster to connect to (primary side)
 * -username: Cohesity username
 * -domain: (optional) AC Domain of Cohesity user (defaults to local)
+* -useApiKey: (optional) use API Key for authentication
+* -password: (optional) will use stored password if omitted
 * -viewNames: (optional) comma separated list of view names to clone
 * -viewList: (optional) text file containing view list to clone (one view name per line)
 * -all: (optional) clone all available views

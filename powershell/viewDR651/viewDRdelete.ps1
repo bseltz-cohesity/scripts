@@ -6,6 +6,8 @@ param (
     [Parameter(Mandatory = $True)][string]$vip,
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
     [Parameter()][array]$viewNames,
     [Parameter()][string]$viewList,
     [Parameter()][switch]$all,
@@ -40,7 +42,11 @@ if($viewList){
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain -quiet
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password -quiet
+}else{
+    apiauth -vip $vip -username $username -domain $domain -password $password -quiet
+}
 
 ### get views
 function getViews(){
