@@ -1,5 +1,5 @@
 # metadata collection settings
-$primaryCluster = 'cluster1'
+$primaryCluster = 'cluster1.mydomain.net'
 $userName = 'myuser'
 $domain = 'mydomain.net'
 $metaDataPath = '\\my\unc\path'

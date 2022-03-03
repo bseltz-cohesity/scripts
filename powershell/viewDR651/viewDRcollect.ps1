@@ -21,15 +21,12 @@ if($useApiKey){
     apiauth -vip $vip -username $username -domain $domain -password $password
 }
 
-### cluster info
-$clusterName = (api get cluster).name
-
 ### get views
 $views = api get views
 $jobs = api get protectionJobs
 
 if(test-path $outPath){
-    $clusterOutPath = Join-Path -Path $outPath -ChildPath $clusterName
+    $clusterOutPath = Join-Path -Path $outPath -ChildPath $vip
     if(! (Test-Path -PathType Container -Path $clusterOutPath)){
         $null = New-Item -ItemType Directory -Path $clusterOutPath -Force
     }

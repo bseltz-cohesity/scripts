@@ -18,10 +18,12 @@ $null = Set-DnsServerResourceRecord -NewInputObject $newCnameRecord -OldInputObj
 # remove the SPN from old host
 "Removing SPN $cname.$domain from $oldHost..."
 $spn = "{0}.{1}" -f $cname, $domain
+$oldHost = $oldHost.split('.')[0]
 Set-ADComputer -Identity $oldHost -ServicePrincipalNames @{Remove="cifs/$spn"}
 Set-ADComputer -Identity $oldHost -ServicePrincipalNames @{Remove="cifs/$cname"}
 
 # add the SPN to the new host
 "Adding SPN $cname.$domain to $newHost..."
+$newHost = $newHost.split('.')[0]
 Set-ADComputer -Identity $newHost -ServicePrincipalNames @{Add="cifs/$spn"}
 Set-ADComputer -Identity $newHost -ServicePrincipalNames @{Add="cifs/$cname"}

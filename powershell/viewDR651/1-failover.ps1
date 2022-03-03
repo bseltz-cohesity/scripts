@@ -1,6 +1,6 @@
 # view failover settings
-$primaryCluster = 'cluster1'
-$drCluster = 'cluster2'
+$primaryCluster = 'cluster1.mydomain.net'
+$drCluster = 'cluster2.mydomain.net'
 $userName = 'myuser'
 $domain = 'mydomain.net'
 $metaDataPath = '\\my\unc\path'
