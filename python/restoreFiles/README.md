@@ -52,7 +52,7 @@ Restore finished with status kSuccess
 * -n, --filename: (optional) path of file to recover (repeat parameter for multiple files)
 * -f, --filelist: (optional) text file containing multiple files to restore
 * -p, --restorepath: (optional) path to restore files on target server (defaults to original location)
-* -r, --runid: (optional) select backup version with this job run ID 
+* -r, --runid: (optional) select backup version with this job run ID
 * -b, --start: (optional) oldest backup date to restore files from (e.g. '2020-04-18 18:00:00')
 * -e, --end: (optional) newest backup date to restore files from (e.g. '2020-04-20 18:00:00')
 * -l, --latest: (optional) use latest backup date to restore files from
