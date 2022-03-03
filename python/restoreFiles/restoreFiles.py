@@ -32,7 +32,7 @@ parser.add_argument('-u', '--username', type=str, default='helios')   # username
 parser.add_argument('-d', '--domain', type=str, default='local')      # domain - defaults to local
 parser.add_argument('-i', '--useApiKey', action='store_true')         # use API key authentication
 parser.add_argument('-pwd', '--password', type=str, default=None)       # optional password
-parser.add_argument('-s', '--sourceserver', type=str, required=True)  # name of source server
+parser.add_argument('-s', '--sourceserver', type=str, action='append')  # name of source server
 parser.add_argument('-t', '--targetserver', type=str, default=None)   # name of target server
 parser.add_argument('-j', '--jobname', type=str, default=None)        # narrow search by job name
 parser.add_argument('-n', '--filename', type=str, action='append')    # file name to restore
@@ -52,10 +52,14 @@ username = args.username
 domain = args.domain
 password = args.password
 useApiKey = args.useApiKey
-sourceserver = args.sourceserver
+sourceservers = args.sourceserver
+
+if sourceservers is None or len(sourceservers) == 0:
+    print('--sourceserver is required')
+    exit()
 
 if args.targetserver is None:
-    targetserver = sourceserver
+    targetserver = sourceservers[0]
 else:
     targetserver = args.targetserver
 
@@ -103,9 +107,9 @@ if len(targetEntity) == 0:
     exit(1)
 
 # find backups for source server
-searchResults = api('get', '/searchvms?entityTypes=kPhysical&vmName=%s' % sourceserver)
+searchResults = api('get', '/searchvms?entityTypes=kPhysical')
 if searchResults:
-    searchResults = [v for v in searchResults['vms'] if v['vmDocument']['objectName'].lower() == sourceserver.lower()]
+    searchResults = [v for v in searchResults['vms'] if v['vmDocument']['objectName'].lower() in [s.lower() for s in sourceservers]]
     if jobname is not None:
         altJobName = 'old name: %s' % jobname.lower()
         altJobName2 = '%s (old name' % jobname.lower()
@@ -113,9 +117,9 @@ if searchResults:
 
 if len(searchResults) == 0:
     if jobname is not None:
-        print("%s is not protected by %s" % (sourceserver, jobname))
+        print("sourceservers are not protected by %s" % jobname)
     else:
-        print("%s is not protected" % sourceserver)
+        print("sourceservers are not protected")
     exit(1)
 
 # find newest among multiple jobs
@@ -144,7 +148,7 @@ else:
         endusecs = dateToUsecs(end)
         versions = [v for v in doc['versions'] if endusecs >= v['snapshotTimestampUsecs']]
     if len(versions) == 0:
-        print('No versions available for %s' % sourceserver)
+        print('No versions available for sourceservers')
     else:
         if latest:
             independentRestores = False
@@ -275,7 +279,7 @@ def listdir(searchPath, dirPath, instance, volumeInfoCookie=None, volumeName=Non
 if independentRestores is False:
     restore(files, doc, version, targetEntity, False)
 else:
-    unindexedSnapshots = [s for s in doc['versions'] if s['numEntriesIndexed'] == 0]
+    unindexedSnapshots = [s for s in doc['versions'] if 'numEntriesIndexed' not in s or s['numEntriesIndexed'] == 0]
     if unindexedSnapshots is not None and len(unindexedSnapshots) > 0:
         print('Crawling for files...')
     for file in files:
@@ -315,20 +319,20 @@ else:
                     fileRestored = True
                     break
             if foundFile is None:
-                print('%s not found on server %s (or not available in the specified versions)' % (file, sourceserver))
+                print('%s not found on sourceservers (or not available in the specified versions)' % file)
         else:
             fileSearch = api('get', '/searchfiles?filename=%s' % encodedFile)
             if 'files' not in fileSearch:
                 print("file %s not found" % file)
             else:
-                fileSearch['files'] = [n for n in fileSearch['files'] if n['fileDocument']['objectId']['entity']['displayName'].lower() == sourceserver and n['fileDocument']['filename'].lower() == file.lower()]
+                fileSearch['files'] = [n for n in fileSearch['files'] if n['fileDocument']['objectId']['entity']['displayName'].lower() in [s.lower() for s in sourceservers] and n['fileDocument']['filename'].lower() == file.lower()]
                 if len(fileSearch['files']) == 0:
-                    print("file %s not found on server %s" % (file, sourceserver))
+                    print("file %s not found on sourceservers" % file)
                 else:
                     if jobname is not None:
                         fileSearch['files'] = [n for n in fileSearch['files'] if doc['objectId']['jobId'] == n['fileDocument']['objectId']['jobId']]
                     if len(fileSearch['files']) == 0:
-                        print("file %s not found on server %s protected by %s" % (file, sourceserver, jobname))
+                        print("file %s not found on sourceservers protected by %s" % (file, jobname))
                     else:
                         filedoc = fileSearch['files'][0]['fileDocument']
                         encodedFile = quote_plus(filedoc['filename'])

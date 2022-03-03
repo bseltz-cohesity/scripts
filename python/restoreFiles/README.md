@@ -47,8 +47,8 @@ Restore finished with status kSuccess
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
-* -s, --sourceserver: name of source server
-* -t, --targetserver: (optional) name of target server (defaults to source server)
+* -s, --sourceserver: name of source server (repeat for multiple)
+* -t, --targetserver: (optional) name of target server (defaults to source server [0])
 * -n, --filename: (optional) path of file to recover (repeat parameter for multiple files)
 * -f, --filelist: (optional) text file containing multiple files to restore
 * -p, --restorepath: (optional) path to restore files on target server (defaults to original location)
