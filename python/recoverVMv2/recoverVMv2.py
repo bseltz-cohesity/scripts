@@ -58,7 +58,7 @@ if vcentername is not None:
     if datastorename is None:
         print('datastorename is required')
         exit()
-    if networkname is None:
+    if networkname is None and detachnetwork is not True:
         print('networkname is required')
         exit()
 
@@ -172,10 +172,12 @@ if vcentername:
         exit()
 
     # select network
-    network = [n for n in api('get', '/networkEntities?resourcePoolId=%s&vCenterId=%s' % (resourcePoolId, vCenterId)) if n['displayName'].lower() == networkname.lower()]
-    if len(network) == 0:
-        print('network %s not found' % networkname)
-        exit()
+    network = None
+    if networkname is not None:
+        network = [n for n in api('get', '/networkEntities?resourcePoolId=%s&vCenterId=%s' % (resourcePoolId, vCenterId)) if n['displayName'].lower() == networkname.lower()]
+        if len(network) == 0:
+            print('network %s not found' % networkname)
+            exit()
 
     restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['recoveryTargetConfig']['recoverToNewSource'] = True
     restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['recoveryTargetConfig']['newSourceConfig'] = {
@@ -187,9 +189,6 @@ if vcentername:
             "networkConfig": {
                 "detachNetwork": False,
                 "newNetworkConfig": {
-                    "networkPortGroup": {
-                        "id": network[0]['id']
-                    },
                     "disableNetwork": True,
                     "preserveMacAddress": False
                 }
@@ -212,6 +211,10 @@ if vcentername:
     if detachnetwork is not True:
         restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['recoveryTargetConfig']['newSourceConfig']['vCenterParams']['networkConfig']['newNetworkConfig']['disableNetwork'] = False
 
+    if network is not None:
+        restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['recoveryTargetConfig']['newSourceConfig']['vCenterParams']['networkConfig']['newNetworkConfig']['networkPortGroup'] = {
+            "id": network[0]['id']
+        }
 else:
     restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['recoveryTargetConfig']['originalSourceConfig'] = {
         "networkConfig": {
