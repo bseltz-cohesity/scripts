@@ -1,4 +1,4 @@
-# version 2022.02.18
+# version 2022.03.04
 # usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
@@ -266,7 +266,7 @@ if($runs){
     $newRunId = $lastRunId = 0
 }
 
-$finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')
+$finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning', '3', '4', '5', '6')
 
 # wait for existing job run to finish
 $now = Get-Date
@@ -274,6 +274,7 @@ $waitUntil = $now.AddMinutes($waitMinutesIfRunning)
 if($runs -and !$metaDataFile){
     $alertWaiting = $True
     while ($runs[0].backupRun.status -notin $finishedStates){
+        Write-Host $runs[0].backupRun.status
         if((Get-Date) -gt $waitUntil){
             output "Timed out waiting for existing run to finish" -warn
             exit 1
@@ -494,7 +495,12 @@ if($enable){
     }
 }
 
+$statusMap = @('0', '1', '2', 'Canceled', 'Success', 'Failed', 'Warning')
+
 if($wait -or $enable){
+    if($runs[0].backupRun.status -in @('3', '4', '5', '6')){
+        $runs[0].backupRun.status = $statusMap[$runs[0].backupRun.status]
+    }
     output "Job finished with status: $($runs[0].backupRun.status)"
     if($outputlog){
         "Backup ended $(usecsToDate $runs[0].backupRun.stats.endTimeUsecs)" | Out-File -FilePath $scriptlog -Append
