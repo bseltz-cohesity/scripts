@@ -14,6 +14,7 @@ parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
 parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-j', '--jobname', type=str, default=None)
 parser.add_argument('-n', '--vmname', action='append', type=str)
 parser.add_argument('-l', '--vmlist', type=str)
 
@@ -26,6 +27,7 @@ password = args.password
 useApiKey = args.useApiKey
 servernames = args.vmname
 serverlist = args.vmlist
+jobname = args.jobname
 
 # gather server list
 if servernames is None:
@@ -47,25 +49,32 @@ for server in servernames:
 
 jobs = api('get', 'data-protect/protection-groups?isDeleted=false&isActive=true&environments=kVMware', v=2)
 
+if jobname is not None:
+    job = [j for j in jobs['protectionGroups'] if j['name'].lower() == jobname.lower()]
+    if job is None or len(job) == 0:
+        print('Job %s not found' % jobname)
+        exit()
+
 if 'protectionGroups' in jobs and jobs['protectionGroups'] is not None:
     for job in jobs['protectionGroups']:
-        saveJob = False
+        if jobname is None or job['name'].lower() == jobname.lower():
+            saveJob = False
 
-        for server in servernames:
-            protectedObjectCount = len(job['vmwareParams']['objects'])
-            job['vmwareParams']['objects'] = [o for o in job['vmwareParams']['objects'] if o['name'].lower() != server.lower()]
-            if len(job['vmwareParams']['objects']) < protectedObjectCount:
-                print('%s removed from from group: %s' % (server, job['name']))
-                serverfound[server] = True
-                saveJob = True
+            for server in servernames:
+                protectedObjectCount = len(job['vmwareParams']['objects'])
+                job['vmwareParams']['objects'] = [o for o in job['vmwareParams']['objects'] if o['name'].lower() != server.lower()]
+                if len(job['vmwareParams']['objects']) < protectedObjectCount:
+                    print('%s removed from from group: %s' % (server, job['name']))
+                    serverfound[server] = True
+                    saveJob = True
 
-        if saveJob is True:
-            if len(job['vmwareParams']['objects']) == 0:
-                print('0 objects left in %s. Deleting...' % job['name'])
-                result = api('delete', 'data-protect/protection-groups/%s' % job['id'], v=2)
-            else:
-                pass
-                result = api('put', 'data-protect/protection-groups/%s' % job['id'], job, v=2)
+            if saveJob is True:
+                if len(job['vmwareParams']['objects']) == 0:
+                    print('0 objects left in %s. Deleting...' % job['name'])
+                    result = api('delete', 'data-protect/protection-groups/%s' % job['id'], v=2)
+                else:
+                    pass
+                    result = api('put', 'data-protect/protection-groups/%s' % job['id'], job, v=2)
 
 for server in servernames:
     if serverfound[server] is False:
