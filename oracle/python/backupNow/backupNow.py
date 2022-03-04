@@ -299,7 +299,7 @@ if len(runs) > 0:
                         reportedwaiting = True
                     sleep(5)
             except Exception:
-                out("got an error...")
+                pass
 else:
     newRunId = lastRunId = 1
 
@@ -452,7 +452,7 @@ if wait is True:
             if status not in finishedStates:
                 sleep(5)
         except Exception:
-            out("got an error...")
+            pass
     out("Job finished with status: %s" % run[0]['backupRun']['status'])
     if run[0]['backupRun']['status'] == 'kFailure':
         out('Error: %s' % run[0]['backupRun']['error'])
