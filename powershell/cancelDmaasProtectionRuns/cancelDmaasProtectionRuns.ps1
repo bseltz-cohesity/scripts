@@ -11,8 +11,9 @@ param (
 # authenticate
 apiauth -username $username -regionid $region
 
-$activities = api post -mcmv2 data-protect/objects/activity
+$activities = api post -mcmv2 data-protect/objects/activity @{"statsParams" = @{"attributes" = @("Status", "ActivityType")}; "statuses" = @("Running", "Accepted")}
 $activities = $activities.activity | Where-Object {$_.archivalRunParams.status -eq 'Running' -or $_.archivalRunParams.status -eq 'Accepted'}
+
 foreach($activity in $activities){
     Write-host "Cancelling backup for $($activity.object.name)"
     $cancel = api post -v2 "data-protect/objects/runs/cancel" @{"objectRuns" = @(@{"objectId" = $activity.object.id})}
