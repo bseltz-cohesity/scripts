@@ -162,15 +162,14 @@ if($vCenterName){
         }
     }
 
-    if(!$detachNetwork){
-        # select network
-        if(! $networkName){
-            Write-Host "network name required" -ForegroundColor Yellow
-            exit
-        }
+    if(!$networkName -and !$detachNetwork){
+        Write-Host "network name required" -ForegroundColor Yellow
+        exit
+    }
+
+    if($networkName){
         $networks = api get "/networkEntities?resourcePoolId=$resourcePoolId&vCenterId=$vCenterId"
         $network = $networks | Where-Object displayName -eq $networkName
-
         if(! $network){
             Write-Host "network $networkName not found" -ForegroundColor Yellow
             exit
@@ -184,6 +183,9 @@ if($vCenterName){
         }
         if($preserveMacAddress){
             $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.recoveryTargetConfig.newSourceConfig.vCenterParams.networkConfig.newNetworkConfig.preserveMacAddress = $True
+        }
+        if($detachNetwork){
+            $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.recoveryTargetConfig.newSourceConfig.vCenterParams.networkConfig.newNetworkConfig["detachNetwork"] = $True
         }
     }
 }else{
