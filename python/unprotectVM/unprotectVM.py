@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """unprotect VMs"""
 
-# version 2021-12-03
+# version 2022-03-05
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -14,7 +14,8 @@ parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
 parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
-parser.add_argument('-j', '--jobname', type=str, default=None)
+parser.add_argument('-j', '--jobname', action='append', type=str)
+parser.add_argument('-s', '--joblist', type=str)
 parser.add_argument('-n', '--vmname', action='append', type=str)
 parser.add_argument('-l', '--vmlist', type=str)
 
@@ -25,47 +26,58 @@ username = args.username
 domain = args.domain
 password = args.password
 useApiKey = args.useApiKey
-servernames = args.vmname
-serverlist = args.vmlist
-jobname = args.jobname
+vmnames = args.vmname
+vmlist = args.vmlist
+jobnames = args.jobname
+joblist = args.joblist
 
-# gather server list
-if servernames is None:
-    servernames = []
-if serverlist is not None:
-    f = open(serverlist, 'r')
-    servernames += [s.strip() for s in f.readlines() if s.strip() != '']
-    f.close()
-if len(servernames) == 0:
-    print('no servers specified')
-    exit()
+
+def gatherList(param=None, filename=None, name='items', required=True):
+    items = []
+    if param is not None:
+        for item in param:
+            items.append(item)
+    if filename is not None:
+        f = open(filename, 'r')
+        items += [s.strip() for s in f.readlines() if s.strip() != '']
+        f.close()
+    if required is True and len(items) == 0:
+        print('no %s specified' % name)
+        exit()
+    return items
+
+
+jobnames = gatherList(jobnames, joblist, name='jobs', required=False)
+vmnames = gatherList(vmnames, vmlist, name='VMs', required=True)
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
 
-serverfound = {}
-for server in servernames:
-    serverfound[server] = False
+vmfound = {}
+for vm in vmnames:
+    vmfound[vm] = False
 
 jobs = api('get', 'data-protect/protection-groups?isDeleted=false&isActive=true&environments=kVMware', v=2)
 
-if jobname is not None:
-    job = [j for j in jobs['protectionGroups'] if j['name'].lower() == jobname.lower()]
-    if job is None or len(job) == 0:
-        print('Job %s not found' % jobname)
-        exit()
+# catch invalid job names
+notfoundjobs = [n for n in jobnames if n.lower() not in [j['name'].lower() for j in jobs['protectionGroups']]]
+if len(notfoundjobs) > 0:
+    print('Jobs not found: %s' % ', '.join(notfoundjobs))
+    exit(1)
 
 if 'protectionGroups' in jobs and jobs['protectionGroups'] is not None:
     for job in jobs['protectionGroups']:
-        if jobname is None or job['name'].lower() == jobname.lower():
+
+        if len(jobnames) == 0 or job['name'].lower() in [j.lower() for j in jobnames]:
+
             saveJob = False
 
-            for server in servernames:
+            for vm in vmnames:
                 protectedObjectCount = len(job['vmwareParams']['objects'])
-                job['vmwareParams']['objects'] = [o for o in job['vmwareParams']['objects'] if o['name'].lower() != server.lower()]
+                job['vmwareParams']['objects'] = [o for o in job['vmwareParams']['objects'] if o['name'].lower() != vm.lower()]
                 if len(job['vmwareParams']['objects']) < protectedObjectCount:
-                    print('%s removed from from group: %s' % (server, job['name']))
-                    serverfound[server] = True
+                    print('%s removed from from group: %s' % (vm, job['name']))
+                    vmfound[vm] = True
                     saveJob = True
 
             if saveJob is True:
@@ -73,9 +85,8 @@ if 'protectionGroups' in jobs and jobs['protectionGroups'] is not None:
                     print('0 objects left in %s. Deleting...' % job['name'])
                     result = api('delete', 'data-protect/protection-groups/%s' % job['id'], v=2)
                 else:
-                    pass
                     result = api('put', 'data-protect/protection-groups/%s' % job['id'], job, v=2)
 
-for server in servernames:
-    if serverfound[server] is False:
-        print('%s not found in any VM protection group. * * * * * *' % server)
+for vm in vmnames:
+    if vmfound[vm] is False:
+        print('%s not found in any VM protection group. * * * * * *' % vm)

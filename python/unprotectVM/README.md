@@ -42,3 +42,4 @@ Place both files in a folder together and run the main script like so:
 * -n, --vmname: (optional) name of server to add to the job (use multiple times for multiple)
 * -l, --vmlist: (optional) list of server names in a text file (one per line)
 * -j, --jobname: (optional) only remove VM from this job (default is all jobs)
+* -s, --joblist: (optional) text file of job names to remove VMs from (one per line)
