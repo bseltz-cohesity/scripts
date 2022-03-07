@@ -80,12 +80,14 @@ foreach($job in $jobs | Sort-Object -Property name){
 
         # check last run for aag state change
         $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1"
+        $objectIds = @()
         foreach($run in $runs){
             $runStartTime = usecsToDate $run.backupRun.stats.startTimeUsecs
             $status = $run.backupRun.status
             $runType = $run.backupRun.runType
             if($status -eq 'kFailure'){
                 if($run.backupRun.PSObject.Properties['error']){
+                    $runNowParameters = @()
                     $message = $run.backupRun.error
                     if($message -match 'Detected AAG metadata changes on the host'){
                         $needsRun = $True
@@ -99,6 +101,25 @@ foreach($job in $jobs | Sort-Object -Property name){
                     if($needsRun){
                         "        ({0}): {1}" -f $runStartTime, $message
                         "{0} ({1}): {2}" -f $job.name, $runStartTime, $message | Out-File -FilePath $outfileName -Append    
+                    }
+                    foreach($source in $run.backupRun.sourceBackupStatus){
+                        if($source.status -eq 'kFailure'){
+                            $sourceId = $source.source.id
+
+                            $runNowParameter = @{
+                                "sourceId" = $sourceId;
+                            }
+                            $sourceName = $source.source.name
+                            foreach($app in $source.appsBackupStatus){
+                                if($app.PSObject.Properties['error']){
+                                    if(! $runNowParameter.databaseIds){
+                                        $runNowParameter.databaseIds = @()
+                                    }
+                                    $runNowParameter.databaseIds = @($runNowParameter.databaseIds + $app.appId)
+                                }
+                            }
+                            $runNowParameters = @($runNowParameters + $runNowParameter)
+                        }
                     }
                 }
             }
@@ -147,7 +168,9 @@ foreach($job in $jobs | Sort-Object -Property name){
             $runParams = @{
                 "runType" = 'kRegular';
                 "copyRunTargets" = @($copyRunTargets)
+                "runNowParameters" = $runNowParameters
             }
+
             $newRun = api post "protectionJobs/run/$jobId" $runParams
             Write-Host "        Running job $($job.name) again..."
         }
