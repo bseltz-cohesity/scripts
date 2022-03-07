@@ -13,7 +13,7 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/heliosV2/python/heliosStoragePerSystem/heliosStoragePerSystem.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/heliosV2/python/heliosStoragePerSystemReport/heliosStoragePerSystemReport.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x heliosStoragePerSystem.py
 # end download commands
