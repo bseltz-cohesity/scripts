@@ -1,4 +1,4 @@
-# version 2022.03.04
+# version 2022.03.07
 # usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
@@ -268,33 +268,6 @@ if($runs){
 
 $finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning', '3', '4', '5', '6')
 
-# wait for existing job run to finish
-$now = Get-Date
-$waitUntil = $now.AddMinutes($waitMinutesIfRunning)
-if($runs -and !$metaDataFile){
-    $alertWaiting = $True
-    while ($runs[0].backupRun.status -notin $finishedStates){
-        Write-Host $runs[0].backupRun.status
-        if((Get-Date) -gt $waitUntil){
-            output "Timed out waiting for existing run to finish" -warn
-            exit 1
-        }
-        if($alertWaiting){
-            if($abortIfRunning){
-                output "job is already running"
-                exit 0
-            }
-            output "waiting for existing job run to finish..."
-            $alertWaiting = $false
-        }
-        if($cancelPreviousRunMinutes -gt 0){
-            cancelRunningJob $job $cancelPreviousRunMinutes
-        }
-        Start-Sleep 5
-        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
-    }    
-}
-
 # set local retention
 $copyRunTargets = @(
     @{
@@ -428,7 +401,7 @@ if($enable){
 }
 
 # run job
-$result = api post ('protectionJobs/run/' + $jobID) $jobdata -quiet
+$result = api post ('protectionJobs/run/' + $jobID) $jobdata
 $reportWaiting = $True
 $now = Get-Date
 $waitUntil = $now.AddMinutes($waitMinutesIfRunning)
@@ -441,6 +414,10 @@ while($result -ne ""){
         cancelRunningJob $job $cancelPreviousRunMinutes
     }
     if($reportWaiting){
+        if($abortIfRunning){
+            output "job is already running"
+            exit 0
+        }
         output "Waiting for existing job run to finish..."
         $reportWaiting = $false
     }
