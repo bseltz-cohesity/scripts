@@ -31,7 +31,8 @@ Place both files in a folder together and run the main script like so:
 ## Parameters
 
 * -username: (optional) used for password storage only (default is 'DMaaS')
-* -region: DMaaS region to use
+* -region: DMaaS region to use (e.g. us-east-2)
+* -environment: (optional) e.g. kVMware
 
 ## Authenticating to DMaaS
 
