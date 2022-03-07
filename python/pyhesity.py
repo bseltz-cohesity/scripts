@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2022.02.24"""
+"""Cohesity Python REST API Wrapper Module - 2022.03.07"""
 
 ##########################################################################################
 # Change Log
@@ -28,6 +28,7 @@
 # 2022.02.04 - added support for V2 session authentication
 # 2022.02.22 - Password retry for helios/MCM
 # 2022.02.24 - Password retry for cluster ApiKey
+# 2022.03.07 - Hide bad password in auth error
 #
 ##########################################################################################
 # Install Notes
@@ -158,11 +159,12 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
         if tenantId is not None:
             COHESITY_API['HEADER']['x-impersonate-tenant-id'] = '%s/' % tenantId
         COHESITY_API['AUTHENTICATED'] = True
-        cluster = api('get', 'cluster')
+        cluster = api('get', 'cluster', quiet=True)
         if cluster is not None and 'id' in cluster:
             if(quiet is None):
                 print("Connected!")
         else:
+            print("Authentication Failed")
             COHESITY_API['AUTHENTICATED'] = False
             apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
     else:
