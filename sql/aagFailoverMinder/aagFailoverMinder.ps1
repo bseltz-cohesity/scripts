@@ -93,8 +93,13 @@ foreach($job in $jobs | Sort-Object -Property name){
                     if($message -match 'No matching replica found for the backup preference'){
                         $needsRun = $True
                     }
-                    "        ({0}): {1}" -f $runStartTime, $message
-                    "{0} ({1}): {2}" -f $job.name, $runStartTime, $message | Out-File -FilePath $outfileName -Append
+                    if($message -match 'Discovered a break in the logchain'){
+                        $needsRun = $True
+                    }
+                    if($needsRun){
+                        "        ({0}): {1}" -f $runStartTime, $message
+                        "{0} ({1}): {2}" -f $job.name, $runStartTime, $message | Out-File -FilePath $outfileName -Append    
+                    }
                 }
             }
         }
