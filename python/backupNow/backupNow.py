@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2022.02.18
+# version 2022.03.07
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -265,41 +265,11 @@ if objectnames is not None:
                 out('Object %s not found!' % objectname)
                 bail(1)
 
-finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning', 'kCanceling']
+finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning', 'kCanceling', '3', '4', '5', '6']
 runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
 
 if len(runs) > 0:
     newRunId = lastRunId = runs[0]['backupRun']['jobRunId']
-
-    # wait for existing job run to finish
-    now = datetime.now()
-    nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
-    waitUntil = nowUsecs + (waitminutesifrunning * 60000000)
-    status = 'unknown'
-    reportedwaiting = False
-    if metadatafile is None:
-        while status not in finishedStates:
-            now = datetime.now()
-            nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
-            if nowUsecs >= waitUntil:
-                out('Timed out waiting for existing run to finish')
-                exit(1)
-            try:
-                if cancelpreviousrunminutes > 0:
-                    cancelRunningJob(job, cancelpreviousrunminutes)
-                sleep(5)
-                runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
-                status = runs[0]['backupRun']['status']
-                if status not in finishedStates:
-                    if reportedwaiting is False:
-                        if abortIfRunning:
-                            out('Job is already running')
-                            bail()
-                        out('Waiting for existing job run to finish...')
-                        reportedwaiting = True
-                    sleep(5)
-            except Exception:
-                pass
 else:
     newRunId = lastRunId = 1
 
@@ -407,7 +377,7 @@ now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 waitUntil = nowUsecs + (waitminutesifrunning * 60000000)
 reportWaiting = True
-runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData, quiet=True)
+runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData)
 while runNow != "":
     if cancelpreviousrunminutes > 0:
         cancelRunningJob(job, cancelpreviousrunminutes)
