@@ -34,6 +34,8 @@ Place both files in a folder together and run the main script like so:
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
+* -i, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: (optional) password of API key
 * -s, --sourcepath: view/path of source folder to copy
 * -t, --targetpath: view/path of new folder to create as copy destination
 

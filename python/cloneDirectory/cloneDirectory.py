@@ -15,6 +15,8 @@ parser.add_argument('-u', '--username', type=str, required=True)
 parser.add_argument('-d', '--domain', type=str, default='local')
 parser.add_argument('-s', '--sourcepath', type=str, required=True)
 parser.add_argument('-t', '--targetpath', type=str, required=True)
+parser.add_argument('-i', '--useApiKey', action='store_true')       # use API key authentication
+parser.add_argument('-pwd', '--password', type=str, default=None)   # optional password
 
 args = parser.parse_args()
 
@@ -23,6 +25,8 @@ username = args.username
 domain = args.domain
 sourcepath = args.sourcepath
 targetpath = args.targetpath
+password = args.password
+useApiKey = args.useApiKey
 
 sourcepath = sourcepath.replace('\\', '/').replace('//', '/')
 targetpath = targetpath.replace('\\', '/').replace('//', '/')
@@ -44,7 +48,7 @@ if targetpath == '':
     exit()
 
 # authenticate
-apiauth(vip, username, domain)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, noretry=True, quiet=True)
 
 # clone directory params
 CloneDirectoryParams = {
