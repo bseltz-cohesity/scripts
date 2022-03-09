@@ -118,10 +118,13 @@ foreach($viewName in $myViews){
         $processView = $True
         $job = $jobs | Where-Object {$_.name -eq $viewResult.vmDocument.jobName}
         $job = $job[0]
+        $view = $null
         if($job.PSObject.Properties['remoteViewName'] -and !$snapshotDate){
             $remoteViews = $views | Where-Object {$job.name -in $_.viewProtection.protectionJobs.jobName}
             $remoteView = ($remoteViews | Sort-Object -Property viewId -Descending)[0]
             $view = $remoteView
+        }
+        if($null -ne $view -and $view.PSObject.Properties['viewId'] -and !$snapshotDate){
             $cloneTask = @{
                 "name"       = "Clone-View_" + $((get-date).ToString().Replace('/', '_').Replace(':', '_').Replace(' ', '_'));
                 "objects"    = @(
@@ -147,8 +150,8 @@ foreach($viewName in $myViews){
                     "cloneViewName"         = "$($metadata.name)$suffix";
                     "viewBoxId"             = $view.viewBoxId;
                     "viewId"                = $view.viewId;
-                    "qos"                   = $metadata.qos;
-                    "protocolAccess"        = $metadata.protocolAccess
+                    "qos"                   = $view.qos;
+                    "protocolAccess"        = $view.protocolAccess
                 }
             }
             $version =  $viewResult.vmDocument.versions[0]
