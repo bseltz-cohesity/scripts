@@ -440,7 +440,7 @@ if wait is True:
             log.write('Backup ended %s\n' % usecsToDate(runs[0]['backupRun']['stats']['endTimeUsecs']))
         except Exception:
             log.write('Backup ended')
-    if runs[0]['backupRun']['status'] == 'kSuccess' or runs[0]['backupRun']['status'] == 'kWarning':
+    if run[0]['backupRun']['status'] == 'kSuccess' or run[0]['backupRun']['status'] == 'kWarning':
         bail(0)
     else:
         bail(1)
