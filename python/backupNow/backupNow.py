@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2022.03.07
+# version 2022.03.09
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -388,7 +388,7 @@ while runNow != "":
     nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
     if nowUsecs >= waitUntil:
         out('Timed out waiting for existing run')
-        exit(1)
+        bail(1)
     sleep(15)
     runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData, quiet=True)
 out("Running %s..." % jobName)
@@ -428,9 +428,6 @@ if wait is True:
         out('Error: %s' % run[0]['backupRun']['error'])
     if run[0]['backupRun']['status'] == 'kWarning':
         out('Warning: %s' % run[0]['backupRun']['warnings'])
-    runURL = "https://%s/protection/job/%s/run/%s/%s/protection" % \
-        (vip, run[0]['jobId'], run[0]['backupRun']['jobRunId'], run[0]['backupRun']['stats']['startTimeUsecs'])
-    out("Run URL: %s" % runURL)
 
 # disable job
 if enable:
