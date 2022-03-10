@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2022.03.10b
+# version 2022.03.10c
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -145,7 +145,7 @@ def getObjectId(objectName):
 def cancelRunningJob(job, durationMinutes):
     if durationMinutes > 0:
         durationUsecs = durationMinutes * 60000000
-        nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
+        nowUsecs = dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         cancelTime = nowUsecs - durationUsecs
         runningRuns = api('get', 'protectionRuns?jobId=%s&numRuns=10&excludeTasks=true' % job['id'])
         if runningRuns is not None and len(runningRuns) > 0:
