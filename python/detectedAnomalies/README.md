@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script reports Helios Detected Ransomeware Anomalies over the past 30 days.
+This script reports Helios Detected Ransomeware Anomalies and forwards them to syslog.
 
 ## Download the script
 
@@ -33,7 +33,13 @@ When prompted for your password, enter the API Key for your Helios account (see 
 
 ## Parameters
 
-* -u, --username: username to authenticate to Cohesity cluster
+* -v, --vip: (optional) mcm or helios (defaults to helios.cohesity.com)
+* -u, --username: (optional) username to authenticate (defaults to helios)
+* -d, --domain: (optional) defaults to local
+* -pwd, --password: (optional) will use cached password if omitted
+* -m, --minimumstrength: (optional) defaults to 10
+* -y, --days: (optional) number of days to look back (default is 7)
+* -f, --maxlogfilesize: (optional) default is 10000 lines
 
 ## Authenticating to Helios
 
