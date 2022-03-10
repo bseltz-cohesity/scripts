@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2022.03.09
+# version 2022.03.09.b
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -396,8 +396,8 @@ out("Running %s..." % jobName)
 # wait for new job run to appear
 if wait is True:
     while(newRunId == lastRunId):
-        sleep(5)
-        runs = api('get', 'protectionRuns?jobId=%s' % job['id'])
+        sleep(0.3)
+        runs = api('get', 'protectionRuns?jobId=%s&numRuns=2' % job['id'])
         if len(runs) > 0:
             newRunId = runs[0]['backupRun']['jobRunId']
         else:
@@ -410,7 +410,7 @@ if wait is True:
     lastProgress = -1
     while status not in finishedStates:
         try:
-            sleep(5)
+            sleep(10)
             runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
             run = [r for r in runs if r['backupRun']['jobRunId'] == newRunId]
             status = run[0]['backupRun']['status']
