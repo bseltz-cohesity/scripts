@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2022.03.09.c
+# version 2022.03.10
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -111,6 +111,7 @@ if apiconnected() is False:
     bail(1)
 
 sources = {}
+cluster = api('get', 'cluster')
 
 
 ### get object ID
@@ -180,6 +181,7 @@ else:
 
 # handle run now objects
 sourceIds = []
+selectedSources = []
 runNowParameters = []
 if objectnames is not None:
     for objectname in objectnames:
@@ -214,6 +216,7 @@ if objectnames is not None:
                             "sourceId": serverObjectId
                         }
                     )
+                    selectedSources.append(serverObjectId)
                 if instance is not None or db is not None:
                     if environment == 'kOracle' or (environment == 'kSQL' and job['environmentParameters']['sqlParameters']['backupType'] in ['kSqlVSSFile', 'kSqlNative']):
                         for runNowParameter in runNowParameters:
@@ -261,6 +264,7 @@ if objectnames is not None:
             sourceId = getObjectId(objectname)
             if sourceId is not None:
                 sourceIds.append(sourceId)
+                selectedSources.append(sourceId)
             else:
                 out('Object %s not found!' % objectname)
                 bail(1)
@@ -369,7 +373,7 @@ if archiveTo is not None:
         bail(1)
 
 ### enable the job
-if enable:
+if enable and cluster['clusterSoftwareVersion'] > '6.5':
     enabled = api('post', 'protectionJobState/%s' % job['id'], {'pause': False})
 
 ### run protectionJob
@@ -396,8 +400,11 @@ out("Running %s..." % jobName)
 # wait for new job run to appear
 if wait is True:
     while(newRunId == lastRunId):
-        sleep(0.3)
-        runs = api('get', 'protectionRuns?jobId=%s&numRuns=2&excludeTasks=true' % job['id'])
+        sleep(1)
+        if len(selectedSources) > 0:
+            runs = api('get', 'protectionRuns?jobId=%s&numRuns=2&excludeTasks=true&sourceId=%s' % (job['id'], selectedSources[0]))
+        else:
+            runs = api('get', 'protectionRuns?jobId=%s&numRuns=2&excludeTasks=true' % job['id'])
         if len(runs) > 0:
             newRunId = runs[0]['backupRun']['jobRunId']
         else:
@@ -411,7 +418,10 @@ if wait is True:
     while status not in finishedStates:
         try:
             sleep(10)
-            runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
+            if len(selectedSources) > 0:
+                runs = api('get', 'protectionRuns?jobId=%s&numRuns=10&excludeTasks=true&sourceId=%s' % (job['id'], selectedSources[0]))
+            else:
+                runs = api('get', 'protectionRuns?jobId=%s&numRuns=10&excludeTasks=true' % job['id'])
             run = [r for r in runs if r['backupRun']['jobRunId'] == newRunId]
             status = run[0]['backupRun']['status']
             progressMonitor = api('get', '/progressMonitors?taskPathVec=backup_%s_1&includeFinishedTasks=true&excludeSubTasks=false' % newRunId)
@@ -430,7 +440,7 @@ if wait is True:
         out('Warning: %s' % run[0]['backupRun']['warnings'])
 
 # disable job
-if enable:
+if enable and cluster['clusterSoftwareVersion'] > '6.5':
     disabled = api('post', 'protectionJobState/%s' % job['id'], {'pause': True})
 
 # return exit code

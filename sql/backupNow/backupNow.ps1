@@ -1,4 +1,4 @@
-# version 2022.03.07
+# version 2022.03.10
 # usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
@@ -136,7 +136,7 @@ function cancelRunningJob($job, $durationMinutes){
     if($durationMinutes -gt 0){
         $durationUsecs = $durationMinutes * 60000000
         $cancelTime = (dateToUsecs) - $durationUsecs
-        $runningRuns = api get "protectionRuns?jobId=$($job.id)&numRuns=10" | Where-Object {$_.backupRun.status -notin $finishedStates}
+        $runningRuns = api get "protectionRuns?jobId=$($job.id)&numRuns=10&excludeTasks=true" | Where-Object {$_.backupRun.status -notin $finishedStates}
         foreach($run in $runningRuns){
             if($run.backupRun.stats.startTimeUsecs -gt 0 -and $run.backupRun.stats.startTimeUsecs -le $cancelTime){
                 $null = api post "protectionRuns/cancel/$($job.id)" @{ "jobRunId" = $run.backupRun.jobRunId }
@@ -184,6 +184,7 @@ if($job){
 
 # handle SQL DB run now objects
 $sourceIds = @()
+$selectedSources = @()
 if($objects){
     $runNowParameters = @()
     foreach($object in $objects){
@@ -200,6 +201,7 @@ if($objects){
                         $runNowParameters += @{
                             "sourceId" = $serverObjectId;
                         }
+                        $selectedSources = @($selectedSources + $serverObjectId)
                     }
                     if($instance -or $db){                  
                         if($environment -eq 'kOracle' -or $job.environmentParameters.sqlParameters.backupType -in @('kSqlVSSFile', 'kSqlNative')){
@@ -250,6 +252,7 @@ if($objects){
             $objectId = getObjectId $object
             if($objectId){
                 $sourceIds += $objectId
+                $selectedSources = @($selectedSources + $objectId)
             }else{
                 output "Object $object not found" -warn
                 exit 1
@@ -259,7 +262,7 @@ if($objects){
 }
 
 # get last run id
-$runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
+$runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true"
 if($runs){
     $newRunId = $lastRunId = $runs[0].backupRun.jobRunId
 }else{
@@ -392,8 +395,8 @@ if($objects){
 }
 
 # enable job
-if($enable){
-    $lastRunTime = (api get "protectionRuns?jobId=$jobId&numRuns=1").backupRun.stats.startTimeUsecs
+if($enable -and $cluster.clusterSoftwareVersion -gt '6.5'){
+    $lastRunTime = (api get "protectionRuns?jobId=$jobId&numRuns=1&excludeTasks=true").backupRun.stats.startTimeUsecs
     while($True -eq (api get protectionJobs/$jobID).isPaused){
         $null = api post protectionJobState/$jobID @{ 'pause'= $false }
         Start-Sleep 2
@@ -429,20 +432,15 @@ output "Running $jobName..."
 # wait for new job run to appear
 $x = 0
 while($newRunId -eq $lastRunId){
-    Start-Sleep 2
-    $x += 1
-    if($x -ge 30){
-        if(!$metaDataFile){
-            output "Timed out waiting for new run" -warn
-            exit 1
-        }else{
-            output "Already running for this object" -warn
-            exit 0
-        }
+    Start-Sleep 1
+    if($selectedSources.Count -gt 0){
+        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&sourceId=$($selectedSources[0])"
+    }else{
+        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true"
     }
-    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
     $newRunId = $runs[0].backupRun.jobRunId
 }
+output "New Job Run ID: $newRunId"
 
 # wait for job run to finish
 if($wait -or $enable){
@@ -457,14 +455,14 @@ if($wait -or $enable){
                 $lastProgress = $percentComplete
             }
         }
-        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10" | Where-Object {$_.backupRun.jobRunId -eq $newRunId}
+        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10&excludeTasks=true" | Where-Object {$_.backupRun.jobRunId -eq $newRunId}
     }
 }
 
 # disable job
-if($enable){
+if($enable -and $cluster.clusterSoftwareVersion -gt '6.5'){
     while($True -ne (api get protectionJobs/$jobID).isPaused){
-        if($lastRunTime -lt (api get "protectionRuns?jobId=$jobId&numRuns=1").backupRun.stats.startTimeUsecs){
+        if($lastRunTime -lt (api get "protectionRuns?jobId=$jobId&numRuns=1&excludeTasks=true").backupRun.stats.startTimeUsecs){
             $null = api post protectionJobState/$jobID @{ 'pause'= $true }
         }else{
             Start-Sleep 2
