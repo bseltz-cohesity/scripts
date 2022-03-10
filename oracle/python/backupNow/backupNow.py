@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2022.03.10
+# version 2022.03.10b
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -270,7 +270,13 @@ if objectnames is not None:
                 bail(1)
 
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning', 'kCanceling', '3', '4', '5', '6']
-runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
+
+if len(selectedSources) > 0:
+    runs = api('get', 'protectionRuns?jobId=%s&numRuns=2&excludeTasks=true&sourceId=%s' % (job['id'], selectedSources[0]))
+    if runs is None or len(runs) == 0:
+        runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
+else:
+    runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
 
 if len(runs) > 0:
     newRunId = lastRunId = runs[0]['backupRun']['jobRunId']
@@ -399,7 +405,7 @@ out("Running %s..." % jobName)
 
 # wait for new job run to appear
 if wait is True:
-    while(newRunId == lastRunId):
+    while(newRunId <= lastRunId):
         sleep(1)
         if len(selectedSources) > 0:
             runs = api('get', 'protectionRuns?jobId=%s&numRuns=2&excludeTasks=true&sourceId=%s' % (job['id'], selectedSources[0]))
@@ -407,8 +413,6 @@ if wait is True:
             runs = api('get', 'protectionRuns?jobId=%s&numRuns=2&excludeTasks=true' % job['id'])
         if len(runs) > 0:
             newRunId = runs[0]['backupRun']['jobRunId']
-        else:
-            newRunId = 1
     out("New Job Run ID: %s" % newRunId)
 
 # wait for job run to finish and report completion
