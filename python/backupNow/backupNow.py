@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2022.03.09.b
+# version 2022.03.09.c
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -146,7 +146,7 @@ def cancelRunningJob(job, durationMinutes):
         durationUsecs = durationMinutes * 60000000
         nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
         cancelTime = nowUsecs - durationUsecs
-        runningRuns = api('get', 'protectionRuns?jobId=%s&numRuns=10' % job['id'])
+        runningRuns = api('get', 'protectionRuns?jobId=%s&numRuns=10&excludeTasks=true' % job['id'])
         if runningRuns is not None and len(runningRuns) > 0:
             for run in runningRuns:
                 if 'backupRun' in run and 'status' in run['backupRun']:
@@ -397,7 +397,7 @@ out("Running %s..." % jobName)
 if wait is True:
     while(newRunId == lastRunId):
         sleep(0.3)
-        runs = api('get', 'protectionRuns?jobId=%s&numRuns=2' % job['id'])
+        runs = api('get', 'protectionRuns?jobId=%s&numRuns=2&excludeTasks=true' % job['id'])
         if len(runs) > 0:
             newRunId = runs[0]['backupRun']['jobRunId']
         else:
