@@ -262,7 +262,15 @@ if($objects){
 }
 
 # get last run id
-$runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true"
+if($selectedSources.Count -gt 0){
+    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&sourceId=$($selectedSources[0])"
+    if(!$runs -or $runs.Count -eq 0){
+        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true"
+    }
+}else{
+    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true"
+}
+
 if($runs){
     $newRunId = $lastRunId = $runs[0].backupRun.jobRunId
 }else{
@@ -431,7 +439,7 @@ output "Running $jobName..."
 
 # wait for new job run to appear
 $x = 0
-while($newRunId -eq $lastRunId){
+while($newRunId -le $lastRunId){
     Start-Sleep 1
     if($selectedSources.Count -gt 0){
         $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&sourceId=$($selectedSources[0])"
@@ -455,7 +463,12 @@ if($wait -or $enable){
                 $lastProgress = $percentComplete
             }
         }
-        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10&excludeTasks=true" | Where-Object {$_.backupRun.jobRunId -eq $newRunId}
+        if($selectedSources.Count -gt 0){
+            $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&sourceId=$($selectedSources[0])"
+        }else{
+            $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10&excludeTasks=true"
+        }
+        $runs = $runs | Where-Object {$_.backupRun.jobRunId -eq $newRunId}
     }
 }
 
