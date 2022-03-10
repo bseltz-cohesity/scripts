@@ -46,7 +46,17 @@ Place both files in a folder together and run the main script like so:
 * -s, --storageDomain: (optional) name of storage domain to place view data (default is DefaultStorageDomain)
 * -w, --whitelist: (optional) ip (and optional netmask) to whitelist (can be used multiple times) e.g. '192.168.1.0, 255.255.255.0'
 * -l, --quotalimit: (optional) quota limit in GiB
-* -a --quotaalert: (optional) quota alert threshold in GiB (defaults to 90% of quotalimit)
+* -a, --quotaalert: (optional) quota alert threshold in GiB (defaults to 90% of quotalimit)
 * -r, --removewhitelistentries: (optional) remove specified entries from whitelist of existing view
 * -c, --clearwhitelist: (optional) clear out the existing whitelist and add specified entries (using -w)
 * -x, --updateexistingview: (optional) allow the script to update an existing view (otherwise quit if view exists)
+
+## Datalock Parameters
+
+* -lm, --lockmode: (optional) Compliance, Enterprise or None (default is None)
+* -al, --autolockminutes: (optional) number of idle minutes before auto locking (default is 0 which means no autolocking)
+* -ml, --minimumlockminutes: (optional) minimum number of minutes when manual locking (default is 0)
+* -lu, --lockunit: (optional) period selection for defaul and maximum lock periods, minutes, hours, days (default is minutes)
+* -dl, --defaultlockperiod: (optional) default manual lock duration, default is 1 (see lockunit above)
+* -xl, --maximumlockperiod: (optional) maximum manual lock duration, default is 1 (see lockunit above)
+* -lt, --manuallockmode': (optional) ReadOnly or FutureATime (default is ReadOnly
