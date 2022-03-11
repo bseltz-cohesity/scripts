@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """restore files using python"""
 
-# version 2022.03.03
+# version 2022.03.11
 
 # usage: ./restoreFiles.py -v mycluster \
 #                          -u myusername \
@@ -218,7 +218,7 @@ def restore(thesefiles, doc, version, targetEntity, singleFile):
     if restoreTask:
         taskId = restoreTask['restoreTask']['performRestoreTaskState']['base']['taskId']
         if wait:
-            finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
+            finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning']
             restoreTask = api('get', '/restoretasks/%s' % taskId)
             while restoreTask[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus'] not in finishedStates:
                 sleep(3)
