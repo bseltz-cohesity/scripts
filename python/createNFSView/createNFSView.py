@@ -178,7 +178,6 @@ newView['qos']['principalName'] = qosPolicy
 
 # create the view
 if existingview is None:
-    display(newView)
     print("Creating view %s..." % viewName)
     result = api('post', 'views', newView)
 else:
