@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2022.03.10c
+# version 2022.03.11
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -40,6 +40,8 @@ parser.add_argument('-x', '--abortifrunning', action='store_true')
 parser.add_argument('-f', '--logfile', type=str, default=None)
 parser.add_argument('-n', '--waitminutesifrunning', type=int, default=60)
 parser.add_argument('-cp', '--cancelpreviousrunminutes', type=int, default=0)
+parser.add_argument('-nrt', '--newruntimeoutsecs', type=int, default=180)
+parser.add_argument('-debug', '--debug', action='store_true')
 
 args = parser.parse_args()
 
@@ -69,6 +71,8 @@ abortIfRunning = args.abortifrunning
 logfile = args.logfile
 waitminutesifrunning = args.waitminutesifrunning
 cancelpreviousrunminutes = args.cancelpreviousrunminutes
+newruntimeoutsecs = args.newruntimeoutsecs
+debugger = args.debug
 
 if enable is True:
     wait = True
@@ -387,6 +391,8 @@ now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 waitUntil = nowUsecs + (waitminutesifrunning * 60000000)
 reportWaiting = True
+if debugger:
+    print(':DEBUG: waiting for new run to be accepted')
 runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData)
 while runNow != "":
     if cancelpreviousrunminutes > 0:
@@ -400,19 +406,31 @@ while runNow != "":
         out('Timed out waiting for existing run')
         bail(1)
     sleep(15)
-    runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData, quiet=True)
+    if debugger:
+        runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData)
+    else:
+        runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData, quiet=True)
 out("Running %s..." % jobName)
 
 # wait for new job run to appear
 if wait is True:
+    timeOutUsecs = dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     while(newRunId <= lastRunId):
-        sleep(1)
+        sleep(5)
         if len(selectedSources) > 0:
             runs = api('get', 'protectionRuns?jobId=%s&numRuns=2&excludeTasks=true&sourceId=%s' % (job['id'], selectedSources[0]))
         else:
             runs = api('get', 'protectionRuns?jobId=%s&numRuns=2&excludeTasks=true' % job['id'])
         if len(runs) > 0:
             newRunId = runs[0]['backupRun']['jobRunId']
+        if debugger:
+            print(':DEBUG: Previous Run ID: %s' % lastRunId)
+            print(':DEBUG:   Latest Run ID: %s\n' % newRunId)
+        # timeout waiting for new run to appear
+        nowUsecs = dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        if (timeOutUsecs + (newruntimeoutsecs * 1000000)) < nowUsecs:
+            out("Timed out waiting for new run to appear")
+            bail(1)
     out("New Job Run ID: %s" % newRunId)
 
 # wait for job run to finish and report completion
@@ -436,7 +454,10 @@ if wait is True:
             if status not in finishedStates:
                 sleep(5)
         except Exception:
-            pass
+            if debugger:
+                ":DEBUG: error getting updated status"
+            else:
+                pass
     out("Job finished with status: %s" % run[0]['backupRun']['status'])
     if run[0]['backupRun']['status'] == 'kFailure':
         out('Error: %s' % run[0]['backupRun']['error'])

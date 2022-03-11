@@ -58,6 +58,8 @@ Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/prote
 * -f, --logfile: (optional) filename to log output
 * -n, --waitminutesifrunning: (optional) exit after X minutes if job is already running (default is 60)
 * -cp, --cancelpreviousrunminutes: (optional) cancel previous job run if it's been running for X minutes
+* -nrt, --newruntimeoutsecs: (optional) exit after X seconds if new run fails to start (default is 180)
+* -debug, --debug: (optional) display verbose error and state messages
 
 ## Using -o (--objectname) Parameter
 
