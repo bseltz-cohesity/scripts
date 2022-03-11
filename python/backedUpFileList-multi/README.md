@@ -10,7 +10,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backedUpFileList/backedUpFileList.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backedUpFileList-multi/backedUpFileList-multi.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x backupNow.py
 # End download commands
@@ -18,7 +18,7 @@ chmod +x backupNow.py
 
 ## Components
 
-* backedUpFileList.py: the main PowerShell script
+* backedUpFileList-multi.py: the main PowerShell script
 * pyhesity.py: the Cohesity REST API helper module
 
 Place all files in a folder together. then, run the main script like so:
@@ -26,34 +26,34 @@ Place all files in a folder together. then, run the main script like so:
 To list what versions are available:
 
 ```bash
-./backedUpFileList.py -v mycluster \
-                      -u myuser \
-                      -d mydomain.net \
-                      -s server1.mydomain.net \
-                      -j 'My Backup Job' \
-                      -l
+./backedUpFileList-multi.py -v mycluster \
+                            -u myuser \
+                            -d mydomain.net \
+                            -s server1.mydomain.net \
+                            -j 'My Backup Job' \
+                            -l
 ```
 
 To use a specific job run ID:
 
 ```bash
-./backedUpFileList.py -v mycluster \
-                      -u myuser \
-                      -d mydomain.net \
-                      -s server1.mydomain.net \
-                      -j 'My Backup Job' \
-                      -r 123456
+./backedUpFileList-multi.py -v mycluster \
+                            -u myuser \
+                            -d mydomain.net \
+                            -s server1.mydomain.net \
+                            -j 'My Backup Job' \
+                            -r 123456
 ```
 
 To choose the backup at or after the specified file date:
 
 ```bash
-./backedUpFileList.py -v mycluster \
-                      -u myuser \
-                      -d mydomain.net \
-                      -s server1.mydomain.net \
-                      -j 'My Backup Job' \
-                      -f '2020-06-30 13:00:00'
+./backedUpFileList-multi.py -v mycluster \
+                            -u myuser \
+                            -d mydomain.net \
+                            -s server1.mydomain.net \
+                            -j 'My Backup Job' \
+                            -f '2020-06-30 13:00:00'
 ```
 
 ## Parameters
