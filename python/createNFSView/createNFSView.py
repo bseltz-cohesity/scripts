@@ -19,6 +19,13 @@ parser.add_argument('-a', '--quotaalert', type=int, default=None)  # quota alert
 parser.add_argument('-c', '--clearwhitelist', action='store_true')  # erase existing whitelist
 parser.add_argument('-r', '--removewhitelistentries', action='store_true')  # remove whitelist entries specified with -w
 parser.add_argument('-x', '--updateexistingview', action='store_true')  # allow update of existing view (otherwise exit if view exists)
+parser.add_argument('-lm', '--lockmode', type=str, choices=['Compliance', 'Enterprise', 'None', 'compliance', 'enterprise', 'none'], default='None')  # datalock mode
+parser.add_argument('-dl', '--defaultlockperiod', type=int, default=1)  # default lock period
+parser.add_argument('-al', '--autolockminutes', type=int, default=0)  # autolock after idle minutes
+parser.add_argument('-ml', '--minimumlockperiod', type=int, default=0)  # minimum manual lock period
+parser.add_argument('-xl', '--maximumlockperiod', type=int, default=1)  # maximum manual lock period
+parser.add_argument('-lt', '--manuallockmode', type=str, choices=['ReadOnly', 'FutureATime', 'readonly', 'futureatim'], default='ReadOnly')  # manual locking type
+parser.add_argument('-lu', '--lockunit', type=str, choices=['minute', 'hour', 'day', 'minutes', 'hours', 'days'], default='minute')  # lock period units
 
 args = parser.parse_args()
 
@@ -34,6 +41,16 @@ quotaalert = args.quotaalert
 removewhitelistentries = args.removewhitelistentries
 clearwhitelist = args.clearwhitelist
 updateexistingview = args.updateexistingview
+lockmode = args.lockmode
+defaultlockperiod = args.defaultlockperiod
+autolockminutes = args.autolockminutes
+minimumlockperiod = args.minimumlockperiod
+maximumlockperiod = args.maximumlockperiod
+manuallockmode = args.manuallockmode
+lockunit = args.lockunit
+
+lockunitmap = {'minute': 60000, 'minutes': 60000, 'hour': 3600000, 'hours': 3600000, 'day': 86400000, 'days': 86400000}
+lockunitmultiplier = lockunitmap[lockunit]
 
 
 # netmask2cidr
@@ -136,6 +153,35 @@ if quotalimit is not None:
         "hardLimitBytes": quotalimit,
         "alertLimitBytes": quotaalert
     }
+
+# apply datalock
+if lockmode.lower() != 'none':
+    newView['fileLockConfig'] = {}
+    if lockmode.lower() == 'enterprise':
+        newView['fileLockConfig']['mode'] = "kEnterprise"
+    if lockmode.lower() == 'compliance':
+        newView['fileLockConfig']['mode'] = "kCompliance"
+    if autolockminutes > 0:
+        newView['fileLockConfig']['autoLockAfterDurationIdleMsecs'] = autolockminutes * 60000
+    newView['fileLockConfig']['defaultFileRetentionDurationMsecs'] = defaultlockperiod * lockunitmultiplier
+    if maximumlockperiod < defaultlockperiod:
+        maximumlockperiod = defaultlockperiod
+    if maximumlockperiod <= minimumlockperiod or defaultlockperiod <= minimumlockperiod:
+        print("default and maximum lock periods must be greater than the minimum lock period")
+        exit()
+    minimumlockmsecs = minimumlockperiod * lockunitmultiplier
+    if minimumlockmsecs == 0:
+        minimumlockmsecs = 60000
+    newView['fileLockConfig']['minRetentionDurationMsecs'] = minimumlockmsecs
+    maximumlockmsecs = maximumlockperiod * lockunitmultiplier
+    if maximumlockmsecs <= (minimumlockmsecs + 240000):
+        maximumlockmsecs = minimumlockmsecs + 240000
+    newView['fileLockConfig']['maxRetentionDurationMsecs'] = maximumlockmsecs
+    if manuallockmode.lower() == 'readonly':
+        newView['fileLockConfig']['lockingProtocol'] = 'kSetReadOnly'
+    else:
+        newView['fileLockConfig']['lockingProtocol'] = 'kSetAtime'
+    newView['fileLockConfig']['expiryTimestampMsecs'] = 0
 
 # update qos policy
 newView['qos']['principalName'] = qosPolicy
