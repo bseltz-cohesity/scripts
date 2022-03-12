@@ -94,20 +94,20 @@ if views['count'] > 0:
                         print('                            smbAccess: %s' % entry['smbAccess'][1:])
                         entrynum = 1
                 if 'fileLockConfig' in view:
-                    print('        File Datalock Mode: %s' % view['fileLockConfig'].get('mode', 'kNone')[1:])
+                    print('             Datalock Mode: %s' % view['fileLockConfig'].get('mode', 'kNone')[1:])
                     if 'autoLockAfterDurationIdle' in view['fileLockConfig']:
                         autolockMins = view['fileLockConfig']['autoLockAfterDurationIdle'] / 60000
                         print('    Auto Lock Idle Minutes: %s' % autolockMins)
                     if 'defaultFileRetentionDurationMsecs' in view['fileLockConfig']:
                         defaultRetention = timeString(view['fileLockConfig']['defaultFileRetentionDurationMsecs'])
-                        print('        Auto Lock Duration: %s' % defaultRetention)
+                        print('       Default Lock Period: %s' % defaultRetention)
                     print('  Manual Datalock Protocol: %s' % view['fileLockConfig'].get('lockingProtocol', 'kNone')[1:])
                     if 'minRetentionDurationMsecs' in view['fileLockConfig']:
                         minRetention = timeString(view['fileLockConfig']['minRetentionDurationMsecs'])
-                        print('  Min Manual Lock Duration: %s' % minRetention)
+                        print('       Minimum Lock Period: %s' % minRetention)
                     if 'maxRetentionDurationMsecs' in view['fileLockConfig']:
                         maxRetention = timeString(view['fileLockConfig']['maxRetentionDurationMsecs'])
-                        print('  Max Manual Lock Duration: %s' % maxRetention)
+                        print('       Maximun Lock Period: %s' % maxRetention)
         print('')
     else:
         print('\nProto  Name')
