@@ -162,7 +162,7 @@ if lockmode.lower() != 'none':
     if lockmode.lower() == 'compliance':
         newView['fileLockConfig']['mode'] = "kCompliance"
     if autolockminutes > 0:
-        newView['fileLockConfig']['autoLockAfterDurationIdleMsecs'] = autolockminutes * 60000
+        newView['fileLockConfig']['autoLockAfterDurationIdle'] = autolockminutes * 60000
     newView['fileLockConfig']['defaultFileRetentionDurationMsecs'] = defaultlockperiod * lockunitmultiplier
     if maximumlockperiod < defaultlockperiod:
         maximumlockperiod = defaultlockperiod
