@@ -3,6 +3,7 @@
 
 # import pyhesity wrapper module
 from pyhesity import *
+from datetime import timedelta
 
 # command line arguments
 import argparse
@@ -32,6 +33,18 @@ if units == 'mib':
 if units == 'gib':
     units = 'GiB'
 
+
+def timeString(msecs):
+    secs = msecs / 1000
+    timeSpan = timedelta(seconds=secs)
+    timedays = timeSpan.days
+    timehours = timeSpan.seconds // 3600
+    timeminutes = (timeSpan.seconds // 60) % 60
+    timesecs = (timeSpan.seconds) % 60
+    duration = '%s:%02d:%02d:%02d' % (timedays, timehours, timeminutes, timesecs)
+    return duration
+
+
 # authenticate
 apiauth(vip, username, domain)
 
@@ -51,35 +64,50 @@ if views['count'] > 0:
                 protected = False
                 if 'viewProtection' in view:
                     protected = True
-                print('\n           name: %s' % view['name'])
-                print('    create date: %s' % usecsToDate(view['createTimeMsecs'] * 1000))
-                print(' Storage Domain: %s' % view['viewBoxName'])
-                print('       protocol: %s' % view['protocolAccess'][1:].replace('Only', ''))
+                print('\n                      Name: %s' % view['name'])
+                print('               Create Date: %s' % usecsToDate(view['createTimeMsecs'] * 1000))
+                print('            Storage Domain: %s' % view['viewBoxName'])
+                print('                  Protocol: %s' % view['protocolAccess'][1:].replace('Only', ''))
                 if 'nfsMountPath' in view:
-                    print(' NFS mount path: %s' % view['nfsMountPath'])
+                    print('            NFS Mount Path: %s' % view['nfsMountPath'])
                 if 'smbMountPath' in view:
-                    print(' SMB mount path: %s' % view['smbMountPath'])
+                    print('            SMB Mount Path: %s' % view['smbMountPath'])
                 if 's3AccessPath' in view:
-                    print('  S3 mount path: %s' % view['s3AccessPath'])
-                print('      protected: %s' % protected)
-                print('  logical usage: %s %s' % (round(view['logicalUsageBytes'] / multiplier, 2), units))
+                    print('             S3 Mount Path: %s' % view['s3AccessPath'])
+                print('                 Protected: %s' % protected)
+                print('             Logical Usage: %s %s' % (round(view['logicalUsageBytes'] / multiplier, 2), units))
                 if 'logicalQuota' in view:
-                    print('  logical quota: %s %s' % (int(round(view['logicalQuota']['hardLimitBytes'] / multiplier, 0)), units))
-                    print('    quota alert: %s %s' % (int(round(view['logicalQuota']['alertLimitBytes'] / multiplier, 0)), units))
-                print('     QOS Policy: %s' % view['qos']['principalName'])
+                    print('             Logical Quota: %s %s' % (int(round(view['logicalQuota']['hardLimitBytes'] / multiplier, 0)), units))
+                    print('               Quota Alert: %s %s' % (int(round(view['logicalQuota']['alertLimitBytes'] / multiplier, 0)), units))
+                print('                QOS Policy: %s' % view['qos']['principalName'])
                 if 'subnetWhitelist' in view:
-                    print('      whitelist:')
+                    print('                 Whitelist:')
                     entrynum = 0
                     for entry in view['subnetWhitelist']:
                         if 'nfsRootSquash' not in entry:
                             entry['nfsRootSquash'] = 'n/a'
                         if entrynum > 0:
                             print('')
-                        print('                 %s/%s' % (entry['ip'], entry['netmaskBits']))
-                        print('                 nfsRootSquash: %s' % entry['nfsRootSquash'])
-                        print('                 nfsAccess: %s' % entry['nfsAccess'][1:])
-                        print('                 smbAccess: %s' % entry['smbAccess'][1:])
+                        print('                            %s/%s' % (entry['ip'], entry['netmaskBits']))
+                        print('                            nfsRootSquash: %s' % entry['nfsRootSquash'])
+                        print('                            nfsAccess: %s' % entry['nfsAccess'][1:])
+                        print('                            smbAccess: %s' % entry['smbAccess'][1:])
                         entrynum = 1
+                if 'fileLockConfig' in view:
+                    print('        File Datalock Mode: %s' % view['fileLockConfig'].get('mode', 'kNone')[1:])
+                    if 'autoLockAfterDurationIdle' in view['fileLockConfig']:
+                        autolockMins = view['fileLockConfig']['autoLockAfterDurationIdle'] / 60000
+                        print('    Auto Lock Idle Minutes: %s' % autolockMins)
+                    if 'defaultFileRetentionDurationMsecs' in view['fileLockConfig']:
+                        defaultRetention = timeString(view['fileLockConfig']['defaultFileRetentionDurationMsecs'])
+                        print('        Auto Lock Duration: %s' % defaultRetention)
+                    print('  Manual Datalock Protocol: %s' % view['fileLockConfig'].get('lockingProtocol', 'kNone')[1:])
+                    if 'minRetentionDurationMsecs' in view['fileLockConfig']:
+                        minRetention = timeString(view['fileLockConfig']['minRetentionDurationMsecs'])
+                        print('  Min Manual Lock Duration: %s' % minRetention)
+                    if 'maxRetentionDurationMsecs' in view['fileLockConfig']:
+                        maxRetention = timeString(view['fileLockConfig']['maxRetentionDurationMsecs'])
+                        print('  Max Manual Lock Duration: %s' % maxRetention)
         print('')
     else:
         print('\nProto  Name')
