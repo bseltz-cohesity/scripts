@@ -43,5 +43,4 @@ Restoring VMs...
 * -vmNetwork: VM Network to attach the VMs to
 * -vmDatastore: Datastore to recover the VMs to
 * -vmResourcePool: (optional) Resource Pool to recover to
-* -vmFolder: (optional) VM folder to recover to 
-
+* -vmFolder: (optional) VM folder to recover to
