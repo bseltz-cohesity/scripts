@@ -39,6 +39,74 @@ function waitForRefresh($objectId){
 }
 
 
+$oldVmFolderPaths = @{}
+
+function walkOldVMFolders($thisvCenterName, $node, $parent=$null, $fullPath=''){
+    $nodeTypes = @('kDataCenter', 'kFolder')
+    if($thisvCenterName -notin $oldVmFolderPaths.keys){
+        $oldVmFolderPaths[$thisvCenterName] = @{}
+    }
+    if($node.protectionSource.vmWareProtectionSource.type -eq 'kFolder'){
+        $fullPath = "{0}/{1}" -f $fullPath, $node.protectionSource.name
+        $oldVmFolderPaths[$thisvCenterName]["$($node.protectionSource.id)"] = $fullPath
+    }
+    if($node.PSObject.Properties['nodes']){
+        foreach($subnode in $node.nodes | Where-Object {$_.protectionSource.vmWareProtectionSource.type -in $nodeTypes}){
+            walkOldVMFolders $thisvCenterName $subnode $node $fullPath
+        }
+    }
+}
+
+
+$newVmFolderPaths = @{}
+
+function walkNewVMFolders($thisvCenterName, $node, $parent=$null, $fullPath=''){
+    $nodeTypes = @('kDataCenter', 'kFolder')
+    if($thisvCenterName -notin $newVmFolderPaths.keys){
+        $newVmFolderPaths[$thisvCenterName] = @{}
+    }
+    if($node.protectionSource.vmWareProtectionSource.type -eq 'kFolder'){
+        $fullPath = "{0}/{1}" -f $fullPath, $node.protectionSource.name
+        $newVmFolderPaths[$thisvCenterName][$fullPath] = $node.protectionSource.id 
+    }
+    if($node.PSObject.Properties['nodes']){
+        foreach($subnode in $node.nodes | Where-Object {$_.protectionSource.vmWareProtectionSource.type -in $nodeTypes}){
+            walkNewVMFolders $thisvCenterName $subnode $node $fullPath
+        }
+    }
+}
+
+
+function getObjectId($objectName, $sources){
+    $global:_object_id = $null
+
+    function get_nodes($obj){
+        if($obj.protectionSource.name -eq $objectName){
+            $global:_object_id = $obj.protectionSource.id
+            break
+        }
+        if($obj.name -eq $objectName){
+            $global:_object_id = $obj.id
+            break
+        }        
+        if($obj.PSObject.Properties['nodes']){
+            foreach($node in $obj.nodes){
+                if($null -eq $global:_object_id){
+                    get_nodes $node
+                }
+            }
+        }
+    }
+    
+    foreach($source in $sources){
+        if($null -eq $global:_object_id){
+            get_nodes $source
+        }
+    }
+    return $global:_object_id
+}
+
+
 function getObjectById($objectId, $source){
     $global:_object = $null
 
@@ -175,6 +243,8 @@ if($job){
     $oldPolicy = (api get -v2 data-protect/policies).policies | Where-Object id -eq $job.policyId
     $oldStorageDomain = api get viewBoxes | Where-Object id -eq $job.storageDomainId
     $oldVCenter = api get "protectionSources?id=$($job.vmwareParams.sourceId)&environments=kVMware&includeVMFolders=true"
+    
+    walkOldVMFolders $oldVCenter.protectionSource.name $oldVCenter
 
     # connect to target cluster for sanity check
     if($targetCluster -ne $sourceCluster){
@@ -246,6 +316,8 @@ if($job){
     }else{
         $newPolicy = $oldPolicy
     }
+
+    walkNewVMFolders $newVCenterName $newVCenter
 
     # same vCenter, different cluster, keep and remap the objects
     if($targetCluster -ne $sourceCluster -and !$vCenterName -and !$clearObjects){
@@ -321,38 +393,108 @@ if($job){
     }
 
     # if different vCenter, clear the objects and select new object(s)
-    if($vCenterName -or $clearObjects -or $vmNames.Count -gt 0){
-        # clear existing objects
-        $job.vmwareParams.objects = @()
-        delApiProperty -obj $job.vmwareParams -name excludeObjectIds
-        delApiProperty -obj $job.vmwareParams -name vmTagIds
-        delApiProperty -obj $job.vmwareParams -name excludeVmTagIds
-        # add new VMs
-        $registeredVMs = api get protectionSources/virtualMachines?vCenterId=$($job.vmwareParams.sourceId)
-        foreach($vmToAdd in $vmNames){
-            $vm = $registeredVMs | Where-Object {$_.name -ieq $vmToAdd}
-            if(!$vm){
-                Write-Host "VM $vmToAdd not found!" -ForegroundColor Yellow
-            }else{
-                $newVMobject = @{
-                    'excludeDisks' = $null;
-                    'id' = $vm.id;
-                    'name' = $vm.name;
-                    'isAutoprotected' = $false
+    if($vCenterName){
+        if($clearObjects -or $vmNames.Count -gt 0){
+            # clear existing objects
+            $job.vmwareParams.objects = @()
+            delApiProperty -obj $job.vmwareParams -name excludeObjectIds
+            delApiProperty -obj $job.vmwareParams -name vmTagIds
+            delApiProperty -obj $job.vmwareParams -name excludeVmTagIds
+            # add new VMs
+            $registeredVMs = api get protectionSources/virtualMachines?vCenterId=$($job.vmwareParams.sourceId)
+            foreach($vmToAdd in $vmNames){
+                $vm = $registeredVMs | Where-Object {$_.name -ieq $vmToAdd}
+                if(!$vm){
+                    Write-Host "VM $vmToAdd not found!" -ForegroundColor Yellow
+                }else{
+                    $newVMobject = @{
+                        'excludeDisks' = $null;
+                        'id' = $vm.id;
+                        'name' = $vm.name;
+                        'isAutoprotected' = $false
+                    }
+                    $job.vmwareParams.objects = @(@($job.vmwareParams.objects | Where-Object {$_.id -ne $vm.id}) + $newVMobject)
                 }
-                $job.vmwareParams.objects = @(@($job.vmwareParams.objects | Where-Object {$_.id -ne $vm.id}) + $newVMobject)
             }
-        }
-        # bail if no VMs were added
-        if($job.vmwareParams.objects.Count -eq 0){
-            Write-Host "At least one VM must be added to the new job" -foregroundcolor Yellow
-            exit
+            # bail if no VMs were added
+            if($job.vmwareParams.objects.Count -eq 0){
+                Write-Host "At least one VM must be added to the new job" -foregroundcolor Yellow
+                exit
+            }
+        }else{
+            # remap VM ids to new vCenter
+            foreach($vm in $job.vmwareParams.objects){
+                if([string]$($vm.id) -in $oldVmFolderPaths[$oldVCenter.protectionSource.name].keys){
+                    $newObjectId = $newVmFolderPaths[$newVCenter.protectionSource.name][$oldVmFolderPaths[$oldVCenter.protectionSource.name][[string]$($vm.id)]]
+                }else{
+                    $newObjectId = getObjectId $vm.name $newVCenter
+                }
+                $vm.id = $newObjectId
+                if($newObjectId -eq $null){
+                    Write-Host "`nSelected object $($vm.name) is missing on target vCenter" -foregroundcolor Yellow
+                    exit
+                }
+            }
+            # exclude objects
+            if($job.vmwareParams.PSObject.Properties['excludeObjectIds']){
+                $newExcludeIds = @()
+                foreach($excludeId in $job.vmwareParams.excludeObjectIds){
+                    if([string]$excludedId -in $oldVmFolderPaths[$oldVCenter.protectionSource.name].keys){
+                        $newObjectId = $newVmFolderPaths[$oldVCenter.protectionSource.name][$newVmFolderPaths[$oldVCenter.protectionSource.name][[string]$($vm.id)]]
+                    }else{
+                        $oldObject = getObjectById $excludeId $oldVCenter
+                        $newObjectId = getObjectId $oldObject.protectionSource.name $newVCenter
+                    }
+                    if($newObjectId -eq $null){
+                        Write-Host "`n    Warning: selected exclude object $($oldObject.protectionSource.name) is missing" -foregroundcolor Yellow
+                    }else{
+                        $newExcludeIds = @($newExcludeIds + $newObjectId)
+                    }
+                }
+                $job.vmwareParams.excludeObjectIds = $newExcludeIds
+            }
+            # include tags
+            if($job.vmwareParams.PSObject.Properties['vmTagIds']){
+                $newTagIds = @()
+                foreach($tag in $job.vmwareParams.vmTagIds){
+                    $newTag = @()
+                    foreach($tagId in $tag){
+                        $oldObject = getObjectById $tagId $oldVCenter
+                        $newObjectId = getObjectId $oldObject.protectionSource.name $newVCenter
+                        $newTag = @($newTag + $newObjectId)
+                        if($newObjectId -eq $null){
+                            Write-Host "`nSelected tag $($oldObject.protectionSource.name) is missing, please edit and save selections in the old job before migrating" -foregroundcolor Yellow
+                            exit
+                        }
+                    }
+                    $newTagIds = @($newTagIds + ,$newTag)
+                }
+                $job.vmwareParams.vmTagIds = @($newTagIds)
+            }
+            # exclude tags
+            if($job.vmwareParams.PSObject.Properties['excludeVmTagIds']){
+                $newTagIds = @()
+                foreach($tag in $job.vmwareParams.excludeVmTagIds){
+                    $newTag = @()
+                    foreach($tagId in $tag){
+                        $oldObject = getObjectById $tagId $oldVCenter
+                        $newObjectId = getObjectId $oldObject.protectionSource.name $newVCenter
+                        $newTag = @($newTag + $newObjectId)
+                        if($newObjectId -eq $null){
+                            Write-Host "`nSelected tag $($oldObject.protectionSource.name) is missing, please edit and save selections in the old job before migrating" -foregroundcolor Yellow
+                            exit
+                        }
+                    }
+                    $newTagIds = @($newTagIds + ,$newTag)
+                }
+                $job.vmwareParams.excludeVmTagIds = @($newTagIds)
+            }
         }
     }
 
     # create new job
     $job.name = $newJobName
-    "Creating job '$newJobName' on $targetCluster..."
+    "`nCreating job '$newJobName' on $targetCluster...`n"
     $newjob = api post -v2 data-protect/protection-groups $job
 }else{
     Write-Host "VMware Job $jobName not found" -ForegroundColor Yellow
