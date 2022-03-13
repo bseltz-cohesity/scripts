@@ -8,8 +8,6 @@ This PowerShell script clones a VMware protection group.
 
 This script can create a copy of a VM protection group, on the same cluster, a different cluster, a different storage domain.
 
-If no vCenter name is specified, the source and VM selections will remain the same, otherwise the VM selections will be cleared and you must specify at least one VM name to protect.
-
 ## Download the script
 
 Run these commands from PowerShell to download the script(s) into your current directory
