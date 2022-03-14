@@ -43,7 +43,7 @@ if($myjobs.Length -gt 0 -and !$showAll){
     }
     $jobs = $jobs | Where-Object {$_.isActive -ne $false}
 }else{
-    $jobs = api get protectionJobs
+    $jobs = api get protectionJobs | Sort-Object -Property name
 }
 
 $x = 0
