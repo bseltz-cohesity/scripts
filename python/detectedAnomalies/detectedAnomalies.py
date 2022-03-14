@@ -79,11 +79,14 @@ for alert in alerts:
     sourceType = [p['value'] for p in alert['propertyList'] if p['key'] == 'environment'][0][1:]
     sourceId = [p['value'] for p in alert['propertyList'] if p['key'] == 'entityId'][0]
     anomalyStrength = [p['value'] for p in alert['propertyList'] if p['key'] == 'anomalyStrength'][0]
+    lastcleanTimeStampUsecs = [p['value'] for p in alert['propertyList'] if p['key'] == 'jobStartTimeUsecs'][0]
+    lastCleanTimeStamp = usecsToDate(lastcleanTimeStampUsecs)
     timeStamp = usecsToDate(timestampUsecs)
     alertDict = {
         "clusterName": clusterName,
         "protectionGroup": jobName,
         "latestAnomalousSnapshotDate": timeStamp,
+        "lastCleanSnapshotDate": lastCleanTimeStamp,
         "protectionSource": sourceName,
         "environment": sourceType,
         "sourceId": sourceId,
@@ -91,8 +94,8 @@ for alert in alerts:
         "anomalyStrength": anomalyStrength
     }
     if int(anomalyStrength) >= minimumStrength and anomalyId not in idcache:
-        print(' Cluster: %s\n     Job: %s\n    Date: %s\n  Source: %s (%s)\n  Object: %s (%s)\nStrength: %s%%\n' % (clusterName, jobName, timeStamp, sourceName, sourceType, objectName, sourceId, anomalyStrength))
-        log.write('\n Cluster: %s\n     Job: %s\n    Date: %s\n  Source: %s (%s)\n  Object: %s (%s)\nStrength: %s%%\n' % (clusterName, jobName, timeStamp, sourceName, sourceType, objectName, sourceId, anomalyStrength))
+        print('          Cluster: %s\n Protection Group: %s\n Suspected Backup: %s\n Last Good Backup: %s\nRegistered Source: %s (%s)\n      Object Name: %s (%s)\n Anomaly Strength: %s%%\n' % (clusterName, jobName, timeStamp, lastCleanTimeStamp, sourceName, sourceType, objectName, sourceType, anomalyStrength))
+        log.write('\n          Cluster: %s\n Protection Group: %s\n Suspected Backup: %s\n Last Good Backup: %s\nRegistered Source: %s (%s)\n      Object Name: %s (%s)\n Anomaly Strength: %s%%\n' % (clusterName, jobName, timeStamp, lastCleanTimeStamp, sourceName, sourceType, objectName, sourceType, anomalyStrength))
         idcache.append(anomalyId)
         syslog.syslog(syslog.LOG_CRIT, json.dumps(alertDict))
 
