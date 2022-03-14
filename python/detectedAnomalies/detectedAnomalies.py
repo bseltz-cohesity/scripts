@@ -73,6 +73,7 @@ for alert in alerts:
     timestampUsecs = alert['latestTimestampUsecs']
     clusterName = alert['clusterName']
     anomalyId = alert['id']
+    jobId = [p['value'] for p in alert['propertyList'] if p['key'] == 'jobId'][0]
     jobName = [p['value'] for p in alert['propertyList'] if p['key'] == 'jobName'][0]
     objectName = [p['value'] for p in alert['propertyList'] if p['key'] == 'object'][0]
     sourceName = [p['value'] for p in alert['propertyList'] if p['key'] == 'source'][0]
@@ -98,6 +99,7 @@ for alert in alerts:
         log.write('\n          Cluster: %s\n Protection Group: %s\n Suspected Backup: %s\n Last Good Backup: %s\nRegistered Source: %s (%s)\n      Object Name: %s (%s)\n Anomaly Strength: %s%%\n' % (clusterName, jobName, timeStamp, lastCleanTimeStamp, sourceName, sourceType, objectName, sourceType, anomalyStrength))
         idcache.append(anomalyId)
         syslog.syslog(syslog.LOG_CRIT, json.dumps(alertDict))
+    # changeLog = api('get', 'snapshots/changelog?jobId=%s&snapshot1TimeUsecs=%s&snapshot2TimeUsecs=%s&pageCount=50&pageNumber=0' % (jobId, lastcleanTimeStampUsecs, timestampUsecs), quiet=True)
 
 # update cache file
 f = open(CACHEFILE, 'w')
