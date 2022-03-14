@@ -27,16 +27,20 @@ if($joblist -ne '' -and (Test-Path $joblist -PathType Leaf)){
 if($jobname){
     $myjobs += $jobname
 }
-if($myjobs.Length -eq 0){
-    Write-Host "No jobs selected"
-    exit 1
-}
-
-# get selected jobs and report missing jobs
-$jobs = api get protectionJobs | Where-Object name -in $myjobs | Sort-Object -Property name
-$badjobs = $myjobs | Where-Object {$_ -notin $jobs.name}
-foreach($badjob in $badjobs | sort){
-    Write-Host "The job $badjob was not found" -ForegroundColor Yellow
+if($pause -or $resume){
+    if($myjobs.Length -eq 0){
+        Write-Host "No jobs selected"
+        exit 1
+    }
+    # get selected jobs and report missing jobs
+    $jobs = api get protectionJobs | Where-Object name -in $myjobs | Sort-Object -Property name
+    $badjobs = $myjobs | Where-Object {$_ -notin $jobs.name}
+    foreach($badjob in $badjobs | sort){
+        Write-Host "The job $badjob was not found" -ForegroundColor Yellow
+    }
+    $jobs = $jobs | Where-Object {$_.isActive -ne $false}
+}else{
+    $jobs = api get protectionJobs
 }
 
 # pause, resume or display job state
