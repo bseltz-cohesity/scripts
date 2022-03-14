@@ -87,7 +87,7 @@ for alert in alerts:
         "protectionSource": sourceName,
         "environment": sourceType,
         "sourceId": sourceId,
-        "sourceName": sourceName,
+        "objectName": objectName,
         "anomalyStrength": anomalyStrength
     }
     if int(anomalyStrength) >= minimumStrength and anomalyId not in idcache:
