@@ -62,3 +62,4 @@ To resume the job:
 * -joblist: (optional) text file containing job names (one per line)
 * -pause: (optional) pause the job
 * -resume: (optional) resume the job
+* -showAll: (optional) show status of all jobs (will only show paused jobs by default)

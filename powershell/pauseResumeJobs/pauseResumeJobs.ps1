@@ -7,7 +7,8 @@ param (
     [Parameter()][array]$jobname,
     [Parameter()][string]$joblist = '',
     [Parameter()][switch]$pause,
-    [Parameter()][switch]$resume
+    [Parameter()][switch]$resume,
+    [Parameter()][switch]$showAll
 )
 
 # source the cohesity-api helper code
@@ -32,6 +33,8 @@ if($pause -or $resume){
         Write-Host "No jobs selected"
         exit 1
     }
+}
+if($myjobs.Length -gt 0 -and !$showAll){
     # get selected jobs and report missing jobs
     $jobs = api get protectionJobs | Where-Object name -in $myjobs | Sort-Object -Property name
     $badjobs = $myjobs | Where-Object {$_ -notin $jobs.name}
@@ -43,6 +46,8 @@ if($pause -or $resume){
     $jobs = api get protectionJobs
 }
 
+$x = 0
+
 # pause, resume or display job state
 foreach($job in $jobs){
     if($pause){
@@ -53,10 +58,15 @@ foreach($job in $jobs){
         $null = api post protectionJobState/$($job.id) @{ "pause" = $false; "pauseReason" = 0 }
     }else{
         if($job.isPaused){
-            "$($job.name) is paused"    
+            "$($job.name) is paused"
+            $x += 1 
         }else{
-            "$($job.name) is enabled"
+            if($showAll -or $job.name -in $myjobs){
+                "$($job.name) is enabled"
+            }
         }
     }
 }
-
+if($x -eq 0 -and !$pause -and !$resume -and $myjobs.Length -eq 0){
+    "No jobs are paused"
+}
