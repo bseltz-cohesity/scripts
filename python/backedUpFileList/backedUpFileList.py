@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2021.09.09
+# version 2022.03.15
 
 # usage: ./backedUpFileList.py -v mycluster \
 #                              -u myuser \
@@ -147,52 +147,59 @@ if len(searchResults) == 0:
     print('No backups available for %s in %s' % (sourceserver, jobname))
     exit(1)
 
-searchResult = sorted(searchResults, key=lambda result: result['vmDocument']['versions'][0]['snapshotTimestampUsecs'], reverse=True)[0]
+allVersions = []
+for searchResult in searchResults:
+    for version in searchResult['vmDocument']['versions']:
+        version['doc'] = searchResult['vmDocument']
+        allVersions.append(version)
+allVersions = sorted(allVersions, key=lambda r: r['snapshotTimestampUsecs'], reverse=True)
 
-doc = searchResult['vmDocument']
+# searchResult = sorted(searchResults, key=lambda result: result['vmDocument']['versions'][0]['snapshotTimestampUsecs'], reverse=True)[0]
+
+# doc = searchResult['vmDocument']
 
 if showversions or start is not None or end is not None or listfiles:
     if start is not None:
         startusecs = dateToUsecs(start)
-        doc['versions'] = [v for v in doc['versions'] if startusecs <= v['snapshotTimestampUsecs']]
+        allVersions = [v for v in allVersions if startusecs <= v['snapshotTimestampUsecs']]
     if end is not None:
         endusecs = dateToUsecs(end)
-        doc['versions'] = [v for v in doc['versions'] if endusecs >= v['snapshotTimestampUsecs']]
+        allVersions = [v for v in allVersions if endusecs >= v['snapshotTimestampUsecs']]
     if listfiles:
-        for version in doc['versions']:
+        for version in allVersions:
             print("\n==============================")
             print("   runId: %s" % version['instanceId']['jobInstanceId'])
             print(" runDate: %s" % usecsToDate(version['instanceId']['jobStartTimeUsecs']))
             print("==============================\n")
-            showFiles(doc, version)
+            showFiles(version['doc'], version)
     else:
         print('%10s  %s' % ('runId', 'runDate'))
         print('%10s  %s' % ('-----', '-------'))
-        for version in doc['versions']:
+        for version in allVersions:
             print('%10d  %s' % (version['instanceId']['jobInstanceId'], usecsToDate(version['instanceId']['jobStartTimeUsecs'])))
     exit(0)
 
 # select version
 if runid is not None:
     # select version with matching runId
-    versions = [v for v in doc['versions'] if runid == v['instanceId']['jobInstanceId']]
+    versions = [v for v in allVersions if runid == v['instanceId']['jobInstanceId']]
     if len(versions) == 0:
         print('Run ID not found')
         exit(1)
     else:
         version = versions[0]
-        showFiles(doc, version)
+        showFiles(version['doc'], version)
 elif filedate is not None:
     # select version just after requested date
     filedateusecs = dateToUsecs(filedate)
-    versions = [v for v in doc['versions'] if filedateusecs <= v['snapshotTimestampUsecs']]
+    versions = [v for v in allVersions if filedateusecs <= v['snapshotTimestampUsecs']]
     if versions:
         version = versions[-1]
-        showFiles(doc, version)
+        showFiles(version['doc'], version)
     else:
         print('No backups from the specified date')
         exit(1)
 else:
     # just use latest version
-    version = doc['versions'][0]
-    showFiles(doc, version)
+    version = allVersions[0]
+    showFiles(version['doc'], version)
