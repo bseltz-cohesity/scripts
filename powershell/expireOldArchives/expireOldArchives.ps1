@@ -28,14 +28,14 @@ $olderThanUsecs = timeAgo $olderThan days
 ### find protectionRuns with old local snapshots with archive tasks and sort oldest to newest
 "searching for old snapshots..."
 
-$jobs = api get protectionJobs | Where-Object { $_.policyId.split(':')[0] -eq $clusterId }
+$jobs = api get protectionJobs # | Where-Object { $_.policyId.split(':')[0] -eq $clusterId }
 if($jobName){
     $jobs = $jobs | Where-Object name -eq $jobName
 }
 
 foreach ($job in $jobs) {
-    
-    $runs = (api get protectionRuns?jobId=$($job.id)`&excludeTasks=true`&excludeNonRestoreableRuns=true`&numRuns=999999`&runTypes=kRegular`&endTimeUsecs=$olderThanUsecs) | `
+    $job.name
+    $runs = (api get protectionRuns?jobId=$($job.id)`&excludeTasks=true`&excludeNonRestoreableRuns=true`&numRuns=999999`&runTypes=kRegular`&runTypes=kFull`&endTimeUsecs=$olderThanUsecs) | `
         Where-Object { $_.copyRun[0].runStartTimeUsecs -le $olderThanUsecs } | `
         Where-Object { 'kArchival' -in $_.copyRun.target.type } | `
         Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
