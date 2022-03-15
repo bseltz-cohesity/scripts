@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2021.09.09
+# version 2022.03.15
 
 # usage: ./backedUpFileList.py -v mycluster \
 #                              -u myuser \
@@ -12,7 +12,6 @@
 
 # import pyhesity wrapper module
 from pyhesity import *
-from datetime import datetime
 import codecs
 import sys
 import argparse
@@ -108,10 +107,6 @@ def showFiles(doc, version):
                     version['instanceId']['jobStartTimeUsecs'],
                     doc['objectId']['jobUid']['objectId']))
 
-    fileDateString = datetime.strptime(usecsToDate(version['instanceId']['jobStartTimeUsecs']), '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d_%H-%M-%S')
-
-    # f = codecs.open('backedUpFiles-%s-%s-%s.txt' % (sourceserver, version['instanceId']['jobInstanceId'], fileDateString), 'w', 'utf-8')
-
     volumeTypes = [1, 6]
     backupType = doc['backupType']
     if backupType in volumeTypes:
@@ -153,19 +148,23 @@ for sourceserver in sourceservers:
         print('No backups available for %s in %s' % (sourceserver, jobname))
         exit(1)
 
-    searchResult = sorted(searchResults, key=lambda result: result['vmDocument']['versions'][0]['snapshotTimestampUsecs'], reverse=True)[0]
-
-    doc = searchResult['vmDocument']
+    allVersions = []
+    for searchResult in searchResults:
+        for version in searchResult['vmDocument']['versions']:
+            version['doc'] = searchResult['vmDocument']
+            allVersions.append(version)
+    allVersions = sorted(allVersions, key=lambda r: r['snapshotTimestampUsecs'], reverse=True)
 
     if showversions or start is not None or end is not None or listfiles:
         if start is not None:
             startusecs = dateToUsecs(start)
-            doc['versions'] = [v for v in doc['versions'] if startusecs <= v['snapshotTimestampUsecs']]
+            allVersions = [v for v in allVersions if startusecs <= v['snapshotTimestampUsecs']]
         if end is not None:
             endusecs = dateToUsecs(end)
-            doc['versions'] = [v for v in doc['versions'] if endusecs >= v['snapshotTimestampUsecs']]
+            allVersions = [v for v in allVersions if endusecs >= v['snapshotTimestampUsecs']]
         if listfiles:
-            for version in doc['versions']:
+            for version in allVersions:
+                doc = version['doc']
                 print("\n==============================")
                 print("   runId: %s" % version['instanceId']['jobInstanceId'])
                 print(" runDate: %s" % usecsToDate(version['instanceId']['jobStartTimeUsecs']))
@@ -174,33 +173,36 @@ for sourceserver in sourceservers:
         else:
             print('%10s  %s' % ('runId', 'runDate'))
             print('%10s  %s' % ('-----', '-------'))
-            for version in doc['versions']:
+            for version in allVersions:
                 print('%10d  %s' % (version['instanceId']['jobInstanceId'], usecsToDate(version['instanceId']['jobStartTimeUsecs'])))
         continue
 
     # select version
     if runid is not None:
         # select version with matching runId
-        versions = [v for v in doc['versions'] if runid == v['instanceId']['jobInstanceId']]
+        versions = [v for v in allVersions if runid == v['instanceId']['jobInstanceId']]
         if len(versions) == 0:
             print('Run ID not found')
             exit(1)
         else:
             version = versions[0]
+            doc = version['doc']
             showFiles(doc, version)
     elif filedate is not None:
         # select version just after requested date
         filedateusecs = dateToUsecs(filedate)
-        versions = [v for v in doc['versions'] if filedateusecs <= v['snapshotTimestampUsecs']]
+        versions = [v for v in allVersions if filedateusecs <= v['snapshotTimestampUsecs']]
         if versions:
             version = versions[-1]
+            doc = version['doc']
             showFiles(doc, version)
         else:
             print('No backups from the specified date')
             exit(1)
     else:
         # just use latest version
-        version = doc['versions'][0]
+        version = allVersions[0]
+        doc = version['doc']
         showFiles(doc, version)
 
 f.close()
