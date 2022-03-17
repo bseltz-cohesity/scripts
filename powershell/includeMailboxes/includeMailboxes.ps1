@@ -44,9 +44,11 @@ if(!$job){
 # get physical protection sources
 $source = api get "protectionSources?id=$($job.parentSourceId)"
 
+$nodes = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
+
 $usersAdded = $false
 foreach ($user in $usersToAdd){
-    $node = $source.nodes[0].nodes | Where-Object { $_.protectionSource.name -eq $user -or $_.protectionSource.office365ProtectionSource.primarySMTPAddress -eq $user }
+    $node = $nodes.nodes | Where-Object { $_.protectionSource.name -eq $user -or $_.protectionSource.office365ProtectionSource.primarySMTPAddress -eq $user }
     if($node){
         if(!($node.protectionSource.id -in $job.sourceIds)){
             $usersAdded = $True
