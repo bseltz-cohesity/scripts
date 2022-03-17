@@ -46,7 +46,7 @@ To trigger detection of an SMB NAS volume, map a network drive to that NAS volum
 ./ransomwareSimulator.ps1 -vip mycluster `
                           -username myusername `
                           -domain mydomain.net `
-                          -jobName 'my NetApp rotection group' `
+                          -jobName 'my NetApp protection group' `
                           -objectName vol0 `
                           -filePath z:\
 ```
