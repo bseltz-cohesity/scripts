@@ -28,34 +28,8 @@ Place both files in a folder together and run the main script like so:
 ./recoveryPoints.ps1 -vip mycluster -username myusername -domain mydomain.net
 ```
 
-```text
-Connected!
+## Parameters
 
-VM Backup (VMware) CentOS2
-
-	             RunDate           SnapExpires        ReplicaExpires        ArchiveExpires
-	 3/29/20 11:30:01 PM    4/3/20 11:30:45 PM                     -   4/29/20 11:30:01 PM
-	 3/22/20 11:30:00 PM                     -                     -   4/22/20 11:30:00 PM
-	 3/15/20 11:00:01 PM                     -                     -   4/15/20 11:00:01 PM
-	  3/8/20 11:00:01 PM                     -                     -    4/8/20 11:00:01 PM
-
-NAS Backup (GenericNas) 192.168.1.7:/volume1/backups
-
-	             RunDate           SnapExpires        ReplicaExpires        ArchiveExpires
-	  3/30/20 1:20:01 AM     4/4/20 1:20:13 AM     4/4/20 1:22:12 AM                     -
-	  3/29/20 1:20:01 AM     4/3/20 1:20:11 AM     4/3/20 1:22:10 AM                     -
-	  3/28/20 1:20:00 AM     4/2/20 1:20:10 AM     4/2/20 1:22:12 AM                     -
-	  3/27/20 1:20:00 AM     4/1/20 1:20:12 AM     4/1/20 1:22:10 AM                     -
-	  3/26/20 1:20:00 AM    3/31/20 1:20:04 AM    3/31/20 1:20:37 AM                     -
-
-Oracle Backup (Oracle) cohesity on oracle.seltzer.net
-
-	             RunDate           SnapExpires        ReplicaExpires        ArchiveExpires
-	 3/29/20 11:40:01 PM    4/3/20 11:40:53 PM    4/3/20 11:42:22 PM                     -
-	 3/28/20 11:40:00 PM    4/2/20 11:40:52 PM    4/2/20 11:42:21 PM                     -
-	 3/27/20 11:40:00 PM    4/1/20 11:40:49 PM    4/1/20 11:42:22 PM                     -
-	 3/26/20 11:40:01 PM   3/31/20 11:40:50 PM   3/31/20 11:42:22 PM                     -
-	 3/25/20 11:40:01 PM   3/30/20 11:40:49 PM   3/30/20 11:42:22 PM                     -
-
-Report Saved to RecoverPoints-2-14-20_5-05-21_AM.csv
-```
+* -vip: DNS or IP of the Cohesity Cluster
+* -username: Cohesity User Name
+* -domain: (optional) defaults to 'local'
