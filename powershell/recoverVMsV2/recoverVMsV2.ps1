@@ -15,7 +15,7 @@ param (
     [Parameter()][datetime]$recoverDate,
     [Parameter()][string]$vCenterName,
     [Parameter()][string]$datacenterName,
-    [Parameter()][string]$hostName,
+    [Parameter()][string]$hostName,  # esx cluster or stand alone host
     [Parameter()][string]$folderName,
     [Parameter()][string]$networkName,
     [Parameter()][string]$datastoreName,
@@ -66,15 +66,6 @@ if($vmTag){
     $taggedVMlist = api get "/searchvms?entityTypes=kVMware&vmName=$vmTag"
     $taggedVMs = $taggedVMlist.vms | Where-Object  {$vmTag -in $_.vmDocument.objectId.entity.vmwareEntity.tagAttributesVec.name} 
     $vmNames = $vmNames + @($taggedVMs.vmDocument.objectName) | Sort-Object -Unique
-}
-
-# prompt for confirmation
-if(!$noPrompt){
-    Write-Host "Ready to restore:`n    $prefix$($vmNames -join "`n    $prefix")" 
-    $confirm = Read-Host -Prompt "Are you sure? Yes(No)"
-    if($confirm.ToLower() -ne 'yes' -and $confirm.ToLower() -ne 'y'){
-        exit
-    }
 }
 
 if($vmNames.Count -eq 0){
@@ -159,8 +150,8 @@ if($vCenterName){
 
     # select host
     $hostSource = $dataCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $hostName}
-    if(!$dataCenterSource){
-        Write-Host "Datacenter $datacenterName not found" -ForegroundColor Yellow
+    if(!$hostSource){
+        Write-Host "ESXi Cluster/Host $hostName not found (use HA cluster name if ESXi hosts are clustered)" -ForegroundColor Yellow
         exit
     }
 
@@ -255,8 +246,16 @@ if($prefix -ne ''){
 
 $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.recoveryProcessType = $recoveryType
 
-# get list of VM backups
+# prompt for confirmation
+if(!$noPrompt){
+    Write-Host "Ready to restore:`n    $prefix$($vmNames -join "`n    $prefix")" 
+    $confirm = Read-Host -Prompt "Are you sure? Yes(No)"
+    if($confirm.ToLower() -ne 'yes' -and $confirm.ToLower() -ne 'y'){
+        exit
+    }
+}
 
+# get list of VM backups
 foreach($vm in $vmNames){
     $vmName = [string]$vm
     $vms = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverVMs,RecoverVApps,RecoverVAppTemplates&searchString=$vmName&environments=kVMware"
