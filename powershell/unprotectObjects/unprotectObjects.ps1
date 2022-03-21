@@ -80,31 +80,51 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         $jobChanged = $False
         $jobParams = findObjectParam $job
+        $reported = @()
         foreach($param in $jobParams){
             if($param.PSObject.Properties['objects']){
                 foreach($objName in $objectNames){
                     foreach($object in $param.objects){
-                        
+                        $objIds = @()
+                        $thisObjectName = $null
+                        $objectId = [string]($object.id)
+                        $sourceId = [string]($object.sourceId)
+                        if(!$objectId){
+                            $objectId = $sourceId
+                        }
+                        $objIds = @($objIds + $objectId)
                         if($object.PSObject.Properties['name']){
                             $thisObjectName = $object.Name
+                            $thisObjectNames = @($thisObjectName)
                         }else{
-                            $objectId = [string]($object.id)
-                            $sourceId = [string]($object.sourceId)
-                            if(!$objectId){
-                                $objectId = $sourceId
-                            }
                             if($idToName.ContainsKey($objectId)){
                                 $thisObjectName = $idToName[$objectId]
                             }else{
-                                $thisObjectName = (api get protectionSources/objects/$objectId).name
-                                $idToName[$objectId] = $thisObjectName
+                                $thisObject = api get protectionSources/objects/$objectId
+                                $idToName[$objectId] = $thisObject.name
+                            }
+                            $thisObjectNames = @($thisObject.name)
+                            if($thisObject.PSObject.Properties['parentId']){
+                                $parentId = [string]$thisObject.parentId
+                                if($idToName.ContainsKey($parentId)){
+                                    $thisObjectParentName = $idToName[$parentId]
+                                }else{
+                                    $parentObject = api get protectionSources/objects/$($thisObject.parentId)
+                                    $thisObjectParentName = $parentObject.name
+                                    $idToName[$parentId] = $thisObjectParentName
+                                }
+                                $thisObjectNames = @($thisObjectNames + $thisObjectParentName)
+                                $objIds = @($objIds + $parentId)
                             }
                         }
-                        if($objName -eq $thisObjectName){
-                            "UNPROTECTING: $($objName) (from $($job.name))" | Tee-Object -FilePath $outfileName -Append
+                        if($objName -in $thisObjectNames){
+                            if($objName -notin $reported){
+                                "UNPROTECTING: $($objName) (from $($job.name))" | Tee-Object -FilePath $outfileName -Append
+                                $reported = @($reported + $objName)
+                            }
                             $unprotected[$objName] = 1
                             $jobChanged = $True
-                            $param.objects = @($param.objects | Where-Object name -ne $objName)
+                            $param.objects = @($param.objects | Where-Object id -notin $objIds)
                         }
                     }
                 }
