@@ -2,9 +2,11 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This powershell script removes objects from protection jobs.
+This powershell script removes objects from protection groups.
 
-Note: if the object is the last remaining object in a protection job, the job will be deleted.
+Note: If the object is the last remaining object in a protection group, the group will be deleted.
+
+Warning: This script has not been tested on every type of protection group and with every permutation of object selections. Please test using a test object/group to ensure correct behavior. If incorrect behavior is noticed, please open an issue on GitHub.
 
 ## Download the script
 
