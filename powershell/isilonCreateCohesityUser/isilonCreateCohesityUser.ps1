@@ -5,7 +5,8 @@ param (
     [Parameter(Mandatory = $True)][string]$username, # username 
     [Parameter()][string]$password = $null,  # optional, will be prompted if omitted
     [Parameter()][string]$cohesityUsername = 'cohesity',
-    [Parameter()][string]$cohesityPassword = $null
+    [Parameter()][string]$cohesityPassword = $null,
+    [Parameter()][switch]$createSMBUser
 )
 
 function isilonAPI($method, $uri, $data=$null){
@@ -73,7 +74,7 @@ $EncodedAuthorization = [System.Text.Encoding]::UTF8.GetBytes($username + ':' + 
 $EncodedPassword = [System.Convert]::ToBase64String($EncodedAuthorization)
 $headers = @{"Authorization"="Basic $($EncodedPassword)"}
 
-"`nCreating user $cohesityUsername..."
+"`nCreating API user $cohesityUsername..."
 if(!$cohesityPassword){
     while($True){
         $secureString = Read-Host -Prompt "Enter new password for $cohesityUsername" -AsSecureString
@@ -150,6 +151,60 @@ $roleParams = @{
     )
 }
 
-"`nCreating role for $cohesityUsername..."
+"Creating API role for $cohesityUsername..."
 $newRole = isilonAPI post /platform/1/auth/roles $roleParams
+
+if($createSMBUser){
+    $zones = isilonAPI get /platform/1/zones-summary
+    foreach($zoneName in $zones.summary.list){
+        $users = isilonAPI get "/platform/1/auth/users?zone=$zoneName&provider=lsa-local-provider%3A$zoneName"
+        $user = $users.users | Where-Object name -eq $cohesityUsername
+        if(! $user){
+            Write-Host "Creating SMB user $cohesityUsername for zone: $zoneName..."
+            $smbUserParams = @{
+                "name" = $cohesityUsername;
+                "enabled" = $True;
+                "shell" = "/bin/zsh";
+                "password_expires" = $false;
+                "password" = $cohesityPassword
+            }
+            $newSMBUser = isilonAPI post "/platform/1/auth/users?zone=$zoneName&provider=lsa-local-provider%3A$zoneName" $smbUserParams
+        }
+        $roles = isilonAPI get /platform/7/auth/roles?zone=$zoneName
+        $role = $roles.roles | Where-Object name -eq "BackupAdmin"
+        if(! $role){
+            Write-Host "Creating BackupAdmin role for zone: $zoneName..."
+            $smbRoleParams = @{
+                "members" = @(
+                    @{
+                        "name" = $cohesityUsername;
+                        "type" = "user"
+                    }
+                );
+                "name" = "BackupAdmin";
+                "privileges" = @(
+                    @{
+                        "id" = "ISI_PRIV_IFS_BACKUP";
+                        "name" = "Backup";
+                        "read_only" = $true
+                    };
+                    @{
+                        "id" = "ISI_PRIV_IFS_RESTORE";
+                        "name" = "Restore";
+                        "read_only" = $true
+                    }
+                )
+            }
+            $smbRole = isilonAPI post /platform/7/auth/roles?zone=$zoneName $smbRoleParams
+        }else{
+            $existingMember = $role.members | Where-Object name -eq $cohesityUsername
+            if(! $existingMember){
+                "Adding $cohesityUsername to BackupAdmin role in zone: $zoneName..."
+                $role.members = @($role.members + @{"name" = $cohesityUsername; "type" = "user"})
+                $role = isilonAPI put /platform/7/auth/roles/BackupAdmin?zone=$zoneName @{"members" = $role.members}
+            }
+        }
+    }
+}
+
 "`nUser/Role creation completed"

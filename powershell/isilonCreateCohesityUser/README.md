@@ -10,7 +10,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-$scriptName = 'isilonCreateCohesityApiUser'
+$scriptName = 'isilonCreateCohesityUser'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
 (Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 # End Download Commands
@@ -19,9 +19,9 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 You can run the main script like so:
 
 ```powershell
-./isilonCreateCohesityApiUser.ps1 -isilon myisilon `
-                                  -username myusername `
-                                  -cohesityUsername cohesity
+./isilonCreateCohesityUser.ps1 -isilon myisilon `
+                               -username myusername `
+                               -cohesityUsername cohesity
 ```
 
 You will first be prompted for your isilon password (to connect to Isilon), and then you will be prompted for the password for the new user.
@@ -33,3 +33,4 @@ You will first be prompted for your isilon password (to connect to Isilon), and 
 * -password: (optional) will prompt if omitted
 * -cohesityUsername: user name to connect to Isilon
 * -cohesityPassword: (optional) will prompt if omitted
+* -createSMBUser: (optional) create SMB user and BackupAdmin role for all zones
