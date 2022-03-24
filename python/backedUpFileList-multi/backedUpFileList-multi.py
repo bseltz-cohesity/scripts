@@ -126,13 +126,13 @@ for sourceserver in sourceservers:
 
     if 'vms' not in search:
         print('no backups found for %s' % sourceserver)
-        exit(1)
+        continue
 
     searchResults = [vm for vm in search['vms'] if vm['vmDocument']['objectName'].lower() == sourceserver.lower()]
 
     if len(searchResults) == 0:
         print('no backups found for %s' % sourceserver)
-        exit(1)
+        continue
 
     altJobName = 'old name: %s' % jobname.lower()
     altJobName2 = '%s (old name' % jobname.lower()
@@ -140,13 +140,13 @@ for sourceserver in sourceservers:
 
     if len(searchResults) == 0:
         print('%s not protected by %s' % (sourceserver, jobname))
-        exit(1)
+        continue
 
     searchResults = [r for r in searchResults if 'versions' in r['vmDocument'] and len(r['vmDocument']['versions']) > 0]
 
     if len(searchResults) == 0:
         print('No backups available for %s in %s' % (sourceserver, jobname))
-        exit(1)
+        continue
 
     allVersions = []
     for searchResult in searchResults:
