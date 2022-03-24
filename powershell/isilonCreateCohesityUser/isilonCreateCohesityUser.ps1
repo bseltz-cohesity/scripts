@@ -75,6 +75,8 @@ $EncodedAuthorization = [System.Text.Encoding]::UTF8.GetBytes($username + ':' + 
 $EncodedPassword = [System.Convert]::ToBase64String($EncodedAuthorization)
 $headers = @{"Authorization"="Basic $($EncodedPassword)"}
 
+$latest = (isilonAPI get /platform/latest).latest
+
 $users = isilonAPI get /platform/1/auth/users
 $existingUser = $users.users | Where-Object name -eq $cohesityUsername
 $roles = isilonAPI get /platform/1/auth/roles
@@ -89,14 +91,14 @@ if($delete){
     }
     foreach($zoneName in $zones.summary.list){
         # remove zone user from BackupAdmins
-        $roles = isilonAPI get /platform/7/auth/roles?zone=$zoneName
+        $roles = isilonAPI get /platform/$latest/auth/roles?zone=$zoneName
         $role = $roles.roles | Where-Object name -eq "BackupAdmin"
         if($role){
             $existingMember = $role.members | Where-Object name -eq $cohesityUsername
             if($existingMember){
                 Write-Host "Removing $cohesityUsername from BackupAdmin role in zone: $zoneName..."
                 $role.members = @($role.members | Where-Object name -ne $cohesityUsername)
-                $role = isilonAPI put /platform/7/auth/roles/BackupAdmin?zone=$zoneName @{"members" = $role.members}
+                $role = isilonAPI put /platform/$latest/auth/roles/BackupAdmin?zone=$zoneName @{"members" = $role.members}
             }
         }
     }
@@ -219,7 +221,7 @@ if($createSMBUser){
             }
             $newSMBUser = isilonAPI post "/platform/1/auth/users?zone=$zoneName&provider=lsa-local-provider%3A$zoneName" $smbUserParams
         }
-        $roles = isilonAPI get /platform/7/auth/roles?zone=$zoneName
+        $roles = isilonAPI get /platform/$latest/auth/roles?zone=$zoneName
         $role = $roles.roles | Where-Object name -eq "BackupAdmin"
         if(! $role){
             Write-Host "Creating BackupAdmin role for zone: $zoneName..."
@@ -244,13 +246,13 @@ if($createSMBUser){
                     }
                 )
             }
-            $smbRole = isilonAPI post /platform/7/auth/roles?zone=$zoneName $smbRoleParams
+            $smbRole = isilonAPI post /platform/$latest/auth/roles?zone=$zoneName $smbRoleParams
         }else{
             $existingMember = $role.members | Where-Object name -eq $cohesityUsername
             if(! $existingMember){
                 "Adding $cohesityUsername to BackupAdmin role in zone: $zoneName..."
                 $role.members = @($role.members + @{"name" = $cohesityUsername; "type" = "user"})
-                $role = isilonAPI put /platform/7/auth/roles/BackupAdmin?zone=$zoneName @{"members" = $role.members}
+                $role = isilonAPI put /platform/$latest/auth/roles/BackupAdmin?zone=$zoneName @{"members" = $role.members}
             }
         }
     }
