@@ -63,6 +63,24 @@ function getViews(){
     return $myViews
 }
 
+$cluster = api get cluster
+
+# get/create temp unlock policy
+$policy = api get protectionPolicies | Where-Object {$_.name -eq 'ViewDR Temp Unlock Policy'}
+if(!$policy){
+    $policyParams = @{
+        "name" = "ViewDR Temp Unlock Policy";
+        "incrementalSchedulingPolicy" = @{
+            "periodicity" = "kDaily";
+            "dailySchedule" = @{}
+        };
+        "retries" = 3;
+        "retryIntervalMins" = 5;
+        "daysToKeep" = 7
+    }
+    $policy = api post protectionPolicies $policyParams
+}
+
 "Gathering Views..."
 $views = getViews
 
@@ -92,6 +110,11 @@ foreach($viewName in $myviews){
                 if($deleteSnapshots){
                     $null = api delete "protectionJobs/$($view.viewProtection.protectionJobs[0].jobId)" @{'deleteSnapshots' = $True}
                 }else{
+                    $jobId = $view.viewProtection.protectionJobs[0].jobId
+                    $v2JobId = "{0}:{1}:{2}" -f $cluster.id, $cluster.incarnationId, $jobId
+                    $job = api get -v2 data-protect/protection-groups/$v2JobId
+                    $job.policyId = $policy.id
+                    $job = api put -v2 data-protect/protection-groups/$v2JobId $job
                     $null = api delete "protectionJobs/$($view.viewProtection.protectionJobs[0].jobId)"
                 }
                 "    deleting view $viewName"
