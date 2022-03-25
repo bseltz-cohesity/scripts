@@ -83,6 +83,7 @@ Processing servers...
 * -inclusionList: a text file list of paths to include
 * -exclusions: one or more exclusion paths (comma separated)
 * -exclusionList: a text file list of exclusion paths
+* -metadataFile: path to directive file (e.g. /home/myuser/directive.txt)
 * -skipNestedMountPoints: (6.3 and below) if omitted, nested mount points will not be skipped
 * -skipNestedMountPointTypes: (6.4 and above) comma separated list of mount point types to skip (e.g. nfs, xfs)
 * -replaceRules: if omitted, inclusions/exclusions are appended to existing server rules (if any)

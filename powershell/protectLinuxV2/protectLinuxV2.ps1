@@ -16,7 +16,8 @@ param (
     [Parameter()][switch]$skipNestedMountPoints,  # 6.3 and below - skip all nested mount points
     [Parameter()][array]$skipNestedMountPointTypes = @(),  # 6.4 and above - skip listed mount point types
     [Parameter()][switch]$replaceRules,
-    [Parameter()][switch]$allServers
+    [Parameter()][switch]$allServers,
+    [Parameter()][string]$metadataFile = ''
 )
 
 # gather list of servers to add to job
@@ -149,29 +150,35 @@ foreach($sourceId in @([array]$sourceIds + [array]$newSourceIds) | Sort-Object -
             }
         }
 
-        # process include rules
-        foreach($includePath in $includePaths | Where-Object {$_ -ne ''} | Sort-Object -Unique){
-            $includePath = $includePath.ToString()
-            $filePath = $params.filePaths | Where-Object includedPath -eq $includePath
-            if(($null -eq $filePath) -or $replaceRules){
-                $filePath = @{
-                    "includedPath" = $includePath;
-                    "skipNestedVolumes" = $skip;
-                    "excludedPaths" = @()
+        # set directive file path if new or replace
+        if($metadataFile -ne '' -and $params.PSObject.Properties['Keys']){
+            $params['metadataFilePath'] = $metadataFile
+        }elseif($metadataFile -eq '' -and (! $params.PSObject.Properties['metadataFilePath'])){
+            delApiProperty -object $params -name 'metadataFilePath'
+            # process include rules
+            foreach($includePath in $includePaths | Where-Object {$_ -ne ''} | Sort-Object -Unique){
+                $includePath = $includePath.ToString()
+                $filePath = $params.filePaths | Where-Object includedPath -eq $includePath
+                if(($null -eq $filePath) -or $replaceRules){
+                    $filePath = @{
+                        "includedPath" = $includePath;
+                        "skipNestedVolumes" = $skip;
+                        "excludedPaths" = @()
+                    }
                 }
+                $params.filePaths = @($params.filePaths | Where-Object includedPath -ne $includePath) + $filePath
             }
-            $params.filePaths = @($params.filePaths | Where-Object includedPath -ne $includePath) + $filePath
-        }
 
-        # process exclude rules
-        foreach($excludePath in $excludePaths | Where-Object {$_ -and $_ -ne ''} | Sort-Object -Unique){
-            $excludePath = $excludePath.ToString()
-            $parentPath = $params.filePaths | Where-Object {$excludePath.contains($_.includedPath)} | Sort-Object -Property {$_.includedPath.Length} -Descending | Select-Object -First 1
-            if($parentPath){
-                $parentPath.excludedPaths = @($parentPath.excludedPaths | Where-Object {$_ -ne $excludePath}) + $excludePath
-            }else{
-                foreach($parentPath in $params.filePaths){
+            # process exclude rules
+            foreach($excludePath in $excludePaths | Where-Object {$_ -and $_ -ne ''} | Sort-Object -Unique){
+                $excludePath = $excludePath.ToString()
+                $parentPath = $params.filePaths | Where-Object {$excludePath.contains($_.includedPath)} | Sort-Object -Property {$_.includedPath.Length} -Descending | Select-Object -First 1
+                if($parentPath){
                     $parentPath.excludedPaths = @($parentPath.excludedPaths | Where-Object {$_ -ne $excludePath}) + $excludePath
+                }else{
+                    foreach($parentPath in $params.filePaths){
+                        $parentPath.excludedPaths = @($parentPath.excludedPaths | Where-Object {$_ -ne $excludePath}) + $excludePath
+                    }
                 }
             }
         }
