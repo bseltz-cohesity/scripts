@@ -71,6 +71,7 @@ Then, run the main script like so:
 * -inclusionList: a text file list of paths to include (one per line)
 * -exclusions: one or more exclusion paths (comma separated)
 * -exclusionList: a text file list of exclusion paths (one per line)
+* -metadataFile: path to directive file (e.g. c:\directive.txt)
 * -allDrives: include all drives in the inclusion list
 * -skipNestedMountPoints: if omitted, nested mount points will not be skipped
 * -followNasLinks: if omitted, NAS symlinks will not be followed

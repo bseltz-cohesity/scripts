@@ -15,7 +15,8 @@ param (
     [Parameter()][switch]$followNasLinks,
     [Parameter()][switch]$allDrives,
     [Parameter()][switch]$replaceRules,
-    [Parameter()][switch]$allServers
+    [Parameter()][switch]$allServers,
+    [Parameter()][string]$metadataFile = ''
 )
 
 # gather list of servers to add to job
@@ -52,7 +53,7 @@ if('' -ne $inclusionList){
     }
 }
 if(! $includePaths){
-    if(! $allDrives){
+    if((! $allDrives) -and $metadataFile -eq ''){
         Write-Host "No include paths specified" -ForegroundColor Yellow
         exit 1
     }
@@ -172,69 +173,75 @@ foreach($sourceId in $sourceIds){
         $excludePathsToProcess = @($excludePaths | Where-Object {$_ -ne $null -and $_ -ne ''})
     }
 
-    # get existing include / exclude paths
+    # set directive file
     $theseParams = $existingParams | Where-Object {$_.id -eq $sourceId}
-    if($theseParams){
-        if(($newServer -and (! $replaceRules)) -or
-           ((! $newServer) -and (! ($replaceRules -and $allServers)))){
-               $excludePathsToProcess += $theseParams.filePaths.excludedPaths
-               $includePathsToProcess += $theseParams.filePaths.includedPath
-               $newParam.followNasSymlinkTarget = $theseParams.followNasSymlinkTarget
-               $newParam.usesPathLevelSkipNestedVolumeSetting = $theseParams.usesPathLevelSkipNestedVolumeSetting
-               $newParam.nestedVolumeTypesToSkip = $theseParams.nestedVolumeTypesToSkip
-        }
-    }
-
-    # process exclude paths
-    $excludePathsProcessed = @()
-    $wildCardExcludePaths = $excludePathsToProcess | Where-Object {$_ -ne $null -and $_.subString(0,2) -eq '*:'}
-    $excludePathsToProcess = $excludePathsToProcess | Where-Object {$_ -notin $wildCardExcludePaths}
-    foreach($wildCardExcludePath in $wildCardExcludePaths){
-        foreach($mountPoint in $mountPoints){
-            $excludePathsToProcess += "$($mountPoint):" + $wildCardExcludePath.subString(2)
-        }
-    }
-    foreach($excludePath in $excludePathsToProcess){
-       if($null -ne $excludePath -and $excludePath.subString(1,1) -eq ':'){
-            $excludePath = "/$($excludePath.replace(':','').replace('\','/'))".replace('//','/')
-       }
-       if($null -ne $excludePath -and $excludePath -notin $excludePathsProcessed){
-        $excludePathsProcessed += $excludePath
-       }
-    }
-    # process include paths
-    $includePathsProcessed = @()
-    
-    if($allDrives -or '$ALL_LOCAL_DRIVES' -in $includePathsToProcess){
-        if($cluster.clusterSoftwareVersion -gt '6.5.1b'){
-            $includePathsProcessed += '$ALL_LOCAL_DRIVES'
-        }else{
-            foreach($mountPoint in $mountPoints){
-                $includePathsProcessed += "/$($mountPoint.replace(':','').replace('\','/'))/".replace('//','/')
+    if($metadataFile -ne '' -and ((! $theseParams) -or $replaceRules)){
+        $newParam.metadataFilePath = $metadataFile
+    }else{
+        # get existing include / exclude paths
+        if($theseParams){
+            if(($newServer -and (! $replaceRules)) -or
+            ((! $newServer) -and (! ($replaceRules -and $allServers)))){
+                $excludePathsToProcess += $theseParams.filePaths.excludedPaths
+                $includePathsToProcess += ($theseParams.filePaths.includedPath | Where-Object {$_ -ne '' -and $_ -ne $null})
+                $newParam.followNasSymlinkTarget = $theseParams.followNasSymlinkTarget
+                $newParam.usesPathLevelSkipNestedVolumeSetting = $theseParams.usesPathLevelSkipNestedVolumeSetting
+                $newParam.nestedVolumeTypesToSkip = $theseParams.nestedVolumeTypesToSkip
             }
         }
-    }else{
-        foreach($includePath in $includePathsToProcess){
+
+        # process exclude paths
+        $excludePathsProcessed = @()
+        $wildCardExcludePaths = $excludePathsToProcess | Where-Object {$_ -ne $null -and $_.subString(0,2) -eq '*:'}
+        $excludePathsToProcess = $excludePathsToProcess | Where-Object {$_ -notin $wildCardExcludePaths}
+        foreach($wildCardExcludePath in $wildCardExcludePaths){
             foreach($mountPoint in $mountPoints){
-                if(($includePath.split('\')[0] -eq $mountPoint.split('\')[0]) -or ($includePath.split('/')[1] -eq $mountPoint.split(':')[0])){
-                    $includePathsProcessed = @($includePathsProcessed) + ,"/$($includePath.replace(':','').replace('\','/'))".replace('//','/')
+                $excludePathsToProcess += "$($mountPoint):" + $wildCardExcludePath.subString(2)
+            }
+        }
+        foreach($excludePath in $excludePathsToProcess){
+        if($null -ne $excludePath -and $excludePath.subString(1,1) -eq ':'){
+                $excludePath = "/$($excludePath.replace(':','').replace('\','/'))".replace('//','/')
+        }
+        if($null -ne $excludePath -and $excludePath -notin $excludePathsProcessed){
+            $excludePathsProcessed += $excludePath
+        }
+        }
+        # process include paths
+        $includePathsProcessed = @()
+        
+        if($allDrives -or '$ALL_LOCAL_DRIVES' -in $includePathsToProcess){
+            if($cluster.clusterSoftwareVersion -gt '6.5.1b'){
+                $includePathsProcessed += '$ALL_LOCAL_DRIVES'
+            }else{
+                foreach($mountPoint in $mountPoints){
+                    $includePathsProcessed += "/$($mountPoint.replace(':','').replace('\','/'))/".replace('//','/')
+                }
+            }
+        }else{
+            foreach($includePath in $includePathsToProcess){
+                foreach($mountPoint in $mountPoints){
+                    if(($includePath.split('\')[0] -eq $mountPoint.split('\')[0]) -or ($includePath.split('/')[1] -eq $mountPoint.split(':')[0])){
+                        $includePathsProcessed = @($includePathsProcessed) + ,"/$($includePath.replace(':','').replace('\','/'))".replace('//','/')
+                    }
                 }
             }
         }
-    }
-    foreach($includePath in $includePathsProcessed | Sort-Object -Unique){
-        $newFilePath= @{
-            "includedPath" = $includePath;
-            "skipNestedVolumes" = $skip;
-            "excludedPaths" = @()
-        }
-        foreach($excludePath in $excludePathsProcessed){
-            if($excludePath -match $includePath -or $includePath -eq '$ALL_LOCAL_DRIVES' -or $excludePath[0] -ne '/'){
-                $newFilePath.excludedPaths += ,$excludePath
+        foreach($includePath in $includePathsProcessed | Sort-Object -Unique){
+            $newFilePath= @{
+                "includedPath" = $includePath;
+                "skipNestedVolumes" = $skip;
+                "excludedPaths" = @()
             }
+            foreach($excludePath in $excludePathsProcessed){
+                if($excludePath -match $includePath -or $includePath -eq '$ALL_LOCAL_DRIVES' -or $excludePath[0] -ne '/'){
+                    $newFilePath.excludedPaths += ,$excludePath
+                }
+            }
+            $newParam.filePaths += ,$newFilePath
         }
-        $newParam.filePaths += ,$newFilePath
     }
+
     if($newServer -or $allServers){
         $newParams += $newParam
     }else{
