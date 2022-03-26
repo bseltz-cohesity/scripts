@@ -33,6 +33,11 @@ Place both files in a folder together and run the main script like so:
 * -vip: the Cohesity cluster to connect to
 * -username: the cohesity user to login with
 * -domain: (optional) domain of the Cohesity user (defaults to local)
+* -jobNameUser: (optional) one or more job names (comma separated)
+* -joblist: (optional) text file containing job names (one per line)
 * -numRuns: (optional) number of runs per job to inspect (defaults to 999)
 * -cancelAll: (optional) cancel existing replication tasks
 * -cancelOutdated: (optional) cancel outdated replication tasks
+
+> **NOTE:** Using -jobNameUser or -joblist along with -cancelAll will result in the cancellation of replaications tasks for those particular protection jobs. 
+

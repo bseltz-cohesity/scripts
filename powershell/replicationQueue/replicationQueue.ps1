@@ -4,6 +4,8 @@ param (
    [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
    [Parameter()][string]$domain = 'local', #local or AD domain
+   [Parameter()][array]$jobNameUser, #jobs for which user wants to list/cancel replications
+   [Parameter()][string]$joblist = '',
    [Parameter()][int]$numRuns = 999,
    [Parameter()][switch]$cancelAll,
    [Parameter()][switch]$cancelOutdated
@@ -15,6 +17,18 @@ param (
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
 
+# gather job names
+$myjobs = @()
+if($joblist -ne '' -and (Test-Path $joblist -PathType Leaf)){
+    $myjobs += Get-Content $joblist | Where-Object {$_ -ne ''}
+}elseif($joblist){
+    Write-Warning "File $joblist not found!"
+    exit 1
+}
+if($jobNameUser){
+    $myjobs += $jobNameUser
+}
+
 $finishedStates = @('kCanceled', 'kSuccess', 'kFailure')
 
 $nowUsecs = dateToUsecs (get-date)
@@ -24,6 +38,9 @@ $runningTasks = @{}
 foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -and $_.isActive -ne $false} | Sort-Object -Property name)){
     $jobId = $job.id
     $jobName = $job.name
+    if(-Not $myjobs.Contains($jobName)){
+        continue
+    }
     "Getting tasks for $jobName"
     $runs = api get "protectionRuns?jobId=$jobId&numRuns=$numRuns&excludeTasks=true" | Where-Object {$_.copyRun.status -notin $finishedStates }
     foreach($run in $runs){
