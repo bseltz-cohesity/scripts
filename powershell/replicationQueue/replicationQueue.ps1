@@ -4,43 +4,83 @@ param (
    [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
    [Parameter()][string]$domain = 'local', #local or AD domain
+   [Parameter()][switch]$useApiKey,
+   [Parameter()][string]$password = $null,
+   [Parameter()][array]$jobName, #jobs for which user wants to list/cancel replications
+   [Parameter()][string]$joblist = '',
    [Parameter()][int]$numRuns = 999,
    [Parameter()][switch]$cancelAll,
    [Parameter()][switch]$cancelOutdated
 )
 
+
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
+        }
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
+        exit
+    }
+    return ($items | Sort-Object -Unique)
+}
+
+$jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Required $false)
+
 ### source the cohesity-api helper code
-. ./cohesity-api
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
 
-$finishedStates = @('kCanceled', 'kSuccess', 'kFailure')
+$jobs = api get protectionJobs | Where-Object {$_.isDeleted -ne $True -and $_.isActive -ne $false}
+
+# catch invalid job names
+if($jobNames.Count -gt 0){
+    $notfoundJobs = $jobNames | Where-Object {$_ -notin $jobs.name}
+    if($notfoundJobs){
+        Write-Host "Jobs not found $($notfoundJobs -join ', ')" -ForegroundColor Yellow
+    }
+}
+
+$finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')
 
 $nowUsecs = dateToUsecs (get-date)
 
 $runningTasks = @{}
 
-foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -and $_.isActive -ne $false} | Sort-Object -Property name)){
+foreach($job in $jobs | Sort-Object -Property name){
     $jobId = $job.id
-    $jobName = $job.name
-    "Getting tasks for $jobName"
-    $runs = api get "protectionRuns?jobId=$jobId&numRuns=$numRuns&excludeTasks=true" | Where-Object {$_.copyRun.status -notin $finishedStates }
-    foreach($run in $runs){
-        $runStartTimeUsecs = $run.backupRun.stats.startTimeUsecs
-        foreach($copyRun in $($run.copyRun | Where-Object {$_.status -notin $finishedStates})){
-            $startTimeUsecs = $runStartTimeUsecs
-            $copyType = $copyRun.target.type
-            $status = $copyRun.status
-            if($copyType -eq 'kRemote'){
-                $runningTask = @{
-                    "jobname" = $jobName;
-                    "jobId" = $jobId;
-                    "startTimeUsecs" = $runStartTimeUsecs;
-                    "copyType" = $copyType;
-                    "status" = $status
+    $thisJobName = $job.name
+    if($jobNames.Count -eq 0 -or $thisJobName -in $jobNames){
+        "Getting tasks for $thisJobName"
+        $runs = api get "protectionRuns?jobId=$jobId&numRuns=$numRuns&excludeTasks=true" | Where-Object {$_.copyRun.status -notin $finishedStates }
+        foreach($run in $runs){
+            $runStartTimeUsecs = $run.backupRun.stats.startTimeUsecs
+            foreach($copyRun in $($run.copyRun | Where-Object {$_.status -notin $finishedStates})){
+                $startTimeUsecs = $runStartTimeUsecs
+                $copyType = $copyRun.target.type
+                $status = $copyRun.status
+                if($copyType -eq 'kRemote'){
+                    $runningTask = @{
+                        "jobname" = $thisJobName;
+                        "jobId" = $jobId;
+                        "startTimeUsecs" = $runStartTimeUsecs;
+                        "copyType" = $copyType;
+                        "status" = $status
+                    }
+                    $runningTasks[$startTimeUsecs] = $runningTask
                 }
-                $runningTasks[$startTimeUsecs] = $runningTask
             }
         }
     }
