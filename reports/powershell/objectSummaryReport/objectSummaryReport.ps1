@@ -78,9 +78,15 @@ function latestStatus($objectName,
     $thisStatus['lastError'] = ''
     $thisStatus['lastSuccess'] = ''
     $searchJobType = $jobType
-        if($jobType -eq 5){
-            $searchJobType = 4
-        }
+    if($jobType -eq 5){
+        $searchJobType = 4
+    }
+    if($jobType -eq 13){
+        $searchJobType = 6
+    }
+    if($jobType -eq 25){
+        $searchJobType = 24
+    }
     $search = api get "/searchvms?vmName=$objectName&entityTypes=$($envType[$searchJobType])"
     if($null -ne $search.vms){
         $versions = $search.vms[0].vmDocument.versions
