@@ -17,7 +17,7 @@ parser.add_argument('-o', '--objectname', type=str, required=True)
 parser.add_argument('-s', '--servername', type=str, default=None)
 parser.add_argument('-i', '--instance', type=str, default='MSSQLSERVER')
 parser.add_argument('-w', '--wait', action='store_true')
-parser.add_argument('-t', '--clonetype', type=str, choices=['sql', 'view', 'vm', 'oracle'], required=True)
+parser.add_argument('-t', '--clonetype', type=str, choices=['sql', 'view', 'vm', 'oracle', 'oracle_view'], required=True)
 
 args = parser.parse_args()
 
@@ -40,7 +40,8 @@ cloneTypes = {
     'vm': 2,
     'view': 5,
     'sql': 7,
-    'oracle': 7
+    'oracle': 7,
+    'oracle_view': 18
 }
 
 taskId = None
@@ -49,8 +50,7 @@ deleteView = None
 # authenticate
 apiauth(vip, username, domain)
 
-allclones = api('get', '/restoretasks?restoreTypes=kCloneView&restoreTypes=kConvertAndDeployVMs&restoreTypes=kCloneApp&restoreTypes=kCloneVMs')
-
+allclones = api('get', '/restoretasks?restoreTypes=kCloneView&restoreTypes=kConvertAndDeployVMs&restoreTypes=kCloneApp&restoreTypes=kCloneVMs&restoreTypes=kCloneAppView')
 availableclones = [clone for clone in allclones if (
     'destroyClonedTaskStateVec' not in clone['restoreTask']
     and clone['restoreTask']['performRestoreTaskState']['base']['type'] == cloneTypes[clonetype]
@@ -90,6 +90,13 @@ for clone in availableclones:
                 taskId = thisTaskId
                 break
 
+    if clonetype == 'oracle_view':
+        cloneViewName = clone['restoreTask']['performRestoreTaskState']['base']['name']
+        if cloneViewName.lower() == objectname:
+            print('tearing down View: %s' % cloneViewName)
+            taskId=thisTaskId
+            break
+
 if deleteView is not None:
     result = api('delete', 'views/%s' % deleteView)
 
@@ -102,7 +109,7 @@ elif taskId is not None:
             sleep(3)
             result = api('get', '/restoretasks/%s' % taskId)
 
-            if ((clonetype == 'sql' or clonetype == 'oracle')
+            if ((clonetype == 'sql' or clonetype == 'oracle' or clonetype == 'oracle_view')
                     and result[0]['restoreTask'].get('destroyClonedTaskStateVec', [
                         {
                             'destroyCloneAppTaskInfo': {}
