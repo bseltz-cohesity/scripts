@@ -30,7 +30,7 @@ Place both files in a folder together and run the main script like so:
 * -v, --vip: Cohesity cluster name or IP
 * -u, --username: Cohesity Username
 * -d, --domain: Cohesity User Domain
-* -t, --clonetype: vm, sql, oracle or view
+* -t, --clonetype: vm, sql, oracle, view, or oracle_view
 * -o, --objectname: name of vm, database or view
 * -s, --server: name of database server (required when tearing down a database)
 * -i, --instance: name of SQL Server instance (defaults to MSSQLSERVER)
