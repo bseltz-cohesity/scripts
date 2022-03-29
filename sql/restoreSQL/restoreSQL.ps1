@@ -44,7 +44,8 @@ param (
     [Parameter()][switch]$showPaths,                     # show data file paths and exit
     [Parameter()][switch]$useSourcePaths,                # use same paths from source server for target server
     [Parameter()][switch]$update,
-    [Parameter()][switch]$noStop
+    [Parameter()][switch]$noStop,
+    [Parameter()][switch]$captureTailLogs
 )
 
 # handle alternate secondary data file locations
@@ -342,6 +343,13 @@ if($targetDB -eq $sourceDB -and $targetServer -eq $sourceServer -and $differentI
     if(! $overWrite){
         write-host "Please use the -overWrite parameter to confirm overwrite of the source database!" -ForegroundColor Yellow
         exit
+    }
+    if($captureTailLogs){
+        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['captureTailLogs'] = $True
+    }
+}else{
+    if($captureTailLogs){
+        Write-Host "-captureTailLogs only applies when overwriting the database in the oroginal location" -ForegroundColor Yellow
     }
 }
 

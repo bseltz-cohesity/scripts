@@ -64,6 +64,7 @@ To specify a source instance, include the instance name in the sourceDB name, li
 * -logTime: Point in time to replay the logs to during the restore (e.g. '2019-04-10 22:31:05')
 * -latest: Replay the logs to the latest log backup date
 * -noStop: Replay the logs to the last transaction available
+* -captureTailLogs: Replay logs that haven't been backed up yet (only applies when overwriting original database)
 * -wait: Wait for the restore to complete and report end status (e.g. kSuccess)
 * -overwrite: Overwrites an existing database (default is no overwrite)
 * -keepCdc: Keep change data capture during restore (default is false)
