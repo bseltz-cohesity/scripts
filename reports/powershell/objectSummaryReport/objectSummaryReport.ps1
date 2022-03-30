@@ -181,7 +181,7 @@ foreach($job in $jobSummary | Sort-Object -Property { $_.backupJobSummary.jobDes
     $jobName = $job.backupJobSummary.jobDescription.name
     $includeJob = $false
     foreach($pre in $prefix){
-        if ($jobName.tolower().startswith($pre.tolower()) -or $prefix -eq 'ALL') {
+        if ($jobName.Trim().ToLower().StartsWith($pre.ToLower()) -or $prefix -eq 'ALL') {
             $includeJob = $True
         }
     }
