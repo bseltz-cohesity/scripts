@@ -29,6 +29,8 @@ parser.add_argument('-is', '--incrementalsla', type=int, default=60)    # increm
 parser.add_argument('-fs', '--fullsla', type=int, default=120)          # full SLA minutes
 parser.add_argument('-ei', '--enableindexing', action='store_true')     # enable indexing
 parser.add_argument('-c', '--cloudarchivedirect', action='store_true')     # enable CAD
+parser.add_argument('-ip', '--incrementalsnapshotprefix', type=str, default=None)
+parser.add_argument('-fp', '--fullsnapshotprefix', type=str, default=None)
 
 args = parser.parse_args()
 
@@ -54,6 +56,8 @@ incrementalsla = args.incrementalsla  # incremental SLA for new job
 fullsla = args.fullsla                # full SLA for new job
 enableindexing = args.enableindexing  # enable indexing on new job
 cloudarchivedirect = args.cloudarchivedirect  # enable cloud archive direct
+incrementalsnapshotprefix = args.incrementalsnapshotprefix
+fullsnapshotprefix = args.fullsnapshotprefix
 
 # zone names
 if zonenames is None:
@@ -205,6 +209,16 @@ if not job or len(job) < 1:
 
     if not cloudarchivedirect:
         job['storageDomainId'] = sdid
+
+    if incrementalsnapshotprefix is not None or fullsnapshotprefix is not None:
+        if incrementalsnapshotprefix is not None and fullsnapshotprefix is None:
+            fullsnapshotprefix = incrementalsnapshotprefix
+        if fullsnapshotprefix is not None and incrementalsnapshotprefix is None:
+            incrementalsnapshotprefix = fullsnapshotprefix
+        job['isilonParams']['snapshotLabel'] = {
+            "incrementalLabel": incrementalsnapshotprefix,
+            "fullLabel": fullsnapshotprefix
+        }
 
 else:
     print('Updating job %s' % jobname)
