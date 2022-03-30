@@ -60,6 +60,7 @@ function latestStatus($objectName,
                       $dataRead = 0,
                       $fileCount){
 
+    $keyName = "{0}::-::{1}" -f $objectName, $jobName
     $thisStatus = @{'status' = $status;
                     'scheduleType' = $scheduleType;
                     'registeredSource' = $registeredSource;
@@ -87,7 +88,7 @@ function latestStatus($objectName,
     if($jobType -eq 25){
         $searchJobType = 24
     }
-    $search = api get "/searchvms?vmName=$objectName&entityTypes=$($envType[$searchJobType])"
+    $search = api get "/searchvms?vmName=$objectName&entityTypes=$($envType[$searchJobType])&jobIds=$jobId"
     if($null -ne $search.vms){
         $versions = $search.vms[0].vmDocument.versions
         $thisStatus['numSnapshots'] = $versions.count 
@@ -114,8 +115,8 @@ function latestStatus($objectName,
             $thisStatus['numErrors'] = '?'
         }
     }
-    if($objectName -notin $objectStatus.Keys -or $startTimeUsecs -gt $objectStatus[$objectName].lastRunUsecs){
-        $objectStatus[$objectName] = $thisStatus
+    if($keyName -notin $objectStatus.Keys -or $startTimeUsecs -gt $objectStatus[$keyName].lastRunUsecs){
+        $objectStatus[$keyName] = $thisStatus
     }
 }
 
@@ -306,35 +307,36 @@ foreach($job in $jobSummary | Sort-Object -Property { $_.backupJobSummary.jobDes
 }
 
 # populate html rows
-foreach ($entity in $objectStatus.Keys | Sort-Object){
+foreach ($keyName in $objectStatus.Keys | Sort-Object){
+    $objectName = ($keyName -split '::-::')[0]
     $app = ''
-    $objectName = $entity
+    # $objectName = $entity
     # $objectStatus[$entity]
-    $environment = $envType[$objectStatus[$entity].jobType].Substring(1)
+    $environment = $envType[$objectStatus[$keyName].jobType].Substring(1)
     if($entity.contains('/') -and $environment -in @('SQL', 'Oracle')){
         $objectName, $app = $entity.split('/',2)
     }
-    $environment = $envType[$objectStatus[$entity].jobType].Substring(1)
-    $registeredSource = $objectStatus[$entity].registeredSource
-    $scheduleType = $objectStatus[$entity].scheduleType.Substring(1)
-    $status = $objectStatus[$entity].status.Substring(1)
-    $jobName = $objectStatus[$entity].jobName
-    $numSnapshots = $objectStatus[$entity].numSnapshots
-    $message = $objectStatus[$entity].message
-    $jobId = $objectStatus[$entity].jobId
+    $environment = $envType[$objectStatus[$keyName].jobType].Substring(1)
+    $registeredSource = $objectStatus[$keyName].registeredSource
+    $scheduleType = $objectStatus[$keyName].scheduleType.Substring(1)
+    $status = $objectStatus[$keyName].status.Substring(1)
+    $jobName = $objectStatus[$keyName].jobName
+    $numSnapshots = $objectStatus[$keyName].numSnapshots
+    $message = $objectStatus[$keyName].message
+    $jobId = $objectStatus[$keyName].jobId
     $jobUrl = "https://$vip/protection/job/$jobId/details"
-    $lastRunStartTime = usecsToDate $objectStatus[$entity].lastRunUsecs
-    $endTimeUsecs = $objectStatus[$entity].endTimeUsecs
+    $lastRunStartTime = usecsToDate $objectStatus[$keyName].lastRunUsecs
+    $endTimeUsecs = $objectStatus[$keyName].endTimeUsecs
     if($endTimeUsecs -eq 0){
         $endTime = ''
     }else{
         $endTime = usecsToDate $endTimeUsecs
     }
-    $isPaused = $objectStatus[$entity].isPaused
-    $logicalSize = $objectStatus[$entity].logicalSize
-    $dataWritten = $objectStatus[$entity].dataWritten
-    $dataRead = $objectStatus[$entity].dataRead
-    $fileCount = $objectStatus[$entity].fileCount
+    $isPaused = $objectStatus[$keyName].isPaused
+    $logicalSize = $objectStatus[$keyName].logicalSize
+    $dataWritten = $objectStatus[$keyName].dataWritten
+    $dataRead = $objectStatus[$keyName].dataRead
+    $fileCount = $objectStatus[$keyName].fileCount
     if($dataRead -gt 0){
         $displayRead = [math]::Round($dataRead/(1024*1024),3)
     }else{
@@ -353,9 +355,9 @@ foreach ($entity in $objectStatus.Keys | Sort-Object){
     }else{
         $displayWritten = 0
     }
-    $numErrors = $objectStatus[$entity].numErrors
+    $numErrors = $objectStatus[$keyName].numErrors
     if($numErrors -eq 0){ $numErrors = ''}
-    $lastRunErrorMsg = $objectStatus[$entity].message
+    $lastRunErrorMsg = $objectStatus[$keyName].message
     if($status -eq 'Warning'){
         $color = 'F3F387'
     }elseif($status -eq 'Failure'){
