@@ -25,10 +25,12 @@ parser.add_argument('-sd', '--storagedomain', type=str, default='DefaultStorageD
 parser.add_argument('-p', '--policyname', type=str, default=None)
 parser.add_argument('-tz', '--timezone', type=str, default='US/Eastern')
 parser.add_argument('-st', '--starttime', type=str, default='21:00')
-parser.add_argument('-is', '--incrementalsla', type=int, default=60)    # incremental SLA minutes
-parser.add_argument('-fs', '--fullsla', type=int, default=120)          # full SLA minutes
+parser.add_argument('-is', '--incrementalsla', type=int, default=60)
+parser.add_argument('-fs', '--fullsla', type=int, default=120)
 parser.add_argument('-a', '--pause', action='store_true')
-parser.add_argument('-c', '--cloudarchivedirect', action='store_true')     # enable CAD
+parser.add_argument('-c', '--cloudarchivedirect', action='store_true')
+parser.add_argument('-ip', '--incrementalsnapshotprefix', type=str, default=None)
+parser.add_argument('-fp', '--fullsnapshotprefix', type=str, default=None)
 
 args = parser.parse_args()
 
@@ -54,6 +56,8 @@ incrementalsla = args.incrementalsla  # incremental SLA for new job
 fullsla = args.fullsla                # full SLA for new job
 pause = args.pause                    # pause new job
 cloudarchivedirect = args.cloudarchivedirect  # enable cloud archive direct
+incrementalsnapshotprefix = args.incrementalsnapshotprefix
+fullsnapshotprefix = args.fullsnapshotprefix
 
 if pause:
     isPaused = True
@@ -238,6 +242,17 @@ if not job or len(job) == 0:
 
     if not cloudarchivedirect:
         job['storageDomainId'] = sdid
+
+    if incrementalsnapshotprefix is not None or fullsnapshotprefix is not None:
+        if incrementalsnapshotprefix is not None and fullsnapshotprefix is None:
+            fullsnapshotprefix = incrementalsnapshotprefix
+        if fullsnapshotprefix is not None and incrementalsnapshotprefix is None:
+            incrementalsnapshotprefix = fullsnapshotprefix
+        job['netappParams']['snapshotLabel'] = {
+            "incrementalLabel": incrementalsnapshotprefix,
+            "fullLabel": fullsnapshotprefix
+        }
+
 else:
     print('Updating job %s' % jobname)
     job = job[0]

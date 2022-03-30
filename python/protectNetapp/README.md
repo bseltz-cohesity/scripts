@@ -57,3 +57,5 @@ Place both files in a folder together and run the main script like so:
 * -fs, --fullsla: (optional) full SLA minutes (default is 120)
 * -ei, --enableindexing: (optional) default is no indexing
 * -c, --cloudarchivedirect: (optional) use direct cloud archiving
+* -ip, --incrementalsnapshotprefix: (optional) prefix of Netapp snapshot name
+* -fp, --fullsnapshotprefix: (optional) prefix of Netapp snapshot name
