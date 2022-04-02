@@ -4,7 +4,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This PowerShell script uses ODBC to execute a Groot query and export the output to a CSV file.
 
-## Get the PostGres ODBC Driver
+## Get the PostGreSQL ODBC Driver
 
 You can download the latest PSQL ODBC Installer here: <https://www.postgresql.org/ftp/odbc/versions/msi/> (I tested using this version: <https://ftp.postgresql.org/pub/odbc/versions/msi/psqlodbc_13_02_0000.zip>). Simply unzip and run the installer.
 
