@@ -59,3 +59,4 @@ Place both files in a folder together and run the main script like so:
 * -c, --cloudarchivedirect: (optional) use direct cloud archiving
 * -ip, --incrementalsnapshotprefix: (optional) prefix of Netapp snapshot name
 * -fp, --fullsnapshotprefix: (optional) prefix of Netapp snapshot name
+* -enc, --encryptionenabled: (optional) enable in-flight encryption of data between the Netapp and Cohesity

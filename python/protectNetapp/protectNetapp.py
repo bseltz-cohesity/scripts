@@ -31,6 +31,7 @@ parser.add_argument('-a', '--pause', action='store_true')
 parser.add_argument('-c', '--cloudarchivedirect', action='store_true')
 parser.add_argument('-ip', '--incrementalsnapshotprefix', type=str, default=None)
 parser.add_argument('-fp', '--fullsnapshotprefix', type=str, default=None)
+parser.add_argument('-enc', '--encryptionenabled', action='store_true')
 
 args = parser.parse_args()
 
@@ -40,7 +41,7 @@ domain = args.domain                  # domain of username (e.g. local, or AD do
 password = args.password              # password or API key
 useApiKey = args.useApiKey            # use API key for authentication
 sourcename = args.sourcename          # name of registered Netapp source to protect
-svmnames = args.svmname             # names of zones to protect
+svmnames = args.svmname               # names of zones to protect
 volumenames = args.volumename         # namea of volumes to protect
 volumelist = args.volumelist          # file with volume names
 jobname = args.jobname                # name of protection job to add server to
@@ -56,8 +57,9 @@ incrementalsla = args.incrementalsla  # incremental SLA for new job
 fullsla = args.fullsla                # full SLA for new job
 pause = args.pause                    # pause new job
 cloudarchivedirect = args.cloudarchivedirect  # enable cloud archive direct
-incrementalsnapshotprefix = args.incrementalsnapshotprefix
-fullsnapshotprefix = args.fullsnapshotprefix
+incrementalsnapshotprefix = args.incrementalsnapshotprefix  # incremental snapshot prefix
+fullsnapshotprefix = args.fullsnapshotprefix  # full snapshot prefix
+encryptionenabled = args.encryptionenabled  # encryption enabled
 
 if pause:
     isPaused = True
@@ -68,6 +70,11 @@ if cloudarchivedirect:
     isCAD = True
 else:
     isCAD = False
+
+if encryptionenabled:
+    encrypt = True
+else:
+    encrypt = False
 
 # svm names
 if svmnames is None:
@@ -234,7 +241,7 @@ if not job or len(job) == 0:
             },
             "protocol": "kNfs3",
             "continueOnError": True,
-            "encryptionEnabled": False,
+            "encryptionEnabled": encrypt,
             "backupExistingSnapshot": True,
             "excludeObjectIds": []
         }

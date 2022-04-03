@@ -25,12 +25,14 @@ parser.add_argument('-sd', '--storagedomain', type=str, default='DefaultStorageD
 parser.add_argument('-p', '--policyname', type=str, default=None)
 parser.add_argument('-tz', '--timezone', type=str, default='US/Eastern')
 parser.add_argument('-st', '--starttime', type=str, default='21:00')
-parser.add_argument('-is', '--incrementalsla', type=int, default=60)    # incremental SLA minutes
-parser.add_argument('-fs', '--fullsla', type=int, default=120)          # full SLA minutes
-parser.add_argument('-ei', '--enableindexing', action='store_true')     # enable indexing
-parser.add_argument('-c', '--cloudarchivedirect', action='store_true')     # enable CAD
+parser.add_argument('-is', '--incrementalsla', type=int, default=60)
+parser.add_argument('-fs', '--fullsla', type=int, default=120)
+parser.add_argument('-ei', '--enableindexing', action='store_true')
+parser.add_argument('-a', '--pause', action='store_true')
+parser.add_argument('-c', '--cloudarchivedirect', action='store_true')
 parser.add_argument('-ip', '--incrementalsnapshotprefix', type=str, default=None)
 parser.add_argument('-fp', '--fullsnapshotprefix', type=str, default=None)
+parser.add_argument('-enc', '--encryptionenabled', action='store_true')
 
 args = parser.parse_args()
 
@@ -55,9 +57,26 @@ timezone = args.timezone              # time zone for new job
 incrementalsla = args.incrementalsla  # incremental SLA for new job
 fullsla = args.fullsla                # full SLA for new job
 enableindexing = args.enableindexing  # enable indexing on new job
+pause = args.pause                    # pause new job
 cloudarchivedirect = args.cloudarchivedirect  # enable cloud archive direct
-incrementalsnapshotprefix = args.incrementalsnapshotprefix
-fullsnapshotprefix = args.fullsnapshotprefix
+incrementalsnapshotprefix = args.incrementalsnapshotprefix  # incremental snapshot prefix
+fullsnapshotprefix = args.fullsnapshotprefix  # full snapshot prefux
+encryptionenabled = args.encryptionenabled  # encryption enabled
+
+if pause:
+    isPaused = True
+else:
+    isPaused = False
+
+if cloudarchivedirect:
+    isCAD = True
+else:
+    isCAD = False
+
+if encryptionenabled:
+    encrypt = True
+else:
+    encrypt = False
 
 # zone names
 if zonenames is None:
@@ -161,7 +180,7 @@ if not job or len(job) < 1:
     job = {
         "name": jobname,
         "environment": "kIsilon",
-        "isPaused": False,
+        "isPaused": isPaused,
         "policyId": policyid,
         "priority": "kMedium",
         "description": "",
@@ -191,7 +210,7 @@ if not job or len(job) < 1:
         "isilonParams": {
             "objects": [],
             "excludeObjectIds": [],
-            "directCloudArchive": cloudarchivedirect,
+            "directCloudArchive": isCAD,
             "nativeFormat": True,
             "indexingPolicy": {
                 "enableIndexing": enableindexing,
@@ -203,7 +222,7 @@ if not job or len(job) < 1:
             "protocol": "kNfs3",
             "continueOnError": True,
             "useChangelist": False,
-            "encryptionEnabled": False
+            "encryptionEnabled": encrypt
         }
     }
 
