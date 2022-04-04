@@ -44,7 +44,7 @@ parser.add_argument('-e', '--end', type=str, default=None)            # show sna
 parser.add_argument('-o', '--newonly', action='store_true')           # abort if PIT is not new
 parser.add_argument('-l', '--latest', action='store_true')            # only use latest version
 parser.add_argument('-w', '--wait', action='store_true')              # wait for completion and report result
-
+parser.add_argument('-k', '--taskname', type=str, default=None)       # recoverytask name
 args = parser.parse_args()
 
 vip = args.vip
@@ -73,6 +73,7 @@ end = args.end
 latest = args.latest
 newonly = args.newonly
 wait = args.wait
+taskname = args.taskname
 
 if sys.version_info > (3,):
     long = int
@@ -169,11 +170,15 @@ if newonly:
 
 
 def restore(thesefiles, doc, version, targetEntity, singleFile):
-    restoreTaskName = "Recover-Files_%s" % datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    if taskname is not None:
+        restoreTaskName = taskname
+    else:
+        restoreTaskName = "Recover-Files_%s" % datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     if singleFile is True:
         fileparts = [p for p in thesefiles.split('/') if p is not None and p != '']
         shortfile = fileparts[-1]
-        restoreTaskName = "Recover-Files_%s_%s" % (datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), shortfile)
+        if taskname is None:
+            restoreTaskName = "%s_%s" % (restoreTaskName, shortfile)
         thesefiles = [thesefiles]
 
     restoreParams = {

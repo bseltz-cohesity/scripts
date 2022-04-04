@@ -58,6 +58,7 @@ Restore finished with status kSuccess
 * -l, --latest: (optional) use latest backup date to restore files from
 * -o, --newonly: (optional) only restore if there is a new point in time to restore
 * -w, --wait: (optional) wait for completion and report status
+* -k, --taskname: (optional) set name of recovery task
 
 ## Backup Versions
 
