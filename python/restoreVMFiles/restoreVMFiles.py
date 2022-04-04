@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, required=True)           # cluster to connect to
 parser.add_argument('-u', '--username', type=str, default='helios')   # username
 parser.add_argument('-d', '--domain', type=str, default='local')      # domain - defaults to local
-parser.add_argument('-k', '--useApiKey', action='store_true')         # use API key authentication
+parser.add_argument('-i', '--useApiKey', action='store_true')         # use API key authentication
 parser.add_argument('-pwd', '--password', type=str, default=None)       # optional password
 parser.add_argument('-s', '--sourcevm', type=str, required=True)  # name of source server
 parser.add_argument('-t', '--targetvm', type=str, default=None)   # name of target server
@@ -23,13 +23,14 @@ parser.add_argument('-f', '--filelist', type=str, default=None)       # text fil
 parser.add_argument('-p', '--restorepath', type=str, default=None)    # destination path
 parser.add_argument('-l', '--showversions', action='store_true')      # show available snapshots
 parser.add_argument('-r', '--runid', type=int, default=None)          # job run id to restore from
-parser.add_argument('-x', '--daysago', type=int, default=0)          # job run id to restore from
+parser.add_argument('-y', '--daysago', type=int, default=0)          # job run id to restore from
 parser.add_argument('-o', '--olderthan', type=str, default=None)          # show snapshots after date
 parser.add_argument('-w', '--wait', action='store_true')              # wait for completion and report result
 parser.add_argument('-m', '--restoremethod', type=str, choices=['ExistingAgent', 'AutoDeploy', 'VMTools'], default='AutoDeploy')
 parser.add_argument('-vu', '--vmuser', type=str, default=None)    # destination path
 parser.add_argument('-vp', '--vmpwd', type=str, default=None)    # destination path
-parser.add_argument('-i', '--noindex', action='store_true')
+parser.add_argument('-x', '--noindex', action='store_true')
+parser.add_argument('-k', '--taskname', type=str, default=None)       # recoverytask name
 args = parser.parse_args()
 
 vip = args.vip
@@ -51,6 +52,7 @@ olderthan = args.olderthan
 daysago = args.daysago
 restoremethod = args.restoremethod
 noindex = args.noindex
+taskname = args.taskname
 
 if sys.version_info > (3,):
     long = int
@@ -127,7 +129,10 @@ elif olderthan:
 else:
     snapshotId = snapshots['snapshots'][-1]['id']
 
-restoreTaskName = "Recover-Files_%s" % datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+if taskname is not None:
+    restoreTaskName = taskname
+else:
+    restoreTaskName = "Recover-Files_%s" % datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 restoreParams = {
     "vmwareParams": {

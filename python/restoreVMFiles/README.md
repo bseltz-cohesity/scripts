@@ -41,7 +41,7 @@ Place both files in a folder together and run the main script like so:
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username (default is local)
-* -k, --useApiKey: (optional) use API key for authentication
+* -i, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) hard code password (uses stored password by default)
 * -s, --sourcevm: name of source server
 * -t, --targetvm: (optional) name of target server (defaults to source server)
@@ -51,12 +51,13 @@ Place both files in a folder together and run the main script like so:
 * -r, --runid: (optional) select backup version with this job run ID
 * -l, --showversions: (optional) show available run IDs and dates
 * -o, --olderthan: (optional) restore from last version prior to this date, e.g. '2021-01-30 23:00:00'
-* -x, --daysago: (optional) restore from last backup X days ago (1 = last night, 2 = night before last)
+* -y, --daysago: (optional) restore from last backup X days ago (1 = last night, 2 = night before last)
 * -w, --wait: (optional) wait for completion and report status
 * -m, --restoremethod: (optional) ExistingAgent, AutoDeploy, or VMTools (default is AutoDeploy)
 * -vu, --vmuser: (optional) required for AutoDeploy and VMTools restore methods, e.g. 'mydomain.net\myuser'
 * -vp, --vmpwd: (optional) will be prompted if required and omitted
-* -i, --noindex: (optional) use if VM is not indexed, file paths must be exact case
+* -x, --noindex: (optional) use if VM is not indexed, file paths must be exact case
+* -k, --taskname: (optional) set name of recovery task
 
 ## File Names and Paths
 
