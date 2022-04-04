@@ -1,21 +1,21 @@
-# Groot Object Protection Report using Python
+# Groot Data Per Object Report using Python
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This python script collects the history of protection status for all protected objects over time.
+This python script calculates the data read/written for protected objects over time.
 
 ## Components
 
-* grootObjectReport: the main python script
+* grootDataPerObject.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/groot/grootObjectReport/grootObjectReport.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/groot/python/grootDataPerObject/grootDataPerObject.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-chmod +x logicalTrends.py
+chmod +x grootDataPerObject.py
 # end download commands
 ```
 
@@ -48,18 +48,17 @@ easy_install psycopg2-binary
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./grootObjectReport.py -v mycluster -u myuser -d mydomain.net
+# example
+./grootDataPerObject.py -v mycluster -u myuser -d mydomain.net
+# end example
 ```
 
-The script will write an output file objectReport-mycluster.html, and optionally, send an html-formatted email
+The script will write an output file dataPerObject-mycluster.csv.
 
 ## Parameters
 
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
 * -u, --username: username to authenticate to Cohesity cluster
-* -d, --domain: (optional) domain of username (default is local)
-* -s, --mailserver: (optional) smtp server to send mail through
-* -p, --mailport: (optional) default is 25
-* -t, --sendto: (optional) email recipient (repeat parameter to send to multiple recipients)
-* -f, --sendfrom: (optional) email address for from field
+* -d, --domain: (optional) domain of username, e.g. mydomain.net (default is local)
 * -n, --numdays: (optional) number of days back to report (default is 31)
+* -x, --units: (optional) Mib or GiB (default is MiB)

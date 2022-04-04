@@ -1,21 +1,21 @@
-# Gather Logical Size of Protected Data using Python
+# Groot Data Per VM Report using Python
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This python script collects the logical size of data protected, over time, by environment type, and writes it to a CSV file, where, once brought into Excel, can be charted to analyze growth trends.
+This python script calculates the data read/written for protected VMs over time.
 
 ## Components
 
-* logicalTrends.py: the main python script
+* grootDataPerVM.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/groot/logicalTrends/logicalTrends.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/groot/python/grootDataPerVM/grootDataPerVM.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-chmod +x logicalTrends.py
+chmod +x grootDataPerVM.py
 # end download commands
 ```
 
@@ -48,11 +48,17 @@ easy_install psycopg2-binary
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./logicalTrends.py -v mycluster -u myuser -d mydomain.net
+# example
+./grootDataPerVM.py -v mycluster -u myuser -d mydomain.net
+# end example
 ```
 
-The script will write an output file logicalTrends-mycluster.csv. This file can be opened in Excel where a chart can be created to show the trends over time (I like the stacked area chart).
+The script will write an output file dataPerVM-mycluster.csv.
 
-## Running the script on a Cohesity cluster
+## Parameters
 
-It isn't possible to install modules on the Cohesity cluster, so I have provided logicalTrends-Linux.zip which contains the missing modules.
+* -v, --vip: DNS or IP of the Cohesity cluster to connect to
+* -u, --username: username to authenticate to Cohesity cluster
+* -d, --domain: (optional) domain of username, e.g. mydomain.net (default is local)
+* -n, --numdays: (optional) number of days back to report (default is 31)
+* -x, --units: (optional) Mib or GiB (default is MiB)
