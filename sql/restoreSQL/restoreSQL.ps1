@@ -1,4 +1,4 @@
-# version 2021-12-17
+# version 2022-04-04
 # usage: ./restore-SQL.ps1 -vip mycluster `
 #                          -username myusername `
 #                          -domain mydomain.net `
@@ -94,7 +94,7 @@ if($sourceDB.Contains('/')){
 }
 
 # search for database to clone
-$searchresults = api get /searchvms?environment=SQL`&entityTypes=kSQL`&entityTypes=kVMware`&vmName=$sourceInstance/$sourceDB
+$searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&entityTypes=kVMware&vmName=$sourceInstance/$sourceDB"
 
 if($targetInstance -ne '' -and $targetInstance -ne $sourceInstance){
     $differentInstance = $True
@@ -104,7 +104,8 @@ if($targetInstance -ne '' -and $targetInstance -ne $sourceInstance){
 
 # narrow the search results to the correct source server
 $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer } | `
-                                  Where-Object { $_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB }
+                                  Where-Object {$_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB } | `
+                                  Where-Object {$_.vmDocument.objectName -eq "$sourceInstance/$sourceDB"}
 
 if($null -eq $dbresults){
     write-host "Database $sourceInstance/$sourceDB on Server $sourceServer Not Found" -foregroundcolor yellow
@@ -118,7 +119,6 @@ if($null -eq $latestdb){
     write-host "Database $sourceInstance/$sourceDB on Server $sourceServer Not Found" -foregroundcolor yellow
     exit 1
 }
-
 
 if($showPaths){
 
@@ -367,6 +367,13 @@ if($noStop -and $useLogTime){
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['restoreTimeSecs'] = (3600 + (datetousecs (Get-Date)) / 1000000)
 }
 
+if($targetInstance -eq '' -and $targetServer -eq $sourceServer){
+    $targetInstance = $sourceInstance
+}
+if($targetInstance -eq '' -and $targetServer -ne $sourceServer){
+    $targetInstance = 'MSSQLSERVER'
+}
+
 # search for target server
 if($targetServer -ne $sourceServer -or $differentInstance){
     $targetEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $targetServer }
@@ -393,10 +400,6 @@ if($ndfFolder){
 # overWrite existing DB
 if($overWrite){
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['dbRestoreOverwritePolicy'] = 1
-}
-
-if($targetInstance -eq ''){
-    $targetInstance = $sourceInstance
 }
 
 # resume only if newer point in time available
