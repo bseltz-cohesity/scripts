@@ -38,6 +38,8 @@ Place both files in a folder together and run the main script like so:
 * -vip: Cohesity Cluster to connect to
 * -username: Cohesity username
 * -domain: Active Directory domain of user (defaults to local)
+* -useApiKey: (optional) Use API key for authentication
+* -password: (optional) will use stored password by default
 * -sendTo: email addresses to send report to (comma separated)
 * -smtpServer: SMTP gateway to forward email through
 * -smtpPort: SMTP port to use (default is 25)
