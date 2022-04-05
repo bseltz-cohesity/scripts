@@ -16,7 +16,7 @@ This will depend on the size of your AVID estate, the average daily change rate,
 
 If backup jobs begin to run close to the full nightly backup window, you can add another proxy, and new shows will be added to the new proxy until the number of shows is balanced across proxies.
 
-## Intall the Avid Client
+## Install the Avid Client
 
 Install the AVID client for Linux, and mount the AVID file system to some location, e.e. /mnt/avid
 
