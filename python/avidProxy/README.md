@@ -4,7 +4,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This script protects linux-based AVID proxies.
 
-# Setup an AVID Proxy
+## Setup an AVID Proxy
 
 These are the steps to setup an AVID proxy. An AVID proxy is a Linux VM (or physical host) running the AVID client for Linux, that will mount the AVID shares and re-export them over NFS, so that Cohesity can protect them using a Generic NAS protection group.
 
