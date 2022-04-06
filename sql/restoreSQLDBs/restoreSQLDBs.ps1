@@ -33,7 +33,10 @@ param (
     [Parameter()][switch]$latest,                          # replay logs to loatest available point in time
     [Parameter()][switch]$noRecovery,                      # leave DB in restore mode
     [Parameter()][switch]$progress,                        # show progress
-    [Parameter()][switch]$noStop
+    [Parameter()][switch]$noStop,                          # replay last log transactions
+    [Parameter()][switch]$showPaths,                       # show data file paths and exit
+    [Parameter()][switch]$useSourcePaths,                  # use same paths from source server for target server
+    [Parameter()][switch]$includeSystemDBs                 # use same paths from source server for target server
 )
 
 ### source the cohesity-api helper code
@@ -123,7 +126,7 @@ if($targetInstance -ne '' -and $targetInstance -ne $sourceInstance){
 }
 
 if($prefix -or $suffix -or $targetServer -ne $sourceServer -or $differentInstance){
-    if('' -eq $mdfFolder){
+    if('' -eq $mdfFolder -and ! $showPaths -and ! $useSourcePaths){
         write-host "-mdfFolder must be specified when restoring to a new database name or different target server" -ForegroundColor Yellow
         exit 1
     }
@@ -131,7 +134,7 @@ if($prefix -or $suffix -or $targetServer -ne $sourceServer -or $differentInstanc
 
 ### overwrite warning
 if((! $prefix) -and (! $suffix) -and $targetServer -eq $sourceServer -and $differentInstance -eq $False){
-    if(! $overWrite){
+    if(! $overWrite -and ! $showPaths){
         write-host "Please use the -overWrite parameter to confirm overwrite of the source database!" -ForegroundColor Yellow
         exit
     }
@@ -281,10 +284,34 @@ function restoreDB($db){
     $targetDBname = "$prefix$sourceDBname$suffix"
 
     if($targetDBname -ne $sourceDBname -or $targetServer -ne $sourceServer -or $differentInstance){
+        $secondaryFileLocation = @()
+        if($useSourcePaths){
+            $mdfFolderFound = $False
+            $ldfFolderFound = $False
+            foreach($datafile in $db.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec){
+                $path = $datafile.fullPath.subString(0, $datafile.fullPath.LastIndexOf('\'))
+                $fileName = $datafile.fullPath.subString($datafile.fullPath.LastIndexOf('\') + 1)
+                if($datafile.type -eq 0){
+                    if($mdfFolderFound -eq $False){
+                        $mdfFolder = $path
+                        $mdfFolderFound = $True
+                    }else{
+                        $secondaryFileLocation = @($secondaryFileLocation + @{'filePattern' = $datafile.fullPath; 'targetDirectory' = $path})
+                    }
+                }
+                if($datafile.type -eq 1){
+                    if($ldfFolderFound -eq $False){
+                        $ldfFolder = $path
+                        $ldfFolderFound = $True
+                    }
+                }
+            }
+        }
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['dataFileDestination'] = $mdfFolder;
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['logFileDestination'] = $ldfFolder;
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['secondaryDataFileDestinationVec'] = $secondaryFileLocation;
-        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['newDatabaseName'] = $targetDBname;    
+        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['newDatabaseName'] = $targetDBname;
+        Write-Host "** Restoring $targetDBName to $mdfFolder"
     }
 
     ### apply log replay time
@@ -368,8 +395,13 @@ foreach($db in $dbresults){
     $dbname = $db.vmDocument.objectName
     if($allDBs -or $dbname -in $selectedDBs){
         $i, $n = $dbname -split '/'
-        if($n -notin @('master', 'model', 'msdb', 'tempdb')){
-            restoreDB($db)
+        if($includeSystemDBs -or ($n -notin @('master', 'model', 'msdb', 'tempdb'))){
+            if($showPaths){
+                Write-Host "`n$dbname"
+                $db.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec | Format-Table -Property logicalName, @{l='Size (MiB)'; e={$_.sizeBytes / (1024 * 1024)}}, fullPath
+            }else{
+                restoreDB($db)
+            }
         }else{
             Write-Host "Skipping System DB $dbname..." -ForegroundColor Cyan
         }

@@ -73,6 +73,8 @@ Place both files in a folder together and run the main script like so:
 * -ndfFolders: Locations to place various ndf files (see below)
 * -overwrite: Overwrites an existing database (default is no overwrite)
 * -noRecovery: Restore the DB with NORECOVER option (default is to recover)
+* -showPaths: show data/log file paths and exit
+* -useSourcePaths: use same paths to restore to target server
 
 ### Misc Parameters
 
