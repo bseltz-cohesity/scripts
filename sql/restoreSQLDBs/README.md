@@ -55,6 +55,7 @@ Place both files in a folder together and run the main script like so:
 * -sourceDBList: (optional) Text file containing databases to restore (e.g. MyDB or MYINSTANCE/MyDB)
 * -sourceInstance: (optional) Name of source SQL instance to restore from
 * -allDBs: (optional) restore all databases from specified server/instance
+* -includeSystemDBs: (optional) also restore system DBs (master, model, msdb)
 
 ### Point in Time Selections
 
