@@ -40,6 +40,7 @@ Place both files in a folder together and run the main script like so:
 * -policyName: name of protection policy to use
 * -vmNames: (optional) one or more VM names (comma separated)
 * -vmList: (optional) text file of VM names (one per line)
+* -protectionType: (optional) CohesitySnapshot, AWSSnapshot or All (default is CohesitySnapshot)
 * -startTime: (optional) e.g. '18:30' (defaults to 8PM)
 * -timeZone: (optional) e.g. 'America/New_York' (default is 'America/New_York')
 * -incrementalSlaMinutes: (optional) default 60
