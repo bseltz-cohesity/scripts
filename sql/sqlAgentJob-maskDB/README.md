@@ -25,7 +25,7 @@ $scriptName = 'restoreSQL'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 (Invoke-WebRequest -Uri "$repoUrl/sql/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-(Invoke-WebRequest -Uri "$repoUrl/sql/sqlAgentJob-cloneDB/createCloneSQLAgentJob.sql").content | Out-File createCloneSQLAgentJob.sql; (Get-Content createCloneSQLAgentJob.sql) | Set-Content createCloneSQLAgentJob.sql
+(Invoke-WebRequest -Uri "$repoUrl/sql/sqlAgentJob-maskDB/createMaskerSQLAgentJob.sql").content | Out-File createMaskerSQLAgentJob.sql; (Get-Content createMaskerSQLAgentJob.sql) | Set-Content createMaskerSQLAgentJob.sql
 # End Download Commands
 ```
 
