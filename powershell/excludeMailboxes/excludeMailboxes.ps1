@@ -44,17 +44,20 @@ if(!$job){
 # get physical protection sources
 $source = api get "protectionSources?id=$($job.parentSourceId)"
 
+$nodes = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
+
 if(! $job.PSObject.Properties['excludeSourceIds']){
     $job | Add-Member -MemberType NoteProperty -Name excludeSourceIds -Value @()
 }
 
 $exclusionsAdded = $false
 foreach ($excludeUser in $exclusions){
-    $node = $source.nodes[0].nodes | Where-Object { $_.protectionSource.name -eq $excludeUser -or $_.protectionSource.office365ProtectionSource.primarySMTPAddress -eq $excludeUser }
+    $node = $nodes.nodes | Where-Object { $_.protectionSource.name -eq $excludeUser -or $_.protectionSource.office365ProtectionSource.primarySMTPAddress -eq $excludeUser }
     if($node){
-        if(!($node.protectionSource.id -in $job.excludeSourceIds)){
+        if(!($node.protectionSource.id -in $job.excludeSourceIds) -or $node.protectionSource.id -in $job.sourceIds){
             $exclusionsAdded = $True
-            $job.excludeSourceIds += $node.protectionSource.id
+            $job.excludeSourceIds = @($job.excludeSourceIds + $node.protectionSource.id)
+            $job.sourceIds = @($job.sourceIds | Where-Object {$_ -ne $node.protectionSource.id})
             write-host "Excluding $($node.protectionSource.name)" -ForegroundColor Green
         }else{
             write-host "$($node.protectionSource.name) already excluded" -ForegroundColor Green
