@@ -1,4 +1,4 @@
-# usage: ./excludeMailboxes.ps1 -vip mycluster -username myusername -jobName 'My Job' -exclusionList ./excludedMailboxes.txt
+# usage: ./excludeMailboxes.ps1 -vip mycluster -username myusername -jobName 'My Job' -userList ./excludedMailboxes.txt
 
 # process commandline arguments
 [CmdletBinding()]
