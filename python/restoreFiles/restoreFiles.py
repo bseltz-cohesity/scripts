@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """restore files using python"""
 
-# version 2022.03.11
+# version 2022.04.08
 
 # usage: ./restoreFiles.py -v mycluster \
 #                          -u myusername \
@@ -27,11 +27,12 @@ else:
 
 # command line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)           # cluster to connect to
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')  # cluster to connect to
 parser.add_argument('-u', '--username', type=str, default='helios')   # username
 parser.add_argument('-d', '--domain', type=str, default='local')      # domain - defaults to local
 parser.add_argument('-i', '--useApiKey', action='store_true')         # use API key authentication
 parser.add_argument('-pwd', '--password', type=str, default=None)       # optional password
+parser.add_argument('-c', '--clustername', type=str, default=None)   # name of helios cluster to connect to
 parser.add_argument('-s', '--sourceserver', type=str, action='append')  # name of source server
 parser.add_argument('-t', '--targetserver', type=str, default=None)   # name of target server
 parser.add_argument('-j', '--jobname', type=str, default=None)        # narrow search by job name
@@ -52,6 +53,7 @@ username = args.username
 domain = args.domain
 password = args.password
 useApiKey = args.useApiKey
+clustername = args.clustername
 sourceservers = args.sourceserver
 
 if sourceservers is None or len(sourceservers) == 0:
@@ -98,6 +100,13 @@ apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=
 if apiconnected() is False:
     print('authentication failed')
     exit(1)
+
+if vip.lower() == 'helios.cohesity.com':
+    if clustername is not None:
+        heliosCluster(clustername)
+    else:
+        print('--clustername is required when connecting to Helios')
+        exit()
 
 # find target server
 physicalEntities = api('get', '/entitiesOfType?environmentTypes=kPhysical&physicalEntityTypes=kHost&physicalEntityTypes=kOracleAPCluster')
