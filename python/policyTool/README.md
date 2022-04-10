@@ -7,8 +7,10 @@ This script lists or modified protection policies. The script is a work in progr
 * List Policies: shows local, replica and archival frequencies and retentions
 * Add a Replica
 * Delete a Replica
+* Add an Archive Target
+* Delete an Archive Target
 
-In the future, changing base and extended retentions, and adding and deleting archival targets will be added. All other features will be considered upon request.
+In the future, changing base and extended retentions will be added. All other features will be considered upon request.
 
 Note: this script is written for Cohesity 6.5.1 and later.
 
@@ -108,10 +110,10 @@ To delete all replicas for a remote cluster:
 * -k, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password of API key
 * -p, --policyname: (optional) name of policy to focus on
-* -n, --targetname: (optional) name of remote cluster or external target
+* -n, --targetname: (optional) name of remote cluster or archive target
 * -f, --frequency: (optional) number of frequency units for schedule (default is 1)
 * -fu, --frequencyunit: (optional) default is every run
 * -r, --retention: (optional) number of retention units
 * -ru, --retentionunit: (optional) default is days
-* -a, --action: (optional) list, addreplica, deletereplica (default is list)
+* -a, --action: (optional) list, addreplica, deletereplica, addarchive, deletearchive (default is list)
 * -all, --all: (optional) delete all entries for the specified target

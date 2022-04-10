@@ -19,7 +19,7 @@ parser.add_argument('-f', '--frequency', type=int, default=None)
 parser.add_argument('-fu', '--frequencyunit', type=str, choices=['runs', 'minutes', 'hours', 'days', 'weeks', 'months', 'years'], default='runs')
 parser.add_argument('-r', '--retention', type=int, default=None)
 parser.add_argument('-ru', '--retentionunit', type=str, choices=['days', 'weeks', 'months', 'years'], default='days')
-parser.add_argument('-a', '--action', type=str, choices=['list', 'addreplica', 'deletereplica'], default='list')
+parser.add_argument('-a', '--action', type=str, choices=['list', 'addreplica', 'deletereplica', 'addarchive', 'deletearchive'], default='list')
 parser.add_argument('-n', '--targetname', type=str, default=None)
 parser.add_argument('-all', '--all', action='store_true')
 args = parser.parse_args()
@@ -138,6 +138,77 @@ if action == 'deletereplica':
             policy['remoteTargetPolicy']['replicationTargets'] = newReplicationTargets
             result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
 
+# add archive
+if action == 'addarchive':
+    if targetname is None:
+        print('--targetname required')
+        exit()
+    if retention is None:
+        print('--retention rewquired')
+        exit()
+    if frequencyunit == 'minutes':
+        print('--frequencyunit "minutes" is not valid for replication')
+        exit()
+    vaults = api('get', 'vaults')
+    thisVault = [v for v in vaults if v['name'].lower() == targetname.lower()]
+    if thisVault is None or len(thisVault) == 0:
+        print('External target %s not found' % targetname)
+        exit()
+    thisVault = thisVault[0]
+    policy = policies[0]
+    if 'remoteTargetPolicy' not in policy:
+        policy['remoteTargetPolicy'] = {}
+    if 'archivalTargets' not in policy['remoteTargetPolicy']:
+        policy['remoteTargetPolicy']['archivalTargets'] = []
+    # find existing replica
+    existingTarget = [t for t in policy['remoteTargetPolicy']['archivalTargets'] if t['targetId'] == thisVault['id']]
+    if existingTarget is None or len(existingTarget) == 0:
+        newTarget = {
+            "schedule": {
+                "unit": frequencyunit.title()
+            },
+            "retention": {
+                "unit": retentionunit.title(),
+                "duration": retention
+            },
+            "copyOnRunSuccess": False,
+            "targetId": thisVault['id'],
+            "targetName": thisVault['name'],
+            "targetType": "Cloud"
+        }
+        if frequencyunit != 'runs':
+            newTarget['schedule']['frequency'] = frequency
+        policy['remoteTargetPolicy']['archivalTargets'].append(newTarget)
+    else:
+        existingTarget[0]['retention']['unit'] = retentionunit.title()
+        existingTarget[0]['retention']['duration'] = retention
+    result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
+
+# delete archive
+if action == 'deletearchive':
+    if targetname is None:
+        print('--targetname required')
+        exit()
+    if frequencyunit == 'minutes':
+        print('--frequencyunit "minutes" is not valid for replication')
+        exit()
+    # find existing replica
+    policy = policies[0]
+    if 'remoteTargetPolicy' in policy and 'archivalTargets' in policy['remoteTargetPolicy']:
+        newArchivalTargets = []
+        changedArchivalTargets = False
+        for archiveTarget in policy['remoteTargetPolicy']['archivalTargets']:
+            includeThisArchive = True
+            if archiveTarget['targetName'].lower() == targetname.lower():
+                includeThisArchive = False
+            if includeThisArchive is True:
+                newArchivalTargets.append(archiveTarget)
+            else:
+                changedArchiveTargets = True
+        if changedArchiveTargets is True:
+            policy['remoteTargetPolicy']['archivalTargets'] = newArchivalTargets
+            result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
+
 # list policies
 for policy in policies:
     print('\n%s' % policy['name'])
@@ -216,5 +287,5 @@ for policy in policies:
                     frequency = 1
                 else:
                     frequency = archivalTarget['schedule']['frequency']
-                print('                       %s (%s):  Every %s %s  (keep for %s %s)' % (archivalTarget['targetName'], archivalTarget['targetType'], frequency, frequencyunit, archivalTarget['retention']['duration'], archivalTarget['retention']['unit']))
+                print('                       %s:  Every %s %s  (keep for %s %s)' % (archivalTarget['targetName'], frequency, frequencyunit, archivalTarget['retention']['duration'], archivalTarget['retention']['unit']))
     print('')
