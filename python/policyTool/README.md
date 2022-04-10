@@ -60,7 +60,7 @@ To add a replica that replicates after every run with 31 day retention:
                 -r 31
 ```
 
-To add a replica that replicates every two weeka with 3 month retention:
+To add a replica that replicates every two weeks with 3 month retention:
 
 ```bash
 ./policyTool.py -v mycluster \
