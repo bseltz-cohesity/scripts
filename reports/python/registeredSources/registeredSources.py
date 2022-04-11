@@ -22,6 +22,10 @@ domain = args.domain
 # authenticate
 apiauth(vip, username, domain)
 
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
+
 print('\ngathering registered sources...\n')
 cluster = api('get', 'cluster')
 now = datetime.now()
@@ -33,7 +37,7 @@ sources = api('get', 'protectionSources/registrationInfo?includeApplicationsTree
 
 f.write('Source,Environment,Protected Count,Unprotected Count\n')
 
-for source in sorted(sources['rootNodes'], key=lambda node: node['rootNode']['name']):  # sorted(searchResults, key=lambda result: result['vmDocument']['versions'][0]['snapshotTimestampUsecs'], reverse=True)[0]
+for source in sorted(sources['rootNodes'], key=lambda node: node['rootNode']['name']):
     sourcename = source['rootNode']['name']
     environment = source['rootNode']['environment'][1:]
     protected = source['stats']['protectedCount']
