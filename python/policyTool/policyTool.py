@@ -19,7 +19,7 @@ parser.add_argument('-f', '--frequency', type=int, default=None)
 parser.add_argument('-fu', '--frequencyunit', type=str, choices=['runs', 'minutes', 'hours', 'days', 'weeks', 'months', 'years'], default='runs')
 parser.add_argument('-r', '--retention', type=int, default=None)
 parser.add_argument('-ru', '--retentionunit', type=str, choices=['days', 'weeks', 'months', 'years'], default='days')
-parser.add_argument('-a', '--action', type=str, choices=['list', 'addreplica', 'deletereplica', 'addarchive', 'deletearchive'], default='list')
+parser.add_argument('-a', '--action', type=str, choices=['list', 'create', 'addextension', 'deleteextension', 'logbackup', 'addreplica', 'deletereplica', 'addarchive', 'deletearchive'], default='list')
 parser.add_argument('-n', '--targetname', type=str, default=None)
 parser.add_argument('-all', '--all', action='store_true')
 args = parser.parse_args()
@@ -36,13 +36,16 @@ retention = args.retention            # number of retention units
 retentionunit = args.retentionunit    # retention units
 action = args.action                  # action to perform
 targetname = args.targetname          # name of remote cluster or external target
-alltargets = args.all                 # delete all entries for the specified target
+allfortarget = args.all               # delete all entries for the specified target
 
 if frequencyunit != 'runs' and frequency is None:
     frequency = 1
 
 if frequencyunit == 'runs' and frequency is not None:
-    frequencyunit = 'days'
+    if action == 'logbackup':
+        frequencyunit = 'hours'
+    else:
+        frequencyunit = 'days'
 
 frequentSchedules = ['Minutes', 'Hours', 'Days']
 
@@ -54,12 +57,136 @@ policies = sorted((api('get', 'data-protect/policies', v=2))['policies'], key=la
 if policyname is not None:
     policies = [p for p in policies if p['name'].lower() == policyname.lower()]
     if policies is None or len(policies) == 0:
-        print("Policy '%s' not found!" % policyname)
-        exit(1)
+        if action != 'create':
+            print("Policy '%s' not found!" % policyname)
+            exit()
+    else:
+        policy = policies[0]
+        if action == 'create':
+            print("Policy '%s' already exists" % policyname)
+            action = 'list'
 else:
     if action != 'list':
         print('--policyname required')
         exit()
+
+# create new policy
+if action == 'create':
+    if retention is None:
+        print('--retention is required')
+        exit()
+    if frequency is None:
+        frequency = 1
+    if frequencyunit == 'runs':
+        frequencyunit = 'days'
+    if frequencyunit != 'days':
+        print('this script will only support creation of policies with daily frequencies')
+        exit()
+    policy = {
+        "backupPolicy": {
+            "regular": {
+                "incremental": {
+                    "schedule": {
+                        "unit": frequencyunit.title(),
+                        "daySchedule": {
+                            "frequency": frequency
+                        }
+                    }
+                },
+                "retention": {
+                    "unit": retentionunit.title(),
+                    "duration": retention
+                }
+            }
+        },
+        "id": None,
+        "name": policyname,
+        "description": None,
+        "remoteTargetPolicy": {},
+        "retryOptions": {
+            "retries": 3,
+            "retryIntervalMins": 5
+        }
+    }
+    # print("Creating policy '%s'" % policyname)
+    result = api('post', 'data-protect/policies', policy, v=2)
+    policies = [policy]
+
+# add extend retention
+if action == 'addextension':
+    if retention is None:
+        print('--retention is required')
+        exit()
+    if frequency is None:
+        frequency = 1
+    if frequencyunit == 'runs':
+        frequencyunit = 'days'
+    if 'extendedRetention' not in policy or policy['extendedRetention'] is None:
+        policy['extendedRetention'] = []
+        existingRetention = None
+    else:
+        existingRetention = [r for r in policy['extendedRetention'] if r['schedule']['unit'].lower() == frequencyunit and r['schedule']['frequency'] == frequency]
+    if existingRetention is None or len(existingRetention) == 0:
+        newRetention = {
+            "schedule": {
+                "unit": frequencyunit.title(),
+                "frequency": frequency
+            },
+            "retention": {
+                "unit": retentionunit.title(),
+                "duration": retention
+            }
+        }
+        policy['extendedRetention'].append(newRetention)
+    else:
+        existingRetention[0]['retention']['unit'] = retentionunit.title()
+        existingRetention[0]['retention']['duration'] = retention
+    result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
+
+# delete extended retention
+if action == 'deleteextension':
+    if 'extendedRetention' in policy and policy['extendedRetention'] is not None:
+        newRetentions = []
+        for existingRetention in policy['extendedRetention']:
+            includeRetention = True
+            if existingRetention['schedule']['unit'].lower() == frequencyunit and existingRetention['schedule']['frequency'] == frequency:
+                includeRetention = False
+            if includeRetention:
+                newRetentions.append(existingRetention)
+        policy['extendedRetention'] = newRetentions
+    result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
+
+# log backup
+if action == 'logbackup':
+    if retention is None:
+        print('--retention is required')
+        exit()
+    if frequency is None:
+        frequency = 1
+    if frequencyunit == 'runs':
+        frequencyunit = 'hours'
+    if frequencyunit not in ['minutes', 'hours']:
+        print('log frequency unit must be minutes or hours')
+        exit()
+    print(retentionunit)
+    policy['backupPolicy']['log'] = {
+        "schedule": {
+            "unit": frequencyunit.title(),
+        },
+        "retention": {
+            "unit": retentionunit.title(),
+            "duration": retention
+        }
+    }
+    if frequencyunit == 'hours':
+        policy['backupPolicy']['log']['schedule']['hourSchedule'] = {
+            "frequency": frequency
+        }
+    else:
+        policy['backupPolicy']['log']['schedule']['minuteSchedule'] = {
+            "frequency": frequency
+        }
+    result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
 
 # add replica
 if action == 'addreplica':
@@ -83,7 +210,6 @@ if action == 'addreplica':
         policy['remoteTargetPolicy'] = {}
     if 'replicationTargets' not in policy['remoteTargetPolicy']:
         policy['remoteTargetPolicy']['replicationTargets'] = []
-    # find existing replica
     existingReplica = [r for r in policy['remoteTargetPolicy']['replicationTargets'] if r['targetType'] == 'RemoteCluster' and r['remoteTargetConfig']['clusterName'].lower() == targetname.lower() and r['schedule']['unit'].lower() == frequencyunit.lower() and ('frequency' not in r['schedule'] or r['schedule']['frequency'] == frequency)]
     if existingReplica is None or len(existingReplica) == 0:
         newReplica = {
@@ -117,7 +243,6 @@ if action == 'deletereplica':
     if frequencyunit == 'minutes':
         print('--frequencyunit "minutes" is not valid for replication')
         exit()
-    # find existing replica
     policy = policies[0]
     if 'remoteTargetPolicy' in policy and 'replicationTargets' in policy['remoteTargetPolicy']:
         newReplicationTargets = []
@@ -125,7 +250,7 @@ if action == 'deletereplica':
         for replicationTarget in policy['remoteTargetPolicy']['replicationTargets']:
             includeThisReplica = True
             if replicationTarget['targetType'] == 'RemoteCluster' and replicationTarget['remoteTargetConfig']['clusterName'].lower() == targetname.lower():
-                if alltargets:
+                if allfortarget:
                     includeThisReplica = False
                 else:
                     if replicationTarget['schedule']['unit'].lower() == frequencyunit.lower() and ('frequency' not in replicationTarget['schedule'] or replicationTarget['schedule']['frequency'] == frequency):
@@ -160,7 +285,6 @@ if action == 'addarchive':
         policy['remoteTargetPolicy'] = {}
     if 'archivalTargets' not in policy['remoteTargetPolicy']:
         policy['remoteTargetPolicy']['archivalTargets'] = []
-    # find existing replica
     existingTarget = [t for t in policy['remoteTargetPolicy']['archivalTargets'] if t['targetId'] == thisVault['id']]
     if existingTarget is None or len(existingTarget) == 0:
         newTarget = {
@@ -192,7 +316,6 @@ if action == 'deletearchive':
     if frequencyunit == 'minutes':
         print('--frequencyunit "minutes" is not valid for replication')
         exit()
-    # find existing replica
     policy = policies[0]
     if 'remoteTargetPolicy' in policy and 'archivalTargets' in policy['remoteTargetPolicy']:
         newArchivalTargets = []
@@ -260,7 +383,7 @@ for policy in policies:
         unit = backupSchedule['unit']
         unitPath = '%sSchedule' % unit.lower()[:-1]
         frequency = backupSchedule[unitPath]['frequency']
-        print('          Log backup:  Every %s %s  (keep for %s %s)' % (frequency, unit, baseRetention['duration'], baseRetention['unit']))
+        print('          Log backup:  Every %s %s  (keep for %s %s)' % (frequency, unit, logRetention['duration'], logRetention['unit']))
     # remote targets
     if 'remoteTargetPolicy' in policy and policy['remoteTargetPolicy'] is not None and len(policy['remoteTargetPolicy']) > 0:
         # replication targets

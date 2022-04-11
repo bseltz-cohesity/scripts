@@ -115,5 +115,17 @@ To delete all replicas for a remote cluster:
 * -fu, --frequencyunit: (optional) default is every run
 * -r, --retention: (optional) number of retention units
 * -ru, --retentionunit: (optional) default is days
-* -a, --action: (optional) list, addreplica, deletereplica, addarchive, deletearchive (default is list)
+* -a, --action: (optional) see below (default is list)
 * -all, --all: (optional) delete all entries for the specified target
+
+## Actions
+
+* list: show policy settings (default)
+* create: create a new policy with a base schedule
+* addextension: add or edit an extended retention
+* deleteextension: delete an extended retention
+* logbackup: add or edit log backup schedule
+* addreplica: add or edit a replication
+* deletereplica: delete a replication
+* addarchive: add or edit an archive
+* deletearchive: delete an archive
