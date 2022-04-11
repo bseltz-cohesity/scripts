@@ -9,13 +9,16 @@ import sys
 import getpass
 import argparse
 
+from pyhesity import COHESITY_API
+
 # command line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)           # cluster to connect to
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')  # cluster to connect to
 parser.add_argument('-u', '--username', type=str, default='helios')   # username
 parser.add_argument('-d', '--domain', type=str, default='local')      # domain - defaults to local
 parser.add_argument('-i', '--useApiKey', action='store_true')         # use API key authentication
 parser.add_argument('-pwd', '--password', type=str, default=None)       # optional password
+parser.add_argument('-c', '--clustername', type=str, default=None)   # name of helios cluster to connect to
 parser.add_argument('-s', '--sourcevm', type=str, required=True)  # name of source server
 parser.add_argument('-t', '--targetvm', type=str, default=None)   # name of target server
 parser.add_argument('-n', '--filename', type=str, action='append')    # file name to restore
@@ -38,6 +41,7 @@ username = args.username
 domain = args.domain
 password = args.password
 useApiKey = args.useApiKey
+clustername = args.clustername
 sourcevm = args.sourcevm
 targetvm = args.targetvm
 files = args.filename
@@ -78,6 +82,15 @@ apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=
 if apiconnected() is False:
     print('authentication failed')
     exit(1)
+
+if vip.lower() == 'helios.cohesity.com':
+    if clustername is not None:
+        heliosCluster(clustername)
+        if 'accessClusterId' not in COHESITY_API['HEADER']:
+            exit()
+    else:
+        print('--clustername is required when connecting to Helios')
+        exit()
 
 restoreMethods = {
     'ExistingAgent': 'UseExistingAgent',
@@ -252,16 +265,19 @@ for file in files:
 # perform restore
 if len(restoreParams['vmwareParams']['recoverFileAndFolderParams']['filesAndFolders']) > 0:
     restoreTask = api('post', 'data-protect/recoveries', restoreParams, v=2)
-    restoreTaskId = restoreTask['id']
-    print("Restoring Files...")
-    if wait:
-        while restoreTask['status'] == "Running":
-            sleep(5)
-            restoreTask = api('get', "data-protect/recoveries/%s?includeTenants=true" % restoreTaskId, v=2)
-        if restoreTask['status'] == 'Succeeded':
-            print("Restore %s" % restoreTask['status'])
-        else:
-            print("Restore %s: %s" % (restoreTask['status'], (", ".join(restoreTask['messages']))))
+    if 'id' in restoreTask:
+        restoreTaskId = restoreTask['id']
+        print("Restoring Files...")
+        if wait:
+            while restoreTask['status'] == "Running":
+                sleep(5)
+                restoreTask = api('get', "data-protect/recoveries/%s?includeTenants=true" % restoreTaskId, v=2)
+            if restoreTask['status'] == 'Succeeded':
+                print("Restore %s" % restoreTask['status'])
+            else:
+                print("Restore %s: %s" % (restoreTask['status'], (", ".join(restoreTask['messages']))))
+    else:
+        exit(1)
 else:
     print("No files found for restore")
     exit(1)

@@ -38,11 +38,12 @@ Place both files in a folder together and run the main script like so:
 
 ## Parameters
 
-* -v, --vip: DNS or IP of the Cohesity cluster to connect to
+* -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (defaults to helios.cohesity.com)
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username (default is local)
 * -i, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) hard code password (uses stored password by default)
+* -c, --clustername: (optional) Helios connected cluster to connect to (when connected to Helios)
 * -s, --sourcevm: name of source server
 * -t, --targetvm: (optional) name of target server (defaults to source server)
 * -n, --filename: (optional) path of file to recover (repeat parameter for multiple files)
