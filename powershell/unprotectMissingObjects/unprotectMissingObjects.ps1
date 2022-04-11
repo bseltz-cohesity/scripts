@@ -97,8 +97,8 @@ foreach($job in $jobs.protectionGroups | Where-Object environment -ne 'kView' | 
                 if($jobChanged){
                     if($param.objects.Count -eq 0){
                         # delete the job
-                        "DELETING JOB: $($job.name) (no objects left)" | Tee-Object -FilePath $outfileName -Append
-                        $null = api delete -v2 "data-protect/protection-groups/$($job.id)"
+                        "JOB: $($job.name) would have no objects left, can be deleted" | Tee-Object -FilePath $outfileName -Append
+                        # $null = api delete -v2 "data-protect/protection-groups/$($job.id)"
                     }else{
                         # update the job
                         $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
