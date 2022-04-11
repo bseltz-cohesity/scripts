@@ -2,15 +2,19 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script lists or modified protection policies. The script is a work in progress and currently performs the following acttions:
+This script lists or modifies protection policies. The script is a work in progress and currently performs the following acttions:
 
 * List Policies: shows local, replica and archival frequencies and retentions
+* Create a policy with a base schedule
+* Add or edit an extended retention
+* Delete an extended retention
+* Add or edit a log backup
 * Add a Replica
 * Delete a Replica
 * Add an Archive Target
 * Delete an Archive Target
 
-In the future, changing base and extended retentions will be added. All other features will be considered upon request.
+Other features will be considered upon request.
 
 Note: this script is written for Cohesity 6.5.1 and later.
 
