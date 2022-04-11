@@ -5,7 +5,8 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 This script lists or modifies protection policies. The script is a work in progress and currently performs the following acttions:
 
 * List Policies: shows local, replica and archival frequencies and retentions
-* Create a policy with a base schedule
+* Create a policy with a base schedule and retention
+* Edit base schedule and retention
 * Add or edit an extended retention
 * Delete an extended retention
 * Add or edit a log backup
@@ -126,6 +127,7 @@ To delete all replicas for a remote cluster:
 
 * list: show policy settings (default)
 * create: create a new policy with a base schedule
+* edit: edit base schedule and retention
 * addextension: add or edit an extended retention
 * deleteextension: delete an extended retention
 * logbackup: add or edit log backup schedule

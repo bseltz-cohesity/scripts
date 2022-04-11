@@ -19,7 +19,7 @@ parser.add_argument('-f', '--frequency', type=int, default=None)
 parser.add_argument('-fu', '--frequencyunit', type=str, choices=['runs', 'minutes', 'hours', 'days', 'weeks', 'months', 'years'], default='runs')
 parser.add_argument('-r', '--retention', type=int, default=None)
 parser.add_argument('-ru', '--retentionunit', type=str, choices=['days', 'weeks', 'months', 'years'], default='days')
-parser.add_argument('-a', '--action', type=str, choices=['list', 'create', 'addextension', 'deleteextension', 'logbackup', 'addreplica', 'deletereplica', 'addarchive', 'deletearchive'], default='list')
+parser.add_argument('-a', '--action', type=str, choices=['list', 'create', 'edit', 'addextension', 'deleteextension', 'logbackup', 'addreplica', 'deletereplica', 'addarchive', 'deletearchive'], default='list')
 parser.add_argument('-n', '--targetname', type=str, default=None)
 parser.add_argument('-all', '--all', action='store_true')
 args = parser.parse_args()
@@ -111,6 +111,32 @@ if action == 'create':
     # print("Creating policy '%s'" % policyname)
     result = api('post', 'data-protect/policies', policy, v=2)
     policies = [policy]
+
+# edit policy
+if action == 'edit':
+    if retention is None:
+        print('--retention is required')
+        exit()
+    if frequency is None:
+        frequency = 1
+    if frequencyunit == 'runs':
+        frequencyunit = 'days'
+    if frequencyunit != 'days':
+        print('this script will only support editing of policies with daily frequencies')
+        exit()
+    policy['backupPolicy']['regular']['incremental'] = {
+        "schedule": {
+            "unit": frequencyunit.title(),
+            "daySchedule": {
+                "frequency": frequency
+            }
+        }
+    }
+    policy['backupPolicy']['regular']['retention'] = {
+        "unit": retentionunit.title(),
+        "duration": retention
+    }
+    result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
 
 # add extend retention
 if action == 'addextension':
