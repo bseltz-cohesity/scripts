@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2022.03.11
+# version 2022.04.12
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -14,12 +14,14 @@ import codecs
 ### command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
 parser.add_argument('-v2', '--vip2', type=str, default=None)
 parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
 parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-p', '--password', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-c', '--clustername', type=str, default=None)
 parser.add_argument('-j', '--jobName', type=str, required=True)
 parser.add_argument('-j2', '--jobName2', type=str, default=None)
 parser.add_argument('-y', '--usepolicy', action='store_true')
@@ -49,7 +51,10 @@ vip = args.vip
 vip2 = args.vip2
 username = args.username
 domain = args.domain
+useApiKey = args.useApiKey
 password = args.password
+clustername = args.clustername
+mcm = args.mcm
 jobName = args.jobName
 jobName2 = args.jobName2
 keepLocalFor = args.keepLocalFor
@@ -61,7 +66,6 @@ enable = args.enable
 wait = args.wait
 backupType = args.backupType
 objectnames = args.objectname
-useApiKey = args.useApiKey
 usepolicy = args.usepolicy
 localonly = args.localonly
 noreplica = args.noreplica
@@ -103,7 +107,20 @@ def bail(code=0):
 
 
 ### authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+# authenticate
+if mcm:
+    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=True)
+else:
+    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+
+# if connected to helios or mcm, select to access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    if clustername is not None:
+        heliosCluster(clustername)
+    else:
+        print('-clustername is required when connecting to Helios or MCM')
+        exit()
+
 if apiconnected() is False and vip2 is not None:
     out('\nFailed to connect to %s. Trying %s...' % (vip, vip2))
     apiauth(vip=vip2, username=username, domain=domain, password=password, useApiKey=useApiKey)

@@ -40,6 +40,7 @@ Place both files in a folder together and run the main script like so:
 * -i, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password of API key
 * -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) helios/mcm cluster to connect to
 * -s, --sourcename: IP or FQDN of protection source to register
 * -j, --jobname: Name of protection group to create
 * -p, --policyname: Name of protection policy to use

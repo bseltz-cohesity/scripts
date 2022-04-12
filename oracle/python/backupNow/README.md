@@ -41,6 +41,9 @@ Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/prote
 * -u, --username: short username to authenticate to the cluster (default is helios)
 * -d, --domain: (optional) active directory domain of user (default is local)
 * -i, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: (optional) password of API key
+* -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) helios/mcm cluster to connect to
 * -j, --jobname: name of protection job to run
 * -o, --objectname: (optional) name of object to backup (repeat this parameter for multiple objects)
 * -l, --localonly: (optional) skip replicas and archivals
@@ -58,6 +61,8 @@ Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/prote
 * -f, --logfile: (optional) filename to log output
 * -n, --waitminutesifrunning: (optional) exit after X minutes if job is already running (default is 60)
 * -cp, --cancelpreviousrunminutes: (optional) cancel previous job run if it's been running for X minutes
+* -nrt, --newruntimeoutsecs: (optional) exit after X seconds if new run fails to start (default is 180)
+* -debug, --debug: (optional) display verbose error and state messages
 
 ## Using -o (--objectname) Parameter
 
