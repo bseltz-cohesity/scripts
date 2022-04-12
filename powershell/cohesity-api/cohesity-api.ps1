@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.04.12 - Brian Seltzer
+#  Version 2022.04.12b - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2021.02.10 - fixed empty body issue
@@ -23,7 +23,7 @@
 # 2022.02.04 - added support for V2 session authentiation
 # 2022.02.10 - fixed bad password handling
 # 2022.02.17 - disabled pwfile autodeletion
-# 2022.04.12 - updated importStoredPassword error handling
+# 2022.04.12 - updated importStoredPassword error handling and case insensitive api method
 #
 # . . . . . . . . . . . . . . . . . . .
 $versionCohesityAPI = '2022.04.12'
@@ -477,7 +477,7 @@ function api($method,
             Write-Host "Cluster connection is READ-ONLY" -ForegroundColor Yellow
             break
         }
-        if(-not $methods.Contains($method)){
+        if($method -notin $methods){
             if($cohesity_api.reportApiErrors){
                 Write-Host "invalid api method: $method" -foregroundcolor yellow
             }
