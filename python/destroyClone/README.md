@@ -27,9 +27,13 @@ Place both files in a folder together and run the main script like so:
 
 ## Parameters
 
-* -v, --vip: Cohesity cluster name or IP
-* -u, --username: Cohesity Username
-* -d, --domain: Cohesity User Domain
+* -v, --vip: name of Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: short username to authenticate to the cluster (default is helios)
+* -d, --domain: (optional) active directory domain of user (default is local)
+* -k, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: (optional) password of API key
+* -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) helios/mcm cluster to connect to
 * -t, --clonetype: vm, sql, oracle, view, or oracle_view
 * -o, --objectname: name of vm, database or view
 * -s, --server: name of database server (required when tearing down a database)
