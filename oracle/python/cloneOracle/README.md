@@ -36,16 +36,20 @@ Place both files in a folder together and run the main script like so:
 
 The script takes the following parameters:
 
-* -v, --vip: Cohesity cluster name or IP
-* -u, --username: Cohesity Username
-* -d, --domain: Cohesity User Domain
+* -v, --vip: name of Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: short username to authenticate to the cluster (default is helios)
+* -d, --domain: (optional) active directory domain of user (default is local)
+* -i, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: (optional) password of API key
+* -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) helios/mcm cluster to connect to
 * -ss, --sourceserver: name of source oracle server
 * -sd, --sourcedb: name of source oracle DB
 * -ts, --targetserver: name of target oracle server
 * -td, --targetdb: name of target oracle DB
 * -oh, --oraclehome: oracle home path on target
 * -ob, --oraclebase: oracle base path on target
-* -c, --channels: number of restore channels
+* -ch, --channels: number of restore channels
 * -cn, --channelnode: rac node for channels
 * -lt, --logtime: point in time to replay the logs to
 * -l, --latest: replay logs to latest available point in time
