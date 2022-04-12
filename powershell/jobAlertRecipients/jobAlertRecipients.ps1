@@ -8,8 +8,14 @@ param (
     [Parameter()][array]$jobList,
     [Parameter()][string]$jobType,
     [Parameter()][array]$addAddress,
-    [Parameter()][array]$removeAddress
+    [Parameter()][array]$removeAddress,
+    [Parameter()][switch]$alertOnSLA
 )
+
+$runStatus = @('kFailure')
+if($alertOnSLA){
+    $runStatus = @('kFailure', 'kSlaViolation')
+}
 
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -38,10 +44,8 @@ function gatherList($paramName, $textFileName=$null){
 
 $jobNames = gatherList $jobName $jobList
 
-# $cluster = api get cluster
-"Modifying email recipients:"
+"Modifying alert settings:"
 $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true"
-# $jobs = api get protectionJobs | Where-Object {$_.isDeleted -ne $true -and $_.isActive -ne $false}
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         if(!$jobType -or $job.environment.substring(1) -eq $jobType){
@@ -54,17 +58,23 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                         $jobEdited = $True
                     }
                 }
+                if($alertOnSLA){
+                    if('kSlaViolation' -notin $job.alertPolicy.backupRunStatus){
+                        $job.alertPolicy.backupRunStatus = @($runStatus)
+                        $jobEdited = $True
+                    }
+                }
             }else{
-                setApiProperty -object $job -name alertPolicy -value @{"backupRunStatus" = @("kFailure"); "alertTargets" = @()}
+                setApiProperty -object $job -name alertPolicy -value @{"backupRunStatus" = @($runStatus); "alertTargets" = @()}
             }
             foreach($address in $addAddress){
                 $address = [string]$address
                 if(!($address -in $job.alertPolicy.alertTargets.emailAddress)){
-                    $job.alertPolicy.alertTargets = $job.alertPolicy.alertTargets + @{
+                    $job.alertPolicy.alertTargets = @($job.alertPolicy.alertTargets + @{
                         "emailAddress"  = $address;
                         "locale"        = "en-us";
                         "recipientType" = "kTo"
-                    }
+                    })
                     $jobEdited = $True
                 }
             }

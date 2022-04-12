@@ -46,3 +46,4 @@ Place the files in a folder together and run the main script like so:
 * -jobType: (optional) filter on job type (e.g. GenericNas, O365, VMware)
 * -addAddress: (optional) one or more email addresses to add (comma separated)
 * -removeAddress: (optional) one or more email addresses to add (comma separated)
+* -alertOnSLA: (optional) enable alerts on SLA violation  
