@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.02.17 - Brian Seltzer
+#  Version 2022.04.12 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2021.02.10 - fixed empty body issue
@@ -23,9 +23,10 @@
 # 2022.02.04 - added support for V2 session authentiation
 # 2022.02.10 - fixed bad password handling
 # 2022.02.17 - disabled pwfile autodeletion
+# 2022.04.12 - updated importStoredPassword error handling
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2022.02.17'
+$versionCohesityAPI = '2022.04.12'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -820,14 +821,18 @@ function storePasswordForUser($vip='helios.cohesity.com', $username='helios', $d
 
 function importStoredPassword($vip='helios.cohesity.com', $username='helios', $domain='local', $key, $useApiKey=$false){
     $userFile = $(Join-Path -Path $PSScriptRoot -ChildPath "pw-$vip-$username-$domain.txt")
-    $keyBytes = [byte[]]($key -split(''))
-    $securePassword = Get-Content $userFile -ErrorAction SilentlyContinue | ConvertTo-SecureString -Key $keyBytes -ErrorAction SilentlyContinue
-    $passwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $securePassword ))
-    if($passwd){
-        $cohesity_api.pwscope = 'user'
-        $null = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -useApiKey $useApiKey -helios $helios -quiet
-        Remove-Item -Path $userFile -Force
-        Write-Host "Password imported successfully" -ForegroundColor Green
+    if(Test-Path -Path $userFile){
+        $keyBytes = [byte[]]($key -split(''))
+        $securePassword = Get-Content $userFile -ErrorAction SilentlyContinue | ConvertTo-SecureString -Key $keyBytes -ErrorAction SilentlyContinue
+        $passwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $securePassword ))
+        if($passwd){
+            $cohesity_api.pwscope = 'user'
+            $null = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -useApiKey $useApiKey -helios $helios -quiet
+            Remove-Item -Path $userFile -Force
+            Write-Host "Password imported successfully" -ForegroundColor Green
+        }else{
+            Write-Host "Password not accessible!" -ForegroundColor Yellow
+        }
     }else{
         Write-Host "Password not accessible!" -ForegroundColor Yellow
     }
