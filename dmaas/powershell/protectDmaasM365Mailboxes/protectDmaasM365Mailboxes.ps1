@@ -10,7 +10,8 @@ param (
     [Parameter()][string]$startTime = '20:00',  # e.g. 23:30 for 11:30 PM
     [Parameter()][string]$timeZone = 'America/New_York', # e.g. 'America/New_York'
     [Parameter()][int]$incrementalSlaMinutes = 60,  # incremental SLA minutes
-    [Parameter()][int]$fullSlaMinutes = 120  # full SLA minutes
+    [Parameter()][int]$fullSlaMinutes = 120,  # full SLA minutes
+    [Parameter()][int]$pageSize = 50000
 )
 
 # gather list of mailboxes to protect
@@ -72,15 +73,19 @@ if(!$usersNode){
 
 $nameIndex = @{}
 $smtpIndex = @{}
+$users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false"
 while(1){
     # implement pagination
-    $users = api get "protectionSources?pageSize=200000&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false"
     foreach($node in $users.nodes){
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
         $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
     }
-    break
-}
+    $cursor = $users.nodes[-1].protectionSource.id
+    $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false&afterCursorEntityId=$cursor"
+    if(!$users.PSObject.Properties['nodes'] -or $users.nodes.Count -eq 1){
+        break
+    }
+}  
 
 # configure protection parameters
 $protectionParams = @{

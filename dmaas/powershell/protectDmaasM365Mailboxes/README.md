@@ -44,6 +44,7 @@ Place both files in a folder together and run the main script like so:
 * -timeZone: (optional) e.g. 'America/New_York' (default is 'America/New_York')
 * -incrementalSlaMinutes: (optional) default 60
 * -fullSlaMinutes: (optional) default is 120
+* -pageSize: (optional) limit number of objects returned pr page (default is 50000)
 
 ## Authenticating to DMaaS
 
