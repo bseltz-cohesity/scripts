@@ -58,15 +58,28 @@ if(!$policy){
 }
 
 # find O365 source
-$source = (api get protectionSources?environments=kO365) | Where-Object {$_.protectionSource.name -eq $sourceName}
-if(!$source){
+$rootSource = api get protectionSources/rootNodes?environments=kO365 | Where-Object {$_.protectionSource.name -eq $sourceName}
+if(!$rootSource){
     Write-Host "O365 Source $sourceName not found" -ForegroundColor Yellow
     exit
 }
+$source = api get "protectionSources?id=$($rootSource.protectionSource.id)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false"
 $usersNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
-if(!$users){
+if(!$usersNode){
     Write-Host "Source $sourceName is not configured for O365 Mailboxes" -ForegroundColor Yellow
     exit
+}
+
+$nameIndex = @{}
+$smtpIndex = @{}
+while(1){
+    # implement pagination
+    $users = api get "protectionSources?pageSize=200000&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidOnedrive=true&allUnderHierarchy=false"
+    foreach($node in $users.nodes){
+        $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
+        $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
+    }
+    break
 }
 
 # configure protection parameters
@@ -95,10 +108,15 @@ $protectionParams = @{
 
 $usersAdded = 0
 $environmentMap = @{'Mailbox' = 'kO365Exchange'; 'OneDrive' = 'kO365OneDrive'}
-# find mailboxes
+# find users
 foreach($driveUser in $usersToAdd){
-    $user = $usersNode.nodes | Where-Object {$_.protectionSource.name -eq $driveUser -or $_.protectionSource.office365ProtectionSource.primarySMTPAddress -eq $driveUser}
-    if($user){
+    $userId = $null
+    if($smtpIndex.ContainsKey($driveUser)){
+        $userId = $smtpIndex[$driveUser]
+    }elseif($nameIndex.ContainsKey($driveUser)){
+        $userId = $nameIndex[$driveUser]
+    }
+    if($userId){
         $protectionParams.objects = @(@{
             "environment"     = "kO365OneDrive";
             "office365Params" = @{
@@ -106,7 +124,7 @@ foreach($driveUser in $usersToAdd){
                 "userOneDriveObjectProtectionParams" = @{
                     "objects"        = @(
                         @{
-                            "id" = $user.protectionSource.id
+                            "id" = $userId
                         }
                     );
                     "indexingPolicy" = @{
