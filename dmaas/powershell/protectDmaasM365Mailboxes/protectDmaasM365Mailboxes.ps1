@@ -58,15 +58,28 @@ if(!$policy){
 }
 
 # find O365 source
-$source = (api get "protectionSources?environments=kO365&excludeOffice365Types=kSites&excludeOffice365Types=kTeams") | Where-Object {$_.protectionSource.name -eq $sourceName}
-if(!$source){
+$rootSource = api get protectionSources/rootNodes?environments=kO365 | Where-Object {$_.protectionSource.name -eq $sourceName}
+if(!$rootSource){
     Write-Host "O365 Source $sourceName not found" -ForegroundColor Yellow
     exit
 }
-$users = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
-if(!$users){
+$source = api get "protectionSources?id=$($rootSource.protectionSource.id)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false"
+$usersNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
+if(!$usersNode){
     Write-Host "Source $sourceName is not configured for O365 Mailboxes" -ForegroundColor Yellow
     exit
+}
+
+$nameIndex = @{}
+$smtpIndex = @{}
+while(1){
+    # implement pagination
+    $users = api get "protectionSources?pageSize=200000&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false"
+    foreach($node in $users.nodes){
+        $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
+        $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
+    }
+    break
 }
 
 # configure protection parameters
@@ -97,8 +110,13 @@ $mailboxesAdded = 0
 
 # find mailboxes
 foreach($mailbox in $mailboxesToAdd){
-    $user = $users.nodes | Where-Object {$_.protectionSource.name -eq $mailbox -or $_.protectionSource.office365ProtectionSource.primarySMTPAddress -eq $mailbox}
-    if($user){
+    $userId = $null
+    if($smtpIndex.ContainsKey($mailbox)){
+        $userId = $smtpIndex[$mailbox]
+    }elseif($nameIndex.ContainsKey($mailbox)){
+        $userId = $nameIndex[$mailbox]
+    }
+    if($userId){
         $protectionParams.objects = @(@{
             "environment"     = "kO365Exchange";
             "office365Params" = @{
@@ -106,7 +124,7 @@ foreach($mailbox in $mailboxesToAdd){
                 "userMailboxObjectProtectionParams" = @{
                     "objects"        = @(
                         @{
-                            "id" = $user.protectionSource.id
+                            "id" = $userId
                         }
                     );
                     "indexingPolicy" = @{
@@ -125,4 +143,3 @@ foreach($mailbox in $mailboxesToAdd){
         Write-Host "Mailbox $mailbox not found" -ForegroundColor Yellow
     }
 }
-
