@@ -12,15 +12,18 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, required=True)       # cluster to connect to
 parser.add_argument('-u', '--username', type=str, required=True)  # username
 parser.add_argument('-d', '--domain', type=str, default='local')  # (optional) domain - defaults to local
-
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str)
 args = parser.parse_args()
 
 vip = args.vip
 username = args.username
 domain = args.domain
+password = args.password
+useApiKey = args.useApiKey
 
 # authenticate
-apiauth(vip, username, domain)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
 
 if apiconnected() is False:
     print('authentication failed')
