@@ -76,7 +76,7 @@ if($exportFileInfo){
             })
         }
     }
-    $fileInfoVec | ConvertTo-JSON -Depth 99 | Out-File -Path $exportFilePath
+    $fileInfoVec | ConvertTo-JSON -Depth 99 | Out-File -FilePath $exportFilePath
     "Exported file paths to $exportFilePath"
     exit 0
 }
