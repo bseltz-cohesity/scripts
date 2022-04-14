@@ -365,11 +365,7 @@ function restoreDB($db){
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['dataFileDestination'] = $mdfFolder;
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['logFileDestination'] = $ldfFolder;
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['secondaryDataFileDestinationVec'] = $secondaryFileLocation;
-        if($targetDBName -ne $sourceDBname){
-            $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['newDatabaseName'] = $targetDBname;
-        }else{
-            $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['newDatabaseName'] = $null
-        }
+        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['newDatabaseName'] = $targetDBname;
         # Write-Host "** Restoring $targetDBName to $mdfFolder"
     }
 
@@ -387,7 +383,7 @@ function restoreDB($db){
     }
 
     ### search for target server
-    if($targetServer -ne $sourceServer -or $differentInstance){
+    if($targetServer -ne $sourceServer -or $differentInstance -or $forceAlternateLocation){
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams['targetHost'] = $targetEntity.appEntity.entity;
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams['targetHostParentSource'] = @{ 'id' = $targetEntity.appEntity.entity.parentId }
         if($targetInstance){
