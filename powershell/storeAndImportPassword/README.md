@@ -24,7 +24,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 Place both files in a folder together and run the main script like so:
 
-To store a password:
+To store a password or API Key:
 
 ```powershell
 ./storeAndImportPassword.ps1 -vip mycluster `
@@ -32,7 +32,7 @@ To store a password:
                              -domain mydomain.net
 ```
 
-You will be prompted for the password to store. The output will display a key that will be used later to import the password. The password is stored encrypted and can be decrypted using the key during import.
+You will be prompted for the password (or API Key) to store. The output will display a key that will be used later to import the password. The password is stored encrypted and can be decrypted using the key during import.
 
 To import a password:
 
@@ -44,14 +44,28 @@ To import a password:
                              -key somekey
 ```
 
+To import a password:
+
+```powershell
+./storeAndImportPassword.ps1 -vip mycluster `
+                             -username myusername `
+                             -domain mydomain.net `
+                             -import `
+                             -key somekey `
+                             -useApiKey
+```
+
 Use the key generated in step 1. This will decrypt the password and import it into user password storage.
 
-## Parameters
+## General Parameters
 
 * -vip: Cohesity cluster to connect to
 * -username: Cohesity username (e.g. admin)
 * -domain: (optional) Active Directory domain (defaults to 'local')
-* -useApiKey: (optional) use API Key for authentication
 * -password: (optional) will prompt if omitted
-* -import: (optional) perform an import (default mode is to store a password)
-* -key: (optional) key for import
+
+## Import Parameters
+
+* -import: perform an import (default mode is to store a password)
+* -useApiKey: required when importing an API Key
+* -key: key for import
