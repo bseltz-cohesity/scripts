@@ -367,6 +367,8 @@ function restoreDB($db){
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['secondaryDataFileDestinationVec'] = $secondaryFileLocation;
         if($targetDBName -ne $sourceDBname){
             $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['newDatabaseName'] = $targetDBname;
+        }else{
+            $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['newDatabaseName'] = $null
         }
         # Write-Host "** Restoring $targetDBName to $mdfFolder"
     }
