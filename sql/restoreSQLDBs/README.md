@@ -76,6 +76,9 @@ Place both files in a folder together and run the main script like so:
 * -noRecovery: Restore the DB with NORECOVER option (default is to recover)
 * -showPaths: show data/log file paths and exit
 * -useSourcePaths: use same paths to restore to target server
+* -exportFileInfo: export DB file path info and exit (file name is sourceserver.json)
+* -importFileInfo: import DB file path info (use in conjunction with -useSourcePaths)
+* -forceAlternateLocation: populate alternate location params even when target server name is the same
 
 ### Misc Parameters
 

@@ -36,7 +36,10 @@ param (
     [Parameter()][switch]$noStop,                          # replay last log transactions
     [Parameter()][switch]$showPaths,                       # show data file paths and exit
     [Parameter()][switch]$useSourcePaths,                  # use same paths from source server for target server
-    [Parameter()][switch]$includeSystemDBs                 # use same paths from source server for target server
+    [Parameter()][switch]$includeSystemDBs,                # experimental
+    [Parameter()][switch]$forceAlternateLocation,          # use alternate location params even when target server name is the same
+    [Parameter()][switch]$exportFileInfo,                  # export DB file paths
+    [Parameter()][switch]$importFileInfo                   # import DB file paths
 )
 
 ### source the cohesity-api helper code
@@ -47,6 +50,43 @@ if($useApiKey){
     apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
 }else{
     apiauth -vip $vip -username $username -domain $domain -password $password
+}
+
+$exportFilePath = Join-Path -Path $PSScriptRoot -ChildPath "$sourceServer.json"
+
+### exportFileInfo
+if($exportFileInfo){
+    $entities = api get "/appEntities?appEnvType=3&envType=3"
+
+    $sourceEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $sourceServer }
+    if($null -eq $sourceEntity){
+        Write-Host "Source Server Not Found" -ForegroundColor Yellow
+        exit 1
+    }
+    
+    $fileInfoVec = @()
+    
+    foreach($instance in $sourceEntity.appEntity.auxChildren){
+        foreach($database in $instance.children){
+            $dbName = $database.entity.displayName
+            $fileInfo = $database.entity.sqlEntity.dbFileInfoVec
+            $fileInfoVec = @($fileInfoVec + @{
+                'name' = $dbName
+                'fileInfo' = $fileInfo
+            })
+        }
+    }
+    $fileInfoVec | ConvertTo-JSON -Depth 99 | Out-File -Path $exportFilePath
+    "Exported file paths to $exportFilePath"
+    exit 0
+}
+
+if($importFileInfo){
+    if(!(Test-Path -Path $exportFilePath)){
+        Write-Host "Import file $exportFilePath not found" -ForegroundColor Yellow
+        exit 1
+    }
+    $importedFileInfo = Get-Content -Path $exportFilePath | ConvertFrom-JSON -Depth 99
 }
 
 ### gather DB names
@@ -111,7 +151,7 @@ $entityType = $dbresults[0].registeredSource.type
 $entities = api get /appEntities?appEnvType=3`&envType=$entityType
 
 ### get target server entity
-if($targetServer -ne $sourceServer){
+if(($targetServer -ne $sourceServer) -or $forceAlternateLocation){
     $targetEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $targetServer }
     if($null -eq $targetEntity){
         Write-Host "Target Server Not Found" -ForegroundColor Yellow
@@ -125,7 +165,7 @@ if($targetInstance -ne '' -and $targetInstance -ne $sourceInstance){
     $differentInstance = $False
 }
 
-if($prefix -or $suffix -or $targetServer -ne $sourceServer -or $differentInstance){
+if($prefix -or $suffix -or $targetServer -ne $sourceServer -or $differentInstance -or $forceAlternateLocation){
     if('' -eq $mdfFolder -and ! $showPaths -and ! $useSourcePaths){
         write-host "-mdfFolder must be specified when restoring to a new database name or different target server" -ForegroundColor Yellow
         exit 1
@@ -283,12 +323,23 @@ function restoreDB($db){
     ### if not restoring to original server/DB
     $targetDBname = "$prefix$sourceDBname$suffix"
 
-    if($targetDBname -ne $sourceDBname -or $targetServer -ne $sourceServer -or $differentInstance){
+    if($targetDBname -ne $sourceDBname -or $targetServer -ne $sourceServer -or $differentInstance -or $forceAlternateLocation){
         $secondaryFileLocation = @()
         if($useSourcePaths){
+            if($importFileInfo){
+                $importedDBFileInfo = $importedFileInfo | Where-Object {$_.name -eq $db.vmDocument.objectName}
+                if($importedDBFileInfo){
+                    $dbFileInfoVec = $importedDBFileInfo.fileInfo                    
+                }else{
+                    Write-Host "No imported file info found for $($db.vmDocument.objectName)"
+                    exit 1
+                }
+            }else{
+                $dbFileInfoVec = $db.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec
+            }
             $mdfFolderFound = $False
             $ldfFolderFound = $False
-            foreach($datafile in $db.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec){
+            foreach($datafile in $dbFileInfoVec){
                 $path = $datafile.fullPath.subString(0, $datafile.fullPath.LastIndexOf('\'))
                 $fileName = $datafile.fullPath.subString($datafile.fullPath.LastIndexOf('\') + 1)
                 if($datafile.type -eq 0){
@@ -307,11 +358,15 @@ function restoreDB($db){
                 }
             }
         }
+        if($mdfFolderFound -eq $False){
+            Write-Host "No path information found for $($db.vmDocument.objectName)" -ForegroundColor Yellow
+            exit 1
+        }
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['dataFileDestination'] = $mdfFolder;
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['logFileDestination'] = $ldfFolder;
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['secondaryDataFileDestinationVec'] = $secondaryFileLocation;
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['newDatabaseName'] = $targetDBname;
-        Write-Host "** Restoring $targetDBName to $mdfFolder"
+        # Write-Host "** Restoring $targetDBName to $mdfFolder"
     }
 
     ### apply log replay time
@@ -398,7 +453,8 @@ foreach($db in $dbresults){
         if($includeSystemDBs -or ($n -notin @('master', 'model', 'msdb', 'tempdb'))){
             if($showPaths){
                 Write-Host "`n$dbname"
-                $db.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec | Format-Table -Property logicalName, @{l='Size (MiB)'; e={$_.sizeBytes / (1024 * 1024)}}, fullPath
+                $db.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec | convertto-json -depth 99
+                # $db.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec | Format-Table -Property logicalName, @{l='Size (MiB)'; e={$_.sizeBytes / (1024 * 1024)}}, fullPath
             }else{
                 restoreDB($db)
             }
