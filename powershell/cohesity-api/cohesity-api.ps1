@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.04.12b - Brian Seltzer
+#  Version 2022.04.14 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2021.02.10 - fixed empty body issue
@@ -24,9 +24,10 @@
 # 2022.02.10 - fixed bad password handling
 # 2022.02.17 - disabled pwfile autodeletion
 # 2022.04.12 - updated importStoredPassword error handling and case insensitive api method
+# 2022.04.14 - fix store and import - support domain\username convention
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2022.04.12'
+$versionCohesityAPI = '2022.04.14'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -797,6 +798,9 @@ function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $do
 }
 
 function storePasswordForUser($vip='helios.cohesity.com', $username='helios', $domain='local', $passwd=$null){
+    if($username.Contains('\')){
+        $domain, $username = $username.Split('\')
+    }
     $userFile = $(Join-Path -Path $PSScriptRoot -ChildPath "pw-$vip-$username-$domain.txt")
     $keyString = (Get-Random -Minimum 10000000000000 -Maximum 99999999999999).ToString()
     $keyBytes = [byte[]]($keyString -split(''))
