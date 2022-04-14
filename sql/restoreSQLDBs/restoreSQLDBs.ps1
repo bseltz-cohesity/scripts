@@ -86,7 +86,7 @@ if($importFileInfo){
         Write-Host "Import file $exportFilePath not found" -ForegroundColor Yellow
         exit 1
     }
-    $importedFileInfo = Get-Content -Path $exportFilePath | ConvertFrom-JSON -Depth 99
+    $importedFileInfo = Get-Content -Path $exportFilePath | ConvertFrom-JSON
 }
 
 ### gather DB names
@@ -452,9 +452,19 @@ foreach($db in $dbresults){
         $i, $n = $dbname -split '/'
         if($includeSystemDBs -or ($n -notin @('master', 'model', 'msdb', 'tempdb'))){
             if($showPaths){
+                if($importFileInfo){
+                    $importedDBFileInfo = $importedFileInfo | Where-Object {$_.name -eq $db.vmDocument.objectName}
+                    if($importedDBFileInfo){
+                        $dbFileInfoVec = $importedDBFileInfo.fileInfo                    
+                    }else{
+                        Write-Host "No imported file info found for $($db.vmDocument.objectName)"
+                        exit 1
+                    }
+                }else{
+                    $dbFileInfoVec = $db.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec
+                }
                 Write-Host "`n$dbname"
-                $db.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec | convertto-json -depth 99
-                # $db.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec | Format-Table -Property logicalName, @{l='Size (MiB)'; e={$_.sizeBytes / (1024 * 1024)}}, fullPath
+                $dbFileInfoVec | Format-Table -Property logicalName, @{l='Size (MiB)'; e={$_.sizeBytes / (1024 * 1024)}}, fullPath
             }else{
                 restoreDB($db)
             }
