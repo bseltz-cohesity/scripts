@@ -263,7 +263,7 @@ foreach($application in $applications){
 
 if($createSMBUser){
     foreach($vServer in $vServers){
-        "vServer $($vServer): Creating CIFS user $cohesityUsername..."
+        "$($vServer): Creating CIFS user $cohesityUsername..."
         $netAppConnection = Connect-NcController -Name $netapp -HTTPS -Vserver $vServer -Credential $netAppCreds
         $newUser = New-NcCifsLocalUser -UserName $cohesityUsername -Password $secureCohesityPassword -FullName $cohesityUsername -VserverContext $vServer -Description 'cohesity_user'
     
