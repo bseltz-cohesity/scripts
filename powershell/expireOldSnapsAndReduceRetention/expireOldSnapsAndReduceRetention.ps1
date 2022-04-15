@@ -46,6 +46,8 @@ if($daysBack -gt 0){
     $daysBackUsecs = ($cluster.createdTimeMsecs * 1000)
 }
 
+$daysToKeepUsecs = timeAgo $daysToKeep days
+
 # find protectionRuns that are older than daysToKeep
 "Searching for old snapshots..."
 
@@ -72,7 +74,7 @@ foreach ($job in $jobs | Sort-Object -Property name) {
             }
             $startdate = usecstodate $run.copyRun[0].runStartTimeUsecs
             $startdateusecs = $run.copyRun[0].runStartTimeUsecs
-            if ($startdateusecs -lt $(timeAgo $daysToKeep days) ) {
+            if ($startdateusecs -lt $daysToKeepUsecs) {
                 ### if -expire switch is set, expire the local snapshot
                 if ($expire) {
                     $exactRun = api get /backupjobruns?exactMatchStartTimeUsecs=$startdateusecs`&id=$jobId
