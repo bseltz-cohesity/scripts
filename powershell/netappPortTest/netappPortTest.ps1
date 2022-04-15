@@ -100,7 +100,7 @@ function portTest($service, $ipAddress){
 
 Write-Host "`nPerforming Port Test..."
 
-foreach($interface in $interfaces.records){
+foreach($interface in $interfaces.records | Sort-Object -Property name){
     $ipAddress = $interface.ip.address
     $portScope = 'cluster'
     if($interface.scope -eq 'svm'){
