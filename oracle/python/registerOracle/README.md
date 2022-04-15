@@ -34,8 +34,12 @@ Place both files in a folder together and run the main script like so:
 
 ## Parameters
 
-* -v, --vip: DNS or IP of the Cohesity cluster to connect to
-* -u, --username: username to authenticate to Cohesity cluster
-* -d, --domain: (optional) domain of username, defaults to local
+* -v, --vip: name of Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: short username to authenticate to the cluster (default is helios)
+* -d, --domain: (optional) active directory domain of user (default is local)
+* -i, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: (optional) password of API key
+* -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) helios/mcm cluster to connect to
 * -s, --servername: (optional) name of server to register. Repeat parameter to register multiple servers
 * -l, --serverlist: (optional) text file of server names to register (one per line)

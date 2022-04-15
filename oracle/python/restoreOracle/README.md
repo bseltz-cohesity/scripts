@@ -37,12 +37,16 @@ Place both files in a folder together and run the main script like so:
 
 ## Parameters
 
-* -v, --vip: Cohesity cluster name or IP
-* -u, --username: Cohesity Username
-* -d, --domain: Cohesity User Domain
+* -v, --vip: name of Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: short username to authenticate to the cluster (default is helios)
+* -d, --domain: (optional) active directory domain of user (default is local)
+* -i, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: (optional) password of API key
+* -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) helios/mcm cluster to connect to
 * -ss, --sourceserver: name of source oracle server
 * -sd, --sourcedb: name of source oracle DB
-* -c, --channels: number of restore channels (default is 1)
+* -ch, --channels: number of restore channels (default is 1)
 * -cn, --channelnode: rac node for channels
 * -o, --overwrite: overwrite existing database
 * -n, --norecovery: leave database in no recovery mode

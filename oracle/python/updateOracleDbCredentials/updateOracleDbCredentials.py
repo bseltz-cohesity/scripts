@@ -7,9 +7,13 @@ from pyhesity import *
 ### command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)
-parser.add_argument('-u', '--username', type=str, required=True)
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-s', '--oracleserver', type=str, required=True)
 parser.add_argument('-o', '--oracleuser', type=str, required=True)
 parser.add_argument('-p', '--oraclepwd', type=str, required=True)
@@ -19,12 +23,27 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
+clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
 oracleserver = args.oracleserver
 oracleuser = args.oracleuser
 oraclepwd = args.oraclepwd
 
 ### authenticate
-apiauth(vip, username, domain)
+if mcm:
+    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=True)
+else:
+    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+
+### if connected to helios or mcm, select to access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    if clustername is not None:
+        heliosCluster(clustername)
+    else:
+        print('-clustername is required when connecting to Helios or MCM')
+        exit()
 
 sources = api('get', '/backupsources?envTypes=19')
 

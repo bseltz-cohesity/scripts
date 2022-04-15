@@ -65,15 +65,19 @@ Place both files in a folder together and run the main script like so:
 
 ## Parameters
 
-* -v, --vip: Cohesity cluster name or IP
-* -u, --username: Cohesity Username
-* -d, --domain: Cohesity User Domain (optional: default is local)
+* -v, --vip: name of Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: short username to authenticate to the cluster (default is helios)
+* -d, --domain: (optional) active directory domain of user (default is local)
+* -i, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: (optional) password of API key
+* -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) helios/mcm cluster to connect to
 * -s, --servername: name of source oracle server
 * -db, --dbname: name of oracle DB (optional: default is all databases)
 * -j, --jobname: name of protection job
 * -p, --policyname: name of protection policy (optional: only required if job doesn't already exist)
 * -t, --starttime: e.g. '21:00' (optional: default is 20:00)
 * -z, --timezone: e.g. 'America/Los_Angeles' (optional: default is America/New_York)
-* -i, --incrementalsla: (optional: default is 60)
-* -f, --fullsla: (optional: default is 120)
+* -is, --incrementalsla: (optional: default is 60)
+* -fs, --fullsla: (optional: default is 120)
 * -sd, --storagedomain: (optional: default is DefaultStorageDomain)

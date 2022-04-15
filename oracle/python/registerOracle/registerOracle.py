@@ -4,9 +4,13 @@ from pyhesity import *
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)           # cluster to connect to
-parser.add_argument('-u', '--username', type=str, default='helios')   # admin user to do the work
-parser.add_argument('-d', '--domain', type=str, default='local')      # domain of admin user
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
+parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-s', '--servername', action='append', type=str)  # server name to register
 parser.add_argument('-l', '--serverlist', type=str, default=None)     # text list of servers to register
 
@@ -15,11 +19,26 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
+clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
 servernames = args.servername
 serverlist = args.serverlist
 
 # authenticate
-apiauth(vip, username, domain)
+if mcm:
+    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=True)
+else:
+    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+
+### if connected to helios or mcm, select to access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    if clustername is not None:
+        heliosCluster(clustername)
+    else:
+        print('-clustername is required when connecting to Helios or MCM')
+        exit()
 
 # read server file
 if servernames is None:

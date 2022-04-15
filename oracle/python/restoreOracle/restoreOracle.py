@@ -20,9 +20,13 @@ from time import sleep
 # command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)  # Cohesity cluster name or IP
-parser.add_argument('-u', '--username', type=str, required=True)  # Cohesity Username
-parser.add_argument('-d', '--domain', type=str, default='local')  # Cohesity User Domain
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
+parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-ss', '--sourceserver', type=str, required=True)  # name of source oracle server
 parser.add_argument('-sd', '--sourcedb', type=str, required=True)  # name of source oracle DB
 parser.add_argument('-ts', '--targetserver', type=str, default=None)  # name of target oracle server
@@ -30,7 +34,7 @@ parser.add_argument('-td', '--targetdb', type=str, default=None)  # name of targ
 parser.add_argument('-oh', '--oraclehome', type=str, default=None)  # oracle home path on target
 parser.add_argument('-ob', '--oraclebase', type=str, default=None)  # oracle base path on target
 parser.add_argument('-od', '--oracledata', type=str, default=None)  # oracle data path on target
-parser.add_argument('-c', '--channels', type=int, default=1)  # number of restore channels
+parser.add_argument('-ch', '--channels', type=int, default=1)  # number of restore channels
 parser.add_argument('-cn', '--channelnode', type=str, default=None)  # oracle data path on target
 parser.add_argument('-cf', '--controlfile', type=str, action='append')  # alternate ctl file path
 parser.add_argument('-r', '--redologpath', type=str, action='append')  # alternate redo log path
@@ -52,6 +56,10 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
+clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
 sourceserver = args.sourceserver
 sourcedb = args.sourcedb
 
@@ -103,7 +111,18 @@ if targetdb == sourcedb and targetserver == sourceserver:
         exit(1)
 
 # authenticate
-apiauth(vip, username, domain)
+if mcm:
+    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=True)
+else:
+    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+
+### if connected to helios or mcm, select to access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    if clustername is not None:
+        heliosCluster(clustername)
+    else:
+        print('-clustername is required when connecting to Helios or MCM')
+        exit()
 
 # search for view to clone
 searchResults = api('get', '/searchvms?entityTypes=kOracle&vmName=%s' % sourcedb)

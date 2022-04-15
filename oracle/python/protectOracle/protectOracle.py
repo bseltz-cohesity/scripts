@@ -17,9 +17,13 @@ from pyhesity import *
 ### command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)       # Cohesity cluster name or IP
-parser.add_argument('-u', '--username', type=str, required=True)  # Cohesity Username
-parser.add_argument('-d', '--domain', type=str, default='local')  # Cohesity User Domain
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
+parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-j', '--jobname', type=str, required=True)   # name of protection job
 parser.add_argument('-p', '--policyname', type=str)               # name of protection policy
 parser.add_argument('-s', '--servername', type=str, required=True)  # name of server to protect
@@ -35,6 +39,10 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
+clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
 jobname = args.jobname
 policyname = args.policyname
 servername = args.servername
@@ -53,7 +61,18 @@ except Exception:
     exit(1)
 
 # authenticate
-apiauth(vip, username, domain)
+if mcm:
+    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=True)
+else:
+    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+
+### if connected to helios or mcm, select to access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    if clustername is not None:
+        heliosCluster(clustername)
+    else:
+        print('-clustername is required when connecting to Helios or MCM')
+        exit()
 
 # find storage domain
 sd = [sd for sd in api('get', 'viewBoxes') if sd['name'].lower() == storagedomain.lower()]
