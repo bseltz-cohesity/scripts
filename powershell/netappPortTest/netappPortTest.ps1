@@ -89,10 +89,18 @@ $servicePorts = @{
 function portTest($service, $ipAddress){
     if($serviceText.ContainsKey($service)){
         foreach($port in $servicePorts[$service]){
-            if(Test-Connection -TargetName $ipAddress -TcpPort $port){
-                Write-Host "  $($serviceText[$service]) ($port):`tOK" -foregroundcolor Green
+            if($PSVersionTable.PSEdition -eq 'Desktop'){
+                if(Test-NetConnection -ComputerName $ipAddress -Port $port -InformationLevel Quiet){
+                    Write-Host "  $($serviceText[$service]) ($port):`tOK" -foregroundcolor Green
+                }else{
+                    Write-Host "  $($serviceText[$service]) ($port):`tNo Response" -foregroundcolor Yellow
+                }
             }else{
-                Write-Host "  $($serviceText[$service]) ($port):`tNo Response" -foregroundcolor Yellow
+                if(Test-Connection -TargetName $ipAddress -TcpPort $port){
+                    Write-Host "  $($serviceText[$service]) ($port):`tOK" -foregroundcolor Green
+                }else{
+                    Write-Host "  $($serviceText[$service]) ($port):`tNo Response" -foregroundcolor Yellow
+                }
             }
         }
     }
