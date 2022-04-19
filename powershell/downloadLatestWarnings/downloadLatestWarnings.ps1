@@ -22,10 +22,16 @@ if($group){
             foreach($obj in $run.objects){
                 $objName = $obj.object.name
                 $objId = $obj.object.id
-                if($obj.localSnapshotInfo.snapshotInfo.PSObject.Properties['warnings']){
-                    $thisFile = "$($group.name)-" + $objName.replace("\","-").replace("/","-").replace(":","-") + "-warnings.txt"
+                if($obj.localSnapshotInfo.snapshotInfo.PSObject.Properties['warnings'] -and $obj.localSnapshotInfo.snapshotInfo.warnings.Count -gt 0){
+                    $thisFile = "$($group.name)-" + $objName.replace("\","-").replace("/","-").replace(":","-").replace(" ","-") + "-warnings.txt"
                     write-host "Downloading warnings for $objName to $thisFile"
-                    fileDownload -v2 -uri "data-protect/protection-groups/$($group.id)/runs/$($group.lastRun.id)/objects/$objId/downloadMessages" -fileName $thisFile
+                    $result = fileDownload -v2 -uri "data-protect/protection-groups/$($group.id)/runs/$($group.lastRun.id)/objects/$objId/downloadMessages" -fileName $thisFile
+                    $resultObj = $result | ConvertFrom-Json
+                    if($resultObj.PSObject.Properties['errorCode']){
+                        foreach($warning in $obj.localSnapshotInfo.snapshotInfo.warnings){
+                            $warning | Out-File -FilePath $thisFile -Append
+                        }
+                    }
                 }
             }
         }
