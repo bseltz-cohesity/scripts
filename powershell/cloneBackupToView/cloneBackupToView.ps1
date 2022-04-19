@@ -282,7 +282,7 @@ foreach($run in $runs){
     foreach($sourceInfo in $run.backupRun.sourceBackupStatus){
         if(!$objectName -or $sourceInfo.source.name -eq $objectName){
             $thisObjectName = $sourceInfo.source.name
-            if($sourceInfo.status -in @('kSuccess', 'kWarning')){
+            if($sourceInfo.status -in @('kSuccess', 'kWarning', '4', '6')){
                 $sourceView = $sourceInfo.currentSnapshotInfo.viewName
                 $x = $attemptNum = 1
                 if($sourceInfo.currentSnapshotInfo.PSObject.Properties['relativeSnapshotDirectory']){
