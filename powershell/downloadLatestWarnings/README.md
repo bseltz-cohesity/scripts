@@ -36,4 +36,4 @@ Place both files in a folder together, then we can run the script.
 * -vip: Cohesity cluster to connect to
 * -username: Cohesity username (e.g. admin)
 * -domain: (optional) Active Directory domain (defaults to 'local')
-* -jobname: Name of protection job
+* -jobname: (optional) Name of protection job (default is all jobs)
