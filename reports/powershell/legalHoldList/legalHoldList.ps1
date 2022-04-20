@@ -47,7 +47,7 @@ foreach ($job in $jobs | Sort-Object -Property name) {
         if($endUsecs -le $daysBackUsecs){
             break
         }
-        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&endTimeUsecs=$endUsecs&excludeTasks=false&excludeNonRestoreableRuns=true" | Where-Object {$_.backupRun.stats.endTimeUsecs -lt $endUsecs}
+        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&endTimeUsecs=$endUsecs&excludeTasks=true&excludeNonRestoreableRuns=true" | Where-Object {$_.backupRun.stats.endTimeUsecs -lt $endUsecs}
         if($runs){
             $endUsecs = $runs[-1].backupRun.stats.startTimeUsecs
         }else{
