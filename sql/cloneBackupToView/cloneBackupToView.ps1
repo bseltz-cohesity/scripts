@@ -296,7 +296,7 @@ foreach($run in $runs){
                     if($sourceInfo.currentSnapshotInfo.PSObject.Properties['relativeSnapshotDirectory']){
                         $sourcePath = "$sourcePathPrefix$($x)"
                     }
-                    $destinationPath = "$thisObjectName-$((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss"))-$($run.backupRun.runType.substring(1))-$x"
+                    $destinationPath = "$thisObjectName---$((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss"))-$($run.backupRun.runType.substring(1))-$x"
                     $runDate = (usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss")
                 
                     # clone snapshot directory
@@ -350,6 +350,9 @@ if($consolidate -or $targetPath){
             $instance, $dbid, $createmsecs, $dbname = $folder.Name.split('_',4)
     
             foreach($file in $files){
+                if(! $dbname){
+                    $dbname = $file.Directory.Name.split('---')[0]
+                }
                 if($file.Name -ne 'common'){
                     if($runType -eq 'kLog'){
                         $newName = "$($runDate)_$($dbname).trn"
@@ -362,7 +365,12 @@ if($consolidate -or $targetPath){
                             $null = New-Item -Path "$backupFolderPath\$dbName" -ItemType Directory -Force
                             $fileDestination = "$backupFolderPath\$dbName\$newName"
                         }
+                        # Write-Host "    $fileDestination"
                         while($True){
+                            if(Test-Path -Path $fileDestination){
+                                Write-Host "    $fileDestination already present"
+                                break
+                            }
                             if(Move-Item -Path $file.FullName -Destination $fileDestination -PassThru){
                                 break
                             }
@@ -377,3 +385,4 @@ if($consolidate -or $targetPath){
 }
 
 write-host "`nFiles cloned to $backupFolderPath`n" 
+
