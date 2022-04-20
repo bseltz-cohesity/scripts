@@ -135,6 +135,6 @@ To refresh a view (on a schedule):
 ## Parameters for Folder Manipulation
 
 * -consolidate: (optional) move all files to root of view
-* -targetPath: (optional) move all files to this directory (e.g. \test\folder)
-* -dbFolders: (optional) move files into db-named folders
-* -logsOnly: (optional) only consolidate log files
+* -targetPath: (optional: requires -consolidate) move all files to this directory (e.g. \test\folder)
+* -dbFolders: (optional: requires -consolidate) move files into db-named folders
+* -logsOnly: (optional: requires -consolidate) only consolidate log files
