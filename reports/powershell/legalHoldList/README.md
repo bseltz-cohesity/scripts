@@ -19,13 +19,13 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 ## Components
 
-* legalHoldRunList.ps1: the main powershell script
+* legalHoldList.ps1: the main powershell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place both files in a folder together, then we can run the script.
 
 ```powershell
-./legalHoldRunList.ps1 -vip mycluster -username myusername -domain mydomain
+./legalHoldList.ps1 -vip mycluster -username myusername -domain mydomain
 ```
 
 ## Parameters
