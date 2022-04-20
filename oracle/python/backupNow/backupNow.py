@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2022.04.12
+# version 2022.04.20
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -261,8 +261,11 @@ if objectnames is not None:
                                 dbSource = [c for c in instanceSource['children'] if c['entity']['displayName'].lower() == '%s/%s' % (instance.lower(), db.lower())]
                             if dbSource is not None and len(dbSource) > 0:
                                 for db in dbSource:
-                                    if backupJobSourceParams is None or db['entity']['id'] in backupJobSourceParams['appEntityIdVec']:
+                                    if backupJobSourceParams is None or db['entity']['id'] in backupJobSourceParams['appEntityIdVec'] or instanceSource['entity']['id'] in backupJobSourceParams['appEntityIdVec']:
                                         runNowParameter['databaseIds'].append(db['entity']['id'])
+                                    else:
+                                        out('%s not protected by %s' % (objectname, jobName))
+                                        bail(1)
                             else:
                                 out('%s not protected by %s' % (objectname, jobName))
                                 bail(1)
