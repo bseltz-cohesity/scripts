@@ -27,8 +27,8 @@ Place all files in a folder together. And run the script like so:
 ```powershell
 # example
 ./sqlFileList.ps1 -vip mycluster `
-                     -username myuser `
-                     -domain mydomain.net
+                  -username myuser `
+                  -domain mydomain.net
 # end example
 ```
 
