@@ -36,6 +36,12 @@ Place the files in a folder together and run the main script like so:
 # End example
 ```
 
+If you want to just list the existing alert recipients, omit the -addAddress and -removeAddress
+
+If you want to focus on a specific job type (SQL for example) use -jobType SQL
+
+If you want to focus on specific jobs, you can use -jobName 'job 1', 'job 2' or you can have a text file of job names (one job name per line) and use -jobList ./myjoblist.txt
+
 ## Parameters
 
 * -vip: Cohesity Cluster to connect to
