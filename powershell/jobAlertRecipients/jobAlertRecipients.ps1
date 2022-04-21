@@ -44,12 +44,13 @@ function gatherList($paramName, $textFileName=$null){
 
 $jobNames = gatherList $jobName $jobList
 
-"Modifying alert settings:"
+'' | Out-File -Path alertRecipients.txt
+
 $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true"
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         if(!$jobType -or $job.environment.substring(1) -eq $jobType){
-            "  $($job.name) ($($job.environment))"
+            "`n$($job.name) ($($job.environment.substring(1)))" | Tee-Object -Path alertRecipients.txt -Append
             $jobEdited = $False
             if($job.PSObject.Properties['alertPolicy']){
                 foreach($address in $removeAddress){
@@ -77,6 +78,9 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                     })
                     $jobEdited = $True
                 }
+            }
+            foreach($address in $job.alertPolicy.alertTargets.emailAddress | Sort-Object){
+                "    $address" | Tee-Object -Path alertRecipients.txt -Append
             }
             if($jobEdited -eq $True){
                 $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
