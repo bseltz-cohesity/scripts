@@ -29,7 +29,7 @@ function gatherList($paramName, $textFileName=$null){
         $returnItems += $item
     }
     if ($textFileName){
-        if(Test-Path -Path $textFileName -PathType Leaf){
+        if(Test-Path -FilePath $textFileName -PathType Leaf){
             $items = Get-Content $textFileName
             foreach($item in $items){
                 $returnItems += [string]$item
@@ -50,7 +50,7 @@ $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=tru
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         if(!$jobType -or $job.environment.substring(1) -eq $jobType){
-            "`n$($job.name) ($($job.environment.substring(1)))" | Tee-Object -Path alertRecipients.txt -Append
+            "`n$($job.name) ($($job.environment.substring(1)))" | Tee-Object -FilePath alertRecipients.txt -Append
             $jobEdited = $False
             if($job.PSObject.Properties['alertPolicy']){
                 foreach($address in $removeAddress){
@@ -80,7 +80,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                 }
             }
             foreach($address in $job.alertPolicy.alertTargets.emailAddress | Sort-Object){
-                "    $address" | Tee-Object -Path alertRecipients.txt -Append
+                "    $address" | Tee-Object -FilePath alertRecipients.txt -Append
             }
             if($jobEdited -eq $True){
                 $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
