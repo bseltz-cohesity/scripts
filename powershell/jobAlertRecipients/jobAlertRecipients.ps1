@@ -44,7 +44,7 @@ function gatherList($paramName, $textFileName=$null){
 
 $jobNames = gatherList $jobName $jobList
 
-'' | Out-File -Path alertRecipients.txt
+'' | Out-File -FilePath alertRecipients.txt
 
 $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true"
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
