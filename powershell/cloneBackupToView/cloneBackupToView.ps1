@@ -27,6 +27,8 @@ param (
     [Parameter()][switch]$dbFolders,
     [Parameter()][switch]$logsOnly,
     [Parameter()][switch]$lastRunOnly,
+    [Parameter()][Int64]$daysToKeep = 0,
+    [Parameter()][switch]$waitForRun, 
     [Parameter()][Int64]$numRuns = 100,
     [Parameter()][array]$ips,                         # optional cidrs to add (comma separated)
     [Parameter()][string]$ipList = '',                # optional textfile of cidrs to add
@@ -104,7 +106,6 @@ if($readOnly){
     $perm = 'kReadOnly'
 }
 
-
 if(!$deleteView){
     if(!$jobName){
         Write-Host "JobName parameter required" -ForegroundColor Yellow
@@ -139,7 +140,10 @@ if($refreshView){
             $confirm = Read-Host -Prompt "Are you sure? Yes(No)"
             if($confirm.ToLower() -eq 'yes' -or $confirm.ToLower() -eq 'y'){
                 "Refreshing View..."
-                Get-ChildItem -Path "\\$vip\$viewName" | ForEach-Object {Remove-Item -Recurse -Path $_.FullName}
+                Get-ChildItem -Path "\\$vip\$viewName" | ForEach-Object {
+                    # "remove $($_.FullName)"
+                    Remove-Item -Recurse -Path $_.FullName
+                }
             }else{
                 exit 0
             }
@@ -161,7 +165,30 @@ $job = ($job | Sort-Object id)[-1]
 $storageDomainId = $job.viewBoxId
 
 # get runs
-$runs = (api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
+If($daysToKeep -gt 0){
+    $daysToKeepUsecs = timeAgo $daysToKeep days
+    $runTail = "numRuns=$numRuns&startTimeUsecs=$daysToKeepUsecs"
+    # $runs = (api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&startTimeUsecs=$daysToKeepUsecs")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
+}else{
+    $runTail = "numRuns=$numRuns"
+    # $runs = (api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
+}
+
+$finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning', '3', '4', '5', '6')
+if($waitForRun){
+    "Waiting for Run Completion"
+    while($True){
+        $runs = (api get "protectionRuns?jobId=$($job.id)&$runTail")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false}
+        if($runs -and $runs.Count -gt 0){
+            if($runs[0].backupRun.status -in $finishedStates){
+                break
+            }
+        }
+        Start-Sleep 15
+    }
+}else{
+    $runs = (api get "protectionRuns?jobId=$($job.id)&$runTail")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
+}
 
 if($lastRunOnly -and $runs.Count -gt 0){
     $runs = $runs[0]
@@ -178,13 +205,11 @@ if($lastRunId){
 if($listRuns){
     $runs | Select-Object -Property @{label='runId'; expression={$_.backupRun.jobRunId}}, 
                                     @{label='runDate'; expression={usecsToDate $_.backupRun.stats.startTimeUsecs}},
-                                    @{label='runType'; expression={$_.backupRun.runType.substring(1)}}
-                                    
+                                    @{label='runType'; expression={$_.backupRun.runType.substring(1)}}                                    
     exit 0
 }
 
 if(!$view){
-
     $newView = @{
         "enableSmbAccessBasedEnumeration" = $false;
         "enableSmbViewDiscovery"          = $true;
@@ -296,7 +321,7 @@ foreach($run in $runs){
                     if($sourceInfo.currentSnapshotInfo.PSObject.Properties['relativeSnapshotDirectory']){
                         $sourcePath = "$sourcePathPrefix$($x)"
                     }
-                    $destinationPath = "$thisObjectName---$((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss"))-$($run.backupRun.runType.substring(1))-$x"
+                    $destinationPath = "$((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss"))---$thisObjectName---$($run.backupRun.runType.substring(1))-$x"
                     $runDate = (usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss")
                 
                     # clone snapshot directory
@@ -307,8 +332,8 @@ foreach($run in $runs){
                     }
                     $folderPath = "\\$vip\$viewName\$destinationPath"
                     Write-Host "Cloning $thisObjectName backup files to $folderPath"
-                    $null = api post views/cloneDirectory $CloneDirectoryParams
-                    $paths += @{'path' = $folderPath; 'runDate' = $runDate; 'runType' = $run.backupRun.runType}
+                    $null = api post views/cloneDirectory $CloneDirectoryParams -Quiet
+                    $paths += @{'path' = $folderPath; 'runDate' = $runDate; 'runType' = $run.backupRun.runType; 'sourceName' = $sourceInfo.source.name}
                     $x = $x + 1
                 }
             }
@@ -318,7 +343,7 @@ foreach($run in $runs){
 
 $backupFolderPath = "\\$vip\$viewName"
 
-if($consolidate -or $targetPath){
+if($consolidate -or $dbFolders){
     Write-Host "Consolidating files..."
     if($targetPath){
         $backupFolderPath = "{0}{1}" -f $backupFolderPath, $targetPath
@@ -326,8 +351,10 @@ if($consolidate -or $targetPath){
     }
     foreach($item in $paths){
         $itemPath = $item.path
+        $itemPath
         $runDate = $item.runDate
         $runType = $item.runType
+        $sourceName = $item.sourceName
         $folders = $null
         while($True){
             $folders = Get-ChildItem -Path $itemPath -ErrorAction SilentlyContinue
@@ -355,20 +382,18 @@ if($consolidate -or $targetPath){
                 }
                 if($file.Name -ne 'common'){
                     if($runType -eq 'kLog'){
-                        $newName = "$($runDate)_$($dbname).trn"
+                        $newName = "$($runDate)---$sourceName---$($dbname).trn"
                     }else{
-                        $newName = "$($runDate)_$($dbname)_$($file.Name)"
+                        $newName = "$($runDate)---$sourceName---$($dbname)---$($file.Name)"
                     }
                     if($runType -eq 'kLog' -or !$logsOnly){
                         $fileDestination = "$backupFolderPath\$newName"
                         if($dbFolders){
-                            $null = New-Item -Path "$backupFolderPath\$dbName" -ItemType Directory -Force
-                            $fileDestination = "$backupFolderPath\$dbName\$newName"
+                            $null = New-Item -Path "$backupFolderPath\$sourceName---$dbName" -ItemType Directory -Force
+                            $fileDestination = "$backupFolderPath\$sourceName---$dbName\$newName"
                         }
-                        # Write-Host "    $fileDestination"
                         while($True){
                             if(Test-Path -Path $fileDestination){
-                                Write-Host "    $fileDestination already present"
                                 break
                             }
                             if(Move-Item -Path $file.FullName -Destination $fileDestination -PassThru){
@@ -384,5 +409,17 @@ if($consolidate -or $targetPath){
     }
 }
 
-write-host "`nFiles cloned to $backupFolderPath`n" 
+$today = Get-Date
+if($daysToKeep -gt 0){
+    $fileset = Get-ChildItem -Path $backupFolderPath -Recurse
+    foreach($file in $fileset){
+        $fdate = (($file.Name -split '---')[0] -split '_')[0] -as [DateTime]
+        if($fdate){
+            if($fdate.AddDays($daysToKeep + 1) -lt $today){
+                $null = Remove-Item -Path $file.FullName -Recurse -ErrorAction SilentlyContinue
+            }
+        }
+    }
+}
 
+write-host "`nFiles cloned to $backupFolderPath`n" 
