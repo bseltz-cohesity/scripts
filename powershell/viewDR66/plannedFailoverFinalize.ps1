@@ -1,7 +1,6 @@
 # general params
-$mcm = 'bseltz-mcm'
-$sourceCluster = 'VE66a'
-$targetCluster = 'VE66b'
+$sourceCluster = 'clustera'
+$targetCluster = 'clusterb'
 $userName = 'admin'
 $userDomain = 'local'
 
@@ -15,9 +14,9 @@ $cnameDomain = 'sa.corp.cohesity.com'
 # using helios
 # .\viewDR.ps1 -helios -targetCluster $targetCluster -username $userName -domain $userDomain -viewList .\myviews.txt -plannedFailover
 # using cluster direct
-# .\viewDR.ps1 -targetCluster $targetCluster -username $userName -domain $userDomain -viewList .\myviews.txt -plannedFailover
+.\viewDR.ps1 -targetCluster $targetCluster -username $userName -domain $userDomain -viewList .\myviews.txt -plannedFailover
 # using mcm
-.\viewDR.ps1 -mcm $mcm -targetCluster $targetCluster -username $userName -domain $userDomain -viewList .\myviews.txt -plannedFailover
+# .\viewDR.ps1 -mcm $mcm -targetCluster $targetCluster -username $userName -domain $userDomain -viewList .\myviews.txt -plannedFailover
 
 # toggle dfs folder targets and/or cnames and SPNs
 if(Test-Path -Path migratedShares.txt -PathType Leaf){
