@@ -45,14 +45,14 @@ Run these commands from PowerShell to download the script(s) into your current d
 * prepareForFailover.ps1: assigns replication policy and cleans up old objects
 * prepareForFailback.ps1: assigns replication policy and cleans up old objects
 
-## Test/Wrapper Scripts for Planned Failover/Failback
+## Example Wrapper Scripts for Planned Failover/Failback
 
 * plannedFailoverPrep.ps1: initiate rapid replication before planned failover
 * plannedFailoverFinalize.ps1: initiate planned failover
 * plannedFailbackPrep.ps1: initiate rapid replication before planned failback
 * plannedFailbackFinalize.ps1: initiate planned failback
 
-## Test/Wrapper Scripts for Unplanned Failover/Failback
+## Example Wrapper Scripts for Unplanned Failover/Failback
 
 * unplannedFailover.ps1: initiate unplanned failover
 * unplannedFailback.ps1: initiate unplanned failback
