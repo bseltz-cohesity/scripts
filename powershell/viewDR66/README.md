@@ -34,7 +34,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 ## Core Components
 
 * viewDR.ps1: performs failover/failback operations
-* enableReplication.ps1: assigns policy and cleans up old objects
+* enableReplication.ps1: assigns replication policy and cleans up old objects
 * cleanupUnmergedViews.ps1: delete unmerged views
 * cnameFailover.ps1: failover cname and SPN records
 * dfsFailover.ps1: failover DFS folder targets
