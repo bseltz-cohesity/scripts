@@ -21,8 +21,8 @@ Run these commands from PowerShell to download the script(s) into your current d
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/unplannedFailover.ps1).content | Out-File unplannedFailover.ps1; (Get-Content unplannedFailover.ps1) | Set-Content unplannedFailover.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/unplannedFailback.ps1).content | Out-File unplannedFailback.ps1; (Get-Content unplannedFailback.ps1) | Set-Content unplannedFailback.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/viewDR.ps1).content | Out-File viewDR.ps1; (Get-Content viewDR.ps1) | Set-Content viewDR.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/cnameFailoverFinalize.ps1).content | Out-File cnameFailoverFinalize.ps1; (Get-Content cnameFailoverFinalize.ps1) | Set-Content cnameFailoverFinalize.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/dfsFailoverFinalize.ps1).content | Out-File dfsFailoverFinalize.ps1; (Get-Content dfsFailoverFinalize.ps1) | Set-Content dfsFailoverFinalize.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/cnameFailover.ps1).content | Out-File cnameFailover.ps1; (Get-Content cnameFailover.ps1) | Set-Content cnameFailover.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/dfsFailover.ps1).content | Out-File dfsFailover.ps1; (Get-Content dfsFailover.ps1) | Set-Content dfsFailover.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/cleanupUnmergedViews.ps1).content | Out-File cleanupUnmergedViews.ps1; (Get-Content cleanupUnmergedViews.ps1) | Set-Content cleanupUnmergedViews.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/enableReplication.ps1).content | Out-File enableReplication.ps1; (Get-Content enableReplication.ps1) | Set-Content enableReplication.ps1
 (Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/prepareForFailover.ps1).content | Out-File prepareForFailover.ps1; (Get-Content prepareForFailover.ps1) | Set-Content prepareForFailover.ps1
@@ -36,8 +36,8 @@ Run these commands from PowerShell to download the script(s) into your current d
 * viewDR.ps1: performs failover/failback operations
 * enableReplication.ps1: assigns policy and cleans up old objects
 * cleanupUnmergedViews.ps1: delete unmerged views
-* cnameFailoverFinalize.ps1: failover cname and SPN records
-* dfsFailoverFinalize.ps1: failover DFS folder targets
+* cnameFailover.ps1: failover cname and SPN records
+* dfsFailover.ps1: failover DFS folder targets
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 ## Example Wrapper Scripts for Failover/Failback Preparation
@@ -181,8 +181,8 @@ When you execute the script, the ciew at ClusterA will be set to read-only and a
 
 ## DFS Failover
 
-If the views are hosted behind a DFS namespace, the `dfsFailoverFinalize.ps1` command can be used to enable the folder targets that point to ClusterB, and disable the folder targets that point to clusterA during failover (and the reverse during failback). For this command to work, the scripts must be run on PowerShell 5.1 Desktop Edition running on a Windows Server 201R2 (or later) that has the DFS management tools installed.
+If the views are hosted behind a DFS namespace, the `dfsFailover.ps1` command can be used to enable the folder targets that point to ClusterB, and disable the folder targets that point to clusterA during failover (and the reverse during failback). For this command to work, the scripts must be run on PowerShell 5.1 Desktop Edition running on a Windows Server 201R2 (or later) that has the DFS management tools installed.
 
 ## CNAME Failover
 
-If the views are accessed using a DNS alias (CNAME), the `cnameFailoverFinalize.ps1` command can be used to update the cname record to point to ClusterB during failover (and the reverse during failback). The script will also migrate the service principal name(s) for the CNAME from the Active Directory computer account for ClusterA to the computer account for ClusterB during failover/failback. For this command to work, the scripts must be run on PowerShell 5.1 Desktop Edition running on a Windows Server 201R2 (or later) that has the Active Directory PowerShell module installed.
+If the views are accessed using a DNS alias (CNAME), the `cnameFailover.ps1` command can be used to update the cname record to point to ClusterB during failover (and the reverse during failback). The script will also migrate the service principal name(s) for the CNAME from the Active Directory computer account for ClusterA to the computer account for ClusterB during failover/failback. For this command to work, the scripts must be run on PowerShell 5.1 Desktop Edition running on a Windows Server 201R2 (or later) that has the Active Directory PowerShell module installed.
