@@ -48,9 +48,9 @@ Run these commands from PowerShell to download the script(s) into your current d
 ## Example Wrapper Scripts for Planned Failover/Failback
 
 * plannedFailoverPrep.ps1: initiate rapid replication before planned failover
-* plannedFailoverFinalize.ps1: initiate planned failover
+* plannedFailoverFinalize.ps1: finalize planned failover
 * plannedFailbackPrep.ps1: initiate rapid replication before planned failback
-* plannedFailbackFinalize.ps1: initiate planned failback
+* plannedFailbackFinalize.ps1: finalize planned failback
 
 ## Example Wrapper Scripts for Unplanned Failover/Failback
 
