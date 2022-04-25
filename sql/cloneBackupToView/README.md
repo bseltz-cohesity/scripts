@@ -15,9 +15,9 @@ Run these commands from PowerShell to download the scripts into the current fold
 ```powershell
 # Download Commands
 $scriptName = 'cloneBackupToView'
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
-(Invoke-WebRequest -Uri "$repoUrl/sql/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
-(Invoke-WebRequest -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
 
@@ -108,9 +108,11 @@ To refresh a view (on a schedule):
 * -jobname: (optional) name of SQL protection job
 * -objectName: (optional) name of sqlServer whose backup to clone
 * -viewName: (optional) name of new or existing view to clone backup files to
+* -waitForRun: (optional) wait for currently run to complete
 
 ## Parameters for Run Selection
 
+* -daysToKeep: (optional) clone the past X days (and delete older files from view)
 * -listRuns: (optional) list available job run IDs and dates
 * -lastRunOnly: (optional) only clone latest run
 * -numRuns: (opyional) max number of runs to clone (default is 100)
@@ -138,3 +140,4 @@ To refresh a view (on a schedule):
 * -targetPath: (optional: requires -consolidate) move all files to this directory (e.g. \test\folder)
 * -dbFolders: (optional: requires -consolidate) move files into db-named folders
 * -logsOnly: (optional: requires -consolidate) only consolidate log files
+* -daysToKeep: (optional) clone the past X days (and delete older files from view)
