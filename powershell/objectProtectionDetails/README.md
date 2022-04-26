@@ -30,8 +30,7 @@ Place both files in a folder together and run the main script like so:
                               -domain mydomain.net `
                               -objects vm1, vm2 `
                               -startDate 2019-10-01 `
-                              -endDate 2019-11-01 `
-                              -includeExpired
+                              -endDate 2019-11-01
 ```
 
 or
@@ -50,4 +49,3 @@ or
 * -objects: one or more object names to report
 * -startDate: (optional) detaults to one month ago
 * -endDate: (optional) defaults to now
-* -includeExpired: (optional) by default only remaining snapshots are shown
