@@ -454,7 +454,7 @@ output "New Job Run ID: $newRunId"
 if($wait -or $enable){
     $lastProgress = -1
     while ($runs[0].backupRun.status -notin $finishedStates){
-        Start-Sleep 5
+        Start-Sleep 15
         if($progress){
             $progressMonitor = api get "/progressMonitors?taskPathVec=backup_$($newRunId)_1&includeFinishedTasks=true&excludeSubTasks=false"
             $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
