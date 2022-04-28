@@ -1,4 +1,4 @@
-# usage: .\laskBackupAttribute.ps1 -vip mycluster -username myusername -domain mydomain.net -viServer vcenter.mydomain.net -viUser 'administrator@vsphere.local'
+# usage: .\lastBackupAttribute.ps1 -vip mycluster -username myusername -domain mydomain.net -viServer vcenter.mydomain.net -viUser 'administrator@vsphere.local'
 
 # process commandline arguments
 [CmdletBinding()]
