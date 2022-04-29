@@ -105,6 +105,7 @@ To refresh a view (on a schedule):
 * -username: Cohesity username (e.g. admin)
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -useApiKey: (optional) use API key for authentication
+* -password: (optional) password or API key (will use stored password by default)
 * -jobname: (optional) name of SQL protection job
 * -objectName: (optional) name of sqlServer whose backup to clone
 * -viewName: (optional) name of new or existing view to clone backup files to

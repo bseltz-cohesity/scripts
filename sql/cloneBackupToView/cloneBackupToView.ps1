@@ -12,6 +12,7 @@ param (
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
     [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
     [Parameter()][array]$access,
     [Parameter()][string]$objectName,
     [Parameter()][string]$jobName,
@@ -42,9 +43,9 @@ param (
 
 # authenticate
 if($useApiKey){
-    apiauth -vip $vip -username $username -domain $domain -useApiKey
+    apiauth -vip $vip -username $username -domain $domain -password $password -useApiKey
 }else{
-    apiauth -vip $vip -username $username -domain $domain
+    apiauth -vip $vip -username $username -domain $domain -password $password
 }
 
 # gather list from command line params and file
