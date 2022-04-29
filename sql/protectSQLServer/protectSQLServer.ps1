@@ -8,8 +8,8 @@ param (
     [Parameter()][array]$servername,
     [Parameter()][string]$serverList = '',  # optional textfile of servers to protect
     [Parameter()][array]$instanceName,
+    [Parameter()][ValidateSet('File','Volume','VDI')][string]$backupType = 'File',
     [Parameter()][switch]$instancesOnly,
-    [Parameter()][switch]$volumeBackup,
     [Parameter()][string]$policyname,
     [Parameter()][string]$startTime = '20:00', # e.g. 23:30 for 11:30 PM
     [Parameter()][string]$timeZone = 'America/Los_Angeles', # e.g. 'America/New_York'
@@ -58,6 +58,7 @@ if(! $job){
     Write-Host "Creating job $jobname..."
     $newJob = $True
 
+    $backupTypeEnum = @{'File' = 'kSqlVSSFile'; 'Volume' = 'kSqlVSSVolume'; 'VDI' = 'kSqlNative'}
     # get policy
     if(! $policyname){
         Write-Host "-policyname required when creating a new job" -ForegroundColor Yellow
@@ -117,14 +118,10 @@ if(! $job){
                 "userDatabasePreference"     = "kBackupAllDatabases";
                 "backupSystemDatabases"      = $true;
                 "aagPreferenceFromSqlServer" = $true;
-                "backupType"                 = "kSqlVSSFile"
+                "backupType"                 = $backupTypeEnum[$backupType]
             }
         }
     }
-    if($volumeBackup){
-        $job.environmentParameters.sqlParameters.backupType = "kSqlVSSVolume"
-    }
-
 }else{
     Write-Host "Updating job $jobname..."
 }
