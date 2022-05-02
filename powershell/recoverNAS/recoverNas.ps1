@@ -152,6 +152,5 @@ if($result){
     $newView.qos = @{
         "principalName" = 'TestAndDev High';
     }
-    $newView | ConvertTo-Json -Depth 99
     $null = api put -v2 file-services/views/$($newView.viewId) $newView
 }
