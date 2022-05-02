@@ -137,7 +137,6 @@ foreach($user in $modify){
 }
 
 if($sharePermissionsApplied -eq $False){
-    "adding everyone"
     $sharePermissions += addPermission "Everyone" 'FullControl'
 }
 
