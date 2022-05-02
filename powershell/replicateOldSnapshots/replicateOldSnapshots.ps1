@@ -52,7 +52,7 @@ $newerThanUsecs = timeAgo $newerThan days
 "searching for old snapshots..."
 foreach ($job in (api get protectionJobs)) {
     if (!$myjob -or ($myjob.name -eq $job.name)){
-        $runs = (api get protectionRuns?jobId=$($job.id)`&numRuns=999999`&runTypes=kRegular,kFull`&excludeTasks=true`&excludeNonRestoreableRuns=true) | `
+        $runs = (api get protectionRuns?jobId=$($job.id)`&numRuns=999999`&runTypes=kRegular`&runTypes=kFull`&excludeTasks=true`&excludeNonRestoreableRuns=true) | `
             Where-Object { $_.backupRun.snapshotsDeleted -eq $false } | `
             Where-Object { $_.copyRun[0].runStartTimeUsecs -le $olderThanUsecs } | `
             Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
