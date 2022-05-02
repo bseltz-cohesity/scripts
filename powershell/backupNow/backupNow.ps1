@@ -1,4 +1,4 @@
-# version 2022.04.18
+# version 2022.05.02
 # usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
@@ -24,7 +24,7 @@ param (
     [Parameter()][string]$archiveTo,      # optional - target to archive to
     [Parameter()][int]$keepArchiveFor,    # keep archive for x days
     [Parameter()][switch]$enable,         # enable a disabled job, run it, then disable when done
-    [Parameter()][ValidateSet('kRegular','kFull','kLog','kSystem')][string]$backupType = 'kRegular',
+    [Parameter()][ValidateSet('kRegular','kFull','kLog','kSystem','Regular','Full','Log','System')][string]$backupType = 'kRegular',
     [Parameter()][array]$objects,         # list of objects to include in run
     [Parameter()][switch]$progress,       # display progress percent
     [Parameter()][switch]$wait,           # wait for completion and report end status
@@ -144,6 +144,11 @@ function cancelRunningJob($job, $durationMinutes){
             }
         }
     }
+}
+
+$backupTypeEnum = @{'Regular' = 'kRegular'; 'Full' = 'kFull'; 'Log' = 'kLog'; 'System' = 'kSystem'; 'kRegular' = 'kRegular'; 'kFull' = 'kFull'; 'kLog' = 'kLog'; 'kSystem' = 'kSystem';}
+if($backupType -in $backupTypeEnum.Keys){
+    $backupType = $backupTypeEnum[$backupType]
 }
 
 # get cluster id
@@ -489,7 +494,7 @@ if($wait -or $enable){
     if($runs[0].backupRun.status -in @('3', '4', '5', '6')){
         $runs[0].backupRun.status = $statusMap[$runs[0].backupRun.status]
     }
-    output "Job finished with status: $($runs[0].backupRun.status)"
+    output "Job finished with status: $($runs[0].backupRun.status.subString(1))"
     if($outputlog){
         "Backup ended $(usecsToDate $runs[0].backupRun.stats.endTimeUsecs)" | Out-File -FilePath $scriptlog -Append
     }
