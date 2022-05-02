@@ -97,11 +97,6 @@ $restoreParams = @{
                         }
                     }
                 };
-                "renameRecoveredVmsParams"   = @{
-                    "prefix" = $null;
-                    "suffix" = $null
-                };
-                "renameRecoveredVAppsParams" = $null;
                 "powerOnVms"                 = $false;
                 "continueOnError"            = $false;
                 "recoveryProcessType"        = "InstantRecovery"
@@ -241,7 +236,9 @@ if($poweron){
 }
 
 if($prefix -ne ''){
-    $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.renameRecoveredVmsParams.prefix = "$prefix-"
+    $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams['renameRecoveredVmsParams'] = @{
+        'prefix' = [string]$prefix + '-';
+    }
 }
 
 $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.recoveryProcessType = $recoveryType
