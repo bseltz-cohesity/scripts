@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2022.04.20
+# version 2022.05.03
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -239,7 +239,7 @@ if objectnames is not None:
                     )
                     selectedSources.append(serverObjectId)
                 if instance is not None or db is not None:
-                    if environment == 'kOracle' or (environment == 'kSQL' and job['environmentParameters']['sqlParameters']['backupType'] in ['kSqlVSSFile', 'kSqlNative']):
+                    if environment == 'kOracle' or environment == 'kSQL':  # and job['environmentParameters']['sqlParameters']['backupType'] in ['kSqlVSSFile', 'kSqlNative']):
                         for runNowParameter in runNowParameters:
                             if runNowParameter['sourceId'] == serverObjectId:
                                 if 'databaseIds' not in runNowParameter:
