@@ -1,4 +1,4 @@
-# version 2022.05.02
+# version 2022.05.03
 # usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
@@ -209,7 +209,7 @@ if($objects){
                         $selectedSources = @($selectedSources + $serverObjectId)
                     }
                     if($instance -or $db){                  
-                        if($environment -eq 'kOracle' -or $job.environmentParameters.sqlParameters.backupType -in @('kSqlVSSFile', 'kSqlNative')){
+                        if($environment -eq 'kOracle' -or $environment -eq 'kSQL'){ # $job.environmentParameters.sqlParameters.backupType -in @('kSqlVSSFile', 'kSqlNative')
                             $runNowParameter = $runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId}
                             if(! $runNowParameter.databaseIds){
                                 $runNowParameter.databaseIds = @()
@@ -393,7 +393,7 @@ $jobdata = @{
 
 # add sourceIds if specified
 if($objects){
-    if(($environment -eq 'kSQL' -and $job.environmentParameters.sqlParameters.backupType -in @('kSqlVSSFile', 'kSqlNative')) -or $environment -eq 'kOracle'){
+    if($environment -eq 'kSQL' -or $environment -eq 'kOracle'){ # -and $job.environmentParameters.sqlParameters.backupType -in @('kSqlVSSFile', 'kSqlNative')
         $jobdata['runNowParameters'] = $runNowParameters
     }else{
         if($metaDataFile){
