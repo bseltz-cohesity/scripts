@@ -12,7 +12,6 @@ param (
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
     [Parameter()][switch]$useApiKey,
-    [Parameter()][string]$password,
     [Parameter()][array]$access,
     [Parameter()][string]$objectName,
     [Parameter()][string]$jobName,
@@ -43,9 +42,9 @@ param (
 
 # authenticate
 if($useApiKey){
-    apiauth -vip $vip -username $username -domain $domain -password $password -useApiKey
+    apiauth -vip $vip -username $username -domain $domain -useApiKey
 }else{
-    apiauth -vip $vip -username $username -domain $domain -password $password
+    apiauth -vip $vip -username $username -domain $domain
 }
 
 # gather list from command line params and file
@@ -333,7 +332,7 @@ foreach($run in $runs){
                     }
                     $folderPath = "\\$vip\$viewName\$destinationPath"
                     Write-Host "Cloning $thisObjectName backup files to $folderPath"
-                    $null = api post views/cloneDirectory $CloneDirectoryParams
+                    $null = api post views/cloneDirectory $CloneDirectoryParams -quiet
                     $paths += @{'path' = $folderPath; 'runDate' = $runDate; 'runType' = $run.backupRun.runType; 'sourceName' = $sourceInfo.source.name}
                     $x = $x + 1
                 }
@@ -352,13 +351,15 @@ if($consolidate -or $dbFolders){
     }
     foreach($item in $paths){
         $itemPath = $item.path
-        $itemPath
+        write-host "$itemPath"
         $runDate = $item.runDate
         $runType = $item.runType
         $sourceName = $item.sourceName
         $folders = $null
-        while($True){
-            $folders = Get-ChildItem -Path $itemPath -ErrorAction SilentlyContinue
+        $i = 0
+        while($i -lt 60){
+            $i += 1
+            $folders = Get-ChildItem -Path "$itemPath" -ErrorAction SilentlyContinue
             if($folders){
                 break
             }
