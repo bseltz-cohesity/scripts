@@ -36,7 +36,7 @@ function waitForRefresh($server){
         $rootFinished = $false
         $appsFinished = $false
         Start-Sleep 2
-        $rootNode = (api get "protectionSources/registrationInfo?includeApplicationsTreeInfo=false&environments=kPhysical").rootNodes | Where-Object {$_.rootNode.name -eq $server}
+        $rootNode = (api get "protectionSources/registrationInfo?includeApplicationsTreeInfo=false").rootNodes | Where-Object {$_.rootNode.name -eq $server}
         if($rootNode.registrationInfo.authenticationStatus -eq 'kFinished'){
             $rootFinished = $True
         }
