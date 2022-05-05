@@ -21,6 +21,7 @@ param (
     [Parameter()][string]$ifExpiringAfter = 0, #do not archve if the snapshot is going to expire within x days
     [Parameter()][string]$keepFor = 0, #set archive retention to x days from original backup date
     [Parameter()][switch]$archive,
+    [Parameter()][switch]$fullOnly,
     [Parameter()][switch]$includeLogs,
     [Parameter()][array]$dates,
     [Parameter()][ValidateSet('kCloud','kTape','kNas')][string]$vaultType = 'kCloud'
@@ -68,6 +69,9 @@ $olderThanUsecs = timeAgo $olderThan days
 # find specified jobs
 $jobs = api get protectionJobs
 $runTypes = 'runTypes=kRegular&runTypes=kFull&'
+if($fullOnly){
+    $runTypes = 'runTypes=kFull&'
+}
 if($includeLogs){
     $runTypes = ''
 }
