@@ -390,12 +390,9 @@ if($consolidate -or $dbFolders -or $objectView){
                 if($file.Name -ne 'common'){
                     if($objectView){
                         if($runType -eq 'kLog' -or !$logsOnly){
-                            $null = New-Item -Path "$backupFolderPath\$dbName\$runDate" -ItemType Directory -Force
-                            $fileDestination = "$backupFolderPath\$dbName\$runDate\"
+                            $null = New-Item -Path "$backupFolderPath\$dbName\$runDate--$($runType.substring(1))" -ItemType Directory -Force
+                            $fileDestination = "$backupFolderPath\$dbName\$runDate--$($runType.substring(1))\"
                             while($True){
-                                # if(Test-Path -Path $fileDestination){
-                                #     break
-                                # }
                                 if(Move-Item -Path $file.FullName -Destination $fileDestination -PassThru){
                                     break
                                 }
