@@ -25,6 +25,7 @@ param (
     [Parameter()][switch]$consolidate,
     [Parameter()][string]$targetPath = $null,
     [Parameter()][switch]$dbFolders,
+    [Parameter()][switch]$objectView,
     [Parameter()][switch]$logsOnly,
     [Parameter()][switch]$lastRunOnly,
     [Parameter()][Int64]$daysToKeep = 0,
@@ -36,6 +37,14 @@ param (
     [Parameter()][switch]$allSquash,                  # whether whitelist entries should use all squash
     [Parameter()][switch]$readOnly                    # grant only read access
 )
+
+if($objectView){
+    if(!$objectName){
+        Write-Host "-objectName is required when using -objectView" -ForegroundColor Yellow
+        exit
+    }
+    $viewName = $objectName.split('.')[0]
+}
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -141,7 +150,6 @@ if($refreshView){
             if($confirm.ToLower() -eq 'yes' -or $confirm.ToLower() -eq 'y'){
                 "Refreshing View..."
                 Get-ChildItem -Path "\\$vip\$viewName" | ForEach-Object {
-                    # "remove $($_.FullName)"
                     Remove-Item -Recurse -Path $_.FullName
                 }
             }else{
@@ -168,10 +176,8 @@ $storageDomainId = $job.viewBoxId
 If($daysToKeep -gt 0){
     $daysToKeepUsecs = timeAgo $daysToKeep days
     $runTail = "numRuns=$numRuns&startTimeUsecs=$daysToKeepUsecs"
-    # $runs = (api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&startTimeUsecs=$daysToKeepUsecs")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
 }else{
     $runTail = "numRuns=$numRuns"
-    # $runs = (api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
 }
 
 $finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning', '3', '4', '5', '6')
@@ -343,7 +349,7 @@ foreach($run in $runs){
 
 $backupFolderPath = "\\$vip\$viewName"
 
-if($consolidate -or $dbFolders){
+if($consolidate -or $dbFolders -or $objectView){
     Write-Host "Consolidating files..."
     if($targetPath){
         $backupFolderPath = "{0}{1}" -f $backupFolderPath, $targetPath
@@ -363,9 +369,8 @@ if($consolidate -or $dbFolders){
             if($folders){
                 break
             }
-            Start-Sleep 1
+            Start-Sleep 2
         }
-        
         foreach($folder in $folders){
             $files = $null
             while($True){
@@ -373,7 +378,7 @@ if($consolidate -or $dbFolders){
                 if($files){
                     break
                 }
-                Start-Sleep 1
+                Start-Sleep 2
             }
             
             $instance, $dbid, $createmsecs, $dbname = $folder.Name.split('_',4)
@@ -383,25 +388,41 @@ if($consolidate -or $dbFolders){
                     $dbname = $file.Directory.Name.split('---')[0]
                 }
                 if($file.Name -ne 'common'){
-                    if($runType -eq 'kLog'){
-                        $newName = "$($runDate)---$sourceName---$($dbname).trn"
-                    }else{
-                        $newName = "$($runDate)---$sourceName---$($dbname)---$($file.Name)"
-                    }
-                    if($runType -eq 'kLog' -or !$logsOnly){
-                        $fileDestination = "$backupFolderPath\$newName"
-                        if($dbFolders){
-                            $null = New-Item -Path "$backupFolderPath\$sourceName---$dbName" -ItemType Directory -Force
-                            $fileDestination = "$backupFolderPath\$sourceName---$dbName\$newName"
+                    if($objectView){
+                        if($runType -eq 'kLog' -or !$logsOnly){
+                            $null = New-Item -Path "$backupFolderPath\$dbName\$runDate" -ItemType Directory -Force
+                            $fileDestination = "$backupFolderPath\$dbName\$runDate\"
+                            while($True){
+                                # if(Test-Path -Path $fileDestination){
+                                #     break
+                                # }
+                                if(Move-Item -Path $file.FullName -Destination $fileDestination -PassThru){
+                                    break
+                                }
+                                Start-Sleep 1
+                            }
                         }
-                        while($True){
-                            if(Test-Path -Path $fileDestination){
-                                break
+                    }else{
+                        if($runType -eq 'kLog'){
+                            $newName = "$($runDate)---$sourceName---$($dbname).trn"
+                        }else{
+                            $newName = "$($runDate)---$sourceName---$($dbname)---$($file.Name)"
+                        }
+                        if($runType -eq 'kLog' -or !$logsOnly){
+                            $fileDestination = "$backupFolderPath\$newName"
+                            if($dbFolders){
+                                $null = New-Item -Path "$backupFolderPath\$sourceName---$dbName" -ItemType Directory -Force
+                                $fileDestination = "$backupFolderPath\$sourceName---$dbName\$newName"
                             }
-                            if(Move-Item -Path $file.FullName -Destination $fileDestination -PassThru){
-                                break
+                            while($True){
+                                if(Test-Path -Path $fileDestination){
+                                    break
+                                }
+                                if(Move-Item -Path $file.FullName -Destination $fileDestination -PassThru){
+                                    break
+                                }
+                                Start-Sleep 1
                             }
-                            Start-Sleep 1
                         }
                     }
                 }

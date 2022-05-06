@@ -142,3 +142,4 @@ To refresh a view (on a schedule):
 * -dbFolders: (optional: requires -consolidate) move files into db-named folders
 * -logsOnly: (optional: requires -consolidate) only consolidate log files
 * -daysToKeep: (optional) clone the past X days (and delete older files from view)
+* -objectView: (optional) move files to \\cluster\hostname\dbname\timestamp folders
