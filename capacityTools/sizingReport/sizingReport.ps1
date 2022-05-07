@@ -25,13 +25,17 @@ $finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning')
 
 $cluster = api get cluster
 $dateString = (get-date).ToString('yyyy-MM-dd')
-$outfileName = "Sizing Report-$($cluster.name)-$dateString.csv"
-"""Owner"",""Job Name"",""Job Type"",""Source Name"",""Logical $unit"",""Peak Read $unit"",""Last Day Read $unit"",""Read Over Days $unit"",""Avg Read $unit"",""Last Day Written $unit"",""Written Over Days $unit"",""Avg Written $unit"",""Days Collected"",""Daily Read Change Rate %"",""Daily Write Change Rate %"",""Avg Replica Queue Hours"",""Avg Replica Hours"",""Avg Logical Replicated"",""Avg Physical Replicated""" | Out-File -FilePath $outfileName
+$objectFileName = "SizingReport-PerObject-$($cluster.name)-$dateString.csv"
+"""Owner"",""Job Name"",""Job Type"",""Source Name"",""Logical $unit"",""Peak Read $unit"",""Last Day Read $unit"",""Read Over Days $unit"",""Avg Read $unit"",""Last Day Written $unit"",""Written Over Days $unit"",""Avg Written $unit"",""Days Collected"",""Daily Read Change Rate %"",""Daily Write Change Rate %"",""Avg Replica Queue Hours"",""Avg Replica Hours"",""Avg Logical Replicated"",""Avg Physical Replicated""" | Out-File -FilePath $objectFileName
 
 $runningTasks = 0
 
 $now = (Get-Date).AddDays(-$backDays)
 $daysBackUsecs = dateToUsecs $now.AddDays(-$daysBack)
+
+$jobStats = @{}
+$workloadStats = @{}
+$clusterStats = @{}
 
 foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&includeTenants=true").protectionGroups | Sort-Object -Property name){
     $jobId = $job.id
@@ -145,8 +149,8 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
         $oldestStat = usecsToDate $stats[$sourceName][-1]['startTimeUsecs']
         $numDays = ($now - $oldestStat).Days + 1
         if($logicalSize -gt 0){
-            $changeRate = 100 * [math]::Round(($xDaysDataRead / $logicalSize) / $numDays, 2)
-            $writeChangeRate = 100 * [math]::Round(($xDaysDataWritten/ $logicalSize) / $numDays, 2)
+            $changeRate = [math]::Round((100 * $xDaysDataRead / $logicalSize) / $numDays, 0)
+            $writeChangeRate = [math]::Round((100 * $xDaysDataWritten/ $logicalSize) / $numDays, 0)
         }else{
             $changeRate = '-'
             $writeChangeRate = '-'
@@ -157,6 +161,85 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
         $avgReplicaDuration = [math]::Round($xDaysReplicaDuration / $numDays, 0)
         $avgLogicalReplicated = [math]::Round($xDaysLogicalReplicated / $numDays, 2)
         $avgPhysicalReplicated = [math]::Round($xDaysPhysicalReplicated / $numDays, 2)
-        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}"",""{13}"",""{14}"",""{15}"",""{16}"",""{17}"",""{18}""" -f $owner, $jobName, $jobType, $sourceName, $(toUnits $logicalSize), $(toUnits $peakRead), $(toUnits $lastDayDataRead), $(toUnits $xDaysDataRead), $(toUnits $avgDataRead), $(toUnits $lastDayDataWritten), $(toUnits $xDaysDataWritten), $(toUnits $avgDataWritten), $numDays, $changeRate, $writeChangeRate, $avgReplicaDelay, $avgReplicaDuration, $(toUnits $avgLogicalReplicated), $(toUnits $avgPhysicalReplicated) | Out-File -FilePath $outfileName -Append
+        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}"",""{13}"",""{14}"",""{15}"",""{16}"",""{17}"",""{18}""" -f $owner, $jobName, $jobType, $sourceName, $(toUnits $logicalSize), $(toUnits $peakRead), $(toUnits $lastDayDataRead), $(toUnits $xDaysDataRead), $(toUnits $avgDataRead), $(toUnits $lastDayDataWritten), $(toUnits $xDaysDataWritten), $(toUnits $avgDataWritten), $numDays, $changeRate, $writeChangeRate, $avgReplicaDelay, $avgReplicaDuration, $(toUnits $avgLogicalReplicated), $(toUnits $avgPhysicalReplicated) | Out-File -FilePath $objectFileName -Append
+        if($jobName -notin $jobStats.Keys){
+            $jobStats[$jobName] = @{
+                'owner' = $owner;
+                'jobType' = $jobType;
+                'avgDataWritten' = $avgDataWritten;
+                'avgDataRead' = $avgDataRead;
+                'logicalSize' = $logicalSize;
+                'avgLogicalReplicated' = $avgLogicalReplicated;
+                'avgPhysicalReplicated' = $avgPhysicalReplicated
+            }
+        }else{
+            $jobStats[$jobName].avgDataWritten += $avgDataWritten
+            $jobStats[$jobName].avgDataRead += $avgDataRead
+            $jobStats[$jobName].logicalSize += $logicalSize
+            $jobStats[$jobName].avgLogicalReplicated += $avgLogicalReplicated
+            $jobStats[$jobName].avgPhysicalReplicated += $avgPhysicalReplicated
+        }
     }
+}
+
+# Per Job Stats
+$jobFileName = "SizingReport-PerJob-$($cluster.name)-$dateString.csv"
+
+"""Owner"",""JobName"",""JobType"",""Logical $unit"",""Avg Read $unit"",""Avg Written $unit"",""Read Change Rate"",""Write Change Rate"",""Avg Logical Replicated $unit"",""Avg Physical Replicated $unit""" | Out-File -FilePath $jobFileName 
+foreach($jobName in ($jobStats.Keys | sort)){
+    $owner = $jobStats[$jobName].owner
+    $jobType = $jobStats[$jobName].jobType
+    $logicalSize = 0
+    $avgDataRead = 0
+    $avgDataWritten = 0
+    $logicalSize = $jobStats[$jobName].logicalSize
+    $avgDataRead = $jobStats[$jobName].avgDataRead
+    $avgDataWritten = $jobStats[$jobName].avgDataWritten
+    $avgLogicalReplicated = $jobStats[$jobName].avgLogicalReplicated
+    $avgPhysicalReplicated = $jobStats[$jobName].avgPhysicalReplicated
+    if("$($owner)--$($jobType)" -notin $workloadStats.Keys){
+        $workloadStats["$($owner)--$($jobType)"] = @{
+            'logicalSize' = $logicalSize;
+            'avgDataRead' = $avgDataRead;
+            'avgDataWritten' = $avgDataWritten
+            'avgLogicalReplicated' = $avgLogicalReplicated
+            'avgPhysicalReplicated' = $avgPhysicalReplicated
+        }
+    }else{
+        $workloadStats["$($owner)--$($jobType)"].logicalSize += $logicalSize
+        $workloadStats["$($owner)--$($jobType)"].avgDataRead += $avgDataRead
+        $workloadStats["$($owner)--$($jobType)"].avgDataWritten += $avgDataWritten
+        $workloadStats["$($owner)--$($jobType)"].avgLogicalReplicated += $avgLogicalReplicated
+        $workloadStats["$($owner)--$($jobType)"].avgPhysicalReplicated += $avgPhysicalReplicated
+    }
+    if($logicalSize -gt 0){
+        $changeRate = [math]::Round(100 * $avgDataRead / $logicalSize, 0)
+        $writeChangeRate = [math]::Round(100 * $avgDataWritten / $logicalSize, 0)
+    }else{
+        $changeRate = '-'
+        $writeChangeRate = '-'
+    }
+    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}""" -f $owner, $jobName, $jobType, $(toUnits $logicalSize), $(toUnits $avgDataRead), $(toUnits $avgDataWritten), $changeRate, $writeChangeRate, $(toUnits $avgLogicalReplicated), $(toUnits $avgPhysicalReplicated) | Out-File -FilePath $jobFileName -Append
+}
+
+# Per Workload Stats
+$workloadFileName = "SizingReport-PerWorkload-$($cluster.name)-$dateString.csv"
+
+"""Owner"",""JobType"",""Logical $unit"",""Avg Read $unit"",""Avg Written $unit"",""Read Change Rate"",""Write Change Rate""" | Out-File -FilePath $workloadFileName
+
+foreach($keyName in ($workloadStats.Keys | sort)){
+    $owner, $jobType = $keyName.split('--')
+    $logicalSize = $workloadStats[$keyName].logicalSize
+    $avgDataRead = $workloadStats[$keyName].avgDataRead
+    $avgDataWritten = $workloadStats[$keyName].avgDataWritten
+    $avgLogicalReplicated = $workloadStats[$keyName].avgLogicalReplicated
+    $avgPhysicalReplicated = $workloadStats[$keyName].avgPhysicalReplicated
+    if($logicalSize -gt 0){
+        $changeRate = [math]::Round(100 * $avgDataRead / $logicalSize, 0)
+        $writeChangeRate = [math]::Round(100 * $avgDataWritten / $logicalSize, 0)
+    }else{
+        $changeRate = '-'
+        $writeChangeRate = '-'
+    }
+    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}""" -f $owner, $jobType, $(toUnits $logicalSize), $(toUnits $avgDataRead), $(toUnits $avgDataWritten), $changeRate, $writeChangeRate | Out-File -FilePath $workloadFileName -Append
 }
