@@ -36,6 +36,8 @@ $daysBackUsecs = dateToUsecs $now.AddDays(-$daysBack)
 $jobStats = @{}
 $workloadStats = @{}
 $clusterStats = @{}
+$archiveStats = @{}
+$jobDays = @{}
 
 foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&includeTenants=true").protectionGroups | Sort-Object -Property name){
     $jobId = $job.id
@@ -65,6 +67,30 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
             if($runStartTimeUsecs -lt $daysBackUsecs){
                 break
             }
+            $jobDays[$jobName] = $runStartTimeUsecs
+            # archive stats
+            if($run.PSObject.Properties['archivalInfo']){
+                $archiveQueuedTime = $run.archivalInfo.archivalTargetResults[0].queuedTimeUsecs
+                $archiveStartTime = $run.archivalInfo.archivalTargetResults[0].startTimeUsecs
+                $archiveEndTime = $run.archivalInfo.archivalTargetResults[0].endTimeUsecs
+                $archiveDelay = ($archiveStartTime - $archiveQueuedTime) / 3600000000
+                $archiveDuration = ($archiveEndTime - $archiveStartTime) / 3600000000
+                $logicalArchived = 0
+                $physicalArchived = 0
+                $run.archivalInfo.archivalTargetResults.stats.logicalBytesTransferred | ForEach-Object {$logicalArchived += $_}
+                $run.archivalInfo.archivalTargetResults.stats.physicalBytesTransferred | ForEach-Object {$physicalArchived += $_}
+                if($jobName -notin $archiveStats.Keys){
+                    $archiveStats[$jobName] = @()
+                }
+                $archiveStats[$jobName] += @{
+                    'startTimeUsecs' = $runStartTimeUsecs;
+                    'delay' = $archiveDelay;
+                    'duration' = $archiveDuration;
+                    'logicalArchived' = $logicalArchived;
+                    'physicalArchived' = $physicalArchived
+                }
+            }
+            # per object stats
             foreach($server in ($run.objects | Sort-Object -Property {$_.object.name})){
                 $sourceName = $server.object.name
                 if(!($run.environment -eq 'kAD' -and $server.object.objectType -eq 'kDomainController')){
@@ -95,6 +121,7 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
                         $server.replicationInfo.replicationTargetResults.stats.logicalBytesTransferred | ForEach-Object {$logicalReplicated += $_}
                         $server.replicationInfo.replicationTargetResults.stats.physicalBytesTransferred | ForEach-Object {$physicalReplicated += $_}
                     }
+                    # per object stats
                     if($sourceName -notin $stats.Keys){
                         $stats[$sourceName] = @()
                     }
@@ -145,9 +172,12 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
         $xDaysStats.physicalReplicated | foreach-object { $xDaysPhysicalReplicated += $_ }
         $xDaysReplicaDuration = 0
         $xDaysStats.replicaDuration | foreach-object { $xDaysReplicaDuration += $_ }
+
         # number of days gathered
         $oldestStat = usecsToDate $stats[$sourceName][-1]['startTimeUsecs']
         $numDays = ($now - $oldestStat).Days + 1
+
+        # change rate
         if($logicalSize -gt 0){
             $changeRate = [math]::Round((100 * $xDaysDataRead / $logicalSize) / $numDays, 0)
             $writeChangeRate = [math]::Round((100 * $xDaysDataWritten/ $logicalSize) / $numDays, 0)
@@ -155,13 +185,17 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
             $changeRate = '-'
             $writeChangeRate = '-'
         }
+
         $avgDataRead = [math]::Round($xDaysDataRead / $numDays, 2)
         $avgDataWritten = [math]::Round($xDaysDataWritten / $numDays, 2)
         $avgReplicaDelay = [math]::Round($xDaysReplicaDelay / $numDays, 0)
         $avgReplicaDuration = [math]::Round($xDaysReplicaDuration / $numDays, 0)
         $avgLogicalReplicated = [math]::Round($xDaysLogicalReplicated / $numDays, 2)
         $avgPhysicalReplicated = [math]::Round($xDaysPhysicalReplicated / $numDays, 2)
+
         """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}"",""{13}"",""{14}"",""{15}"",""{16}"",""{17}"",""{18}""" -f $owner, $jobName, $jobType, $sourceName, $(toUnits $logicalSize), $(toUnits $peakRead), $(toUnits $lastDayDataRead), $(toUnits $xDaysDataRead), $(toUnits $avgDataRead), $(toUnits $lastDayDataWritten), $(toUnits $xDaysDataWritten), $(toUnits $avgDataWritten), $numDays, $changeRate, $writeChangeRate, $avgReplicaDelay, $avgReplicaDuration, $(toUnits $avgLogicalReplicated), $(toUnits $avgPhysicalReplicated) | Out-File -FilePath $objectFileName -Append
+
+        # per job stats
         if($jobName -notin $jobStats.Keys){
             $jobStats[$jobName] = @{
                 'owner' = $owner;
@@ -185,25 +219,40 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
 # Per Job Stats
 $jobFileName = "SizingReport-PerJob-$($cluster.name)-$dateString.csv"
 
-"""Owner"",""JobName"",""JobType"",""Logical $unit"",""Avg Read $unit"",""Avg Written $unit"",""Read Change Rate"",""Write Change Rate"",""Avg Logical Replicated $unit"",""Avg Physical Replicated $unit""" | Out-File -FilePath $jobFileName 
+"""Owner"",""JobName"",""JobType"",""Logical $unit"",""Avg Read $unit"",""Avg Written $unit"",""Read Change Rate"",""Write Change Rate"",""Avg Logical Replicated $unit"",""Avg Physical Replicated $unit"",""Avg Logical Archived $unit"",""Avg Physical Archived $unit""" | Out-File -FilePath $jobFileName 
 foreach($jobName in ($jobStats.Keys | sort)){
     $owner = $jobStats[$jobName].owner
     $jobType = $jobStats[$jobName].jobType
     $logicalSize = 0
     $avgDataRead = 0
     $avgDataWritten = 0
+    $avgLogicalReplicated = 0
+    $avgPhysicalReplicated = 0
+    $avgLogicalArchived = 0
+    $avgPhysicalArchived = 0
     $logicalSize = $jobStats[$jobName].logicalSize
     $avgDataRead = $jobStats[$jobName].avgDataRead
     $avgDataWritten = $jobStats[$jobName].avgDataWritten
     $avgLogicalReplicated = $jobStats[$jobName].avgLogicalReplicated
     $avgPhysicalReplicated = $jobStats[$jobName].avgPhysicalReplicated
+    if($jobName -in $archiveStats.Keys){
+        $archiveStats[$jobName].logicalArchived | ForEach-Object { $avgLogicalArchived += $_ }
+        $archiveStats[$jobName].physicalArchived | ForEach-Object {$avgPhysicalArchived += $_ }
+        $oldestStat = usecsToDate $jobDays[$jobName]
+        $numDays = ($now - $oldestStat).Days + 1
+        $avgLogicalArchived = [math]::Round($avgLogicalArchived / $numDays, 0)
+        $avgPhysicalArchived = [math]::Round($avgPhysicalArchived / $numDays, 0)
+    }
+    # workload stats
     if("$($owner)--$($jobType)" -notin $workloadStats.Keys){
         $workloadStats["$($owner)--$($jobType)"] = @{
             'logicalSize' = $logicalSize;
             'avgDataRead' = $avgDataRead;
-            'avgDataWritten' = $avgDataWritten
-            'avgLogicalReplicated' = $avgLogicalReplicated
-            'avgPhysicalReplicated' = $avgPhysicalReplicated
+            'avgDataWritten' = $avgDataWritten;
+            'avgLogicalReplicated' = $avgLogicalReplicated;
+            'avgPhysicalReplicated' = $avgPhysicalReplicated;
+            'avgLogicalArchived' = $avgLogicalArchived;
+            'avgPhysicalArchived' = $avgPhysicalArchived
         }
     }else{
         $workloadStats["$($owner)--$($jobType)"].logicalSize += $logicalSize
@@ -211,6 +260,8 @@ foreach($jobName in ($jobStats.Keys | sort)){
         $workloadStats["$($owner)--$($jobType)"].avgDataWritten += $avgDataWritten
         $workloadStats["$($owner)--$($jobType)"].avgLogicalReplicated += $avgLogicalReplicated
         $workloadStats["$($owner)--$($jobType)"].avgPhysicalReplicated += $avgPhysicalReplicated
+        $workloadStats["$($owner)--$($jobType)"].avgLogicalArchived += $avgLogicalArchived
+        $workloadStats["$($owner)--$($jobType)"].avgPhysicalArchived += $avgPhysicalArchived
     }
     if($logicalSize -gt 0){
         $changeRate = [math]::Round(100 * $avgDataRead / $logicalSize, 0)
@@ -219,7 +270,7 @@ foreach($jobName in ($jobStats.Keys | sort)){
         $changeRate = '-'
         $writeChangeRate = '-'
     }
-    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}""" -f $owner, $jobName, $jobType, $(toUnits $logicalSize), $(toUnits $avgDataRead), $(toUnits $avgDataWritten), $changeRate, $writeChangeRate, $(toUnits $avgLogicalReplicated), $(toUnits $avgPhysicalReplicated) | Out-File -FilePath $jobFileName -Append
+    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}""" -f $owner, $jobName, $jobType, $(toUnits $logicalSize), $(toUnits $avgDataRead), $(toUnits $avgDataWritten), $changeRate, $writeChangeRate, $(toUnits $avgLogicalReplicated), $(toUnits $avgPhysicalReplicated), $(toUnits $avgLogicalArchived), $(toUnits $avgPhysicalArchived) | Out-File -FilePath $jobFileName -Append
 }
 
 # Per Workload Stats
@@ -232,8 +283,10 @@ foreach($keyName in ($workloadStats.Keys | sort)){
     $logicalSize = $workloadStats[$keyName].logicalSize
     $avgDataRead = $workloadStats[$keyName].avgDataRead
     $avgDataWritten = $workloadStats[$keyName].avgDataWritten
-    $avgLogicalReplicated = $workloadStats[$keyName].avgLogicalReplicated
-    $avgPhysicalReplicated = $workloadStats[$keyName].avgPhysicalReplicated
+    # $avgLogicalReplicated = $workloadStats[$keyName].avgLogicalReplicated
+    # $avgPhysicalReplicated = $workloadStats[$keyName].avgPhysicalReplicated
+    # $avgLogicalArchived = $workloadStats[$keyName].avgLogicalArchived
+    # $avgPhysicalArchived = $workloadStats[$keyName].avgPhysicalArchived
     if($logicalSize -gt 0){
         $changeRate = [math]::Round(100 * $avgDataRead / $logicalSize, 0)
         $writeChangeRate = [math]::Round(100 * $avgDataWritten / $logicalSize, 0)
