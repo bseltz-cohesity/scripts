@@ -310,7 +310,7 @@ foreach($keyName in ($workloadStats.Keys | sort)){
 # Policy Info
 "" | Out-File -FilePath $policyFileName
 foreach($policy in $policies | Where-Object {$_.name -in $policyNames}){
-    "Policy Name: $($policy.name)" | Out-File -FilePath $policyFileName -Append
+    "         Policy Name: $($policy.name)" | Out-File -FilePath $policyFileName -Append
     # base retention
     $baseRetention = $policy.backupPolicy.regular.retention
     $dataLock = ''
@@ -362,7 +362,7 @@ foreach($policy in $policies | Where-Object {$_.name -in $policyNames}){
     if($policy.PSObject.Properties['extendedRetention'] -and $policy.extendedRetention -ne $null -and $policy.extendedRetention.Count -gt 0){
         "  Extended retention:" | Out-File -FilePath $policyFileName -Append
         foreach($extendedRetention in $policy.extendedRetention){
-            "                       Every {0} {1} (keep for {2} {3})" -f $extendedRetention.schedule.frequency, $extendedRetention.schedule.unit, $extendedRetention.retention.duration, $extendedRetention.retention.unit | Out-File -FilePath $policyFileName -Append
+            "                      Every {0} {1} (keep for {2} {3})" -f $extendedRetention.schedule.frequency, $extendedRetention.schedule.unit, $extendedRetention.retention.duration, $extendedRetention.retention.unit | Out-File -FilePath $policyFileName -Append
         }
     }
     # log backup
@@ -392,7 +392,7 @@ foreach($policy in $policies | Where-Object {$_.name -in $policyNames}){
                 }else{
                     $frequency = $replicationTarget.schedule.frequency
                 }
-                "                       {0}: Every {1} {2} (keep for {3} {4})" -f $targetName, $frequency, $frequencyunit, $replicationTarget.retention.duration, $replicationTarget.retention.unit | Out-File -FilePath $policyFileName -Append
+                "                      {0}: Every {1} {2} (keep for {3} {4})" -f $targetName, $frequency, $frequencyunit, $replicationTarget.retention.duration, $replicationTarget.retention.unit | Out-File -FilePath $policyFileName -Append
             }
         }
         if($policy.remoteTargetPolicy.PSObject.Properties['archivalTargets'] -and $policy.remoteTargetPolicy.archivalTargets -ne $null -and $policy.remoteTargetPolicy.archivalTargets.Count -gt 0){
@@ -405,7 +405,7 @@ foreach($policy in $policies | Where-Object {$_.name -in $policyNames}){
                 }else{
                     $frequency = $archivalTarget.schedule.frequency
                 }
-                "                       {0}: Every {1} {2} (keep for {3} {4})" -f $archivalTarget.targetName, $frequency, $frequencyunit, $archivalTarget.retention.duration, $archivalTarget.retention.unit | Out-File -FilePath $policyFileName -Append
+                "                      {0}: Every {1} {2} (keep for {3} {4})" -f $archivalTarget.targetName, $frequency, $frequencyunit, $archivalTarget.retention.duration, $archivalTarget.retention.unit | Out-File -FilePath $policyFileName -Append
             }
         }
     }
