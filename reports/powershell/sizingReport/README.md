@@ -39,3 +39,4 @@ Place both files in a folder together and run the main script like so:
 * -daysBack: (optional) number of days to inspect (default is 31)
 * -unit: (optional) KiB, MiB, GiB, or TiB (default is MiB)
 * -numRuns: (optional) number of runs to grab at a time (default is 100)
+* -indexStats: (optional) collect indexing task durations
