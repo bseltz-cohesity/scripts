@@ -7,7 +7,8 @@ param (
    [Parameter()][ValidateSet('KiB','MiB','GiB','TiB')][string]$unit = 'MiB',
    [Parameter()][int]$daysBack = 7,
    [Parameter()][Int64]$numRuns = 100,
-   [Parameter()][Int64]$backDays = 0
+   [Parameter()][Int64]$backDays = 0,
+   [Parameter()][switch]$indexStats
 )
 
 ### source the cohesity-api helper code
@@ -26,7 +27,7 @@ $finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning')
 $cluster = api get cluster
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $objectFileName = "SizingReport-PerObject-$($cluster.name)-$dateString.csv"
-"""Owner"",""Job Name"",""Job Type"",""Source Name"",""Logical $unit"",""Peak Read $unit"",""Last Day Read $unit"",""Read Over Days $unit"",""Avg Read $unit"",""Last Day Written $unit"",""Written Over Days $unit"",""Avg Written $unit"",""Days Collected"",""Daily Read Change Rate %"",""Daily Write Change Rate %"",""Avg Replica Queue Hours"",""Avg Replica Hours"",""Avg Logical Replicated"",""Avg Physical Replicated""" | Out-File -FilePath $objectFileName
+"""Owner"",""Job Name"",""Job Type"",""Source Name"",""Logical $unit"",""Peak Read $unit"",""Last Day Read $unit"",""Read Over Days $unit"",""Avg Read $unit"",""Last Day Written $unit"",""Written Over Days $unit"",""Avg Written $unit"",""Days Collected"",""Daily Read Change Rate %"",""Daily Write Change Rate %"",""Avg Replica Queue Hours"",""Avg Replica Hours"",""Avg Logical Replicated"",""Avg Physical Replicated"",""Avg Index Hours""" | Out-File -FilePath $objectFileName
 
 $runningTasks = 0
 
@@ -104,9 +105,27 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
                     'physicalArchived' = $physicalArchived
                 }
             }
+            # index stats
+            $runIndexDuration = 0
+            if($indexStats){
+                if($run.PSObject.Properties['localBackupInfo'] -and $run.localBackupInfo.PSObject.Properties['indexingTaskId']){
+                    $indexingTaskId = $run.localBackupInfo.indexingTaskId
+                    $indexingTask = api get "/progressMonitors?taskPathVec=$indexingTaskId&excludeSubTasks=false&includeFinishedTasks=true"
+                    if($indexingTask.resultGroupVec.Count -gt 0){
+                        if($indexingTask.resultGroupVec[0].taskVec.Count -gt 0){
+                            if($indexingTask.resultGroupVec[0].taskVec[0].PSObject.Properties['progress']){
+                                if($indexingTask.resultGroupVec[0].taskVec[0].progress.PSObject.Properties['endTimeSecs']){
+                                    $runIndexDuration = $indexingTask.resultGroupVec[0].taskVec[0].progress.endTimeSecs - $indexingTask.resultGroupVec[0].taskVec[0].progress.startTimeSecs
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             # per object stats
             foreach($server in ($run.objects | Sort-Object -Property {$_.object.name})){
                 $sourceName = $server.object.name
+                $thisObjectIndexDuration = 0
                 if(!($run.environment -eq 'kAD' -and $server.object.objectType -eq 'kDomainController')){
                     if($server.PSObject.Properties['originalBackupInfo']){
                         $logicalBytes = $server.originalBackupInfo.snapshotInfo.stats.logicalSizeBytes
@@ -121,6 +140,15 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
                         $bytesRead = $server.localSnapshotInfo.snapshotInfo.stats.bytesRead
                         $bytesWritten = $server.localSnapshotInfo.snapshotInfo.stats.bytesWritten
                         $owner = $cluster.name
+                        if($runIndexDuration -gt 0){
+                            $taskPath = "entity_$($server.object.id)"
+                            $indexingSubTask = $indexingTask.resultGroupVec[0].taskVec[0].subTaskVec | Where-Object taskPath -eq $taskPath
+                            if($indexingSubTask -and $indexingSubTask.PSObject.Properties['progress']){
+                                if($indexingSubTask.progress.PSObject.Properties['endTimeSecs']){
+                                    $thisObjectIndexDuration = $indexingSubTask.progress.endTimeSecs - $indexingSubTask.progress.startTimeSecs
+                                }
+                            }
+                        }
                     }
                     $logicalReplicated = 0
                     $physicalReplicated = 0
@@ -146,7 +174,9 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
                                              'replicaDelay' = $replicaDelay;
                                              'replicaDuration' = $replicaDuration;
                                              'logicalReplicated' = $logicalReplicated;
-                                             'physicalReplicated' = $physicalReplicated
+                                             'physicalReplicated' = $physicalReplicated;
+                                             'runIndexDuration' = $runIndexDuration;
+                                             'thisObjectIndexDuration' = $thisObjectIndexDuration
                                             }
                     $owners[$sourceName] = $owner
                 }
@@ -186,6 +216,10 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
         $xDaysStats.physicalReplicated | foreach-object { $xDaysPhysicalReplicated += $_ }
         $xDaysReplicaDuration = 0
         $xDaysStats.replicaDuration | foreach-object { $xDaysReplicaDuration += $_ }
+        $xDaysRunIndexDuration = 0
+        $xDaysStats.runIndexDuration | foreach-object { $xDaysRunIndexDuration += $_ }
+        $xDaysThisObjectIndexDuration = 0
+        $xDaysStats.thisObjectIndexDuration | foreach-object { $xDaysThisObjectIndexDuration += $_ }
 
         # number of days gathered
         $oldestStat = usecsToDate $stats[$sourceName][-1]['startTimeUsecs']
@@ -207,7 +241,10 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
         $avgLogicalReplicated = [math]::Round($xDaysLogicalReplicated / $numDays, 2)
         $avgPhysicalReplicated = [math]::Round($xDaysPhysicalReplicated / $numDays, 2)
 
-        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}"",""{13}"",""{14}"",""{15}"",""{16}"",""{17}"",""{18}""" -f $owner, $jobName, $jobType, $sourceName, $(toUnits $logicalSize), $(toUnits $peakRead), $(toUnits $lastDayDataRead), $(toUnits $xDaysDataRead), $(toUnits $avgDataRead), $(toUnits $lastDayDataWritten), $(toUnits $xDaysDataWritten), $(toUnits $avgDataWritten), $numDays, $changeRate, $writeChangeRate, $avgReplicaDelay, $avgReplicaDuration, $(toUnits $avgLogicalReplicated), $(toUnits $avgPhysicalReplicated) | Out-File -FilePath $objectFileName -Append
+        $avgRunIndexDuration = [math]::Round($xDaysRunIndexDuration / ($numDays * 3600), 1)
+        $avgThisObjectIndexDuration = [math]::Round($xDaysThisObjectIndexDuration / ($numDays * 3600), 1)
+
+        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}"",""{13}"",""{14}"",""{15}"",""{16}"",""{17}"",""{18}"",""{19}""" -f $owner, $jobName, $jobType, $sourceName, $(toUnits $logicalSize), $(toUnits $peakRead), $(toUnits $lastDayDataRead), $(toUnits $xDaysDataRead), $(toUnits $avgDataRead), $(toUnits $lastDayDataWritten), $(toUnits $xDaysDataWritten), $(toUnits $avgDataWritten), $numDays, $changeRate, $writeChangeRate, $avgReplicaDelay, $avgReplicaDuration, $(toUnits $avgLogicalReplicated), $(toUnits $avgPhysicalReplicated), $avgThisObjectIndexDuration | Out-File -FilePath $objectFileName -Append
 
         # per job stats
         if($jobName -notin $jobStats.Keys){
@@ -218,7 +255,8 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
                 'avgDataRead' = $avgDataRead;
                 'logicalSize' = $logicalSize;
                 'avgLogicalReplicated' = $avgLogicalReplicated;
-                'avgPhysicalReplicated' = $avgPhysicalReplicated
+                'avgPhysicalReplicated' = $avgPhysicalReplicated;
+                'avgRunIndexDuration' = $avgRunIndexDuration
             }
         }else{
             $jobStats[$jobName].avgDataWritten += $avgDataWritten
@@ -233,7 +271,7 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
 # Per Job Stats
 $jobFileName = "SizingReport-PerJob-$($cluster.name)-$dateString.csv"
 
-"""Owner"",""JobName"",""JobType"",""Policy"",""Logical $unit"",""Avg Read $unit"",""Avg Written $unit"",""Read Change Rate"",""Write Change Rate"",""Avg Logical Replicated $unit"",""Avg Physical Replicated $unit"",""Avg Logical Archived $unit"",""Avg Physical Archived $unit""" | Out-File -FilePath $jobFileName 
+"""Owner"",""JobName"",""JobType"",""Policy"",""Logical $unit"",""Avg Read $unit"",""Avg Written $unit"",""Read Change Rate"",""Write Change Rate"",""Avg Logical Replicated $unit"",""Avg Physical Replicated $unit"",""Avg Logical Archived $unit"",""Avg Physical Archived $unit"",""Avg Index Duration""" | Out-File -FilePath $jobFileName 
 foreach($jobName in ($jobStats.Keys | sort)){
     $owner = $jobStats[$jobName].owner
     $jobType = $jobStats[$jobName].jobType
@@ -249,6 +287,7 @@ foreach($jobName in ($jobStats.Keys | sort)){
     $avgDataWritten = $jobStats[$jobName].avgDataWritten
     $avgLogicalReplicated = $jobStats[$jobName].avgLogicalReplicated
     $avgPhysicalReplicated = $jobStats[$jobName].avgPhysicalReplicated
+    $avgRunIndexDuration = $jobStats[$jobName].avgRunIndexDuration
     if($jobName -in $archiveStats.Keys){
         $archiveStats[$jobName].logicalArchived | ForEach-Object { $avgLogicalArchived += $_ }
         $archiveStats[$jobName].physicalArchived | ForEach-Object {$avgPhysicalArchived += $_ }
@@ -284,7 +323,7 @@ foreach($jobName in ($jobStats.Keys | sort)){
         $changeRate = '-'
         $writeChangeRate = '-'
     }
-    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}""" -f $owner, $jobName, $jobType, $jobPolicies[$jobName], $(toUnits $logicalSize), $(toUnits $avgDataRead), $(toUnits $avgDataWritten), $changeRate, $writeChangeRate, $(toUnits $avgLogicalReplicated), $(toUnits $avgPhysicalReplicated), $(toUnits $avgLogicalArchived), $(toUnits $avgPhysicalArchived) | Out-File -FilePath $jobFileName -Append
+    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}"",""{13}""" -f $owner, $jobName, $jobType, $jobPolicies[$jobName], $(toUnits $logicalSize), $(toUnits $avgDataRead), $(toUnits $avgDataWritten), $changeRate, $writeChangeRate, $(toUnits $avgLogicalReplicated), $(toUnits $avgPhysicalReplicated), $(toUnits $avgLogicalArchived), $(toUnits $avgPhysicalArchived), $avgRunIndexDuration | Out-File -FilePath $jobFileName -Append
 }
 
 # Per Workload Stats
