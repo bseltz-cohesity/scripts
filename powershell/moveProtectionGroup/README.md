@@ -39,5 +39,5 @@ Place all files in a folder together. then, run the main script like so:
 * -vip: DNS or IP of the Cohesity Cluster
 * -username: Cohesity User Name
 * -domain: - defaults to 'local'
-* -jobName: one or more jobs to migrate (comma separated)
+* -jobName: name of protection group to migrate
 * -newStorageDomainName: name of storage domain to migrate to
