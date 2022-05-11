@@ -1,4 +1,4 @@
-# version 2021.09.22
+# version 2022.05.11
 # usage: ./backedUpFileList.ps1 -vip mycluster \
 #                               -username myuser \
 #                               -domain mydomain.net \
@@ -25,13 +25,20 @@ param (
     [Parameter()][Int64]$runId,
     [Parameter()][datetime]$fileDate,
     [Parameter()][string]$startPath = '/',
-    [Parameter()][switch]$noIndex
+    [Parameter()][switch]$noIndex,
+    [Parameter()][switch]$showStats
 )
 
 if($noIndex){
     $useLibrarian = $False
 }else{
     $useLibrarian = $True
+}
+
+if($showStats){
+    $statfile = $True
+}else{
+    $statfile = $False
 }
 
 $volumeTypes = @(1, 6)
@@ -50,15 +57,15 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
     $thisDirPath = [System.Web.HttpUtility]::UrlEncode($dirPath).Replace('%2f%2f','%2F')
     if($cookie){
         if($null -ne $volumeName){
-            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=true&volumeInfoCookie=$volumeInfoCookie&cookie=$cookie&volumeName=$volumeName&dirPath=$thisDirPath"
+            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=$statfile&volumeInfoCookie=$volumeInfoCookie&cookie=$cookie&volumeName=$volumeName&dirPath=$thisDirPath"
         }else{
-            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=true&cookie=$cookie&dirPath=$thisDirPath"
+            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=$statfile&cookie=$cookie&dirPath=$thisDirPath"
         }
     }else{
         if($null -ne $volumeName){
-            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=true&volumeInfoCookie=$volumeInfoCookie&volumeName=$volumeName&dirPath=$thisDirPath"
+            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=$statfile&volumeInfoCookie=$volumeInfoCookie&volumeName=$volumeName&dirPath=$thisDirPath"
         }else{
-            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=true&dirPath=$thisDirPath"
+            $dirList = api get "/vm/directoryList?$instance&useLibrarian=$useLibrarian&statFileEntries=$statfile&dirPath=$thisDirPath"
         }
     }
     if($dirList.PSObject.Properties['entries'] -and $dirList.entries.Count -gt 0){
@@ -67,9 +74,13 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
             if($entry.type -eq 'kDirectory'){
                 listdir "$dirPath/$($entry.name)" $instance $volumeInfoCookie $volumeName
             }else{
-                $filesize = $entry.fstatInfo.size
-                $mtime = usecsToDate $entry.fstatInfo.mtimeUsecs
-                "{0} ({1}) [{2} bytes]" -f $entry.fullPath, $mtime, $filesize | Tee-Object -FilePath $outputfile -Append  
+                if($statfile){
+                    $filesize = $entry.fstatInfo.size
+                    $mtime = usecsToDate $entry.fstatInfo.mtimeUsecs
+                    "{0} ({1}) [{2} bytes]" -f $entry.fullPath, $mtime, $filesize | Tee-Object -FilePath $outputfile -Append  
+                }else{
+                    "{0}" -f $entry.fullPath | Tee-Object -FilePath $outputfile -Append  
+                }
             }
         }
     }
@@ -97,7 +108,7 @@ function showFiles($doc, $version){
     
     $backupType = $doc.backupType
     if($backupType -in $volumeTypes){
-        $volumeList = api get "/vm/volumeInfo?$instance&statFileEntries=false"
+        $volumeList = api get "/vm/volumeInfo?$instance&statFileEntries=$statfile"
         if($volumeList.PSObject.Properties['volumeInfos']){
             $volumeInfoCookie = $volumeList.volumeInfoCookie
             foreach($volume in $volumeList.volumeInfos | Sort-Object -Property name){

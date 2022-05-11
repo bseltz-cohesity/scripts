@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2022.03.15
+# version 2022.05.11
 
 # usage: ./backedUpFileList.py -v mycluster \
 #                              -u myuser \
@@ -38,6 +38,7 @@ parser.add_argument('-r', '--runid', type=int, default=None)          # choose s
 parser.add_argument('-f', '--filedate', type=str, default=None)       # date to restore from
 parser.add_argument('-p', '--startpath', type=str, default='/')       # date to restore from
 parser.add_argument('-n', '--noindex', action='store_true')           # do not use librarian
+parser.add_argument('-ss', '--showstats', action='store_true')           # do not use librarian
 
 args = parser.parse_args()
 
@@ -56,6 +57,12 @@ filedate = args.filedate
 listfiles = args.listfiles
 startpath = args.startpath
 noindex = args.noindex
+showstats = args.showstats
+
+if showstats is True:
+    statfile = True
+else:
+    statfile = False
 
 if noindex is True:
     useLibrarian = False
@@ -70,23 +77,27 @@ def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None, cookie
     thisDirPath = quote_plus(dirPath).replace('%2F%2F', '%2F')
     if cookie is not None:
         if volumeName is not None:
-            dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=true&dirPath=%s&volumeInfoCookie=%s&volumeName=%s&cookie=%s' % (instance, useLibrarian, thisDirPath, volumeInfoCookie, volumeName, cookie))
+            dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=%s&dirPath=%s&volumeInfoCookie=%s&volumeName=%s&cookie=%s' % (instance, useLibrarian, statfile, thisDirPath, volumeInfoCookie, volumeName, cookie))
         else:
-            dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=true&dirPath=%s&cookie=%s' % (instance, useLibrarian, thisDirPath, cookie))
+            dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=%s&dirPath=%s&cookie=%s' % (instance, useLibrarian, statfile, thisDirPath, cookie))
     else:
         if volumeName is not None:
-            dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=true&dirPath=%s&volumeInfoCookie=%s&volumeName=%s' % (instance, useLibrarian, thisDirPath, volumeInfoCookie, volumeName))
+            dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=%s&dirPath=%s&volumeInfoCookie=%s&volumeName=%s' % (instance, useLibrarian, statfile, thisDirPath, volumeInfoCookie, volumeName))
         else:
-            dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=true&dirPath=%s' % (instance, useLibrarian, thisDirPath))
+            dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=%s&dirPath=%s' % (instance, useLibrarian, statfile, thisDirPath))
     if dirList and 'entries' in dirList:
         for entry in sorted(dirList['entries'], key=lambda e: e['name']):
             if entry['type'] == 'kDirectory':
                 listdir('%s/%s' % (dirPath, entry['name']), instance, f, volumeInfoCookie, volumeName)
             else:
-                filesize = entry['fstatInfo']['size']
-                mtime = usecsToDate(entry['fstatInfo']['mtimeUsecs'])
-                print('%s (%s) [%s bytes]' % (entry['fullPath'], mtime, filesize))
-                f.write('%s (%s) [%s bytes]\n' % (entry['fullPath'], mtime, filesize))
+                if statfile is True:
+                    filesize = entry['fstatInfo']['size']
+                    mtime = usecsToDate(entry['fstatInfo']['mtimeUsecs'])
+                    print('%s (%s) [%s bytes]' % (entry['fullPath'], mtime, filesize))
+                    f.write('%s (%s) [%s bytes]\n' % (entry['fullPath'], mtime, filesize))
+                else:
+                    print('%s' % entry['fullPath'])
+                    f.write('%s\n' % entry['fullPath'])
     if dirList and 'cookie' in dirList:
         listdir('%s' % dirPath, instance, f, volumeInfoCookie, volumeName, dirList['cookie'])
 
@@ -109,7 +120,7 @@ def showFiles(doc, version):
     volumeTypes = [1, 6]
     backupType = doc['backupType']
     if backupType in volumeTypes:
-        volumeList = api('get', '/vm/volumeInfo?%s&statFileEntries=true' % instance)
+        volumeList = api('get', '/vm/volumeInfo?%s&statFileEntries=%s' % (instance, statfile))
         if 'volumeInfos' in volumeList:
             volumeInfoCookie = volumeList['volumeInfoCookie']
             for volume in sorted(volumeList['volumeInfos'], key=lambda v: v['name']):

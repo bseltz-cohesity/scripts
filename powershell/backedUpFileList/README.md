@@ -83,3 +83,4 @@ Or simply use the latest version:
 * -fileDate: (optional) use snapshot version at or after date specified
 * -startPath: (optional) start listing files at path (default is /)
 * -noIndex: (optional) if omitted, indexer will be used
+* -showStats: (optional) include file date and size in the output
