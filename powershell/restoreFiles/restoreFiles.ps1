@@ -1,4 +1,4 @@
-# version 2021.11.12
+# version 2022.05.11
 ### usage: ./restoreFiles.ps1 -vip mycluster -username myuser -domain mydomain.net `
 #                             -sourceServer server1.mydomain.net `
 #                             -targetServer server2.mydomain.net `
@@ -161,6 +161,12 @@ function restore($thesefiles, $doc, $version, $targetEntity, $singleFile){
         $restoreParams.params.restoreFilesPreferences.restoreToOriginalPaths = $false
         $restoreParams.params.restoreFilesPreferences["alternateRestoreBaseDirectory"] = $restorePath
     }
+
+    # select local or cloud archive copy
+    if($version.replicaInfo.replicaVec[0].target.type -eq 3){
+        $restoreParams.sourceObjectInfo['archivalTarget'] = $version.replicaInfo.replicaVec[0].target.archivalTarget
+    }
+
     if($singleFile){
         Write-Host "Restoring $thesefiles"
     }else{
