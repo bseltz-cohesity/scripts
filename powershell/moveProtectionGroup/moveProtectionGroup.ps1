@@ -30,7 +30,7 @@ if($job){
 
     $newStorageDomain = api get viewBoxes | Where-Object name -eq $newStorageDomainName
     if(!$newStorageDomain){
-        Write-Host "Storage Domain $($oldStorageDomain.name) not found" -ForegroundColor Yellow
+        Write-Host "Storage Domain $newStorageDomainName not found" -ForegroundColor Yellow
         exit
     }else{
         $job.storageDomainId = $newStorageDomain.id
