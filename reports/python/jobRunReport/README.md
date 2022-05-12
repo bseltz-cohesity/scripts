@@ -22,20 +22,16 @@ chmod +x jobRunReport.py
 Place both files in a folder together and run the main script like so:
 
 ```bash
-bash:~/scripts/python$ ./jobRunReport.py -v mycluster -u myusername
-Connected!
-             JobName    Status   StartTime
-             -------   --------  ---------
-          NAS Backup   kSuccess  2019-01-10 00:10:01
-          SQL Backup   kSuccess  2019-01-09 23:50:01
-      Infrastructure   kSuccess  2019-01-09 23:40:01
-      SQL File Based   kSuccess  2019-01-09 20:06:00
-          CohesityDB   kSuccess  2019-01-09 23:23:27
-   File-Based Backup   kSuccess  2019-01-09 20:12:00
-           VM Backup   kSuccess  2019-01-09 23:30:01
-              Oracle   kSuccess  2019-01-10 00:00:00
-              Isilon   kSuccess  2019-01-09 17:51:39
+./jobRunReport.py -v mycluster -u myusername -d mydomain.net
 ```
+
+## Parameters
+
+* -v, --vip: DNS or IP of the Cohesity cluster to connect to
+* -u, --username: username to authenticate to Cohesity cluster
+* -d, --domain: (optional) domain of username (default is local)
+* -i, --useApiKey: (optional) use API key for authentication
+* -pwd: --password: (optional) use password from command line instead of stored password
 
 ## The Python Helper Module - pyhesity.py
 
