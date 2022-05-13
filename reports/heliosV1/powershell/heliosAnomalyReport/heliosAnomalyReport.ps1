@@ -27,13 +27,12 @@ $dateString = ($today).ToString('yyyy-MM-dd')
 $outfileName = "anomalyReport-$dateString.csv"
 
 # headings
-"""Cluster Name"",""Job Name"",""Job Type"",""Run Date"",""Object Name"",""File Name"",""Action""" | Out-File -FilePath $outfileName
+"""Cluster Name"",""Job Name"",""Job Type"",""Run Date"",""Object Name"",""Anomaly Strength"",""File Name"",""Action""" | Out-File -FilePath $outfileName
 
 $alerts = api get -mcm "alerts?alertCategoryList=kSecurity&alertStateList=kOpen&endDateUsecs=$uEnd&maxAlerts=1000&startDateUsecs=$uStart&_includeTenantInfo=true"
 
 foreach($alert in $alerts | Where-Object {$_.alertDocument.alertName -eq 'DataIngestAnomalyAlert'}){
     $strength = ($alert.propertyList | Where-Object key -eq 'anomalyStrength').value
-    $strength
     if($strength -ge $anomalyStrength){
         $clusterName = $alert.clusterName
         $jobName = ($alert.propertyList | Where-Object key -eq 'jobName').value
@@ -46,12 +45,17 @@ foreach($alert in $alerts | Where-Object {$_.alertDocument.alertName -eq 'DataIn
             $snapshot2 = $alert.id.split(':')[1]
             $conn = heliosCluster $clusterName
             $changeLog = api get  "snapshots/changelog?jobId=$jobId&snapshot1TimeUsecs=$jobStartTimeUsecs&snapshot2TimeUsecs=$snapshot2&pageCount=50&pageNumber=0" -quiet
+            if($changeLog -eq $null -or !$changeLog.PSObject.Properties['results'] -or $changeLog.results.Count -eq 0){
+                """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}""" -f $clusterName, $jobName, $objectType, $(usecsToDate $jobStartTimeUsecs), $object, $strength, 'file changes not computed' | Out-File -FilePath $outfileName -Append
+            }
             foreach($result in $changeLog.results){
                 $filename = $result.filename
                 $operation = $result.operation
                 Write-Host "    $filename"
-                """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}""" -f $clusterName, $jobName, $objectType, $object, $filename, $operation.substring(1) | Out-File -FilePath $outfileName -Append
+                """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}""" -f $clusterName, $jobName, $objectType, $(usecsToDate $jobStartTimeUsecs), $object, $strength, $filename, $operation.substring(1) | Out-File -FilePath $outfileName -Append
             }
         }    
     }
 }
+
+"`nOutput saved to $outfilename`n"
