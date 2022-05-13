@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script takes SMB share information (exported from Isilon using the Isilon CLI) and for each share, identifies the matching view on Cohesity, and migrates share permissions and child shares. Note that share-level SMB permissions require Cohesity version 6.4 or later.
+This script takes SMB share information from isilon, and for each share, identifies the matching subdirectory on the specified Cohesity view, and migrates share permissions and child shares. Note that share-level SMB permissions require Cohesity version 6.4 or later.
 
 ## Download the script
 
@@ -28,8 +28,10 @@ Place both files in a folder together and run the main script like so:
 ./migrateIsilonShares.ps1 -vip mycluster `
                           -username myusername `
                           -domain mydomain.net `
-                          -shareDataFilename ./shares.csv `
-                          -sourcePathPrefix '/ifs/myisilon/'
+                          -isilon myisilon `
+                          -isilonUsername admin `
+                          -viewName isilon `
+                          -sourcePath /ifs
 ```
 
 ## Parameters
@@ -37,5 +39,8 @@ Place both files in a folder together and run the main script like so:
 * -vip: Cohesity Cluster to connect to
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain of user (defaults to local)
-* -shareDataFilename: path to csv output file from Isilon
-* -sourcePathPrefix: Isilon root path (relative to Cohesity View)
+* -isilon: name of isilon to connect to
+* -isilonUsername: name of isilon user
+* -isilonPassword: (optional) password to connect to isilon
+* -viewName: name of Cohesity view that isilon was restored to
+* -sourcePath: isilon path that was restored to the Cohesity view (e.g. /ifs)
