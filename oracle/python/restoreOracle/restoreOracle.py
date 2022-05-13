@@ -414,16 +414,24 @@ if 'errorCode' in response:
 
 print("Restoring DB %s to %s as %s..." % (sourcedb, targetserver, targetdb))
 taskId = response['restoreTask']['performRestoreTaskState']['base']['taskId']
-status = api('get', '/restoretasks/%s' % taskId)
+if taskId is None:
+    print('Failed to get restore task ID')
+    exit(1)
+# status = api('get', '/restoretasks/%s' % taskId)
 
 if wait is True:
+    status = 'unknown'
     finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
-    while(status[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus'] not in finishedStates):
-        sleep(1)
-        status = api('get', '/restoretasks/%s' % taskId)
-    if(status[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus'] == 'kSuccess'):
+    while(status not in finishedStates):
+        sleep(10)
+        try:
+            task = api('get', '/restoretasks/%s' % taskId)
+            status = task[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus']
+        except:
+            pass
+    if(status == 'kSuccess'):
         print('Restore Completed Successfully')
         exit(0)
     else:
-        print('Restore Ended with state: %s' % status[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus'])
+        print('Restore Ended with state: %s' % status)
         exit(1)
