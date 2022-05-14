@@ -1,4 +1,4 @@
-# version 2022.05.03
+# version 2022.05.14
 # usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
@@ -34,7 +34,8 @@ param (
     [Parameter()][string]$metaDataFile,   # backup file list
     [Parameter()][switch]$abortIfRunning,  # exit if job is already running
     [Parameter()][int64]$waitMinutesIfRunning = 60,
-    [Parameter()][int64]$cancelPreviousRunMinutes = 0
+    [Parameter()][int64]$cancelPreviousRunMinutes = 0,
+    [Parameter()][int64]$statusRetries = 10
 )
 
 # source the cohesity-api helper code
@@ -456,24 +457,56 @@ while($newRunId -le $lastRunId){
 output "New Job Run ID: $newRunId"
 
 # wait for job run to finish
-if($wait -or $enable){
+if($wait -or $enable -or $progress){
+    $statusRetryCount = 0
     $lastProgress = -1
-    while ($runs[0].backupRun.status -notin $finishedStates){
+    $lastStatus = 'unknown'
+    while ($lastStatus -notin $finishedStates){
         Start-Sleep 15
-        if($progress){
-            $progressMonitor = api get "/progressMonitors?taskPathVec=backup_$($newRunId)_1&includeFinishedTasks=true&excludeSubTasks=false"
-            $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
-            if($percentComplete -gt $lastProgress){
-                "{0} percent complete" -f [math]::Round($percentComplete, 0)
-                $lastProgress = $percentComplete
+        # progress monitor
+        try {
+            if($progress){
+                $progressMonitor = api get "/progressMonitors?taskPathVec=backup_$($newRunId)_1&includeFinishedTasks=true&excludeSubTasks=false"
+                if($progressMonitor -and $progressMonitor.PSObject.Properties['resultGroupVec'] -and $progressMonitor.resultGroupVec.Count -gt 0){
+                    $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
+                    if($percentComplete -gt $lastProgress){
+                        "{0} percent complete" -f [math]::Round($percentComplete, 0)
+                        $lastProgress = $percentComplete
+                    }
+                }else{
+                    $statusRetryCount += 1
+                }
             }
+        }catch{
+            $statusRetryCount += 1
+            Start-Sleep 5
         }
-        if($selectedSources.Count -gt 0){
-            $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&sourceId=$($selectedSources[0])"
-        }else{
-            $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10&excludeTasks=true"
+        # status
+        try {
+            if($selectedSources.Count -gt 0){
+                $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&sourceId=$($selectedSources[0])"
+            }else{
+                $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10&excludeTasks=true"
+            }
+            if($runs -and $runs.Count -gt 0){
+                $runs = $runs | Where-Object {$_.backupRun.jobRunId -eq $newRunId}
+                if($runs.Count -gt 0 -and $runs[0].PSObject.Properties['backupRun']){
+                    if($runs[0].backupRun.PSObject.Properties['status']){
+                        $lastStatus = $runs[0].backupRun.status
+                        $statusRetryCount = 0
+                    }
+                }
+            }else{
+                $statusRetryCount += 1
+            }
+        }catch{
+            $statusRetryCount += 1
+            Start-Sleep 5
         }
-        $runs = $runs | Where-Object {$_.backupRun.jobRunId -eq $newRunId}
+        if($statusRetryCount -gt $statusRetries){
+            Write-Host "Timed out waiting for status update" -foregroundcolor Yellow
+            exit 1
+        }
     }
 }
 
@@ -490,7 +523,7 @@ if($enable -and $cluster.clusterSoftwareVersion -gt '6.5'){
 
 $statusMap = @('0', '1', '2', 'Canceled', 'Success', 'Failed', 'Warning')
 
-if($wait -or $enable){
+if($wait -or $enable -or $progress){
     if($runs[0].backupRun.status -in @('3', '4', '5', '6')){
         $runs[0].backupRun.status = $statusMap[$runs[0].backupRun.status]
     }
