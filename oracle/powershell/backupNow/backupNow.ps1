@@ -473,6 +473,7 @@ if($wait -or $enable -or $progress){
                         "{0} percent complete" -f [math]::Round($percentComplete, 0)
                         $lastProgress = $percentComplete
                     }
+                    $statusRetryCount = 0
                 }else{
                     $statusRetryCount += 1
                 }
