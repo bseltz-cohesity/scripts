@@ -93,7 +93,6 @@ function __writeLog($logmessage){
 }
 
 # authentication functions ========================================================================
-
 function apiauth($vip='helios.cohesity.com', 
                  $username = 'helios', 
                  $domain = 'local', 
@@ -109,8 +108,21 @@ function apiauth($vip='helios.cohesity.com',
                  [switch] $noprompt, 
                  [switch] $updatePassword, 
                  [switch] $useApiKey,
-                 [switch] $v2){
+                 [switch] $v2,
+                 [boolean] $apiKeyAuthentication = $false,
+                 [boolean] $heliosAuthentication = $false,
+                 [boolean] $sendMfaCode = $false){
 
+    if($apiKeyAuthentication -eq $True){
+        $useApiKey = $True
+    }
+    if($heliosAuthentication -eq $True){
+        $helios = $True
+    }
+    if($sendMfaCode -eq $True){
+        $emailMfaCode = $True
+    }
+    
     # parse domain\username or username@domain
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
