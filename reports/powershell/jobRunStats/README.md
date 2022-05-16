@@ -56,6 +56,10 @@ SQL Backup (SQL)
 * -vip: the Cohesity cluster to connect to
 * -username: the cohesity user to login with
 * -domain: domain of the Cohesity user (defaults to local)
+* -useApiKey: (optional) Use API key for authentication
+* -password: (optional) password or API key (will use stored password by default)
+* -mfaCode: (optional) multi-factor authentication code
+* -emailMfaCode: (optional) send mfaCode via email
 * -failedOnly: (optional) Show only unsuccessful job runs
 * -lastDay: (optional) Show only the past 24 hours of job runs
 * -numDays: (optional) Limit output to the last X days

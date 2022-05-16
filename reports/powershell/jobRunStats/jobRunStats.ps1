@@ -8,6 +8,10 @@ param (
     [Parameter(Mandatory = $True)][string]$vip,
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password = $null,
+    [Parameter()][string]$mfaCode = $null,
+    [Parameter()][switch]$emailMfaCode,
     [Parameter()][switch]$failedOnly,
     [Parameter()][switch]$lastDay,
     [Parameter()][int]$numDays = 0
@@ -17,7 +21,15 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
+}else{
+    if($emailMfaCode){
+        apiauth -vip $vip -username $username -domain $domain -password $password -emailMfaCode
+    }else{
+        apiauth -vip $vip -username $username -domain $domain -password $password -mfaCode $mfaCode
+    }
+}
 
 $cluster = api get cluster
 
