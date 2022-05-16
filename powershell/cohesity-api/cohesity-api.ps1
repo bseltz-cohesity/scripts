@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.04.14 - Brian Seltzer
+#  Version 2022.05.16 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2021.02.10 - fixed empty body issue
@@ -24,10 +24,11 @@
 # 2022.02.10 - fixed bad password handling
 # 2022.02.17 - disabled pwfile autodeletion
 # 2022.04.12 - updated importStoredPassword error handling and case insensitive api method
-# 2022.04.14 - fix store and import - support domain\username convention
+# 2022.04.14 - fixed store and import - support domain\username convention
+# 2022.05.16 - fixed mfa for v2 user/session authentication
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2022.04.14'
+$versionCohesityAPI = '2022.05.16'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -228,6 +229,7 @@ function apiauth($vip='helios.cohesity.com',
                     'otpType' = 'Email';
                     'otpCode' = $mfaCode
                 }
+                $mfaType = 'email'
             }
             # authenticate
             if($PSVersionTable.PSEdition -eq 'Core'){
@@ -264,7 +266,9 @@ function apiauth($vip='helios.cohesity.com',
                         $body = ConvertTo-Json @{
                             'domain' = $domain;
                             'username' = $username;
-                            'password' = $passwd
+                            'password' = $passwd;
+                            'otpType' = $mfaType.ToLower();
+                            'otpCode' = $mfaCode
                         }
                         # authenticate
                         if($PSVersionTable.PSEdition -eq 'Core'){
