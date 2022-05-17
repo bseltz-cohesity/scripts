@@ -4,7 +4,8 @@ param (
     [Parameter()][string]$username = 'DMaaS',
     [Parameter(Mandatory = $True)][string]$region,  # DMaaS region
     [Parameter(Mandatory = $True)][string]$objectName,
-    [Parameter()][switch]$debugmode
+    [Parameter()][switch]$debugmode,
+    [Parameter()][switch]$wait
 )
 
 # source the cohesity-api helper code
@@ -12,6 +13,10 @@ param (
 
 # authenticate
 apiauth -username $username -regionid $region
+
+$nowUsecs = dateToUsecs
+$tomorrowUsecs = $nowUsecs + 86400000000
+$weekAgoUsecs = timeAgo 1 week
 
 $objects = api get -v2 "data-protect/search/objects?searchString=$objectName&includeTenants=true"
 $objects = $objects.objects | Where-Object name -eq $objectName
@@ -41,6 +46,24 @@ $runParams = @{
     }
 }
 
+$activityParams = @{
+    "statsParams" = @{
+        "attributes" = @(
+            "Status";
+            "ActivityType"
+        )
+    };
+    "fromTimeUsecs" = $weekAgoUsecs;
+    "toTimeUsecs" = $tomorrowUsecs;
+    "objectIdentifiers" = @(
+        @{
+            "objectId" = $protectedObjects[0].id;
+            "clusterId" = $null;
+            "regionId" = $region
+        }
+    )
+}
+
 # handle multiple protections
 $policies = $object.objects[0].objectBackupConfiguration.policyConfig.policies
 if($policies.Count -gt 1){
@@ -58,7 +81,32 @@ if($policies.Count -gt 1){
     }
 }
 
+# wait for existing run to finish
+$finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning')
+$status = 'unknown'
+$reportWaiting = $True
+while($status -notin $finishedStates){
+    $result = api post -mcmv2 "data-protect/objects/activity" $activityParams
+    if($result.PSObject.Properties['activity'] -and $result.activity -ne $null -and $result.activity.Count -gt 0){
+        if($result.activity[0].PSObject.Properties['archivalRunParams'] -and $result.activity[0].archivalRunParams.PSObject.Properties['status']){
+            $status = $result.activity[0].archivalRunParams.status
+            if($status -in $finishedStates){
+                break
+            }else{
+                if($reportWaiting){
+                    Write-Host "Waiting for existing run to finish"
+                    $reportWaiting = $false
+                }
+                Start-Sleep 10
+            }
+        }
+    }else{
+        break
+    }
+}
+
 $result = api post -v2 data-protect/protected-objects/actions $runParams
+
 if($debugmode){
     $result | ConvertTo-Json -Depth 99
 }
@@ -71,6 +119,25 @@ if($result -and $result.PSObject.Properties['objects'] -and $result.objects.Coun
         }
     }else{
         "Running backup of $objectName"
+        if($wait){
+            Start-Sleep 10
+            $activityParams.fromTimeUsecs = $nowUsecs
+            $status = 'unknown'
+            while($status -notin $finishedStates){
+                $result = api post -mcmv2 "data-protect/objects/activity" $activityParams
+                if($result.PSObject.Properties['activity'] -and $result.activity -ne $null -and $result.activity.Count -gt 0){
+                    if($result.activity[0].PSObject.Properties['archivalRunParams'] -and $result.activity[0].archivalRunParams.PSObject.Properties['status']){
+                        $status = $result.activity[0].archivalRunParams.status
+                        if($status -in $finishedStates){
+                            break
+                        }else{
+                            Start-Sleep 10
+                        }
+                    }
+                }
+            }
+            Write-Host "Backup finished with status: $status"
+        }
     }
 }else{
     Write-Host "An unknown error occured" -ForegroundColor Yellow

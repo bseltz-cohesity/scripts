@@ -35,6 +35,7 @@ Place both files in a folder together and run the main script like so:
 * -username: (optional) used for password storage only (default is 'DMaaS')
 * -region: DMaaS region to use
 * -objectName: name of protected object to backup
+* -wait: (optional) wait for completion and report status
 * -debugmode: (optional) display JSON output for troubleshooting
 
 ## Authenticating to DMaaS
