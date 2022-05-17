@@ -1,4 +1,4 @@
-# version 2022.05.14
+# version 2022.05.17
 # usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
@@ -444,7 +444,6 @@ while($result -ne ""){
 output "Running $jobName..."
 
 # wait for new job run to appear
-$x = 0
 while($newRunId -le $lastRunId){
     Start-Sleep 1
     if($selectedSources.Count -gt 0){
@@ -462,10 +461,10 @@ if($wait -or $enable -or $progress){
     $lastProgress = -1
     $lastStatus = 'unknown'
     while ($lastStatus -notin $finishedStates){
-        Start-Sleep 15
+        Start-Sleep 5
         # progress monitor
         try {
-            if($progress){
+            if($progress -and $lastProgress -lt 100){
                 $progressMonitor = api get "/progressMonitors?taskPathVec=backup_$($newRunId)_1&includeFinishedTasks=true&excludeSubTasks=false"
                 if($progressMonitor -and $progressMonitor.PSObject.Properties['resultGroupVec'] -and $progressMonitor.resultGroupVec.Count -gt 0){
                     $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
@@ -489,9 +488,9 @@ if($wait -or $enable -or $progress){
             }else{
                 $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10&excludeTasks=true"
             }
-            if($runs -and $runs.Count -gt 0){
+            if($runs){
                 $runs = $runs | Where-Object {$_.backupRun.jobRunId -eq $newRunId}
-                if($runs.Count -gt 0 -and $runs[0].PSObject.Properties['backupRun']){
+                if($runs -and $runs[0].PSObject.Properties['backupRun']){
                     if($runs[0].backupRun.PSObject.Properties['status']){
                         $lastStatus = $runs[0].backupRun.status
                         $statusRetryCount = 0
