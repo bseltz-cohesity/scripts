@@ -332,7 +332,7 @@ $workloadFileName = "SizingReport-PerWorkload-$($cluster.name)-$dateString.csv"
 """Owner"",""JobType"",""Logical $unit"",""Avg Read $unit"",""Avg Written $unit"",""Read Change Rate"",""Write Change Rate""" | Out-File -FilePath $workloadFileName
 
 foreach($keyName in ($workloadStats.Keys | sort)){
-    $owner, $jobType = $keyName.split('--')
+    $owner, $jobType = $keyName -split('--')
     $logicalSize = $workloadStats[$keyName].logicalSize
     $avgDataRead = $workloadStats[$keyName].avgDataRead
     $avgDataWritten = $workloadStats[$keyName].avgDataWritten
