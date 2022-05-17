@@ -44,16 +44,26 @@ foreach($alert in $alerts | Where-Object {$_.alertDocument.alertName -eq 'DataIn
             Write-Host "$object ($(usecsToDate $jobStartTimeUsecs))"
             $snapshot2 = $alert.id.split(':')[1]
             $conn = heliosCluster $clusterName
-            $changeLog = api get  "snapshots/changelog?jobId=$jobId&snapshot1TimeUsecs=$jobStartTimeUsecs&snapshot2TimeUsecs=$snapshot2&pageCount=50&pageNumber=0" -quiet
+            $changeLog = api get  "snapshots/changelog?jobId=$jobId&snapshot1TimeUsecs=$jobStartTimeUsecs&snapshot2TimeUsecs=$snapshot2&pageCount=500&pageNumber=0" -quiet
             if($changeLog -eq $null -or !$changeLog.PSObject.Properties['results'] -or $changeLog.results.Count -eq 0){
                 """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}""" -f $clusterName, $jobName, $objectType, $(usecsToDate $jobStartTimeUsecs), $object, $strength, 'file changes not computed' | Out-File -FilePath $outfileName -Append
             }
-            foreach($result in $changeLog.results){
-                $filename = $result.filename
-                $operation = $result.operation
-                Write-Host "    $filename"
-                """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}""" -f $clusterName, $jobName, $objectType, $(usecsToDate $jobStartTimeUsecs), $object, $strength, $filename, $operation.substring(1) | Out-File -FilePath $outfileName -Append
+            $numPages = $changeLog.numPages
+            $pageNum = 1
+            while($True){
+                foreach($result in $changeLog.results){
+                    $filename = $result.filename
+                    $operation = $result.operation
+                    Write-Host "    $filename"
+                    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}""" -f $clusterName, $jobName, $objectType, $(usecsToDate $jobStartTimeUsecs), $object, $strength, $filename, $operation.substring(1) | Out-File -FilePath $outfileName -Append
+                }
+                $pageNum += 1
+                $changeLog = api get  "snapshots/changelog?jobId=$jobId&snapshot1TimeUsecs=$jobStartTimeUsecs&snapshot2TimeUsecs=$snapshot2&pageCount=250&pageNumber=$pageNum" -quiet
+                if($changeLog -eq $null -or !$changeLog.PSObject.Properties['results'] -or $changeLog.results.Count -eq 0){
+                    break
+                }
             }
+
         }    
     }
 }
