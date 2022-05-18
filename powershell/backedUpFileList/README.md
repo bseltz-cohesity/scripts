@@ -84,3 +84,4 @@ Or simply use the latest version:
 * -startPath: (optional) start listing files at path (default is /)
 * -noIndex: (optional) if omitted, indexer will be used
 * -showStats: (optional) include file date and size in the output
+* -newerThan: (optional) only list files that were added/modified in the last X days

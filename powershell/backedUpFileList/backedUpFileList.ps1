@@ -26,7 +26,8 @@ param (
     [Parameter()][datetime]$fileDate,
     [Parameter()][string]$startPath = '/',
     [Parameter()][switch]$noIndex,
-    [Parameter()][switch]$showStats
+    [Parameter()][switch]$showStats,
+    [Parameter()][Int64]$newerThan = 0
 )
 
 if($noIndex){
@@ -35,11 +36,13 @@ if($noIndex){
     $useLibrarian = $True
 }
 
-if($showStats){
+if($showStats -or $newerThan -gt 0){
     $statfile = $True
 }else{
     $statfile = $False
 }
+
+$daysAgo = (get-Date).AddDays(-$newerThan)
 
 $volumeTypes = @(1, 6)
 
@@ -77,7 +80,9 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
                 if($statfile){
                     $filesize = $entry.fstatInfo.size
                     $mtime = usecsToDate $entry.fstatInfo.mtimeUsecs
-                    "{0} ({1}) [{2} bytes]" -f $entry.fullPath, $mtime, $filesize | Tee-Object -FilePath $outputfile -Append  
+                    if($mtime -ge $daysAgo){
+                        "{0} ({1}) [{2} bytes]" -f $entry.fullPath, $mtime, $filesize | Tee-Object -FilePath $outputfile -Append
+                    }
                 }else{
                     "{0}" -f $entry.fullPath | Tee-Object -FilePath $outputfile -Append  
                 }
@@ -90,6 +95,9 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
 }
 
 function showFiles($doc, $version){
+    if($newerThan -gt 0){
+        Write-Host "`nSearching for files added/modified in the past $newerThan days...`n"
+    }
     $Global:filesFound = $False
     $versionDate = (usecsToDate $version.instanceId.jobStartTimeUsecs).ToString('yyyy-MM-dd_hh-mm-ss')
     $sourceServerString = $sourceServer.Replace('\','-').Replace('/','-')
