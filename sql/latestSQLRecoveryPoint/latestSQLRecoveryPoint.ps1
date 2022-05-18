@@ -36,12 +36,38 @@ $latestdb = ($dbresults | sort-object -property @{Expression={$_.vmDocument.vers
 $doc = $latestdb.vmDocument
 $version = $doc.versions[0]
 $jobId = $doc.objectId.jobId
+$dbId = $doc.objectId.entity.id
+
 $job = api get "protectionJobs/$jobId"
-return @{
-    'jobName' = $job.name
-    'jobId' = $jobId
-    'jobRunId' = $version.instanceId.jobInstanceId
-    'backupType' = $job.environmentParameters.sqlParameters.backupType
-    'backupDateUsecs' = $version.snapshotTimestampUsecs
-    'backupDate' = usecsToDate $version.snapshotTimestampUsecs
+
+# get last log backup
+$latestPIT = usecsToDate $version.snapshotTimestampUsecs
+
+$logUsecsDayStart = [int64]($version.snapshotTimestampUsecs)
+$logUsecsDayEnd = [int64]( dateToUsecs (get-date))
+
+$timeRangeQuery = @{
+    "endTimeUsecs"       = $logUsecsDayEnd;
+    "protectionSourceId" = $dbId;
+    "environment"        = "kSQL";
+    "jobUids"            = @(
+        @{
+            "clusterId"            = $doc.objectId.jobUid.clusterId;
+            "clusterIncarnationId" = $doc.objectId.jobUid.clusterIncarnationId;
+            "id"                   = $doc.objectId.jobUid.objectId
+        }
+    );
+    "startTimeUsecs"     = $logUsecsDayStart
 }
+
+$pointsForTimeRange = api post restore/pointsForTimeRange $timeRangeQuery
+if($pointsForTimeRange.PSobject.Properties['timeRanges']){
+    $timeRange = $pointsForTimeRange.timeRanges[0]
+    $logEnd = $timeRange.endTimeUsecs
+    $latestUsecs = $logEnd - 1000000
+    $latestPIT = usecsToDate $latestUsecs
+}
+
+Write-Host  "`n            Job Name: $($job.name) ($($job.environmentParameters.sqlParameters.backupType))"
+Write-Host  "      Last DB Backup: $(usecsToDate $version.snapshotTimestampUsecs)"
+Write-Host  "Latest Point In Time: $latestPIT`n"
