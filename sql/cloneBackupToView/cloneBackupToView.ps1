@@ -393,7 +393,10 @@ if($consolidate -or $dbFolders -or $objectView){
                             $null = New-Item -Path "$backupFolderPath\$dbName\$runDate--$($runType.substring(1))" -ItemType Directory -Force
                             $fileDestination = "$backupFolderPath\$dbName\$runDate--$($runType.substring(1))\"
                             while($True){
-                                if(Move-Item -Path $file.FullName -Destination $fileDestination -PassThru){
+                                if(Test-Path -Path $file.FullName){
+                                    break
+                                }
+                                if(Move-Item -Path $file.FullName -Destination $fileDestination -PassThru -Force){
                                     break
                                 }
                                 Start-Sleep 1
@@ -415,7 +418,7 @@ if($consolidate -or $dbFolders -or $objectView){
                                 if(Test-Path -Path $fileDestination){
                                     break
                                 }
-                                if(Move-Item -Path $file.FullName -Destination $fileDestination -PassThru){
+                                if(Move-Item -Path $file.FullName -Destination $fileDestination -PassThru -Force){
                                     break
                                 }
                                 Start-Sleep 1
