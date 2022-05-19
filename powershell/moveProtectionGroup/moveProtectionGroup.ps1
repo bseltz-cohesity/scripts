@@ -5,8 +5,15 @@ param (
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
     [Parameter(Mandatory = $True)][string]$jobName,
+    [Parameter()][string]$prefix = '',
+    [Parameter()][switch]$deleteOldJob,
     [Parameter(Mandatory = $True)][string]$newStorageDomainName
 )
+
+if($prefix -eq '' -and !$deleteOldJob){
+    Write-Host "You must use either -prefix or -deleteOldJob" -foregroundcolor Yellow
+    exit
+}
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -14,13 +21,12 @@ param (
 # authenticate
 apiauth -vip $vip -username $username -domain $domain
 
-
 if(! $AUTHORIZED -and ! $cohesity_api.authorized){
     Write-Host "Failed to connect to Cohesity cluster" -foregroundcolor Yellow
     exit
 }
 
-$job = (api get -v2 'data-protect/protection-groups?environments=kVMware&isActive=true').protectionGroups | Where-Object name -eq $jobName
+$job = (api get -v2 'data-protect/protection-groups?isActive=true').protectionGroups | Where-Object name -eq $jobName
 
 if($job){
     if($job.Count -gt 1){
@@ -37,9 +43,13 @@ if($job){
     }
 
     "Moving protection group $($job.name) to $newStorageDomainName..."
-    $deljob = api delete -v2 data-protect/protection-groups/$($job.id)
+    if($prefix -ne ''){
+        $job.name = "$($prefix)-$($job.name)"
+    }
+    if($deleteOldJob){
+        $deljob = api delete -v2 data-protect/protection-groups/$($job.id)
+    }
     $newjob = api post -v2 data-protect/protection-groups $job
-
 }else{
-    Write-Host "VMware Job $jobName not found" -ForegroundColor Yellow
+    Write-Host "Job $jobName not found" -ForegroundColor Yellow
 }

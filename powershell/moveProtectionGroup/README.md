@@ -38,6 +38,14 @@ Place all files in a folder together. then, run the main script like so:
 
 * -vip: DNS or IP of the Cohesity Cluster
 * -username: Cohesity User Name
-* -domain: - defaults to 'local'
+* -domain: (optional) defaults to 'local'
 * -jobName: name of protection group to migrate
 * -newStorageDomainName: name of storage domain to migrate to
+* -prefix: (optional) add a prefix to the name of the new protection group
+* -deleteOldJob: (optional) delete the old protection group
+
+## Notes
+
+You must use either -prefix or -deleteOldJob (or both).
+
+In some cases it's not possible to protect the same object in two jobs (e.g. SQL servers), so it's nessessary to use -deleteOldJob in those cases.
