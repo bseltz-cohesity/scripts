@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2022.03.07"""
+"""Cohesity Python REST API Wrapper Module - 2022.05.19"""
 
 ##########################################################################################
 # Change Log
@@ -29,6 +29,7 @@
 # 2022.02.22 - Password retry for helios/MCM
 # 2022.02.24 - Password retry for cluster ApiKey
 # 2022.03.07 - Hide bad password in auth error
+# 2022.05.19 - Fix MFA for session auth
 #
 ##########################################################################################
 # Install Notes
@@ -197,7 +198,8 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                     if 'access denied' in response.json()['message'].lower():
                         try:
                             url = COHESITY_API['APIROOTv2'] + 'users/sessions'
-                            creds = json.dumps({"domain": domain, "password": pwd, "username": username})
+                            creds = json.dumps({"domain": domain, "password": pwd, "username": username, "otpType": mfaType.lower(), "otpCode": mfaCode})
+                            # creds = json.dumps({"domain": domain, "password": pwd, "username": username})
                             response = requests.post(url, data=creds, headers=COHESITY_API['HEADER'], verify=False)
                             if response != '':
                                 if response.status_code == 201:
