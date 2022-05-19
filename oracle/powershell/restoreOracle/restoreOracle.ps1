@@ -34,7 +34,9 @@ param (
     [Parameter()][switch]$latest,                        # replay to latest available log PIT
     [Parameter()][switch]$noRecovery,                    # leave the restored DB in noRecovery mode
     [Parameter()][switch]$overWrite,                     # overwrite existing DB
-    [Parameter()][string]$password = $null               # optional! clear text password
+    [Parameter()][string]$password = $null,              # optional! clear text password
+    [Parameter()][array]$pfileParameterName,
+    [Parameter()][array]$pfileParameterValue
 )
 
 ### validate arguments
@@ -323,6 +325,22 @@ if($validLogTime -eq $True){
         Write-Host "LogTime of $logTime is out of range" -ForegroundColor Yellow
         Write-Host "Available range is $(usecsToDate $logStart) to $(usecsToDate $logEnd)" -ForegroundColor Yellow
         exit 1
+    }
+}
+
+### handle pfile parameters
+if($pfileParameterName.Count -ne $pfileParameterValue.Count){
+    Write-Host "Number of pfile parameter names and values do not match" -ForegroundColor Yellow
+    exit 1
+}else{
+    if($pfileParameterName.Count -gt 0){
+        $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams['oracleDbConfig'] = @{ "pfileParameterMap" = @()}
+        0..($pfileParameterName.Count - 1) | ForEach-Object {
+            $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap += @{
+                "key" = [string]$pfileParameterName[$_];
+                "value" = [string]$pfileParameterValue[$_]
+            }
+        }
     }
 }
 

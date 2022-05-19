@@ -71,6 +71,10 @@ Place both files in a folder together and run the main script like so:
 * -frapath: (optional) alternate fra path
 * -frasizeMB: (optional) alternate fra size in MB
 * -bctfile: (optional) alternate bct file path
+* -pfileParameterName: (optional) one or more parameter names to include in pfile (comma seaparated)
+* -pfileParameterValue: (optional) one or more parameter values to include in pfile (comma separated)
+
+Note: the number and order of pfileParameterNames must match the number and order of pfileParameterValues.
 
 ## Miscellaneous Parameters
 

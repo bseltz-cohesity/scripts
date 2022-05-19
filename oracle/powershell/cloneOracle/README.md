@@ -55,4 +55,4 @@ The script takes the following parameters:
 * -postScript: (optional) name of script to run after clone operation
 * -postScriptArguments: (optional) postScript parameters (use quotes, like: 'param1=test switch2')
 
-Note: the number of pfileParameterNames must match the number of pfileParameterValues.
+Note: the number and order of pfileParameterNames must match the number and order of pfileParameterValues.
