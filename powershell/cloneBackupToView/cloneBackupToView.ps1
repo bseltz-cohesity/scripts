@@ -390,10 +390,14 @@ if($consolidate -or $dbFolders -or $objectView){
                 if($file.Name -ne 'common'){
                     if($objectView){
                         if($runType -eq 'kLog' -or !$logsOnly){
-                            $null = New-Item -Path "$backupFolderPath\$dbName\$runDate--$($runType.substring(1))" -ItemType Directory -Force
+                            if(!(Test-Path -Path "$backupFolderPath\$dbName\$runDate--$($runType.substring(1))")){
+                                $null = New-Item -Path "$backupFolderPath\$dbName\$runDate--$($runType.substring(1))" -ItemType Directory -Force
+                            }
                             $fileDestination = "$backupFolderPath\$dbName\$runDate--$($runType.substring(1))\"
                             while($True){
-                                if(Test-Path -Path $file.FullName){
+                               
+                                if(Test-Path -Path "$($fileDestination)$($file.Name)"){
+                                    # Write-Host "    Already Exists $($fileDestination)$($file.Name)"
                                     break
                                 }
                                 if(Move-Item -Path $file.FullName -Destination $fileDestination -PassThru -Force){
@@ -411,17 +415,21 @@ if($consolidate -or $dbFolders -or $objectView){
                         if($runType -eq 'kLog' -or !$logsOnly){
                             $fileDestination = "$backupFolderPath\$newName"
                             if($dbFolders){
-                                $null = New-Item -Path "$backupFolderPath\$sourceName---$dbName" -ItemType Directory -Force
+                                if(!(Test-Path -Path "$backupFolderPath\$sourceName---$dbName")){
+                                    $null = New-Item -Path "$backupFolderPath\$sourceName---$dbName" -ItemType Directory -Force
+                                }
                                 $fileDestination = "$backupFolderPath\$sourceName---$dbName\$newName"
                             }
                             while($True){
-                                if(Test-Path -Path $fileDestination){
+                                if(Test-Path -Path "$($fileDestination)$($file.Name)"){
+                                    # Write-Host "    Already Exists $($fileDestination)$($file.Name)"
                                     break
                                 }
                                 if(Move-Item -Path $file.FullName -Destination $fileDestination -PassThru -Force){
                                     break
                                 }
                                 Start-Sleep 1
+                                write-host "sleeping"
                             }
                         }
                     }
