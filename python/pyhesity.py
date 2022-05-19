@@ -199,6 +199,8 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                         try:
                             url = COHESITY_API['APIROOTv2'] + 'users/sessions'
                             creds = json.dumps({"domain": domain, "password": pwd, "username": username, "otpType": mfaType.lower(), "otpCode": mfaCode})
+                            if emailMfaCode is True:
+                                creds = json.dumps({"domain": domain, "password": pwd, "username": username, "otpType": 'email', "otpCode": mfaCode})
                             # creds = json.dumps({"domain": domain, "password": pwd, "username": username})
                             response = requests.post(url, data=creds, headers=COHESITY_API['HEADER'], verify=False)
                             if response != '':
