@@ -63,3 +63,10 @@ Place the files in a folder together and run the main script like so:
 * -preserveMacAddress: (optional) maintain original Mac address (default is false)
 * -recoveryType: (optional) InstantRecovery or CopyRecovery (default is InstantRecovery)
 * -noPrompt: (optional) Don't prompt to confirm
+
+Note: when restoring to a standalone ESXi host, review the object hierarchy of the registered ESXi host under protection sources to determine the following information, but typically:
+
+* -datacenterName is 'ha-datacenter'
+* -folderName is 'vm'
+* -vCenterName is the registered source name of the ESXi host
+* -hostName is the registered source name of the ESXi host
