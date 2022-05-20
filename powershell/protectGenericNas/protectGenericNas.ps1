@@ -51,7 +51,7 @@ $hour, $minute = $startTime.split(':')
 $tempInt = ''
 if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]::TryParse($minute,[ref]$tempInt)))){
     Write-Host "Please provide a valid start time" -ForegroundColor Yellow
-    exit
+    exit 1
 }
 
 # indexing
@@ -79,7 +79,7 @@ if ($mountList){
 
 if($cloudArchiveDirect -and $mountPaths.Length -gt 1){
     Write-Host "Cloud Archive Direct jobs are limited to a single mountPoint" -ForegroundColor Yellow
-    exit
+    exit 1
 }
 
 # gather inclusion list
@@ -95,7 +95,7 @@ if('' -ne $inclusionList){
         }
     }else{
         Write-Warning "Inclusions file $inclusionList not found!"
-        exit
+        exit 1
     }
 }
 if($includePaths.Length -eq 0){
@@ -115,7 +115,7 @@ if('' -ne $exclusionList){
         }
     }else{
         Write-Warning "Exclusions file $exclusionList not found!"
-        exit
+        exit 1
     }
 }
 if($excludePaths.Length -eq 0){
@@ -128,7 +128,7 @@ if($viewBoxes -is [array]){
         $viewBox = $viewBoxes | Where-Object { $_.name -ieq $storageDomainName }
         if (!$viewBox) { 
             write-host "Storage domain $storageDomainName not Found" -ForegroundColor Yellow
-            exit
+            exit 1
         }
 }else{
     $viewBox = $viewBoxes[0]
@@ -138,7 +138,7 @@ if($viewBoxes -is [array]){
 $policy = api get protectionPolicies | Where-Object { $_.name -ieq $policyName }
 if(!$policy){
     Write-Warning "Policy $policyName not found!"
-    exit
+    exit 1
 }
 
 ### get generic NAS mount points
@@ -150,7 +150,7 @@ foreach($mountPath in $mountPaths){
     $source = $sources.nodes | Where-Object {$_.protectionSource.name -eq $mountPath}
     if(! $source){
         Write-Host "Mount Path $mountPath is not registered in Cohesity" -ForegroundColor Yellow
-        exit
+        exit 1
     }
     $sourceIds += $source.protectionSource.id
 }
@@ -202,11 +202,10 @@ if(! $job){
 }else{
     if($cloudArchiveDirect){
         Write-Host "Cloud Archive Direct jobs are limited to a single mountPoint" -ForegroundColor Yellow
-        exit
+        exit 1
     }
     "Updating protection job $jobName..."
     $job.sourceIds += $sourceIds | Sort-Object -Unique
     $null = api put protectionJobs/$($job.id) $job
 }
-
-
+exit 0
