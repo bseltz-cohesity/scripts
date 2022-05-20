@@ -32,6 +32,7 @@ Place both files in a folder together and run the main script like so:
 * -d, --domain: (optional) domain of username (default is local)
 * -i, --useApiKey: (optional) use API key for authentication
 * -pwd: --password: (optional) use password from command line instead of stored password
+* -l, --localonly: (optional) only report local jobs (omit replicated jobs)
 
 ## The Python Helper Module - pyhesity.py
 
