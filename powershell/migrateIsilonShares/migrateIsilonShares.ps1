@@ -7,7 +7,7 @@ param (
     [Parameter()][string]$domain = 'local',
     [Parameter(Mandatory = $True)][string]$isilon,
     [Parameter(Mandatory = $True)][string]$isilonUsername,
-    [Parameter()][string]$isilonPassword,
+    [Parameter()][string]$isilonPassword = $null,
     [Parameter(Mandatory = $True)][string]$viewName,
     [Parameter(Mandatory = $True)][string]$sourcePath = '/ifs'
 )
@@ -57,15 +57,16 @@ $baseurl = 'https://' + $isilon +":8080"
 
 # authentication
 if(!$isilonPassword){
-    $secureString = Read-Host -Prompt "Enter your Isilon password" -AsSecureString
+    $secureString = Read-Host -Prompt "Enter your password" -AsSecureString
     $isilonPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
 }
-$EncodedAuthorization = [System.Text.Encoding]::UTF8.GetBytes($username + ':' + $isilonPassword)
+$EncodedAuthorization = [System.Text.Encoding]::UTF8.GetBytes($isilonUsername + ':' + $isilonPassword)
 $EncodedPassword = [System.Convert]::ToBase64String($EncodedAuthorization)
 $headers = @{"Authorization"="Basic $($EncodedPassword)"}
 
 $shares = @()
 $zones = isilonAPI get /platform/1/zones-summary
+
 foreach($zoneName in $zones.summary.list){
     $isilonShares = isilonAPI get /platform/3/protocols/smb/shares?zone=$zoneName
     foreach($isilonShare in $isilonShares.shares){
