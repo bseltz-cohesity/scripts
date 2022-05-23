@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Backup Now and Copy for python"""
 
-# version 2022.05.03
+# version 2022.05.23
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -463,14 +463,23 @@ if wait is True:
             if len(selectedSources) > 0:
                 runs = api('get', 'protectionRuns?jobId=%s&numRuns=10&excludeTasks=true&sourceId=%s' % (job['id'], selectedSources[0]))
             else:
-                runs = api('get', 'protectionRuns?jobId=%s&numRuns=10&excludeTasks=true' % job['id'])
+                runs = api('get', 'protectionRuns?jobId=%s&numRuns=10' % job['id'])
             run = [r for r in runs if r['backupRun']['jobRunId'] == newRunId]
             status = run[0]['backupRun']['status']
-            progressMonitor = api('get', '/progressMonitors?taskPathVec=backup_%s_1&includeFinishedTasks=true&excludeSubTasks=false' % newRunId)
-            percentComplete = int(round(progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']))
+
+            progressTotal = 0
+            progressPaths = [s['progressMonitorTaskPath'] for s in runs[0]['backupRun']['sourceBackupStatus']]
+            sourceCount = len(runs[0]['backupRun']['sourceBackupStatus'])
+            for progressPath in progressPaths:
+                progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&includeFinishedTasks=true&excludeSubTasks=false' % progressPath)
+                thisProgress = progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']
+                progressTotal += thisProgress
+            percentComplete = int(round(progressTotal / sourceCount))
+
             if percentComplete > lastProgress:
                 out('%s%% completed' % percentComplete)
                 lastProgress = percentComplete
+
             if status not in finishedStates:
                 sleep(5)
         except Exception:
