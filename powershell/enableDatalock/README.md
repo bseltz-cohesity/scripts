@@ -24,7 +24,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 Place all files in a folder together and run the script like so:
 
-To add datalock to all policies, using a user that has the Data Security role:
+To add datalock to all policies, using a user that has the `Data Security` role:
 
 ```powershell
 ./enableDatalock.ps1 -vip mycluster `
@@ -32,7 +32,7 @@ To add datalock to all policies, using a user that has the Data Security role:
                      -domain mydomain.net
 ```
 
-Or, to add datalock to all policies, using a user that has the Admin role:
+Or, to add datalock to all policies, using a user that has the `Admin` role:
 
 ```powershell
 ./enableDatalock.ps1 -vip mycluster `
