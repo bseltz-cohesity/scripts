@@ -1,4 +1,4 @@
-# version 2022.05.22
+# version 2022.05.25
 # usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
@@ -487,7 +487,7 @@ if($wait -or $enable -or $progress){
                             $progressTotal += $thisProgress
                         }
                         $percentComplete = $progressTotal / $sourceCount
-                        if($percentComplete -gt $lastProgress){
+                        if($percentComplete -ne $lastProgress){
                             "{0} percent complete" -f [math]::Round($percentComplete, 0)
                             $lastProgress = $percentComplete
                         }
