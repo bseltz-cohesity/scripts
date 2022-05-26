@@ -36,4 +36,8 @@ Place both files in a folder together and run the main script like so:
 * -jobName: (optional) focus on just one job
 * -cancelAll: (optional) cancel all archive tasks
 * -cancelQueued: (optional) cancel archive tasks that haven't moved any data yet
-* -daysBack: (optional) number of days back to search (default is 31)
+* -cancelOutdated: (optional) cancel archives that would be expired by now
+* -cancelOlderThan: (optional) cancel archives that for runs that started X days ago or more
+* -showFinished: (optional) display historical finished archive tasks
+* -numRuns: (optional) number of runs to get per API call (default is 1000)
+* -unit: (optional) units for display (MiB, GiB, TiB) default is MiB

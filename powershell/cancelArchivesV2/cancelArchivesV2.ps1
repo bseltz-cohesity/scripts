@@ -8,6 +8,7 @@ param (
    [Parameter()][switch]$cancelOutdated,
    [Parameter()][switch]$cancelQueued,
    [Parameter()][switch]$cancelAll,
+   [Parameter()][int]$cancelOlderThan = 0,
    [Parameter()][switch]$showFinished,
    [Parameter()][int]$numRuns = 1000,
    [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB'
@@ -80,6 +81,10 @@ foreach($job in $jobs){
         if($cancelQueued){
             $runInfo = @($runInfo | Where-Object {$_.status -notin $finishedStates})
             $runInfo = $runInfo[0..$($runInfo.Length-2)]
+        }elseif($cancelOlderThan -gt 0){
+            $daysBack = (Get-Date).AddDays(-$cancelOlderThan)
+            $daysBackUsecs = dateToUsecs $daysBack
+            $runInfo = @($runInfo | Where-Object {$_.status -notin $finishedStates -and $_.startTimeUsecs -lt $daysBackUsecs})
         }
         foreach($run in $runInfo){
             $referenceFull = ''
