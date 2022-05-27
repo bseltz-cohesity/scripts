@@ -67,9 +67,14 @@ Skipping SQL Gold - lab3 snapshot from 2019-04-13 01:01:12 (not replicated)
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
+* -i, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: (optional) password or API key (will prompt or use stored password if omitted)
+* -j, --jobname: (optional) name of job to focus on (repeat for multiple jobs)
+* -l, --joblist: (optional) text file of job names to focus on (one per line)
 * -k, --daystokeep: number of days to keep local snapshots
 * -e, --expire: (optional) expire snapshots older than k days
 * -r, --confirmreplication: (optional) do not expire local snapshot if not replicated
+* -n, --numruns: (optional) numver of runs to retrieve at a time (default is 1000)
 
 ## The Python Helper Module - pyhesity.py
 
