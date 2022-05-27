@@ -4,6 +4,10 @@ param (
    [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
    [Parameter()][string]$domain = 'local', #local or AD domain
+   [Parameter()][switch]$useApiKey,
+   [Parameter()][string]$password = $null,
+   [Parameter()][string]$mfaCode = $null,
+   [Parameter()][switch]$emailMfaCode,
    [Parameter()][ValidateSet('KiB','MiB','GiB','TiB')][string]$unit = 'MiB',
    [Parameter()][int]$daysBack = 7,
    [Parameter()][Int64]$numRuns = 100,
@@ -20,7 +24,15 @@ function toUnits($val){
 }
 
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
+}else{
+    if($emailMfaCode){
+        apiauth -vip $vip -username $username -domain $domain -password $password -emailMfaCode
+    }else{
+        apiauth -vip $vip -username $username -domain $domain -password $password -mfaCode $mfaCode
+    }
+}
 
 $finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning')
 

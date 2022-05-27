@@ -36,6 +36,10 @@ Place both files in a folder together and run the main script like so:
 * -vip: Cohesity Cluster to connect to
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain of user (defaults to local)
+* -useApiKey: (optional) Use API key for authentication
+* -password: (optional) password or API key (will use stored password by default)
+* -mfaCode: (optional) multi-factor authentication code
+* -emailMfaCode: (optional) send mfaCode via email
 * -daysBack: (optional) number of days to inspect (default is 31)
 * -unit: (optional) KiB, MiB, GiB, or TiB (default is MiB)
 * -numRuns: (optional) number of runs to grab at a time (default is 100)
