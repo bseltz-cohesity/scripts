@@ -74,7 +74,7 @@ Skipping SQL Gold - lab3 snapshot from 2019-04-13 01:01:12 (not replicated)
 * -k, --daystokeep: number of days to keep local snapshots
 * -e, --expire: (optional) expire snapshots older than k days
 * -r, --confirmreplication: (optional) do not expire local snapshot if not replicated
-* -n, --numruns: (optional) numver of runs to retrieve at a time (default is 1000)
+* -n, --numruns: (optional) number of runs to retrieve at a time (default is 1000)
 
 ## The Python Helper Module - pyhesity.py
 
