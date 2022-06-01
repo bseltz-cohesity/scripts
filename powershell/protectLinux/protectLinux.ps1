@@ -101,6 +101,7 @@ $job = $jobs.protectionGroups | Where-Object {$_.name -ieq $jobName}
 $newJob = $false
 
 if(!$job){
+    "Creating new protection group..."
     $newJob = $True
 
     # parse startTime
@@ -205,6 +206,8 @@ if(!$job){
             }
         }
     }
+}else{
+    "Updating protection group..."
 }
 
 if($job.physicalParams.protectionType -ne 'kFile'){
