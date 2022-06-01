@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This PowerShell script adds physical Windows servers to a file-based protection job. The script will automatically include all volumes (C:\, D:\, etc.) and will apply a global list of exclusion paths to each server added to the job.
+This PowerShell script adds physical Windows servers to a file-based protection job.
 
 This script is compatible with Cohesity 6.5.1 and later.
 
