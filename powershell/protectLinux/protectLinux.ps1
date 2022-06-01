@@ -16,7 +16,15 @@ param (
     [Parameter()][switch]$skipNestedMountPoints,  # 6.3 and below - skip all nested mount points
     [Parameter()][array]$skipNestedMountPointTypes = @(),  # 6.4 and above - skip listed mount point types
     [Parameter()][switch]$replaceRules,
-    [Parameter()][switch]$allServers
+    [Parameter()][switch]$allServers,
+    [Parameter()][string]$metadataFile = '',
+    [Parameter()][string]$startTime = '20:00',
+    [Parameter()][string]$timeZone = 'America/New_York',
+    [Parameter()][int]$incrementalSlaMinutes = 60,
+    [Parameter()][int]$fullSlaMinutes = 120,
+    [Parameter()][string]$storageDomainName = 'DefaultStorageDomain',
+    [Parameter()][string]$policyName,
+    [Parameter()][ValidateSet('kBackupHDD', 'kBackupSSD')][string]$qosPolicy = 'kBackupHDD'
 )
 
 # gather list of servers to add to job
@@ -87,26 +95,129 @@ if($skipNestedMountPoints){
 apiauth -vip $vip -username $username -domain $domain
 
 # get the protectionJob
-$job = api get protectionJobs | Where-Object {$_.name -ieq $jobName}
+$jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&environments=kPhysical&names=$jobName"
+$job = $jobs.protectionGroups | Where-Object {$_.name -ieq $jobName}
+
+$newJob = $false
+
 if(!$job){
-    Write-Warning "Job $jobName not found!"
+    $newJob = $True
+
+    # parse startTime
+    $hour, $minute = $startTime.split(':')
+    $tempInt = ''
+    if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]::TryParse($minute,[ref]$tempInt)))){
+        Write-Host "Please provide a valid start time" -ForegroundColor Yellow
+        exit
+    }
+    
+    # policy
+    if(!$policyName){
+        Write-Host "-policyName required when creating new job" -ForegroundColor Yellow
+        exit
+    }
+
+    $policy = (api get -v2 "data-protect/policies").policies | Where-Object name -eq $policyName
+    if(!$policy){
+        Write-Host "Policy $policyName not found" -ForegroundColor Yellow
+        exit
+    }
+    
+    # get storageDomain
+    $viewBoxes = api get viewBoxes
+    if($viewBoxes -is [array]){
+            $viewBox = $viewBoxes | Where-Object { $_.name -ieq $storageDomainName }
+            if (!$viewBox) { 
+                write-host "Storage domain $storageDomainName not Found" -ForegroundColor Yellow
+                exit
+            }
+    }else{
+        $viewBox = $viewBoxes[0]
+    }
+
+    $job = @{
+        "id" = $null;
+        "name" = $jobName;
+        "policyId" = $policy.id;
+        "priority" = "kMedium";
+        "storageDomainId" = $viewBox.id;
+        "description" = "";
+        "startTime" = @{
+            "hour" = [int]$hour;
+            "minute" = [int]$minute;
+            "timeZone" = $timeZone
+        };
+        "alertPolicy" = @{
+            "backupRunStatus" = @(
+                "kFailure"
+            );
+            "alertTargets" = @()
+        };
+        "sla" = @(
+            @{
+                "backupRunType" = "kIncremental";
+                "slaMinutes" = $incrementalSlaMinutes
+            };
+            @{
+                "backupRunType" = "kFull";
+                "slaMinutes" = $fullSlaMinutes
+            }
+        );
+        "qosPolicy" = $qosPolicy;
+        "abortInBlackouts" = $false;
+        "isActive" = $true;
+        "isPaused" = $false;
+        "environment" = "kPhysical";
+        "permissions" = @();
+        "missingEntities" = $null;
+        "physicalParams" = @{
+            "protectionType" = "kFile";
+            "fileProtectionTypeParams" = @{
+                "objects" = @();
+                "indexingPolicy" = @{
+                    "enableIndexing" = $true;
+                    "includePaths" = @(
+                        "/"
+                    );
+                    "excludePaths" = @(
+                        '/$Recycle.Bin';
+                        "/Windows";
+                        "/Program Files";
+                        "/Program Files (x86)";
+                        "/ProgramData";
+                        "/System Volume Information";
+                        "/Users/*/AppData";
+                        "/Recovery";
+                        "/var";
+                        "/usr";
+                        "/sys";
+                        "/proc";
+                        "/lib";
+                        "/grub";
+                        "/grub2";
+                        "/opt/splunk";
+                        "/splunk"
+                    )
+                };
+                "performSourceSideDeduplication" = $false;
+                "dedupExclusionSourceIds" = $null;
+                "globalExcludePaths" = $null
+            }
+        }
+    }
+}
+
+if($job.physicalParams.protectionType -ne 'kFile'){
+    Write-Host "Job $jobName is not a file-based physical job!" -ForegroundColor Yellow
     exit
 }
 
-$cluster = api get cluster
-
-if($cluster.clusterSoftwareVersion -gt '6.5'){
-    $protectionGroups = api get "data-protect/protection-groups?isDeleted=false&includeTenants=true&includeLastRunInfo=true" -v2
-    $protectionGroup = $protectionGroups.protectionGroups | Where-Object name -eq $jobName
-    $globalExcludePaths = $protectionGroup.physicalParams.fileProtectionTypeParams.globalExcludePaths
-}
-
 # get physical protection sources
-$sources = api get protectionSources?environment=kPhysical
+$sources = api get protectionSources?environments=kPhysical
 
-# add sourceIds for new servers
-$sourceIds = @($job.sourceIds)
+$sourceIds = [array]($job.physicalParams.fileProtectionTypeParams.objects.id)
 $newSourceIds = @()
+
 foreach($server in $serversToAdd | Where-Object {$_ -ne ''}){
     $server = $server.ToString()
     $node = $sources.nodes | Where-Object { $_.protectionSource.name -eq $server }
@@ -116,10 +227,9 @@ foreach($server in $serversToAdd | Where-Object {$_ -ne ''}){
         }else{
             if($node.protectionSource.physicalProtectionSource.hostType -ne 'kWindows'){
                 $sourceId = $node.protectionSource.id
-                $sourceIds += $sourceId
                 $newSourceIds += $sourceId
             }else{
-                Write-Warning "$server is not a Linux/AIX/Solaris host"
+                Write-Warning "$server is a Windows host"
             }
         }
     }else{
@@ -127,93 +237,70 @@ foreach($server in $serversToAdd | Where-Object {$_ -ne ''}){
     }
 }
 
-$sourceIds = @($sourceIds | Select-Object -Unique)
-$existingParams = $job.sourceSpecialParameters
-$newParams = @()
-
-# process inclusions and exclusions
-foreach($sourceId in $sourceIds){
-    $source = $sources.nodes | Where-Object {$_.protectionSource.id -eq $sourceId}
-    $newServer = $sourceId -in $newSourceIds
-
-    $theseParams = $existingParams | Where-Object {$_.sourceId -eq $sourceId}
-
-    if($newServer){
-        $newParam = @{
-            "sourceId" = $sourceId;
-            "physicalSpecialParameters" = @{
-                "filePaths" = @()
+foreach($sourceId in @([array]$sourceIds + [array]$newSourceIds) | Sort-Object -Unique){
+    if($allServers -or $sourceId -in $newSourceIds){
+        $params = $job.physicalParams.fileProtectionTypeParams.objects | Where-Object id -eq $sourceId
+        $node = $sources.nodes | Where-Object { $_.protectionSource.id -eq $sourceId }
+        Write-Host "processing $($node.protectionSource.name)"
+        if(($null -eq $params) -or $replaceRules){
+            $params = @{
+                "id" = $sourceId;
+                "name" = $node.protectionSource.name;
+                "filePaths" = @();
+                "usesPathLevelSkipNestedVolumeSetting" = $true;
+                "nestedVolumeTypesToSkip" = $null;
+                "followNasSymlinkTarget" = $false
             }
         }
+
+        # skip nested mountpoint types
+        if($sourceId -in $newSourceIds -or $replaceRules){
+            if($skipNestedMountPointTypes.Count -gt 0){
+                $params.usesPathLevelSkipNestedVolumeSetting = $false
+                $params.nestedVolumeTypesToSkip = @($skipNestedMountPointTypes)
+            }
+        }
+
+        # set directive file path if new or replace
+        if($metadataFile -ne '' -and $params.PSObject.Properties['Keys']){
+            $params['metadataFilePath'] = $metadataFile
+        }elseif($metadataFile -eq '' -and (! $params.PSObject.Properties['metadataFilePath'])){
+            delApiProperty -object $params -name 'metadataFilePath'
+            # process include rules
+            foreach($includePath in $includePaths | Where-Object {$_ -ne ''} | Sort-Object -Unique){
+                $includePath = $includePath.ToString()
+                $filePath = $params.filePaths | Where-Object includedPath -eq $includePath
+                if(($null -eq $filePath) -or $replaceRules){
+                    $filePath = @{
+                        "includedPath" = $includePath;
+                        "skipNestedVolumes" = $skip;
+                        "excludedPaths" = @()
+                    }
+                }
+                $params.filePaths = @($params.filePaths | Where-Object includedPath -ne $includePath) + $filePath
+            }
+
+            # process exclude rules
+            foreach($excludePath in $excludePaths | Where-Object {$_ -and $_ -ne ''} | Sort-Object -Unique){
+                $excludePath = $excludePath.ToString()
+                $parentPath = $params.filePaths | Where-Object {$excludePath.contains($_.includedPath)} | Sort-Object -Property {$_.includedPath.Length} -Descending | Select-Object -First 1
+                if($parentPath){
+                    $parentPath.excludedPaths = @($parentPath.excludedPaths | Where-Object {$_ -ne $excludePath}) + $excludePath
+                }else{
+                    foreach($parentPath in $params.filePaths){
+                        $parentPath.excludedPaths = @($parentPath.excludedPaths | Where-Object {$_ -ne $excludePath}) + $excludePath
+                    }
+                }
+            }
+        }
+
+        # update params
+        $job.physicalParams.fileProtectionTypeParams.objects = @($job.physicalParams.fileProtectionTypeParams.objects | Where-Object id -ne $sourceId) + $params
+    }
+
+    if($True -eq $newJob){
+        $null = api post -v2 "data-protect/protection-groups" $job
     }else{
-        $newParam = $theseParams
-    }
-
-
-    $includePathsToProcess = @()
-    $excludePathsToProcess = @()
-
-    # get existing rules
-    
-    if($theseParams){
-        if(($newServer -and (! $replaceRules)) -or
-            ((! $newServer) -and (! ($replaceRules -and $allServers)))){
-                $excludePathsToProcess += $theseParams.physicalSpecialParameters.filePaths.excludedFilePaths
-                $includePathsToProcess += $theseParams.physicalSpecialParameters.filePaths.backupFilePath
-        }
-    }
-
-    # add new rules
-    if($newServer -or $allServers){
-        "  processing $($source.protectionSource.name)"
-        $includePathsToProcess += @($includePaths | Where-Object {$_ -ne $null -and $_ -ne ''})
-        $excludePathsToProcess += @($excludePaths | Where-Object {$_ -ne $null -and $_ -ne ''})
-        if($skipNestedMountPointTypes.Count -gt 0){
-            $newParam.physicalSpecialParameters['usesSkipNestedVolumesVec'] = $True
-            $newParam.physicalSpecialParameters['skipNestedVolumesVec'] = $skipNestedMountPointTypes
-        }
-    }
-
-    # process include rules
-    foreach($includePath in $includePathsToProcess | Where-Object {$_ -ne ''} | Sort-Object -Unique){
-        $includePath = $includePath.ToString()
-        $filePath = @{
-            "backupFilePath" = $includePath;
-            "skipNestedVolumes" = $skip;
-            "excludedFilePaths" = @()
-        }
-        $newParam.physicalSpecialParameters.filePaths = @($newParam.physicalSpecialParameters.filePaths | Where-Object backupFilePath -ne $includePath)
-        $newParam.physicalSpecialParameters.filePaths += $filePath
-    }
-
-    # process exclude rules
-    foreach($excludePath in $excludePathsToProcess | Where-Object {$_ -and $_ -ne ''} | Sort-Object -Unique){
-        $excludePath = $excludePath.ToString()
-        $parentPath = $newParam.physicalSpecialParameters.filePaths | Where-Object {$excludePath.contains($_.backupFilePath)} | Sort-Object -Property {$_.backupFilePath.Length} -Descending | Select-Object -First 1
-        if($parentPath){
-            $parentPath.excludedFilePaths += $excludePath
-        }else{
-            foreach($parentPath in $newParam.physicalSpecialParameters.filePaths){
-                $parentPath.excludedFilePaths += $excludePath
-            }
-        }
-    }
-    $newParams += $newParam
-}
-
-$newParams | ConvertTo-Json -Depth 99 | Out-File -FilePath protectLinuxDebug.txt
-
-# update job
-$job.sourceSpecialParameters = $newParams
-$job.sourceIds = @($sourceIds)
-
-$null = api put "protectionJobs/$($job.id)" $job
-
-if($cluster.clusterSoftwareVersion -gt '6.5'){
-    if($globalExcludePaths){
-        $protectionGroups = api get "data-protect/protection-groups?isDeleted=false&includeTenants=true&includeLastRunInfo=true" -v2
-        $protectionGroup = $protectionGroups.protectionGroups | Where-Object name -eq $jobName
-        setApiProperty -object $protectionGroup.physicalParams.fileProtectionTypeParams -name 'globalExcludePaths' -value $globalExcludePaths
-        $null = api put "data-protect/protection-groups/$($protectionGroup.id)" $protectionGroup -v2
+        $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
     }
 }

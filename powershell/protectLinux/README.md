@@ -75,15 +75,27 @@ Processing servers...
 
 * -vip: name or IP of Cohesity cluster
 * -username: name of user to connect to Cohesity
-* -domain: your AD domain (defaults to local)
+* -domain: (optional) your AD domain (defaults to local)
 * -jobName: name of protection job
-* -servers: one or more servers (comma separated) to add to the proctection job
-* -serverList: file containing list of servers
-* -inclusions: one or more inclusion paths (comma separated)
-* -inclusionList: a text file list of paths to include
-* -exclusions: one or more exclusion paths (comma separated)
-* -exclusionList: a text file list of exclusion paths
-* -skipNestedMountPoints: (6.3 and below) if omitted, nested mount points will not be skipped
-* -skipNestedMountPointTypes: (6.4 and above) comma separated list of mount point types to skip (e.g. nfs, xfs)
-* -replaceRules: if omitted, inclusions/exclusions are appended to existing server rules (if any)
-* -allServers: inclusions/exclusions are applied to all servers in the job
+* -servers: (optional) one or more servers (comma separated) to add to the proctection job
+* -serverList: (optional) text file containing list of servers (one per line)
+* -inclusions: (optional) one or more inclusion paths (comma separated) defaults to /
+* -inclusionList: (optional) a text file list of paths to include (one per line)
+* -exclusions: (optional) one or more exclusion paths (comma separated)
+* -exclusionList: (optional) a text file list of exclusion paths (one per line)
+* -metadataFile: (optional) path to directive file (e.g. /home/myuser/directive.txt)
+* -skipNestedMountPoints: (optional) (6.3 and below) if omitted, nested mount points will not be skipped
+* -skipNestedMountPointTypes: (optional) (6.4 and above) comma separated list of mount point types to skip (e.g. nfs, xfs)
+* -replaceRules: (optional) if omitted, inclusions/exclusions are appended to existing server rules (if any)
+* -allServers: (optional) inclusions/exclusions are applied to all servers in the job
+
+## New Job Parameters
+
+* -policyName: (optional) name of protection policy to use
+* -startTime: (optional) e.g. '18:30' (defaults to 8PM)
+* -timeZone: (optional) e.g. 'America/New_York' (default is 'America/Los_Angeles')
+* -incrementalSlaMinutes: (optional) default 60
+* -fullSlaMinutes: (optional) default is 120
+* -storageDomainName: (optional) default is 'DefaultStorageDomain'
+* -paused: (optional) pause future runs (new job only)
+* -qosPolicy: (optional) kBackupHDD or kBackupSSD (default is kBackupHDD)
