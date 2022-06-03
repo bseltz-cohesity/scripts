@@ -38,6 +38,10 @@ Place the files in a folder together and run the script like so:
 * -vip: name or IP of Cohesity cluster
 * -username: name of user to connect to Cohesity
 * -domain: (optional) your AD domain (default is local)
+* -useApiKey: (optional) Use API key for authentication
+* -password: (optional) password or API key (will use stored password by default)
+* -mfaCode: (optional) multi-factor authentication code
+* -emailMfaCode: (optional) send mfaCode via email
 * -unit: (optional) TiB, GiB, MiB or KiB (default is MiB)
 * -smtpServer: (optional) SMTP gateway to forward email through
 * -smtpPort: (optional) SMTP port to use (default is 25)

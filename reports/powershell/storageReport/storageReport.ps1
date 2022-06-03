@@ -3,6 +3,10 @@ param (
     [Parameter(Mandatory = $True)][string]$vip, # Cohesity cluster to connect to
     [Parameter(Mandatory = $True)][string]$username, #cohesity username
     [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password = $null,
+    [Parameter()][string]$mfaCode = $null,
+    [Parameter()][switch]$emailMfaCode,
     [Parameter()][ValidateSet('KiB','MiB','GiB','TiB')][string]$unit = 'MiB',
     [Parameter()][string]$smtpServer, # outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, # outbound smtp port
@@ -14,7 +18,15 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
+}else{
+    if($emailMfaCode){
+        apiauth -vip $vip -username $username -domain $domain -password $password -emailMfaCode
+    }else{
+        apiauth -vip $vip -username $username -domain $domain -password $password -mfaCode $mfaCode
+    }
+}
 
 $conversion = @{'Kib' = 1024; 'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
 function toUnits($val){
