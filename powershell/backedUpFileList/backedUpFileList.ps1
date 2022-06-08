@@ -1,4 +1,4 @@
-# version 2022.05.11
+# version 2022.06.08
 # usage: ./backedUpFileList.ps1 -vip mycluster \
 #                               -username myuser \
 #                               -domain mydomain.net \
@@ -80,7 +80,7 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
                 if($statfile){
                     $filesize = $entry.fstatInfo.size
                     $mtime = usecsToDate $entry.fstatInfo.mtimeUsecs
-                    if($mtime -ge $daysAgo){
+                    if($mtime -ge $daysAgo -or $newerThan -eq 0){
                         "{0} ({1}) [{2} bytes]" -f $entry.fullPath, $mtime, $filesize | Tee-Object -FilePath $outputfile -Append
                     }
                 }else{
