@@ -51,6 +51,8 @@ The script takes the following parameters:
 * -ob, --oraclebase: oracle base path on target
 * -ch, --channels: number of restore channels
 * -cn, --channelnode: rac node for channels
+* -pf, --pfileparameter: example -pf 'param1=value1' (repeat for multiple variables)
+* -sh, --shellvariable: example -sh 'var1=value1' (repeat for multiple variables)
 * -lt, --logtime: point in time to replay the logs to
 * -l, --latest: replay logs to latest available point in time
 * -w, --wait: wait for completion

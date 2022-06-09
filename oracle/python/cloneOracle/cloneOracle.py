@@ -37,6 +37,8 @@ parser.add_argument('-ch', '--channels', type=int, default=2)  # number of resto
 parser.add_argument('-cn', '--channelnode', type=str, default=None)  # oracle data path on target
 parser.add_argument('-l', '--latest', action='store_true')
 parser.add_argument('-w', '--wait', action='store_true')  # wait for completion
+parser.add_argument('-sh', '--shellvariable', type=str, action='append')
+parser.add_argument('-pf', '--pfileparameter', type=str, action='append')
 
 args = parser.parse_args()
 
@@ -67,6 +69,13 @@ channels = args.channels
 channelnode = args.channelnode
 latest = args.latest
 wait = args.wait
+shellvars = args.shellvariable
+pfileparams = args.pfileparameter
+
+if shellvars is None:
+    shellvars = []
+if pfileparams is None:
+    pfileparams = []
 
 ### authenticate
 if mcm:
@@ -287,6 +296,32 @@ else:
         print('LogTime of %s is out of range' % logtime)
         print('Available range is %s to %s' % (usecsToDate(logStart), usecsToDate(logEnd)))
         exit(1)
+
+if len(pfileparams) > 0:
+    if 'oracleDbConfig' not in cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
+        cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig'] = {}
+        cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig']['pfileParameterMap'] = []
+    for pfileparam in pfileparams:
+        paramparts = pfileparam.split('=')
+        if len(paramparts) < 2:
+            print('pfile parameter is invalid')
+            exit(1)
+        else:
+            paramname = paramparts[0].strip()
+            paramval = paramparts[1].strip()
+            cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig']['pfileParameterMap'].append({"key": paramname, "value": paramval})
+
+if len(shellvars) > 0:
+    cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['shellEnvironmentVec'] = []
+    for shellvar in shellvars:
+        varparts = shellvar.split('=')
+        if len(varparts) < 2:
+            print('invalid shell variable')
+            exit(1)
+        else:
+            varname = varparts[0].strip()
+            varval = varparts[1].strip()
+            cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['shellEnvironmentVec'].append({"xKey": varname, "xValue": varval})
 
 ### execute the clone task
 response = api('post', '/cloneApplication', cloneParams)
