@@ -16,7 +16,9 @@ param (
     [Parameter()][int]$incrementalProtectionSlaTimeMins = 60,
     [Parameter()][int]$fullProtectionSlaTimeMins = 120,
     [Parameter()][string]$storageDomainName = 'DefaultStorageDomain', #storage domain you want the new job to write to
-    [Parameter()][switch]$paused
+    [Parameter()][switch]$paused,
+    [Parameter()][int]$numStreams = 3,
+    [Parameter()][string]$withClause = ''
 )
 
 # gather list of servers to add to job
@@ -120,6 +122,12 @@ if(! $job){
                 "aagPreferenceFromSqlServer" = $true;
                 "backupType"                 = $backupTypeEnum[$backupType]
             }
+        }
+    }
+    if($backupType -eq 'VDI'){
+        $job.environmentParameters.sqlParameters['numStreams'] = $numStreams
+        if($withClause -ne ''){
+            $job.environmentParameters.sqlParameters['withClause'] = $withClause
         }
     }
 }else{
