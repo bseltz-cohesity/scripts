@@ -244,11 +244,7 @@ cloneParams = {
 # configure channels
 if channels is not None:
     if channelnode is not None:
-        uuid = [d['entity']['oracleEntity']['uuid'] for d in targetEntity['appEntity']['auxChildren'] if d['entity']['displayName'].lower() == sourcedb.lower()]
-        if uuid is None or len(uuid) == 0:
-            print('database not found on source entity')
-            exit(1)
-        uuid = uuid[0]
+        uuid = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
         endpoints = [e for e in targetEntity['appEntity']['entity']['physicalEntity']['networkingInfo']['resourceVec'] if e['type'] == 0]
         channelNodeObj = None
         for endpoint in endpoints:
@@ -262,12 +258,58 @@ if channels is not None:
             else:
                 print('channelnode %s not found' % channelnode)
                 exit(1)
+            cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['oracleTargetParams'] = {
+                "additionalOracleDbParamsVec": [
+                    {
+                        "appEntityId": latestdb['vmDocument']['objectId']['entity']['id'],
+                        "dbInfoChannelVec": [
+                            {
+                                "hostInfoVec": [
+                                    {
+                                        "host": str(channelNodeId),
+                                        "numChannels": channels
+                                    }
+                                ],
+                                "dbUuid": uuid
+                            }
+                        ]
+                    }
+                ]
+            }
         else:
             print('channelnode %s not found' % channelnode)
             exit(1)
-else:
-    channelNodeId = targetserver
-    uuid = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
+    else:
+        channelNodeId = targetserver
+        uuid = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
+
+# # configure channels
+# if channels is not None:
+#     if channelnode is not None:
+#         uuid = [d['entity']['oracleEntity']['uuid'] for d in targetEntity['appEntity']['auxChildren'] if d['entity']['displayName'].lower() == sourcedb.lower()]
+#         if uuid is None or len(uuid) == 0:
+#             print('database not found on source entity')
+#             exit(1)
+#         uuid = uuid[0]
+#         endpoints = [e for e in targetEntity['appEntity']['entity']['physicalEntity']['networkingInfo']['resourceVec'] if e['type'] == 0]
+#         channelNodeObj = None
+#         for endpoint in endpoints:
+#             preferredEndPoint = [e for e in endpoint['endpointVec'] if e['isPreferredEndpoint'] is True]
+#             if preferredEndPoint[0]['fqdn'].lower() == channelnode.lower() or preferredEndPoint[0]['ipv4Addr'] == channelnode.lower():
+#                 channelNodeObj = preferredEndPoint[0]
+#         if channelNodeObj is not None:
+#             channelNodeAgent = [a for a in targetEntity['appEntity']['entity']['physicalEntity']['agentStatusVec'] if a['displayName'].lower() == channelNodeObj['fqdn'].lower() or a['displayName'].lower() == channelNodeObj['ipv4Addr']]
+#             if channelNodeAgent is not None and len(channelNodeAgent) > 0:
+#                 channelNodeId = channelNodeAgent[0]['id']
+#             else:
+#                 print('channelnode %s not found' % channelnode)
+#                 exit(1)
+#         else:
+#             print('channelnode %s not found' % channelnode)
+#             exit(1)
+# else:
+#     channelNodeId = targetserver
+#     uuid = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
 
     cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['oracleTargetParams'] = {
         "additionalOracleDbParamsVec": [
