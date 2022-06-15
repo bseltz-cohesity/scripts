@@ -73,15 +73,17 @@ if(!$usersNode){
 
 $nameIndex = @{}
 $smtpIndex = @{}
-$users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false"
+$users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidOnedrive=true&allUnderHierarchy=false"
 while(1){
     # implement pagination
     foreach($node in $users.nodes){
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
-        $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
+        if($node.protectionSource.office365ProtectionSource.PSObject.Properties['primarySMTPAddress']){
+            $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
+        }
     }
     $cursor = $users.nodes[-1].protectionSource.id
-    $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false&afterCursorEntityId=$cursor"
+    $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidOnedrive=true&allUnderHierarchy=false&afterCursorEntityId=$cursor"
     if(!$users.PSObject.Properties['nodes'] -or $users.nodes.Count -eq 1){
         break
     }
@@ -112,7 +114,7 @@ $protectionParams = @{
 }
 
 $usersAdded = 0
-$environmentMap = @{'Mailbox' = 'kO365Exchange'; 'OneDrive' = 'kO365OneDrive'}
+
 # find users
 foreach($driveUser in $usersToAdd){
     $userId = $null
