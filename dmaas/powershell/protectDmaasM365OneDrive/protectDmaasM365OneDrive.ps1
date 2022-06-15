@@ -11,7 +11,7 @@ param (
     [Parameter()][string]$timeZone = 'America/New_York', # e.g. 'America/New_York'
     [Parameter()][int]$incrementalSlaMinutes = 60,  # incremental SLA minutes
     [Parameter()][int]$fullSlaMinutes = 120,  # full SLA minutes
-    [Parameter()][int]$pageSize = 50000
+    [Parameter()][int]$pageSize = 1000
 )
 
 # gather list of mailboxes to protect
@@ -58,6 +58,19 @@ if(!$policy){
     exit
 }
 
+# # find O365 source
+# $rootSource = api get protectionSources/rootNodes?environments=kO365 | Where-Object {$_.protectionSource.name -eq $sourceName}
+# if(!$rootSource){
+#     Write-Host "O365 Source $sourceName not found" -ForegroundColor Yellow
+#     exit
+# }
+# $source = api get "protectionSources?id=$($rootSource.protectionSource.id)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false"
+# $usersNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
+# if(!$usersNode){
+#     Write-Host "Source $sourceName is not configured for O365 Mailboxes" -ForegroundColor Yellow
+#     exit
+# }
+
 # find O365 source
 $rootSource = api get protectionSources/rootNodes?environments=kO365 | Where-Object {$_.protectionSource.name -eq $sourceName}
 if(!$rootSource){
@@ -73,21 +86,21 @@ if(!$usersNode){
 
 $nameIndex = @{}
 $smtpIndex = @{}
+
 $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidOnedrive=true&allUnderHierarchy=false"
 while(1){
     # implement pagination
     foreach($node in $users.nodes){
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
-        if($node.protectionSource.office365ProtectionSource.PSObject.Properties['primarySMTPAddress']){
-            $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
-        }
+        $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
     }
     $cursor = $users.nodes[-1].protectionSource.id
     $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidOnedrive=true&allUnderHierarchy=false&afterCursorEntityId=$cursor"
-    if(!$users.PSObject.Properties['nodes'] -or $users.nodes.Count -eq 1){
+
+    if(!($users[0].PSObject.Properties['nodes']) -or $users[0].nodes.Count -eq 1){
         break
     }
-} 
+}  
 
 # configure protection parameters
 $protectionParams = @{
