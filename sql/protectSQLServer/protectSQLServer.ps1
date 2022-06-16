@@ -4,7 +4,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vip,  # the cluster to connect to (DNS name or IP)
     [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
     [Parameter()][string]$domain = 'local',  # local or AD domain
-    [Parameter(Mandatory = $True)][string]$jobname,
+    [Parameter(Mandatory = $True)][string]$jobName,
     [Parameter()][array]$servername,
     [Parameter()][string]$serverList = '',  # optional textfile of servers to protect
     [Parameter()][array]$instanceName,
@@ -57,16 +57,23 @@ $newJob = $false
 
 if(! $job){
     # create new job
-    Write-Host "Creating job $jobname..."
+    Write-Host "Creating job $jobName..."
     $newJob = $True
 
-    $backupTypeEnum = @{'File' = 'kSqlVSSFile'; 'Volume' = 'kSqlVSSVolume'; 'VDI' = 'kSqlNative'}
+    if($paused){
+        $isPaused = $True
+    }else{
+        $isPaused = $false
+    }
+
+    $backupTypeEnum = @{'File' = 'kFile'; 'Volume' = 'kVolume'; 'VDI' = 'kNative'}
+
     # get policy
     if(! $policyname){
         Write-Host "-policyname required when creating a new job" -ForegroundColor Yellow
         exit 1
     }
-    $policy = api get protectionPolicies | Where-Object name -eq $policyname
+    $policy = (api get -v2 "data-protect/policies").policies | Where-Object name -eq $policyName
     if(! $policy){
         Write-Host "Policy $policyname not found!" -ForegroundColor Yellow
         exit 1
@@ -83,52 +90,121 @@ if(! $job){
     # get storageDomain
     $viewBoxes = api get viewBoxes
     if($viewBoxes -is [array]){
-            $viewBox = $viewBoxes | Where-Object { $_.name -ieq $storageDomainName }
-            if (!$viewBox) { 
-                write-host "Storage domain $storageDomainName not Found" -ForegroundColor Yellow
-                exit
-            }
+        $viewBox = $viewBoxes | Where-Object { $_.name -ieq $storageDomainName }
+        if (!$viewBox) { 
+            write-host "Storage domain $storageDomainName not Found" -ForegroundColor Yellow
+            exit
+        }
     }else{
         $viewBox = $viewBoxes[0]
     }
 
     $job = @{
-        "name"                             = $jobname;
-        "environment"                      = "kSQL";
-        "policyId"                         = $policy.id;
-        "viewBoxId"                        = $viewBox.id;
-        "parentSourceId"                   = $sources[0].protectionSource.id;
-        "sourceIds"                        = @();
-        "startTime"                        = @{
-            "hour"   = [int]$hour;
-            "minute" = [int]$minute
+
+        "name" = $jobName;
+        "policyId" = $policy.id;
+        "priority" = "kMedium";
+        "storageDomainId" = $viewBox.id;
+        "description" = "";
+        "startTime" = @{
+            "hour" = [int]$hour;
+            "minute" = [int]$minute;
+            "timeZone" = $timeZone
         };
-        "timezone"                         = $timeZone;
-        "incrementalProtectionSlaTimeMins" = $incrementalProtectionSlaTimeMins;
-        "fullProtectionSlaTimeMins"        = $fullProtectionSlaTimeMins;
-        "priority"                         = "kMedium";
-        "alertingPolicy"                   = @(
-            "kFailure"
-        );
-        "indexingPolicy"                   = @{
-            "disableIndexing" = $true
+        "alertPolicy" = @{
+            "backupRunStatus" = @(
+                "kFailure"
+            );
+            "alertTargets" = @()
         };
-        "performSourceSideDedup"           = $false;
-        "qosType"                          = "kBackupHDD";
-        "environmentParameters"            = @{
-            "sqlParameters" = @{
-                "userDatabasePreference"     = "kBackupAllDatabases";
-                "backupSystemDatabases"      = $true;
-                "aagPreferenceFromSqlServer" = $true;
-                "backupType"                 = $backupTypeEnum[$backupType]
+        "sla" = @(
+            @{
+                "backupRunType" = "kIncremental";
+                "slaMinutes" = $incrementalProtectionSlaTimeMins
+            };
+            @{
+                "backupRunType" = "kFull";
+                "slaMinutes" = $fullProtectionSlaTimeMins
             }
+        );
+        "qosPolicy" = "kBackupHDD";
+        "abortInBlackouts" = $false;
+        "isActive" = $true;
+        "isPaused" = $isPaused;
+        "environment" = "kSQL";
+        "permissions" = @();
+        "missingEntities" = $null;
+        "mssqlParams" = @{
+            "protectionType" = $backupTypeEnum[$backupType];
         }
     }
-    if($backupType -eq 'VDI'){
-        $job.environmentParameters.sqlParameters['numStreams'] = $numStreams
-        if($withClause -ne ''){
-            $job.environmentParameters.sqlParameters['withClause'] = $withClause
+    
+    if($backupType -eq 'File'){
+        $job.mssqlParams['fileProtectionTypeParams'] = @{
+            "objects" = @();
+            "performSourceSideDeduplication" = $false;
+            "additionalHostParams" = @();
+            "userDbBackupPreferenceType" = "kBackupAllDatabases";
+            "backupSystemDbs" = $true;
+            "useAagPreferencesFromServer" = $true;
+            "fullBackupsCopyOnly" = $false;
+            "excludeFilters" = $null
         }
+        $params = $job.mssqlParams.fileProtectionTypeParams
+    }
+
+    if($backupType -eq 'VDI'){
+        $job.mssqlParams['nativeProtectionTypeParams'] = @{
+            "objects" = @();
+            "numStreams" = $numStreams;
+            "withClause" = $withClause;
+            "userDbBackupPreferenceType" = "kBackupAllDatabases";
+            "backupSystemDbs" = $true;
+            "useAagPreferencesFromServer" = $true;
+            "fullBackupsCopyOnly" = $false;
+            "excludeFilters" = $null
+        }
+        $params = $job.mssqlParams.nativeProtectionTypeParams
+    }
+
+    if($backupType -eq 'Volume'){
+        $job.mssqlParams['volumeProtectionTypeParams'] = @{
+            "objects" = @();
+            "incrementalBackupAfterRestart" = $true;
+            "indexingPolicy" = @{
+                "enableIndexing" = $true;
+                "includePaths" = @(
+                    "/"
+                );
+                "excludePaths" = @(
+                    '/$Recycle.Bin';
+                    "/Windows";
+                    "/Program Files";
+                    "/Program Files (x86)";
+                    "/ProgramData";
+                    "/System Volume Information";
+                    "/Users/*/AppData";
+                    "/Recovery";
+                    "/var";
+                    "/usr";
+                    "/sys";
+                    "/proc";
+                    "/lib";
+                    "/grub";
+                    "/grub2";
+                    "/opt/splunk";
+                    "/splunk"
+                )
+            };
+            "backupDbVolumesOnly" = $false;
+            "additionalHostParams" = @();
+            "userDbBackupPreferenceType" = "kBackupAllDatabases";
+            "backupSystemDbs" = $true;
+            "useAagPreferencesFromServer" = $true;
+            "fullBackupsCopyOnly" = $false;
+            "excludeFilters" = $null
+        }
+        $params = $job.mssqlParams.volumeProtectionTypeParams
     }
 }else{
     Write-Host "Updating job $jobname..."
@@ -143,55 +219,29 @@ foreach($servername in $serversToAdd){
         exit 1
     }
     
-    # instances
-    $haveParams = $false
-    $mySourceParams = @{
-        "sourceId" = $serverSource.protectionSource.id;
-        "sqlSpecialParameters" = @{
-            "applicationEntityIds" = @()
-        }
-    }
-    
     if($instanceName.Count -eq 0 -and $instancesOnly){
-        $mySourceParams.sqlSpecialParameters.applicationEntityIds = @($serverSource.applicationNodes.protectionSource.id)
-        $haveParams = $True
-    }else{
+        foreach($instanceId in $serverSource.applicationNodes.protectionSource.id){
+            $params.objects = @($params.objects + @{ 'id' = $instanceId})
+        }
+    }elseif($instanceName.Count -gt 0){
         foreach($instance in $instanceName){
             $instanceSource = $serverSource.applicationNodes | Where-Object {$_.protectionSource.name -eq $instance}
             if(! $instanceSource){
                 Write-Host "Instance $instance not found on server $servername"
                 exit
             }else{
-                $mySourceParams.sqlSpecialParameters.applicationEntityIds += $instanceSource.protectionSource.id
-                $haveParams = $True
+                $params.objects = @($params.objects + @{ 'id' = $instanceSource.protectionSource.id})
             }
         }
+    }else{
+        $params.objects = @($params.objects + @{ 'id' = $serverSource.protectionSource.id})
     }
-
-    if($haveParams){
-        if(! $job.PSObject.Properties['sourceSpecialParameters']){
-            setApiProperty -object $job -name 'sourceSpecialParameters' -value @($mySourceParams)
-        }else{
-            $existingParams = $job.sourceSpecialParameters | Where-Object {$_.sourceId -eq $serverSource.protectionSource.id}
-            if($existingParams){
-                $existingParams.sqlSpecialParameters.applicationEntityIds += @($mySourceParams.sqlSpecialParameters.applicationEntityIds | Sort-Object -Unique)
-            }else{
-                $job.sourceSpecialParameters += $mySourceParams
-            }
-        }
-    }
-
-    $job.sourceIds += @($job.sourceIds + $serverSource.protectionSource.id | Sort-Object -Unique)
     Write-Host "Protecting $servername..."
 }
 
 if($newJob -eq $True){
-    $createdJob = api post protectionJobs $job
-    if($paused){
-        $null = api post protectionJobState/$($createdJob.id) @{ 'pause'= $true }
-    }
+    $createdJob = api post -v2 data-protect/protection-groups $job
 }else{
-    $null = api put protectionJobs/$($job.id) $job 
+    $null = api put -v2 data-protect/protection-groups/$($job.id) $job 
 }
-
 
