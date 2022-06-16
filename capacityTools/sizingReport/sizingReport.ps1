@@ -39,7 +39,7 @@ $finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning')
 $cluster = api get cluster
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $objectFileName = "SizingReport-PerObject-$($cluster.name)-$dateString.csv"
-"""Owner"",""Job Name"",""Job Type"",""Source Name"",""Logical $unit"",""Peak Read $unit"",""Last Day Read $unit"",""Read Over Days $unit"",""Avg Read $unit"",""Last Day Written $unit"",""Written Over Days $unit"",""Avg Written $unit"",""Days Collected"",""Daily Read Change Rate %"",""Daily Write Change Rate %"",""Avg Replica Queue Hours"",""Avg Replica Hours"",""Avg Logical Replicated"",""Avg Physical Replicated"",""Avg Index Hours""" | Out-File -FilePath $objectFileName
+"""Owner"",""Job Name"",""Job Type"",""Source Name"",""Logical $unit"",""Peak Read $unit"",""Last Day Read $unit"",""Read Over Days $unit"",""Avg Read $unit"",""Last Day Written $unit"",""Written Over Days $unit"",""Avg Written $unit"",""Days Collected"",""Daily Read Change Rate %"",""Daily Write Change Rate %"",""Avg Replica Queue Hours"",""Avg Replica Hours"",""Avg Logical Replicated"",""Avg Physical Replicated"",""Avg Index Hours""" | Out-File -FilePath $objectFileName -Encoding utf8
 
 $runningTasks = 0
 
@@ -283,7 +283,7 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
 # Per Job Stats
 $jobFileName = "SizingReport-PerJob-$($cluster.name)-$dateString.csv"
 
-"""Owner"",""JobName"",""JobType"",""Policy"",""Logical $unit"",""Avg Read $unit"",""Avg Written $unit"",""Read Change Rate"",""Write Change Rate"",""Avg Logical Replicated $unit"",""Avg Physical Replicated $unit"",""Avg Logical Archived $unit"",""Avg Physical Archived $unit"",""Avg Index Duration""" | Out-File -FilePath $jobFileName 
+"""Owner"",""JobName"",""JobType"",""Policy"",""Logical $unit"",""Avg Read $unit"",""Avg Written $unit"",""Read Change Rate"",""Write Change Rate"",""Avg Logical Replicated $unit"",""Avg Physical Replicated $unit"",""Avg Logical Archived $unit"",""Avg Physical Archived $unit"",""Avg Index Duration""" | Out-File -FilePath $jobFileName -Encoding utf8
 foreach($jobName in ($jobStats.Keys | sort)){
     $owner = $jobStats[$jobName].owner
     $jobType = $jobStats[$jobName].jobType
@@ -341,7 +341,7 @@ foreach($jobName in ($jobStats.Keys | sort)){
 # Per Workload Stats
 $workloadFileName = "SizingReport-PerWorkload-$($cluster.name)-$dateString.csv"
 
-"""Owner"",""JobType"",""Logical $unit"",""Avg Read $unit"",""Avg Written $unit"",""Read Change Rate"",""Write Change Rate""" | Out-File -FilePath $workloadFileName
+"""Owner"",""JobType"",""Logical $unit"",""Avg Read $unit"",""Avg Written $unit"",""Read Change Rate"",""Write Change Rate""" | Out-File -FilePath $workloadFileName -Encoding utf8
 
 foreach($keyName in ($workloadStats.Keys | sort)){
     $owner, $jobType = $keyName -split('--')
@@ -359,7 +359,7 @@ foreach($keyName in ($workloadStats.Keys | sort)){
 }
 
 # Policy Info
-"" | Out-File -FilePath $policyFileName
+"" | Out-File -FilePath $policyFileName -Encoding utf8
 foreach($policy in $policies | Where-Object {$_.name -in $policyNames}){
     "         Policy Name: $($policy.name)" | Out-File -FilePath $policyFileName -Append
     # base retention
