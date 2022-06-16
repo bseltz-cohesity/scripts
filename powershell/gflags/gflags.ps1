@@ -103,7 +103,7 @@ public class SSLHandler
 }
 
 function setGflag($servicename, $flagname, $flagvalue, $reason){
-    write-host "setting $($servicename): $flagname = $flagvalue..."
+    write-host "setting  $($servicename):  $flagname = $flagvalue"
     $gflagReq = @{
         'clusterId' = $cluster.id;
         'gflags' = @(
@@ -155,16 +155,15 @@ if($flagvalue){
     }
 }
 
-# import list og gflags
+# import list of gflags
 if($import -ne ''){
     if (!(Test-Path -Path $import)) {
         Write-Host "import file $import not found" -ForegroundColor Yellow
         exit
     }else{
-        $imports = Import-Csv -Path $import
+        $imports = Import-Csv -Path $import -Encoding utf8
         foreach($i in $imports){
-            
-            $serviceame = $null
+            $servicename = $null
             $flagname = $null
             $flagvalue = $null
             $reason = $null
@@ -174,7 +173,7 @@ if($import -ne ''){
             $flagvalue = $i.flagValue
             $reason = $i.reason
 
-            "setting $servicename / $flagname : $flagvalue ($reason)`n"
+            # Write-Host ("setting {0} / {1} : {2} ({3})" -f $servicename, $flagname, $flagvalue, $reason)
             if($servicename -and $flagname -and $flagvalue -and $reason){
                 setGflag -servicename $servicename -flagname $flagname -flagvalue $flagvalue -reason $reason
                 $restartServices += $servicename
@@ -184,6 +183,7 @@ if($import -ne ''){
             }
         }
     }
+    exit 0
 }
 
 # show currently set gflags
@@ -198,13 +198,17 @@ foreach($service in $gflags){
     Write-Host "`n$($svcName):"
 
     foreach($serviceGflag in $serviceGflags){
-        Write-Host "    $($serviceGflag.name): $($serviceGflag.value) ($($serviceGflag.reason))"
-        $gflaglist += """$svcName"",""$($serviceGflag.name)"",""$($serviceGflag.value)"",""$($serviceGflag.reason)"""
+        $timeStamp = ''
+        if($serviceGflag.timestamp -ne 0){
+            $timeStamp = $(usecsToDate ($serviceGflag.timestamp * 1000000)).ToString('yyyy-MM-dd')
+        }
+        Write-Host "    $($serviceGflag.name): $($serviceGflag.value) ($($serviceGflag.reason)) ($timeStamp)"
+        $gflaglist += @{'serviceName' = $svcName; 'flagName' = $serviceGflag.name; 'flagValue' = $serviceGflag.value; 'reason' = $serviceGflag.reason; 'timestamp' = $timeStamp}
     }
 }
 
-"serviceName,flagName,flagValue,reason" | Out-File -FilePath "gflags-$($cluster.name).csv"
-$gflaglist | Out-File -FilePath "gflags-$($cluster.name).csv" -Append
+$gflaglist = ($gflaglist | ConvertTo-Json -Depth 99 | ConvertFrom-Json)
+$gflaglist | Export-Csv -Path "gflags-$($cluster.name).csv" -Encoding utf8 -NoTypeInformation
 
 Write-Host "`n$($cluster.name) gflags saved to gflags-$($cluster.name).csv`n"
 
