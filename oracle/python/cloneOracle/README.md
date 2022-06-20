@@ -49,8 +49,9 @@ The script takes the following parameters:
 * -td, --targetdb: name of target oracle DB
 * -oh, --oraclehome: oracle home path on target
 * -ob, --oraclebase: oracle base path on target
-* -ch, --channels: number of restore channels
-* -cn, --channelnode: rac node for channels
+* -ch, --channels: (optional) number of restore channels (default is 2)
+* -cn, --channelnode: (optional) rac node for channels
+* -vlan, --vlan: (optional) VLAN ID to use for restore
 * -pf, --pfileparameter: example -pf 'param1=value1' (repeat for multiple variables)
 * -sh, --shellvariable: example -sh 'var1=value1' (repeat for multiple variables)
 * -lt, --logtime: point in time to replay the logs to
