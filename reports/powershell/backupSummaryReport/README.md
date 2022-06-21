@@ -30,8 +30,14 @@ Place both files in a folder together, then we can run the script.
 
 ## Parameters
 
-* -vip: DNS or IP of the Cohesity Cluster
-* -username: Cohesity User Name
+* -vip: (optional) DNS or IP of the Cohesity Cluster (default is 'helios.cohesity.com')
+* -username: (optional) Cohesity User Name (default is 'helios')
 * -domain: (optional) defaults to 'local'
+* -useApiKey: (optional) use API key for cluster authentication
+* -password: (optional) clear text password (will be prompted if omitted)
+* -mcm: (optional) authenticate to MultiCluster Manager
+* -mfaCode: (optional) supply TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through helios or MCM
 * -unit: (optional) KiB, MiB, GiB or TiB (default is MiB)
 * -daysBack: (optional) default is 7

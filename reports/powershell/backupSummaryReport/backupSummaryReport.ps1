@@ -1,15 +1,39 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-   [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
-   [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
-   [Parameter()][string]$domain = 'local', #local or AD domain
+   [Parameter()][string]$vip = 'helios.cohesity.com',
+   [Parameter()][string]$username = 'helios',
+   [Parameter()][string]$domain = 'local',
+   [Parameter()][switch]$useApiKey,
+   [Parameter()][string]$password = $null,
+   [Parameter()][switch]$mcm,
+   [Parameter()][string]$mfaCode = $null,
+   [Parameter()][switch]$emailMfaCode,
+   [Parameter()][string]$clusterName = $null,
    [Parameter()][ValidateSet('KiB','MiB','GiB','TiB')][string]$unit = 'MiB',
    [Parameter()][int]$daysBack = 7
 )
 
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+
+### authenticate
+apiauth -vip $vip -username $username -domain $domain -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region
+
+### select helios/mcm managed cluster
+if($USING_HELIOS -and !$region){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit
+}
 
 $conversion = @{'Kib' = 1024; 'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
 function toUnits($val){
@@ -26,9 +50,6 @@ $environments = @('kUnknown', 'kVMware', 'kHyperV', 'kSQL', 'kView', 'kPuppeteer
                 'kHBase', 'kHive', 'kHdfs', 'kCouchbase', 'kUnknown', 'kUnknown', 'kUnknown')
 
 $slaViolation = @{$false = 'Pass'; $True = 'Fail'}
-
-### authenticate
-apiauth -vip $vip -username $username -domain $domain
 
 $finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning')
 
