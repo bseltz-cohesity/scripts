@@ -42,12 +42,12 @@ Place both files in a folder together and run the main script like so:
 * -i, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password of API key
 * -mcm, --mcm: (optional) connect through MCM
-* -n, --sourcename: IP or FQDN of protection source to register
+* -n, --sourcename: One or more IP or FQDN of protection sources to register (repeat for multiple)
 * -t, --sourcetype: (optional) Type of UDA database (see list below) default is Other
 * -p, --scriptpath: Location of UDA scripts, e.g. /opt/cohesity/postgres/scripts
 * -a, --sourceargs: (optional) source registration arguments, e.g. '--source-name=postgres1.mydomain.net'
 * -m, --mountview: (optional) false if omitted
-* -au, --appusername: username to connect to app, e.g. postgres
+* -au, --appusername: (optional) username to connect to app, e.g. postgres
 * -ap, --apppassword: (optional)  will be prompted if omitted
 
 ## UDA Source Types

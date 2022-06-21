@@ -13,12 +13,12 @@ parser.add_argument('-c', '--clustername', type=str, default=None)
 parser.add_argument('-mcm', '--mcm', action='store_true')
 parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
-parser.add_argument('-n', '--sourcename', type=str, required=True)
+parser.add_argument('-n', '--sourcename', action='append', type=str)
 parser.add_argument('-t', '--sourcetype', type=str, choices=['CockroachDB', 'DB2', 'MySQL', 'Other', 'SapHana', 'SapMaxDB', 'SapOracle', 'SapSybase', 'SapSybaseIQ', 'SapASE'], default='Other')
 parser.add_argument('-p', '--scriptpath', type=str, required=True)
-parser.add_argument('-a', '--sourceargs', type=str, required=True)
-parser.add_argument('-au', '--appusername', type=str, required=True)
-parser.add_argument('-ap', '--apppassword', type=str, default=None)
+parser.add_argument('-a', '--sourceargs', type=str, default=None)
+parser.add_argument('-au', '--appusername', type=str, default='')
+parser.add_argument('-ap', '--apppassword', type=str, default='')
 parser.add_argument('-m', '--mountview', action='store_true')
 args = parser.parse_args()
 
@@ -77,16 +77,14 @@ def waitForRefresh(id):
     return rootNode['rootNode']['id']
 
 
-if apppassword is None:
+if appusername != '' and apppassword == '':
     apppassword = getpass.getpass("Enter app password: ")
 
 regparams = {
     "environment": "kUDA",
     "udaParams": {
         "sourceType": sourceTypeName[sourcetype],
-        "hosts": [
-            sourcename
-        ],
+        "hosts": sourcename,
         "credentials": {
             "username": appusername,
             "password": apppassword
@@ -101,7 +99,7 @@ regparams = {
 if mountview:
     regparams['udaParams']['mountView'] = True
 
-print("Registering UDA protection source '%s'..." % sourcename)
+print("Registering UDA protection source '%s'..." % sourcename[0])
 result = api('post', 'data-protect/sources/registrations', regparams, v=2)
 if 'id' in result:
     id = waitForRefresh(result['id'])

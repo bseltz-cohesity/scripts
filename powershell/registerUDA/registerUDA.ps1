@@ -93,7 +93,8 @@ $regParams = @{
 if($mountView){
     $regParams.udaParams.mountView = $True
 }
-"Registering UDA protection source '$sourceName'..."
+
+"Registering UDA protection source '$($sourceName[0])'..."
 $result = api post -v2 data-protect/sources/registrations $regParams
 if($result.PSObject.Properties['id']){
     $id = waitForRefresh($result.id)
