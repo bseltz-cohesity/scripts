@@ -87,25 +87,22 @@ foreach($job in $jobs | Sort-Object -Property name){
             }
             $message = ''
             $runmessage = ''
-            $localSnapshotInfo.snapshotInfo.status
+            $status = $localSnapshotInfo.snapshotInfo.status;
             if($run.PSObject.Properties['localBackupInfo'] -and $run.localBackupInfo.PSObject.Properties['messages'] -and $run.localBackupInfo.messages.Count -gt 0){
                 $runmessage = $run.localBackupInfo.messages[0]
             }
-            if($localSnapshotInfo -ne $null -and $localSnapshotInfo.snapshotInfo.status -ne 'kSuccessful'){
-                if($localSnapshotInfo.snapshotInfo.PSObject.Properties['warnings'] -and $localSnapshotInfo.snapshotInfo.warnings.Count -gt 0){
-                    $message = $localSnapshotInfo.snapshotInfo.warnings[0]
-                }
-                if($localSnapshotInfo.PSObject.Properties['failedAttempts'] -and $localSnapshotInfo.failedAttempts.Count -gt 0){
-                    $message = $localSnapshotInfo.failedAttempts[-1].message
-                }
+            if($localSnapshotInfo.snapshotInfo.PSObject.Properties['warnings'] -and $localSnapshotInfo.snapshotInfo.warnings.Count -gt 0){
+                $message = $localSnapshotInfo.snapshotInfo.warnings[0]
+                $status = 'kWarning'
             }
-            if($localSnapshotInfo -ne $null -and $localSnapshotInfo.snapshotInfo.status -eq 'kSuccessful'){
-                $message = ''
-            } 
+            if($localSnapshotInfo.PSObject.Properties['failedAttempts'] -and $localSnapshotInfo.failedAttempts.Count -gt 0){
+                $message = $localSnapshotInfo.failedAttempts[-1].message
+                $status = 'kFailed'
+            }
             
             $objects[$object.id].runs.Add(@{
                 'protectionGroupName' = $run.protectionGroupName;
-                'status' = $localSnapshotInfo.snapshotInfo.status; 
+                'status' = $status; 
                 'startTime' = $startTimeUsecs; 
                 'endTime' = $endTimeUsecs;
                 'expiry' = $localSnapshotInfo.snapshotInfo.expiryTimeUsecs;
