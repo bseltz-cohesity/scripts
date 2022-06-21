@@ -52,8 +52,8 @@ f = codecs.open(outfile, 'w')
 # headings
 f.write('Date,Capacity (%s),Consumed (%s),Free (%s),Used %%,Data In (%s),Data Written (%s),Storage Reduction,Data Reduction\n' % (unit, unit, unit, unit, unit))
 
-endMsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S")) / 1000
-startMsecs = (timeAgo(days, 'days')) / 1000
+endMsecs = int(dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S")) / 1000)
+startMsecs = int((timeAgo(days, 'days')) / 1000)
 
 capacityStats = api('get', 'statistics/timeSeriesStats?endTimeMsecs=%s&entityId=%s&metricName=kCapacityBytes&metricUnitType=0&range=day&rollupFunction=average&rollupIntervalSecs=86400&schemaName=kBridgeClusterStats&startTimeMsecs=%s' % (endMsecs, cluster['id'], startMsecs))
 consumedStats = api('get', 'statistics/timeSeriesStats?startTimeMsecs=%s&schemaName=kBridgeClusterTierPhysicalStats&metricName=kMorphedUsageBytes&rollupIntervalSecs=86400&rollupFunction=latest&entityIdList=%s:Local&endTimeMsecs=%s' % (startMsecs, cluster['id'], endMsecs))
