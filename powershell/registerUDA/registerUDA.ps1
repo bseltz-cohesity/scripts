@@ -9,12 +9,12 @@ param (
     [Parameter()][switch]$mcm,
     [Parameter()][string]$clusterName = $null,
     [Parameter()][ValidateSet('CockroachDB', 'DB2', 'MySQL', 'Other', 'SapHana', 'SapMaxDB', 'SapOracle', 'SapSybase', 'SapSybaseIQ', 'SapASE')][string]$sourceType='Other',
-    [Parameter(Mandatory = $True)][string]$sourceName,
+    [Parameter()][array]$sourceName,
     [Parameter(Mandatory = $True)][string]$scriptDir,
-    [Parameter(Mandatory = $True)][string]$sourceArgs,
+    [Parameter()][string]$sourceArgs = $null,
     [Parameter()][switch]$mountView,
-    [Parameter(Mandatory = $True)][string]$appUsername,
-    [Parameter()][string]$appPassword=$null
+    [Parameter()][string]$appUsername = '',
+    [Parameter()][string]$appPassword = ''
 )
 
 $sourceTypeName = @{
@@ -67,7 +67,7 @@ if($USING_HELIOS){
     }
 }
 
-if(!$appPassword){
+if($appUsername -ne '' -and $appPassword -eq ''){
     $secureString = Read-Host -Prompt "Enter your app password" -AsSecureString
     $appPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
 }

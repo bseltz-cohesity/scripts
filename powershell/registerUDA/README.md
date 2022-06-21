@@ -46,12 +46,12 @@ To add some exclusions to a job:
 * -password: (optional) will use stored password by default
 * -mcm: (optional) connect via MCM
 * -clusterName: (optional) required when connecting through Helios or MCM
-* -sourceName: IP or FQDN of protection source to register
+* -sourceName: One or more IP or FQDN of protection sources to register (comma separated)
 * -sourceType: Type of UDA database (see list below)
 * -scriptDir: Location of UDA scripts, e.g. /opt/cohesity/postgres/scripts
-* -sourceArgs: source registration arguments, e.g. '--source-name=postgres1.mydomain.net'
+* -sourceArgs: (optional) source registration arguments, e.g. '--source-name=postgres1.mydomain.net'
 * -mountView: (optional) false if omitted
-* -appUsername: username to connect to app, e.g. postgres
+* -appUsername: (optional) username to connect to app, e.g. postgres
 * -appPassword: (optional) will be prompted if omitted
 
 ## UDA Source Types
