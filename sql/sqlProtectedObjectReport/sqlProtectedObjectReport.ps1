@@ -32,7 +32,7 @@ $cluster = api get cluster
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "$($cluster.name)-sqlProtectedObjectReport-$dateString.csv"
 
-"Cluster Name,Job Name,Environment,Object Name,Object Type,Parent,Policy Name,Frequency (Minutes),Run Type,Status,Start Time,End Time,Duration (Minutes),Expires,Job Paused" | Out-File -FilePath $outfileName
+"Cluster Name,Job Name,Environment,Object Name,Object Type,Parent,Policy Name,Frequency (Minutes),Run Type,Status,Start Time,End Time,Duration (Minutes),Expires,Job Paused,Object Message,Run Message" | Out-File -FilePath $outfileName
 
 $policies = api get -v2 "data-protect/policies"
 $jobs = (api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&environments=kSQL").protectionGroups
@@ -60,6 +60,8 @@ foreach($job in $jobs | Sort-Object -Property name){
         $runDates = $runs.runs.localBackupInfo.startTimeUsecs
     }
     foreach($run in $runs.runs){
+        $startTimeUsecs = $run.localBackupInfo.startTimeUsecs
+        $endTimeUsecs = $run.localBackupInfo.endTimeUsecs
         foreach($thisobject in $run.objects){
             $object = $thisobject.object
             $localSnapshotInfo = $thisobject.localSnapshotInfo
@@ -83,13 +85,33 @@ foreach($job in $jobs | Sort-Object -Property name){
                     $objects[$object.id].sourceId = $object.sourceId
                 }
             }
+            $message = ''
+            $runmessage = ''
+            $localSnapshotInfo.snapshotInfo.status
+            if($run.PSObject.Properties['localBackupInfo'] -and $run.localBackupInfo.PSObject.Properties['messages'] -and $run.localBackupInfo.messages.Count -gt 0){
+                $runmessage = $run.localBackupInfo.messages[0]
+            }
+            if($localSnapshotInfo -ne $null -and $localSnapshotInfo.snapshotInfo.status -ne 'kSuccessful'){
+                if($localSnapshotInfo.snapshotInfo.PSObject.Properties['warnings'] -and $localSnapshotInfo.snapshotInfo.warnings.Count -gt 0){
+                    $message = $localSnapshotInfo.snapshotInfo.warnings[0]
+                }
+                if($localSnapshotInfo.PSObject.Properties['failedAttempts'] -and $localSnapshotInfo.failedAttempts.Count -gt 0){
+                    $message = $localSnapshotInfo.failedAttempts[-1].message
+                }
+            }
+            if($localSnapshotInfo -ne $null -and $localSnapshotInfo.snapshotInfo.status -eq 'kSuccessful'){
+                $message = ''
+            } 
+            
             $objects[$object.id].runs.Add(@{
                 'protectionGroupName' = $run.protectionGroupName;
                 'status' = $localSnapshotInfo.snapshotInfo.status; 
-                'startTime' = $localSnapshotInfo.snapshotInfo.startTimeUsecs; 
-                'endTime' = $localSnapshotInfo.snapshotInfo.endTimeUsecs;
+                'startTime' = $startTimeUsecs; 
+                'endTime' = $endTimeUsecs;
                 'expiry' = $localSnapshotInfo.snapshotInfo.expiryTimeUsecs;
-                'runType' = $run.localBackupInfo.runType
+                'runType' = $run.localBackupInfo.runType;
+                'message' = $message;
+                'runmessage' = $runmessage
             })
         }
     }
@@ -121,10 +143,16 @@ foreach($id in $objects.Keys){
             $status = $run.status.subString(1)
             $startTime = (usecsToDate $run.startTime).ToString('MM/dd/yyyy HH:mm')
             $endTime = (usecsToDate $run.endTime).ToString('MM/dd/yyyy HH:mm')
-            $expireTime = (usecsToDate $run.expiry).ToString('MM/dd/yyyy HH:mm')
+            if($run.expiry){
+                $expireTime = (usecsToDate $run.expiry).ToString('MM/dd/yyyy HH:mm')
+            }else{
+                $expireTime = ''
+            }
+            
             $duration = [math]::Round(($run.endTime - $run.startTime) / (1000000 * 60))
             $runType = $run.runType.subString(1)
-            $report = @($report + ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14}" -f $cluster.name, $run.protectionGroupName, $object.environment.subString(1), $object.name, $object.objectType.subString(1), $object.parent, $object.policyName, $frequency, $runType, $status, $startTime, $endTime, $duration, $expireTime, $object.jobPaused))
+            $message = $run.message
+            $report = @($report + ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16}" -f $cluster.name, $run.protectionGroupName, $object.environment.subString(1), $object.name, $object.objectType.subString(1), $object.parent, $object.policyName, $frequency, $runType, $status, $startTime, $endTime, $duration, $expireTime, $object.jobPaused, $run.message, $run.runmessage))
         }
     }
 }
