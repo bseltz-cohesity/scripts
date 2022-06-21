@@ -70,7 +70,7 @@ else:
     remote = remote[0]
 
 jobs = api('get', 'protectionJobs')
-jobs = [j for j in jobs if 'isActive' not in j and 'isDeleted' not in j]
+jobs = [j for j in jobs if 'isDeleted' not in j]
 
 # catch invalid job names
 notfoundjobs = [n for n in jobnames if n.lower() not in [j['name'].lower() for j in jobs]]
