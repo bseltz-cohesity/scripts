@@ -25,7 +25,8 @@ param (
     [Parameter()][switch]$poweron, # leave powered off by default
     [Parameter()][switch]$wait, # wait for restore tasks to complete
     [Parameter()][switch]$noPrompt,
-    [Parameter()][ValidateSet('InstantRecovery','CopyRecovery')][string]$recoveryType = 'InstantRecovery'
+    [Parameter()][ValidateSet('InstantRecovery','CopyRecovery')][string]$recoveryType = 'InstantRecovery',
+    [Parameter()][switch]$dbg
 )
 
 # gather list from command line params and file
@@ -286,6 +287,10 @@ foreach($vm in $vmNames){
     }else{
         write-host "skipping $vmName no snapshot available"
     }
+}
+
+if($dbg){
+    $restoreParams | ConvertTo-Json -Depth 99 | Out-file 'debug-recoverVMsV2.json'
 }
 
 if($restoreParams.vmwareParams.objects.Count -gt 0){

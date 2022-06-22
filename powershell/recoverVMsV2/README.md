@@ -63,6 +63,7 @@ Place the files in a folder together and run the main script like so:
 * -preserveMacAddress: (optional) maintain original Mac address (default is false)
 * -recoveryType: (optional) InstantRecovery or CopyRecovery (default is InstantRecovery)
 * -noPrompt: (optional) Don't prompt to confirm
+* -dbg: (optional) debug mode, export JSON payload to file for analysis
 
 Note: when restoring to a standalone ESXi host, review the object hierarchy of the registered ESXi host under protection sources to determine the following information, but typically:
 
