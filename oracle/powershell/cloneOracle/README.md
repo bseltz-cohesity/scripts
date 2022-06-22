@@ -54,5 +54,6 @@ The script takes the following parameters:
 * -preScriptArguments: (optional) preScript parameters (use quotes, like: 'param1=test switch2')
 * -postScript: (optional) name of script to run after clone operation
 * -postScriptArguments: (optional) postScript parameters (use quotes, like: 'param1=test switch2')
+* -vlan: (optional) VLAN ID to connect to the target host through
 
 Note: the number and order of pfileParameterNames must match the number and order of pfileParameterValues.

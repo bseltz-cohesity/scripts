@@ -28,7 +28,8 @@ param (
     [Parameter()][string]$preScriptArguments = '',
     [Parameter()][string]$postScript,
     [Parameter()][string]$postScriptArguments = '',
-    [Parameter()][Int64]$scriptTimeout = 900
+    [Parameter()][Int64]$scriptTimeout = 900,
+    [Parameter()][Int64]$vlan = 0
 )
 
 ### source the cohesity-api helper code
@@ -248,6 +249,20 @@ if($channels){
                 )
             }
         )
+    }
+}
+
+# vlan config
+if($vlan -gt 0){
+    $vlanObj = api get vlans | Where-Object id -eq $vlan
+    if($vlanObj){
+        $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.targetHost.physicalEntity['vlanParams'] = @{
+            "vlanId" = $vlanObj.id;
+            "interfaceName" = $vlanObj.ifaceGroupName
+        }
+    }else{
+        Write-Host "VLAN $vlan not found" -foregroundcolor Yellow
+        exit 1
     }
 }
 
