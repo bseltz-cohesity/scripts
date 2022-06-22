@@ -309,8 +309,8 @@ if len(pfileparams) > 0:
         cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig'] = {}
         cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig']['pfileParameterMap'] = []
     for pfileparam in pfileparams:
-        paramparts = pfileparam.split('=')
-        if len(paramparts) < 2:
+        paramparts = pfileparam.split('=', 1)
+        if len(paramparts) != 2:
             print('pfile parameter is invalid')
             exit(1)
         else:
