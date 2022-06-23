@@ -5,34 +5,38 @@ param (
     [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
     [Parameter()][string]$domain = 'local',           # local or AD domain
     [Parameter()][string]$tenantId = $null,           # tenant ID to impersonate
-    [Parameter(Mandatory = $True)][string]$viewName,  # name of view to create
+    [Parameter()][array]$viewNames,                   # names of view to modify (comma separated)
+    [Parameter()][string]$viewList,                   # optional textfile of views to modify
     [Parameter()][array]$ips,                         # optional cidrs to add (comma separated)
-    [Parameter()][string]$ipList = '',                # optional textfile of cidrs to add
+    [Parameter()][string]$ipList,                     # optional textfile of cidrs to add
     [Parameter()][switch]$rootSquash,                 # whether whitelist entries should use root squash
     [Parameter()][switch]$allSquash,                  # whether whitelist entries should use all squash
     [Parameter()][switch]$readOnly                    # grant only read access
 )
 
-# gather list of cidrs to add to whitelist
-$ipsToAdd = @()
-foreach($ip in $ips){
-    $ipsToAdd += $ip
-}
-if ('' -ne $ipList){
-    if(Test-Path -Path $ipList -PathType Leaf){
-        $ips = Get-Content $ipList
-        foreach($ip in $ips){
-            $ipsToAdd += [string]$ip
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
         }
-    }else{
-        Write-Warning "IP list $ipList not found!"
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
         exit
     }
+    return ($items | Sort-Object -Unique)
 }
-if($ipsToAdd.Count -eq 0){
-    Write-Host "No IPs specified" -ForegroundColor Yellow
-    exit
-}
+
+$ipsToAdd = @(gatherList -Param $ips -FilePath $ipList -Name 'IPs' -Required $True)
+$viewsToModify = @(gatherList -Param $viewNames -FilePath $viewList -Name 'views' -Required $True)
 
 $perm = 'kReadWrite'
 if($readOnly){
@@ -44,7 +48,6 @@ if($readOnly){
 
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain -tenantId $tenantId
-
 
 function newWhiteListEntry($cidr, $perm){
     $ip, $netbits = $cidr -split '/'
@@ -69,23 +72,26 @@ function newWhiteListEntry($cidr, $perm){
     return $whitelistEntry
 }
 
-$view = (api get -v2 file-services/views).views | Where-Object name -eq $viewName
-if(! $view){
-    Write-Host "View $viewName not found" -ForegroundColor Yellow
-    exit
-}
+$views =  (api get -v2 file-services/views).views
 
-Write-Host $view.name
-
-if(! $view.PSObject.Properties['subnetWhitelist']){
-    setApiProperty -object $view -name 'subnetWhitelist' -value @()
+foreach($viewName in $viewsToModify){
+    $view = $views | Where-Object name -eq $viewName
+    if(! $view){
+        Write-Host "View $viewName not found" -ForegroundColor Yellow
+    }else{
+        Write-Host $view.name
+    
+        if(! $view.PSObject.Properties['subnetWhitelist']){
+            setApiProperty -object $view -name 'subnetWhitelist' -value @()
+        }
+        
+        foreach($cidr in $ipsToAdd){
+            Write-Host "    $cidr"
+            $ip, $netbits = $cidr -split '/'
+            $view.subnetWhitelist = @($view.subnetWhiteList | Where-Object ip -ne $ip)
+            $view.subnetWhitelist = @($view.subnetWhiteList +(newWhiteListEntry $cidr $perm))
+        }
+        $view.subnetWhiteList = @($view.subnetWhiteList | Where-Object {$_ -ne $null})
+        $null = api put -v2 file-services/views/$($view.viewId) $view
+    }
 }
-
-foreach($cidr in $ipsToAdd){
-    Write-Host "    $cidr"
-    $ip, $netbits = $cidr -split '/'
-    $view.subnetWhitelist = @($view.subnetWhiteList | Where-Object ip -ne $ip)
-    $view.subnetWhitelist = @($view.subnetWhiteList +(newWhiteListEntry $cidr $perm))
-}
-$view.subnetWhiteList = @($view.subnetWhiteList | Where-Object {$_ -ne $null})
-$null = api put -v2 file-services/views/$($view.viewId) $view

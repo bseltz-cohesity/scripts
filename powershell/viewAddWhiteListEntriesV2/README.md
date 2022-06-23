@@ -29,7 +29,7 @@ Place both files in a folder together and run the main script like so:
 ./viewAddWhiteListEntries.ps1 -vip mycluster `
                               -username myusername `
                               -domain mydomain.net `
-                              -viewName myview `
+                              -viewNames myview1, myview2 `
                               -ips 192.168.1.7/32, 192.168.2.0/24 `
                               -readOnly
                               -rootSquash
@@ -42,7 +42,8 @@ Place both files in a folder together and run the main script like so:
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -tenantId: (optional) tenant to impersonate
-* -viewName: name of new view to create
+* -viewNames: (optional) names of new views to modify (comma separated)
+* -viewList: (optional) text file of views to modify (one per line)
 * -ips: (optional) cidrs to add, examples: 192.168.1.3/32, 192.168.2.0/24 (comma separated)
 * -ipList: (optional) text file of cidrs to add (one per line)
 * -readOnly: (optional) readWrite if omitted
