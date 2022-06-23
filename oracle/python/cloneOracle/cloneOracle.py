@@ -40,6 +40,11 @@ parser.add_argument('-w', '--wait', action='store_true')  # wait for completion
 parser.add_argument('-sh', '--shellvariable', type=str, action='append')
 parser.add_argument('-pf', '--pfileparameter', type=str, action='append')
 parser.add_argument('-vlan', '--vlan', type=int, default=0)  # use alternate vlan
+parser.add_argument('-prescript', '--prescript', type=str, default=None)  # pre script
+parser.add_argument('-postscript', '--postscript', type=str, default=None)  # post script
+parser.add_argument('-prescriptargs', '--prescriptargs', type=str, default='')  # pre script arguments
+parser.add_argument('-postscriptargs', '--postscriptargs', type=str, default='')  # post script arguments
+parser.add_argument('-t', '--scripttimeout', type=int, default=900)  # pre post script timeout
 
 args = parser.parse_args()
 
@@ -73,6 +78,11 @@ wait = args.wait
 shellvars = args.shellvariable
 pfileparams = args.pfileparameter
 vlan = args.vlan
+prescript = args.prescript
+postscript = args.postscript
+prescriptargs = args.prescriptargs
+postscriptargs = args.postscriptargs
+scripttimeout = args.scripttimeout
 
 if shellvars is None:
     shellvars = []
@@ -329,6 +339,28 @@ if len(shellvars) > 0:
             varname = varparts[0].strip()
             varval = varparts[1].strip()
             cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['shellEnvironmentVec'].append({"xKey": varname, "xValue": varval})
+
+# handle pre script
+if prescript is not None or postscript is not None:
+    cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['additionalParams'] = {}
+    if prescript is not None:
+        cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['additionalParams']['preScript'] = {
+            "script": {
+                "continueOnError": False,
+                "scriptPath": prescript,
+                "scriptParams": prescriptargs,
+                "timeoutSecs": scripttimeout
+            }
+        }
+    if postscript is not None:
+        cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['additionalParams']['postScript'] = {
+            "script": {
+                "continueOnError": False,
+                "scriptPath": postscript,
+                "scriptParams": postscriptargs,
+                "timeoutSecs": scripttimeout
+            }
+        }
 
 ### execute the clone task
 response = api('post', '/cloneApplication', cloneParams)

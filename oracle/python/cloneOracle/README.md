@@ -45,18 +45,23 @@ The script takes the following parameters:
 * -c, --clustername: (optional) helios/mcm cluster to connect to
 * -ss, --sourceserver: name of source oracle server
 * -sd, --sourcedb: name of source oracle DB
-* -ts, --targetserver: name of target oracle server
-* -td, --targetdb: name of target oracle DB
+* -ts, --targetserver: (optional) name of target oracle server
+* -td, --targetdb: (optional) name of target oracle DB
 * -oh, --oraclehome: oracle home path on target
 * -ob, --oraclebase: oracle base path on target
 * -ch, --channels: (optional) number of restore channels (default is 2)
 * -cn, --channelnode: (optional) rac node for channels
 * -vlan, --vlan: (optional) VLAN ID to use for restore
-* -pf, --pfileparameter: example -pf 'param1=value1' (repeat for multiple variables)
-* -sh, --shellvariable: example -sh 'var1=value1' (repeat for multiple variables)
-* -lt, --logtime: point in time to replay the logs to
-* -l, --latest: replay logs to latest available point in time
-* -w, --wait: wait for completion
+* -pf, --pfileparameter: (optional) example -pf 'param1=value1' (repeat for multiple variables)
+* -sh, --shellvariable: (optional) example -sh 'var1=value1' (repeat for multiple variables)
+* -prescript, --prescript: (optional) script to run before clone operation
+* -postscript, --postscript: (optional) args for prescript
+* -prescriptargs, --prescriptargs: (optional) script to run after clone operation
+* -postscriptargs, --postscriptargs: (optional) args for postscript
+* -t, --scripttimeout: (optional) timeout pre/post script execution (default is 900 seconds)
+* -lt, --logtime: (optional) point in time to replay the logs to
+* -l, --latest: (optional) replay logs to latest available point in time
+* -w, --wait: (optional) wait for completion
 
 ## Point in Time Recovery
 
