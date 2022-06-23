@@ -208,7 +208,7 @@ if($vCenterName){
         }
         $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.recoveryTargetConfig.newSourceConfig.vCenterParams.networkConfig["newNetworkConfig"] = @{
             "networkPortGroup"   = @{
-                "id" = $network.id
+                "id" = $network[0].id
             };
             "disableNetwork"     = $False;
             "preserveMacAddress" = $False
