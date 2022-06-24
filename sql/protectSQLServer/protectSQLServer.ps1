@@ -52,7 +52,7 @@ apiauth -vip $vip -username $username -domain $domain -password $password
 $sources = api get protectionSources?environments=kSQL
 
 # get the protectionJob
-$job = api get protectionJobs | Where-Object name -eq $jobName
+$job = (api get -v2 data-protect/protection-groups).protectionGroups | Where-Object name -eq $jobName
 $newJob = $false
 
 if(! $job){
@@ -208,6 +208,17 @@ if(! $job){
     }
 }else{
     Write-Host "Updating job $jobname..."
+    if($job.mssqlParams.protectionType -eq 'kFile'){
+        $params = $job.mssqlParams.fileProtectionTypeParams
+    }
+
+    if($job.mssqlParams.protectionType -eq 'kNative'){
+        $params = $job.mssqlParams.nativeProtectionTypeParams
+    }
+
+    if($job.mssqlParams.protectionType -eq 'kVolume'){
+        $params = $job.mssqlParams.volumeProtectionTypeParams
+    }
 }
 
 # server source
