@@ -7,7 +7,8 @@ param (
     [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
     [Parameter()][string]$domain = 'local',  # local or AD domain
     [Parameter(Mandatory = $True)][string]$jobname,
-    [Parameter(Mandatory = $True)][string]$servername,
+    [Parameter()][array]$servername,
+    [Parameter()][string]$serverlist,
     [Parameter()][string]$dbname = $null,
     [Parameter()][string]$policyname = $null,
     [Parameter()][string]$storagedomain = 'DefaultStorageDomain',
@@ -15,6 +16,29 @@ param (
     [Parameter()][string]$starttime = $null
 
 )
+
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
+        }
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
+        exit
+    }
+    return ($items | Sort-Object -Unique)
+}
+
+$serverNames = @(gatherList -Param $servername -FilePath $serverlist -Name 'servers' -Required $True)
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -84,43 +108,56 @@ if($policyname){
     }
 }
 
-# find server to add to job
-$server = $sources.nodes | Where-Object {$_.protectionSource.name -eq $servername}
-if(!$server){
-    Write-Warning "Server $servername not found!"
-    exit
-}
-$serverId = $server.protectionSource.id
-$job.sourceIds = @($job.sourceIds + $serverId | Select-Object -Unique)
+$serversAdded = $false
 
-if($dbname){
-    # find db to add to job
-    $db = $server.applicationNodes| Where-Object {$_.protectionSource.name -eq $dbname}
-    if(!$db){
-        Write-Warning "Database $dbname not found!"
-        exit
+foreach($servername in $serverNames){
+    $foundServer = $false
+    # find server to add to job
+    $server = $sources.nodes | Where-Object {$_.protectionSource.name -eq $servername}
+    if(!$server){
+        Write-Warning "Server $servername not found!"
+    }else{
+        $serverId = $server.protectionSource.id
+        $job.sourceIds = @($job.sourceIds + $serverId | Select-Object -Unique)
+    
+        if($dbname){
+            # find db to add to job
+            $db = $server.applicationNodes| Where-Object {$_.protectionSource.name -eq $dbname}
+            if(!$db){
+                Write-Warning "Database $dbname not found!"
+            }else{
+                $foundServer = $True
+                $serversAdded = $True
+                $dbIds = @($db.protectionSource.id)
+                write-host "Adding $servername/$dbname to protection job $jobname..."
+            }
+        }else{
+            # or add all dbs to job
+            $foundServer = $True
+            $serversAdded = $True
+            $dbIds = @($server.applicationNodes.protectionSource.id)
+            write-host "Adding $servername/* to protection job $jobname..."
+        }
+    
+        if($foundServer -eq $True){
+            # update dblist for server
+            $sourceSpecialParameter = $job.sourceSpecialParameters | Where-Object {$_.sourceId -eq $serverId }
+            if(!$sourceSpecialParameter){
+                $job.sourceSpecialParameters += @{"sourceId" = $serverId; "oracleSpecialParameters" = @{"applicationEntityIds" = $dbIds}}
+            }else{
+                $sourceSpecialParameter.oracleSpecialParameters.applicationEntityIds += $dbIds | Select-Object -Unique
+                $sourceSpecialParameter.oracleSpecialParameters.applicationEntityIds = @($sourceSpecialParameter.oracleSpecialParameters.applicationEntityIds | Where-Object {$_ -in $server.applicationNodes.protectionSource.id})
+            }
+        }
     }
-    $dbIds = @($db.protectionSource.id)
-    write-host "Adding $servername/$dbname to protection job $jobname..."
-}else{
-    # or add all dbs to job
-    $dbIds = @($server.applicationNodes.protectionSource.id)
-    write-host "Adding $servername/* to protection job $jobname..."
 }
 
-# update dblist for server
-$sourceSpecialParameter = $job.sourceSpecialParameters | Where-Object {$_.sourceId -eq $serverId }
-if(!$sourceSpecialParameter){
-    $job.sourceSpecialParameters += @{"sourceId" = $serverId; "oracleSpecialParameters" = @{"applicationEntityIds" = $dbIds}}
-}else{
-    $sourceSpecialParameter.oracleSpecialParameters.applicationEntityIds += $dbIds | Select-Object -Unique
-    $sourceSpecialParameter.oracleSpecialParameters.applicationEntityIds = @($sourceSpecialParameter.oracleSpecialParameters.applicationEntityIds | Where-Object {$_ -in $server.applicationNodes.protectionSource.id})
-}
-
-if($policyname){
-    # create new job
-    $null = api post protectionJobs $job
-}else{
-    # update existing job
-    $null = api put "protectionJobs/$($job.id)" $job
+if($serversAdded -eq $True){
+    if($policyname){
+        # create new job
+        $null = api post protectionJobs $job
+    }else{
+        # update existing job
+        $null = api put "protectionJobs/$($job.id)" $job
+    }
 }

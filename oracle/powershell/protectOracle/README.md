@@ -52,7 +52,8 @@ or:
 * -username: name of user to connect to Cohesity
 * -domain: (optional) your AD domain (defaults to local)
 * -jobname: name of protection job (new or existing)
-* -servername: name of Oracle server to protect
+* -servername: (optional) one or more names of Oracle servers to protect (comma separated)
+* -serverlist: (optional) text file of names of Oracle servers to protect (one per line)
 * -dbname: (optional) name of database to protect (defaults to all dbs)
 * -policyname: (optional) name of policy to apply to new job
 * -storagedomain: (optional) name of storage domain for new job (defaults to DefaultStorageDomain)
