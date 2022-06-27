@@ -19,7 +19,7 @@ parser.add_argument('-f', '--frequency', type=int, default=None)
 parser.add_argument('-fu', '--frequencyunit', type=str, choices=['runs', 'minutes', 'hours', 'days', 'weeks', 'months', 'years'], default='runs')
 parser.add_argument('-r', '--retention', type=int, default=None)
 parser.add_argument('-ru', '--retentionunit', type=str, choices=['days', 'weeks', 'months', 'years'], default='days')
-parser.add_argument('-a', '--action', type=str, choices=['list', 'create', 'edit', 'addextension', 'deleteextension', 'logbackup', 'addreplica', 'deletereplica', 'addarchive', 'deletearchive'], default='list')
+parser.add_argument('-a', '--action', type=str, choices=['list', 'create', 'edit', 'delete', 'addextension', 'deleteextension', 'logbackup', 'addreplica', 'deletereplica', 'addarchive', 'deletearchive'], default='list')
 parser.add_argument('-n', '--targetname', type=str, default=None)
 parser.add_argument('-all', '--all', action='store_true')
 args = parser.parse_args()
@@ -79,18 +79,13 @@ if action == 'create':
         frequency = 1
     if frequencyunit == 'runs':
         frequencyunit = 'days'
-    if frequencyunit != 'days':
-        print('this script will only support creation of policies with daily frequencies')
-        exit()
+
     policy = {
         "backupPolicy": {
             "regular": {
                 "incremental": {
                     "schedule": {
-                        "unit": frequencyunit.title(),
-                        "daySchedule": {
-                            "frequency": frequency
-                        }
+                        "unit": frequencyunit.title()
                     }
                 },
                 "retention": {
@@ -108,9 +103,27 @@ if action == 'create':
             "retryIntervalMins": 5
         }
     }
-    # print("Creating policy '%s'" % policyname)
+
+    if frequencyunit == 'days':
+        policy['backupPolicy']['regular']['incremental']['schedule']['daySchedule'] = {
+            "frequency": frequency
+        }
+    if frequencyunit == 'hours':
+        policy['backupPolicy']['regular']['incremental']['schedule']['hourSchedule'] = {
+            "frequency": frequency
+        }
+    if frequencyunit == 'minutes':
+        policy['backupPolicy']['regular']['incremental']['schedule']['minuteSchedule'] = {
+            "frequency": frequency
+        }
+
     result = api('post', 'data-protect/policies', policy, v=2)
     policies = [policy]
+
+if action == 'delete':
+    print('Deleting policy %s' % policy['name'])
+    result = api('delete', 'data-protect/policies/%s' % policy['id'], v=2)
+    exit()
 
 # edit policy
 if action == 'edit':
@@ -121,17 +134,25 @@ if action == 'edit':
         frequency = 1
     if frequencyunit == 'runs':
         frequencyunit = 'days'
-    if frequencyunit != 'days':
-        print('this script will only support editing of policies with daily frequencies')
-        exit()
     policy['backupPolicy']['regular']['incremental'] = {
         "schedule": {
             "unit": frequencyunit.title(),
-            "daySchedule": {
-                "frequency": frequency
-            }
         }
     }
+
+    if frequencyunit == 'days':
+        policy['backupPolicy']['regular']['incremental']['schedule']['daySchedule'] = {
+            "frequency": frequency
+        }
+    if frequencyunit == 'hours':
+        policy['backupPolicy']['regular']['incremental']['schedule']['hourSchedule'] = {
+            "frequency": frequency
+        }
+    if frequencyunit == 'minutes':
+        policy['backupPolicy']['regular']['incremental']['schedule']['minuteSchedule'] = {
+            "frequency": frequency
+        }
+
     policy['backupPolicy']['regular']['retention'] = {
         "unit": retentionunit.title(),
         "duration": retention
