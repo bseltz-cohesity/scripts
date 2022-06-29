@@ -25,7 +25,11 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./protectView.ps1 -vip mycluster -username admin -viewName myview1, myview2 -jobName 'view backup' -policyName 'my policy'
+./protectView.ps1 -vip mycluster `
+                  -username admin `
+                  -viewName myview1, myview2 `
+                  -jobName 'view backup' `
+                  -policyName 'my policy'
 ```
 
 ## Parameters
