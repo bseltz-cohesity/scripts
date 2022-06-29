@@ -54,5 +54,5 @@ Place both files in a folder together and run the main script like so:
 * -startTime: (optional) e.g. '18:30' (defaults to 8PM)
 * -timeZone: (optional) e.g. 'America/New_York' (default is 'America/Los_Angeles')
 * -storageDomainName: (optional) default is 'DefaultStorageDomain'
-* -paused: (optional) pause future runs (new job only)
+* -paused: (optional) pause future runs
 * -disableIndexing: (optional) disable indexing (indexing is enabled by default)
