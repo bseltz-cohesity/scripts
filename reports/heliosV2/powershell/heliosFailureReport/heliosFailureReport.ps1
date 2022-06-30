@@ -6,8 +6,33 @@ param (
     [Parameter()][string]$endDate = '',
     [Parameter()][switch]$thisCalendarMonth,
     [Parameter()][switch]$lastCalendarMonth,
-    [Parameter()][int]$days = 31
+    [Parameter()][int]$days = 31,
+    [Parameter()][array]$excludeString,
+    [Parameter()][string]$excludeList
 )
+
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
+        }
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
+        exit
+    }
+    return ($items | Sort-Object -Unique)
+}
+
+$excludeStrings = @(gatherList -Param $excludeString -FilePath $excludeList -Name 'excludeStrings' -Required $false)
 
 $filePrefix = "heliosFailureReport"
 $title = "Helios Failure Report"
@@ -307,21 +332,28 @@ foreach($uniqueKey in $stats.Keys | Sort-Object){
     $failedBackups = $stats[$uniqueKey].failedBackups
     $strikes = $stats[$uniqueKey].strikes
     $lastError = $stats[$uniqueKey].lastError
-
-    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}""" -f $clusterName, $jobName, $sourceName, $objectName, $environment, $policy, $lastFailure, $failedBackups, $strikes, $lastError | Out-File -FilePath $csvFileName -Append
-    "{0}`t{1}`t{2}`t{3}`t{4}`t{5}`t{6}`t{7}`t{8}`t{9}" -f $clusterName, $jobName, $sourceName, $objectName, $environment, $policy, $lastFailure, $failedBackups, $strikes, $lastError | Out-File -FilePath $tsvFileName -Append
-    $Global:html += '<tr>
-        <td class="nowrap">{0}</td>
-        <td>{1}</td>
-        <td>{2}</td>
-        <td>{3}</td>
-        <td>{4}</td>
-        <td>{5}</td>
-        <td class="nowrap">{6}</td>
-        <td>{7}</td>
-        <td>{8}</td>
-        <td>{9}</td>
-        </tr>' -f $clusterName, $jobName, $sourceName, $objectName, $environment, $policy, $lastFailure, $failedBackups, $strikes, $lastError
+    $includeItem = $True
+    foreach($thisExcludeString in $excludeStrings){
+        if($lastError -match $thisExcludeString){
+            $includeItem = $false
+        }
+    }
+    if($includeItem -eq $True){
+        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}""" -f $clusterName, $jobName, $sourceName, $objectName, $environment, $policy, $lastFailure, $failedBackups, $strikes, $lastError | Out-File -FilePath $csvFileName -Append
+        "{0}`t{1}`t{2}`t{3}`t{4}`t{5}`t{6}`t{7}`t{8}`t{9}" -f $clusterName, $jobName, $sourceName, $objectName, $environment, $policy, $lastFailure, $failedBackups, $strikes, $lastError | Out-File -FilePath $tsvFileName -Append
+        $Global:html += '<tr>
+            <td class="nowrap">{0}</td>
+            <td>{1}</td>
+            <td>{2}</td>
+            <td>{3}</td>
+            <td>{4}</td>
+            <td>{5}</td>
+            <td class="nowrap">{6}</td>
+            <td>{7}</td>
+            <td>{8}</td>
+            <td>{9}</td>
+            </tr>' -f $clusterName, $jobName, $sourceName, $objectName, $environment, $policy, $lastFailure, $failedBackups, $strikes, $lastError
+    }
 }
 
 $Global:html += "</table>                
