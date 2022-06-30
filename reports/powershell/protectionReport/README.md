@@ -56,6 +56,8 @@ To show only failures and warnings:
 * -domain: (optional) domain of the Cohesity user (defaults to local)
 * -daysBack: (optional) number of days to include in report (default is 7 days)
 * -jobTypes: (optional) filter by job type (SQL, ORacle, VMWare, etc)
+* -jobName: (optional) one or more job names to include (comma separated)
+* -jobList: (optional) text file of job names to include (one per line)
 * -objectNames: (optional) filter on object/server name (comma separated)
 * -failuresOnly: (optional) only include latest runs of jobs with errors or warnings
 * -lastRunOnly: (optional) only include the latest runs

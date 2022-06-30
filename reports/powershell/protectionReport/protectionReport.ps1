@@ -14,6 +14,8 @@ param (
     [Parameter()][string]$domain = 'local',  # local or AD domain
     [Parameter()][int]$daysBack = 7,  # number of days to include in report
     [Parameter()][array]$jobTypes,  # filter by type (SQL, Oracle, VMware, etc.)
+    [Parameter()][array]$jobName,  # filter by job names (comma separated)
+    [Parameter()][string]$jobList,  # filter by job names in text file (one per line) 
     [Parameter()][array]$objectNames, # filter by object names
     [Parameter()][switch]$failuresOnly,  # only show unsuccessful runs 
     [Parameter()][switch]$lastRunOnly,  # only show latest run
@@ -26,6 +28,29 @@ param (
     [Parameter()][string]$outPath,  # folder to write output file
     [Parameter()][switch]$skipLogBackups
 )
+
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
+        }
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
+        exit
+    }
+    return ($items | Sort-Object -Unique)
+}
+
+$jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Required $false)
 
 if($showApps){
     $showObjects = $True
@@ -254,6 +279,10 @@ $nowUsecs = dateToUsecs (get-date)
 $jobs = api get "protectionJobs?includeLastRunAndStats=true" | Sort-Object -Property name | Where-Object {$_.isDeleted -ne $true -and $_.isPaused -ne $true -and $_.isActive -ne $false}
 if($jobTypes){
     $jobs = $jobs | Where-Object {$_.environment.substring(1) -in $jobTypes -or $_.environment -in $jobTypes}
+}
+
+if($jobNames.Count -gt 0){
+    $jobs = $jobs | Where-Object {$_.name -in $jobNames}
 }
 
 $maxLength = 0
