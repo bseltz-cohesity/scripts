@@ -1,4 +1,4 @@
-# version 2022-04-04
+# version 2022-06-05
 # usage: ./restore-SQL.ps1 -vip mycluster `
 #                          -username myusername `
 #                          -domain mydomain.net `
@@ -439,7 +439,8 @@ if($wait -or $progress){
     $taskId = $response.restoreTask.performRestoreTaskState.base.taskId
     $finishedStates = @('kSuccess','kFailed','kCanceled', 'kFailure')
     while($True){
-        $status = (api get /restoretasks/$taskId).restoreTask.performRestoreTaskState.base.publicStatus
+        $task = api get /restoretasks/$taskId
+        $status = $task.restoreTask.performRestoreTaskState.base.publicStatus
         if($progress){
             $progressMonitor = api get "/progressMonitors?taskPathVec=restore_sql_$($taskId)&includeFinishedTasks=true&excludeSubTasks=false"
             try{
@@ -463,6 +464,9 @@ if($wait -or $progress){
     if($status -eq 'kSuccess'){
         exit 0
     }else{
+        if($status -eq 'kFailure'){
+            write-host "Error Message: $($task.restoreTask.performRestoreTaskState.base.error.errorMsg)"
+        }
         exit 1
     }
 }
