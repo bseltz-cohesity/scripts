@@ -11,10 +11,10 @@ You can download these scripts onto your PC by opening a PowerShell session and 
 
 ```powershell
 # Begin Download Commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/restoreSQL/restoreSQL.ps1).content | Out-File restoreSQL.ps1; (Get-Content restoreSQL.ps1) | Set-Content restoreSQL.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/cloneSQL/cloneSQL.ps1).content | Out-File cloneSQL.ps1; (Get-Content cloneSQL.ps1) | Set-Content cloneSQL.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/destroyClone/destroyClone.ps1).content | Out-File destroyClone.ps1; (Get-Content destroyClone.ps1) | Set-Content destroyClone.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/backupNow/backupNow.ps1).content | Out-File backupNow.ps1; (Get-Content backupNow.ps1) | Set-Content backupNow.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/restoreSQL/restoreSQL.ps1).content | Out-File restoreSQL.ps1; (Get-Content restoreSQL.ps1) | Set-Content restoreSQL.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/cloneSQL/cloneSQL.ps1).content | Out-File cloneSQL.ps1; (Get-Content cloneSQL.ps1) | Set-Content cloneSQL.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/destroyClone/destroyClone.ps1).content | Out-File destroyClone.ps1; (Get-Content destroyClone.ps1) | Set-Content destroyClone.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/backupNow/backupNow.ps1).content | Out-File backupNow.ps1; (Get-Content backupNow.ps1) | Set-Content backupNow.ps1
 # End Download Commands
 ```

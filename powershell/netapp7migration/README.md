@@ -12,10 +12,10 @@ Run these commands from PowerShell to download the script(s) into your current d
 # Download Commands
 $scriptName = 'netapp7migration'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
-(Invoke-WebRequest -Uri "$repoUrl/$scriptName/netapp7ImportSMB.ps1").content | Out-File "netapp7ImportSMB.ps1"; (Get-Content "netapp7ImportSMB.ps1") | Set-Content "netapp7ImportSMB.ps1"
-(Invoke-WebRequest -Uri "$repoUrl/$scriptName/netapp7ImportNFS.ps1").content | Out-File "netapp7ImportNFS.ps1"; (Get-Content "netapp7ImportNFS.ps1") | Set-Content "netapp7ImportNFS.ps1"
-(Invoke-WebRequest -Uri "$repoUrl/$scriptName/netapp7Export.ps1").content | Out-File "netapp7Export.ps1"; (Get-Content "netapp7Export.ps1") | Set-Content "netapp7Export.ps1"
-(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/netapp7ImportSMB.ps1").content | Out-File "netapp7ImportSMB.ps1"; (Get-Content "netapp7ImportSMB.ps1") | Set-Content "netapp7ImportSMB.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/netapp7ImportNFS.ps1").content | Out-File "netapp7ImportNFS.ps1"; (Get-Content "netapp7ImportNFS.ps1") | Set-Content "netapp7ImportNFS.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/netapp7Export.ps1").content | Out-File "netapp7Export.ps1"; (Get-Content "netapp7Export.ps1") | Set-Content "netapp7Export.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
 

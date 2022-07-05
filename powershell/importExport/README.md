@@ -14,13 +14,13 @@ Run these commands from PowerShell to download the script(s) into your current d
 # Download Commands
 $scriptName = 'importExport'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
-(Invoke-WebRequest -Uri "$repoUrl/$scriptName/exportConfiguration.ps1").content | Out-File "exportConfiguration.ps1"; (Get-Content "exportConfiguration.ps1") | Set-Content "exportConfiguration.ps1"
-(Invoke-WebRequest -Uri "$repoUrl/$scriptName/exportConfigurationV2.ps1").content | Out-File "exportConfigurationV2.ps1"; (Get-Content "exportConfigurationV2.ps1") | Set-Content "exportConfigurationV2.ps1"
-(Invoke-WebRequest -Uri "$repoUrl/$scriptName/importStorageDomains.ps1").content | Out-File "importStorageDomains.ps1"; (Get-Content "importStorageDomains.ps1") | Set-Content "importStorageDomains.ps1"
-(Invoke-WebRequest -Uri "$repoUrl/$scriptName/importPolicies.ps1").content | Out-File "importPolicies.ps1"; (Get-Content "importPolicies.ps1") | Set-Content "importPolicies.ps1"
-(Invoke-WebRequest -Uri "$repoUrl/$scriptName/importNasSources.ps1").content | Out-File "importNasSources.ps1"; (Get-Content "importNasSources.ps1") | Set-Content "importNasSources.ps1"
-(Invoke-WebRequest -Uri "$repoUrl/$scriptName/importNasJobs.ps1").content | Out-File "importNasJobs.ps1"; (Get-Content "importNasJobs.ps1") | Set-Content "importNasJobs.ps1"
-(Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/exportConfiguration.ps1").content | Out-File "exportConfiguration.ps1"; (Get-Content "exportConfiguration.ps1") | Set-Content "exportConfiguration.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/exportConfigurationV2.ps1").content | Out-File "exportConfigurationV2.ps1"; (Get-Content "exportConfigurationV2.ps1") | Set-Content "exportConfigurationV2.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/importStorageDomains.ps1").content | Out-File "importStorageDomains.ps1"; (Get-Content "importStorageDomains.ps1") | Set-Content "importStorageDomains.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/importPolicies.ps1").content | Out-File "importPolicies.ps1"; (Get-Content "importPolicies.ps1") | Set-Content "importPolicies.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/importNasSources.ps1").content | Out-File "importNasSources.ps1"; (Get-Content "importNasSources.ps1") | Set-Content "importNasSources.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/importNasJobs.ps1").content | Out-File "importNasJobs.ps1"; (Get-Content "importNasJobs.ps1") | Set-Content "importNasJobs.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
 

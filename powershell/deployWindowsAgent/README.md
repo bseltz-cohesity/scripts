@@ -10,9 +10,9 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployWindowsAgent/deployWindowsAgent.ps1).content | Out-File deployWindowsAgent.ps1; (Get-Content deployWindowsAgent.ps1) | Set-Content deployWindowsAgent.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployWindowsAgent/UserRights.psm1).content | Out-File UserRights.psm1; (Get-Content UserRights.psm1) | Set-Content UserRights.psm1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployWindowsAgent/deployWindowsAgent.ps1).content | Out-File deployWindowsAgent.ps1; (Get-Content deployWindowsAgent.ps1) | Set-Content deployWindowsAgent.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployWindowsAgent/UserRights.psm1).content | Out-File UserRights.psm1; (Get-Content UserRights.psm1) | Set-Content UserRights.psm1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End download commands
 ```
 

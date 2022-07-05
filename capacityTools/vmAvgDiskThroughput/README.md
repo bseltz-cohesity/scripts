@@ -12,7 +12,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 # Download Commands
 $scriptName = 'vmAvgDiskThroughput'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
-(Invoke-WebRequest -Uri "$repoUrl/capacityTools/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/capacityTools/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 # End Download Commands
 ```
 

@@ -12,7 +12,7 @@ You can download the scripts using the following commands:
 # Download Commands
 $scriptName = 'storePassword'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/easyScript'
-(Invoke-WebRequest -Uri "$repoUrl/$scriptName/powershell/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/powershell/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 # End Download Commands
 ```
 

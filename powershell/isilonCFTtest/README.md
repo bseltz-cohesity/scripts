@@ -12,7 +12,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 # Download Commands
 $scriptName = 'isilonCFTtest'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
-(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 # End Download Commands
 ```
 

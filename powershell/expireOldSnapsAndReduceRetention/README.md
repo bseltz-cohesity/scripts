@@ -12,8 +12,8 @@ Run these commands from PowerShell to download the scripts into the current fold
 
 ```powershell
 # download commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/capacityTools/expireOldSnapsAndReduceRetention/expireOldSnapsAndReduceRetention.ps1).content | Out-File expireOldSnapsAndReduceRetention.ps1; (Get-Content expireOldSnapsAndReduceRetention.ps1) | Set-Content expireOldSnapsAndReduceRetention.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/capacityTools/expireOldSnapsAndReduceRetention/expireOldSnapsAndReduceRetention.ps1).content | Out-File expireOldSnapsAndReduceRetention.ps1; (Get-Content expireOldSnapsAndReduceRetention.ps1) | Set-Content expireOldSnapsAndReduceRetention.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # end of download commands
 ```
 

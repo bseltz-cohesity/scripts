@@ -5,7 +5,7 @@ I have provided download commands for most of the scripts in this repository. Mo
 ```text
 Invoke-WebRequest : The underlying connection was closed: An unexpected error occurred on a send.
 At line:1 char:2
-+ (Invoke-WebRequest -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").con ...
++ (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").con ...
 +  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     + CategoryInfo          : InvalidOperation: (System.Net.HttpWebRequest:HttpWebRequest) [Invoke-WebRequest], WebException
     + FullyQualifiedErrorId : WebCmdletWebResponseException,Microsoft.PowerShell.Commands.InvokeWebRequestCommand

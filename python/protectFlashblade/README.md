@@ -28,10 +28,10 @@ Run these commands from PowerShell to download the script(s) into your current d
 # Download Commands
 $scriptName = 'protectFlashblade'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python'
-(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName.py").content | Out-File "$scriptName.py"; (Get-Content "$scriptName.py") | Set-Content "$scriptName.py"
-(Invoke-WebRequest -Uri "$repoUrl/$scriptName/$scriptName-multi.py").content | Out-File "$scriptName-multi.py"; (Get-Content "$scriptName-multi.py") | Set-Content "$scriptName-multi.py"
-(Invoke-WebRequest -Uri "$repoUrl/$scriptName/flashBladeProtectionStatus.py").content | Out-File "flashBladeProtectionStatus.py"; (Get-Content "flashBladeProtectionStatus.py") | Set-Content "flashBladeProtectionStatus.py"
-(Invoke-WebRequest -Uri "$repoUrl/pyhesity.py").content | Out-File pyhesity.py; (Get-Content pyhesity.py) | Set-Content pyhesity.py
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.py").content | Out-File "$scriptName.py"; (Get-Content "$scriptName.py") | Set-Content "$scriptName.py"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName-multi.py").content | Out-File "$scriptName-multi.py"; (Get-Content "$scriptName-multi.py") | Set-Content "$scriptName-multi.py"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/flashBladeProtectionStatus.py").content | Out-File "flashBladeProtectionStatus.py"; (Get-Content "flashBladeProtectionStatus.py") | Set-Content "flashBladeProtectionStatus.py"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/pyhesity.py").content | Out-File pyhesity.py; (Get-Content pyhesity.py) | Set-Content pyhesity.py
 # End Download Commands
 ```
 

@@ -11,13 +11,13 @@ Run these commands from PowerShell to download the script(s) into your current d
 ```powershell
 # Download Commands
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
-(Invoke-WebRequest -Uri "$repoUrl/powershell/backupNow/backupNow.ps1").content | Out-File "backupNow.ps1"; (Get-Content "backupNow.ps1") | Set-Content "backupNow.ps1"
-(Invoke-WebRequest -Uri "$repoUrl/sql/cloneSQL/cloneSQL.ps1").content | Out-File "cloneSQL.ps1"; (Get-Content "cloneSQL.ps1") | Set-Content "cloneSQL.ps1"
-(Invoke-WebRequest -Uri "$repoUrl/sql/destroyClone/destroyClone.ps1").content | Out-File "destroyClone.ps1"; (Get-Content "destroyClone.ps1") | Set-Content "destroyClone.ps1"
-(Invoke-WebRequest -Uri "$repoUrl/powershell/refreshSource/refreshSource.ps1").content | Out-File "refreshSource.ps1"; (Get-Content "refreshSource.ps1") | Set-Content "refreshSource.ps1"
-(Invoke-WebRequest -Uri "$repoUrl/sql/restoreSQL/restoreSQL.ps1").content | Out-File "restoreSQL.ps1"; (Get-Content "restoreSQL.ps1") | Set-Content "restoreSQL.ps1"
-(Invoke-WebRequest -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-(Invoke-WebRequest -Uri "$repoUrl/sql/sqlAgentJob-maskDB/createMaskerSQLAgentJob.sql").content | Out-File createMaskerSQLAgentJob.sql; (Get-Content createMaskerSQLAgentJob.sql) | Set-Content createMaskerSQLAgentJob.sql
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/powershell/backupNow/backupNow.ps1").content | Out-File "backupNow.ps1"; (Get-Content "backupNow.ps1") | Set-Content "backupNow.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/sql/cloneSQL/cloneSQL.ps1").content | Out-File "cloneSQL.ps1"; (Get-Content "cloneSQL.ps1") | Set-Content "cloneSQL.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/sql/destroyClone/destroyClone.ps1").content | Out-File "destroyClone.ps1"; (Get-Content "destroyClone.ps1") | Set-Content "destroyClone.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/powershell/refreshSource/refreshSource.ps1").content | Out-File "refreshSource.ps1"; (Get-Content "refreshSource.ps1") | Set-Content "refreshSource.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/sql/restoreSQL/restoreSQL.ps1").content | Out-File "restoreSQL.ps1"; (Get-Content "restoreSQL.ps1") | Set-Content "restoreSQL.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/sql/sqlAgentJob-maskDB/createMaskerSQLAgentJob.sql").content | Out-File createMaskerSQLAgentJob.sql; (Get-Content createMaskerSQLAgentJob.sql) | Set-Content createMaskerSQLAgentJob.sql
 # End Download Commands
 ```
 

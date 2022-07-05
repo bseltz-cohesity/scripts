@@ -10,10 +10,10 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/linkShares/linkSharesMaster.ps1).content | Out-File linkSharesMaster.ps1; (Get-Content linkSharesMaster.ps1) | Set-Content linkSharesMaster.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/linkShares/linkSharesProxy.ps1).content | Out-File linkSharesProxy.ps1; (Get-Content linkSharesProxy.ps1) | Set-Content linkSharesProxy.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/linkShares/linkSharesStatus.json).content | Out-File linkSharesStatus.json; (Get-Content linkSharesStatus.json) | Set-Content linkSharesStatus.json
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/linkShares/linkSharesMaster.ps1).content | Out-File linkSharesMaster.ps1; (Get-Content linkSharesMaster.ps1) | Set-Content linkSharesMaster.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/linkShares/linkSharesProxy.ps1).content | Out-File linkSharesProxy.ps1; (Get-Content linkSharesProxy.ps1) | Set-Content linkSharesProxy.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/linkShares/linkSharesStatus.json).content | Out-File linkSharesStatus.json; (Get-Content linkSharesStatus.json) | Set-Content linkSharesStatus.json
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
 
