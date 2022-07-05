@@ -126,15 +126,15 @@ function setGflag($servicename, $flagname, $flagvalue, $reason){
             $ProgressPreference = 'SilentlyContinue'
             if($PSVersionTable.PSEdition -eq 'Core'){
                 if($servicename -eq 'iris'){
-                    $null = Invoke-WebRequest -Uri "https://$($node.ip):443/flagz?$flagname=$flagvalue" -Headers $cohesity_api.header -SkipCertificateCheck
+                    $null = Invoke-WebRequest -UseBasicParsing -Uri "https://$($node.ip):443/flagz?$flagname=$flagvalue" -Headers $cohesity_api.header -SkipCertificateCheck
                 }else{
-                    $null = Invoke-WebRequest -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=http%3A%2F%2F$($node.ip)%3A$($port[$servicename])%2Fflagz%3F$flagname=$flagvalue" -Headers $cohesity_api.header -SkipCertificateCheck
+                    $null = Invoke-WebRequest -UseBasicParsing -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=http%3A%2F%2F$($node.ip)%3A$($port[$servicename])%2Fflagz%3F$flagname=$flagvalue" -Headers $cohesity_api.header -SkipCertificateCheck
                 }
             }else{
                 if($servicename -eq 'iris'){
-                    $null = Invoke-WebRequest -Uri "https://$($node.ip):443/flagz?$flagname=$flagvalue" -Headers $cohesity_api.header
+                    $null = Invoke-WebRequest -UseBasicParsing -Uri "https://$($node.ip):443/flagz?$flagname=$flagvalue" -Headers $cohesity_api.header
                 }else{
-                    $null = Invoke-WebRequest -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=http%3A%2F%2F$($node.ip)%3A$($port[$servicename])%2Fflagz%3F$flagname=$flagvalue" -Headers $cohesity_api.header
+                    $null = Invoke-WebRequest -UseBasicParsing -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=http%3A%2F%2F$($node.ip)%3A$($port[$servicename])%2Fflagz%3F$flagname=$flagvalue" -Headers $cohesity_api.header
                 }
             }
             $ProgressPreference = 'Continue'

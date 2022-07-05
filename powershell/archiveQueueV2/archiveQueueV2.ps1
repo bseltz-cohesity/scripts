@@ -53,21 +53,21 @@ if(!$showFinished){
     $nodes = api get nodes
     $ProgressPreference = 'SilentlyContinue'
     if($PSVersionTable.PSEdition -eq 'Core'){
-        $bridgePage = Invoke-WebRequest -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=http%3A%2F%2F$($nodes[0].ip)%3A11111%2F" -Headers $cohesity_api.header -SkipCertificateCheck
+        $bridgePage = Invoke-WebRequest -UseBasicParsing -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=http%3A%2F%2F$($nodes[0].ip)%3A11111%2F" -Headers $cohesity_api.header -SkipCertificateCheck
     }else{
-        $bridgePage = Invoke-WebRequest -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=http%3A%2F%2F$($nodes[0].ip)%3A11111%2F" -Headers $cohesity_api.header
+        $bridgePage = Invoke-WebRequest -UseBasicParsing -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=http%3A%2F%2F$($nodes[0].ip)%3A11111%2F" -Headers $cohesity_api.header
     }
     $iceBoxUrl = $bridgePage.Content.split('flagz')[-1].split('>icebox<')[0].split('=')[-1].split('"')[0]
     if($PSVersionTable.PSEdition -eq 'Core'){
-        $iceBoxPage = Invoke-WebRequest -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=$iceBoxUrl" -Headers $cohesity_api.header -SkipCertificateCheck
+        $iceBoxPage = Invoke-WebRequest -UseBasicParsing -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=$iceBoxUrl" -Headers $cohesity_api.header -SkipCertificateCheck
     }else{
-        $iceBoxPage = Invoke-WebRequest -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=$iceBoxUrl" -Headers $cohesity_api.header
+        $iceBoxPage = Invoke-WebRequest -UseBasicParsing -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=$iceBoxUrl" -Headers $cohesity_api.header
     }
     $iceBoxMasterUrl = $iceBoxPage.Content.Split('Icebox Master Location</td>')[1].split('</td>')[0].split('remoteUrl=')[1].split('"')[0]
     if($PSVersionTable.PSEdition -eq 'Core'){
-        $iceBoxMasterPage = Invoke-WebRequest -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=$iceBoxMasterUrl" -Headers $cohesity_api.header -SkipCertificateCheck
+        $iceBoxMasterPage = Invoke-WebRequest -UseBasicParsing -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=$iceBoxMasterUrl" -Headers $cohesity_api.header -SkipCertificateCheck
     }else{
-        $iceBoxMasterPage = Invoke-WebRequest -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=$iceBoxMasterUrl" -Headers $cohesity_api.header
+        $iceBoxMasterPage = Invoke-WebRequest -UseBasicParsing -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=$iceBoxMasterUrl" -Headers $cohesity_api.header
     }
     $rows = $iceBoxMasterPage.Content.split('Archival Jobs')[1].split('<table ')[1].split('</table/>')[0].split('<tr>') | Where-Object { $_.subString(1,4) -eq '<td>' }
     $ProgressPreference = 'Continue'

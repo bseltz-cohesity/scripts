@@ -1050,7 +1050,7 @@ function toJson(){
 function cohesityAPIversion([switch]$update){
     if($update){
         $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
-        (Invoke-WebRequest -Uri "$repoURL/cohesity-api/cohesity-api.ps1").content | Out-File -Force cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+        (Invoke-WebRequest -UseBasicParsing -Uri "$repoURL/cohesity-api/cohesity-api.ps1").content | Out-File -Force cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
         Write-Host "Cohesity-API version updated! Please restart PowerShell"
     }else{
         Write-Host "Cohesity-API version $versionCohesityAPI" -ForegroundColor Green 
