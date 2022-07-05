@@ -6,12 +6,13 @@ param (
     [Parameter()][string]$domain = 'local',
     [Parameter(Mandatory = $True)][string]$jobName,
     [Parameter()][string]$prefix = '',
+    [Parameter()][string]$suffix = '',
     [Parameter()][switch]$deleteOldJob,
     [Parameter(Mandatory = $True)][string]$newStorageDomainName
 )
 
-if($prefix -eq '' -and !$deleteOldJob){
-    Write-Host "You must use either -prefix or -deleteOldJob" -foregroundcolor Yellow
+if($prefix -eq '' -and $suffix -eq '' -and !$deleteOldJob){
+    Write-Host "You must use either -prefix or -suffix or -deleteOldJob" -foregroundcolor Yellow
     exit
 }
 
@@ -45,6 +46,9 @@ if($job){
     "Moving protection group $($job.name) to $newStorageDomainName..."
     if($prefix -ne ''){
         $job.name = "$($prefix)-$($job.name)"
+    }
+    if($suffix -ne ''){
+        $job.name = "$($job.name)-$($suffix)"
     }
     if($deleteOldJob){
         $deljob = api delete -v2 data-protect/protection-groups/$($job.id)
