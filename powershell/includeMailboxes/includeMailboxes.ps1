@@ -8,7 +8,8 @@ param (
     [Parameter()][string]$domain = 'local',  # local or AD domain
     [Parameter(Mandatory = $True)][string]$jobName,  # name of the job to exclude mailboxes from
     [Parameter()][array]$users = $null, # comma separated list of users to add
-    [Parameter()][string]$userList = ''  # import users to add from a file
+    [Parameter()][string]$userList = '',  # import users to add from a file
+    [Parameter()][int]$pageSize = 1000
 )
 
 # gather list of users to add to job
@@ -41,26 +42,71 @@ if(!$job){
     exit
 }
 
-# get physical protection sources
-$source = api get "protectionSources?id=$($job.parentSourceId)"
+# find O365 source
+$rootSource = api get "protectionSources/rootNodes?environments=kO365&id=$($job.parentSourceId)"
 
-$nodes = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
+$source = api get "protectionSources?id=$($rootSource.protectionSource.id)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder&allUnderHierarchy=false"
+$usersNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
+if(!$usersNode){
+    Write-Host "Source $sourceName is not configured for O365 Mailboxes" -ForegroundColor Yellow
+    exit
+}
 
-$usersAdded = $false
-foreach ($user in $usersToAdd){
-    $node = $nodes.nodes | Where-Object { $_.protectionSource.name -eq $user -or $_.protectionSource.office365ProtectionSource.primarySMTPAddress -eq $user }
-    if($node){
-        if(!($node.protectionSource.id -in $job.sourceIds)){
-            $usersAdded = $True
-            $job.sourceIds += $node.protectionSource.id
-            write-host "Adding $($node.protectionSource.name)" -ForegroundColor Green
-        }else{
-            write-host "$($node.protectionSource.name) already added" -ForegroundColor Green
-        }
-    }else{
-        Write-host "Can't find user $user - skipping" -ForegroundColor Yellow
+$nameIndex = @{}
+$smtpIndex = @{}
+$users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false"
+while(1){
+    foreach($node in $users.nodes){
+        $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
+        $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
+    }
+    $cursor = $users.nodes[-1].protectionSource.id
+    $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false&afterCursorEntityId=$cursor"
+    if(!$users.PSObject.Properties['nodes'] -or $users.nodes.Count -eq 1){
+        break
     }
 }
+
+foreach($user in $usersToAdd){
+    $userId = $null
+    if($smtpIndex.ContainsKey($user)){
+        $userId = $smtpIndex[$user]
+    }elseif($nameIndex.ContainsKey($user)){
+        $userId = $nameIndex[$user]
+    }
+    if($userId){
+        if(!($userId -in $job.sourceIds)){
+            $usersAdded = $True
+            $job.sourceIds += $userId
+            write-host "Adding $user" -ForegroundColor Green
+        }else{
+            write-host "$user already added" -ForegroundColor Green
+        }
+    }else{
+        Write-Host "Can't find user $user - skipping" -ForegroundColor Yellow
+    }
+}
+
+# get physical protection sources
+# $source = api get "protectionSources?id=$($job.parentSourceId)"
+
+# $nodes = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
+
+# $usersAdded = $false
+# foreach ($user in $usersToAdd){
+#     $node = $nodes.nodes | Where-Object { $_.protectionSource.name -eq $user -or $_.protectionSource.office365ProtectionSource.primarySMTPAddress -eq $user }
+#     if($node){
+#         if(!($node.protectionSource.id -in $job.sourceIds)){
+#             $usersAdded = $True
+#             $job.sourceIds += $node.protectionSource.id
+#             write-host "Adding $($node.protectionSource.name)" -ForegroundColor Green
+#         }else{
+#             write-host "$($node.protectionSource.name) already added" -ForegroundColor Green
+#         }
+#     }else{
+#         Write-host "Can't find user $user - skipping" -ForegroundColor Yellow
+#     }
+# }
 
 if($usersAdded){
     $null = api put "protectionJobs/$($job.id)" $job

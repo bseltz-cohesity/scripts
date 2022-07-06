@@ -63,3 +63,4 @@ Can't find user Joey Bagadonuts - skipping
 * -jobName: name of the O365 protection job to exclude mailboxes from
 * -users: a comma separated list of usernames or smtp addresses to add
 * -userList: a text file list of user names or SMTP addresses to add
+* -pageSize: number of objects to per query (default is 1000)
