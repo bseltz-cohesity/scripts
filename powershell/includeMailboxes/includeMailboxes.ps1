@@ -87,27 +87,6 @@ foreach($user in $usersToAdd){
     }
 }
 
-# get physical protection sources
-# $source = api get "protectionSources?id=$($job.parentSourceId)"
-
-# $nodes = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
-
-# $usersAdded = $false
-# foreach ($user in $usersToAdd){
-#     $node = $nodes.nodes | Where-Object { $_.protectionSource.name -eq $user -or $_.protectionSource.office365ProtectionSource.primarySMTPAddress -eq $user }
-#     if($node){
-#         if(!($node.protectionSource.id -in $job.sourceIds)){
-#             $usersAdded = $True
-#             $job.sourceIds += $node.protectionSource.id
-#             write-host "Adding $($node.protectionSource.name)" -ForegroundColor Green
-#         }else{
-#             write-host "$($node.protectionSource.name) already added" -ForegroundColor Green
-#         }
-#     }else{
-#         Write-host "Can't find user $user - skipping" -ForegroundColor Yellow
-#     }
-# }
-
 if($usersAdded){
     $null = api put "protectionJobs/$($job.id)" $job
 }
