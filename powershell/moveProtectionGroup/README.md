@@ -44,9 +44,12 @@ Place all files in a folder together. then, run the main script like so:
 * -prefix: (optional) add a prefix to the name of the new protection group
 * -suffix: (optional) add a suffix to the name of the new protection group
 * -deleteOldJob: (optional) delete the old protection group
+* -newPolicyName: (optional) change the policy used by the job
+* -pauseOldJob: (optional) pause the old job
+* -pauseNewJob: (optional) pause the new job
 
 ## Notes
 
-You must use either -prefix or -deleteOldJob (or both).
+You must use either -prefix, -suffix or -deleteOldJob to avoid conflicting job names.
 
 In some cases it's not possible to protect the same object in two jobs (e.g. SQL servers), so it's nessessary to use -deleteOldJob in those cases.
