@@ -25,7 +25,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./registerGenericNasList.ps1 -vip mycluster -username myusername -domain mydomain.net -nasList ./mynaslist.txt -smbUserName mydomain.net\myusername
+./registerGenericNasList.ps1 -vip mycluster -username myusername -domain mydomain.net -mountList ./mymountlist.txt -smbUserName mydomain.net\myusername
 ```
 
 ## Parameters
@@ -34,6 +34,6 @@ Place both files in a folder together and run the main script like so:
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -mountPoint: (optional) nas mount points to register (comma separated)
-* -nasList: (optional) text file containing list of mount points to register (one per line)
+* -mountList: (optional) text file containing list of mount points to register (one per line)
 * -smbUserName: (optional) SMB username to connect to SMB shares, e.g. mydomain\myusername
 * -smbPassword: (optional) SMB password to connect to SMB shares (will be prompted if necessary)

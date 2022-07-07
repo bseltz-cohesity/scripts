@@ -2,7 +2,7 @@
 # ./registerGenericNasList.ps1 -vip bseltzve01 `
 #                              -username admin `
 #                              -domain mydomain.net `
-#                              -nasList ./nasList.txt `
+#                              -mountList ./mountList.txt `
 #                              -smbUserName mydomain\myusername
 
 ### provide a list of mount points in a text file
@@ -15,7 +15,7 @@ param (
     [Parameter()][string]$domain = 'local', # local or AD domain
     [Parameter()][string]$tenant,
     [Parameter()][array]$mountPoint, # nas path to register (comma separated)
-    [Parameter()][string]$nasList, # text file of nas paths to register (one per line)
+    [Parameter()][string]$mountList, # text file of nas paths to register (one per line)
     [Parameter()][string]$smbUserName = '', # username to register smb paths
     [Parameter()][string]$smbPassword # password to register smb paths
  )
@@ -32,10 +32,10 @@ if ($smbUserName -ne ''){
 
 # gather path list
 $pathList = @()
-if($nasList -and (Test-Path $nasList -PathType Leaf)){
-    $pathList += Get-Content $nasList | Where-Object {$_ -ne ''}
-}elseif($nasList){
-    Write-Warning "File $nasList not found!"
+if($mountList -and (Test-Path $mountList -PathType Leaf)){
+    $pathList += Get-Content $mountList | Where-Object {$_ -ne ''}
+}elseif($mountList){
+    Write-Warning "File $mountList not found!"
     exit 1
 }
 if($mountPoint){
@@ -119,7 +119,7 @@ foreach ($nasPath in $pathList) {
     if($nasPath -ne ''){
         if($existing){
             "Updating $nasPath"
-            $null = api put "/backupsources/$($existing.rootNode.id)" $updateParams
+            # $null = api put "/backupsources/$($existing.rootNode.id)" $updateParams
         }else{
             "Registering $nasPath"
             $null = api post /backupsources $newSource
