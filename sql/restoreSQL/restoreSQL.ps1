@@ -1,4 +1,4 @@
-# version 2022-06-05
+# version 2022-06-07
 # usage: ./restore-SQL.ps1 -vip mycluster `
 #                          -username myusername `
 #                          -domain mydomain.net `
@@ -81,6 +81,11 @@ if($USING_HELIOS){
         write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
         exit 1
     }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit 1
 }
 
 # handle source instance name e.g. instance/dbname
