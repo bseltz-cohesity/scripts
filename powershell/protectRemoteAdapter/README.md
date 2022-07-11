@@ -57,6 +57,8 @@ Place all files in a folder together, then run the main script like so:
 * -scriptParams: (optional) any parameters to be passed to the script
 * -logScriptPath: path to log backup script (required only if selected policy is log-enabled)
 * -logScriptParams: (optional) any parameters to be passed to the log script
+* -fullScriptPath: path to full backup script (required only if selected policy does periodic full)
+* -fullScriptParams: (optional) any parameters to be passed to the full backup script
 
 ## Notes
 

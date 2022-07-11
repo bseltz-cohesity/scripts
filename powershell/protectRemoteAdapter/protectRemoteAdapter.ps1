@@ -15,7 +15,9 @@ param (
     [Parameter(Mandatory = $True)][string]$scriptPath,
     [Parameter()][string]$scriptParams = $null,
     [Parameter()][string]$logScriptPath = $null,
-    [Parameter()][string]$logScriptParams = $null
+    [Parameter()][string]$logScriptParams = $null,
+    [Parameter()][string]$fullScriptPath = $null,
+    [Parameter()][string]$fullScriptParams = $null
 )
 
 # source the cohesity-api helper code
@@ -136,6 +138,13 @@ if($logScriptPath){
     $myObject.remoteAdapterParams.hosts[0]['logBackupScript'] = @{
         "path"   = $logScriptPath;
         "params" = $logScriptParams
+    };
+}
+
+if($fullScriptPath){
+    $myObject.remoteAdapterParams.hosts[0]['fullBackupScript'] = @{
+        "path"   = $fullScriptPath;
+        "params" = $fullScriptParams
     };
 }
 
