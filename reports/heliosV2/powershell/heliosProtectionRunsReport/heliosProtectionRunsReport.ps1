@@ -30,6 +30,7 @@ Seconds
 Protection Group
 Environment
 Source
+Object
 Snapshot Status
 Logical Data ($unit)
 Data Read ($unit)
@@ -278,6 +279,7 @@ foreach($range in $ranges){
                 $sourceName = $i.sourceName
                 if($i.PSObject.Properties['environment'] -and $i.environment.length -gt 0){
                     $environment = $i.environment.subString(1)
+                    $objectName = $i.objectName
                     $policy = $i.policyName
                     $status = $i.status.subString(1)
                     $startTime = (usecsToDate $i.runStartTimeUsecs).ToSTring('yyyy-MM-dd hh:mm')
@@ -299,8 +301,8 @@ foreach($range in $ranges){
                     $dataRead = toUnits $i.dataRead
                     $dataWritten = toUnits $i.dataWritten
                     
-                    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}"",""{13}""" -f $clusterName, $policy, $status, $startTime, $endTime, $duration, $durationSecs, $jobName, $environment, $sourceName, $snapshotStatus, $logicalSize, $dataRead, $dataWritten | Out-File -FilePath $csvFileName -Append
-                    $Global:html += '<tr style="border: 1px solid {14} background-color: {14}">
+                    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}"",""{13}"",""{14}""" -f $clusterName, $policy, $status, $startTime, $endTime, $duration, $durationSecs, $jobName, $environment, $sourceName, $objectName, $snapshotStatus, $logicalSize, $dataRead, $dataWritten | Out-File -FilePath $csvFileName -Append
+                    $Global:html += '<tr style="border: 1px solid {15} background-color: {15}">
                         <td class="nowrap">{0}</td>
                         <td>{1}</td>
                         <td>{2}</td>
@@ -315,7 +317,8 @@ foreach($range in $ranges){
                         <td>{11}</td>
                         <td>{12}</td>
                         <td>{13}</td>
-                        </tr>' -f $clusterName, $policy, $status, $startTime, $endTime, $duration, $durationSecs, $jobName, $environment, $sourceName, $snapshotStatus, $logicalSize, $dataRead, $dataWritten, $Global:trColor            
+                        <td>{14}</td>
+                        </tr>' -f $clusterName, $policy, $status, $startTime, $endTime, $duration, $durationSecs, $jobName, $environment, $sourceName, $objectName, $snapshotStatus, $logicalSize, $dataRead, $dataWritten, $Global:trColor            
                 }
             }
         }
