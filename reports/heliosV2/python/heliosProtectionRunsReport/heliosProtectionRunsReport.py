@@ -49,6 +49,7 @@ Seconds
 Protection Group
 Environment
 Source
+Object
 Snapshot Status
 Logical Data (%s)
 Data Read (%s)
@@ -294,6 +295,7 @@ for range in ranges:
                 clusterName = i['system'].upper()
                 jobName = i['groupName']
                 sourceName = i['sourceName']
+                objectName = i['objectName']
                 environment = i['environment'][1:]
                 policy = i['policyName']
                 status = i['status'][1:]
@@ -316,7 +318,7 @@ for range in ranges:
                 logicalSize = round(float(i['logicalSize']) / multiplier, 1)
                 dataRead = round(float(i['dataRead']) / multiplier, 1)
                 dataWritten = round(float(i['dataWritten']) / multiplier, 1)
-                csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, policy, status, startTime, endTime, duration, durationSecs, jobName, environment, sourceName, snapshotStatus, logicalSize, dataRead, dataWritten))
+                csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, policy, status, startTime, endTime, duration, durationSecs, jobName, environment, sourceName, objectName, snapshotStatus, logicalSize, dataRead, dataWritten))
                 html += '''<tr>
                     <td class="nowrap">%s</td>
                     <td>%s</td>
@@ -332,7 +334,8 @@ for range in ranges:
                     <td>%s</td>
                     <td>%s</td>
                     <td>%s</td>
-                    </tr>''' % (clusterName, policy, status, startTime, endTime, duration, durationSecs, jobName, environment, sourceName, snapshotStatus, logicalSize, dataRead, dataWritten)
+                    <td>%s</td>
+                    </tr>''' % (clusterName, policy, status, startTime, endTime, duration, durationSecs, jobName, environment, sourceName, objectName, snapshotStatus, logicalSize, dataRead, dataWritten)
 
         if preview['component']['data'] is None or len(preview['component']['data']) == 0:
             moreRecords = False
