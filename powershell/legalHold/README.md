@@ -102,7 +102,6 @@ Remove legal hold on a range of dates:
                 -removeHold
 ```
 
-
 ## Parameters
 
 * -vip: Cohesity Cluster to connect to
