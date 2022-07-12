@@ -4,7 +4,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This script add or remove legal hold from a protection run.
 
-Runs or objects placed on legal hold will not expire when their retention end date is reached. Instead, they will be rertained until the legal hold is removed. Note that the user adding or removeing leegal hosd much have the Data Security role assigned to their account.
+Runs or objects placed on legal hold will not expire when their retention end date is reached. Instead, they will be retained until the legal hold is removed. Note that the user adding or removing legal hold must have the Data Security role assigned to their account.
 
 ## Download the script
 
