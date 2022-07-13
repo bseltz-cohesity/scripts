@@ -70,5 +70,6 @@ Or to update an existing job:
 * -storageDomainName: (optional) default is 'DefaultStorageDomain' (or 'Direct_Archive_Viewbox' for cloud archive direct jobs)
 * -paused: (optional) pause new protection job
 * -instancesOnly: (optional) auto protect existing instances but not the root of the server (so any new instances will not be protected)
+* -systemDBsOnly: (optional) only protect system DBs (for all or specified instanceName(s))
 * -numStreams: (optional) only applicable to VDI backups (default is 3)
 * -withClause: (optional) only applicable to VDI backups (e.g. 'WITH Compression')

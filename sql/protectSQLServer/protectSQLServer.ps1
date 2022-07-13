@@ -10,6 +10,7 @@ param (
     [Parameter()][array]$instanceName,
     [Parameter()][ValidateSet('File','Volume','VDI')][string]$backupType = 'File',
     [Parameter()][switch]$instancesOnly,
+    [Parameter()][switch]$systemDBsOnly,
     [Parameter()][string]$policyname,
     [Parameter()][string]$startTime = '20:00', # e.g. 23:30 for 11:30 PM
     [Parameter()][string]$timeZone = 'America/Los_Angeles', # e.g. 'America/New_York'
@@ -47,6 +48,8 @@ if($serversToAdd.Length -eq 0){
 
 # authenticate
 apiauth -vip $vip -username $username -domain $domain -password $password
+
+$systemDBs = @('master', 'model', 'msdb')
 
 # root SQL source
 $sources = api get protectionSources?environments=kSQL
@@ -241,11 +244,29 @@ foreach($servername in $serversToAdd){
                 Write-Host "Instance $instance not found on server $servername"
                 exit
             }else{
-                $params.objects = @($params.objects + @{ 'id' = $instanceSource.protectionSource.id})
+                if($systemDBsOnly){
+                    foreach($node in $instanceSource.nodes){
+                        if(($node.protectionSource.name -split '/')[1] -in $systemDBs){
+                            $params.objects = @($params.objects + @{ 'id' = $node.protectionSource.id})
+                        }
+                    }
+                }else{
+                    $params.objects = @($params.objects + @{ 'id' = $instanceSource.protectionSource.id})
+                }
             }
         }
     }else{
-        $params.objects = @($params.objects + @{ 'id' = $serverSource.protectionSource.id})
+        if($systemDBsOnly){
+            foreach($instanceSource in $serverSource.applicationNodes){
+                foreach($node in $instanceSource.nodes){
+                    if(($node.protectionSource.name -split '/')[1] -in $systemDBs){
+                        $params.objects = @($params.objects + @{ 'id' = $node.protectionSource.id})
+                    }
+                }
+            }
+        }else{
+            $params.objects = @($params.objects + @{ 'id' = $serverSource.protectionSource.id})
+        }
     }
     Write-Host "Protecting $servername..."
 }
@@ -255,4 +276,3 @@ if($newJob -eq $True){
 }else{
     $null = api put -v2 data-protect/protection-groups/$($job.id) $job 
 }
-
