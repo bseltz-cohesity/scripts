@@ -24,7 +24,7 @@ chmod +x registerPhysical.py
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./registerPhysical.ps1 -v mycluster \
+./registerPhysical.py  -v mycluster \
                        -u myuser \
                        -d mydomain.net \
                        -s myserver1.mydomain.net \
