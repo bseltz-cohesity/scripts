@@ -193,22 +193,6 @@ As mentioned above, if you want to update the stored password, you can type:
 apiauth -vip mycluster -username myusername -domain mydomain.net -updatepassword
 ```
 
-You can also use the apipwd function which has some additional functionality:
-
-```powershell
-apipwd -vip mycluster -username myusername -domain mydomain.net
-```
-
-When passwords are stored, they are stored for the currently logged in OS user. In Linux, the encrypted password is stored under the currently logged in OS user's home directory. In Windows, the encrypted password is stored under the currently logged in OS user's registry.
-
-If you are setting up a script to run unattended by another user who is not currently logged in, we must store the password while logged in as that user. This is common in Windows environments where scripts may be run by the SQL Agent account. To store the password as another Windows user, you can type:
-
-```powershell
-apipwd -vip mycluster -username myusername -domain mydomain.net -asUser
-```
-
-You will be prompted for the credentials of another Windows user, and then a new PowerShell window will open and prompt you for the api password.
-
 ### Using a Password File
 
 In some cases it can be challenging to store the API password for a service account to use, in which case it might be easier (albeit less secure) to store the API password in a file. You can store the password in a file, in the same folder as the script(s) that you want to run, like so:
