@@ -48,7 +48,7 @@ foreach ($job in $jobs) {
         ### Display Status of archive task
         foreach ($copyRun in $run.copyRun) {
             if ($copyRun.target.type -eq 'kArchival') {
-                if ($copyRun.status -eq 'kSuccess' -and (! $showUnsuccessful)) {
+                if (($copyRun.status -eq 'kSuccess' -or $copyRun.status -eq 4) -and (! $showUnsuccessful)) {
                     if ($copyRun.expiryTimeUsecs -gt 0) {
                         if( ! $target -or $copyRun.target.archivalTarget.vaultName -eq $target){
                             write-host "$runDate  $jobName" -ForegroundColor Green
