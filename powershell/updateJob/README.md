@@ -44,7 +44,7 @@ You can also provide a text file of jobs to change (one job name per line):
                 -policyName 'my new policy'
 ```
 
-Chaning the start time:
+Changing the start time:
 
 ```powershell
 ./updateJob.ps1 -vip mycluster `
@@ -52,6 +52,19 @@ Chaning the start time:
                 -domain mydomain.net `
                 -jobList ./myjobs.txt `
                 -startTime '23:30'
+```
+
+Changing several properties at once:
+
+```powershell
+./updateJob.ps1 -vip mycluster `
+                -username myusername `
+                -domain mydomain.net `
+                -jobList ./myjobs.txt `
+                -startTime '23:30' `
+                -policyName 'my new policy' `
+                -incrementalProtectionSlaTimeMins 120
+
 ```
 
 ## Authentication Parameters
