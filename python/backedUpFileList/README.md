@@ -12,7 +12,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 # Begin download commands
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backedUpFileList/backedUpFileList.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-chmod +x backupNow.py
+chmod +x backedUpFileList.py
 # End download commands
 ```
 
