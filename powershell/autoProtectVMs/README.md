@@ -27,19 +27,37 @@ Place both files in a folder together and run the main script like so:
 To autoprotect a vSphere cluster:
 
 ```powershell
-./autoProtectVMs.ps1 -vip mycluster -username admin -vCenter myvcenter.mydomain.net -dataCenter myDataCenter -jobName 'vm backup' -objectName myHACluster1
+./autoProtectVMs.ps1 -vip mycluster `
+                     -username myusername `
+                     -domain mydomain.net `
+                     -vCenter myvcenter.mydomain.net `
+                     -dataCenter myDataCenter `
+                     -jobName 'vm backup' `
+                     -objectName myHACluster1
 ```
 
 To autoprotect a folder:
 
 ```powershell
-./autoProtectVMs.ps1 -vip mycluster -username admin -vCenter myvcenter.mydomain.net -dataCenter myDataCenter -jobName 'vm backup' -objectName myfolder1
+./autoProtectVMs.ps1 -vip mycluster `
+                     -username myusername `
+                     -domain mydomain.net `
+                     -vCenter myvcenter.mydomain.net `
+                     -dataCenter myDataCenter `
+                     -jobName 'vm backup' `
+                     -objectName myfolder1
 ```
 
 If a folder is nested, you can specify the canonical folder path:
 
 ```powershell
-./autoProtectVMs.ps1 -vip mycluster -username admin -vCenter myvcenter.mydomain.net -dataCenter myDataCenter -jobName 'vm backup' -objectName 'myfolder1/mysubfolder'
+./autoProtectVMs.ps1 -vip mycluster `
+                     -username myusername `
+                     -domain mydomain.net `
+                     -vCenter myvcenter.mydomain.net `
+                     -dataCenter myDataCenter `
+                     -jobName 'vm backup' `
+                     -objectName 'myfolder1/mysubfolder'
 ```
 
 ## Authentication Parameters
