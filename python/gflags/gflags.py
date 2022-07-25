@@ -137,6 +137,17 @@ def setGflag(servicename, flagname, flagvalue, reason):
         nodes = api('get', 'nodes')
         for node in nodes:
             print('        %s' % node['ip'])
+            if clear is True:
+                if servicename == 'iris':
+                    currentflags = requests.get('https://%s:%s/flagz' % (node['ip'], port[servicename]), verify=False, headers=context['HEADER'])
+                else:
+                    currentflags = requests.get('https://%s/siren/v1/remote?relPath=&remoteUrl=http' % vip + quote_plus('://') + node['ip'] + quote_plus(':') + port[servicename] + quote_plus('/flagz'), verify=False, headers=context['HEADER'])
+                for existingflag in currentflags.content.split('\n'):
+                    parts = str(existingflag).split('=')
+                    existingflagname = parts[0][2:]
+                    if existingflagname == flagname:
+                        if len(parts) > 2:
+                            flagvalue = parts[2][0:-1]
             if servicename == 'iris':
                 response = requests.get('https://%s:%s/flagz?%s=%s' % (node['ip'], port[servicename], flagname, flagvalue), verify=False, headers=context['HEADER'])
             else:
@@ -161,7 +172,7 @@ if importfile is not None:
     flagdata += [s.strip() for s in f.readlines() if s.strip() != '']
     f.close()
     for f in flagdata[1:]:
-        (servicename, flagname, flagvalue, reason) = f.split(',')
+        (servicename, flagname, flagvalue, reason) = f.split(',', 3)
         setGflag(servicename=servicename, flagname=flagname, flagvalue=flagvalue, reason=reason)
         servicestorestart.append(servicename)
 
