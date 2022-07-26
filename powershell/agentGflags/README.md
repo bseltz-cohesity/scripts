@@ -25,6 +25,12 @@ Run the main script like so:
 To list agent gflags on a host:
 
 ```powershell
+./agentGflags.ps1 -serverName myhost
+```
+
+To set a gflag:
+
+```powershell
 ./agentGflags.ps1 -serverName myhost -flagName sql_allow_multiple_cohesity_clusters -flagValue true
 ```
 
