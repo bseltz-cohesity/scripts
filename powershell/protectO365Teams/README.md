@@ -10,7 +10,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Begin download commands
-$scriptName = 'protectO365Mailboxes'
+$scriptName = 'protectO365Teams'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
@@ -19,7 +19,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* protectO365Mailboxes.ps1: the main PowerShell script
+* protectO365Teams.ps1: the main PowerShell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place all files in a folder together. You can provide a list of teams at the command line, or create a text file and populate with the team names or SMTP addresses (one per line)
@@ -30,7 +30,11 @@ Then, run the main script like so:
 
 ```powershell
 # example - adding teams from the command line
-./protectO365Mailboxes.ps1 -vip mycluster -username myusername -domain mydomain.net -jobName 'My Job' -teams my-team1, my-team2
+./protectO365Teams.ps1 -vip mycluster `
+                       -username myusername `
+                       -domain mydomain.net `
+                       -jobName 'My Job' `
+                       -teams my-team1, my-team2
 # end example
 ```
 
@@ -38,7 +42,11 @@ or
 
 ```powershell
 # example - adding teams from a text file
-./protectO365Mailboxes.ps1 -vip mycluster -username myusername -domain mydomain.net -jobName 'My Job' -teamList ./myTeamlist.txt
+./protectO365Teams.ps1 -vip mycluster `
+                       -username myusername `
+                       -domain mydomain.net `
+                       -jobName 'My Job' `
+                       -teamList ./myTeamlist.txt
 # end example
 ```
 
