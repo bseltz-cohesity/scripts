@@ -54,6 +54,10 @@ if(!$usersNode){
 
 $nameIndex = @{}
 $smtpIndex = @{}
+$indexCount = 0
+
+Write-Host "Discovering users..."
+
 $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false"
 while(1){
     foreach($node in $users.nodes){
@@ -62,10 +66,13 @@ while(1){
     }
     $cursor = $users.nodes[-1].protectionSource.id
     $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false&afterCursorEntityId=$cursor"
-    if(!$users.PSObject.Properties['nodes'] -or $users.nodes.Count -eq 1){
+    if($smtpIndex.Keys.Count -eq $indexCount){
         break
     }
+    $indexCount = $smtpIndex.Keys.Count
 }
+
+Write-Host "$($smtpIndex.Keys.Count) users discovered"
 
 foreach($user in $usersToAdd){
     $userId = $null
