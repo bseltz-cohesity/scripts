@@ -78,7 +78,7 @@ if targetEntity is None:
 search = api('get', 'data-protect/search/protected-objects?snapshotActions=RecoverApps&searchString=%s&environments=kOracle' % sourcedb, v=2)
 objects = None
 if search is not None and 'objects' in search:
-    objects = [o for o in search['objects'] if o['oracleParams']['hostInfo']['name'].lower() == sourceserver.lower()]
+    objects = [o for o in search['objects'] if 'oracleParams' in o and o['oracleParams']['hostInfo']['name'].lower() == sourceserver.lower()]
 
 if objects is None or len(objects) == 0:
     print('No backups found for Oracle DB %s' % sourcedb)
@@ -171,7 +171,7 @@ restoreParams = {
                 "recoverToNewSource": True,
                 "newSourceConfig": {
                     "host": {
-                        "id": 2318
+                        "id": targetEntity['appEntity']['entity']['id']
                     },
                     "recoveryTarget": "RecoverView",
                     "recoverViewParams": {
