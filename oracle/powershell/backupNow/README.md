@@ -38,6 +38,7 @@ Place all files in a folder together. then, run the main script like so:
 * -domain: (optional) your AD domain (defaults to local)
 * -useApiKey: (optional) use API key for authentication
 * -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
 * -mcm: (optional) connect through MCM
 * -mfaCode: (optional) TOTP MFA code
 * -emailMfaCode: (optional) send MFA code via email
