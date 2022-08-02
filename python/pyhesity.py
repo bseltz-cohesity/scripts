@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2022.05.19"""
+"""Cohesity Python REST API Wrapper Module - 2022.08.02"""
 
 ##########################################################################################
 # Change Log
@@ -30,6 +30,7 @@
 # 2022.02.24 - Password retry for cluster ApiKey
 # 2022.03.07 - Hide bad password in auth error
 # 2022.05.19 - Fix MFA for session auth
+# 2022.08.02 - Fixed password prompt=False processing
 #
 ##########################################################################################
 # Install Notes
@@ -115,6 +116,9 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
     pwd = password
     if password is None:
         pwd = __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, prompt)
+    if pwd is None:
+        COHESITY_API['AUTHENTICATED'] = False
+        return None
     COHESITY_API['HEADER'] = {'accept': 'application/json', 'content-type': 'application/json'}
     COHESITY_API['APIROOT'] = 'https://' + vip + '/irisservices/api/v1'
     COHESITY_API['APIROOTv2'] = 'https://' + vip + '/v2/'
@@ -475,7 +479,7 @@ def __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, 
         vip = '--'  # wildcard vip
     if password is not None:
         return password
-    if prompt is not None:
+    if prompt is not False:
         pwd = getpass.getpass("Enter your password: ")
         return pwd
     if os.path.exists(PWFILE):
@@ -505,16 +509,19 @@ def __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, 
         return pwd
     except Exception:
         __writelog('prompting for password...')
-        pwd = getpass.getpass("Enter your password: ")
-        try:
-            pwdfile = open(pwpath, 'w')
-            opwd = base64.b64encode(pwd.encode('utf-8')).decode('utf-8')
-            pwdfile.write(opwd)
-            pwdfile.close()
-            return pwd
-        except Exception:
-            print('error storing password')
-            return pwd
+        if prompt is not False:
+            pwd = getpass.getpass("Enter your password: ")
+            try:
+                pwdfile = open(pwpath, 'w')
+                opwd = base64.b64encode(pwd.encode('utf-8')).decode('utf-8')
+                pwdfile.write(opwd)
+                pwdfile.close()
+                return pwd
+            except Exception:
+                print('error storing password')
+                return pwd
+        else:
+            return None
 
 
 # store password in PWFILE
