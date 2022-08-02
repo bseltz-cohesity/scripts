@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.05.16 - Brian Seltzer
+#  Version 2022.08.02 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2021.02.10 - fixed empty body issue
@@ -26,9 +26,10 @@
 # 2022.04.12 - updated importStoredPassword error handling and case insensitive api method
 # 2022.04.14 - fixed store and import - support domain\username convention
 # 2022.05.16 - fixed mfa for v2 user/session authentication
+# 2022.08.02 - added promptForPassword as boolean
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2022.05.16'
+$versionCohesityAPI = '2022.08.02'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -111,7 +112,8 @@ function apiauth($vip='helios.cohesity.com',
                  [switch] $v2,
                  [boolean] $apiKeyAuthentication = $false,
                  [boolean] $heliosAuthentication = $false,
-                 [boolean] $sendMfaCode = $false){
+                 [boolean] $sendMfaCode = $false,
+                 [boolean] $promptForPassword = $True){
 
     if($apiKeyAuthentication -eq $True){
         $useApiKey = $True
@@ -122,7 +124,9 @@ function apiauth($vip='helios.cohesity.com',
     if($sendMfaCode -eq $True){
         $emailMfaCode = $True
     }
-    
+    if($promptForPassword -eq $false){
+        $noprompt = $True
+    }
     # parse domain\username or username@domain
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
@@ -1125,3 +1129,4 @@ function getViews([switch]$includeInactive){
 # 2020.12.20 - added JSON compression
 #
 # . . . . . . . . . . . . . . . . . . .
+

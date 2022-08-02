@@ -41,16 +41,25 @@ apiauth -vip mycluster -username myusername -domain mydomain.net -updatepassword
 
 apiauth supports the following parameters:
 
-* -vip: FQDN or IP Address of the Cohesity cluster to connect to
-* -username: username to connect to Cohesity
-* -domain: (optional) Active Directory domain name of user (defaults to mydomain.net)
+* -vip: (optional) endpoint to connect to (cluster, MCM or helios - defaults to helios.cohesity.com)
+* -username: (optional) username to connect to Cohesity
+* -domain: (optional) Active Directory domain name of user (defaults to local)
 * -tenantId: (optional) tenant to impersonate
 * -pwd: (optional) hard code the password (not recommended) the password will not be stored
 * -password: (optional) hard code the password (not recommended) the password will not be stored
-* -updatepassword: (optional) prompt for password and overwrite the stored password
-* -quiet: (optional) by default a successfull authentication will report Connected!
-* -noprompt: (optional) will not prompt user for password and will exit if password is not already stored
-* -helios: (optional) will use Helios api key for authentication
+* -updatepassword: (optional) prompt for password and overwrite the stored password (switch)
+* -helios: (optional) will use Helios api key for authentication (switch)
+* -regionid: (optional) DMaaS region
+* -mfaCode: (optional) Totp MFA code
+* -emailMfaCode: (optional) send MFA code via email (switch)
+* -quiet: (optional) hide output from authentication (switch)
+* -noprompt: (optional) do not prompt for password (switch)
+* -useApiKey: (optional) use API key for authentication (switch)
+* -v2: (optional) use V2 APIs by default (switch)
+* -apiKeyAuthentication: (optional) use API key for authentication (boolean - default is $false)
+* -heliosAuthentication: (optional) use Helios authentication (boolean - default is $false)
+* -sendMfaCode: (optional) send MFA code via email (boolean - default is $false)
+* -promptForPassword: (optional) do not prompt for password (boolean - default is $false)
 
 You can combine the domain and username like this:
 
