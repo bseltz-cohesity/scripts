@@ -148,7 +148,7 @@ function apiauth($vip='helios.cohesity.com',
             # report no password
             Write-Host "No password provided for $username at $vip" -ForegroundColor Yellow
             apidrop -quiet
-            break
+            return $null
         }
     }
 
@@ -327,7 +327,7 @@ function apiauth($vip='helios.cohesity.com',
                                 Write-Host $thisError.ToString() -foregroundcolor yellow
                             }
                         }
-                        break
+                        return $null
                     }
                 }else{
                     # report authentication error
@@ -497,13 +497,13 @@ function api($method,
     }else{
         if($method -ne 'get' -and $cohesity_api.clusterReadOnly -eq $true){
             Write-Host "Cluster connection is READ-ONLY" -ForegroundColor Yellow
-            break
+            return $null
         }
         if($method -notin $methods){
             if($cohesity_api.reportApiErrors){
                 Write-Host "invalid api method: $method" -foregroundcolor yellow
             }
-            break
+            return $null
         }
         # use api version
         if(!$version){
@@ -569,7 +569,7 @@ function api($method,
 
 function fileDownload($uri, $fileName, $version=1, [switch]$v2){
 
-    if(-not $cohesity_api.authorized){ Write-Host 'Please use apiauth to connect to a cohesity cluster' -foregroundcolor yellow; break }
+    if(-not $cohesity_api.authorized){ Write-Host 'Please use apiauth to connect to a cohesity cluster' -foregroundcolor yellow; return $null }
     try {
         if($version -eq 2 -or $v2){
             $url = $cohesity_api.apiRootv2 + $uri
