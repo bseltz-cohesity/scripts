@@ -55,6 +55,7 @@ $cohesity_api = @{
     'webcli' = $null;
     'version' = 1;
     'pwscope' = 'user';
+    'api_version' = $versionCohesityAPI;
 }
 
 $pwfile = $(Join-Path -Path $PSScriptRoot -ChildPath YWRtaW4)
