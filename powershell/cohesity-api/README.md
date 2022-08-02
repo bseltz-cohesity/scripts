@@ -59,7 +59,7 @@ apiauth supports the following parameters:
 * -apiKeyAuthentication: (optional) use API key for authentication (boolean - default is $false)
 * -heliosAuthentication: (optional) use Helios authentication (boolean - default is $false)
 * -sendMfaCode: (optional) send MFA code via email (boolean - default is $false)
-* -promptForPassword: (optional) do not prompt for password (boolean - default is $false)
+* -noPromptForPassword: (optional) do not prompt for password (boolean - default is $false)
 
 You can combine the domain and username like this:
 

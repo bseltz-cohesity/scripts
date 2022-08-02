@@ -113,7 +113,7 @@ function apiauth($vip='helios.cohesity.com',
                  [boolean] $apiKeyAuthentication = $false,
                  [boolean] $heliosAuthentication = $false,
                  [boolean] $sendMfaCode = $false,
-                 [boolean] $promptForPassword = $True){
+                 [boolean] $noPromptForPassword = $false){
 
     if($apiKeyAuthentication -eq $True){
         $useApiKey = $True
@@ -124,7 +124,7 @@ function apiauth($vip='helios.cohesity.com',
     if($sendMfaCode -eq $True){
         $emailMfaCode = $True
     }
-    if($promptForPassword -eq $false){
+    if($noPromptForPassword -eq $True){
         $noprompt = $True
     }
     # parse domain\username or username@domain
