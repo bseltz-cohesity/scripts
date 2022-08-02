@@ -42,6 +42,7 @@ Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/prote
 * -d, --domain: (optional) active directory domain of user (default is local)
 * -i, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password of API key
+* -np, --noprompt: (optional) do not prompt for password
 * -mcm, --mcm: (optional) connect through MCM
 * -c, --clustername: (optional) helios/mcm cluster to connect to
 * -j, --jobname: name of protection job to run
@@ -63,6 +64,16 @@ Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/prote
 * -cp, --cancelpreviousrunminutes: (optional) cancel previous job run if it's been running for X minutes
 * -nrt, --newruntimeoutsecs: (optional) exit after X seconds if new run fails to start (default is 180)
 * -debug, --debug: (optional) display verbose error and state messages
+* -ex, --extendederrorcodes: (optional) return extended set of exit codes
+
+## Extended Error Codes
+
+* 0: Successful (no error to report)
+* 1: Unsuccessful (backup ended in failure or warning)
+* 2: authentication error (failed to authenticate)
+* 3: Syntax Error (incorrect command line)
+* 4: Timed out waiting for existing run to finish (existing run still running)
+* 5: Timed out waiting for new run / status update (failed to get status updates)
 
 ## Using -o (--objectname) Parameter
 

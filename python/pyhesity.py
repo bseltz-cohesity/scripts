@@ -60,7 +60,8 @@ requests.packages.urllib3.disable_warnings()
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-__all__ = ['apiauth',
+__all__ = ['api_version',
+           'apiauth',
            'api',
            'usecsToDate',
            'usecsToDateTime',
@@ -95,6 +96,7 @@ CONFIGDIR = expanduser("~") + '/.pyhesity'
 SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
 PWFILE = os.path.join(SCRIPTDIR, 'YWRtaW4')
 LOGFILE = os.path.join(SCRIPTDIR, 'pyhesity-debug.log')
+api_version = '2022.08.02'
 
 
 ### authentication

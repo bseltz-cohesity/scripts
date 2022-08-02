@@ -1,7 +1,16 @@
 #!/usr/bin/env python
-"""Backup Now and Copy for python"""
+"""BackupNow for python"""
 
-# version 2022.05.23
+# version 2022.08.02
+
+# extended error codes
+# ====================
+# 0: Successful
+# 1: Unsuccessful
+# 2: authentication error
+# 3: Syntax Error
+# 4: Timed out waiting for existing run to finish
+# 5: Timed out waiting for status update / waiting for run to appear
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -20,6 +29,7 @@ parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
 parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-p', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-mcm', '--mcm', action='store_true')
 parser.add_argument('-c', '--clustername', type=str, default=None)
 parser.add_argument('-j', '--jobName', type=str, required=True)
@@ -44,6 +54,7 @@ parser.add_argument('-n', '--waitminutesifrunning', type=int, default=60)
 parser.add_argument('-cp', '--cancelpreviousrunminutes', type=int, default=0)
 parser.add_argument('-nrt', '--newruntimeoutsecs', type=int, default=180)
 parser.add_argument('-debug', '--debug', action='store_true')
+parser.add_argument('-ex', '--extendederrorcodes', action='store_true')
 
 args = parser.parse_args()
 
@@ -53,6 +64,7 @@ username = args.username
 domain = args.domain
 useApiKey = args.useApiKey
 password = args.password
+noprompt = args.noprompt
 clustername = args.clustername
 mcm = args.mcm
 jobName = args.jobName
@@ -77,6 +89,12 @@ waitminutesifrunning = args.waitminutesifrunning
 cancelpreviousrunminutes = args.cancelpreviousrunminutes
 newruntimeoutsecs = args.newruntimeoutsecs
 debugger = args.debug
+extendederrorcodes = args.extendederrorcodes
+
+if noprompt is True:
+    prompt = False
+else:
+    prompt = True
 
 if enable is True:
     wait = True
@@ -106,12 +124,18 @@ def bail(code=0):
     exit(code)
 
 
+if 'api_version' not in globals() or api_version < '2022.08.02':
+    out('this script requires pyhesity.py version 2022.08.02 or later')
+    if extendederrorcodes is True:
+        bail(3)
+    else:
+        bail(1)
+
 ### authenticate
-# authenticate
 if mcm:
-    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=True)
+    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=True, prompt=prompt)
 else:
-    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, prompt=prompt)
 
 # if connected to helios or mcm, select to access cluster
 if mcm or vip.lower() == 'helios.cohesity.com':
@@ -129,7 +153,10 @@ if apiconnected() is False and vip2 is not None:
 
 if apiconnected() is False:
     out('\nFailed to connect to Cohesity cluster')
-    bail(1)
+    if extendederrorcodes is True:
+        bail(2)
+    else:
+        bail(1)
 
 sources = {}
 cluster = api('get', 'cluster')
@@ -182,7 +209,10 @@ def cancelRunningJob(job, durationMinutes):
 job = [job for job in api('get', 'protectionJobs') if job['name'].lower() == jobName.lower()]
 if not job:
     out("Job '%s' not found" % jobName)
-    bail(1)
+    if extendederrorcodes is True:
+        bail(3)
+    else:
+        bail(1)
 else:
     job = job[0]
     environment = job['environment']
@@ -190,7 +220,10 @@ else:
         environment = 'kPhysical'
     if environment not in ['kOracle', 'kSQL'] and backupType == 'kLog':
         out('BackupType kLog not applicable to %s jobs' % environment)
-        bail(1)
+        if extendederrorcodes is True:
+            bail(3)
+        else:
+            bail(1)
     if objectnames is not None:
         if environment in ['kOracle', 'kSQL']:
             backupJob = api('get', '/backupjobs/%s' % job['id'])
@@ -230,7 +263,10 @@ if objectnames is not None:
             if serverObjectId is not None:
                 if serverObjectId not in job['sourceIds']:
                     out("%s not protected by %s" % (server, jobName))
-                    bail(1)
+                    if extendederrorcodes is True:
+                        bail(3)
+                    else:
+                        bail(1)
                 if len([obj for obj in runNowParameters if obj['sourceId'] == serverObjectId]) == 0:
                     runNowParameters.append(
                         {
@@ -265,10 +301,16 @@ if objectnames is not None:
                                         runNowParameter['databaseIds'].append(db['entity']['id'])
                                     else:
                                         out('%s not protected by %s' % (objectname, jobName))
-                                        bail(1)
+                                        if extendederrorcodes is True:
+                                            bail(3)
+                                        else:
+                                            bail(1)
                             else:
                                 out('%s not protected by %s' % (objectname, jobName))
-                                bail(1)
+                                if extendederrorcodes is True:
+                                    bail(3)
+                                else:
+                                    bail(1)
                         else:
                             dbSource = [c for c in serverSource['auxChildren'] if c['entity']['displayName'].lower() == instance.lower()]
                             if dbSource is not None and len(dbSource) > 0:
@@ -277,13 +319,22 @@ if objectnames is not None:
                                         runNowParameter['databaseIds'].append(db['entity']['id'])
                             else:
                                 out('%s not protected by %s' % (objectname, jobName))
-                                bail(1)
+                                if extendederrorcodes is True:
+                                    bail(3)
+                                else:
+                                    bail(1)
                     else:
                         out("Job is Volume based. Can not selectively backup instances/databases")
-                        bail(1)
+                        if extendederrorcodes is True:
+                            bail(3)
+                        else:
+                            bail(1)
             else:
                 out('Object %s not found (server name)' % server)
-                bail(1)
+                if extendederrorcodes is True:
+                    bail(3)
+                else:
+                    bail(1)
         else:
             sourceId = getObjectId(objectname)
             if sourceId is not None:
@@ -291,7 +342,10 @@ if objectnames is not None:
                 selectedSources.append(sourceId)
             else:
                 out('Object %s not found!' % objectname)
-                bail(1)
+                if extendederrorcodes is True:
+                    bail(3)
+                else:
+                    bail(1)
 
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning', 'kCanceling', '3', '4', '5', '6']
 
@@ -366,7 +420,10 @@ if localonly is not True and noarchive is not True:
 if replicateTo is not None:
     if keepReplicaFor is None:
         out("--keepReplicaFor is required")
-        bail(1)
+        if extendederrorcodes is True:
+            bail(3)
+        else:
+            bail(1)
     remote = [remote for remote in api('get', 'remoteClusters') if remote['name'].lower() == replicateTo.lower()]
     if len(remote) > 0:
         remote = remote[0]
@@ -380,12 +437,18 @@ if replicateTo is not None:
         })
     else:
         out("Remote Cluster %s not found!" % replicateTo)
-        bail(1)
+        if extendederrorcodes is True:
+            bail(3)
+        else:
+            bail(1)
 
 if archiveTo is not None:
     if keepArchiveFor is None:
         out("--keepArchiveFor is required")
-        bail(1)
+        if extendederrorcodes is True:
+            bail(3)
+        else:
+            bail(1)
     vault = [vault for vault in api('get', 'vaults') if vault['name'].lower() == archiveTo.lower()]
     if len(vault) > 0:
         vault = vault[0]
@@ -400,7 +463,10 @@ if archiveTo is not None:
         })
     else:
         out("Archive target %s not found!" % archiveTo)
-        bail(1)
+        if extendederrorcodes is True:
+            bail(3)
+        else:
+            bail(1)
 
 ### enable the job
 if enable and cluster['clusterSoftwareVersion'] > '6.5':
@@ -413,18 +479,24 @@ waitUntil = nowUsecs + (waitminutesifrunning * 60000000)
 reportWaiting = True
 if debugger:
     print(':DEBUG: waiting for new run to be accepted')
-runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData)
+runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData, quiet=True)
 while runNow != "":
     if cancelpreviousrunminutes > 0:
         cancelRunningJob(job, cancelpreviousrunminutes)
     if reportWaiting is True:
+        if abortIfRunning:
+            out('job is already running')
+            bail(0)
         out('Waiting for existing run to finish')
         reportWaiting = False
     now = datetime.now()
     nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
     if nowUsecs >= waitUntil:
         out('Timed out waiting for existing run')
-        bail(1)
+        if extendederrorcodes is True:
+            bail(4)
+        else:
+            bail(1)
     sleep(15)
     if debugger:
         runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData)
@@ -450,7 +522,10 @@ if wait is True:
         nowUsecs = dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         if (timeOutUsecs + (newruntimeoutsecs * 1000000)) < nowUsecs:
             out("Timed out waiting for new run to appear")
-            bail(1)
+            if extendederrorcodes is True:
+                bail(5)
+            else:
+                bail(1)
     out("New Job Run ID: %s" % newRunId)
 
 # wait for job run to finish and report completion
