@@ -20,6 +20,7 @@ parser.add_argument('-l', '--joblist', type=str)
 parser.add_argument('-k', '--daystokeep', type=int, required=True)  # number of days of snapshots to retain
 parser.add_argument('-e', '--expire', action='store_true')          # (optional) expire snapshots older than k days
 parser.add_argument('-r', '--confirmreplication', action='store_true')  # (optional) confirm replication before expiring
+parser.add_argument('-a', '--confirmarchive', action='store_true')  # (optional) confirm archival before expiring
 parser.add_argument('-n', '--numruns', type=int, default=1000)
 
 args = parser.parse_args()
@@ -34,6 +35,7 @@ joblist = args.joblist
 daystokeep = args.daystokeep
 expire = args.expire
 confirmreplication = args.confirmreplication
+confirmarchive = args.confirmarchive
 numruns = args.numruns
 
 # authenticate
@@ -95,9 +97,23 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                         if copyRun['status'] == 'kSuccess':
                             replicated = True
 
+                # check for archive
+                archived = False
+                for copyRun in run['copyRun']:
+                    if copyRun['target']['type'] == 'kArchival':
+                        if copyRun['status'] == 'kSuccess':
+                            archived = True
+
                 if startdateusecs < timeAgo(daystokeep, 'days') and run['backupRun']['snapshotsDeleted'] is False:
-                    if expire:
-                        if replicated is True or confirmreplication is False:
+                    skip = False
+                    if replicated is False and confirmreplication is True:
+                        skip = True
+                        print("    Skipping %s (not replicated)" % startdate)
+                    elif archived is False and confirmarchive is True:
+                        skip = True
+                        print("    Skipping %s (not archived)" % startdate)
+                    if skip is False:
+                        if expire:
                             exactRun = api('get', '/backupjobruns?exactMatchStartTimeUsecs=%s&id=%s' % (startdateusecs, job['id']))
                             jobUid = exactRun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']
                             expireRun = {
@@ -123,6 +139,4 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                             print("    Expiring %s" % startdate)
                             api('put', 'protectionRuns', expireRun)
                         else:
-                            print("    Skipping %s (not replicated)" % startdate)
-                    else:
-                        print("    %s" % startdate)
+                            print("    %s" % startdate)
