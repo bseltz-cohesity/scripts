@@ -33,13 +33,16 @@ Place all files in a folder together. then, run the main script like so:
 
 ## Authentication Parameters
 
-* -vip: DNS or IP of the Cohesity Cluster
-* -username: Cohesity User Name
-* -domain: (optional) defaults to 'local'
-* -useApiKey: (optional) Use API key for authentication
-* -password: (optional) password or API key (will use stored password by default)
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
 * -tenant: (optional) org tenant to impersonate
-* -clusterName: (optional) cluster to access (when connecting via Helios)
 
 ## Job Run Parameters
 
@@ -69,8 +72,18 @@ Place all files in a folder together. then, run the main script like so:
 * -waitMinutesIfRunning: (optional) exit after X minutes if job is already running (default is 60)
 * -cancelPreviousRunMinutes: (optional) cancel previous job run if it has been running for X minutes
 * -statusRetries: (optional) quit script with failure if unable to get status X times (default is 10)
+* -extendedErrorCodes: (optional) return extended set of exit codes (see below) by default 0 = successful, 1 = not successful
 
 ## Outdated Parameters
 
 * -usePolicy: (optional) deprecated (this is the default behavior)
 * -enable: (optional) enable a paused job before running, then disable when done (not needed post 6.5)
+
+## Extended Error Codes
+
+* 0: Successful (no error to report)
+* 1: Unsuccessful (backup ended in failure or warning)
+* 2: authentication error (failed to authenticate)
+* 3: Syntax Error (incorrect command line)
+* 4: Timed out waiting for existing run to finish (existing run still running)
+* 5: Timed out waiting for status update (failed to get status updates)
