@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2022.08.02"""
+"""Cohesity Python REST API Wrapper Module - 2022.08.03"""
 
 ##########################################################################################
 # Change Log
@@ -481,7 +481,7 @@ def __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, 
         vip = '--'  # wildcard vip
     if password is not None:
         return password
-    if prompt is not False:
+    if prompt is not False and prompt is not None:
         pwd = getpass.getpass("Enter your password: ")
         return pwd
     if os.path.exists(PWFILE):
