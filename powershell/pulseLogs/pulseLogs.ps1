@@ -1,4 +1,4 @@
-# usage: ./getPureSnapshotNames.ps1 -vip mycluster -username myuser -domain mydomain.net -jobName 'My Job'
+# usage: ./pulseLogs.ps1 -vip mycluster -username myuser -domain mydomain.net -jobName 'My Job'
 
 # process commandline arguments
 [CmdletBinding()]
