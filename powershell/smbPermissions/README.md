@@ -31,7 +31,8 @@ Place both files in a folder together and run the main script like so:
                      -domain mydomain.net `
                      -shareName myshare `
                      -readWrite mydomain.net\user1 `
-                     -fullControl mydomain.net\admingroup1, mydomain.net\admingroup2
+                     -fullControl mydomain.net\admingroup1, mydomain.net\admingroup2 `
+                     -remove everyone
 #end example
 ```
 
