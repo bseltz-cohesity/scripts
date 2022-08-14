@@ -27,40 +27,37 @@ Place both files in a folder together, then we can run the script.
 First, run the script WITHOUT the -replicate switch to see what would be replicated.
 
 ```powershell
-./replicateOldSnapshots.ps1 -vip mycluster -username admin -replicateTo CohesityVE -olderThan 1 -IfExpiringAfter 3
-```
-
-```text
-Connected!
-searching for old snapshots...
-05/19/2019 23:20:00  VM Backup  (expiring in 3 days. skipping...)
-05/20/2019 05:34:46  VM Backup  (expiring in 3 days. skipping...)
-05/20/2019 23:20:00  VM Backup  (would replicate for 4 days)
-05/19/2019 23:40:01  Infrastructure  (expiring in 3 days. skipping...)
-05/20/2019 23:40:01  Infrastructure  (would replicate for 4 days)
-05/20/2019 00:00:01  Oracle Adapter  (expiring in 3 days. skipping...)
-05/21/2019 00:00:01  Oracle Adapter  (would replicate for 4 days)
-05/20/2019 00:20:00  SQL Backup  (expiring in 3 days. skipping...)
-05/21/2019 00:20:01  SQL Backup  (would replicate for 4 days)
+./replicateOldSnapshots.ps1 -vip mycluster -username admin -replicateTo othercluster -olderThan 1 -IfExpiringAfter 3
 ```
 
 Then, if you're happy with the list of snapshots that will be replicated, run the script again and include the -replicate switch. This will execute the replication tasks
 
 ```powershell
-./replicateOldSnapshots.ps1 -vip mycluster -username admin -replicateTo CohesityVE -olderThan 1 -IfExpiringAfter 3 -replicate
+./replicateOldSnapshots.ps1 -vip mycluster -username admin -replicateTo othercluster -olderThan 1 -IfExpiringAfter 3 -replicate
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: Cohesity cluster to connect to
-* -username: Cohesity username
-* -domain: (optional) AD domain name (defaults to local)
-* -jobName: (optional) replicate only specified job (otherwise replicate all jobs)
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
+* -jobName: (optional) one or more job names (comma separated) to process (default is all jobs)
+* -jobList: (optional) text file of job names (one per line) to process (default is all jobs)
 * -replicateTo: name of remote cluster to replicate to
 * -keepFor: days to keep replica (default is same as local) existing age is subtracted
-* -olderThan: (optional) only replicate if older than X days
-* -newerThan: (optional) only replicate if newer than X days
+* -olderThan: (optional) only replicate if older than X days (default is 0)
+* -newerThan: (optional) only replicate if newer than X days (default is time of cluster creation)
 * -IfExpiringAfter: (optional) only replicate if there are X or more days left before expiration
 * -replicate: (optional) actually replicate (otherwise only a test run)
 * -resync: (optional) re-replicate to same target
 * -includeLogs: (optional) replicate logs (default is to skip logs)
+* -numRuns: (optional) number of runs to gather per API query (default is 1000)
