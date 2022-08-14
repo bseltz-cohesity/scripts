@@ -27,13 +27,24 @@ Place both files in a folder together, then we can run the script.
 First, run the script WITHOUT the -replicate switch to see what would be replicated.
 
 ```powershell
-./replicateOldSnapshots.ps1 -vip mycluster -username admin -replicateTo othercluster -olderThan 1 -IfExpiringAfter 3
+./replicateOldSnapshots.ps1 -vip mycluster `
+                            -username myuser `
+                            -domain mydomain.net `
+                            -replicateTo othercluster `
+                            -olderThan 1 `
+                            -IfExpiringAfter 3
 ```
 
 Then, if you're happy with the list of snapshots that will be replicated, run the script again and include the -replicate switch. This will execute the replication tasks
 
 ```powershell
-./replicateOldSnapshots.ps1 -vip mycluster -username admin -replicateTo othercluster -olderThan 1 -IfExpiringAfter 3 -replicate
+./replicateOldSnapshots.ps1 -vip mycluster `
+                            -username myuser `
+                            -domain mydomain.net `
+                            -replicateTo othercluster `
+                            -olderThan 1 `
+                            -IfExpiringAfter 3 `
+                            -replicate
 ```
 
 ## Authentication Parameters
