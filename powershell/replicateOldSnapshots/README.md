@@ -61,10 +61,10 @@ Then, if you're happy with the list of snapshots that will be replicated, run th
 
 ## Other Parameters
 
+* -replicateTo: name of remote cluster to replicate to
 * -jobName: (optional) one or more job names (comma separated) to process (default is all jobs)
 * -jobList: (optional) text file of job names (one per line) to process (default is all jobs)
-* -replicateTo: name of remote cluster to replicate to
-* -keepFor: days to keep replica (default is same as local) existing age is subtracted
+* -keepFor: (optional) days to keep replica (default is same as local) existing age is subtracted
 * -olderThan: (optional) only replicate if older than X days (default is 0)
 * -newerThan: (optional) only replicate if newer than X days (default is time of cluster creation)
 * -IfExpiringAfter: (optional) only replicate if there are X or more days left before expiration
