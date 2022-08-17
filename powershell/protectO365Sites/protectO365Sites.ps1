@@ -51,7 +51,7 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
     return ($items | Sort-Object -Unique)
 }
 
-$sitesToAdd = @(gatherList -Param $viewName -FilePath $viewList -Name 'sites' -Required $False)
+$sitesToAdd = @(gatherList -Param $site -FilePath $siteList -Name 'sites' -Required $False)
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -199,7 +199,7 @@ if(! $rootSource){
     exit
 }
 
-$source = api get "protectionSources?id=$($rootSource.protectionSource.id)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder&allUnderHierarchy=false"
+$source = api get "protectionSources?id=$($rootSource.protectionSource.id)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false"
 $sitesNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Sites'}
 if(!$sitesNode){
     Write-Host "Source $sourceName is not configured for O365 Sites" -ForegroundColor Yellow
@@ -230,6 +230,8 @@ while(1){
 }
 
 Write-Host "$($nameIndex.Keys.Count) users discovered"
+
+
 
 if($autoProtectRemaining){
     $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $sitesNode.protectionSource.id})
@@ -272,6 +274,8 @@ if($autoProtectRemaining){
                     Write-Host "adding $siteName"
                     $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $nameIndex[$siteName]})
                 }
+            }else{
+                Write-Host "$siteName not found" -ForegroundColor Yellow
             }
         }
     }
