@@ -52,4 +52,4 @@ Place all files in a folder together. then, run the main script like so:
 
 You must use either -prefix, -suffix or -deleteOldJob to avoid conflicting job names.
 
-In some cases it's not possible to protect the same object in two jobs (e.g. SQL servers), so it's nessessary to use -deleteOldJob in those cases.
+In some cases it's not possible to protect the same object in two jobs (e.g. SQL servers), so it's nessesary to use -deleteOldJob in those cases.
