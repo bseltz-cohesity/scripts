@@ -1,18 +1,5 @@
 #!/usr/bin/env python
-"""Add Physical Linux Servers to File-based Protection Job Using Python"""
-
-### usage: ./protectLinux.py -v mycluster \
-#                            -u myuser \
-#                            -d mydomain.net \
-#                            -j 'My Backup Job' \
-#                            -s myserver1.mydomain.net \
-#                            -s myserver2.mydomain.net \
-#                            -l serverlist.txt \
-#                            -i /var \
-#                            -i /home \
-#                            -e /var/log \
-#                            -e /home/oracle \
-#                            -f excludes.txt
+"""Add Physical Windows Servers to File-based Protection Job Using Python"""
 
 ### import pyhesity wrapper module
 from pyhesity import *
