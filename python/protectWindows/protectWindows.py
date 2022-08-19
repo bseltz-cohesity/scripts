@@ -42,6 +42,8 @@ parser.add_argument('-st', '--starttime', type=str, default='21:00')
 parser.add_argument('-is', '--incrementalsla', type=int, default=60)    # incremental SLA minutes
 parser.add_argument('-fs', '--fullsla', type=int, default=120)          # full SLA minutes
 parser.add_argument('-ei', '--enableindexing', action='store_true')     # enable indexing
+parser.add_argument('-q', '--quiesce', action='store_true')     # try to quiesce but continue if quiesce fails
+parser.add_argument('-fq', '--forcequiesce', action='store_true')     # try to quiesce and fail if quiesce fails
 
 args = parser.parse_args()
 
@@ -67,6 +69,17 @@ timezone = args.timezone              # time zone for new job
 incrementalsla = args.incrementalsla  # incremental SLA for new job
 fullsla = args.fullsla                # full SLA for new job
 enableindexing = args.enableindexing  # enable indexing on new job
+quiesce = args.quiesce                # try crash consistent backup
+forcequiesce = args.forcequiesce      # demand crash consistent backup
+
+ccb = False
+cccb = False
+if quiesce:
+    ccb = True
+    cccb = True
+if forcequiesce:
+    ccb = True
+    cccb = False
 
 # read server file
 if servernames is None:
@@ -208,7 +221,9 @@ if not job or len(job) < 1:
                 },
                 "performSourceSideDeduplication": False,
                 "dedupExclusionSourceIds": None,
-                "globalExcludePaths": None
+                "globalExcludePaths": None,
+                "quiesce": ccb,
+                "continueOnQuiesceFailure": cccb
             }
         }
     }

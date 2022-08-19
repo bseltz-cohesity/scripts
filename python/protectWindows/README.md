@@ -12,9 +12,9 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectWindowsV2/protectWindowsV2.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectWindows/protectWindows.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-chmod +x protectWindowsV2.py
+chmod +x protectWindows.py
 # end download commands
 ```
 
@@ -26,18 +26,18 @@ chmod +x protectWindowsV2.py
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./protectWindowsV2.py -v mycluster \
-                      -u myuser \
-                      -d mydomain.net \
-                      -j 'My Backup Job' \
-                      -s myserver.mydomain.net \
-                      -l serverlist.txt \
-                      -i 'c:\Users' \
-                      -i 'd:\' \
-                      -n includes.txt \
-                      -e 'c:\Users\Administrator' \
-                      -e '*:\junk' \
-                      -x excludes.txt
+./protectWindows.py -v mycluster \
+                    -u myuser \
+                    -d mydomain.net \
+                    -j 'My Backup Job' \
+                    -s myserver.mydomain.net \
+                    -l serverlist.txt \
+                    -i 'c:\Users' \
+                    -i 'd:\' \
+                    -n includes.txt \
+                    -e 'c:\Users\Administrator' \
+                    -e '*:\junk' \
+                    -x excludes.txt
 ```
 
 ## Parameters
@@ -64,6 +64,8 @@ Place both files in a folder together and run the main script like so:
 * -is, --incrementalsla: (optional) incremental SLA minutes (default is 60)
 * -fs, --fullsla: (optional) full SLA minutes (default is 120)
 * -ei, --enableindexing: (optional) default is no indexing
+* -q, --quiesce: (optional) try to quiesce but continue if quiesce fails
+* -fq, --forcequiesce: (optional) try to quiesce and fail if quiesce fails
 
 ## Notes
 
