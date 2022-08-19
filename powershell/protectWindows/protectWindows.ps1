@@ -23,8 +23,21 @@ param (
     [Parameter()][int]$fullSlaMinutes = 120,
     [Parameter()][string]$storageDomainName = 'DefaultStorageDomain',
     [Parameter()][string]$policyName,
-    [Parameter()][ValidateSet('kBackupHDD', 'kBackupSSD')][string]$qosPolicy = 'kBackupHDD'
+    [Parameter()][ValidateSet('kBackupHDD', 'kBackupSSD')][string]$qosPolicy = 'kBackupHDD',
+    [Parameter()][switch]$quiesce,
+    [Parameter()][switch]$forceQuiesce
 )
+
+$ccb = $false
+$cccb = $false
+if($quiesce){
+    $ccb = $True
+    $cccb = $True
+}
+if($forceQuiesce){
+    $ccb = $True
+    $cccb = $false
+}
 
 # gather list of servers to add to job
 $serversToAdd = @()
@@ -211,7 +224,9 @@ if(!$job){
                 };
                 "performSourceSideDeduplication" = $false;
                 "dedupExclusionSourceIds" = $null;
-                "globalExcludePaths" = $null
+                "globalExcludePaths" = $null;
+                "quiesce" = $ccb;
+                "continueOnQuiesceFailure" = $cccb
             }
         }
     }

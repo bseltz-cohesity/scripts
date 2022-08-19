@@ -88,3 +88,5 @@ Then, run the main script like so:
 * -storageDomainName: (optional) default is 'DefaultStorageDomain'
 * -paused: (optional) pause future runs (new job only)
 * -qosPolicy: (optional) kBackupHDD or kBackupSSD (default is kBackupHDD)
+* -quiesce: (optional) try to quiesce but continue if quiesce fails
+* -forceQuiesce: (optional) try to quiesce and fail if quiesce fails
