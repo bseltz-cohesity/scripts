@@ -224,7 +224,7 @@ for thisViewName in viewstoadd:
                     "viewName": drViewName
                 }
             else:
-                job['viewParams']['replicationParams']['viewNameConfigList'] = [v for v in job['viewParams']['replicationParams']['viewNameConfigList'] if v['viewName'].lower() != drViewName.lower()]
+                job['viewParams']['replicationParams']['viewNameConfigList'] = [v for v in job['viewParams']['replicationParams']['viewNameConfigList'] if v['sourceViewId'] != thisView['viewId']]
                 job['viewParams']['replicationParams']['viewNameConfigList'].append({
                     "sourceViewId": thisView['viewId'],
                     "useSameViewName": useSameViewName,
