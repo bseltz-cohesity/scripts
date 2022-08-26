@@ -95,8 +95,8 @@ Tearing down mount points...
 * -a, --useexistingagent: (optional) use existing agent during mount to a VM
 * -vol, --volume: (optional) specify volume name to mount (repeat for multiple volumes)
 * -l, --showversions: show available versions
-* -t, --start: show versions after date
-* -e, --end: show versions before date
+* -start, --start: show versions after date
+* -end, --end: show versions before date
 * -r, --runid: use specific run ID
 
 ## Other Parameters for instantVolumeMountDestroy
