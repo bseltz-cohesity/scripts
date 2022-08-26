@@ -1,4 +1,4 @@
-# version 2022.08.02
+# version 2022.08.26
 # usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
@@ -491,6 +491,7 @@ if($enable -and $cluster.clusterSoftwareVersion -gt '6.5'){
 $result = api post ('protectionJobs/run/' + $jobID) $jobdata
 $reportWaiting = $True
 $now = Get-Date
+$startUsecs = dateToUsecs $now
 $waitUntil = $now.AddMinutes($waitMinutesIfRunning)
 while($result -ne ""){
     if((Get-Date) -gt $waitUntil){
@@ -521,9 +522,9 @@ output "Running $jobName..."
 while($newRunId -le $lastRunId){
     Start-Sleep 3
     if($selectedSources.Count -gt 0){
-        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&sourceId=$($selectedSources[0])"
+        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10&sourceId=$($selectedSources[0])"
     }else{
-        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true"
+        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10&excludeTasks=true"
     }
     $newRunId = $runs[0].backupRun.jobRunId
 }
@@ -538,9 +539,9 @@ if($wait -or $enable -or $progress){
         Start-Sleep 15
         try {
             if($selectedSources.Count -gt 0){
-                $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&sourceId=$($selectedSources[0])"
+                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$startUsecs&numRuns=10000&sourceId=$($selectedSources[0])"
             }else{
-                $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
+                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$startUsecs&numRuns=10000"
             }
             if($runs){
                 $runs = $runs | Where-Object {$_.backupRun.jobRunId -eq $newRunId}
