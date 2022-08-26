@@ -31,6 +31,7 @@ parser.add_argument('-fs', '--fullsla', type=int, default=120)          # full S
 parser.add_argument('-ei', '--enableindexing', action='store_true')     # enable indexing
 parser.add_argument('-q', '--quiesce', action='store_true')     # try to quiesce but continue if quiesce fails
 parser.add_argument('-fq', '--forcequiesce', action='store_true')     # try to quiesce and fail if quiesce fails
+parser.add_argument('-z', '--paused', action='store_true')     # pause new protection group
 
 args = parser.parse_args()
 
@@ -58,6 +59,7 @@ fullsla = args.fullsla                # full SLA for new job
 enableindexing = args.enableindexing  # enable indexing on new job
 quiesce = args.quiesce                # try crash consistent backup
 forcequiesce = args.forcequiesce      # demand crash consistent backup
+paused = args.paused
 
 ccb = False
 cccb = False
@@ -214,7 +216,8 @@ if not job or len(job) < 1:
             }
         }
     }
-
+    if paused is True:
+        job['isPaused'] = True
 else:
     job = job[0]
     if 'physicalParams' not in job or job['physicalParams']['protectionType'] != 'kFile':

@@ -45,7 +45,7 @@ if(!$job){
 # find O365 source
 $rootSource = api get "protectionSources/rootNodes?environments=kO365&id=$($job.parentSourceId)"
 
-$source = api get "protectionSources?id=$($rootSource.protectionSource.id)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder&allUnderHierarchy=false"
+$source = api get "protectionSources?id=$($rootSource.protectionSource.id)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false"
 $usersNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
 if(!$usersNode){
     Write-Host "Source $sourceName is not configured for O365 Mailboxes" -ForegroundColor Yellow

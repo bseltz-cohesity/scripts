@@ -43,6 +43,7 @@ parser.add_argument('-st', '--starttime', type=str, default='21:00')
 parser.add_argument('-is', '--incrementalsla', type=int, default=60)    # incremental SLA minutes
 parser.add_argument('-fs', '--fullsla', type=int, default=120)          # full SLA minutes
 parser.add_argument('-ei', '--enableindexing', action='store_true')     # enable indexing
+parser.add_argument('-z', '--paused', action='store_true')     # pause new protection group
 
 args = parser.parse_args()
 
@@ -69,6 +70,7 @@ timezone = args.timezone              # time zone for new job
 incrementalsla = args.incrementalsla  # incremental SLA for new job
 fullsla = args.fullsla                # full SLA for new job
 enableindexing = args.enableindexing  # enable indexing on new job
+paused = args.paused
 
 # read server file
 if servernames is None:
@@ -214,7 +216,8 @@ if not job or len(job) < 1:
             }
         }
     }
-
+    if paused is True:
+        job['isPaused'] = True
 else:
     job = job[0]
     if 'physicalParams' not in job or job['physicalParams']['protectionType'] != 'kFile':
