@@ -19,7 +19,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* archiveQueueV2.ps1: the main python script
+* archiveQueueV2.ps1: the main PowerShell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:

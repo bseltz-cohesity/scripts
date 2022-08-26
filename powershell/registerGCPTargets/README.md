@@ -19,7 +19,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* registerGCPTargets.ps1: the main python script
+* registerGCPTargets.ps1: the main PowerShell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place both files in a folder together and create a CSV file containing the target information like so:

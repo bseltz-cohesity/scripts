@@ -6,7 +6,7 @@ This PowerShell script creates a protection job for every Isilon share read from
 
 ## Components
 
-* protectIsilonShares.ps1: the main python script
+* protectIsilonShares.ps1: the main PowerShell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 * shares.txt: a text file containing a list of share names from the Isilon
 

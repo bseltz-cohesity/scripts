@@ -6,7 +6,7 @@ This PowerShell script reports which protection job is protecting an object.
 
 ## Components
 
-* protectedBy.ps1: the main python script
+* protectedBy.ps1: the main PowerShell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place all files in a folder together (see download instructions below), and run the script like so:
