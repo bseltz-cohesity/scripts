@@ -117,10 +117,17 @@ if clearwhitelist is True:
 if len(whitelist) > 0:
 
     for ip in whitelist:
+        description = ''
         if ',' in ip:
-            (thisip, netmask) = ip.split(',')
-            netmask = netmask.lstrip()
-            cidr = netmask2cidr(netmask)
+            parts = ip.split(',')
+            if len(parts) >= 3:
+                description = parts[2]
+            if len(parts) >= 2:
+                netmask = parts[1]
+                netmask = netmask.lstrip()
+                cidr = netmask2cidr(netmask)
+            thisip = parts[0]
+            # (thisip, netmask) = ip.split(',')
         else:
             thisip = ip
             netmask = '255.255.255.255'
@@ -132,7 +139,7 @@ if len(whitelist) > 0:
 
         if removewhitelistentries is not True and len(existingEntry) == 0:
             newView['subnetWhitelist'].append({
-                "description": '',
+                "description": description,
                 "nfsAccess": "kReadWrite",
                 "smbAccess": "kReadWrite",
                 "nfsRootSquash": False,

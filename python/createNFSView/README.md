@@ -29,7 +29,7 @@ Place both files in a folder together and run the main script like so:
                    -n newview1 \
                    -q 'TestAndDev High' \
                    -s mystoragedomain \
-                   -w '192.168.1.0, 255.255.255.0' \
+                   -w '192.168.1.0, 255.255.255.0, Test Lab' \
                    -w 192.168.2.11 \
                    -l 300 \
                    -a 250
@@ -44,7 +44,7 @@ Place both files in a folder together and run the main script like so:
 * -n, --viewname: name of new view to create or modify
 * -q, --qospolicy: (optional) 'Backup Target Low', 'Backup Target High' or 'TestAndDev Low' (default is 'TestAndDev High')
 * -s, --storageDomain: (optional) name of storage domain to place view data (default is DefaultStorageDomain)
-* -w, --whitelist: (optional) ip (and optional netmask) to whitelist (can be used multiple times) e.g. '192.168.1.0, 255.255.255.0'
+* -w, --whitelist: (optional) ip (and optional netmask, description) to whitelist (can be used multiple times) e.g. '192.168.1.0, 255.255.255.0, Test Lab'
 * -l, --quotalimit: (optional) quota limit in GiB
 * -a, --quotaalert: (optional) quota alert threshold in GiB (defaults to 90% of quotalimit)
 * -r, --removewhitelistentries: (optional) remove specified entries from whitelist of existing view
