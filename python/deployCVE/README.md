@@ -28,7 +28,7 @@ chmod +x test-deployCVE.sh
 
 ## Components
 
-* deployCVEcluster.py: the main PowerShell script
+* deployCVEcluster.py: the main python script
 * cohesity-api.ps1: the Cohesity REST API helper module
 * test-deployCVE.sh: example command line
 * pyVmomi: Python SDK for the VMware vSphere API (see attributions below)

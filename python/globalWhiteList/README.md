@@ -16,7 +16,7 @@ chmod +x globalWhiteList.py
 
 ## Components
 
-* globalWhiteList.py: the main powershell script
+* globalWhiteList.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:

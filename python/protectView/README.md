@@ -18,7 +18,7 @@ chmod +x protectView.py
 
 ## Components
 
-* protectView.py: the main powershell script
+* protectView.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:

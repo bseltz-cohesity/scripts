@@ -18,7 +18,7 @@ chmod +x unprotectPhysicalServer.py
 
 ## Components
 
-* unprotectPhysicalServer.py: the main powershell script
+* unprotectPhysicalServer.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:

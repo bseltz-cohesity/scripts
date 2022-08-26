@@ -6,7 +6,7 @@ This Python script deletes one or more protection jobs.
 
 ## Download the script
 
-Run these commands from PowerShell to download the script(s) into your current directory
+Run these commands from a terminal to download the script(s) into your current directory
 
 ```bash
 # Begin download commands
@@ -18,7 +18,7 @@ chmod +x deleteJobs.py
 
 ## Components
 
-* deleteJobs.py: the main PowerShell script
+* deleteJobs.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 To delete some protection jobs, place all files in a folder together, then run the main script like so:

@@ -18,7 +18,7 @@ chmod +x registerGenericNas.py
 
 ## Components
 
-* registerGenericNas.py: the main powershell script
+* registerGenericNas.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:

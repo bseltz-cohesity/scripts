@@ -6,7 +6,7 @@ This Python script enumerates the files that are available for restore from the 
 
 ## Download the script
 
-Run these commands from PowerShell to download the script(s) into your current directory
+Run these commands from a terminal to download the script(s) into your current directory
 
 ```bash
 # Begin download commands
@@ -18,7 +18,7 @@ chmod +x backupNow.py
 
 ## Components
 
-* backedUpFileList-multi.py: the main PowerShell script
+* backedUpFileList-multi.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 Place all files in a folder together. then, run the main script like so:

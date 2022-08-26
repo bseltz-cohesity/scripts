@@ -22,7 +22,7 @@ chmod +x flashBladeProtectionStatus.py
 
 You can also use these PowerShell commands to download the files in Windows:
 
-Run these commands from PowerShell to download the script(s) into your current directory
+Run these commands from a terminal to download the script(s) into your current directory
 
 ```powershell
 # Download Commands
@@ -37,7 +37,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pyt
 
 ## Components
 
-* protectFlashblade.py: the main powershell script (creates one job for all selected volumes)
+* protectFlashblade.py: the main python script (creates one job for all selected volumes)
 * protectFlashblade-multi.py: alternative that creates one job per volume
 * flashBladeProtectionStatus.py: list protection status for all volumes of a flashblade
 * pyhesity.py: the Cohesity REST API helper module

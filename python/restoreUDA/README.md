@@ -18,7 +18,7 @@ chmod +x restoreUDA.py
 
 ## Components
 
-* restoreUDA.py: the main powershell script
+* restoreUDA.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
@@ -63,7 +63,7 @@ By default (if both **--latest** and **--logtime** are omitted), the latest full
 
 If you want to replay the logs to the very latest available point in time, use the **--latest** parameter, or if you want to replay logs to a specific point in time, use the **--logtime** parameter and specify a date and time in military format like so:
 
-```powershell
+```bash
 --logtime '2019-01-20 23:47:02'
 ```
 

@@ -6,7 +6,7 @@ This Python script renames one or more protection jobs.
 
 ## Download the script
 
-Run these commands from PowerShell to download the script(s) into your current directory
+Run these commands from a terminal to download the script(s) into your current directory
 
 ```bash
 # Begin download commands
@@ -18,7 +18,7 @@ chmod +x renameJobs.py
 
 ## Components
 
-* renameJobs.py: the main PowerShell script
+* renameJobs.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 To rename a protection job, place all files in a folder together, then run the main script like so:

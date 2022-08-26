@@ -6,7 +6,7 @@ This Python script stores an API password in a shared password file.
 
 ## Download the script
 
-Run these commands from PowerShell to download the script(s) into your current directory
+Run these commands from a terminal to download the script(s) into your current directory
 
 ```bash
 # Begin download commands
@@ -18,7 +18,7 @@ chmod +x storePasswordInFile.py
 
 ## Components
 
-* storePasswordInFile.py: the main PowerShell script
+* storePasswordInFile.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 Place all files in a folder together. then, run the main script like so:

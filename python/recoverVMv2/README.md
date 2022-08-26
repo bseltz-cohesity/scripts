@@ -6,7 +6,7 @@ This python script recovers a VM.
 
 ## Download the script
 
-Run these commands from PowerShell to download the script(s) into your current directory
+Run these commands from a terminal to download the script(s) into your current directory
 
 ```bash
 # Begin download commands

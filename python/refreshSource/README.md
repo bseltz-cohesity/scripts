@@ -18,7 +18,7 @@ chmod +x refreshSource.py
 
 ## Components
 
-* refreshSource.py: the main powershell script
+* refreshSource.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
