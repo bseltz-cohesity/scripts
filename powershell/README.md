@@ -221,4 +221,4 @@ and get the latest version:
 cohesityAPIversion -update
 ```
 
-Please exit and restart PowerShell after updating.
+Please exit and restart PowerShell after updating!
