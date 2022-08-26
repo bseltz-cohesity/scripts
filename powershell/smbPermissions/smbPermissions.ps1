@@ -41,6 +41,12 @@ if(!$cohesity_api.authorized){
     exit
 }
 
+
+$cluster = api get cluster
+if($cluster.clusterSoftwareVersion -ge '6.6'){
+
+}
+
 function newPermission($user, $perms, $shareName, $isView){
     $domain, $domainuser = $user.split('\')
     if($perms -eq 'remove'){
@@ -62,7 +68,8 @@ function newPermission($user, $perms, $shareName, $isView){
         $permission = @{
             "sid" = $principal.sid;
             "type" = $type;
-            "access" = $perms
+            "access" = $perms;
+            "mode" = "FolderSubFoldersAndFiles"
         }
         return $permission
     }else{
@@ -85,7 +92,11 @@ if($share.shareName -eq $share.viewName){
     $isView = $True
     $share = (api get -v2 "file-services/views?viewNames=$($share.viewName)").views[0]
     if(!$share.PSObject.Properties['sharePermissions']){
-        setApiProperty -object $share -name 'permissions' -value @()
+        if($cluster.clusterSoftwareVersion -ge '6.6'){
+            setApiProperty -object $share -name 'sharePermissions' -value @{"permissions" = @()}
+        }else{
+            setApiProperty -object $share -name 'sharePermissions' -value @()
+        }
     }
 }else{
     setApiProperty -object $share -name 'aliasName' -value $share.shareName
@@ -94,43 +105,49 @@ if($share.shareName -eq $share.viewName){
     }
 }
 
+if($share.sharePermissions.PSObject.Properties['permissions']){
+    $sharePermissions = $share.sharePermissions.permissions
+}else{
+    $sharePermissions = $share.sharePermissions
+}
+
 if($reset){
-    $share.sharePermissions = @()
+    $sharePermissions = @()
 }
 
 $permsAdded = 0
 
 foreach($user in $readWrite){
     $permission = newPermission $user 'kReadWrite' $shareName $isView
-    $share.sharePermissions = @($share.sharePermissions | Where-Object {$_.sid -ne $permission.sid})
-    $share.sharePermissions = @($share.sharePermissions + $permission)
+    $sharePermissions = @($sharePermissions | Where-Object {$_.sid -ne $permission.sid})
+    $sharePermissions = @($sharePermissions + $permission)
     $permsAdded += 1
 }
 
 foreach($user in $fullControl){
     $permission = newPermission $user 'kFullControl' $shareName $isView
-    $share.sharePermissions = @($share.sharePermissions | Where-Object {$_.sid -ne $permission.sid})
-    $share.sharePermissions = @($share.sharePermissions + $permission)
+    $sharePermissions = @($sharePermissions | Where-Object {$_.sid -ne $permission.sid})
+    $sharePermissions = @($sharePermissions + $permission)
     $permsAdded += 1
 }
 
 foreach($user in $readOnly){
     $permission = newPermission $user 'kReadOnly' $shareName $isView
-    $share.sharePermissions = @($share.sharePermissions | Where-Object {$_.sid -ne $permission.sid})
-    $share.sharePermissions = @($share.sharePermissions + $permission)
+    $sharePermissions = @($sharePermissions | Where-Object {$_.sid -ne $permission.sid})
+    $sharePermissions = @($sharePermissions + $permission)
     $permsAdded += 1
 }
 
 foreach($user in $modify){
     $permission = newPermission $user 'kModify' $shareName $isView
-    $share.sharePermissions = @($share.sharePermissions | Where-Object {$_.sid -ne $permission.sid})
-    $share.sharePermissions = @($share.sharePermissions + $permission)
+    $sharePermissions = @($sharePermissions | Where-Object {$_.sid -ne $permission.sid})
+    $sharePermissions = @($sharePermissions + $permission)
     $permsAdded += 1
 }
 
 foreach($user in $remove){
     $permission = newPermission $user 'remove' $shareName $isView
-    $share.sharePermissions = @($share.sharePermissions | Where-Object {$_.sid -ne $permission.sid})
+    $sharePermissions = @($sharePermissions | Where-Object {$_.sid -ne $permission.sid})
 }
 
 if($reset -and $permsAdded -eq 0){
@@ -141,7 +158,7 @@ if($reset -and $permsAdded -eq 0){
         $type = 'Allow'
         $access = 'FullControl'
     }
-    $share.sharePermissions = @(
+    $sharePermissions = @(
         @{
             "type" = $type;
             "mode" = "FolderSubFoldersAndFiles";
@@ -151,7 +168,13 @@ if($reset -and $permsAdded -eq 0){
     )
 }
 
-$share.sharePermissions = @($share.sharePermissions | Where-Object {$_ -ne $null})
+$sharePermissions = @($sharePermissions | Where-Object {$_ -ne $null})
+
+if($share.sharePermissions.PSObject.Properties['permissions']){
+    $share.sharePermissions.permissions = $sharePermissions
+}else{
+    $share.sharePermissions = $sharePermissions
+}
 
 if($isView -eq $True){
     $null = api put -v2 "file-services/views/$($share.viewId)" $share 
