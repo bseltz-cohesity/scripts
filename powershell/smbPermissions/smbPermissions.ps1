@@ -43,9 +43,6 @@ if(!$cohesity_api.authorized){
 
 
 $cluster = api get cluster
-if($cluster.clusterSoftwareVersion -ge '6.6'){
-
-}
 
 function newPermission($user, $perms, $shareName, $isView){
     $domain, $domainuser = $user.split('\')
