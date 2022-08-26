@@ -11,16 +11,19 @@ This PowerShell script creates a protection job for every Isilon share read from
 * shares.txt: a text file containing a list of share names from the Isilon
 
 Place all files in a folder together. Create a text file called shares.txt and populate with the shares that you want to protect, like so:
-```
+
+```text
 share1
 share2
 share3
 ```
+
 Then, run the main script like so:
 
 ```powershell
 ./protectIsilonShares.ps1 -vip mycluster -username myusername -policyName 'My Policy' -isilon Isilon1
 ```
+
 ```text
 Connected!
 Creating Job Isilon-share1...
@@ -47,4 +50,3 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
-
