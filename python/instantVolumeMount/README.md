@@ -74,23 +74,33 @@ Connected!
 Tearing down mount points...
 ```
 
-## Parameters for instantVolumeMount
+## Authentication Parameters
 
-* -v, --vip: DNS or IP of the Cohesity cluster to connect to
-* -u, --username: username to authenticate to Cohesity cluster
-* -d, --domain: (optional) domain of username, defaults to local
+* -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
+* -d, --domain: (optional) domain of username (defaults to local)
+* -i, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: (optional) password of API key
+* -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) helios/mcm cluster to connect to
+* -m, --mfacode: (optional) MFA code for authentication
+* -e, --emailmfacode: (optional) send MFA code via email
+
+## Other Parameters for instantVolumeMount
+
 * -s, --sourceserver: name of server that was backed up
 * -t, --targetserver: (optional) name of server to restore to (default is sourceserver)
 * -n, --targetusername: (optional) only required if agent is not already installed (VM)
 * -p, --targetpassword: (optional) only required if agent is not already installed (VM)
 * -a, --useexistingagent: (optional) use existing agent during mount to a VM
-* -m, --volume: (optional) specify volume name to mount (repeat for multiple volumes)
+* -vol, --volume: (optional) specify volume name to mount (repeat for multiple volumes)
+* -l, --showversions: show available versions
+* -t, --start: show versions after date
+* -e, --end: show versions before date
+* -r, --runid: use specific run ID
 
-## Parameters for instantVolumeMountDestroy
+## Other Parameters for instantVolumeMountDestroy
 
-* -v, --vip: DNS or IP of the Cohesity cluster to connect to
-* -u, --username: username to authenticate to Cohesity cluster
-* -d, --domain: (optional) domain of username, defaults to local
 * -t, --taskid: task ID to tear down
 
 ## Notes

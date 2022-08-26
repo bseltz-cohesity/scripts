@@ -16,27 +16,47 @@ from time import sleep
 # command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)       # cluster to connect to
-parser.add_argument('-u', '--username', type=str, required=True)  # username
-parser.add_argument('-d', '--domain', type=str, default='local')  # (optional) domain - defaults to local
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
+parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-m', '--mfacode', type=str, default=None)
+parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-s', '--sourceserver', type=str, required=True)   # job name
 parser.add_argument('-t', '--targetserver', type=str, default=None)   # run date to archive in military format with 00 seconds
 parser.add_argument('-n', '--targetusername', type=str, default='')    # (optional) will use policy retention if omitted
 parser.add_argument('-p', '--targetpassword', type=str, default='')  # (optional) will use policy target if omitted
 parser.add_argument('-a', '--useexistingagent', action='store_true')
-parser.add_argument('-m', '--volume', action='append', type=str)
+parser.add_argument('-vol', '--volume', action='append', type=str)
+parser.add_argument('-l', '--showversions', action='store_true')      # show available snapshots
+parser.add_argument('-start', '--start', type=str, default=None)          # show snapshots after date
+parser.add_argument('-end', '--end', type=str, default=None)            # show snapshots before date
+parser.add_argument('-r', '--runid', type=int, default=None)          # choose specific job run id
 
 args = parser.parse_args()
 
 vip = args.vip
 username = args.username
 domain = args.domain
+clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
+mfacode = args.mfacode
+emailmfacode = args.emailmfacode
 sourceserver = args.sourceserver
 targetserver = args.targetserver
 targetusername = args.targetusername
 targetpassword = args.targetpassword
 useexistingagent = args.useexistingagent
 volumes = args.volume
+showversions = args.showversions
+start = args.start
+end = args.end
+runid = args.runid
 
 if targetserver is None:
     targetserver = sourceserver
@@ -53,9 +73,50 @@ if len(searchResults) == 0:
     print("%s is not protected" % sourceserver)
     exit(1)
 
+searchResults = [r for r in searchResults if 'versions' in r['vmDocument'] and len(r['vmDocument']['versions']) > 0]
+
+if len(searchResults) == 0:
+    print('No backups available for %s' % sourceserver)
+    exit(1)
+
+allVersions = []
+for searchResult in searchResults:
+    for version in searchResult['vmDocument']['versions']:
+        version['doc'] = searchResult['vmDocument']
+        allVersions.append(version)
+allVersions = sorted(allVersions, key=lambda r: r['snapshotTimestampUsecs'], reverse=True)
+
+if showversions or start is not None or end is not None:
+    if start is not None:
+        startusecs = dateToUsecs(start)
+        allVersions = [v for v in allVersions if startusecs <= v['snapshotTimestampUsecs']]
+    if end is not None:
+        endusecs = dateToUsecs(end)
+        allVersions = [v for v in allVersions if endusecs >= v['snapshotTimestampUsecs']]
+    else:
+        print('%10s  %s' % ('runId', 'runDate'))
+        print('%10s  %s' % ('-----', '-------'))
+        for version in allVersions:
+            print('%10d  %s' % (version['instanceId']['jobInstanceId'], usecsToDate(version['instanceId']['jobStartTimeUsecs'])))
+    exit(0)
+
+# select version
+if runid is not None:
+    # select version with matching runId
+    versions = [v for v in allVersions if runid == v['instanceId']['jobInstanceId']]
+    if len(versions) == 0:
+        print('Run ID not found')
+        exit(1)
+    else:
+        version = versions[0]
+else:
+    # just use latest version
+    version = allVersions[0]
+
 # find newest among multiple jobs
-searchResult = sorted(searchResults, key=lambda result: result['vmDocument']['versions'][0]['snapshotTimestampUsecs'], reverse=True)[0]
-doc = searchResult['vmDocument']
+# searchResult = sorted(searchResults, key=lambda result: result['vmDocument']['versions'][0]['snapshotTimestampUsecs'], reverse=True)[0]
+# doc = searchResult['vmDocument']
+doc = version['doc']
 
 # find source and target servers
 entities = api('get', '/entitiesOfType?awsEntityTypes=kEC2Instance&azureEntityTypes=kVirtualMachine&environmentTypes=kVMware&environmentTypes=kPhysical&environmentTypes=kView&environmentTypes=kGenericNas&environmentTypes=kIsilon&environmentTypes=kNetapp&environmentTypes=kAzure&environmentTypes=kAWS&environmentTypes=kGCP&gcpEntityTypes=kVirtualMachine&genericNasEntityTypes=kHost&isProtected=true&isilonEntityTypes=kMountPoint&netappEntityTypes=kVolume&physicalEntityTypes=kHost&viewEntityTypes=kView&vmwareEntityTypes=kVirtualMachine')
@@ -77,8 +138,8 @@ mountTask = {
             'jobId': doc['objectId']['jobId'],
             'jobUid': doc['objectId']['jobUid'],
             'entity': sourceEntity[0],
-            'jobInstanceId': doc['versions'][0]['instanceId']['jobInstanceId'],
-            'startTimeUsecs': doc['versions'][0]['instanceId']['jobStartTimeUsecs']
+            'jobInstanceId': version['instanceId']['jobInstanceId'],
+            'startTimeUsecs': version['instanceId']['jobStartTimeUsecs']
         }
     ],
     'mountVolumesParams': {
@@ -116,6 +177,7 @@ while status not in finishedStates:
 print("Volume mount ended with status %s" % status)
 if status == 'kSuccess':
     print('Task ID for tearDown is: %s' % restoreTask[0]['restoreTask']['performRestoreTaskState']['base']['taskId'])
-    mountPoints = restoreTask[0]['restoreTask']['performRestoreTaskState']['mountVolumesTaskState']['mountInfo']['mountVolumeResultVec']
-    for mountPoint in mountPoints:
-        print('%s mounted to %s' % (mountPoint['originalVolumeName'], mountPoint['mountPoint']))
+    if 'mountVolumeResultVec' in restoreTask[0]['restoreTask']['performRestoreTaskState']['mountVolumesTaskState']['mountInfo']:
+        mountPoints = restoreTask[0]['restoreTask']['performRestoreTaskState']['mountVolumesTaskState']['mountInfo']['mountVolumeResultVec']
+        for mountPoint in mountPoints:
+            print('%s mounted to %s' % (mountPoint['originalVolumeName'], mountPoint['mountPoint']))
