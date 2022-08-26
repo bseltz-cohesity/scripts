@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2022.08.02
+# version 2022.08.26
 
 # extended error codes
 # ====================
@@ -94,7 +94,7 @@ extendederrorcodes = args.extendederrorcodes
 if noprompt is True:
     prompt = False
 else:
-    prompt = True
+    prompt = None
 
 if enable is True:
     wait = True
@@ -195,7 +195,7 @@ def cancelRunningJob(job, durationMinutes):
         durationUsecs = durationMinutes * 60000000
         nowUsecs = dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         cancelTime = nowUsecs - durationUsecs
-        runningRuns = api('get', 'protectionRuns?jobId=%s&numRuns=10&excludeTasks=true' % job['id'])
+        runningRuns = api('get', 'protectionRuns?jobId=%s&numRuns=10000&excludeTasks=true' % job['id'])
         if runningRuns is not None and len(runningRuns) > 0:
             for run in runningRuns:
                 if 'backupRun' in run and 'status' in run['backupRun']:
@@ -475,6 +475,7 @@ if enable and cluster['clusterSoftwareVersion'] > '6.5':
 ### run protectionJob
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
+startUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 waitUntil = nowUsecs + (waitminutesifrunning * 60000000)
 reportWaiting = True
 if debugger:
@@ -510,9 +511,9 @@ if wait is True:
     while(newRunId <= lastRunId):
         sleep(5)
         if len(selectedSources) > 0:
-            runs = api('get', 'protectionRuns?jobId=%s&numRuns=2&excludeTasks=true&sourceId=%s' % (job['id'], selectedSources[0]))
+            runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&numRuns=10000&excludeTasks=true&sourceId=%s' % (job['id'], startUsecs, selectedSources[0]))
         else:
-            runs = api('get', 'protectionRuns?jobId=%s&numRuns=2&excludeTasks=true' % job['id'])
+            runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&numRuns=10000&excludeTasks=true' % (job['id'], startUsecs))
         if len(runs) > 0:
             newRunId = runs[0]['backupRun']['jobRunId']
         if debugger:
@@ -536,9 +537,9 @@ if wait is True:
         try:
             sleep(10)
             if len(selectedSources) > 0:
-                runs = api('get', 'protectionRuns?jobId=%s&numRuns=10&excludeTasks=true&sourceId=%s' % (job['id'], selectedSources[0]))
+                runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&numRuns=10000&excludeTasks=true&sourceId=%s' % (job['id'], startUsecs, selectedSources[0]))
             else:
-                runs = api('get', 'protectionRuns?jobId=%s&numRuns=10' % job['id'])
+                runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&numRuns=10000' % (job['id'], startUsecs))
             run = [r for r in runs if r['backupRun']['jobRunId'] == newRunId]
             status = run[0]['backupRun']['status']
 
