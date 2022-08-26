@@ -65,6 +65,7 @@ Place both files in a folder together and run the main script like so:
 * -is, --incrementalsla: (optional) incremental SLA minutes (default is 60)
 * -fs, --fullsla: (optional) full SLA minutes (default is 120)
 * -ei, --enableindexing: (optional) default is no indexing
+* -z, --paused: (optional) pause new protection group
 
 ## Notes
 

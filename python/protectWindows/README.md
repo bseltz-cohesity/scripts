@@ -66,6 +66,7 @@ Place both files in a folder together and run the main script like so:
 * -ei, --enableindexing: (optional) default is no indexing
 * -q, --quiesce: (optional) try to quiesce but continue if quiesce fails
 * -fq, --forcequiesce: (optional) try to quiesce and fail if quiesce fails
+* -z, --paused: (optional) pause new protection group
 
 ## Notes
 
