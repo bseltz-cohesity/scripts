@@ -70,7 +70,7 @@ if searchResults:
     searchResults = [v for v in searchResults['vms'] if v['vmDocument']['objectName'].lower() == sourceserver.lower()]
 
 if len(searchResults) == 0:
-    print("%s is not protected" % sourceserver)
+    print('%s is not protected' % sourceserver)
     exit(1)
 
 searchResults = [r for r in searchResults if 'versions' in r['vmDocument'] and len(r['vmDocument']['versions']) > 0]
@@ -122,11 +122,11 @@ sourceEntity = [e for e in entities if e['displayName'].lower() == sourceserver.
 targetEntity = [e for e in entities if e['displayName'].lower() == targetserver.lower()]
 
 if len(sourceEntity) == 0:
-    print("source server %s not found")
+    print('source server %s not found' % sourceserver)
     exit(1)
 
 if len(targetEntity) == 0:
-    print("target server %s not found")
+    print('target server %s not found' % targetserver)
     exit(1)
 
 mountTask = {
@@ -161,7 +161,7 @@ if useexistingagent:
 if volumes is not None:
     mountTask['mountVolumesParams']['volumeNameVec'] = volumes
 
-print("mounting volumes to %s..." % targetserver)
+print('mounting volumes to %s...' % targetserver)
 result = api('post', '/restore', mountTask)
 
 # wait for completion
@@ -172,7 +172,7 @@ while status not in finishedStates:
     sleep(3)
     restoreTask = api('get', '/restoretasks/%s' % taskid)
     status = restoreTask[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus']
-print("Volume mount ended with status %s" % status)
+print('Volume mount ended with status %s' % status)
 if status == 'kSuccess':
     print('Task ID for tearDown is: %s' % restoreTask[0]['restoreTask']['performRestoreTaskState']['base']['taskId'])
     if 'mountVolumeResultVec' in restoreTask[0]['restoreTask']['performRestoreTaskState']['mountVolumesTaskState']['mountInfo']:
