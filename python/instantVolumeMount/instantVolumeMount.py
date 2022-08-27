@@ -86,18 +86,19 @@ for searchResult in searchResults:
         allVersions.append(version)
 allVersions = sorted(allVersions, key=lambda r: r['snapshotTimestampUsecs'], reverse=True)
 
-if showversions or start is not None or end is not None:
-    if start is not None:
-        startusecs = dateToUsecs(start)
-        allVersions = [v for v in allVersions if startusecs <= v['snapshotTimestampUsecs']]
-    if end is not None:
-        endusecs = dateToUsecs(end)
-        allVersions = [v for v in allVersions if endusecs >= v['snapshotTimestampUsecs']]
-    else:
-        print('%10s  %s' % ('runId', 'runDate'))
-        print('%10s  %s' % ('-----', '-------'))
-        for version in allVersions:
-            print('%10d  %s' % (version['instanceId']['jobInstanceId'], usecsToDate(version['instanceId']['jobStartTimeUsecs'])))
+if start is not None:
+    startusecs = dateToUsecs(start)
+    allVersions = [v for v in allVersions if startusecs <= v['snapshotTimestampUsecs']]
+if end is not None:
+    endusecs = dateToUsecs(end)
+    allVersions = [v for v in allVersions if endusecs >= v['snapshotTimestampUsecs']]
+
+if showversions:
+    print('\n%10s  %s' % ('runId', 'runDate'))
+    print('%10s  %s' % ('-----', '-------'))
+    for version in allVersions:
+        print('%10d  %s' % (version['instanceId']['jobInstanceId'], usecsToDate(version['instanceId']['jobStartTimeUsecs'])))
+    print('')
     exit(0)
 
 # select version
@@ -113,9 +114,6 @@ else:
     # just use latest version
     version = allVersions[0]
 
-# find newest among multiple jobs
-# searchResult = sorted(searchResults, key=lambda result: result['vmDocument']['versions'][0]['snapshotTimestampUsecs'], reverse=True)[0]
-# doc = searchResult['vmDocument']
 doc = version['doc']
 
 # find source and target servers
