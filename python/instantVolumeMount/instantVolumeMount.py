@@ -62,7 +62,25 @@ if targetserver is None:
     targetserver = sourceserver
 
 # authenticate
-apiauth(vip, username, domain)
+if mcm:
+    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=True)
+else:
+    if emailmfacode:
+        apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, emailMfaCode=True)
+    else:
+        apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, mfaCode=mfacode)
+
+# if connected to helios or mcm, select to access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    if clustername is not None:
+        heliosCluster(clustername)
+    else:
+        print('-clustername is required when connecting to Helios or MCM')
+        exit()
+
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
 
 # find backups for source server
 searchResults = api('get', '/searchvms?vmName=%s' % sourceserver)
