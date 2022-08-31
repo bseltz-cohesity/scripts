@@ -124,8 +124,6 @@ if($usingHelios){
             'Description' = $_.alertDocument.alertDescription
         }
     }
-    # $alertsList = $alerts | Sort-Object -Property {$_.latestTimestampUsecs} | Format-Table -Property clusterName, @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}
-    # $alertsList | ConvertTo-Json -Depth 99 | ConvertFrom-Json | Export-Csv -Path "alerts.csv" -Encoding utf8 -NoTypeInformation
 }else{
     $alerts | Sort-Object -Property latestTimestampUsecs | Format-Table -Property @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}
     $alerts | Sort-Object -Property latestTimestampUsecs -Descending | Foreach-Object {
@@ -136,10 +134,8 @@ if($usingHelios){
             'Description' = $_.alertDocument.alertDescription
         }
     }
-    # $alertsList = $alerts | Sort-Object -Property latestTimestampUsecs | Format-Table -Property @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}} | Export-Csv -Path "alerts.csv" -Encoding utf8 -NoTypeInformation
-    # $alertsList | ConvertTo-Json -Depth 99 | ConvertFrom-Json | Export-Csv -Path "alerts.csv" -Encoding utf8 -NoTypeInformation
 }
-$alertsList | ConvertTo-Json -Depth 99 | ConvertFrom-Json | Export-Csv -Path "alerts.csv" -Encoding utf8 -NoTypeInformation
+($alertsList | ConvertTo-Json -Depth 99 | ConvertFrom-Json) | Export-Csv -Path "alerts.csv" -Encoding utf8 -NoTypeInformation
 
 if($resolution){
     "Resolving alerts..."
