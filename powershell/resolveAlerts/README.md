@@ -60,11 +60,25 @@ add -resolution to any of the above to mark them resolved:
                     -resolution 'we solved this'
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: name or IP of Cohesity cluster
-* -username: name of user to connect to Cohesity
-* -domain: your AD domain (defaults to local)
-* -severity: filter on severity (kInfo, kCritical, etc.)
-* -alertType: filter on alert type (1007, 1024, etc.)
-* -resolution: text to use for resolution (just report if omitted)
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+* -region: (optional) filter on DMaaS region
+
+## Other Parameters
+
+* -severity: (optional) filter on severity (kInfo, kCritical, etc.)
+* -alertType: (optional) filter on alert type (1007, 1024, etc.)
+* -resolution: (optional) text to use for resolution (just report if omitted)
+* -matchString: (optional) filter on matching string
+* -startDate: (optional) include alerts after this date (e.g. '2022-08-01')
+* -endDate: (optional) include alerts before this date (e.g. '2022-08-01')
+* -maxDays: (optional) include alerts from the past X days
