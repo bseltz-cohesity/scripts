@@ -46,3 +46,5 @@ By default, the script will only show what it would do. To actually execute the 
 * -l, --joblist: (optional) text file of job names to include (one per line) default is all jobs
 * -e, --excludelogs: (optional) do not replicate database log backups
 * -c, --commit: (optional) perform replications (show only if omitted)
+* -resync, --resync: (optional) re-replicate to same cluster (skip previously replicated if omitted)
+* -n, --numruns: (optional) number of runs per API query (default is 1000)
