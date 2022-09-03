@@ -1,21 +1,60 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
-    [Parameter()][string]$domain = 'local', #local or AD domain
-    [Parameter()][array]$principal,
-    [Parameter()][array]$addObject,
-    [Parameter()][array]$addView,
-    [Parameter()][array]$removeObject,
-    [Parameter()][array]$removeView
+    [Parameter()][string]$vip = 'helios.cohesity.com',  # endpoint to connect to
+    [Parameter()][string]$username = 'helios',  # username for authentication / password storage
+    [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][switch]$useApiKey,  # use API key authentication
+    [Parameter()][string]$password = $null,  # send password / API key via command line (not recommended)
+    [Parameter()][switch]$noPrompt,  # do not prompt for password
+    [Parameter()][switch]$mcm,  # connect to MCM endpoint
+    [Parameter()][string]$mfaCode = $null,  # MFA code
+    [Parameter()][switch]$emailMfaCode,  # email MFA code
+    [Parameter()][string]$clusterName = $null,  # cluster name to connect to when connected to Helios/MCM
+    [Parameter()][array]$principalName,
+    [Parameter()][string]$principalList,
+    [Parameter()][array]$objectName,
+    [Parameter()][string]$objectList,
+    [Parameter()][array]$viewName,
+    [Parameter()][string]$viewList,
+    [Parameter()][switch]$remove
 )
 
-### source the cohesity-api helper code
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
+        }
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
+        exit
+    }
+    return ($items | Sort-Object -Unique)
+}
+
+$principals = @(gatherList -Param $principalName -FilePath $principalList -Name 'principals' -Required $True)
+$objects = @(gatherList -Param $objectName -FilePath $objectList -Name 'objects' -Required $False)
+$viewNames = @(gatherList -Param $viewName -FilePath $viewList -Name 'views' -Required $False)
+
+if($objects.Count -eq 0 -and $viewNames.Count -eq 0){
+    Write-Host "At least one object or view must be specified" -ForegroundColor Yellow
+    exit
+}
+
+# source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
 
 $users = api get users?_includeTenantInfo=true
 $groups = api get groups?_includeTenantInfo=true
@@ -52,9 +91,11 @@ function getObjectId($objectName){
 }
 
 
-foreach($p in $principal){
-    if($p -match '/'){
+foreach($p in $principals){
+    if($p.Contains('/')){
         $d, $p = $p.split('/')
+    }elseif($p.Contains('\')){
+        $d, $p = $p.split('\')
     }else{
         $d = 'local'
     }
@@ -65,8 +106,10 @@ foreach($p in $principal){
         $thisPrincipal = $groups | Where-Object {$_.name -eq $p -and $_.domain -eq $d}
     }
     if(!$thisPrincipal){
-        Write-Host "Principal $d/$p not found!" -ForegroundColor Yellow
+        Write-Host "Principal $d\$p not found!" -ForegroundColor Yellow
         continue
+    }else{
+        Write-Host "$d\$p"
     }
     $access = api get principals/protectionSources?sids=$($thisPrincipal.sid)
     $newAccess = @{
@@ -78,34 +121,34 @@ foreach($p in $principal){
             }
         )
     }
-    foreach($objectName in $addObject){
-        $objectId = getObjectId $objectName
+    foreach($o in $objects){
+        $objectId = getObjectId $o
         if(!$objectId){
-            Write-Host "Object $objectName not found!" -ForegroundColor Yellow
+            Write-Host "    Object $o not found!" -ForegroundColor Yellow
             continue
         }
-        "Adding $objectName"
-        $newAccess.sourcesForPrincipals[0].protectionSourceIds = @($newAccess.sourcesForPrincipals[0].protectionSourceIds + $objectId)
-    }
-    foreach($objectName in $removeObject){
-        $objectId = getObjectId $objectName
-        if($objectId){
-            "Removing $objectName"
+        if($remove){
+            "    Removing $o"
             $newAccess.sourcesForPrincipals[0].protectionSourceIds = @($newAccess.sourcesForPrincipals[0].protectionSourceIds | Where-Object {$_ -ne $objectId})
+        }else{
+            "    Adding $o"
+            $newAccess.sourcesForPrincipals[0].protectionSourceIds = @($newAccess.sourcesForPrincipals[0].protectionSourceIds + $objectId)
         }
     }
-    foreach($viewName in $addView){
-        $view = $views.views | Where-Object {$_.name -eq $viewName}
+    foreach($v in $viewNames){
+        $view = $views.views | Where-Object {$_.name -eq $v}
         if(!$view){
-            Write-Host "View $viewName not found" -ForegroundColor Yellow
+            Write-Host "    View $v not found" -ForegroundColor Yellow
             continue
         }
-        "Adding $viewName"
-        $newAccess.sourcesForPrincipals[0].viewNames = @($newAccess.sourcesForPrincipals[0].viewNames + $view.name)
-    }
-    foreach($viewName in $removeView){
-        "Removing $viewName"
-        $newAccess.sourcesForPrincipals[0].viewNames = @($newAccess.sourcesForPrincipals[0].viewNames | Where-Object {$_ -ne $viewName})
+        if($remove){
+            "    Removing $v"
+            $newAccess.sourcesForPrincipals[0].viewNames = @($newAccess.sourcesForPrincipals[0].viewNames | Where-Object {$_ -ne $view.name})
+        }else{
+            "    Adding $v"
+            $newAccess.sourcesForPrincipals[0].viewNames = @($newAccess.sourcesForPrincipals[0].viewNames + $view.name)
+        }
+        
     }
     $newAccess.sourcesForPrincipals[0].protectionSourceIds = @($newAccess.sourcesForPrincipals[0].protectionSourceIds | Sort-Object -Unique)
     $newAccess.sourcesForPrincipals[0].viewNames = @($newAccess.sourcesForPrincipals[0].viewNames | Sort-Object -Unique)

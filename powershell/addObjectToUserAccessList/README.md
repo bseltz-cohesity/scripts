@@ -37,13 +37,24 @@ Place the files in a folder together and run the main script like so:
 # End example
 ```
 
+## Authentication Parameters
+
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
 ## Parameters
 
-* -vip: Cohesity Cluster to connect to
-* -username: Cohesity username
-* -domain: (optional) Cohesity logon domain (defaults to local)
-* -principal: name(s) (comma separated) of user or group to modify (e.g. mydomain.net/myuser, or mylocaluser) `
-* -addObject: (optional) names of registered objects to add to access list (comma separated)
-* -removeObject: (optional) names of registered objects to remove from access list (comma separated)
-* -addView: (optional) names of views to add to access list (comma separated)
-* -removeView: (optional) names of views to remove from access list (comma separated)
+* -principalName: (optional) users or groups to modify (comma separated) e.g. mydomain.net\myuser, mylocaluser `
+* -principalList: (optional) text file of users or groups to modify (one per line)
+* -objectName: (optional) registered objects to add/remove from access list (comma separated)
+* -objectList: (optional) text file of registered objects to add/remove from access list (one per line)
+* -viewName: (optional) views to add/remove from access list (comma separated)
+* -viewList: (optional) text file of views to add/remove from access list (one per line)
+* -remove: (optional) perform remove operation (default is add)
