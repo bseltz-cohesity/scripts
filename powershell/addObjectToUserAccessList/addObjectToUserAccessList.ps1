@@ -56,6 +56,21 @@ if($objects.Count -eq 0 -and $viewNames.Count -eq 0){
 # authenticate
 apiauth -vip $vip -username $username -domain $domain -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
 
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit
+}
+
 $users = api get users?_includeTenantInfo=true
 $groups = api get groups?_includeTenantInfo=true
 $sources = api get "protectionSources"

@@ -29,11 +29,9 @@ Place the files in a folder together and run the main script like so:
 ./addObjectToUserAccessList.ps1 -vip mycluster `
                                 -username myuser `
                                 -domain mydomain.net `
-                                -principal mydomain.net/myuser `
-                                -addObject vm1, server1.mydomain.net `
-                                -removeObject vm2, vm3 `
-                                -addView view1, view2 `
-                                -removeView view3, view4
+                                -principalName mydomain.net/myuser `
+                                -objectName vm1, server1.mydomain.net `
+                                -viewName view1, view2
 # End example
 ```
 
