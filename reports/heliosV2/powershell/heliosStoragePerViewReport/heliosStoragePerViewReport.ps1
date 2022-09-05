@@ -21,14 +21,11 @@ $reportNumber = 1400
 
 $headings = "Cluster
 View Name
-Logical Data ($unit)
-Data In ($unit)
-Data Written ($unit)
-Consumed ($unit)
-Reduction
-Growth ($unit)
-Daily Growth ($unit)
-Daily Growth %" -split "`n"
+Source Data ($unit)
+Storage Consumed ($unit)
+Storage Consumed Growth ($unit)
+Storage Consumed Daily Growth ($unit)
+Reduction" -split "`n"
 
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -245,24 +242,23 @@ $reportParams = @{
 
 $preview = api post -reportingV2 "components/$reportNumber/preview" $reportParams
 
+# $headings = "Cluster
+# View Name
+# Source Data ($unit)
+# Storage Consumed ($unit)
+# Storage Consumed Growth ($unit)
+# Storage Consumed Daily Growth ($unit)
+# Reduction" -split "`n"
+
 foreach($i in $preview.component.data | Sort-Object -Property systemName, viewName){
     $clusterName = $i.systemName.ToUpper()
     $viewName = $i.viewName
-    $logicalSize = toUnits $i.totalLogicalUsageBytes
-    $dataIn = toUnits $i.dataInBytes
-    $dataWritten = toUnits $i.totalDataWrittenBytes
-    $consumed = toUnits $i.lastStorageConsumedBytes
-    $reduction = $i.dataReduction
-    $growth = toUnits $i.totalGrowthBytes
-    $dailyGrowth = toUnits $i.avgDailyGrowthRateBytes
-    if($i.lastStorageConsumedBytes -gt $i.firstStorageConsumedBytes){
-        $dailyPctGrowth = [math]::round(100 * ($i.lastStorageConsumedBytes - $i.firstStorageConsumedBytes) / $timeSpan.TotalDays / $i.lastStorageConsumedBytes, 1)
-    }elseif($i.firstStorageConsumedBytes -gt $i.lastStorageConsumedBytes){
-        $dailyPctGrowth = [math]::round(-100 * ($i.firstStorageConsumedBytes - $i.lastStorageConsumedBytes) / $timeSpan.TotalDays / $i.firstStorageConsumedBytes, 1)
-    }else{
-        $dailyPctGrowth = 0
-    }
-    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}""" -f $clusterName, $viewName, $logicalSize, $dataIn, $dataWritten, $consumed, $reduction, $growth, $dailyGrowth, $dailyPctGrowth | Out-File -FilePath $csvFileName -Append
+    $sourceData = toUnits $i.srcDataRetainedBytes
+    $storageConsumed = toUnits $i.scResiliencyBytes
+    $storageConsumedGrowth = toUnits $i.scResiliencyBytesGrowth
+    $storageConsumedGrowthRate = toUnits $i.scResiliencyDailyGrowthRate
+    $dataReduction = [math]::Round($i.dataReduction, 1)
+    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}""" -f $clusterName, $viewName, $sourceData, $storageConsumed, $storageConsumedGrowth, $storageConsumedGrowthRate, $dataReduction | Out-File -FilePath $csvFileName -Append
     $Global:html += '<tr>
         <td class="nowrap">{0}</td>
         <td>{1}</td>
@@ -271,10 +267,7 @@ foreach($i in $preview.component.data | Sort-Object -Property systemName, viewNa
         <td>{4}</td>
         <td>{5}</td>
         <td>{6}</td>
-        <td>{7}</td>
-        <td>{8}</td>
-        <td>{9}</td>
-        </tr>' -f $clusterName, $viewName, $logicalSize, $dataIn, $dataWritten, $consumed, $reduction, $growth, $dailyGrowth, $dailyPctGrowth           
+        </tr>' -f  $clusterName, $viewName, $sourceData, $storageConsumed, $storageConsumedGrowth, $storageConsumedGrowthRate, $dataReduction
 }
 
 $Global:html += "</table>                
