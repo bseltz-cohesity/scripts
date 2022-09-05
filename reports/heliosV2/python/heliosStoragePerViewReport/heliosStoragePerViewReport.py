@@ -39,14 +39,11 @@ reportNumber = 1400
 
 headings = ('''Cluster
 View Name
-Logical Data (%s)
-Data In (%s)
-Data Written (%s)
-Consumed (%s)
-Reduction
-Growth (%s)
-Daily Growth (%s)
-Daily Growth %%''' % (units, units, units, units, units, units)).split('\n')
+Source Data (%s)
+Storage Consumed (%s)
+Storage Consumed Growth (%s)
+Storage Consumed Daily Growth (%s)
+Reduction''' % (units, units, units, units)).split('\n')
 
 # authenticate
 apiauth(vip=vip, username=username, domain='local', helios=True)
@@ -263,20 +260,12 @@ preview = api('post', 'components/%s/preview' % reportNumber, reportParams, repo
 for i in sorted(preview['component']['data'], key=lambda d: (d['systemName'].lower(), d['viewName'].lower())):
     clusterName = i['systemName'].upper()
     viewName = i['viewName']
-    logicalSize = round(float(i['totalLogicalUsageBytes']) / multiplier, 1)
-    dataIn = round(float(i['dataInBytes']) / multiplier, 1)
-    dataWritten = round(float(i['totalDataWrittenBytes']) / multiplier, 1)
-    consumed = round(float(i['lastStorageConsumedBytes']) / multiplier, 1)
-    reduction = i['dataReduction']
-    growth = round(float(i['totalGrowthBytes']) / multiplier, 1)
-    dailyGrowth = round(float(i['avgDailyGrowthRateBytes']) / multiplier, 1)
-    if i['lastStorageConsumedBytes'] > i['firstStorageConsumedBytes']:
-        dailyPctGrowth = round(100 * float(i['lastStorageConsumedBytes'] - i['firstStorageConsumedBytes']) / totalDays / i['lastStorageConsumedBytes'], 1)
-    elif i['firstStorageConsumedBytes'] > i['lastStorageConsumedBytes']:
-        dailyPctGrowth = round(-100 * float(i['firstStorageConsumedBytes'] - i['lastStorageConsumedBytes']) / totalDays / i['firstStorageConsumedBytes'], 1)
-    else:
-        dailyPctGrowth = 0
-    csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, viewName, logicalSize, dataIn, dataWritten, consumed, reduction, growth, dailyGrowth, dailyPctGrowth))
+    sourceData = round(float(i['srcDataRetainedBytes']) / multiplier, 1)
+    storageConsumed = round(float(i['scResiliencyBytes']) / multiplier, 1)
+    storageConsumedGrowth = round(float(i['scResiliencyBytesGrowth']) / multiplier, 1)
+    storageConsumedGrowthRate = round(float(i['scResiliencyDailyGrowthRate']) / multiplier, 1)
+    reduction = round(float(i['dataReduction']), 1)
+    csv.write('"%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, viewName, sourceData, storageConsumed, storageConsumedGrowth, storageConsumedGrowthRate, reduction))
     html += '''<tr>
         <td class="nowrap">%s</td>
         <td>%s</td>
@@ -285,10 +274,7 @@ for i in sorted(preview['component']['data'], key=lambda d: (d['systemName'].low
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
-        <td>%s</td>
-        <td>%s</td>
-        <td>%s</td>
-        </tr>''' % (clusterName, viewName, logicalSize, dataIn, dataWritten, consumed, reduction, growth, dailyGrowth, dailyPctGrowth)
+        </tr>''' % (clusterName, viewName, sourceData, storageConsumed, storageConsumedGrowth, storageConsumedGrowthRate, reduction)
 
 html += '''</table>
 </div>
