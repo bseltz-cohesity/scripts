@@ -242,14 +242,6 @@ $reportParams = @{
 
 $preview = api post -reportingV2 "components/$reportNumber/preview" $reportParams
 
-# $headings = "Cluster
-# View Name
-# Source Data ($unit)
-# Storage Consumed ($unit)
-# Storage Consumed Growth ($unit)
-# Storage Consumed Daily Growth ($unit)
-# Reduction" -split "`n"
-
 foreach($i in $preview.component.data | Sort-Object -Property systemName, viewName){
     $clusterName = $i.systemName.ToUpper()
     $viewName = $i.viewName
