@@ -72,7 +72,7 @@ else:
     remote = remote[0]
 
 jobs = api('get', 'data-protect/protection-groups', v=2)
-jobs = [j for j in jobs['protectionGroups'] if 'isDeleted' not in j]
+jobs = [j for j in jobs['protectionGroups'] if 'isDeleted' not in j or j['isDeleted'] is not True]
 
 # catch invalid job names
 notfoundjobs = [n for n in jobnames if n.lower() not in [j['name'].lower() for j in jobs]]
@@ -103,9 +103,9 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                 break
             runs = [r for r in runs['runs'] if 'isLocalSnapshotsDeleted' not in r]
             if runs is not None and len(runs) > 0:
-                runs = [r for r in runs if 'localBackupInfo' in r and 'endTimeUsecs' in r['localBackupInfo']]
+                runs = [r for r in runs if ('localBackupInfo' in r and 'endTimeUsecs' in r['localBackupInfo']) or ('originalBackupInfo' in r and 'endTimeUsecs' in r['originalBackupInfo'])]
             if runs is not None and len(runs) > 0 and excludelogs is True:
-                runs = [r for r in runs if r['localBackupInfo']['runType'] != 'kLog']
+                runs = [r for r in runs if ('localBackupInfo' in r and r['localBackupInfo']['runType'] != 'kLog') or ('originalBackupInfo') in r and r['originalBackupInfo']['runType'] != 'kLog']
             if runs is not None and len(runs) > 0:
                 for run in sorted(runs, key=lambda run: run['id']):
                     daysToKeep = keepfor
@@ -118,7 +118,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                     if 'replicationInfo' in run:
                         if 'replicationTargetResults' in run['replicationInfo'] and len(run['replicationInfo']['replicationTargetResults']) > 0:
                             for replicationTargetResult in run['replicationInfo']['replicationTargetResults']:
-                                if replicationTargetResult['clusterName'].lower() == remotecluster.lower() and replicationTargetResult['status'] in ['Succeeded', 'Running', 'Accepted', 'Canceling']:
+                                if 'clusterName' in replicationTargetResult and replicationTargetResult['clusterName'].lower() == remotecluster.lower() and replicationTargetResult['status'] in ['Succeeded', 'Running', 'Accepted', 'Canceling']:
                                     replicated = True
                                     if resync and replicationTargetResult['clusterName'].lower() == remotecluster.lower() and replicationTargetResult['status'] == 'Succeeded':
                                         replicated = False
