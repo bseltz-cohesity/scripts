@@ -74,6 +74,13 @@ if(!$cohesity_api.authorized){
     exit
 }
 
+$cluster = api get cluster
+if($cluster.clusterSoftwareVersion -gt '6.8'){
+    $environment = 'kO365Sharepoint'
+}else{
+    $environment = 'kO365'
+}
+
 # get the protectionJob
 $job = (api get -v2 "data-protect/protection-groups").protectionGroups | Where-Object {$_.name -eq $jobName}
 
@@ -154,7 +161,7 @@ if($job){
         "abortInBlackouts" = $false;
         "storageDomainId" = $viewBox.id;
         "name" = $jobName;
-        "environment" = "kO365";
+        "environment" = $environment;
         "description" = "";
         "alertPolicy" = @{
             "backupRunStatus" = @(
@@ -193,6 +200,10 @@ if($job.office365Params.PSObject.Properties['sourceId']){
         exit
     }
     $rootSource = api get "protectionSources/rootNodes?environments=kO365" | Where-Object {$_.protectionSource.name -eq $sourceName}
+    # if($rootSource){
+    #     setApiProperty -object $job.office365Params -name 'sourceId' -value $rootSource.protectionSource.id
+    #     setApiProperty -object $job.office365Params -name 'sourceName' -value $rootSource.protectionSource.name        
+    # }
 }
 if(! $rootSource){
     Write-Host "protection source $sourceName not found" -ForegroundColor Yellow
@@ -220,8 +231,8 @@ while(1){
         if(! $node.protectedSourcesSummary[0].leavesCount){
             $unprotectedIndex[$node.protectionSource.name] = $node.protectionSource.id
         }
+        $cursor = $node.protectionSource.id
     }
-    $cursor = $sites.nodes[-1].protectionSource.id
     $sites = api get "protectionSources?pageSize=$pageSize&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false&afterCursorEntityId=$cursor"
     if($nameIndex.Keys.Count -eq $indexCount){
         break
@@ -230,8 +241,6 @@ while(1){
 }
 
 Write-Host "$($nameIndex.Keys.Count) users discovered"
-
-
 
 if($autoProtectRemaining){
     $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $sitesNode.protectionSource.id})
