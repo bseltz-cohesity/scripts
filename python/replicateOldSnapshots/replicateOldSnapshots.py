@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-"""expire old snapshots"""
+"""replicate old snapshots"""
+
+# version 2022.09.06
 
 # import pyhesity wrapper module
 from pyhesity import *
