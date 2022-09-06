@@ -7,9 +7,15 @@ from pyhesity import *
 ### command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)
-parser.add_argument('-u', '--username', type=str, required=True)
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-m', '--mfacode', type=str, default=None)
+parser.add_argument('-em', '--emailmfacode', action='store_true')
 parser.add_argument('-j', '--jobname', action='append', type=str)
 parser.add_argument('-l', '--joblist', type=str)
 parser.add_argument('-e', '--exclude', action='append', type=str)
@@ -18,9 +24,15 @@ parser.add_argument('-o', '--overwrite', action='store_true')
 
 args = parser.parse_args()
 
-vip = args.vip                  # cluster name/ip
-username = args.username        # username to connect to cluster
-domain = args.domain            # domain of username (e.g. local, or AD domain)
+vip = args.vip
+username = args.username
+domain = args.domain
+clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
+mfacode = args.mfacode
+emailmfacode = args.emailmfacode
 jobnames = args.jobname          # name of protection job to add server to
 joblist = args.joblist
 excludes = args.exclude         # exclude path
@@ -44,8 +56,26 @@ if excludefile is not None:
     excludes += [e.strip() for e in f.readlines() if e.strip() != '']
     f.close()
 
-# authenticate to Cohesity
-apiauth(vip, username, domain)
+# authenticate
+if mcm:
+    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=True)
+else:
+    if emailmfacode:
+        apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, emailMfaCode=True)
+    else:
+        apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, mfaCode=mfacode)
+
+# if connected to helios or mcm, select to access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    if clustername is not None:
+        heliosCluster(clustername)
+    else:
+        print('-clustername is required when connecting to Helios or MCM')
+        exit()
+
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
 
 # get jobs
 jobs = api('get', 'data-protect/protection-groups?isDeleted=false&isActive=true&environments=kPhysical&includeTenants=true', v=2)

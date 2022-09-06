@@ -33,11 +33,20 @@ Place both files in a folder together and run the main script like so:
                            -e /home/oracle
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -v, --vip: DNS or IP of the Cohesity cluster to connect to
-* -u, --username: username to authenticate to Cohesity cluster
-* -d, --domain: (optional) domain of username, defaults to local
+* -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
+* -d, --domain: (optional) domain of username (defaults to local)
+* -i, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: (optional) password of API key
+* -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) helios/mcm cluster to connect to
+* -m, --mfacode: (optional) MFA code for authentication
+* -em, --emailmfacode: (optional) send MFA code via email
+
+## Other Parameters
+
 * -j, --jobname: name of protection job to process (repeat for multiple jobs)
 * -l, --joblist: (optional) list of job names in a text file (one per line)
 * -e, --exclude: (optional) file path to exclude (repeat for multiple paths)
