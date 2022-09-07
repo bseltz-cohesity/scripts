@@ -296,13 +296,6 @@ if(!$init){
     if($filter -ne ''){
         $migrations = $migrations | Where-Object name -match $filter
     }
-    if($migrations){
-        $migrations = $migrations | Where-Object {$_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.PSObject.Properties['multiStageRestoreOptions']}
-        $migrations = $migrations | sort-object -Property id -Descending
-        if($returnTaskIds){
-            return $migrations.id
-        }
-    }
     if($sourceDB -ne '' -and $sourceServer -ne ''){
         $migrations = $migrations | Where-Object {$_.mssqlParams.objects[0].objectInfo.sourceId -eq $latestdb.vmDocument.objectId.entity.sqlEntity.ownerId -and $_.mssqlParams.objects[0].objectInfo.name -eq "$($latestdb.vmDocument.objectId.entity.sqlEntity.instanceName)/$($latestdb.vmDocument.objectId.entity.sqlEntity.databaseName)"}
     }
@@ -310,6 +303,13 @@ if(!$init){
         $migrations = $migrations | Where-Object {$_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.host.name -eq $targetServer -and
                                                   $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.instanceName -eq $targetInstance -and
                                                   $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.databaseName -eq $targetDB}
+    }
+    if($migrations){
+        $migrations = $migrations | Where-Object {$_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.PSObject.Properties['multiStageRestoreOptions']}
+        $migrations = $migrations | sort-object -Property id -Descending
+        if($returnTaskIds){
+            return $migrations.id
+        }
     }
     $migrationCount = 0
     foreach($migration in $migrations){
