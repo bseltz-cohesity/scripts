@@ -125,6 +125,7 @@ If none are used, the script will be in list mode.
 * -name: (optional) only show/sync/finalize migration task with this name
 * -filter: (optional) only show/sync/finalize migration tasks matching this string
 * -id: (optional) only show/sync/finalize migration task matching this id
+* -returnTaskIds: (optional) return resulting list of task IDs and exit
 
 ## Init Mode Parameters
 

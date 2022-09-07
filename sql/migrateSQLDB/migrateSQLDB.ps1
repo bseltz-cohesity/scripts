@@ -33,7 +33,8 @@ param(
     [Parameter()][int]$daysBack = 7,                    # days back for showAll
     [Parameter()][string]$name = '',                    # task name
     [Parameter()][string]$filter = '',                  # task name search filter
-    [Parameter()][string]$id = ''                       # task id
+    [Parameter()][string]$id = '',                      # task id
+    [Parameter()][switch]$returnTaskIds                 # only return task IDs
 )
 
 # demand parameters for init mode
@@ -302,9 +303,13 @@ if($init -or $showPaths){
     }
     if($migrations){
         $migrations = $migrations | Where-Object {$_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.PSObject.Properties['multiStageRestoreOptions']}
+        $migrations = $migrations | sort-object -Property id -Descending
+        if($returnTaskIds){
+            return $migrations.id
+        }
     }
     $migrationCount = 0
-    foreach($migration in $migrations | sort-object -Property id -Descending){
+    foreach($migration in $migrations){
         $migrationCount += 1
         $mTaskId = [int]($migration.id -split ':')[2]
         $mTask = api get /restoretasks/$mTaskId
@@ -312,7 +317,6 @@ if($init -or $showPaths){
         $mTargetHost = $migration.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.host.name
         $mTargetInstance = $migration.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.instanceName
         $mTargetDB = $migration.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.databaseName
-
         Write-Host "`nTask Name: $($migration.name)"
         Write-Host "  Task ID: $($migration.id)"
         Write-Host "Target DB: $mTargetHost/$mTargetInstance/$mTargetDB"
