@@ -30,6 +30,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 The script will list, initialize, sync or finalize migrations.
 
+## List Mode
+
 To list existing migrations in progress (On Hold or Running):
 
 ```powershell
@@ -37,6 +39,18 @@ To list existing migrations in progress (On Hold or Running):
                    -username myuser `
                    -domain mydomain.net
 ```
+
+To list existing migrations (including completed migrations):
+
+```powershell
+./migrateSQLDB.ps1 -vip mycluster `
+                   -username myuser `
+                   -domain mydomain.net `
+                   -showAll `
+                   -daysBack 7
+```
+
+## Init Mode
 
 To initiate a new migration `
 
@@ -50,6 +64,8 @@ To initiate a new migration `
                    -targetDB mydb2 `
                    -mdfFolder c:\sqldata 
 ```
+
+## Sync Mode
 
 To sync all existing migration(s):
 
@@ -69,6 +85,8 @@ Or you can filter on name, id or filter:
                    -sync `
                    -id -id 428418101664119:1631181117066:180265
 ```
+
+## Finalize Mode
 
 To finalize existing migration(s):
 
