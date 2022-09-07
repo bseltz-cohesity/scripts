@@ -1,22 +1,8 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.08.02 - Brian Seltzer
+#  Version 2022.09.07 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
-# 2021.02.10 - fixed empty body issue
-# 2021.03.26 - added apiKey unique password storage
-# 2021.08.16 - revamped passwd storage, auto prompt for invalid password
-# 2021.09.23 - added support for DMaaS, Helios Reporting V2
-# 2021.10.14 - added storePasswordForUser and importStoredPassword
-# 2021.10.22 - fixed json2code and py functions and added toJson function
-# 2021.11.03 - fixed 'Cannot send a content-body with this verb-type' message in debug log
-# 2021.11.10 - added getContext, setContext
-# 2021.11.15 - added support for helios on prem
-# 2021.11.18 - added support for multifactor authentication
-# 2021.12.07 - added support for email multifactor authentication
-# 2021.12.11 - added date formatting to usecsToDate function and dateToUsecs defaults to now
-# 2021.12.17 - auto import shared password into user password storage
-# 2021.12.21 - fixed USING_HELIOS status flag
 # 2022.01.12 - fixed storePasswordForUser
 # 2022.01.27 - changed password storage for non-Windows, added wildcard vip for AD accounts
 # 2022.01.29 - fixed helios on-prem password storage, heliosCluster function
@@ -27,9 +13,10 @@
 # 2022.04.14 - fixed store and import - support domain\username convention
 # 2022.05.16 - fixed mfa for v2 user/session authentication
 # 2022.08.02 - added promptForPassword as boolean
+# 2022.09.07 - clear state cache before new logon, fixed bad password handling
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2022.08.02'
+$versionCohesityAPI = '2022.09.07'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -116,6 +103,7 @@ function apiauth($vip='helios.cohesity.com',
                  [boolean] $sendMfaCode = $false,
                  [boolean] $noPromptForPassword = $false){
 
+    apidrop -quiet                
     if($apiKeyAuthentication -eq $True){
         $useApiKey = $True
     }
@@ -140,7 +128,7 @@ function apiauth($vip='helios.cohesity.com',
     # get stored password
     if(!$passwd){
         $passwd = Get-CohesityAPIPassword -vip $vip -username $username -domain $domain -useApiKey $useApiKey -helios $helios
-        if(!$passwd -and !$noprompt){
+        if(!$passwd -and !$noprompt -and $noPromptForPassword -ne $True){
             # prompt for password and store
             $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -quiet -useApiKey $useApiKey -helios $helios
         }
@@ -203,7 +191,9 @@ function apiauth($vip='helios.cohesity.com',
             }else{
                 Write-Host "api key authentication failed" -ForegroundColor Yellow
                 apidrop -quiet
-                apiauth -vip $vip -username $username -domain $domain -useApiKey -updatePassword
+                if(!$noprompt){
+                    apiauth -vip $vip -username $username -domain $domain -useApiKey -updatePassword
+                }
             }
         }
         # validate helios authorization
@@ -223,7 +213,9 @@ function apiauth($vip='helios.cohesity.com',
             }catch{
                 Write-Host "helios authentication failed" -ForegroundColor Yellow
                 apidrop -quiet
-                apiauth -vip $vip -username $username -domain $domain -updatePassword
+                if(!$noprompt){
+                    apiauth -vip $vip -username $username -domain $domain -updatePassword
+                }
             }
         }
     }else{
@@ -321,7 +313,9 @@ function apiauth($vip='helios.cohesity.com',
                                 $message = (ConvertFrom-Json $_.ToString()).message
                                 Write-Host $message -foregroundcolor yellow
                                 if($message -match 'Invalid Username or Password'){
-                                    apiauth -vip $vip -username $username -domain $domain -updatePassword
+                                    if(!$noprompt){
+                                        apiauth -vip $vip -username $username -domain $domain -updatePassword
+                                    }
                                 }
                             }else{
                                 Write-Host $thisError.ToString() -foregroundcolor yellow
@@ -337,7 +331,9 @@ function apiauth($vip='helios.cohesity.com',
                     if($cohesity_api.reportApiErrors){
                         Write-Host $message -foregroundcolor yellow
                         if($message -match 'Invalid Username or Password'){
-                            apiauth -vip $vip -username $username -domain $domain -updatePassword
+                            if(!$noprompt){
+                                apiauth -vip $vip -username $username -domain $domain -updatePassword
+                            }
                         }
                     }
                 }
@@ -350,7 +346,9 @@ function apiauth($vip='helios.cohesity.com',
                         $message = (ConvertFrom-Json $_.ToString()).message
                         Write-Host $message -foregroundcolor yellow
                         if($message -match 'Invalid Username or Password'){
-                            apiauth -vip $vip -username $username -domain $domain -updatePassword
+                            if(!$noprompt){
+                                apiauth -vip $vip -username $username -domain $domain -updatePassword
+                            }
                         }
                     }else{
                         Write-Host $thisError.ToString() -foregroundcolor yellow
@@ -748,8 +746,6 @@ function Clear-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios
 
 function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', $passwd=$null, [switch]$quiet, $useApiKey=$false, $helios=$false){
 
-    Clear-CohesityAPIPassword -vip $vip -username $username -domain $domain -useApiKey $useApiKey -helios $helios
-
     # parse domain\username or username@domain
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
@@ -763,6 +759,8 @@ function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
         $passwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
     }
     $opwd = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($passwd))
+
+    Clear-CohesityAPIPassword -vip $vip -username $username -domain $domain -useApiKey $useApiKey -helios $helios
 
     $keyName = "$vip`-$domain`-$username`-$useApiKey"
     if($cohesity_api.pwscope -eq 'user'){
@@ -779,7 +777,7 @@ function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
                 if(!(Test-Path $registryPath)){
                     New-Item -Path $registryPath -Force | Out-Null
                 }
-                Set-ItemProperty -Path "$registryPath" -Name "$keyName" -Value "$encryptedPasswordText"
+                Set-ItemProperty -Path "$registryPath" -Name "$keyName" -Value "$encryptedPasswordText" -Force
             }
         }
     }else{
@@ -1128,6 +1126,20 @@ function getViews([switch]$includeInactive){
 # 2020.12.04 - added tenant impersonate / switchback
 # 2020.12.05 - improved cohesity_api.version and tenant handling
 # 2020.12.20 - added JSON compression
+# 2021.02.10 - fixed empty body issue
+# 2021.03.26 - added apiKey unique password storage
+# 2021.08.16 - revamped passwd storage, auto prompt for invalid password
+# 2021.09.23 - added support for DMaaS, Helios Reporting V2
+# 2021.10.14 - added storePasswordForUser and importStoredPassword
+# 2021.10.22 - fixed json2code and py functions and added toJson function
+# 2021.11.03 - fixed 'Cannot send a content-body with this verb-type' message in debug log
+# 2021.11.10 - added getContext, setContext
+# 2021.11.15 - added support for helios on prem
+# 2021.11.18 - added support for multifactor authentication
+# 2021.12.07 - added support for email multifactor authentication
+# 2021.12.11 - added date formatting to usecsToDate function and dateToUsecs defaults to now
+# 2021.12.17 - auto import shared password into user password storage
+# 2021.12.21 - fixed USING_HELIOS status flag
 #
 # . . . . . . . . . . . . . . . . . . .
 
