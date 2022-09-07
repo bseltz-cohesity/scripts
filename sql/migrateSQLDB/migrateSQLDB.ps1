@@ -70,6 +70,10 @@ if($ndfFolders){
     }
 }
 
+if($targetInstance -eq ''){
+    $targetInstance = 'MSSQLSERVER'
+}
+
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
@@ -250,10 +254,6 @@ if($init -or $showPaths -or ($sourceDB -ne '' -and $sourceServer -ne '')){
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['secondaryDataFileDestinationVec'] = $secondaryFileLocation;
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['newDatabaseName'] = $targetDB;    
     
-        if($targetInstance -eq '' -and $targetServer -ne $sourceServer){
-            $targetInstance = 'MSSQLSERVER'
-        }
-    
         # search for target server
     
         $targetEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $targetServer }
@@ -305,6 +305,11 @@ if(!$init){
     }
     if($sourceDB -ne '' -and $sourceServer -ne ''){
         $migrations = $migrations | Where-Object {$_.mssqlParams.objects[0].objectInfo.sourceId -eq $latestdb.vmDocument.objectId.entity.sqlEntity.ownerId -and $_.mssqlParams.objects[0].objectInfo.name -eq "$($latestdb.vmDocument.objectId.entity.sqlEntity.instanceName)/$($latestdb.vmDocument.objectId.entity.sqlEntity.databaseName)"}
+    }
+    if($targetDB -ne '' -and $targetServer -ne ''){
+        $migrations = $migrations | Where-Object {$_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.host.name -eq $targetServer -and
+                                                  $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.instanceName -eq $targetInstance -and
+                                                  $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.databaseName -eq $targetDB}
     }
     $migrationCount = 0
     foreach($migration in $migrations){

@@ -140,6 +140,8 @@ If none are used, the script will be in list mode.
 * -returnTaskIds: (optional) return resulting list of task IDs and exit
 * -sourceServer: (optional) filter on -sourceServer and -sourceDB
 * -sourceDB: (optional) filter on -sourceServer and -sourceDB
+* -targetServer: (optional) filter on -sourceServer and -sourceDB
+* -targetDB: (optional) filter on -targetServer and -targetDB
 
 ## Init Mode Parameters
 
