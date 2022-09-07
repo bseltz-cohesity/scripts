@@ -52,7 +52,7 @@ To list existing migrations (including completed migrations):
 
 ## Init Mode
 
-To initiate a new migration `
+To initiate a new migration:
 
 ```powershell
 ./migrateSQLDB.ps1 -vip mycluster `
