@@ -285,10 +285,7 @@ if($init -or $showPaths){
         exit 1
     }
 }else{
-    if($name -ne '' -or $id -ne '' -or $filter -ne ''){
-        $daysBackUsecs = timeAgo $daysBack days
-        $migrations = (api get -v2 "data-protect/recoveries?snapshotEnvironments=kSQL&recoveryActions=RecoverApps&startTimeUsecs=$daysBackUsecs").recoveries
-    }elseif($showAll){
+    if($showAll){
         $daysBackUsecs = timeAgo $daysBack days
         $migrations = (api get -v2 "data-protect/recoveries?snapshotEnvironments=kSQL&recoveryActions=RecoverApps&startTimeUsecs=$daysBackUsecs").recoveries
     }else{
