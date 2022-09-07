@@ -1,12 +1,22 @@
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,
-    [Parameter(Mandatory = $True)][string]$username,
-    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$vip = 'helios.cohesity.com',  # the cluster to connect to (DNS name or IP)
+    [Parameter()][string]$username = 'helios',          # username (local or AD)
+    [Parameter()][string]$domain = 'local',             # local or AD domain
+    [Parameter()][switch]$useApiKey,                    # use API key for authentication
+    [Parameter()][string]$password,                     # optional password
+    [Parameter()][switch]$mcm,                          # connect through mcm
+    [Parameter()][string]$mfaCode = $null,              # mfa code
+    [Parameter()][switch]$emailMfaCode,                 # send mfa code via email
+    [Parameter()][string]$clusterName = $null,          # cluster to connect to via helios/mcm
     [Parameter()][array]$jobname,
     [Parameter()][string]$joblist = '',
     [Parameter()][int]$days = 7,
-    [Parameter()][switch]$includeLogs
+    [Parameter()][switch]$includeLogs,
+    [Parameter()][string]$smtpServer, # outbound smtp server '192.168.1.95'
+    [Parameter()][string]$smtpPort = 25, # outbound smtp port
+    [Parameter()][array]$sendTo, # send to address
+    [Parameter()][string]$sendFrom # send from address
 )
 
 # gather job names
@@ -25,7 +35,26 @@ if($jobname){
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain
+# authenticate
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
+}else{
+    apiauth -vip $vip -username $username -domain $domain -password $password
+}
+
+if($USING_HELIOS){
+    if($clusterName){
+        heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit 1
+}
 
 $cluster = api get cluster
 
@@ -159,3 +188,12 @@ $report = Import-Csv -Path $outfileName
 $report | Sort-Object -Property 'Cluster Name', 'Job Name', 'Object Name', @{Expression={$_.'Start Time'}; Descending=$True} | Export-Csv -Path $outfileName
 
 "`nOutput saved to $outfilename`n"
+
+if($smtpServer -and $sendTo -and $sendFrom){
+    Write-Host "Sending report to $([string]::Join(", ", $sendTo))`n"
+
+    # send email report
+    foreach($toaddr in $sendTo){
+        Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject 'Cohesity - SQL Protected Object Report' -Attachments $outfileName -WarningAction SilentlyContinue
+    }
+}
