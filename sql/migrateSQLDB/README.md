@@ -50,6 +50,18 @@ To list existing migrations (including completed migrations):
                    -daysBack 7
 ```
 
+To list existing migrations for a specific source database:
+
+```powershell
+./migrateSQLDB.ps1 -vip mycluster `
+                   -username myuser `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1 `
+                   -sourceDB MSSQLSERVER/mydb `
+                   -showAll `
+                   -daysBack 7
+```
+
 ## Init Mode
 
 To initiate a new migration:
@@ -126,6 +138,8 @@ If none are used, the script will be in list mode.
 * -filter: (optional) only show/sync/finalize migration tasks matching this string
 * -id: (optional) only show/sync/finalize migration task matching this id
 * -returnTaskIds: (optional) return resulting list of task IDs and exit
+* -sourceServer: (optional) filter on -sourceServer and -sourceDB
+* -sourceDB: (optional) filter on -sourceServer and -sourceDB
 
 ## Init Mode Parameters
 

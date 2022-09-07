@@ -104,7 +104,7 @@ if($sourceDB.Contains('/')){
     $sourceInstance = 'MSSQLSERVER'
 }
 
-if($init -or $showPaths){
+if($init -or $showPaths -or ($sourceDB -ne '' -and $sourceServer -ne '')){
     # search for database to clone
     $searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&entityTypes=kVMware&vmName=$sourceInstance/$sourceDB"
 
@@ -127,7 +127,6 @@ if($init -or $showPaths){
     }
 
     if($showPaths){
-
         $latestdb.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec | Format-Table -Property logicalName, @{l='Size (MiB)'; e={$_.sizeBytes / (1024 * 1024)}}, fullPath
     
         Write-Host "Example Restore Path Parameters:`n"
@@ -241,44 +240,47 @@ if($init -or $showPaths){
         }
     }
 
-    if('' -eq $mdfFolder){
-        write-host "-mdfFolder must be specified when restoring to a new database name or different target server" -ForegroundColor Yellow
-        exit
+    if($init){
+        if('' -eq $mdfFolder){
+            write-host "-mdfFolder must be specified when restoring to a new database name or different target server" -ForegroundColor Yellow
+            exit
+        }
+        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['dataFileDestination'] = $mdfFolder;
+        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['logFileDestination'] = $ldfFolder;
+        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['secondaryDataFileDestinationVec'] = $secondaryFileLocation;
+        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['newDatabaseName'] = $targetDB;    
+    
+        if($targetInstance -eq '' -and $targetServer -ne $sourceServer){
+            $targetInstance = 'MSSQLSERVER'
+        }
+    
+        # search for target server
+    
+        $targetEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $targetServer }
+        if($null -eq $targetEntity){
+            Write-Host "Target Server Not Found" -ForegroundColor Yellow
+            exit 1
+        }
+        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams['targetHost'] = $targetEntity.appEntity.entity;
+        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams['targetHostParentSource'] = @{ 'id' = $targetEntity.appEntity.entity.parentId }
+        if($targetInstance){
+            $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['instanceName'] = $targetInstance
+        }else{
+            $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['instanceName'] = 'MSSQLSERVER'
+        }
+    
+        # execute the recovery task (post /recoverApplication api call)
+        $response = api post /recoverApplication $restoreTask
+    
+        if($response){
+            "Initiating migration of $sourceInstance/$sourceDB to $targetServer/$targetInstance/$targetDB"
+            exit 0
+        }else{
+            exit 1
+        }
     }
-    $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['dataFileDestination'] = $mdfFolder;
-    $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['logFileDestination'] = $ldfFolder;
-    $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['secondaryDataFileDestinationVec'] = $secondaryFileLocation;
-    $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['newDatabaseName'] = $targetDB;    
-
-    if($targetInstance -eq '' -and $targetServer -ne $sourceServer){
-        $targetInstance = 'MSSQLSERVER'
-    }
-
-    # search for target server
-
-    $targetEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $targetServer }
-    if($null -eq $targetEntity){
-        Write-Host "Target Server Not Found" -ForegroundColor Yellow
-        exit 1
-    }
-    $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams['targetHost'] = $targetEntity.appEntity.entity;
-    $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams['targetHostParentSource'] = @{ 'id' = $targetEntity.appEntity.entity.parentId }
-    if($targetInstance){
-        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['instanceName'] = $targetInstance
-    }else{
-        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['instanceName'] = 'MSSQLSERVER'
-    }
-
-    # execute the recovery task (post /recoverApplication api call)
-    $response = api post /recoverApplication $restoreTask
-
-    if($response){
-        "Initiating migration of $sourceInstance/$sourceDB to $targetServer/$targetInstance/$targetDB"
-        exit 0
-    }else{
-        exit 1
-    }
-}else{
+}
+if(!$init){
     if($showAll){
         $daysBackUsecs = timeAgo $daysBack days
         $migrations = (api get -v2 "data-protect/recoveries?snapshotEnvironments=kSQL&recoveryActions=RecoverApps&startTimeUsecs=$daysBackUsecs").recoveries
@@ -301,6 +303,9 @@ if($init -or $showPaths){
             return $migrations.id
         }
     }
+    if($sourceDB -ne '' -and $sourceServer -ne ''){
+        $migrations = $migrations | Where-Object {$_.mssqlParams.objects[0].objectInfo.sourceId -eq $latestdb.vmDocument.objectId.entity.sqlEntity.ownerId -and $_.mssqlParams.objects[0].objectInfo.name -eq "$($latestdb.vmDocument.objectId.entity.sqlEntity.instanceName)/$($latestdb.vmDocument.objectId.entity.sqlEntity.databaseName)"}
+    }
     $migrationCount = 0
     foreach($migration in $migrations){
         $migrationCount += 1
@@ -315,7 +320,6 @@ if($init -or $showPaths){
         Write-Host "Target DB: $mTargetHost/$mTargetInstance/$mTargetDB"
         Write-Host "   Status: $($migration.status)"
         Write-Host "Synced To: $(usecsToDate $mSnapshotUsecs)"
-
         if($sync){
             if($migration.status -eq 'OnHold'){
                 Write-host "Performing Sync..."
