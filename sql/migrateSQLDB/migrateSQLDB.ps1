@@ -108,12 +108,6 @@ if($init -or $showPaths){
     # search for database to clone
     $searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&entityTypes=kVMware&vmName=$sourceInstance/$sourceDB"
 
-    if($targetInstance -ne '' -and $targetInstance -ne $sourceInstance){
-        $differentInstance = $True
-    }else{
-        $differentInstance = $False
-    }
-
     # narrow the search results to the correct source server
     $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer } | `
                                     Where-Object {$_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB } | `
@@ -168,7 +162,6 @@ if($init -or $showPaths){
     # search for source server
     $entities = api get /appEntities?appEnvType=3`&envType=$entityType
     $ownerId = $latestdb.vmDocument.objectId.entity.sqlEntity.ownerId
-    $dbId = $latestdb.vmDocument.objectId.entity.id
 
     $versionNum = 0
     $dbVersions = $latestdb.vmDocument.versions
