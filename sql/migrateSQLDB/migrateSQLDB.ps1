@@ -22,7 +22,6 @@ param(
     [Parameter()][hashtable]$ndfFolders,                # paths to restore the ndfs (requires Cohesity 6.0x)
     [Parameter()][string]$targetInstance,               # SQL instance name on the targetServer
     [Parameter()][switch]$noRecovery,                   # restore with NORECOVERY option
-    [Parameter()][switch]$helios,                       # connect via Helios
     [Parameter()][switch]$keepCdc,                      # keepCDC
     [Parameter()][switch]$showPaths,                    # show data file paths and exit
     [Parameter()][switch]$useSourcePaths,               # use same paths from source server for target server
@@ -287,7 +286,8 @@ if($init -or $showPaths){
     }
 }else{
     if($name -ne '' -or $id -ne '' -or $filter -ne ''){
-        $migrations = (api get -v2 "data-protect/recoveries?snapshotEnvironments=kSQL&recoveryActions=RecoverApps").recoveries
+        $daysBackUsecs = timeAgo $daysBack days
+        $migrations = (api get -v2 "data-protect/recoveries?snapshotEnvironments=kSQL&recoveryActions=RecoverApps&startTimeUsecs=$daysBackUsecs").recoveries
     }elseif($showAll){
         $daysBackUsecs = timeAgo $daysBack days
         $migrations = (api get -v2 "data-protect/recoveries?snapshotEnvironments=kSQL&recoveryActions=RecoverApps&startTimeUsecs=$daysBackUsecs").recoveries
@@ -302,6 +302,9 @@ if($init -or $showPaths){
     }
     if($filter -ne ''){
         $migrations = $migrations | Where-Object name -match $filter
+    }
+    if($migrations){
+        $migrations = $migrations | Where-Object {$_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.PSObject.Properties['multiStageRestoreOptions']}
     }
     $migrationCount = 0
     foreach($migration in $migrations | sort-object -Property id -Descending){
