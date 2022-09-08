@@ -139,10 +139,6 @@ foreach($s in $sourceDBs){
         }
     }
 
-    if($targetInstance -eq ''){
-        $targetInstance = 'MSSQLSERVER'
-    }
-
     # handle source instance name e.g. instance/dbname
     if($sourceDB.Contains('/')){
         if($targetDB -eq $sourceDB){
@@ -216,7 +212,7 @@ foreach($s in $sourceDBs){
         $versionNum = 0
         $dbVersions = $latestdb.vmDocument.versions
 
-        $restoreTaskName = "Migrate-{0}_{1}_{2}_{3}" -f $sourceServer, $sourceInstance, $sourceDB, $(get-date -UFormat '%b_%d_%Y_%H-%M%p')
+        $restoreTaskName = "Migrate-{0}_{1}_{2}_{3}" -f $sourceServer, $sourceInstance, $s, $(get-date -UFormat '%b_%d_%Y_%H-%M%p')
 
         # create new clone task (RestoreAppArg Object)
         $restoreTask = @{
@@ -292,6 +288,9 @@ foreach($s in $sourceDBs){
         }
 
         if($init){
+            if($targetInstance -eq ''){
+                $targetInstance = 'MSSQLSERVER'
+            }
             if('' -eq $mdfFolder){
                 Write-Host "-mdfFolder must be specified when restoring to a new database name or different target server" -ForegroundColor Yellow
                 exit
@@ -355,14 +354,26 @@ foreach($s in $sourceDBs){
         }
         if($targetDB -ne '' -and $targetServer -ne ''){
             if($migrations){
+                if($targetDB.Contains('/')){
+                    $thisTargetInstance, $thisTargetDB = $targetDB.Split('/')
+                }else{
+                    $thisTargetDB = $targetDB
+                }
+                if($targetInstance){
+                    $thisTargetInstance = $targetInstance
+                }elseif($targetDB.Contains('/')){
+                    $thisTargetInstance = $targetDB.Split('/')[0]
+                }else{
+                    $thisTargetInstance = 'MSSQLSERVER'
+                }
                 $migrations = $migrations | Where-Object {($_.mssqlParams.recoverAppParams.PSObject.Properties['sqlTargetParams'] -and
                                                         $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.host.name -eq $targetServer -and
-                                                        $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.instanceName -eq $targetInstance -and
-                                                        $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.databaseName -eq $targetDB) -or
+                                                        $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.instanceName -eq $thisTargetInstance -and
+                                                        $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.databaseName -eq $thisTargetDB) -or
                                                         ($_.mssqlParams.recoverAppParams[0].PSObject.Properties['sqlTargetParams'] -and
                                                         $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.host.name -eq $targetServer -and
-                                                        $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.instanceName -eq $targetInstance -and
-                                                        $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.databaseName -eq $targetDB)}
+                                                        $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.instanceName -eq $thisTargetInstance -and
+                                                        $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.databaseName -eq $thisTargetDB)}
 
                 }
             }
