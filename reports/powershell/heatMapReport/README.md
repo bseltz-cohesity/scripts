@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This PowerShell script reports per-job and per-view storage consumption. The script will generate an html report and send it to email recipients. Per-job abd per-view storage statistics are available in Cohesity 6.4 and later.
+This PowerShell genrates a heatmap report for all protected objects, and can email the HTML output as an email attachment.
 
 ## Download the script
 
