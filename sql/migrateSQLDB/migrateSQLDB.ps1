@@ -98,6 +98,8 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
+$cluster = api get cluster
+
 # handle source instance name e.g. instance/dbname
 if($sourceDB.Contains('/')){
     if($targetDB -eq $sourceDB){
@@ -114,8 +116,8 @@ if($init -or $showPaths -or ($sourceDB -ne '' -and $sourceServer -ne '')){
 
     # narrow the search results to the correct source server
     $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer } | `
-                                    Where-Object {$_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB } | `
-                                    Where-Object {$_.vmDocument.objectName -eq "$sourceInstance/$sourceDB"}
+                                      Where-Object {$_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB } | `
+                                      Where-Object {$_.vmDocument.objectName -eq "$sourceInstance/$sourceDB"}
 
     if($null -eq $dbresults){
         write-host "Database $sourceInstance/$sourceDB on Server $sourceServer Not Found" -foregroundcolor yellow
@@ -297,15 +299,31 @@ if(!$init){
         $migrations = $migrations | Where-Object name -match $filter
     }
     if($sourceDB -ne '' -and $sourceServer -ne ''){
-        $migrations = $migrations | Where-Object {$_.mssqlParams.objects[0].objectInfo.sourceId -eq $latestdb.vmDocument.objectId.entity.sqlEntity.ownerId -and $_.mssqlParams.objects[0].objectInfo.name -eq "$($latestdb.vmDocument.objectId.entity.sqlEntity.instanceName)/$($latestdb.vmDocument.objectId.entity.sqlEntity.databaseName)"}
+        if($migrations){
+            $migrations = $migrations | Where-Object {($_.mssqlParams.PSObject.Properties['objects'] -and
+                                                       $_.mssqlParams.objects[0].objectInfo.sourceId -eq $latestdb.vmDocument.objectId.entity.sqlEntity.ownerId -and 
+                                                       $_.mssqlParams.objects[0].objectInfo.name -eq "$($latestdb.vmDocument.objectId.entity.sqlEntity.instanceName)/$($latestdb.vmDocument.objectId.entity.sqlEntity.databaseName)") -or
+                                                      ($_.mssqlParams.recoverAppParams[0].PSObject.Properties['objectInfo'] -and
+                                                       $_.mssqlParams.recoverAppParams[0].hostInfo.name -eq $sourceServer -and
+                                                       $_.mssqlParams.recoverAppParams[0].objectInfo.name -eq "$($latestdb.vmDocument.objectId.entity.sqlEntity.instanceName)/$($latestdb.vmDocument.objectId.entity.sqlEntity.databaseName)")}
+        }
     }
     if($targetDB -ne '' -and $targetServer -ne ''){
-        $migrations = $migrations | Where-Object {$_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.host.name -eq $targetServer -and
-                                                  $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.instanceName -eq $targetInstance -and
-                                                  $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.databaseName -eq $targetDB}
-    }
+        if($migrations){
+            $migrations = $migrations | Where-Object {($_.mssqlParams.recoverAppParams.PSObject.Properties['sqlTargetParams'] -and
+                                                    $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.host.name -eq $targetServer -and
+                                                    $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.instanceName -eq $targetInstance -and
+                                                    $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.databaseName -eq $targetDB) -or
+                                                    ($_.mssqlParams.recoverAppParams[0].PSObject.Properties['sqlTargetParams'] -and
+                                                    $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.host.name -eq $targetServer -and
+                                                    $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.instanceName -eq $targetInstance -and
+                                                    $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.databaseName -eq $targetDB)}
+
+            }
+        }
     if($migrations){
-        $migrations = $migrations | Where-Object {$_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.PSObject.Properties['multiStageRestoreOptions']}
+        $migrations = $migrations | Where-Object {$_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.PSObject.Properties['multiStageRestoreOptions'] -or
+                                                  $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.PSObject.Properties['multiStageRestoreOptions']}
         $migrations = $migrations | sort-object -Property id -Descending
         if($returnTaskIds){
             return $migrations.id
