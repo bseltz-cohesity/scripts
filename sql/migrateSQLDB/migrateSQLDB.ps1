@@ -100,6 +100,16 @@ if($targetDB -ne ''){
 
 $taskIds = @()
 $sourceNames = @{}
+$entities = $null
+
+if(!$init){
+    if($showAll){
+        $daysBackUsecs = timeAgo $daysBack days
+        $allmigrations = (api get -v2 "data-protect/recoveries?snapshotEnvironments=kSQL&recoveryActions=RecoverApps&startTimeUsecs=$daysBackUsecs").recoveries
+    }else{
+        $allmigrations = (api get -v2 "data-protect/recoveries?status=OnHold,Running&snapshotEnvironments=kSQL&recoveryActions=RecoverApps").recoveries
+    }
+}
 
 foreach($s in $sourceDBs){
     $sourceDB = [string]$s
@@ -209,7 +219,10 @@ foreach($s in $sourceDBs){
         $entityType = $latestdb.registeredSource.type
 
         # search for source server
-        $entities = api get /appEntities?appEnvType=3`&envType=$entityType
+        if($null -eq $entities){
+            $entities = api get /appEntities?appEnvType=3`&envType=$entityType
+        }
+        
         $ownerId = $latestdb.vmDocument.objectId.entity.sqlEntity.ownerId
 
         $versionNum = 0
@@ -331,12 +344,7 @@ foreach($s in $sourceDBs){
         }
     }
     if(!$init){
-        if($showAll){
-            $daysBackUsecs = timeAgo $daysBack days
-            $migrations = (api get -v2 "data-protect/recoveries?snapshotEnvironments=kSQL&recoveryActions=RecoverApps&startTimeUsecs=$daysBackUsecs").recoveries
-        }else{
-            $migrations = (api get -v2 "data-protect/recoveries?status=OnHold,Running&snapshotEnvironments=kSQL&recoveryActions=RecoverApps").recoveries
-        }
+        $migrations = $allmigrations.clone()
         if($name -ne ''){
             $migrations = $migrations | Where-Object name -eq $name
         }
