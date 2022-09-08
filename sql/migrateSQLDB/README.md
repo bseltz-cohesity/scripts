@@ -139,7 +139,8 @@ If none are used, the script will be in list mode.
 * -id: (optional) only show/sync/finalize migration task matching this id
 * -returnTaskIds: (optional) return resulting list of task IDs and exit
 * -sourceServer: (optional) filter on -sourceServer and -sourceDB
-* -sourceDB: (optional) filter on -sourceServer and -sourceDB
+* -sourceDB: (optional) one or more source DBs to filter on -sourceServer and -sourceDB (comma separated)
+* -sourceDBList: (optional) text file of source DBs to filter on -sourceServer and -sourceDB (one per line)
 * -targetServer: (optional) filter on -sourceServer and -sourceDB
 * -targetDB: (optional) filter on -targetServer and -targetDB
 

@@ -13,9 +13,10 @@ param(
     [Parameter()][switch]$emailMfaCode,                 # send mfa code via email
     [Parameter()][string]$clusterName = $null,          # cluster to connect to via helios/mcm
     [Parameter()][string]$sourceServer = '',            # protection source where the DB was backed up
-    [Parameter()][string]$sourceDB = '',                # name of the source DB we want to restore
+    [Parameter()][array]$sourceDB,                      # names of the source DBs we want to migrate
+    [Parameter()][string]$sourceDBList,                 # text file of sourceDBs to migrate
     [Parameter()][string]$targetServer = '',            # where to restore the DB to
-    [Parameter()][string]$targetDB = $sourceDB,         # desired restore DB name
+    [Parameter()][string]$targetDB = '',                # desired restore DB name
     [Parameter()][switch]$overWrite,                    # overwrite existing DB
     [Parameter()][string]$mdfFolder,                    # path to restore the mdf
     [Parameter()][string]$ldfFolder = $mdfFolder,       # path to restore the ldf
@@ -37,42 +38,34 @@ param(
     [Parameter()][switch]$returnTaskIds                 # only return task IDs
 )
 
-# demand parameters for init mode
-if($init -or $showPaths){
-    if('' -eq $sourceServer){
-        Write-Host "-sourceServer is required" -ForegroundColor Yellow
-        exit 1
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
     }
-    if('' -eq $sourceDB){
-        Write-Host "-sourceDB is required" -ForegroundColor Yellow
-        exit 1
-    }
-}
-if($init){
-    if('' -eq $targetServer){
-        Write-Host "-targetServer is required" -ForegroundColor Yellow
-        exit 1
-    }
-}
-
-$isAutoSyncEnabled = $True
-if($manualsync){
-    $isAutoSyncEnabled = $False
-}
-
-# handle alternate secondary data file locations
-$secondaryFileLocation = @()
-if($ndfFolders){
-    if($ndfFolders -is [hashtable]){
-        foreach ($key in $ndfFolders.Keys){
-            $secondaryFileLocation += @{'filePattern' = $key; 'targetDirectory' = $ndfFolders[$key]}
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
         }
     }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
+        exit
+    }
+    return ($items | Sort-Object -Unique)
 }
 
-if($targetInstance -eq ''){
-    $targetInstance = 'MSSQLSERVER'
+$sourceDBs = @(gatherList -Param $sourceDB -FilePath $sourceDBList -Name 'sourceDBs' -Required $False)
+
+if(!$sourceDBs -or $sourceDBs.Count -eq 0){
+    $sourceDBs = @('')
 }
+
+$migrationCount = 0
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -88,7 +81,7 @@ if($USING_HELIOS){
     if($clusterName){
         heliosCluster $clusterName
     }else{
-        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
         exit 1
     }
 }
@@ -98,270 +91,328 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
-$cluster = api get cluster
-
-# handle source instance name e.g. instance/dbname
-if($sourceDB.Contains('/')){
-    if($targetDB -eq $sourceDB){
-        $targetDB = $sourceDB.Split('/')[1]
-    }
-    $sourceInstance, $sourceDB = $sourceDB.Split('/')
-}else{
-    $sourceInstance = 'MSSQLSERVER'
-}
-
-if($init -or $showPaths -or ($sourceDB -ne '' -and $sourceServer -ne '')){
-    # search for database to clone
-    $searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&entityTypes=kVMware&vmName=$sourceInstance/$sourceDB"
-
-    # narrow the search results to the correct source server
-    $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer } | `
-                                      Where-Object {$_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB } | `
-                                      Where-Object {$_.vmDocument.objectName -eq "$sourceInstance/$sourceDB"}
-
-    if($null -eq $dbresults){
-        write-host "Database $sourceInstance/$sourceDB on Server $sourceServer Not Found" -foregroundcolor yellow
+if($init -or $showPaths){
+    if($sourceDBs.Count -gt 1){
+        Write-Host "-init and -showPaths can only support one sourceDB" -ForegroundColor Yellow
         exit
     }
+}
 
-    # if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot 
-    $latestdb = ($dbresults | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
+$taskIds = @()
 
-    if($null -eq $latestdb){
-        write-host "Database $sourceInstance/$sourceDB on Server $sourceServer Not Found" -foregroundcolor yellow
-        exit 1
+foreach($s in $sourceDBs){
+    $sourceDB = [string]$s
+    if($targetDB -eq ''){
+        $targetDB = $sourceDB
     }
-
-    if($showPaths){
-        $latestdb.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec | Format-Table -Property logicalName, @{l='Size (MiB)'; e={$_.sizeBytes / (1024 * 1024)}}, fullPath
-    
-        Write-Host "Example Restore Path Parameters:`n"
-    
-        $ndfFolderExample = '@{'
-        $mdfFolderExample = ''
-        $ldfFolderExample = ''
-        foreach($file in $latestdb.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec){
-            $fileName = Split-Path -Path $file.fullPath -Leaf
-            $filePath = (Split-Path -Path $file.fullPath).replace('/', '\')
-            $extension = ".$((Split-Path -Path $file.fullPath -Leaf).Split('.')[-1])"
-            if($file.type -eq 0){
-                if($mdfFolderExample -eq '' -and $extension -eq '.mdf'){
-                    $mdfFolderExample = $filePath
-                }else{
-                    $ndfFolderExample += "`n              '.*$fileName' = '$filePath'; "
-                }
-            }else{
-                if($ldfFolderExample -eq ''){
-                    $ldfFolderExample = $filePath
-                }
-            }
+    # demand parameters for init mode
+    if($init -or $showPaths){
+        if('' -eq $sourceServer){
+            Write-Host "-sourceServer is required" -ForegroundColor Yellow
+            exit 1
         }
-        $ndfFolderExample += "`n            }"
-        Write-Host "-mdfFolder $mdfFolderExample ```n-ldfFolder $ldfFolderExample ```n-ndfFolders $ndfFolderExample`n"
-        exit 0
-    }
-
-    # identify physical or vm
-    $entityType = $latestdb.registeredSource.type
-
-    # search for source server
-    $entities = api get /appEntities?appEnvType=3`&envType=$entityType
-    $ownerId = $latestdb.vmDocument.objectId.entity.sqlEntity.ownerId
-
-    $versionNum = 0
-    $dbVersions = $latestdb.vmDocument.versions
-
-    $restoreTaskName = "Migrate-{0}_{1}_{2}_{3}" -f $sourceServer, $sourceInstance, $sourceDB, $(get-date -UFormat '%b_%d_%Y_%H-%M%p')
-
-    # create new clone task (RestoreAppArg Object)
-    $restoreTask = @{
-        "name" = $restoreTaskName;
-        'action' = 'kRecoverApp';
-        'restoreAppParams' = @{
-            'type' = 3;
-            'ownerRestoreInfo' = @{
-                "ownerObject" = @{
-                    "jobUid" = $latestdb.vmDocument.objectId.jobUid;
-                    "jobId" = $latestdb.vmDocument.objectId.jobId;
-                    "jobInstanceId" = $dbVersions[$versionNum].instanceId.jobInstanceId;
-                    "startTimeUsecs" = $dbVersions[$versionNum].instanceId.jobStartTimeUsecs;
-                    "entity" = @{
-                        "id" = $ownerId
-                    }
-                }
-                'ownerRestoreParams' = @{
-                    'action' = 'kRecoverVMs';
-                    'powerStateConfig' = @{}
-                };
-                'performRestore' = $false
-            };
-            'restoreAppObjectVec' = @(
-                @{
-                    "appEntity" = $latestdb.vmDocument.objectId.entity;
-                    'restoreParams' = @{
-                        'sqlRestoreParams' = @{
-                            'captureTailLogs' = $false;
-                            'secondaryDataFileDestinationVec' = @();
-                            'alternateLocationParams' = @{};
-                            "isAutoSyncEnabled" = $isAutoSyncEnabled;
-                            "isMultiStageRestore" = $True
-                        };
-                    }
-                }
-            )
+        if('' -eq $sourceDB){
+            Write-Host "-sourceDB is required" -ForegroundColor Yellow
+            exit 1
         }
     }
-
-    # noRecovery
-    if($noRecovery){
-        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.withNoRecovery = $True
-    }
-
-    # keepCDC
-    if($keepCdc){
-        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['keepCdc'] = $True
-    }
-
-    # alt location params
-    if($useSourcePaths){
-        $mdfFolderFound = $False
-        $ldfFolderFound = $False
-        foreach($datafile in $latestdb.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec){
-            $path = $datafile.fullPath.subString(0, $datafile.fullPath.LastIndexOf('\'))
-            $fileName = $datafile.fullPath.subString($datafile.fullPath.LastIndexOf('\') + 1)
-            if($datafile.type -eq 0){
-                if($mdfFolderFound -eq $False){
-                    $mdfFolder = $path
-                    $mdfFolderFound = $True
-                }else{
-                    $secondaryFileLocation += @{'filePattern' = $datafile.fullPath; 'targetDirectory' = $path}
-                }
-            }
-            if($datafile.type -eq 1){
-                if($ldfFolderFound -eq $False){
-                    $ldfFolder = $path
-                    $ldfFolderFound = $True
-                }
-            }
-        }
-    }
-
     if($init){
-        if('' -eq $mdfFolder){
-            write-host "-mdfFolder must be specified when restoring to a new database name or different target server" -ForegroundColor Yellow
-            exit
-        }
-        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['dataFileDestination'] = $mdfFolder;
-        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['logFileDestination'] = $ldfFolder;
-        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['secondaryDataFileDestinationVec'] = $secondaryFileLocation;
-        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['newDatabaseName'] = $targetDB;    
-    
-        # search for target server
-    
-        $targetEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $targetServer }
-        if($null -eq $targetEntity){
-            Write-Host "Target Server Not Found" -ForegroundColor Yellow
+        if('' -eq $targetServer){
+            Write-Host "-targetServer is required" -ForegroundColor Yellow
             exit 1
         }
-        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams['targetHost'] = $targetEntity.appEntity.entity;
-        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams['targetHostParentSource'] = @{ 'id' = $targetEntity.appEntity.entity.parentId }
-        if($targetInstance){
-            $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['instanceName'] = $targetInstance
-        }else{
-            $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['instanceName'] = 'MSSQLSERVER'
+    }
+
+    $isAutoSyncEnabled = $True
+    if($manualsync){
+        $isAutoSyncEnabled = $False
+    }
+
+    # handle alternate secondary data file locations
+    $secondaryFileLocation = @()
+    if($ndfFolders){
+        if($ndfFolders -is [hashtable]){
+            foreach ($key in $ndfFolders.Keys){
+                $secondaryFileLocation += @{'filePattern' = $key; 'targetDirectory' = $ndfFolders[$key]}
+            }
         }
-    
-        # execute the recovery task (post /recoverApplication api call)
-        $response = api post /recoverApplication $restoreTask
-    
-        if($response){
-            "Initiating migration of $sourceInstance/$sourceDB to $targetServer/$targetInstance/$targetDB"
+    }
+
+    if($targetInstance -eq ''){
+        $targetInstance = 'MSSQLSERVER'
+    }
+
+    # handle source instance name e.g. instance/dbname
+    if($sourceDB.Contains('/')){
+        if($targetDB -eq $sourceDB){
+            $targetDB = $sourceDB.Split('/')[1]
+        }
+        $sourceInstance, $sourceDB = $sourceDB.Split('/')
+    }else{
+        $sourceInstance = 'MSSQLSERVER'
+    }
+
+    if($init -or $showPaths -or ($sourceDB -ne '' -and $sourceServer -ne '')){
+        # search for database to clone
+        $searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&entityTypes=kVMware&vmName=$sourceInstance/$sourceDB"
+
+        # narrow the search results to the correct source server
+        $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer } | `
+                                        Where-Object {$_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB } | `
+                                        Where-Object {$_.vmDocument.objectName -eq "$sourceInstance/$sourceDB"}
+
+        if($null -eq $dbresults){
+            Write-Host "Database $sourceInstance/$sourceDB on Server $sourceServer Not Found" -ForegroundColor Yellow
+            # exit
+            continue
+        }
+
+        # if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot 
+        $latestdb = ($dbresults | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
+
+        if($null -eq $latestdb){
+            Write-Host "Database $sourceInstance/$sourceDB on Server $sourceServer Not Found" -ForegroundColor Yellow
+            # exit
+            continue
+        }
+
+        if($showPaths){
+            $latestdb.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec | Format-Table -Property logicalName, @{l='Size (MiB)'; e={$_.sizeBytes / (1024 * 1024)}}, fullPath
+        
+            Write-Host "Example Restore Path Parameters:`n"
+        
+            $ndfFolderExample = '@{'
+            $mdfFolderExample = ''
+            $ldfFolderExample = ''
+            foreach($file in $latestdb.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec){
+                $fileName = Split-Path -Path $file.fullPath -Leaf
+                $filePath = (Split-Path -Path $file.fullPath).replace('/', '\')
+                $extension = ".$((Split-Path -Path $file.fullPath -Leaf).Split('.')[-1])"
+                if($file.type -eq 0){
+                    if($mdfFolderExample -eq '' -and $extension -eq '.mdf'){
+                        $mdfFolderExample = $filePath
+                    }else{
+                        $ndfFolderExample += "`n              '.*$fileName' = '$filePath'; "
+                    }
+                }else{
+                    if($ldfFolderExample -eq ''){
+                        $ldfFolderExample = $filePath
+                    }
+                }
+            }
+            $ndfFolderExample += "`n            }"
+            Write-Host "-mdfFolder $mdfFolderExample ```n-ldfFolder $ldfFolderExample ```n-ndfFolders $ndfFolderExample`n"
             exit 0
+        }
+
+        # identify physical or vm
+        $entityType = $latestdb.registeredSource.type
+
+        # search for source server
+        $entities = api get /appEntities?appEnvType=3`&envType=$entityType
+        $ownerId = $latestdb.vmDocument.objectId.entity.sqlEntity.ownerId
+
+        $versionNum = 0
+        $dbVersions = $latestdb.vmDocument.versions
+
+        $restoreTaskName = "Migrate-{0}_{1}_{2}_{3}" -f $sourceServer, $sourceInstance, $sourceDB, $(get-date -UFormat '%b_%d_%Y_%H-%M%p')
+
+        # create new clone task (RestoreAppArg Object)
+        $restoreTask = @{
+            "name" = $restoreTaskName;
+            'action' = 'kRecoverApp';
+            'restoreAppParams' = @{
+                'type' = 3;
+                'ownerRestoreInfo' = @{
+                    "ownerObject" = @{
+                        "jobUid" = $latestdb.vmDocument.objectId.jobUid;
+                        "jobId" = $latestdb.vmDocument.objectId.jobId;
+                        "jobInstanceId" = $dbVersions[$versionNum].instanceId.jobInstanceId;
+                        "startTimeUsecs" = $dbVersions[$versionNum].instanceId.jobStartTimeUsecs;
+                        "entity" = @{
+                            "id" = $ownerId
+                        }
+                    }
+                    'ownerRestoreParams' = @{
+                        'action' = 'kRecoverVMs';
+                        'powerStateConfig' = @{}
+                    };
+                    'performRestore' = $false
+                };
+                'restoreAppObjectVec' = @(
+                    @{
+                        "appEntity" = $latestdb.vmDocument.objectId.entity;
+                        'restoreParams' = @{
+                            'sqlRestoreParams' = @{
+                                'captureTailLogs' = $false;
+                                'secondaryDataFileDestinationVec' = @();
+                                'alternateLocationParams' = @{};
+                                "isAutoSyncEnabled" = $isAutoSyncEnabled;
+                                "isMultiStageRestore" = $True
+                            };
+                        }
+                    }
+                )
+            }
+        }
+
+        # noRecovery
+        if($noRecovery){
+            $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.withNoRecovery = $True
+        }
+
+        # keepCDC
+        if($keepCdc){
+            $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['keepCdc'] = $True
+        }
+
+        # alt location params
+        if($useSourcePaths){
+            $mdfFolderFound = $False
+            $ldfFolderFound = $False
+            foreach($datafile in $latestdb.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec){
+                $path = $datafile.fullPath.subString(0, $datafile.fullPath.LastIndexOf('\'))
+                $fileName = $datafile.fullPath.subString($datafile.fullPath.LastIndexOf('\') + 1)
+                if($datafile.type -eq 0){
+                    if($mdfFolderFound -eq $False){
+                        $mdfFolder = $path
+                        $mdfFolderFound = $True
+                    }else{
+                        $secondaryFileLocation += @{'filePattern' = $datafile.fullPath; 'targetDirectory' = $path}
+                    }
+                }
+                if($datafile.type -eq 1){
+                    if($ldfFolderFound -eq $False){
+                        $ldfFolder = $path
+                        $ldfFolderFound = $True
+                    }
+                }
+            }
+        }
+
+        if($init){
+            if('' -eq $mdfFolder){
+                Write-Host "-mdfFolder must be specified when restoring to a new database name or different target server" -ForegroundColor Yellow
+                exit
+            }
+            $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['dataFileDestination'] = $mdfFolder;
+            $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['logFileDestination'] = $ldfFolder;
+            $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['secondaryDataFileDestinationVec'] = $secondaryFileLocation;
+            $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['newDatabaseName'] = $targetDB;    
+        
+            # search for target server
+        
+            $targetEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $targetServer }
+            if($null -eq $targetEntity){
+                Write-Host "Target Server Not Found" -ForegroundColor Yellow
+                exit 1
+            }
+            $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams['targetHost'] = $targetEntity.appEntity.entity;
+            $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams['targetHostParentSource'] = @{ 'id' = $targetEntity.appEntity.entity.parentId }
+            if($targetInstance){
+                $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['instanceName'] = $targetInstance
+            }else{
+                $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['instanceName'] = 'MSSQLSERVER'
+            }
+        
+            # execute the recovery task (post /recoverApplication api call)
+            $response = api post /recoverApplication $restoreTask
+        
+            if($response){
+                "Initiating migration of $sourceInstance/$sourceDB to $targetServer/$targetInstance/$targetDB"
+                exit 0
+            }else{
+                exit 1
+            }
+        }
+    }
+    if(!$init){
+        if($showAll){
+            $daysBackUsecs = timeAgo $daysBack days
+            $migrations = (api get -v2 "data-protect/recoveries?snapshotEnvironments=kSQL&recoveryActions=RecoverApps&startTimeUsecs=$daysBackUsecs").recoveries
         }else{
-            exit 1
+            $migrations = (api get -v2 "data-protect/recoveries?status=OnHold,Running&snapshotEnvironments=kSQL&recoveryActions=RecoverApps").recoveries
+        }
+        if($name -ne ''){
+            $migrations = $migrations | Where-Object name -eq $name
+        }
+        if($id -ne ''){
+            $migrations = $migrations | Where-Object id -eq $id
+        }
+        if($filter -ne ''){
+            $migrations = $migrations | Where-Object name -match $filter
+        }
+        if($sourceDB -ne '' -and $sourceServer -ne ''){
+            if($migrations){
+                $migrations = $migrations | Where-Object {($_.mssqlParams.PSObject.Properties['objects'] -and
+                                                        $_.mssqlParams.objects[0].objectInfo.sourceId -eq $latestdb.vmDocument.objectId.entity.sqlEntity.ownerId -and 
+                                                        $_.mssqlParams.objects[0].objectInfo.name -eq "$($latestdb.vmDocument.objectId.entity.sqlEntity.instanceName)/$($latestdb.vmDocument.objectId.entity.sqlEntity.databaseName)") -or
+                                                        ($_.mssqlParams.recoverAppParams[0].PSObject.Properties['objectInfo'] -and
+                                                        $_.mssqlParams.recoverAppParams[0].hostInfo.name -eq $sourceServer -and
+                                                        $_.mssqlParams.recoverAppParams[0].objectInfo.name -eq "$($latestdb.vmDocument.objectId.entity.sqlEntity.instanceName)/$($latestdb.vmDocument.objectId.entity.sqlEntity.databaseName)")}
+            }
+        }
+        if($targetDB -ne '' -and $targetServer -ne ''){
+            if($migrations){
+                $migrations = $migrations | Where-Object {($_.mssqlParams.recoverAppParams.PSObject.Properties['sqlTargetParams'] -and
+                                                        $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.host.name -eq $targetServer -and
+                                                        $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.instanceName -eq $targetInstance -and
+                                                        $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.databaseName -eq $targetDB) -or
+                                                        ($_.mssqlParams.recoverAppParams[0].PSObject.Properties['sqlTargetParams'] -and
+                                                        $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.host.name -eq $targetServer -and
+                                                        $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.instanceName -eq $targetInstance -and
+                                                        $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.databaseName -eq $targetDB)}
+
+                }
+            }
+        if($migrations){
+            $migrations = $migrations | Where-Object {$_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.PSObject.Properties['multiStageRestoreOptions'] -or
+                                                    $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.PSObject.Properties['multiStageRestoreOptions']}
+            $migrations = $migrations | sort-object -Property id -Descending
+            if($returnTaskIds){
+                $taskIds = @($taskIds + $migrations.id)
+                continue
+            }
+        }
+
+        foreach($migration in $migrations){
+            $migrationCount += 1
+            $mTaskId = [int]($migration.id -split ':')[2]
+            $mTask = api get /restoretasks/$mTaskId
+            $mSnapshotUsecs = $mTask.restoreTask.restoreSubTaskWrapperProtoVec[-1].performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.startTimeUsecs
+            $mTargetHost = $migration.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.host.name
+            $mTargetInstance = $migration.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.instanceName
+            $mTargetDB = $migration.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.databaseName
+            Write-Host "`nTask Name: $($migration.name)"
+            Write-Host "  Task ID: $($migration.id)"
+            Write-Host "Target DB: $mTargetHost/$mTargetInstance/$mTargetDB"
+            Write-Host "   Status: $($migration.status)"
+            Write-Host "Synced To: $(usecsToDate $mSnapshotUsecs)"
+            if($sync){
+                if($migration.status -eq 'OnHold'){
+                    Write-Host "Performing Sync..."
+                    $null = api put restore/recover -quiet @{"restoreTaskId" = $mTaskId; "sqlOptions" = "kUpdate"}
+                }else{
+                    Write-Host "Can't sync now ($($migration.status))" -ForegroundColor Yellow
+                }
+            }
+            if($finalize){
+                if($migration.status -eq 'OnHold'){
+                    Write-Host "Finalizing..."
+                    $null = api put restore/recover -quiet @{"restoreTaskId" = $mTaskId; "sqlOptions" = "kFinalize"}
+                }else{
+                    Write-Host "Can't finalize now ($($migration.status))" -ForegroundColor Yellow
+                }
+            }
         }
     }
 }
-if(!$init){
-    if($showAll){
-        $daysBackUsecs = timeAgo $daysBack days
-        $migrations = (api get -v2 "data-protect/recoveries?snapshotEnvironments=kSQL&recoveryActions=RecoverApps&startTimeUsecs=$daysBackUsecs").recoveries
-    }else{
-        $migrations = (api get -v2 "data-protect/recoveries?status=OnHold,Running&snapshotEnvironments=kSQL&recoveryActions=RecoverApps").recoveries
-    }
-    if($name -ne ''){
-        $migrations = $migrations | Where-Object name -eq $name
-    }
-    if($id -ne ''){
-        $migrations = $migrations | Where-Object id -eq $id
-    }
-    if($filter -ne ''){
-        $migrations = $migrations | Where-Object name -match $filter
-    }
-    if($sourceDB -ne '' -and $sourceServer -ne ''){
-        if($migrations){
-            $migrations = $migrations | Where-Object {($_.mssqlParams.PSObject.Properties['objects'] -and
-                                                       $_.mssqlParams.objects[0].objectInfo.sourceId -eq $latestdb.vmDocument.objectId.entity.sqlEntity.ownerId -and 
-                                                       $_.mssqlParams.objects[0].objectInfo.name -eq "$($latestdb.vmDocument.objectId.entity.sqlEntity.instanceName)/$($latestdb.vmDocument.objectId.entity.sqlEntity.databaseName)") -or
-                                                      ($_.mssqlParams.recoverAppParams[0].PSObject.Properties['objectInfo'] -and
-                                                       $_.mssqlParams.recoverAppParams[0].hostInfo.name -eq $sourceServer -and
-                                                       $_.mssqlParams.recoverAppParams[0].objectInfo.name -eq "$($latestdb.vmDocument.objectId.entity.sqlEntity.instanceName)/$($latestdb.vmDocument.objectId.entity.sqlEntity.databaseName)")}
-        }
-    }
-    if($targetDB -ne '' -and $targetServer -ne ''){
-        if($migrations){
-            $migrations = $migrations | Where-Object {($_.mssqlParams.recoverAppParams.PSObject.Properties['sqlTargetParams'] -and
-                                                    $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.host.name -eq $targetServer -and
-                                                    $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.instanceName -eq $targetInstance -and
-                                                    $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.databaseName -eq $targetDB) -or
-                                                    ($_.mssqlParams.recoverAppParams[0].PSObject.Properties['sqlTargetParams'] -and
-                                                    $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.host.name -eq $targetServer -and
-                                                    $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.instanceName -eq $targetInstance -and
-                                                    $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.databaseName -eq $targetDB)}
 
-            }
-        }
-    if($migrations){
-        $migrations = $migrations | Where-Object {$_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.PSObject.Properties['multiStageRestoreOptions'] -or
-                                                  $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.PSObject.Properties['multiStageRestoreOptions']}
-        $migrations = $migrations | sort-object -Property id -Descending
-        if($returnTaskIds){
-            return $migrations.id
-        }
-    }
-    $migrationCount = 0
-    foreach($migration in $migrations){
-        $migrationCount += 1
-        $mTaskId = [int]($migration.id -split ':')[2]
-        $mTask = api get /restoretasks/$mTaskId
-        $mSnapshotUsecs = $mTask.restoreTask.restoreSubTaskWrapperProtoVec[-1].performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.startTimeUsecs
-        $mTargetHost = $migration.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.host.name
-        $mTargetInstance = $migration.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.instanceName
-        $mTargetDB = $migration.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.databaseName
-        Write-Host "`nTask Name: $($migration.name)"
-        Write-Host "  Task ID: $($migration.id)"
-        Write-Host "Target DB: $mTargetHost/$mTargetInstance/$mTargetDB"
-        Write-Host "   Status: $($migration.status)"
-        Write-Host "Synced To: $(usecsToDate $mSnapshotUsecs)"
-        if($sync){
-            if($migration.status -eq 'OnHold'){
-                Write-host "Performing Sync..."
-                $null = api put restore/recover -quiet @{"restoreTaskId" = $mTaskId; "sqlOptions" = "kUpdate"}
-            }else{
-                Write-Host "Can't sync now ($($migration.status))" -ForegroundColor Yellow
-            }
-        }
-        if($finalize){
-            if($migration.status -eq 'OnHold'){
-                Write-Host "Finalizing..."
-                $null = api put restore/recover -quiet @{"restoreTaskId" = $mTaskId; "sqlOptions" = "kFinalize"}
-            }else{
-                Write-Host "Can't finalize now ($($migration.status))" -ForegroundColor Yellow
-            }
-        }
-    }
-    ''
-    if($migrationCount -eq 0){
-        Write-Host "No migrations found`n"
-    }
+if($returnTaskIds){
+    return $taskIds
+}
+
+''
+if($migrationCount -eq 0){
+    Write-Host "No migrations found`n"
 }
