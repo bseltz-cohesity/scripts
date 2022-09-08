@@ -99,6 +99,7 @@ if($init -or $showPaths){
 }
 
 $taskIds = @()
+$sourceNames = @{}
 
 foreach($s in $sourceDBs){
     $sourceDB = [string]$s
@@ -383,8 +384,22 @@ foreach($s in $sourceDBs){
             $mTargetHost = $migration.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.host.name
             $mTargetInstance = $migration.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.instanceName
             $mTargetDB = $migration.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.databaseName
+            if($migration.mssqlParams.PSObject.Properties['objects']){
+                $mSourceDB = $migration.mssqlParams.objects[0].objectInfo.name
+                if("$($migration.mssqlParams.objects[0].objectInfo.sourceId)" -in $sourceNames.Keys){
+                    $mSourceHost = $sourceNames["$($migration.mssqlParams.objects[0].objectInfo.sourceId)"]
+                }else{
+                    $hostSearch = api get /searchvms?entityIds=$($migration.mssqlParams.objects[0].objectInfo.sourceId)
+                    $mSourceHost = $hostSearch.vms[0].vmDocument.objectAliases[0]
+                    $sourceNames["$($migration.mssqlParams.objects[0].objectInfo.sourceId)"] = $mSourceHost
+                }
+            }elseif($migration.mssqlParams.recoverAppParams[0].PSObject.Properties['objectInfo']){
+                $mSourceDB = $migration.mssqlParams.recoverAppParams[0].objectInfo.name
+                $mSourceHost = $migration.mssqlParams.recoverAppParams[0].hostInfo.name
+            }
             Write-Host "`nTask Name: $($migration.name)"
             Write-Host "  Task ID: $($migration.id)"
+            Write-Host "Source DB: $mSourceHost/$mSourceDB"
             Write-Host "Target DB: $mTargetHost/$mTargetInstance/$mTargetDB"
             Write-Host "   Status: $($migration.status)"
             Write-Host "Synced To: $(usecsToDate $mSnapshotUsecs)"
