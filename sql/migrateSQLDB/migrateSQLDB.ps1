@@ -91,9 +91,9 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
-if($init -or $showPaths){
+if($targetDB -ne ''){
     if($sourceDBs.Count -gt 1){
-        Write-Host "-init and -showPaths can only support one sourceDB" -ForegroundColor Yellow
+        Write-Host "-targetDB not supported with multiple DBs" -ForegroundColor Yellow
         exit
     }
 }
@@ -103,6 +103,9 @@ $sourceNames = @{}
 
 foreach($s in $sourceDBs){
     $sourceDB = [string]$s
+    if($sourceDBs.Count -gt 1){
+        $targetDB = $sourceDB
+    }
     if($targetDB -eq ''){
         $targetDB = $sourceDB
     }
@@ -199,7 +202,7 @@ foreach($s in $sourceDBs){
             }
             $ndfFolderExample += "`n            }"
             Write-Host "-mdfFolder $mdfFolderExample ```n-ldfFolder $ldfFolderExample ```n-ndfFolders $ndfFolderExample`n"
-            exit 0
+            continue
         }
 
         # identify physical or vm
@@ -319,10 +322,11 @@ foreach($s in $sourceDBs){
             $response = api post /recoverApplication $restoreTask
         
             if($response){
-                "Initiating migration of $sourceInstance/$sourceDB to $targetServer/$targetInstance/$targetDB"
-                exit 0
+                Write-Host "Initiating migration of $sourceInstance/$sourceDB to $targetServer/$targetInstance/$targetDB"
+                continue
             }else{
-                exit 1
+                Write-Host "An error occured" -ForegroundColor Yellow
+                continue
             }
         }
     }
@@ -434,11 +438,11 @@ foreach($s in $sourceDBs){
     }
 }
 
-if($returnTaskIds){
+if($returnTaskIds -and !$init){
     return $taskIds
 }
 
 ''
-if($migrationCount -eq 0){
+if($migrationCount -eq 0 -and !$init){
     Write-Host "No migrations found`n"
 }
