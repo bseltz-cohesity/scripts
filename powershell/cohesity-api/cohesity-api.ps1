@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.09.07 - Brian Seltzer
+#  Version 2022.09.09 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2022.01.12 - fixed storePasswordForUser
@@ -14,9 +14,10 @@
 # 2022.05.16 - fixed mfa for v2 user/session authentication
 # 2022.08.02 - added promptForPassword as boolean
 # 2022.09.07 - clear state cache before new logon, fixed bad password handling
+# 2022.09.09 - set timeout to 300 secs, store password if stored on the command line
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2022.09.07'
+$versionCohesityAPI = '2022.09.09'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -120,7 +121,10 @@ function apiauth($vip='helios.cohesity.com',
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
     }
-    if($password){ $passwd = $password }
+    if($password){ 
+        $passwd = $password
+        $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
+    }
     # update password
     if($updatePassword -or $clearPassword){
         $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
@@ -201,9 +205,9 @@ function apiauth($vip='helios.cohesity.com',
             try{
                 $URL = $cohesity_api.apiRootmcm + 'clusters/connectionStatus'
                 if($PSVersionTable.PSEdition -eq 'Core'){
-                    $heliosAllClusters = Invoke-RestMethod -Method get -Uri $URL -header $cohesity_api.header -SkipCertificateCheck
+                    $heliosAllClusters = Invoke-RestMethod -Method get -Uri $URL -header $cohesity_api.header -SkipCertificateCheck -TimeoutSec 300
                 }else{
-                    $heliosAllClusters = Invoke-RestMethod -Method get -Uri $URL -header $cohesity_api.header
+                    $heliosAllClusters = Invoke-RestMethod -Method get -Uri $URL -header $cohesity_api.header  -TimeoutSec 300
                 }
                 $cohesity_api.heliosConnectedClusters = $heliosAllClusters | Where-Object {$_.connectedToCluster -eq $true}
                 $cohesity_api.authorized = $true
@@ -226,9 +230,9 @@ function apiauth($vip='helios.cohesity.com',
             if($emailMfaCode){
                 $emailUrl = $cohesity_api.apiRootv2 + 'email-otp'
                 if($PSVersionTable.PSEdition -eq 'Core'){
-                    $email = Invoke-RestMethod -Method Post -Uri $emailUrl -header $cohesity_api.header -Body $emailMfaBody -SkipCertificateCheck
+                    $email = Invoke-RestMethod -Method Post -Uri $emailUrl -header $cohesity_api.header -Body $emailMfaBody -SkipCertificateCheck  -TimeoutSec 300
                 }else{
-                    $email = Invoke-RestMethod -Method Post -Uri $emailUrl -header $cohesity_api.header -Body $emailMfaBody
+                    $email = Invoke-RestMethod -Method Post -Uri $emailUrl -header $cohesity_api.header -Body $emailMfaBody -TimeoutSec 300
                 }
                 $mfaCode = Read-Host -Prompt "Enter emailed MFA code"
                 $body = ConvertTo-Json @{
@@ -242,9 +246,9 @@ function apiauth($vip='helios.cohesity.com',
             }
             # authenticate
             if($PSVersionTable.PSEdition -eq 'Core'){
-                $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck
+                $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -TimeoutSec 300
             }else{
-                $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body
+                $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -TimeoutSec 300
             }
             # set file transfer details
             if($PSVersionTable.Platform -eq 'Unix'){
@@ -281,9 +285,9 @@ function apiauth($vip='helios.cohesity.com',
                         }
                         # authenticate
                         if($PSVersionTable.PSEdition -eq 'Core'){
-                            $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck
+                            $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -TimeoutSec 300
                         }else{
-                            $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body
+                            $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -TimeoutSec 300
                         }
                         # set file transfer details
                         if($PSVersionTable.Platform -eq 'Unix'){
@@ -538,15 +542,15 @@ function api($method,
             }
             if($PSVersionTable.PSEdition -eq 'Core'){
                 if($body){
-                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $cohesity_api.header -SkipCertificateCheck
+                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $cohesity_api.header -SkipCertificateCheck -TimeoutSec 300
                 }else{
-                    $result = Invoke-RestMethod -Method $method -Uri $url -header $cohesity_api.header -SkipCertificateCheck
+                    $result = Invoke-RestMethod -Method $method -Uri $url -header $cohesity_api.header -SkipCertificateCheck -TimeoutSec 300
                 }
             }else{
                 if($body){
-                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $cohesity_api.header
+                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $cohesity_api.header -TimeoutSec 300
                 }else{
-                    $result = Invoke-RestMethod -Method $method -Uri $url -header $cohesity_api.header
+                    $result = Invoke-RestMethod -Method $method -Uri $url -header $cohesity_api.header -TimeoutSec 300
                 }
             }
             return $result
