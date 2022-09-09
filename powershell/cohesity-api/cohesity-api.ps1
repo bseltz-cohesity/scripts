@@ -123,6 +123,8 @@ function apiauth($vip='helios.cohesity.com',
     }
     if($password){ 
         $passwd = $password
+    }
+    if($passwd){
         $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
     }
     # update password
