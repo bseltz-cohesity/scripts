@@ -200,10 +200,6 @@ if($job.office365Params.PSObject.Properties['sourceId']){
         exit
     }
     $rootSource = api get "protectionSources/rootNodes?environments=kO365" | Where-Object {$_.protectionSource.name -eq $sourceName}
-    # if($rootSource){
-    #     setApiProperty -object $job.office365Params -name 'sourceId' -value $rootSource.protectionSource.id
-    #     setApiProperty -object $job.office365Params -name 'sourceName' -value $rootSource.protectionSource.name        
-    # }
 }
 if(! $rootSource){
     Write-Host "protection source $sourceName not found" -ForegroundColor Yellow
@@ -220,73 +216,107 @@ if(!$sitesNode){
 Write-Host "Discovering sites..."
 
 $nameIndex = @{}
-$unprotectedIndex = @{}
+$webUrlIndex = @{}
+$unprotectedIndex = @()
+$protectedIndex = @()
+$nodeIdIndex = @()
 $indexCount = 0
 
 $sites = api get "protectionSources?pageSize=$pageSize&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false"
 
+# enumerate sites
 while(1){
     foreach($node in $sites.nodes){
+        $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id | Sort-Object -Unique)
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
-        if(! $node.protectedSourcesSummary[0].leavesCount){
-            $unprotectedIndex[$node.protectionSource.name] = $node.protectionSource.id
+        if($node.protectionSource.office365ProtectionSource.PSObject.Properties['webUrl']){
+            $webUrlIndex["$([string]$node.protectionSource.office365ProtectionSource.webUrl)"] = $node.protectionSource.id
+        }
+        if($node.protectedSourcesSummary[0].leavesCount){
+            $protectedIndex = @($protectedIndex + $node.protectionSource.id)
+        }else{
+            $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
         }
         $cursor = $node.protectionSource.id
     }
     $sites = api get "protectionSources?pageSize=$pageSize&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false&afterCursorEntityId=$cursor"
-    if($nameIndex.Keys.Count -eq $indexCount){
+    if($nodeIdIndex.Count -eq $indexCount){
         break
     }
-    $indexCount = $nameIndex.Keys.Count
+    $indexCount = $nodeIdIndex.Count
 }
 
-Write-Host "$($nameIndex.Keys.Count) users discovered"
+Write-Host "$($nodeIdIndex.Count) sites discovered ($($protectedIndex.Count) protected, $($unprotectedIndex.Count) unprotected)"
 
 if($autoProtectRemaining){
-    $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $sitesNode.protectionSource.id})
+    if($unprotectedIndex -gt $maxSitesPerJob){
+        Write-Host "There are $($unprotectedIndex.Count) sites to protect, which is more than the maximum allowed ($maxSitesPerJob)" -ForegroundColor Yellow
+        exit
+    }
+    if(!($job.office365Params.objects | Where-Object {$_.id -eq $sitesNode.protectionSource.id})){
+        $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $sitesNode.protectionSource.id})
+    }
     if(! $job.office365Params.PSObject.Properties['excludeObjectIds']){
         setApiProperty -object $job.office365Params -name 'excludeObjectIds' -value @()
     }
-    foreach($siteName in $nameIndex.Keys){
-        if(! $unprotectedIndex.ContainsKey($siteName)){
-            $job.office365Params.excludeObjectIds = @($job.office365Params.excludeObjectIds + $nameIndex[$siteName] | Sort-Object -Unique)
-        }
+    foreach($siteId in $protectedIndex){
+        $job.office365Params.excludeObjectIds = @($job.office365Params.excludeObjectIds + $siteId | Sort-Object -Unique)
     }
 }elseif($allSites){
     $sitesAdded = 0
-    if($unprotectedIndex.Keys.Count -eq 0){
+    if($unprotectedIndex.Count -eq 0){
         Write-Host "All sites are protected" -ForegroundColor Green
         exit
     }
-    foreach($siteName in ($unprotectedIndex.Keys | Sort-Object)){
+    foreach($siteId in $unprotectedIndex){
         if($job.office365Params.objects.Count -ge $maxSitesPerJob){
             break
         }
-        $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $unprotectedIndex[$siteName]})
-        Write-Host "adding $siteName"
-        $sitesAdded += 1
+        if(!($job.office365Params.objects | Where-Object {$_.id -eq $siteId})){
+            $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $siteId})
+            $sitesAdded += 1
+        }
     }
     if($sitesAdded -eq 0){
         Write-Host "Job already has the maximum number of sites protected" -ForegroundColor Yellow
         exit
+    }else{
+        Write-Host "$sitesAdded added"
     }
 }else{
     if($sitesToAdd.Count -eq 0){
         Write-Host "No sites specified to add"
         exit
     }else{
+        $sitesAdded = 0
         foreach($siteName in $sitesToAdd){
-            if($nameIndex.ContainsKey($siteName)){
-                if($job.office365Params.objects | Where-Object id -eq $nameIndex[$siteName]){
-                   Write-Host "$siteName already added" -ForegroundColor Green 
+            if($job.office365Params.objects.Count -ge $maxSitesPerJob){
+                Write-Host "Job already has the maximum number of sites protected"
+                continue
+            }
+            if($siteName -ne '' -and $null -ne $siteName){
+                if($nameIndex.ContainsKey($siteName) -or $webUrlIndex.ContainsKey("$siteName")){
+                    if($nameIndex.ContainsKey($siteName)){
+                        $siteId = $nameIndex[$siteName]
+                    }else{
+                        $siteId = $webUrlIndex["$siteName"]
+                    }
+                    if($siteId -in $protectedIndex){
+                        Write-Host "$siteName already protected" -ForegroundColor Green
+                    }else{
+                        Write-Host "adding $siteName"
+                        $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $siteId})
+                        $sitesAdded += 1
+                    }
                 }else{
-                    Write-Host "adding $siteName"
-                    $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $nameIndex[$siteName]})
+                    Write-Host "$siteName not found" -ForegroundColor Yellow
                 }
-            }else{
-                Write-Host "$siteName not found" -ForegroundColor Yellow
             }
         }
+    }
+    if($sitesAdded -eq 0){
+        Write-Host "No sites added" -ForegroundColor Yellow
+        exit
     }
 }
 
