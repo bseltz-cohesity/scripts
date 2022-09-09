@@ -403,7 +403,6 @@ foreach($s in $sourceDBs){
         foreach($migration in $migrations){
             $migrationCount += 1
             $mTaskId = [int]($migration.id -split ':')[2]
-            # $mTask = api get /restoretasks/$mTaskId
             $mTask = $tasks | Where-Object {$_.restoreTask.performRestoreTaskState.base.taskId -eq $mTaskId}
             $mSnapshotUsecs = $mTask.restoreTask.restoreSubTaskWrapperProtoVec[-1].performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.startTimeUsecs
             $mTargetHost = $migration.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.host.name
