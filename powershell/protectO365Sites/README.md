@@ -99,9 +99,9 @@ To create an autoprotect job that excludes sites that are already protected:
 
 ## New Job Parameters
 
-* -policyName: (optional) name of the protection policy to use
+* -policyName: (optional) name of the protection policy to use (required for a new protection job)
 * -startTime: (optional) e.g. '18:30' (defaults to 8PM)
-* -timeZone: (optional) e.g. 'America/New_York' (default is 'America/Los_Angeles')
+* -timeZone: (optional) e.g. 'America/Los_Angeles' (default is 'America/New_York')
 * -incrementalSlaMinutes: (optional) default 60
 * -fullSlaMinutes: (optional) default is 120
 * -storageDomainName: (optional) default is 'DefaultStorageDomain'

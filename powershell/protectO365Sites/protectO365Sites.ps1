@@ -1,5 +1,3 @@
-### usage: ./protectVMs.ps1 -vip bseltzve01 -username admin -jobName 'vm backup' -vmName mongodb
-
 ### process commandline arguments
 [CmdletBinding()]
 param (
