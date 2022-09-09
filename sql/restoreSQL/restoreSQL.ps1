@@ -1,4 +1,4 @@
-# version 2022-06-07
+# version 2022-09-09
 # usage: ./restore-SQL.ps1 -vip mycluster `
 #                          -username myusername `
 #                          -domain mydomain.net `
@@ -45,7 +45,8 @@ param (
     [Parameter()][switch]$useSourcePaths,                # use same paths from source server for target server
     [Parameter()][switch]$update,
     [Parameter()][switch]$noStop,
-    [Parameter()][switch]$captureTailLogs
+    [Parameter()][switch]$captureTailLogs,
+    [Parameter()][int64]$sleepTimeSecs = 30
 )
 
 # handle alternate secondary data file locations
@@ -78,7 +79,7 @@ if($USING_HELIOS){
     if($clusterName){
         heliosCluster $clusterName
     }else{
-        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
         exit 1
     }
 }
@@ -113,7 +114,7 @@ $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq 
                                   Where-Object {$_.vmDocument.objectName -eq "$sourceInstance/$sourceDB"}
 
 if($null -eq $dbresults){
-    write-host "Database $sourceInstance/$sourceDB on Server $sourceServer Not Found" -foregroundcolor yellow
+    Write-Host "Database $sourceInstance/$sourceDB on Server $sourceServer Not Found" -ForegroundColor Yellow
     exit
 }
 
@@ -121,7 +122,7 @@ if($null -eq $dbresults){
 $latestdb = ($dbresults | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
 
 if($null -eq $latestdb){
-    write-host "Database $sourceInstance/$sourceDB on Server $sourceServer Not Found" -foregroundcolor yellow
+    Write-Host "Database $sourceInstance/$sourceDB on Server $sourceServer Not Found" -ForegroundColor Yellow
     exit 1
 }
 
@@ -334,7 +335,7 @@ if($targetDB -ne $sourceDB -or $targetServer -ne $sourceServer -or $differentIns
     }
 
     if('' -eq $mdfFolder){
-        write-host "-mdfFolder must be specified when restoring to a new database name or different target server" -ForegroundColor Yellow
+        Write-Host "-mdfFolder must be specified when restoring to a new database name or different target server" -ForegroundColor Yellow
         exit
     }
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['dataFileDestination'] = $mdfFolder;
@@ -346,7 +347,7 @@ if($targetDB -ne $sourceDB -or $targetServer -ne $sourceServer -or $differentIns
 # overwrite warning
 if($targetDB -eq $sourceDB -and $targetServer -eq $sourceServer -and $differentInstance -eq $False){
     if(! $overWrite){
-        write-host "Please use the -overWrite parameter to confirm overwrite of the source database!" -ForegroundColor Yellow
+        Write-Host "Please use the -overWrite parameter to confirm overwrite of the source database!" -ForegroundColor Yellow
         exit
     }
     if($captureTailLogs){
@@ -442,36 +443,41 @@ if($response){
 if($wait -or $progress){
     $lastProgress = -1
     $taskId = $response.restoreTask.performRestoreTaskState.base.taskId
-    $finishedStates = @('kSuccess','kFailed','kCanceled', 'kFailure')
-    while($True){
-        $task = api get /restoretasks/$taskId
-        $status = $task.restoreTask.performRestoreTaskState.base.publicStatus
-        if($progress){
-            $progressMonitor = api get "/progressMonitors?taskPathVec=restore_sql_$($taskId)&includeFinishedTasks=true&excludeSubTasks=false"
-            try{
-                $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
-                if($percentComplete -gt $lastProgress){
+    if($taskId){
+        $finishedStates = @('kSuccess','kFailed','kCanceled', 'kFailure')
+        while($True){
+            $task = api get /restoretasks/$taskId
+            $status = $task.restoreTask.performRestoreTaskState.base.publicStatus
+            if($progress){
+                $progressMonitor = api get "/progressMonitors?taskPathVec=restore_sql_$($taskId)&includeFinishedTasks=true&excludeSubTasks=false"
+                try{
+                    $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
+                    if($percentComplete -gt $lastProgress){
+                        "{0} percent complete" -f [math]::Round($percentComplete, 0)
+                        $lastProgress = $percentComplete
+                    }
+                }catch{
+                    $percentComplete = 0
                     "{0} percent complete" -f [math]::Round($percentComplete, 0)
-                    $lastProgress = $percentComplete
+                    $lastProgress = 0
                 }
-            }catch{
-                $percentComplete = 0
-                "{0} percent complete" -f [math]::Round($percentComplete, 0)
-                $lastProgress = 0
             }
+            if ($status -in $finishedStates){
+                break
+            }
+            Start-Sleep $sleepTimeSecs
         }
-        if ($status -in $finishedStates){
-            break
+        "restore ended with $status"
+        if($status -eq 'kSuccess'){
+            exit 0
+        }else{
+            if($status -eq 'kFailure'){
+                Write-Host "Error Message: $($task.restoreTask.performRestoreTaskState.base.error.errorMsg)"
+            }
+            exit 1
         }
-        Start-Sleep 5
-    }
-    "restore ended with $status"
-    if($status -eq 'kSuccess'){
-        exit 0
     }else{
-        if($status -eq 'kFailure'){
-            write-host "Error Message: $($task.restoreTask.performRestoreTaskState.base.error.errorMsg)"
-        }
+        Write-Host "Failed to get restore task ID" -ForegroundColor Yellow
         exit 1
     }
 }

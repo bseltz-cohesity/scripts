@@ -73,6 +73,7 @@ To specify a source instance, include the instance name in the sourceDB name, li
 * -progress: display percent complete
 * -helios: use on-prem helios
 * -update: short hand for -resume -noRecovery -latest
+* -sleepTimeSecs: sleep between status queries (default is 30 seconds)
 
 ## Always On Availability Groups
 
