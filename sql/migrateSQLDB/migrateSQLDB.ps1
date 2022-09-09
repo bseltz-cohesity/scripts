@@ -109,7 +109,7 @@ if(!$init){
     }else{
         $allmigrations = (api get -v2 "data-protect/recoveries?status=OnHold,Running&snapshotEnvironments=kSQL&recoveryActions=RecoverApps").recoveries
     }
-    $tasks = api get /restoretasks
+    $tasks = api get "/restoretasks?restoreTypes=kRestoreApp&startTimeUsecs=$(timeAgo $daysBack days)"
 }
 
 foreach($s in $sourceDBs){
