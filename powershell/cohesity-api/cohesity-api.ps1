@@ -439,6 +439,7 @@ function heliosClusters(){
 
 # terminate authentication
 function apidrop([switch] $quiet){
+    $cohesity_api.pwscope = 'user'
     $cohesity_api.authorized = $false
     $cohesity_api.apiRoot = ''
     $cohesity_api.apiRootv2 = ''
@@ -838,6 +839,7 @@ function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
 function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $domain='local', $passwd=$null, [switch]$useApiKey){
     $cohesity_api.pwscope = 'file'
     $null = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -useApiKey $useApiKey -helios $helios
+    $cohesity_api.pwscope = 'user'
 }
 
 function storePasswordForUser($vip='helios.cohesity.com', $username='helios', $domain='local', $passwd=$null){
