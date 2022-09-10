@@ -1,42 +1,59 @@
-# version 2022.01.31
+# version 2022.09.10
 # usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][string]$vip = 'helios.cohesity.com',  # the cluster to connect to (DNS name or IP)
-    [Parameter()][string]$vip2,                 # alternate cluster to connect to
-    [Parameter()][string]$username = 'helios',  # username (local or AD)
-    [Parameter()][string]$domain = 'local',     # local or AD domain
+    [Parameter()][string]$vip = 'helios.cohesity.com',  # endpoint to connect to
+    [Parameter()][string]$username = 'helios',  # username for authentication / password storage
+    [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][switch]$useApiKey,  # use API key authentication
+    [Parameter()][string]$password = $null,  # send password / API key via command line (not recommended)
+    [Parameter()][switch]$noPrompt,  # do not prompt for password
+    [Parameter()][switch]$mcm,  # connect to MCM endpoint
+    [Parameter()][string]$mfaCode = $null,  # MFA code
+    [Parameter()][switch]$emailMfaCode,  # email MFA code
+    [Parameter()][string]$clusterName = $null,  # cluster name to connect to when connected to Helios/MCM
     [Parameter()][string]$tenant,         # tenant org name
-    [Parameter()][string]$password,       # optional password
-    [Parameter()][switch]$useApiKey,      # use API key for authentication
-    [Parameter()][string]$clusterName,    # helios cluster to access 
+    [Parameter()][string]$vip2,           # alternate cluster to connect to (deprecated)
     [Parameter(Mandatory = $True)][string]$jobName,  # job to run
-    [Parameter()][switch]$usePolicy,      # deprecated (does nothibng)
-    [Parameter()][switch]$localOnly,      # perform local backup only
-    [Parameter()][switch]$noReplica,      # skip replication
-    [Parameter()][switch]$noArchive,      # skip archival
-    [Parameter()][string]$jobName2,       # alternate jobName to run
-    [Parameter()][int]$keepLocalFor,      # keep local snapshot for x days
-    [Parameter()][string]$replicateTo,    # optional - remote cluster to replicate to
-    [Parameter()][int]$keepReplicaFor,    # keep replica for x days
-    [Parameter()][string]$archiveTo,      # optional - target to archive to
-    [Parameter()][int]$keepArchiveFor,    # keep archive for x days
-    [Parameter()][switch]$enable,         # enable a disabled job, run it, then disable when done
-    [Parameter()][ValidateSet('kRegular','kFull','kLog','kSystem')][string]$backupType = 'kRegular',
+    [Parameter()][switch]$usePolicy,      # deprecated (does nothing)
+    [Parameter()][switch]$localOnly,      # override policy - perform local backup only
+    [Parameter()][switch]$noReplica,      # override policy - skip replication
+    [Parameter()][switch]$noArchive,      # override policy - skip archival
+    [Parameter()][string]$jobName2,       # alternate jobName to run (deprecated)
+    [Parameter()][int]$keepLocalFor,      # override policy - keep local snapshot for x days
+    [Parameter()][string]$replicateTo,    # override policy - remote cluster to replicate to
+    [Parameter()][int]$keepReplicaFor,    # override policy - keep replica for x days
+    [Parameter()][string]$archiveTo,      # override policy - target to archive to
+    [Parameter()][int]$keepArchiveFor,    # override policy - keep archive for x days
+    [Parameter()][switch]$enable,         # deprecated (does nothing)
+    [Parameter()][ValidateSet('kRegular','kFull','kLog','kSystem','Regular','Full','Log','System')][string]$backupType = 'kRegular',
     [Parameter()][array]$objects,         # list of objects to include in run
     [Parameter()][switch]$progress,       # display progress percent
     [Parameter()][switch]$wait,           # wait for completion and report end status
-    [Parameter()][switch]$helios,         # use helios on-prem
     [Parameter()][string]$logfile,        # name of log file
     [Parameter()][switch]$outputlog,      # enable logging
     [Parameter()][string]$metaDataFile,   # backup file list
-    [Parameter()][switch]$abortIfRunning  # exit if job is already running
+    [Parameter()][switch]$abortIfRunning,  # exit if job is already running
+    [Parameter()][int64]$waitMinutesIfRunning = 60,  # give up and exit if existing run is still running
+    [Parameter()][int64]$cancelPreviousRunMinutes = 0,  # cancel previous run if it has been running long
+    [Parameter()][int64]$statusRetries = 10,  # give up waiting for new run to appear
+    [Parameter()][switch]$extendedErrorCodes,
+    [Parameter()][int64]$sleepTimeSecs = 30
 )
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+
+# extended error codes
+# ====================
+# 0: Successful
+# 1: Unsuccessful
+# 2: authentication error
+# 3: Syntax Error
+# 4: Timed out waiting for existing run to finish
+# 5: Timed out waiting for status update
 
 if($outputlog){
     if($logfile){
@@ -69,31 +86,36 @@ if($outputlog){
     }
 }
 
-if($useApiKey){
-    apiauth -vip $vip -username $username -domain $domain -password $password -useApiKey -tenant $tenant
-    if((! $AUTHORIZED -and ! $cohesity_api.authorized) -and $vip2){
-        output "Failed to connect to $vip. Trying $vip2..." -warn
-        apiauth -vip2 $vip -username $username -domain $domain -password $password -useApiKey
-        $jobName = $jobName2
-    }
-}else{
-    apiauth -vip $vip -username $username -domain $domain -password $password -tenant $tenant
-    if((! $AUTHORIZED -and ! $cohesity_api.authorized) -and $vip2){
-        output "Failed to connect to $vip. Trying $vip2..." -warn
-        $jobName = $jobName2
+if($cohesity_api.api_version -lt '2022.08.02'){
+    output "This script requires cohesity-api.ps1 version 2022.08.02 or later" -warn
+    if($extendedErrorCodes){
+        exit 2
+    }else{
+        exit 1
     }
 }
 
-if(! $AUTHORIZED -and ! $cohesity_api.authorized){
-    output "Failed to connect to Cohesity cluster" -warn
-    exit 1
-}
+apiauth -vip $vip -username $username -domain $domain -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
 
-if($vip -eq 'helios.cohesity.com'){
+### select helios/mcm managed cluster
+if($USING_HELIOS){
     if($clusterName){
-        heliosCluster $clusterName
+        $thisCluster = heliosCluster $clusterName
     }else{
         output "Please provide -clusterName when connecting through helios" -warn
+        if($extendedErrorCodes){
+            exit 2
+        }else{
+            exit 1
+        }
+    }
+}
+
+if(!$cohesity_api.authorized){
+    output "Not authenticated" -warn
+    if($extendedErrorCodes){
+        exit 2
+    }else{
         exit 1
     }
 }
@@ -130,6 +152,25 @@ function getObjectId($objectName){
     return $global:_object_id
 }
 
+function cancelRunningJob($job, $durationMinutes){
+    if($durationMinutes -gt 0){
+        $durationUsecs = $durationMinutes * 60000000
+        $cancelTime = (dateToUsecs) - $durationUsecs
+        $runningRuns = api get "protectionRuns?jobId=$($job.id)&numRuns=10&excludeTasks=true" | Where-Object {$_.backupRun.status -notin $finishedStates}
+        foreach($run in $runningRuns){
+            if($run.backupRun.stats.startTimeUsecs -gt 0 -and $run.backupRun.stats.startTimeUsecs -le $cancelTime){
+                $null = api post "protectionRuns/cancel/$($job.id)" @{ "jobRunId" = $run.backupRun.jobRunId }
+                output "Canceling previous job run"
+            }
+        }
+    }
+}
+
+$backupTypeEnum = @{'Regular' = 'kRegular'; 'Full' = 'kFull'; 'Log' = 'kLog'; 'System' = 'kSystem'; 'kRegular' = 'kRegular'; 'kFull' = 'kFull'; 'kLog' = 'kLog'; 'kSystem' = 'kSystem';}
+if($backupType -in $backupTypeEnum.Keys){
+    $backupType = $backupTypeEnum[$backupType]
+}
+
 # get cluster id
 $cluster = api get cluster
 
@@ -139,7 +180,11 @@ if($job){
     $policyId = $job.policyId
     if($policyId.split(':')[0] -ne $cluster.id){
         output "Job $jobName is not local to the cluster $($cluster.name)" -warn
-        exit 1
+        if($extendedErrorCodes){
+            exit 3
+        }else{
+            exit 1
+        }
     }
     $jobID = $job.id
     $environment = $job.environment
@@ -152,7 +197,11 @@ if($job){
     }
     if($environment -notin ('kOracle', 'kSQL') -and $backupType -eq 'kLog'){
         output "BackupType kLog not applicable to $environment jobs" -warn
-        exit 1
+        if($extendedErrorCodes){
+            exit 3
+        }else{
+            exit 1
+        }
     }
     if($objects){
         if($environment -match 'kAWS'){
@@ -163,11 +212,16 @@ if($job){
     }
 }else{
     output "Job $jobName not found!" -warn
-    exit 1
+    if($extendedErrorCodes){
+        exit 3
+    }else{
+        exit 1
+    }
 }
 
 # handle SQL DB run now objects
 $sourceIds = @()
+$selectedSources = @()
 if($objects){
     $runNowParameters = @()
     foreach($object in $objects){
@@ -184,9 +238,10 @@ if($objects){
                         $runNowParameters += @{
                             "sourceId" = $serverObjectId;
                         }
+                        $selectedSources = @($selectedSources + $serverObjectId)
                     }
                     if($instance -or $db){                  
-                        if($environment -eq 'kOracle' -or $job.environmentParameters.sqlParameters.backupType -in @('kSqlVSSFile', 'kSqlNative')){
+                        if($environment -eq 'kOracle' -or $environment -eq 'kSQL'){ # $job.environmentParameters.sqlParameters.backupType -in @('kSqlVSSFile', 'kSqlNative')
                             $runNowParameter = $runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId}
                             if(! $runNowParameter.databaseIds){
                                 $runNowParameter.databaseIds = @()
@@ -201,11 +256,15 @@ if($objects){
                                 # SQL
                                 $instanceSource = $serverSource.auxChildren | Where-Object {$_.entity.displayName -eq $instance}
                                 $dbSource = $instanceSource.children | Where-Object {$_.entity.displayName -eq "$instance/$db"}
-                                if($dbSource -and ( $null -eq $backupJobSourceParams -or $dbSource.entity.id -in $backupJobSourceParams.appEntityIdVec)){
+                                if($dbSource -and ( $null -eq $backupJobSourceParams -or $dbSource.entity.id -in $backupJobSourceParams.appEntityIdVec -or $instanceSource.entity.id -in $backupJobSourceParams.appEntityIdVec)){
                                     $runNowParameter.databaseIds = @($runNowParameter.databaseIds + $dbSource.entity.id)
                                 }else{
                                     output "$object not protected by job $jobName" -warn
-                                    exit 1
+                                    if($extendedErrorCodes){
+                                        exit 3
+                                    }else{
+                                        exit 1
+                                    }
                                 }
                             }else{
                                 # Oracle
@@ -214,60 +273,72 @@ if($objects){
                                     $runNowParameter.databaseIds = @($runNowParameter.databaseIds + $dbSource.entity.id)
                                 }else{
                                     output "$object not protected by job $jobName" -warn
-                                    exit 1
+                                    if($extendedErrorCodes){
+                                        exit 3
+                                    }else{
+                                        exit 1
+                                    }
                                 }
                             }
                         }else{
                             output "Job is Volume based. Can not selectively backup instances/databases" -warn
-                            exit 1
+                            if($extendedErrorCodes){
+                                exit 3
+                            }else{
+                                exit 1
+                            }
                         }
                     }
                 }else{
                     output "Server $server not protected by job $jobName" -warn
-                    exit 1
+                    if($extendedErrorCodes){
+                        exit 3
+                    }else{
+                        exit 1
+                    }
                 }
             }else{
                 output "Server $server not found" -warn
-                exit 1
+                if($extendedErrorCodes){
+                    exit 3
+                }else{
+                    exit 1
+                }
             }
         }else{
             $objectId = getObjectId $object
             if($objectId){
                 $sourceIds += $objectId
+                $selectedSources = @($selectedSources + $objectId)
             }else{
                 output "Object $object not found" -warn
-                exit 1
+                if($extendedErrorCodes){
+                    exit 3
+                }else{
+                    exit 1
+                }
             }
         }
     }
 }
 
 # get last run id
-$runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
+if($selectedSources.Count -gt 0){
+    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&sourceId=$($selectedSources[0])"
+    if(!$runs -or $runs.Count -eq 0){
+        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true"
+    }
+}else{
+    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true"
+}
+
 if($runs){
     $newRunId = $lastRunId = $runs[0].backupRun.jobRunId
 }else{
     $newRunId = $lastRunId = 0
 }
 
-$finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')
-
-# wait for existing job run to finish
-if($runs -and !$metaDataFile){
-    $alertWaiting = $True
-    while ($runs[0].backupRun.status -notin $finishedStates){
-        if($alertWaiting){
-            if($abortIfRunning){
-                output "job is already running"
-                exit 0
-            }
-            output "waiting for existing job run to finish..."
-            $alertWaiting = $false
-        }
-        Start-Sleep 5
-        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
-    }    
-}
+$finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning', '3', '4', '5', '6')
 
 # set local retention
 $copyRunTargets = @(
@@ -324,8 +395,12 @@ if((! $localOnly) -and (! $noArchive)){
 if((! $localOnly) -and (! $noReplica)){
     if ($replicateTo) {
         if(! $keepReplicaFor){
-            Write-Host "-keepReplicaFor is required" -ForegroundColor Yellow
-            exit 1
+            output "-keepReplicaFor is required" -warn
+            if($extendedErrorCodes){
+                exit 3
+            }else{
+                exit 1
+            }
         }
         $remote = api get remoteClusters | Where-Object {$_.name -eq $replicateTo}
         if ($remote) {
@@ -340,7 +415,11 @@ if((! $localOnly) -and (! $noReplica)){
         }
         else {
             output "Remote Cluster $replicateTo not found!" -warn
-            exit 1
+            if($extendedErrorCodes){
+                exit 3
+            }else{
+                exit 1
+            }
         }
     }
 }
@@ -349,8 +428,12 @@ if((! $localOnly) -and (! $noReplica)){
 if((! $localOnly) -and (! $noArchive)){
     if($archiveTo){
         if(! $keepArchiveFor){
-            Write-Host "-keepArchiveFor is required" -ForegroundColor Yellow
-            exit 1
+            output "-keepArchiveFor is required" -warn
+            if($extendedErrorCodes){
+                exit 3
+            }else{
+                exit 1
+            }
         }
         $vault = api get vaults | Where-Object {$_.name -eq $archiveTo}
         if($vault){
@@ -365,7 +448,11 @@ if((! $localOnly) -and (! $noArchive)){
             }
         }else{
             output "Archive target $archiveTo not found!" -warn
-            exit 1
+            if($extendedErrorCodes){
+                exit 3
+            }else{
+                exit 1
+            }
         }
     }
 }
@@ -378,7 +465,7 @@ $jobdata = @{
 
 # add sourceIds if specified
 if($objects){
-    if(($environment -eq 'kSQL' -and $job.environmentParameters.sqlParameters.backupType -in @('kSqlVSSFile', 'kSqlNative')) -or $environment -eq 'kOracle'){
+    if($environment -eq 'kSQL' -or $environment -eq 'kOracle'){ # -and $job.environmentParameters.sqlParameters.backupType -in @('kSqlVSSFile', 'kSqlNative')
         $jobdata['runNowParameters'] = $runNowParameters
     }else{
         if($metaDataFile){
@@ -392,67 +479,117 @@ if($objects){
     }
 }
 
-# enable job
-if($enable){
-    $lastRunTime = (api get "protectionRuns?jobId=$jobId&numRuns=1").backupRun.stats.startTimeUsecs
-    while($True -eq (api get protectionJobs/$jobID).isPaused){
-        $null = api post protectionJobState/$jobID @{ 'pause'= $false }
-        Start-Sleep 2
-    }
-}
-
 # run job
-output "Running $jobName..."
-$null = api post ('protectionJobs/run/' + $jobID) $jobdata
-
-# wait for new job run to appear
-$x = 0
-while($newRunId -eq $lastRunId){
-    Start-Sleep 2
-    $x += 1
-    if($x -ge 30){
-        if(!$metaDataFile){
-            output "Timed out waiting for new run" -warn
-            exit 1
+$result = api post ('protectionJobs/run/' + $jobID) $jobdata
+$reportWaiting = $True
+$now = Get-Date
+$startUsecs = dateToUsecs $now
+$waitUntil = $now.AddMinutes($waitMinutesIfRunning)
+while($result -ne ""){
+    if((Get-Date) -gt $waitUntil){
+        output "Timed out waiting for existing run to finish" -warn
+        if($extendedErrorCodes){
+            exit 4
         }else{
-            output "Already running for this object" -warn
+            exit 1
+        }
+    }
+    if($cancelPreviousRunMinutes -gt 0){
+        cancelRunningJob $job $cancelPreviousRunMinutes
+    }
+    if($reportWaiting){
+        if($abortIfRunning){
+            output "job is already running"
             exit 0
         }
+        output "Waiting for existing job run to finish..."
+        $reportWaiting = $false
     }
-    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10"
-    $newRunId = $runs[0].backupRun.jobRunId
+    Start-Sleep $sleepTimeSecs
+    $result = api post ('protectionJobs/run/' + $jobID) $jobdata -quiet
 }
+output "Running $jobName..."
+
+# wait for new job run to appear
+while($newRunId -le $lastRunId){
+    Start-Sleep 3
+    if($selectedSources.Count -gt 0){
+        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10&sourceId=$($selectedSources[0])"
+    }else{
+        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10&excludeTasks=true"
+    }
+    $newRunId = $runs[0].backupRun.jobRunId
+    if($newRunId -le $lastRunId){
+        Start-Sleep $sleepTimeSecs
+    }
+}
+output "New Job Run ID: $newRunId"
 
 # wait for job run to finish
-if($wait -or $enable){
+if($wait -or $progress){
+    $statusRetryCount = 0
     $lastProgress = -1
-    while ($runs[0].backupRun.status -notin $finishedStates){
-        Start-Sleep 5
-        if($progress){
-            $progressMonitor = api get "/progressMonitors?taskPathVec=backup_$($newRunId)_1&includeFinishedTasks=true&excludeSubTasks=false"
-            $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
-            if($percentComplete -gt $lastProgress){
-                "{0} percent complete" -f [math]::Round($percentComplete, 0)
-                $lastProgress = $percentComplete
+    $lastStatus = 'unknown'
+    while ($lastStatus -notin $finishedStates){
+        Start-Sleep $sleepTimeSecs
+        try {
+            if($selectedSources.Count -gt 0){
+                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$startUsecs&numRuns=10000&sourceId=$($selectedSources[0])"
+            }else{
+                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$startUsecs&numRuns=10000"
+            }
+            if($runs){
+                $runs = $runs | Where-Object {$_.backupRun.jobRunId -eq $newRunId}
+                if($runs -and $runs[0].PSObject.Properties['backupRun']){
+                    if($runs[0].backupRun.PSObject.Properties['status']){
+                        $lastStatus = $runs[0].backupRun.status
+                        $statusRetryCount = 0
+                    }
+                }
+                try{
+                    if($progress){
+                        $progressTotal = 0
+                        $progressPaths = $runs[0].backupRun.sourceBackupStatus.progressMonitorTaskPath
+                        $sourceCount = $runs[0].backupRun.sourceBackupStatus.Count
+                        foreach($progressPath in $progressPaths){
+                            $progressMonitor = api get "/progressMonitors?taskPathVec=$progressPath&includeFinishedTasks=true&excludeSubTasks=false"
+                            $thisProgress = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
+                            $progressTotal += $thisProgress
+                        }
+                        $percentComplete = $progressTotal / $sourceCount
+                        if($percentComplete -ne $lastProgress){
+                            "{0} percent complete" -f [math]::Round($percentComplete, 0)
+                            $lastProgress = $percentComplete
+                        }
+                    }
+                }catch{
+                    Start-Sleep 1
+                }
+            }else{
+                $statusRetryCount += 1
+            }
+        }catch{
+            $statusRetryCount += 1
+            Start-Sleep 5
+        }
+        if($statusRetryCount -gt $statusRetries){
+            output "Timed out waiting for status update" -warn
+            if($extendedErrorCodes){
+                exit 5
+            }else{
+                exit 1
             }
         }
-        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10" | Where-Object {$_.backupRun.jobRunId -eq $newRunId}
     }
 }
 
-# disable job
-if($enable){
-    while($True -ne (api get protectionJobs/$jobID).isPaused){
-        if($lastRunTime -lt (api get "protectionRuns?jobId=$jobId&numRuns=1").backupRun.stats.startTimeUsecs){
-            $null = api post protectionJobState/$jobID @{ 'pause'= $true }
-        }else{
-            Start-Sleep 2
-        }
-    }
-}
+$statusMap = @('0', '1', '2', 'kCanceled', 'kSuccess', 'kFailed', 'kWarning')
 
-if($wait -or $enable){
-    output "Job finished with status: $($runs[0].backupRun.status)"
+if($wait -or $progress){
+    if($runs[0].backupRun.status -in @('3', '4', '5', '6')){
+        $runs[0].backupRun.status = $statusMap[$runs[0].backupRun.status]
+    }
+    output "Job finished with status: $($runs[0].backupRun.status.subString(1))"
     if($outputlog){
         "Backup ended $(usecsToDate $runs[0].backupRun.stats.endTimeUsecs)" | Out-File -FilePath $scriptlog -Append
     }
