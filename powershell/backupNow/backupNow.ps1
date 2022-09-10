@@ -1,4 +1,4 @@
-# version 2022.08.26
+# version 2022.09.10
 # usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
@@ -27,7 +27,7 @@ param (
     [Parameter()][int]$keepReplicaFor,    # override policy - keep replica for x days
     [Parameter()][string]$archiveTo,      # override policy - target to archive to
     [Parameter()][int]$keepArchiveFor,    # override policy - keep archive for x days
-    [Parameter()][switch]$enable,         # enable a disabled job, run it, then disable when done
+    [Parameter()][switch]$enable,         # deprecated (does nothing)
     [Parameter()][ValidateSet('kRegular','kFull','kLog','kSystem','Regular','Full','Log','System')][string]$backupType = 'kRegular',
     [Parameter()][array]$objects,         # list of objects to include in run
     [Parameter()][switch]$progress,       # display progress percent
@@ -39,7 +39,8 @@ param (
     [Parameter()][int64]$waitMinutesIfRunning = 60,  # give up and exit if existing run is still running
     [Parameter()][int64]$cancelPreviousRunMinutes = 0,  # cancel previous run if it has been running long
     [Parameter()][int64]$statusRetries = 10,  # give up waiting for new run to appear
-    [Parameter()][switch]$extendedErrorCodes
+    [Parameter()][switch]$extendedErrorCodes,
+    [Parameter()][int64]$sleepTimeSecs = 30
 )
 
 # source the cohesity-api helper code
@@ -478,15 +479,6 @@ if($objects){
     }
 }
 
-# enable job
-if($enable -and $cluster.clusterSoftwareVersion -gt '6.5'){
-    $lastRunTime = (api get "protectionRuns?jobId=$jobId&numRuns=1&excludeTasks=true").backupRun.stats.startTimeUsecs
-    while($True -eq (api get protectionJobs/$jobID).isPaused){
-        $null = api post protectionJobState/$jobID @{ 'pause'= $false }
-        Start-Sleep 2
-    }
-}
-
 # run job
 $result = api post ('protectionJobs/run/' + $jobID) $jobdata
 $reportWaiting = $True
@@ -513,7 +505,7 @@ while($result -ne ""){
         output "Waiting for existing job run to finish..."
         $reportWaiting = $false
     }
-    Start-Sleep 15
+    Start-Sleep $sleepTimeSecs
     $result = api post ('protectionJobs/run/' + $jobID) $jobdata -quiet
 }
 output "Running $jobName..."
@@ -527,16 +519,19 @@ while($newRunId -le $lastRunId){
         $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10&excludeTasks=true"
     }
     $newRunId = $runs[0].backupRun.jobRunId
+    if($newRunId -le $lastRunId){
+        Start-Sleep $sleepTimeSecs
+    }
 }
 output "New Job Run ID: $newRunId"
 
 # wait for job run to finish
-if($wait -or $enable -or $progress){
+if($wait -or $progress){
     $statusRetryCount = 0
     $lastProgress = -1
     $lastStatus = 'unknown'
     while ($lastStatus -notin $finishedStates){
-        Start-Sleep 15
+        Start-Sleep $sleepTimeSecs
         try {
             if($selectedSources.Count -gt 0){
                 $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$startUsecs&numRuns=10000&sourceId=$($selectedSources[0])"
@@ -588,20 +583,9 @@ if($wait -or $enable -or $progress){
     }
 }
 
-# disable job
-if($enable -and $cluster.clusterSoftwareVersion -gt '6.5'){
-    while($True -ne (api get protectionJobs/$jobID).isPaused){
-        if($lastRunTime -lt (api get "protectionRuns?jobId=$jobId&numRuns=1&excludeTasks=true").backupRun.stats.startTimeUsecs){
-            $null = api post protectionJobState/$jobID @{ 'pause'= $true }
-        }else{
-            Start-Sleep 2
-        }
-    }
-}
+$statusMap = @('0', '1', '2', 'kCanceled', 'kSuccess', 'kFailed', 'kWarning')
 
-$statusMap = @('0', '1', '2', 'Canceled', 'Success', 'Failed', 'Warning')
-
-if($wait -or $enable -or $progress){
+if($wait -or $progress){
     if($runs[0].backupRun.status -in @('3', '4', '5', '6')){
         $runs[0].backupRun.status = $statusMap[$runs[0].backupRun.status]
     }

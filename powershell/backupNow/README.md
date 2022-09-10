@@ -65,6 +65,7 @@ Place all files in a folder together. then, run the main script like so:
 
 ## Other Runtime Parameters
 
+* -sleepTimeSecs: (optional) seconds to sleep between status queries (default is 30)
 * -progress: (optional) display percent complete
 * -wait: (optional) wait for job to complete and return exit code, otherwise exit immediately after starting the job
 * -abortIfRunning: (optional) exit if job is already running (default is to wait and run when existing run is finished)
@@ -74,11 +75,6 @@ Place all files in a folder together. then, run the main script like so:
 * -cancelPreviousRunMinutes: (optional) cancel previous job run if it has been running for X minutes
 * -statusRetries: (optional) quit script with failure if unable to get status X times (default is 10)
 * -extendedErrorCodes: (optional) return extended set of exit codes (see below) by default 0 = successful, 1 = not successful
-
-## Outdated Parameters
-
-* -usePolicy: (optional) deprecated (this is the default behavior)
-* -enable: (optional) enable a paused job before running, then disable when done (not needed post 6.5)
 
 ## Extended Error Codes
 
