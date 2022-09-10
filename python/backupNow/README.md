@@ -6,7 +6,7 @@ This Python script performs a runNow on a protection job and optionally replicat
 
 ## Download the script
 
-Run these commands from a terminal to download the script(s) into your current directory
+Run these commands from PowerShell to download the script(s) into your current directory
 
 ```bash
 # Begin download commands
@@ -18,7 +18,7 @@ chmod +x backupNow.py
 
 ## Components
 
-* backupNow.py: the main python script
+* backupNow.py: the main PowerShell script
 * pyhesity.py: the Cohesity REST API helper module
 
 Place all files in a folder together. then, run the main script like so:
@@ -55,8 +55,9 @@ Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/prote
 * -ka, --keepArchiveFor: (optional) days to keep in archive (defaults to policy settings)
 * -r, --replicateTo: (optional) name of remote cluster to replicate to (defaults to policy settings)
 * -kr, --keepReplicaFor: (optional) days to keep replica for (defaults to policy settings)
-* -e, --enable: (optional) enable a paused job before running, then disable when done
 * -w, --wait: (optional) wait for backup run to complete and report result
+* -pr, --progress: (optional) display percent complete
+* -s, --sleeptimesecs: (optional) seconds to sleep between status queries (default is 30)
 * -t, --backupType: (optional) choose one of kRegular, kFull or kLog backup types. Default is kRegular (incremental)
 * -x, --abortifrunning: (optional) exit if job is already running (default is to wait and run after existing run is finished)
 * -f, --logfile: (optional) filename to log output

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2022.08.26
+# version 2022.09.10
 
 # extended error codes
 # ====================
@@ -45,6 +45,7 @@ parser.add_argument('-a', '--archiveTo', type=str, default=None)
 parser.add_argument('-ka', '--keepArchiveFor', type=int, default=None)
 parser.add_argument('-e', '--enable', action='store_true')
 parser.add_argument('-w', '--wait', action='store_true')
+parser.add_argument('-pr', '--progress', action='store_true')
 parser.add_argument('-t', '--backupType', type=str, choices=['kLog', 'kRegular', 'kFull'], default='kRegular')
 parser.add_argument('-o', '--objectname', action='append', type=str)
 parser.add_argument('-m', '--metadatafile', type=str, default=None)
@@ -55,6 +56,7 @@ parser.add_argument('-cp', '--cancelpreviousrunminutes', type=int, default=0)
 parser.add_argument('-nrt', '--newruntimeoutsecs', type=int, default=180)
 parser.add_argument('-debug', '--debug', action='store_true')
 parser.add_argument('-ex', '--extendederrorcodes', action='store_true')
+parser.add_argument('-s', '--sleeptimesecs', type=int, default=30)
 
 args = parser.parse_args()
 
@@ -90,13 +92,15 @@ cancelpreviousrunminutes = args.cancelpreviousrunminutes
 newruntimeoutsecs = args.newruntimeoutsecs
 debugger = args.debug
 extendederrorcodes = args.extendederrorcodes
+sleeptimesecs = args.sleeptimesecs
+progress = args.progress
 
 if noprompt is True:
     prompt = False
 else:
     prompt = None
 
-if enable is True:
+if enable is True or progress is True:
     wait = True
 
 if logfile is not None:
@@ -468,10 +472,6 @@ if archiveTo is not None:
         else:
             bail(1)
 
-### enable the job
-if enable and cluster['clusterSoftwareVersion'] > '6.5':
-    enabled = api('post', 'protectionJobState/%s' % job['id'], {'pause': False})
-
 ### run protectionJob
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
@@ -498,7 +498,7 @@ while runNow != "":
             bail(4)
         else:
             bail(1)
-    sleep(15)
+    sleep(sleeptimesecs)
     if debugger:
         runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData)
     else:
@@ -527,6 +527,8 @@ if wait is True:
                 bail(5)
             else:
                 bail(1)
+        if newRunId <= lastRunId:
+            sleep(sleeptimesecs)
     out("New Job Run ID: %s" % newRunId)
 
 # wait for job run to finish and report completion
@@ -534,44 +536,39 @@ if wait is True:
     status = 'unknown'
     lastProgress = -1
     while status not in finishedStates:
+        sleep(5)
         try:
-            sleep(10)
             if len(selectedSources) > 0:
                 runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&numRuns=10000&excludeTasks=true&sourceId=%s' % (job['id'], startUsecs, selectedSources[0]))
             else:
                 runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&numRuns=10000' % (job['id'], startUsecs))
             run = [r for r in runs if r['backupRun']['jobRunId'] == newRunId]
             status = run[0]['backupRun']['status']
+            if progress:
+                progressTotal = 0
+                progressPaths = [s['progressMonitorTaskPath'] for s in runs[0]['backupRun']['sourceBackupStatus']]
+                sourceCount = len(runs[0]['backupRun']['sourceBackupStatus'])
+                for progressPath in progressPaths:
+                    progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&includeFinishedTasks=true&excludeSubTasks=false' % progressPath)
+                    thisProgress = progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']
+                    progressTotal += thisProgress
+                percentComplete = int(round(progressTotal / sourceCount))
 
-            progressTotal = 0
-            progressPaths = [s['progressMonitorTaskPath'] for s in runs[0]['backupRun']['sourceBackupStatus']]
-            sourceCount = len(runs[0]['backupRun']['sourceBackupStatus'])
-            for progressPath in progressPaths:
-                progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&includeFinishedTasks=true&excludeSubTasks=false' % progressPath)
-                thisProgress = progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']
-                progressTotal += thisProgress
-            percentComplete = int(round(progressTotal / sourceCount))
-
-            if percentComplete > lastProgress:
-                out('%s%% completed' % percentComplete)
-                lastProgress = percentComplete
-
-            if status not in finishedStates:
-                sleep(5)
+                if percentComplete > lastProgress:
+                    out('%s%% completed' % percentComplete)
+                    lastProgress = percentComplete
         except Exception:
             if debugger:
                 ":DEBUG: error getting updated status"
             else:
                 pass
+        if status not in finishedStates:
+            sleep(sleeptimesecs)
     out("Job finished with status: %s" % run[0]['backupRun']['status'])
     if run[0]['backupRun']['status'] == 'kFailure':
         out('Error: %s' % run[0]['backupRun']['error'])
     if run[0]['backupRun']['status'] == 'kWarning':
         out('Warning: %s' % run[0]['backupRun']['warnings'])
-
-# disable job
-if enable and cluster['clusterSoftwareVersion'] > '6.5':
-    disabled = api('post', 'protectionJobState/%s' % job['id'], {'pause': True})
 
 # return exit code
 if wait is True:
