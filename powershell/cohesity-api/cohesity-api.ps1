@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.09.09 - Brian Seltzer
+#  Version 2022.09.10 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2022.01.12 - fixed storePasswordForUser
@@ -15,9 +15,10 @@
 # 2022.08.02 - added promptForPassword as boolean
 # 2022.09.07 - clear state cache before new logon, fixed bad password handling
 # 2022.09.09 - set timeout to 300 secs, store password if stored on the command line
+# 2022.09.10 - added log file rotate and added call stack to log entries 
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2022.09.09'
+$versionCohesityAPI = '2022.09.10'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -79,7 +80,24 @@ public class SSLHandler
 }
 
 function __writeLog($logmessage){
-    "$(Get-Date): $logmessage" | Out-File -FilePath $apilogfile -Append
+    $caller = ''
+    try{
+        $caller = (Get-PSCallStack).Command -join ', '
+    }catch{
+        # nothing
+    }
+    try{
+        $logfile = Get-Item -Path $apilogfile
+        if($logfile){
+            $size = $logfile.size
+            if($size -gt 1048576){
+                Move-Item -Path $apilogfile -Destination "$apilogfile-$(get-date -UFormat '%Y-%m-%d-%H-%M-%S').txt"
+            }
+        }
+    }catch{
+        # nothing
+    }
+    "$(Get-Date): ($caller) $logmessage" | Out-File -FilePath $apilogfile -Append
 }
 
 # authentication functions ========================================================================
