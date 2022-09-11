@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2022.08.03"""
+"""Cohesity Python REST API Wrapper Module - 2022.09.11"""
 
 ##########################################################################################
 # Change Log
@@ -31,6 +31,7 @@
 # 2022.03.07 - Hide bad password in auth error
 # 2022.05.19 - Fix MFA for session auth
 # 2022.08.02 - Fixed password prompt=False processing
+# 2022.09.11 - store password when passed from script, added caller to api log
 #
 ##########################################################################################
 # Install Notes
@@ -51,6 +52,7 @@ import getpass
 import base64
 import os
 import urllib3
+import traceback
 from os.path import expanduser
 
 ### ignore unsigned certificates
@@ -74,7 +76,6 @@ __all__ = ['api_version',
            'apiconnected',
            'apidrop',
            'pw',
-           'storepw',
            'setpwd',
            'showProps',
            'storePasswordFromInput',
@@ -116,8 +117,8 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
         (domain, username) = username.split('/')
 
     pwd = password
-    if password is None:
-        pwd = __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, prompt)
+    # if password is None:
+    pwd = __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, prompt)
     if pwd is None:
         COHESITY_API['AUTHENTICATED'] = False
         return None
@@ -479,11 +480,6 @@ def __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, 
     """get/set stored password"""
     if domain.lower() != 'local' and helios is False and vip != 'helios.cohesity.com' and useApiKey is False:
         vip = '--'  # wildcard vip
-    if password is not None:
-        return password
-    if prompt is not False and prompt is not None:
-        pwd = getpass.getpass("Enter your password: ")
-        return pwd
     if os.path.exists(PWFILE):
         f = open(PWFILE, 'r')
         pwdlist = [e.strip() for e in f.readlines() if e.strip() != '']
@@ -492,14 +488,29 @@ def __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, 
             try:
                 v, d, u, k, opwd = pwditem.split(":", 5)
                 if v.lower() == vip.lower() and d.lower() == domain.lower() and u.lower() == username.lower() and k == str(useApiKey):
+                    if password is not None:
+                        setpwd(v=vip, u=username, d=domain, helios=helios, useApiKey=useApiKey, password=password)
+                        return password
                     if updatepw is not None:
-                        setpwd(v=vip, u=username, d=domain, useApiKey=useApiKey)
+                        setpwd(v=vip, u=username, d=domain, helios=helios, useApiKey=useApiKey)
                         return pw(vip, username, domain)
                     else:
                         return base64.b64decode(opwd.encode('utf-8')).decode('utf-8')
             except Exception:
                 pass
     pwpath = os.path.join(CONFIGDIR, vip + '-' + domain + '-' + username + '-' + str(useApiKey))
+    if password is not None:
+        pwd = password
+        try:
+            pwdfile = open(pwpath, 'w')
+            opwd = base64.b64encode(pwd.encode('utf-8')).decode('utf-8')
+            pwdfile.write(opwd)
+            pwdfile.close()
+            return pwd
+        except Exception:
+            __writelog('error storing password')
+            print('error storing password')
+            return pwd
     if(updatepw is not None):
         if(os.path.isfile(pwpath) is True):
             os.remove(pwpath)
@@ -528,6 +539,10 @@ def __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, 
 
 # store password in PWFILE
 def setpwd(v='helios.cohesity.com', u='helios', d='local', useApiKey=False, helios=False, password=None):
+    print("v = %s" % v)
+    print("u = %s" % u)
+    print("d = %s" % d)
+    print("useApiKey = %s" % useApiKey)
     if d.lower() != 'local' and helios is False and v != 'helios.cohesity.com' and useApiKey is False:
         v = '--'  # wildcard vip
     if password is None:
@@ -563,14 +578,14 @@ def pw(vip, username, domain='local', password=None, updatepw=None, useApiKey=Fa
     return __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, prompt)
 
 
-def storepw(vip, username, domain='local', password=None, useApiKey=False, helios=False, updatepw=True, prompt=None):
-    pwd1 = '1'
-    pwd2 = '2'
-    while(pwd1 != pwd2):
-        pwd1 = __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, prompt)
-        pwd2 = getpass.getpass("Re-enter your password: ")
-        if(pwd1 != pwd2):
-            print('Passwords do not match! Please re-enter...')
+# def storepw(vip, username, domain='local', password=None, useApiKey=False, helios=False, updatepw=True, prompt=None):
+#     pwd1 = '1'
+#     pwd2 = '2'
+#     while(pwd1 != pwd2):
+#         pwd1 = __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, prompt)
+#         pwd2 = getpass.getpass("Re-enter your password: ")
+#         if(pwd1 != pwd2):
+#             print('Passwords do not match! Please re-enter...')
 
 
 ### store password from input
@@ -591,6 +606,7 @@ def storePasswordFromInput(vip, username, password, domain='local', useApiKey=Fa
 def __writelog(logmessage):
     debuglog = open(LOGFILE, 'a')
     debuglog.write('%s:\n' % datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+    debuglog.write(traceback.format_stack()[0].strip() + '\n')
     debuglog.write('%s\n' % logmessage)
     debuglog.close()
 
