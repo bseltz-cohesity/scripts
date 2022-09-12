@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.09.11 - Brian Seltzer
+#  Version 2022.09.12 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2022.01.12 - fixed storePasswordForUser
@@ -16,9 +16,10 @@
 # 2022.09.07 - clear state cache before new logon, fixed bad password handling
 # 2022.09.09 - set timeout to 300 secs, store password if stored on the command line
 # 2022.09.11 - added log file rotate and added call stack to log entries 
+# 2022.09.12 - added $cohesity_api.last_api_error
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2022.09.11'
+$versionCohesityAPI = '2022.09.12'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -45,6 +46,7 @@ $cohesity_api = @{
     'version' = 1;
     'pwscope' = 'user';
     'api_version' = $versionCohesityAPI;
+    'last_api_error' = 'OK';
 }
 
 $pwfile = $(Join-Path -Path $PSScriptRoot -ChildPath YWRtaW4)
@@ -171,6 +173,7 @@ function apiauth($vip='helios.cohesity.com',
         }
         if(!$passwd){
             # report no password
+            $cohesity_api.last_api_error = "No password provided for $domain\$username at $vip"
             Write-Host "No password provided for $domain\$username at $vip" -ForegroundColor Yellow
             __writeLog "No password provided for $domain\$username at $vip"
             apidrop -quiet
@@ -227,11 +230,16 @@ function apiauth($vip='helios.cohesity.com',
             if($cluster){
                 if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
             }else{
-                Write-Host "api key authentication failed" -ForegroundColor Yellow
-                __writeLog "api key authentication failed for $domain\$username at $vip"
-                apidrop -quiet
-                if(!$noprompt){
-                    apiauth -vip $vip -username $username -domain $domain -useApiKey -updatePassword
+                if($cohesity_api.last_api_error -eq 'connection refused'){
+                    apidrop -quiet
+                }else{
+                    $cohesity_api.last_api_error = "api key authentication failed"
+                    Write-Host "api key authentication failed" -ForegroundColor Yellow
+                    __writeLog "api key authentication failed for $domain\$username at $vip"
+                    apidrop -quiet
+                    if(!$noprompt){
+                        apiauth -vip $vip -username $username -domain $domain -useApiKey -updatePassword
+                    }
                 }
             }
         }
@@ -250,6 +258,7 @@ function apiauth($vip='helios.cohesity.com',
                 $Global:USING_HELIOS | Out-Null
                 if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
             }catch{
+                $cohesity_api.last_api_error = "helios authentication failed"
                 Write-Host "helios authentication failed" -ForegroundColor Yellow
                 __writeLog "helios authentication failed for $username"
                 apidrop -quiet
@@ -305,10 +314,12 @@ function apiauth($vip='helios.cohesity.com',
             }
             if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
         }catch{
+            $cohesity_api.last_api_error = $_.ToString()
             $thisError = $_
             # try v2 session auth
             if($thisError.ToString().contains('"message":')){
                 $message = (ConvertFrom-Json $thisError.ToString()).message
+                $cohesity_api.last_api_error = $message
                 if($message -eq 'Access denied'){
                     try{
                         $url = $cohesity_api.apiRootv2 + 'users/sessions'
@@ -346,6 +357,7 @@ function apiauth($vip='helios.cohesity.com',
                             Write-Host "Connected!" -foregroundcolor green
                         }
                     }catch{
+                        $cohesity_api.last_api_error = "user session authentication failed"
                         apidrop -quiet
                         __writeLog $thisError.ToString()
                         if($cohesity_api.reportApiErrors){
@@ -370,6 +382,7 @@ function apiauth($vip='helios.cohesity.com',
                     $message = (ConvertFrom-Json $_.ToString()).message
                     if($cohesity_api.reportApiErrors){
                         Write-Host $message -foregroundcolor yellow
+                        $cohesity_api.last_api_error = $message
                         if($message -match 'Invalid Username or Password'){
                             if(!$noprompt){
                                 apiauth -vip $vip -username $username -domain $domain -updatePassword
@@ -391,7 +404,13 @@ function apiauth($vip='helios.cohesity.com',
                             }
                         }
                     }else{
-                        Write-Host $thisError.ToString() -foregroundcolor yellow
+                        if($thisError.ToString() -match '404 Not Found'){
+                            Write-Host 'connection refused'
+                            $cohesity_api.last_api_error = 'connection refused'
+                            apidrop -quiet
+                        }else{
+                            Write-Host $thisError.ToString() -foregroundcolor yellow
+                        }
                     }
                 }
             }
@@ -526,7 +545,8 @@ function api($method,
         $data = $null
     }
 
-    if(-not $cohesity_api.authorized){ 
+    if(-not $cohesity_api.authorized){
+        $cohesity_api.last_api_error = 'not authorized'
         if($cohesity_api.reportApiErrors){
             Write-Host 'Not authenticated to a cohesity cluster' -foregroundcolor yellow
             if($MyInvocation.PSCommandPath){
@@ -535,10 +555,12 @@ function api($method,
         }
     }else{
         if($method -ne 'get' -and $cohesity_api.clusterReadOnly -eq $true){
+            $cohesity_api.last_api_error = 'invalid put/post/delete to readonly cluster'
             Write-Host "Cluster connection is READ-ONLY" -ForegroundColor Yellow
             return $null
         }
         if($method -notin $methods){
+            $cohesity_api.last_api_error = "invalid api method: $method"
             if($cohesity_api.reportApiErrors){
                 Write-Host "invalid api method: $method" -foregroundcolor yellow
             }
@@ -590,8 +612,10 @@ function api($method,
                     $result = Invoke-RestMethod -Method $method -Uri $url -header $cohesity_api.header -TimeoutSec 300
                 }
             }
+            $cohesity_api.last_api_error = 'OK'
             return $result
         }catch{
+            $cohesity_api.last_api_error = $_.ToString()
             __writeLog $_.ToString()
             if($cohesity_api.reportApiErrors -and !$quiet){
                 if($_.ToString().contains('"message":')){

@@ -1,4 +1,4 @@
-# version 2022.09.10
+# version 2022.09.12
 # usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
 
 # process commandline arguments
@@ -65,11 +65,13 @@ if($outputlog){
 }
 
 # log function
-function output($msg, [switch]$warn){
-    if($warn){
-        Write-Host $msg -ForegroundColor Yellow
-    }else{
-        Write-Host $msg
+function output($msg, [switch]$warn, [switch]$quiet){
+    if(!$quiet){
+        if($warn){
+            Write-Host $msg -ForegroundColor Yellow
+        }else{
+            Write-Host $msg
+        }
     }
     if($outputlog){
         $msg | Out-File -FilePath $scriptlog -Append
@@ -108,6 +110,15 @@ if($USING_HELIOS){
         }else{
             exit 1
         }
+    }
+}
+
+if($cohesity_api.last_api_error -ne 'OK' -and $null -ne $cohesity_api.last_api_error){
+    output $cohesity_api.last_api_error -warn -quiet
+    if($extendedErrorCodes){
+        exit 2
+    }else{
+        exit 1
     }
 }
 
