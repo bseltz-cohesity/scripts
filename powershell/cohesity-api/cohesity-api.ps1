@@ -87,6 +87,7 @@ function __writeLog($logmessage){
     }catch{
         # nothing
     }
+
     # rotate log
     try{
         $logfile = Get-Item -Path $apilogfile
@@ -100,16 +101,16 @@ function __writeLog($logmessage){
         # nothing
     }
 
-    $apiErrorDate = Get-Date
     # avoid race condition
+    $apiErrorDate = Get-Date
     if($Global:lastAPIerror -eq "($caller) $logmessage" -and $apiErrorDate -lt $Global:lastAPIerrorDate.AddSeconds(5)){
         Start-Sleep 5
     }
     $Global:lastAPIerror = "($caller) $logmessage"
     $Global:lastAPIerrorDate = $apiErrorDate
+
     # output message
     "$($apiErrorDate): ($caller) $logmessage" | Out-File -FilePath $apilogfile -Append
-
 }
 
 # authentication functions ========================================================================
