@@ -8,6 +8,7 @@ param(
     [Parameter()][string]$domain = 'local',             # local or AD domain
     [Parameter()][switch]$useApiKey,                    # use API key for authentication
     [Parameter()][string]$password,                     # optional password
+    [Parameter()][switch]$noPrompt,                     # do not prompt for password
     [Parameter()][switch]$mcm,                          # connect through mcm
     [Parameter()][string]$mfaCode = $null,              # mfa code
     [Parameter()][switch]$emailMfaCode,                 # send mfa code via email
@@ -71,15 +72,12 @@ $migrationCount = 0
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-if($useApiKey){
-    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
-}else{
-    apiauth -vip $vip -username $username -domain $domain -password $password
-}
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
 
+# select helios/mcm managed cluster
 if($USING_HELIOS){
     if($clusterName){
-        heliosCluster $clusterName
+        $thisCluster = heliosCluster $clusterName
     }else{
         Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
         exit 1
@@ -87,7 +85,7 @@ if($USING_HELIOS){
 }
 
 if(!$cohesity_api.authorized){
-    Write-Host "Not authenticated"
+    Write-Host "Not authenticated" -ForegroundColor Yellow
     exit 1
 }
 

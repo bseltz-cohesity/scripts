@@ -35,24 +35,29 @@ Connected!
 Restoring cohesitydb to sqldev01 as restoreTest
 ```
 
-## Parameters
+## Authentication Parameters
 
-### Basic Parameters
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
 
-* -vip: Cohesity Cluster to connect to
-* -username: Cohesity username
-* -domain: Active Directory domain of user (defaults to local)
-* -useApiKey: (optional) Use API key for authentication
-* -password: (optional) will use stored password by default
+## Basic Parameters
+
 * -sourceServer: Server name (or AAG name) where the database was backed up
 * -sourceDB: Original database name
-* -mdfFolder: Location to place the primary data file (e.g. C:\SQLData)
 
 To specify a source instance, include the instance name in the sourceDB name, like MYINSTANCE/MyDB
 
-### Optional Parameters
+## Optional Parameters
 
-* -clusterName: Specify cluster name when connected through Helios
+* -mdfFolder: Location to place the primary data file (e.g. C:\SQLData)
 * -targetServer: Server name to restore to (defaults to same as sourceServer)
 * -targetDB: New database name (defaults to same as sourceDB)
 * -targetInstance: Instance name to restore to (defaults to MSSQLSERVER)
