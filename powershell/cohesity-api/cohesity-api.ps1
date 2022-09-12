@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.09.10 - Brian Seltzer
+#  Version 2022.09.11 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2022.01.12 - fixed storePasswordForUser
@@ -15,10 +15,10 @@
 # 2022.08.02 - added promptForPassword as boolean
 # 2022.09.07 - clear state cache before new logon, fixed bad password handling
 # 2022.09.09 - set timeout to 300 secs, store password if stored on the command line
-# 2022.09.10 - added log file rotate and added call stack to log entries 
+# 2022.09.11 - added log file rotate and added call stack to log entries 
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2022.09.10'
+$versionCohesityAPI = '2022.09.11'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
