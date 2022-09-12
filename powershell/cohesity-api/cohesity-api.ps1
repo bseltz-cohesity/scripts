@@ -80,12 +80,14 @@ public class SSLHandler
 }
 
 function __writeLog($logmessage){
+    # get call stack
     $caller = ''
     try{
         $caller = (Get-PSCallStack).Command -join ', '
     }catch{
         # nothing
     }
+    # rotate log
     try{
         $logfile = Get-Item -Path $apilogfile
         if($logfile){
@@ -97,6 +99,7 @@ function __writeLog($logmessage){
     }catch{
         # nothing
     }
+    # output message
     "$(Get-Date): ($caller) $logmessage" | Out-File -FilePath $apilogfile -Append
 }
 
@@ -158,7 +161,8 @@ function apiauth($vip='helios.cohesity.com',
         }
         if(!$passwd){
             # report no password
-            Write-Host "No password provided for $username at $vip" -ForegroundColor Yellow
+            Write-Host "No password provided for $domain\$username at $vip" -ForegroundColor Yellow
+            __writeLog "No password provided for $domain\$username at $vip"
             apidrop -quiet
             return $null
         }
@@ -214,6 +218,7 @@ function apiauth($vip='helios.cohesity.com',
                 if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
             }else{
                 Write-Host "api key authentication failed" -ForegroundColor Yellow
+                __writeLog "api key authentication failed for $domain\$username at $vip"
                 apidrop -quiet
                 if(!$noprompt){
                     apiauth -vip $vip -username $username -domain $domain -useApiKey -updatePassword
@@ -236,6 +241,7 @@ function apiauth($vip='helios.cohesity.com',
                 if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
             }catch{
                 Write-Host "helios authentication failed" -ForegroundColor Yellow
+                __writeLog "helios authentication failed for $username"
                 apidrop -quiet
                 if(!$noprompt){
                     apiauth -vip $vip -username $username -domain $domain -updatePassword
