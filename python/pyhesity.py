@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2022.09.11"""
+"""Cohesity Python REST API Wrapper Module - 2022.09.12"""
 
 ##########################################################################################
 # Change Log
@@ -118,7 +118,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
 
     pwd = password
     # if password is None:
-    pwd = __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, prompt)
+    pwd = __getpassword(vip=vip, username=username, password=password, domain=domain, useApiKey=useApiKey, helios=helios, updatepw=updatepw, prompt=prompt)
     if pwd is None:
         COHESITY_API['AUTHENTICATED'] = False
         return None
@@ -227,7 +227,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                                     if quiet is None:
                                         print(response.json()['message'])
                                     if 'invalid username' in response.json()['message'].lower():
-                                        if noretry is False:
+                                        if noretry is False and prompt is not False:
                                             apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
                         except requests.exceptions.RequestException as e2:
                             __writelog(e2)
@@ -240,7 +240,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                         if quiet is None:
                             print(response.json()['message'])
                         if 'invalid username' in response.json()['message'].lower():
-                            if noretry is False:
+                            if noretry is False and prompt is not False:
                                 apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
 
         except requests.exceptions.RequestException as e:
@@ -521,8 +521,8 @@ def __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, 
         pwdfile.close()
         return pwd
     except Exception:
-        __writelog('prompting for password...')
         if prompt is not False:
+            __writelog('prompting for password...')
             pwd = getpass.getpass("Enter your password: ")
             try:
                 pwdfile = open(pwpath, 'w')
@@ -534,6 +534,8 @@ def __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, 
                 print('error storing password')
                 return pwd
         else:
+            print('no password provided for %s/%s at %s' % (domain, username, vip))
+            __writelog('no password provided for %s/%s at %s' % (domain, username, vip))
             return None
 
 
@@ -602,13 +604,32 @@ def storePasswordFromInput(vip, username, password, domain='local', useApiKey=Fa
         print('error trying to store password')
 
 
+lastapierrorusecs = dateToUsecs()
+lastapierror = ''
+
+
 ### debug log
 def __writelog(logmessage):
+    global lastapierrorusecs
+    global lastapierror
+    apidate = datetime.now()
+    apierrordatestring = apidate.strftime("%Y-%m-%d-%H-%M-%S")
+    apierrorusecs = dateToUsecs(apidate)
+    # rotate log
+    logsize = os.path.getsize(LOGFILE)
+    if logsize > 1048576:
+        os.rename(LOGFILE, '%s-%s.txt' % (LOGFILE, apierrordatestring))
+    callstack = traceback.format_stack()[0].replace('\n', ' ').strip()
+    apierror = '%s :: %s' % (callstack, logmessage)
+    # avoid race condition
+    if apierror == lastapierror and apierrorusecs < (lastapierrorusecs + 5000000):
+        time.sleep(5)
+    # output log message
     debuglog = open(LOGFILE, 'a')
-    debuglog.write('%s:\n' % datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
-    debuglog.write(traceback.format_stack()[0].strip() + '\n')
-    debuglog.write('%s\n' % logmessage)
+    debuglog.write('%s: %s\n' % (apierrordatestring, apierror))
     debuglog.close()
+    lastapierrorusecs = apierrorusecs
+    lastapierror = apierror
 
 
 ### display json/dictionary as formatted text
