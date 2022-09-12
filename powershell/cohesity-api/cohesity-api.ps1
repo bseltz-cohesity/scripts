@@ -92,7 +92,7 @@ function __writeLog($logmessage){
     try{
         $logfile = Get-Item -Path $apilogfile
         if($logfile){
-            $size = $logfile.size
+            $size = $logfile.Length
             if($size -gt 1048576){
                 Move-Item -Path $apilogfile -Destination "$apilogfile-$(get-date -UFormat '%Y-%m-%d-%H-%M-%S').txt"
             }
