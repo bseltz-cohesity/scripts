@@ -12,7 +12,7 @@ parser.add_argument('-u', '--username', type=str, required=True)  # Cohesity Use
 parser.add_argument('-d', '--domain', type=str, default='local')  # Cohesity User Domain
 parser.add_argument('-n', '--viewname', type=str, required=True)  # name view to create
 parser.add_argument('-s', '--storagedomain', type=str, default='DefaultStorageDomain')  # name of storage domain to use
-parser.add_argument('-q', '--qospolicy', type=str, choices=['Backup Target Low', 'Backup Target High', 'TestAndDev High', 'TestAndDev Low'], default='TestAndDev High')  # qos policy
+parser.add_argument('-q', '--qospolicy', type=str, choices=['Backup Target Low', 'Backup Target High', 'TestAndDev High', 'TestAndDev Low', None], default=None)  # qos policy
 parser.add_argument('-w', '--whitelist', action='append', default=[])  # ip to whitelist
 parser.add_argument('-l', '--quotalimit', type=int, default=None)  # quota limit
 parser.add_argument('-a', '--quotaalert', type=int, default=None)  # quota alert threshold
@@ -78,6 +78,10 @@ if existingview is not None and updateexistingview is not True:
     exit(0)
 
 if existingview is None:
+    # default qos policy
+    if qosPolicy is None:
+        qosPolicy = 'TestAndDev High'
+
     # find storage domain
     sd = [sd for sd in api('get', 'viewBoxes') if sd['name'].lower() == storageDomain.lower()]
 
@@ -127,7 +131,6 @@ if len(whitelist) > 0:
                 netmask = netmask.lstrip()
                 cidr = netmask2cidr(netmask)
             thisip = parts[0]
-            # (thisip, netmask) = ip.split(',')
         else:
             thisip = ip
             netmask = '255.255.255.255'
@@ -191,7 +194,8 @@ if lockmode.lower() != 'none':
     newView['fileLockConfig']['expiryTimestampMsecs'] = 0
 
 # update qos policy
-newView['qos']['principalName'] = qosPolicy
+if qosPolicy is not None:
+    newView['qos']['principalName'] = qosPolicy
 
 # create the view
 if existingview is None:
