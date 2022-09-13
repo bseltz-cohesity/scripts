@@ -20,6 +20,7 @@ param (
     [Parameter()][string]$networkName,
     [Parameter()][string]$datastoreName,
     [Parameter()][string]$prefix = '',
+    [Parameter()][int]$vlan,
     [Parameter()][switch]$preserveMacAddress,
     [Parameter()][switch]$detachNetwork,
     [Parameter()][switch]$poweron, # leave powered off by default
@@ -243,6 +244,20 @@ if($prefix -ne ''){
 }
 
 $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.recoveryProcessType = $recoveryType
+
+# select cluster interface
+if($vlan){
+    $vlanObj = api get vlans | Where-Object id -eq $vlan
+    if($vlanObj){
+        $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams['vlanConfig'] = @{
+            "id" = $vlanObj.id;
+            "interfaceName" = $vlanObj.vlanName.split('.')[0]
+        }
+    }else{
+        Write-Host "vlan $vlan not found" -ForegroundColor Yellow
+        exit
+    }
+}
 
 # prompt for confirmation
 if(!$noPrompt){
