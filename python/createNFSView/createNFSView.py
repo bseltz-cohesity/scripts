@@ -26,6 +26,7 @@ parser.add_argument('-ml', '--minimumlockperiod', type=int, default=0)  # minimu
 parser.add_argument('-xl', '--maximumlockperiod', type=int, default=1)  # maximum manual lock period
 parser.add_argument('-lt', '--manuallockmode', type=str, choices=['ReadOnly', 'FutureATime', 'readonly', 'futureatim'], default='ReadOnly')  # manual locking type
 parser.add_argument('-lu', '--lockunit', type=str, choices=['minute', 'hour', 'day', 'minutes', 'hours', 'days'], default='minute')  # lock period units
+parser.add_argument('-show', '--show', action='store_true')
 
 args = parser.parse_args()
 
@@ -48,6 +49,7 @@ minimumlockperiod = args.minimumlockperiod
 maximumlockperiod = args.maximumlockperiod
 manuallockmode = args.manuallockmode
 lockunit = args.lockunit
+show = args.show
 
 lockunitmap = {'minute': 60000, 'minutes': 60000, 'hour': 3600000, 'hours': 3600000, 'day': 86400000, 'days': 86400000}
 lockunitmultiplier = lockunitmap[lockunit]
@@ -73,11 +75,15 @@ if views['count'] > 0:
     if(len(existingviews) > 0):
         existingview = existingviews[0]
 
-if existingview is not None and updateexistingview is not True:
+if existingview is not None and updateexistingview is not True and show is not True:
     print('view %s already exists' % viewName)
     exit(0)
 
 if existingview is None:
+    if show:
+        print('view %s not found' % viewName)
+        exit(0)
+
     # default qos policy
     if qosPolicy is None:
         qosPolicy = 'TestAndDev High'
@@ -114,6 +120,9 @@ if existingview is None:
 
 else:
     newView = existingview
+    if show:
+        display(newView)
+        exit(0)
 
 if clearwhitelist is True:
     newView['subnetWhitelist'] = []

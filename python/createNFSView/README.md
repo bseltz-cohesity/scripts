@@ -50,6 +50,7 @@ Place both files in a folder together and run the main script like so:
 * -r, --removewhitelistentries: (optional) remove specified entries from whitelist of existing view
 * -c, --clearwhitelist: (optional) clear out the existing whitelist and add specified entries (using -w)
 * -x, --updateexistingview: (optional) allow the script to update an existing view (otherwise quit if view exists)
+* -show, --show: (optional) display existing view settings and exit
 
 ## Datalock Parameters
 
