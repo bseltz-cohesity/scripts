@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2022.09.10
+# version 2022.09.13
 
 # extended error codes
 # ====================
@@ -116,8 +116,9 @@ if logfile is not None:
         exit(1)
 
 
-def out(message):
-    print(message)
+def out(message, quiet=False):
+    if quiet is not True:
+        print(message)
     if logfile is not None:
         log.write('%s\n' % message)
 
@@ -128,8 +129,8 @@ def bail(code=0):
     exit(code)
 
 
-if 'api_version' not in globals() or api_version < '2022.08.02':
-    out('this script requires pyhesity.py version 2022.08.02 or later')
+if 'api_version' not in globals() or api_version < '2022.09.13':
+    out('this script requires pyhesity.py version 2022.09.13 or later')
     if extendederrorcodes is True:
         bail(3)
     else:
@@ -149,11 +150,25 @@ if mcm or vip.lower() == 'helios.cohesity.com':
         print('-clustername is required when connecting to Helios or MCM')
         exit()
 
+if LAST_API_ERROR() != 'OK':
+    out(LAST_API_ERROR(), quiet=True)
+    if vip2 is None:
+        if extendederrorcodes is True:
+            bail(2)
+        else:
+            bail(1)
+
 if apiconnected() is False and vip2 is not None:
     out('\nFailed to connect to %s. Trying %s...' % (vip, vip2))
     apiauth(vip=vip2, username=username, domain=domain, password=password, useApiKey=useApiKey)
     if jobName2 is not None:
         jobName = jobName2
+    if LAST_API_ERROR() != 'OK':
+        out(LAST_API_ERROR(), quiet=True)
+        if extendederrorcodes is True:
+            bail(2)
+        else:
+            bail(1)
 
 if apiconnected() is False:
     out('\nFailed to connect to Cohesity cluster')
