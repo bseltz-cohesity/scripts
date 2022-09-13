@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.09.12 - Brian Seltzer
+#  Version 2022.09.13 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2022.01.12 - fixed storePasswordForUser
@@ -16,10 +16,10 @@
 # 2022.09.07 - clear state cache before new logon, fixed bad password handling
 # 2022.09.09 - set timeout to 300 secs, store password if stored on the command line
 # 2022.09.11 - added log file rotate and added call stack to log entries 
-# 2022.09.12 - added $cohesity_api.last_api_error
+# 2022.09.13 - added $cohesity_api.last_api_error
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2022.09.12'
+$versionCohesityAPI = '2022.09.13'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -221,7 +221,7 @@ function apiauth($vip='helios.cohesity.com',
         }else{
             $cohesity_api.webcli.headers['apiKey'] = $passwd;
         }
-        # validate cluster authorization
+        # validate cluster API key authorization
         if($useApiKey -and (($vip -ne 'helios.cohesity.com') -and $helios -ne $True)){
             $cluster = api get cluster -quiet -version 1 -data $null
             if($cluster.clusterSoftwareVersion -lt '6.4'){
@@ -230,37 +230,27 @@ function apiauth($vip='helios.cohesity.com',
             if($cluster){
                 if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
             }else{
-                if($cohesity_api.last_api_error -eq 'connection refused'){
-                    apidrop -quiet
-                }else{
+                if($cohesity_api.last_api_error -match 'KStatusUnauthorized'){
                     $cohesity_api.last_api_error = "api key authentication failed"
-                    Write-Host "api key authentication failed" -ForegroundColor Yellow
-                    __writeLog "api key authentication failed for $domain\$username at $vip"
-                    apidrop -quiet
-                    if(!$noprompt){
-                        apiauth -vip $vip -username $username -domain $domain -useApiKey -updatePassword
-                    }
+                }
+                Write-Host $cohesity_api.last_api_error -ForegroundColor Yellow
+                __writeLog $cohesity_api.last_api_error
+                apidrop -quiet
+                if(!$noprompt -and $cohesity_api.last_api_error -eq "api key authentication failed"){
+                    apiauth -vip $vip -username $username -domain $domain -useApiKey -updatePassword
                 }
             }
         }
-        # validate helios authorization
+        # validate helios/mcm authorization
         if($vip -eq 'helios.cohesity.com' -or $helios){
-            try{
-                $URL = $cohesity_api.apiRootmcm + 'clusters/connectionStatus'
-                if($PSVersionTable.PSEdition -eq 'Core'){
-                    $heliosAllClusters = Invoke-RestMethod -Method get -Uri $URL -header $cohesity_api.header -SkipCertificateCheck -TimeoutSec 300
-                }else{
-                    $heliosAllClusters = Invoke-RestMethod -Method get -Uri $URL -header $cohesity_api.header  -TimeoutSec 300
-                }
+            $heliosAllClusters = api get -mcm clusters/connectionStatus
+            if($cohesity_api.last_api_error -eq 'OK'){
                 $cohesity_api.heliosConnectedClusters = $heliosAllClusters | Where-Object {$_.connectedToCluster -eq $true}
                 $cohesity_api.authorized = $true
                 $Global:USING_HELIOS = $true
                 $Global:USING_HELIOS | Out-Null
                 if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
-            }catch{
-                $cohesity_api.last_api_error = "helios authentication failed"
-                Write-Host "helios authentication failed" -ForegroundColor Yellow
-                __writeLog "helios authentication failed for $username"
+            }else{
                 apidrop -quiet
                 if(!$noprompt){
                     apiauth -vip $vip -username $username -domain $domain -updatePassword
@@ -268,6 +258,7 @@ function apiauth($vip='helios.cohesity.com',
             }
         }
     }else{
+        # username/password authentication
         $Global:USING_HELIOS = $false
         $Global:USING_HELIOS | Out-Null
         $url = $cohesity_api.apiRoot + '/public/accessTokens'
