@@ -1,5 +1,4 @@
-# version 2022.09.10
-# usage: ./backupNow.ps1 -vip mycluster -vip2 mycluster2 -username myusername -domain mydomain.net -jobName 'My Job' -keepLocalFor 5 -archiveTo 'My Target' -keepArchiveFor 5 -replicateTo mycluster2 -keepReplicaFor 5 -enable
+# version 2022.09.13
 
 # process commandline arguments
 [CmdletBinding()]
@@ -7,40 +6,41 @@ param (
     [Parameter()][string]$vip = 'helios.cohesity.com',  # endpoint to connect to
     [Parameter()][string]$username = 'helios',  # username for authentication / password storage
     [Parameter()][string]$domain = 'local',  # local or AD domain
-    [Parameter()][switch]$useApiKey,  # use API key authentication
+    [Parameter()][switch]$useApiKey,         # use API key authentication
     [Parameter()][string]$password = $null,  # send password / API key via command line (not recommended)
-    [Parameter()][switch]$noPrompt,  # do not prompt for password
-    [Parameter()][switch]$mcm,  # connect to MCM endpoint
-    [Parameter()][string]$mfaCode = $null,  # MFA code
-    [Parameter()][switch]$emailMfaCode,  # email MFA code
+    [Parameter()][switch]$noPrompt,          # do not prompt for password
+    [Parameter()][switch]$mcm,               # connect to MCM endpoint
+    [Parameter()][string]$mfaCode = $null,   # MFA code
+    [Parameter()][switch]$emailMfaCode,      # email MFA code
     [Parameter()][string]$clusterName = $null,  # cluster name to connect to when connected to Helios/MCM
-    [Parameter()][string]$tenant,         # tenant org name
-    [Parameter()][string]$vip2,           # alternate cluster to connect to (deprecated)
+    [Parameter()][string]$tenant,            # tenant org name
+    [Parameter()][string]$vip2,              # alternate cluster to connect to (deprecated)
     [Parameter(Mandatory = $True)][string]$jobName,  # job to run
-    [Parameter()][switch]$usePolicy,      # deprecated (does nothing)
-    [Parameter()][switch]$localOnly,      # override policy - perform local backup only
-    [Parameter()][switch]$noReplica,      # override policy - skip replication
-    [Parameter()][switch]$noArchive,      # override policy - skip archival
-    [Parameter()][string]$jobName2,       # alternate jobName to run (deprecated)
-    [Parameter()][int]$keepLocalFor,      # override policy - keep local snapshot for x days
-    [Parameter()][string]$replicateTo,    # override policy - remote cluster to replicate to
-    [Parameter()][int]$keepReplicaFor,    # override policy - keep replica for x days
-    [Parameter()][string]$archiveTo,      # override policy - target to archive to
-    [Parameter()][int]$keepArchiveFor,    # override policy - keep archive for x days
-    [Parameter()][switch]$enable,         # deprecated (does nothing)
+    [Parameter()][switch]$usePolicy,         # deprecated (does nothing)
+    [Parameter()][switch]$localOnly,         # override policy - perform local backup only
+    [Parameter()][switch]$noReplica,         # override policy - skip replication
+    [Parameter()][switch]$noArchive,         # override policy - skip archival
+    [Parameter()][string]$jobName2,          # alternate jobName to run (deprecated)
+    [Parameter()][int]$keepLocalFor,         # override policy - keep local snapshot for x days
+    [Parameter()][string]$replicateTo,       # override policy - remote cluster to replicate to
+    [Parameter()][int]$keepReplicaFor,       # override policy - keep replica for x days
+    [Parameter()][string]$archiveTo,         # override policy - target to archive to
+    [Parameter()][int]$keepArchiveFor,       # override policy - keep archive for x days
+    [Parameter()][switch]$enable,            # deprecated (does nothing)
     [Parameter()][ValidateSet('kRegular','kFull','kLog','kSystem','Regular','Full','Log','System')][string]$backupType = 'kRegular',
-    [Parameter()][array]$objects,         # list of objects to include in run
-    [Parameter()][switch]$progress,       # display progress percent
-    [Parameter()][switch]$wait,           # wait for completion and report end status
-    [Parameter()][string]$logfile,        # name of log file
-    [Parameter()][switch]$outputlog,      # enable logging
-    [Parameter()][string]$metaDataFile,   # backup file list
-    [Parameter()][switch]$abortIfRunning,  # exit if job is already running
-    [Parameter()][int64]$waitMinutesIfRunning = 60,  # give up and exit if existing run is still running
+    [Parameter()][array]$objects,            # list of objects to include in run
+    [Parameter()][switch]$progress,          # display progress percent
+    [Parameter()][switch]$wait,              # wait for completion and report end status
+    [Parameter()][string]$logfile,           # name of log file
+    [Parameter()][switch]$outputlog,         # enable logging
+    [Parameter()][string]$metaDataFile,      # backup file list
+    [Parameter()][switch]$abortIfRunning,    # exit if job is already running
+    [Parameter()][int64]$waitMinutesIfRunning = 60,     # give up and exit if existing run is still running
+    [Parameter()][int64]$waitForNewRunMinutes = 10,     # give up and exit if new run fails to appear
     [Parameter()][int64]$cancelPreviousRunMinutes = 0,  # cancel previous run if it has been running long
-    [Parameter()][int64]$statusRetries = 10,  # give up waiting for new run to appear
-    [Parameter()][switch]$extendedErrorCodes,
-    [Parameter()][int64]$sleepTimeSecs = 30
+    [Parameter()][int64]$statusRetries = 10,   # give up waiting for new run to appear
+    [Parameter()][switch]$extendedErrorCodes,  # report failure-specific error codes
+    [Parameter()][int64]$sleepTimeSecs = 30    # sleep seconds between status queries
 )
 
 # source the cohesity-api helper code
@@ -50,10 +50,11 @@ param (
 # ====================
 # 0: Successful
 # 1: Unsuccessful
-# 2: authentication error
+# 2: connection/authentication error
 # 3: Syntax Error
 # 4: Timed out waiting for existing run to finish
 # 5: Timed out waiting for status update
+# 6: Timed out waiting for new run to appear
 
 if($outputlog){
     if($logfile){
@@ -65,11 +66,13 @@ if($outputlog){
 }
 
 # log function
-function output($msg, [switch]$warn){
-    if($warn){
-        Write-Host $msg -ForegroundColor Yellow
-    }else{
-        Write-Host $msg
+function output($msg, [switch]$warn, [switch]$quiet){
+    if(!$quiet){
+        if($warn){
+            Write-Host $msg -ForegroundColor Yellow
+        }else{
+            Write-Host $msg
+        }
     }
     if($outputlog){
         $msg | Out-File -FilePath $scriptlog -Append
@@ -108,6 +111,15 @@ if($USING_HELIOS){
         }else{
             exit 1
         }
+    }
+}
+
+if($cohesity_api.last_api_error -ne 'OK' -and $null -ne $cohesity_api.last_api_error){
+    output $cohesity_api.last_api_error -warn -quiet
+    if($extendedErrorCodes){
+        exit 2
+    }else{
+        exit 1
     }
 }
 
@@ -511,7 +523,17 @@ while($result -ne ""){
 output "Running $jobName..."
 
 # wait for new job run to appear
+$now = Get-Date
+$waitUntil = $now.AddMinutes($waitForNewRunMinutes)
 while($newRunId -le $lastRunId){
+    if((Get-Date) -gt $waitUntil){
+        output "Timed out waiting for new run to appear" -warn
+        if($extendedErrorCodes){
+            exit 6
+        }else{
+            exit 1
+        }
+    }
     Start-Sleep 3
     if($selectedSources.Count -gt 0){
         $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10&sourceId=$($selectedSources[0])"
@@ -534,9 +556,9 @@ if($wait -or $progress){
         Start-Sleep $sleepTimeSecs
         try {
             if($selectedSources.Count -gt 0){
-                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$startUsecs&numRuns=10000&sourceId=$($selectedSources[0])"
+                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$startUsecs&numRuns=1000&sourceId=$($selectedSources[0])"
             }else{
-                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$startUsecs&numRuns=10000"
+                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$startUsecs&numRuns=1000"
             }
             if($runs){
                 $runs = $runs | Where-Object {$_.backupRun.jobRunId -eq $newRunId}
@@ -545,6 +567,8 @@ if($wait -or $progress){
                         $lastStatus = $runs[0].backupRun.status
                         $statusRetryCount = 0
                     }
+                }else{
+                    $statusRetryCount += 1
                 }
                 try{
                     if($progress){
@@ -557,20 +581,20 @@ if($wait -or $progress){
                             $progressTotal += $thisProgress
                         }
                         $percentComplete = $progressTotal / $sourceCount
+                        $statusRetryCount = 0
                         if($percentComplete -ne $lastProgress){
                             "{0} percent complete" -f [math]::Round($percentComplete, 0)
                             $lastProgress = $percentComplete
                         }
                     }
                 }catch{
-                    Start-Sleep 1
+                    $statusRetryCount += 1
                 }
             }else{
                 $statusRetryCount += 1
             }
         }catch{
             $statusRetryCount += 1
-            Start-Sleep 5
         }
         if($statusRetryCount -gt $statusRetries){
             output "Timed out waiting for status update" -warn

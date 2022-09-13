@@ -72,6 +72,7 @@ Place all files in a folder together. then, run the main script like so:
 * -outputlog: (optional) enable output logging
 * -logfile: (optional) path/name of log file (default is ./log-backupNow.log)
 * -waitMinutesIfRunning: (optional) exit after X minutes if job is already running (default is 60)
+* -waitForNewRunMinutes: (optional) exit after X minutes if new run fails to appear (Default is 10)
 * -cancelPreviousRunMinutes: (optional) cancel previous job run if it has been running for X minutes
 * -statusRetries: (optional) quit script with failure if unable to get status X times (default is 10)
 * -extendedErrorCodes: (optional) return extended set of exit codes (see below) by default 0 = successful, 1 = not successful
