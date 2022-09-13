@@ -243,7 +243,7 @@ function apiauth($vip='helios.cohesity.com',
         }
         # validate helios/mcm authorization
         if($vip -eq 'helios.cohesity.com' -or $helios){
-            $heliosAllClusters = api get -mcm clusters/connectionStatus
+            $heliosAllClusters = api get -mcm clusters/connectionStatus -quiet
             if($cohesity_api.last_api_error -eq 'OK'){
                 $cohesity_api.heliosConnectedClusters = $heliosAllClusters | Where-Object {$_.connectedToCluster -eq $true}
                 $cohesity_api.authorized = $true
@@ -251,6 +251,11 @@ function apiauth($vip='helios.cohesity.com',
                 $Global:USING_HELIOS | Out-Null
                 if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
             }else{
+                if($cohesity_api.last_api_error -match '404 Not Found'){
+                    $cohesity_api.last_api_error = 'connection refused'
+                }
+                Write-Host $cohesity_api.last_api_error -ForegroundColor Yellow
+                __writeLog $cohesity_api.last_api_error
                 apidrop -quiet
                 if(!$noprompt){
                     apiauth -vip $vip -username $username -domain $domain -updatePassword
