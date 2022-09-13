@@ -23,9 +23,10 @@ param (
     [Parameter()][switch]$disableIndexing,
     [Parameter()][switch]$allSites,
     [Parameter()][int]$maxSitesPerJob = 5000,
-    [Parameter()][int]$pageSize = 1000,
+    [Parameter()][int]$pageSize = 100,
     [Parameter()][string]$sourceName,
-    [Parameter()][switch]$autoProtectRemaining
+    [Parameter()][switch]$autoProtectRemaining,
+    [Parameter()][switch]$dbg
 )
 
 # gather list from command line params and file
@@ -218,14 +219,14 @@ $webUrlIndex = @{}
 $unprotectedIndex = @()
 $protectedIndex = @()
 $nodeIdIndex = @()
-$indexCount = 0
+$lastCursor = 0
 
 $sites = api get "protectionSources?pageSize=$pageSize&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false"
 
 # enumerate sites
 while(1){
     foreach($node in $sites.nodes){
-        $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id | Sort-Object -Unique)
+        $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id) # | Sort-Object -Unique)
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
         if($node.protectionSource.office365ProtectionSource.PSObject.Properties['webUrl']){
             $webUrlIndex["$([string]$node.protectionSource.office365ProtectionSource.webUrl)"] = $node.protectionSource.id
@@ -238,10 +239,15 @@ while(1){
         $cursor = $node.protectionSource.id
     }
     $sites = api get "protectionSources?pageSize=$pageSize&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false&afterCursorEntityId=$cursor"
-    if($nodeIdIndex.Count -eq $indexCount){
+    $nodeIdIndex = @($nodeIdIndex | Sort-Object -Unique)
+    if($cursor -eq $lastCursor){
         break
     }
-    $indexCount = $nodeIdIndex.Count
+    $lastCursor = $cursor
+    if($dbg){
+        Write-Host "`n  Cursor: $cursor"
+        Write-Host "  Sites Discovered: $($nodeIdIndex.Count)"
+    }
 }
 
 Write-Host "$($nodeIdIndex.Count) sites discovered ($($protectedIndex.Count) protected, $($unprotectedIndex.Count) unprotected)"
