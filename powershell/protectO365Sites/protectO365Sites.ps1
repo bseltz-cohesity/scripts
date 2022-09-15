@@ -23,7 +23,6 @@ param (
     [Parameter()][switch]$disableIndexing,
     [Parameter()][switch]$allSites,
     [Parameter()][int]$maxSitesPerJob = 5000,
-    [Parameter()][int]$pageSize = 50000,
     [Parameter()][string]$sourceName,
     [Parameter()][switch]$autoProtectRemaining,
     [Parameter()][switch]$dbg
@@ -78,6 +77,11 @@ if($cluster.clusterSoftwareVersion -gt '6.8'){
     $environment = 'kO365Sharepoint'
 }else{
     $environment = 'kO365'
+}
+if($cluster.clusterSoftwareVersion -lt '6.6'){
+    $entityTypes = 'kMailbox,kUser,kGroup,kSite,kPublicFolder'
+}else{
+    $entityTypes = 'kMailbox,kUser,kGroup,kSite,kPublicFolder,kO365Exchange,kO365OneDrive,kO365Sharepoint'
 }
 
 # get the protectionJob
@@ -205,7 +209,7 @@ if(! $rootSource){
     exit
 }
 
-$source = api get "protectionSources?id=$($rootSource.protectionSource.id)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false"
+$source = api get "protectionSources?id=$($rootSource.protectionSource.id)&excludeOffice365Types=$entityTypes&allUnderHierarchy=false"
 $sitesNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Sites'}
 if(!$sitesNode){
     Write-Host "Source $sourceName is not configured for O365 Sites" -ForegroundColor Yellow
@@ -221,7 +225,7 @@ $protectedIndex = @()
 $nodeIdIndex = @()
 $lastCursor = 0
 
-$sites = api get "protectionSources?pageSize=$pageSize&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false"
+$sites = api get "protectionSources?pageSize=50000&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false"
 
 # enumerate sites
 while(1){
@@ -238,7 +242,7 @@ while(1){
         }
         $cursor = $node.protectionSource.id
     }
-    $sites = api get "protectionSources?pageSize=$pageSize&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&afterCursorEntityId=$cursor"
+    $sites = api get "protectionSources?pageSize=50000&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&afterCursorEntityId=$cursor"
     $nodeIdIndex = @($nodeIdIndex | Sort-Object -Unique)
     if($cursor -eq $lastCursor){
         break

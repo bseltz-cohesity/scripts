@@ -95,7 +95,6 @@ To create an autoprotect job that excludes sites that are already protected:
 * -maxSitesPerJob: (optional) default is 5000
 * -sourceName: (optional) name of registered O365 protection source (required for new job)
 * -autoProtectRemaining: (optional) autoprotect at the source and exclude already protected sites
-* -pageSize: (optional) discover X users per query (default is 1000)
 * -dbg: (optional) display debug info during site discovery
 
 ## New Job Parameters
