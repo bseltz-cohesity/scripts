@@ -29,6 +29,7 @@ param (
     [Parameter()][string]$clusterName = $null,           # helios cluster to access 
     [Parameter(Mandatory = $True)][string]$sourceServer, # protection source where the DB was backed up
     [Parameter(Mandatory = $True)][string]$sourceDB,     # name of the source DB we want to restore
+    [Parameter()][array]$sourceInstance,                 # one or more source instances
     [Parameter()][string]$targetServer = $sourceServer,  # where to restore the DB to
     [Parameter()][string]$targetDB = $sourceDB,          # desired restore DB name
     [Parameter()][switch]$overWrite,                     # overwrite existing DB
@@ -90,34 +91,20 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
-# if($useApiKey){
-#     apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
-# }else{
-#     apiauth -vip $vip -username $username -domain $domain -password $password
-# }
-
-# if($USING_HELIOS){
-#     if($clusterName){
-#         heliosCluster $clusterName
-#     }else{
-#         Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
-#         exit 1
-#     }
-# }
-
-# if(!$cohesity_api.authorized){
-#     Write-Host "Not authenticated"
-#     exit 1
-# }
-
 # handle source instance name e.g. instance/dbname
 if($sourceDB.Contains('/')){
     if($targetDB -eq $sourceDB){
         $targetDB = $sourceDB.Split('/')[1]
     }
-    $sourceInstance, $sourceDB = $sourceDB.Split('/')
-}else{
-    $sourceInstance = 'MSSQLSERVER'
+    $si, $sourceDB = $sourceDB.Split('/')
+    $sourceInstance = @($si)
+}
+if(!$sourceInstance -or $sourceInstance.Count -eq 0){
+    $sourceInstance = @('MSSQLSERVER')
+}
+$sourceDBObjectNames = @()
+foreach($si in $sourceInstance){
+    $sourceDBObjectNames = @($sourceDBObjectNames + "$si/$sourceDB")
 }
 
 # search for database to clone
@@ -132,31 +119,44 @@ if($targetInstance -ne '' -and $targetInstance -ne $sourceInstance){
 # narrow the search results to the correct source server
 $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer } | `
                                   Where-Object {$_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB } | `
-                                  Where-Object {$_.vmDocument.objectName -eq "$sourceInstance/$sourceDB"}
+                                  Where-Object {$_.vmDocument.objectName -in $sourceDBObjectNames}
 
 if($null -eq $dbresults){
-    Write-Host "Database $sourceInstance/$sourceDB on Server $sourceServer Not Found" -ForegroundColor Yellow
-    exit
+    foreach($si in $sourceInstance){
+        Write-Host "Database $si/$sourceDB on Server $sourceServer Not Found" -ForegroundColor Yellow
+    }
+    exit 1
 }
+# if there are multiple results (e.g. old/new jobs?) sort from newest to oldest
+$dbVersions = @()
+foreach($dbresult in $dbresults){
+    foreach($version in $dbresult.vmDocument.versions){
+        setApiProperty -object $version -name vmDocument -value $dbresult.vmDocument
+        setApiProperty -object $version -name registeredSource -value $dbresult.registeredSource
+        $dbVersions = @($dbVersions + $version)
+    }
+}
+$dbVersions = $dbVersions | Sort-Object -Property {$_.instanceId.jobStartTimeUsecs} -Descending
 
-# if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot 
-$latestdb = ($dbresults | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
-
-if($null -eq $latestdb){
-    Write-Host "Database $sourceInstance/$sourceDB on Server $sourceServer Not Found" -ForegroundColor Yellow
+if($dbVersions.Count -eq 0){
+    foreach($si in $sourceInstance){
+        Write-Host "Database $si/$sourceDB on Server $sourceServer Not Found" -ForegroundColor Yellow
+    }
     exit 1
 }
 
+$latestdbDoc = $dbVersions[0].vmDocument
+
 if($showPaths){
 
-    $latestdb.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec | Format-Table -Property logicalName, @{l='Size (MiB)'; e={$_.sizeBytes / (1024 * 1024)}}, fullPath
+    $latestdbDoc.objectId.entity.sqlEntity.dbFileInfoVec | Format-Table -Property logicalName, @{l='Size (MiB)'; e={$_.sizeBytes / (1024 * 1024)}}, fullPath
 
     Write-Host "Example Restore Path Parameters:`n"
 
     $ndfFolderExample = '@{'
     $mdfFolderExample = ''
     $ldfFolderExample = ''
-    foreach($file in $latestdb.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec){
+    foreach($file in $latestdbDoc.objectId.entity.sqlEntity.dbFileInfoVec){
         $fileName = Split-Path -Path $file.fullPath -Leaf
         $filePath = (Split-Path -Path $file.fullPath).replace('/', '\')
         $extension = ".$((Split-Path -Path $file.fullPath -Leaf).Split('.')[-1])"
@@ -179,12 +179,12 @@ if($showPaths){
 }
 
 # identify physical or vm
-$entityType = $latestdb.registeredSource.type
+$entityType = $dbVersions[0].registeredSource.type
 
 # search for source server
 $entities = api get /appEntities?appEnvType=3`&envType=$entityType
-$ownerId = $latestdb.vmDocument.objectId.entity.sqlEntity.ownerId
-$dbId = $latestdb.vmDocument.objectId.entity.id
+$ownerId = $latestdbDoc.objectId.entity.sqlEntity.ownerId
+$dbId = $latestdbDoc.objectId.entity.id
 
 # handle log replay
 $versionNum = 0
@@ -192,8 +192,6 @@ $validLogTime = $False
 $useLogTime = $False
 $latestUsecs = 0
 $oldestUsecs = 0
-
-$dbVersions = $latestdb.vmDocument.versions
 
 if ($logTime -or $latest -or $noStop){
     if($logTime){
@@ -216,9 +214,9 @@ if ($logTime -or $latest -or $noStop){
             "environment"        = "kSQL";
             "jobUids"            = @(
                 @{
-                    "clusterId"            = $latestdb.vmDocument.objectId.jobUid.clusterId;
-                    "clusterIncarnationId" = $latestdb.vmDocument.objectId.jobUid.clusterIncarnationId;
-                    "id"                   = $latestdb.vmDocument.objectId.jobUid.objectId
+                    "clusterId"            = $version.vmDocument.objectId.jobUid.clusterId;
+                    "clusterIncarnationId" = $version.vmDocument.objectId.jobUid.clusterIncarnationId;
+                    "id"                   = $version.vmDocument.objectId.jobUid.objectId
                 }
             );
             "startTimeUsecs"     = $logUsecsDayStart
@@ -291,8 +289,8 @@ $restoreTask = @{
         'type' = 3;
         'ownerRestoreInfo' = @{
             "ownerObject" = @{
-                "jobUid" = $latestdb.vmDocument.objectId.jobUid;
-                "jobId" = $latestdb.vmDocument.objectId.jobId;
+                "jobUid" = $dbVersions[$versionNum].vmDocument.objectId.jobUid;
+                "jobId" = $dbVersions[$versionNum].vmDocument.objectId.jobId;
                 "jobInstanceId" = $dbVersions[$versionNum].instanceId.jobInstanceId;
                 "startTimeUsecs" = $dbVersions[$versionNum].instanceId.jobStartTimeUsecs;
                 "entity" = @{
@@ -307,7 +305,7 @@ $restoreTask = @{
         };
         'restoreAppObjectVec' = @(
             @{
-                "appEntity" = $latestdb.vmDocument.objectId.entity;
+                "appEntity" = $dbVersions[$versionNum].vmDocument.objectId.entity;
                 'restoreParams' = @{
                     'sqlRestoreParams' = @{
                         'captureTailLogs' = $false;
@@ -335,7 +333,7 @@ if($targetDB -ne $sourceDB -or $targetServer -ne $sourceServer -or $differentIns
     if($useSourcePaths){
         $mdfFolderFound = $False
         $ldfFolderFound = $False
-        foreach($datafile in $latestdb.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec){
+        foreach($datafile in $latestdbDoc.objectId.entity.sqlEntity.dbFileInfoVec){
             $path = $datafile.fullPath.subString(0, $datafile.fullPath.LastIndexOf('\'))
             $fileName = $datafile.fullPath.subString($datafile.fullPath.LastIndexOf('\') + 1)
             if($datafile.type -eq 0){

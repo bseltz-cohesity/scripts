@@ -51,12 +51,13 @@ Restoring cohesitydb to sqldev01 as restoreTest
 ## Basic Parameters
 
 * -sourceServer: Server name (or AAG name) where the database was backed up
-* -sourceDB: Original database name
+* -sourceDB: Original database name e.g. MYDB or MYINSTANCE/MYDB
 
 To specify a source instance, include the instance name in the sourceDB name, like MYINSTANCE/MyDB
 
 ## Optional Parameters
 
+* -sourceInstance: one or more instance names (see below)
 * -mdfFolder: Location to place the primary data file (e.g. C:\SQLData)
 * -targetServer: Server name to restore to (defaults to same as sourceServer)
 * -targetDB: New database name (defaults to same as sourceDB)
@@ -83,6 +84,15 @@ To specify a source instance, include the instance name in the sourceDB name, li
 ## Always On Availability Groups
 
 Use the **AAG name** as the **-sourceServer** when restoring from an AAG backup (e.g. -sourceServer myAAG1)
+
+## Source Intances
+
+By default, the script will default to MSSQLSERVER as the source instance. You can specify a source instance in a few ways:
+
+* You can specify the source instance as part of the -sourceDB parameter, like `-sourceDB MYINSTANCE/MYDB`
+* You can specify the source instance using the -sourceInstance parameter, like `-sourceInstance MYINSTANCE`
+
+For Always on availability groups, if the AAG nodes each have different instance names, you can include multiple instance names like `-sourceInstance AAGINSTANCE1, AAGINSTANCE2`
 
 ## Overwrite Warning
 
