@@ -225,7 +225,10 @@ $protectedIndex = @()
 $nodeIdIndex = @()
 $lastCursor = 0
 
-$sites = api get "protectionSources?pageSize=50000&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false"
+$sites = api get "protectionSources?pageSize=50&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false"
+write-host "protectionSources?pageSize=50&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false"
+# First page URL (page size = 50000)
+$sites | ConvertTo-Json -Depth 99 | Out-File firstPage.json
 
 # enumerate sites
 while(1){
@@ -242,22 +245,24 @@ while(1){
         }
         $cursor = $node.protectionSource.id
     }
-    $sites = api get "protectionSources?pageSize=50000&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&afterCursorEntityId=$cursor"
+    $sites = api get "protectionSources?pageSize=50&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&afterCursorEntityId=$cursor"
+    Write-Host "protectionSources?pageSize=50&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&afterCursorEntityId=$cursor"
+    $sites | ConvertTo-Json -Depth 99 | Out-File secondPage.json -append
     $nodeIdIndex = @($nodeIdIndex | Sort-Object -Unique)
-    if($cursor -eq $lastCursor){
-        break
-    }
-    $lastCursor = $cursor
     if($dbg){
         Write-Host "`n  Cursor: $cursor"
         Write-Host "  Sites Discovered: $($nodeIdIndex.Count)"
     }
+    if($cursor -eq $lastCursor){
+        break
+    }
+    $lastCursor = $cursor
 }
 
 Write-Host "$($nodeIdIndex.Count) sites discovered ($($protectedIndex.Count) protected, $($unprotectedIndex.Count) unprotected)"
 
 if($autoProtectRemaining){
-    if($unprotectedIndex -gt $maxSitesPerJob){
+    if($unprotectedIndex.Count -gt $maxSitesPerJob){
         Write-Host "There are $($unprotectedIndex.Count) sites to protect, which is more than the maximum allowed ($maxSitesPerJob)" -ForegroundColor Yellow
         exit
     }
@@ -330,8 +335,8 @@ if($autoProtectRemaining){
 
 if($newJob){
     "Creating protection job $jobName"
-    $null = api post -v2 "data-protect/protection-groups" $job
+    # $null = api post -v2 "data-protect/protection-groups" $job
 }else{
     "Updating protection job $($job.name)"
-    $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
+    # $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
 }
