@@ -23,7 +23,7 @@ param (
     [Parameter()][switch]$disableIndexing,
     [Parameter()][switch]$allSites,
     [Parameter()][int]$maxSitesPerJob = 5000,
-    [Parameter()][int]$pageSize = 100,
+    [Parameter()][int]$pageSize = 50000,
     [Parameter()][string]$sourceName,
     [Parameter()][switch]$autoProtectRemaining,
     [Parameter()][switch]$dbg
@@ -221,12 +221,12 @@ $protectedIndex = @()
 $nodeIdIndex = @()
 $lastCursor = 0
 
-$sites = api get "protectionSources?pageSize=$pageSize&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false"
+$sites = api get "protectionSources?pageSize=$pageSize&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false"
 
 # enumerate sites
 while(1){
     foreach($node in $sites.nodes){
-        $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id) # | Sort-Object -Unique)
+        $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
         if($node.protectionSource.office365ProtectionSource.PSObject.Properties['webUrl']){
             $webUrlIndex["$([string]$node.protectionSource.office365ProtectionSource.webUrl)"] = $node.protectionSource.id
@@ -238,7 +238,7 @@ while(1){
         }
         $cursor = $node.protectionSource.id
     }
-    $sites = api get "protectionSources?pageSize=$pageSize&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false&afterCursorEntityId=$cursor"
+    $sites = api get "protectionSources?pageSize=$pageSize&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&afterCursorEntityId=$cursor"
     $nodeIdIndex = @($nodeIdIndex | Sort-Object -Unique)
     if($cursor -eq $lastCursor){
         break
