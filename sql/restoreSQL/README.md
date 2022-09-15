@@ -83,7 +83,7 @@ To specify a source instance, include the instance name in the sourceDB name, li
 
 ## Always On Availability Groups
 
-Use the **AAG name** as the **-sourceServer** when restoring from an AAG backup (e.g. -sourceServer myAAG1)
+Use the **AAG name** as the **-sourceServer** when restoring from an AAG backup, like `-sourceServer myAAG1`
 
 ## Source Intances
 
