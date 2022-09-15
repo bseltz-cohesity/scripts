@@ -91,8 +91,7 @@ By default, the script will default to MSSQLSERVER as the source instance. You c
 
 * You can specify the source instance as part of the -sourceDB parameter, like `-sourceDB MYINSTANCE/MYDB`
 * You can specify the source instance using the -sourceInstance parameter, like `-sourceInstance MYINSTANCE`
-
-For Always on availability groups, if the AAG nodes each have different instance names, you can include multiple instance names like `-sourceInstance AAGINSTANCE1, AAGINSTANCE2`
+* For Always on availability groups, if the AAG nodes each have different instance names, you can include multiple instance names like `-sourceInstance AAGINSTANCE1, AAGINSTANCE2`
 
 ## Overwrite Warning
 
