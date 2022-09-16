@@ -47,11 +47,11 @@ to perform user defined actions and tear down immediately after:
 
 ```powershell
 ./recoverExchangeDB.ps1 -vip mycluster `
-                       -username myusername `
-                       -domain mydomain.net ` 
-                       -dbName 'Mailbox Database 1173012194' `
-                       -targetServer exchange01.mydomain.net `
-                       -tearDownAfter
+                        -username myusername `
+                        -domain mydomain.net ` 
+                        -dbName 'Mailbox Database 1173012194' `
+                        -targetServer exchange01.mydomain.net `
+                        -tearDownAfter
 ```
 
 ## Authentication Parameters
