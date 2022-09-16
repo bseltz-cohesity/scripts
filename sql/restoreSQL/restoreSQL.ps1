@@ -108,7 +108,7 @@ foreach($si in $sourceInstance){
 }
 
 # search for database to clone
-$searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&entityTypes=kVMware&vmName=$sourceInstance/$sourceDB"
+$searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&entityTypes=kVMware&vmName=$sourceDB"
 
 if($targetInstance -ne '' -and $targetInstance -ne $sourceInstance){
     $differentInstance = $True
