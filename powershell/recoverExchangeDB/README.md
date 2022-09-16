@@ -28,13 +28,30 @@ Place the files in a folder together and run the main script like so:
 ./recoverExchangeDB.ps1 -vip mycluster `
                        -username myusername `
                        -domain mydomain.net ` 
-                       -vmName vm1, vm2 `
-                       -scvmmName scvmm-01.mydomain.net `
-                       -hostName hyperv-01.mydomain.net `
-                       -volumeName D:\ `
-                       -networkName vm-switch `
-                       -prefix 'copy1' `
-                       -wait
+                       -dbName 'Mailbox Database 1173012194' `
+                       -targetServer exchange01.mydomain.net
+```
+
+to tear down later:
+
+```powershell
+./recoverExchangeDB.ps1 -vip mycluster `
+                       -username myusername `
+                       -domain mydomain.net ` 
+                       -dbName 'Mailbox Database 1173012194' `
+                       -targetServer exchange01.mydomain.net `
+                       -tearDown
+```
+
+to perform user defined actions and tear down immediately after:
+
+```powershell
+./recoverExchangeDB.ps1 -vip mycluster `
+                       -username myusername `
+                       -domain mydomain.net ` 
+                       -dbName 'Mailbox Database 1173012194' `
+                       -targetServer exchange01.mydomain.net `
+                       -tearDownAfter
 ```
 
 ## Authentication Parameters
@@ -58,3 +75,18 @@ Place the files in a folder together and run the main script like so:
 * -teardownSearchDays: (optional) days back to search to recovery views to teardown (default is 7)
 * -teardownAfter: (optional) tear down after user defined commands
 * -destination: (optional) destination directory for file copy
+
+## User defined actions
+
+There is a commented section of the script where you can put additional commands to complete the recovery of the exchange database:
+
+```powershell
+    # BEGIN USER DEFINED RECOVERY STEPS =================================
+
+    # stop exchange
+    # COPY-ITEM -Path $mountPoint\* -Destination $destination
+    # check db
+    # start exchange
+
+    # END USER DEFINED RECOVERY STEPS ===================================
+```
