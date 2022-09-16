@@ -26,21 +26,21 @@ Place the files in a folder together and run the main script like so:
 
 ```powershell
 ./recoverExchangeDB.ps1 -vip mycluster `
-                       -username myusername `
-                       -domain mydomain.net ` 
-                       -dbName 'Mailbox Database 1173012194' `
-                       -targetServer exchange01.mydomain.net
+                        -username myusername `
+                        -domain mydomain.net ` 
+                        -dbName 'Mailbox Database 1173012194' `
+                        -targetServer exchange01.mydomain.net
 ```
 
 to tear down later:
 
 ```powershell
 ./recoverExchangeDB.ps1 -vip mycluster `
-                       -username myusername `
-                       -domain mydomain.net ` 
-                       -dbName 'Mailbox Database 1173012194' `
-                       -targetServer exchange01.mydomain.net `
-                       -tearDown
+                        -username myusername `
+                        -domain mydomain.net ` 
+                        -dbName 'Mailbox Database 1173012194' `
+                        -targetServer exchange01.mydomain.net `
+                        -tearDown
 ```
 
 to perform user defined actions and tear down immediately after:
