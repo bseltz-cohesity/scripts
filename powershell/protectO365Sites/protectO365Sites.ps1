@@ -253,6 +253,7 @@ while(1){
     }else{
         break
     }
+    # patch for 6.8.1
     if($sites.nodes -eq $null){
         if($cursor -gt $Global:lastCursor){
             $lastNode = api get protectionSources?id=$cursor
