@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.09.13 - Brian Seltzer
+#  Version 2022.09.19 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2022.01.12 - fixed storePasswordForUser
@@ -17,9 +17,10 @@
 # 2022.09.09 - set timeout to 300 secs, store password if stored on the command line
 # 2022.09.11 - added log file rotate and added call stack to log entries 
 # 2022.09.13 - added $cohesity_api.last_api_error
+# 2022.09.19 - fixed log encoding
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2022.09.13'
+$versionCohesityAPI = '2022.09.19'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -112,7 +113,7 @@ function __writeLog($logmessage){
     $Global:lastAPIerrorDate = $apiErrorDate
 
     # output message
-    "$($apiErrorDate): ($caller) $logmessage" | Out-File -FilePath $apilogfile -Append
+    "$($apiErrorDate): ($caller) $logmessage" | Out-File -FilePath $apilogfile -Append -Encoding ascii
 }
 
 # authentication functions ========================================================================
