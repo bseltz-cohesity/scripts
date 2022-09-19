@@ -166,13 +166,13 @@ if($scvmmName){
         }
     }
 }else{
-    $restoreParams.hypervParams.recoverVmParams.recoveryTargetConfig["originalSourceConfig"] = @{
+    $restoreParams.hypervParams.recoverVmParams.hypervTargetParams.recoveryTargetConfig["originalSourceConfig"] = @{
         "networkConfig" = @{
             "detachNetwork" = $false
         }
     }
     if($detachNetwork){
-        $restoreParams.hypervParams.recoverVmParams.recoveryTargetConfig.originalSourceConfig.networkConfig.detachNetwork = $True
+        $restoreParams.hypervParams.recoverVmParams.hypervTargetParams.recoveryTargetConfig.originalSourceConfig.networkConfig.detachNetwork = $True
     }
 }
 
