@@ -11,6 +11,8 @@ param (
     [Parameter(Mandatory = $True)][string]$jobName,  # name of the job to add VM to
     [Parameter()][string]$vCenterName,  # vcenter source name
     [Parameter()][array]$excludeDisk,
+    [Parameter()][array]$includeDisk,
+    [Parameter()][switch]$includeFirstDiskOnly,
     [Parameter()][string]$startTime = '20:00', # e.g. 23:30 for 11:30 PM
     [Parameter()][string]$timeZone = 'America/New_York', # e.g. 'America/New_York'
     [Parameter()][int]$incrementalSlaMinutes = 60,  # incremental SLA minutes
@@ -53,6 +55,14 @@ apiauth -vip $vip -username $username -domain $domain
 foreach($disk in $excludeDisk){
     if($disk -notmatch '([0-9]|[0-9][0-9]):([0-9]|[0-9][0-9])'){
         Write-Host "excludeDisk must be in the format busNumber:unitNumber - e.g. 0:1" -ForegroundColor Yellow
+        exit
+    }
+}
+
+# validate include disks
+foreach($disk in $includeDisk){
+    if($disk -notmatch '([0-9]|[0-9][0-9]):([0-9]|[0-9][0-9])'){
+        Write-Host "includeDisk must be in the format busNumber:unitNumber - e.g. 0:1" -ForegroundColor Yellow
         exit
     }
 }
@@ -221,19 +231,34 @@ foreach($vmName in $vmsToAdd){
             }
         }
         if($newVMobject.excludeDisks){
-            $excludedDisks = @($newVMobject.excludeDisks)
+            $excludedDisks = @()
         }
-        
-        foreach($disk in $excludeDisk){
-            $busNumber, $unitNumber = $disk.split(":")
-            $vdisk = $vm.vmWareProtectionSource.virtualDisks | Where-Object {$_.busNumber -eq $busNumber -and $_.unitNumber -eq $unitNumber}
-            $existingExcludedDisk = $excludedDisks | Where-Object {$_.busNumber -eq $busNumber -and $_.unitNumber -eq $unitNumber}
-            if($vdisk -and !$existingExcludedDisk){
-                $excludedDisks = @($excludedDisks + @{
-                    "controllerType" = $controllerType[$vdisk.controllerType];
-                    "busNumber" = $vdisk.busNumber;
-                    "unitNumber" = $vdisk.unitNumber
-                })
+        if($excludeDisk.Count -gt 0 -or $includeDisk.Count -gt 0 -or $includeFirstDiskOnly){
+            $vdisks = $vm.vmWareProtectionSource.virtualDisks
+            foreach($vdisk in $vdisks){
+                $disk = "{0}:{1}" -f $vdisk.busNumber, $vdisk.unitNumber
+                # exclude if not the fist disk
+                if($includeFirstDiskOnly -and $disk -ne '0:0'){
+                    $excludedDisks = @($excludedDisks + @{
+                        "controllerType" = $controllerType[$vdisk.controllerType];
+                        "busNumber" = $vdisk.busNumber;
+                        "unitNumber" = $vdisk.unitNumber
+                    })
+                # exclude if not explicitly included
+                }elseif($includeDisk.Count -gt 0 -and $disk -notin $includeDisk){
+                    $excludedDisks = @($excludedDisks + @{
+                        "controllerType" = $controllerType[$vdisk.controllerType];
+                        "busNumber" = $vdisk.busNumber;
+                        "unitNumber" = $vdisk.unitNumber
+                    })
+                # exclude if explicitly excluded
+                }elseif($disk -in $excludeDisk){
+                    $excludedDisks = @($excludedDisks + @{
+                        "controllerType" = $controllerType[$vdisk.controllerType];
+                        "busNumber" = $vdisk.busNumber;
+                        "unitNumber" = $vdisk.unitNumber
+                    })
+                }
             }
         }
 
