@@ -20,7 +20,7 @@ param (
     [Parameter()][string]$storageDomainName = 'DefaultStorageDomain',  # storage domain you want the new job to write to
     [Parameter()][string]$policyName,  # protection policy name
     [Parameter()][switch]$paused,  # pause future runs (new job only)
-    [Parameter()][ValidateSet('kBackupHDD', 'kBackupSSD')][string]$qosPolicy = 'kBackupHDD',
+    [Parameter()][ValidateSet('kBackupHDD', 'kBackupSSD', 'kBackupAll')][string]$qosPolicy = 'kBackupHDD',
     [Parameter()][switch]$disableIndexing
 )
 

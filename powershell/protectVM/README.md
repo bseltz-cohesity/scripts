@@ -47,7 +47,7 @@ Place both files in a folder together and run the main script like so:
 * -fullSlaMinutes: (optional) default is 120
 * -storageDomainName: (optional) default is 'DefaultStorageDomain'
 * -paused: (optional) pause future runs (new job only)
-* -qosPolicy: (optional) kBackupHDD or kBackupSSD (default is kBackupHDD)
+* -qosPolicy: (optional) kBackupHDD, kBackupSSD, or kBackupAll (default is kBackupHDD)
 * -disableIndexing: (optional) disable indexing (indexing is enabled by default)
 * -includeFirstDiskOnly: (optional) exclude all but the first disk
 * -includeDisk: (optional) one or more disks to include (comma separated), e.g. 0:1, 0:2
