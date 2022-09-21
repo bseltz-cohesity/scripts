@@ -3,25 +3,52 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
-    [Parameter()][string]$domain = 'local', #local or AD domain
+    [Parameter()][string]$vip = 'helios.cohesity.com',  # the cluster to connect to (DNS name or IP)
+    [Parameter()][string]$username = 'helios',          # username (local or AD)
+    [Parameter()][string]$domain = 'local',             # local or AD domain
+    [Parameter()][switch]$useApiKey,                    # use API key for authentication
+    [Parameter()][string]$password,                     # optional password
+    [Parameter()][switch]$mcm,                          # connect through mcm
+    [Parameter()][string]$mfaCode = $null,              # mfa code
+    [Parameter()][switch]$emailMfaCode,                 # send mfa code via email
+    [Parameter()][string]$clusterName = $null,          # cluster to connect to via helios/mcm
     [Parameter(Mandatory = $True)][string]$shareName, #sharename as listed in sources
     [Parameter(Mandatory = $True)][string]$viewName, #name of the view to create
     [Parameter()][array]$fullControl,                 # list of users to grant full control
     [Parameter()][array]$readWrite,                   # list of users to grant read/write
     [Parameter()][array]$readOnly,                    # list of users to grant read-only
     [Parameter()][array]$modify,                      # list of users to grant modify
-    [Parameter()][string]$sourceName = $null
+    [Parameter()][string]$sourceName = $null,
+    [Parameter()][switch]$smbOnly
 )
 
-### source the cohesity-api helper code
-. ./cohesity-api
+# source the cohesity-api helper code
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain
+# authenticate
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
+}else{
+    apiauth -vip $vip -username $username -domain $domain -password $password
+}
 
-### hard coding the qos selection
+if($USING_HELIOS){
+    if($clusterName){
+        heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit 1
+}
+
+$cluster = api get cluster
+
+# hard coding the qos selection
 $qosSetting = 'TestAndDev High'
 
 ### get AD info
@@ -72,7 +99,7 @@ $sharePermissions = @()
 
 function addPermission($user, $perms){
     if($user.contains('\')){
-        $workgroup, $user = $username.split('\')
+        $workgroup, $user = $user.split('\')
         # find domain
         $adDomain = $ads | Where-Object { $_.workgroup -eq $workgroup -or $_.domainName -eq $workgroup}
         if(!$adDomain){
@@ -148,9 +175,21 @@ if($result){
     $newView = (api get -v2 file-services/views).views | Where-Object { $_.name -eq $viewName }
     $newView | setApiProperty -name Category -value 'FileServices'
     $newView | setApiProperty -name enableSmbViewDiscovery -value $True
-    $newView | setApiProperty -name sharePermissions -value @($sharePermissions)
+    if($cluster.clusterSoftwareVersion -gt '6.6'){
+        $newView.sharePermissions | setApiProperty -name permissions -value $sharePermissions
+    }else{
+        $newView | setApiProperty -name sharePermissions -value @($sharePermissions)
+    }
     $newView.qos = @{
         "principalName" = 'TestAndDev High';
+    }
+    if($smbOnly){
+        $newView.protocolAccess = @(
+            @{
+                "type" = "SMB";
+                "mode" = "ReadWrite"
+            }
+        )
     }
     $null = api put -v2 file-services/views/$($newView.viewId) $newView
 }

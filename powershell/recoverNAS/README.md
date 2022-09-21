@@ -4,10 +4,16 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script recovers a protected NAS share to a Cohesity View.
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
 ```powershell
 # Download Commands
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/recoverNas/recoverNas.ps1).content | Out-File recoverNas.ps1; (Get-Content recoverNas.ps1) | Set-Content recoverNas.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+$scriptName = 'recoverNas'
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
 
@@ -19,42 +25,34 @@ This powershell script recovers a protected NAS share to a Cohesity View.
 Place both files in a folder together, then run the script like so:
 
 ```powershell
-powershell> ./recoverNas.ps1 -vip mycluster -username admin -shareName \\netapp1.mydomain.net\share1 -viewName share1 -sourceName mynetapp
-Connected!
-Recovering \\netapp1.mydomain.net\share1 as view share1
+./recoverNas.ps1 -vip mycluster `
+                 -username admin `
+                 -shareName \\netapp1.mydomain.net\share1 `
+                 -viewName share1
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: Cohesity cluster to connect to
-* -username: Cohesity logon username
-* -domain: (optional) Cohesity logon domain (defaults to local)
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -shareName: name of protected NAS share to be recovered
 * -viewName: name of Cohesity view to recover to
 * -sourceName: (optional) name of protected NAS source
 
-## Notes
+## Optional Parameters
 
-The format of Isilon shares is different, so recovering an Isilon share looks like this:
-
-```powershell
-powershell> ./recoverNas.ps1 -vip mycluster -username admin -shareName /ifs/share1 -viewName share1
-Connected!
-Recovering /ifs/share1 as view share1
-```
-
-If you have two Isilon arrays and they both have an /ifs/share1 on them, then you can use the -sourceName parameter to specify which one you want to recover:
-
-```powershell
-powershell> ./recoverNas.ps1 -vip mycluster -username admin -shareName /ifs/share1 -viewName share1 -sourceName Isilon1
-Connected!
-Recovering /ifs/share1 as view share1
-```
-
-If you are using an Active Directory account to log onto Cohesity, use the -username and -domain parameters like this:
-
-```powershell
-powershell> ./recoverNas.ps1 -vip mycluster -username myusername -domain mydomain.net -shareName /ifs/share1 -viewName share1 -sourceName Isilon1
-Connected!
-Recovering /ifs/share1 as view share1
-```
+* -fullControl: list of users to grant full control for share permissions (comma separated)
+* -readWrite: list of users to grant read/write for share permissions (comma separated)
+* -readOnly: list of users to grant read-only for share permissions (comma separated)
+* -modify: list of users to grant modify for share permissions (comma separated)
+* -smbOnly: set protocol access to SMB only
