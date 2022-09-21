@@ -279,7 +279,7 @@ if ($logTime -or $latest -or $noStop){
     }
 }
 
-$restoreTaskName = "Recover-{0}_{1}_{2}_{3}" -f $sourceServer, $sourceInstance, $sourceDB, $(get-date -UFormat '%b_%d_%Y_%H-%M%p')
+$restoreTaskName = "Recover-{0}_{1}_{2}_{3}" -f $sourceServer, $sourceInstance[0], $sourceDB, $(get-date -UFormat '%b_%d_%Y_%H-%M%p')
 
 # create new clone task (RestoreAppArg Object)
 $restoreTask = @{
