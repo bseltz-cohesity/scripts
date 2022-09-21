@@ -173,6 +173,7 @@ if importfile is not None:
     f.close()
     for f in flagdata[1:]:
         (servicename, flagname, flagvalue, reason) = f.split(',', 3)
+        flagvalue = flagvalue.replace(';;', ',')
         setGflag(servicename=servicename, flagname=flagname, flagvalue=flagvalue, reason=reason)
         servicestorestart.append(servicename)
 
@@ -194,6 +195,7 @@ for service in flags['servicesGflags']:
         flagvalue = gflag['value']
         reason = gflag['reason']
         print('    %s: %s (%s)' % (flagname, flagvalue, reason))
+        flagvalue = flagvalue.replace(',', ';;')
         f.write('%s,%s,%s,%s\n' % (servicename, flagname, flagvalue, reason))
 
 f.close()
