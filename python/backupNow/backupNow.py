@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2022.09.13
+# version 2022.09.21
 
 # extended error codes
 # ====================
@@ -225,7 +225,8 @@ def cancelRunningJob(job, durationMinutes):
 
 
 ### find protectionJob
-job = [job for job in api('get', 'protectionJobs') if job['name'].lower() == jobName.lower()]
+job = [job for job in api('get', 'protectionJobs') if job['name'].lower() == jobName.lower() and ('isActive' not in job or job['isActive'] is not False)]
+
 if not job:
     out("Job '%s' not found" % jobName)
     if extendederrorcodes is True:
@@ -523,7 +524,7 @@ out("Running %s..." % jobName)
 # wait for new job run to appear
 if wait is True:
     timeOutUsecs = dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    while(newRunId <= lastRunId):
+    while newRunId <= lastRunId:
         sleep(5)
         if len(selectedSources) > 0:
             runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&numRuns=10000&excludeTasks=true&sourceId=%s' % (job['id'], startUsecs, selectedSources[0]))
