@@ -77,9 +77,10 @@ To protect specific collections:
 ## Other Parameters
 
 * -jobName: name of the O365 protection job to exclude mailboxes from
-* -sourceName: (optional) name of registered O365 protection source (required for new job)
+* -sourceName: name of registered O365 protection source (required for new job)
 * -objectName: (optional) one or more database or database.collection names (comma separated)
 * -objectList: (optional) text file of database or database.collection names (one per line)
+* -exclude: (optional) autoprotect the source and exclude objects in -objectName and -objectList
 
 ## New Job Parameters
 
@@ -90,3 +91,4 @@ To protect specific collections:
 * -fullSlaMinutes: (optional) default is 120
 * -storageDomainName: (optional) default is 'DefaultStorageDomain'
 * -paused: (optional) pause future runs (new job only)
+* -streams: (optional) number of concurrent streams (default is 16)
