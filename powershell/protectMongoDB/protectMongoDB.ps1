@@ -8,6 +8,7 @@ param (
     [Parameter()][string]$domain = 'local',             # local or AD domain
     [Parameter()][switch]$useApiKey,                    # use API key for authentication
     [Parameter()][string]$password,                     # optional password
+    [Parameter()][switch]$noPrompt,                     # don't prompt for password
     [Parameter()][switch]$mcm,                          # connect through mcm
     [Parameter()][string]$mfaCode = $null,              # mfa code
     [Parameter()][switch]$emailMfaCode,                 # send mfa code via email
@@ -56,11 +57,7 @@ $objectNames = @(gatherList -Param $objectName -FilePath $objectList -Name 'obje
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-if($useApiKey){
-    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
-}else{
-    apiauth -vip $vip -username $username -domain $domain -password $password
-}
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -noPromptForPassword $noPrompt
 
 if($USING_HELIOS){
     if($clusterName){
