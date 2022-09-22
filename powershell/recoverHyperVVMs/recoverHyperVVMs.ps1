@@ -6,6 +6,7 @@ param (
     [Parameter()][string]$domain = 'local',             # local or AD domain
     [Parameter()][switch]$useApiKey,                    # use API key for authentication
     [Parameter()][string]$password,                     # optional password
+    [Parameter()][switch]$noPrompt,                     # don't prompt for password
     [Parameter()][switch]$mcm,                          # connect through mcm
     [Parameter()][string]$mfaCode = $null,              # mfa code
     [Parameter()][switch]$emailMfaCode,                 # send mfa code via email
@@ -21,7 +22,6 @@ param (
     [Parameter()][switch]$detachNetwork,
     [Parameter()][switch]$poweron, # leave powered off by default
     [Parameter()][switch]$wait, # wait for restore tasks to complete
-    [Parameter()][switch]$noPrompt,
     [Parameter()][switch]$dbg
 )
 
@@ -52,11 +52,7 @@ $vmNames = @(gatherList -Param $vmName -FilePath $vmList -Name 'vms' -Required $
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-if($useApiKey){
-    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
-}else{
-    apiauth -vip $vip -username $username -domain $domain -password $password
-}
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -noPromptForPassword $noPrompt
 
 if($USING_HELIOS){
     if($clusterName){
@@ -197,37 +193,38 @@ if(!$noPrompt){
 
 # get list of VM backups
 foreach($vm in $vmNames){
-    $vmName = [string]$vm
-    $vms = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverVMs,RecoverVApps,RecoverVAppTemplates&searchString=$vmName&environments=kHyperV"
-    $exactVMs = $vms.objects | Where-Object name -eq $vmName
-    $latestsnapshot = ($exactVMs | Sort-Object -Property @{Expression={$_.latestSnapshotsInfo[0].protectionRunStartTimeUsecs}; Ascending = $False})[0]
-
-    if($recoverDate){
-        $recoverDateUsecs = dateToUsecs ($recoverDate.AddMinutes(1))
+    if($null -ne $vm -and $vm -ne ''){
+        $vms = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverVMs,RecoverVApps,RecoverVAppTemplates&searchString=$vm&environments=kHyperV"
+        $exactVMs = $vms.objects | Where-Object name -eq $vm
+        $latestsnapshot = ($exactVMs | Sort-Object -Property @{Expression={$_.latestSnapshotsInfo[0].protectionRunStartTimeUsecs}; Ascending = $False})[0]
     
-        $snapshots = api get -v2 "data-protect/objects/$($latestsnapshot.id)/snapshots?protectionGroupIds=$($latestsnapshot.latestSnapshotsInfo.protectionGroupId)"
-        $snapshots = $snapshots.snapshots | Sort-Object -Property runStartTimeUsecs -Descending | Where-Object runStartTimeUsecs -lt $recoverDateUsecs
-        if($snapshots -and $snapshots.Count -gt 0){
-            $snapshot = $snapshots[0]
-            $snapshotId = $snapshot.id
-        }else{
-            Write-Host "No snapshots available for $vmName"
-        }
-    }else{
-        $snapshot = $latestsnapshot.latestSnapshotsInfo[0].localSnapshotInfo
-        $snapshotId = $snapshot.snapshotId
-    }
-
-    if($snapshotId){
-        write-host "restoring $vmName"
-        if($snapshotId -notin $restores){
-            $restores += $snapshotId
-            $restoreParams.hypervParams.objects += @{
-                "snapshotId" = $snapshotId
+        if($recoverDate){
+            $recoverDateUsecs = dateToUsecs ($recoverDate.AddMinutes(1))
+        
+            $snapshots = api get -v2 "data-protect/objects/$($latestsnapshot.id)/snapshots?protectionGroupIds=$($latestsnapshot.latestSnapshotsInfo.protectionGroupId)"
+            $snapshots = $snapshots.snapshots | Sort-Object -Property runStartTimeUsecs -Descending | Where-Object runStartTimeUsecs -lt $recoverDateUsecs
+            if($snapshots -and $snapshots.Count -gt 0){
+                $snapshot = $snapshots[0]
+                $snapshotId = $snapshot.id
+            }else{
+                Write-Host "No snapshots available for $vm"
             }
+        }else{
+            $snapshot = $latestsnapshot.latestSnapshotsInfo[0].localSnapshotInfo
+            $snapshotId = $snapshot.snapshotId
         }
-    }else{
-        write-host "skipping $vmName no snapshot available"
+    
+        if($snapshotId){
+            write-host "restoring $vm"
+            if($snapshotId -notin $restores){
+                $restores += $snapshotId
+                $restoreParams.hypervParams.objects += @{
+                    "snapshotId" = $snapshotId
+                }
+            }
+        }else{
+            write-host "skipping $vm no snapshot available"
+        }
     }
 }
 
