@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.09.19 - Brian Seltzer
+#  Version 2022.09.22 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2022.01.12 - fixed storePasswordForUser
@@ -18,9 +18,10 @@
 # 2022.09.11 - added log file rotate and added call stack to log entries 
 # 2022.09.13 - added $cohesity_api.last_api_error
 # 2022.09.19 - fixed log encoding
+# 2022.09.22 - fixed 404 error output format
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2022.09.19'
+$versionCohesityAPI = '2022.09.22'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -612,13 +613,17 @@ function api($method,
             $cohesity_api.last_api_error = 'OK'
             return $result
         }catch{
-            $cohesity_api.last_api_error = $_.ToString()
-            __writeLog $_.ToString()
+            $thisError = $_.ToString()
+            if($thisError.Contains('404 Not Found')){
+                $thisError = '404 Not Found'
+            }
+            $cohesity_api.last_api_error = $thisError
+            __writeLog $thisError
             if($cohesity_api.reportApiErrors -and !$quiet){
                 if($_.ToString().contains('"message":')){
                     Write-Host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
                 }else{
-                    Write-Host $_.ToString() -foregroundcolor yellow
+                    Write-Host $thisError -foregroundcolor yellow
                 }
             }            
         }
@@ -748,12 +753,9 @@ function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
             $i = $false
             $cpwd = $parts[3]
         }
-        # $v, $d, $u, $i, $cpwd = $pwitem.split(";", 5)
         if($v -eq $vip -and $d -eq $domain -and $u -eq $username -and $i -eq $useApiKey){
             $cohesity_api.pwscope = 'file'
             $passwd = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($cpwd))
-            # $cohesity_api.pwscope = 'user'
-            # $null = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -useApiKey $useApiKey -helios $helios -passwd $passwd -quiet
             return $passwd
         }
     }
@@ -1205,4 +1207,3 @@ function getViews([switch]$includeInactive){
 # 2021.12.21 - fixed USING_HELIOS status flag
 #
 # . . . . . . . . . . . . . . . . . . .
-
