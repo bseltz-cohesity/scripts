@@ -245,7 +245,7 @@ if($restoreParams.hypervParams.objects.Count -gt 0){
 # wait for restores to complete
 if($wait){
     "Waiting for restores to complete..."
-    $finishedStates = @('Canceled', 'Succeeded', 'kFailed')
+    $finishedStates = @('Canceled', 'Succeeded', 'Failed')
     $pass = 0
     do{
         Start-Sleep 10
