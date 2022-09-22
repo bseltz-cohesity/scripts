@@ -110,12 +110,6 @@ foreach($si in $sourceInstance){
 # search for database to clone
 $searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&entityTypes=kVMware&vmName=$sourceDB"
 
-if($targetInstance -ne '' -and $targetInstance -ne $sourceInstance){
-    $differentInstance = $True
-}else{
-    $differentInstance = $False
-}
-
 # narrow the search results to the correct source server
 $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer } | `
                                   Where-Object {$_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB } | `
@@ -279,7 +273,38 @@ if ($logTime -or $latest -or $noStop){
     }
 }
 
-$restoreTaskName = "Recover-{0}_{1}_{2}_{3}" -f $sourceServer, $sourceInstance[0], $sourceDB, $(get-date -UFormat '%b_%d_%Y_%H-%M%p')
+# same or different instance
+$thisSourceInstance, $thisSourceDB = ($dbVersions[$versionNum].vmDocument.objectId.entity.displayName).split('/')
+
+if($targetInstance -ne '' -and $targetInstance -ne $thisSourceInstance){
+    $differentInstance = $True
+}else{
+    $differentInstance = $False
+}
+
+if($targetInstance -eq '' -and $targetServer -eq $sourceServer){
+    $targetInstance = $thisSourceInstance
+}
+if($targetInstance -eq '' -and $targetServer -ne $sourceServer){
+    $targetInstance = 'MSSQLSERVER'
+}
+
+# overwrite warning
+if($targetDB -eq $sourceDB -and $targetServer -eq $sourceServer -and $differentInstance -eq $False){
+    if(! $overWrite){
+        Write-Host "Please use the -overWrite parameter to confirm overwrite of the source database!" -ForegroundColor Yellow
+        exit
+    }
+    if($captureTailLogs){
+        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['captureTailLogs'] = $True
+    }
+}else{
+    if($captureTailLogs){
+        Write-Host "-captureTailLogs only applies when overwriting the database in the oroginal location" -ForegroundColor Yellow
+    }
+}
+
+$restoreTaskName = "Recover-{0}_{1}_{2}_{3}" -f $sourceServer, $thisSourceInstance, $sourceDB, $(get-date -UFormat '%b_%d_%Y_%H-%M%p')
 
 # create new clone task (RestoreAppArg Object)
 $restoreTask = @{
@@ -363,21 +388,6 @@ if($targetDB -ne $sourceDB -or $targetServer -ne $sourceServer -or $differentIns
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['newDatabaseName'] = $targetDB;    
 }
 
-# overwrite warning
-if($targetDB -eq $sourceDB -and $targetServer -eq $sourceServer -and $differentInstance -eq $False){
-    if(! $overWrite){
-        Write-Host "Please use the -overWrite parameter to confirm overwrite of the source database!" -ForegroundColor Yellow
-        exit
-    }
-    if($captureTailLogs){
-        $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['captureTailLogs'] = $True
-    }
-}else{
-    if($captureTailLogs){
-        Write-Host "-captureTailLogs only applies when overwriting the database in the oroginal location" -ForegroundColor Yellow
-    }
-}
-
 # apply log replay time
 if($useLogTime -eq $True){
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['restoreTimeSecs'] = $([int64]($logUsecs/1000000))
@@ -390,13 +400,6 @@ $restoreTime = usecsToDate $newRestoreUsecs
 if($noStop -and $useLogTime){
     # replay logs to one day in the future to ensure no STOPAT
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['restoreTimeSecs'] = (3600 + (datetousecs (Get-Date)) / 1000000)
-}
-
-if($targetInstance -eq '' -and $targetServer -eq $sourceServer){
-    $targetInstance = $sourceInstance
-}
-if($targetInstance -eq '' -and $targetServer -ne $sourceServer){
-    $targetInstance = 'MSSQLSERVER'
 }
 
 # search for target server
@@ -454,7 +457,7 @@ if($resume){
 $response = api post /recoverApplication $restoreTask
 
 if($response){
-    "Restoring $sourceInstance/$sourceDB to $targetServer/$targetInstance/$targetDB (Point in time: $restoreTime)"
+    "Restoring $thisSourceInstance/$sourceDB to $targetServer/$targetInstance/$targetDB (Point in time: $restoreTime)"
 }else{
     exit 1
 }
