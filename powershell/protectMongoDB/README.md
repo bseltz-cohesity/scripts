@@ -76,8 +76,8 @@ To protect specific collections:
 
 ## Other Parameters
 
-* -jobName: name of the O365 protection job to exclude mailboxes from
-* -sourceName: name of registered O365 protection source (required for new job)
+* -jobName: name of the protection job
+* -sourceName: name of registered MongoDB protection source
 * -objectName: (optional) one or more database or database.collection names (comma separated)
 * -objectList: (optional) text file of database or database.collection names (one per line)
 * -exclude: (optional) autoprotect the source and exclude objects in -objectName and -objectList
