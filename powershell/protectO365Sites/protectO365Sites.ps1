@@ -283,8 +283,9 @@ if($autoProtectRemaining){
         $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $sitesNode.protectionSource.id})
     }
     if(! $job.office365Params.PSObject.Properties['excludeObjectIds']){
-        setApiProperty -object $job.office365Params -name 'excludeObjectIds' -value @($protectedIndex)
+        setApiProperty -object $job.office365Params -name 'excludeObjectIds' -value @()
     }
+    $job.office365Params.excludeObjectIds = $protectedIndex
     # foreach($siteId in $protectedIndex){
     #     $job.office365Params.excludeObjectIds = @($job.office365Params.excludeObjectIds + $siteId | Sort-Object -Unique)
     # }
