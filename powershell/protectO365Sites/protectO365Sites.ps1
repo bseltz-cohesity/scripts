@@ -218,34 +218,30 @@ if(!$sitesNode){
 
 Write-Host "Discovering sites..."
 
-$Global:nameIndex = @{}
-$Global:webUrlIndex = @{}
-$Global:unprotectedIndex = @()
-$Global:protectedIndex = @()
-$Global:nodeIdIndex = @()
-$Global:lastCursor = 0
+$nameIndex = @{}
+$webUrlIndex = @{}
+$unprotectedIndex = @()
+$protectedIndex = @()
+$nodeIdIndex = @()
+$lastCursor = 0
 
 $sites = api get "protectionSources?pageSize=50000&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false"
 $cursor = $sites.entityPaginationParameters.beforeCursorEntityId
 
-function indexNode($node){
-    $Global:nodeIdIndex = @($Global:nodeIdIndex + $node.protectionSource.id)
-    $Global:nameIndex[$node.protectionSource.name] = $node.protectionSource.id
-    if($node.protectionSource.office365ProtectionSource.PSObject.Properties['webUrl']){
-        $Global:webUrlIndex["$([string]$node.protectionSource.office365ProtectionSource.webUrl)"] = $node.protectionSource.id
-    }
-    if($node.protectedSourcesSummary[0].leavesCount){
-        $Global:protectedIndex = @($Global:protectedIndex + $node.protectionSource.id)
-    }else{
-        $Global:unprotectedIndex = @($Global:unprotectedIndex + $node.protectionSource.id)
-    }
-    $Global:lastCursor = $node.protectionSource.id
-}
-
 # enumerate sites
 while(1){
     foreach($node in $sites.nodes){
-        indexNode($node)
+        $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
+        $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
+        if($node.protectionSource.office365ProtectionSource.PSObject.Properties['webUrl']){
+            $webUrlIndex["$([string]$node.protectionSource.office365ProtectionSource.webUrl)"] = $node.protectionSource.id
+        }
+        if($node.protectedSourcesSummary[0].leavesCount){
+            $protectedIndex = @($protectedIndex + $node.protectionSource.id)
+        }else{
+            $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
+        }
+        $lastCursor = $node.protectionSource.id
     }
     if($cursor){
         $sites = api get "protectionSources?pageSize=50000&nodeId=$($sitesNode.protectionSource.id)&id=$($sitesNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&afterCursorEntityId=$cursor"
@@ -255,22 +251,32 @@ while(1){
     }
     # patch for 6.8.1
     if($sites.nodes -eq $null){
-        if($cursor -gt $Global:lastCursor){
+        if($cursor -gt $lastCursor){
             $lastNode = api get protectionSources?id=$cursor
-            indexNode($lastNode)
+            $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
+            $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
+            if($node.protectionSource.office365ProtectionSource.PSObject.Properties['webUrl']){
+                $webUrlIndex["$([string]$node.protectionSource.office365ProtectionSource.webUrl)"] = $node.protectionSource.id
+            }
+            if($node.protectedSourcesSummary[0].leavesCount){
+                $protectedIndex = @($protectedIndex + $node.protectionSource.id)
+            }else{
+                $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
+            }
+            $lastCursor = $node.protectionSource.id
         }
     }
-    if($cursor -eq $Global:lastCursor){
+    if($cursor -eq $lastCursor){
         break
     }
 }
 
-$Global:nodeIdIndex = @($Global:nodeIdIndex | Sort-Object -Unique)
-Write-Host "$($Global:nodeIdIndex.Count) sites discovered ($($Global:protectedIndex.Count) protected, $($Global:unprotectedIndex.Count) unprotected)"
+$nodeIdIndex = @($nodeIdIndex | Sort-Object -Unique)
+Write-Host "$($nodeIdIndex.Count) sites discovered ($($protectedIndex.Count) protected, $($unprotectedIndex.Count) unprotected)"
 
 if($autoProtectRemaining){
-    if($Global:unprotectedIndex.Count -gt $maxSitesPerJob){
-        Write-Host "There are $($Global:unprotectedIndex.Count) sites to protect, which is more than the maximum allowed ($maxSitesPerJob)" -ForegroundColor Yellow
+    if($unprotectedIndex.Count -gt $maxSitesPerJob){
+        Write-Host "There are $($unprotectedIndex.Count) sites to protect, which is more than the maximum allowed ($maxSitesPerJob)" -ForegroundColor Yellow
         exit
     }
     if(!($job.office365Params.objects | Where-Object {$_.id -eq $sitesNode.protectionSource.id})){
@@ -279,16 +285,16 @@ if($autoProtectRemaining){
     if(! $job.office365Params.PSObject.Properties['excludeObjectIds']){
         setApiProperty -object $job.office365Params -name 'excludeObjectIds' -value @()
     }
-    foreach($siteId in $Global:protectedIndex){
+    foreach($siteId in $protectedIndex){
         $job.office365Params.excludeObjectIds = @($job.office365Params.excludeObjectIds + $siteId | Sort-Object -Unique)
     }
 }elseif($allSites){
     $sitesAdded = 0
-    if($Global:unprotectedIndex.Count -eq 0){
+    if($unprotectedIndex.Count -eq 0){
         Write-Host "All sites are protected" -ForegroundColor Green
         exit
     }
-    foreach($siteId in $Global:unprotectedIndex){
+    foreach($siteId in $unprotectedIndex){
         if($job.office365Params.objects.Count -ge $maxSitesPerJob){
             break
         }
@@ -315,13 +321,13 @@ if($autoProtectRemaining){
                 continue
             }
             if($siteName -ne '' -and $null -ne $siteName){
-                if($Global:nameIndex.ContainsKey($siteName) -or $Global:webUrlIndex.ContainsKey("$siteName")){
-                    if($Global:nameIndex.ContainsKey($siteName)){
-                        $siteId = $Global:nameIndex[$siteName]
+                if($nameIndex.ContainsKey($siteName) -or $webUrlIndex.ContainsKey("$siteName")){
+                    if($nameIndex.ContainsKey($siteName)){
+                        $siteId = $nameIndex[$siteName]
                     }else{
-                        $siteId = $Global:webUrlIndex["$siteName"]
+                        $siteId = $webUrlIndex["$siteName"]
                     }
-                    if($siteId -in $Global:protectedIndex){
+                    if($siteId -in $protectedIndex){
                         Write-Host "$siteName already protected" -ForegroundColor Green
                     }else{
                         Write-Host "adding $siteName"
