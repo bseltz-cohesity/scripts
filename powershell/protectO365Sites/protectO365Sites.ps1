@@ -298,10 +298,10 @@ if($autoProtectRemaining){
         if($job.office365Params.objects.Count -ge $maxSitesPerJob){
             break
         }
-        if(!($job.office365Params.objects | Where-Object {$_.id -eq $siteId})){
+        # if(!($job.office365Params.objects | Where-Object {$_.id -eq $siteId})){
             $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $siteId})
             $sitesAdded += 1
-        }
+        # }
     }
     if($sitesAdded -eq 0){
         Write-Host "Job already has the maximum number of sites protected" -ForegroundColor Yellow
