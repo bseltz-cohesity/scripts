@@ -34,7 +34,7 @@ To protect specific mailboxes:
                            -username myusername `
                            -domain mydomain.net `
                            -jobName 'My Job' `
-                           -site my-site1, my-site2
+                           -mailbox user1@mydomain.net, user2@mydomain.net
 # end example
 ```
 
@@ -46,7 +46,7 @@ To protect a list of mailboxes from a text file:
                            -username myusername `
                            -domain mydomain.net `
                            -jobName 'My Job' `
-                           -sitelist ./mymailboxes.txt
+                           -mailboxlist ./mymailboxes.txt
 # end example
 ```
 
@@ -89,8 +89,8 @@ To create an autoprotect job that excludes mailboxes that are already protected:
 ## Other Parameters
 
 * -jobName: name of the O365 protection job to exclude mailboxes from
-* -mailbox: (optional) a comma separated list of site names to protect
-* -mailboxList: (optional) a text file list of site names to protect
+* -mailbox: (optional) a comma separated list of mailbox names to protect
+* -mailboxList: (optional) a text file list of mailbox names to protect
 * -allMailboxes: (optional) protect unprotected mailboxes (up to the maxmailboxesPerJob)
 * -maxMailboxesPerJob: (optional) default is 5000
 * -sourceName: (optional) name of registered O365 protection source (required for new job)
