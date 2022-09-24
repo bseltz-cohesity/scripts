@@ -104,7 +104,7 @@ if($recoverDate){
 $recoverDateString = (get-date).ToString('yyyy-MM-dd_hh-mm-ss')
 
 $recoverParams = @{
-    "name" = "Recover_MongoDB_$($sourceName)_$($sourceObject)_$recoverDateString";
+    "name" = "Recover_MongoDB_$($sourceServer)_$($sourceObject)_$recoverDateString";
     "snapshotEnvironment" = "kMongoDB";
     "mongodbParams" = @{
         "recoveryAction" = "RecoverObjects";
@@ -149,10 +149,12 @@ if($targetServer){
 $recovery = api post -v2 data-protect/recoveries $recoverParams
 
 # wait for restores to complete
+$finishedStates = @('Canceled', 'Succeeded', 'Failed')
+if(! $recovery.PSObject.Properties['id']){
+    exit 1
+}
 if($wait){
     "Waiting for restore to complete..."
-    $finishedStates = @('Canceled', 'Succeeded', 'Failed')
-    $pass = 0
     do{
         Start-Sleep 30
         $recoveryTask = api get -v2 data-protect/recoveries/$($recovery.id)?includeTenants=true
