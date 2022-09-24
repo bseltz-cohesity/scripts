@@ -58,7 +58,7 @@ To protect automatically selected mailboxes that are unprotected:
                            -username myusername `
                            -domain mydomain.net `
                            -jobName 'My Job' `
-                           -allmailboxes
+                           -allMailboxes
 # end example
 ```
 

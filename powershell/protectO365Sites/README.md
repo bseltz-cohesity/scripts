@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This PowerShell script adds Sites to an O365 Teams protection job. It takes as input a list of site names.
+This PowerShell script adds Sites to an O365 protection job.
 
 ## Download the script
 
@@ -22,14 +22,14 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 * protectO365Sites.ps1: the main PowerShell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
-Place all files in a folder together. You can provide a list of sites at the command line, or create a text file and populate with the team names (one per line), or you can automatically protect unprotected sites.
+Place all files in a folder together. You can provide a list of sites at the command line, or create a text file and populate with the site names or web URLs (one per line), or you can automatically protect unprotected sites.
 
 Then, run the main script like so:
 
 To protect specific sites:
 
 ```powershell
-# example - adding teams from the command line
+# example
 ./protectO365Sites.ps1 -vip mycluster `
                        -username myusername `
                        -domain mydomain.net `
@@ -41,7 +41,7 @@ To protect specific sites:
 To protect a list of sites from a text file:
 
 ```powershell
-# example - adding teams from the command line
+# example
 ./protectO365Sites.ps1 -vip mycluster `
                        -username myusername `
                        -domain mydomain.net `
@@ -53,7 +53,7 @@ To protect a list of sites from a text file:
 To protect automatically selected sites that are unprotected:
 
 ```powershell
-# example - adding teams from a text file
+# example
 ./protectO365Sites.ps1 -vip mycluster `
                        -username myusername `
                        -domain mydomain.net `
@@ -65,7 +65,7 @@ To protect automatically selected sites that are unprotected:
 To create an autoprotect job that excludes sites that are already protected:
 
 ```powershell
-# example - adding teams from a text file
+# example
 ./protectO365Sites.ps1 -vip mycluster `
                        -username myusername `
                        -domain mydomain.net `
