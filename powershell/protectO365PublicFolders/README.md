@@ -1,8 +1,8 @@
-# Protect O365 Sites Using PowerShell
+# Protect O365 Public Folders Using PowerShell
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This PowerShell script adds Sites to an O365 protection job.
+This PowerShell script adds Public Folders to an O365 protection job.
 
 ## Download the script
 
@@ -10,7 +10,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Begin download commands
-$scriptName = 'protectO365Sites'
+$scriptName = 'protectO365PublicFolders'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
@@ -19,54 +19,54 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* protectO365Sites.ps1: the main PowerShell script
+* protectO365PublicFolders.ps1: the main PowerShell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
-Place all files in a folder together. You can provide a list of sites at the command line, or create a text file and populate with the site names or web URLs (one per line), or you can automatically protect unprotected sites.
+Place all files in a folder together. You can provide a list of folders at the command line, or create a text file and populate with the folder names or web URLs (one per line), or you can automatically protect unprotected folders.
 
 Then, run the main script like so:
 
-To protect specific sites:
+To protect specific folders:
 
 ```powershell
 # example
-./protectO365Sites.ps1 -vip mycluster `
-                       -username myusername `
-                       -domain mydomain.net `
-                       -jobName 'My Job' `
-                       -site my-site1, my-site2
+./protectO365PublicFolders.ps1 -vip mycluster `
+                               -username myusername `
+                               -domain mydomain.net `
+                               -jobName 'My Job' `
+                               -folder my-folder1, my-folder2
 # end example
 ```
 
-To protect a list of sites from a text file:
+To protect a list of folders from a text file:
 
 ```powershell
 # example
-./protectO365Sites.ps1 -vip mycluster `
+./protectO365PublicFolders.ps1 -vip mycluster `
                        -username myusername `
                        -domain mydomain.net `
                        -jobName 'My Job' `
-                       -siteList ./mysites.txt
+                       -folderList ./myfolders.txt
 # end example
 ```
 
-To protect automatically selected sites that are unprotected:
+To protect automatically selected folders that are unprotected:
 
 ```powershell
 # example
-./protectO365Sites.ps1 -vip mycluster `
+./protectO365PublicFolders.ps1 -vip mycluster `
                        -username myusername `
                        -domain mydomain.net `
                        -jobName 'My Job' `
-                       -allSites
+                       -allFolders
 # end example
 ```
 
-To create an autoprotect job that excludes sites that are already protected:
+To create an autoprotect job that excludes folders that are already protected:
 
 ```powershell
 # example
-./protectO365Sites.ps1 -vip mycluster `
+./protectO365PublicFolders.ps1 -vip mycluster `
                        -username myusername `
                        -domain mydomain.net `
                        -jobName 'My Job' `
@@ -89,12 +89,12 @@ To create an autoprotect job that excludes sites that are already protected:
 ## Other Parameters
 
 * -jobName: name of the O365 protection job to exclude mailboxes from
-* -site: (optional) a comma separated list of site names to protect
-* -siteList: (optional) a text file list of site names to protect
-* -allSites: (optional) protect unprotected sites (up to the maxSitesPerJob)
-* -maxSitesPerJob: (optional) default is 5000
+* -folder: (optional) a comma separated list of folder names to protect
+* -folderList: (optional) a text file list of folder names to protect
+* -allFolders: (optional) protect unprotected folders (up to the maxFoldersPerJob)
+* -maxFoldersPerJob: (optional) default is 5000
 * -sourceName: (optional) name of registered O365 protection source (required for new job)
-* -autoProtectRemaining: (optional) autoprotect at the source and exclude already protected sites
+* -autoProtectRemaining: (optional) autoprotect at the source and exclude already protected folders
 
 ## New Job Parameters
 
