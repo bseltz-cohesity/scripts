@@ -46,7 +46,7 @@ To protect a list of mailboxes from a text file:
                            -username myusername `
                            -domain mydomain.net `
                            -jobName 'My Job' `
-                           -mailboxlist ./mymailboxes.txt
+                           -mailboxList ./mymailboxes.txt
 # end example
 ```
 
@@ -91,7 +91,7 @@ To create an autoprotect job that excludes mailboxes that are already protected:
 * -jobName: name of the O365 protection job to exclude mailboxes from
 * -mailbox: (optional) a comma separated list of mailbox names to protect
 * -mailboxList: (optional) a text file list of mailbox names to protect
-* -allMailboxes: (optional) protect unprotected mailboxes (up to the maxmailboxesPerJob)
+* -allMailboxes: (optional) protect unprotected mailboxes (up to the maxMailboxesPerJob)
 * -maxMailboxesPerJob: (optional) default is 5000
 * -sourceName: (optional) name of registered O365 protection source (required for new job)
 * -autoProtectRemaining: (optional) autoprotect at the source and exclude already protected mailboxes
