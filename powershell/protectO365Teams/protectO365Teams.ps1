@@ -224,7 +224,7 @@ $protectedIndex = @()
 $nodeIdIndex = @()
 $lastCursor = 0
 
-$teams = api get "protectionSources?pageSize=30&nodeId=$($teamsNode.protectionSource.id)&id=$($teamsNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false"
+$teams = api get "protectionSources?pageSize=50000&nodeId=$($teamsNode.protectionSource.id)&id=$($teamsNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false"
 $cursor = $teams.entityPaginationParameters.beforeCursorEntityId
 
 # enumerate teams
@@ -240,7 +240,7 @@ while(1){
         $lastCursor = $node.protectionSource.id
     }
     if($cursor){
-        $teams = api get "protectionSources?pageSize=30&nodeId=$($teamsNode.protectionSource.id)&id=$($teamsNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&afterCursorEntityId=$cursor"
+        $teams = api get "protectionSources?pageSize=50000&nodeId=$($teamsNode.protectionSource.id)&id=$($teamsNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&afterCursorEntityId=$cursor"
         $cursor = $teams.entityPaginationParameters.beforeCursorEntityId
     }else{
         break
