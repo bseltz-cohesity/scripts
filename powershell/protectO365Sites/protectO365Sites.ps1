@@ -252,7 +252,7 @@ while(1){
     # patch for 6.8.1
     if($sites.nodes -eq $null){
         if($cursor -gt $lastCursor){
-            $lastNode = api get protectionSources?id=$cursor
+            $node = api get protectionSources?id=$cursor
             $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
             $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
             if($node.protectionSource.office365ProtectionSource.PSObject.Properties['webUrl']){
@@ -286,9 +286,6 @@ if($autoProtectRemaining){
         setApiProperty -object $job.office365Params -name 'excludeObjectIds' -value @()
     }
     $job.office365Params.excludeObjectIds = $protectedIndex
-    # foreach($siteId in $protectedIndex){
-    #     $job.office365Params.excludeObjectIds = @($job.office365Params.excludeObjectIds + $siteId | Sort-Object -Unique)
-    # }
 }elseif($allSites){
     $sitesAdded = 0
     if($unprotectedIndex.Count -eq 0){
@@ -299,10 +296,8 @@ if($autoProtectRemaining){
         if($job.office365Params.objects.Count -ge $maxSitesPerJob){
             break
         }
-        # if(!($job.office365Params.objects | Where-Object {$_.id -eq $siteId})){
-            $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $siteId})
-            $sitesAdded += 1
-        # }
+        $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $siteId})
+        $sitesAdded += 1
     }
     if($sitesAdded -eq 0){
         Write-Host "Job already has the maximum number of sites protected" -ForegroundColor Yellow
