@@ -91,7 +91,7 @@ To create an autoprotect job that excludes teams that are already protected:
 * -jobName: name of the O365 protection job to exclude teams from
 * -team: (optional) a comma separated list of team names to protect
 * -teamList: (optional) a text file list of team names to protect
-* -allTeams: (optional) protect unprotected teams (up to the maxteamsPerJob)
+* -allTeams: (optional) protect unprotected teams (up to the maxTeamsPerJob)
 * -maxTeamsPerJob: (optional) default is 5000
 * -sourceName: (optional) name of registered O365 protection source (required for new job)
 * -autoProtectRemaining: (optional) autoprotect at the source and exclude already protected teams

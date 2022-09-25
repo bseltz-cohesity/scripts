@@ -46,7 +46,7 @@ To protect a list of sites from a text file:
                        -username myusername `
                        -domain mydomain.net `
                        -jobName 'My Job' `
-                       -sitelist ./mysites.txt
+                       -siteList ./mysites.txt
 # end example
 ```
 
