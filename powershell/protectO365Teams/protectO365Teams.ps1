@@ -219,6 +219,7 @@ if(!$teamsNode){
 Write-Host "Discovering teams..."
 
 $nameIndex = @{}
+$smtpIndex = @{}
 $unprotectedIndex = @()
 $protectedIndex = @()
 $nodeIdIndex = @()
@@ -232,6 +233,7 @@ while(1){
     foreach($node in $teams.nodes){
         $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
+        $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
         if($node.protectedSourcesSummary[0].leavesCount){
             $protectedIndex = @($protectedIndex + $node.protectionSource.id)
         }else{
@@ -251,6 +253,7 @@ while(1){
             $node = api get protectionSources?id=$cursor
             $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
             $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
+            $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
             if($node.protectedSourcesSummary[0].leavesCount){
                 $protectedIndex = @($protectedIndex + $node.protectionSource.id)
             }else{
@@ -310,9 +313,11 @@ if($autoProtectRemaining){
                 continue
             }
             if($teamName -ne '' -and $null -ne $teamName){
-                if($nameIndex.ContainsKey($teamName)){
+                if($nameIndex.ContainsKey($teamName) -or $smtpIndex.ContainsKey("$teamName")){
                     if($nameIndex.ContainsKey($teamName)){
                         $teamId = $nameIndex[$teamName]
+                    }else{
+                        $teamId = $smtpIndex["$teamName"]
                     }
                     if($teamId -in $protectedIndex){
                         Write-Host "$teamName already protected" -ForegroundColor Green
