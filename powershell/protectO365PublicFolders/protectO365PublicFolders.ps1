@@ -219,7 +219,6 @@ if(!$foldersNode){
 Write-Host "Discovering PublicFolders..."
 
 $nameIndex = @{}
-$webUrlIndex = @{}
 $unprotectedIndex = @()
 $protectedIndex = @()
 $nodeIdIndex = @()
@@ -233,9 +232,6 @@ while(1){
     foreach($node in $folders.nodes){
         $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
-        if($node.protectionSource.office365ProtectionSource.PSObject.Properties['webUrl']){
-            $webUrlIndex["$([string]$node.protectionSource.office365ProtectionSource.webUrl)"] = $node.protectionSource.id
-        }
         if($node.protectedSourcesSummary[0].leavesCount){
             $protectedIndex = @($protectedIndex + $node.protectionSource.id)
         }else{
@@ -255,9 +251,6 @@ while(1){
             $node = api get protectionSources?id=$cursor
             $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
             $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
-            if($node.protectionSource.office365ProtectionSource.PSObject.Properties['webUrl']){
-                $webUrlIndex["$([string]$node.protectionSource.office365ProtectionSource.webUrl)"] = $node.protectionSource.id
-            }
             if($node.protectedSourcesSummary[0].leavesCount){
                 $protectedIndex = @($protectedIndex + $node.protectionSource.id)
             }else{
@@ -286,9 +279,6 @@ if($autoProtectRemaining){
         setApiProperty -object $job.office365Params -name 'excludeObjectIds' -value @()
     }
     $job.office365Params.excludeObjectIds = $protectedIndex
-    # foreach($folderId in $protectedIndex){
-    #     $job.office365Params.excludeObjectIds = @($job.office365Params.excludeObjectIds + $folderId | Sort-Object -Unique)
-    # }
 }elseif($allFolders){
     $foldersAdded = 0
     if($unprotectedIndex.Count -eq 0){
@@ -299,10 +289,8 @@ if($autoProtectRemaining){
         if($job.office365Params.objects.Count -ge $maxFoldersPerJob){
             break
         }
-        # if(!($job.office365Params.objects | Where-Object {$_.id -eq $folderId})){
-            $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $folderId})
-            $foldersAdded += 1
-        # }
+        $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $folderId})
+        $foldersAdded += 1
     }
     if($foldersAdded -eq 0){
         Write-Host "Job already has the maximum number of folders protected" -ForegroundColor Yellow
@@ -322,12 +310,8 @@ if($autoProtectRemaining){
                 continue
             }
             if($folderName -ne '' -and $null -ne $folderName){
-                if($nameIndex.ContainsKey($folderName) -or $webUrlIndex.ContainsKey("$folderName")){
-                    if($nameIndex.ContainsKey($folderName)){
-                        $folderId = $nameIndex[$folderName]
-                    }else{
-                        $folderId = $webUrlIndex["$folderName"]
-                    }
+                if($nameIndex.ContainsKey($folderName)){
+                    $folderId = $nameIndex[$folderName]
                     if($folderId -in $protectedIndex){
                         Write-Host "$folderName already protected" -ForegroundColor Green
                     }else{
