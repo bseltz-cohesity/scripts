@@ -106,3 +106,7 @@ To create an autoprotect job that excludes teams that are already protected:
 * -storageDomainName: (optional) default is 'DefaultStorageDomain'
 * -paused: (optional) pause future runs (new job only)
 * -disableIndexing: (optional) disable indexing (indexing is enabled by default)
+
+## Notes
+
+If you have more than 5000 teams to protect, please read: [Protecting O365 Objects](https://github.com/bseltz-cohesity/scripts/wiki/Protecting-O365-Objects) for guidance on how to protect O365 objects at scale.
