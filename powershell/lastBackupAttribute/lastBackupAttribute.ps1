@@ -8,6 +8,7 @@ param (
     [Parameter()][string]$domain = 'local',
     [Parameter(Mandatory = $True)][string]$viServer,
     [Parameter(Mandatory = $True)][string]$viUser,
+    [Parameter()][string]$viPassword = '',
     [Parameter()][string]$attributeName = 'Last Cohesity Backup'
 )
 
@@ -18,7 +19,15 @@ param (
 apiauth -vip $vip -username $username -domain $domain
 
 # authenticate to vSphere
-$null = Connect-VIServer -Server $viServer -User $viUser -Password (getpwd -vip $viServer -username $viUser) -Force
+if($viPassword -eq ''){
+    $viPassword = Get-CohesityAPIPassword -vip $viServer -username $viUser
+    if($viPassword -eq ''){
+        Write-Host "Need Password for vCenter"
+        $viPassword = Set-CohesityAPIPassword -vip $viServer -username $viUser
+    }
+}
+
+$null = Connect-VIServer -Server $viServer -User $viUser -Password $viPassword -Force
 
 # create custom attribute
 if(! (Get-CustomAttribute | Where-Object Name -eq $attributeName)){

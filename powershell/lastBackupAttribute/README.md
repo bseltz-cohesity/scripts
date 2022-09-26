@@ -36,10 +36,11 @@ Place both files in a folder together and run the main script like so:
 
 * -vip: Cohesity Cluster to connect to
 * -username: Cohesity username
-* -domain: Active Directory domain of user (defaults to local)
+* -domain: (optional) Active Directory domain of user (defaults to local)
 * -viServer: vCenter to connect to
 * -viUser: vCenter user name
-* -attributeName: name of custom attribute to use (defaults to 'Last Cohesity Backup')
+* -viPassword: vCenter password (will prompt and store password if omitted)
+* -attributeName: (optional) name of custom attribute to use (defaults to 'Last Cohesity Backup')
 
 ## Notes
 
