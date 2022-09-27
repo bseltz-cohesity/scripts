@@ -342,7 +342,7 @@ foreach($s in $sourceDBs){
             }
         }
     }
-    if(!$init){
+    if($allmigrations -and !$init){
         $migrations = $allmigrations.clone()
         if($name -ne ''){
             $migrations = $migrations | Where-Object name -eq $name
@@ -402,7 +402,9 @@ foreach($s in $sourceDBs){
             $migrationCount += 1
             $mTaskId = [int]($migration.id -split ':')[2]
             $mTask = $tasks | Where-Object {$_.restoreTask.performRestoreTaskState.base.taskId -eq $mTaskId}
-            $mSnapshotUsecs = $mTask.restoreTask.restoreSubTaskWrapperProtoVec[-1].performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.startTimeUsecs
+            if($mTask.restoreTask.restoreSubTaskWrapperProtoVec.Count -gt 0){
+                $mSnapshotUsecs = $mTask.restoreTask.restoreSubTaskWrapperProtoVec[-1].performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.startTimeUsecs
+            }
             $mTargetHost = $migration.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.host.name
             $mTargetInstance = $migration.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.instanceName
             $mTargetDB = $migration.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.databaseName
@@ -424,7 +426,9 @@ foreach($s in $sourceDBs){
             Write-Host "Source DB: $mSourceHost/$mSourceDB"
             Write-Host "Target DB: $mTargetHost/$mTargetInstance/$mTargetDB"
             Write-Host "   Status: $($migration.status)"
-            Write-Host "Synced To: $(usecsToDate $mSnapshotUsecs)"
+            if($mTask.restoreTask.restoreSubTaskWrapperProtoVec.Count -gt 0){
+                Write-Host "Synced To: $(usecsToDate $mSnapshotUsecs)"
+            }
             if($sync){
                 if($migration.status -eq 'OnHold'){
                     Write-Host "Performing Sync..."
