@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.09.22 - Brian Seltzer
+#  Version 2022.09.27 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2022.01.12 - fixed storePasswordForUser
@@ -19,9 +19,10 @@
 # 2022.09.13 - added $cohesity_api.last_api_error
 # 2022.09.19 - fixed log encoding
 # 2022.09.22 - fixed 404 error output format
+# 2022.09.27 - fixed error log not found error
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2022.09.22'
+$versionCohesityAPI = '2022.09.27'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -94,11 +95,11 @@ function __writeLog($logmessage){
 
     # rotate log
     try{
-        $logfile = Get-Item -Path $apilogfile
+        $logfile = Get-Item -Path "$apilogfile" -ErrorAction SilentlyContinue
         if($logfile){
             $size = $logfile.Length
             if($size -gt 1048576){
-                Move-Item -Path $apilogfile -Destination "$apilogfile-$(get-date -UFormat '%Y-%m-%d-%H-%M-%S').txt"
+                Move-Item -Path "$apilogfile" -Destination "$apilogfile-$(get-date -UFormat '%Y-%m-%d-%H-%M-%S').txt"
             }
         }
     }catch{
@@ -114,7 +115,7 @@ function __writeLog($logmessage){
     $Global:lastAPIerrorDate = $apiErrorDate
 
     # output message
-    "$($apiErrorDate): ($caller) $logmessage" | Out-File -FilePath $apilogfile -Append -Encoding ascii
+    "$($apiErrorDate): ($caller) $logmessage" | Out-File -FilePath "$apilogfile" -Append -Encoding ascii
 }
 
 # authentication functions ========================================================================
