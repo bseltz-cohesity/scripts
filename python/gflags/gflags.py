@@ -155,6 +155,7 @@ def setGflag(servicename, flagname, flagvalue, reason):
 
 
 servicestorestart = []
+servicescantrestart = []
 
 # set a flag
 if flagvalue is not None:
@@ -175,7 +176,10 @@ if importfile is not None:
         (servicename, flagname, flagvalue, reason) = f.split(',', 3)
         flagvalue = flagvalue.replace(';;', ',')
         setGflag(servicename=servicename, flagname=flagname, flagvalue=flagvalue, reason=reason)
-        servicestorestart.append(servicename)
+        if servicename.lower() != 'nexus':
+            servicestorestart.append(servicename)
+        else:
+            servicescantrestart.append(servicename)
 
 # write gflags to export file
 print('\nCurrent GFlags:')
@@ -207,5 +211,8 @@ if restartservices is True:
         "services": list(set(servicestorestart))
     }
     response = api('post', '/nexus/cluster/restart', restartParams)
+
+if restartservices is True and len(servicescantrestart) > 0:
+    print('\nCant restart services: %s\n' % ', '.join(servicescantrestart))
 
 print('\nGflags saved to %s\n' % exportfile)
