@@ -37,7 +37,8 @@ param(
     [Parameter()][string]$name = '',                    # task name
     [Parameter()][string]$filter = '',                  # task name search filter
     [Parameter()][string]$id = '',                      # task id
-    [Parameter()][switch]$returnTaskIds                 # only return task IDs
+    [Parameter()][switch]$returnTaskIds,                # only return task IDs
+    [Parameter()][switch]$cancel                        # cancel tasks
 )
 
 # gather list from command line params and file
@@ -442,6 +443,12 @@ foreach($s in $sourceDBs){
                     $null = api put restore/recover -quiet @{"restoreTaskId" = $mTaskId; "sqlOptions" = "kFinalize"}
                 }else{
                     Write-Host "Can't finalize now ($($migration.status))" -ForegroundColor Yellow
+                }
+            }
+            if($cancel){
+                if($migration.status -in @('OnHold', 'Running')){
+                    Write-Host "Cancelling..."
+                    $null = api put "restore/tasks/cancel/$mTaskId"
                 }
             }
         }

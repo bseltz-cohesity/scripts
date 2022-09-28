@@ -127,6 +127,7 @@ If none are used, the script will be in list mode.
 * -init: (optional) initialize a new migration
 * -sync: (optional) perform manual sync now
 * -finalize: (optional) finalize migration(s)
+* -cancel: (optional) cancel migration(s)
 
 ## Filter Parameters for sync finalize or list modes
 
