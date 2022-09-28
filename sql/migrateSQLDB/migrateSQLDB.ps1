@@ -9,6 +9,7 @@ param(
     [Parameter()][switch]$useApiKey,                    # use API key for authentication
     [Parameter()][string]$password,                     # optional password
     [Parameter()][switch]$noPrompt,                     # do not prompt for password
+    [Parameter()][string]$tenant,                       # org to impersonate
     [Parameter()][switch]$mcm,                          # connect through mcm
     [Parameter()][string]$mfaCode = $null,              # mfa code
     [Parameter()][switch]$emailMfaCode,                 # send mfa code via email
@@ -108,7 +109,9 @@ if(!$init){
         $allmigrations = (api get -v2 "data-protect/recoveries?status=OnHold,Running&snapshotEnvironments=kSQL&recoveryActions=RecoverApps").recoveries
     }
     $tasks = api get "/restoretasks?restoreTypes=kRestoreApp&startTimeUsecs=$(timeAgo $daysBack days)"
-}
+    $allmigrations = $allmigrations | Where-Object {$_.mssqlParams.recoverAppParams[0].sqlTargetParams.recoverToNewSource -eq $True -and
+                                                    $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.PSObject.Properties['multiStageRestoreOptions']}
+    }
 
 foreach($s in $sourceDBs){
     $sourceDB = [string]$s
@@ -389,8 +392,6 @@ foreach($s in $sourceDBs){
                 }
             }
         if($migrations){
-            $migrations = $migrations | Where-Object {$_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.PSObject.Properties['multiStageRestoreOptions'] -or
-                                                    $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.PSObject.Properties['multiStageRestoreOptions']}
             $migrations = $migrations | sort-object -Property id -Descending
             if($returnTaskIds){
                 $taskIds = @($taskIds + $migrations.id)
@@ -421,12 +422,12 @@ foreach($s in $sourceDBs){
                 $mSourceDB = $migration.mssqlParams.recoverAppParams[0].objectInfo.name
                 $mSourceHost = $migration.mssqlParams.recoverAppParams[0].hostInfo.name
             }
-            Write-Host "`nTask Name: $($migration.name)"
-            Write-Host "  Task ID: $($migration.id)"
-            Write-Host "Source DB: $mSourceHost/$mSourceDB"
-            Write-Host "Target DB: $mTargetHost/$mTargetInstance/$mTargetDB"
-            Write-Host "   Status: $($migration.status)"
             if($mTask.restoreTask.restoreSubTaskWrapperProtoVec.Count -gt 0){
+                Write-Host "`nTask Name: $($migration.name)"
+                Write-Host "  Task ID: $($migration.id)"
+                Write-Host "Source DB: $mSourceHost/$mSourceDB"
+                Write-Host "Target DB: $mTargetHost/$mTargetInstance/$mTargetDB"
+                Write-Host "   Status: $($migration.status)"
                 Write-Host "Synced To: $(usecsToDate $mSnapshotUsecs)"
             }
             if($sync){
