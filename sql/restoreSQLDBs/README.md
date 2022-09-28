@@ -38,18 +38,25 @@ Place both files in a folder together and run the main script like so:
                     -latest
 ```
 
-## Parameters
+## Authentication Parameters
 
-### Basic Parameters
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
 
-* -vip: Cohesity Cluster to connect to
-* -username: Cohesity username
-* -domain: (optional) Active Directory domain of user (defaults to local)
-* -useApiKey: (optional) Use API key for authentication
-* -password: (optional) will use stored password by default
+## Basic Parameters
+
 * -sourceServer: Server name (or AAG name) where the database was backed up
 
-### Source DB Selections
+## Source DB Selections
 
 * -sourceDBnames: (optional) Databases to restore (e.g. MyDB or MYINSTANCE/MyDB) comma separated list
 * -sourceDBList: (optional) Text file containing databases to restore (e.g. MyDB or MYINSTANCE/MyDB)
@@ -57,13 +64,13 @@ Place both files in a folder together and run the main script like so:
 * -allDBs: (optional) restore all databases from specified server/instance
 * -includeSystemDBs: (optional) also restore system DBs (master, model, msdb)
 
-### Point in Time Selections
+## Point in Time Selections
 
 * -logTime: Point in time to replay the logs to during the restore (e.g. '2019-04-10 22:31:05')
 * -latest: Replay the logs to the latest log backup date
 * -noStop: Replay the logs to the last transaction available
 
-### Target Parameters
+## Target Parameters
 
 * -prefix: (optional) Prefix to apply to database names (e.g. 'Dev-')
 * -suffix: (optional) Suffix to apply to database names (e.g. '-Dev')
@@ -80,7 +87,7 @@ Place both files in a folder together and run the main script like so:
 * -importFileInfo: import DB file path info (use in conjunction with -useSourcePaths)
 * -forceAlternateLocation: populate alternate location params even when target server name is the same
 
-### Misc Parameters
+## Misc Parameters
 
 * -wait: Wait for the restore to complete and report end status (e.g. kSuccess)
 * -progress: (optional) display percent complete
