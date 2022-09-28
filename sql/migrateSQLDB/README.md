@@ -114,6 +114,7 @@ To finalize existing migration(s):
 * -useApiKey: (optional) use API key for authentication
 * -password: (optional) will use cached password or will be prompted
 * -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
 * -mcm: (optional) connect through MCM
 * -mfaCode: (optional) TOTP MFA code
 * -emailMfaCode: (optional) send MFA code via email
