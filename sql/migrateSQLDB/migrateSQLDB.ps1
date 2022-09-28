@@ -109,9 +109,7 @@ if(!$init){
         $allmigrations = (api get -v2 "data-protect/recoveries?status=OnHold,Running&snapshotEnvironments=kSQL&recoveryActions=RecoverApps").recoveries
     }
     $tasks = api get "/restoretasks?restoreTypes=kRestoreApp&startTimeUsecs=$(timeAgo $daysBack days)"
-    $allmigrations = $allmigrations | Where-Object {$_.mssqlParams.recoverAppParams[0].sqlTargetParams.recoverToNewSource -eq $True -and
-                                                    $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.PSObject.Properties['multiStageRestoreOptions']}
-    }
+}
 
 foreach($s in $sourceDBs){
     $sourceDB = [string]$s
