@@ -23,6 +23,7 @@ param (
     [Parameter()][switch]$useApiKey,                     # use API key for authentication
     [Parameter()][string]$password,                      # optional password
     [Parameter()][switch]$noPrompt,                      # do not prompt for password
+    [Parameter()][string]$tenant,                        # org to impersonate
     [Parameter()][switch]$mcm,                           # connect to MCM endpoint
     [Parameter()][string]$mfaCode = $null,               # MFA code
     [Parameter()][switch]$emailMfaCode,                  # email MFA code
