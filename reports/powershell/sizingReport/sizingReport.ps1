@@ -8,8 +8,8 @@ param (
    [Parameter()][string]$password = $null,
    [Parameter()][string]$mfaCode = $null,
    [Parameter()][switch]$emailMfaCode,
-   [Parameter()][ValidateSet('KiB','MiB','GiB','TiB')][string]$unit = 'MiB',
-   [Parameter()][int]$daysBack = 7,
+   [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'MiB',
+   [Parameter()][int]$daysBack = 31,
    [Parameter()][Int64]$numRuns = 100,
    [Parameter()][Int64]$backDays = 0,
    [Parameter()][switch]$indexStats
