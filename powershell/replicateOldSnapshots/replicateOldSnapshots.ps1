@@ -80,7 +80,8 @@ if($jobNames.Count -gt 0){
 }
 
 ### cluster Id
-$clusterId = (api get cluster).id
+$cluster = api get cluster
+$clusterId = $cluster.id
 
 ### get replication target info
 $remote = api get remoteClusters | Where-Object {$_.name -eq $replicateTo}
