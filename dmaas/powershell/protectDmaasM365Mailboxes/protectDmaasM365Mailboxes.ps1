@@ -73,12 +73,16 @@ if(!$usersNode){
 
 $nameIndex = @{}
 $smtpIndex = @{}
+$unprotectedIndex = @()
 $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false"
 while(1){
     # implement pagination
     foreach($node in $users.nodes){
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
         $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
+        if(($node.unprotectedSourcesSummary | Where-Object environment -eq 'kO365Exchange').leavesCount -eq 1){
+            $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
+        }
     }
     $cursor = $users.nodes[-1].protectionSource.id
     $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false&afterCursorEntityId=$cursor"
@@ -86,7 +90,7 @@ while(1){
         break
     }
 }  
-
+# $nameIndex.Count
 # configure protection parameters
 $protectionParams = @{
     "policyId"         = $policy.id;
@@ -121,7 +125,7 @@ foreach($mailbox in $mailboxesToAdd){
     }elseif($nameIndex.ContainsKey($mailbox)){
         $userId = $nameIndex[$mailbox]
     }
-    if($userId){
+    if($userId -and $userId -in $unprotectedIndex){
         $protectionParams.objects = @(@{
             "environment"     = "kO365Exchange";
             "office365Params" = @{
@@ -144,6 +148,8 @@ foreach($mailbox in $mailboxesToAdd){
         })
         Write-Host "Protecting $mailbox"
         $response = api post -v2 data-protect/protected-objects $protectionParams
+    }elseif($userId -and $userId -notin $unprotectedIndex){
+        Write-Host "Mailbox $mailbox already protected" -ForegroundColor Magenta
     }else{
         Write-Host "Mailbox $mailbox not found" -ForegroundColor Yellow
     }
