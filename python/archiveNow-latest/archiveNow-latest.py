@@ -73,12 +73,10 @@ else:
     print('No archive target named %s' % target)
     exit()
 
-if keepfor:
-    daysToKeep = keepfor
-
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning']
 
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
+    daysToKeep = keepfor
     if job['name'].lower() in [j.lower() for j in jobnames]:
         print('\n%s' % job['name'])
         runs = api('get', 'protectionRuns?jobId=%s&runTypes=kRegular&runTypes=kFull&numRuns=10&excludeTasks=true' % job['id'])
@@ -116,12 +114,12 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
 
                         # if fromtoday is not set, calculate days to keep from snapshot date
                         if fromtoday is False:
-                            daysToKeep = daysToKeep - dayDiff(dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S")), run['copyRun'][0]['runStartTimeUsecs'])
+                            daysToKeep = keepfor - dayDiff(dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S")), run['copyRun'][0]['runStartTimeUsecs'])
 
                         archiveTask['jobRuns'][0]['copyRunTargets'][0]['daysToKeep'] = int(daysToKeep)
 
                         # update run
-                        if((daysToKeep > 0 and currentExpiry is None) or (daysToKeep != 0 and currentExpiry is not None)):
+                        if (daysToKeep > 0 and currentExpiry is None) or (daysToKeep != 0 and currentExpiry is not None):
                             if commit:
                                 print('    archiving snapshot from %s...' % usecsToDate(run['copyRun'][0]['runStartTimeUsecs']))
                                 result = api('put', 'protectionRuns', archiveTask)
