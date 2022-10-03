@@ -138,6 +138,7 @@ If none are used, the script will be in list mode.
 * -id: (optional) only show/sync/finalize migration task matching this id
 * -returnTaskIds: (optional) return resulting list of task IDs and exit
 * -sourceServer: (optional) filter on -sourceServer and -sourceDB
+* -sourceInstance: (optional) filter on -sourceInstance
 * -sourceDB: (optional) one or more source DBs to filter on -sourceServer and -sourceDB (comma separated)
 * -sourceDBList: (optional) text file of source DBs to filter on -sourceServer and -sourceDB (one per line)
 * -targetServer: (optional) filter on -sourceServer and -sourceDB
@@ -147,6 +148,7 @@ If none are used, the script will be in list mode.
 
 * -sourceServer: (required for init) Server name (or AAG name) where the database was backed up
 * -sourceDB: (required for init) Original database name
+* -sourceInstance: (optional) specify source instance name
 * -targetServer: (required for init) Server name to migrate to
 * -targetInstance: (optional) Instance name to restore to (defaults to MSSQLSERVER)
 * -targetDB: (optional) New database name (defaults to same as sourceDB)

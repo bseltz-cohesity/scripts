@@ -16,6 +16,7 @@ param(
     [Parameter()][string]$clusterName = $null,          # cluster to connect to via helios/mcm
     [Parameter()][string]$sourceServer = '',            # protection source where the DB was backed up
     [Parameter()][array]$sourceDB,                      # names of the source DBs we want to migrate
+    [Parameter()][string]$sourceInstance,               # SQL instance name on the source server
     [Parameter()][string]$sourceDBList,                 # text file of sourceDBs to migrate
     [Parameter()][string]$targetServer = '',            # where to restore the DB to
     [Parameter()][string]$targetDB = '',                # desired restore DB name
@@ -91,7 +92,9 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
+$noTargetDBSpecified = $True
 if($targetDB -ne ''){
+    $noTargetDBSpecified = $False
     if($sourceDBs.Count -gt 1){
         Write-Host "-targetDB not supported with multiple DBs" -ForegroundColor Yellow
         exit
@@ -154,12 +157,12 @@ foreach($s in $sourceDBs){
     }
 
     # handle source instance name e.g. instance/dbname
-    if($sourceDB.Contains('/')){
+    if($sourceDB -match '/'){
         if($targetDB -eq $sourceDB){
             $targetDB = $sourceDB.Split('/')[1]
         }
         $sourceInstance, $sourceDB = $sourceDB.Split('/')
-    }else{
+    }elseif(! $sourceInstance){
         $sourceInstance = 'MSSQLSERVER'
     }
 
@@ -367,29 +370,35 @@ foreach($s in $sourceDBs){
         }
         if($targetDB -ne '' -and $targetServer -ne ''){
             if($migrations){
-                if($targetDB.Contains('/')){
+                if($targetDB -match '/'){
                     $thisTargetInstance, $thisTargetDB = $targetDB.Split('/')
                 }else{
                     $thisTargetDB = $targetDB
                 }
                 if($targetInstance){
                     $thisTargetInstance = $targetInstance
-                }elseif($targetDB.Contains('/')){
+                }elseif($targetDB -match '/'){
                     $thisTargetInstance = $targetDB.Split('/')[0]
                 }else{
                     $thisTargetInstance = 'MSSQLSERVER'
                 }
-                $migrations = $migrations | Where-Object {($_.mssqlParams.recoverAppParams.PSObject.Properties['sqlTargetParams'] -and
-                                                        $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.host.name -eq $targetServer -and
-                                                        $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.instanceName -eq $thisTargetInstance -and
-                                                        $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.databaseName -eq $thisTargetDB) -or
-                                                        ($_.mssqlParams.recoverAppParams[0].PSObject.Properties['sqlTargetParams'] -and
-                                                        $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.host.name -eq $targetServer -and
-                                                        $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.instanceName -eq $thisTargetInstance -and
-                                                        $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.databaseName -eq $thisTargetDB)}
 
+                if($targetServer -ne ''){
+                    $migrations = $migrations | Where-Object {($_.mssqlParams.recoverAppParams.PSObject.Properties['sqlTargetParams'] -and
+                                                        $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.host.name -eq $targetServer) -or
+                                                        ($_.mssqlParams.recoverAppParams[0].PSObject.Properties['sqlTargetParams'] -and
+                                                        $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.host.name -eq $targetServer)}
+                }
+                if($noTargetDBSpecified -eq $false){
+                    $migrations = $migrations | Where-Object {($_.mssqlParams.recoverAppParams.PSObject.Properties['sqlTargetParams'] -and
+                    $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.instanceName -eq $thisTargetInstance -and
+                    $_.mssqlParams.recoverAppParams.sqlTargetParams.newSourceConfig.databaseName -eq $thisTargetDB) -or
+                    ($_.mssqlParams.recoverAppParams[0].PSObject.Properties['sqlTargetParams'] -and
+                    $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.instanceName -eq $thisTargetInstance -and
+                    $_.mssqlParams.recoverAppParams[0].sqlTargetParams.newSourceConfig.databaseName -eq $thisTargetDB)}
                 }
             }
+        }
         if($migrations){
             $migrations = $migrations | sort-object -Property id -Descending
             if($returnTaskIds){
