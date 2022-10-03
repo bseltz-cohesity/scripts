@@ -58,19 +58,6 @@ if(!$policy){
     exit
 }
 
-# # find O365 source
-# $rootSource = api get protectionSources/rootNodes?environments=kO365 | Where-Object {$_.protectionSource.name -eq $sourceName}
-# if(!$rootSource){
-#     Write-Host "O365 Source $sourceName not found" -ForegroundColor Yellow
-#     exit
-# }
-# $source = api get "protectionSources?id=$($rootSource.protectionSource.id)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false"
-# $usersNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
-# if(!$usersNode){
-#     Write-Host "Source $sourceName is not configured for O365 Mailboxes" -ForegroundColor Yellow
-#     exit
-# }
-
 # find O365 source
 $rootSource = api get protectionSources/rootNodes?environments=kO365 | Where-Object {$_.protectionSource.name -eq $sourceName}
 if(!$rootSource){
@@ -86,6 +73,7 @@ if(!$usersNode){
 
 $nameIndex = @{}
 $smtpIndex = @{}
+$unprotectedIndex = @()
 
 $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidOnedrive=true&allUnderHierarchy=false"
 while(1){
@@ -93,6 +81,9 @@ while(1){
     foreach($node in $users.nodes){
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
         $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
+        if(($node.unprotectedSourcesSummary | Where-Object environment -eq 'kO365OneDrive').leavesCount -eq 1){
+            $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
+        }
     }
     $cursor = $users.nodes[-1].protectionSource.id
     $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidOnedrive=true&allUnderHierarchy=false&afterCursorEntityId=$cursor"
@@ -100,7 +91,7 @@ while(1){
     if(!($users[0].PSObject.Properties['nodes']) -or $users[0].nodes.Count -eq 1){
         break
     }
-}  
+}
 
 # configure protection parameters
 $protectionParams = @{
@@ -136,7 +127,7 @@ foreach($driveUser in $usersToAdd){
     }elseif($nameIndex.ContainsKey($driveUser)){
         $userId = $nameIndex[$driveUser]
     }
-    if($userId){
+    if($userId -and $userId -in $unprotectedIndex){
         $protectionParams.objects = @(@{
             "environment"     = "kO365OneDrive";
             "office365Params" = @{
@@ -159,6 +150,8 @@ foreach($driveUser in $usersToAdd){
         })
         Write-Host "Protecting OneDrive for $driveUser"
         $response = api post -v2 data-protect/protected-objects $protectionParams
+    }elseif($userId -and $userId -notin $unprotectedIndex){
+        Write-Host "OneDrive $driveUser already protected" -ForegroundColor Magenta
     }else{
         Write-Host "OneDrive for $driveUser not found" -ForegroundColor Yellow
     }
