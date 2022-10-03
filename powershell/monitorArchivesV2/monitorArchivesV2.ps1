@@ -34,7 +34,7 @@ $now = Get-Date
 $nowUsecs = dateToUsecs $now
 $daysBackUsecs = dateToUsecs $now.AddDays(-$daysBack)
 
-foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true").protectionGroups | Sort-Object -Property name){
+foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&includeTenants=true").protectionGroups | Sort-Object -Property name){
     $jobId = $job.id
     $jobName = $job.name
     "Getting tasks for $jobName"
@@ -51,7 +51,11 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&isA
         }
         foreach($run in $runs.runs){
             $runId = $run.id
-            $runStartTimeUsecs = $run.localBackupInfo.startTimeUsecs
+            if($run.PSObject.Properties['localBackupInfo']){
+                $runStartTimeUsecs = $run.localBackupInfo.startTimeUsecs
+            }else{
+                $runStartTimeUsecs = $run.originalBackupInfo.startTimeUsecs
+            }
             if($runStartTimeUsecs -lt $daysBackUsecs){
                 break
             }
