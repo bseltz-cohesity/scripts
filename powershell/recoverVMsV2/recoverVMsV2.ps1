@@ -239,7 +239,7 @@ if($poweron){
 
 if($prefix -ne ''){
     $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams['renameRecoveredVmsParams'] = @{
-        'prefix' = [string]$prefix + '-';
+        'prefix' = [string]$prefix;
     }
 }
 
@@ -292,7 +292,7 @@ foreach($vm in $vmNames){
     }
 
     if($snapshotId){
-        write-host "restoring $vmName"
+        write-host "restoring $($prefix)$($vmName)"
         if($snapshotId -notin $restores){
             $restores += $snapshotId
             $restoreParams.vmwareParams.objects += @{
