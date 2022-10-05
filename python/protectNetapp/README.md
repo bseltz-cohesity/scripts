@@ -25,12 +25,40 @@ chmod +x protectNetapp.py
 
 Place both files in a folder together and run the main script like so:
 
+To autoprotect the entire Netapp:
+
 ```bash
 ./protectNetapp.py -v mycluster \
                    -u myuser \
                    -d mydomain.net \
                    -j 'My Backup Job' \
-                   -s myNetapp
+                   -s myNetapp \
+                   -p myPolicy
+```
+
+To autoprotect a single SVM:
+
+```bash
+./protectNetapp.py -v mycluster \
+                   -u myuser \
+                   -d mydomain.net \
+                   -j 'My Backup Job' \
+                   -s myNetapp \
+                   -p myPolicy \
+                   -z SVM0
+```
+
+To autoprotect an entire Netapp but exclude volumes that contain the strings 'scratch' or 'test':
+
+```bash
+./protectNetapp.py -v mycluster \
+                   -u myuser \
+                   -d mydomain.net \
+                   -j 'My Backup Job' \
+                   -s myNetapp \
+                   -p myPolicy \
+                   -vx scratch \
+                   -vx test
 ```
 
 ## Authentication Parameters
