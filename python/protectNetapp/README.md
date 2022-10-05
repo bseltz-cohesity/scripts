@@ -33,22 +33,32 @@ Place both files in a folder together and run the main script like so:
                    -s myNetapp
 ```
 
+## Authentication Parameters
+
+* -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
+* -d, --domain: (optional) domain of username (defaults to local)
+* -i, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: (optional) password of API key
+* -np, --noprompt: (optional) do not prompt to update password
+* -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) helios/mcm cluster to connect to
+* -m, --mfacode: (optional) MFA code for authentication
+* -em, --emailmfacode: (optional) send MFA code via email
+
 ## Parameters
 
-* -v, --vip: DNS or IP of the Cohesity cluster to connect to
-* -u, --username: username to authenticate to Cohesity cluster
-* -d, --domain: (optional) domain of username, defaults to local
-* -k, --useApiKey: (optional) use API key for authentication
-* -pwd, --password: (optional) password of API key
 * -s, --sourcename: name of registered Netapp to protect
 * -z, --svmname: (optional) protect specific SVM (repeat for multiple SVMs)
 * -n, --volumename: (optional) protect specific volumes (repeat for multiple volumes)
 * -l, --volumelist: (optional) list of volume names in a text file
+* -vx, --vexstring: (optional) match string to exclude volumes (repeat for multiple strings)
+* -vl, --vexlist: (optional) text file of match strings (one per line)
 * -j, --jobname: name of the job to add the server to
-* -i, --include: (optional) file path to include (use multiple times for multiple paths)
-* -n, --includefile: (optional) a text file full of include paths
+* -in, --include: (optional) file path to include (use multiple times for multiple paths)
+* -n, --includelist: (optional) a text file full of include paths
 * -x, --exclude: (optional) file path to exclude (use multiple times for multiple paths)
-* -f, --excludefile: (optional) a text file full of exclude file paths
+* -f, --excludelist: (optional) a text file full of exclude file paths
 * -sd, --storagedomain: (optional) name of storage domain to create job in (default is DefaultStorageDomain)
 * -p, --policyname: (optional) name of protection policy to use for new job (only required for new job)
 * -tz, --timezone: (optional) time zone for new job (default is US/Eastern)
