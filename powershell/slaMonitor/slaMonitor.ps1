@@ -1,63 +1,103 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-   [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
-   [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
-   [Parameter()][string]$domain = 'local', #local or AD domain
-   [Parameter()][string]$smtpServer, #outbound smtp server '192.168.1.95'
-   [Parameter()][string]$smtpPort = 25, #outbound smtp port
-   [Parameter()][array]$sendTo, #send to address
-   [Parameter()][string]$sendFrom #send from address
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
+    [Parameter()][int]$daysBack = 7,
+    [Parameter()][int]$maxLogBackupMinutes = 0,
+    [Parameter()][string]$smtpServer,
+    [Parameter()][string]$smtpPort = 25,
+    [Parameter()][array]$sendTo, #send to address
+    [Parameter()][string]$sendFrom #send from address
 )
 
-### source the cohesity-api helper code
+# source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -tenant $tenant
 
-$finishedStates = @('kCanceled', 'kSuccess', 'kFailure')
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit
+}
 
 $nowUsecs = dateToUsecs (get-date)
-
+$daysBackUsecs = timeAgo $daysBack days
+$maxLogBackupUsecs = $maxLogBackupMinutes * 60000000
 $cluster = api get cluster
 $title = "Missed SLAs on $($cluster.name)"
 
 $missesRecorded = $false
 $message = ""
 
-foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -and $_.isActive -ne $false} | Sort-Object -Property name)){
+$finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning', 'SucceededWithWarning')
+
+$jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true"
+
+foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     $jobId = $job.id
     $jobName = $job.name
     $slaPass = "Pass"
-    $sla = $job.incrementalProtectionSlaTimeMins
+    $sla = $job.sla[0].slaMinutes
     $slaUsecs = $sla * 60000000
-    $runs = api get "protectionRuns?jobId=$jobId&excludeTasks=true&numRuns=2"
-    foreach($run in $runs){
-        $startTimeUsecs = $run.backupRun.stats.startTimeUsecs
-        $status = $run.backupRun.status
+    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=2&endTimeUsecs=$endUsecs&includeTenants=true"
+    foreach($run in $runs.runs){
+        $startTimeUsecs = $run.localBackupInfo.startTimeUsecs
+        if(! $startTimeUsecs){
+            $startTimeUsecs = $run.archivalInfo.archivalTargetResults[0].startTimeUsecs
+        }
+        $status = $run.localBackupInfo.status
         if($status -in $finishedStates){
-            $endTimeUsecs = $run.backupRun.stats.endTimeUsecs
+            $endTimeUsecs = $run.localBackupInfo.endTimeUsecs
             $runTimeUsecs = $endTimeUsecs - $startTimeUsecs
         }else{
             $runTimeUsecs = $nowUsecs - $startTimeUsecs
         }
-        if($runTimeUsecs -gt $slaUsecs){
-            $slaPass = "Miss"
+        if(!($startTimeUsecs -le $daysBackUsecs -and $status -in $finishedStates)){
+            if($status -ne 'Canceled'){
+                if($runTimeUsecs -gt $slaUsecs){
+                    $slaPass = "Miss"
+                    $reason = "SLA: $sla minutes"
+                }
+                if($maxLogBackupMinutes -gt 0 -and $run.localBackupInfo.runType -eq 'kLog' -and $runTimeUsecs -ge $maxLogBackupUsecs){
+                    $slaPass = "Miss"
+                    $reason = "Log SLA: $maxLogBackupMinutes minutes"
+                }
+            }
         }
+
         $runTimeMinutes = [math]::Round(($runTimeUsecs / 60000000),0)
         if($slaPass -eq "Miss"){
             $missesRecorded = $True
-            if($run.backupRun.status -in $finishedStates){
+            if($status -in $finishedStates){
                 $verb = "ran"
             }else{
                 $verb = "has been running"
             }
-            $messageLine = "{0} (Missed SLA) {1} for {2} minutes (SLA: {3} minutes)" -f $jobName, $verb, $runTimeMinutes, $sla
+            $startTime = usecsToDate $startTimeUsecs
+            $messageLine = "- {0} ({1}) {2} for {3} minutes ({4})" -f $jobName, $startTime, $verb, $runTimeMinutes, $reason
             $messageLine
             $message += "$messageLine`n"
-        }
-        if($run.backupRun.status -in $finishedStates){
             break
         }
     }
