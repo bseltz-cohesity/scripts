@@ -62,13 +62,21 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     $slaUsecs = $sla * 60000000
     $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=2&endTimeUsecs=$endUsecs&includeTenants=true"
     foreach($run in $runs.runs){
-        $startTimeUsecs = $run.localBackupInfo.startTimeUsecs
-        if(! $startTimeUsecs){
+        if($run.PSObject.Properties['localBackupInfo']){
+            $startTimeUsecs = $run.localBackupInfo.startTimeUsecs
+            $status = $run.localBackupInfo.status
+            if($run.localBackupInfo.PSObject.Properties['endTimeUsecs']){
+                $endTimeUsecs = $run.localBackupInfo.endTimeUsecs
+            }
+        }else{
             $startTimeUsecs = $run.archivalInfo.archivalTargetResults[0].startTimeUsecs
+            $status = $run.archivalInfo.archivalTargetResults[0].status
+            if($run.archivalInfo.archivalTargetResults[0].PSObject.Properties['endTimeUsecs']){
+                $endTimeUsecs = $run.archivalInfo.archivalTargetResults[0].endTimeUsecs
+            }
         }
-        $status = $run.localBackupInfo.status
+        
         if($status -in $finishedStates){
-            $endTimeUsecs = $run.localBackupInfo.endTimeUsecs
             $runTimeUsecs = $endTimeUsecs - $startTimeUsecs
         }else{
             $runTimeUsecs = $nowUsecs - $startTimeUsecs
