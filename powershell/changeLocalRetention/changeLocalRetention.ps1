@@ -27,7 +27,8 @@ param (
     [Parameter(Mandatory = $True)][string]$daysToKeep,
     [Parameter()][ValidateSet("kRegular","kFull","kLog","kSystem","kAll")][string]$backupType = 'kAll',
     [Parameter()][int]$maxRuns = 100000,
-    [Parameter()][switch]$commit
+    [Parameter()][switch]$commit,
+    [Parameter()][switch]$allowReduction
 )
 
 # source the cohesity-api helper code
@@ -82,31 +83,34 @@ function changeRetention($run){
     if($daysToChange -eq 0){
         Write-Host "Retention for $($run.jobName) ($($startDate)) to $newExpireDate remains unchanged"
     }else{
-        
-        if($commit){
-            $exactRun = api get /backupjobruns?exactMatchStartTimeUsecs=$startDateUsecs`&id=$($run.jobId)
-            $jobUid = $exactRun[0].backupJobRuns.protectionRuns[0].backupRun.base.jobUid
-            $editRun = @{
-                'jobRuns' = @(
-                    @{
-                        'jobUid'            = @{
-                            'clusterId' = $jobUid.clusterId;
-                            'clusterIncarnationId' = $jobUid.clusterIncarnationId;
-                            'id' = $jobUid.objectId
-                        };
-                        'runStartTimeUsecs' = $startDateUsecs;
-                        'copyRunTargets'    = @(
-                            @{'daysToKeep' = $daysToChange;
-                                'type'     = 'kLocal';
-                            }
-                        )
-                    }
-                )
-            }
-            write-host "Changing retention for $($run.jobName) ($($startDate)) to $newExpireDate"
-            $null = api put protectionRuns $editRun
+        if(!$allowReduction -and $daysToChange -lt 0){
+            Write-Host "Would reduce Retention for $($run.jobName) ($($startDate)) to $newExpireDate - skipping"
         }else{
-            Write-Host "Would change retention for $($run.jobName) ($($startDate)) to $newExpireDate"
+            if($commit){
+                $exactRun = api get /backupjobruns?exactMatchStartTimeUsecs=$startDateUsecs`&id=$($run.jobId)
+                $jobUid = $exactRun[0].backupJobRuns.protectionRuns[0].backupRun.base.jobUid
+                $editRun = @{
+                    'jobRuns' = @(
+                        @{
+                            'jobUid'            = @{
+                                'clusterId' = $jobUid.clusterId;
+                                'clusterIncarnationId' = $jobUid.clusterIncarnationId;
+                                'id' = $jobUid.objectId
+                            };
+                            'runStartTimeUsecs' = $startDateUsecs;
+                            'copyRunTargets'    = @(
+                                @{'daysToKeep' = $daysToChange;
+                                    'type'     = 'kLocal';
+                                }
+                            )
+                        }
+                    )
+                }
+                write-host "Changing retention for $($run.jobName) ($($startDate)) to $newExpireDate"
+                $null = api put protectionRuns $editRun
+            }else{
+                Write-Host "Would change retention for $($run.jobName) ($($startDate)) to $newExpireDate"
+            }
         }
     }
 }

@@ -63,3 +63,4 @@ Warning: Any snapshots whose new expire date is set to a date in the past will e
 * -backupType: (optional) choose one of kRegular, kFull, kLog, kSystem or kAll backup types. Default is kAll
 * -commit: (optional) perform the changes. If omitted, script will run in show/only mode
 * -maxRuns: (optional) dig back in time for X snapshots. Default is 100000. Increase this value to get further back in time, decrease this parameter if the script reports an error that the response it too large
+* -allowReduction: (optional) if omitted, the script will not reduce the retention of any snapshots
