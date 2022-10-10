@@ -56,7 +56,6 @@ if($job){
             }elseif($runId) {
                 $runs = $runs | Where-Object {$_.backupRun.jobRunId -eq $runId}
             }elseif($startDate -and $endDate){
-                "dates"
                 $startDateUsecs = dateToUsecs $startDate
                 $endDateUsecs = dateToUsecs $endDate
                 $runs = $runs | Where-Object {$_.backupRun.stats.startTimeUsecs -ge $startDateUsecs -and $_.backupRun.stats.startTimeUsecs -le $endDateUsecs}
