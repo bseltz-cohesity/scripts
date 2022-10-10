@@ -26,34 +26,40 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 Place both files in a folder together, then we can run the script.
 
-First, run the script WITHOUT the -force switch to see what would be deleted.
+First, run the script WITHOUT the -commit switch to see what would be deleted.
 
 ```powershell
 ./changeLocalRetention.ps1 -vip mycluster `
                            -username myuser `
                            -domain mydomain.net `
                            -jobname 'My Job' `
-                           -snapshotDate '2020-05-01 23:30' `
                            -daysToKeep 10
-```
-
-```text
-Connected!
-Changing retention for VM Backup (05/01/2020 23:30:01) to 05/11/2020 23:30:01
 ```
 
 If you're happy with the list of snapshots that will be changed, run the script again and include the -force switch.
 
 Warning: Any snapshots whose new expire date is set to a date in the past will expire immediately!
 
-## Parameters
+## Authentication Parameters
 
-* -vip: Cohesity cluster to connect to
-* -username: Cohesity username (e.g. admin)
-* -domain: (optional) Active Directory domain (defaults to 'local')
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -jobname: (optional) narrow scope to just the specified jobs (comma separated)
 * -daysToKeep: set retention to X days from original run date
-* -snapshotDate (optional) specify run date to modify (e.g. '2020-04-30' or '2020-04-30 23:00')
-* -backupType: (optional) choose one of kRegular, kFull, kLog or kSystem backup types. Default is all
-* -force: (optional) perform the changes. If omitted, script will run in show/only mode
+* -before: (optional) operate on runs before this date (e.g. '2022-10-10 00:00:00')
+* -after: (optional) operate on runs after this date (e.g. '2022-09-01 23:00:00')
+* -backupType: (optional) choose one of kRegular, kFull, kLog, kSystem or kAll backup types. Default is kAll
+* -commit: (optional) perform the changes. If omitted, script will run in show/only mode
 * -maxRuns: (optional) dig back in time for X snapshots. Default is 100000. Increase this value to get further back in time, decrease this parameter if the script reports an error that the response it too large
