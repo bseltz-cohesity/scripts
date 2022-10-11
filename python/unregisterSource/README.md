@@ -38,6 +38,6 @@ Place both files in a folder together and run the main script like so:
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
 * -i, --useApiKey: (optional) use API key for authentication
-* -pwd, --password: (optional) password of API key
+* -pwd, --password: (optional) password or API key
 * -n, --sourcename: (optional) name of server to add to the job (use multiple times for multiple)
 * -l, --sourcelist: (optional) list of server names in a text file (one per line)

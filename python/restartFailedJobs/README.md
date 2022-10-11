@@ -38,7 +38,7 @@ Place both files in a folder together and run the main script like so:
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
 * -i, --useApiKey: (optional) use API key for authentication
-* -pwd, --password: (optional) password of API key
+* -pwd, --password: (optional) password or API key
 * -c, --canceled: (optional) restart canceled jobs
 * -n, --hoursback: (optional) number of hours to look back (default is 24)
 * -r, --restart: (optional) perform restarts (display only is the default)

@@ -31,7 +31,7 @@ Place both files in a folder together and run the main script like so:
 * -u, --username: short username to authenticate to the cluster (default is helios)
 * -d, --domain: (optional) active directory domain of user (default is local)
 * -k, --useApiKey: (optional) use API key for authentication
-* -pwd, --password: (optional) password of API key
+* -pwd, --password: (optional) password or API key
 * -mcm, --mcm: (optional) connect through MCM
 * -c, --clustername: (optional) helios/mcm cluster to connect to
 * -t, --clonetype: vm, sql, oracle, view, or oracle_view

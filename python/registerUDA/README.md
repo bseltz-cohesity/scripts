@@ -40,7 +40,7 @@ Place both files in a folder together and run the main script like so:
 * -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
 * -d, --domain: (optional) domain of username (defaults to local)
 * -i, --useApiKey: (optional) use API key for authentication
-* -pwd, --password: (optional) password of API key
+* -pwd, --password: (optional) password or API key
 * -mcm, --mcm: (optional) connect through MCM
 * -n, --sourcename: One or more IP or FQDN of protection sources to register (repeat for multiple)
 * -t, --sourcetype: (optional) Type of UDA database (see list below) default is Other

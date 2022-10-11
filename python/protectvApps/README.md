@@ -42,7 +42,7 @@ Place both files in a folder together and run the main script like so:
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
 * -k, --useApiKey: (optional) use API key for authentication
-* -pwd, --password: (optional) password of API key
+* -pwd, --password: (optional) password or API key
 
 ## vCloud Parameters
 

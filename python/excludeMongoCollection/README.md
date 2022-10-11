@@ -39,7 +39,7 @@ By default, the script will exclude the collection(s) from all MongoDB protectio
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
 * -k, --useApiKey: (optional) use API key for authentication
-* -pwd, --password: (optional) password of API key
+* -pwd, --password: (optional) password or API key
 * -n, --collectionname: (optional) name of collection to exclude (use multiple times for multiple)
 * -c, --collectionlist: (optional) list of collection names in a text file (one per line)
 * -j, --jobname: (optional) name of protection group to include (use multiple times for multiple)

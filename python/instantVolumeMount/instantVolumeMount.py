@@ -23,8 +23,9 @@ parser.add_argument('-c', '--clustername', type=str, default=None)
 parser.add_argument('-mcm', '--mcm', action='store_true')
 parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
-parser.add_argument('-e', '--emailmfacode', action='store_true')
+parser.add_argument('-em', '--emailmfacode', action='store_true')
 parser.add_argument('-s', '--sourceserver', type=str, required=True)   # job name
 parser.add_argument('-t', '--targetserver', type=str, default=None)   # run date to archive in military format with 00 seconds
 parser.add_argument('-n', '--targetusername', type=str, default='')    # (optional) will use policy retention if omitted
@@ -45,6 +46,7 @@ clustername = args.clustername
 mcm = args.mcm
 useApiKey = args.useApiKey
 password = args.password
+noprompt = args.noprompt
 mfacode = args.mfacode
 emailmfacode = args.emailmfacode
 sourceserver = args.sourceserver
@@ -62,15 +64,9 @@ if targetserver is None:
     targetserver = sourceserver
 
 # authenticate
-if mcm:
-    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=True)
-else:
-    if emailmfacode:
-        apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, emailMfaCode=True)
-    else:
-        apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, mfaCode=mfacode)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), emailMfaCode=emailmfacode, mfaCode=mfacode)
 
-# if connected to helios or mcm, select to access cluster
+# if connected to helios or mcm, select access cluster
 if mcm or vip.lower() == 'helios.cohesity.com':
     if clustername is not None:
         heliosCluster(clustername)
@@ -78,6 +74,7 @@ if mcm or vip.lower() == 'helios.cohesity.com':
         print('-clustername is required when connecting to Helios or MCM')
         exit()
 
+# exit if not authenticated
 if apiconnected() is False:
     print('authentication failed')
     exit(1)
@@ -183,6 +180,8 @@ print('mounting volumes to %s...' % targetserver)
 result = api('post', '/restore', mountTask)
 
 # wait for completion
+if 'restoreTask' not in result:
+    exit(1)
 taskid = result['restoreTask']['performRestoreTaskState']['base']['taskId']
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
 status = 'unknown'

@@ -114,7 +114,7 @@ To delete all replicas for a remote cluster:
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
 * -k, --useApiKey: (optional) use API key for authentication
-* -pwd, --password: (optional) password of API key
+* -pwd, --password: (optional) password or API key
 * -p, --policyname: (optional) name of policy to focus on
 * -n, --targetname: (optional) name of remote cluster or archive target
 * -f, --frequency: (optional) number of frequency units for schedule (default is 1)
