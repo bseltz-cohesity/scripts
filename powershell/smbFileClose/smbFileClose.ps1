@@ -13,7 +13,7 @@ param (
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName,
     [Parameter(Mandatory = $True)][string]$viewName,
-    [Parameter(Mandatory = $True)][string]$FilePath
+    [Parameter()][string]$FilePath
 )
 
 # source the cohesity-api helper code
@@ -37,17 +37,24 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
-$fileOpens = api get "smbFileOpens?viewName=$viewName&filePath=$filePath"
+if($filePath){
+    $fileOpens = api get "smbFileOpens?viewName=$viewName&filePath=$filePath"
+}else{
+    $fileOpens = api get "smbFileOpens?viewName=$viewName"
+}
 
 if(! $fileOpens.PSObject.Properties['activeFilePaths']){
-    Write-Host "No file opens for $viewName $filePath "
+    Write-Host "No file opens"
 }else{
-    Write-Host "Closing $filePath"
-    foreach($openId in $fileOpens.activeFilePaths.activeSessions.activeOpens.openId){
-        $null = api post smbFileOpens @{
-            "filePath" = $filePath;
-            "openId" = $openId;
-            "viewName" = $viewName
+    foreach($activeFilePath in $fileOpens.activeFilePaths){
+        $filePath = $activeFilePath.filePath
+        Write-Host "Closing $filePath"
+        foreach($openId in $activeFilePath.activeSessions.activeOpens.openId){
+            $null = api post smbFileOpens @{
+                "filePath" = $filePath;
+                "openId" = $openId;
+                "viewName" = $viewName
+            }
         }
     }
 }

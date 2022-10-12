@@ -53,4 +53,4 @@ To close an open file:
 ## Other Parameters
 
 * -viewName: name of new view where paths are located
-* -filePath: path within view to close
+* -filePath: (optional) path within view to close
