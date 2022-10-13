@@ -36,4 +36,7 @@ Place both files in a folder together and run the main script like so:
 * -username: Cohesity User Name
 * -domain: (optional) AD domain of Cohesity user (defaults to local)
 * -roleName: name of role to clone
-* -newRoleName: name of new role to create
+* -newRoleName: (optional) name of new role to create
+* -targetCluster: (optional) clone role to another cluster
+* -targetUsername: (optional) username for target cluster
+* -targetDomain: (optional) user domain for target cluster (default is local)

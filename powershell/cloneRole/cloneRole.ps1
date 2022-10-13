@@ -11,8 +11,11 @@ param (
     [Parameter(Mandatory = $True)][string]$vip,
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$targetCluster,
+    [Parameter()][string]$targetUsername,
+    [Parameter()][string]$targetDomain = 'local',
     [Parameter(Mandatory = $True)][string]$roleName,
-    [Parameter(Mandatory = $True)][string]$newRoleName
+    [Parameter()][string]$newRoleName
 )
 
 ### source the cohesity-api helper code
@@ -29,7 +32,18 @@ if(! $role){
 }
 
 $newRole = $role
-$newRole.name = $newRoleName
-$newRole.label = $newRoleName
-"Cloning role `'$roleName`' to `'$newRoleName`'..."
+if(!$targetCluster -and !$newRoleName){
+    Write-Host "-newRoleName is required" -ForegroundColor Yellow
+    exit
+}
+if($newRoleName){
+    $newRole.name = $newRoleName
+    $newRole.label = $newRoleName
+}
+if($targetCluster -and $targetUsername){
+    apiauth -vip $targetCluster -username $targetUsername -domain $targetDomain
+    "Cloning role `'$($role.name)`' to `'$($newRole.name)`' on $targetCluster..."
+}else{
+    "Cloning role `'$($role.name)`' to `'$($newRole.name)`'..."
+}
 $null = api post roles $newRole
