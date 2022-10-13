@@ -121,6 +121,8 @@ To delete all replicas for a remote cluster:
 * -fu, --frequencyunit: (optional) default is every run
 * -r, --retention: (optional) number of retention units
 * -ru, --retentionunit: (optional) default is days
+* -ld, --lockduration: (optional) number of lock units
+* -lu, --lockunit: (optional) default is days
 * -a, --action: (optional) see below (default is list)
 * -all, --all: (optional) delete all entries for the specified target
 

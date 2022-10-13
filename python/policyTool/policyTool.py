@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Manage Protection Policy Using Python"""
 
-# version 2022.04.10
+# version 2022.10.13
 
 ### import pyhesity wrapper module
 from pyhesity import *
@@ -18,6 +18,8 @@ parser.add_argument('-p', '--policyname', type=str, default=None)
 parser.add_argument('-f', '--frequency', type=int, default=None)
 parser.add_argument('-fu', '--frequencyunit', type=str, choices=['runs', 'minutes', 'hours', 'days', 'weeks', 'months', 'years'], default='runs')
 parser.add_argument('-r', '--retention', type=int, default=None)
+parser.add_argument('-ld', '--lockduration', type=int, default=None)
+parser.add_argument('-lu', '--lockunit', type=str, choices=['days', 'weeks', 'months', 'years'], default='days')
 parser.add_argument('-ru', '--retentionunit', type=str, choices=['days', 'weeks', 'months', 'years'], default='days')
 parser.add_argument('-a', '--action', type=str, choices=['list', 'create', 'edit', 'delete', 'addextension', 'deleteextension', 'logbackup', 'addreplica', 'deletereplica', 'addarchive', 'deletearchive'], default='list')
 parser.add_argument('-n', '--targetname', type=str, default=None)
@@ -34,6 +36,8 @@ frequency = args.frequency            # number of frequency units for schedule
 frequencyunit = args.frequencyunit    # frequency units for schedule
 retention = args.retention            # number of retention units
 retentionunit = args.retentionunit    # retention units
+lockduration = args.lockduration      # number of lock units
+lockunit = args.lockunit              # lock units
 action = args.action                  # action to perform
 targetname = args.targetname          # name of remote cluster or external target
 allfortarget = args.all               # delete all entries for the specified target
@@ -53,6 +57,7 @@ frequentSchedules = ['Minutes', 'Hours', 'Days']
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
 
 policies = sorted((api('get', 'data-protect/policies', v=2))['policies'], key=lambda policy: policy['name'].lower())
+cluster = api('get', 'cluster')
 
 if policyname is not None:
     policies = [p for p in policies if p['name'].lower() == policyname.lower()]
@@ -116,7 +121,15 @@ if action == 'create':
         policy['backupPolicy']['regular']['incremental']['schedule']['minuteSchedule'] = {
             "frequency": frequency
         }
-
+    if lockduration is not None:
+        if cluster['clusterSoftwareVersion'] < '6.6.0d':
+            policy['dataLock'] = 'Compliance'
+        else:
+            policy['backupPolicy']['regular']['retention']['dataLockConfig'] = {
+                "mode": "Compliance",
+                "unit": lockunit.title(),
+                "duration": lockduration
+            }
     result = api('post', 'data-protect/policies', policy, v=2)
     policies = [policy]
 
@@ -127,6 +140,7 @@ if action == 'delete':
 
 # edit policy
 if action == 'edit':
+
     if retention is None:
         print('--retention is required')
         exit()
@@ -157,7 +171,18 @@ if action == 'edit':
         "unit": retentionunit.title(),
         "duration": retention
     }
+    if lockduration is not None:
+        if cluster['clusterSoftwareVersion'] < '6.6.0d':
+            policy['dataLock'] = 'Compliance'
+        else:
+            policy['backupPolicy']['regular']['retention']['dataLockConfig'] = {
+                "mode": "Compliance",
+                "unit": lockunit.title(),
+                "duration": lockduration
+            }
     result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
+    if 'error' in result:
+        exit(1)
 
 # add extend retention
 if action == 'addextension':
@@ -184,11 +209,31 @@ if action == 'addextension':
                 "duration": retention
             }
         }
+        if lockduration is not None:
+            if cluster['clusterSoftwareVersion'] < '6.6.0d':
+                policy['dataLock'] = 'Compliance'
+            else:
+                newRetention['retention']['dataLockConfig'] = {
+                    "mode": "Compliance",
+                    "unit": lockunit.title(),
+                    "duration": lockduration
+                }
         policy['extendedRetention'].append(newRetention)
     else:
         existingRetention[0]['retention']['unit'] = retentionunit.title()
         existingRetention[0]['retention']['duration'] = retention
+        if lockduration is not None:
+            if cluster['clusterSoftwareVersion'] < '6.6.0d':
+                policy['dataLock'] = 'Compliance'
+            else:
+                existingRetention[0]['retention']['dataLockConfig'] = {
+                    "mode": "Compliance",
+                    "unit": lockunit.title(),
+                    "duration": lockduration
+                }
     result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
+    if 'error' in result:
+        exit(1)
 
 # delete extended retention
 if action == 'deleteextension':
@@ -202,6 +247,8 @@ if action == 'deleteextension':
                 newRetentions.append(existingRetention)
         policy['extendedRetention'] = newRetentions
     result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
+    if 'error' in result:
+        exit(1)
 
 # log backup
 if action == 'logbackup':
@@ -225,6 +272,15 @@ if action == 'logbackup':
             "duration": retention
         }
     }
+    if lockduration is not None:
+        if cluster['clusterSoftwareVersion'] < '6.6.0d':
+            policy['dataLock'] = 'Compliance'
+        else:
+            policy['backupPolicy']['log']['retention']['dataLockConfig'] = {
+                "mode": "Compliance",
+                "unit": lockunit.title(),
+                "duration": lockduration
+            }
     if frequencyunit == 'hours':
         policy['backupPolicy']['log']['schedule']['hourSchedule'] = {
             "frequency": frequency
@@ -234,6 +290,8 @@ if action == 'logbackup':
             "frequency": frequency
         }
     result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
+    if 'error' in result:
+        exit(1)
 
 # add replica
 if action == 'addreplica':
@@ -274,13 +332,33 @@ if action == 'addreplica':
                 "clusterName": thisRemoteCluster['name']
             }
         }
+        if lockduration is not None:
+            if cluster['clusterSoftwareVersion'] < '6.6.0d':
+                policy['dataLock'] = 'Compliance'
+            else:
+                newReplica['retention']['dataLockConfig'] = {
+                    "mode": "Compliance",
+                    "unit": lockunit.title(),
+                    "duration": lockduration
+                }
         if frequencyunit != 'runs':
             newReplica['schedule']['frequency'] = frequency
         policy['remoteTargetPolicy']['replicationTargets'].append(newReplica)
     else:
         existingReplica[0]['retention']['unit'] = retentionunit.title()
         existingReplica[0]['retention']['duration'] = retention
+        if lockduration is not None:
+            if cluster['clusterSoftwareVersion'] < '6.6.0d':
+                policy['dataLock'] = 'Compliance'
+            else:
+                existingReplica[0]['retention']['dataLockConfig'] = {
+                    "mode": "Compliance",
+                    "unit": lockunit.title(),
+                    "duration": lockduration
+                }
     result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
+    if 'error' in result:
+        exit(1)
 
 # delete replica
 if action == 'deletereplica':
@@ -309,6 +387,8 @@ if action == 'deletereplica':
         if changedReplicationTargets is True:
             policy['remoteTargetPolicy']['replicationTargets'] = newReplicationTargets
             result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
+            if 'error' in result:
+                exit(1)
 
 # add archive
 if action == 'addarchive':
@@ -347,13 +427,33 @@ if action == 'addarchive':
             "targetName": thisVault['name'],
             "targetType": "Cloud"
         }
+        if lockduration is not None:
+            if cluster['clusterSoftwareVersion'] < '6.6.0d':
+                policy['dataLock'] = 'Compliance'
+            else:
+                newTarget['retention']['dataLockConfig'] = {
+                    "mode": "Compliance",
+                    "unit": lockunit.title(),
+                    "duration": lockduration
+                }
         if frequencyunit != 'runs':
             newTarget['schedule']['frequency'] = frequency
         policy['remoteTargetPolicy']['archivalTargets'].append(newTarget)
     else:
         existingTarget[0]['retention']['unit'] = retentionunit.title()
         existingTarget[0]['retention']['duration'] = retention
+        if lockduration is not None:
+            if cluster['clusterSoftwareVersion'] < '6.6.0d':
+                policy['dataLock'] = 'Compliance'
+            else:
+                existingTarget[0]['retention']['dataLockConfig'] = {
+                    "mode": "Compliance",
+                    "unit": lockunit.title(),
+                    "duration": lockduration
+                }
     result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
+    if 'error' in result:
+        exit(1)
 
 # delete archive
 if action == 'deletearchive':
@@ -378,6 +478,8 @@ if action == 'deletearchive':
         if changedArchiveTargets is True:
             policy['remoteTargetPolicy']['archivalTargets'] = newArchivalTargets
             result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
+            if 'error' in result:
+                exit(1)
 
 # list policies
 for policy in policies:
@@ -410,19 +512,24 @@ for policy in policies:
         unitPath = '%sSchedule' % unit.lower()[:-1]
         if unit in frequentSchedules:
             frequency = backupSchedule[unitPath]['frequency']
-            print('         Full backup:  Every %s %s  (keep for %s %s' % (frequency, unit, baseRetention['duration'], baseRetention['unit']))
+            print('         Full backup:  Every %s %s  (keep for %s %s%s' % (frequency, unit, baseRetention['duration'], baseRetention['unit'], dataLock))
         else:
             if unit == 'Weeks':
-                print('         Full backup:  Weekly on %s  (keep for %s %s)' % ((', '.join(backupSchedule[unitPath]['dayOfWeek'])), baseRetention['duration'], baseRetention['unit']))
+                print('         Full backup:  Weekly on %s  (keep for %s %s%s)' % ((', '.join(backupSchedule[unitPath]['dayOfWeek'])), baseRetention['duration'], baseRetention['unit'], dataLock))
             if unit == 'Months':
-                print('         Full backup:  Monthly on the %s %s  (keep for %s %s)' % (backupSchedule[unitPath]['weekOfMonth'], backupSchedule[unitPath]['dayOfWeek'][0], baseRetention['duration'], baseRetention['unit']))
+                print('         Full backup:  Monthly on the %s %s  (keep for %s %s%s)' % (backupSchedule[unitPath]['weekOfMonth'], backupSchedule[unitPath]['dayOfWeek'][0], baseRetention['duration'], baseRetention['unit'], dataLock))
             if unit == 'ProtectOnce':
-                print('         Full backup:  Once (keep for %s %s)' % (baseRetention['duration'], baseRetention['unit']))
+                print('         Full backup:  Once (keep for %s %s%s)' % (baseRetention['duration'], baseRetention['unit'], dataLock))
     # extended retention
     if 'extendedRetention' in policy and policy['extendedRetention'] is not None and len(policy['extendedRetention']) > 0:
         print('  Extended retention:')
         for extendedRetention in policy['extendedRetention']:
-            print('                       Every %s %s  (keep for %s %s)' % (extendedRetention['schedule']['frequency'], extendedRetention['schedule']['unit'], extendedRetention['retention']['duration'], extendedRetention['retention']['unit']))
+            dataLock = ''
+            if 'dataLockConfig' in extendedRetention['retention']:
+                dataLock = ', datalock for %s %s' % (extendedRetention['retention']['dataLockConfig']['duration'], extendedRetention['retention']['dataLockConfig']['unit'])
+            if 'dataLock' in policy:
+                dataLock = ', datalock for %s %s' % (extendedRetention['retention']['duration'], extendedRetention['retention']['unit'])
+            print('                       Every %s %s  (keep for %s %s%s)' % (extendedRetention['schedule']['frequency'], extendedRetention['schedule']['unit'], extendedRetention['retention']['duration'], extendedRetention['retention']['unit'], dataLock))
     # log backup
     if 'log' in policy['backupPolicy']:
         logRetention = policy['backupPolicy']['log']['retention']
@@ -430,7 +537,12 @@ for policy in policies:
         unit = backupSchedule['unit']
         unitPath = '%sSchedule' % unit.lower()[:-1]
         frequency = backupSchedule[unitPath]['frequency']
-        print('          Log backup:  Every %s %s  (keep for %s %s)' % (frequency, unit, logRetention['duration'], logRetention['unit']))
+        dataLock = ''
+        if 'dataLockConfig' in logRetention:
+            dataLock = ', datalock for %s %s' % (logRetention['dataLockConfig']['duration'], logRetention['dataLockConfig']['unit'])
+        if 'dataLock' in policy:
+            dataLock = ', datalock for %s %s' % (logRetention['duration'], logRetention['unit'])
+        print('          Log backup:  Every %s %s  (keep for %s %s%s)' % (frequency, unit, logRetention['duration'], logRetention['unit'], dataLock))
     # remote targets
     if 'remoteTargetPolicy' in policy and policy['remoteTargetPolicy'] is not None and len(policy['remoteTargetPolicy']) > 0:
         # replication targets
@@ -447,7 +559,12 @@ for policy in policies:
                     frequency = 1
                 else:
                     frequency = replicationTarget['schedule']['frequency']
-                print('                       %s:  Every %s %s  (keep for %s %s)' % (targetName, frequency, frequencyunit, replicationTarget['retention']['duration'], replicationTarget['retention']['unit']))
+                dataLock = ''
+                if 'dataLockConfig' in replicationTarget['retention']:
+                    dataLock = ', datalock for %s %s' % (replicationTarget['retention']['dataLockConfig']['duration'], replicationTarget['retention']['dataLockConfig']['unit'])
+                if 'dataLock' in policy:
+                    dataLock = ', datalock for %s %s' % (replicationTarget['retention']['duration'], replicationTarget['retention']['unit'])
+                print('                       %s:  Every %s %s  (keep for %s %s%s)' % (targetName, frequency, frequencyunit, replicationTarget['retention']['duration'], replicationTarget['retention']['unit'], dataLock))
         if 'archivalTargets' in policy['remoteTargetPolicy'] and policy['remoteTargetPolicy']['archivalTargets'] is not None and len(policy['remoteTargetPolicy']['archivalTargets']) > 0:
             print('          Archive To:')
             for archivalTarget in policy['remoteTargetPolicy']['archivalTargets']:
@@ -457,5 +574,10 @@ for policy in policies:
                     frequency = 1
                 else:
                     frequency = archivalTarget['schedule']['frequency']
-                print('                       %s:  Every %s %s  (keep for %s %s)' % (archivalTarget['targetName'], frequency, frequencyunit, archivalTarget['retention']['duration'], archivalTarget['retention']['unit']))
+                dataLock = ''
+                if 'dataLockConfig' in archivalTarget['retention']:
+                    dataLock = ', datalock for %s %s' % (archivalTarget['retention']['dataLockConfig']['duration'], archivalTarget['retention']['dataLockConfig']['unit'])
+                if 'dataLock' in policy:
+                    dataLock = ', datalock for %s %s' % (archivalTarget['retention']['duration'], archivalTarget['retention']['unit'])
+                print('                       %s:  Every %s %s  (keep for %s %s%s)' % (archivalTarget['targetName'], frequency, frequencyunit, archivalTarget['retention']['duration'], archivalTarget['retention']['unit'], dataLock))
     print('')
