@@ -31,12 +31,12 @@ Place the files in a folder together and run the main script like so:
                 -vmName myvm `
                 -vCenterName myvcenter.mydomain.net `
                 -datacenterName mydatacenter `
-                -hostName esx1 `
+                -computeResource esx1 `
                 -folderName myFolder `
                 -networkName 'VM Network' `
                 -datastoreName datastore1 `
                 -poweron `
-                -disableNetwork `
+                -detachNetwork `
                 -prefix restore-
 ```
 
@@ -49,7 +49,7 @@ Place the files in a folder together and run the main script like so:
 * -prefix: (optional) add a prefix to the VM name during restore
 * -vCenterName: (optional)vCenter protection source to recover to
 * -datacenterName: (optional) name of vSphere data center to recover to
-* -hostName: (optional) name of vSphere host to recover to
+* -computeResource: (optional) name of vSphere host or cluster to recover to
 * -folderName: (optional) name of vSphere folder to recover to
 * -networkName: (optional) VM Network to attach the VM to
 * -datastoreName: (optional) Datastore to recover the VM to
