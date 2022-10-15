@@ -66,6 +66,7 @@ foreach($server in $servers){
     $entityId = $null
     $alreadySQL = $false
     $server = [string]$server
+    Write-Host $server -NoNewline
     $registeredSource = $registeredSources.rootNodes | Where-Object { $_.rootNode.name -eq $server }
     if($registeredSource){
         $entityId = $registeredSource.rootNode.id
@@ -97,16 +98,16 @@ foreach($server in $servers){
         if($result.entity.id){
             $entityId = $result.entity.id
         }else{
-            Write-Host "$($server): failed to register physical server" -ForegroundColor Yellow
+            Write-Host ": failed to register" -ForegroundColor Yellow
             continue
         }
     }
     # register SQL
     if(!$alreadySQL){
-        Write-Host "$($server): registering as SQL"
+        Write-Host ": registering as SQL"
         $regSQL = @{"ownerEntity" = @{"id" = $entityId}; "appEnvVec" = @(3)}
         $result = api post /applicationSourceRegistration $regSQL
     }else{
-        Write-Host "$($server): already registered"
+        Write-Host ": already registered"
     }
 }
