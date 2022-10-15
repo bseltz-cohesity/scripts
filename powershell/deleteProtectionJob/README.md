@@ -33,13 +33,22 @@ Place both files in a folder together and run the main script like so:
 
 Note: server names must exactly match what is shown in protection sources.
 
-## Parameters
+## Authentication Parameters
 
-* -vip: Cohesity cluster to connect to
-* -username: Cohesity username (e.g. admin)
-* -domain: (optional) Active Directory domain (defaults to 'local')
-* -useApiKey: (optional) use API Key for authentication
-* -password: (optional) will use stored password by default
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -jobName: (optional) comma separated list of job names to delete
 * -jobList: (optional) text file containing job names to delete
 * -deleteSnapshots: (optional) delete existing snapshots (snapshots are reteined by default)
