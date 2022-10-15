@@ -21,41 +21,40 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 * registerSQL.ps1: the main PowerShell script
 * cohesity-api.ps1: the Cohesity REST API helper module
-* servers.txt: an optional text file containing a list of serversto add to the protection job
 
-Place all files in a folder together. Optionally create a text file called servers.txt and populate with the servers that you want to protect, like so:
-
-```text
-server1.mydomain.net
-server2.mydomain.net
-server3.mydomain.net
-```
-
-Note that the servers in the text file must be registered in Cohesity, and should match the name format as shown in the Cohesity UI.
-
-Then, run the main script like so:
+Place the files in a folder together and then run the script like so:
 
 ```powershell
-./registerSQL.ps1 -vip mycluster -username myusername -server myerver
+./registerSQL.ps1 -vip mycluster `
+                  -username myuser `
+                  -domain mydomain.net `
+                  -serverName mysqlserver1.mydomain.net, mysqlserver2.mydomain.net 
 ```
 
-or
+Or optionally create a text file called servers.txt and populate with the servers that you want to register (one per line), and then run the script like so:
 
 ```powershell
-./registerSQL.ps1 -vip mycluster -username myusername -serverList ./servers.txt
+./registerSQL.ps1 -vip mycluster `
+                  -username myuser `
+                  -domain mydomain.net `
+                  -serverList ./servers.txt 
 ```
 
-```text
-Connected!
-Registering server1.mydomain.net as a SQL protection source...
-Registering server2.mydomain.net as a SQL protection source...
-Registering server3.mydomain.net as a SQL protection source...
-```
+## Authentication Parameters
 
-## Parameters
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
 
-* -vip: Cohesity Cluster to connect to
-* -username: Cohesity username
-* -domain: your AD domain (defaults to local)
-* -server: name of a single server to add to the job
+## Other Parameters
+
+* -serverName: name of a single server to add to the job
 * -serverList: a text file list of servers to add to the job

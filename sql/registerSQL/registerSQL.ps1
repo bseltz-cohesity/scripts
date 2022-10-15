@@ -1,45 +1,112 @@
-    ### process commandline arguments
+# process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, #Cohesity cluster to connect to
-    [Parameter(Mandatory = $True)][string]$username, #Cohesity username
-    [Parameter()][string]$domain = 'local', #Cohesity user domain name
-    [Parameter()][string]$serverList, #Servers to add as physical source
-    [Parameter()][string]$server
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
+    [Parameter()][array]$serverName,
+    [Parameter()][string]$serverList
 )
 
-if($serverList){
-    $servers = get-content $serverList
-}elseif($server){
-    $servers = @($server)
-}else{
-    Write-Warning "No Servers Specified"
-    exit
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
+        }
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
+        exit
+    }
+    return ($items | Sort-Object -Unique)
 }
 
-### source the cohesity-api helper code
+$servers = @(gatherList -Param $serverName -FilePath $serverList -Name 'servers' -Required $True)
+
+# source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
 
-### get protection sources
-$sources = api get protectionSources/registrationInfo
+# select helios/mcm managed cluster
+if($USING_HELIOS -and !$region){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
 
-### register server as SQL
-foreach ($server in $servers){
-    $server = $server.ToString()
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit 1
+}
 
-    if (! $($sources.rootNodes | Where-Object { $_.rootNode.name -eq $server -and $_.applications.environment -eq 'kSQL' })) {
-        "Registering $server as SQL protection source..."
-        $phys = api get protectionSources?environments=kPhysical
-        $sourceId = ($phys.nodes | Where-Object { $_.protectionSource.name -ieq $server }).protectionSource.id
-        if ($sourceId) {
-            $regSQL = @{"ownerEntity" = @{"id" = $sourceId}; "appEnvVec" = @(3)}
-            $null = api post /applicationSourceRegistration $regSQL
+$registeredSources = api get "protectionSources/registrationInfo"
+
+foreach($server in $servers){
+    $entityId = $null
+    $alreadySQL = $false
+    $server = [string]$server
+    $registeredSource = $registeredSources.rootNodes | Where-Object { $_.rootNode.name -eq $server }
+    if($registeredSource){
+        $entityId = $registeredSource.rootNode.id
+        if($registeredSource.applications | Where-Object environment -eq kSQL){
+            $alreadySQL = $True
         }
-        else {
-            Write-Warning "$server is not yet registered as a protection source"
+    }else{
+        $newSource = @{
+            'entity' = @{
+                'type' = 6;
+                'physicalEntity' = @{
+                    'name' = $server;
+                    'type' = 1;
+                    'hostType' = 1
+                }
+            };
+            'entityInfo' = @{
+                'endpoint' = $server;
+                'type' = 6;
+                'hostType' = 1
+            };
+            'sourceSideDedupEnabled' = $true;
+            'throttlingPolicy' = @{
+                'isThrottlingEnabled' = $false
+            };
+            'forceRegister' = $True
         }
+        $result = api post /backupsources $newSource -quiet
+        if($result.entity.id){
+            $entityId = $result.entity.id
+        }else{
+            Write-Host "$($server): failed to register physical server" -ForegroundColor Yellow
+            continue
+        }
+    }
+    # register SQL
+    if(!$alreadySQL){
+        Write-Host "$($server): registering as SQL"
+        $regSQL = @{"ownerEntity" = @{"id" = $entityId}; "appEnvVec" = @(3)}
+        $result = api post /applicationSourceRegistration $regSQL
+    }else{
+        Write-Host "$($server): already registered"
     }
 }
