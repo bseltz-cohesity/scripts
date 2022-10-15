@@ -1,12 +1,20 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,  # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
-    [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter(Mandatory = $True)][string]$jobName,
-    [Parameter()][array]$servername,
-    [Parameter()][string]$serverList = '',  # optional textfile of servers to protect
+    [Parameter()][array]$serverName,
+    [Parameter()][string]$serverList,  # optional textfile of servers to protect
     [Parameter()][array]$instanceName,
     [Parameter()][ValidateSet('File','Volume','VDI')][string]$backupType = 'File',
     [Parameter()][switch]$instancesOnly,
@@ -22,32 +30,49 @@ param (
     [Parameter()][string]$withClause = ''
 )
 
-# gather list of servers to add to job
-$serversToAdd = @()
-foreach($server in $servername){
-    $serversToAdd += $server
-}
-if ('' -ne $serverList){
-    if(Test-Path -Path $serverList -PathType Leaf){
-        $servers = Get-Content $serverList
-        foreach($server in $servers){
-            $serversToAdd += [string]$server
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
         }
-    }else{
-        Write-Warning "Server list $serverList not found!"
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
         exit
     }
+    return ($items | Sort-Object -Unique)
 }
-if($serversToAdd.Length -eq 0){
-    Write-Host "No servers to add"
-    exit
-}
+
+$serversToAdd = @(gatherList -Param $serverName -FilePath $serverList -Name 'sources' -Required $True)
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain -password $password
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# select helios/mcm managed cluster
+if($USING_HELIOS -and !$region){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit 1
+}
 
 $systemDBs = @('master', 'model', 'msdb')
 
