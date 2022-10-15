@@ -3,9 +3,17 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, #Cohesity cluster to connect to
-    [Parameter(Mandatory = $True)][string]$username, #Cohesity username
-    [Parameter()][string]$domain = 'local', #Cohesity user domain name
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter()][array]$sourceName, #Server to add as physical source
     [Parameter()][string]$sourceList
 )
@@ -33,11 +41,26 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 
 $sourceNames = @(gatherList -Param $sourceName -FilePath $sourceList -Name 'sources' -Required $True)
 
-### source the cohesity-api helper code
+# source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain -quiet
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# select helios/mcm managed cluster
+if($USING_HELIOS -and !$region){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit 1
+}
 
 $registeredSources = api get "protectionSources/registrationInfo?includeEntityPermissionInfo=true&includeApplicationsTreeInfo=false"
 
