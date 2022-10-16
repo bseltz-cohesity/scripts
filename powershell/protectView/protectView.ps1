@@ -17,7 +17,6 @@ param (
     [Parameter(Mandatory = $True)][string]$jobName,  # name of the job to add VM to
     [Parameter()][string]$startTime = '20:00', # e.g. 23:30 for 11:30 PM
     [Parameter()][string]$timeZone = 'America/New_York', # e.g. 'America/New_York'
-    [Parameter()][string]$storageDomainName = 'DefaultStorageDomain',  # storage domain you want the new job to write to
     [Parameter()][string]$policyName,  # protection policy name
     [Parameter()][switch]$paused,  # pause future runs (new job only)
     [Parameter()][switch]$disableIndexing,
@@ -120,18 +119,6 @@ if($job){
             exit 1
         }
     }
-    
-    # get storageDomain
-    $viewBoxes = api get viewBoxes
-    if($viewBoxes -is [array]){
-            $viewBox = $viewBoxes | Where-Object { $_.name -ieq $storageDomainName }
-            if (!$viewBox) { 
-                write-host "Storage domain $storageDomainName not Found" -ForegroundColor Yellow
-                exit 1
-            }
-    }else{
-        $viewBox = $viewBoxes[0]
-    }
 
     # parse startTime
     $hour, $minute = $startTime.split(':')
@@ -147,7 +134,7 @@ if($job){
         "isPaused"         = $isPaused;
         "policyId"         = $policy.id;
         "priority"         = "kMedium";
-        "storageDomainId"  = $viewBox.id;
+        "storageDomainId"  = 0;
         "description"      = "";
         "startTime"        = @{
             "hour"     = [int]$hour;
@@ -199,6 +186,12 @@ foreach($thisViewName in $viewsToAdd){
         Write-Host "View $thisViewName not found" -ForegroundColor Yellow
         exit 1
     }else{
+        if($job.storageDomainId -eq 0){
+            $job.storageDomainId = $thisView.storageDomainId
+        }elseif($job.storageDomainId -ne $thisView.storageDomainId){
+            Write-Host "View $thisViewName is in a different storage domain than the protection job $($job.name). Skipping..." -ForegroundColor Yellow
+            continue
+        }
         $job.viewParams.objects = @(@($job.viewParams.objects | Where-Object {$_.id -ne $thisView.viewId}) + @{"id" = $thisView.viewId})
         if($job.viewParams.PSObject.Properties['replicationParams']){
             $drViewName = $thisViewName
