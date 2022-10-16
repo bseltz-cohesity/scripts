@@ -36,6 +36,7 @@ Place both files in a folder together and run the main script like so:
 * -region: DMaaS region to use
 * -objectName: (optional) one or more names of protected objects to backup (comma separated)
 * -objectList: (optional) text file of object names to backup (one per line)
+* -fullBackup: (optional) perform full backup (default is incremental backup)
 * -debugmode: (optional) display JSON output for troubleshooting
 
 ## Authenticating to DMaaS
