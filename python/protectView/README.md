@@ -53,7 +53,6 @@ Place both files in a folder together and run the main script like so:
 ## Optional Job Parameters
 
 * -p, --policyname: Name of protection policy to use
-* -sd, --storagedomain: (optional) name of storage domain to create job in (default is DefaultStorageDomain)
 * -p, --policyname: (optional) name of protection policy to use for new job (only required for new job)
 * -tz, --timezone: (optional) time zone for new job (default is US/Eastern)
 * -st, --starttime: (optional) start time for new job (default is 21:00)

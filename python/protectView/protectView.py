@@ -16,7 +16,6 @@ parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-n', '--viewname', action='append', type=str)
 parser.add_argument('-l', '--viewlist', type=str, default=None)
 parser.add_argument('-j', '--jobname', type=str, required=True)
-parser.add_argument('-sd', '--storagedomain', type=str, default='DefaultStorageDomain')
 parser.add_argument('-p', '--policyname', type=str, default=None)
 parser.add_argument('-tz', '--timezone', type=str, default='US/Eastern')
 parser.add_argument('-st', '--starttime', type=str, default='21:00')
@@ -38,7 +37,6 @@ emailmfacode = args.emailmfacode
 viewnames = args.viewname
 viewlist = args.viewlist
 jobname = args.jobname
-storagedomain = args.storagedomain
 policyname = args.policyname
 starttime = args.starttime
 timezone = args.timezone
@@ -94,8 +92,8 @@ if cluster['clusterSoftwareVersion'] < '6.6' and len(viewstoadd) > 1:
 
 views = api('get', 'file-services/views', v=2)
 
-# get the protectionJob
-job = [j for j in (api('get', 'data-protect/protection-groups', v=2))['protectionGroups'] if j['name'].lower() == jobname.lower()]
+# get the protection job
+job = [j for j in (api('get', 'data-protect/protection-groups?environments=kView', v=2))['protectionGroups'] if j['name'].lower() == jobname.lower()]
 if job is None or len(job) == 0:
     newJob = True
     if cluster['clusterSoftwareVersion'] < '6.6' and len(viewstoadd) > 1:
@@ -120,14 +118,6 @@ if job is None or len(job) == 0:
         else:
             policy = policy[0]
 
-    # get storageDomain
-    viewBox = [v for v in api('get', 'viewBoxes') if v['name'].lower() == storagedomain.lower()]
-    if viewBox is None or len(viewBox) == 0:
-        print('Storage Domain %s not found' % storagedomain)
-        exit(1)
-    else:
-        viewBox = viewBox[0]
-
     # parse starttime
     try:
         (hour, minute) = starttime.split(':')
@@ -151,7 +141,7 @@ if job is None or len(job) == 0:
         "isPaused": isPaused,
         "policyId": policy['id'],
         "priority": "kMedium",
-        "storageDomainId": viewBox['id'],
+        "storageDomainId": 0,
         "description": "",
         "startTime": {
             "hour": hour,
@@ -210,6 +200,11 @@ for thisViewName in viewstoadd:
         exit(1)
     else:
         thisView = thisView[0]
+        if job['storageDomainId'] == 0:
+            job['storageDomainId'] = thisView['storageDomainId']
+        elif job['storageDomainId'] != thisView['storageDomainId']:
+            print('View %s is in a different storage domain than the protection job %s. Skipping...' % (thisViewName, job['name']))
+            continue
         job['viewParams']['objects'] = [o for o in job['viewParams']['objects'] if o['id'] != thisView['viewId']]
         job['viewParams']['objects'].append({"id": thisView['viewId']})
         if 'replicationParams' in job['viewParams']:
