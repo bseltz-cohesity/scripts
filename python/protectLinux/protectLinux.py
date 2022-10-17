@@ -20,11 +20,16 @@ from pyhesity import *
 ### command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)
-parser.add_argument('-u', '--username', type=str, required=True)
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
 parser.add_argument('-k', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-mfa', '--mfacode', type=str, default=None)
+parser.add_argument('-em', '--emailmfacode', action='store_true')
 parser.add_argument('-s', '--servername', action='append', type=str)
 parser.add_argument('-l', '--serverlist', type=str)
 parser.add_argument('-j', '--jobname', type=str, required=True)
@@ -54,11 +59,16 @@ parser.add_argument('-posttimeout', '--postscripttimeout', type=int, default=900
 
 args = parser.parse_args()
 
-vip = args.vip                        # cluster name/ip
-username = args.username              # username to connect to cluster
-domain = args.domain                  # domain of username (e.g. local, or AD domain)
-password = args.password              # password or API key
-useApiKey = args.useApiKey            # use API key for authentication
+vip = args.vip
+username = args.username
+domain = args.domain
+clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
+emailmfacode = args.emailmfacode
 servernames = args.servername         # name of server to protect
 serverlist = args.serverlist          # file with server names
 jobname = args.jobname                # name of protection job to add server to
@@ -125,8 +135,8 @@ if excludefile is not None:
     excludes += [e.strip() for e in f.readlines() if e.strip() != '']
     f.close()
 
-# authenticate to Cohesity
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+# authenticate
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), emailMfaCode=emailmfacode, mfaCode=mfacode)
 
 # get job info
 newJob = False
