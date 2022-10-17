@@ -66,6 +66,13 @@ Place both files in a folder together and run the main script like so:
 * -fs, --fullsla: (optional) full SLA minutes (default is 120)
 * -ei, --enableindexing: (optional) default is no indexing
 * -z, --paused: (optional) pause new protection group
+* -pre, --prescript: (optional) name of pre script
+* -preargs, --prescriptargs: (optional) arguments for pre script
+* -pretimeout, --prescripttimeout: (optional) timeout for pre script (default is 900 seconds)
+* -prefail, --prescriptfail: (optional) fail backup if pres cript fails
+* -post, --postscript: (optional) name of post script
+* -postargs, --postscriptargs: (optional) arguments for post script
+* -posttimeout, --postscripttimeout: (optional) timeout for post script (default is 900 seconds)
 
 ## Notes
 

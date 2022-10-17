@@ -40,10 +40,17 @@ parser.add_argument('-sd', '--storagedomain', type=str, default='DefaultStorageD
 parser.add_argument('-p', '--policyname', type=str, default=None)
 parser.add_argument('-tz', '--timezone', type=str, default='US/Eastern')
 parser.add_argument('-st', '--starttime', type=str, default='21:00')
-parser.add_argument('-is', '--incrementalsla', type=int, default=60)    # incremental SLA minutes
-parser.add_argument('-fs', '--fullsla', type=int, default=120)          # full SLA minutes
-parser.add_argument('-ei', '--enableindexing', action='store_true')     # enable indexing
-parser.add_argument('-z', '--paused', action='store_true')     # pause new protection group
+parser.add_argument('-is', '--incrementalsla', type=int, default=60)
+parser.add_argument('-fs', '--fullsla', type=int, default=120)
+parser.add_argument('-ei', '--enableindexing', action='store_true')
+parser.add_argument('-z', '--paused', action='store_true')
+parser.add_argument('-pre', '--prescript', type=str, default=None)
+parser.add_argument('-preargs', '--prescriptargs', type=str, default=None)
+parser.add_argument('-pretimeout', '--prescripttimeout', type=int, default=900)
+parser.add_argument('-prefail', '--prescriptfail', action='store_true')
+parser.add_argument('-post', '--postscript', type=str, default=None)
+parser.add_argument('-postargs', '--postscriptargs', type=str, default=None)
+parser.add_argument('-posttimeout', '--postscripttimeout', type=int, default=900)
 
 args = parser.parse_args()
 
@@ -70,7 +77,19 @@ timezone = args.timezone              # time zone for new job
 incrementalsla = args.incrementalsla  # incremental SLA for new job
 fullsla = args.fullsla                # full SLA for new job
 enableindexing = args.enableindexing  # enable indexing on new job
-paused = args.paused
+paused = args.paused                  # pause future runs
+prescript = args.prescript            # prescript
+prescriptargs = args.prescriptargs    # prescript arguments
+prescripttimeout = args.prescripttimeout  # prescript timeout
+prescriptfail = args.prescriptfail        # fail job if prescritp fails
+postscript = args.postscript              # postscript
+postscriptargs = args.postscriptargs      # post script args
+postscripttimeout = args.postscripttimeout  # post script timeout
+
+if prescriptfail is True:
+    continueonerror = False
+else:
+    continueonerror = True
 
 # read server file
 if servernames is None:
@@ -218,6 +237,21 @@ if not job or len(job) < 1:
     }
     if paused is True:
         job['isPaused'] = True
+    if prescript is not None or postscript is not None:
+        job['physicalParams']['fileProtectionTypeParams']['prePostScript'] = {}
+    if prescript is not None:
+        job['physicalParams']['fileProtectionTypeParams']['prePostScript']['preScript'] = {
+            "path": prescript,
+            "params": prescriptargs,
+            "timeoutSecs": prescripttimeout,
+            "continueOnError": continueonerror
+        }
+    if postscript is not None:
+        job['physicalParams']['fileProtectionTypeParams']['prePostScript']['postScript'] = {
+            "path": postscript,
+            "params": postscriptargs,
+            "timeoutSecs": postscripttimeout
+        }
 else:
     job = job[0]
     if 'physicalParams' not in job or job['physicalParams']['protectionType'] != 'kFile':
