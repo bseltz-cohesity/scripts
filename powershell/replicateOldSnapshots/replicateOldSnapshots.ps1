@@ -100,7 +100,7 @@ if($newerThan){
 
 ### find protectionRuns with old local snapshots that are not archived yet and sort oldest to newest
 "searching for old snapshots..."
-foreach($job in $jobs | Sort-Object -Property name| Where-Object {$_.isDeleted -ne $true -and $_.isActive -ne $false}){
+foreach($job in $jobs | Sort-Object -Property name| Where-Object {$_.isDeleted -ne $true}){
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         Write-Host $job.name
         $theseRuns = @{}
