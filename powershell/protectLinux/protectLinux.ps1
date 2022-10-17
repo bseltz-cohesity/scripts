@@ -3,9 +3,17 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,  # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
-    [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter()][array]$servers = '',  # optional name of one server protect
     [Parameter()][string]$serverList = '',  # optional textfile of servers to protect
     [Parameter()][array]$inclusions = '', # optional paths to exclude (comma separated)
@@ -24,8 +32,21 @@ param (
     [Parameter()][int]$fullSlaMinutes = 120,
     [Parameter()][string]$storageDomainName = 'DefaultStorageDomain',
     [Parameter()][string]$policyName,
-    [Parameter()][ValidateSet('kBackupHDD', 'kBackupSSD')][string]$qosPolicy = 'kBackupHDD'
+    [Parameter()][ValidateSet('kBackupHDD', 'kBackupSSD')][string]$qosPolicy = 'kBackupHDD',
+    [Parameter()][string]$preScript,
+    [Parameter()][string]$preScriptArgs = '',
+    [Parameter()][int]$preScriptTimeout = 900,
+    [Parameter()][switch]$preScriptFail,
+    [Parameter()][string]$postScript,
+    [Parameter()][string]$postScriptArgs = '',
+    [Parameter()][int]$postScriptTimeout = 900,
+    [Parameter()][switch]$paused
 )
+
+$continueOnError = $True
+if($preScriptFail){
+    $continueOnError = $false
+}
 
 # gather list of servers to add to job
 $serversToAdd = @()
@@ -92,7 +113,22 @@ if($skipNestedMountPoints){
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# select helios/mcm managed cluster
+if($USING_HELIOS -and !$region){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit 1
+}
 
 # get the protectionJob
 $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&environments=kPhysical&names=$jobName"
@@ -203,6 +239,27 @@ if(!$job){
                 "performSourceSideDeduplication" = $false;
                 "dedupExclusionSourceIds" = $null;
                 "globalExcludePaths" = $null
+            }
+        }
+    }
+    if($paused){
+        $job.isPaused = $True
+    }
+    if($preScript -or $postScript){
+        $job.physicalParams.fileProtectionTypeParams['prePostScript'] = @{}
+        if($preScript){
+            $job.physicalParams.fileProtectionTypeParams.prePostScript['preScript'] = @{
+                "path" = $preScript;
+                "params" = $preScriptArgs;
+                "timeoutSecs" = $preScriptTimeout;
+                "continueOnError" = $continueOnError
+            }
+        }
+        if($postScript){
+            $job.physicalParams.fileProtectionTypeParams.prePostScript['postScript'] = @{
+                "path" = $postScript;
+                "params" = $postScriptArgs;
+                "timeoutSecs" = $postScriptTimeout
             }
         }
     }

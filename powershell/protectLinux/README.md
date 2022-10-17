@@ -71,11 +71,22 @@ Processing servers...
   server2.mydomain.net
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: name or IP of Cohesity cluster
-* -username: name of user to connect to Cohesity
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
 * -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -jobName: name of protection job
 * -servers: (optional) one or more servers (comma separated) to add to the proctection job
 * -serverList: (optional) text file containing list of servers (one per line)
@@ -99,3 +110,10 @@ Processing servers...
 * -storageDomainName: (optional) default is 'DefaultStorageDomain'
 * -paused: (optional) pause future runs (new job only)
 * -qosPolicy: (optional) kBackupHDD or kBackupSSD (default is kBackupHDD)
+* -preScript: (optional) name of pre script
+* -preScriptArgs: (optional) arguments for pre script
+* -preScriptTimeout: (optional) timeout for pre script (default is 900 seconds)
+* -preScriptFail: (optional) fail backup if pre script fails
+* -postScript: (optional) name of post script
+* -postScriptArgs: (optional) arguments for post script
+* -postScriptTimeout: (optional) timeout for post script (default is 900 seconds)
