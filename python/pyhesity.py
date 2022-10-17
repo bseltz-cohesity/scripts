@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2022.09.21"""
+"""Cohesity Python REST API Wrapper Module - 2022.10.17"""
 
 ##########################################################################################
 # Change Log
@@ -564,13 +564,16 @@ def __writelog(logmessage):
     apidate = datetime.now()
     apierrordatestring = apidate.strftime("%Y-%m-%d-%H-%M-%S")
     apierrorusecs = dateToUsecs(apidate)
+
     # rotate log
-    logsize = os.path.getsize(LOGFILE)
-    if logsize > 1048576:
-        os.rename(LOGFILE, '%s-%s.txt' % (LOGFILE, apierrordatestring))
+    if os.path.exists(LOGFILE):
+        logsize = os.path.getsize(LOGFILE)
+        if logsize > 1048576:
+            os.rename(LOGFILE, '%s-%s.txt' % (LOGFILE, apierrordatestring))
+
+    # avoid race condition
     callstack = traceback.format_stack()[0].replace('\n', ' ').strip()
     apierror = '%s :: %s' % (callstack, logmessage)
-    # avoid race condition
     if apierror == lastapierror and apierrorusecs < (lastapierrorusecs + 5000000):
         time.sleep(5)
     # output log message
