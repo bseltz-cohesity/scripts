@@ -84,8 +84,8 @@ if($cluster.clusterSoftwareVersion -lt '6.6'){
 }
 
 # get the protectionJob
-$job = (api get -v2 "data-protect/protection-groups").protectionGroups | Where-Object {$_.name -eq $jobName}
-
+$jobs = (api get -v2 "data-protect/protection-groups?environments=kO365").protectionGroups | Where-Object {$_.office365Params.protectionTypes -eq 'kMailbox'}
+$job = $jobs | Where-Object {$_.name -eq $jobName}
 if($job){
 
     # existing protection job
@@ -224,7 +224,10 @@ $protectedIndex = @()
 $nodeIdIndex = @()
 $lastCursor = 0
 
-$mailboxes = api get "protectionSources?pageSize=50000&nodeId=$($mailboxesNode.protectionSource.id)&id=$($mailboxesNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false"
+$protectedIndex = @($jobs.office365Params.objects.id | Where-Object {$_ -ne $null})
+$unprotectedIndex = @($jobs.office365Params.excludeObjectIds | Where-Object {$_ -ne $null -and $_ -notin $protectedIndex})
+
+$mailboxes = api get "protectionSources?pageSize=50000&nodeId=$($mailboxesNode.protectionSource.id)&id=$($mailboxesNode.protectionSource.id)&allUnderHierarchy=false&hasValidMailbox=true&useCachedData=false"
 $cursor = $mailboxes.entityPaginationParameters.beforeCursorEntityId
 
 # enumerate mailboxes
@@ -233,15 +236,16 @@ while(1){
         $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
         $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
-        if($node.protectedSourcesSummary[0].leavesCount){
+        if($autoProtected -eq $True -and $node.protectionSource.id -notin $unprotectedIndex){
             $protectedIndex = @($protectedIndex + $node.protectionSource.id)
-        }else{
+        }
+        if($autoProtected -ne $True -and $node.protectionSource.id -notin $protectedIndex){
             $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
         }
         $lastCursor = $node.protectionSource.id
     }
     if($cursor){
-        $mailboxes = api get "protectionSources?pageSize=50000&nodeId=$($mailboxesNode.protectionSource.id)&id=$($mailboxesNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&afterCursorEntityId=$cursor"
+        $mailboxes = api get "protectionSources?pageSize=50000&nodeId=$($mailboxesNode.protectionSource.id)&id=$($mailboxesNode.protectionSource.id)&allUnderHierarchy=false&hasValidMailbox=true&useCachedData=false&afterCursorEntityId=$cursor"
         $cursor = $mailboxes.entityPaginationParameters.beforeCursorEntityId
     }else{
         break
