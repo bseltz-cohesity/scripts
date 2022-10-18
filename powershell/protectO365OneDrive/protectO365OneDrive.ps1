@@ -224,7 +224,7 @@ $unprotectedIndex = @()
 $protectedIndex = @()
 $nodeIdIndex = @()
 $lastCursor = 0
-Write-Host $jobs.protectionGroups.name
+
 $protectedIndex = @($jobs.office365Params.objects.id | Where-Object {$_ -ne $null})
 $unprotectedIndex = @($jobs.office365Params.excludeObjectIds | Where-Object {$_ -ne $null -and $_ -notin $protectedIndex})
 
