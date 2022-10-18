@@ -372,7 +372,7 @@ if targetserver != sourceserver or targetdb != sourcedb:
             restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig'] = {}
         restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig']['pfileParameterMap'] = []
     for pfileparam in pfileparams:
-        paramparts = pfileparam.split('=')
+        paramparts = pfileparam.split('=', 1)
         if len(paramparts) < 2:
             print('pfile parameter is invalid')
             exit(1)
@@ -422,14 +422,14 @@ if taskId is None:
 if wait is True:
     status = 'unknown'
     finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
-    while(status not in finishedStates):
+    while status not in finishedStates:
         sleep(10)
         try:
             task = api('get', '/restoretasks/%s' % taskId)
             status = task[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus']
         except:
             pass
-    if(status == 'kSuccess'):
+    if status == 'kSuccess':
         print('Restore Completed Successfully')
         exit(0)
     else:
