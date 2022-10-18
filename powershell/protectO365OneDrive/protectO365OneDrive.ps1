@@ -84,7 +84,8 @@ if($cluster.clusterSoftwareVersion -lt '6.6'){
 }
 
 # get the protectionJob
-$job = (api get -v2 "data-protect/protection-groups").protectionGroups | Where-Object {$_.name -eq $jobName}
+$jobs = (api get -v2 "data-protect/protection-groups?environments=kO365").protectionGroups | Where-Object {$_.office365Params.protectionTypes -eq 'kOneDrive'}
+$job = $jobs | Where-Object {$_.name -eq $jobName}
 
 if($job){
 
@@ -223,19 +224,25 @@ $unprotectedIndex = @()
 $protectedIndex = @()
 $nodeIdIndex = @()
 $lastCursor = 0
+Write-Host $jobs.protectionGroups.name
+$protectedIndex = @($jobs.office365Params.objects.id | Where-Object {$_ -ne $null})
+$unprotectedIndex = @($jobs.office365Params.excludeObjectIds | Where-Object {$_ -ne $null -and $_ -notin $protectedIndex})
 
 $users = api get "protectionSources?pageSize=50000&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&allUnderHierarchy=false&hasValidOnedrive=true&useCachedData=false"
 $cursor = $users.entityPaginationParameters.beforeCursorEntityId
-
+if($users.protectionSource.id -in $protectedIndex){
+    $autoProtected = $True
+}
 # enumerate Onedrives
 while(1){
     foreach($node in $users.nodes){
         $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
         $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
-        if($node.protectedSourcesSummary[0].leavesCount){
+        if($autoProtected -eq $True -and $node.protectionSource.id -notin $unprotectedIndex){
             $protectedIndex = @($protectedIndex + $node.protectionSource.id)
-        }else{
+        }
+        if($autoProtected -ne $True -and $node.protectionSource.id -notin $protectedIndex){
             $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
         }
         $lastCursor = $node.protectionSource.id
@@ -291,8 +298,10 @@ if($autoProtectRemaining){
         if($job.office365Params.objects.Count -ge $maxUsersPerJob){
             break
         }
-        $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $userId})
-        $usersAdded += 1
+        if($userId -ne $null){
+            $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $userId})
+            $usersAdded += 1
+        }
     }
     if($usersAdded -eq 0){
         Write-Host "Job already has the maximum number of users protected" -ForegroundColor Yellow
