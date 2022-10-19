@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Apply Exclusion Rules to VM Autoprotect Protection Job"""
 
 # usage: ./excludeVMs.py -v mycluster -u myuser [-d mydomain.net -j 'VM Backup' -xt -x sql -x ora
@@ -36,7 +36,7 @@ if excludeRules is None:
     excludeRules = []
 
 if excludePoweredOff is True:
-    if vcuser is None or vpassword is None:
+    if vcuser == None or vpassword == None:
         print("vCenter UserName and Password required!")
         exit(1)
 
