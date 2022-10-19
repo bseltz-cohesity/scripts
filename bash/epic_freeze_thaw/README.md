@@ -25,13 +25,11 @@ chmod +x backupNow.py
 * backupNow.py: python script to start and monitor the Pure job
 * pyhesity.py: Cohesity python function library
 
-## Instructions
-
-### Create a Pure Protection Group
+## Create a Pure Protection Group
 
 First, create a Pure protection group, protecting the Pure volumes that hold the Epic database, and leave it paused.
 
-### Create a Remote Adapter Protection Group
+## Create a Remote Adapter Protection Group
 
 This protection group will require an new Cohesity view to backup, but the view will remain empty as it's just a place holder. Configure the RA job to ssh to the EPIC host using a user account, for example `cohesity_script`.
 
@@ -39,7 +37,7 @@ In the script information fields (for the various job run types) enter the path 
 
 Also copy the ssh key shown in the RA job configuration screen
 
-### On the Epic Host
+## On the Epic Host
 
 On the host, create the user `cohesity_script` and copy the four script files to the location you specified in the RA job.
 
@@ -63,7 +61,7 @@ make sure all of the script files are owned by `cohesity_script` and have execut
 -rwxr-xr-x. 1 cohesity_script cohesity_script  1230 Oct 19 14:59 epic_freeze_thaw.sh
 ```
 
-### Customize the Wrapper Script
+## Customize the Wrapper Script
 
 Edit the top few lines of the epic_freeze_thaw.sh wrapper script to ensure all items are configured for your environment:
 
@@ -79,12 +77,12 @@ FREEZE_CMD="/bin/sudo -u epicadm /epic/prod/bin/instfreeze"
 THAW_CMD="/bin/sudo -u epicadm /epic/prod/bin/instthaw"
 ```
 
-### Generate an API Key
+## Generate an API Key
 
 To generate an API key, log onto the Cohesity UI, and go to Settings -> Access Management -> API Keys. Click `Add API Key`.
 
 Select the `cohesity_script` user, enter an arbitrary key name and click `Add`. Copy the API Key token on the next screen and use it in the wrapper script as shown above.
 
-### Test the Results
+## Test the Results
 
 Finally, run the RA job. The job should run the script which will check to ensure the Pure job is not running, then freeze Epic, start the Pure job, monitor for the Pure snapshots to be taken, thaw Epic, then complete the backup of the Pure volumes.
