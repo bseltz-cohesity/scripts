@@ -45,7 +45,7 @@ Configure the sudoers file to allow the `cohesity_script` to run some commands a
 
 ```bash
 # sudoers entries
-cohesity_script ALL=(seltzerb) NOPASSWD: /bin/sudo -u epicadm /epic/prod/bin/instfreeze, /bin/sudo -u epicadm /epic/prod/bin/instthaw
+cohesity_script ALL=(epicadm) NOPASSWD: /bin/sudo -u epicadm /epic/prod/bin/instfreeze, /bin/sudo -u epicadm /epic/prod/bin/instthaw
 Defaults:cohesity_script !requiretty
 # end sudoers entries
 ```
