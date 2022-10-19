@@ -66,6 +66,8 @@ Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/prote
 * -nrt, --newruntimeoutsecs: (optional) exit after X seconds if new run fails to start (default is 180)
 * -debug, --debug: (optional) display verbose error and state messages
 * -ex, --extendederrorcodes: (optional) return extended set of exit codes
+* -es, --exitstring: (optional) search for string in pulse logs and exit 0 when found
+* -est, --exitstringtimeoutsecs: (optional) timeout searching for string and exit 1 if not found
 
 ## Extended Error Codes
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2022.09.21
+# version 2022.10.19
 
 # extended error codes
 # ====================
@@ -57,6 +57,8 @@ parser.add_argument('-nrt', '--newruntimeoutsecs', type=int, default=180)
 parser.add_argument('-debug', '--debug', action='store_true')
 parser.add_argument('-ex', '--extendederrorcodes', action='store_true')
 parser.add_argument('-s', '--sleeptimesecs', type=int, default=30)
+parser.add_argument('-es', '--exitstring', type=str, default=None)
+parser.add_argument('-est', '--exitstringtimeoutsecs', type=int, default=30)
 
 args = parser.parse_args()
 
@@ -94,6 +96,8 @@ debugger = args.debug
 extendederrorcodes = args.extendederrorcodes
 sleeptimesecs = args.sleeptimesecs
 progress = args.progress
+exitstring = args.exitstring
+exitstringtimeoutsecs = args.exitstringtimeoutsecs
 
 if noprompt is True:
     prompt = False
@@ -552,6 +556,8 @@ if wait is True:
     status = 'unknown'
     lastProgress = -1
     while status not in finishedStates:
+        x = 0
+        s = 0
         sleep(5)
         try:
             if len(selectedSources) > 0:
@@ -573,6 +579,37 @@ if wait is True:
                 if percentComplete > lastProgress:
                     out('%s%% completed' % percentComplete)
                     lastProgress = percentComplete
+            if exitstring:
+                while x < len(run[0]['backupRun']['sourceBackupStatus']) and s < exitstringtimeoutsecs:
+                    sleep(5)
+                    s += 5
+                    if s > exitstringtimeoutsecs:
+                        break
+                    x = 0
+                    try:
+                        taskMon = api('get', '/progressMonitors?taskPathVec=backup_%s_1' % run[0]['backupRun']['jobRunId'])
+                        sources = taskMon['resultGroupVec'][0]['taskVec'][0]['subTaskVec']
+                        for source in sources:
+                            if source['taskPath'] != 'post_processing':
+                                # get pulse log messages
+                                eventmsgs = source['progress']['eventVec']
+                                foundkeystring = False
+                                # check for key string in event messages
+                                for eventmsg in eventmsgs:
+                                    if exitstring in eventmsg['eventMsg']:
+                                        foundkeystring = True
+                                if foundkeystring is True:
+                                    x += 1
+                                else:
+                                    preprocessFinished = False
+                    except Exception:
+                        pass
+                    if x >= len(run[0]['backupRun']['sourceBackupStatus']):
+                        print('*** SUCCESSFUL STRING MATCH')
+                        exit(0)
+                if x < len(run[0]['backupRun']['sourceBackupStatus']):
+                    print('*** TIMED OUT WAITING FOR STRING MATCH')
+                    exit(1)
         except Exception:
             if debugger:
                 ":DEBUG: error getting updated status"
