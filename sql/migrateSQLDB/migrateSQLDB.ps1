@@ -438,7 +438,7 @@ foreach($s in $sourceDBs){
                 Write-Host "   Status: $($migration.status)"
                 Write-Host "Synced To: $(usecsToDate $mSnapshotUsecs)"
             }
-            if($mTask.restoreTask.restoreSubTaskWrapperProtoVec[0].performRestoreTaskState.base.PSObject.Properties['warnings'] -and $mTask.restoreTask.restoreSubTaskWrapperProtoVec[0].performRestoreTaskState.base.warnings[0].errorMsg){
+            if($mTask.restoreTask.restoreSubTaskWrapperProtoVec.Count -gt 0 -and $mTask.restoreTask.restoreSubTaskWrapperProtoVec[0].performRestoreTaskState.base.PSObject.Properties['warnings'] -and $mTask.restoreTask.restoreSubTaskWrapperProtoVec[0].performRestoreTaskState.base.warnings[0].errorMsg){
                 Write-Host "  Warning: $($mTask.restoreTask.restoreSubTaskWrapperProtoVec[0].performRestoreTaskState.base.warnings[0].errorMsg)"
             }
             if($sync){
