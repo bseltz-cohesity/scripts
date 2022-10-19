@@ -34,7 +34,7 @@ if excludeRules is None:
     excludeRules = []
 
 if excludePoweredOff is True:
-    if vcuser is None or vpassword is None:
+    if vcuser == None or vpassword == None:
         print("vCenter UserName and Password required!")
         exit(1)
 
