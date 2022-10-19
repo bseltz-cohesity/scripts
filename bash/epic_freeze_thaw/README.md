@@ -8,7 +8,7 @@ This bash script can be used as a pre-script in a remote adapter job to freeze a
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/epic_freeze_thaw.sh/epic_freeze_thaw.sh.sh
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/epic_freeze_thaw/epic_freeze_thaw.sh.sh
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/jobRunning/jobRunning.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNow/backupNow.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
