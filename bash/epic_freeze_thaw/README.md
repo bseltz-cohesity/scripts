@@ -46,8 +46,10 @@ On the host, create the user `cohesity_script` and copy the four script files to
 Configure the sudoers file to allow the `cohesity_script` to run some commands as the epicadm user:
 
 ```bash
+# sudoers entries
 cohesity_script ALL=(seltzerb) NOPASSWD: /bin/sudo -u epicadm /epic/prod/bin/instfreeze, /bin/sudo -u epicadm /epic/prod/bin/instthaw
 Defaults:cohesity_script !requiretty
+# end sudoers entries
 ```
 
 Also append the SSH key copied earier into `/home/cohesity_script/.ssh/authorized_keys`
