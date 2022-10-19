@@ -39,9 +39,9 @@ Also copy the ssh key shown in the RA job configuration screen
 
 ## On the Epic Host
 
-On the host, create the user `cohesity_script` and copy the four script files to the location you specified in the RA job.
+On the host, create the user cohesity_script and copy the four script files to the location you specified in the RA job.
 
-Configure the sudoers file to allow the `cohesity_script` to run some commands as the epicadm user:
+Configure the sudoers file to allow the cohesity_script to run some commands as the epicadm user:
 
 ```bash
 # sudoers entries
@@ -52,7 +52,7 @@ Defaults:cohesity_script !requiretty
 
 Also append the SSH key copied earier into `/home/cohesity_script/.ssh/authorized_keys`
 
-make sure all of the script files are owned by `cohesity_script` and have execute permissions:
+make sure all of the script files are owned by cohesity_script and have execute permissions:
 
 ```bash
 -rwxr-xr-x. 1 cohesity_script cohesity_script 26604 Oct 19 09:27 backupNow.py
@@ -81,7 +81,7 @@ THAW_CMD="/bin/sudo -u epicadm /epic/prod/bin/instthaw"
 
 To generate an API key, log onto the Cohesity UI, and go to Settings -> Access Management -> API Keys. Click `Add API Key`.
 
-Select the `cohesity_script` user, enter an arbitrary key name and click `Add`. Copy the API Key token on the next screen and use it in the wrapper script as shown above.
+Select the cohesity_script user, enter an arbitrary key name and click `Add`. Copy the API Key token on the next screen and use it in the wrapper script as shown above.
 
 ## Test the Results
 
