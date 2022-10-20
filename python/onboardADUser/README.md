@@ -41,7 +41,8 @@ Place both files in a folder together and run the main script like so:
 * -pwd, --password: (optional) password or API key
 * -n, --aduser: name of AD user to onboard
 * -a, --addomain: domain of AD user to onboard
-* -m, --moniker: (optional) suffix for API key name (default is key)
+* -desc: --description: (optional) description for user
+* -keyname, --keyname: (optional) name for API key(default is aduser-key)
 * -r, --role: (optional) Cohesity role to grant to user (default is 'COHESITY_VIEWER')
 * -g, --generateApiKey: (optional) generate new API key for user
 * -s, --storeApiKey: (optional) store new API key in local password storage

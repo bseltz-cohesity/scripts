@@ -11,7 +11,8 @@ parser.add_argument('-i', '--useApiKey', action='store_true')        # use API k
 parser.add_argument('-p', '--password', type=str, default=None)      # password for admin user
 parser.add_argument('-n', '--aduser', type=str, required=True)       # AD user to onboard
 parser.add_argument('-a', '--addomain', type=str, required=True)     # AD user to onboard
-parser.add_argument('-m', '--moniker', type=str, default='key')      # API key name suffix
+parser.add_argument('-desc', '--description', type=str, default='')  # AD user description
+parser.add_argument('-keyname', '--keyname', type=str, default='')      # API key name
 parser.add_argument('-r', '--role', type=str, default='COHESITY_VIEWER')    # Cohesity role to grant
 parser.add_argument('-g', '--generateApiKey', action='store_true')          # generate new API key
 parser.add_argument('-s', '--storeApiKey', action='store_true')             # store API key in file
@@ -26,7 +27,8 @@ useApiKey = args.useApiKey
 password = args.password
 aduser = args.aduser
 addomain = args.addomain
-moniker = args.moniker
+description = args.description
+keyname = args.keyname
 role = args.role
 generateApiKey = args.generateApiKey
 storeApiKey = args.storeApiKey
@@ -47,7 +49,8 @@ if len(users) == 0:
                 role
             ],
             "domain": addomain,
-            "restricted": False
+            "restricted": False,
+            "description": description
         }
     ]
     print('Granting role: %s to user %s/%s...' % (role, addomain, aduser))
@@ -59,26 +62,27 @@ else:
 # generate API Key
 if generateApiKey:
     sid = users[0]['sid']
+    if keyname == '':
+        keyname = '%s-key' % users[0]['username']
 
-    keys = [key for key in api('get', 'usersApiKeys') if key['name'].lower() == '%s-%s' % (aduser.lower(), moniker.lower())]
+    keys = [key for key in api('get', 'usersApiKeys') if key['name'].lower() == keyname]
     if len(keys) > 0:
         if overwrite is True:
             deletekey = api('delete', 'users/%s/apiKeys/%s' % (sid, keys[0]['id']))
         else:
             print('api key already exists for %s' % username)
             exit(1)
-
     params = {
         'isActive': True,
         'user': users[0],
-        'name': '%s-%s' % (users[0]['username'], moniker)
+        'name': keyname
     }
 
     response = api('post', 'users/%s/apiKeys' % sid, params)
 
     if 'key' in response:
         if storeApiKey is True:
-            setpwd(v=vip, u=aduser, d=addomain, password=response['key'])
+            setpwd(v=vip, u=aduser, d=addomain, password=response['key'], useApiKey=True)
         else:
             print('New API Key: %s' % response['key'])
     else:
