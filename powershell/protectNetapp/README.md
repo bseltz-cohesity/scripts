@@ -33,41 +33,47 @@ Place all files in a folder together. And run the script like so:
                     -jobName 'My New Job' `
                     -timeZone 'America/New_York' `
                     -enableIndexing `
-                    -netappSource mynetapp `
-                    -volumeName SVM0:vol1, SVM1:vol3 `
-                    -cloudArchiveDirect
+                    -netappSource mynetapp
 # end example
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: name or IP of Cohesity cluster
-* -username: name of user to connect to Cohesity
-* -domain: your AD domain (defaults to local)
-* -policyName: name of the protection policy to use
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -jobName: name of protection job
 * -netappSource: name of registered Netapp source to protect
-
-## Optional Prameters
-
-* -startTime: (optional) e.g. '18:30' (defaults to 8PM)
+* -svmNames: (optional) one or more SVMs to protect (comma separated)
 * -volumeName: (optional) one or more volumes to protect (comma separated, default is all volumes)
 * -volumeList: (optional) text file list of volumes to protect
 * -inclusions: (optional) one or more inclusion paths (comma separated)
 * -inclusionList: (optional) text file list of paths to include
 * -exclusions: (optional) one or more exclusion paths (comma separated)
 * -exclusionList: (optional) text file list of exclusion paths
-* -timeZone: (optional) e.g. 'America/New_York' (default is 'America/Los_Angeles')
-* -incrementalProtectionSlaTimeMins: (optional) default 60
+
+## New Job Parameters
+
+* -policyName: name of the protection policy to use
+* -startTime: (optional) default is '20:00'
+* -timeZone: (optional) default is 'America/Los_Angeles'
+* -incrementalProtectionSlaTimeMins: (optional) default is 60
 * -fullProtectionSlaTimeMins: (optional) default is 120
-* -enableIndexing: (optional) default is disabled
-* -cloudArchiveDirect: (optional) default is false
-* -storageDomainName: (optional) default is 'DefaultStorageDomain' (or 'Direct_Archive_Viewbox' for cloud archive direct jobs)
-
-## Selecting Volumes
-
-In the absense of any volume names or volume list provided in the command line, the entire netapp will be auto protected.
-
-You can auto protect all volumes of an SVM by including it in the list of volumes to protect (e.g. `-volumeName SVM0`).
-
-You can protect individual volumes by specifying SVM:volume (e.g. `-volumeName SVM0:vol1`)
+* -enableIndexing: (optional) disabled by default
+* -cloudArchiveDirect: (optional) use cloud archive direct
+* -storageDomainName: (optional) defaul is 'DefaultStorageDomain'
+* -paused: (optional) pause future runs
+* -encrypted: (optional) use inflight encryption
+* -incrementalsnapshotprefix: (optional) prefix of Netapp snapshot name
+* -fullsnapshotprefix: (optional) prefix of Netapp snapshot name
