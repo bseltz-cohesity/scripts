@@ -34,7 +34,7 @@ param(
     [Parameter()][switch]$sync,                         # perform manual sync now
     [Parameter()][switch]$finalize,                     # finalize migration
     [Parameter()][switch]$showAll,                      # also show completed tasks
-    [Parameter()][int]$daysBack = 7,                    # days back for showAll
+    [Parameter()][int]$daysBack = 30,                   # days back to look
     [Parameter()][string]$name = '',                    # task name
     [Parameter()][string]$filter = '',                  # task name search filter
     [Parameter()][string]$id = '',                      # task id
@@ -104,13 +104,12 @@ if($targetDB -ne ''){
 $taskIds = @()
 $sourceNames = @{}
 $entities = $null
+$daysBackUsecs = timeAgo $daysBack days
 
 if(!$init){
-    if($showAll){
-        $daysBackUsecs = timeAgo $daysBack days
-        $allmigrations = (api get -v2 "data-protect/recoveries?snapshotEnvironments=kSQL&recoveryActions=RecoverApps&startTimeUsecs=$daysBackUsecs").recoveries
-    }else{
-        $allmigrations = (api get -v2 "data-protect/recoveries?status=OnHold,Running&snapshotEnvironments=kSQL&recoveryActions=RecoverApps").recoveries
+    $allmigrations = (api get -v2 "data-protect/recoveries?snapshotEnvironments=kSQL&recoveryActions=RecoverApps&startTimeUsecs=$daysBackUsecs").recoveries
+    if(! $showAll){
+        $allmigrations = $allmigrations | Where-Object {$_.status -eq 'OnHold' -or $_.status -eq 'Running'}
     }
     $tasks = api get "/restoretasks?restoreTypes=kRestoreApp&startTimeUsecs=$(timeAgo $daysBack days)"
 }
@@ -348,7 +347,7 @@ foreach($s in $sourceDBs){
         }
     }
     if($allmigrations -and !$init){
-        $migrations = $allmigrations.clone()
+        $migrations = $allmigrations #.clone()
         if($name -ne ''){
             $migrations = $migrations | Where-Object name -eq $name
         }
@@ -368,7 +367,7 @@ foreach($s in $sourceDBs){
                                                         $_.mssqlParams.recoverAppParams[0].objectInfo.name -eq "$($latestdb.vmDocument.objectId.entity.sqlEntity.instanceName)/$($latestdb.vmDocument.objectId.entity.sqlEntity.databaseName)")}
             }
         }
-        if($targetDB -ne '' -and $targetServer -ne ''){
+        if($targetDB -ne '' -or $targetServer -ne ''){
             if($migrations){
                 if($targetDB -match '/'){
                     $thisTargetInstance, $thisTargetDB = $targetDB.Split('/')
