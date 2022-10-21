@@ -94,9 +94,11 @@ foreach($server in $servers){
             };
             'forceRegister' = $True
         }
+        Write-Host ": registering as Physical" -NoNewline
         $result = api post /backupsources $newSource -quiet
         if($result.entity.id){
             $entityId = $result.entity.id
+            Start-Sleep 10
         }else{
             Write-Host ": failed to register" -ForegroundColor Yellow
             continue
