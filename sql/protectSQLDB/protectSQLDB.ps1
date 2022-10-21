@@ -47,8 +47,9 @@ if(!$db){
 $dbId = $db.protectionSource.id
 
 $job.sourceIds = @(($job.sourceIds + $serverId) | Sort-Object -Unique)
+
 if(! $job.PSObject.Properties['sourceSpecialParameters']){
-    setApiProperty -object $job -name 'sourceSpecialParameters' -value = @()
+    setApiProperty -object $job -name 'sourceSpecialParameters' -value @()
 }
 $sourceSpecialParameter = $job.sourceSpecialParameters | Where-Object {$_.sourceId -eq $serverId }
 if(!$sourceSpecialParameter){
