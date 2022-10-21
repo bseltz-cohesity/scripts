@@ -92,6 +92,39 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
+# demand parameters for init mode
+if($init -or $showPaths){
+    if('' -eq $sourceServer){
+        Write-Host "-sourceServer is required" -ForegroundColor Yellow
+        exit 1
+    }
+    if('' -eq $sourceDB){
+        Write-Host "-sourceDB is required" -ForegroundColor Yellow
+        exit 1
+    }
+}
+if($init){
+    if('' -eq $targetServer){
+        Write-Host "-targetServer is required" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+# handle alternate secondary data file locations
+$secondaryFileLocation = @()
+if($ndfFolders){
+    if($ndfFolders -is [hashtable]){
+        foreach ($key in $ndfFolders.Keys){
+            $secondaryFileLocation += @{'filePattern' = $key; 'targetDirectory' = $ndfFolders[$key]}
+        }
+    }
+}
+
+$isAutoSyncEnabled = $True
+if($manualsync){
+    $isAutoSyncEnabled = $False
+}
+
 $noTargetDBSpecified = $True
 if($targetDB -ne ''){
     $noTargetDBSpecified = $False
@@ -114,6 +147,15 @@ if(!$init){
     $tasks = api get "/restoretasks?restoreTypes=kRestoreApp&startTimeUsecs=$(timeAgo $daysBack days)"
 }
 
+$sqlSources = api get protectionSources/registrationInfo?environments=kSQL
+if($sourceServer -ne ''){
+    $sqlSource = $sqlSources.rootNodes | Where-Object {$_.rootNode.name -eq $sourceServer}
+    if(! $sqlSource){
+        Write-Host "sourceServer $sourceServer not found" -ForegroundColor Yellow
+        exit
+    }
+}
+
 foreach($s in $sourceDBs){
     $sourceDB = [string]$s
     if($sourceDBs.Count -gt 1){
@@ -121,38 +163,6 @@ foreach($s in $sourceDBs){
     }
     if($targetDB -eq ''){
         $targetDB = $sourceDB
-    }
-    # demand parameters for init mode
-    if($init -or $showPaths){
-        if('' -eq $sourceServer){
-            Write-Host "-sourceServer is required" -ForegroundColor Yellow
-            exit 1
-        }
-        if('' -eq $sourceDB){
-            Write-Host "-sourceDB is required" -ForegroundColor Yellow
-            exit 1
-        }
-    }
-    if($init){
-        if('' -eq $targetServer){
-            Write-Host "-targetServer is required" -ForegroundColor Yellow
-            exit 1
-        }
-    }
-
-    $isAutoSyncEnabled = $True
-    if($manualsync){
-        $isAutoSyncEnabled = $False
-    }
-
-    # handle alternate secondary data file locations
-    $secondaryFileLocation = @()
-    if($ndfFolders){
-        if($ndfFolders -is [hashtable]){
-            foreach ($key in $ndfFolders.Keys){
-                $secondaryFileLocation += @{'filePattern' = $key; 'targetDirectory' = $ndfFolders[$key]}
-            }
-        }
     }
 
     # handle source instance name e.g. instance/dbname
@@ -165,18 +175,17 @@ foreach($s in $sourceDBs){
         $sourceInstance = 'MSSQLSERVER'
     }
 
-    if($init -or $showPaths -or ($sourceDB -ne '' -and $sourceServer -ne '')){
+    if($init -or $showPaths){
         # search for database to clone
         $searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&entityTypes=kVMware&vmName=$sourceInstance/$sourceDB"
 
         # narrow the search results to the correct source server
         $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer } | `
-                                        Where-Object {$_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB } | `
-                                        Where-Object {$_.vmDocument.objectName -eq "$sourceInstance/$sourceDB"}
+                                          Where-Object {$_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB } | `
+                                          Where-Object {$_.vmDocument.objectName -eq "$sourceInstance/$sourceDB"}
 
         if($null -eq $dbresults){
             Write-Host "Database $sourceInstance/$sourceDB on Server $sourceServer Not Found" -ForegroundColor Yellow
-            # exit
             continue
         }
 
@@ -185,7 +194,6 @@ foreach($s in $sourceDBs){
 
         if($null -eq $latestdb){
             Write-Host "Database $sourceInstance/$sourceDB on Server $sourceServer Not Found" -ForegroundColor Yellow
-            # exit
             continue
         }
 
@@ -357,14 +365,20 @@ foreach($s in $sourceDBs){
         if($filter -ne ''){
             $migrations = $migrations | Where-Object name -match $filter
         }
-        if($sourceDB -ne '' -and $sourceServer -ne ''){
+        if($sourceDB -ne ''){
             if($migrations){
                 $migrations = $migrations | Where-Object {($_.mssqlParams.PSObject.Properties['objects'] -and
-                                                        $_.mssqlParams.objects[0].objectInfo.sourceId -eq $latestdb.vmDocument.objectId.entity.sqlEntity.ownerId -and 
-                                                        $_.mssqlParams.objects[0].objectInfo.name -eq "$($latestdb.vmDocument.objectId.entity.sqlEntity.instanceName)/$($latestdb.vmDocument.objectId.entity.sqlEntity.databaseName)") -or
-                                                        ($_.mssqlParams.recoverAppParams[0].PSObject.Properties['objectInfo'] -and
-                                                        $_.mssqlParams.recoverAppParams[0].hostInfo.name -eq $sourceServer -and
-                                                        $_.mssqlParams.recoverAppParams[0].objectInfo.name -eq "$($latestdb.vmDocument.objectId.entity.sqlEntity.instanceName)/$($latestdb.vmDocument.objectId.entity.sqlEntity.databaseName)")}
+                                                           $_.mssqlParams.objects[0].objectInfo.name -eq "$sourceInstance/$sourceDB") -or
+                                                          ($_.mssqlParams.recoverAppParams[0].PSObject.Properties['objectInfo'] -and
+                                                           $_.mssqlParams.recoverAppParams[0].objectInfo.name -eq "$sourceInstance/$sourceDB")}
+            }
+        }
+        if($sourceServer -ne ''){
+            if($migrations){
+                $migrations = $migrations | Where-Object {($_.mssqlParams.PSObject.Properties['objects'] -and
+                                                           $_.mssqlParams.objects[0].objectInfo.sourceId -eq $sqlSource.rootNode.id) -or
+                                                          ($_.mssqlParams.recoverAppParams[0].PSObject.Properties['objectInfo'] -and
+                                                           $_.mssqlParams.recoverAppParams[0].hostInfo.name -eq $sourceServer)}
             }
         }
         if($targetDB -ne '' -or $targetServer -ne ''){
