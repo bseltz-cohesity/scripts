@@ -36,6 +36,7 @@ Place both files in a folder together and run the main script like so:
 * -t, --thismonth: (optional) set date range to this month
 * -l, --lastmonth: (optional) set date range to last month
 * -y, --days: (optional) set date range to last X days (default is 7)
+* -hr, --hours: (optional) set date range to last X hours
 * -p, --pagesize: (optional) maximum number of records per query (default is 10000)
 * -n, --units: (optional) GiB or MiB (default is MiB)
 

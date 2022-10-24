@@ -16,6 +16,7 @@ parser.add_argument('-e', '--enddate', type=str, default='')
 parser.add_argument('-t', '--thismonth', action='store_true')
 parser.add_argument('-l', '--lastmonth', action='store_true')
 parser.add_argument('-y', '--days', type=int, default=7)
+parser.add_argument('-hr', '--hours', type=int, default=0)
 parser.add_argument('-p', '--pagesize', type=int, default=10000)
 parser.add_argument('-n', '--units', type=str, choices=['MiB', 'GiB'], default='MiB')
 
@@ -28,6 +29,7 @@ enddate = args.enddate
 thismonth = args.thismonth
 lastmonth = args.lastmonth
 days = args.days
+hours = args.hours
 pagesize = args.pagesize
 units = args.units
 
@@ -74,6 +76,9 @@ elif thismonth:
 elif lastmonth:
     uStart = dateToUsecs(lastCalendarMonth)
     uEnd = dateToUsecs(endofLastMonth)
+elif hours > 0:
+    uStart = timeAgo(hours, 'hours')
+    uEnd = dateToUsecs(now)
 else:
     uStart = timeAgo(days, 'days')
     uEnd = dateToUsecs(now)
