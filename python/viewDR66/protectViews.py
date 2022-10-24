@@ -16,7 +16,7 @@ parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-n', '--viewname', action='append', type=str)
 parser.add_argument('-l', '--viewlist', type=str, default=None)
-parser.add_argument('-p', '--policyname', type=str, default=None)
+parser.add_argument('-p', '--policyname', type=str, required=True)
 
 args = parser.parse_args()
 
@@ -90,7 +90,8 @@ for job in jobs['protectionGroups']:
     updateJob = False
     for viewname in viewnames:
         jobviewnames = [n['name'].lower() for n in job['viewParams']['objects']]
-        if viewname in jobviewnames:
+        # print(jobviewnames)
+        if viewname.lower() in jobviewnames:
             updateJob = True
 
     if updateJob is True:
