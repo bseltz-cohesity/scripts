@@ -37,6 +37,22 @@ Place all files in a folder together. And run the script like so:
 # end example
 ```
 
+To exclude volumes that contain the words 'scratch' or 'temp':
+
+```powershell
+# example
+./protectNetapp.ps1 -vip mycluster `
+                    -username myuser `
+                    -domain mydomain.net `
+                    -policyName 'My Policy' `
+                    -jobName 'My New Job' `
+                    -timeZone 'America/New_York' `
+                    -enableIndexing `
+                    -netappSource mynetapp `
+                    -vexString scratch, junk
+# end example
+```
+
 ## Authentication Parameters
 
 * -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
@@ -62,6 +78,8 @@ Place all files in a folder together. And run the script like so:
 * -inclusionList: (optional) text file list of paths to include
 * -exclusions: (optional) one or more exclusion paths (comma separated)
 * -exclusionList: (optional) text file list of exclusion paths
+* -vexString: (optional) one or more match strings to exclude volumes (comma separated)
+* -vexList: (optional) text file of match strings to exclude volumes (one per line)
 
 ## New Job Parameters
 
