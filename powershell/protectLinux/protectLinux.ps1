@@ -40,7 +40,8 @@ param (
     [Parameter()][string]$postScript,
     [Parameter()][string]$postScriptArgs = '',
     [Parameter()][int]$postScriptTimeout = 900,
-    [Parameter()][switch]$paused
+    [Parameter()][switch]$paused,
+    [Parameter()][switch]$allLocalDrives
 )
 
 $continueOnError = $True
@@ -81,8 +82,11 @@ if('' -ne $inclusionList){
         exit
     }
 }
-if(! $includePaths){
+if(! $includePaths -and ! $allLocalDrives){
     $includePaths += '/'
+}
+if($allLocalDrives){
+    $includePaths += '$ALL_LOCAL_DRIVES'
 }
 
 # gather exclusion list

@@ -99,6 +99,7 @@ Processing servers...
 * -skipNestedMountPointTypes: (optional) (6.4 and above) comma separated list of mount point types to skip (e.g. nfs, xfs)
 * -replaceRules: (optional) if omitted, inclusions/exclusions are appended to existing server rules (if any)
 * -allServers: (optional) inclusions/exclusions are applied to all servers in the job
+* -allLocalDrives: (optional) backup all local volumes
 
 ## New Job Parameters
 
