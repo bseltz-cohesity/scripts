@@ -357,10 +357,10 @@ foreach($sourceId in @([array]$sourceIds + [array]$newSourceIds) | Sort-Object -
         # update params
         $job.physicalParams.fileProtectionTypeParams.objects = @($job.physicalParams.fileProtectionTypeParams.objects | Where-Object id -ne $sourceId) + $params
     }
+}
 
-    if($True -eq $newJob){
-        $null = api post -v2 "data-protect/protection-groups" $job
-    }else{
-        $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
-    }
+if($True -eq $newJob){
+    $null = api post -v2 "data-protect/protection-groups" $job
+}else{
+    $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
 }
