@@ -1,13 +1,17 @@
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, # Cohesity cluster to connect to
-    [Parameter(Mandatory = $True)][string]$username, #cohesity username
-    [Parameter()][string]$domain = 'local',  # local or AD domain
-    [Parameter()][switch]$useApiKey,
-    [Parameter()][string]$password = $null,
-    [Parameter()][string]$mfaCode = $null,
-    [Parameter()][switch]$emailMfaCode,
-    [Parameter()][ValidateSet('KiB','MiB','GiB','TiB')][string]$unit = 'MiB',
+    [Parameter()][string]$vip = 'helios.cohesity.com',  # the cluster to connect to (DNS name or IP)
+    [Parameter()][string]$username = 'helios',          # username (local or AD)
+    [Parameter()][string]$domain = 'local',             # local or AD domain
+    [Parameter()][switch]$useApiKey,                    # use API key for authentication
+    [Parameter()][string]$password,                     # optional password
+    [Parameter()][switch]$noPrompt,                     # do not prompt for password
+    [Parameter()][string]$tenant,                       # org to impersonate
+    [Parameter()][switch]$mcm,                          # connect through mcm
+    [Parameter()][string]$mfaCode = $null,              # mfa code
+    [Parameter()][switch]$emailMfaCode,                 # send mfa code via email
+    [Parameter()][string]$clusterName = $null,          # cluster to connect to via helios/mcm
+    [Parameter()][ValidateSet('KiB','MiB','GiB','TiB','MB','GB','TB')][string]$unit = 'MiB',
     [Parameter()][string]$smtpServer, # outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, # outbound smtp port
     [Parameter()][array]$sendTo, # send to address
@@ -18,19 +22,26 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-if($useApiKey){
-    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
-}else{
-    if($emailMfaCode){
-        apiauth -vip $vip -username $username -domain $domain -password $password -emailMfaCode
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
     }else{
-        apiauth -vip $vip -username $username -domain $domain -password $password -mfaCode $mfaCode
+        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
     }
 }
 
-$conversion = @{'Kib' = 1024; 'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
+
+$conversion = @{'Kib' = 1024; 'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024; 'MB' = 1000 * 1000; 'GB' = 1000 * 1000 * 1000; 'TB' = 1000 * 1000 * 1000}
 function toUnits($val){
-    return "{0:n2}" -f ($val/($conversion[$unit]))
+    return "{0:n1}" -f ($val/($conversion[$unit]))
 }
 
 $cluster = api get cluster
@@ -157,7 +168,8 @@ $html += "</span>
     <th>Job/View Name</th>
     <th>Tenant</th>
     <th>Environment</th>
-    <th>Local/Replicated</th>
+    <th>Origination</th>
+    <th>Storage Target</th>
     <th>$unit Logical</th>
     <th>$unit Ingested</th>
     <th>$unit Consumed</th>
@@ -168,12 +180,25 @@ $html += "</span>
     <th>Reduction</th>
 </tr>"
 
-"Job/View Name,Tenant,Environment,Local/Replicated,$unit Logical,$unit Ingested,$unit Consumed,$unit Written,$unit Unique,Dedup Ratio,Compression,Reduction" | Out-File -FilePath $csvFile
+"Job/View Name,Tenant,Environment,Origination,Storage Target,$unit Logical,$unit Ingested,$unit Consumed,$unit Written,$unit Unique,Dedup Ratio,Compression,Reduction" | Out-File -FilePath $csvFile
 
 $jobs = api get protectionJobs?allUnderHierarchy=true
+$vaults = api get vaults | Where-Object {$_.usageType -eq 'kArchival'}
+
+$nowMsecs = [int64]((dateToUsecs) / 1000)
+$monthAgoMsecs = [int64]((timeAgo 1 month) / 1000)
+$vaultStats = @()
+foreach($vault in $vaults){
+    $externalTargetStats = api get "reports/dataTransferToVaults?endTimeMsecs=$nowMsecs&startTimeMsecs=$monthAgoMsecs&vaultIds=$($vault.id)"
+    if($externalTargetStats -and $externalTargetStats.PSObject.Properties['dataTransferSummary'] -and $externalTargetStats.dataTransferSummary.Count -gt 0){
+        $vaultStats = @($vaultStats + @{
+            'vaultName' = $vault.name
+            'stats' = $externalTargetStats
+        })
+    }
+}
 
 function processStats($stats, $name, $environment, $location, $tenant){
-        # write-host ($stats.statsList[0].stats | ConvertTo-Json)
         $logicalBytes = $stats.statsList[0].stats.totalLogicalUsageBytes
         $dataIn = $stats.statsList[0].stats.dataInBytes
         $dataInAfterDedup = $stats.statsList[0].stats.dataInBytesAfterDedup
@@ -200,10 +225,11 @@ function processStats($stats, $name, $environment, $location, $tenant){
 
         Write-Host ("{0,35}: {1,11:f2} {2}" -f $name, $consumption, $unit)
 
-        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}""" -f $name,
+        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}""" -f $name,
                                                  $tenant,
                                                  $environment,
                                                  $location,
+                                                 'Local',
                                                  $logical,
                                                  $dataInUnits,
                                                  $consumption,
@@ -223,11 +249,13 @@ function processStats($stats, $name, $environment, $location, $tenant){
         <td>{8}</td>
         <td>{9}</td>
         <td>{10}</td>
-        <td>{10}</td>
+        <td>{11}</td>
+        <td>{12}</td>
         </tr>" -f $name,
                   $tenant,
                   $environment,
                   $location,
+                  'Local',
                   $logical,
                   $dataInUnits,
                   $consumption,
@@ -239,9 +267,53 @@ function processStats($stats, $name, $environment, $location, $tenant){
     
 }
 
+function processExternalStats($vaultName, $storageConsumed, $name, $environment, $location, $tenant){
+    $consumption = toUnits $storageConsumed
+
+    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}""" -f $name,
+                                             $tenant,
+                                             $environment,
+                                             $location,
+                                             $vaultName,
+                                             '',
+                                             '',
+                                             $consumption,
+                                             '',
+                                             '',
+                                             '',
+                                             '',
+                                             '' | Out-File -FilePath $csvFile -Append
+    return ("<td>{0}</td>
+    <td>{1}</td>
+    <td>{2}</td>
+    <td>{3}</td>
+    <td>{4}</td>
+    <td>{5}</td>
+    <td>{6}</td>
+    <td>{7}</td>
+    <td>{8}</td>
+    <td>{9}</td>
+    <td>{10}</td>
+    <td>{10}</td>
+    <td>{11}</td>
+    </tr>" -f $name,
+              $tenant,
+              $environment,
+              $location,
+              $vaultName,
+              '-',
+              '-',
+              $consumption,
+              '-',
+              '-',
+              '-',
+              '-',
+              '-')
+}
 
 Write-Host "  Local ProtectionJobs..."
 foreach($job in $jobs | Sort-Object -Property name){
+    $stats = $null
     if($job.PSObject.Properties['tenantId']){
         $tenant = $job.tenantId.Substring(0, $job.tenantId.length - 1)
     }else{
@@ -257,11 +329,22 @@ foreach($job in $jobs | Sort-Object -Property name){
             $html += processStats $stats $job.name $job.environment.subString(1) 'Local' $tenant
         }
     }
+    foreach($vaultStat in $vaultStats){
+        foreach($vault in $vaultStat.stats.dataTransferSummary){
+            $vaultName = $vault.vaultName
+            $thisJobStats = $vault.dataTransferPerProtectionJob | Where-Object {$_.protectionJobName -eq $job.name}
+            if($thisJobStats){
+                $storageConsumed = $thisJobStats[0].storageConsumed
+                $html += processExternalStats $vaultName $storageConsumed $job.name $job.environment.subString(1) 'Local' $tenant
+            }
+        }
+    }
 }
 
 Write-Host "  Views..."
 $views = api get views?allUnderHierarchy=true
 foreach($view in $views.views | Sort-Object -Property name){
+    $stats = $null
     if($view.PSObject.Properties['tenantId']){
         $tenant = $view.tenantId.Substring(0, $view.tenantId.length - 1)
     }else{
@@ -277,6 +360,7 @@ foreach($view in $views.views | Sort-Object -Property name){
 
 Write-Host "  Replicated Jobs..."
 foreach($job in $jobs | Sort-Object -Property name){
+    $stats = $null
     if($job.PSObject.Properties['tenantId']){
         $tenant = $job.tenantId.Substring(0, $job.tenantId.length - 1)
     }else{
