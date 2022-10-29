@@ -1,8 +1,8 @@
-# Gather Restore Report using Python
+# Gather Audit Report using Python
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This Python script generates a restore report and outputs to HTML and CSV files.
+This Python script generates a report of audit log entries outputs to HTML and CSV files.
 
 ## Download the script
 
@@ -10,15 +10,15 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/python/restoreReport/restoreReport.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/python/auditReport/auditReport.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-chmod +x restoreReport.py
+chmod +x auditReport.py
 # end download commands
 ```
 
 ## Components
 
-* restoreReport.py: the main powershell script
+* auditReport.py: the main powershell script
 * pyhesity.py: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
@@ -26,23 +26,23 @@ Place both files in a folder together and run the main script like so:
 To connect directly to one cluster:
 
 ```bash
-./restoreReport.py -v mycluster \
-                   -u myusername \
-                   -d mydomain.net
+./auditReport.py -v mycluster \
+                 -u myusername \
+                 -d mydomain.net
 ```
 
 Or to connect through Helios and report on all clusters:
 
 ```bash
-./restoreReport.py -u myusername@mydomain.net
+./auditReport.py -u myusername@mydomain.net
 ```
 
 Or to connect through Helios and report on specific clusters:
 
 ```bash
-./restoreReport.py -u myusername@mydomain.net \
-                   -c cluster1 \
-                   -c cluster2
+./auditReport.py -u myusername@mydomain.net \
+                 -c cluster1 \
+                 -c cluster2
 ```
 
 ## Authentication Parameters
