@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Storage Report for Python"""
+"""Audit Log Report for Python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -86,7 +86,7 @@ else:
 
 print('Collecting report data...')
 
-title = 'Restore Report (%s - %s)' % (start, end)
+title = 'Audit Log Report (%s - %s)' % (start, end)
 
 filepart = ''
 if len(clusternames) == 1:
