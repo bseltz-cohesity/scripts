@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Storage Report for Python"""
+"""Restore Report for Python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
