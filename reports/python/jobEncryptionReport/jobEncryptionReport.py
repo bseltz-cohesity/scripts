@@ -293,7 +293,7 @@ for clustername in clusternames:
                         <td>%s</td>
                         <td class="wrap">%s</td>
                         </tr>''' % (clustername, job['name'], job['environment'][1:], 'Archive', vault[0]['name'], archiveEncrypted)
-                csv.write('"%s","%s","%s","%s","%s","%s"\n' % (clustername, job['name'], job['environment'][1:], targetType, sdname, encrypted))
+                csv.write('"%s","%s","%s","%s","%s","%s"\n' % (clustername, job['name'], job['environment'][1:], 'Archive', vault[0]['name'], archiveEncrypted))
 
         # data is stored in cloud snapshot storage
         elif sd is None or len(sd) == 0:
