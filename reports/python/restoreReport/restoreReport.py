@@ -93,7 +93,7 @@ if len(clusternames) == 1:
     filepart = '-%s' % clusternames[0]
 
 htmlfileName = '%s/restoreReport%s-%s-%s.html' % (folder, filepart, start, end)
-csvfileName = '%s/storageReport%s-%s-%s.csv' % (folder, filepart, start, end)
+csvfileName = '%s/restoreReport%s-%s-%s.csv' % (folder, filepart, start, end)
 csv = codecs.open(csvfileName, 'w', 'utf-8')
 csv.write('"Cluster","Date","Task","Object","Type","Target","Status","Duration (Min)","User"\n')
 
@@ -279,8 +279,8 @@ for clustername in clusternames:
     if mcm or vip.lower() == 'helios.cohesity.com':
         heliosCluster(clustername)
 
-    restores = api('get', '/restoretasks?_includeTenantInfo=true&endTimeUsecs=%s&restoreTypes=kCloneView&restoreTypes=kConvertAndDeployVMs&restoreTypes=kCloneApp&restoreTypes=kCloneVMs&restoreTypes=kDeployVMs&restoreTypes=kMountFileVolume&restoreTypes=kMountVolumes&restoreTypes=kSystem&restoreTypes=kRecoverApp&restoreTypes=kRecoverSanVolume&restoreTypes=kRecoverVMs&restoreTypes=kRestoreFiles&restoreTypes=kRecoverVolumes&restoreTypes=kDownloadFiles&restoreTypes=kRecoverEmails&restoreTypes=kRecoverDisks&startTimeUsecs=%s&targetType=kLocal' % (uEnd, uStart))
-
+    # restores = api('get', '/restoretasks?_includeTenantInfo=true&endTimeUsecs=%s&restoreTypes=kCloneView&restoreTypes=kConvertAndDeployVMs&restoreTypes=kCloneApp&restoreTypes=kCloneVMs&restoreTypes=kDeployVMs&restoreTypes=kMountFileVolume&restoreTypes=kMountVolumes&restoreTypes=kSystem&restoreTypes=kRecoverApp&restoreTypes=kRecoverSanVolume&restoreTypes=kRecoverVMs&restoreTypes=kRestoreFiles&restoreTypes=kRecoverVolumes&restoreTypes=kDownloadFiles&restoreTypes=kRecoverEmails&restoreTypes=kRecoverDisks&startTimeUsecs=%s&targetType=kLocal' % (uEnd, uStart))
+    restores = api('get', '/restoretasks?_includeTenantInfo=true&endTimeUsecs=%s&startTimeUsecs=%s&targetType=kLocal' % (uEnd, uStart))
     for restore in restores:
         taskId = restore['restoreTask']['performRestoreTaskState']['base']['taskId']
         taskName = restore['restoreTask']['performRestoreTaskState']['base']['name']
