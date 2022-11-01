@@ -3,17 +3,41 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,
-    [Parameter(Mandatory = $True)][string]$username,
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
     [Parameter()][string]$domain = 'local',
-    [Parameter(Mandatory = $True)][string]$object
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
+    [Parameter(Mandatory = $True)][string]$object,
+    [Parameter()][switch]$returnJobName
 )
 
-### source the cohesity-api helper code
-. ./cohesity-api
+# source the cohesity-api helper code
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt -quiet
+
+# select helios/mcm managed cluster
+if($USING_HELIOS -and !$region){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit 1
+}
 
 # get protection jobs
 $jobs = api get protectionJobs
@@ -58,7 +82,10 @@ foreach($node in $global:nodes){
         
         # report result
         if($environment -ne 'kAgent'){
-            "({0}) {1} ({2}) {3}" -f $environment, $name, $sourceId, $protectionStatus
+            if($returnJobName){
+                return $($job.name) 
+            }
+            Write-Host ("({0}) {1} ({2}) {3}" -f $environment, $name, $sourceId, $protectionStatus)
             $foundNode = $True
             $foundIds += $sourceId
         }
@@ -67,5 +94,8 @@ foreach($node in $global:nodes){
 
 # object not found
 if(! $foundNode){
-    "$object not found"
+    if($returnJobName){
+        return $null
+    }
+    Write-Host "$object not found"
 }
