@@ -13,7 +13,8 @@ param (
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName,
     [Parameter()][array]$serverName,
-    [Parameter()][string]$serverList
+    [Parameter()][string]$serverList,
+    [Parameter()][switch]$force
 )
 
 # gather list from command line params and file
@@ -60,6 +61,11 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
+$forceRegister = $false
+if($force){
+    $forceRegister = $True
+}
+
 $registeredSources = api get "protectionSources/registrationInfo"
 
 foreach($server in $servers){
@@ -92,7 +98,7 @@ foreach($server in $servers){
             'throttlingPolicy' = @{
                 'isThrottlingEnabled' = $false
             };
-            'forceRegister' = $True
+            'forceRegister' = $forceRegister
         }
         Write-Host ": registering as Physical" -NoNewline
         $result = api post /backupsources $newSource -quiet
