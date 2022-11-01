@@ -15,7 +15,8 @@ param (
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName,
     [Parameter(Mandatory = $True)][string]$object,
-    [Parameter()][switch]$returnJobName
+    [Parameter()][switch]$returnJobName,
+    [Parameter()][string]$jobType
 )
 
 # source the cohesity-api helper code
@@ -72,8 +73,13 @@ foreach($node in $global:nodes){
     if($name -like "*$($object)*" -and $sourceId -notin $foundIds){
         $environment = $node.protectionSource.environment
 
+        if($jobType){
+            $jobs = $jobs | Where-Object {$_.environment -match $jobType}
+        }
+        
         # find job that protects this node
         $job = $jobs | Where-Object {$_.sourceIds -eq $sourceId }
+
         if($job){
             $protectionStatus = "is protected by $($job.name)"
         }else{

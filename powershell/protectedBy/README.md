@@ -50,4 +50,5 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 ## Other Parameters
 
 * -object: name of object to inspect
+* -jobType: (optional) limit jobs returned to matching type, e.g. -jobType sql
 * -returnJobName: (optional) return job name to the pipeline
