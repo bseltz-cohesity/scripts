@@ -286,10 +286,11 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
 
 print("\n  Unprotected Views...")
 views = api('get', 'views?allUnderHierarchy=true')
-for view in sorted([v for v in views['views'] if 'viewProtection' not in v], key=lambda view: view['name'].lower()):
-    stats = api('get', 'stats/consumers?consumerType=kViews&consumerIdList=%s' % view['viewId'])
-    if 'statsList' in stats and stats['statsList'] is not None:
-        html += processStats(stats, view['name'], 'View', 'Local')
+if 'views' in views and len(views['views']) > 0:
+    for view in sorted([v for v in views['views'] if 'viewProtection' not in v], key=lambda view: view['name'].lower()):
+        stats = api('get', 'stats/consumers?consumerType=kViews&consumerIdList=%s' % view['viewId'])
+        if 'statsList' in stats and stats['statsList'] is not None:
+            html += processStats(stats, view['name'], 'View', 'Local')
 
 print("\n  Replicated ProtectionJobs...")
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
