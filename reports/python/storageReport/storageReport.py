@@ -31,7 +31,8 @@ apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=
 print('Collecting report data...')
 
 cluster = api('get', 'cluster')
-
+remotes = api('get', 'remoteClusters')
+jobs = api('get', 'protectionJobs')
 title = 'Storage Report for %s' % cluster['name']
 
 now = datetime.now()
@@ -39,7 +40,7 @@ datestring = now.strftime("%Y-%m-%d")
 htmlfileName = '%s/storageReport-%s-%s.html' % (folder, cluster['name'], datestring)
 csvfileName = '%s/storageReport-%s-%s.csv' % (folder, cluster['name'], datestring)
 csv = codecs.open(csvfileName, 'w', 'utf-8')
-csv.write("Job/View Name,Environment,Local/Replicated,GiB Logical,GiB Ingested,GiB Consumed,Dedup Ratio,Compression,Reduction\n")
+csv.write("Job/View Name,Environment,Local/Replicated,Source Cluster,GiB Logical,GiB Ingested,GiB Consumed,Dedup Ratio,Compression,Reduction\n")
 
 html = '''<html>
 <head>
@@ -210,6 +211,7 @@ html += '''</span>
     <th>Job/View Name</th>
     <th>Environment</th>
     <th>Local/Replicated</th>
+    <th>Source Cluster</th>
     <th>GiB Logical</th>
     <th>GiB Ingested</th>
     <th>GiB Consumed</th>
@@ -220,6 +222,22 @@ html += '''</span>
 
 
 def processStats(stats, name, environment, location):
+    if location == 'Replicated':
+        jobId = stats['statsList'][0]['id']
+        job = [j for j in jobs if j['id'] == jobId]
+        if job is not None and len(job) > 0:
+            jobClusterId = job[0]['policyId'].split(':')[0]
+            remote = [r for r in remotes if int(r['clusterId']) == int(jobClusterId)]
+            # display(remote)
+
+            if remote is not None and len(remote) > 0:
+                sourcecluster = remote[0]['name']
+            else:
+                sourcecluster = 'UNKNOWN'
+        else:
+            sourcecluster = 'UNKNOWN'
+    else:
+        sourcecluster = cluster['name']
     logicalBytes = stats['statsList'][0]['stats'].get('totalLogicalUsageBytes', 0)
     dataIn = stats['statsList'][0]['stats'].get('dataInBytes', 0)
     dataInAfterDedup = stats['statsList'][0]['stats'].get('dataInBytesAfterDedup', 0)
@@ -239,7 +257,7 @@ def processStats(stats, name, environment, location):
     logical = round(float(logicalBytes) / (1024 * 1024 * 1024), 1)
     dataInGiB = round(float(dataIn) / (1024 * 1024 * 1024), 1)
     print('%30s: %11s %s' % (name, consumption, 'GiB'))
-    csv.write('%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (name, environment, location, logical, dataInGiB, consumption, dedup, compression, reduction))
+    csv.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (name, environment, location, sourcecluster, logical, dataInGiB, consumption, dedup, compression, reduction))
     return '''<tr>
     <td>%s</td>
     <td>%s</td>
@@ -250,7 +268,8 @@ def processStats(stats, name, environment, location):
     <td>%s</td>
     <td>%s</td>
     <td>%s</td>
-    </tr>''' % (name, environment, location, logical, dataInGiB, consumption, dedup, compression, reduction)
+    <td>%s</td>
+    </tr>''' % (name, environment, location, sourcecluster, logical, dataInGiB, consumption, dedup, compression, reduction)
 
 
 jobs = api('get', 'protectionJobs?allUnderHierarchy=true')
