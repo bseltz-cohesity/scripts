@@ -81,7 +81,7 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
             print('%s' % job['name'])
 
         endUsecs = nowUsecs
-        while(1):
+        while 1:
             runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&endTimeUsecs=%s&includeTenants=true' % (job['id'], numruns, endUsecs), v=2)
             if len(runs['runs']) > 0:
                 endUsecs = runs['runs'][-1]['localBackupInfo']['startTimeUsecs'] - 1
