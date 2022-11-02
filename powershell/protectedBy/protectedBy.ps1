@@ -16,7 +16,8 @@ param (
     [Parameter()][string]$clusterName,
     [Parameter(Mandatory = $True)][string]$object,
     [Parameter()][switch]$returnJobName,
-    [Parameter()][string]$jobType
+    [Parameter()][string]$jobType,
+    [Parameter()][switch]$quickSearch
 )
 
 # source the cohesity-api helper code
@@ -43,8 +44,10 @@ if(!$cohesity_api.authorized){
 # get protection jobs
 $jobs = api get protectionJobs
 
-# get root protection sources
-$sources = api get protectionSources
+if($jobType){
+    $jobs = $jobs | Where-Object {$_.environment -match $jobType}
+}
+
 $global:nodes = @()
 
 # get flat list of protection source nodes
@@ -58,45 +61,69 @@ function get_nodes($obj){
     }
 }
 
-foreach($source in $sources){
-    get_nodes($source)
-}
-
 $foundNode = $false
 $foundIds = @()
 
-foreach($node in $global:nodes){
-    $name = $node.protectionSource.name
-    $sourceId = $node.protectionSource.id
-
-    # find matching node
-    if($name -like "*$($object)*" -and $sourceId -notin $foundIds){
-        $environment = $node.protectionSource.environment
-
-        if($jobType){
-            $jobs = $jobs | Where-Object {$_.environment -match $jobType}
+if($quickSearch){
+    $search = api get /searchvms?vmName=$object
+    $searchResults = $search.vms | Where-Object {$_.vmDocument.objectName -eq $object -or $_.vmDocument.objectAliases -eq $object}
+    $searchResults = $searchResults | Where-Object {$_.vmDocument.objectId.jobId -in $jobs.id}
+    $versions = @()
+    foreach($searchResult in $searchResults){
+        foreach($version in $searchResult.vmDocument.versions){
+            setApiProperty -object $version -name vmDocument -value $searchResult.vmDocument
+            setApiProperty -object $version -name registeredSource -value $searchResult.registeredSource
+            $versions = @($versions + $version)
         }
-        
-        # find job that protects this node
-        $job = $jobs | Where-Object {$_.sourceIds -eq $sourceId }
-
-        if($job){
-            $protectionStatus = "is protected by $($job.name)"
-        }else{
-            $protectionStatus = 'is unprotected'
+    }
+    $versions = $versions | Sort-Object -Property {$_.instanceId.jobStartTimeUsecs} -Descending
+    if($versions.Count -gt 0){
+        $jobName = $versions[0].vmDocument.jobName
+        $foundNode = $True
+        $job = $jobs | Where-Object {$_.id -eq $version.vmDocument.objectId.jobId}
+        if($returnJobName){
+            return $($job.name) 
         }
-        
-        # report result
-        if($environment -ne 'kAgent'){
-            if($returnJobName){
-                return $($job.name) 
+        Write-Host ("({0}) {1} {3}" -f $job.environment, $job.name)
+    }
+}else{
+    # get root protection sources
+    $sources = api get protectionSources
+
+    foreach($source in $sources){
+        get_nodes($source)
+    }
+
+    foreach($node in $global:nodes){
+        $name = $node.protectionSource.name
+        $sourceId = $node.protectionSource.id
+
+        # find matching node
+        if($name -like "*$($object)*" -and $sourceId -notin $foundIds){
+            $environment = $node.protectionSource.environment
+
+            # find job that protects this node
+            $job = $jobs | Where-Object {$_.sourceIds -eq $sourceId }
+
+            if($job){
+                $protectionStatus = "is protected by $($job.name)"
+            }else{
+                $protectionStatus = 'is unprotected'
             }
-            Write-Host ("({0}) {1} ({2}) {3}" -f $environment, $name, $sourceId, $protectionStatus)
-            $foundNode = $True
-            $foundIds += $sourceId
+            
+            # report result
+            if($environment -ne 'kAgent'){
+                if($returnJobName){
+                    return $($job.name) 
+                }
+                Write-Host ("({0}) {1} ({2}) {3}" -f $environment, $name, $sourceId, $protectionStatus)
+                $foundNode = $True
+                $foundIds += $sourceId
+            }
         }
     }
 }
+
 
 # object not found
 if(! $foundNode){
