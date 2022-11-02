@@ -16,7 +16,8 @@ param (
     [Parameter()][string]$joblist = '',
     [Parameter()][int]$numRuns = 999,
     [Parameter()][switch]$cancelAll,
-    [Parameter()][switch]$cancelOutdated
+    [Parameter()][switch]$cancelOutdated,
+    [Parameter()][switch]$showFinished
 )
 
 
@@ -85,10 +86,10 @@ foreach($job in $jobs | Sort-Object -Property name){
     $thisJobName = $job.name
     if($jobNames.Count -eq 0 -or $thisJobName -in $jobNames){
         "Getting tasks for $thisJobName"
-        $runs = api get "protectionRuns?jobId=$jobId&numRuns=$numRuns&excludeTasks=true" | Where-Object {$_.copyRun.status -notin $finishedStates }
+        $runs = api get "protectionRuns?jobId=$jobId&numRuns=$numRuns&excludeTasks=true" # | Where-Object {$_.copyRun.status -notin $finishedStates }
         foreach($run in $runs){
             $runStartTimeUsecs = $run.backupRun.stats.startTimeUsecs
-            foreach($copyRun in $($run.copyRun | Where-Object {$_.status -notin $finishedStates})){
+            foreach($copyRun in $run.copyRun){ # $($run.copyRun | Where-Object {$_.status -notin $finishedStates})){
                 $startTimeUsecs = $runStartTimeUsecs
                 $copyType = $copyRun.target.type
                 $status = $copyRun.status
@@ -113,42 +114,45 @@ if($runningTasks.Keys.Count -gt 0){
     "----------           --------"
     foreach($startTimeUsecs in ($runningTasks.Keys | Sort-Object)){
         $t = $runningTasks[$startTimeUsecs]
-        "{0}   {1} ({2})" -f (usecsToDate $t.startTimeUsecs), $t.jobName, $t.jobId
-        $run = api get "/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=$($t.startTimeUsecs)&id=$($t.jobId)"
-        $runStartTimeUsecs = $run.backupJobRuns.protectionRuns[0].backupRun.base.startTimeUsecs
-        foreach($task in $run.backupJobRuns.protectionRuns[0].copyRun.activeTasks){
-            if($task.snapshotTarget.type -eq 2){
-
-                $noLongerNeeded = ''
-                $daysToKeep = $task.retentionPolicy.numDaysToKeep
-                $usecsToKeep = $daysToKeep * 1000000 * 86400
-                $timePassed = $nowUsecs - $runStartTimeUsecs
-                if($timePassed -gt $usecsToKeep){
-                    $noLongerNeeded = "NO LONGER NEEDED"
-                }
-                "                       Replication Task ID: {0}  {1}" -f $task.taskUid.objectId, $noLongerNeeded
-                foreach($subTask in $task.activeCopySubTasks | Sort-Object {$_.publicStatus} -Descending){
-                    if($subTask.snapshotTarget.type -eq 2){
-                        if($subTask.publicStatus -eq 'kRunning'){
-                            $pct = $subTask.replicationInfo.pctCompleted
-                        }else{
-                            $pct = 0
-                        }
-                        "                       {0} ({1})`t{2}" -f $subTask.publicStatus, $pct, $subTask.entity.displayName
+        if($t.status -notin $finishedStates){
+            "{0}   {1} ({2})" -f (usecsToDate $t.startTimeUsecs), $t.jobName, $t.jobId
+            $run = api get "/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=$($t.startTimeUsecs)&id=$($t.jobId)"
+            $runStartTimeUsecs = $run.backupJobRuns.protectionRuns[0].backupRun.base.startTimeUsecs
+            foreach($task in $run.backupJobRuns.protectionRuns[0].copyRun.activeTasks){
+                if($task.snapshotTarget.type -eq 2){
+                    $noLongerNeeded = ''
+                    $daysToKeep = $task.retentionPolicy.numDaysToKeep
+                    $usecsToKeep = $daysToKeep * 1000000 * 86400
+                    $timePassed = $nowUsecs - $runStartTimeUsecs
+                    if($timePassed -gt $usecsToKeep){
+                        $noLongerNeeded = "NO LONGER NEEDED"
                     }
-                }
-                if($cancelAll -or ($cancelOutdated -and ($noLongerNeeded -eq "NO LONGER NEEDED"))){
-                    $cancelTaskParams = @{
-                        "jobId"       = $t.jobId;
-                        "copyTaskUid" = @{
-                            "id"                   = $task.taskUid.objectId;
-                            "clusterId"            = $task.taskUid.clusterId;
-                            "clusterIncarnationId" = $task.taskUid.clusterIncarnationId
+                    "                       Replication Task ID: {0}  {1}" -f $task.taskUid.objectId, $noLongerNeeded
+                    foreach($subTask in $task.activeCopySubTasks | Sort-Object {$_.publicStatus} -Descending){
+                        if($subTask.snapshotTarget.type -eq 2){
+                            if($subTask.publicStatus -eq 'kRunning'){
+                                $pct = $subTask.replicationInfo.pctCompleted
+                            }else{
+                                $pct = 0
+                            }
+                            "                       {0} ({1})`t{2}" -f $subTask.publicStatus, $pct, $subTask.entity.displayName
                         }
                     }
-                    $null = api post "protectionRuns/cancel/$($t.jobId)" $cancelTaskParams 
+                    if($cancelAll -or ($cancelOutdated -and ($noLongerNeeded -eq "NO LONGER NEEDED"))){
+                        $cancelTaskParams = @{
+                            "jobId"       = $t.jobId;
+                            "copyTaskUid" = @{
+                                "id"                   = $task.taskUid.objectId;
+                                "clusterId"            = $task.taskUid.clusterId;
+                                "clusterIncarnationId" = $task.taskUid.clusterIncarnationId
+                            }
+                        }
+                        $null = api post "protectionRuns/cancel/$($t.jobId)" $cancelTaskParams 
+                    }
                 }
             }
+        }elseif($showFinished){
+            "{0}   {1} ({2}) {3}" -f (usecsToDate $t.startTimeUsecs), $t.jobName, $t.jobId, $t.status
         }
     }
 }else{

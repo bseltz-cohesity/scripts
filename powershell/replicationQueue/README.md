@@ -49,3 +49,4 @@ Place both files in a folder together and run the main script like so:
 * -numRuns: (optional) number of runs per job to inspect (defaults to 999)
 * -cancelAll: (optional) cancel existing replication tasks
 * -cancelOutdated: (optional) cancel outdated replication tasks
+* -showFinished: (optional) also display completed replications
