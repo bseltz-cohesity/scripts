@@ -84,7 +84,7 @@ if($quickSearch){
         if($returnJobName){
             return $($job.name) 
         }
-        Write-Host ("({0}) {1} {3}" -f $job.environment, $job.name)
+        Write-Host ("({0}) {1}" -f $job.environment, $job.name)
     }
 }else{
     # get root protection sources
