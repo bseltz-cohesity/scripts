@@ -77,15 +77,17 @@ Place both files in a folder together and run the main script like so:
 * -targetServer: (optional) Server name to restore to (defaults to same as sourceServer)
 * -targetInstance: (optional) SQL instance to restore to (defaults to MSSQLSERVER)
 * -mdfFolder: (optional) Location to place the primary data file (e.g. C:\SQLData)
-* -ldfFolder: Location to place the log files (defaults to same as mdfFolder)
-* -ndfFolders: Locations to place various ndf files (see below)
-* -overwrite: Overwrites an existing database (default is no overwrite)
-* -noRecovery: Restore the DB with NORECOVER option (default is to recover)
-* -showPaths: show data/log file paths and exit
-* -useSourcePaths: use same paths to restore to target server
-* -exportFileInfo: export DB file path info and exit (file name is sourceserver.json)
-* -importFileInfo: import DB file path info (use in conjunction with -useSourcePaths)
-* -forceAlternateLocation: populate alternate location params even when target server name is the same
+* -ldfFolder: (optional) Location to place the log files (defaults to same as mdfFolder)
+* -ndfFolders: (optional) Locations to place various ndf files (see below)
+* -overwrite: (optional) Overwrites an existing database (default is no overwrite)
+* -noRecovery: (optional) Restore the DB with NORECOVER option (default is to recover)
+* -showPaths: (optional) show data/log file paths and exit
+* -useSourcePaths: (optional) use same paths to restore to target server
+* -exportFileInfo: (optional) export DB file path info and exit (file name is sourceserver.json)
+* -importFileInfo: (optional) import DB file path info (use in conjunction with -useSourcePaths)
+* -forceAlternateLocation: (optional) populate alternate location params even when target server name is the same
+* -resume: (optional) Resume recovery of previously restored database (left in NORECOVERY mode)
+* -update: short hand for -resume -noRecovery -latest
 
 ## Misc Parameters
 
