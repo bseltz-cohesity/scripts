@@ -280,21 +280,6 @@ for clustername in clusternames:
                 encrypted = True
             else:
                 encrypted = 'Check Cloud Bucket'
-        elif policy is not None and len(policy) > 0 and 'remoteTargetPolicy' in policy[0] and 'archivalTargets' in policy[0]['remoteTargetPolicy'] and len(policy[0]['remoteTargetPolicy']['archivalTargets']) > 0:
-            for archivalTarget in policy[0]['remoteTargetPolicy']['archivalTargets']:
-                archiveEncrypted = 'Check Cloud Bucket'
-                vault = [v for v in vaults if v['id'] == archivalTarget['targetId']]
-                if vault[0]['encryptionPolicy'] != 'kEncryptionNone':
-                    archiveEncrypted = True
-                html += '''<tr><td>%s</td>
-                        <td>%s</td>
-                        <td>%s</td>
-                        <td>%s</td>
-                        <td>%s</td>
-                        <td class="wrap">%s</td>
-                        </tr>''' % (clustername, job['name'], job['environment'][1:], 'Archive', vault[0]['name'], archiveEncrypted)
-                csv.write('"%s","%s","%s","%s","%s","%s"\n' % (clustername, job['name'], job['environment'][1:], 'Archive', vault[0]['name'], archiveEncrypted))
-
         # data is stored in cloud snapshot storage
         elif sd is None or len(sd) == 0:
             targetType = 'Cloud'
@@ -311,6 +296,20 @@ for clustername in clusternames:
                 <td class="wrap">%s</td>
                 </tr>''' % (clustername, job['name'], job['environment'][1:], targetType, sdname, encrypted)
         csv.write('"%s","%s","%s","%s","%s","%s"\n' % (clustername, job['name'], job['environment'][1:], targetType, sdname, encrypted))
+        if policy is not None and len(policy) > 0 and 'remoteTargetPolicy' in policy[0] and 'archivalTargets' in policy[0]['remoteTargetPolicy'] and len(policy[0]['remoteTargetPolicy']['archivalTargets']) > 0:
+            for archivalTarget in policy[0]['remoteTargetPolicy']['archivalTargets']:
+                archiveEncrypted = 'Check Cloud Bucket'
+                vault = [v for v in vaults if v['id'] == archivalTarget['targetId']]
+                if vault[0]['encryptionPolicy'] != 'kEncryptionNone':
+                    archiveEncrypted = True
+                html += '''<tr><td>%s</td>
+                        <td>%s</td>
+                        <td>%s</td>
+                        <td>%s</td>
+                        <td>%s</td>
+                        <td class="wrap">%s</td>
+                        </tr>''' % (clustername, job['name'], job['environment'][1:], 'Archive', vault[0]['name'], archiveEncrypted)
+                csv.write('"%s","%s","%s","%s","%s","%s"\n' % (clustername, job['name'], job['environment'][1:], 'Archive', vault[0]['name'], archiveEncrypted))
 
 html += '''</table>
 </div>
