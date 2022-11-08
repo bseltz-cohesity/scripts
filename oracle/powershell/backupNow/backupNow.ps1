@@ -1,4 +1,4 @@
-# version 2022.09.13
+# version 2022.11.08
 
 # process commandline arguments
 [CmdletBinding()]
@@ -38,7 +38,7 @@ param (
     [Parameter()][int64]$waitMinutesIfRunning = 60,     # give up and exit if existing run is still running
     [Parameter()][int64]$waitForNewRunMinutes = 10,     # give up and exit if new run fails to appear
     [Parameter()][int64]$cancelPreviousRunMinutes = 0,  # cancel previous run if it has been running long
-    [Parameter()][int64]$statusRetries = 10,   # give up waiting for new run to appear
+    [Parameter()][int64]$statusRetries = 30,   # give up waiting for new run to appear
     [Parameter()][switch]$extendedErrorCodes,  # report failure-specific error codes
     [Parameter()][int64]$sleepTimeSecs = 30    # sleep seconds between status queries
 )
@@ -554,6 +554,7 @@ if($wait -or $progress){
     $lastStatus = 'unknown'
     while ($lastStatus -notin $finishedStates){
         Start-Sleep $sleepTimeSecs
+        $bumpStatusCount = $false
         try {
             if($selectedSources.Count -gt 0){
                 $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$startUsecs&numRuns=1000&sourceId=$($selectedSources[0])"
@@ -568,7 +569,8 @@ if($wait -or $progress){
                         $statusRetryCount = 0
                     }
                 }else{
-                    $statusRetryCount += 1
+                    $bumpStatusCount = $True
+                    # $statusRetryCount += 1
                 }
                 try{
                     if($progress){
@@ -588,12 +590,18 @@ if($wait -or $progress){
                         }
                     }
                 }catch{
-                    $statusRetryCount += 1
+                    $bumpStatusCount = $True
+                    # $statusRetryCount += 1
                 }
             }else{
-                $statusRetryCount += 1
+                $bumpStatusCount = $True
+                # $statusRetryCount += 1
             }
         }catch{
+            $bumpStatusCount = $True
+            # $statusRetryCount += 1
+        }
+        if($bumpStatusCount -eq $True){
             $statusRetryCount += 1
         }
         if($statusRetryCount -gt $statusRetries){
