@@ -278,7 +278,8 @@ for clustername in clusternames:
     endTimeUsecs = uEnd
     breakOut = False
     while breakOut is False:
-        logs = api('get', 'audit-logs?endTimeUsecs=%s&count=1000' % endTimeUsecs, v=2)
+        startTimeUsecs = endTimeUsecs - 604800000000
+        logs = api('get', 'audit-logs?startTimeUsecs=%s&endTimeUsecs=%s&count=1000' % (startTimeUsecs, endTimeUsecs), v=2)
         if logs is not None and 'auditLogs' in logs and len(logs['auditLogs']) > 0:
             for log in sorted(logs['auditLogs'], key=lambda lg: lg['timestampUsecs'], reverse=True):
                 if log['timestampUsecs'] < uStart:
