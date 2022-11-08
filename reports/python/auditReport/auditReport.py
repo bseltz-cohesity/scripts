@@ -77,6 +77,8 @@ else:
 start = usecsToDate(uStart, '%Y-%m-%d')
 end = usecsToDate(uEnd, '%Y-%m-%d')
 
+uEnd = uEnd + 86400000000
+
 if mcm or vip.lower() == 'helios.cohesity.com':
     if clusternames is None or len(clusternames) == 0:
         clusternames = [c['name'] for c in heliosClusters()]
@@ -276,7 +278,7 @@ for clustername in clusternames:
     endTimeUsecs = uEnd
     breakOut = False
     while breakOut is False:
-        logs = api('get', 'audit-logs?endTimeUsecs=%s' % endTimeUsecs, v=2)
+        logs = api('get', 'audit-logs?endTimeUsecs=%s&count=1000' % endTimeUsecs, v=2)
         if logs is not None and 'auditLogs' in logs and len(logs['auditLogs']) > 0:
             for log in sorted(logs['auditLogs'], key=lambda lg: lg['timestampUsecs'], reverse=True):
                 if log['timestampUsecs'] < uStart:
