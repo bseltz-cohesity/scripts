@@ -50,5 +50,5 @@ Note: server names must exactly match what is shown in protection sources.
 ## Other Parameters
 
 * -jobName: (optional) comma separated list of job names to delete
-* -jobList: (optional) text file containing job names to delete
+* -jobList: (optional) text file containing job names to delete (one per line)
 * -deleteSnapshots: (optional) delete existing snapshots (snapshots are reteined by default)
