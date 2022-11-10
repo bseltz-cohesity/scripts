@@ -68,6 +68,7 @@ Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/prote
 * -ex, --extendederrorcodes: (optional) return extended set of exit codes
 * -es, --exitstring: (optional) search for string in pulse logs and exit 0 when found
 * -est, --exitstringtimeoutsecs: (optional) timeout searching for string and exit 1 if not found
+* -sr, --statusretries: (optional) give up trying to get status update after X tries (default is 30)
 
 ## Extended Error Codes
 
