@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2022.10.19
+# version 2022.11.10
 
 # extended error codes
 # ====================
@@ -59,6 +59,7 @@ parser.add_argument('-ex', '--extendederrorcodes', action='store_true')
 parser.add_argument('-s', '--sleeptimesecs', type=int, default=30)
 parser.add_argument('-es', '--exitstring', type=str, default=None)
 parser.add_argument('-est', '--exitstringtimeoutsecs', type=int, default=30)
+parser.add_argument('-sr', '--statusretries', type=int, default=30)
 
 args = parser.parse_args()
 
@@ -98,6 +99,7 @@ sleeptimesecs = args.sleeptimesecs
 progress = args.progress
 exitstring = args.exitstring
 exitstringtimeoutsecs = args.exitstringtimeoutsecs
+statusretries = args.statusretries
 
 if noprompt is True:
     prompt = False
@@ -555,6 +557,7 @@ if wait is True:
 if wait is True:
     status = 'unknown'
     lastProgress = -1
+    statusRetryCount = 0
     while status not in finishedStates:
         x = 0
         s = 0
@@ -579,6 +582,7 @@ if wait is True:
                 if percentComplete > lastProgress:
                     out('%s%% completed' % percentComplete)
                     lastProgress = percentComplete
+            statusRetryCount = 0
             if exitstring:
                 while x < len(run[0]['backupRun']['sourceBackupStatus']) and s < exitstringtimeoutsecs:
                     sleep(5)
@@ -611,10 +615,17 @@ if wait is True:
                     print('*** TIMED OUT WAITING FOR STRING MATCH')
                     exit(1)
         except Exception:
+            statusRetryCount += 1
             if debugger:
                 ":DEBUG: error getting updated status"
             else:
                 pass
+            if statusRetryCount > statusretries:
+                out("Timed out waiting for status update")
+                if extendederrorcodes is True:
+                    bail(5)
+                else:
+                    bail(1)
         if status not in finishedStates:
             sleep(sleeptimesecs)
     out("Job finished with status: %s" % run[0]['backupRun']['status'])
