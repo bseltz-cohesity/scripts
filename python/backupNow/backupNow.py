@@ -59,7 +59,7 @@ parser.add_argument('-ex', '--extendederrorcodes', action='store_true')
 parser.add_argument('-s', '--sleeptimesecs', type=int, default=30)
 parser.add_argument('-es', '--exitstring', type=str, default=None)
 parser.add_argument('-est', '--exitstringtimeoutsecs', type=int, default=30)
-parser.add_argument('-sr', '--statusretries', type=int, default=30)
+parser.add_argument('-sr', '--statusretries', type=int, default=10)
 
 args = parser.parse_args()
 

@@ -38,7 +38,7 @@ param (
     [Parameter()][int64]$waitMinutesIfRunning = 60,     # give up and exit if existing run is still running
     [Parameter()][int64]$waitForNewRunMinutes = 10,     # give up and exit if new run fails to appear
     [Parameter()][int64]$cancelPreviousRunMinutes = 0,  # cancel previous run if it has been running long
-    [Parameter()][int64]$statusRetries = 30,   # give up waiting for new run to appear
+    [Parameter()][int64]$statusRetries = 10,   # give up waiting for new run to appear
     [Parameter()][switch]$extendedErrorCodes,  # report failure-specific error codes
     [Parameter()][int64]$sleepTimeSecs = 30    # sleep seconds between status queries
 )
