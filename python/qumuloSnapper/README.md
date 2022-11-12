@@ -33,7 +33,7 @@ The scripts will connect to Cohesity and inspect a NAS protection group. For eac
 
 ## Setup Instructions
 
-Register your Qumulo SMB shares and NFS exports as protection sources (of type NAS -> Mount Point) on your Cohesity cluster, and create a NAS protection group that protects them. Leave this protection group in a paused state ("pause future runs"), as the group will be run via API rather than by schedule. Note that if you have multiple Qumulo clusters, any protection group should only protect shares/exports from a `single` Qumulo cluster.
+Register your Qumulo SMB shares and NFS exports as protection sources (of type NAS -> Mount Point) on your Cohesity cluster, and create a NAS protection group that protects them. Choose a policy for this protection group that specifies the desired retention of the backups, plus any replication or archiving requirements. Note that the frewuency of the backup will be controlled seperately (read on). Leave this protection group in a paused state ("pause future runs"), as the group will be run via API rather than by schedule. Note that if you have multiple Qumulo clusters, any protection group should only protect shares/exports from a `single` Qumulo cluster.
 
 ## Choose a Linux Host to Run the Scripts
 
@@ -103,7 +103,7 @@ This Remote Adapter protection group is the orchestrator of the workflow. It wil
 
 First create a new Cohesity View. The view settings are not important, this is just an empty view for use with the Remote Adapter protection group.
 
-Then create a Remote Adapter protection group. Choose a policy that matches your desired backup frequency. Configure the group to connect to our linux host and user, and provide the full path to the prescript-example.sh, like `/home/cohesity-script/prescript-example.sh`
+Then create a Remote Adapter protection group. Choose a policy that matches your desired backup frequency (this will determine the frequecy of the NAS backup, while the retention, replication and archiving will be determined by the policy assigned to the NAS protection group). Configure the RA group to connect to our linux host and user, and provide the full path to the prescript-example.sh, like `/home/cohesity-script/prescript-example.sh`
 
 Copy the ssh key provided and add it to our linux user's authorized_keys file, e.g. `/home/cohesity-script/.ssh/authorized_keys`
 
