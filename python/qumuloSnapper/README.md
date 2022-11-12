@@ -60,7 +60,7 @@ or via pip:
 pip install requests
 ```
 
-Note that for Python 3.x, these commands may differ. The yum package may be called python3-requests, and the pip command may be pip3.
+Note that for Python 3.x, these commands may differ. The yum package may be called `python3-requests`, and the pip command may be `pip3`.
 
 ## Modify the PreScript
 
