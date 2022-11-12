@@ -93,7 +93,7 @@ then run the script:
 
 You will be prompted for the passwords required for access to the Cohesity cluster, the Qumulo cluster and the SMB access user. These passwords will be stored in secure password storage so that the script can run unattended later.
 
-When the script runs, it will connect to Qumulo and take snapshots of the shares/exports in the specified protection group, and update the protection sources to point to the new snapshot directories. Then it will initiate the protection group.
+When the script runs, it will connect to Qumulo and take snapshots of the shares/exports in the specified protection group, and update the protection sources to point to the new snapshot directories. Then it will initiate the NAS protection group.
 
 If successful we will next configure a Remote Adapter protection group to run the script on a schedule.
 
