@@ -113,7 +113,7 @@ Finally, choose "Run Now" on the new Remote Adapter protection group. While it's
 
 When the Remote Adapter protection group runs the script, it connects to Cohesity and inspects the NAS protection group. If the group is already running, the script aborts, so as not to interfere with the current backup.
 
-If the group is not already running, then it gets the list of NAS shares/exports protected by the NAS protection group. For each share/export, it finds and deletes any existing snapshots, with the naming convention of id_suffix. By default, the suffix is `_cohesity`. This can be adjusted using the `-s, --snapsuffix` parameter of the qumuloSnap.py script (see parameters section below). It then will create a new snapshot with the same naming convention.
+If the group is not already running, then it gets the list of NAS shares/exports protected by the NAS protection group. For each share/export, it finds and deletes any existing snapshots, with the naming convention of id_suffix. By default, the suffix is `cohesity`. This can be adjusted using the `-s, --snapsuffix` parameter of the qumuloSnap.py script (see parameters section below). It then will create a new snapshot with the same naming convention.
 
 The script will then update the Cohesity protection source for that share/export, updating the mount path to point to the snapshot directory, e.g. `\\qumulo1\share1\.snapshot\123_cohesity`. When the NAS protection group runs, it will backup this directory.
 
