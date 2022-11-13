@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2022.11.10
+# version 2022.11.13
 
 # extended error codes
 # ====================
@@ -533,11 +533,12 @@ if wait is True:
     while newRunId <= lastRunId:
         sleep(5)
         if len(selectedSources) > 0:
-            runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&numRuns=10000&excludeTasks=true&sourceId=%s' % (job['id'], startUsecs, selectedSources[0]))
+            runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&numRuns=100&excludeTasks=true&sourceId=%s' % (job['id'], startUsecs, selectedSources[0]))
         else:
-            runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&numRuns=10000&excludeTasks=true' % (job['id'], startUsecs))
+            runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&numRuns=100&excludeTasks=true' % (job['id'], startUsecs))
         if len(runs) > 0:
             newRunId = runs[0]['backupRun']['jobRunId']
+            startedTimeUsecs = runs[0]['backupRun']['stats']['startTimeUsecs']
         if debugger:
             print(':DEBUG: Previous Run ID: %s' % lastRunId)
             print(':DEBUG:   Latest Run ID: %s\n' % newRunId)
@@ -563,13 +564,14 @@ if wait is True:
         s = 0
         sleep(5)
         try:
-            if len(selectedSources) > 0:
-                runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&numRuns=10000&excludeTasks=true&sourceId=%s' % (job['id'], startUsecs, selectedSources[0]))
+            if progress:
+                runs = api('get', 'protectionRuns?jobId=%s&startedTimeUsecs=%s' % (job['id'], startedTimeUsecs))
             else:
-                runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&numRuns=10000' % (job['id'], startUsecs))
+                runs = api('get', 'protectionRuns?jobId=%s&startedTimeUsecs=%s&excludeTasks=True' % (job['id'], startedTimeUsecs))
             run = [r for r in runs if r['backupRun']['jobRunId'] == newRunId]
             status = run[0]['backupRun']['status']
             if progress:
+                sleep(sleeptimesecs)
                 progressTotal = 0
                 progressPaths = [s['progressMonitorTaskPath'] for s in runs[0]['backupRun']['sourceBackupStatus']]
                 sourceCount = len(runs[0]['backupRun']['sourceBackupStatus'])

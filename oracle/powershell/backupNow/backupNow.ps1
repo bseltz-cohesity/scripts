@@ -1,4 +1,4 @@
-# version 2022.11.08
+# version 2022.11.13
 
 # process commandline arguments
 [CmdletBinding()]
@@ -38,7 +38,7 @@ param (
     [Parameter()][int64]$waitMinutesIfRunning = 60,     # give up and exit if existing run is still running
     [Parameter()][int64]$waitForNewRunMinutes = 10,     # give up and exit if new run fails to appear
     [Parameter()][int64]$cancelPreviousRunMinutes = 0,  # cancel previous run if it has been running long
-    [Parameter()][int64]$statusRetries = 30,   # give up waiting for new run to appear
+    [Parameter()][int64]$statusRetries = 10,   # give up waiting for new run to appear
     [Parameter()][switch]$extendedErrorCodes,  # report failure-specific error codes
     [Parameter()][int64]$sleepTimeSecs = 30    # sleep seconds between status queries
 )
@@ -336,7 +336,7 @@ if($objects){
 
 # get last run id
 if($selectedSources.Count -gt 0){
-    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&sourceId=$($selectedSources[0])"
+    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&sourceId=$($selectedSources[0])&excludeTasks=true"
     if(!$runs -or $runs.Count -eq 0){
         $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true"
     }
@@ -536,11 +536,14 @@ while($newRunId -le $lastRunId){
     }
     Start-Sleep 3
     if($selectedSources.Count -gt 0){
-        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10&sourceId=$($selectedSources[0])"
+        $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$startUsecs&numRuns=100&sourceId=$($selectedSources[0])&excludeTasks=true"
     }else{
-        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=10&excludeTasks=true"
+        $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$startUsecs&numRuns=100&excludeTasks=true"
     }
-    $newRunId = $runs[0].backupRun.jobRunId
+    if($runs.Count -gt 0){
+        $newRunId = $runs[0].backupRun.jobRunId
+        $startedTimeUsecs = $runs[0].backupRun.stats.startTimeUsecs
+    }
     if($newRunId -le $lastRunId){
         Start-Sleep $sleepTimeSecs
     }
@@ -556,10 +559,10 @@ if($wait -or $progress){
         Start-Sleep $sleepTimeSecs
         $bumpStatusCount = $false
         try {
-            if($selectedSources.Count -gt 0){
-                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$startUsecs&numRuns=1000&sourceId=$($selectedSources[0])"
+            if($progress){
+                $runs = api get "protectionRuns?jobId=$($job.id)&startedTimeUsecs=$startedTimeUsecs"   
             }else{
-                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$startUsecs&numRuns=1000"
+                $runs = api get "protectionRuns?jobId=$($job.id)&startedTimeUsecs=$startedTimeUsecs&excludeTasks=true"
             }
             if($runs){
                 $runs = $runs | Where-Object {$_.backupRun.jobRunId -eq $newRunId}
@@ -570,10 +573,10 @@ if($wait -or $progress){
                     }
                 }else{
                     $bumpStatusCount = $True
-                    # $statusRetryCount += 1
                 }
                 try{
                     if($progress){
+                        Start-Sleep $sleepTimeSecs
                         $progressTotal = 0
                         $progressPaths = $runs[0].backupRun.sourceBackupStatus.progressMonitorTaskPath
                         $sourceCount = $runs[0].backupRun.sourceBackupStatus.Count
@@ -591,15 +594,12 @@ if($wait -or $progress){
                     }
                 }catch{
                     $bumpStatusCount = $True
-                    # $statusRetryCount += 1
                 }
             }else{
                 $bumpStatusCount = $True
-                # $statusRetryCount += 1
             }
         }catch{
             $bumpStatusCount = $True
-            # $statusRetryCount += 1
         }
         if($bumpStatusCount -eq $True){
             $statusRetryCount += 1
