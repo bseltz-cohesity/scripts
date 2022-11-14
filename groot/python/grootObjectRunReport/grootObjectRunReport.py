@@ -51,6 +51,7 @@ cur = conn.cursor()
 # sql query ----------------------------------------
 sql_query = """
 select
+DISTINCT
     entity_name as "Object Name",
     TRIM (leading 'k' from reporting.environment_types.env_name) as "Source Type",
     reporting.registered_sources.source_name as "Source Name",
@@ -98,13 +99,13 @@ from reporting.protection_job_run_entities
     INNER JOIN reporting.protection_job_runs on reporting.protection_job_runs.job_run_id = reporting.protection_job_run_entities.job_run_id
     INNER JOIN reporting.protection_policy_data_lock_type on reporting.protection_policy_data_lock_type.type_id = p1.data_lock
     INNER JOIN reporting.registered_sources on reporting.registered_sources.source_id = reporting.protection_job_run_entities.parent_source_id
-    LEFT JOIN reporting.backup_schedule on p1.id=reporting.backup_schedule.policy_id
-    LEFT JOIN reporting.policy_replication_schedule on p1.id=policy_replication_schedule.policy_id
-    LEFT JOIN reporting.protection_job_run_replication_entities on reporting.protection_job_run_entities.job_run_id = reporting.protection_job_run_replication_entities.job_run_id
+    INNER JOIN reporting.backup_schedule on reporting.backup_schedule.policy_id=p1.id
     INNER JOIN reporting.schedule_periodicity sp1 on sp1.id = reporting.backup_schedule.periodicity_id
+    LEFT JOIN reporting.policy_replication_schedule on p1.id=policy_replication_schedule.policy_id
+    LEFT JOIN reporting.protection_job_run_replication_entities on reporting.protection_job_run_entities.job_run_id = reporting.protection_job_run_replication_entities.job_run_id and reporting.protection_job_run_entities.job_id = reporting.protection_job_run_replication_entities.job_id and reporting.protection_job_run_entities.entity_id=reporting.protection_job_run_replication_entities.entity_id
 where
-reporting.protection_job_run_entities.end_time_usecs >= %s and
-reporting.protection_job_run_entities.status not in (1)""" % startUsecs
+reporting.protection_job_run_entities.end_time_usecs >= %s
+order by to_timestamp(protection_job_run_entities.end_time_usecs  / 1000000) desc""" % startUsecs
 
 outfileName = 'objectRuns-%s.csv' % cluster['name']
 f = codecs.open(outfileName, 'w', 'utf-8')
