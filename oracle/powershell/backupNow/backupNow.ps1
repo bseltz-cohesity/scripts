@@ -540,7 +540,7 @@ while($newRunId -le $lastRunId){
     }else{
         $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$startUsecs&numRuns=100&excludeTasks=true"
     }
-    if($runs.Count -gt 0){
+    if($null -ne $runs){
         $newRunId = $runs[0].backupRun.jobRunId
         $startedTimeUsecs = $runs[0].backupRun.stats.startTimeUsecs
     }
