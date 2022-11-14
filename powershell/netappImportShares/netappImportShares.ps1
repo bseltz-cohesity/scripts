@@ -104,7 +104,7 @@ function getSid($principalName){
             }
         }else{
             # find local or wellknown sid
-            $principal = api get "activeDirectory/principals?includeComputers=true&search=$principalName"
+            $principal = api get "activeDirectory/principals?domain=$($ads[0].domainName)&includeComputers=true&search=$principalName"
             if(!$principal){
                 write-host "user $($principalName) not found!" -ForegroundColor Yellow
                 $sids[$principalName] = $null
