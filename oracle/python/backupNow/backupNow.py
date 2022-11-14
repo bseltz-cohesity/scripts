@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2022.11.13
+# version 2022.11.14
 
 # extended error codes
 # ====================
@@ -571,16 +571,11 @@ if wait is True:
             run = [r for r in runs if r['backupRun']['jobRunId'] == newRunId]
             status = run[0]['backupRun']['status']
             if progress:
-                sleep(sleeptimesecs)
-                progressTotal = 0
-                progressPaths = [s['progressMonitorTaskPath'] for s in runs[0]['backupRun']['sourceBackupStatus']]
-                sourceCount = len(runs[0]['backupRun']['sourceBackupStatus'])
-                for progressPath in progressPaths:
-                    progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&includeFinishedTasks=true&excludeSubTasks=false' % progressPath)
-                    thisProgress = progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']
-                    progressTotal += thisProgress
-                percentComplete = int(round(progressTotal / sourceCount))
-
+                sleep(10)
+                progressPath = run[0]['backupRun']['sourceBackupStatus'][0]['progressMonitorTaskPath'].split('/')[0]
+                progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&excludeSubTasks=true&includeFinishedTasks=false' % progressPath)
+                progressTotal = progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']
+                percentComplete = int(round(progressTotal))
                 if percentComplete > lastProgress:
                     out('%s%% completed' % percentComplete)
                     lastProgress = percentComplete

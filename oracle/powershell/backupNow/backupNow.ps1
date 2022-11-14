@@ -1,4 +1,4 @@
-# version 2022.11.13
+# version 2022.11.14
 
 # process commandline arguments
 [CmdletBinding()]
@@ -576,19 +576,15 @@ if($wait -or $progress){
                 }
                 try{
                     if($progress){
-                        Start-Sleep $sleepTimeSecs
+                        Start-Sleep 10
                         $progressTotal = 0
-                        $progressPaths = $runs[0].backupRun.sourceBackupStatus.progressMonitorTaskPath
-                        $sourceCount = $runs[0].backupRun.sourceBackupStatus.Count
-                        foreach($progressPath in $progressPaths){
-                            $progressMonitor = api get "/progressMonitors?taskPathVec=$progressPath&includeFinishedTasks=true&excludeSubTasks=false"
-                            $thisProgress = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
-                            $progressTotal += $thisProgress
-                        }
-                        $percentComplete = $progressTotal / $sourceCount
+                        $progressPath = ($runs[0].backupRun.sourceBackupStatus[0].progressMonitorTaskPath -split '/')[0]
+                        $progressMonitor = api get "/progressMonitors?taskPathVec=$progressPath&excludeSubTasks=true&includeFinishedTasks=false"
+                        $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
+                        $percentComplete = [math]::Round($percentComplete, 0)
                         $statusRetryCount = 0
                         if($percentComplete -ne $lastProgress){
-                            "{0} percent complete" -f [math]::Round($percentComplete, 0)
+                            "$percentComplete percent complete"
                             $lastProgress = $percentComplete
                         }
                     }
