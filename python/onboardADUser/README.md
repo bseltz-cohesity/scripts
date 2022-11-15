@@ -39,7 +39,8 @@ Place both files in a folder together and run the main script like so:
 * -d, --domain: (optional) domain of username, defaults to local
 * -i, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password or API key
-* -n, --aduser: name of AD user to onboard
+* -n, --aduser: name of AD user to onboard (repeat for multiple)
+* -l, --aduserlist: text file of AD users to onboard (one per line)
 * -a, --addomain: domain of AD user to onboard
 * -desc: --description: (optional) description for user
 * -keyname, --keyname: (optional) name for API key(default is aduser-key)
@@ -47,3 +48,7 @@ Place both files in a folder together and run the main script like so:
 * -g, --generateApiKey: (optional) generate new API key for user
 * -s, --storeApiKey: (optional) store new API key in local password storage
 * -o, --overwrite: (optional) overwrite existing API key
+
+## Note
+
+If more than one AD user is specified and `-g` is used, a text file apikeys.txt will be created to record the user's new API keys.
