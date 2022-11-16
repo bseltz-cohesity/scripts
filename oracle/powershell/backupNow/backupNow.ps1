@@ -561,11 +561,7 @@ if($wait -or $progress){
         Start-Sleep $sleepTimeSecs
         $bumpStatusCount = $false
         try {
-            # if($progress){
-            #     $run = api get -v2 "data-protect/protection-groups/$v2JobId/runs/$($v2RunId)?includeObjectDetails=true"
-            # }else{
-                $run = api get -v2 "data-protect/protection-groups/$v2JobId/runs/$($v2RunId)?includeObjectDetails=false"
-            # }
+            $run = api get -v2 "data-protect/protection-groups/$v2JobId/runs/$($v2RunId)?includeObjectDetails=false"
             if($run){
                 if($run.PSObject.Properties['localBackupInfo']){
                     if($run.localBackupInfo.PSObject.Properties['status']){
