@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2022.11.16
+# version 2022.11.14
 
 # extended error codes
 # ====================
@@ -241,7 +241,6 @@ if not job:
         bail(1)
 else:
     job = job[0]
-    v2JobId = '%s:%s:%s' % (cluster['id'], cluster['incarnationId'], job['id'])
     environment = job['environment']
     if environment == 'kPhysicalFiles':
         environment = 'kPhysical'
@@ -374,7 +373,7 @@ if objectnames is not None:
                 else:
                     bail(1)
 
-finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning', 'kCanceling', '3', '4', '5', '6', 'Canceled', 'Succeeded', 'Failed', 'SucceededWithWarning']
+finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning', 'kCanceling', '3', '4', '5', '6']
 
 if len(selectedSources) > 0:
     runs = api('get', 'protectionRuns?jobId=%s&numRuns=2&excludeTasks=true&sourceId=%s' % (job['id'], selectedSources[0]))
@@ -540,7 +539,6 @@ if wait is True:
         if len(runs) > 0:
             newRunId = runs[0]['backupRun']['jobRunId']
             startedTimeUsecs = runs[0]['backupRun']['stats']['startTimeUsecs']
-            v2RunId = '%s:%s' % (job['id'], startedTimeUsecs)
         if debugger:
             print(':DEBUG: Previous Run ID: %s' % lastRunId)
             print(':DEBUG:   Latest Run ID: %s\n' % newRunId)
@@ -554,7 +552,7 @@ if wait is True:
                 bail(1)
         if newRunId <= lastRunId:
             sleep(sleeptimesecs)
-    out("New Job Run ID: %s" % v2RunId)
+    out("New Job Run ID: %s" % newRunId)
 
 # wait for job run to finish and report completion
 if wait is True:
@@ -566,21 +564,31 @@ if wait is True:
         s = 0
         sleep(5)
         try:
-            if exitstring:
-                run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=true' % (v2JobId, v2RunId), v=2)
+            if progress:
+                runs = api('get', 'protectionRuns?jobId=%s&startedTimeUsecs=%s' % (job['id'], startedTimeUsecs))
             else:
-                run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=false' % (v2JobId, v2RunId), v=2)
-            status = run['localBackupInfo']['status']
+                runs = api('get', 'protectionRuns?jobId=%s&startedTimeUsecs=%s&excludeTasks=True' % (job['id'], startedTimeUsecs))
+            run = [r for r in runs if r['backupRun']['jobRunId'] == newRunId]
+            status = run[0]['backupRun']['status']
+            if progress:
+                sleep(10)
+                progressPath = run[0]['backupRun']['sourceBackupStatus'][0]['progressMonitorTaskPath'].split('/')[0]
+                progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&excludeSubTasks=true&includeFinishedTasks=false' % progressPath)
+                progressTotal = progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']
+                percentComplete = int(round(progressTotal))
+                if percentComplete > lastProgress:
+                    out('%s%% completed' % percentComplete)
+                    lastProgress = percentComplete
+            statusRetryCount = 0
             if exitstring:
-                while x < len(run['objects']) and s < exitstringtimeoutsecs:
+                while x < len(run[0]['backupRun']['sourceBackupStatus']) and s < exitstringtimeoutsecs:
                     sleep(5)
                     s += 5
                     if s > exitstringtimeoutsecs:
                         break
                     x = 0
                     try:
-                        progressPath = run['localBackupInfo']['progressTaskId']
-                        taskMon = api('get', '/progressMonitors?taskPathVec=%s' % progressPath)
+                        taskMon = api('get', '/progressMonitors?taskPathVec=backup_%s_1' % run[0]['backupRun']['jobRunId'])
                         sources = taskMon['resultGroupVec'][0]['taskVec'][0]['subTaskVec']
                         for source in sources:
                             if source['taskPath'] != 'post_processing':
@@ -597,22 +605,12 @@ if wait is True:
                                     preprocessFinished = False
                     except Exception:
                         pass
-                    if x >= len(run['objects']):
+                    if x >= len(run[0]['backupRun']['sourceBackupStatus']):
                         print('*** SUCCESSFUL STRING MATCH')
                         exit(0)
-                if x < len(run['objects']):
+                if x < len(run[0]['backupRun']['sourceBackupStatus']):
                     print('*** TIMED OUT WAITING FOR STRING MATCH')
                     exit(1)
-            if progress and lastProgress < 100 and 'progressTaskId' in run['localBackupInfo']:
-                sleep(10)
-                progressPath = run['localBackupInfo']['progressTaskId']
-                progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&excludeSubTasks=true&includeFinishedTasks=false' % progressPath)
-                progressTotal = progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']
-                percentComplete = int(round(progressTotal))
-                if percentComplete > lastProgress:
-                    out('%s%% completed' % percentComplete)
-                    lastProgress = percentComplete
-            statusRetryCount = 0
         except Exception:
             statusRetryCount += 1
             if debugger:
@@ -627,20 +625,20 @@ if wait is True:
                     bail(1)
         if status not in finishedStates:
             sleep(sleeptimesecs)
-    out("Job finished with status: %s" % run['localBackupInfo']['status'])
-    if run['localBackupInfo']['status'] == 'Failed':
-        out('Error: %s' % run['localBackupInfo']['messages'][0])
-    if run['localBackupInfo']['status'] == 'SucceededWithWarning':
-        out('Warning: %s' % run['localBackupInfo']['messages'][0])
+    out("Job finished with status: %s" % run[0]['backupRun']['status'])
+    if run[0]['backupRun']['status'] == 'kFailure':
+        out('Error: %s' % run[0]['backupRun']['error'])
+    if run[0]['backupRun']['status'] == 'kWarning':
+        out('Warning: %s' % run[0]['backupRun']['warnings'])
 
 # return exit code
 if wait is True:
     if logfile is not None:
         try:
-            log.write('Backup ended %s\n' % usecsToDate(run['localBackupInfo']['endTimeUsecs']))
+            log.write('Backup ended %s\n' % usecsToDate(runs[0]['backupRun']['stats']['endTimeUsecs']))
         except Exception:
             log.write('Backup ended')
-    if run['localBackupInfo']['status'] == 'Succeeded' or run['localBackupInfo']['status'] == 'SucceededWithWarning':
+    if run[0]['backupRun']['status'] == 'kSuccess' or run[0]['backupRun']['status'] == 'kWarning':
         bail(0)
     else:
         bail(1)
