@@ -3,17 +3,32 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,  # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
-    [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter(Mandatory = $True)][string]$jobname,
     [Parameter()][array]$servername,
     [Parameter()][string]$serverlist,
     [Parameter()][string]$dbname = $null,
-    [Parameter()][string]$policyname = $null,
-    [Parameter()][string]$storagedomain = 'DefaultStorageDomain',
-    [Parameter()][string]$timezone = "America/New_York",
-    [Parameter()][string]$starttime = $null
+    [Parameter()][int]$channels,
+    [Parameter()][string]$channelNode,
+    [Parameter()][int]$channelPort = 1521,
+    [Parameter()][int]$deleteLogDays = 0,
+    [Parameter()][string]$policyname,
+    [Parameter()][string]$startTime = '20:00', # e.g. 23:30 for 11:30 PM
+    [Parameter()][string]$timeZone = 'America/Los_Angeles', # e.g. 'America/New_York'
+    [Parameter()][int]$incrementalProtectionSlaTimeMins = 60,
+    [Parameter()][int]$fullProtectionSlaTimeMins = 120,
+    [Parameter()][string]$storageDomainName = 'DefaultStorageDomain', #storage domain you want the new job to write to
+    [Parameter()][switch]$paused
 
 )
 
@@ -44,68 +59,110 @@ $serverNames = @(gatherList -Param $servername -FilePath $serverlist -Name 'serv
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain -password $password
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# select helios/mcm managed cluster
+if($USING_HELIOS -and !$region){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit 1
+}
 
 # get Oracle sources
 $sources = api get protectionSources?environments=kOracle
 
 # get the protectionJob
-if($policyname){
-    # create new job based on existing job
-    $policy = api get protectionPolicies | Where-Object {$_.name -ieq $policyname}
-    if(!$policy){
-        Write-Host "Policy $policyname not found!" -ForegroundColor Yellow
-        exit
-    }
-    $sd = api get viewBoxes | Where-Object {$_.name -eq $storagedomain}
-    if(!$sd){
-        Write-Host "Storage domain $storagedomain not found!" -ForegroundColor Yellow
-        exit
-    }
-    $job = @{
-        "name"                             = $jobname;
-        "environment"                      = "kOracle";
-        "policyId"                         = $policy.id;
-        "viewBoxId"                        = $sd.id;
-        "parentSourceId"                   = $sources.protectionSource.id;
-        "sourceIds"                        = @();
-        "startTime"                        = @{
-            "hour"   = 20;
-            "minute" = 00
-        };
-        "timezone"                         = $timezone;
-        "incrementalProtectionSlaTimeMins" = 60;
-        "fullProtectionSlaTimeMins"        = 120;
-        "priority"                         = "kMedium";
-        "alertingPolicy"                   = @(
-            "kFailure"
-        );
-        "indexingPolicy"                   = @{
-            "disableIndexing" = $true
-        };
-        "sourceSpecialParameters"          = @();
-        "qosType"                          = "kBackupHDD";
-        "createRemoteView"                 = $false;
+$job = (api get -v2 data-protect/protection-groups).protectionGroups | Where-Object name -eq $jobName
+$newJob = $false
+
+if(! $job){
+    # create new job
+    Write-Host "Creating job $jobName..."
+    $newJob = $True
+
+    if($paused){
+        $isPaused = $True
+    }else{
+        $isPaused = $false
     }
 
-    # set start time for new job
-    if($starttime){
-        $hours, $minutes = $starttime.split(':')
-        if(!($hours -match "^[\d\.]+$" -and $hours -in 0..23) -or !($minutes -match "^[\d\.]+$" -and $minutes -in 0..59)){
-            write-host 'Start time is invalid' -ForegroundColor Yellow
+    # get policy
+    if(! $policyname){
+        Write-Host "-policyname required when creating a new job" -ForegroundColor Yellow
+        exit 1
+    }
+    $policy = (api get -v2 "data-protect/policies").policies | Where-Object name -eq $policyName
+    if(! $policy){
+        Write-Host "Policy $policyname not found!" -ForegroundColor Yellow
+        exit 1
+    }
+
+    # parse startTime
+    $hour, $minute = $startTime.split(':')
+    $tempInt = ''
+    if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]::TryParse($minute,[ref]$tempInt)))){
+        Write-Host "Please provide a valid start time" -ForegroundColor Yellow
+        exit
+    }
+
+    # get storageDomain
+    $viewBoxes = api get viewBoxes
+    if($viewBoxes -is [array]){
+        $viewBox = $viewBoxes | Where-Object { $_.name -ieq $storageDomainName }
+        if (!$viewBox) { 
+            write-host "Storage domain $storageDomainName not Found" -ForegroundColor Yellow
             exit
-        }else{
-            $job.startTime.hour = [int]$hours
-            $job.startTime.minute = [int]$minutes
+        }
+    }else{
+        $viewBox = $viewBoxes[0]
+    }
+
+    $job = @{
+        "name" = $jobName;
+        "environment" = "kOracle";
+        "isPaused" = $isPaused;
+        "policyId" = $policy.id;
+        "priority" = "kMedium";
+        "storageDomainId" = $viewBox.id;
+        "description" = "";
+        "startTime" = @{
+            "hour" = [int]$hour;
+            "minute" = [int]$minute;
+            "timeZone" = $timeZone
+        };
+        "abortInBlackouts" = $false;
+        "alertPolicy" = @{
+            "backupRunStatus" = @(
+                "kFailure"
+            );
+            "alertTargets" = @()
+        };
+        "sla" = @(
+            @{
+                "backupRunType" = "kFull";
+                "slaMinutes" = $fullProtectionSlaTimeMins
+            };
+            @{
+                "backupRunType" = "kIncremental";
+                "slaMinutes" = $incrementalProtectionSlaTimeMins
+            }
+        );
+        "qosPolicy" = "kBackupAll";
+        "oracleParams" = @{
+            "persistMountpoints" = $true;
+            "objects" = @()
         }
     }
 }else{
-    # or add server/db to an existing job
-    $job = api get protectionJobs | Where-Object {$_.name -ieq $jobname}
-    if(!$job){
-        Write-Warning "Job $jobName not found!"
-        exit
-    }
+    Write-Host "Updating job $jobname..."
 }
 
 $serversAdded = $false
@@ -118,46 +175,64 @@ foreach($servername in $serverNames){
         Write-Warning "Server $servername not found!"
     }else{
         $serverId = $server.protectionSource.id
-        $job.sourceIds = @($job.sourceIds + $serverId | Select-Object -Unique)
-    
-        if($dbname){
-            # find db to add to job
-            $db = $server.applicationNodes| Where-Object {$_.protectionSource.name -eq $dbname}
-            if(!$db){
-                Write-Warning "Database $dbname not found!"
-            }else{
-                $foundServer = $True
-                $serversAdded = $True
-                $dbIds = @($db.protectionSource.id)
-                write-host "Adding $servername/$dbname to protection job $jobname..."
-            }
-        }else{
-            # or add all dbs to job
-            $foundServer = $True
-            $serversAdded = $True
-            $dbIds = @($server.applicationNodes.protectionSource.id)
-            write-host "Adding $servername/* to protection job $jobname..."
-        }
-    
-        if($foundServer -eq $True){
-            # update dblist for server
-            $sourceSpecialParameter = $job.sourceSpecialParameters | Where-Object {$_.sourceId -eq $serverId }
-            if(!$sourceSpecialParameter){
-                $job.sourceSpecialParameters += @{"sourceId" = $serverId; "oracleSpecialParameters" = @{"applicationEntityIds" = $dbIds}}
-            }else{
-                $sourceSpecialParameter.oracleSpecialParameters.applicationEntityIds += $dbIds | Select-Object -Unique
-                $sourceSpecialParameter.oracleSpecialParameters.applicationEntityIds = @($sourceSpecialParameter.oracleSpecialParameters.applicationEntityIds | Where-Object {$_ -in $server.applicationNodes.protectionSource.id})
+        $thisObject = $job.oracleParams.objects | Where-Object {$_.sourceId -eq $serverId}
+        $job.oracleParams.objects = @($job.oracleParams.objects | Where-Object {$_.sourceId -ne $serverId})
+        if(! $thisObject){
+            $thisObject = @{
+                "sourceId" = $serverId;
+                "dbParams" = @()
             }
         }
+        foreach($dbNode in $server.applicationNodes){
+            if(!$dbname -or $dbNode.protectionSource.name -eq $dbname){
+                Write-Host "Adding $($dbNode.protectionSource.name) to $jobName"
+                $thisDB = $thisObject.dbParams | Where-Object {$_.databaseId -eq $dbNode.protectionSource.id}
+                $thisObject.dbParams = @($thisObject.dbParams | Where-Object {$_.databaseId -ne $dbNode.protectionSource.id})
+                if(!$thisDB){
+                    $thisDB = @{
+                        "databaseId" = $dbNode.protectionSource.id;
+                        "dbChannels" = @()
+                    }
+                }
+                if(($channels -and $channelNode) -or $deleteLogDays -gt 0){
+                    $thisDB.dbChannels = @(
+                        @{
+                            "databaseUuid" = $dbNode.protectionSource.oracleProtectionSource.uuid;
+                            "databaseNodeList" = @();
+                            "enableDgPrimaryBackup" = $true;
+                            "rmanBackupType" = "kImageCopy"
+                        }
+                    )
+                    if($deleteLogDays -gt 0){
+                        $thisDB.dbChannels[0]['archiveLogRetentionDays'] = $deleteLogDays
+                    }
+                    if($channels -and $channelNode){
+                        $channelNodeObject = $sources.nodes | Where-Object {$_.protectionSource.name -eq $channelNode}
+                        if(!$channelNodeObject){
+                            Write-Host "Channel node $channelNode not found" -ForegroundColor Yellow
+                            exit
+                        }else{
+                            $channelNodeId = $channelNodeObject.protectionSource.physicalProtectionSource.agents.id
+                        }
+                        $thisDB.dbChannels[0].databaseNodeList = @(
+                            @{
+                                "hostId" = [string]$channelNodeId;
+                                "channelCount" = $channels;
+                                "port" = $channelPort
+                            }
+                        )
+                    }
+                }
+                $thisObject.dbParams = @($thisObject.dbParams + $thisDB)
+            }
+        }
+        $job.oracleParams.objects = @($job.oracleParams.objects + $thisObject)
     }
 }
+# $job | ConvertTo-Json -Depth 99
 
-if($serversAdded -eq $True){
-    if($policyname){
-        # create new job
-        $null = api post protectionJobs $job
-    }else{
-        # update existing job
-        $null = api put "protectionJobs/$($job.id)" $job
-    }
+if($newJob -eq $True){
+    $null = api post -v2 data-protect/protection-groups $job
+}else{
+    $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
 }

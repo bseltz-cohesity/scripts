@@ -46,16 +46,37 @@ or:
 # end
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: name or IP of Cohesity cluster
-* -username: name of user to connect to Cohesity
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
 * -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -jobname: name of protection job (new or existing)
 * -servername: (optional) one or more names of Oracle servers to protect (comma separated)
 * -serverlist: (optional) text file of names of Oracle servers to protect (one per line)
 * -dbname: (optional) name of database to protect (defaults to all dbs)
-* -policyname: (optional) name of policy to apply to new job
-* -storagedomain: (optional) name of storage domain for new job (defaults to DefaultStorageDomain)
-* -timezone: (optional) timezone for job (defaults to America/New_York)
-* -starttime: (optional) start time for job (defaults to 20:00)
+* -channels: (optional) number of RMAN channels to use
+* -channelNode: (optional) name of RAC oracle node to use for backup
+* -channelPort: (optional) Oracle port (Default is 1521)
+* -deleteLogDays: (optional) delete archive logs after X days (default is no delete)
+
+## New Job Parameters
+
+* -policyName: (optional) name of protection policy to use
+* -startTime: (optional) e.g. '18:30' (defaults to 8PM)
+* -timeZone: (optional) e.g. 'America/New_York' (default is 'America/Los_Angeles')
+* -incrementalSlaMinutes: (optional) default 60
+* -fullSlaMinutes: (optional) default is 120
+* -storageDomainName: (optional) default is 'DefaultStorageDomain'
+* -paused: (optional) pause future runs (new job only)
