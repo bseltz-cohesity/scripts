@@ -47,7 +47,7 @@ Modify all commands to suite your environment and perform the initial setup step
 
 # Always Run
 # ============
-sudo mount -t nfs -o soft,intr,noatime,retrans=1000,timeo=900,retry=5,rsize=1048576,wsize=1048576,nolock ve2:/GitHub-Scripts /mnt/GitHub-Scripts/
+sudo mount -t nfs -o soft,intr,noatime,retrans=1000,timeo=900,retry=5,rsize=1048576,wsize=1048576,nolock mycohesity:/GitHub-Scripts /mnt/GitHub-Scripts/
 cd /mnt/GitHub-Scripts/
 
 # Inital Setup (comment out after first run)
