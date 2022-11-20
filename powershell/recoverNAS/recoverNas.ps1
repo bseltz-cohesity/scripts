@@ -98,7 +98,9 @@ $sharePermissions = @()
 
 
 function addPermission($user, $perms){
-    if($user.contains('\')){
+    if($user -eq 'Everyone'){
+        $sid = 'S-1-1-0'
+    }elseif($user.contains('\')){
         $workgroup, $user = $user.split('\')
         # find domain
         $adDomain = $ads | Where-Object { $_.workgroup -eq $workgroup -or $_.domainName -eq $workgroup}
@@ -126,12 +128,12 @@ function addPermission($user, $perms){
             $sids[$user] = $sid
         }
     }
-
+    #"visible" = $True;
     if($sid){
-        $permission = @{
-            "visible" = $True;
+        $permission = @{       
             "sid" = $sid;
             "type" = "Allow";
+            "mode" = "FolderOnly"
             "access" = $perms
         }
         return $permission
@@ -171,17 +173,16 @@ if($sharePermissionsApplied -eq $False){
 
 $result = api post restore/recover $nasRecovery
 if($result){
-    sleep 1
+    sleep 2
     $newView = (api get -v2 file-services/views).views | Where-Object { $_.name -eq $viewName }
-    $newView | setApiProperty -name Category -value 'FileServices'
+    $newView | setApiProperty -name category -value 'FileServices'
+    delApiProperty -object $newView -name nfsMountPaths
     $newView | setApiProperty -name enableSmbViewDiscovery -value $True
+    delApiProperty -object $newView -name versioning
     if($cluster.clusterSoftwareVersion -gt '6.6'){
         $newView.sharePermissions | setApiProperty -name permissions -value $sharePermissions
     }else{
         $newView | setApiProperty -name sharePermissions -value @($sharePermissions)
-    }
-    $newView.qos = @{
-        "principalName" = 'TestAndDev High';
     }
     if($smbOnly){
         $newView.protocolAccess = @(
