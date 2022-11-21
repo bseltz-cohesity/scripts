@@ -3,9 +3,17 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
-    [Parameter()][string]$domain = 'local', #local or AD domain
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter()][array]$fullControl,                 # list of users to grant full control
     [Parameter()][array]$readWrite,                   # list of users to grant read/write
     [Parameter()][array]$readOnly,                    # list of users to grant read-only
@@ -17,16 +25,35 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# select helios/mcm managed cluster
+if($USING_HELIOS -and !$region){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit 1
+}
+
+$cluster = api get cluster
 
 ### get AD info
 $ads = api get activeDirectory
 $sids = @{}
 
 
-function addPermission($username, $perms){
-    if($user.contains('\')){
-        $workgroup, $user = $username.split('\')
+function addPermission($user, $perms){
+    if($user -eq 'Everyone'){
+        $sid = 'S-1-1-0'
+    }elseif($user.contains('\')){
+        $workgroup, $user = $user.split('\')
         # find domain
         $adDomain = $ads | Where-Object { $_.workgroup -eq $workgroup -or $_.domainName -eq $workgroup}
         if(!$adDomain){
@@ -37,28 +64,28 @@ function addPermission($username, $perms){
             $domainName = $adDomain.domainName
             $principal = api get "activeDirectory/principals?domain=$($domainName)&includeComputers=true&search=$($user)"
             if(!$principal){
-                write-host "user $($username) not found!" -ForegroundColor Yellow
+                write-host "user $($user) not found!" -ForegroundColor Yellow
             }else{
                 $sid = $principal[0].sid
-                $sids[$username] = $sid
+                $sids[$user] = $sid
             }
         }
     }else{
         # find local or wellknown sid
-        $principal = api get "activeDirectory/principals?includeComputers=true&search=$($username)"
+        $principal = api get "activeDirectory/principals?includeComputers=true&search=$($user)"
         if(!$principal){
-            write-host "user $($username) not found!" -ForegroundColor Yellow
+            write-host "user $($user) not found!" -ForegroundColor Yellow
         }else{
             $sid = $principal[0].sid
-            $sids[$username] = $sid
+            $sids[$user] = $sid
         }
     }
-
+    #"visible" = $True;
     if($sid){
-        $permission = @{
-            "visible" = $True;
+        $permission = @{       
             "sid" = $sid;
-            "type" = "kAllow";
+            "type" = "Allow";
+            "mode" = "FolderOnly"
             "access" = $perms
         }
         return $permission
@@ -73,7 +100,10 @@ function addPermission($username, $perms){
 $nasListFile = Get-Content $nasList
 
 foreach($shareName in $nasListFile){
-
+    $shareName = [string]$shareName
+    if($shareName -eq ''){
+        continue
+    }
     # find nas share to recover
     $shares = api get restore/objects?search=$shareName
     $exactShares = $shares.objectSnapshotInfo | Where-Object {$_.snapshottedSource.name -ieq $shareName}
@@ -123,42 +153,52 @@ foreach($shareName in $nasListFile){
 
             foreach($user in $readWrite){
                 $sharePermissionsApplied = $True
-                $sharePermissions += addPermission $user 'kReadWrite'
+                $sharePermissions += addPermission $user 'ReadWrite'
                 
             }
             
             foreach($user in $fullControl){
                 $sharePermissionsApplied = $True
-                $sharePermissions += addPermission $user 'kFullControl'
+                $sharePermissions += addPermission $user 'FullControl'
             }
             
             foreach($user in $readOnly){
                 $sharePermissionsApplied = $True
-                $sharePermissions += addPermission $user 'kReadOnly'
+                $sharePermissions += addPermission $user 'ReadOnly'
             }
             
             foreach($user in $modify){
                 $sharePermissionsApplied = $True
-                $sharePermissions += addPermission $user 'kModify'
+                $sharePermissions += addPermission $user 'Modify'
             }
             
             if($sharePermissionsApplied -eq $False){
-                $sharePermissions += addPermission "Everyone" 'kFullControl'
+                $sharePermissions += addPermission "Everyone" 'FullControl'
             }
 
             do {
-                $newView = (api get views).views | Where-Object { $_.name -eq $newViewName }
-                sleep 1
+                sleep 2
+                $newView = (api get -v2 file-services/views).views | Where-Object { $_.name -eq $newViewName }
             } until ($newView)
             
+            $newView | setApiProperty -name category -value 'FileServices'
+            delApiProperty -object $newView -name nfsMountPaths
             $newView | setApiProperty -name enableSmbViewDiscovery -value $True
-            $newView | setApiProperty -name enableSmbAccessBasedEnumeration -value $True
-            $newView | setApiProperty -name protocolAccess -value 'kSMBOnly'
-            $newView | setApiProperty -name sharePermissions -value $sharePermissions
-            $newView.qos = @{
-                "principalName" = 'TestAndDev High';
+            delApiProperty -object $newView -name versioning
+            if($cluster.clusterSoftwareVersion -gt '6.6'){
+                $newView.sharePermissions | setApiProperty -name permissions -value $sharePermissions
+            }else{
+                $newView | setApiProperty -name sharePermissions -value @($sharePermissions)
             }
-            $null = api put views $newView
+            if($smbOnly){
+                $newView.protocolAccess = @(
+                    @{
+                        "type" = "SMB";
+                        "mode" = "ReadWrite"
+                    }
+                )
+            }
+            $null = api put -v2 file-services/views/$($newView.viewId) $newView
         }
     }
 }
