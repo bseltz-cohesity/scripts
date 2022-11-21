@@ -18,7 +18,7 @@ param (
     [Parameter()][datetime]$recoverDate,
     [Parameter()][string]$ahvSourceName,
     [Parameter()][string]$networkName,
-    [Parameter()][string]$datastoreName,
+    [Parameter()][string]$storageContainer,
     [Parameter()][string]$prefix = '',
     [Parameter()][int]$vlan,
     [Parameter()][switch]$detachNetwork,
@@ -113,8 +113,8 @@ $restoreParams = @{
 # alternate restore location params
 if($ahvSourceName){
     # require alternate location params
-    if(!$datastoreName){
-        Write-Host "datastoreName required" -ForegroundColor Yellow
+    if(!$storageContainer){
+        Write-Host "storageContainer required" -ForegroundColor Yellow
         exit
     }
     # select AHV target
@@ -125,10 +125,10 @@ if($ahvSourceName){
     }
     $ahvSourceId = $ahvSource.protectionSource.id
     
-    # select datastore
-    $datastore = api get "/entitiesOfType?acropolisEntityTypes=kStorageContainer&environmentTypes=kAcropolis&rootEntityId=$ahvSourceId" | Where-Object { $_.displayName -eq $datastoreName }
-    if(!$datastore){
-        Write-Host "Datastore $datastoreName not found" -ForegroundColor Yellow
+    # select storageContainer
+    $storageContainerObject = api get "/entitiesOfType?acropolisEntityTypes=kStorageContainer&environmentTypes=kAcropolis&rootEntityId=$ahvSourceId" | Where-Object { $_.displayName -eq $storageContainer }
+    if(!$storageContainerObject){
+        Write-Host "storageContainer $storageContainer not found" -ForegroundColor Yellow
         exit
     }
 
@@ -141,7 +141,7 @@ if($ahvSourceName){
             "detachNetwork" = $True;
         };
         "storageContainer" = @{
-            "id" = $datastore.id
+            "id" = $storageContainerObject.id
         }
     }
 

@@ -53,7 +53,7 @@ Place the files in a folder together and run the main script like so:
 * -prefix: (optional) add a prefix to the VM name during restore
 * -ahvSourceName: (optional) AHV protection source to recover to
 * -networkName: (optional) VM Network to attach the VM to
-* -datastoreName: (optional) Datastore to recover the VM to
+* -storageContainer: (optional) storage container to recover the VM to
 * -poweron: (optional) power on the VMs during restore (default is false)
 * -detachNetwork: (optional) leave VM network disconnected (default is false)
 * -vlan: (optional) vlan ID to choose for restore (cluster interface)
