@@ -158,7 +158,8 @@ if($ahvSourceName){
             Write-Host "network $networkName not found" -ForegroundColor Yellow
             exit
         }
-        $restoreParams.acropolisParams.recoverVmParams.acropolisTargetParams.recoveryTargetConfig.newSourceConfig.networkConfig["newNetworkConfig"] = @{
+        # ["newNetworkConfig"]
+        $restoreParams.acropolisParams.recoverVmParams.acropolisTargetParams.recoveryTargetConfig.newSourceConfig.networkConfig = @{
             "networkPortGroup"   = @{
                 "id" = $network[0].id
             };
