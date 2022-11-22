@@ -1,8 +1,15 @@
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,
-    [Parameter(Mandatory = $True)][string]$username,
-    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$vip = 'helios.cohesity.com',  # the cluster to connect to (DNS name or IP)
+    [Parameter()][string]$username = 'helios',          # username (local or AD)
+    [Parameter()][string]$domain = 'local',             # local or AD domain
+    [Parameter()][switch]$useApiKey,                    # use API key for authentication
+    [Parameter()][string]$password,                     # optional password
+    [Parameter()][string]$tenant,                       # org to impersonate
+    [Parameter()][switch]$mcm,                          # connect through mcm
+    [Parameter()][string]$mfaCode = $null,              # mfa code
+    [Parameter()][switch]$emailMfaCode,                 # send mfa code via email
+    [Parameter()][string]$clusterName = $null,          # cluster to connect to via helios/mcm
     [Parameter()][int64]$pageSize = 100
 )
 
@@ -10,11 +17,26 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
 
 $dateString = (get-date).ToString().Replace(' ','_').Replace('/','-').Replace(':','-')
 $outfileName = "RecoveryPoints-$dateString.csv"
-"Job Name,Job Type,Protected Object,Recovery Date,Local Expiry,Archival Expiry,Archive Target,Run URL" | Out-File -FilePath $outfileName
+"Job Name,Job Type,Protected Object,Recovery Date,Local Expiry,Archival Expiry,Archive Target" | Out-File -FilePath $outfileName
 
 ### find recoverable objects
 $from = 0
@@ -51,16 +73,14 @@ if($ro.count -gt 0){
             write-host ("`n{0} ({1}) {2}" -f $jobName, $objType, $objName) -ForegroundColor Green 
             $versionList = @()
             foreach($version in $doc.versions){
-            # $doc.versions | ForEach-Object {  
-                # $version = $_
                 $runId = $version.instanceId.jobInstanceId
                 $startTime = $version.instanceId.jobStartTimeUsecs
-                $local = 0
-                $remote = 0
-                $remoteCluster = ''
-                $archive = 0
-                $archiveTarget = ''
                 foreach($replica in $version.replicaInfo.replicaVec){
+                    $local = 0
+                    $remote = 0
+                    $remoteCluster = ''
+                    $archive = 0
+                    $archiveTarget = ''
                     if($replica.target.type -eq 1){
                         $local = $replica.expiryTimeUsecs
                     }elseif($replica.target.type -eq 3) {
@@ -69,8 +89,8 @@ if($ro.count -gt 0){
                             $archiveTarget = $replica.target.archivalTarget.name
                         }
                     }
+                    $versionList += @{'RunDate' = $startTime; 'local' = $local; 'archive' = $archive; 'archiveTarget' = $archiveTarget; 'runId' = $runId; 'startTime' = $startTime}
                 }
-                $versionList += @{'RunDate' = $startTime; 'local' = $local; 'archive' = $archive; 'archiveTarget' = $archiveTarget; 'runId' = $runId; 'startTime' = $startTime}
             }
             write-host "`n`t             RunDate           SnapExpires        ArchiveExpires" -ForegroundColor Blue
             foreach($version in $versionList){
@@ -87,8 +107,8 @@ if($ro.count -gt 0){
                 $runDate = usecsToDate $version['RunDate']
                 "`t{0,20}  {1,20}  {2,20}" -f $runDate, $local, $archive
                 
-                $runURL = "https://$vip/protection/job/$jobId/run/$($version['runId'])/$($version['startTime'])/protection"
-                "$jobName,$objType,$objName,$runDate,$local,$archive,$($version['archiveTarget']),$runURL" | Out-File -FilePath $outfileName -Append
+                # $runURL = "https://$vip/protection/job/$jobId/run/$($version['runId'])/$($version['startTime'])/protection"
+                "$jobName,$objType,$objName,$runDate,$local,$archive,$($version['archiveTarget'])" | Out-File -FilePath $outfileName -Append
             }
         }
         if($ro.count -gt ($pageSize + $from)){
@@ -100,7 +120,3 @@ if($ro.count -gt 0){
     }
     write-host "`nReport Saved to $outFileName`n" -ForegroundColor Blue
 }
-
-
-
-
