@@ -85,7 +85,9 @@ function getSid($principalName){
     if($sids.ContainsKey($principalName)){
         $sid = $sids[$principalName]
     }else{
-        if($principalName.contains('\')){
+        if($principalName -eq 'Everyone'){
+            $sid = 'S-1-1-0'
+        }elseif($principalName.contains('\')){
             $workgroup, $user = $principalName.split('\')
             # find domain
             $adDomain = $ads | Where-Object { $_.workgroup -eq $workgroup -or $_.domainName -eq $workgroup}
