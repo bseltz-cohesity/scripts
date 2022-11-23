@@ -30,12 +30,12 @@ Take note of the `nodeIp` and `defaultPassword` values. If you see multiple node
 
 In Grafana, create a PostgreSQL data source with the following settings:
 
-* Host: nodeIp:port, for example: 192.168.1.100:27999
-* Database: postgres
-* User: reporting_read
-* Password: defaultPassword, for example b29b2f695190d807
-* TLS/SSL Mode: disable (unless you have deployed a valid/trusted certificate to your cluster)
-* Version: 10
+* `Host`: nodeIp:port, for example: 192.168.1.100:27999
+* `Database`: postgres
+* `User`: reporting_read
+* `Password`: defaultPassword, for example b29b2f695190d807
+* `TLS/SSL Mode`: disable (unless you have deployed a valid/trusted certificate to your cluster)
+* `Version`: 10
 
 ## Import the Dashboard
 
