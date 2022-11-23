@@ -39,4 +39,4 @@ In Grafana, create a PostgreSQL data source with the following settings:
 
 In Grafana, go to Dashboards -> Import and upload the JSON file. Give the new dashboard a unique name and UID, and select our data source.
 
-![dashboard](../../images/ClusterResourceDashboard.png)
+![dashboard](../../../images/ClusterResourceDashboard.png)
