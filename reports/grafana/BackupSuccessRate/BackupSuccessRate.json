@@ -12,6 +12,12 @@
   "__elements": {},
   "__requires": [
     {
+      "type": "panel",
+      "id": "gauge",
+      "name": "Gauge",
+      "version": ""
+    },
+    {
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
@@ -67,6 +73,83 @@
       "fieldConfig": {
         "defaults": {
           "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "id": 6,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "9.3.0-beta1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_VE2}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "select date_trunc('day', to_timestamp(start_time_usecs / 1000000)) as starttime,\n100 * count(status) filter (where status = 4 or status = 5) / count(status) as Succeeded\nfrom reporting.protection_job_run_entities\nGroup by starttime",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Success Rate",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_VE2}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
             "mode": "palette-classic"
           },
           "custom": {
@@ -113,7 +196,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "percent"
         },
         "overrides": [
           {
@@ -240,8 +324,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 24,
-        "x": 0,
+        "w": 18,
+        "x": 4,
         "y": 0
       },
       "id": 4,
@@ -289,6 +373,87 @@
       ],
       "title": "Backup Success Rate",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_VE2}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 4
+      },
+      "id": 8,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "9.3.0-beta1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_VE2}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "select date_trunc('day', to_timestamp(start_time_usecs / 1000000)) as starttime,\n100 * count(status) filter (where status = 6) / count(status) as Failed\nfrom reporting.protection_job_run_entities\nGroup by starttime",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Failure Rate",
+      "type": "gauge"
     },
     {
       "datasource": {
@@ -412,8 +577,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 24,
-        "x": 0,
+        "w": 18,
+        "x": 4,
         "y": 8
       },
       "id": 2,
@@ -438,7 +603,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "select date_trunc('day', to_timestamp(start_time_usecs / 1000000)) as starttime,\ncount(status) filter (where status = 3) as Canceled,\ncount(status) filter (where status = 4) as Succeeded,\ncount(status) filter (where status = 5) as SucceededWithWarning,\ncount(status) filter (where status = 6) as Failed\nfrom reporting.protection_job_run_entities\nGroup by starttime",
+          "rawSql": "select date_trunc('day', to_timestamp(start_time_usecs / 1000000)) as starttime,\ncount(status) filter (where status = 3) as Canceled,\ncount(status) filter (where status = 5) as SucceededWithWarning,\ncount(status) filter (where status = 6) as Failed\nfrom reporting.protection_job_run_entities\nGroup by starttime",
           "refId": "A",
           "sql": {
             "columns": [
@@ -459,7 +624,7 @@
           }
         }
       ],
-      "title": "Backup Success Count",
+      "title": "Backup Failure Count",
       "type": "timeseries"
     }
   ],
@@ -478,6 +643,6 @@
   "timezone": "",
   "title": "Backup Success Rate",
   "uid": "DVypDLOVk",
-  "version": 4,
+  "version": 5,
   "weekStart": ""
 }
