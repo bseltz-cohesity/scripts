@@ -11,9 +11,17 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, # the Cohesity cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, # Cohesity username (local or AD)
-    [Parameter()][string]$domain = 'local', # local or AD domain
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter(Mandatory = $True)][string]$importFile, # path to Netapp import file
     [Parameter(Mandatory = $True)][string]$netappSource, # name of the Netapp protection source
     [Parameter()][array]$volumeName, # name(s) of volumes(s) to recover
@@ -29,7 +37,70 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate to Cohesity cluster
-apiauth -vip $vip -username $username -domain $domain
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# select helios/mcm managed cluster
+if($USING_HELIOS -and !$region){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit 1
+}
+
+function addPermission($user, $perms){
+    if($user -eq 'Everyone'){
+        $sid = 'S-1-1-0'
+    }elseif($user.contains('\')){
+        $workgroup, $user = $user.split('\')
+        # find domain
+        $adDomain = $ads | Where-Object { $_.workgroup -eq $workgroup -or $_.domainName -eq $workgroup}
+        if(!$adDomain){
+            write-host "domain $workgroup not found!" -ForegroundColor Yellow
+            exit 1
+        }else{
+            # find domain princlipal/sid
+            $domainName = $adDomain.domainName
+            $principal = api get "activeDirectory/principals?domain=$($domainName)&includeComputers=true&search=$($user)"
+            if(!$principal){
+                write-host "user $($user) not found!" -ForegroundColor Yellow
+            }else{
+                $sid = $principal[0].sid
+                $sids[$user] = $sid
+            }
+        }
+    }else{
+        # find local or wellknown sid
+        $principal = api get "activeDirectory/principals?includeComputers=true&search=$($user)"
+        if(!$principal){
+            write-host "user $($user) not found!" -ForegroundColor Yellow
+        }else{
+            $sid = $principal[0].sid
+            $sids[$user] = $sid
+        }
+    }
+    #"visible" = $True;
+    if($sid){
+        $permission = @{       
+            "sid" = $sid;
+            "type" = "Allow";
+            "mode" = "FolderOnly"
+            "access" = $perms
+        }
+        return $permission
+    }else{
+        Write-Warning "User $user not found"
+        exit 1
+    }
+}
+
+$cluster = api get cluster
 
 # gather list of volumes to recover
 $volumes = @()
@@ -87,6 +158,7 @@ function getSid($principalName){
     }else{
         if($principalName -eq 'Everyone'){
             $sid = 'S-1-1-0'
+            $sids[$principalName] = $sid
         }elseif($principalName.contains('\')){
             $workgroup, $user = $principalName.split('\')
             # find domain
@@ -168,36 +240,39 @@ foreach($volumeName in $volumesToRecover){
     }
 }
 
-Start-Sleep -Seconds 2
+Start-Sleep -Seconds 5
 
 # set properties of migrated volume views
-$views = api get views
+$views = api get -v2 file-services/views
 foreach($volumeName in $recoveredVolumes){
     $newViewName = "$viewPrefix$volumeName$"
     $view = $views.views | Where-Object name -eq $newViewName
     if($view){
-        $view.protocolAccess = 'kSMBOnly'
-        if($view.PSObject.properties['enableSmbViewDiscovery']){
-            $view.enableSmbViewDiscovery = $True
-        }else{
-            setApiProperty -obj $view -name 'enableSmbViewDiscovery' -value $True
+        $view | setApiProperty -name category -value 'FileServices'
+        delApiProperty -object $view -name nfsMountPaths
+        $view | setApiProperty -name enableSmbViewDiscovery -value $True
+        delApiProperty -object $view -name versioning
+        if($smbOnly){
+            $newView.protocolAccess = @(
+                @{
+                    "type" = "SMB";
+                    "mode" = "ReadWrite"
+                }
+            )
         }
         if($restrictVolumeSharePermissions.Length -ne 0){
-            $view.sharePermissions = @()
+            $sharePermissions = @()
             foreach($principalName in $restrictVolumeSharePermissions){
-                $sid = getSid $principalName
-                if($sid){
-                    $view.sharePermissions += @{
-                        "visible" = $true;
-                        "sid"    = $sid;
-                        "access" = "kFullControl";
-                        "type"   = "kAllow"
-                    }
-                }
+                $sharePermissions += addPermission $principalName
+            }
+            if($cluster.clusterSoftwareVersion -gt '6.6'){
+                $view.sharePermissions | setApiProperty -name permissions -value $sharePermissions
+            }else{
+                $view | setApiProperty -name sharePermissions -value @($sharePermissions)
             }
         }
-        $null = api put views $view
-    }    
+        $null = api put -v2 file-services/views/$($view.viewId) $view
+    }
 }
 
 # create shares
@@ -236,14 +311,12 @@ foreach($netappShare in $netappShares | Where-Object {$_.ShareName -ne "/$($_.Pa
                         $principalName, $permission = $ace.split('/')
                         $principalName = $principalName.Trim()
                         $permission = $permission.Trim()
-                        $sid = getSid $principalName
-                        if($sid){
-                            $shareParams.sharePermissions += @{
-                                "visible" = $true;
-                                "sid"    = $sid;
-                                "access" = $permission.replace('Full Control', 'kFullControl').replace('Read', 'kReadOnly').replace('Change', 'kModify');
-                                "type"   = "kAllow"
-                            }
+                        $shareParams["sharePermissions"] += @{
+                            "visible" = $true;
+                            "sid"    = getSid $principalName;
+                            "access" = $permission.replace('Full Control', 'kFullControl').replace('Read', 'kReadOnly').replace('Change', 'kModify');
+                            "type"   = "kAllow";
+                            "mode" = "kFolderSubFoldersAndFiles"
                         }
                     }
                 }
