@@ -4,6 +4,8 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This graphana dashboard displays storage and cpu/memory usage for a Cohesity cluster.
 
+![dashboard](../../../images/ClusterResourceDashboard.png)
+
 ## Get the JSON File
 
 Go here to get the raw JSON file and save it to your local machine.
@@ -38,5 +40,3 @@ In Grafana, create a PostgreSQL data source with the following settings:
 ## Import the Dashboard
 
 In Grafana, go to Dashboards -> Import and upload the JSON file. Give the new dashboard a unique name and UID, and select our data source.
-
-![dashboard](../../../images/ClusterResourceDashboard.png)
