@@ -40,6 +40,7 @@ Place all files in a folder together, then run the main script like so:
 * -lastCalendarMonth: (optional) set date range to last month
 * -days: (optional) set date range to last X days (default is 31)
 * -pageSize: (optional) maximim number of records per query (default is 10000)
+* -clusterNames: (optional) limit report to specified cluster names (comma separated)
 
 ## Authenticating to Helios
 

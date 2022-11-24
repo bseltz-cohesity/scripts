@@ -8,6 +8,7 @@ param (
     [Parameter()][switch]$lastCalendarMonth,
     [Parameter()][int]$days = 7,
     [Parameter()][int]$pageSize = 10000,
+    [Parameter()][array]$clusterNames,
     [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB'
 )
 
@@ -62,14 +63,14 @@ if($startDate -ne '' -and $endDate -ne ''){
 $start = (usecsToDate $uStart).ToString('yyyy-MM-dd')
 $end = (usecsToDate $uEnd).ToString('yyyy-MM-dd')
 
-# build 7 day time ranges
+# build 1 day time ranges
 $ranges = @()
 $gotAllRanges = $False
 $thisUend = $uEnd
 $thisUstart = $uStart
 while($gotAllRanges -eq $False){
-    if(($thisUend - $uStart) -gt 604800000000){
-        $thisUstart = $thisUend - 604800000000
+    if(($thisUend - $uStart) -gt 86400000000){
+        $thisUstart = $thisUend - 86400000000
         $ranges = @($ranges + @{'start' = $thisUstart; 'end' = $thisUend})
         $thisUend = $thisUstart - 1
     }else{
@@ -241,91 +242,99 @@ $sortAttribute = 'runStartTimeUsecs'
 
 Write-Host "Retrieving report data..."
 
+$selectedClusters = heliosClusters | Where-Object {$_.name -in $clusterNames}
+
 foreach($range in $ranges){
     $startfrom = 0
     $moreRecords = $True
-    while($moreRecords){
-        $reportParams = @{
-            "filters"  = @(
-                @{
-                    "attribute"             = "date";
-                    "filterType"            = "TimeRange";
-                    "timeRangeFilterParams" = @{
-                        "lowerBound" = [int64]$range.start;
-                        "upperBound" = [int64]$range.end
-                    }
-                }
-            );
-            "sort"     = @(
-                @{
-                    "attribute" = $sortAttribute;
-                }
-            );
-            "timezone" = "America/New_York";
-            "limit"    = @{
-                "size" = $pageSize;
-                "from" = $startfrom
-            }
-        }
-
-        $preview = api post -reportingV2 "components/$reportNumber/preview" $reportParams
-
-        $clusters = $preview.component.data.system | Sort-Object -Unique
-
-        foreach($cluster in $clusters){
-            foreach($i in $preview.component.data | Where-Object system -eq $cluster | Sort-Object -Property groupName, sourceName){
-                $clusterName = $i.system.ToUpper()
-                $jobName = $i.groupName
-                $sourceName = $i.sourceName
-                if($i.PSObject.Properties['environment'] -and $i.environment.length -gt 0){
-                    $environment = $i.environment.subString(1)
-                    $objectName = $i.objectName
-                    $policy = $i.policyName
-                    $status = $i.status.subString(1)
-                    $startTime = (usecsToDate $i.runStartTimeUsecs).ToSTring('yyyy-MM-dd hh:mm')
-                    $endTime = (usecsToDate $i.endTimeUsecs).ToSTring('yyyy-MM-dd hh:mm')
-                    $durationSecs = [math]::Round($i.durationUsecs / 1000000, 0)
-                    $timeSpan = [timespan]::fromseconds($durationSecs)
-                    $duration = "{0}s" -f $timeSpan.Seconds
-                    if($timeSpan.Minutes -gt 0){
-                        $duration = "{0}m $duration" -f $timeSpan.Minutes
-                    }
-                    if($timeSpan.Hours -gt 0){
-                        $duration = "{0}h $duration" -f $timeSpan.Hours
-                    }
-                    if($timeSpan.Days -gt 0){
-                        $duration = "{0}d $duration" -f $timeSpan.Days
-                    }
-                    $snapshotStatus = $i.snapshotStatus
-                    $logicalSize = toUnits $i.logicalSize
-                    $dataRead = toUnits $i.dataRead
-                    $dataWritten = toUnits $i.dataWritten
-                    
-                    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}"",""{13}"",""{14}""" -f $clusterName, $policy, $status, $startTime, $endTime, $duration, $durationSecs, $jobName, $environment, $sourceName, $objectName, $snapshotStatus, $logicalSize, $dataRead, $dataWritten | Out-File -FilePath $csvFileName -Append
-                    $Global:html += '<tr style="border: 1px solid {15} background-color: {15}">
-                        <td class="nowrap">{0}</td>
-                        <td>{1}</td>
-                        <td>{2}</td>
-                        <td class="nowrap">{3}</td>
-                        <td class="nowrap">{4}</td>
-                        <td class="nowrap">{5}</td>
-                        <td>{6}</td>
-                        <td>{7}</td>
-                        <td>{8}</td>
-                        <td>{9}</td>
-                        <td>{10}</td>
-                        <td>{11}</td>
-                        <td>{12}</td>
-                        <td>{13}</td>
-                        <td>{14}</td>
-                        </tr>' -f $clusterName, $policy, $status, $startTime, $endTime, $duration, $durationSecs, $jobName, $environment, $sourceName, $objectName, $snapshotStatus, $logicalSize, $dataRead, $dataWritten, $Global:trColor            
+    $reportParams = @{
+        "filters"  = @(
+            @{
+                "attribute"             = "date";
+                "filterType"            = "TimeRange";
+                "timeRangeFilterParams" = @{
+                    "lowerBound" = [int64]$range.start;
+                    "upperBound" = [int64]$range.end
                 }
             }
+        );
+        "sort"     = @(
+            @{
+                "attribute" = $sortAttribute;
+            }
+        );
+        "timezone" = "America/New_York";
+        "limit"    = @{
+            "size" = $pageSize;
         }
-        if($preview.component.data.Count -eq 0){
-            $moreRecords = $False
-        }else{
-            $startfrom += $pageSize
+    }
+    if($selectedClusters){
+        $systemIdFilter = @{
+            "attribute" = "systemId";
+            "filterType" = "Systems";
+            "systemsFilterParams" = @{
+                "systemIds" = @();
+                "systemNames" = @()
+            }
+        }
+        foreach($selectedCluster in $selectedClusters){
+            $systemIdFilter.systemsFilterParams.systemIds = @($systemIdFilter.systemsFilterParams.systemIds + "$($selectedCluster.clusterId):$($selectedCluster.clusterIncarnationId)")
+            $systemIdFilter.systemsFilterParams.systemNames = @($systemIdFilter.systemsFilterParams.systemNames + "$($selectedCluster.name)")
+        }
+        $reportParams.filters = @($reportParams.filters + $systemIdFilter)
+    }
+    $preview = api post -reportingV2 "components/$reportNumber/preview" $reportParams
+
+    $clusters = $preview.component.data.system | Sort-Object -Unique
+
+    foreach($cluster in $clusters){
+        foreach($i in $preview.component.data | Where-Object system -eq $cluster | Sort-Object -Property groupName, sourceName){
+            $clusterName = $i.system.ToUpper()
+            $jobName = $i.groupName
+            $sourceName = $i.sourceName
+            if($i.PSObject.Properties['environment'] -and $i.environment.length -gt 0){
+                $environment = $i.environment.subString(1)
+                $objectName = $i.objectName
+                $policy = $i.policyName
+                $status = $i.status.subString(1)
+                $startTime = (usecsToDate $i.runStartTimeUsecs).ToSTring('yyyy-MM-dd hh:mm')
+                $endTime = (usecsToDate $i.endTimeUsecs).ToSTring('yyyy-MM-dd hh:mm')
+                $durationSecs = [math]::Round($i.durationUsecs / 1000000, 0)
+                $timeSpan = [timespan]::fromseconds($durationSecs)
+                $duration = "{0}s" -f $timeSpan.Seconds
+                if($timeSpan.Minutes -gt 0){
+                    $duration = "{0}m $duration" -f $timeSpan.Minutes
+                }
+                if($timeSpan.Hours -gt 0){
+                    $duration = "{0}h $duration" -f $timeSpan.Hours
+                }
+                if($timeSpan.Days -gt 0){
+                    $duration = "{0}d $duration" -f $timeSpan.Days
+                }
+                $snapshotStatus = $i.snapshotStatus
+                $logicalSize = toUnits $i.logicalSize
+                $dataRead = toUnits $i.dataRead
+                $dataWritten = toUnits $i.dataWritten
+                
+                """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}"",""{13}"",""{14}""" -f $clusterName, $policy, $status, $startTime, $endTime, $duration, $durationSecs, $jobName, $environment, $sourceName, $objectName, $snapshotStatus, $logicalSize, $dataRead, $dataWritten | Out-File -FilePath $csvFileName -Append
+                $Global:html += '<tr style="border: 1px solid {15} background-color: {15}">
+                    <td class="nowrap">{0}</td>
+                    <td>{1}</td>
+                    <td>{2}</td>
+                    <td class="nowrap">{3}</td>
+                    <td class="nowrap">{4}</td>
+                    <td class="nowrap">{5}</td>
+                    <td>{6}</td>
+                    <td>{7}</td>
+                    <td>{8}</td>
+                    <td>{9}</td>
+                    <td>{10}</td>
+                    <td>{11}</td>
+                    <td>{12}</td>
+                    <td>{13}</td>
+                    <td>{14}</td>
+                    </tr>' -f $clusterName, $policy, $status, $startTime, $endTime, $duration, $durationSecs, $jobName, $environment, $sourceName, $objectName, $snapshotStatus, $logicalSize, $dataRead, $dataWritten, $Global:trColor            
+            }
         }
     }
 }
