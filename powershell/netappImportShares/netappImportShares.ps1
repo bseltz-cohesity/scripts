@@ -311,12 +311,15 @@ foreach($netappShare in $netappShares | Where-Object {$_.ShareName -ne "/$($_.Pa
                         $principalName, $permission = $ace.split('/')
                         $principalName = $principalName.Trim()
                         $permission = $permission.Trim()
-                        $shareParams["sharePermissions"] += @{
-                            "visible" = $true;
-                            "sid"    = getSid $principalName;
-                            "access" = $permission.replace('Full Control', 'kFullControl').replace('Read', 'kReadOnly').replace('Change', 'kModify');
-                            "type"   = "kAllow";
-                            "mode" = "kFolderSubFoldersAndFiles"
+                        $sid = getSid $principalName
+                        if($sid){
+                            $shareParams["sharePermissions"] += @{
+                                "visible" = $true;
+                                "sid"    = $sid;
+                                "access" = $permission.replace('Full Control', 'kFullControl').replace('Read', 'kReadOnly').replace('Change', 'kModify');
+                                "type"   = "kAllow";
+                                "mode" = "kFolderSubFoldersAndFiles"
+                            }
                         }
                     }
                 }
