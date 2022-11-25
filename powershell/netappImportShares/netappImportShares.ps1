@@ -254,7 +254,7 @@ foreach($volumeName in $recoveredVolumes){
         $view | setApiProperty -name enableSmbViewDiscovery -value $True
         delApiProperty -object $view -name versioning
         if($smbOnly){
-            $newView.protocolAccess = @(
+            $view.protocolAccess = @(
                 @{
                     "type" = "SMB";
                     "mode" = "ReadWrite"
