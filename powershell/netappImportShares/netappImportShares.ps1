@@ -30,7 +30,8 @@ param (
     [Parameter()][string]$viewPrefix = '', # prefix to apply to volume-level views
     [Parameter()][string]$sharePrefix = '', # prefix to apply to shares within views
     [Parameter()][array]$exclude, # skip creating shares that match these substrings
-    [Parameter()][switch]$copySharePermissions
+    [Parameter()][switch]$copySharePermissions,
+    [Parameter()][switch]$smbOnly
 )
 
 # source the cohesity-api helper code

@@ -70,3 +70,4 @@ After the information has been exported from NetApp, we can import into Cohesity
 * -exclude: (optional) comma separated list of substrings - exclude shares that match
 * -copySharePermissions: (optional) if omitted, share permissions are not copied
 * -restrictVolumeSharePermissions: (optional) restrict share permissions for volume/view level shares (e.g. 'mydomain.net\domain admins', 'mydomain.net\storage admins')
+* -smbOnly: (optional) restrict views/shares to SMB protocol only
