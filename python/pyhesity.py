@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2022.10.17"""
+"""Cohesity Python REST API Wrapper Module - 2022.11.26"""
 
 ##########################################################################################
 # Change Log
@@ -17,6 +17,7 @@
 # 2022.09.11 - store password when passed from script, added caller to api log
 # 2022.09.13 - added specific failure mode logging
 # 2022.09.21 - better handling of bad API key scenarios
+# 2022.11.26 - added v2 file download
 #
 ##########################################################################################
 # Install Notes
@@ -500,10 +501,6 @@ def __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, 
 
 # store password in PWFILE
 def setpwd(v='helios.cohesity.com', u='helios', d='local', useApiKey=False, helios=False, password=None):
-    print("v = %s" % v)
-    print("u = %s" % u)
-    print("d = %s" % d)
-    print("useApiKey = %s" % useApiKey)
     if d.lower() != 'local' and helios is False and v != 'helios.cohesity.com' and useApiKey is False:
         v = '--'  # wildcard vip
     if password is None:
@@ -596,13 +593,16 @@ def display(myjson):
         print(json.dumps(myjson, sort_keys=True, indent=4, separators=(', ', ': ')))
 
 
-def fileDownload(uri, fileName):
+def fileDownload(uri, fileName, v=1):
     """download file"""
     if COHESITY_API['AUTHENTICATED'] is False:
         return "Not Connected"
-    if uri[0] != '/':
-        uri = '/public/' + uri
-    response = requests.get(COHESITY_API['APIROOT'] + uri, headers=COHESITY_API['HEADER'], verify=False, timeout=300, stream=True)
+    if v == 2:
+        response = requests.get(COHESITY_API['APIROOTv2'] + uri, headers=COHESITY_API['HEADER'], verify=False, timeout=300, stream=True)
+    else:
+        if uri[0] != '/':
+            uri = '/public/' + uri
+        response = requests.get(COHESITY_API['APIROOT'] + uri, headers=COHESITY_API['HEADER'], verify=False, timeout=300, stream=True)
     f = open(fileName, 'wb')
     for chunk in response.iter_content(chunk_size=1048576):
         if chunk:
