@@ -2,4 +2,4 @@
 
 Some Grafana dashboard examples
 
-![dashboard](../../../images/BackupSuccessRate.png)
+![dashboard](../../images/BackupSuccessRate.png)
