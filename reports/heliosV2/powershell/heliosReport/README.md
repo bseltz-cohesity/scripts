@@ -41,7 +41,9 @@ Place all files in a folder together, then run the main script like so:
 * -dayRange: (optional) page results by number of days (default is 7)
 * -clusterNames: (optional) limit report to one or more cluster names (comma separated)
 * -unit: (optional) 'MiB','GiB' or 'TiB' (default is 'MiB')
-* -timeZone: (optional) default is 'America/New_York'
+* -timeZone: (optional) default is 'America/New_York',
+* -showRecord: (optional) show first record format and exit
+* -filters: (optional) one or more filters, e.g. 'numSnapshots=0', 'protectionStatus=protected'
 
 ## Authenticating to Helios
 

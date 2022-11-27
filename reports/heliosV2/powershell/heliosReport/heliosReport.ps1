@@ -11,7 +11,9 @@ param (
     [Parameter()][array]$clusterNames,
     [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB',
     [Parameter()][string]$reportName = 'Protection Runs',
-    [Parameter()][string]$timeZone = 'America/New_York'
+    [Parameter()][string]$timeZone = 'America/New_York',
+    [Parameter()][switch]$showRecord,
+    [Parameter()][array]$filters
 )
 
 $conversion = @{'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
@@ -306,7 +308,24 @@ foreach($cluster in ($selectedClusters | Sort-Object -Property name)){
         }else{
             $previewData = $preview.component.data | Sort-Object -Property $attributes[0].attributeName
         }
+        if($filters){
+            foreach($filter in $filters){
+                if($filter -match '='){
+                    $fattrib, $fvalue = $filter -split '='
+                    if(! $previewData[0].PSObject.Properties[$fattrib]){
+                        Write-Host "`nInvalid filter attribute: $fattrib`nUse -showRecord to see attribute names`n" -ForegroundColor Yellow
+                        exit
+                    }else{
+                        $previewData = $previewData | Where-Object {$_.$fattrib -eq $fvalue}
+                    }
+                }
+            }
+        }
         foreach($rec in $previewData){
+            if($showRecord){
+                $rec | ConvertTo-Json -Depth 99
+                exit
+            }
             $csvColumns = @()
             $Global:html += '<tr style="border: 1px solid {0} background-color: {0}">' -f $Global:trColor
             foreach($attribute in $attributes){
