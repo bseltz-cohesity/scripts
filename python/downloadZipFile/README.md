@@ -4,6 +4,8 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This script downloads and extracts a recovered zip file from a file-level recovery from archive.
 
+**Warning**: zip extraction will `overwrite` existing files without asking. Make sure you know what you are doing!
+
 ## Download the scripts
 
 You can download the scripts using the following commands:
@@ -18,26 +20,36 @@ chmod +x downloadZipFile.py
 
 ## Components
 
-* downloadZipFile: the main python script
+* downloadZipFile.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
-# Example
+## Example
 
-Go ahead and use the Cohesity UI to perform your file-level restore from archive and choose the download option. When the recovery task is complete, a download file will be available (via a button in the recovery task). Take note of the recovery task name (e.g. Download_Files_Nov_25_2022_8_53_AM).
+Go ahead and use the Cohesity UI to perform your file-level recovery from archive and choose the download option. When the recovery task is complete, a download file will be available (via a button in the recovery task). Take note of the recovery task name (e.g. Download_Files_Nov_25_2022_8_53_AM).
 
-Then you can run the script, like so:
+Then you can run the script on the server you wish to recover the files to, like so:
 
 To download the zip and extract the files to ./recover :
 
 ```bash
-./downloadZipFile.py -v ve2 -u admin -n 'Download_Files_Nov_25_2022_8_53_AM' -r ./recover
+./downloadZipFile.py -v mycluster \
+                     -u myusername \
+                     -d mydomain.net \
+                     -n 'Download_Files_Nov_25_2022_8_53_AM' \
+                     -r ./recover
 ```
 
 Or to download the zip and extract to the files to their original locations :
 
 ```bash
-./downloadZipFile.py -v ve2 -u admin -n 'Download_Files_Nov_25_2022_8_53_AM' -r /
+./downloadZipFile.py -v mycluster \
+                     -u myusername \
+                     -d mydomain.net \
+                     -n 'Download_Files_Nov_25_2022_8_53_AM' \
+                     -r /
 ```
+
+Note that the zip file contains the full path structure of the recovered files (e.g. /home/myusername/myfiles) so recovering to `/` puts the files back to their original locations.
 
 ## Authentication Parameters
 
@@ -45,7 +57,7 @@ Or to download the zip and extract to the files to their original locations :
 * -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
 * -d, --domain: (optional) domain of username (defaults to local)
 * -i, --useApiKey: (optional) use API key for authentication
-* -pwd, --password: (optional) password or API key
+* -pwd, --password: (optional) password or API key (will prompt or use stored password if omitted)
 
 ## Other Parameters
 
