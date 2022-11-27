@@ -53,8 +53,8 @@ Note that the zip file contains the full path structure of the recovered files (
 
 ## Authentication Parameters
 
-* -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
-* -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
+* -v, --vip: DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: username to authenticate to Cohesity cluster (default is helios)
 * -d, --domain: (optional) domain of username (defaults to local)
 * -i, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password or API key (will prompt or use stored password if omitted)
