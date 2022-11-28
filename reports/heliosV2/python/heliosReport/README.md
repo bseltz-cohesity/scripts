@@ -33,7 +33,8 @@ Place both files in a folder together and run the main script like so:
 * -e, --enddate: (optional) specify end of date range
 * -t, --thismonth: (optional) set date range to this month
 * -l, --lastmonth: (optional) set date range to last month
-* -y, --days: (optional) set date range to last X days (default is 31)
+* -y, --days: (optional) limit report to last X days (default is 7)
+* -hr, --hours: (optional) limit report to last X hours
 * -n, --units: (optional) MiB or GiB (default is MiB)
 * -r, --reportname: (optional) name of helios report (default is 'Protection Runs')
 * -c, --clustername: (optional) limit to one or more cluster names (repeat for multiple)
