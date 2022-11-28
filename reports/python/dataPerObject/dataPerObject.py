@@ -55,7 +55,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
     print(job['name'])
     stats = {}
     endUsecs = midnightusecs
-    while(1):
+    while 1:
         runs = [r for r in api('get', 'protectionRuns?jobId=%s&numRuns=%s&endTimeUsecs=%s&excludeNonRestoreableRuns=true' % (job['id'], numruns, endUsecs)) if r['backupRun']['stats']['endTimeUsecs'] < endUsecs]
         if len(runs) > 0:
             endUsecs = runs[-1]['backupRun']['stats']['startTimeUsecs']
@@ -71,7 +71,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                         'startTimeUsecs': run['backupRun']['stats']['startTimeUsecs'],
                         'dataRead': source['stats'].get('totalBytesReadFromSource', 0),
                         'dataWritten': source['stats'].get('totalPhysicalBackupSizeBytes', 0),
-                        'logicalSize': source['stats']['totalLogicalBackupSizeBytes']
+                        'logicalSize': source['stats'].get('totalLogicalBackupSizeBytes', 0)
                     })
     for sourceName in stats:
         if len(stats[sourceName]) > 0:
