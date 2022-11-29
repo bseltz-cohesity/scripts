@@ -103,34 +103,32 @@ for o in job['genericNasParams']['objects']:
     # parse fspath and current snap id
     if '\\' in mountpath:
         smb = True
-        fs_path = '/' + mountpath.split('\\', 3)[3].split('\\.snapshot')[0]
+        share_name = mountpath.split('\\', 3)[3].split('\\.snapshot')[0]
         snapidparts = mountpath.split('\\.snapshot\\')
     else:
-        fs_path = '/' + mountpath.split('/', 2)[1].split('/.snapshot')[0]
+        share_name = '/' + mountpath.split('/', 2)[1].split('/.snapshot')[0]
         snapidparts = mountpath.split('/.snapshot/')
-    # if len(snapidparts) > 1:
-    #     snapid = snapidparts[-1]
-    # else:
-    #     print('%s is not using snapshots' % mountpath)
-    #     continue
     # get share
     if smb is True:
         if smbshares is not None and len(smbshares) > 0:
-            share = [s for s in smbshares if s['fs_path'].lower() == fs_path.lower()]
+            share = [s for s in smbshares if s['share_name'].lower() == share_name.lower()]
             if share is not None and len(share) > 0:
                 share = share[0]
-                fs_id = share['id']
+                sharepath = share['fs_path'].replace('/', '%2F')
+                fileinfo = (requests.get('https://%s:8000/v1/files/%s/info/attributes' % (qumulo, sharepath), headers=header, verify=False)).json()
+                fs_id = fileinfo['id']
             else:
-                print('Share %s not found' % fs_path)
+                print('Share %s not found' % share_name)
                 continue
         else:
             print('no smb shares found')
             continue
     else:
         if nfsexports is not None and len(nfsexports) > 0:
-            export = [e for e in nfsexports if e['fs_path'].lower() == fs_path.lower()]
+            export = [e for e in nfsexports if e['export_path'].lower() == share_name.lower()]
             if export is not None and len(export) > 0:
                 share = export[0]
+                share_name = share['export_path']
                 sharepath = share['fs_path'].replace('/', '%2F')
                 fileinfo = (requests.get('https://%s:8000/v1/files/%s/info/attributes' % (qumulo, sharepath), headers=header, verify=False)).json()
                 fs_id = fileinfo['id']
