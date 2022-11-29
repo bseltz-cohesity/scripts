@@ -89,10 +89,10 @@ $reportNumber = $report.componentIds[0]
 $title = $report.title
 
 # CSV output
-$csvFileName = "$($title)_$($start)_$($end).tsv"
+$csvFileName = "$($title.replace('/','-').replace('\','-'))_$($start)_$($end).tsv"
 
 # HTML output
-$htmlFileName = "$($title)_$($start)_$($end).html"
+$htmlFileName = "$($title.replace('/','-').replace('\','-'))_$($start)_$($end).html"
 
 $trColors = @('#FFFFFF;', '#F1F1F1;')
 
