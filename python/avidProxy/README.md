@@ -44,10 +44,12 @@ firewall-cmd --reload
 Edit the /etc/exports file and add something like the following:
 
 ```bash
-/mnt/avid 192.168.0.0/16(rw,no_root_squash,fsid=1)
+/mnt/avid1 192.168.0.0/16(rw,no_root_squash,fsid=1)
+/mnt/avid2 192.168.0.0/16(rw,no_root_squash,fsid=2)
+/mnt/avid3 192.168.0.0/16(rw,no_root_squash,fsid=3)
 ```
 
-Note that the fsid must be unique on this host.
+Note that the fsid must be unique on this host. All proxies should have the same exports.
 
 ## Restart the NFS Services
 
@@ -77,7 +79,9 @@ Before running the script, repeat the instructions above for all AVID proxies th
                -j avid-backup \
                -n avidproxy1 \
                -n avidproxy2 \
-               -m /mnt/avid \
+               -m /mnt/avid1 \
+               -m /mnt/avid2 \
+               -m /mnt/avid3 \
                -p 'my policy'
 ```
 
