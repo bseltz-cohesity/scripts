@@ -90,11 +90,11 @@ The above command line will register the two AVID proxies as Generic NAS protect
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
-* -n, --proxyname: (optional) name of proxy to protect (use multiple times for multiple)
-* -l, --proxylist: (optional) text file containing proxy names 9one per line)
+* -pn, --proxyname: (optional) name of proxy to protect (use multiple times for multiple)
+* -pl, --proxylist: (optional) text file containing proxy names (one per line)
 * -j, --jobprefix: prefix of job name to create
-* -m, --mountpoint: path of exported avid root (e.g. /mnt/avid)
-* -r, --avidroot: (optional) path of avid root if different then mountpoint (e.g. /mnt/avid)
+* -mp, --mountpoint: (optional) path of exported avid root (e.g. /mnt/avid) (repeat for multiple)
+* -ml, --mountlist: (optional) text file of mount points (one per line)
 * -s, --showdelimiter: (optional) default is '_' (underscore)
 * -p, --policyname: name of protection policy to use for new job (only required for new job)
 * -sd, --storagedomain: (optional) name of storage domain to create job in (default is DefaultStorageDomain)

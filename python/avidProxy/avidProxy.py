@@ -14,12 +14,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, required=True)
 parser.add_argument('-u', '--username', type=str, required=True)
 parser.add_argument('-d', '--domain', type=str, default='local')
-parser.add_argument('-n', '--proxyname', action='append', type=str)
-parser.add_argument('-l', '--proxylist', type=str)
+parser.add_argument('-pn', '--proxyname', action='append', type=str)
+parser.add_argument('-pl', '--proxylist', type=str)
 parser.add_argument('-j', '--jobprefix', type=str, required=True)
-parser.add_argument('-r', '--avidroot', type=str, default=None)
 parser.add_argument('-p', '--policyname', type=str, required=True)
-parser.add_argument('-m', '--mountpoint', type=str, required=True)
+parser.add_argument('-mp', '--mountpoint', action='append', type=str)
+parser.add_argument('-ml', '--mountlist', type=str)
 parser.add_argument('-s', '--showdelimiter', type=str, default='_')
 parser.add_argument('-sd', '--storagedomain', type=str, default='DefaultStorageDomain')
 parser.add_argument('-tz', '--timezone', type=str, default='US/Eastern')
@@ -34,9 +34,9 @@ domain = args.domain          # domain of username (e.g. local, or AD domain)
 proxies = args.proxyname      # name of server to protect
 proxylist = args.proxylist    # file with server names
 jobprefix = args.jobprefix    # name of protection job to add server to
-avidroot = args.avidroot      # root folder of avid shares
 policyname = args.policyname  # protection policy
 mountpoint = args.mountpoint  # mount path of avid root
+mountlist = args.mountlist    # file with mount points
 showdelimiter = args.showdelimiter    # delimiter for show name
 storagedomain = args.storagedomain    # storage domain for new job
 policyname = args.policyname          # policy name for new job
@@ -44,8 +44,25 @@ starttime = args.starttime            # start time for new job
 timezone = args.timezone              # time zone for new job
 maxlogfilesize = args.maxlogfilesize  # max size to truncate log
 
-if avidroot is None:
-    avidroot = mountpoint
+
+# gather server list
+def gatherList(param=None, filename=None, name='items', required=True):
+    items = []
+    if param is not None:
+        for item in param:
+            items.append(item)
+    if filename is not None:
+        f = open(filename, 'r')
+        items += [s.strip() for s in f.readlines() if s.strip() != '']
+        f.close()
+    if required is True and len(items) == 0:
+        print('no %s specified' % name)
+        exit()
+    return items
+
+
+proxies = gatherList(proxies, proxylist, name='proxies', required=True)
+mountpoints = gatherList(mountpoint, mountlist, name='mount points', required=True)
 
 # truncate log file
 try:
@@ -76,18 +93,6 @@ log = codecs.open('avidproxy-log.txt', 'a', 'utf-8')
 date = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
 out('\n----------------------------\nStarted: %s\n----------------------------\n' % date)
 
-# get proxy list
-if proxies is None:
-    proxies = []
-if proxylist is not None:
-    f = open(proxylist, 'r')
-    proxies += [s.strip() for s in f.readlines() if s.strip() != '']
-    f.close()
-
-if len(proxies) < 1:
-    out('no proxies specified')
-    bailout()
-
 # authenticate to Cohesity
 apiauth(vip, username, domain)
 
@@ -98,7 +103,10 @@ sources = api('get', 'protectionSources/registrationInfo?includeEntityPermission
 nassources = [s for s in sources['rootNodes'] if s['rootNode']['environment'] == 'kGenericNas']
 
 # get avid share and show lists
-avidshares = [d for d in listdir(avidroot) if isdir(join(avidroot, d))]
+avidshares = []
+for mountpoint in mountpoints:
+    avidshares = avidshares + [d for d in listdir(mountpoint) if isdir(join(mountpoint, d))]
+
 shows = list(set([d.split(showdelimiter)[0] for d in avidshares]))
 
 proxyShares = {}
