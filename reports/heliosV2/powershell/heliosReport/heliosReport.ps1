@@ -293,7 +293,17 @@ foreach($cluster in ($selectedClusters | Sort-Object -Property name)){
                         $headings = @($headings + "$($attribute.customLabel)")
                     }
                 }else{
-                    $headings = @($headings + $($attribute.attributeName))
+                    if($attribute.attributeName -match 'byteds'){
+                        $headings = @($headings + $($attribute.attributeName -replace 'bytes', $unit))
+                    }elseif($attribute.attributeName -match 'read' -or
+                            $attribute.attributeName -match 'written' -or
+                            $attribute.attributeName -match 'size' -or
+                            $attribute.attributeName -match 'daily' -or
+                            $attribute.attributeName -match 'data'){
+                        $headings = @($headings + "$($attribute.attributeName) $unit")
+                    }else{
+                        $headings = @($headings + $($attribute.attributeName))
+                    }
                 }
             }
             $gotHeadings = $True
@@ -341,6 +351,13 @@ foreach($cluster in ($selectedClusters | Sort-Object -Property name)){
                                                                          $attribute.customLabel -match 'size' -or
                                                                          $attribute.customLabel -match 'daily' -or
                                                                          $attribute.customLabel -match 'data'))){
+                    $data = toUnits $data
+                }elseif(!$attribute.PSObject.Properties['customLabel'] -and ($($attribute.attributeName -match 'bytes' -or
+                                                                               $attribute.attributeName -match 'read' -or
+                                                                               $attribute.attributeName -match 'written' -or
+                                                                               $attribute.attributeName -match 'size' -or
+                                                                               $attribute.attributeName -match 'daily' -or
+                                                                               $attribute.attributeName -match 'data'))){
                     $data = toUnits $data
                 }
                 if($attribute.attributeName -match 'percent'){

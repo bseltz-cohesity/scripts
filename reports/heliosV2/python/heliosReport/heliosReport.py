@@ -113,11 +113,11 @@ reportNumber = report[0]['componentIds'][0]
 title = report[0]['title']
 
 # CSV output
-csvFileName = "%s_%s_%s.tsv" % (title, start, end)
+csvFileName = "%s_%s_%s.tsv" % (title.replace('/', '-').replace('\\', '-'), start, end)
 csv = codecs.open(csvFileName, 'w', 'utf-8')
 
 # HTML output
-htmlFileName = "%s_%s_%s.html" % (title, start, end)
+htmlFileName = "%s_%s_%s.html" % (title.replace('/', '-').replace('\\', '-'), start, end)
 htmlFile = codecs.open(htmlFileName, 'w', 'utf-8')
 
 html = '''<html>
@@ -314,7 +314,16 @@ for cluster in sorted(selectedClusters, key=lambda c: c['name'].lower()):
                     else:
                         headings.append(attribute['customLabel'])
                 else:
-                    headings.append(attribute['attributeName'])
+                    if 'bytes' in attribute['attributeName'].lower():
+                        headings.append((attribute['attributeName'].replace('bytes', units).replace('Bytes', units)))
+                    elif 'read' in attribute['attributeName'].lower() or \
+                         'written' in attribute['attributeName'].lower() or \
+                         'size' in attribute['attributeName'].lower() or \
+                         'daily' in attribute['attributeName'].lower() or \
+                         'data' in attribute['attributeName'].lower():
+                        headings.append('%s %s' % (attribute['attributeName'], units))
+                    else:
+                        headings.append(attribute['attributeName'])
             gotHeadings = True
             csvHeadings = '\t'.join(headings)
             csv.write('%s\n' % csvHeadings)
@@ -354,7 +363,14 @@ for cluster in sorted(selectedClusters, key=lambda c: c['name'].lower()):
                        'daily' in attribute['customLabel'].lower() or \
                        'data' in attribute['customLabel'].lower():
                         data = round(data / multiplier, 1)
-
+                else:
+                    if 'bytes' in attribute['attributeName'].lower() or \
+                       'read' in attribute['attributeName'].lower() or \
+                       'written' in attribute['attributeName'].lower() or \
+                       'size' in attribute['attributeName'].lower() or \
+                       'daily' in attribute['attributeName'].lower() or \
+                       'data' in attribute['attributeName'].lower():
+                        data = round(data / multiplier, 1)
                 if 'percent' in attribute['attributeName'].lower():
                     data = round(data, 1)
 
