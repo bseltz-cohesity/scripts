@@ -341,7 +341,11 @@ foreach($cluster in ($selectedClusters | Sort-Object -Property name)){
             foreach($attribute in $attributes){
                 $data = $rec.$($attribute.attributeName)
                 if($attribute.PSObject.Properties['format'] -and $attribute.format -eq 'timestamp'){
-                    $data = usecsToDate $data
+                    if($data -ne $null -and $data -ne 0){
+                        $data = usecsToDate $data
+                    }else{
+                        $data = '-'
+                    }
                 }elseif($attribute.attributeName -match 'usecs'){
                     $data = [int]($data / 1000000)
                 }
