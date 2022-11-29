@@ -133,7 +133,7 @@ for o in job['genericNasParams']['objects']:
                 fileinfo = (requests.get('https://%s:8000/v1/files/%s/info/attributes' % (qumulo, sharepath), headers=header, verify=False)).json()
                 fs_id = fileinfo['id']
             else:
-                print('Share %s not found' % fs_path)
+                print('Share %s not found' % share_name)
                 continue
         else:
             print('no smb shares found')
