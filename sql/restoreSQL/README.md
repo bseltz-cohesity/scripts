@@ -81,6 +81,7 @@ To specify a source instance, include the instance name in the sourceDB name, li
 * -helios: use on-prem helios
 * -update: short hand for -resume -noRecovery -latest
 * -sleepTimeSecs: sleep between status queries (default is 30 seconds)
+* -withClause: VDI with clause e.g. `-withClause "WITH BUFFERCOUNT = 256,MAXTRANSFERSIZE = 4194304"`
 
 ## Always On Availability Groups
 

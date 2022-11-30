@@ -52,7 +52,8 @@ param (
     [Parameter()][switch]$update,
     [Parameter()][switch]$noStop,
     [Parameter()][switch]$captureTailLogs,
-    [Parameter()][int64]$sleepTimeSecs = 30
+    [Parameter()][int64]$sleepTimeSecs = 30,
+    [Parameter()][string]$withClause
 )
 
 # handle alternate secondary data file locations
@@ -429,6 +430,10 @@ if($ndfFolder){
 # overWrite existing DB
 if($overWrite){
     $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['dbRestoreOverwritePolicy'] = 1
+}
+
+if($withClause){
+    $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.withClause = $withClause
 }
 
 # resume only if newer point in time available
