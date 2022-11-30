@@ -294,30 +294,30 @@ if channels is not None:
             else:
                 print('channelnode %s not found' % channelnode)
                 exit(1)
-            restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['oracleTargetParams'] = {
-                "additionalOracleDbParamsVec": [
-                    {
-                        "appEntityId": latestdb['vmDocument']['objectId']['entity']['id'],
-                        "dbInfoChannelVec": [
-                            {
-                                "hostInfoVec": [
-                                    {
-                                        "host": str(channelNodeId),
-                                        "numChannels": channels
-                                    }
-                                ],
-                                "dbUuid": uuid
-                            }
-                        ]
-                    }
-                ]
-            }
         else:
             print('channelnode %s not found' % channelnode)
             exit(1)
     else:
         channelNodeId = targetserver
         uuid = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
+    restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['oracleTargetParams'] = {
+        "additionalOracleDbParamsVec": [
+            {
+                "appEntityId": latestdb['vmDocument']['objectId']['entity']['id'],
+                "dbInfoChannelVec": [
+                    {
+                        "hostInfoVec": [
+                            {
+                                "host": str(channelNodeId),
+                                "numChannels": channels
+                            }
+                        ],
+                        "dbUuid": uuid
+                    }
+                ]
+            }
+        ]
+    }
 
 # alternate location params
 if targetserver != sourceserver or targetdb != sourcedb:
