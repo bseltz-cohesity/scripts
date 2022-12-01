@@ -3,11 +3,17 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
-    [Parameter()][string]$domain = 'local', #local or AD domain
-    [Parameter()][switch]$useApiKey, # use API key for authentication
-    [Parameter()][string]$password = $null,
+    [Parameter()][string]$vip = 'helios.cohesity.com',   # the cluster to connect to (DNS name or IP)
+    [Parameter()][string]$username = 'helios',           # username (local or AD)
+    [Parameter()][string]$domain = 'local',              # local or AD domain
+    [Parameter()][switch]$useApiKey,                     # use API key for authentication
+    [Parameter()][string]$password,                      # optional password
+    [Parameter()][switch]$noPrompt,                      # do not prompt for password
+    [Parameter()][string]$tenant,                        # org to impersonate
+    [Parameter()][switch]$mcm,                           # connect to MCM endpoint
+    [Parameter()][string]$mfaCode = $null,               # MFA code
+    [Parameter()][switch]$emailMfaCode,                  # email MFA code
+    [Parameter()][string]$clusterName = $null,           # helios cluster to access
     [Parameter()][string]$startDate = '',
     [Parameter()][string]$endDate = '',
     [Parameter()][switch]$lastCalendarMonth,
@@ -18,14 +24,25 @@ param (
     [Parameter()][string]$sendFrom #send from address
 )
 
-### source the cohesity-api helper code
+# source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-if($useApiKey){
-    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
-}else{
-    apiauth -vip $vip -username $username -domain $domain -password $password
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
 }
 
 ### determine start and end dates
@@ -47,12 +64,14 @@ if($startDate -ne '' -and $endDate -ne ''){
 $start = (usecsToDate $uStart).ToString('yyyy-MM-dd')
 $end = (usecsToDate $uEnd).ToString('yyyy-MM-dd')
 
-$title = "Restore Report ($start - $end)"
+$cluster = api get cluster
+
+$title = "Restore Report for $($cluster.name) ($start - $end)"
 
 $date = (get-date).ToString()
 
 $now = (Get-Date).ToString("yyyy-MM-dd")
-$csvFile = "restoreReport-$now.csv"
+$csvFile = "restoreReport-$($cluster.name)-$now.csv"
 
 "Date,Task,Object,Type,Target,Status,Duration (Min),User" | Out-File $csvFile
 
@@ -186,92 +205,100 @@ $entityType=@('Unknown', 'VMware', 'HyperV', 'SQL', 'View', 'Puppeteer',
               'Nimble', 'AzureSnapshotManager', 'Elastifile', 'Cassandra', 'MongoDB',
               'HBase', 'Hive', 'Hdfs', 'Couchbase', 'Unknown', 'Unknown', 'Unknown')
 
-$restores = api get "/restoretasks?_includeTenantInfo=true&endTimeUsecs=$uEnd&restoreTypes=kCloneView&restoreTypes=kConvertAndDeployVMs&restoreTypes=kCloneApp&restoreTypes=kCloneVMs&restoreTypes=kDeployVMs&restoreTypes=kMountFileVolume&restoreTypes=kMountVolumes&restoreTypes=kSystem&restoreTypes=kRecoverApp&restoreTypes=kRecoverSanVolume&restoreTypes=kRecoverVMs&restoreTypes=kRestoreFiles&restoreTypes=kRecoverVolumes&restoreTypes=kDownloadFiles&restoreTypes=kRecoverEmails&restoreTypes=kRecoverDisks&startTimeUsecs=$uStart&targetType=kLocal"
-
-foreach ($restore in $restores){
-    $taskId = $restore.restoreTask.performRestoreTaskState.base.taskId
-    $taskName = $restore.restoreTask.performRestoreTaskState.base.name
-    $status = ($restore.restoreTask.performRestoreTaskState.base.publicStatus).Substring(1)
-    $startTime = usecsToDate $restore.restoreTask.performRestoreTaskState.base.startTimeUsecs
-    $duration = '-'
-    if($restore.restoreTask.performRestoreTaskState.base.PSObject.properties['endTimeUsecs']){
-        $endTime = usecsToDate $restore.restoreTask.performRestoreTaskState.base.endTimeUsecs
-        $duration = [math]::Round(($endTime - $startTime).TotalMinutes)
+$endUsecs = $uEnd
+while(1){
+    $restores = api get "/restoretasks?_includeTenantInfo=true&endTimeUsecs=$endUsecs&startTimeUsecs=$uStart"
+    foreach ($restore in $restores | Sort-Object -Property {$_.restoreTask.performRestoreTaskState.base.startTimeUsecs} -Descending){
+        $taskId = $restore.restoreTask.performRestoreTaskState.base.taskId
+        $taskName = $restore.restoreTask.performRestoreTaskState.base.name
+        $status = ($restore.restoreTask.performRestoreTaskState.base.publicStatus).Substring(1)
+        $startTime = usecsToDate $restore.restoreTask.performRestoreTaskState.base.startTimeUsecs
+        $duration = '-'
+        if($restore.restoreTask.performRestoreTaskState.base.PSObject.properties['endTimeUsecs']){
+            $endTime = usecsToDate $restore.restoreTask.performRestoreTaskState.base.endTimeUsecs
+            $duration = [math]::Round(($endTime - $startTime).TotalMinutes)
+            $endUsecs = $restore.restoreTask.performRestoreTaskState.base.endTimeUsecs
+        }
+        $link = "https://$vip/protection/recovery/detail/local/$taskId/"
+        if($restore.restoreTask.performRestoreTaskState.PSObject.properties['objects']){
+            foreach ($object in $restore.restoreTask.performRestoreTaskState.objects){
+    
+                $objectType = $entityType[$object.entity.type]
+                $targetObject = $objectName = $object.entity.displayName
+                # vmware prefix/suffix
+                if($restore.restoreTask.performRestoreTaskState.renameRestoredObjectParam.prefix){
+                    $targetObject = "$($restore.restoreTask.performRestoreTaskState.renameRestoredObjectParam.prefix)$targetObject"
+                }
+                if($restore.restoreTask.performRestoreTaskState.renameRestoredObjectParam.suffix){
+                    $targetObject = "$targetObject$($restore.restoreTask.performRestoreTaskState.renameRestoredObjectParam.suffix)"
+                }
+                # netapp, isilon, genericNas
+                if($restore.restoreTask.performRestoreTaskState.restoreInfo.type -in @(9, 11, 14)){
+                    $targetObject = $restore.restoreTask.performRestoreTaskState.fullViewName
+                }
+                if($status -eq 'Failure'){
+                    $html += "<tr style='color:BA3415;'>"
+                }else{
+                    $html += "<tr>"
+                }
+                $html += "<td>$startTime</td>
+                <td><a href=$link>$taskName</a></td>
+                <td>$objectName</td>
+                <td>$objectType</td>
+                <td>$targetObject</td>
+                <td>$status</td>
+                <td>$duration</td>
+                <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
+                </tr>"
+                "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
+            }
+        }elseif($restore.restoreTask.performRestoreTaskState.PSObject.properties['restoreAppTaskState']){
+            $targetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
+            foreach ($restoreAppObject in $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec){
+                $objectName = $restoreAppObject.appEntity.displayName
+                $objectType = $entityType[$restoreAppObject.appEntity.type]
+                if($restoreAppObject.restoreParams.targetHost.displayName){
+                    $targetServer = $restoreAppObject.restoreParams.targetHost.displayName
+                }
+                $targetObject = $targetServer
+                # sql target
+                if($restoreAppObject.restoreParams.sqlRestoreParams.instanceName){
+                    $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.instanceName)"
+                }
+                if($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName){
+                    $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName)"
+                }
+                # oracle target
+                if($restoreAppObject.restoreParams.oracleRestoreParams.alternateLocationParams.newDatabaseName){
+                    $targetObject += "/$($restoreAppObject.restoreParams.oracleRestoreParams.alternateLocationParams.newDatabaseName)"
+                }
+                if($targetObject -eq $targetServer){
+                    $targetObject = "$targetServer/$objectName"
+                }
+                if($status -eq 'Failure'){
+                    $html += "<tr style='color:BA3415;'>"
+                }else{
+                    $html += "<tr>"
+                }
+                $html += "<td>$startTime</td>
+                <td><a href=$link>$taskName</a></td>
+                <td>$sourceServer/$objectName</td>
+                <td>$objectType</td>
+                <td>$targetObject</td>
+                <td>$status</td>
+                <td>$duration</td>
+                <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
+                </tr>"
+                "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
+            }
+        }else{
+            "***************more types****************"
+        }
     }
-    $link = "https://$vip/protection/recovery/detail/local/$taskId/"
-    if($restore.restoreTask.performRestoreTaskState.PSObject.properties['objects']){
-        foreach ($object in $restore.restoreTask.performRestoreTaskState.objects){
-
-            $objectType = $entityType[$object.entity.type]
-            $targetObject = $objectName = $object.entity.displayName
-            # vmware prefix/suffix
-            if($restore.restoreTask.performRestoreTaskState.renameRestoredObjectParam.prefix){
-                $targetObject = "$($restore.restoreTask.performRestoreTaskState.renameRestoredObjectParam.prefix)$targetObject"
-            }
-            if($restore.restoreTask.performRestoreTaskState.renameRestoredObjectParam.suffix){
-                $targetObject = "$targetObject$($restore.restoreTask.performRestoreTaskState.renameRestoredObjectParam.suffix)"
-            }
-            # netapp, isilon, genericNas
-            if($restore.restoreTask.performRestoreTaskState.restoreInfo.type -in @(9, 11, 14)){
-                $targetObject = $restore.restoreTask.performRestoreTaskState.fullViewName
-            }
-            if($status -eq 'Failure'){
-                $html += "<tr style='color:BA3415;'>"
-            }else{
-                $html += "<tr>"
-            }
-            $html += "<td>$startTime</td>
-            <td><a href=$link>$taskName</a></td>
-            <td>$objectName</td>
-            <td>$objectType</td>
-            <td>$targetObject</td>
-            <td>$status</td>
-            <td>$duration</td>
-            <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
-            </tr>"
-            "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
-        }
-    }elseif($restore.restoreTask.performRestoreTaskState.PSObject.properties['restoreAppTaskState']){
-        $targetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
-        foreach ($restoreAppObject in $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec){
-            $objectName = $restoreAppObject.appEntity.displayName
-            $objectType = $entityType[$restoreAppObject.appEntity.type]
-            if($restoreAppObject.restoreParams.targetHost.displayName){
-                $targetServer = $restoreAppObject.restoreParams.targetHost.displayName
-            }
-            $targetObject = $targetServer
-            # sql target
-            if($restoreAppObject.restoreParams.sqlRestoreParams.instanceName){
-                $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.instanceName)"
-            }
-            if($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName){
-                $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName)"
-            }
-            # oracle target
-            if($restoreAppObject.restoreParams.oracleRestoreParams.alternateLocationParams.newDatabaseName){
-                $targetObject += "/$($restoreAppObject.restoreParams.oracleRestoreParams.alternateLocationParams.newDatabaseName)"
-            }
-            if($targetObject -eq $targetServer){
-                $targetObject = "$targetServer/$objectName"
-            }
-            if($status -eq 'Failure'){
-                $html += "<tr style='color:BA3415;'>"
-            }else{
-                $html += "<tr>"
-            }
-            $html += "<td>$startTime</td>
-            <td><a href=$link>$taskName</a></td>
-            <td>$sourceServer/$objectName</td>
-            <td>$objectType</td>
-            <td>$targetObject</td>
-            <td>$status</td>
-            <td>$duration</td>
-            <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
-            </tr>"
-            "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
-        }
+    if(!$restores -or $restores.Count -le 2){
+        break
     }else{
-        "***************more types****************"
+        Write-Host "Retrieved $($restores.Count) restore tasks..."
     }
 }
 
@@ -280,7 +307,7 @@ $html += "</table>
 </body>
 </html>"
 
-$html | out-file "restoreReport-$($now).html"
+$html | out-file "restoreReport-$($cluster.name)-$($now).html"
 
 "Saving output to restoreReport-$now.html and restoreReport-$now.csv"
 
