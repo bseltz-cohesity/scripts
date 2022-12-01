@@ -53,12 +53,11 @@ Restoring cohesitydb to sqldev01 as restoreTest
 
 * -sourceServer: Server name (or AAG name) where the database was backed up
 * -sourceDB: Original database name e.g. MYDB or MYINSTANCE/MYDB
-
-To specify a source instance, include the instance name in the sourceDB name, like MYINSTANCE/MyDB
-
-## Optional Parameters
-
+* -overwrite: Overwrites an existing database (default is no overwrite)
 * -sourceInstance: one or more instance names (see below)
+
+## Alternate Target Parameters
+
 * -mdfFolder: Location to place the primary data file (e.g. C:\SQLData)
 * -targetServer: Server name to restore to (defaults to same as sourceServer)
 * -targetDB: New database name (defaults to same as sourceDB)
@@ -68,20 +67,27 @@ To specify a source instance, include the instance name in the sourceDB name, li
 * -ldfFolder: Location to place the log files (defaults to same as mdfFolder)
 * -ndfFolder: Location to place the secondary files (defaults to same as ndfFolder)
 * -ndfFolders: Locations to place various ndf files (see below)
+
+## Point in Time Parameters
+
 * -logTime: Point in time to replay the logs to during the restore (e.g. '2019-04-10 22:31:05')
 * -latest: Replay the logs to the latest log backup date
 * -noStop: Replay the logs to the last transaction available
 * -captureTailLogs: Replay logs that haven't been backed up yet (only applies when overwriting original database)
-* -wait: Wait for the restore to complete and report end status (e.g. kSuccess)
-* -overwrite: Overwrites an existing database (default is no overwrite)
+
+## Restore Options
+
 * -keepCdc: Keep change data capture during restore (default is false)
+* -withClause: VDI with clause e.g. `-withClause "WITH BUFFERCOUNT = 256,MAXTRANSFERSIZE = 4194304"`
 * -noRecovery: Restore the DB with NORECOVER option (default is to recover)
 * -resume: Resume recovery of previously restored database (left in NORECOVERY mode)
-* -progress: display percent complete
-* -helios: use on-prem helios
 * -update: short hand for -resume -noRecovery -latest
+
+## Other Parameters
+
+* -wait: Wait for the restore to complete and report end status (e.g. kSuccess)
+* -progress: display percent complete
 * -sleepTimeSecs: sleep between status queries (default is 30 seconds)
-* -withClause: VDI with clause e.g. `-withClause "WITH BUFFERCOUNT = 256,MAXTRANSFERSIZE = 4194304"`
 
 ## Always On Availability Groups
 

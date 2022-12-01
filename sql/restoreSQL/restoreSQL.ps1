@@ -44,7 +44,6 @@ param (
     [Parameter()][switch]$latest,                        # use latest point in time available
     [Parameter()][switch]$noRecovery,                    # restore with NORECOVERY option
     [Parameter()][switch]$progress,                      # display progress
-    [Parameter()][switch]$helios,                        # connect via Helios
     [Parameter()][switch]$resume,                        # resume recovery of previously restored DB
     [Parameter()][switch]$keepCdc,                       # keepCDC
     [Parameter()][switch]$showPaths,                     # show data file paths and exit
