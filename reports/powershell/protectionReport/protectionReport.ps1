@@ -9,9 +9,17 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,  # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
-    [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][string]$vip = 'helios.cohesity.com',   # the cluster to connect to (DNS name or IP)
+    [Parameter()][string]$username = 'helios',           # username (local or AD)
+    [Parameter()][string]$domain = 'local',              # local or AD domain
+    [Parameter()][switch]$useApiKey,                     # use API key for authentication
+    [Parameter()][string]$password,                      # optional password
+    [Parameter()][switch]$noPrompt,                      # do not prompt for password
+    [Parameter()][string]$tenant,                        # org to impersonate
+    [Parameter()][switch]$mcm,                           # connect to MCM endpoint
+    [Parameter()][string]$mfaCode = $null,               # MFA code
+    [Parameter()][switch]$emailMfaCode,                  # email MFA code
+    [Parameter()][string]$clusterName = $null,           # helios cluster to access
     [Parameter()][int]$daysBack = 7,  # number of days to include in report
     [Parameter()][array]$jobTypes,  # filter by type (SQL, Oracle, VMware, etc.)
     [Parameter()][array]$jobName,  # filter by job names (comma separated)
@@ -26,7 +34,8 @@ param (
     [Parameter()][array]$sendTo,  # send to address
     [Parameter()][string]$sendFrom,  # send from address
     [Parameter()][string]$outPath,  # folder to write output file
-    [Parameter()][switch]$skipLogBackups
+    [Parameter()][switch]$skipLogBackups,
+    [Parameter()][int]$numRuns = 1000
 )
 
 # gather list from command line params and file
@@ -70,7 +79,22 @@ if($outPath){
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
 
 $cluster = api get cluster
 
@@ -540,34 +564,43 @@ foreach($job in $jobs){
     }
 
     if($job.lastRun){
-        if($lastRunOnly){
-            if($skipLogBackups){
-                $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true&runTypes=kRegular&runTypes=kFull"
-            }else{
-                $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true"
-            }
-        }else{
-            if($skipLogBackups){
-                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs&numRuns=9999&excludeTasks=true&runTypes=kRegular&runTypes=kFull"
-            }else{
-                $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs&numRuns=9999&excludeTasks=true"
-            }   
-        }
+        $endUsecs = $nowUsecs
+        $moreRuns = $True
         $jobMessage = '<br /><div class="job"><span>{0}</span><span class="info"> ({1})</span></div><div class="snapshot">' -f $job.name.ToUpper(), $job.environment.substring(1)
-        "`n{0,$maxLength} ({1})`n" -f $job.name, $job.environment.subString(1)
-
-        foreach($run in $runs){
-            $jobMessage += displaySnapshot $run
-            $jobMessage += displayReplicas $run
-            $jobMessage += displayArchives $run
-            if($showObjects){
-                $jobMessage += displayObjects $run
+            "`n{0,$maxLength} ({1})`n" -f $job.name, $job.environment.subString(1)
+        while($moreRuns -eq $True){
+            if($lastRunOnly){
+                if($skipLogBackups){
+                    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true&runTypes=kRegular&runTypes=kFull"
+                }else{
+                    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true"
+                }
+            }else{
+                if($skipLogBackups){
+                    $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs&endTimeUsecs=$endUsecs&numRuns=$numRuns&excludeTasks=true&runTypes=kRegular&runTypes=kFull"
+                }else{
+                    $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs&endTimeUsecs=$endUsecs&numRuns=$numRuns&excludeTasks=true"
+                }   
             }
+    
+            foreach($run in $runs){
+                $jobMessage += displaySnapshot $run
+                $jobMessage += displayReplicas $run
+                $jobMessage += displayArchives $run
+                if($showObjects){
+                    $jobMessage += displayObjects $run
+                }
+                $endUsecs = $run.backupRun.stats.endTimeUsecs - 1
+            }
+            if(!$runs -or $runs.Count -lt $numRuns){
+                $moreRuns = $false
+            }
+            # Write-Host "$($runs.Count)"
         }
         $jobMessage += '</div>'
-    }
-    if($global:showJob -and $global:inScope){
-        $global:message += $jobMessage
+        if($global:showJob -and $global:inScope){
+            $global:message += $jobMessage
+        }
     }
 }
 
