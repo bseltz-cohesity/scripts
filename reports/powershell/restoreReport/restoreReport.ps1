@@ -217,7 +217,7 @@ while(1){
         if($restore.restoreTask.performRestoreTaskState.base.PSObject.properties['endTimeUsecs']){
             $endTime = usecsToDate $restore.restoreTask.performRestoreTaskState.base.endTimeUsecs
             $duration = [math]::Round(($endTime - $startTime).TotalMinutes)
-            $endUsecs = $restore.restoreTask.performRestoreTaskState.base.endTimeUsecs
+            $endUsecs = $restore.restoreTask.performRestoreTaskState.base.endTimeUsecs - 1
         }
         $link = "https://$vip/protection/recovery/detail/local/$taskId/"
         if($restore.restoreTask.performRestoreTaskState.PSObject.properties['objects']){
@@ -295,10 +295,11 @@ while(1){
             "***************more types****************"
         }
     }
-    if(!$restores -or $restores.Count -le 2){
+    if(!$restores -or $restores.Count -eq 0 -or $lastUsecs -eq $endUsecs){
         break
     }else{
         Write-Host "Retrieved $($restores.Count) restore tasks..."
+        $lastUsecs = $endUsecs
     }
 }
 
