@@ -41,3 +41,7 @@ The output will be written to a CSV file.
 * -domain: (optional) your AD domain (defaults to local)
 * -sqlFile: (optional) name of text file containing sql query (default is query.sql)
 * -outFile: (optional) name of output CSV file to create (default is grootExport.csv)
+
+## Queries
+
+See <https://github.com/bseltz-cohesity/scripts/tree/master/groot/queries> for example queries

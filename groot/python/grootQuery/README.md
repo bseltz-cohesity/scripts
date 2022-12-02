@@ -29,7 +29,9 @@ Place both files in a folder together and run the main script like so:
 # end example
 ```
 
-The script will write an output file objectRuns-mycluster.csv.
+## Queries
+
+See <https://github.com/bseltz-cohesity/scripts/tree/master/groot/queries> for example queries
 
 ## Authentication Parameters
 
