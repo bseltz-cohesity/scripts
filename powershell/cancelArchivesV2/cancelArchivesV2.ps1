@@ -1,29 +1,52 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-   [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
-   [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
-   [Parameter()][string]$domain = 'local', #local or AD domain
-   [Parameter()][string]$jobName,  #optional jobname filter
-   [Parameter()][switch]$cancelOutdated,
-   [Parameter()][switch]$cancelQueued,
-   [Parameter()][switch]$cancelAll,
-   [Parameter()][int]$cancelOlderThan = 0,
-   [Parameter()][switch]$showFinished,
-   [Parameter()][int]$numRuns = 1000,
-   [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB'
+    [Parameter()][string]$vip = 'helios.cohesity.com',   # the cluster to connect to (DNS name or IP)
+    [Parameter()][string]$username = 'helios',           # username (local or AD)
+    [Parameter()][string]$domain = 'local',              # local or AD domain
+    [Parameter()][switch]$useApiKey,                     # use API key for authentication
+    [Parameter()][string]$password,                      # optional password
+    [Parameter()][switch]$noPrompt,                      # do not prompt for password
+    [Parameter()][string]$tenant,                        # org to impersonate
+    [Parameter()][switch]$mcm,                           # connect to MCM endpoint
+    [Parameter()][string]$mfaCode = $null,               # MFA code
+    [Parameter()][switch]$emailMfaCode,                  # email MFA code
+    [Parameter()][string]$clusterName = $null,           # helios cluster to access
+    [Parameter()][string]$jobName,  #optional jobname filter
+    [Parameter()][switch]$cancelOutdated,
+    [Parameter()][switch]$cancelQueued,
+    [Parameter()][switch]$cancelAll,
+    [Parameter()][int]$cancelOlderThan = 0,
+    [Parameter()][switch]$showFinished,
+    [Parameter()][int]$numRuns = 1000,
+    [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB'
 )
-
-### source the cohesity-api helper code
-. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 $conversion = @{'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
 function toUnits($val){
     return "{0:n2}" -f ($val/($conversion[$unit]))
 }
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain
+# source the cohesity-api helper code
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
 
 $finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning')
 
@@ -109,12 +132,27 @@ foreach($job in $jobs){
                 }
                 "    $($run.status)  $(usecsToDate $($run.startTimeUsecs))  ($($run.transferred))  $referenceFull  $reason  $cancelling"
                 if($cancelling -ne ''){
-                    $cancelParams = @{
-                        "archivalTaskId" = @(
-                                $run.taskId
-                        )
+                    if($cluster.clusterSoftwareVersion -gt '6.8'){
+                        $cancelParams = @{
+                            "action" = "Cancel";
+                            "cancelParams" = @(
+                                @{
+                                    "runId" = $run.runId;
+                                    "archivalTaskId" = @(
+                                        $run.taskId
+                                    )
+                                }
+                            )
+                        }
+                        $null = api post -v2 "data-protect/protection-groups/$jobId/runs/actions" $cancelParams
+                    }else{
+                        $cancelParams = @{
+                            "archivalTaskId" = @(
+                                    $run.taskId
+                            )
+                        }
+                        $null = api post -v2 "data-protect/protection-groups/$jobId/runs/$($run.runId)/cancel" $cancelParams                            
                     }
-                    $null = api post -v2 "data-protect/protection-groups/$jobId/runs/$($run.runId)/cancel" $cancelParams
                 }
             }else{
                 if($showFinished){
