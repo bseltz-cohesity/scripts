@@ -15,6 +15,7 @@ parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-s', '--servername', action='append', type=str)  # server name to register
 parser.add_argument('-l', '--serverlist', type=str, default=None)     # text list of servers to register
+parser.add_argument('-f', '--force', action='store_true')
 
 args = parser.parse_args()
 
@@ -29,6 +30,7 @@ mfacode = args.mfacode
 emailmfacode = args.emailmfacode
 servername = args.servername
 serverlist = args.serverlist
+force = args.force
 
 
 # gather list function
@@ -71,6 +73,10 @@ if apiconnected() is False:
     print('authentication failed')
     exit(1)
 
+forceRegister = False
+if force is True:
+    forceRegister = True
+
 for server in servernames:
     newSource = {
         'entity': {
@@ -90,7 +96,7 @@ for server in servernames:
         'throttlingPolicy': {
             'isThrottlingEnabled': False
         },
-        'forceRegister': True
+        'forceRegister': forceRegister
     }
 
     result = api('post', '/backupsources', newSource)
