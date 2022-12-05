@@ -52,3 +52,4 @@ Note that the Cohesity agent must be installed on the host and that firewall por
 
 * -serverName: name of server to register
 * -serverList: text file containing list of servers to register (one per line)
+* -force: force register

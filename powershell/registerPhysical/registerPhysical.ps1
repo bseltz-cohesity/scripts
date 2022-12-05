@@ -13,7 +13,8 @@ param (
     [Parameter()][switch]$emailMfaCode,                 # send mfa code via email
     [Parameter()][string]$clusterName = $null,          # cluster to connect to via helios/mcm
     [Parameter()][string]$serverName, #Server to add as physical source
-    [Parameter()][string]$serverList
+    [Parameter()][string]$serverList,
+    [Parameter()][switch]$force
 )
 
 # gather view list
@@ -50,6 +51,11 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
+$forceRegister = $false
+if($force){
+    $forceRegister = $True
+}
+
 foreach($server in $servers){
     $server = [string]$server
     $registeredSource = (api get "protectionSources/registrationInfo?includeEntityPermissionInfo=true").rootNodes | Where-Object { $_.rootNode.name -eq $server }
@@ -74,7 +80,7 @@ foreach($server in $servers){
             'throttlingPolicy' = @{
                 'isThrottlingEnabled' = $false
             };
-            'forceRegister' = $True
+            'forceRegister' = $forceRegister
         }
         
         $result = api post /backupsources $newSource
