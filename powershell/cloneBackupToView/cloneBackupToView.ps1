@@ -338,7 +338,11 @@ foreach($run in $runs){
                     }
                     $folderPath = "\\$vip\$viewName\$destinationPath"
                     Write-Host "Cloning $thisObjectName backup files to $folderPath"
-                    $null = api post views/cloneDirectory $CloneDirectoryParams
+                    $null = api post views/cloneDirectory $CloneDirectoryParams -quiet
+                    if($cohesity_api.last_api_error -match 'kPermissionDenied'){
+                        Write-Host "`nAccess Denied. Cluster config must be modified. Add:`n`n    bridge_enable_secure_view_access: false`n" -ForegroundColor Yellow
+                        exit
+                    }
                     $paths += @{'path' = $folderPath; 'runDate' = $runDate; 'runType' = $run.backupRun.runType; 'sourceName' = $sourceInfo.source.name}
                     $x = $x + 1
                 }
