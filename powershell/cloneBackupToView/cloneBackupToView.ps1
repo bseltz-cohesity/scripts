@@ -338,7 +338,7 @@ foreach($run in $runs){
                     }
                     $folderPath = "\\$vip\$viewName\$destinationPath"
                     Write-Host "Cloning $thisObjectName backup files to $folderPath"
-                    $null = api post views/cloneDirectory $CloneDirectoryParams -quiet
+                    $null = api post views/cloneDirectory $CloneDirectoryParams
                     $paths += @{'path' = $folderPath; 'runDate' = $runDate; 'runType' = $run.backupRun.runType; 'sourceName' = $sourceInfo.source.name}
                     $x = $x + 1
                 }
