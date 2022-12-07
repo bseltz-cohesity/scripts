@@ -8,8 +8,8 @@ param (
    [Parameter()][string]$password = $null,
    [Parameter()][string]$mfaCode = $null,
    [Parameter()][switch]$emailMfaCode,
-   [Parameter()][ValidateSet('KiB','MiB','GiB','TiB')][string]$unit = 'MiB',
-   [Parameter()][int]$daysBack = 7,
+   [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'MiB',
+   [Parameter()][int]$daysBack = 31,
    [Parameter()][Int64]$numRuns = 100,
    [Parameter()][Int64]$backDays = 0,
    [Parameter()][switch]$indexStats
@@ -359,7 +359,7 @@ foreach($keyName in ($workloadStats.Keys | sort)){
 }
 
 # Policy Info
-"" | Out-File -FilePath $policyFileName -Encoding utf8
+"Policy Info`n" | Out-File -FilePath $policyFileName -Encoding ascii
 foreach($policy in $policies | Where-Object {$_.name -in $policyNames}){
     "         Policy Name: $($policy.name)" | Out-File -FilePath $policyFileName -Append
     # base retention

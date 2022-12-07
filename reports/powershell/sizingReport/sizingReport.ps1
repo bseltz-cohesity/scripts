@@ -359,7 +359,7 @@ foreach($keyName in ($workloadStats.Keys | sort)){
 }
 
 # Policy Info
-"" | Out-File -FilePath $policyFileName -Encoding utf8
+"Policy Info`n" | Out-File -FilePath $policyFileName -Encoding ascii
 foreach($policy in $policies | Where-Object {$_.name -in $policyNames}){
     "         Policy Name: $($policy.name)" | Out-File -FilePath $policyFileName -Append
     # base retention
