@@ -34,21 +34,16 @@ if($useApiKey){
     }
 }
 
-$finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning')
-
 $cluster = api get cluster
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $objectFileName = "SizingReport-PerObject-$($cluster.name)-$dateString.csv"
 """Owner"",""Job Name"",""Job Type"",""Source Name"",""Logical $unit"",""Peak Read $unit"",""Last Day Read $unit"",""Read Over Days $unit"",""Avg Read $unit"",""Last Day Written $unit"",""Written Over Days $unit"",""Avg Written $unit"",""Days Collected"",""Daily Read Change Rate %"",""Daily Write Change Rate %"",""Avg Replica Queue Hours"",""Avg Replica Hours"",""Avg Logical Replicated"",""Avg Physical Replicated"",""Avg Index Hours""" | Out-File -FilePath $objectFileName -Encoding utf8
-
-$runningTasks = 0
 
 $now = (Get-Date).AddDays(-$backDays)
 $daysBackUsecs = dateToUsecs $now.AddDays(-$daysBack)
 
 $jobStats = @{}
 $workloadStats = @{}
-$clusterStats = @{}
 $archiveStats = @{}
 $jobDays = @{}
 $jobPolicies = @{}
@@ -85,7 +80,6 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
             break
         }
         foreach($run in $runs.runs){
-            $runId = $run.id
             if($run.PSObject.Properties['originalBackupInfo']){
                 $runStartTimeUsecs = $run.originalBackupInfo.startTimeUsecs
             }else{
@@ -195,7 +189,7 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
             }
         }
     }
-    foreach($sourceName in ($stats.Keys | sort)){
+    foreach($sourceName in ($stats.Keys | Sort-Object)){
         "  $sourceName"
         $owner = $owners[$sourceName]
 
@@ -284,7 +278,7 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
 $jobFileName = "SizingReport-PerJob-$($cluster.name)-$dateString.csv"
 
 """Owner"",""JobName"",""JobType"",""Policy"",""Logical $unit"",""Avg Read $unit"",""Avg Written $unit"",""Read Change Rate"",""Write Change Rate"",""Avg Logical Replicated $unit"",""Avg Physical Replicated $unit"",""Avg Logical Archived $unit"",""Avg Physical Archived $unit"",""Avg Index Duration""" | Out-File -FilePath $jobFileName -Encoding utf8
-foreach($jobName in ($jobStats.Keys | sort)){
+foreach($jobName in ($jobStats.Keys | Sort-Object)){
     $owner = $jobStats[$jobName].owner
     $jobType = $jobStats[$jobName].jobType
     $logicalSize = 0
@@ -343,7 +337,7 @@ $workloadFileName = "SizingReport-PerWorkload-$($cluster.name)-$dateString.csv"
 
 """Owner"",""JobType"",""Logical $unit"",""Avg Read $unit"",""Avg Written $unit"",""Read Change Rate"",""Write Change Rate""" | Out-File -FilePath $workloadFileName -Encoding utf8
 
-foreach($keyName in ($workloadStats.Keys | sort)){
+foreach($keyName in ($workloadStats.Keys | Sort-Object)){
     $owner, $jobType = $keyName -split('--')
     $logicalSize = $workloadStats[$keyName].logicalSize
     $avgDataRead = $workloadStats[$keyName].avgDataRead
@@ -359,13 +353,13 @@ foreach($keyName in ($workloadStats.Keys | sort)){
 }
 
 # Policy Info
-"Policy Info`n" | Out-File -FilePath $policyFileName -Encoding ascii
+"Policy Info`n`n" | Out-File -FilePath $policyFileName
 foreach($policy in $policies | Where-Object {$_.name -in $policyNames}){
     "         Policy Name: $($policy.name)" | Out-File -FilePath $policyFileName -Append
     # base retention
     $baseRetention = $policy.backupPolicy.regular.retention
     $dataLock = ''
-    if($baseRetention.PSObject.Properties['dataLockConfig'] -and $baseRetention.dataLockConfig -ne $null){
+    if($baseRetention.PSObject.Properties['dataLockConfig'] -and $null -eq $baseRetention.dataLockConfig){
         $dataLock = ", datalock for {0} {1}" -f $baseRetention.dataLockConfig.duration, $baseRetention.dataLockConfig.unit
     }
     if($policy.PSObject.Properties['dataLock']){
@@ -410,7 +404,7 @@ foreach($policy in $policies | Where-Object {$_.name -in $policyNames}){
         }
     }
     # extended retention
-    if($policy.PSObject.Properties['extendedRetention'] -and $policy.extendedRetention -ne $null -and $policy.extendedRetention.Count -gt 0){
+    if($policy.PSObject.Properties['extendedRetention'] -and $null -ne $policy.extendedRetention){
         "  Extended retention:" | Out-File -FilePath $policyFileName -Append
         foreach($extendedRetention in $policy.extendedRetention){
             "                      Every {0} {1} (keep for {2} {3})" -f $extendedRetention.schedule.frequency, $extendedRetention.schedule.unit, $extendedRetention.retention.duration, $extendedRetention.retention.unit | Out-File -FilePath $policyFileName -Append
@@ -426,9 +420,9 @@ foreach($policy in $policies | Where-Object {$_.name -in $policyNames}){
         "          Log backup: Every {0} {1} (keep for {2} {3})" -f $frequency, $punit, $logRetention.duration, $logRetention.unit | Out-File -FilePath $policyFileName -Append
     }
     # remote targets
-    if($policy.PSObject.Properties['remoteTargetPolicy'] -and $policy.remoteTargetPolicy -ne $null -and $policy.remoteTargetPolicy.Count -gt 0){
+    if($policy.PSObject.Properties['remoteTargetPolicy'] -and $null -ne $policy.remoteTargetPolicy){
         # replication targets
-        if($policy.remoteTargetPolicy.PSObject.Properties['replicationTargets'] -and $policy.remoteTargetPolicy.replicationTargets -ne $null -and $policy.remoteTargetPolicy.replicationTargets.Count -gt 0){
+        if($policy.remoteTargetPolicy.PSObject.Properties['replicationTargets'] -and $null -ne $policy.remoteTargetPolicy.replicationTargets){
             "        Replicate To:" | Out-File -FilePath $policyFileName -Append
             foreach($replicationTarget in $policy.remoteTargetPolicy.replicationTargets){
                 if($replicationTarget.targetType -eq 'RemoteCluster'){
@@ -446,7 +440,7 @@ foreach($policy in $policies | Where-Object {$_.name -in $policyNames}){
                 "                      {0}: Every {1} {2} (keep for {3} {4})" -f $targetName, $frequency, $frequencyunit, $replicationTarget.retention.duration, $replicationTarget.retention.unit | Out-File -FilePath $policyFileName -Append
             }
         }
-        if($policy.remoteTargetPolicy.PSObject.Properties['archivalTargets'] -and $policy.remoteTargetPolicy.archivalTargets -ne $null -and $policy.remoteTargetPolicy.archivalTargets.Count -gt 0){
+        if($policy.remoteTargetPolicy.PSObject.Properties['archivalTargets'] -and $null -ne $policy.remoteTargetPolicy.archivalTargets){
             "          Archive To:" | Out-File -FilePath $policyFileName -Append
             foreach($archivalTarget in $policy.remoteTargetPolicy.archivalTargets){
                 $frequencyunit = $archivalTarget.schedule.unit
@@ -460,7 +454,7 @@ foreach($policy in $policies | Where-Object {$_.name -in $policyNames}){
             }
         }
     }
-    "`n`n" | Out-File -FilePath $policyFileName -Append
+    "`n" | Out-File -FilePath $policyFileName -Append
 }
 
 "`n  Per Object Stats saved to: {0}" -f $objectFileName
