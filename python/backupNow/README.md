@@ -35,7 +35,7 @@ Job finished with status: kSuccess
 Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/protection
 ```
 
-## Parameters
+## Authentication Parameters
 
 * -v, --vip: name of Cohesity cluster to connect to (default is helios.cohesity.com)
 * -u, --username: short username to authenticate to the cluster (default is helios)
@@ -45,8 +45,16 @@ Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/prote
 * -np, --noprompt: (optional) do not prompt for password
 * -mcm, --mcm: (optional) connect through MCM
 * -c, --clustername: (optional) helios/mcm cluster to connect to
+
+## Selection Parameters
+
 * -j, --jobname: name of protection job to run
 * -o, --objectname: (optional) name of object to backup (repeat this parameter for multiple objects)
+* -m, --metadatafile: (optional) path to directive file for backup
+* -t, --backupType: (optional) choose one of kRegular, kFull or kLog backup types. Default is kRegular (incremental)
+
+## Policy Overrides
+
 * -l, --localonly: (optional) skip replicas and archivals
 * -nr, --noreplica: (optional) skip replicas
 * -na, --noarchive: (optional) skip archives
@@ -55,10 +63,12 @@ Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/prote
 * -ka, --keepArchiveFor: (optional) days to keep in archive (defaults to policy settings)
 * -r, --replicateTo: (optional) name of remote cluster to replicate to (defaults to policy settings)
 * -kr, --keepReplicaFor: (optional) days to keep replica for (defaults to policy settings)
+
+## Monitoring Parameters
+
 * -w, --wait: (optional) wait for backup run to complete and report result
 * -pr, --progress: (optional) display percent complete
 * -s, --sleeptimesecs: (optional) seconds to sleep between status queries (default is 30)
-* -t, --backupType: (optional) choose one of kRegular, kFull or kLog backup types. Default is kRegular (incremental)
 * -x, --abortifrunning: (optional) exit if job is already running (default is to wait and run after existing run is finished)
 * -f, --logfile: (optional) filename to log output
 * -n, --waitminutesifrunning: (optional) exit after X minutes if job is already running (default is 60)
