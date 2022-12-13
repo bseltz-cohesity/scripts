@@ -7,16 +7,23 @@ from pyhesity import *
 # command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)  # Cohesity cluster name or IP
-parser.add_argument('-u', '--username', type=str, required=True)  # Cohesity Username
-parser.add_argument('-d', '--domain', type=str, default='local')  # Cohesity User Domain
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
+parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-m', '--mfacode', type=str, default=None)
+parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-n', '--viewname', type=str, required=True)  # name view to create
 parser.add_argument('-s', '--storagedomain', type=str, default='DefaultStorageDomain')  # name of storage domain to use
 parser.add_argument('-q', '--qospolicy', type=str, choices=['Backup Target Low', 'Backup Target High', 'TestAndDev High', 'TestAndDev Low', None], default=None)  # qos policy
 parser.add_argument('-w', '--whitelist', action='append', default=[])  # ip to whitelist
 parser.add_argument('-l', '--quotalimit', type=int, default=None)  # quota limit
 parser.add_argument('-a', '--quotaalert', type=int, default=None)  # quota alert threshold
-parser.add_argument('-c', '--clearwhitelist', action='store_true')  # erase existing whitelist
+parser.add_argument('-cw', '--clearwhitelist', action='store_true')  # erase existing whitelist
 parser.add_argument('-r', '--removewhitelistentries', action='store_true')  # remove whitelist entries specified with -w
 parser.add_argument('-x', '--updateexistingview', action='store_true')  # allow update of existing view (otherwise exit if view exists)
 parser.add_argument('-lm', '--lockmode', type=str, choices=['Compliance', 'Enterprise', 'None', 'compliance', 'enterprise', 'none'], default='None')  # datalock mode
@@ -33,6 +40,13 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
+clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
+emailmfacode = args.emailmfacode
 viewName = args.viewname
 storageDomain = args.storagedomain
 qosPolicy = args.qospolicy
@@ -66,13 +80,26 @@ def netmask2cidr(netmask):
 
 
 # authenticate
-apiauth(vip, username, domain)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), emailMfaCode=emailmfacode, mfaCode=mfacode)
+
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    if clustername is not None:
+        heliosCluster(clustername)
+    else:
+        print('-clustername is required when connecting to Helios or MCM')
+        exit()
+
+# exit if not authenticated
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
 
 existingview = None
 views = api('get', 'views')
 if views['count'] > 0:
     existingviews = [v for v in views['views'] if v['name'].lower() == viewName.lower()]
-    if(len(existingviews) > 0):
+    if len(existingviews) > 0:
         existingview = existingviews[0]
 
 if existingview is not None and updateexistingview is not True and show is not True:
