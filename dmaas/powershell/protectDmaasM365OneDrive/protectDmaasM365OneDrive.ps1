@@ -80,7 +80,9 @@ while(1){
     # implement pagination
     foreach($node in $users.nodes){
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
-        $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
+        if($node.protectionSource.office365ProtectionSource.PSObject.Properties['primarySMTPAddress']){
+            $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
+        }
         if(($node.unprotectedSourcesSummary | Where-Object environment -eq 'kO365OneDrive').leavesCount -eq 1){
             $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
         }
