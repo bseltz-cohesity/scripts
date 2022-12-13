@@ -24,15 +24,13 @@ chmod +x backupNow.py
 Place all files in a folder together. then, run the main script like so:
 
 ```bash
-./backupNow.py -v mycluster -u myuser -d mydomain.net -j 'My Backup Job' -k 7 -r anothercluster -kr 10 -a myarchivetarget -ka 10 -w
-```
-
-```text
-Connected!
-Running My Backup Job...
-New Job Run ID: 60429
-Job finished with status: kSuccess
-Run URL: https://mycluster/protection/job/32793/run/60429/1555751503627452/protection
+# example
+./backupNow.py -v mycluster \
+               -u myuser \
+               -d mydomain.net \
+               -j 'My Backup Job' \
+               -w
+# end example
 ```
 
 ## Authentication Parameters
