@@ -87,10 +87,13 @@ while(1){
             $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
         }
     }
-    $cursor = $users.nodes[-1].protectionSource.id
+    $cursor = $users.entityPaginationParameters.beforeCursorEntityId
+    if(! $cursor){
+        break
+    }
     $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidOnedrive=true&allUnderHierarchy=false&afterCursorEntityId=$cursor"
-
-    if(!($users[0].PSObject.Properties['nodes']) -or $users[0].nodes.Count -eq 1){
+    $newcursor = $users.entityPaginationParameters.beforeCursorEntityId
+    if($newcursor -eq $cursor){
         break
     }
 }
