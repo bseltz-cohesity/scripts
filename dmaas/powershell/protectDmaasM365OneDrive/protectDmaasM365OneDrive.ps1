@@ -96,6 +96,7 @@ while(1){
     if($newcursor -eq $cursor){
         break
     }
+    Write-Host "$($nameIndex.Keys.Count) discovered"
 }
 
 # configure protection parameters
