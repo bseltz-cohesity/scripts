@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2022.11.16
+# version 2022.12.15
 
 # extended error codes
 # ====================
