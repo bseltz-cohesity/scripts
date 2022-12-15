@@ -30,7 +30,20 @@ Place both files in a folder together and run the main script like so:
 ./excludeVMs.ps1 -vip mycluster -username admin -jobName 'vm backup' -vmName mongodb
 ```
 
-## Parameters
+## Authentication Parameters
+
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) one or more clusters to connect to when connecting through Helios or MCM (comma separated)
+
+## Other Parameters
 
 * -vip: name or IP of Cohesity cluster
 * -username: name of user to connect to Cohesity
@@ -38,3 +51,4 @@ Place both files in a folder together and run the main script like so:
 * -vmName: (optional) one or more VMs to exclude the proctection job (comma separated)
 * -vmList: (optional) text file containing list of VMs to exclude (one per line)
 * -jobName: (optional) one or more protection jobs to process (default is all VMware jobs)
+* -removeExclusion

@@ -3,19 +3,42 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,  # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
-    [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter()][array]$vmName,  # name of VM to protect
     [Parameter()][string]$vmList = '',  # text file of vm names
-    [Parameter()][array]$jobName
+    [Parameter()][array]$jobName,
+    [Parameter()][switch]$removeExclusion
 )
 
-### source the cohesity-api helper code
+# source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -noPromptForPassword $noPrompt
+
+# select helios/mcm managed cluster
+if($USING_HELIOS -and !$region){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit 1
+}
 
 ### get the protectionJob
 $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&environments=kVMware"
@@ -58,11 +81,18 @@ foreach($job in $jobs.protectionGroups){
             }else{
                 $vmcache[$vmName] = $vm
                 $vmsAdded = $True
-                Write-Host "Excluding $vmName from $($job.name)"
-                if(!$job.vmwareParams.PSObject.Properties['excludeObjectIds']){
-                    setApiProperty -object $job.vmwareParams -name 'excludeObjectIds' -value @($vm.id)
+                if($removeExclusion){
+                    Write-Host "Removing exclusion for $vmName from $($job.name)"
+                    if($job.vmwareParams.PSObject.Properties['excludeObjectIds']){
+                        $job.vmwareParams.excludeObjectIds = @($job.vmwareParams.excludeObjectIds | Where-Object {$_ -ne $vm.id})
+                    }
                 }else{
-                    $job.vmwareParams.excludeObjectIds = @($job.vmwareParams.excludeObjectIds + $vm.id)
+                    Write-Host "Excluding $vmName from $($job.name)"
+                    if(!$job.vmwareParams.PSObject.Properties['excludeObjectIds']){
+                        setApiProperty -object $job.vmwareParams -name 'excludeObjectIds' -value @($vm.id)
+                    }else{
+                        $job.vmwareParams.excludeObjectIds = @($job.vmwareParams.excludeObjectIds + $vm.id)
+                    }
                 }
             } 
         }
