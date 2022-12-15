@@ -1,4 +1,4 @@
-# version 2022.11.16
+# version 2022.12.15
 
 # process commandline arguments
 [CmdletBinding()]
@@ -36,7 +36,7 @@ param (
     [Parameter()][string]$metaDataFile,      # backup file list
     [Parameter()][switch]$abortIfRunning,    # exit if job is already running
     [Parameter()][int64]$waitMinutesIfRunning = 60,     # give up and exit if existing run is still running
-    [Parameter()][int64]$waitForNewRunMinutes = 10,     # give up and exit if new run fails to appear
+    [Parameter()][int64]$waitForNewRunMinutes = 20,     # give up and exit if new run fails to appear
     [Parameter()][int64]$cancelPreviousRunMinutes = 0,  # cancel previous run if it has been running long
     [Parameter()][int64]$statusRetries = 10,   # give up waiting for new run to appear
     [Parameter()][switch]$extendedErrorCodes,  # report failure-specific error codes
@@ -337,18 +337,19 @@ if($objects){
 
 # get last run id
 if($selectedSources.Count -gt 0){
-    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&sourceId=$($selectedSources[0])&excludeTasks=true"
-    if(!$runs -or $runs.Count -eq 0){
-        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true"
+    $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=20&includeObjectDetails=true"
+    if($runs -ne $null -and $runs.PSObject.Properties['runs']){
+        $runs = $runs.runs | Where-Object {$selectedSources[0] -in $_.objects.object.id}
     }
 }else{
-    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=1&excludeTasks=true"
+    $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=20&includeObjectDetails=false"
+    if($runs -ne $null -and $runs.PSObject.Properties['runs']){
+        $runs = $runs.runs
+    }
 }
 
-if($runs){
-    $newRunId = $lastRunId = $runs[0].backupRun.jobRunId
-}else{
-    $newRunId = $lastRunId = 0
+if($null -ne $runs -and $runs.Count -ne "0"){
+    $newRunId = $lastRunId = $runs[0].protectionGroupInstanceId
 }
 
 $finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning', '3', '4', '5', '6', 'Canceled', 'Succeeded', 'Failed', 'SucceededWithWarning')
@@ -365,6 +366,8 @@ $copyRunTargets = @(
 $policy = api get "protectionPolicies/$policyId"
 if(! $keepLocalFor){
     $copyRunTargets[0].daysToKeep = $policy.daysToKeep
+}else{
+
 }
 
 # replication
@@ -494,6 +497,7 @@ if($objects){
 
 # run job
 $result = api post ('protectionJobs/run/' + $jobID) $jobdata
+
 $reportWaiting = $True
 $now = Get-Date
 $startUsecs = dateToUsecs $now
@@ -537,14 +541,19 @@ while($newRunId -le $lastRunId){
     }
     Start-Sleep 3
     if($selectedSources.Count -gt 0){
-        $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$startUsecs&numRuns=100&sourceId=$($selectedSources[0])&excludeTasks=true"
+        $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=20&includeObjectDetails=true"
+        if($runs -ne $null -and $runs.PSObject.Properties['runs']){
+            $runs = $runs.runs | Where-Object {$selectedSources[0] -in $_.objects.object.id}
+        }
     }else{
-        $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$startUsecs&numRuns=100&excludeTasks=true"
+        $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=20&includeObjectDetails=false"
+        if($runs -ne $null -and $runs.PSObject.Properties['runs']){
+            $runs = $runs.runs
+        }
     }
-    if($null -ne $runs){
-        $newRunId = $runs[0].backupRun.jobRunId
-        $startedTimeUsecs = $runs[0].backupRun.stats.startTimeUsecs
-        $v2RunId = "{0}:{1}" -f $jobId, $startedTimeUsecs
+    if($null -ne $runs -and $runs.Count -ne "0"){
+        $newRunId = $runs[0].protectionGroupInstanceId
+        $v2RunId = $runs[0].id
     }
     if($newRunId -le $lastRunId){
         Start-Sleep $sleepTimeSecs
