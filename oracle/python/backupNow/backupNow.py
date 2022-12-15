@@ -53,7 +53,7 @@ parser.add_argument('-x', '--abortifrunning', action='store_true')
 parser.add_argument('-f', '--logfile', type=str, default=None)
 parser.add_argument('-n', '--waitminutesifrunning', type=int, default=60)
 parser.add_argument('-cp', '--cancelpreviousrunminutes', type=int, default=0)
-parser.add_argument('-nrt', '--newruntimeoutsecs', type=int, default=180)
+parser.add_argument('-nrt', '--newruntimeoutsecs', type=int, default=1200)
 parser.add_argument('-debug', '--debug', action='store_true')
 parser.add_argument('-ex', '--extendederrorcodes', action='store_true')
 parser.add_argument('-s', '--sleeptimesecs', type=int, default=30)
@@ -534,9 +534,9 @@ if wait is True:
     while newRunId <= lastRunId:
         sleep(5)
         if len(selectedSources) > 0:
-            runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&numRuns=100&excludeTasks=true&sourceId=%s' % (job['id'], startUsecs, selectedSources[0]))
+            runs = api('get', 'protectionRuns?jobId=%s&numRuns=20&excludeTasks=true&sourceId=%s' % (job['id'], selectedSources[0]))
         else:
-            runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&numRuns=100&excludeTasks=true' % (job['id'], startUsecs))
+            runs = api('get', 'protectionRuns?jobId=%s&numRuns=20&excludeTasks=true' % job['id'])
         if len(runs) > 0:
             newRunId = runs[0]['backupRun']['jobRunId']
             startedTimeUsecs = runs[0]['backupRun']['stats']['startTimeUsecs']
