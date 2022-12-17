@@ -31,12 +31,22 @@ Connected!
 tearing down SQLDB: cohesitydb-test from sqldev01...
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: Cohesity cluster to connect to
-* -username: Cohesity username
-* -domain: (optional) Active Directory domain (defaults to 'local')
-* -cloneType: type of clone to destroy ('sql', 'view', 'vm', 'oracle')
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) one or more clusters to connect to when connecting through Helios or MCM (comma separated)
+
+## Other Parameters
+
+* -cloneType: type of clone to destroy ('sql', 'view', 'vm', 'oracle', 'oracle_view')
 * -viewName: name of clone view to tear down
 * -vmName: name of clone VM to tear down
 * -dbName: name of clone DB to tear down

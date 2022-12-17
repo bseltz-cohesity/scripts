@@ -4,12 +4,17 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
-    [Parameter()][string]$domain = 'local', #local or AD domain
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
     [Parameter()][switch]$useApiKey,
-    [Parameter()][string]$password = $null,
-    [Parameter(Mandatory = $True)][ValidateSet('sql','view','vm','oracle')][string]$cloneType,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
+    [Parameter(Mandatory = $True)][ValidateSet('sql','view','vm','oracle','oracle_view')][string]$cloneType,
     [Parameter()][string]$viewName = '', #name of clone view to tear down
     [Parameter()][string]$vmName = '', #name of clone VM to tear down
     [Parameter()][string]$dbName = '', #name of clone DB to tear down
@@ -25,7 +30,7 @@ if ($cloneType -eq 'sql' -or $cloneType -eq 'oracle'){
     }
 }
 
-if ($cloneType -eq 'view'){
+if ($cloneType -eq 'view' -or $cloneType -eq 'oracle_view'){
     if($viewName -eq ''){
         write-host "viewName parameter required" -foregroundcolor yellow
         exit  
@@ -39,24 +44,36 @@ if ($cloneType -eq 'vm'){
     }
 }
 
-### source the cohesity-api helper code
+# source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-if($useApiKey){
-    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
-}else{
-    apiauth -vip $vip -username $username -domain $domain -password $password
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -noPromptForPassword $noPrompt
+
+# select helios/mcm managed cluster
+if($USING_HELIOS -and !$region){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
 }
 
-$cloneTypes = @{ 'vm' = 2; 'view' = 5; 'sql' = 7 ; 'oracle' = 7}
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit 1
+}
+
+$cloneTypes = @{ 'vm' = 2; 'view' = 5; 'sql' = 7; 'oracle' = 7; 'oracle_view' = 18}
 
 $taskId = $null
 
 ### get list of active clones
 $clones = api get ("/restoretasks?restoreTypes=kCloneView&" +
                                 "restoreTypes=kCloneApp&" +
-                                "restoreTypes=kCloneVMs") `
+                                "restoreTypes=kCloneVMs&" +
+                                "restoreTypes=kCloneAppView") `
                                 | where-object { $_.restoreTask.destroyClonedTaskStateVec -eq $null } `
                                 | Where-Object { $_.restoreTask.performRestoreTaskState.base.type -eq $cloneTypes[$cloneType]} `
                                 | Where-Object { $_.restoreTask.performRestoreTaskState.base.publicStatus -eq 'kSuccess' }
@@ -116,6 +133,17 @@ foreach ($clone in $clones){
                 $taskId = $thisTaskId
                 break
             }
+        }
+    }
+
+    ### tear down oracle view
+    if($cloneType -eq 'oracle_view'){
+        $cloneTaskName = $clone.restoreTask.performRestoreTaskState.base.name
+        $cloneViewName = $clone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.oracleCloneAppViewParamsVec[0].mountPathIdentifier
+        if($cloneViewName -eq $viewName){
+            "tearing down View: $cloneViewName..."
+            $taskId = $thisTaskId
+            break
         }
     }
 }
