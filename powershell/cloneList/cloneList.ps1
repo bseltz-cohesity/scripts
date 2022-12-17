@@ -1,10 +1,17 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
     [Parameter()][string]$domain = 'local',
-    [Parameter()][ValidateSet('sql','view','vm','oracle')][string]$type,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
+    [Parameter()][ValidateSet('sql','view','vm','oracle', 'appview')][string]$type,
     [Parameter()][string]$source,
     [Parameter()][string]$sourceDB,
     [Parameter()][string]$target,
@@ -18,8 +25,23 @@ param (
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -noPromptForPassword $noPrompt
+
+# select helios/mcm managed cluster
+if($USING_HELIOS -and !$region){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit 1
+}
 
 $views = api get views
 
@@ -30,10 +52,10 @@ $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfile = "cloneList-$($cluster.name)-$dateString.csv"
 "TaskId,Created,Type,Source,Target" | Out-File -FilePath $outfile
 
-$cloneTypes = @{ 'vm' = 2; 'view' = 5; 'sql' = 7 ; 'oracle' = 7}
+$cloneTypes = @{ 'vm' = 2; 'view' = 5; 'sql' = 7 ; 'oracle' = 7; 'appview' = 18}
 
 ### get list of active clones
-$clones = api get ("/restoretasks?restoreTypes=kCloneView&restoreTypes=kCloneApp&restoreTypes=kCloneVMs") `
+$clones = api get ("/restoretasks?restoreTypes=kCloneView&restoreTypes=kCloneApp&restoreTypes=kCloneVMs&restoreTypes=kCloneAppView") `
     | where-object { $_.restoreTask.destroyClonedTaskStateVec -eq $null } `
     | Where-Object { $_.restoreTask.performRestoreTaskState.base.publicStatus -eq 'kSuccess' } `
     | Where-Object {$_.restoreTask.performRestoreTaskState.base.startTimeUsecs -le $olderThanUsecs}
@@ -142,6 +164,57 @@ foreach ($clone in $clones){
                     }
                     Write-Host "Clone Destroyed"
                 }
+            }
+        }
+    }
+
+    # Oracle View
+    if($cloneType -eq 18){
+        $targetHost = $clone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.targetHost.displayName
+        $sourceHost = $clone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
+        $sourceDBName = $clone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].appEntity.displayName 
+        
+        $cloneTypeName = 'App View'
+        if($type -and $type -ne 'appview'){
+            $typeMatch = $false
+        }
+
+        $targetDBName = $clone.restoreTask.performRestoreTaskState.fullViewName
+        # $targetDBName = $clone.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.newDatabaseName
+        
+        $targetServerMatch = !$target -or ($target -eq $targetHost)
+        $targetDBMatch = !$targetDB -or ($targetDB -eq $targetDBName)
+        $sourceServerMatch = !$source -or ($source -eq $sourceHost)
+        $sourceDBMatch = !$sourceDB -or ($sourceDB -eq $sourceDBName)
+        $taskIdMatch = !$taskId -or $taskId -eq $thisTaskId
+
+        if($sourceServerMatch -and $targetServerMatch -and $sourceDBMatch -and $targetDBMatch -and $taskIdMatch -and $typeMatch){
+
+            "`n{0} ({1}): `n    [{2}] {3}/{4} -> {5}/{6}" -f  $thisTaskId,
+                (usecsToDate $startTimeUsecs),
+                $cloneTypeName,
+                $sourceHost,
+                $sourceDBName,
+                $targetHost,
+                $targetDBName
+
+            "{0},{1},{2},{3}/{4},{5}/{6}" -f  $thisTaskId,
+                (usecsToDate $startTimeUsecs),
+                $cloneTypeName,
+                $sourceHost,
+                $sourceDBName,
+                $targetHost,
+                $targetDBName | Out-File -FilePath $outfile -Append
+
+            if($destroy){
+                $restoreTask = api post "/destroyclone/$thisTaskId"
+                if($wait){
+                    while($restoreTask.restoreTask.destroyClonedTaskStateVec[0].status -eq 1){
+                        Start-Sleep 5
+                        $restoreTask = api get "/restoretasks/$taskId"
+                    }
+                }
+                Write-Host "Clone Destroyed"
             }
         }
     }
