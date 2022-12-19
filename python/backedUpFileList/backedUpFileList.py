@@ -31,14 +31,15 @@ parser.add_argument('-pwd', '--password', type=str, default=None)     # optional
 parser.add_argument('-s', '--sourceserver', type=str, required=True)  # name of source server
 parser.add_argument('-j', '--jobname', type=str, required=True)       # narrow search by job name
 parser.add_argument('-l', '--showversions', action='store_true')      # show available snapshots
-parser.add_argument('-k', '--listfiles', action='store_true')         # show available snapshots
+parser.add_argument('-k', '--listfiles', action='store_true')         # show fils in snapshots
 parser.add_argument('-t', '--start', type=str, default=None)          # show snapshots after date
 parser.add_argument('-e', '--end', type=str, default=None)            # show snapshots before date
 parser.add_argument('-r', '--runid', type=int, default=None)          # choose specific job run id
-parser.add_argument('-f', '--filedate', type=str, default=None)       # date to restore from
-parser.add_argument('-p', '--startpath', type=str, default='/')       # date to restore from
+parser.add_argument('-f', '--filedate', type=str, default=None)       # show snapshots after date
+parser.add_argument('-p', '--startpath', type=str, default='/')       # show files under this path
 parser.add_argument('-n', '--noindex', action='store_true')           # do not use librarian
-parser.add_argument('-ss', '--showstats', action='store_true')           # do not use librarian
+parser.add_argument('-ss', '--showstats', action='store_true')        # show file last modified date and size
+parser.add_argument('-nt', '--newerthan', type=int, default=0)        # show files newer than X days
 
 args = parser.parse_args()
 
@@ -58,8 +59,9 @@ listfiles = args.listfiles
 startpath = args.startpath
 noindex = args.noindex
 showstats = args.showstats
+newerthan = args.newerthan
 
-if showstats is True:
+if showstats is True or newerthan > 0:
     statfile = True
 else:
     statfile = False
@@ -93,8 +95,10 @@ def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None, cookie
                 if statfile is True:
                     filesize = entry['fstatInfo']['size']
                     mtime = usecsToDate(entry['fstatInfo']['mtimeUsecs'])
-                    print('%s (%s) [%s bytes]' % (entry['fullPath'], mtime, filesize))
-                    f.write('%s (%s) [%s bytes]\n' % (entry['fullPath'], mtime, filesize))
+                    mtimeusecs = entry['fstatInfo']['mtimeUsecs']
+                    if newerthan == 0 or mtimeusecs > timeAgo(newerthan, 'days'):
+                        print('%s (%s) [%s bytes]' % (entry['fullPath'], mtime, filesize))
+                        f.write('%s (%s) [%s bytes]\n' % (entry['fullPath'], mtime, filesize))
                 else:
                     print('%s' % entry['fullPath'])
                     f.write('%s\n' % entry['fullPath'])

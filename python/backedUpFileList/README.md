@@ -73,3 +73,4 @@ To choose the backup at or after the specified file date:
 * -p, --startpath: (optional) start listing files at path (default is /)
 * -n, --noindex: (optional) if omitted, indexer will be used
 * -ss, --showstats: (optional) include file date and size in the output
+* -nt, --newerthan: (optional) show files added/modified in the last X days
