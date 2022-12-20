@@ -68,24 +68,38 @@ while 1:
     runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&endTimeUsecs=%s&includeTenants=true&includeObjectDetails=true' % (job['id'], numruns, endUsecs), v=2)
     for run in runs['runs']:
         try:
-            endUsecs = run['localBackupInfo']['startTimeUsecs'] - 1
-            runtype = run['localBackupInfo']['runType'][1:]
+            if 'localBackupInfo' in run:
+                info = run['localBackupInfo']
+            else:
+                info = run['archivalInfo']['archivalTargetResults'][0]
+            endUsecs = info['startTimeUsecs'] - 1
+            runtype = info['runType'][1:]
             if runtype == 'Regular':
                 runType = 'Incremental'
-            startTimeUsecs = run['localBackupInfo']['startTimeUsecs']
-            if 'endTimeUsecs' in run['localBackupInfo']:
-                endTimeUsecs = run['localBackupInfo']['endTimeUsecs']
+            startTimeUsecs = info['startTimeUsecs']
+            if 'endTimeUsecs' in info:
+                endTimeUsecs = info['endTimeUsecs']
             else:
                 endTimeUsecs = nowUsecs
             durationSecs = round((endTimeUsecs - startTimeUsecs) / 1000000, 0)
-            runStartTime = usecsToDate(run['localBackupInfo']['startTimeUsecs'])
-            if run['localBackupInfo']['startTimeUsecs'] < daysBackUsecs:
+            runStartTime = usecsToDate(info['startTimeUsecs'])
+            if info['startTimeUsecs'] < daysBackUsecs:
                 break
-            bytesread = round(run['localBackupInfo']['localSnapshotStats']['bytesRead'] / multiplier, 2)
-            byteswritten = round(run['localBackupInfo']['localSnapshotStats']['bytesWritten'] / multiplier, 2)
-            status = run['localBackupInfo']['status']
-            numsuccess = len([o for o in run['objects'] if o['localSnapshotInfo']['snapshotInfo']['status'] in ['kSuccessful', 'kWarning']])
-            numfailed = len([o for o in run['objects'] if o['localSnapshotInfo']['snapshotInfo']['status'] == 'kFailed'])
+            if 'localSnapshotStats' in info:
+                bytesread = round(info['localSnapshotStats']['bytesRead'] / multiplier, 2)
+                byteswritten = round(info['localSnapshotStats']['bytesWritten'] / multiplier, 2)
+                numsuccess = len([o for o in run['objects'] if o['localSnapshotInfo']['snapshotInfo']['status'] in ['kSuccessful', 'kWarning']])
+                numfailed = len([o for o in run['objects'] if o['localSnapshotInfo']['snapshotInfo']['status'] == 'kFailed'])
+            else:
+                bytesread = ''
+                byteswritten = ''
+                if 'stats' in info and 'bytesRead' in info['stats']:
+                    bytesread = round(info['stats']['bytesRead'] / multiplier, 2)
+                if 'stats' in info and 'physicalBytesTransferred' in info['stats']:
+                    byteswritten = round(info['stats']['physicalBytesTransferred'] / multiplier, 2)
+                numsuccess = ''
+                numfailed = ''
+            status = info['status']
             print("    %s  %s" % (runStartTime, status))
             f.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (runStartTime, runtype, durationSecs, status, bytesread, byteswritten, numsuccess, numfailed))
         except Exception as e:
