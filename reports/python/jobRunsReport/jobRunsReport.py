@@ -64,14 +64,11 @@ finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning', 'kCanceling',
 
 endUsecs = nowUsecs
 
-while(1):
+while 1:
     runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&endTimeUsecs=%s&includeTenants=true&includeObjectDetails=true' % (job['id'], numruns, endUsecs), v=2)
-    if len(runs['runs']) > 0:
-        endUsecs = runs['runs'][-1]['localBackupInfo']['startTimeUsecs'] - 1
-    else:
-        break
     for run in runs['runs']:
         try:
+            endUsecs = run['localBackupInfo']['startTimeUsecs'] - 1
             runtype = run['localBackupInfo']['runType'][1:]
             if runtype == 'Regular':
                 runType = 'Incremental'
@@ -92,6 +89,9 @@ while(1):
             print("    %s  %s" % (runStartTime, status))
             f.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (runStartTime, runtype, durationSecs, status, bytesread, byteswritten, numsuccess, numfailed))
         except Exception as e:
+            print('exception!')
             pass
+    if len(runs['runs']) < numruns:
+        break
 f.close()
 print('\nOutput saved to %s\n' % outfile)
