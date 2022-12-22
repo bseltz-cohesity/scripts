@@ -51,7 +51,7 @@ You can filter on any valid attribute name and value. Comparisons can be one of 
 
 To see what the attribute names are, use the -showRecord option. This will display one record and exit, so that you can see what the attribute names and value types are
 
-You can include multiple filters like: `-filters 'groupName==My PRotection Group', 'logicalSize!=10000000000', 'objectName==server1.mydomain.net'`
+You can include multiple filters like: `-filters 'groupName==My Protection Group', 'logicalSize>=10000000000', 'objectName==server1.mydomain.net'`
 
 ## Authenticating to Helios
 

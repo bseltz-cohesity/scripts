@@ -336,13 +336,40 @@ for cluster in sorted(selectedClusters, key=lambda c: c['name'].lower()):
             previewData = sorted(preview['component']['data'], key=lambda d: d[attributes[0]['attributeName']])
         if filters is not None and len(filters) > 0:
             for filter in filters:
-                if '=' in filter:
-                    (fattrib, fvalue) = filter.split('=')
-                    if fattrib not in previewData[0]:
-                        print('\nInvalid filter attribute: %s\nUse --showrecord to see attribute names\n' % fattrib)
-                        exit()
-                    else:
+                if '==' in filter:
+                    (fattrib, fvalue) = filter.split('==')
+                elif '!=' in filter:
+                    (fattrib, fvalue) = filter.split('!=')
+                elif '>=' in filter:
+                    (fattrib, fvalue) = filter.split('>=')
+                elif '<=' in filter:
+                    (fattrib, fvalue) = filter.split('<=')
+                elif '<' in filter:
+                    (fattrib, fvalue) = filter.split('<')
+                elif '>' in filter:
+                    (fattrib, fvalue) = filter.split('>')
+                else:
+                    print('\nInvalid filter format, should be one of ==, !=, <=, >=, <, >\n')
+                    exit()
+                if len(previewData) > 0 and fattrib not in previewData[0]:
+                    print('\nInvalid filter attribute: %s\nUse --showrecord to see attribute names\n' % fattrib)
+                    exit()
+                else:
+                    if fvalue.isnumeric():
+                        fvalue = float(fvalue)
+                    if '==' in filter:
                         previewData = [p for p in previewData if p[fattrib] == fvalue]
+                    elif '!=' in filter:
+                        previewData = [p for p in previewData if p[fattrib] != fvalue]
+                    elif '>=' in filter:
+                        previewData = [p for p in previewData if p[fattrib] >= fvalue]
+                    elif '<=' in filter:
+                        previewData = [p for p in previewData if p[fattrib] <= fvalue]
+                    elif '<' in filter:
+                        previewData = [p for p in previewData if p[fattrib] < fvalue]
+                    elif '>' in filter:
+                        previewData = [p for p in previewData if p[fattrib] > fvalue]
+
         for rec in previewData:
             if showrecord:
                 display(rec)

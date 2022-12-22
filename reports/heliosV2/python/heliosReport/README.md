@@ -40,7 +40,15 @@ Place both files in a folder together and run the main script like so:
 * -c, --clustername: (optional) limit to one or more cluster names (repeat for multiple)
 * -z, --timezone: (optional) default is 'America/New_York'
 * -sr, --showrecord: (optional) show format of one record and exit
-* -f, --filter: (optional) one or more filters, e.g. -f 'numSnapshots=0' -f 'protectionStatus=protected'
+* -f, --filter: (optional) one or more filters, e.g. -f 'numSnapshots==0' -f 'protectionStatus==protected'
+
+## Filters
+
+You can filter on any valid attribute name and value. Comparisons can be one of ==, !=, >=, <=, > or <
+
+To see what the attribute names are, use the -sr, --showrecord option. This will display one record and exit, so that you can see what the attribute names and value types are
+
+You can include multiple filters like: `-f 'groupName==My Protection Group' -f 'logicalSize>=10000000000' -f 'objectName==server1.mydomain.net'`
 
 ## The Python Helper Module - pyhesity.py
 
