@@ -43,7 +43,15 @@ Place all files in a folder together, then run the main script like so:
 * -unit: (optional) 'MiB','GiB' or 'TiB' (default is 'MiB')
 * -timeZone: (optional) default is 'America/New_York',
 * -showRecord: (optional) show first record format and exit
-* -filters: (optional) one or more filters, e.g. 'numSnapshots=0', 'protectionStatus=protected'
+* -filters: (optional) one or more filters, e.g. 'numSnapshots==0', 'protectionStatus==protected'
+
+## Filters
+
+You can filter on any valid attribute name and value. Comparisons can be one of ==, !=, >=, <=, > or <
+
+To see what the attribute names are, use the -showRecord option. This will display one record and exit, so that you can see what the attribute names and value types are
+
+You can include multiple filters like: `-filters 'groupName==My PRotection Group', 'logicalSize!=10000000000', 'objectName==server1.mydomain.net'`
 
 ## Authenticating to Helios
 
