@@ -320,13 +320,38 @@ foreach($cluster in ($selectedClusters | Sort-Object -Property name)){
         }
         if($filters){
             foreach($filter in $filters){
-                if($filter -match '='){
-                    $fattrib, $fvalue = $filter -split '='
-                    if(! $previewData[0].PSObject.Properties[$fattrib]){
-                        Write-Host "`nInvalid filter attribute: $fattrib`nUse -showRecord to see attribute names`n" -ForegroundColor Yellow
-                        exit
-                    }else{
+                if($filter -match '<='){
+                    $fattrib, $fvalue = $filter -split "<="
+                }elseif($filter -match '>='){
+                    $fattrib, $fvalue = $filter -split ">="
+                }elseif($filter -match '!='){
+                    $fattrib, $fvalue = $filter -split "!="
+                }elseif($filter -match '=='){
+                    $fattrib, $fvalue = $filter -split "=="
+                }elseif($filter -match '>'){
+                    $fattrib, $fvalue = $filter -split ">"
+                }elseif($filter -match '<'){
+                    $fattrib, $fvalue = $filter -split "<"
+                }else{
+                    Write-Host "`nInvalid filter format, should be one of ==, !=, <=, >=, <, >`n" -ForegroundColor Yellow
+                    exit
+                }
+                if($previewData -and ! $previewData[0].PSObject.Properties[$fattrib]){
+                    Write-Host "`nInvalid filter attribute: $fattrib`nUse -showRecord to see attribute names`n" -ForegroundColor Yellow
+                    exit
+                }else{
+                    if($filter -match '<='){
+                        $previewData = $previewData | Where-Object {$_.$fattrib -le $fvalue}
+                    }elseif($filter -match '>='){
+                        $previewData = $previewData | Where-Object {$_.$fattrib -ge $fvalue}
+                    }elseif($filter -match '!='){
+                        $previewData = $previewData | Where-Object {$_.$fattrib -ne $fvalue}
+                    }elseif($filter -match '=='){
                         $previewData = $previewData | Where-Object {$_.$fattrib -eq $fvalue}
+                    }elseif($filter -match '>'){
+                        $previewData = $previewData | Where-Object {$_.$fattrib -gt $fvalue}
+                    }elseif($filter -match '<'){
+                        $previewData = $previewData | Where-Object {$_.$fattrib -lt $fvalue}
                     }
                 }
             }
