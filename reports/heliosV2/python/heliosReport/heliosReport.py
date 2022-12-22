@@ -351,6 +351,8 @@ for cluster in sorted(selectedClusters, key=lambda c: c['name'].lower()):
                 else:
                     print('\nInvalid filter format, should be one of ==, !=, <=, >=, <, >\n')
                     exit()
+                fattrib = fattrib.strip()
+                fvalue = fvalue.strip()
                 if len(previewData) > 0 and fattrib not in previewData[0]:
                     print('\nInvalid filter attribute: %s\nUse --showrecord to see attribute names\n' % fattrib)
                     exit()

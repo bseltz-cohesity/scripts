@@ -336,6 +336,8 @@ foreach($cluster in ($selectedClusters | Sort-Object -Property name)){
                     Write-Host "`nInvalid filter format, should be one of ==, !=, <=, >=, <, >`n" -ForegroundColor Yellow
                     exit
                 }
+                $fattrib = $fattrib.Trim()
+                $fvalue = $fvalue.Trim()
                 if($previewData -and ! $previewData[0].PSObject.Properties[$fattrib]){
                     Write-Host "`nInvalid filter attribute: $fattrib`nUse -showRecord to see attribute names`n" -ForegroundColor Yellow
                     exit
