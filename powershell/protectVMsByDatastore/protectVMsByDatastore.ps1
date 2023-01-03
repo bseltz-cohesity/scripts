@@ -1,10 +1,17 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,  # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
-    [Parameter()][string]$domain = 'local',  # local or AD domain
-    [Parameter()][string]$tenant,  # org name
+    [Parameter()][string]$vip = 'helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant = $null,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password = $null,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode = $null,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName = $null,
     [Parameter(Mandatory = $True)][string]$jobName,  # job name
     [Parameter(Mandatory = $True)][string]$vCenterName,  # vcenter source name
     [Parameter(Mandatory = $True)][string]$dataStoreName,  # name of datastore to protect
@@ -23,18 +30,35 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain -tenant $tenant
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
 
-$vCenter = api get protectionSources?environments=kVMware | Where-Object {$_.protectionSource.name -eq $vCenterName}
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
+
+# find specified vcenter
+$vCenter = api get protectionSources/rootNodes?environments=kVMware | Where-Object {$_.protectionSource.name -eq $vCenterName}
 if(!$vCenter){
     Write-Host "vCenter $vCenterName not found!" -ForegroundColor Yellow
     exit 1
 }
 
-$vms = api get protectionSources/virtualMachines?vCenterId=$($vCenter.protectionSource.id) | Where-Object {$_.vmWareProtectionSource.virtualDisks.fileName -match "\[$dataStoreName\]"}
+# find unprotected VMs on specified datastore
+$vms = api get "protectionSources/virtualMachines?vCenterId=$($vCenter.protectionSource.id)&protected=false" | Where-Object {$_.vmWareProtectionSource.virtualDisks.fileName -match "\[$dataStoreName\]"}
 if($vms.Count -eq 0){
-    Write-Host "No VMs found on datastore $dataStoreName" -ForegroundColor Yellow
-    exit 1
+    Write-Host "All VMs on datastore $dataStoreName are protected" -ForegroundColor Green
+    exit
 }
 
 if($paused){
@@ -49,6 +73,7 @@ if($disableIndexing){
     $enableIndexing = $True
 }
 
+# find specified protection job
 $job = (api get -v2 "data-protect/protection-groups").protectionGroups | Where-Object {$_.name -eq $jobName}
 
 if($job){
@@ -168,8 +193,9 @@ if($job){
     }     
 }
 
-foreach($vm in $vms){
+foreach($vm in $vms | Sort-Object -Property name){
     if($vm.id -notin $job.vmwareParams.objects.id){
+        Write-Host "    protecting $($vm.name)"
         $job.vmwareParams.objects += @{
             'excludeDisks' = $null;
             'id' = $vm.id;
@@ -178,7 +204,6 @@ foreach($vm in $vms){
         }
     }
 }
-$job.vmwareParams.objects.Count
 
 if($newJob){
     "Creating protection job $jobName"

@@ -38,15 +38,25 @@ To create a new protection job:
 # end example
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: name or IP of Cohesity cluster
-* -userName: name of user to connect to Cohesity
-* -domain: your AD domain (defaults to local)
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -tenant: (optional) name of tenant organization
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Basic Parameters
+
 * -jobName: name of protection job to create or add to
 * -vCenterName: name of registered vCenter source
 * -dataStoreName: name of datastore to protect
-* -tenant: (optional) impersonate a Cohesity tenant
 
 ## Optional Parameters for New Jobs Only
 
