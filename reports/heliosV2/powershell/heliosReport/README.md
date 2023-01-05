@@ -44,6 +44,8 @@ Place all files in a folder together, then run the main script like so:
 * -timeZone: (optional) default is 'America/New_York',
 * -showRecord: (optional) show first record format and exit
 * -filters: (optional) one or more filters, e.g. 'numSnapshots==0', 'protectionStatus==protected'
+* -filterList: (optional) text file of items to search for (e.g. server names)
+* -filterProperty: (optional) property to search for items (e.g. objectName)
 
 ## Filters
 
@@ -52,6 +54,17 @@ You can filter on any valid attribute name and value. Comparisons can be one of 
 To see what the attribute names are, use the -showRecord option. This will display one record and exit, so that you can see what the attribute names and value types are
 
 You can include multiple filters like: `-filters 'groupName==My Protection Group', 'logicalSize>=10000000000', 'objectName==server1.mydomain.net'`
+
+## Using filter list
+
+You can provide a text file (of server names for example) to search for by using -filterList and -filterProperty. Create a text file of objects you want to search for (for example, myservers.txt) and then you can do, for example:
+
+```powershell
+./heliosReport.ps1 -username myusername@mydomain.net `
+                   -reportName 'Protected Objects' `
+                   -filterProperty objectName `
+                   -filterList ./myservers.txt
+```
 
 ## Authenticating to Helios
 

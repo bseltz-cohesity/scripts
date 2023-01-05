@@ -13,8 +13,33 @@ param (
     [Parameter()][string]$reportName = 'Protection Runs',
     [Parameter()][string]$timeZone = 'America/New_York',
     [Parameter()][switch]$showRecord,
-    [Parameter()][array]$filters
+    [Parameter()][array]$filters,
+    [Parameter()][string]$filterList,
+    [Parameter()][string]$filterProperty
 )
+
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
+        }
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
+        exit
+    }
+    return ($items | Sort-Object -Unique)
+}
+
+$filterTextList = @(gatherList -FilePath $filterList -Name 'filter text list' -Required $false)
 
 $conversion = @{'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
 function toUnits($val){
@@ -356,6 +381,14 @@ foreach($cluster in ($selectedClusters | Sort-Object -Property name)){
                         $previewData = $previewData | Where-Object {$_.$fattrib -lt $fvalue}
                     }
                 }
+            }
+        }
+        if($filterList -and $filterProperty){
+            if($previewData -and ! $previewData[0].PSObject.Properties[$filterProperty]){
+                Write-Host "`nInvalid filter attribute: $filterProperty`nUse -showRecord to see attribute names`n" -ForegroundColor Yellow
+                exit
+            }else{
+                $previewData = $previewData | Where-Object {$_.$filterProperty -in $filterTextList}
             }
         }
         foreach($rec in $previewData){
