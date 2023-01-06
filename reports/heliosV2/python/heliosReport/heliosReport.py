@@ -24,6 +24,8 @@ parser.add_argument('-c', '--clustername', action='append', type=str)
 parser.add_argument('-z', '--timezone', type=str, default='America/New_York')
 parser.add_argument('-sr', '--showrecord', action='store_true')
 parser.add_argument('-f', '--filter', action='append', type=str)
+parser.add_argument('-fl', '--filterlist', type=str, default=None)
+parser.add_argument('-fp', '--filterproperty', type=str, default=None)
 
 args = parser.parse_args()
 
@@ -42,6 +44,27 @@ clusternames = args.clustername
 timezone = args.timezone
 showrecord = args.showrecord
 filters = args.filter
+filterlist = args.filterlist
+filterproperty = args.filterproperty
+
+
+# gather server list
+def gatherList(param=None, filename=None, name='items', required=True):
+    items = []
+    if param is not None:
+        for item in param:
+            items.append(item)
+    if filename is not None:
+        f = open(filename, 'r')
+        items += [s.strip() for s in f.readlines() if s.strip() != '']
+        f.close()
+    if required is True and len(items) == 0:
+        print('no %s specified' % name)
+        exit()
+    return items
+
+
+filterTextList = gatherList(filename=filterlist, name='filter text list', required=False)
 
 multiplier = 1024 * 1024
 if units.lower() == 'gib':
@@ -371,7 +394,12 @@ for cluster in sorted(selectedClusters, key=lambda c: c['name'].lower()):
                         previewData = [p for p in previewData if p[fattrib] < fvalue]
                     elif '>' in filter:
                         previewData = [p for p in previewData if p[fattrib] > fvalue]
-
+        if filterlist and filterproperty:
+            if previewData and filterproperty not in previewData[0]:
+                print('\nInvalid filter attribute: %s\nUse --showrecord to see attribute names\n' % filterproperty)
+                exit()
+            else:
+                previewData = [p for p in previewData if p[filterproperty].lower() in [f.lower() for f in filterTextList]]
         for rec in previewData:
             if showrecord:
                 display(rec)
