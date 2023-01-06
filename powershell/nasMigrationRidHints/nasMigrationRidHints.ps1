@@ -39,7 +39,7 @@ foreach($task in $restoreTasks){
         if($view){
             $viewProtectionJobName = $null
             if($view.viewProtection){
-                $viewProtectionJobName = $view.viewProtection.protectionJobs[0].jobName
+                $viewProtectionJobName = $view.viewProtection.protectionJobs[-1].jobName
             }
             if($viewProtectionJobName){
                 
