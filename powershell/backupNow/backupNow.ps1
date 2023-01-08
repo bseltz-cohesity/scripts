@@ -1,4 +1,18 @@
-# version 2022.12.15
+# version 2022.01.08
+
+# version history
+# ===============
+# 2022.01.08 - enforce sleeptimesecs >= 110 and waitForNewRunMinutes >= 20 unless -testMode is used
+
+# extended error codes
+# ====================
+# 0: Successful
+# 1: Unsuccessful
+# 2: connection/authentication error
+# 3: Syntax Error
+# 4: Timed out waiting for existing run to finish
+# 5: Timed out waiting for status update
+# 6: Timed out waiting for new run to appear
 
 # process commandline arguments
 [CmdletBinding()]
@@ -40,21 +54,26 @@ param (
     [Parameter()][int64]$cancelPreviousRunMinutes = 0,  # cancel previous run if it has been running long
     [Parameter()][int64]$statusRetries = 10,   # give up waiting for new run to appear
     [Parameter()][switch]$extendedErrorCodes,  # report failure-specific error codes
-    [Parameter()][int64]$sleepTimeSecs = 30    # sleep seconds between status queries
+    [Parameter()][int64]$sleepTimeSecs = 110,  # sleep seconds between status queries
+    [Parameter()][switch]$testMode
 )
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-# extended error codes
-# ====================
-# 0: Successful
-# 1: Unsuccessful
-# 2: connection/authentication error
-# 3: Syntax Error
-# 4: Timed out waiting for existing run to finish
-# 5: Timed out waiting for status update
-# 6: Timed out waiting for new run to appear
+# enforce enterprise mode
+if(! $testMode){
+    if($sleepTimeSecs -lt 110){
+        $sleepTimeSecs = 110
+    }
+    if($waitForNewRunMinutes -lt 20){
+        $waitForNewRunMinutes = 20
+    }
+}
+
+if($progress -or $enable){
+    $wait = $True
+}
 
 if($outputlog){
     if($logfile){
@@ -338,12 +357,12 @@ if($objects){
 # get last run id
 if($selectedSources.Count -gt 0){
     $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=20&includeObjectDetails=true"
-    if($runs -ne $null -and $runs.PSObject.Properties['runs']){
+    if($null -ne $runs -and $runs.PSObject.Properties['runs']){
         $runs = $runs.runs | Where-Object {$selectedSources[0] -in $_.objects.object.id}
     }
 }else{
     $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=20&includeObjectDetails=false"
-    if($runs -ne $null -and $runs.PSObject.Properties['runs']){
+    if($null -ne $runs -and $runs.PSObject.Properties['runs']){
         $runs = $runs.runs
     }
 }
@@ -495,12 +514,14 @@ if($objects){
     }
 }
 
+# $jobdata | ConvertTo-Json -Depth 99
+
 # run job
-$result = api post ('protectionJobs/run/' + $jobID) $jobdata
+$result = api post ('protectionJobs/run/' + $jobID) $jobdata -quiet
 
 $reportWaiting = $True
 $now = Get-Date
-$startUsecs = dateToUsecs $now
+# $startUsecs = dateToUsecs $now
 $waitUntil = $now.AddMinutes($waitMinutesIfRunning)
 while($result -ne ""){
     if((Get-Date) -gt $waitUntil){
@@ -528,38 +549,41 @@ while($result -ne ""){
 output "Running $jobName..."
 
 # wait for new job run to appear
-$now = Get-Date
-$waitUntil = $now.AddMinutes($waitForNewRunMinutes)
-while($newRunId -le $lastRunId){
-    if((Get-Date) -gt $waitUntil){
-        output "Timed out waiting for new run to appear" -warn
-        if($extendedErrorCodes){
-            exit 6
+if($wait -or $progress){
+    $now = Get-Date
+    $waitUntil = $now.AddMinutes($waitForNewRunMinutes)
+    while($newRunId -le $lastRunId){
+        if((Get-Date) -gt $waitUntil){
+            output "Timed out waiting for new run to appear" -warn
+            if($extendedErrorCodes){
+                exit 6
+            }else{
+                exit 1
+            }
+        }
+        Start-Sleep 10
+        if($selectedSources.Count -gt 0){
+            $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=20&includeObjectDetails=true"
+            if($null -ne $runs -and $runs.PSObject.Properties['runs']){
+                $runs = $runs.runs | Where-Object {$selectedSources[0] -in $_.objects.object.id}
+            }
         }else{
-            exit 1
+            $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=20&includeObjectDetails=false"
+            if($null -ne $runs -and $runs.PSObject.Properties['runs']){
+                $runs = $runs.runs
+            }
         }
-    }
-    Start-Sleep 3
-    if($selectedSources.Count -gt 0){
-        $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=20&includeObjectDetails=true"
-        if($runs -ne $null -and $runs.PSObject.Properties['runs']){
-            $runs = $runs.runs | Where-Object {$selectedSources[0] -in $_.objects.object.id}
+        if($null -ne $runs -and $runs.Count -ne "0"){
+            $newRunId = $runs[0].protectionGroupInstanceId
+            $v2RunId = $runs[0].id
         }
-    }else{
-        $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=20&includeObjectDetails=false"
-        if($runs -ne $null -and $runs.PSObject.Properties['runs']){
-            $runs = $runs.runs
+        if($newRunId -gt $lastRunId){
+            break
         }
-    }
-    if($null -ne $runs -and $runs.Count -ne "0"){
-        $newRunId = $runs[0].protectionGroupInstanceId
-        $v2RunId = $runs[0].id
-    }
-    if($newRunId -le $lastRunId){
         Start-Sleep $sleepTimeSecs
     }
+    output "New Job Run ID: $v2RunId"
 }
-output "New Job Run ID: $v2RunId"
 
 # wait for job run to finish
 if($wait -or $progress){
@@ -567,7 +591,7 @@ if($wait -or $progress){
     $lastProgress = -1
     $lastStatus = 'unknown'
     while ($lastStatus -notin $finishedStates){
-        Start-Sleep $sleepTimeSecs
+        Start-Sleep 10
         $bumpStatusCount = $false
         try {
             $run = api get -v2 "data-protect/protection-groups/$v2JobId/runs/$($v2RunId)?includeObjectDetails=false"
@@ -604,6 +628,10 @@ if($wait -or $progress){
         }catch{
             $bumpStatusCount = $True
         }
+        if($lastStatus -in $finishedStates){
+            break
+        }
+        Start-Sleep $sleepTimeSecs
         if($bumpStatusCount -eq $True){
             $statusRetryCount += 1
         }

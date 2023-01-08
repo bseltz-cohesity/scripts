@@ -66,17 +66,18 @@ Place all files in a folder together. then, run the main script like so:
 
 * -w, --wait: (optional) wait for backup run to complete and report result
 * -pr, --progress: (optional) display percent complete
-* -s, --sleeptimesecs: (optional) seconds to sleep between status queries (default is 30)
+* -s, --sleeptimesecs: (optional) seconds to sleep between status queries (default is 110)
 * -x, --abortifrunning: (optional) exit if job is already running (default is to wait and run after existing run is finished)
 * -f, --logfile: (optional) filename to log output
 * -n, --waitminutesifrunning: (optional) exit after X minutes if job is already running (default is 60)
 * -cp, --cancelpreviousrunminutes: (optional) cancel previous job run if it's been running for X minutes
-* -nrt, --newruntimeoutsecs: (optional) exit after X seconds if new run fails to start (default is 180)
+* -nrt, --newruntimeoutsecs: (optional) exit after X seconds if new run fails to start (default is 1200)
 * -debug, --debug: (optional) display verbose error and state messages
 * -ex, --extendederrorcodes: (optional) return extended set of exit codes
 * -es, --exitstring: (optional) search for string in pulse logs and exit 0 when found
 * -est, --exitstringtimeoutsecs: (optional) timeout searching for string and exit 1 if not found
 * -sr, --statusretries: (optional) give up trying to get status update after X tries (default is 30)
+* -tm, --testmode: (optional) override default sleeptimesecs and newruntimeoutsecs (otherwise defaults will be enforced)
 
 ## Extended Error Codes
 

@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2022.12.15
+# version 2023.01.08
+
+# version history
+# ===============
+# 2022.01.08 - enforce sleeptimesecs >= 110 and newruntimeoutsecs >= 1200 unless --testmode is used
 
 # extended error codes
 # ====================
@@ -56,10 +60,11 @@ parser.add_argument('-cp', '--cancelpreviousrunminutes', type=int, default=0)
 parser.add_argument('-nrt', '--newruntimeoutsecs', type=int, default=1200)
 parser.add_argument('-debug', '--debug', action='store_true')
 parser.add_argument('-ex', '--extendederrorcodes', action='store_true')
-parser.add_argument('-s', '--sleeptimesecs', type=int, default=30)
+parser.add_argument('-s', '--sleeptimesecs', type=int, default=110)
 parser.add_argument('-es', '--exitstring', type=str, default=None)
 parser.add_argument('-est', '--exitstringtimeoutsecs', type=int, default=30)
 parser.add_argument('-sr', '--statusretries', type=int, default=10)
+parser.add_argument('-tm', '--testmode', action='store_true')
 
 args = parser.parse_args()
 
@@ -100,6 +105,14 @@ progress = args.progress
 exitstring = args.exitstring
 exitstringtimeoutsecs = args.exitstringtimeoutsecs
 statusretries = args.statusretries
+testmode = args.testmode
+
+# enforce enterprise mode
+if not testmode:
+    if sleeptimesecs < 110:
+        sleeptimesecs = 110
+    if newruntimeoutsecs < 1200:
+        newruntimeoutsecs = 1200
 
 if noprompt is True:
     prompt = False
@@ -532,7 +545,7 @@ out("Running %s..." % jobName)
 if wait is True:
     timeOutUsecs = dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     while newRunId <= lastRunId:
-        sleep(5)
+        sleep(10)
         if len(selectedSources) > 0:
             runs = api('get', 'protectionRuns?jobId=%s&numRuns=20&excludeTasks=true&sourceId=%s' % (job['id'], selectedSources[0]))
         else:
@@ -552,8 +565,9 @@ if wait is True:
                 bail(5)
             else:
                 bail(1)
-        if newRunId <= lastRunId:
-            sleep(sleeptimesecs)
+        if newRunId > lastRunId:
+            break
+        sleep(sleeptimesecs)
     out("New Job Run ID: %s" % v2RunId)
 
 # wait for job run to finish and report completion
@@ -564,7 +578,7 @@ if wait is True:
     while status not in finishedStates:
         x = 0
         s = 0
-        sleep(5)
+        sleep(10)
         try:
             if exitstring:
                 run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=true' % (v2JobId, v2RunId), v=2)
