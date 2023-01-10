@@ -238,7 +238,9 @@ while(1){
     foreach($node in $users.nodes){
         $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
-        $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
+        if($node.protectionSource.office365ProtectionSource.PSObject.Properties['primarySMTPAddress']){
+            $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
+        }
         if($autoProtected -eq $True -and $node.protectionSource.id -notin $unprotectedIndex){
             $protectedIndex = @($protectedIndex + $node.protectionSource.id)
         }
@@ -259,7 +261,9 @@ while(1){
             $node = api get protectionSources?id=$cursor
             $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
             $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
-            $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
+            if($node.protectionSource.office365ProtectionSource.PSObject.Properties['primarySMTPAddress']){
+                $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
+            }
             if($node.protectedSourcesSummary[0].leavesCount){
                 $protectedIndex = @($protectedIndex + $node.protectionSource.id)
             }else{
