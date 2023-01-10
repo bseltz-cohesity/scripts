@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.01.08
+# version 2023.01.10
 
 # version history
 # ===============
-# 2022.01.08 - enforce sleeptimesecs >= 110 and newruntimeoutsecs >= 1200 unless --testmode is used
+# 2022.01.10 - enforce sleeptimesecs >= 30 and newruntimeoutsecs >= 720
 
 # extended error codes
 # ====================
@@ -18,13 +18,13 @@
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
-### import pyhesity wrapper module
+# import pyhesity wrapper module
 from pyhesity import *
 from time import sleep
 from datetime import datetime
 import codecs
 
-### command line arguments
+# command line arguments
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
@@ -57,14 +57,13 @@ parser.add_argument('-x', '--abortifrunning', action='store_true')
 parser.add_argument('-f', '--logfile', type=str, default=None)
 parser.add_argument('-n', '--waitminutesifrunning', type=int, default=60)
 parser.add_argument('-cp', '--cancelpreviousrunminutes', type=int, default=0)
-parser.add_argument('-nrt', '--newruntimeoutsecs', type=int, default=1200)
+parser.add_argument('-nrt', '--newruntimeoutsecs', type=int, default=1800)
 parser.add_argument('-debug', '--debug', action='store_true')
 parser.add_argument('-ex', '--extendederrorcodes', action='store_true')
-parser.add_argument('-s', '--sleeptimesecs', type=int, default=110)
+parser.add_argument('-s', '--sleeptimesecs', type=int, default=120)
 parser.add_argument('-es', '--exitstring', type=str, default=None)
-parser.add_argument('-est', '--exitstringtimeoutsecs', type=int, default=30)
+parser.add_argument('-est', '--exitstringtimeoutsecs', type=int, default=120)
 parser.add_argument('-sr', '--statusretries', type=int, default=10)
-parser.add_argument('-tm', '--testmode', action='store_true')
 
 args = parser.parse_args()
 
@@ -105,14 +104,13 @@ progress = args.progress
 exitstring = args.exitstring
 exitstringtimeoutsecs = args.exitstringtimeoutsecs
 statusretries = args.statusretries
-testmode = args.testmode
 
-# enforce enterprise mode
-if not testmode:
-    if sleeptimesecs < 110:
-        sleeptimesecs = 110
-    if newruntimeoutsecs < 1200:
-        newruntimeoutsecs = 1200
+# enforce sleep time
+if sleeptimesecs < 30:
+    sleeptimesecs = 30
+
+if newruntimeoutsecs < 720:
+    newruntimeoutsecs = 720
 
 if noprompt is True:
     prompt = False
@@ -155,7 +153,7 @@ if 'api_version' not in globals() or api_version < '2022.09.13':
     else:
         bail(1)
 
-### authenticate
+# authenticate
 if mcm:
     apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=True, prompt=prompt)
 else:
@@ -200,7 +198,7 @@ sources = {}
 cluster = api('get', 'cluster')
 
 
-### get object ID
+# get object ID
 def getObjectId(objectName):
 
     d = {'_object_id': None}
@@ -243,7 +241,7 @@ def cancelRunningJob(job, durationMinutes):
                             out('Canceling previous job run')
 
 
-### find protectionJob
+# find protectionJob
 job = [job for job in api('get', 'protectionJobs') if job['name'].lower() == jobName.lower() and ('isActive' not in job or job['isActive'] is not False)]
 
 if not job:
@@ -389,18 +387,6 @@ if objectnames is not None:
 
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning', 'kCanceling', '3', '4', '5', '6', 'Canceled', 'Succeeded', 'Failed', 'SucceededWithWarning']
 
-if len(selectedSources) > 0:
-    runs = api('get', 'protectionRuns?jobId=%s&numRuns=2&excludeTasks=true&sourceId=%s' % (job['id'], selectedSources[0]))
-    if runs is None or len(runs) == 0:
-        runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
-else:
-    runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=10' % job['id'])
-
-if len(runs) > 0:
-    newRunId = lastRunId = runs[0]['backupRun']['jobRunId']
-else:
-    newRunId = lastRunId = 1
-
 # job parameters (base)
 jobData = {
     "copyRunTargets": [
@@ -508,7 +494,14 @@ if archiveTo is not None:
         else:
             bail(1)
 
-### run protectionJob
+# get last run ID
+runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=1&includeObjectDetails=false' % v2JobId, v=2)
+if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
+    newRunId = lastRunId = runs['runs'][0]['protectionGroupInstanceId']
+else:
+    newRunId = lastRunId = 1
+
+# run protectionJob
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 startUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
@@ -545,15 +538,18 @@ out("Running %s..." % jobName)
 if wait is True:
     timeOutUsecs = dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     while newRunId <= lastRunId:
-        sleep(10)
+        sleep(15)
         if len(selectedSources) > 0:
-            runs = api('get', 'protectionRuns?jobId=%s&numRuns=20&excludeTasks=true&sourceId=%s' % (job['id'], selectedSources[0]))
+            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=10&includeObjectDetails=true' % v2JobId, v=2)
+            if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
+                runs = [r for r in runs['runs'] if selectedSources[0] in [o['object']['id'] for o in r['objects']]]
         else:
-            runs = api('get', 'protectionRuns?jobId=%s&numRuns=20&excludeTasks=true' % job['id'])
-        if len(runs) > 0:
-            newRunId = runs[0]['backupRun']['jobRunId']
-            startedTimeUsecs = runs[0]['backupRun']['stats']['startTimeUsecs']
-            v2RunId = '%s:%s' % (job['id'], startedTimeUsecs)
+            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=1&includeObjectDetails=false' % v2JobId, v=2)
+            if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
+                runs = runs['runs']
+        if runs is not None and len(runs) > 0:
+            newRunId = runs[0]['protectionGroupInstanceId']
+            v2RunId = runs[0]['id']
         if debugger:
             print(':DEBUG: Previous Run ID: %s' % lastRunId)
             print(':DEBUG:   Latest Run ID: %s\n' % newRunId)
@@ -578,7 +574,7 @@ if wait is True:
     while status not in finishedStates:
         x = 0
         s = 0
-        sleep(10)
+        sleep(15)
         try:
             if exitstring:
                 run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=true' % (v2JobId, v2RunId), v=2)
@@ -587,8 +583,8 @@ if wait is True:
             status = run['localBackupInfo']['status']
             if exitstring:
                 while x < len(run['objects']) and s < exitstringtimeoutsecs:
-                    sleep(5)
-                    s += 5
+                    sleep(15)
+                    s += 15
                     if s > exitstringtimeoutsecs:
                         break
                     x = 0
@@ -618,7 +614,7 @@ if wait is True:
                     print('*** TIMED OUT WAITING FOR STRING MATCH')
                     exit(1)
             if progress and lastProgress < 100 and 'progressTaskId' in run['localBackupInfo']:
-                sleep(10)
+                sleep(15)
                 progressPath = run['localBackupInfo']['progressTaskId']
                 progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&excludeSubTasks=true&includeFinishedTasks=false' % progressPath)
                 progressTotal = progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']

@@ -1,8 +1,8 @@
-# version 2022.01.08
+# version 2022.01.10
 
 # version history
 # ===============
-# 2022.01.08 - enforce sleeptimesecs >= 110 and waitForNewRunMinutes >= 20 unless -testMode is used
+# 2022.01.10 - enforce sleeptimesecs >= 30 and waitForNewRunMinutes >= 12
 
 # extended error codes
 # ====================
@@ -50,25 +50,25 @@ param (
     [Parameter()][string]$metaDataFile,      # backup file list
     [Parameter()][switch]$abortIfRunning,    # exit if job is already running
     [Parameter()][int64]$waitMinutesIfRunning = 60,     # give up and exit if existing run is still running
-    [Parameter()][int64]$waitForNewRunMinutes = 20,     # give up and exit if new run fails to appear
+    [Parameter()][int64]$waitForNewRunMinutes = 30,     # give up and exit if new run fails to appear
     [Parameter()][int64]$cancelPreviousRunMinutes = 0,  # cancel previous run if it has been running long
     [Parameter()][int64]$statusRetries = 10,   # give up waiting for new run to appear
     [Parameter()][switch]$extendedErrorCodes,  # report failure-specific error codes
-    [Parameter()][int64]$sleepTimeSecs = 110,  # sleep seconds between status queries
-    [Parameter()][switch]$testMode
+    [Parameter()][int64]$sleepTimeSecs = 120   # sleep seconds between status queries
 )
+
+$finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning', '3', '4', '5', '6', 'Canceled', 'Succeeded', 'Failed', 'SucceededWithWarning')
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-# enforce enterprise mode
-if(! $testMode){
-    if($sleepTimeSecs -lt 110){
-        $sleepTimeSecs = 110
-    }
-    if($waitForNewRunMinutes -lt 20){
-        $waitForNewRunMinutes = 20
-    }
+# enforce sleep times
+if($sleepTimeSecs -lt 30){
+    $sleepTimeSecs = 30
+}
+
+if($waitForNewRunMinutes -lt 12){
+    $waitForNewRunMinutes = 12
 }
 
 if($progress -or $enable){
@@ -354,25 +354,6 @@ if($objects){
     }
 }
 
-# get last run id
-if($selectedSources.Count -gt 0){
-    $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=20&includeObjectDetails=true"
-    if($null -ne $runs -and $runs.PSObject.Properties['runs']){
-        $runs = $runs.runs | Where-Object {$selectedSources[0] -in $_.objects.object.id}
-    }
-}else{
-    $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=20&includeObjectDetails=false"
-    if($null -ne $runs -and $runs.PSObject.Properties['runs']){
-        $runs = $runs.runs
-    }
-}
-
-if($null -ne $runs -and $runs.Count -ne "0"){
-    $newRunId = $lastRunId = $runs[0].protectionGroupInstanceId
-}
-
-$finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning', '3', '4', '5', '6', 'Canceled', 'Succeeded', 'Failed', 'SucceededWithWarning')
-
 # set local retention
 $copyRunTargets = @(
     @{
@@ -514,14 +495,20 @@ if($objects){
     }
 }
 
-# $jobdata | ConvertTo-Json -Depth 99
+# get last run id
+$runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=1&includeObjectDetails=false"
+if($null -ne $runs -and $runs.PSObject.Properties['runs']){
+    $runs = @($runs.runs)
+}
+
+if($null -ne $runs -and $runs.Count -ne "0"){
+    $newRunId = $lastRunId = $runs[0].protectionGroupInstanceId
+}
 
 # run job
 $result = api post ('protectionJobs/run/' + $jobID) $jobdata -quiet
-
 $reportWaiting = $True
 $now = Get-Date
-# $startUsecs = dateToUsecs $now
 $waitUntil = $now.AddMinutes($waitMinutesIfRunning)
 while($result -ne ""){
     if((Get-Date) -gt $waitUntil){
@@ -561,16 +548,16 @@ if($wait -or $progress){
                 exit 1
             }
         }
-        Start-Sleep 10
+        Start-Sleep 15
         if($selectedSources.Count -gt 0){
-            $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=20&includeObjectDetails=true"
+            $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=10&includeObjectDetails=true"
             if($null -ne $runs -and $runs.PSObject.Properties['runs']){
-                $runs = $runs.runs | Where-Object {$selectedSources[0] -in $_.objects.object.id}
+                $runs = @($runs.runs | Where-Object {$selectedSources[0] -in $_.objects.object.id})
             }
         }else{
-            $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=20&includeObjectDetails=false"
+            $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=1&includeObjectDetails=false"
             if($null -ne $runs -and $runs.PSObject.Properties['runs']){
-                $runs = $runs.runs
+                $runs = @($runs.runs)
             }
         }
         if($null -ne $runs -and $runs.Count -ne "0"){
@@ -591,7 +578,7 @@ if($wait -or $progress){
     $lastProgress = -1
     $lastStatus = 'unknown'
     while ($lastStatus -notin $finishedStates){
-        Start-Sleep 10
+        Start-Sleep 15
         $bumpStatusCount = $false
         try {
             $run = api get -v2 "data-protect/protection-groups/$v2JobId/runs/$($v2RunId)?includeObjectDetails=false"
@@ -606,7 +593,7 @@ if($wait -or $progress){
                 }
                 try{
                     if($progress -and $lastProgress -ne 100){
-                        Start-Sleep 10
+                        Start-Sleep 15
                         if($run.localBackupInfo.PSObject.Properties['progressTaskId']){
                             $progressPath = $run.localBackupInfo.progressTaskId
                             $progressMonitor = api get "/progressMonitors?taskPathVec=$progressPath&excludeSubTasks=true&includeFinishedTasks=false"
