@@ -19,7 +19,8 @@ param (
     [Parameter()][ValidateSet("kRegular","kFull","kLog","kSystem","kAll")][string]$backupType = 'kAll',
     [Parameter()][switch]$expire,
     [Parameter()][Int64]$numRuns = 1000,
-    [Parameter()][Int64]$daysBack = 180
+    [Parameter()][Int64]$daysBack = 0,
+    [Parameter()][switch]$skipMonthlies
 )
 
 # source the cohesity-api helper code
@@ -39,7 +40,14 @@ if($jobname){
     }
 }
 
-$daysBackUsecs = dateToUsecs (get-date).AddDays(-$daysBack)
+$cluster = api get cluster
+if($daysBack -gt 0){
+    $daysBackUsecs = dateToUsecs (get-date).AddDays(-$daysBack)
+}else{
+    $daysBackUsecs = ($cluster.createdTimeMsecs * 1000)
+}
+
+$daysToKeepUsecs = timeAgo $daysToKeep days
 
 # find protectionRuns that are older than daysToKeep
 "Searching for old snapshots..."
@@ -67,46 +75,16 @@ foreach ($job in $jobs | Sort-Object -Property name) {
             }
             $startdate = usecstodate $run.copyRun[0].runStartTimeUsecs
             $startdateusecs = $run.copyRun[0].runStartTimeUsecs
-            if ($startdateusecs -lt $(timeAgo $daysToKeep days) ) {
-                ### if -expire switch is set, expire the local snapshot
-                if ($expire) {
-                    $exactRun = api get /backupjobruns?exactMatchStartTimeUsecs=$startdateusecs`&id=$jobId
-                    $jobUid = $exactRun[0].backupJobRuns.protectionRuns[0].backupRun.base.jobUid
-                    ### expire the snapshot
-                    "    Expiring $($job.name) Snapshot from $startdate"
-                    $expireRun = @{'jobRuns' = @(
-                            @{'expiryTimeUsecs'     = 0;
-                                'jobUid'            = @{
-                                    'clusterId' = $jobUid.clusterId;
-                                    'clusterIncarnationId' = $jobUid.clusterIncarnationId;
-                                    'id' = $jobUid.objectId;
-                                }
-                                'runStartTimeUsecs' = $startdateusecs;
-                                'copyRunTargets'    = @(
-                                    @{'daysToKeep' = 0;
-                                        'type'     = 'kLocal';
-                                    }
-                                )
-                            }
-                        )
-                    }
-                    $null = api put protectionRuns $expireRun
-                }else{
-                    ### just print old snapshots if we're not expiring
-                    "    Would expire $($job.name) ($($run.backupRun.runType.subString(1))) $($startdate)"
-                }
-            }else{
-                $newExpiryUsecs = [int64](dateToUsecs $startdate.addDays($daysToKeep))
-                if($run.copyRun[0].expiryTimeUsecs -gt ($newExpiryUsecs + 86400000000)){
-                    $reduceByDays = [int64][math]::floor(($run.copyRun[0].expiryTimeUsecs - $newExpiryUsecs) / 86400000000)
-                    ### if -expire is set, reduce the retention
+            if(! $skipMonthlies -or $startdate.Day -ne 1){
+                if ($startdateusecs -lt $daysToKeepUsecs) {
+                    ### if -expire switch is set, expire the local snapshot
                     if ($expire) {
                         $exactRun = api get /backupjobruns?exactMatchStartTimeUsecs=$startdateusecs`&id=$jobId
                         $jobUid = $exactRun[0].backupJobRuns.protectionRuns[0].backupRun.base.jobUid
-                        ### edit the snapshot
-                        "    Reducing retention for $($job.name) Snapshot from $startdate"
-                        $editRun = @{'jobRuns' = @(
-                                @{
+                        ### expire the snapshot
+                        "    Expiring $($job.name) Snapshot from $startdate"
+                        $expireRun = @{'jobRuns' = @(
+                                @{'expiryTimeUsecs'     = 0;
                                     'jobUid'            = @{
                                         'clusterId' = $jobUid.clusterId;
                                         'clusterIncarnationId' = $jobUid.clusterIncarnationId;
@@ -114,19 +92,53 @@ foreach ($job in $jobs | Sort-Object -Property name) {
                                     }
                                     'runStartTimeUsecs' = $startdateusecs;
                                     'copyRunTargets'    = @(
-                                        @{'daysToKeep' = -$reduceByDays;
+                                        @{'daysToKeep' = 0;
                                             'type'     = 'kLocal';
                                         }
                                     )
                                 }
                             )
                         }
-                        $null = api put protectionRuns $editRun
+                        $null = api put protectionRuns $expireRun
                     }else{
-                        ### just print snapshots we would expire
-                        "    Would reduce $($job.name) $($startdate) by $reduceByDays days"
-                    }    
+                        ### just print old snapshots if we're not expiring
+                        "    Would expire $($job.name) ($($run.backupRun.runType.subString(1))) $($startdate)"
+                    }
+                }else{
+                    $newExpiryUsecs = [int64](dateToUsecs $startdate.addDays($daysToKeep))
+                    if($run.copyRun[0].expiryTimeUsecs -gt ($newExpiryUsecs + 86400000000)){
+                        $reduceByDays = [int64][math]::floor(($run.copyRun[0].expiryTimeUsecs - $newExpiryUsecs) / 86400000000)
+                        ### if -expire is set, reduce the retention
+                        if ($expire -and $reduceByDays -ge 1) {
+                            $exactRun = api get /backupjobruns?exactMatchStartTimeUsecs=$startdateusecs`&id=$jobId
+                            $jobUid = $exactRun[0].backupJobRuns.protectionRuns[0].backupRun.base.jobUid
+                            ### edit the snapshot
+                            "    Reducing retention for $($job.name) Snapshot from $startdate"
+                            $editRun = @{'jobRuns' = @(
+                                    @{
+                                        'jobUid'            = @{
+                                            'clusterId' = $jobUid.clusterId;
+                                            'clusterIncarnationId' = $jobUid.clusterIncarnationId;
+                                            'id' = $jobUid.objectId;
+                                        }
+                                        'runStartTimeUsecs' = $startdateusecs;
+                                        'copyRunTargets'    = @(
+                                            @{'daysToKeep' = -$reduceByDays;
+                                                'type'     = 'kLocal';
+                                            }
+                                        )
+                                    }
+                                )
+                            }
+                            $null = api put protectionRuns $editRun
+                        }else{
+                            ### just print snapshots we would expire
+                            "    Would reduce $($job.name) $($startdate) by $reduceByDays days"
+                        }    
+                    }
                 }
+            }else{
+                "    Skipping monthly $($job.name) $($startdate)"
             }
         }
     }

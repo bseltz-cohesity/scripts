@@ -59,3 +59,4 @@ Also note that if you're waiting for capacity to be freed up, it may take hours 
 * -expire: (optional) expire the snapshots (if omitted, the script will only show what 'would' be expired)
 * -numRuns: (optional) page through X runs at a time (default is 1000)
 * -daysBack: (optional) dig back through X days of job run history (default is 180)
+* -skipMonthlies: (optional) don't change snapshots that are on the 1st day of the month
