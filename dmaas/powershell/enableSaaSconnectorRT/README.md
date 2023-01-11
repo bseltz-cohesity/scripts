@@ -25,7 +25,13 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./enableSaaSconnectorRT.ps1 -region us-east-2
+./enableSaaSconnectorRT.ps1 -vip 10.1.1.1 -username admin -enable -days 5
+```
+
+or
+
+```powershell
+./enableSaaSconnectorRT.ps1 -vip 10.1.1.1 -username admin -disable
 ```
 
 ## Parameters
