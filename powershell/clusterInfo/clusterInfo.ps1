@@ -114,7 +114,7 @@ foreach($chassis in $chassisList | Sort-Object -Property id){
             $needSerial = $false
         }
         output ("`n                  Node ID: {0}" -f $node.id)
-        output ("                     VIPs: {0}" -f (($nwInfo.networkInterfaces.virtualIp | Where-Object {$_ -ne ''} | Sort-Object) -join ' '))
+        output ("              Virtual IPs: {0}" -f (($nwInfo.networkInterfaces.virtualIp | Where-Object {$_ -ne ''} | Sort-Object) -join ', '))
         output ("                  Node IP: {0}" -f $nodeIp)
         output ("                  IPMI IP: {0}" -f $nodeIpmiIp)
         output ("                  Slot No: {0}" -f $node.slotNumber)
