@@ -37,4 +37,6 @@ Place both files in a folder together and run the main script like so:
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -useApiKey: (optional) use API key for authentication
 * -password: (optional) will use stored password or be prompted if omitted
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
 * -outFolder: (optional) folder for output file (defaults to current folder)

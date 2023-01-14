@@ -1,11 +1,13 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,  # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
-    [Parameter()][string]$domain = 'local',      # local or AD domain
-    [Parameter()][switch]$useApiKey,             # use API key for authentication
-    [Parameter()][string]$password,              # optional password
+    [Parameter(Mandatory = $True)][string]$vip,
+    [Parameter(Mandatory = $True)][string]$username,
+    [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password = $null,
+    [Parameter()][string]$mfaCode = $null,
+    [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$outFolder = '.'        # output folder
 )
 
@@ -13,10 +15,11 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-if($useApiKey){
-    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
-}else{
-    apiauth -vip $vip -username $username -domain $domain -password $password
+apiauth -vip $vip -username $username -domain $domain -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit
 }
 
 $cluster = api get cluster?fetchStats=true
@@ -104,11 +107,14 @@ foreach($chassis in $chassisList | Sort-Object -Property id){
         # node info
         $cohesity_api.apiRoot = "https://$($nodeIp)/irisservices/api/v1"
         $nodeInfo = api get /nexus/node/hardware_info
+        $nwInfo = api get /nexus/node/list_network_interfaces?cache=true
+
         if($needSerial){
             output ("   Chassis Serial: {0}" -f $nodeInfo.cohesityChassisSerial)
             $needSerial = $false
         }
         output ("`n                  Node ID: {0}" -f $node.id)
+        output ("                     VIPs: {0}" -f (($nwInfo.networkInterfaces.virtualIp | Where-Object {$_ -ne ''} | Sort-Object) -join ' '))
         output ("                  Node IP: {0}" -f $nodeIp)
         output ("                  IPMI IP: {0}" -f $nodeIpmiIp)
         output ("                  Slot No: {0}" -f $node.slotNumber)
