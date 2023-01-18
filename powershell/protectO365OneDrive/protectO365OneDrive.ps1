@@ -264,9 +264,10 @@ while(1){
             if($node.protectionSource.office365ProtectionSource.PSObject.Properties['primarySMTPAddress']){
                 $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
             }
-            if($node.protectedSourcesSummary[0].leavesCount){
+            if($autoProtected -eq $True -and $node.protectionSource.id -notin $unprotectedIndex){
                 $protectedIndex = @($protectedIndex + $node.protectionSource.id)
-            }else{
+            }
+            if($autoProtected -ne $True -and $node.protectionSource.id -notin $protectedIndex){
                 $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
             }
             $lastCursor = $node.protectionSource.id
