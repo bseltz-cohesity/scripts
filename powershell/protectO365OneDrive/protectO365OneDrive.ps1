@@ -84,7 +84,7 @@ if($cluster.clusterSoftwareVersion -lt '6.6'){
 }
 
 # get the protectionJob
-$jobs = (api get -v2 "data-protect/protection-groups?environments=kO365").protectionGroups | Where-Object {$_.office365Params.protectionTypes -eq 'kOneDrive'}
+$jobs = (api get -v2 "data-protect/protection-groups?environments=kO365&isActive=true&isDeleted=false").protectionGroups | Where-Object {$_.office365Params.protectionTypes -eq 'kOneDrive'}
 $job = $jobs | Where-Object {$_.name -eq $jobName}
 
 if($job){
@@ -230,8 +230,9 @@ $unprotectedIndex = @($jobs.office365Params.excludeObjectIds | Where-Object {$_ 
 
 $users = api get "protectionSources?pageSize=50000&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&allUnderHierarchy=false&hasValidOnedrive=true&useCachedData=false"
 $cursor = $users.entityPaginationParameters.beforeCursorEntityId
-if($users.protectionSource.id -in $protectedIndex){
+if($usersNode.protectionSource.id -in $protectedIndex){
     $autoProtected = $True
+    Write-Host 'autoprotect job'
 }
 # enumerate Onedrives
 while(1){
@@ -292,7 +293,7 @@ if($autoProtectRemaining){
     if(! $job.office365Params.PSObject.Properties['excludeObjectIds']){
         setApiProperty -object $job.office365Params -name 'excludeObjectIds' -value @()
     }
-    $job.office365Params.excludeObjectIds = $protectedIndex
+    $job.office365Params.excludeObjectIds = $protectedIndex | Sort-Object -Unique
 }elseif($allUsers){
     $usersAdded = 0
     if($unprotectedIndex.Count -eq 0){
@@ -352,6 +353,10 @@ if($autoProtectRemaining){
 }
 
 if($newJob){
+    if($autoProtected){
+        Write-Host "Another autoprotect group already exists" -ForegroundColor Yellow
+        exit
+    }
     "Creating protection job $jobName"
     $null = api post -v2 "data-protect/protection-groups" $job
 }else{
