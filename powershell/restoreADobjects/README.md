@@ -73,3 +73,4 @@ You can also use `-objectList myfile.txt` to specify object names, where the tex
 * -runId: (optional) use backup version for restore (default is latest version)
 * -showVersions: (optional) show available run IDs and dates
 * -ignoreErrors: (optional) don't wait to confirm successful restores
+* -reportDifferences: (optional) generate report of object differences (output to CSV)

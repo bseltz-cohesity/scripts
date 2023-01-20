@@ -24,7 +24,8 @@ param (
     [Parameter()][string]$adPasswd,     # AD password for mounting AD backup
     [Parameter()][Int64]$adPort = 9001, # port to use for AD mount
     [Parameter()][switch]$ignoreErrors, # don't wait to confirm successful object restore
-    [Parameter()][switch]$showVersions  # show runIds/dates
+    [Parameter()][switch]$showVersions, # show runIds/dates
+    [Parameter()][switch]$reportDifferences
 )
 
 # source the cohesity-api helper code
@@ -47,7 +48,7 @@ foreach($obj in $objectName){
     $objectNames += $obj
 }
 $objectNames = $objectNames | Sort-Object -Unique
-if((! $showVersions) -and $objectNames.Length -eq 0){
+if((! $showVersions) -and (! $reportDifferences) -and $objectNames.Length -eq 0){
     Write-Host "No objects selected for restore"
     exit 1
 }
@@ -135,100 +136,128 @@ if(! $searchResult.vms){
         }else{
             $adTopology = api get "restore/adDomainRootTopology?restoreTaskId=$taskId"
             $dn = $adTopology[0].distinguishedName
-            foreach($obj in $objectNames){
-
-                # find object in backup
-                $adSearch = api get "restore/adObjects?restoreTaskId=$taskId&subtreeSearchScope=true&searchBaseDn=$dn&recordOffset=0&numObjects=16&filter=$obj&excludeSystemProperties=true&compareObjects=false"
-                $objectGuid = $adSearch[0].sourceGuid
-                if($objectGuid){
-
-                    # find object in live AD
-                    $attributeQuery = @{                          
-                        "restoreTaskId"           = $taskId;          
-                        "excludeSysAttributes"    = $true;
-                        "filterNullValAttributes" = $true;
-                        "filterSameValAttributes" = $false;
-                        "quickCompare"            = $true;
-                        "allowEmptyDestGuids"     = $true;
-                        "guidPairs"               = @(
-                            @{
-                                "sourceGuid" = $objectGuid
-                            }
-                        )
+            if($reportDifferences){
+                $offset = 0
+                Write-Host "Gathering differences...`n"
+                """Display Name"",""Distinguished Name"",""Object Class"",""Status"",""Flags""" | Out-File -FilePath "adDifferences.csv" -Encoding utf8
+                while($True){
+                    $adobj = api get "restore/adObjects?restoreTaskId=$taskId&subtreeSearchScope=true&searchBaseDn=$dn&recordOffset=$offset&numObjects=101&filter=&excludeSystemProperties=true&compareObjects=true"
+                    $objCount = $adobj.Count
+                    $diffObjects = $adobj | Where-Object {'kEqual' -notin $_.searchResultFlags}
+                    foreach($diffObject in $diffObjects){
+                        Write-Host "$($diffObject.distinguishedName)"
+                        if($diffObject.destinationGuid){
+                            $status = 'Different'
+                        }else{
+                            $status = 'Missing'
+                        }
+                        """{0}"",""{1}"",""{2}"",""{3}"",""{4}""" -f $diffObject.displayName, $diffObject.distinguishedName, $diffObject.objectClass, $status, ($diffObject.searchResultFlags -join '; ') | Out-File -FilePath "adDifferences.csv" -Append
                     }
+                    if($objCount -lt 101){
+                        Write-Host ""
+                        break
+                    }
+                    $offset += 101
+                    Write-Host "    $offset"
+                }
+                Write-Host "Difference Report saved to adDifferences.csv"
+            }else{
+                foreach($obj in $objectNames){
 
-                    $targetStatus = api post restore/adObjectAttributes $attributeQuery
-
-                    if('kDestinationNotFound' -in $targetStatus[0].adObjectFlags){
-                        # restore object
-                        $restoreParams = @{
-                            "restoreTaskId" = $taskId;
-                            "adOptions"     = @{
-                                "type"             = "kObjects";
-                                "objectParameters" = @{
-                                    "objectGuids"        = @(
-                                        $objectGuid
-                                    );
-                                    "leaveStateDisabled" = $false
+                    # find object in backup
+                    $adSearch = api get "restore/adObjects?restoreTaskId=$taskId&subtreeSearchScope=true&searchBaseDn=$dn&recordOffset=0&numObjects=16&filter=$obj&excludeSystemProperties=true&compareObjects=false"
+                    $objectGuid = $adSearch[0].sourceGuid
+                    if($objectGuid){
+    
+                        # find object in live AD
+                        $attributeQuery = @{                          
+                            "restoreTaskId"           = $taskId;          
+                            "excludeSysAttributes"    = $true;
+                            "filterNullValAttributes" = $true;
+                            "filterSameValAttributes" = $false;
+                            "quickCompare"            = $true;
+                            "allowEmptyDestGuids"     = $true;
+                            "guidPairs"               = @(
+                                @{
+                                    "sourceGuid" = $objectGuid
+                                }
+                            )
+                        }
+    
+                        $targetStatus = api post restore/adObjectAttributes $attributeQuery
+    
+                        if('kDestinationNotFound' -in $targetStatus[0].adObjectFlags){
+                            # restore object
+                            $restoreParams = @{
+                                "restoreTaskId" = $taskId;
+                                "adOptions"     = @{
+                                    "type"             = "kObjects";
+                                    "objectParameters" = @{
+                                        "objectGuids"        = @(
+                                            $objectGuid
+                                        );
+                                        "leaveStateDisabled" = $false
+                                    }
                                 }
                             }
-                        }
-                        Write-Host "Restoring object $obj..."
-                        $null = api put restore/recover $restoreParams
-                        if(! $ignoreErrors){
-                            # monitor for successful object restore
-                            $objectRestoreStatus = 'kRunning'
-                            while($objectRestoreStatus -notin $finishedStates){
-                                Start-Sleep 1
-                                $restoreTask = api get "/restoretasks/$taskId"
-                                $subTask = $restoreTask.restoreTask.restoreSubTaskWrapperProtoVec | Where-Object {$objectGuid -in $_.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.adRestoreParams.adUpdateOptions.objectParam.guidVec}
-                                $objectRestoreStatus = $subTask.performRestoreTaskState.base.publicStatus
+                            Write-Host "Restoring object $obj..."
+                            $null = api put restore/recover $restoreParams
+                            if(! $ignoreErrors){
+                                # monitor for successful object restore
+                                $objectRestoreStatus = 'kRunning'
+                                while($objectRestoreStatus -notin $finishedStates){
+                                    Start-Sleep 1
+                                    $restoreTask = api get "/restoretasks/$taskId"
+                                    $subTask = $restoreTask.restoreTask.restoreSubTaskWrapperProtoVec | Where-Object {$objectGuid -in $_.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.adRestoreParams.adUpdateOptions.objectParam.guidVec}
+                                    $objectRestoreStatus = $subTask.performRestoreTaskState.base.publicStatus
+                                }
+                                if($objectRestoreStatus -ne 'kSuccess'){
+                                    $errorMsg = $subTask.performRestoreTaskState.base.error.errorMsg
+                                    Write-Host "$errorMsg" -ForegroundColor Yellow
+                                }
                             }
-                            if($objectRestoreStatus -ne 'kSuccess'){
-                                $errorMsg = $subTask.performRestoreTaskState.base.error.errorMsg
-                                Write-Host "$errorMsg" -ForegroundColor Yellow
+                        }else{
+                            # restore properties
+                            $destinationGuid = $targetStatus[0].destinationGuid
+                            $restoreParams = @{
+                                "restoreTaskId" = $taskId;
+                                "adOptions"     = @{
+                                    "type"                      = "kObjectAttributes";
+                                    "objectAttributeParameters" = @{
+                                        "adGuidPairs"             = @(
+                                            @{
+                                                "source"      = $objectGuid;
+                                                "destination" = $destinationGuid
+                                            }
+                                        );
+                                        "mergeMultiValProperties" = $false;
+                                        "ldapProperties"          = @()
+                                    }
+                                }
+                            }
+                            Write-Host "Restoring object $obj..."
+                            $null = api put restore/recover $restoreParams
+                            if(! $ignoreErrors){
+                                # monitor for successful object restore
+                                $objectRestoreStatus = 'kRunning'
+                                while($objectRestoreStatus -notin $finishedStates){
+                                    Start-Sleep 1
+                                    $restoreTask = api get "/restoretasks/$taskId"
+                                    $subTask = $restoreTask.restoreTask.restoreSubTaskWrapperProtoVec | Where-Object {$objectGuid -in $_.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.adRestoreParams.adUpdateOptions.objectAttributesParam.guidpairVec[0]}
+                                    $objectRestoreStatus = $subTask.performRestoreTaskState.base.publicStatus
+                                }
+                                if($objectRestoreStatus -ne 'kSuccess'){
+                                    $errorMsg = $subTask.performRestoreTaskState.base.error.errorMsg
+                                    Write-Host "$errorMsg" -ForegroundColor Yellow
+                                }
                             }
                         }
                     }else{
-                        # restore properties
-                        $destinationGuid = $targetStatus[0].destinationGuid
-                        $restoreParams = @{
-                            "restoreTaskId" = $taskId;
-                            "adOptions"     = @{
-                                "type"                      = "kObjectAttributes";
-                                "objectAttributeParameters" = @{
-                                    "adGuidPairs"             = @(
-                                        @{
-                                            "source"      = $objectGuid;
-                                            "destination" = $destinationGuid
-                                        }
-                                    );
-                                    "mergeMultiValProperties" = $false;
-                                    "ldapProperties"          = @()
-                                }
-                            }
-                        }
-                        Write-Host "Restoring object $obj..."
-                        $null = api put restore/recover $restoreParams
-                        if(! $ignoreErrors){
-                            # monitor for successful object restore
-                            $objectRestoreStatus = 'kRunning'
-                            while($objectRestoreStatus -notin $finishedStates){
-                                Start-Sleep 1
-                                $restoreTask = api get "/restoretasks/$taskId"
-                                $subTask = $restoreTask.restoreTask.restoreSubTaskWrapperProtoVec | Where-Object {$objectGuid -in $_.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.adRestoreParams.adUpdateOptions.objectAttributesParam.guidpairVec[0]}
-                                $objectRestoreStatus = $subTask.performRestoreTaskState.base.publicStatus
-                            }
-                            if($objectRestoreStatus -ne 'kSuccess'){
-                                $errorMsg = $subTask.performRestoreTaskState.base.error.errorMsg
-                                Write-Host "$errorMsg" -ForegroundColor Yellow
-                            }
-                        }
+                        Write-Host "Object $obj not found" -ForegroundColor Yellow
                     }
-                }else{
-                    Write-Host "Object $obj not found" -ForegroundColor Yellow
                 }
             }
+
 
             # unmount AD backup
             Write-Host "Unmounting AD Backup..."
