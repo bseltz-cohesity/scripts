@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """restore files using python"""
 
-# version 2022.05.11
+# version 2023.01.22
 
 # usage: ./restoreFiles.py -v mycluster \
 #                          -u myusername \
@@ -223,14 +223,16 @@ def restore(thesefiles, doc, version, targetEntity, singleFile):
         restoreParams['params']['restoreFilesPreferences']['alternateRestoreBaseDirectory'] = restorepath
 
     # select local or cloud archive copy
-    if version['replicaInfo']['replicaVec'][0]['target']['type'] == 3:
+    fromTarget = '(local)'
+    if sorted(version['replicaInfo']['replicaVec'], key=lambda replica: replica['target']['type'])[0]['target']['type'] == 3:
+        fromTarget = '(archive)'
         restoreParams['sourceObjectInfo']['archivalTarget'] = version['replicaInfo']['replicaVec'][0]['target']['archivalTarget']
 
     # perform restore
     if singleFile is True:
-        print('Restoring %s' % file)
+        print('Restoring %s from %s %s' % (file, usecsToDate(version['instanceId']['jobStartTimeUsecs']), fromTarget))
     else:
-        print("Restoring Files...")
+        print('Restoring Files from %s %s' % (usecsToDate(version['instanceId']['jobStartTimeUsecs']), fromTarget))
     restoreTask = api('post', '/restoreFiles', restoreParams)
 
     if restoreTask:

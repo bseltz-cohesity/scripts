@@ -1,4 +1,4 @@
-# version 2023.01.06
+# version 2023.01.22
 ### usage: ./restoreFiles.ps1 -vip mycluster -username myuser -domain mydomain.net `
 #                             -sourceServer server1.mydomain.net `
 #                             -targetServer server2.mydomain.net `
