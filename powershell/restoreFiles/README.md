@@ -48,6 +48,7 @@ Restore finished with status Success
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -sourceServer: server that was backed up
 * -targetServer: (optional) server to restore to (defaults to sourceServer)
+* -jobName: (optional) filter by job name
 * -fileNames: (optional) file names to restore (comma separated)
 * -fileList: (optional) text file of file names to restore
 * -restorePath: (optional) path to restore files on targetServer
@@ -55,14 +56,17 @@ Restore finished with status Success
 * -end: (optional) newest backup date to restore files from (e.g. '2020-04-20 18:00:00')
 * -runId: (optional) use specified runId to restore files from
 * -latest: (optional) use the latest backup date to restore files from
-* -wait: wait for completion and report status
-* -showLog: show detailed log output after completion
+* -wait: (optional) wait for completion and report status
+* -showLog: (optional) show detailed log output after completion
+* -overwrite: (optional) overwrite existing files
+* -rangeRestore: (optional) restore all versions (of folder) newset to oldest
+* -showVersions: (optional) show available versions
 
 ## Backup Versions
 
-By default, the script will search for each file and restore it from the newest version available for that file. You can narrow the date range that will be searched by using the -start and -end parameters.
+By default, the script will search for each file and restore it from the newest version available for that file. You can narrow the date range that will be searched by using the `-start` and `-end` parameters.
 
-Using the -runId or -latest parameters will cause the script to try to restore all the requested files at once (in one recovery task), from one backup version.
+Using the `-runId` or `-latest` parameters will cause the script to try to restore all the requested files at once (in one recovery task), from one backup version.
 
 ## File Names and Paths
 

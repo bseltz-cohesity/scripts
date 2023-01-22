@@ -1,4 +1,4 @@
-# version 2022.05.11
+# version 2023.01.06
 ### usage: ./restoreFiles.ps1 -vip mycluster -username myuser -domain mydomain.net `
 #                             -sourceServer server1.mydomain.net `
 #                             -targetServer server2.mydomain.net `
@@ -26,8 +26,21 @@ param (
     [Parameter()][datetime]$end,
     [Parameter()][switch]$latest,
     [Parameter()][switch]$wait,
-    [Parameter()][switch]$showLog
+    [Parameter()][switch]$showLog,
+    [Parameter()][switch]$overwrite,
+    [Parameter()][switch]$rangeRestore,
+    [Parameter()][switch]$showVersions
 )
+
+if($overWrite){
+    $override = $True
+}else{
+    $override = $False
+}
+
+if($rangeRestore){
+    $wait = $True
+}
 
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -122,6 +135,18 @@ if($runId){
     }
 }
 
+# show versions
+if($showVersions){
+    if($start){
+        $doc.versions = $doc.versions | Where-Object {$start -le (usecsToDate ($_.snapshotTimestampUsecs))}
+    }
+    if($end){
+        $doc.versions = $doc.versions | Where-Object {$end -ge (usecsToDate ($_.snapshotTimestampUsecs))}
+    }
+    $doc.versions | Select-Object -Property @{label='runId'; expression={$_.instanceId.jobInstanceId}}, @{label='runDate'; expression={usecsToDate $_.instanceId.jobStartTimeUsecs}}
+    exit 0
+}
+
 function restore($thesefiles, $doc, $version, $targetEntity, $singleFile){
     $restoreTaskName = "Recover-Files_$(get-date -UFormat '%b_%d_%Y_%H-%M%p')"
     if($singleFile){
@@ -146,7 +171,7 @@ function restore($thesefiles, $doc, $version, $targetEntity, $singleFile){
             };
             "restoreFilesPreferences" = @{
                 "restoreToOriginalPaths"        = $true;
-                "overrideOriginals"             = $true;
+                "overrideOriginals"             = $override;
                 "preserveTimestamps"            = $true;
                 "preserveAcls"                  = $true;
                 "preserveAttributes"            = $true;
@@ -163,14 +188,16 @@ function restore($thesefiles, $doc, $version, $targetEntity, $singleFile){
     }
 
     # select local or cloud archive copy
-    if($version.replicaInfo.replicaVec[0].target.type -eq 3){
+    $fromTarget = "(local)"
+    if(($version.replicaInfo.replicaVec | Sort-Object -Property {$_.target.type})[0].target.type -eq 3){
+        $fromTarget = "(archive)"
         $restoreParams.sourceObjectInfo['archivalTarget'] = $version.replicaInfo.replicaVec[0].target.archivalTarget
     }
 
     if($singleFile){
-        Write-Host "Restoring $thesefiles"
+        Write-Host "Restoring $thesefiles from $(usecsToDate ($version.instanceId.jobStartTimeUsecs)) $fromTarget"
     }else{
-        Write-Host "Restoring Files"
+        Write-Host "Restoring Files from $(usecsToDate ($version.instanceId.jobStartTimeUsecs)) $fromTarget"
     }
     
     $restoreTask = api post /restoreFiles $restoreParams
@@ -197,24 +224,32 @@ function restore($thesefiles, $doc, $version, $targetEntity, $singleFile){
             if($restoreTaskStatus -eq 'kSuccess'){
                 Write-Host "Restore finished with status $($restoreTaskStatus.Substring(1))" -ForegroundColor Green
                 if(! $singleFile){
-                    exit 0
+                    if(! $rangeRestore){
+                        exit 0
+                    }
                 }
             }else{
                 $errorMsg = $restoreTask.restoreTask.performRestoreTaskState.base.error.errorMsg
                 Write-Host "Restore finished with status $($restoreTaskStatus.Substring(1))" -ForegroundColor Yellow
                 Write-Host "$errorMsg" -ForegroundColor Yellow
                 if(! $singleFile){
-                    exit 1
+                    if(! $rangeRestore){
+                        exit 1
+                    }
                 }
             }
         }else{
             if(! $singleFile){
-                exit 0
+                if(! $rangeRestore){
+                    exit 0
+                }
             }
         }
     }else{
         if(! $singleFile){
-            exit 1
+            if(! $rangeRestore){
+                exit 1
+            }
         }
     }
 }
@@ -254,7 +289,17 @@ function listdir($searchPath, $dirPath, $instance, $volumeInfoCookie=$null, $vol
 
 if($False -eq $independentRestores){
     # perform blind restore from selected version
-    restore $files $doc $version $targetEntity $False
+    if($rangeRestore){
+        foreach($version in $doc.versions){
+            # $version | ConvertTo-Json -Depth 99
+            # exit
+            restore $files $doc $version $targetEntity $False
+            Start-Sleep 5
+            $override = $False
+        }
+    }else{
+        restore $files $doc $version $targetEntity $False
+    }
 }else{
     # perform independent restores
     if($doc.versions | Where-Object numEntriesIndexed -eq 0){
@@ -302,6 +347,15 @@ if($False -eq $independentRestores){
 
                 }
                 if($global:foundFile){
+                    if($rangeRestore){
+                        foreach($version in $doc.versions){
+                            # $version | ConvertTo-Json -Depth 99
+                            # exit
+                            restore $files $doc $version $targetEntity $False
+                            Start-Sleep 5
+                            $override = $False
+                        }
+                    }
                     restore $global:foundFile $doc $version $targetEntity $True
                     $fileRestored = $True
                     break
@@ -338,8 +392,18 @@ if($False -eq $independentRestores){
                         if(! $fileversions.versions){
                             Write-Host "no versions available for $file" -ForegroundColor Yellow
                         }else{
-                            $fileversion = $fileversions.versions[0]
-                            restore $filedoc.filename $doc $fileversion $targetEntity $True
+                            if($rangeRestore){
+                                foreach($fileversion in $fileversions.versions){
+                                    # $fileversion | ConvertTo-Json -Depth 99
+                                    # exit
+                                    restore $filedoc.filename $doc $fileversion $targetEntity $True
+                                    Start-Sleep 5
+                                    $override = $False
+                                }
+                            }else{
+                                $fileversion = $fileversions.versions[0]
+                                restore $filedoc.filename $doc $fileversion $targetEntity $True
+                            }
                         }
                     }
                 }
