@@ -66,6 +66,7 @@ Place both files in a folder together and run the main script like so:
 * -noIndex: (optional) use if VM is not indexed, file paths must be exact case
 * -localOnly: (optional) restore from local snapshots only
 * -overwrite: (optional) overwrite existing files
+* -taskString: (optional) custom string in recovery task name (default is RestoreFiles_sourcevm_date)
 
 ## File Names and Paths
 

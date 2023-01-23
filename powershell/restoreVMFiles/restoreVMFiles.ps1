@@ -27,13 +27,18 @@ param (
     [Parameter()][int]$daysAgo, # restore from backup X days ago
     [Parameter()][switch]$noIndex,
     [Parameter()][switch]$localOnly,
-    [Parameter()][switch]$overwrite
+    [Parameter()][switch]$overwrite,
+    [Parameter()][string]$taskString = ''
 )
 
 if($overWrite){
     $override = $True
 }else{
     $override = $False
+}
+
+if($taskString -eq ''){
+    $taskString = $sourceVM
 }
 
 # source the cohesity-api helper code
@@ -126,7 +131,7 @@ $dateString = get-date -UFormat '%Y-%m-%d_%H-%M-%S'
 
 $restoreParams = @{
     "snapshotEnvironment" = "kVMware";
-    "name"                = "Recover_$dateString";
+    "name"                = "RestoreFiles_$($taskString)_$($dateString)";
     "vmwareParams"        = @{
         "objects"                    = @(
             @{
