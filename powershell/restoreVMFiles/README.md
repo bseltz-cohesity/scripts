@@ -65,6 +65,7 @@ Place both files in a folder together and run the main script like so:
 * -wait: (optional) wait for completion and report status
 * -noIndex: (optional) use if VM is not indexed, file paths must be exact case
 * -localOnly: (optional) restore from local snapshots only
+* -overwrite: (optional) overwrite existing files
 
 ## File Names and Paths
 

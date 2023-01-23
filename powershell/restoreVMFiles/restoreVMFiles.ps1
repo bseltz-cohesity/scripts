@@ -26,8 +26,15 @@ param (
     [Parameter()][string]$olderThan, # restore from latest backup before date
     [Parameter()][int]$daysAgo, # restore from backup X days ago
     [Parameter()][switch]$noIndex,
-    [Parameter()][switch]$localOnly
+    [Parameter()][switch]$localOnly,
+    [Parameter()][switch]$overwrite
 )
+
+if($overWrite){
+    $override = $True
+}else{
+    $override = $False
+}
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -132,7 +139,7 @@ $restoreParams = @{
             "targetEnvironment"  = "kVMware";
             "vmwareTargetParams" = @{
                 "recoverToOriginalTarget" = $true;
-                "overwriteExisting"       = $true;
+                "overwriteExisting"       = $override;
                 "preserveAttributes"      = $true;
                 "continueOnError"         = $true;
                 "encryptionEnabled"       = $false
