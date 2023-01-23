@@ -71,6 +71,7 @@ output (" Stopped Services: {0}" -f $status.bulletinState.stoppedServices)
 output ("Physical Capacity: {0} GiB" -f $physicalCapacity)
 output ("    Used Capacity: {0} GiB" -f $usedCapacity)
 output ("     Used Percent: {0}%" -f $usedPct)
+output ("  Number of nodes: {0}" -f @($nodes).Length)
 output ("-------------------------------------------------------")
 
 $ipmi = api get /nexus/ipmi/cluster_get_lan_info -quiet
