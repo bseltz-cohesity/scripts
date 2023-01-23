@@ -1,11 +1,17 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, # Cohesity cluster to connect to
-    [Parameter(Mandatory = $True)][string]$username, # Cohesity username
-    [Parameter()][string]$domain = 'local', # Cohesity user domain name
-    [Parameter()][switch]$useApiKey, # use API key for authentication
-    [Parameter()][string]$password = $null,
+    [Parameter()][string]$vip = 'helios.cohesity.com',   # the cluster to connect to (DNS name or IP)
+    [Parameter()][string]$username = 'helios',           # username (local or AD)
+    [Parameter()][string]$domain = 'local',              # local or AD domain
+    [Parameter()][switch]$useApiKey,                     # use API key for authentication
+    [Parameter()][string]$password,                      # optional password
+    [Parameter()][switch]$noPrompt,                      # do not prompt for password
+    [Parameter()][string]$tenant,                        # org to impersonate
+    [Parameter()][switch]$mcm,                           # connect to MCM endpoint
+    [Parameter()][string]$mfaCode = $null,               # MFA code
+    [Parameter()][switch]$emailMfaCode,                  # email MFA code
+    [Parameter()][string]$clusterName = $null,           # helios cluster to access
     [Parameter(Mandatory = $True)][string]$sourceVM, # name of source VM
     [Parameter()][string]$targetVM, # name of target VM
     [Parameter()][array]$fileNames, # one or more file paths
