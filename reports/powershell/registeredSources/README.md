@@ -28,9 +28,21 @@ Place both files in a folder together, then we can run the script.
 ./registeredSources.ps1 -vip mycluster -username myusername -domain mydomain
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: (optional) DNS or IP of the Cohesity Cluster (default is helios.cohesity.com)
-* -username: Cohesity User Name
-* -domain: (optional) defaults to 'local'
-* -heliosAccessCluster: (optional) if vip is helios.cohesity.com then connect to this cluster name through helios
+* -vip: (optional) one or more cluster names or IP (comma separated) defaults to helios.cohesity.com
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) one or more clusters (comma separated) to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
+* -searchString: (optional) limit results to sources where the name matches the search string
+* -searchType: (optional) limit results to sources where the environment type matches the search type
