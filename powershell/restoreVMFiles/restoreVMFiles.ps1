@@ -28,7 +28,8 @@ param (
     [Parameter()][switch]$noIndex,
     [Parameter()][switch]$localOnly,
     [Parameter()][switch]$overwrite,
-    [Parameter()][string]$taskString = ''
+    [Parameter()][string]$taskString = '',
+    [Parameter()][int]$vlan = 0
 )
 
 if($overWrite){
@@ -150,6 +151,20 @@ $restoreParams = @{
                 "encryptionEnabled"       = $false
             }
         }
+    }
+}
+
+# select cluster interface
+if($vlan -gt 0){
+    $vlanObj = api get vlans | Where-Object id -eq $vlan
+    if($vlanObj){
+        $restoreParams.vmwareParams.recoverFileAndFolderParams.vmwareTargetParams['vlanConfig'] = @{
+            "id" = $vlanObj.id;
+            "interfaceName" = $vlanObj.ifaceGroupName.split('.')[0]
+        }
+    }else{
+        Write-Host "vlan $vlan not found" -ForegroundColor Yellow
+        exit
     }
 }
 
