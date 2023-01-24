@@ -24,8 +24,40 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 Place both files in a folder together, then we can run the script.
 
+For a single cluster:
+
 ```powershell
 ./registeredSources.ps1 -vip mycluster -username myusername -domain mydomain
+```
+
+For multiple clusters (direct access/authentication):
+
+```powershell
+./registeredSources.ps1 -vip mycluster, mycluster2 -username myusername -domain mydomain
+```
+
+For all helios clusters:
+
+```powershell
+./registeredSources.ps1 -username myusername@mydomain.net
+```
+
+For selected helios clusters:
+
+```powershell
+./registeredSources.ps1 -username myusername@mydomain.net -clusterName mycluster, mycluster2
+```
+
+Search by source name (applies to all above scenarios):
+
+```powershell
+./registeredSources.ps1 -vip mycluster -username myusername -domain mydomain -searchName 'mysource'
+```
+
+Search by source type (applies to all above scenarios):
+
+```powershell
+./registeredSources.ps1 -vip mycluster -username myusername -domain mydomain -searchType 'vmware'
 ```
 
 ## Authentication Parameters
