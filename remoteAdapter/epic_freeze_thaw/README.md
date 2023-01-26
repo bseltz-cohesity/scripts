@@ -39,7 +39,7 @@ Also copy the ssh key shown in the RA job configuration screen
 
 ## Dependencies for the Epic Host
 
-We will require python to be installed, plus the python `requests` module: <https://pypi.org/project/requests/>
+We will require python 2.7 or later to be installed, plus the python `requests` module: <https://pypi.org/project/requests/>
 
 ## On the Epic Host
 
