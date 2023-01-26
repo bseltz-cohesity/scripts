@@ -37,6 +37,10 @@ In the script information fields (for the various job run types) enter the path 
 
 Also copy the ssh key shown in the RA job configuration screen
 
+## Dependencies for the Epic Host
+
+We will require python to be installed, plus the python `requests` module: <https://pypi.org/project/requests/>
+
 ## On the Epic Host
 
 On the host, create the user cohesity_script and copy the four script files to the location you specified in the RA job.
