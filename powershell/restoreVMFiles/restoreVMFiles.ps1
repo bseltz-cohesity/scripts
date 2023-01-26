@@ -1,3 +1,4 @@
+# 2023-01-26
 # process commandline arguments
 [CmdletBinding()]
 param (
@@ -25,7 +26,7 @@ param (
     [Parameter()][string]$runId, # restore from specified run ID
     [Parameter()][string]$olderThan, # restore from latest backup before date
     [Parameter()][int]$daysAgo, # restore from backup X days ago
-    [Parameter()][switch]$noIndex,
+    [Parameter()][switch]$noIndex, # deprecated
     [Parameter()][switch]$localOnly,
     [Parameter()][switch]$overwrite,
     [Parameter()][string]$taskString = '',
@@ -112,20 +113,26 @@ if($runId){
         Write-Host "runId $runId not found" -ForegroundColor Yellow
         exit 1
     }
-    $snapshotId = $snapshot.id
+    # $snapshotId = $snapshot.id
 }elseif($olderThan){
     # select lastest run before olderThan date
     $olderThanUsecs = dateToUsecs $olderThan
     $olderSnapshots = $snapshots.snapshots | Where-Object {$olderThanUsecs -gt $_.runStartTimeUsecs}
     if($olderSnapshots){
-        $snapshotId = $olderSnapshots[-1].id
+        $snapshot = $olderSnapshots[-1]
     }else{
         Write-Host "Oldest snapshot is $(usecsToDate $snapshots.snapshots[0].runStartTimeUsecs)"
         exit 1
     }
 }else{
     # use latest run
-    $snapshotId = $snapshots.snapshots[-1].id
+    $snapshot = $snapshots.snapshots[-1]
+}
+$snapshotId = $snapshot.id
+if($snapshot.PSObject.Properties['indexingStatus'] -and $snapshot.indexingStatus -eq 'Done'){
+    $noIndex = $False
+}else{
+    $noIndex = $True
 }
 
 $dateString = get-date -UFormat '%Y-%m-%d_%H-%M-%S'
@@ -225,7 +232,7 @@ if($targetVM){
 
 # find files for restore
 foreach($file in $files){
-    if($noIndex){
+    if($noIndex -eq $True){
         if($file[-1] -eq '/'){
             $isDirectory = $True
         }else{
