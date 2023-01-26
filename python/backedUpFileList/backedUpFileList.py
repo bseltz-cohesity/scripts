@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2022.05.11
+# version 2023.01.26
 
 # usage: ./backedUpFileList.py -v mycluster \
 #                              -u myuser \
@@ -37,7 +37,7 @@ parser.add_argument('-e', '--end', type=str, default=None)            # show sna
 parser.add_argument('-r', '--runid', type=int, default=None)          # choose specific job run id
 parser.add_argument('-f', '--filedate', type=str, default=None)       # show snapshots after date
 parser.add_argument('-p', '--startpath', type=str, default='/')       # show files under this path
-parser.add_argument('-n', '--noindex', action='store_true')           # do not use librarian
+parser.add_argument('-n', '--noindex', action='store_true')           # do not use librarian (deprecated)
 parser.add_argument('-ss', '--showstats', action='store_true')        # show file last modified date and size
 parser.add_argument('-nt', '--newerthan', type=int, default=0)        # show files newer than X days
 
@@ -66,10 +66,10 @@ if showstats is True or newerthan > 0:
 else:
     statfile = False
 
-if noindex is True:
-    useLibrarian = False
-else:
-    useLibrarian = True
+# if noindex is True:
+#     useLibrarian = False
+# else:
+useLibrarian = True
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
@@ -107,6 +107,11 @@ def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None, cookie
 
 
 def showFiles(doc, version):
+    if 'numEntriesIndexed' not in version or version['numEntriesIndexed'] == 0:
+        useLibrarian = False
+    else:
+        useLibrarian = True
+
     instance = ("attemptNum=%s&clusterId=%s&clusterIncarnationId=%s&entityId=%s&jobId=%s&jobInstanceId=%s&jobStartTimeUsecs=%s&jobUidObjectId=%s" %
                 (version['instanceId']['attemptNum'],
                     doc['objectId']['jobUid']['clusterId'],

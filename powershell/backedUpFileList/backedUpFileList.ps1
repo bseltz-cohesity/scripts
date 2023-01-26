@@ -1,4 +1,4 @@
-# version 2022.06.08
+# version 2023.01.26
 # usage: ./backedUpFileList.ps1 -vip mycluster \
 #                               -username myuser \
 #                               -domain mydomain.net \
@@ -25,7 +25,7 @@ param (
     [Parameter()][Int64]$runId,
     [Parameter()][datetime]$fileDate,
     [Parameter()][string]$startPath = '/',
-    [Parameter()][switch]$noIndex,
+    [Parameter()][switch]$noIndex,  # deprecated
     [Parameter()][switch]$showStats,
     [Parameter()][Int64]$newerThan = 0
 )
@@ -95,6 +95,11 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
 }
 
 function showFiles($doc, $version){
+    if($version.numEntriesIndexed -eq 0){
+        $useLibrarian = $False
+    }else{
+        $useLibrarian = $True
+    }
     if($newerThan -gt 0){
         Write-Host "`nSearching for files added/modified in the past $newerThan days...`n"
     }
