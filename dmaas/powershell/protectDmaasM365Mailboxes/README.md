@@ -29,7 +29,8 @@ Place both files in a folder together and run the main script like so:
                                 -policyName Gold `
                                 -sourceName mydomain.onmicrosoft.com `
                                 -mailboxes user1.mydomain.onmicrosoft.com, user2.mydomain.onmicrosoft.com `
-                                -mailboxList ./mailboxlist.txt
+                                -mailboxList ./mailboxlist.txt `
+                                -excludeFolders 'In-Place archive', 'Infected Items'
 ```
 
 ## Parameters
@@ -44,6 +45,7 @@ Place both files in a folder together and run the main script like so:
 * -timeZone: (optional) e.g. 'America/New_York' (default is 'America/New_York')
 * -incrementalSlaMinutes: (optional) default 60
 * -fullSlaMinutes: (optional) default is 120
+* -excludeFolders: (optional) one or more folders to exclude (comma separated)
 * -pageSize: (optional) limit number of objects returned pr page (default is 50000)
 
 ## Authenticating to DMaaS

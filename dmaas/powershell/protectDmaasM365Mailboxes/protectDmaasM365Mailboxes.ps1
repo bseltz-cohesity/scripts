@@ -11,7 +11,8 @@ param (
     [Parameter()][string]$timeZone = 'America/New_York', # e.g. 'America/New_York'
     [Parameter()][int]$incrementalSlaMinutes = 60,  # incremental SLA minutes
     [Parameter()][int]$fullSlaMinutes = 120,  # full SLA minutes
-    [Parameter()][int]$pageSize = 50000
+    [Parameter()][int]$pageSize = 50000,
+    [Parameter()][array]$excludeFolders
 )
 
 # gather list of mailboxes to protect
@@ -36,6 +37,11 @@ $mailboxesToAdd = @($mailboxesToAdd | Where-Object {$_ -ne ''})
 if($mailboxesToAdd.Count -eq 0){
     Write-Host "No mailboxes specified" -ForegroundColor Yellow
     exit
+}
+
+$foldersToExclude = @()
+foreach($excludeFolder in $excludeFolders){
+    $foldersToExclude = @($foldersToExclude + $excludeFolder)
 }
 
 # parse startTime
@@ -76,7 +82,6 @@ $smtpIndex = @{}
 $unprotectedIndex = @()
 $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false"
 while(1){
-    # implement pagination
     foreach($node in $users.nodes){
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
         $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
@@ -90,34 +95,7 @@ while(1){
         break
     }
 }  
-# $nameIndex.Count
-# configure protection parameters
-$protectionParams = @{
-    "policyId"         = $policy.id;
-    "startTime"        = @{
-        "hour"     = [int64]$hour;
-        "minute"   = [int64]$minute;
-        "timeZone" = $timeZone
-    };
-    "priority"         = "kMedium";
-    "sla"              = @(
-        @{
-            "backupRunType" = "kFull";
-            "slaMinutes"    = $fullSlaMinutes
-        };
-        @{
-            "backupRunType" = "kIncremental";
-            "slaMinutes"    = $incrementalSlaMinutes
-        }
-    );
-    "qosPolicy"        = "kBackupSSD";
-    "abortInBlackouts" = $false;
-    "objects"          = @()
-}
 
-$mailboxesAdded = 0
-
-# find mailboxes
 foreach($mailbox in $mailboxesToAdd){
     $userId = $null
     if($smtpIndex.ContainsKey($mailbox)){
@@ -126,30 +104,99 @@ foreach($mailbox in $mailboxesToAdd){
         $userId = $nameIndex[$mailbox]
     }
     if($userId -and $userId -in $unprotectedIndex){
-        $protectionParams.objects = @(@{
-            "environment"     = "kO365Exchange";
-            "office365Params" = @{
-                "objectProtectionType"              = "kMailbox";
-                "userMailboxObjectProtectionParams" = @{
-                    "objects"        = @(
-                        @{
-                            "id" = $userId
+        $protectionParams = @{
+            "policyId"         = $policy.id;
+            "startTime"        = @{
+                "hour"     = [int64]$hour;
+                "minute"   = [int64]$minute;
+                "timeZone" = $timeZone
+            };
+            "priority"         = "kMedium";
+            "sla"              = @(
+                @{
+                    "backupRunType" = "kFull";
+                    "slaMinutes"    = $fullSlaMinutes
+                };
+                @{
+                    "backupRunType" = "kIncremental";
+                    "slaMinutes"    = $incrementalSlaMinutes
+                }
+            );
+            "qosPolicy"        = "kBackupSSD";
+            "abortInBlackouts" = $false;
+            "objects"          = @(
+                @{
+                    "environment" = "kO365Exchange";
+                    "office365Params" = @{
+                        "objectProtectionType"              = "kMailbox";
+                        "userMailboxObjectProtectionParams" = @{
+                            "objects"        = @(
+                                @{
+                                    "id" = $userId
+                                }
+                            );
+                            "indexingPolicy" = @{
+                                "enableIndexing" = $true;
+                                "includePaths"   = @(
+                                    "/"
+                                );
+                                "excludePaths"   = @()
+                            };
+                            "excludeFolders" = $foldersToExclude;
                         }
-                    );
-                    "indexingPolicy" = @{
-                        "enableIndexing" = $true;
-                        "includePaths"   = @(
-                            "/"
+                    }
+                }
+            )
+        }
+        Write-Host "Protecting $mailbox"
+        $null = api post -v2 data-protect/protected-objects $protectionParams
+    }elseif($userId -and $userId -notin $unprotectedIndex){
+        if($foldersToExclude.Count -gt 0){
+            $protectionParams = @{
+                "environment" = "kO365Exchange";
+                "policyId"         = $policy.id;
+                "startTime"        = @{
+                    "hour"     = [int64]$hour;
+                    "minute"   = [int64]$minute;
+                    "timeZone" = $timeZone
+                };
+                "priority"         = "kMedium";
+                "sla"              = @(
+                    @{
+                        "backupRunType" = "kFull";
+                        "slaMinutes"    = $fullSlaMinutes
+                    };
+                    @{
+                        "backupRunType" = "kIncremental";
+                        "slaMinutes"    = $incrementalSlaMinutes
+                    }
+                );
+                "qosPolicy"        = "kBackupSSD";
+                "abortInBlackouts" = $false;
+                "office365Params" = @{
+                    "objectProtectionType"              = "kMailbox";
+                    "userMailboxObjectProtectionParams" = @{
+                        "objects"        = @(
+                            @{
+                                "id" = $userId
+                            }
                         );
-                        "excludePaths"   = @()
+                        "indexingPolicy" = @{
+                            "enableIndexing" = $true;
+                            "includePaths"   = @(
+                                "/"
+                            );
+                            "excludePaths"   = @()
+                        };
+                        "excludeFolders" = $foldersToExclude
                     }
                 }
             }
-        })
-        Write-Host "Protecting $mailbox"
-        $response = api post -v2 data-protect/protected-objects $protectionParams
-    }elseif($userId -and $userId -notin $unprotectedIndex){
-        Write-Host "Mailbox $mailbox already protected" -ForegroundColor Magenta
+            Write-Host "Updating $mailbox"
+            $null = api put -v2 data-protect/protected-objects/$userId $protectionParams
+        }else{
+            Write-Host "Mailbox $mailbox already protected" -ForegroundColor Magenta
+        }
     }else{
         Write-Host "Mailbox $mailbox not found" -ForegroundColor Yellow
     }
