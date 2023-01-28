@@ -1,4 +1,4 @@
-# version 2023.01.22
+# version 2023.01.28
 ### usage: ./restoreFiles.ps1 -vip mycluster -username myuser -domain mydomain.net `
 #                             -sourceServer server1.mydomain.net `
 #                             -targetServer server2.mydomain.net `
@@ -92,8 +92,8 @@ if($restorePath){
 $files = [string[]]$files | ForEach-Object {("/" + $_.Replace('\','/').replace(':','')).Replace('//','/')}
 
 # find source and target server
-$physicalEntities = api get "/entitiesOfType?environmentTypes=kPhysical&physicalEntityTypes=kHost"
-$targetEntity = $physicalEntities | Where-Object displayName -eq $targetServer
+$entities = api get "/entitiesOfType?environmentTypes=kFlashblade&environmentTypes=kGenericNas&environmentTypes=kGPFS&environmentTypes=kIsilon&environmentTypes=kNetapp&environmentTypes=kPhysical&flashbladeEntityTypes=kFileSystem&genericNasEntityTypes=kHost&gpfsEntityTypes=kFileset&isilonEntityTypes=kMountPoint&netappEntityTypes=kVolume&physicalEntityTypes=kHost&physicalEntityTypes=kWindowsCluster"
+$targetEntity = $entities | Where-Object displayName -eq $targetServer
 
 if(!$targetEntity){
     Write-Host "$targetServer not found" -ForegroundColor Yellow
@@ -101,7 +101,8 @@ if(!$targetEntity){
 }
 
 # find backups for source server
-$searchResults = api get "/searchvms?entityTypes=kPhysical&vmName=$sourceServer"
+# $searchResults = api get "/searchvms?entityTypes=kPhysical&vmName=$sourceServer"
+$searchResults = api get "/searchvms?vmName=$sourceServer"
 $searchResults = $searchResults.vms | Where-Object {$_.vmDocument.objectName -eq $sourceServer}
 
 # narrow search by job name
