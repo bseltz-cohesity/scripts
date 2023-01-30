@@ -50,7 +50,7 @@ Place both files in a folder together and run the main script like so:
 * -cn, --channelnode: rac node for channels
 * -o, --overwrite: overwrite existing database
 * -n, --norecovery: leave database in no recovery mode
-* -pf, --pfileparameter: example -pf 'param1=value1' (repeat for multiple variables)
+* -pf, --pfileparameter: example -pf 'param1=value1' -pf tde_configuration="'KEYSTORE_CONFIGURATION=FILE'" -pf wallet_root=+data/MYDB/WALLET (repeat for multiple parameters)
 * -sh, --shellvariable: example -sh 'var1=value1' (repeat for multiple variables)
 
 ## Point in Time Parameters
