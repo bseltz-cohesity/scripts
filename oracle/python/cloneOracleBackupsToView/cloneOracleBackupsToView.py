@@ -143,28 +143,28 @@ successStates = ['kSuccess', 'kWarning']
 
 # get runs
 thisObjectFound = False
-runs = [r for r in api('get', 'protectionRuns?jobId=%s' % job['id']) if r['backupRun']['snapshotsDeleted'] is False and r['backupRun']['status'] in successStates]
+runs = [r for r in api('get', 'protectionRuns?jobId=%s' % job['id']) if r['backupRun']['snapshotsDeleted'] is False]
 if len(runs) > 0:
     for run in runs:
         runType = run['backupRun']['runType'][1:]
         for sourceInfo in run['backupRun']['sourceBackupStatus']:
             thisObjectName = sourceInfo['source']['name']
             if objectname is None or thisObjectName.lower() == objectname.lower():
-                if sourceInfo['status'] in successStates:
-                    thisObjectFound = True
-                    sourceView = [v for v in views['views'] if '_%s_' % run['backupRun']['jobRunId'] in v['name'] and '_%s_' % job['id'] in v['name']]
-                    if sourceView is not None and len(sourceView) > 0:
-                        sourceView = sourceView[0]
-                        starttimeString = datetime.strptime(usecsToDate(run['backupRun']['stats']['startTimeUsecs']), '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d_%H-%M-%S')
-                        destinationPath = "%s-%s-%s" % (thisObjectName, starttimeString, runType)
-                        CloneDirectoryParams = {
-                            'destinationDirectoryName': destinationPath,
-                            'destinationParentDirectoryPath': '/%s' % viewName,
-                            'sourceDirectoryPath': '/%s/' % sourceView['name'],
-                        }
-                        folderPath = "%s:/%s/%s" % (vip, viewName, destinationPath)
-                        print("Cloning %s backup files to %s" % (thisObjectName, folderPath))
-                        result = api('post', 'views/cloneDirectory', CloneDirectoryParams)
+                # if sourceInfo['status'] in successStates:
+                thisObjectFound = True
+                sourceView = [v for v in views['views'] if '_%s_' % run['backupRun']['jobRunId'] in v['name'] and '_%s_' % job['id'] in v['name']]
+                if sourceView is not None and len(sourceView) > 0:
+                    sourceView = sourceView[0]
+                    starttimeString = datetime.strptime(usecsToDate(run['backupRun']['stats']['startTimeUsecs']), '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d_%H-%M-%S')
+                    destinationPath = "%s-%s-%s" % (thisObjectName, starttimeString, runType)
+                    CloneDirectoryParams = {
+                        'destinationDirectoryName': destinationPath,
+                        'destinationParentDirectoryPath': '/%s' % viewName,
+                        'sourceDirectoryPath': '/%s/' % sourceView['name'],
+                    }
+                    folderPath = "%s:/%s/%s" % (vip, viewName, destinationPath)
+                    print("Cloning %s backup files to %s" % (thisObjectName, folderPath))
+                    result = api('post', 'views/cloneDirectory', CloneDirectoryParams)
     if thisObjectFound is False:
         print('No runs found containing %s' % objectname)
 else:
