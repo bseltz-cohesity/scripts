@@ -70,6 +70,7 @@ if views['count'] > 0:
     existingviews = [v for v in views['views'] if v['name'].lower() == viewName.lower()]
     if len(existingviews) > 0:
         existingview = existingviews[0]
+        viewName = existingview['name']
 
 if existingview is None and deleteview is not True:
 
@@ -117,13 +118,11 @@ if existingview is None and deleteview is not True:
 
     print("Creating new view %s..." % viewName)
     result = api('post', 'views', newView)
-    sleep(5)
-    views = api('get', 'views')
-    if views['count'] > 0:
-        existingviews = [v for v in views['views'] if v['name'].lower() == viewName.lower()]
-        if len(existingviews) > 0:
-            view = existingviews[0]
-
+    newview = None
+    print("Waiting for new view to come online...")
+    while newview is None:
+        sleep(5)
+        newview = api('get', 'views/%s' % viewName)
 else:
     if deleteview is True:
         if existingview:
@@ -160,7 +159,7 @@ if len(runs) > 0:
                         destinationPath = "%s-%s-%s" % (thisObjectName, starttimeString, runType)
                         CloneDirectoryParams = {
                             'destinationDirectoryName': destinationPath,
-                            'destinationParentDirectoryPath': '/%s' % view['name'],
+                            'destinationParentDirectoryPath': '/%s' % viewName,
                             'sourceDirectoryPath': '/%s/' % sourceView['name'],
                         }
                         folderPath = "%s:/%s/%s" % (vip, viewName, destinationPath)
