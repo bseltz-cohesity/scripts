@@ -364,13 +364,13 @@ if targetserver != sourceserver or targetdb != sourcedb:
             restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig'] = {}
         restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['diagDest'] = diagpath
     if frapath is not None:
-        if 'oracleDbConfig' not in restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
+        if 'oracleDBConfig' not in restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
             restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig'] = {}
         restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['fraDest'] = frapath
     if len(pfileparams) > 0:
-        if 'oracleDbConfig' not in restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
-            restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig'] = {}
-        restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig']['pfileParameterMap'] = []
+        if 'oracleDBConfig' not in restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
+            restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig'] = {}
+        restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['pfileParameterMap'] = []
     for pfileparam in pfileparams:
         paramparts = pfileparam.split('=', 1)
         if len(paramparts) < 2:
@@ -379,7 +379,9 @@ if targetserver != sourceserver or targetdb != sourcedb:
         else:
             paramname = paramparts[0].strip()
             paramval = paramparts[1].strip()
-            restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig']['pfileParameterMap'].append({"key": paramname, "value": paramval})
+        if len(paramparts) == 3:
+            paramval = paramval + "=" + paramparts[2].strip()
+        restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['pfileParameterMap'].append({"key": paramname, "value": paramval})
 
 if len(shellvars) > 0:
     restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['shellEnvironmentVec'] = []
