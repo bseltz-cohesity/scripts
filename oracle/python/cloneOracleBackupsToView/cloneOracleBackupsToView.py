@@ -150,7 +150,6 @@ if len(runs) > 0:
         for sourceInfo in run['backupRun']['sourceBackupStatus']:
             thisObjectName = sourceInfo['source']['name']
             if objectname is None or thisObjectName.lower() == objectname.lower():
-                # if sourceInfo['status'] in successStates:
                 thisObjectFound = True
                 sourceView = [v for v in views['views'] if '_%s_' % run['backupRun']['jobRunId'] in v['name'] and '_%s_' % job['id'] in v['name']]
                 if sourceView is not None and len(sourceView) > 0:
