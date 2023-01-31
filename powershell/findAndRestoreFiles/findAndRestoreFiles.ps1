@@ -41,6 +41,9 @@ param (
     [Parameter()][string]$vmPwd # password for vm tools
 )
 
+### source the cohesity-api helper code
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+
 $restoreMethods = @{
     'ExistingAgent' = 'UseExistingAgent';
     'AutoDeploy' = 'AutoDeploy';
@@ -94,9 +97,6 @@ if($showStats -or $filesNewerThan -or $filesOlderThan){
 }
 
 $volumeTypes = @(1, 6)
-
-### source the cohesity-api helper code
-. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -tenant $tenant -noPromptForPassword $noPrompt
