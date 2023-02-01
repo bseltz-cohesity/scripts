@@ -1,3 +1,5 @@
+# 2023-02-01
+
 ### usage: ./cloneSQL.ps1 -vip 192.168.1.198 -username admin [ -domain local ] -sourceServer 'SQL2012' -sourceDB 'CohesityDB' [ -targetServer 'SQLDEV01' ] [ -targetDB 'CohesityDB-Dev' ] [ -targetInstance 'MSSQLSERVER' ] [ -wait ]
 
 ### process commandline arguments
@@ -137,7 +139,7 @@ if ($logTime -or $latest) {
     }
 }
 
-$taskName = "dbClone-$(dateToUsecs (get-date))"
+$taskName = "CloneSQL-$($targetServer)-$($targetInstance)-$($targetDB)"
 
 ### create new clone task (RestoreAppArg Object)
 $cloneTask = @{
