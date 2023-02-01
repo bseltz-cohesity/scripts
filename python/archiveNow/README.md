@@ -1,8 +1,8 @@
-# Archive a Snapshot Now using Python
+# Archive latest Snapshot Now using Python
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This python script archives an existing local snapshot.
+This python script archives the latest local snapshot from the specified jobs.
 
 ## Components
 
@@ -22,14 +22,7 @@ chmod +x archiveNow.py
 Place both files in a folder together and run the main script like so:
 
 ```bash
-./archiveNow.py -v mycluster -u myuser -d mydomain.net -j myjob -r '2019-03-26 14:55:00'
-```
-
-The date entered is the date of the protection run that you want to archive. The script output should be similar to the following:
-
-```text
-Connected!
-archiving snapshot from 2019-03-26 14:55:18...
+./archiveNow.py -v mycluster -u myuser -d mydomain.net -j myjob -t mytarget -k 90 -c
 ```
 
 ## Parameters
@@ -37,23 +30,15 @@ archiving snapshot from 2019-03-26 14:55:18...
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
-* -j, --jobname: Name of protection job
-* -r, --rundate: Date and time of protection run to archive, e.g. '2019-03-26 14:37:00'
-* -k, --keepfor: (optional) keepfor X days. Required if there is no archive policy for the job
-* -t, --target: (optional) name of the external target. Required if there is no archive policy for the job
+* -j, --jobname: (optional) name of protection job (repeat for multiple)
+* -l, --joblist: (optional) text file of job names (one per line)
+* -xj, --excludejobname: (optional) name of protection job (repeat for multiple)
+* -xl, --excludejoblist: (optional) text file of job names (one per line)
+* -k, --keepfor: keepfor X days
+* -t, --target: name of the external target
 * -f, --fromtoday: (optional) calculate -k from today instead of from snapshot date
-* -l, --listruns: list available runs and exit
-* -n, --newestrun: use latest run
-
-## Notes
-
-If the job has a policy applied with an archival policy element, by default the script will use the target and retention specified in the policy. The retention to be set will be calculated from the snapshot date by default, so if the retention is 10 days, but the snapshot occured 2 days ago, then the retention will be set to 8 days.
-
-Using the -k parameter overrides the retention specified in the policy, or specifies a retention when the job has no archival policy. Again, retention is adjusted based on the age of the snapshot. Also, if an existing archive exists, using -k will update the retention (otherwise the existing retention will be maintained).
-
-Using the -t parameter overrides the archival target specified in the policy, or specifies a target when the job has no archival policy.
-
-Using the -f parameter ignores the snapshot age and sets the retention to k days from today.
+* -c, --commit: (optional) if omitted, will just report what would happen
+* -a, --archiveonfailure: (optional) archive failed jobs
 
 ## The Python Helper Module - pyhesity.py
 

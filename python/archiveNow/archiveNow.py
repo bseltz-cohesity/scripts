@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 """Archive Now for python"""
 
-# usage: ./archiveNow.py -v mycluster -u myuser -d mydomain.net -j MyJob -r '2019-03-26 14:47:00' [ -k 5 ] [ -t S3 ] [ -f ]
-
 # import pyhesity wrapper module
 from pyhesity import *
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # command line arguments
 import argparse
@@ -13,40 +11,73 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, required=True)       # cluster to connect to
 parser.add_argument('-u', '--username', type=str, required=True)  # username
 parser.add_argument('-d', '--domain', type=str, default='local')  # (optional) domain - defaults to local
-parser.add_argument('-j', '--jobname', type=str, required=True)   # job name
-parser.add_argument('-r', '--rundate', type=str, default=None)   # run date to archive in military format with 00 seconds
+parser.add_argument('-j', '--jobname', action='append', type=str)
+parser.add_argument('-l', '--joblist', type=str)
+parser.add_argument('-xj', '--excludejobname', action='append', type=str)
+parser.add_argument('-xl', '--excludejoblist', type=str)
 parser.add_argument('-k', '--keepfor', type=int, required=True)    # (optional) will use policy retention if omitted
 parser.add_argument('-t', '--target', type=str, required=True)  # (optional) will use policy target if omitted
 parser.add_argument('-f', '--fromtoday', action='store_true')     # (optional) keepfor x days from today instead of from snapshot date
-parser.add_argument('-l', '--listruns', action='store_true')
-parser.add_argument('-n', '--newestrun', action='store_true')
+parser.add_argument('-c', '--commit', action='store_true')
+parser.add_argument('-a', '--archiveonfailure', action='store_true')
 
 args = parser.parse_args()
 
 vip = args.vip
 username = args.username
 domain = args.domain
-jobname = args.jobname
-rundate = args.rundate
+jobnames = args.jobname
+joblist = args.joblist
+excludejobnames = args.excludejobname
+excludejoblist = args.excludejoblist
 keepfor = args.keepfor
 target = args.target
 fromtoday = args.fromtoday
-listruns = args.listruns
-newestrun = args.newestrun
+commit = args.commit
+archiveonfailure = args.archiveonfailure
 
 # authenticate
 apiauth(vip, username, domain)
 
-# find protection job
-job = [job for job in api('get', 'protectionJobs') if job['name'].lower() == jobname.lower()]
-if not job:
-    print("Job '%s' not found" % jobname)
-    exit()
-else:
-    job = job[0]
+
+# gather server list
+def gatherList(param=None, filename=None, name='items', required=True):
+    items = []
+    if param is not None:
+        for item in param:
+            items.append(item)
+    if filename is not None:
+        f = open(filename, 'r')
+        items += [s.strip() for s in f.readlines() if s.strip() != '']
+        f.close()
+    if required is True and len(items) == 0:
+        print('no %s specified' % name)
+        exit()
+    return items
+
+
+jobnames = gatherList(jobnames, joblist, name='jobs', required=False)
+excludedjobnames = gatherList(excludejobnames, excludejoblist, name='excluded jobs', required=False)
+
+jobs = api('get', 'protectionJobs')
+
+# catch invalid job names
+
+if len(jobnames) > 0:
+    notfoundjobs = [n for n in jobnames if n.lower() not in [j['name'].lower() for j in jobs]]
+    if len(notfoundjobs) > 0:
+        print('Critical: Jobs not found: %s' % ', '.join(notfoundjobs))
+        exit(1)
+    jobs = [j for j in jobs if j['name'].lower() in [n.lower() for n in jobnames]]
+
+if len(excludedjobnames) > 0:
+    notfoundexcludedjobs = [n for n in excludedjobnames if n.lower() not in [j['name'].lower() for j in jobs]]
+    if len(notfoundexcludedjobs) > 0:
+        print('Warning: Excluded jobs not found: %s' % ', '.join(notfoundjobs))
+    jobs = [j for j in jobs if j['name'].lower() not in [n.lower() for n in excludedjobnames]]
+
 
 daysToKeep = None
-
 
 vault = [vault for vault in api('get', 'vaults') if vault['name'].lower() == target.lower()]
 if len(vault) > 0:
@@ -58,78 +89,73 @@ if len(vault) > 0:
     }
 else:
     print('No archive target named %s' % target)
-    exit()
+    exit(1)
 
-if keepfor:
+finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning']
+
+readyStates = ['kSuccess', 'kWarning']
+if archiveonfailure:
+    readyStates = ['kSuccess', 'kFailure', 'kWarning']
+
+for job in sorted(jobs, key=lambda job: job['name'].lower()):
     daysToKeep = keepfor
+    print('\n%s' % job['name'])
+    runs = api('get', 'protectionRuns?jobId=%s&runTypes=kRegular&runTypes=kFull&numRuns=10&excludeTasks=true' % job['id'])
+    for run in runs:
+        if run['backupRun']['snapshotsDeleted'] is False and run['backupRun']['status'] in readyStates:
+            # check for active copy tasks
+            activeCopyTasks = [t for t in run['copyRun'] if t['status'] not in finishedStates]
+            if activeCopyTasks is None or len(activeCopyTasks) == 0:
 
-# find requested run
+                # check for already completed archive tasks to this target
+                copyTasks = [t for t in run['copyRun'] if t['target']['type'] == 'kArchival' and t['status'] == 'kSuccess' and t['target']['archivalTarget']['vaultName'].lower() == target['vaultName'].lower()]
+                if copyTasks is None or len(copyTasks) == 0:
+                    thisrun = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&excludeTasks=true&id=%s' % (run['backupRun']['stats']['startTimeUsecs'], run['jobId']))
+                    jobUid = thisrun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']
 
-runs = api('get', 'protectionRuns?jobId=%s' % job['id'])
-
-foundRun = False
-for run in runs:
-
-    # zero out seconds for rundate match
-    thisrundate = datetime.strptime(usecsToDate(run['copyRun'][0]['runStartTimeUsecs']), "%Y-%m-%d %H:%M:%S")
-    thisrundatebase = (thisrundate - timedelta(seconds=thisrundate.second)).strftime("%Y-%m-%d %H:%M:%S")
-    if listruns is True:
-        print(thisrundatebase)
-    else:
-        if rundate == thisrundatebase or newestrun:
-            thisrun = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&excludeTasks=true&id=%s' % (run['backupRun']['stats']['startTimeUsecs'], run['jobId']))
-            jobUid = thisrun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']
-            foundRun = True
-            currentExpiry = None
-            for copyRun in run['copyRun']:
-
-                # resync existing archive run
-                if copyRun['target']['type'] == 'kArchival':
-                    target = copyRun['target']['archivalTarget']
-                    currentExpiry = copyRun.get('expiryTimeUsecs', 0)
-
-                # configure archive task
-                archiveTask = {
-                    "jobRuns": [
-                        {
-                            "copyRunTargets": [
-                                {
-                                    "archivalTarget": target,
-                                    "type": "kArchival"
+                    # configure archive task
+                    archiveTask = {
+                        "jobRuns": [
+                            {
+                                "copyRunTargets": [
+                                    {
+                                        "archivalTarget": target,
+                                        "type": "kArchival"
+                                    }
+                                ],
+                                "runStartTimeUsecs": run['copyRun'][0]['runStartTimeUsecs'],
+                                "jobUid": {
+                                    "clusterId": jobUid['clusterId'],
+                                    "clusterIncarnationId": jobUid['clusterIncarnationId'],
+                                    "id": jobUid['objectId']
                                 }
-                            ],
-                            "runStartTimeUsecs": run['copyRun'][0]['runStartTimeUsecs'],
-                            "jobUid": {
-                                "clusterId": jobUid['clusterId'],
-                                "clusterIncarnationId": jobUid['clusterIncarnationId'],
-                                "id": jobUid['objectId']
                             }
-                        }
-                    ]
-                }
+                        ]
+                    }
 
-            # if fromtoday is not set, calculate days to keep from snapshot date
-            if fromtoday is False:
-                daysToKeep = daysToKeep - dayDiff(dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S")), run['copyRun'][0]['runStartTimeUsecs'])
+                    # if fromtoday is not set, calculate days to keep from snapshot date
+                    if fromtoday is False:
+                        daysToKeep = keepfor - dayDiff(dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S")), run['copyRun'][0]['runStartTimeUsecs'])
 
-            # if there's an existing archive and keepfor is specified adjust the retention
-            if keepfor is not None and currentExpiry != 0 and currentExpiry is not None:
-                if currentExpiry != 0 and currentExpiry is not None:
-                    daysToKeep = daysToKeep + (dayDiff(run['copyRun'][0]['runStartTimeUsecs'], currentExpiry))
-                archiveTask['jobRuns'][0]['copyRunTargets'][0]['daysToKeep'] = int(daysToKeep)
+                    archiveTask['jobRuns'][0]['copyRunTargets'][0]['daysToKeep'] = int(daysToKeep)
 
-            # if the current archive was deleted, resync it
-            if currentExpiry == 0:
-                archiveTask['jobRuns'][0]['copyRunTargets'][0]['daysToKeep'] = int(daysToKeep)
-
-            # update run
-            if((daysToKeep > 0 and currentExpiry is None) or (daysToKeep != 0 and currentExpiry is not None)):
-                print('archiving snapshot from %s...' % usecsToDate(run['copyRun'][0]['runStartTimeUsecs']))
-                result = api('put', 'protectionRuns', archiveTask)
-                exit()
+                    # update run
+                    if (daysToKeep > 0):
+                        if commit:
+                            print('    archiving: %s...' % usecsToDate(run['copyRun'][0]['runStartTimeUsecs']))
+                            result = api('put', 'protectionRuns', archiveTask)
+                        else:
+                            print('    would archive: %s' % usecsToDate(run['copyRun'][0]['runStartTimeUsecs']))
+                        break
+                    else:
+                        print('    skipping archive: %s (would be past expiration)' % usecsToDate(run['copyRun'][0]['runStartTimeUsecs']))
+                        break
+                else:
+                    print('    already archived: %s' % usecsToDate(run['copyRun'][0]['runStartTimeUsecs']))
+                    break
             else:
-                print('Not archiving because expiry time would be in the past or unchanged')
-
-# report if no run was found
-if foundRun is False and listruns is not True:
-    print('Could not find a run with the date %s' % rundate)
+                # check if currently archiving to this target
+                copyTasks = [t for t in run['copyRun'] if t['target']['type'] == 'kArchival' and t['target']['archivalTarget']['vaultName'].lower() == target['vaultName'].lower()]
+                if copyTasks is not None and len(copyTasks) > 0:
+                    print('    already archiving snapshot from %s' % usecsToDate(run['copyRun'][0]['runStartTimeUsecs']))
+                    break
