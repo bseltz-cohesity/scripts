@@ -65,6 +65,10 @@ $start = (usecsToDate $uStart).ToString('yyyy-MM-dd')
 $end = (usecsToDate $uEnd).ToString('yyyy-MM-dd')
 
 $cluster = api get cluster
+if($cluster.clusterSoftwareVersion -lt '6.8.1'){
+    Write-Host "This script requires Cohesity version6.8.1 or later" -ForegroundColor Yellow
+    exit
+}
 
 $title = "SQL Restore Report for $($cluster.name) ($start - $end)"
 
@@ -206,13 +210,17 @@ $entityType=@('Unknown', 'VMware', 'HyperV', 'SQL', 'View', 'Puppeteer',
               'HBase', 'Hive', 'Hdfs', 'Couchbase', 'Unknown', 'Unknown', 'Unknown')
 
 $endUsecs = $uEnd
-$script:lastId = ''
+$script:seenIds = @()
+$lastSeenCount = 0
+$seenCount = 0
+
 while(1){
     $restores = api get -v2 "data-protect/recoveries?startTimeUsecs=$uStart&snapshotEnvironments=kSQL&recoveryActions=RecoverApps&includeTenants=true&endTimeUsecs=$endUsecs"
     foreach($restore in $restores.recoveries){
         $taskId = $restore.id
-        if($script:lastId -eq '' -or $taskId -lt $script:lastId){
-            $script:lastId = $taskId
+        if($taskId -notin $script:seenIds){
+            $seenCount += 1
+            $script:seenIds = @($script:seenIds + $taskId)
             $taskName = $restore.name
             $status = $restore.status
             $startTime = usecsToDate $restore.startTimeUsecs
@@ -223,15 +231,17 @@ while(1){
                 $endUsecs = $restore.endTimeUsecs - 1
             }
             $link = "https://$vip//recovery/detail/$taskId"
+
             foreach($db in $restore.mssqlParams.recoverAppParams){
                 $targetHost = $sourceHost = $db.hostInfo.name
                 $targetDB = $sourceDB = $db.objectInfo.name
                 $progressId = $db.progressTaskId
+                $dbSize = '-'
                 if($cluster.clusterSoftwareVersion -gt '6.8.1'){
                     $progressMonitor = api get "/progressMonitors?taskPathVec=$($progressId)&excludeSubTasks=false&includeFinishedTasks=true&includeEventLogs=true&fetchLogsMaxLevel=0"
-                    $dbSize = ((($progressMonitor.resultGroupVec[0].taskVec[0].progress.eventVec | Where-Object {$_ -match 'total_expected_size'})[0].eventMsg -split 'total_expected_size=')[1] -split ', ')[0]
-                }else{
-                    $dbSize = '-'
+                    if($progressMonitor.resultGroupVec[0].PSObject.Properties['taskVec']){
+                        $dbSize = ((($progressMonitor.resultGroupVec[0].taskVec[0].progress.eventVec | Where-Object {$_ -match 'total_expected_size'})[0].eventMsg -split 'total_expected_size=')[1] -split ', ')[0]
+                    }
                 }
                 $targetObject = $sourceObject = "$($sourceHost)/$($sourceDB)"
                 if($db.sqlTargetParams.recoverToNewSource -eq $True){
@@ -257,10 +267,11 @@ while(1){
             }
         }
     }
-    if(!$restores -or @($restores.recoveries).Count -lt 2 -or $lastUsecs -eq $endUsecs){
+    if($seenCount -eq $lastSeenCount){
+        Write-Host "Found $seenCount SQL Restores"
         break
     }else{
-        $lastUsecs = $endUsecs
+        $lastSeenCount = $seenCount
     }
 }
 
