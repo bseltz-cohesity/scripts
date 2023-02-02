@@ -216,7 +216,7 @@ $seenCount = 0
 
 while(1){
     $restores = api get -v2 "data-protect/recoveries?startTimeUsecs=$uStart&snapshotEnvironments=kSQL&recoveryActions=RecoverApps&includeTenants=true&endTimeUsecs=$endUsecs"
-    foreach($restore in $restores.recoveries){
+    foreach($restore in $restores.recoveries | Sort-Object -Property startTimeUsecs -Descending){
         $taskId = $restore.id
         if($taskId -notin $script:seenIds){
             $seenCount += 1
