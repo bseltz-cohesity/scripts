@@ -229,8 +229,15 @@ while(1){
         $link = "https://$vip/protection/recovery/detail/local/$taskId/"
 
         if($restore.restoreTask.performRestoreTaskState.PSObject.properties['restoreAppTaskState']){
-            $targetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
-            foreach ($restoreAppObject in $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec){
+            if($restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.PSObject.Properties['restoreAppObjectVec']){
+                $targetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
+                $restoreAppObjects = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec
+            }else{
+                $targetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.childRestoreAppParamsVec[0].ownerRestoreInfo.ownerObject.entity.displayName
+                $restoreAppObjects = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.childRestoreAppParamsVec[0].restoreAppObjectVec
+            }
+            
+            foreach ($restoreAppObject in $restoreAppObjects){ # $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec
                 $objectName = $restoreAppObject.appEntity.displayName
                 $objectType = $entityType[$restoreAppObject.appEntity.type]
                 if($objectType -eq 'SQL' -and $restore.restoreTask.performRestoreTaskState.base.type -eq 4){
@@ -269,8 +276,6 @@ while(1){
                     "$startTime,$taskName,$objectName,$totalSize,$targetObject,$status,$duration,$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append    
                 }
             }
-        }else{
-            "***************more types****************"
         }
     }
     if(!$restores -or $restores.Count -eq 0 -or $lastUsecs -eq $endUsecs){
