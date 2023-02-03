@@ -68,3 +68,7 @@ or
 
 * -startDate: (optional) start of date range to report on (e.g. -startDate '2019-08-01')
 * -endDate: (optional) end of date range to report on (e.g. -endDate '2019-09-01')
+
+## Other Parameters
+
+* -unit: (optional) Display size in MiB or GiB (default is MiB)

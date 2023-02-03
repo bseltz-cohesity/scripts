@@ -18,11 +18,17 @@ param (
     [Parameter()][string]$endDate = '',
     [Parameter()][switch]$lastCalendarMonth,
     [Parameter()][int]$lastXDays = 0,
+    [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'MiB',
     [Parameter()][string]$smtpServer, #outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, #outbound smtp port
     [Parameter()][array]$sendTo, #send to address
     [Parameter()][string]$sendFrom #send from address
 )
+
+$conversion = @{'Kib' = 1024; 'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
+function toUnits($val){
+    return "{0:n0}" -f ($val/($conversion[$unit]))
+}
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -65,10 +71,6 @@ $start = (usecsToDate $uStart).ToString('yyyy-MM-dd')
 $end = (usecsToDate $uEnd).ToString('yyyy-MM-dd')
 
 $cluster = api get cluster
-if($cluster.clusterSoftwareVersion -lt '6.8.1'){
-    Write-Host "This script requires Cohesity version6.8.1 or later" -ForegroundColor Yellow
-    exit
-}
 
 $title = "SQL Restore Report for $($cluster.name) ($start - $end)"
 
@@ -77,7 +79,7 @@ $date = (get-date).ToString()
 $now = (Get-Date).ToString("yyyy-MM-dd")
 $csvFile = "sqlRestoreReport-$($cluster.name)-$now.csv"
 
-"Date,Task,Object,Target,Status,Duration (Min),Restore Size,User" | Out-File $csvFile
+"Date,Task,Object,Size ($unit),Target,Status,Duration (Min),User" | Out-File $csvFile
 
 $html = '<html>
 <head>
@@ -186,19 +188,19 @@ $html += $title
 $html += '</span>
 <span style="font-size:0.75em; text-align: right; padding-top: 8px; padding-right: 2px; float: right;">'
 $html += $date
-$html += '</span>
+$html += "</span>
 </p>
 <table>
 <tr>
         <th>Date</th>
         <th>Task</th>
         <th>Object</th>
+        <th>Size ($unit)</th>
         <th>Target</th>
         <th>Status</th>
         <th>Duration (Min)</th>
-        <th>Restore Size</th>
         <th>User</th>
-      </tr>'
+      </tr>"
 
 $entityType=@('Unknown', 'VMware', 'HyperV', 'SQL', 'View', 'Puppeteer',
               'Physical', 'Pure', 'Azure', 'Netapp', 'Agent', 'GenericNas',
@@ -209,69 +211,73 @@ $entityType=@('Unknown', 'VMware', 'HyperV', 'SQL', 'View', 'Puppeteer',
               'Nimble', 'AzureSnapshotManager', 'Elastifile', 'Cassandra', 'MongoDB',
               'HBase', 'Hive', 'Hdfs', 'Couchbase', 'Unknown', 'Unknown', 'Unknown')
 
+$restoresCount = 0
 $endUsecs = $uEnd
-$script:seenIds = @()
-$lastSeenCount = 0
-$seenCount = 0
-
 while(1){
-    $restores = api get -v2 "data-protect/recoveries?startTimeUsecs=$uStart&snapshotEnvironments=kSQL&recoveryActions=RecoverApps&includeTenants=true&endTimeUsecs=$endUsecs"
-    foreach($restore in $restores.recoveries | Sort-Object -Property startTimeUsecs -Descending){
-        $taskId = $restore.id
-        if($taskId -notin $script:seenIds){
-            $seenCount += 1
-            $script:seenIds = @($script:seenIds + $taskId)
-            $taskName = $restore.name
-            $status = $restore.status
-            $startTime = usecsToDate $restore.startTimeUsecs
-            $duration = '-'
-            if($restore.PSObject.properties['endTimeUsecs']){
-                $endTime = usecsToDate $restore.endTimeUsecs
-                $duration = [math]::Round(($endTime - $startTime).TotalMinutes)
-                $endUsecs = $restore.endTimeUsecs - 1
-            }
-            $link = "https://$vip//recovery/detail/$taskId"
+    $restores = api get "/restoretasks?restoreTypes=kRestoreApp&_includeTenantInfo=true&endTimeUsecs=$endUsecs&startTimeUsecs=$uStart"
+    foreach ($restore in $restores | Sort-Object -Property {$_.restoreTask.performRestoreTaskState.base.startTimeUsecs} -Descending){
+        $taskId = $restore.restoreTask.performRestoreTaskState.base.taskId
+        $taskName = $restore.restoreTask.performRestoreTaskState.base.name
+        $status = ($restore.restoreTask.performRestoreTaskState.base.publicStatus).Substring(1)
+        $startTime = usecsToDate $restore.restoreTask.performRestoreTaskState.base.startTimeUsecs
+        $duration = '-'
+        if($restore.restoreTask.performRestoreTaskState.base.PSObject.properties['endTimeUsecs']){
+            $endTime = usecsToDate $restore.restoreTask.performRestoreTaskState.base.endTimeUsecs
+            $duration = [math]::Round(($endTime - $startTime).TotalMinutes)
+            $endUsecs = $restore.restoreTask.performRestoreTaskState.base.endTimeUsecs - 1
+        }
+        $link = "https://$vip/protection/recovery/detail/local/$taskId/"
 
-            foreach($db in $restore.mssqlParams.recoverAppParams){
-                $targetHost = $sourceHost = $db.hostInfo.name
-                $targetDB = $sourceDB = $db.objectInfo.name
-                $progressId = $db.progressTaskId
-                $dbSize = '-'
-                if($cluster.clusterSoftwareVersion -gt '6.8.1'){
-                    $progressMonitor = api get "/progressMonitors?taskPathVec=$($progressId)&excludeSubTasks=false&includeFinishedTasks=true&includeEventLogs=true&fetchLogsMaxLevel=0"
-                    if($progressMonitor.resultGroupVec[0].PSObject.Properties['taskVec']){
-                        $dbSize = ((($progressMonitor.resultGroupVec[0].taskVec[0].progress.eventVec | Where-Object {$_ -match 'total_expected_size'})[0].eventMsg -split 'total_expected_size=')[1] -split ', ')[0]
+        if($restore.restoreTask.performRestoreTaskState.PSObject.properties['restoreAppTaskState']){
+            $targetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
+            foreach ($restoreAppObject in $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec){
+                $objectName = $restoreAppObject.appEntity.displayName
+                $objectType = $entityType[$restoreAppObject.appEntity.type]
+                if($objectType -eq 'SQL' -and $restore.restoreTask.performRestoreTaskState.base.type -eq 4){
+                    $restoresCount += 1
+                    $totalSize = toUnits $restoreAppObject.appEntity.sqlEntity.totalSizeBytes
+                    if($restoreAppObject.restoreParams.targetHost.displayName){
+                        $targetServer = $restoreAppObject.restoreParams.targetHost.displayName
                     }
-                }
-                $targetObject = $sourceObject = "$($sourceHost)/$($sourceDB)"
-                if($db.sqlTargetParams.recoverToNewSource -eq $True){
-                    $targetHost = $db.sqlTargetParams.newSourceConfig.host.name
-                    $targetDB = "$($db.sqlTargetParams.newSourceConfig.instanceName)/$($db.sqlTargetParams.newSourceConfig.databaseName)"
-                    $targetObject = "$($targetHost)/$($targetDB)"
-                    if($status -eq 'Failed'){
+                    $targetObject = $targetServer
+                    # sql target
+                    if($restoreAppObject.restoreParams.sqlRestoreParams.instanceName){
+                        $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.instanceName)"
+                    }
+                    if($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName){
+                        $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName)"
+                    }
+                    if($targetObject -eq $targetServer){
+                        $targetObject = "$targetServer/$objectName"
+                    }
+                    if($status -eq 'Failure'){
                         $html += "<tr style='color:BA3415;'>"
+                    }elseif($status -eq 'Canceled'){
+                        $html += "<tr style='color:FF9800;'>"
                     }else{
                         $html += "<tr>"
                     }
+                    $html += "<td>$startTime</td>
+                    <td><a href=$link>$taskName</a></td>
+                    <td>$sourceServer/$objectName</td>
+                    <td>$totalSize</td>
+                    <td>$targetObject</td>
+                    <td>$status</td>
+                    <td>$duration</td>
+                    <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
+                    </tr>"
+                    "$startTime,$taskName,$objectName,$totalSize,$targetObject,$status,$duration,$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append    
                 }
-                $html += "<td>$startTime</td>
-                <td><a href=$link>$taskName</a></td>
-                <td>$sourceObject</td>
-                <td>$targetObject</td>
-                <td>$status</td>
-                <td>$duration</td>
-                <td>$dbSize</td>
-                <td>$($restore.creationInfo.userName)</td>
-                </tr>"
-                "$startTime,$taskName,$objectName,$targetObject,$status,$duration,$dbSize,$($restore.creationInfo.userName)" | out-file $csvFile -Append
             }
+        }else{
+            "***************more types****************"
         }
     }
-    if($seenCount -eq $lastSeenCount){
-        Write-Host "Found $seenCount SQL Restores"
+    if(!$restores -or $restores.Count -eq 0 -or $lastUsecs -eq $endUsecs){
         break
     }else{
-        $lastSeenCount = $seenCount
+        Write-Host "Retrieved $($restoresCount) restore tasks..."
+        $lastUsecs = $endUsecs
     }
 }
 
@@ -292,3 +298,4 @@ if($smtpServer -and $sendFrom -and $sendTo){
         Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject $title -BodyAsHtml $html -WarningAction SilentlyContinue
     }
 }
+
