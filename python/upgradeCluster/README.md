@@ -117,13 +117,13 @@ In my case, I've deployed the upgradeServer on a linux host with the IP address 
 Now that you've got your upgrade files hosted on your web server (or decided not to do this), we can upgrade a cluster, like so:
 
 ```bash
-./upgradeCluster.py -v 192.168.1.194 -u admin -r '6.1.1d_release-20190315_3d1332e6' -url 'http://192.168.1.195:5000/6.6.0d_u6_release-20221204_c03629f0'
+./upgradeCluster.py -v 192.168.1.194 -u admin -r '6.6.0d_u6_release-20221204_c03629f0' -url 'http://192.168.1.195:5000/6.6.0d_u6_release-20221204_c03629f0'
 ```
 
 or if you've decided not to deploy an upgrade server, you can access the upgrade package directly from the Cohesity download site:
 
 ```bash
-./upgradeCluster.py -v 192.168.1.194 -u admin -r '6.1.1d_release-20190315_3d1332e6' -url 'https://www.downloads.cohesity.com/artifacts/6.6.0d_u6/20221205-020056/release_full/tar/cohesity-6.6.0d_u6_release-20221204_c03629f0.tar.gz'
+./upgradeCluster.py -v 192.168.1.194 -u admin -r '6.6.0d_u6_release-20221204_c03629f0' -url 'https://www.downloads.cohesity.com/artifacts/6.6.0d_u6/20221205-020056/release_full/tar/cohesity-6.6.0d_u6_release-20221204_c03629f0.tar.gz'
 ```
 
 the script should return a message like this:
