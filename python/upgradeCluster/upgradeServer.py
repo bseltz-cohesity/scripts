@@ -6,9 +6,9 @@ app = Flask(__name__)
 app.debug = True
 
 
-@app.route('/6.5.1c_release-20201119_ec194046', methods=['GET'])
-def download651c():
-    return send_file('cohesity-6.5.1c_release-20201119_ec194046.tar.gz', as_attachment=True)
+@app.route('/6.6.0d_u6_release-20221204_c03629f0', methods=['GET'])
+def download660d():
+    return send_file('cohesity-6.6.0d_u6_release-20221204_c03629f0.tar.gz', as_attachment=True)
 
 
 @app.route('/', methods=['GET'])
@@ -16,7 +16,7 @@ def rootpage():
     return '''
 <h2>Cohesity Upgrade Server</h2>
 <br/>
-<a href='6.5.1c_release-20201119_ec194046'>6.5.1c_release-20201119_ec194046</a><br/>
+<a href='6.6.0d_u6_release-20221204_c03629f0'>6.6.0d_u6_release-20221204_c03629f0</a><br/>
 '''
 
 

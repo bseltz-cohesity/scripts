@@ -67,7 +67,7 @@ From within the upgrade server directory, download at least one upgrade package:
 
 ```bash
 cd /opt/cohesity/upgradeserver
-curl -O http://downloads.cohesity.com/public/pkg/6.1.1d_release-20190315_3d1332e6/cohesity-6.1.1d_release-20190315_3d1332e6.tar.gz
+curl -O https://www.downloads.cohesity.com/artifacts/6.6.0d_u6/20221205-020056/release_full/tar/cohesity-6.6.0d_u6_release-20221204_c03629f0.tar.gz
 ```
 
 Now let's edit the upgradeServer.py.
@@ -81,14 +81,9 @@ app = Flask(__name__)
 app.debug = True
 
 
-@app.route('/6.1.0b_release-20181211_b2d1609d', methods=['GET'])
-def download610b():
-    return send_file('cohesity-6.1.0b_release-20181211_b2d1609d.tar.gz', as_attachment=True)
-
-
-@app.route('/6.1.1d_release-20190315_3d1332e6', methods=['GET'])
-def download611d():
-    return send_file('cohesity-6.1.1d_release-20190315_3d1332e6.tar.gz', as_attachment=True)
+@app.route('/6.6.0d_u6_release-20221204_c03629f0', methods=['GET'])
+def download660d():
+    return send_file('cohesity-6.6.0d_u6_release-20221204_c03629f0.tar.gz', as_attachment=True)
 
 
 @app.route('/', methods=['GET'])
@@ -96,8 +91,7 @@ def rootpage():
     return '''
 <h2>Cohesity Upgrade Server</h2>
 <br/>
-<a href='6.1.0b_release-20181211_b2d1609d'>6.1.0b_release-20181211_b2d1609d</a><br/>
-<a href='6.1.1d_release-20190315_3d1332e6'>6.1.1d_release-20190315_3d1332e6</a><br/>
+<a href='6.6.0d_u6_release-20221204_c03629f0'>6.6.0d_u6_release-20221204_c03629f0</a><br/>
 '''
 
 
@@ -116,25 +110,25 @@ systemctl enable cohesity-upgradeserver.service
 systemctl start cohesity-upgradeserver.service
 ```
 
-In my case, I've deployed the upgradeServer on a linux host with the IP address of 192.168.1.195, so my upgrade url is <http://192.168.1.195:5000> (Flask uses port 5000 by default). If I append a release to the url, the file will begin to download <http://192.168.1.195:5000/6.1.1d_release-20190315_3d1332e6>
+In my case, I've deployed the upgradeServer on a linux host with the IP address of 192.168.1.195, so my upgrade url is <http://192.168.1.195:5000> (Flask uses port 5000 by default). If I append a release to the url, the file will begin to download <http://192.168.1.195:5000/6.6.0d_u6_release-20221204_c03629f0>
 
 ## Upgrading a Cluster
 
 Now that you've got your upgrade files hosted on your web server (or decided not to do this), we can upgrade a cluster, like so:
 
 ```bash
-./upgradeCluster.py -v 192.168.1.194 -u admin -r '6.1.1d_release-20190315_3d1332e6' -url 'http://192.168.1.195:5000/6.1.1d_release-20190315_3d1332e6'
+./upgradeCluster.py -v 192.168.1.194 -u admin -r '6.1.1d_release-20190315_3d1332e6' -url 'http://192.168.1.195:5000/6.6.0d_u6_release-20221204_c03629f0'
 ```
 
 or if you've decided not to deploy an upgrade server, you can access the upgrade package directly from the Cohesity download site:
 
 ```bash
-./upgradeCluster.py -v 192.168.1.194 -u admin -r '6.1.1d_release-20190315_3d1332e6' -url 'http://downloads.cohesity.com/public/pkg/6.1.1d_release-20190315_3d1332e6/cohesity-6.1.1d_release-20190315_3d1332e6.tar.gz'
+./upgradeCluster.py -v 192.168.1.194 -u admin -r '6.1.1d_release-20190315_3d1332e6' -url 'https://www.downloads.cohesity.com/artifacts/6.6.0d_u6/20221205-020056/release_full/tar/cohesity-6.6.0d_u6_release-20221204_c03629f0.tar.gz'
 ```
 
 the script should return a message like this:
 
 ```text
 Connected!
-Request to upgrade the S/W version of the cluster to 6.1.1d_release-20190315_3d1332e6 is accepted
+Request to upgrade the S/W version of the cluster to 6.6.0d_u6_release-20221204_c03629f0 is accepted
 ```
