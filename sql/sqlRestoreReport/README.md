@@ -54,6 +54,11 @@ Place both files in a folder together and run the main script like so:
 * -smtpPort: SMTP port to use (default is 25)
 * -sendFrom: email address to show in the from field
 
+## Other Parameters
+
+* -unit: (optional) Display size in MiB or GiB (default is MiB)
+* -includeClones: (optional) also show SQL clone tasks
+
 ## Date Range Parameters
 
 If no date range parameters are specified, the date range will default to the last 31 days. Otherwise you can use one of the following:
@@ -68,7 +73,3 @@ or
 
 * -startDate: (optional) start of date range to report on (e.g. -startDate '2019-08-01')
 * -endDate: (optional) end of date range to report on (e.g. -endDate '2019-09-01')
-
-## Other Parameters
-
-* -unit: (optional) Display size in MiB or GiB (default is MiB)

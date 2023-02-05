@@ -19,6 +19,7 @@ param (
     [Parameter()][switch]$lastCalendarMonth,
     [Parameter()][int]$lastXDays = 0,
     [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'MiB',
+    [Parameter()][switch]$includeClones,
     [Parameter()][string]$smtpServer, #outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, #outbound smtp port
     [Parameter()][array]$sendTo, #send to address
@@ -212,6 +213,7 @@ $entityType=@('Unknown', 'VMware', 'HyperV', 'SQL', 'View', 'Puppeteer',
               'HBase', 'Hive', 'Hdfs', 'Couchbase', 'Unknown', 'Unknown', 'Unknown')
 
 $restoresCount = 0
+$lastTaskId = 0
 $endUsecs = $uEnd
 while(1){
     $restores = api get "/restoretasks?restoreTypes=kRestoreApp&_includeTenantInfo=true&endTimeUsecs=$endUsecs&startTimeUsecs=$uStart"
@@ -237,10 +239,10 @@ while(1){
                 $restoreAppObjects = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.childRestoreAppParamsVec[0].restoreAppObjectVec
             }
             
-            foreach ($restoreAppObject in $restoreAppObjects){ # $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec
+            foreach ($restoreAppObject in $restoreAppObjects){
                 $objectName = $restoreAppObject.appEntity.displayName
                 $objectType = $entityType[$restoreAppObject.appEntity.type]
-                if($objectType -eq 'SQL' -and $restore.restoreTask.performRestoreTaskState.base.type -eq 4){
+                if($objectType -eq 'SQL' -and ($includeClones -or $restore.restoreTask.performRestoreTaskState.base.type -eq 4)){
                     $restoresCount += 1
                     $totalSize = toUnits $restoreAppObject.appEntity.sqlEntity.totalSizeBytes
                     if($restoreAppObject.restoreParams.targetHost.displayName){
@@ -278,11 +280,11 @@ while(1){
             }
         }
     }
-    if(!$restores -or $restores.Count -eq 0 -or $lastUsecs -eq $endUsecs){
+    if($lastTaskId -eq $taskId){
         break
     }else{
+        $lastTaskId = $taskId
         Write-Host "Retrieved $($restoresCount) restore tasks..."
-        $lastUsecs = $endUsecs
     }
 }
 
