@@ -7,7 +7,8 @@ param (
     [Parameter()][string]$smtpServer, # outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, # outbound smtp port
     [Parameter()][array]$sendTo, # send to address
-    [Parameter()][string]$sendFrom # send from address
+    [Parameter()][string]$sendFrom, # send from address
+    [Parameter()][int]$days = 7
 )
 
 # source the cohesity-api helper code
@@ -18,19 +19,21 @@ apiauth -vip $vip -username $username -domain $domain
 
 $cluster = api get cluster
 
-$today = get-date
+$today = get-date -Hour 0 -Minute 0 -Second 0
 $fileDate = $today.ToString('yyyy-MM-dd')
 
 $todayUsecs = dateToUsecs (get-date -Date $today -Hour 0 -Minute 0 -Second 0 -Millisecond 0).AddMilliseconds(-1)
-$lastWeek = get-date -Date $today.AddDays(-7) -Hour 0 -Minute 0 -Second 0 -Millisecond 0
+$lastWeek = get-date -Date $today.AddDays(-$days) -Hour 0 -Minute 0 -Second 0 -Millisecond 0
 $lastWeekUsecs = dateToUsecs $lastWeek
 $reportDays = for ($i = $lastWeek; $i -le $today; $i=$i.AddDays(1)){$i.ToString('MM-dd')}
 
 $reportDays = @()
 $reportDates = @()
 for ($i = $lastWeek; $i -le $today; $i=$i.AddDays(1)){
-    $reportDays += $i.ToString('MM-dd')
-    $reportDates += $i
+    if($i -lt $today.Date){
+        $reportDays += $i.ToString('MM/dd')
+        $reportDates += $i
+    }
 }
 
 $title = "Heatmap Report for $($cluster.name)"
@@ -53,7 +56,6 @@ $html = '<html>
             color: #333333;
             font-size: 0.75em;
             border-collapse: collapse;
-            width: 100%;
         }
 
         tr {
@@ -65,6 +67,7 @@ $html = '<html>
             width: 6%;
             text-align: left;
             padding: 1px;
+            white-space: nowrap;
         }
 
         .color-block-success {
@@ -244,15 +247,13 @@ $html += "</span>
 <tr>
     <th>Parent</th>
     <th>Object</th>
-    <th>Type</th>
-    <th>{0}</th>
-    <th>{1}</th>
-    <th>{2}</th>
-    <th>{3}</th>
-    <th>{4}</th>
-    <th>{5}</th>
-    <th>{6}</th>
-</tr>" -f $reportDays
+    <th>Type</th>"
+
+foreach($reportDay in $reportDays){
+    $html += "&nbsp;<th>{0}&nbsp;&nbsp;</th>" -f $reportDay
+}
+
+$html += "</tr>"
 
 $report = api get "reports/protectedObjectsTrends?allUnderHierarchy=true&endTimeUsecs=$todayUsecs&rollup=day&startTimeUsecs=$lastWeekUsecs&timezone=$timeZone"
 
@@ -288,14 +289,11 @@ foreach($item in $report | Sort-Object -Property name){
     $html += "<td>$parentName</td>
     <td>$objectName</td>
     <td>$objectType</td>
-    <td>{0}</td>
-    <td>{1}</td>
-    <td>{2}</td>
-    <td>{3}</td>
-    <td>{4}</td>
-    <td>{5}</td>
-    <td>{6}</td>
-    </tr>" -f $trendCells
+    "
+    foreach($trendCell in $trendCells){
+        $html += "<td>{0}</td>" -f $trendCell
+    }
+    $html += "</tr>"
 }
 
 $html += "</table>                

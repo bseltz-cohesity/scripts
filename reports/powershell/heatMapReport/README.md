@@ -39,6 +39,7 @@ Place the files in a folder together and run the script like so:
 * -username: name of user to connect to Cohesity
 * -domain: your AD domain (defaults to local)
 * -timeZone: (optional) default is America/New_York
+* -days: (optional) default is 7
 * -smtpServer: (optional) SMTP gateway to forward email through
 * -smtpPort: (optional) SMTP port to use (default is 25)
 * -sendTo: (optional) email addresses to send report to (comma separated)
