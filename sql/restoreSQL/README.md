@@ -55,6 +55,7 @@ Restoring cohesitydb to sqldev01 as restoreTest
 * -sourceDB: Original database name e.g. MYDB or MYINSTANCE/MYDB
 * -overwrite: Overwrites an existing database (default is no overwrite)
 * -sourceInstance: one or more instance names (see below)
+* -sourceNodes: (optional) Limit source results to these AAG nodes (comma separated)
 
 ## Alternate Target Parameters
 

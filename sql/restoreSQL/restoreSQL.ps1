@@ -52,7 +52,8 @@ param (
     [Parameter()][switch]$noStop,
     [Parameter()][switch]$captureTailLogs,
     [Parameter()][int64]$sleepTimeSecs = 30,
-    [Parameter()][string]$withClause
+    [Parameter()][string]$withClause,
+    [Parameter()][array]$sourceNodes                       # limit results to these AAG nodes
 )
 
 # handle alternate secondary data file locations
@@ -116,12 +117,20 @@ $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq 
                                   Where-Object {$_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB } | `
                                   Where-Object {$_.vmDocument.objectName -in $sourceDBObjectNames}
 
+# narrow by source AAG nodes
+if($sourceNodes){
+    $dbresults = $dbresults | Where-Object {
+        ([array]$x = Compare-Object -Referenceobject $sourceNodes -DifferenceObject $_.vmDocument.objectAliases  -excludedifferent -IncludeEqual)
+    }
+}
+
 if($null -eq $dbresults){
     foreach($si in $sourceInstance){
         Write-Host "Database $si/$sourceDB on Server $sourceServer Not Found" -ForegroundColor Yellow
     }
     exit 1
 }
+
 # if there are multiple results (e.g. old/new jobs?) sort from newest to oldest
 $dbVersions = @()
 foreach($dbresult in $dbresults){
