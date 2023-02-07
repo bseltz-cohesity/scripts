@@ -15,6 +15,7 @@ This script lists or modifies protection policies. The script is a work in progr
 * Delete a Replica
 * Add an Archive Target
 * Delete an Archive Target
+* Edit Retry setting
 
 Other features will be considered upon request.
 
@@ -120,6 +121,8 @@ To delete all replicas for a remote cluster:
 * -f, --frequency: (optional) number of frequency units for schedule (default is 1)
 * -fu, --frequencyunit: (optional) default is every run
 * -r, --retention: (optional) number of retention units
+* -t, --retries: (optional) number of times to retry failed backups (default is 3)
+* -m, --retryminutes: (optional) number of minutes to wait between retries (default is 5)
 * -ru, --retentionunit: (optional) default is days
 * -ld, --lockduration: (optional) number of lock units
 * -lu, --lockunit: (optional) default is days
@@ -132,6 +135,7 @@ To delete all replicas for a remote cluster:
 * delete: delete a policy
 * create: create a new policy with a base schedule
 * edit: edit base schedule and retention
+* editretries: edit retry settings
 * addextension: add or edit an extended retention
 * deleteextension: delete an extended retention
 * logbackup: add or edit log backup schedule

@@ -21,9 +21,11 @@ parser.add_argument('-r', '--retention', type=int, default=None)
 parser.add_argument('-ld', '--lockduration', type=int, default=None)
 parser.add_argument('-lu', '--lockunit', type=str, choices=['days', 'weeks', 'months', 'years'], default='days')
 parser.add_argument('-ru', '--retentionunit', type=str, choices=['days', 'weeks', 'months', 'years'], default='days')
-parser.add_argument('-a', '--action', type=str, choices=['list', 'create', 'edit', 'delete', 'addextension', 'deleteextension', 'logbackup', 'addreplica', 'deletereplica', 'addarchive', 'deletearchive'], default='list')
+parser.add_argument('-a', '--action', type=str, choices=['list', 'create', 'edit', 'delete', 'addextension', 'deleteextension', 'logbackup', 'addreplica', 'deletereplica', 'addarchive', 'deletearchive', 'editretries'], default='list')
 parser.add_argument('-n', '--targetname', type=str, default=None)
 parser.add_argument('-all', '--all', action='store_true')
+parser.add_argument('-t', '--retries', type=int, default=3)
+parser.add_argument('-m', '--retryminutes', type=int, default=5)
 args = parser.parse_args()
 
 vip = args.vip                        # cluster name/ip
@@ -41,6 +43,8 @@ lockunit = args.lockunit              # lock units
 action = args.action                  # action to perform
 targetname = args.targetname          # name of remote cluster or external target
 allfortarget = args.all               # delete all entries for the specified target
+retries = args.retries                # number of retries
+retryminutes = args.retryminutes      # number of minutes to wait between retries
 
 if frequencyunit != 'runs' and frequency is None:
     frequency = 1
@@ -104,8 +108,8 @@ if action == 'create':
         "description": None,
         "remoteTargetPolicy": {},
         "retryOptions": {
-            "retries": 3,
-            "retryIntervalMins": 5
+            "retries": retries,
+            "retryIntervalMins": retryminutes
         }
     }
 
@@ -183,6 +187,12 @@ if action == 'edit':
     result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
     if 'error' in result:
         exit(1)
+
+# edit retry settings
+if action == 'editretries':
+    policy['retryOptions']['retries'] = retries
+    policy['retryOptions']['retryIntervalMins'] = retryminutes
+    result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
 
 # add extend retention
 if action == 'addextension':
@@ -485,6 +495,7 @@ if action == 'deletearchive':
 for policy in policies:
     print('\n%s' % policy['name'])
     print(('-' * len(policy['name']) + '\n'))
+    print('Retry: %s times after %s minutes\n' % (policy['retryOptions']['retries'], policy['retryOptions']['retryIntervalMins']))
     # base retention
     baseRetention = policy['backupPolicy']['regular']['retention']
     dataLock = ''
