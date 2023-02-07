@@ -150,7 +150,7 @@ if($sourceInstance){
 ### narrow by source AAG nodes
 if($sourceNodes){
     $dbresults = $dbresults | Where-Object {
-        ([array]$x = Compare-Object -Referenceobject $sourceNodes -DifferenceObject $_.vmDocument.objectAliases  -excludedifferent -IncludeEqual).count -gt 0
+        ([array]$x = Compare-Object -Referenceobject $sourceNodes -DifferenceObject $_.vmDocument.objectAliases  -excludedifferent -IncludeEqual)
     }
 }
 
