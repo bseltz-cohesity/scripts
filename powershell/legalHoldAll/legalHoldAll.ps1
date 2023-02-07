@@ -82,13 +82,19 @@ foreach($job in $jobs | Sort-Object -Property name| Where-Object {$_.isDeleted -
         while($True){
             $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&endTimeUsecs=$endUsecs&excludeTasks=true"
             foreach($run in $runs){
-                if($addHold -or $removeHold){
-                    $copyRunsFound = $false
-                    foreach($copyRun in $run.copyRun){
-                        if($copyRun.expiryTimeUsecs -gt (dateToUsecs)){
-                            $copyRunsFound = $True
-                        }
+                $copyRunsFound = $false
+                foreach($copyRun in $run.copyRun){
+                    if($copyRun.expiryTimeUsecs -gt (dateToUsecs)){
+                        $copyRunsFound = $True
                     }
+                }
+                if($addHold -or $removeHold){
+                    # $copyRunsFound = $false
+                    # foreach($copyRun in $run.copyRun){
+                    #     if($copyRun.expiryTimeUsecs -gt (dateToUsecs)){
+                    #         $copyRunsFound = $True
+                    #     }
+                    # }
                     if($copyRunsFound -eq $True){
                         if($removeHold){
                             $holdValue = $false
@@ -122,13 +128,15 @@ foreach($job in $jobs | Sort-Object -Property name| Where-Object {$_.isDeleted -
                         $null = api put protectionRuns $runParams
                     }
                 }else{
-                    $legalHoldState = $false
-                    foreach($copyRun in $run.copyRun){
-                        if($True -eq $copyRun.holdForLegalPurpose){
-                            $legalHoldState = $True
+                    if($copyRunsFound -eq $True){
+                        $legalHoldState = $false
+                        foreach($copyRun in $run.copyRun){
+                            if($True -eq $copyRun.holdForLegalPurpose){
+                                $legalHoldState = $True
+                            }
                         }
+                        write-host "    $(usecsToDate $run.backupRun.stats.startTimeUsecs): LegalHold = $legalHoldState"
                     }
-                    write-host "    $(usecsToDate $run.backupRun.stats.startTimeUsecs): LegalHold = $legalHoldState"
                 }
             }
             if($runs.Count -eq $numRuns){
