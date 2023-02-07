@@ -47,7 +47,8 @@ param (
     [Parameter()][switch]$exportFileInfo,                  # export DB file paths
     [Parameter()][switch]$importFileInfo,                  # import DB file paths
     [Parameter()][switch]$resume,                          # resume recovery of previously restored DB
-    [Parameter()][switch]$update                           # resume norecovery latest
+    [Parameter()][switch]$update,                          # resume norecovery latest
+    [Parameter()][array]$sourceNodes                       # limit results to these AAG nodes
 )
 
 if($update){
@@ -144,6 +145,13 @@ $dbresults = $dbresults | Sort-Object -Property @{Expression={$_.vmDocument.vers
 ### narrow by sourceInstance
 if($sourceInstance){
     $dbresults = $dbresults | Where-Object {($_.vmDocument.objectName -split '/')[0] -eq $sourceInstance}
+}
+
+### narrow by source AAG nodes
+if($sourceNodes){
+    $dbresults = $dbresults | Where-Object {
+        ([array]$x = Compare-Object -Referenceobject $sourceNodes -DifferenceObject $_.vmDocument.objectAliases  -excludedifferent -IncludeEqual).count -gt 0
+    }
 }
 
 if(! $dbresults){

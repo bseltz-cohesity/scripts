@@ -61,6 +61,7 @@ Place both files in a folder together and run the main script like so:
 * -sourceDBnames: (optional) Databases to restore (e.g. MyDB or MYINSTANCE/MyDB) comma separated list
 * -sourceDBList: (optional) Text file containing databases to restore (e.g. MyDB or MYINSTANCE/MyDB)
 * -sourceInstance: (optional) Name of source SQL instance to restore from
+* -sourceNodes: (optional) Limit source results to these AAG nodes (comma separated)
 * -allDBs: (optional) restore all databases from specified server/instance
 * -includeSystemDBs: (optional) also restore system DBs (master, model, msdb)
 
