@@ -85,7 +85,7 @@ def gatherList(param=None, filename=None, name='items', required=True):
 
 jobnames = gatherList(jobnames, joblist, name='jobs', required=False)
 
-jobs = api('get', 'data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true', v=2)
+jobs = api('get', 'data-protect/protection-groups?isDeleted=false&includeTenants=true', v=2)
 
 # catch invalid job names
 notfoundjobs = [n for n in jobnames if n.lower() not in [j['name'].lower() for j in jobs['protectionGroups']]]
