@@ -58,6 +58,8 @@ Place both files in a folder together and run the main script like so:
 
 * -unit: (optional) Display size in MiB or GiB (default is MiB)
 * -includeClones: (optional) also show SQL clone tasks
+* -status: (optional) filter on status - Success, Failure, Canceled, All (default is All)
+* -nameMatch: (optional) filter on task name substring match
 
 ## Date Range Parameters
 
