@@ -86,6 +86,7 @@ Place all files in a folder together. then, run the main script like so:
 * 3: Syntax Error (incorrect command line)
 * 4: Timed out waiting for existing run to finish (existing run still running)
 * 5: Timed out waiting for new run / status update (failed to get status updates)
+* 6: Timed out waiting for new run to appear (new run accepted but not started)
 
 ## Using -o (--objectname) Parameter
 

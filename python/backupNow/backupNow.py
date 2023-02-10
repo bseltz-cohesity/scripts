@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.01.10
+# version 2023.02.10
 
 # version history
 # ===============
@@ -11,10 +11,11 @@
 # ====================
 # 0: Successful
 # 1: Unsuccessful
-# 2: authentication error
+# 2: connection/authentication error
 # 3: Syntax Error
 # 4: Timed out waiting for existing run to finish
-# 5: Timed out waiting for status update / waiting for run to appear
+# 5: Timed out waiting for status update
+# 6: Timed out waiting for new run to appear
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -558,7 +559,7 @@ if wait is True:
         if (timeOutUsecs + (newruntimeoutsecs * 1000000)) < nowUsecs:
             out("Timed out waiting for new run to appear")
             if extendederrorcodes is True:
-                bail(5)
+                bail(6)
             else:
                 bail(1)
         if newRunId > lastRunId:
