@@ -55,11 +55,21 @@ To remove an entry:
 #end example
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -v, --vip: Cohesity cluster to connect to
-* -u, --username: Cohesity username
-* -d, --domain: (optional) Active Directory domain (defaults to 'local')
+* -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
+* -d, --domain: (optional) domain of username (defaults to local)
+* -k, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: (optional) password or API key
+* -np, --noprompt: (optional) do not prompt for password
+* -mcm, --mcm: (optional) connect through MCM
+* -z, --clustername: (optional) helios/mcm cluster to connect to
+* -m, --mfacode: (optional) MFA code for authentication
+* -e, --emailmfacode: (optional) send MFA code via email
+
+## Other Parameters
+
 * -a, --addentry: (optional) add an entry to the whitelist
 * -r, --removeentry: (optional) remove an entry to the whitelist
 * -c, --cidr: (optional) cidr to add/remove, e.g. '192.168.1.0/24'
