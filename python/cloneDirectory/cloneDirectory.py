@@ -66,7 +66,7 @@ if mcm or vip.lower() == 'helios.cohesity.com':
         heliosCluster(clustername)
     else:
         print('-clustername is required when connecting to Helios or MCM')
-        exit()
+        exit(1)
 
 # exit if not authenticated
 if apiconnected() is False:
@@ -83,3 +83,5 @@ CloneDirectoryParams = {
 # clone directory
 print("Cloning %s to %s/%s..." % (sourcepath, targetview, targetpath))
 result = api('post', 'views/cloneDirectory', CloneDirectoryParams)
+if result is not None and 'error' in result:
+    exit(1)
