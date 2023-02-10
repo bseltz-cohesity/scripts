@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2022.09.27 - Brian Seltzer
+#  Version 2023.02.10 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2022.01.12 - fixed storePasswordForUser
@@ -20,9 +20,10 @@
 # 2022.09.19 - fixed log encoding
 # 2022.09.22 - fixed 404 error output format
 # 2022.09.27 - fixed error log not found error
+# 2023.02.10 - added -region to api function (for DMaaS)
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2022.09.27'
+$versionCohesityAPI = '2023.02.10'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -530,7 +531,8 @@ function setContext($context){
 $methods = 'get', 'post', 'put', 'delete', 'patch'
 function api($method, 
              $uri, 
-             $data, 
+             $data,
+             $region,
              [ValidateRange(0,2)][Int]$version=0,
              [switch]$v1, 
              [switch]$v2,
@@ -542,6 +544,11 @@ function api($method,
     if($method -eq 'get'){
         $body = $null
         $data = $null
+    }
+
+    $header = $cohesity_api.header.Clone()
+    if($region){
+        $header['regionid'] = $region
     }
 
     if(-not $cohesity_api.authorized){
@@ -600,15 +607,15 @@ function api($method,
             }
             if($PSVersionTable.PSEdition -eq 'Core'){
                 if($body){
-                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $cohesity_api.header -SkipCertificateCheck -TimeoutSec 300
+                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $header -SkipCertificateCheck -TimeoutSec 300
                 }else{
-                    $result = Invoke-RestMethod -Method $method -Uri $url -header $cohesity_api.header -SkipCertificateCheck -TimeoutSec 300
+                    $result = Invoke-RestMethod -Method $method -Uri $url -header $header -SkipCertificateCheck -TimeoutSec 300
                 }
             }else{
                 if($body){
-                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $cohesity_api.header -TimeoutSec 300
+                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $header -TimeoutSec 300
                 }else{
-                    $result = Invoke-RestMethod -Method $method -Uri $url -header $cohesity_api.header -TimeoutSec 300
+                    $result = Invoke-RestMethod -Method $method -Uri $url -header $header -TimeoutSec 300
                 }
             }
             $cohesity_api.last_api_error = 'OK'
@@ -1208,3 +1215,4 @@ function getViews([switch]$includeInactive){
 # 2021.12.21 - fixed USING_HELIOS status flag
 #
 # . . . . . . . . . . . . . . . . . . .
+
