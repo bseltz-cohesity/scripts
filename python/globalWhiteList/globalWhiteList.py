@@ -70,28 +70,39 @@ accessEnum = {'readonly': 'kReadOnly', 'readwrite': 'kReadWrite', 'none': 'kDisa
 globalWhitelist = api('get', 'externalClientSubnets')
 
 if removeentry is True and 'clientSubnets' in globalWhitelist:
-    (ip, netmaskBits) = cidr.split('/')
-    globalWhitelist['clientSubnets'] = [e for e in globalWhitelist['clientSubnets'] if e['ip'] != ip or str(e['netmaskBits']) != netmaskBits]
-    globaLWhiteList = api('put', 'externalClientSubnets', globalWhitelist)
+    if '/' not in cidr:
+        ip = cidr
+        netmaskBits = '32'
+    else:
+        (ip, netmaskBits) = cidr.split('/')
+    globalWhitelist['clientSubnets'] = [e for e in globalWhitelist['clientSubnets'] if e['ip'] != ip or ('netmaskBits' in e and str(e['netmaskBits']) != netmaskBits)]
+    globaLWhitelist = api('put', 'externalClientSubnets', globalWhitelist)
 elif addentry is True:
-    (ip, netmaskBits) = cidr.split('/')
+    if '/' not in cidr:
+        ip = cidr
+        netmaskBits = '32'
+    else:
+        (ip, netmaskBits) = cidr.split('/')
     if 'clientSubnets' not in globalWhitelist:
         globalWhitelist['clientSubnets'] = []
-    globalWhitelist['clientSubnets'] = [e for e in globalWhitelist['clientSubnets'] if e['ip'] != ip or str(e['netmaskBits']) != netmaskBits]
+    globalWhitelist['clientSubnets'] = [e for e in globalWhitelist['clientSubnets'] if e['ip'] != ip or ('netmaskBits' in e and str(e['netmaskBits']) != netmaskBits)]
     newEntry = {
         'ip': ip,
-        'netmaskBits': int(netmaskBits),
         'desciption': description,
         'nfsAccess': accessEnum[nfsaccess],
         'smbAccess': accessEnum[smbaccess],
         'description': description
     }
+    if ip != '0.0.0.0':
+        newEntry['netmaskBits'] = int(netmaskBits)
+    else:
+        newEntry['netmaskIp4'] = '0.0.0.0'
     if squash == 'all':
         newEntry['nfsAllSquash'] = True
     elif squash == 'root':
         newEntry['nfsRootSquash'] = True
     globalWhitelist['clientSubnets'].append(newEntry)
-    globalWhiteList = api('put', 'externalClientSubnets', globalWhitelist)
+    globalWhitelist = api('put', 'externalClientSubnets', globalWhitelist)
 
 # display whitelist
 if 'clientSubnets' in globalWhitelist:
@@ -99,7 +110,7 @@ if 'clientSubnets' in globalWhitelist:
         squashString = 'None'
         descriptionString = ''
         ip = entry.get('ip')
-        netmaskBits = entry.get('netmaskBits')
+        netmaskBits = entry.get('netmaskBits', '0.0.0.0')
         description = entry.get('description', '')
         nfsAccess = entry.get('nfsAccess')
         nfsAccessString = accessString[nfsAccess]
