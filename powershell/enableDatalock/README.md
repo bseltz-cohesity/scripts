@@ -70,6 +70,7 @@ To add datsalock to a list of policies provided in a text file:
 * -policyList: (optional) text file of policy names (one per line)
 * -lockDuration: (optional) datalock duration in days (default is 5)
 * -asAdmin: (optional) see below
+* -disable: (optional) remove datalock
 
 ## User rights requirements
 

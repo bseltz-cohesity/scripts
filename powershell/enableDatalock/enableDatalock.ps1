@@ -9,7 +9,8 @@ param (
     [Parameter()][array]$policyName,
     [Parameter()][string]$policyList,
     [Parameter()][int64]$lockDuration = 5,
-    [Parameter()][switch]$asAdmin
+    [Parameter()][switch]$asAdmin,
+    [Parameter()][switch]$disable
 )
 
 # source the cohesity-api helper code
@@ -118,6 +119,22 @@ foreach($policy in ($policies.policies | Sort-Object -Property name)){
                 "unit" = "Days";
                 "duration" = $lockDuration
             }
+        }elseif($disable){
+            $policyChanged = $True
+            delApiProperty -object $policy.backupPolicy.regular.retention -name 'dataLockConfig'
+        }
+        foreach($extendedRetention in $policy.extendedRetention){
+            if(! $extendedRetention.retention.PSObject.Properties['dataLockConfig']){
+                $policyChanged = $True
+                setApiProperty -object $extendedRetention.retention -name 'dataLockConfig' -value @{
+                    "mode" = "Compliance";
+                    "unit" = "Days";
+                    "duration" = $lockDuration
+                }
+            }elseif($disable){
+                $policyChanged = $True
+                delApiProperty -object $extendedRetention.retention -name 'dataLockConfig'
+            }
         }
         if($policy.PSObject.Properties['remoteTargetPolicy']){
             if($policy.remoteTargetPolicy.PSObject.Properties['replicationTargets']){
@@ -129,6 +146,9 @@ foreach($policy in ($policies.policies | Sort-Object -Property name)){
                             "unit" = "Days";
                             "duration" = $lockDuration
                         }
+                    }elseif($disable){
+                        $policyChanged = $True
+                        delApiProperty -object $replicationTarget.retention -name 'dataLockConfig'
                     }
                 }
             }
@@ -141,15 +161,26 @@ foreach($policy in ($policies.policies | Sort-Object -Property name)){
                             "unit" = "Days";
                             "duration" = $lockDuration
                         }
+                    }elseif($disable){
+                        $policyChanged = $True
+                        delApiProperty -object $archivalTarget.retention -name 'dataLockConfig'
                     }
                 }
             }
         }
         if($True -eq $policyChanged){
-            "    adding datalock" | Tee-Object -FilePath $outfileName -Append
+            if($disable){
+                "    removing datalock" | Tee-Object -FilePath $outfileName -Append
+            }else{
+                "    adding datalock" | Tee-Object -FilePath $outfileName -Append
+            }
             $null = api put -v2 data-protect/policies/$($policy.id) $policy
         }else{
-            "    already datalocked" | Tee-Object -FilePath $outfileName -Append
+            if($disable){
+                "    not datalocked" | Tee-Object -FilePath $outfileName -Append
+            }else{
+                "    already datalocked" | Tee-Object -FilePath $outfileName -Append
+            }
         }
     }
 }
