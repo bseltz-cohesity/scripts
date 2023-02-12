@@ -22,6 +22,7 @@ $sessionUser = api get sessionUser
 $tenantId = $sessionUser.profiles[0].tenantId
 $regions = api get -mcmv2 dms/tenants/regions?tenantId=$tenantId
 $regionList = $regions.tenantRegionInfoList.regionId -join ','
+$connectors = api get -mcmv2 "rigelmgmt/rigel-groups?tenantId=$tenantId"
 
 # report headings
 $today = get-date
@@ -63,7 +64,7 @@ $Global:html = '<html>
 
         td,
         th {
-            width: 20%;
+            width: 5%;
             text-align: left;
             padding: 6px;
         }
@@ -201,12 +202,13 @@ $Global:html += '</span>
 <table>
 <tr style="background-color: #F1F1F1;">
     <th>Region</th>
+    <th>SaaS Connection</th>
     <th>Server Name</th>
     <th>Path</th>
     <th>Included/Excluded</th>
 </tr>'
 
-"Region,Server Name,Path,Included/Excluded" | Out-File -FilePath $csvFileName
+"Region,SaaS Connection,Server Name,Path,Included/Excluded" | Out-File -FilePath $csvFileName
 
 $x = 0
 $objectprinted = $false
@@ -216,11 +218,11 @@ foreach($region in ($regions.tenantRegionInfoList.regionId | Sort-Object)){
     $sources = api get -mcmv2 "data-protect/sources?regionIds=$region&environments=kPhysical"
     $protectedSources = $sources.sources | Where-Object {$_.sourceInfoList.protectionStats.protectedCount -gt 0}
     foreach($source in ($protectedSources | Sort-Object -Property name)){
-        $source.objects
         $sourceId = $source.sourceInfoList[0].sourceId
         $sourceRegion = $source.sourceInfoList[0].regionId
         $obj = api get -v2 data-protect/objects?ids=$sourceId -region $sourceRegion
         if($obj.objects[0].PSObject.Properties['objectBackupConfiguration']){
+            $connector = $connectors.rigelGroups | Where-Object groupId -eq $source.sourceInfoList[0].registrationDetails.connectionId 
             $Global:trColor = $trColors[$x % 2]
             $x += 1
             Write-Host "$($source.name)"
@@ -230,8 +232,9 @@ foreach($region in ($regions.tenantRegionInfoList.regionId | Sort-Object)){
                     <td>{1}</td>
                     <td>{2}</td>
                     <td>{3}</td>
-                    </tr>' -f $region, $source.name, $includedPath, 'Included', $Global:trColor
-            "{0},{1},{2},{3}" -f $region, $source.name, $includedPath, 'Included' | Out-File -FilePath $csvFileName -Append
+                    <td>{4}</td>
+                    </tr>' -f $region, $connector.groupName, $source.name, $includedPath, 'Included', $Global:trColor
+            "{0},{1},{2},{3},{4}" -f $region, $connector.groupName, $source.name, $includedPath, 'Included' | Out-File -FilePath $csvFileName -Append
             $excludedPaths = $obj.objects[0].objectBackupConfiguration.physicalParams.fileObjectProtectionTypeParams.objects[0].filePaths[0].excludedPaths
             foreach($excludedPath in $excludedPaths){
                 $Global:html += '<tr style="border: 1px solid {4} background-color: {4}">
@@ -239,8 +242,9 @@ foreach($region in ($regions.tenantRegionInfoList.regionId | Sort-Object)){
                     <td>{1}</td>
                     <td>{2}</td>
                     <td>{3}</td>
-                    </tr>' -f '', '', $excludedPath, 'Excluded', $Global:trColor
-                "{0},{1},{2},{3}" -f $region, $source.name, $excludedPath, 'Excluded' | Out-File -FilePath $csvFileName -Append
+                    <td>{4}</td>
+                    </tr>' -f '', '', '', $excludedPath, 'Excluded', $Global:trColor
+                "{0},{1},{2},{3},{4}" -f $region, $connector.groupName, $source.name, $excludedPath, 'Excluded' | Out-File -FilePath $csvFileName -Append
             }
         }
     }
