@@ -93,7 +93,10 @@ if cluster['clusterSoftwareVersion'] < '6.6' and len(viewstoadd) > 1:
 views = api('get', 'file-services/views', v=2)
 
 # get the protection job
-job = [j for j in (api('get', 'data-protect/protection-groups?environments=kView', v=2))['protectionGroups'] if j['name'].lower() == jobname.lower()]
+jobs = api('get', 'data-protect/protection-groups?environments=kView', v=2)
+job = None
+if 'protectionGroups' in jobs and jobs['protectionGroups'] is not None:
+    job = [j for j in (api('get', 'data-protect/protection-groups?environments=kView', v=2))['protectionGroups'] if j['name'].lower() == jobname.lower()]
 if job is None or len(job) == 0:
     newJob = True
     if cluster['clusterSoftwareVersion'] < '6.6' and len(viewstoadd) > 1:
