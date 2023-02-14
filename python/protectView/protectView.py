@@ -22,6 +22,8 @@ parser.add_argument('-st', '--starttime', type=str, default='21:00')
 parser.add_argument('-z', '--pause', action='store_true')
 parser.add_argument('-di', '--disableindexing', action='store_true')
 parser.add_argument('-suffix', '--drsuffix', type=str, default='')
+parser.add_argument('-prefix', '--drprefix', type=str, default='')
+
 
 args = parser.parse_args()
 
@@ -43,6 +45,7 @@ timezone = args.timezone
 pause = args.pause
 disableindexing = args.disableindexing
 drsuffix = args.drsuffix
+drprefix = args.drprefix
 
 # authenticate
 if mcm:
@@ -215,6 +218,9 @@ for thisViewName in viewstoadd:
             useSameViewName = True
             if drsuffix != '':
                 drViewName = '%s-%s' % (drViewName, drsuffix)
+                useSameViewName = False
+            if drprefix != '':
+                drViewName = '%s-%s' % (drprefix, drViewName)
                 useSameViewName = False
             if cluster['clusterSoftwareVersion'] < '6.6':
                 job['viewParams']['replicationParams'] = {

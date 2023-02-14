@@ -58,4 +58,5 @@ Place both files in a folder together and run the main script like so:
 * -st, --starttime: (optional) start time for new job (default is 21:00)
 * -z, --pause: (optional) pause future runs of new job
 * -di, --disableindexing: (optional) do not index
+* -prefix, --drprefix: (optional) prefix for remote view name
 * -suffix, --drsuffix: (optional) suffix for remote view name
