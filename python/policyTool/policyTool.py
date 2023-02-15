@@ -495,7 +495,8 @@ if action == 'deletearchive':
 for policy in policies:
     print('\n%s' % policy['name'])
     print(('-' * len(policy['name']) + '\n'))
-    print('Retry: %s times after %s minutes\n' % (policy['retryOptions']['retries'], policy['retryOptions']['retryIntervalMins']))
+    if 'retryOptions' in policy:
+        print('Retry: %s times after %s minutes\n' % (policy['retryOptions']['retries'], policy['retryOptions']['retryIntervalMins']))
     # base retention
     baseRetention = policy['backupPolicy']['regular']['retention']
     dataLock = ''
