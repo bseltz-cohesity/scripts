@@ -80,9 +80,9 @@ $title = "SQL Restore Report for $($cluster.name) ($start - $end)"
 $date = (get-date).ToString()
 
 $now = (Get-Date).ToString("yyyy-MM-dd")
-$csvFile = "sqlRestoreReport-$($cluster.name)-$now.csv"
+$csvFile = "sqlRestoreReport-$($cluster.name)-$now.tsv"
 
-"Date,Task,Object,Size ($unit),Target,Status,Duration (Min),User" | Out-File $csvFile
+"Date`tTask`tObject`tSize ($unit)`tTarget`tStatus`tDuration (Min)`tUser" | Out-File $csvFile
 
 $html = '<html>
 <head>
@@ -279,7 +279,7 @@ while(1){
                             <td>$duration</td>
                             <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
                             </tr>"
-                            "$startTime,$taskName,$objectName,$totalSize,$targetObject,$thisstatus,$duration,$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append    
+                            "$startTime`t$taskName`t$objectName`t$totalSize`t$targetObject`t$thisstatus`t$duration`t$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append    
                         }
                     }
                 }
@@ -301,7 +301,7 @@ $html += "</table>
 
 $html | out-file "sqlRestoreReport-$($cluster.name)-$($now).html"
 
-"Saving output to sqlRestoreReport-$now.html and sqlRestoreReport-$now.csv"
+"Saving output to sqlRestoreReport-$now.html and sqlRestoreReport-$now.tsv"
 
 if($smtpServer -and $sendFrom -and $sendTo){
     write-host "sending report to $([string]::Join(", ", $sendTo))"
@@ -311,4 +311,3 @@ if($smtpServer -and $sendFrom -and $sendTo){
         Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject $title -BodyAsHtml $html -WarningAction SilentlyContinue
     }
 }
-
