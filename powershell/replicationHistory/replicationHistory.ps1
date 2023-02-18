@@ -47,7 +47,8 @@ if($daysBack -gt 0){
     $daysBackUsecs = timeAgo $daysBack days
 }
 
-$dailyCount = @{}
+$dailyCountFinished = @{}
+$dailyCountRunning = @{}
 
 foreach($job in $jobs | Sort-Object -Property name){
     $endUsecs = dateToUsecs (Get-Date)
@@ -60,12 +61,19 @@ foreach($job in $jobs | Sort-Object -Property name){
             }
             $runStartTime = usecsToDate $run.backupRun.stats.startTimeUsecs
             $runStartDate = $runStartTime.ToString('yyyy-MM-dd')
-            if($runStartDate -notin $dailyCount.Keys){
-                $dailyCount["$runStartDate"] = 0
+            if($runStartDate -notin $dailyCountFinished.Keys){
+                $dailyCountFinished["$runStartDate"] = 0
+            }
+            if($runStartDate -notin $dailyCountRunning.Keys){
+                $dailyCountRunning["$runStartDate"] = 0
             }
             foreach($copyRun in $run.copyRun){
-                $dailyCount["$runStartDate"] += 1
                 if($copyRun.target.type -eq 'kRemote'){
+                    if($copyRun.status -in $finishedStates){
+                        $dailyCountFinished["$runStartDate"] += 1
+                    }else{
+                        $dailyCountRunning["$runStartDate"] += 1
+                    }
                     Write-Host ("`t{0}`t{1}" -f $runStartTime, $copyRun.status)
                 }
             }
@@ -81,7 +89,7 @@ foreach($job in $jobs | Sort-Object -Property name){
 Write-Host "`n========================="
 Write-Host "Replication tasks per day"
 Write-Host "=========================`n"
-foreach($thisDate in ($dailyCount.Keys | Sort-Object)){
-    Write-Host "$thisDate`t$($dailyCount["$thisDate"])"
+foreach($thisDate in ($dailyCountFinished.Keys | Sort-Object)){
+    Write-Host "$thisDate`tfinished: $($dailyCountFinished["$thisDate"])`trunning:$($dailyCountRunning["$thisDate"]) "
 }
 Write-Host ""
