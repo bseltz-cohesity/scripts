@@ -37,15 +37,17 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
-$jobs = api get protectionJobs | Where-Object {$_.isDeleted -ne $True -and $_.isActive -ne $false}
+$jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true" # protectionJobs | Where-Object {$_.isDeleted -ne $True -and $_.isActive -ne $false}
 
-$finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')
+# $finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')
+$finishedStates = @('Canceled', 'Succeeded', 'Failed', 'SucceededWithWarning')
 
 $now = (Get-Date)
 $nowUsecs = dateToUsecs $now
 
 if($daysBack -gt 0){
-    $daysBackUsecs = timeAgo $daysBack days
+    $daysBackUsecs = dateToUsecs ((Get-Date -Hour 0 -Minute 0 -Second 0).AddDays(-$daysBack))
+    # $daysBackUsecs = timeAgo $daysBack days
 }
 
 $dailyCountStarted = @{}
@@ -53,16 +55,17 @@ $dailyCountFinished = @{}
 $dailyCountRunning = @{}
 $replications = @()
 
-foreach($job in $jobs | Sort-Object -Property name){
+foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     $endUsecs = $nowUsecs
     Write-Host $job.name
     while($True){
-        $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&endTimeUsecs=$endUsecs&excludeTasks=true"
-        foreach($run in $runs){
-            if($daysBack -gt 0 -and $run.backupRun.stats.startTimeUsecs -lt $daysBackUsecs){
+        $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true"
+        # $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&endTimeUsecs=$endUsecs&excludeTasks=true"
+        foreach($run in $runs.runs){
+            if($daysBack -gt 0 -and $run.localBackupInfo.startTimeUsecs -lt $daysBackUsecs){
                 break
             }
-            $runStartTime = usecsToDate $run.copyRun[0].runStartTimeUsecs
+            $runStartTime = usecsToDate $run.localBackupInfo.startTimeUsecs
             $runStartDate = $runStartTime.ToString('yyyy-MM-dd')
             if($runStartDate -notin $dailyCountFinished.Keys){
                 $dailyCountFinished["$runStartDate"] = 0
@@ -73,26 +76,24 @@ foreach($job in $jobs | Sort-Object -Property name){
             if($runStartDate -notin $dailyCountStarted.Keys){
                 $dailyCountStarted["$runStartDate"] = 0
             }
-            foreach($copyRun in $run.copyRun){
-                if($copyRun.target.type -eq 'kRemote'){
-                    $dailyCountStarted["$runStartDate"] += 1
-                    if($copyRun.status -in $finishedStates){
-                        $dailyCountFinished["$runStartDate"] += 1
-                        $endTime = usecsToDate $copyRun.stats.endTimeUsecs
-                        if($copyRun.status -eq 'kFailure'){
-                            $endTime = $runStartTime
-                        }
-                    }else{
-                        $dailyCountRunning["$runStartDate"] += 1
-                        $endTime = $now
+            foreach($copyRun in $run.replicationInfo.replicationTargetResults){
+                $dailyCountStarted["$runStartDate"] += 1
+                if($copyRun.status -in $finishedStates){
+                    $dailyCountFinished["$runStartDate"] += 1
+                    $endTime = usecsToDate $copyRun.endTimeUsecs
+                    if($copyRun.status -eq 'kFailure'){
+                        $endTime = $runStartTime
                     }
-                    $replications = @($replications + @{'startTime' = $runStartTime; 'endTime' = $endTime})
-                    Write-Host ("`t{0}`t{1}" -f $runStartTime, $copyRun.status)
+                }else{
+                    $dailyCountRunning["$runStartDate"] += 1
+                    $endTime = $now
                 }
+                $replications = @($replications + @{'startTime' = $runStartTime; 'endTime' = $endTime})
+                Write-Host ("`t{0}`t{1}" -f $runStartTime, $copyRun.status)
             }
         }
         if($runs.Count -eq $numRuns){
-            $endUsecs = $runs[-1].backupRun.stats.endTimeUsecs - 1
+            $endUsecs = $runs[-1].localBackupInfo.endTimeUsecs - 1
         }else{
             break
         }
@@ -103,9 +104,11 @@ Write-Host "`n========================="
 Write-Host "Replication tasks per day"
 Write-Host "=========================`n"
 $replications = $replications | ConvertTo-Json -Depth 99 | ConvertFrom-Json
+$totalRunning = 0
 foreach($thisDateString in ($dailyCountStarted.Keys | Sort-Object)){
+    $totalRunning += $dailyCountRunning["$thisDateString"]
     $thisDate = [datetime]$thisDateString
     $wasRunning = @($replications | Where-Object {$_.startTime -lt $($thisDate.AddDays(1)) -and $_.endTime -ge $thisDate}).Count
     Write-Host "$thisDateString`t started: $($dailyCountStarted["$thisDateString"]) `t finished: $($dailyCountFinished["$thisDateString"])`t in queue (that day): $wasRunning`t in queue (now): $($dailyCountRunning["$thisDateString"])"
 }
-Write-Host ""
+Write-Host "`nTotal Still Running:  $totalRunning"
