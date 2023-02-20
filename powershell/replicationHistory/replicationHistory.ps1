@@ -105,7 +105,7 @@ Write-Host "=========================`n"
 $replications = $replications | ConvertTo-Json -Depth 99 | ConvertFrom-Json
 foreach($thisDateString in ($dailyCountStarted.Keys | Sort-Object)){
     $thisDate = [datetime]$thisDateString
-    $wasRunning = @($replications | Where-Object {$_.startTime -ge $thisDate -and $_.startTime -lt $($thisDate.AddDays(1)) -and $_.endTime -ge $thisDate}).Count
-    Write-Host "$thisDateString`tstarted: $($dailyCountStarted["$thisDateString"]) `tfinished: $($dailyCountFinished["$thisDateString"])`tin queue (that day): $wasRunning`tin queue (now): $($dailyCountRunning["$thisDateString"])"
+    $wasRunning = @($replications | Where-Object {$_.startTime -lt $($thisDate.AddDays(1)) -and $_.endTime -ge $thisDate}).Count
+    Write-Host "$thisDateString`t started: $($dailyCountStarted["$thisDateString"]) `t finished: $($dailyCountFinished["$thisDateString"])`t in queue (that day): $wasRunning`t in queue (now): $($dailyCountRunning["$thisDateString"])"
 }
 Write-Host ""
