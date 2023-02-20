@@ -5,7 +5,8 @@
 
 # version history
 # ===============
-# 2022.01.10 - enforce sleeptimesecs >= 30 and newruntimeoutsecs >= 720
+# 2023.01.10 - enforce sleeptimesecs >= 30 and newruntimeoutsecs >= 720
+# 2023.02.17 - implement retry on get protectionJobs - added error code 7
 
 # extended error codes
 # ====================
@@ -16,6 +17,7 @@
 # 4: Timed out waiting for existing run to finish
 # 5: Timed out waiting for status update
 # 6: Timed out waiting for new run to appear
+# 7: Timed out getting job
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -243,7 +245,23 @@ def cancelRunningJob(job, durationMinutes):
 
 
 # find protectionJob
-job = [job for job in api('get', 'protectionJobs') if job['name'].lower() == jobName.lower() and ('isActive' not in job or job['isActive'] is not False)]
+jobs = None
+jobRetries = 0
+while jobs is None:
+    jobs = api('get', 'protectionJobs')
+    if jobs is None or 'error' in jobs:
+        jobs = None
+        jobRetries += 1
+        if jobRetries == 3:
+            out('Timed out getting job!')
+            if extendederrorcodes is True:
+                bail(7)
+            else:
+                bail(1)
+        else:
+            sleep(15)
+
+job = [job for job in jobs if job['name'].lower() == jobName.lower() and ('isActive' not in job or job['isActive'] is not False)]
 
 if not job:
     out("Job '%s' not found" % jobName)

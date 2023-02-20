@@ -1,8 +1,9 @@
-# version 2022.01.10
+# version 2022.02.17
 
 # version history
 # ===============
 # 2022.01.10 - enforce sleeptimesecs >= 30 and waitForNewRunMinutes >= 12
+# 2022.02.17 - implement retry on get protectionJobs - added error code 7
 
 # extended error codes
 # ====================
@@ -13,6 +14,7 @@
 # 4: Timed out waiting for existing run to finish
 # 5: Timed out waiting for status update
 # 6: Timed out waiting for new run to appear
+# 7: Timed out getting protection jobs
 
 # process commandline arguments
 [CmdletBinding()]
@@ -206,7 +208,25 @@ if($backupType -in $backupTypeEnum.Keys){
 $cluster = api get cluster
 
 # find the jobID
-$job = (api get protectionJobs | Where-Object name -ieq $jobName)
+$jobs = $null
+$jobRetries = 0
+while(! $jobs){
+    $jobs = api get protectionJobs
+    if(! $jobs){
+        $jobRetries += 1
+        if($jobRetries -eq 3){
+            output "Timed out getting Job!" -warn
+            if($extendedErrorCodes){
+                exit 7
+            }else{
+                exit 1
+            }
+        }else{
+            Start-Sleep 15
+        }
+    }
+}
+$job = ($jobs | Where-Object name -ieq $jobName)
 if($job){
     $policyId = $job.policyId
     if($policyId.split(':')[0] -ne $cluster.id){
