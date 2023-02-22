@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script registers generic NAS volumes.
+This script refreshes a protection source.
 
 ## Download the script
 
@@ -36,5 +36,3 @@ Place both files in a folder together and run the main script like so:
 * -u, --username: username to authenticate to Cohesity cluster
 * -d, --domain: (optional) domain of username, defaults to local
 * -n, --sourcename: name of protection source to refresh (repeat for multiple sources)
-
-**Note**: generic SMB NAS sources shouldbe quoted, like `'\\mynas\myshare'`
