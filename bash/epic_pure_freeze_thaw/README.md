@@ -31,7 +31,7 @@ chmod +x epic_pure_freeze_thaw.sh
 
 Log into the Pure FlashArray and perform the following steps:
 
-* Create a user for the script to use to log into the Pure FlashArray
+* Create or select a user for the script to use to log into the Pure FlashArray
 * Paste the ssh public key for the AIX / Linux user into the field provided
 * Create a Pure Protection Group and add all EPIC related volumes to the group
 
