@@ -242,6 +242,9 @@ if(! $job){
 
     if($job.mssqlParams.protectionType -eq 'kNative'){
         $params = $job.mssqlParams.nativeProtectionTypeParams
+        if($withClause -ne ''){
+            $params['withClause'] = $withClause
+        }
     }
 
     if($job.mssqlParams.protectionType -eq 'kVolume'){
