@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This bash script can be used as a pre-script in a Pure FlashArray volume backup to freeze an EPIC database, snapshot the related Pure volumes, and thaw the database prior to the volume backup starting.
+This bash script can be used as a Pre Script in a Cohesity Pure FlashArray volume backup to freeze an EPIC database, snapshot the related Pure volumes, and thaw the database prior to the volume backup starting.
 
 ## Download the script
 
