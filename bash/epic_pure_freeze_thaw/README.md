@@ -79,7 +79,7 @@ Under Additional Settings, under the Pre and Post Scripts option, configure the 
 * Disable `Continue Backup if Script Fails`
 * Disable `Post Script`
 
-Also, copy the Cluster SSH Public Key provided and add that to the AIX/Linux user's authorized_keys file on the script host.
+Also, copy the Cluster SSH Public Key provided and add that to the AIX/Linux user's `authorized_keys` file on the script host.
 
 ## Testing the Script
 
