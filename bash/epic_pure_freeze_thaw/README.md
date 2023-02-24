@@ -62,7 +62,7 @@ And restart sshd:
 
 ```bash
 systemctl restart sshd.service  # Linux
-stopsrc -g ssh && startsrc -g ssh  # AIX
+stopsrc -s ssh && startsrc -s ssh  # AIX
 ```
 
 ## Create a Cohesity Pure FlashArray Protection Group
