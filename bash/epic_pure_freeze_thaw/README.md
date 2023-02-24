@@ -10,8 +10,6 @@ This bash script can be used as a pre-script in a Pure FlashArray volume backup 
 # Begin download commands
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/epic_pure_freeze_thaw/epic_pure_freeze_thaw.sh
 chmod +x epic_pure_freeze_thaw.sh
-chmod +x jobRunning.py
-chmod +x backupNow.py
 # End download commands
 ```
 
