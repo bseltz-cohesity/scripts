@@ -26,8 +26,8 @@ Place both files in a folder together and run the main script.
 
 ```powershell
 ./reverseSizingReport.ps1 -vip mycluster `
-                       -username myuser `
-                       -domain mydomain.net
+                          -username myuser `
+                          -domain mydomain.net
 ```
 
 ## Authentication Parameters
