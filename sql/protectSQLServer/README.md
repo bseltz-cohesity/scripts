@@ -81,3 +81,5 @@ Or to update an existing job:
 * -systemDBsOnly: (optional) only protect system DBs (for all or specified instanceName(s))
 * -numStreams: (optional) only applicable to VDI backups (default is 3)
 * -withClause: (optional) only applicable to VDI backups (e.g. 'WITH Compression')
+* -logNumStreams: (optional) default is 3 (requires Cohesity 6.8.1 or later)
+* -logWithClause: (optional) e.g. 'WITH Compression' (requires Cohesity 6.8.1 or later)

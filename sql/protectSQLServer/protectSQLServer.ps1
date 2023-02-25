@@ -27,7 +27,9 @@ param (
     [Parameter()][string]$storageDomainName = 'DefaultStorageDomain', #storage domain you want the new job to write to
     [Parameter()][switch]$paused,
     [Parameter()][int]$numStreams = 3,
-    [Parameter()][string]$withClause = ''
+    [Parameter()][string]$withClause = '',
+    [Parameter()][int]$logNumStreams = 3,
+    [Parameter()][string]$logWithClause = ''
 )
 
 # gather list from command line params and file
@@ -51,7 +53,7 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
     return ($items | Sort-Object -Unique)
 }
 
-$serversToAdd = @(gatherList -Param $serverName -FilePath $serverList -Name 'sources' -Required $True)
+$serversToAdd = @(gatherList -Param $serverName -FilePath $serverList -Name 'sources' -Required $False)
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -85,6 +87,10 @@ $newJob = $false
 
 if(! $job){
     # create new job
+    if($serversToAdd.Count -eq 0){
+        Write-Host "No servers to add" -ForegroundColor Yellow
+        exit
+    }
     Write-Host "Creating job $jobName..."
     $newJob = $True
 
@@ -176,7 +182,9 @@ if(! $job){
             "backupSystemDbs" = $true;
             "useAagPreferencesFromServer" = $true;
             "fullBackupsCopyOnly" = $false;
-            "excludeFilters" = $null
+            "excludeFilters" = $null;
+            "logBackupNumStreams" = $logNumStreams;
+            "logBackupWithClause" = $logWithClause;
         }
         $params = $job.mssqlParams.fileProtectionTypeParams
     }
@@ -186,6 +194,8 @@ if(! $job){
             "objects" = @();
             "numStreams" = $numStreams;
             "withClause" = $withClause;
+            "logBackupNumStreams" = $logNumStreams;
+            "logBackupWithClause" = $logWithClause;
             "userDbBackupPreferenceType" = "kBackupAllDatabases";
             "backupSystemDbs" = $true;
             "useAagPreferencesFromServer" = $true;
@@ -198,6 +208,8 @@ if(! $job){
     if($backupType -eq 'Volume'){
         $job.mssqlParams['volumeProtectionTypeParams'] = @{
             "objects" = @();
+            "logBackupNumStreams" = $logNumStreams;
+            "logBackupWithClause" = $logWithClause;
             "incrementalBackupAfterRestart" = $true;
             "indexingPolicy" = @{
                 "enableIndexing" = $true;
@@ -238,17 +250,30 @@ if(! $job){
     Write-Host "Updating job $jobname..."
     if($job.mssqlParams.protectionType -eq 'kFile'){
         $params = $job.mssqlParams.fileProtectionTypeParams
+        setApiProperty -object $params -name 'logBackupNumStreams' -value $logNumStreams
+        if($logWithClause -ne ''){
+            setApiProperty -object $params -name 'logBackupWithClause' -value $logWithClause
+        }
     }
 
     if($job.mssqlParams.protectionType -eq 'kNative'){
         $params = $job.mssqlParams.nativeProtectionTypeParams
+        setApiProperty -object $params -name 'numStreams' -value $numStreams
         if($withClause -ne ''){
-            $params['withClause'] = $withClause
+            setApiProperty -object $params -name 'withClause' -value $withClause
+        }
+        setApiProperty -object $params -name 'logBackupNumStreams' -value $logNumStreams
+        if($logWithClause -ne ''){
+            setApiProperty -object $params -name 'logBackupWithClause' -value $logWithClause
         }
     }
 
     if($job.mssqlParams.protectionType -eq 'kVolume'){
         $params = $job.mssqlParams.volumeProtectionTypeParams
+        setApiProperty -object $params -name 'logBackupNumStreams' -value $logNumStreams
+        if($logWithClause -ne ''){
+            setApiProperty -object $params -name 'logBackupWithClause' -value $logWithClause
+        }
     }
 }
 
@@ -263,7 +288,7 @@ foreach($servername in $serversToAdd){
     
     if($instanceName.Count -eq 0 -and $instancesOnly){
         foreach($instanceId in $serverSource.applicationNodes.protectionSource.id){
-            $params.objects = @($params.objects + @{ 'id' = $instanceId})
+            $params.objects = @(@($params.objects | Where-Object {$_.id -ne $instanceId}) + @{ 'id' = $instanceId})
         }
     }elseif($instanceName.Count -gt 0){
         foreach($instance in $instanceName){
@@ -275,11 +300,11 @@ foreach($servername in $serversToAdd){
                 if($systemDBsOnly){
                     foreach($node in $instanceSource.nodes){
                         if(($node.protectionSource.name -split '/')[1] -in $systemDBs){
-                            $params.objects = @($params.objects + @{ 'id' = $node.protectionSource.id})
+                            $params.objects = @(@($params.objects | Where-Object {$_.id -ne $node.protectionSource.id}) + @{ 'id' = $node.protectionSource.id})
                         }
                     }
                 }else{
-                    $params.objects = @($params.objects + @{ 'id' = $instanceSource.protectionSource.id})
+                    $params.objects = @(@($params.objects | Where-Object {$_.id -ne $instanceSource.protectionSource.id}) + @{ 'id' = $instanceSource.protectionSource.id})
                 }
             }
         }
@@ -288,12 +313,12 @@ foreach($servername in $serversToAdd){
             foreach($instanceSource in $serverSource.applicationNodes){
                 foreach($node in $instanceSource.nodes){
                     if(($node.protectionSource.name -split '/')[1] -in $systemDBs){
-                        $params.objects = @($params.objects + @{ 'id' = $node.protectionSource.id})
+                        $params.objects = @(@($params.objects | Where-Object {$_.id -ne $node.protectionSource.id}) + @{ 'id' = $node.protectionSource.id})
                     }
                 }
             }
         }else{
-            $params.objects = @($params.objects + @{ 'id' = $serverSource.protectionSource.id})
+            $params.objects = @(@($params.objects | Where-Object {$_.id -ne $serverSource.protectionSource.id}) + @{ 'id' = $serverSource.protectionSource.id})
         }
     }
     Write-Host "Protecting $servername..."
