@@ -11,7 +11,7 @@ param (
     [Parameter()][string]$mfaCode,
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName,
-    [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'MiB',
+    [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'GiB',
     [Parameter()][int]$daysBack = 8,
     [Parameter()][Int64]$numRuns = 100,
     [Parameter()][Int64]$backDays = 0
@@ -88,7 +88,7 @@ foreach($job in (api get -v2 "data-protect/protection-groups?includeTenants=true
         if($endUsecs -le $daysBackUsecs){
             break
         }
-        $runs = api get -v2 "data-protect/protection-groups/$jobId/runs?endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=True&numRuns=$numRuns"
+        $runs = api get -v2 "data-protect/protection-groups/$jobId/runs?endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=True&numRuns=$numRuns&runTypes=kIncremental,kFull"
         if($runs.runs.Count -gt 0){
             $endUsecs = $runs.runs[-1].localBackupInfo.startTimeUsecs - 1
         }else{
@@ -115,6 +115,11 @@ foreach($job in (api get -v2 "data-protect/protection-groups?includeTenants=true
             # per object stats
             foreach($server in ($run.objects | Sort-Object -Property {$_.object.name})){
                 $sourceName = $server.object.name
+                if($jobType -eq 'Oracle' -or $jobType -eq 'SQL'){
+                    if($server.object.objectType -ne 'kDatabase'){
+                        Continue
+                    }
+                }
                 if($jobType -eq 'View'){
                     $protectedViews = @($protectedViews + $sourceName)
                 }
@@ -149,7 +154,7 @@ foreach($view in $views.views){
 
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $fileName = "reverseSizingReport-SizingInfo-$($cluster.name)-$dateString.tsv"
-"Owner`tJob Type`tPolicy Name`tLogical Size $unit`tTotal TB" | Out-File -FilePath $fileName -Encoding utf8
+"Owner`tJob Type`tPolicy Name`tLogical Size $unit`tWorkload Size TB" | Out-File -FilePath $fileName -Encoding utf8
 
 foreach($policyName in $sizingData.Keys){
     foreach($jobType in $sizingData[$policyName].Keys){
@@ -169,17 +174,33 @@ $clusterCapacityTiB = [math]::Round($cluster.stats.usagePerfStats.physicalCapaci
 $clusterUsageTiB = [math]::Round($cluster.stats.usagePerfStats.totalPhysicalUsageBytes / (1024 * 1024 * 1024 * 1024), 2)
 $clusterCapacityTB = [math]::Round($cluster.stats.usagePerfStats.physicalCapacityBytes / (1000 * 1000 * 1000 * 1000), 2)
 $clusterUsageTB = [math]::Round($cluster.stats.usagePerfStats.totalPhysicalUsageBytes / (1000 * 1000 * 1000 * 1000), 2)
-    "     Cluster Name: $($cluster.name)" | Out-File -FilePath $policyFileName -Append
-    "            Total: $($clusterCapacityTiB) TiB ($($clusterCapacityTB) TB)" | Out-File -FilePath $policyFileName -Append
-    "             Used: $($clusterUsageTiB) TiB ($($clusterUsageTB) TB)" | Out-File -FilePath $policyFileName -Append
-    "       Node Count: $($cluster.nodeCount)" | Out-File -FilePath $policyFileName -Append
+$ec21RequiredTB = [math]::Round($clusterUsageTB * 0.67, 2)
+    "      Cluster Name: $($cluster.name)" | Out-File -FilePath $policyFileName -Append
+    "             Total: $($clusterCapacityTiB) TiB ($($clusterCapacityTB) TB)" | Out-File -FilePath $policyFileName -Append
+    "              Used: $($clusterUsageTiB) TiB ($($clusterUsageTB) TB)" | Out-File -FilePath $policyFileName -Append
+    " Dedup Storage Req: $ec21RequiredTB TB (EC 2:1)" | Out-File -FilePath $policyFileName -Append
+    "        Node Count: $($cluster.nodeCount)" | Out-File -FilePath $policyFileName -Append
     $nodes = api get nodes
-    "   Product Models:" | Out-File -FilePath $policyFileName -Append
+    "    Product Models:" | Out-File -FilePath $policyFileName -Append
     foreach($node in $nodes){
         if($node.PSObject.Properties['productModel']){
-            "                   $($node.productModel)" | Out-File -FilePath $policyFileName -Append
+            "                    $($node.productModel)" | Out-File -FilePath $policyFileName -Append
         }
     }
+
+$sds = api get viewBoxes?fetchStats=true
+"`n`nStorage Domains:`n" | Out-File -FilePath $policyFileName -Append
+foreach($sd in $sds){
+    $ec = '-'
+    $numDataStripes = $sd.storagePolicy.erasureCodingInfo.numDataStripes
+    $numCodedStripes = $sd[0].storagePolicy.erasureCodingInfo.numCodedStripes
+    $ec = "$($numDataStripes):$($numCodedStripes)"
+    if($ec -eq ":"){
+        $ec = "RF"
+    }
+    $usage = toUnits $sd.stats.usagePerfStats.totalPhysicalUsageBytes
+    "    $($sd.name) ($ec) $usage $unit" | Out-File -FilePath $policyFileName -Append
+}
 
 # Policy Info
 "`n`nPolicy Info:`n" | Out-File -FilePath $policyFileName -Append
