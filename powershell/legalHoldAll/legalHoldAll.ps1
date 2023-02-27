@@ -61,7 +61,6 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
     return ($items | Sort-Object -Unique)
 }
 
-
 $jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Required $false)
 
 $jobs = api get "protectionJobs"
@@ -74,6 +73,12 @@ if($jobNames.Count -gt 0){
         exit 1
     }
 }
+
+$cluster = api get cluster
+
+$dateString = (Get-Date).ToString('yyyy-MM-dd')
+$outfile = "legalHolds-$($cluster.name)-$dateString.csv"
+"JobName,RunDate,LegalHold" | Out-File -FilePath $outfile
 
 foreach($job in $jobs | Sort-Object -Property name| Where-Object {$_.isDeleted -ne $true}){
     $endUsecs = dateToUsecs (Get-Date)
@@ -89,12 +94,6 @@ foreach($job in $jobs | Sort-Object -Property name| Where-Object {$_.isDeleted -
                     }
                 }
                 if($addHold -or $removeHold){
-                    # $copyRunsFound = $false
-                    # foreach($copyRun in $run.copyRun){
-                    #     if($copyRun.expiryTimeUsecs -gt (dateToUsecs)){
-                    #         $copyRunsFound = $True
-                    #     }
-                    # }
                     if($copyRunsFound -eq $True){
                         if($removeHold){
                             $holdValue = $false
@@ -135,7 +134,9 @@ foreach($job in $jobs | Sort-Object -Property name| Where-Object {$_.isDeleted -
                                 $legalHoldState = $True
                             }
                         }
-                        write-host "    $(usecsToDate $run.backupRun.stats.startTimeUsecs): LegalHold = $legalHoldState"
+                        $runDate = usecsToDate $run.backupRun.stats.startTimeUsecs
+                        write-host "    $runDate : LegalHold = $legalHoldState"
+                        """{0}"",""{1}"",""{2}""" -f $job.name, $runDate, $legalHoldState | Out-File -FilePath $outfile -Append
                     }
                 }
             }
