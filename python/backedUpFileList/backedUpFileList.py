@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2023.01.26
+# version 2023.03.01
 
 # usage: ./backedUpFileList.py -v mycluster \
 #                              -u myuser \
@@ -67,9 +67,9 @@ else:
     statfile = False
 
 # if noindex is True:
-#     useLibrarian = False
+#     useLibrarian = ''  # False
 # else:
-useLibrarian = True
+useLibrarian = '&useLibrarian=true'  # True
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
@@ -79,14 +79,14 @@ def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None, cookie
     thisDirPath = quote_plus(dirPath).replace('%2F%2F', '%2F')
     if cookie is not None:
         if volumeName is not None:
-            dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=%s&dirPath=%s&volumeInfoCookie=%s&volumeName=%s&cookie=%s' % (instance, useLibrarian, statfile, thisDirPath, volumeInfoCookie, volumeName, cookie))
+            dirList = api('get', '/vm/directoryList?%s%s&statFileEntries=%s&dirPath=%s&volumeInfoCookie=%s&volumeName=%s&cookie=%s' % (instance, useLibrarian, statfile, thisDirPath, volumeInfoCookie, volumeName, cookie))
         else:
-            dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=%s&dirPath=%s&cookie=%s' % (instance, useLibrarian, statfile, thisDirPath, cookie))
+            dirList = api('get', '/vm/directoryList?%s%s&statFileEntries=%s&dirPath=%s&cookie=%s' % (instance, useLibrarian, statfile, thisDirPath, cookie))
     else:
         if volumeName is not None:
-            dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=%s&dirPath=%s&volumeInfoCookie=%s&volumeName=%s' % (instance, useLibrarian, statfile, thisDirPath, volumeInfoCookie, volumeName))
+            dirList = api('get', '/vm/directoryList?%s%ss&statFileEntries=%s&dirPath=%s&volumeInfoCookie=%s&volumeName=%s' % (instance, useLibrarian, statfile, thisDirPath, volumeInfoCookie, volumeName))
         else:
-            dirList = api('get', '/vm/directoryList?%s&useLibrarian=%s&statFileEntries=%s&dirPath=%s' % (instance, useLibrarian, statfile, thisDirPath))
+            dirList = api('get', '/vm/directoryList?%s%s&statFileEntries=%s&dirPath=%s' % (instance, useLibrarian, statfile, thisDirPath))
     if dirList and 'entries' in dirList:
         for entry in sorted(dirList['entries'], key=lambda e: e['name']):
             if entry['type'] == 'kDirectory':
@@ -107,10 +107,11 @@ def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None, cookie
 
 
 def showFiles(doc, version):
+    global useLibrarian
     if 'numEntriesIndexed' not in version or version['numEntriesIndexed'] == 0:
-        useLibrarian = False
+        useLibrarian = ''  # False
     else:
-        useLibrarian = True
+        useLibrarian = '&useLibrarian=true'
 
     instance = ("attemptNum=%s&clusterId=%s&clusterIncarnationId=%s&entityId=%s&jobId=%s&jobInstanceId=%s&jobStartTimeUsecs=%s&jobUidObjectId=%s" %
                 (version['instanceId']['attemptNum'],
@@ -173,10 +174,6 @@ for searchResult in searchResults:
         version['doc'] = searchResult['vmDocument']
         allVersions.append(version)
 allVersions = sorted(allVersions, key=lambda r: r['snapshotTimestampUsecs'], reverse=True)
-
-# searchResult = sorted(searchResults, key=lambda result: result['vmDocument']['versions'][0]['snapshotTimestampUsecs'], reverse=True)[0]
-
-# doc = searchResult['vmDocument']
 
 if showversions or start is not None or end is not None or listfiles:
     if start is not None:
