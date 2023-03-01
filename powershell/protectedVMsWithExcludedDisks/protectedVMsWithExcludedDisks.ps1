@@ -17,8 +17,8 @@ $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "$($cluster.name)-protectedVMsWithExcludedDisks-$dateString.txt"
 "`nProtected VMs with excluded disks:" | Tee-Object -FilePath $outfileName
 
-$vms = api get protectionSources/virtualMachines?protected=true
-$jobs = api get protectionJobs?environments=kVMware | where-object {$_.isDeleted -ne $True -and $_.isActive -ne $False}
+$vms = api get "protectionSources/virtualMachines?protected=true&allUnderHierarchy=true"
+$jobs = api get "protectionJobs?environments=kVMware&allUnderHierarchy=true" | where-object {$_.isDeleted -ne $True -and $_.isActive -ne $False}
 
 foreach($job in $jobs){
     $jobReported = $False
