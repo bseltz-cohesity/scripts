@@ -72,3 +72,5 @@ Or remove legal hold from all backups:
 * -jobList: (optional) text file of job names to apply hold (one per line)
 * -addHold: (optional) add legal hold to all backups for selected jobs (all jobs by default)
 * -removeHold: (optional) remove legal host from all backups for selected jobs (all jobs by default)
+* -showTrue: (optional) display backups where legal hold is True
+* -showFalse: (optional) display backups where legal hold is False

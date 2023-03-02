@@ -16,7 +16,9 @@ param (
     [Parameter()][string]$jobList,
     [Parameter()][int]$numRuns = 1000,
     [Parameter()][switch]$removeHold,
-    [Parameter()][switch]$addHold
+    [Parameter()][switch]$addHold,
+    [Parameter()][switch]$showTrue,
+    [Parameter()][switch]$showFalse
 )
 
 # source the cohesity-api helper code
@@ -135,8 +137,10 @@ foreach($job in $jobs | Sort-Object -Property name| Where-Object {$_.isDeleted -
                             }
                         }
                         $runDate = usecsToDate $run.backupRun.stats.startTimeUsecs
-                        write-host "    $runDate : LegalHold = $legalHoldState"
-                        """{0}"",""{1}"",""{2}""" -f $job.name, $runDate, $legalHoldState | Out-File -FilePath $outfile -Append
+                        if((! $showTrue -or $legalHoldState -eq $True) -and (! $showFalse -or $legalHoldState -eq $false)){
+                            write-host "    $runDate : LegalHold = $legalHoldState"
+                            """{0}"",""{1}"",""{2}""" -f $job.name, $runDate, $legalHoldState | Out-File -FilePath $outfile -Append
+                        }
                     }
                 }
             }
