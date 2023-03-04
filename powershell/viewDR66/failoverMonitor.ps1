@@ -48,16 +48,22 @@ if($viewList){
 foreach($viewName in $myViews | Sort-Object){
     $view = $views.views | Where-Object name -eq $viewName
     if($view){
-        $result = api get -v2 "data-protect/failover/views/$($view.viewId)" | Sort-Object -Property id
+        $result = api get -v2 "data-protect/failover/views/$($view.viewId)"
         Write-Host "`n       View Name: $viewName"
         if($result -and $result.PSObject.Properties['failovers']){
-            $result = $result.failovers[-1]
+            $result = ($result.failovers | Sort-Object -Property startTimeUsecs)[-1]
             Write-Host "   Failover Type: $($result.type)"
             Write-Host "       StartTime: $(usecsToDate $result.startTimeUsecs)"
             Write-Host "          Status: $($result.status)"
             if($result.replications){
                 $lastReplication = ($result.replications | Sort-Object -Property startTimeUsecs)[-1]
                 Write-Host "Last Replication: $(usecsToDate $lastReplication.startTimeUsecs) - $($lastReplication.status)"
+            }else{
+                if($result.type -eq 'Planned'){
+                    Write-Host "Last Replication: *** None ***"
+                }else{
+                    Write-Host "Last Replication: N/A"
+                }
             }
         }
     }else{
