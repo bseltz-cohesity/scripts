@@ -49,7 +49,8 @@ foreach($viewName in $myViews | Sort-Object){
     $view = $views.views | Where-Object name -eq $viewName
     if($view){
         $result = api get -v2 "data-protect/failover/views/$($view.viewId)"
-        Write-Host "`n       View Name: $viewName"
+        Write-Host "`n-------------------------------------`n       View Name: $viewName"
+        Write-Host "-------------------------------------"
         if($result -and $result.PSObject.Properties['failovers']){
             $result = ($result.failovers | Sort-Object -Property startTimeUsecs)[-1]
             Write-Host "   Failover Type: $($result.type)"
@@ -57,7 +58,11 @@ foreach($viewName in $myViews | Sort-Object){
             Write-Host "          Status: $($result.status)"
             if($result.replications){
                 $lastReplication = ($result.replications | Sort-Object -Property startTimeUsecs)[-1]
-                Write-Host "Last Replication: $(usecsToDate $lastReplication.startTimeUsecs)"
+                if($lastReplication.status -ne 'Succeeded'){
+                    Write-Host "Last Replication: $(usecsToDate $lastReplication.startTimeUsecs) - $($lastReplication.status)"
+                }else{
+                    Write-Host "Last Replication: $(usecsToDate $lastReplication.startTimeUsecs)"
+                }   
             }else{
                 if($result.type -eq 'Planned'){
                     Write-Host "Last Replication: *** None ***"
