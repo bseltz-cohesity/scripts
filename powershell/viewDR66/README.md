@@ -14,9 +14,9 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/plannedFailoverPrep.ps1).content | Out-File plannedFailoverPrep.ps1; (Get-Content plannedFailoverPrep.ps1) | Set-Content plannedFailoverPrep.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/plannedFailoverStart.ps1).content | Out-File plannedFailoverStart.ps1; (Get-Content plannedFailoverStart.ps1) | Set-Content plannedFailoverStart.ps1
 (Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/plannedFailoverFinalize.ps1).content | Out-File plannedFailoverFinalize.ps1; (Get-Content plannedFailoverFinalize.ps1) | Set-Content plannedFailoverFinalize.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/plannedFailbackPrep.ps1).content | Out-File plannedFailbackPrep.ps1; (Get-Content plannedFailbackPrep.ps1) | Set-Content plannedFailbackPrep.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/plannedFailbackStart.ps1).content | Out-File plannedFailbackStart.ps1; (Get-Content plannedFailbackStart.ps1) | Set-Content plannedFailbackStart.ps1
 (Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/plannedFailbackFinalize.ps1).content | Out-File plannedFailbackFinalize.ps1; (Get-Content plannedFailbackFinalize.ps1) | Set-Content plannedFailbackFinalize.ps1
 (Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/unplannedFailover.ps1).content | Out-File unplannedFailover.ps1; (Get-Content unplannedFailover.ps1) | Set-Content unplannedFailover.ps1
 (Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/unplannedFailback.ps1).content | Out-File unplannedFailback.ps1; (Get-Content unplannedFailback.ps1) | Set-Content unplannedFailback.ps1
@@ -27,6 +27,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 (Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/enableReplication.ps1).content | Out-File enableReplication.ps1; (Get-Content enableReplication.ps1) | Set-Content enableReplication.ps1
 (Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/prepareForFailover.ps1).content | Out-File prepareForFailover.ps1; (Get-Content prepareForFailover.ps1) | Set-Content prepareForFailover.ps1
 (Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/prepareForFailback.ps1).content | Out-File prepareForFailback.ps1; (Get-Content prepareForFailback.ps1) | Set-Content prepareForFailback.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/failoverMonitor.ps1).content | Out-File failoverMonitor.ps1; (Get-Content failoverMonitor.ps1) | Set-Content failoverMonitor.ps1
 (Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
@@ -34,6 +35,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 ## Core Components
 
 * viewDR.ps1: performs failover/failback operations
+* failoverMonitor.ps1: displays the status of failover tasks
 * enableReplication.ps1: assigns replication policy and cleans up old objects
 * cleanupUnmergedViews.ps1: delete unmerged views
 * cnameFailover.ps1: failover cname and SPN records
@@ -47,9 +49,9 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ## Example Wrapper Scripts for Planned Failover/Failback
 
-* plannedFailoverPrep.ps1: initiate rapid replication before planned failover
+* plannedFailoverStart.ps1: initiate rapid replication before planned failover
 * plannedFailoverFinalize.ps1: finalize planned failover
-* plannedFailbackPrep.ps1: initiate rapid replication before planned failback
+* plannedFailbackStart.ps1: initiate rapid replication before planned failback
 * plannedFailbackFinalize.ps1: finalize planned failback
 
 ## Example Wrapper Scripts for Unplanned Failover/Failback
@@ -137,7 +139,7 @@ You can use `cleanupUnmergedViews.ps1` to aid in the deletion of these unmerged 
 
 Planned Failover/Failback takes a phased approach to ensure that all changes are replicated before failover. This approach takes more time, but is the recommmended approach to ensure zero data loss. There are two phases:
 
-1) The Prepare phase: during this phase, replication is performed repeatedly in rapid succession to ensure that there is minimal changes to replicate during the final phase.
+1) The Start phase: during this phase, replication is performed repeatedly in rapid succession to ensure that there is minimal changes to replicate during the final phase.
 
 2) The Finalize phase: during this phase, both the source and target view are set to read-only and a final replication is performed, after which the view at ClusterB is set as read-write. During this phase, no new writes are allowed at either cluster, so it is recommended that you monitor replication during the Prepare phase to ensure that replication is pretty well caught up, such that the final replication (and duration of write blocking) will be as short as possible,
 
@@ -145,7 +147,7 @@ Again, when the failover occurs, the views at ClusterB are automatically protect
 
 ## Planned Failover/Failback Test/Wrapper Scripts
 
-`plannedFailoverPrep.ps1` initiates the Prepare phase of failover. At the top of the script are configuration parameters that you should set for your environment.
+`plannedFailoverStart.ps1` initiates the Prepare phase of failover. At the top of the script are configuration parameters that you should set for your environment.
 
 ```powershell
 # general params
@@ -177,7 +179,15 @@ Set your parameters as appropriate, and comment out the DFS and CNAME commands a
 
 When you execute the script, the ciew at ClusterA will be set to read-only and a final replication will occur, then the view at ClusterB will be marked as readwrite.
 
-`plannedFailbackPrep.ps1` and `plannedFailbackFinalize.ps1` are the same as `plannedFailoverPrep.ps1` and `plannedFailoverFinalize.ps1` but in reverse (the source and target clusters are reversed).
+`plannedFailbackStart.ps1` and `plannedFailbackFinalize.ps1` are the same as `plannedFailoverStart.ps1` and `plannedFailoverFinalize.ps1` but in reverse (the source and target clusters are reversed).
+
+## Monitoring Failover Tasks
+
+You can use the `failoverMonitor.ps1` script to display the status of failover/failback tasks. Run the script against the target cluster that you are failing over/back to, like so:
+
+```powershell
+.\failoverMonitor -targetCluster clusterb -usernam admin -viewList myviews.txt
+```
 
 ## DFS Failover
 
