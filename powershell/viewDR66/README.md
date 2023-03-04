@@ -158,6 +158,12 @@ $userDomain = 'local'
 
 When you execute the script, replication from ClusterA to ClusterB begins to run repeatedly. Monitor the replication at ClusterA to see if the replication runs are completing rapidly. Once the replication is "caught up" we can proceed to the Final phase.
 
+You can monitor the status using `failoverMonitor.ps1` like so:
+
+```powershell
+.\failoverMonitor -targetCluster clusterb -usernam admin -viewList myviews.txt
+```
+
 `plannedFailoverFinalize.ps1` initiates the final replication and failover. Like the unplanned failover scripts, there are configuration parameters to be setup
 
 ```powershell
