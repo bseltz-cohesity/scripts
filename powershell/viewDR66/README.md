@@ -141,13 +141,13 @@ Planned Failover/Failback takes a phased approach to ensure that all changes are
 
 1) The Start phase: during this phase, replication is performed repeatedly in rapid succession to ensure that there is minimal changes to replicate during the final phase.
 
-2) The Finalize phase: during this phase, both the source and target view are set to read-only and a final replication is performed, after which the view at ClusterB is set as read-write. During this phase, no new writes are allowed at either cluster, so it is recommended that you monitor replication during the Prepare phase to ensure that replication is pretty well caught up, such that the final replication (and duration of write blocking) will be as short as possible,
+2) The Finalize phase: during this phase, both the source and target view are set to read-only and a final replication is performed, after which the view at ClusterB is set as read-write. During this phase, no new writes are allowed at either cluster, so it is recommended that you monitor replication during the Start phase to ensure that replication is pretty well caught up, such that the final replication (and duration of write blocking) will be as short as possible.
 
 Again, when the failover occurs, the views at ClusterB are automatically protected with replication back to ClusterA, in preparation for failback.
 
 ## Planned Failover/Failback Test/Wrapper Scripts
 
-`plannedFailoverStart.ps1` initiates the Prepare phase of failover. At the top of the script are configuration parameters that you should set for your environment.
+`plannedFailoverStart.ps1` initiates the Start phase of failover. At the top of the script are configuration parameters that you should set for your environment.
 
 ```powershell
 # general params
