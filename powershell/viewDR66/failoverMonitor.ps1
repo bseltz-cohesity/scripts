@@ -57,7 +57,7 @@ foreach($viewName in $myViews | Sort-Object){
             Write-Host "          Status: $($result.status)"
             if($result.replications){
                 $lastReplication = ($result.replications | Sort-Object -Property startTimeUsecs)[-1]
-                Write-Host "Last Replication: $(usecsToDate $lastReplication.startTimeUsecs) - $($lastReplication.status)"
+                Write-Host "Last Replication: $(usecsToDate $lastReplication.startTimeUsecs)"
             }else{
                 if($result.type -eq 'Planned'){
                     Write-Host "Last Replication: *** None ***"
