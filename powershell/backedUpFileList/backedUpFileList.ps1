@@ -16,7 +16,7 @@ param (
     [Parameter()][string]$domain = 'local', # local or AD domain
     [Parameter()][switch]$useApiKey, # use API key for authentication
     [Parameter()][string]$password = $null,
-    [Parameter(Mandatory = $True)][string]$sourceServer, # source server
+    [Parameter(Mandatory = $True)][array]$sourceServer, # source server
     [Parameter(Mandatory = $True)][string]$jobName, # narrow search by job name
     [Parameter()][switch]$showVersions,
     [Parameter()][switch]$listFiles,
@@ -137,82 +137,86 @@ function showFiles($doc, $version){
     }
 }
 
-$searchResults = api get "/searchvms?entityTypes=kView&entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAWSSnapshotManager&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kFlashBlade&entityTypes=kGCP&entityTypes=kGenericNas&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kIsilon&entityTypes=kKVM&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware&vmName=$sourceserver"
-$searchResults = $searchResults.vms | Where-Object {$_.vmDocument.objectName -eq $sourceServer}
+$sourceServers = $sourceServer
+foreach($sourceServer in $sourceServers){
+    Write-Host "`n============================`n $sourceServer`n============================`n"
+    $searchResults = api get "/searchvms?entityTypes=kView&entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAWSSnapshotManager&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kFlashBlade&entityTypes=kGCP&entityTypes=kGenericNas&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kIsilon&entityTypes=kKVM&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware&vmName=$sourceserver"
+    $searchResults = $searchResults.vms | Where-Object {$_.vmDocument.objectName -eq $sourceServer}
 
-if(!$searchResults){
-    Write-Host "no backups found for $sourceServer" -ForegroundColor Yellow
-    exit 1
-}
-
-# narrow search by job name
-$altJobName = "Old Name: $jobName"
-$altJobName2 = "$jobName \(Old Name:"
-$searchResults = $searchResults | Where-Object {($_.vmDocument.jobName -eq $jobName) -or ($_.vmDocument.jobName -match $altJobName) -or ($_.vmDocument.jobName -match $altJobName2)}
-
-if(!$searchResults){
-    Write-Host "$sourceServer is not protected by $jobName" -ForegroundColor Yellow
-    exit 1
-}
-
-$searchResult = ($searchResults | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
-
-$doc = $searchResult.vmDocument
-
-# show versions
-if($showVersions -or $start -or $end -or $listFiles){
-    if($start){
-        $doc.versions = $doc.versions | Where-Object {$start -le (usecsToDate ($_.snapshotTimestampUsecs))}
+    if(!$searchResults){
+        Write-Host "no backups found for $sourceServer" -ForegroundColor Yellow
+        continue
     }
-    if($end){
-        $doc.versions = $doc.versions | Where-Object {$end -ge (usecsToDate ($_.snapshotTimestampUsecs))}
+
+    # narrow search by job name
+    $altJobName = "Old Name: $jobName"
+    $altJobName2 = "$jobName \(Old Name:"
+    $searchResults = $searchResults | Where-Object {($_.vmDocument.jobName -eq $jobName) -or ($_.vmDocument.jobName -match $altJobName) -or ($_.vmDocument.jobName -match $altJobName2)}
+
+    if(!$searchResults){
+        Write-Host "$sourceServer is not protected by $jobName" -ForegroundColor Yellow
+        continue
     }
-    if($listFiles){
-        foreach($version in $doc.versions){
-            Write-Host "`n=============================="
-            Write-Host "   runId: $($version.instanceId.jobInstanceId)"
-            write-host " runDate: $(usecsToDate $version.instanceId.jobStartTimeUsecs)"
-            Write-Host "==============================`n"
-            if($version.numEntriesIndexed -eq 0){
-                $useLibrarian = $False
-            }
-            showFiles $doc $version
+
+    $searchResult = ($searchResults | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
+
+    $doc = $searchResult.vmDocument
+
+    # show versions
+    if($showVersions -or $start -or $end -or $listFiles){
+        if($start){
+            $doc.versions = $doc.versions | Where-Object {$start -le (usecsToDate ($_.snapshotTimestampUsecs))}
         }
+        if($end){
+            $doc.versions = $doc.versions | Where-Object {$end -ge (usecsToDate ($_.snapshotTimestampUsecs))}
+        }
+        if($listFiles){
+            foreach($version in $doc.versions){
+                Write-Host "`n=============================="
+                Write-Host "   runId: $($version.instanceId.jobInstanceId)"
+                write-host " runDate: $(usecsToDate $version.instanceId.jobStartTimeUsecs)"
+                Write-Host "==============================`n"
+                if($version.numEntriesIndexed -eq 0){
+                    $useLibrarian = $False
+                }
+                showFiles $doc $version
+            }
+        }else{
+            $doc.versions | Select-Object -Property @{label='runId'; expression={$_.instanceId.jobInstanceId}}, @{label='runDate'; expression={usecsToDate $_.instanceId.jobStartTimeUsecs}}
+        }
+        continue
+    }
+
+    $Global:filesFound = $False
+
+    # select version
+    if($runId){
+        # select version with matching runId
+        $version = ($doc.versions | Where-Object {$_.instanceId.jobInstanceId -eq $runId})
+        if(! $version){
+            Write-Host "Job run ID $runId not found" -ForegroundColor Yellow
+            continue
+        }
+        if($version.numEntriesIndexed -eq 0){
+            $useLibrarian = $False
+        }
+        showFiles $doc $version
+    }elseif($fileDate){
+        # select version just after requested date
+        $version = ($doc.versions | Where-Object {$fileDate -le (usecsToDate ($_.snapshotTimestampUsecs))})[-1]
+        if(! $version){
+            $version = $doc.versions[0]
+        }
+        if($version.numEntriesIndexed -eq 0){
+            $useLibrarian = $False
+        }
+        showFiles $doc $version
     }else{
-        $doc.versions | Select-Object -Property @{label='runId'; expression={$_.instanceId.jobInstanceId}}, @{label='runDate'; expression={usecsToDate $_.instanceId.jobStartTimeUsecs}}
-    }
-    exit 0
-}
-
-$Global:filesFound = $False
-
-# select version
-if($runId){
-    # select version with matching runId
-    $version = ($doc.versions | Where-Object {$_.instanceId.jobInstanceId -eq $runId})
-    if(! $version){
-        Write-Host "Job run ID $runId not found" -ForegroundColor Yellow
-        exit 1
-    }
-    if($version.numEntriesIndexed -eq 0){
-        $useLibrarian = $False
-    }
-    showFiles $doc $version
-}elseif($fileDate){
-    # select version just after requested date
-    $version = ($doc.versions | Where-Object {$fileDate -le (usecsToDate ($_.snapshotTimestampUsecs))})[-1]
-    if(! $version){
+        # just use latest version
         $version = $doc.versions[0]
+        if($version.numEntriesIndexed -eq 0){
+            $useLibrarian = $False
+        }
+        showFiles $doc $version
     }
-    if($version.numEntriesIndexed -eq 0){
-        $useLibrarian = $False
-    }
-    showFiles $doc $version
-}else{
-    # just use latest version
-    $version = $doc.versions[0]
-    if($version.numEntriesIndexed -eq 0){
-        $useLibrarian = $False
-    }
-    showFiles $doc $version
 }

@@ -74,7 +74,7 @@ Or simply use the latest version:
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -useApiKey: (optional) use API key for authentication
 * -password: (optional) will use stored password or be prompted if omitted
-* -sourceServer: server that was backed up
+* -sourceServer: one or more servers that were backed up (comma separated)
 * -jobName: name of protection job
 * -showVersions: (optional) just list available versions and exit
 * -start: (optional) show versions starting at date (e.g. '07-10-2020 13:30:00')
