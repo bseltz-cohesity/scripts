@@ -63,7 +63,7 @@ To choose the backup at or after the specified file date:
 * -d, --domain: active directory domain of user (default is local)
 * -i, --useApiKey: use API key for authentication
 * -pwd, --password: (optional) password for Cohesity user
-* -s, --sourceserver: name of server to inspect
+* -s, --sourceserver: name of server to inspect (repeat for multiple)
 * -j, --jobname: name of protection job to run
 * -l, --showversions: show available versions
 * -t, --start: show versions after date

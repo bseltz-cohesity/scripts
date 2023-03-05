@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2023.03.01
+# version 2023.03.05
 
 # usage: ./backedUpFileList.py -v mycluster \
 #                              -u myuser \
@@ -28,7 +28,7 @@ parser.add_argument('-u', '--username', type=str, default='helios')   # username
 parser.add_argument('-d', '--domain', type=str, default='local')      # domain - defaults to local
 parser.add_argument('-i', '--useApiKey', action='store_true')         # use API key authentication
 parser.add_argument('-pwd', '--password', type=str, default=None)     # optional password
-parser.add_argument('-s', '--sourceserver', type=str, required=True)  # name of source server
+parser.add_argument('-s', '--sourceserver', type=str, action='append')  # name of source server
 parser.add_argument('-j', '--jobname', type=str, required=True)       # narrow search by job name
 parser.add_argument('-l', '--showversions', action='store_true')      # show available snapshots
 parser.add_argument('-k', '--listfiles', action='store_true')         # show fils in snapshots
@@ -48,7 +48,7 @@ username = args.username
 domain = args.domain
 password = args.password
 useApiKey = args.useApiKey
-sourceserver = args.sourceserver
+sourceservers = args.sourceserver
 jobname = args.jobname
 showversions = args.showversions
 start = args.start
@@ -60,19 +60,6 @@ startpath = args.startpath
 noindex = args.noindex
 showstats = args.showstats
 newerthan = args.newerthan
-
-if showstats is True or newerthan > 0:
-    statfile = True
-else:
-    statfile = False
-
-# if noindex is True:
-#     useLibrarian = ''  # False
-# else:
-useLibrarian = '&useLibrarian=true'  # True
-
-# authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
 
 
 def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None, cookie=None):
@@ -142,81 +129,98 @@ def showFiles(doc, version):
     f.close()
 
 
-search = api('get', '/searchvms?entityTypes=kView&entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAWSSnapshotManager&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kFlashBlade&entityTypes=kGCP&entityTypes=kGenericNas&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kIsilon&entityTypes=kKVM&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware&vmName=%s' % sourceserver)
+if sourceservers is None or len(sourceservers) == 0:
+    print('--sourceserver is required')
+    exit()
 
-if 'vms' not in search:
-    print('no backups found for %s' % sourceserver)
-    exit(1)
-
-searchResults = [vm for vm in search['vms'] if vm['vmDocument']['objectName'].lower() == sourceserver.lower()]
-
-if len(searchResults) == 0:
-    print('no backups found for %s' % sourceserver)
-    exit(1)
-
-altJobName = 'old name: %s' % jobname.lower()
-altJobName2 = '%s (old name' % jobname.lower()
-searchResults = [vm for vm in searchResults if vm['vmDocument']['jobName'].lower() == jobname.lower() or altJobName in vm['vmDocument']['jobName'].lower() or altJobName2 in vm['vmDocument']['jobName'].lower()]
-
-if len(searchResults) == 0:
-    print('%s not protected by %s' % (sourceserver, jobname))
-    exit(1)
-
-searchResults = [r for r in searchResults if 'versions' in r['vmDocument'] and len(r['vmDocument']['versions']) > 0]
-
-if len(searchResults) == 0:
-    print('No backups available for %s in %s' % (sourceserver, jobname))
-    exit(1)
-
-allVersions = []
-for searchResult in searchResults:
-    for version in searchResult['vmDocument']['versions']:
-        version['doc'] = searchResult['vmDocument']
-        allVersions.append(version)
-allVersions = sorted(allVersions, key=lambda r: r['snapshotTimestampUsecs'], reverse=True)
-
-if showversions or start is not None or end is not None or listfiles:
-    if start is not None:
-        startusecs = dateToUsecs(start)
-        allVersions = [v for v in allVersions if startusecs <= v['snapshotTimestampUsecs']]
-    if end is not None:
-        endusecs = dateToUsecs(end)
-        allVersions = [v for v in allVersions if endusecs >= v['snapshotTimestampUsecs']]
-    if listfiles:
-        for version in allVersions:
-            print("\n==============================")
-            print("   runId: %s" % version['instanceId']['jobInstanceId'])
-            print(" runDate: %s" % usecsToDate(version['instanceId']['jobStartTimeUsecs']))
-            print("==============================\n")
-            showFiles(version['doc'], version)
-    else:
-        print('%10s  %s' % ('runId', 'runDate'))
-        print('%10s  %s' % ('-----', '-------'))
-        for version in allVersions:
-            print('%10d  %s' % (version['instanceId']['jobInstanceId'], usecsToDate(version['instanceId']['jobStartTimeUsecs'])))
-    exit(0)
-
-# select version
-if runid is not None:
-    # select version with matching runId
-    versions = [v for v in allVersions if runid == v['instanceId']['jobInstanceId']]
-    if len(versions) == 0:
-        print('Run ID not found')
-        exit(1)
-    else:
-        version = versions[0]
-        showFiles(version['doc'], version)
-elif filedate is not None:
-    # select version just after requested date
-    filedateusecs = dateToUsecs(filedate)
-    versions = [v for v in allVersions if filedateusecs <= v['snapshotTimestampUsecs']]
-    if versions:
-        version = versions[-1]
-        showFiles(version['doc'], version)
-    else:
-        print('No backups from the specified date')
-        exit(1)
+if showstats is True or newerthan > 0:
+    statfile = True
 else:
-    # just use latest version
-    version = allVersions[0]
-    showFiles(version['doc'], version)
+    statfile = False
+
+useLibrarian = '&useLibrarian=true'  # True
+
+# authenticate
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+
+for sourceserver in sourceservers:
+    print('\n============================\n %s\n============================\n' % sourceserver)
+
+    search = api('get', '/searchvms?entityTypes=kView&entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAWSSnapshotManager&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kFlashBlade&entityTypes=kGCP&entityTypes=kGenericNas&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kIsilon&entityTypes=kKVM&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware&vmName=%s' % sourceserver)
+
+    if 'vms' not in search:
+        print('no backups found for %s' % sourceserver)
+        continue
+
+    searchResults = [vm for vm in search['vms'] if vm['vmDocument']['objectName'].lower() == sourceserver.lower()]
+
+    if len(searchResults) == 0:
+        print('no backups found for %s' % sourceserver)
+        continue
+
+    altJobName = 'old name: %s' % jobname.lower()
+    altJobName2 = '%s (old name' % jobname.lower()
+    searchResults = [vm for vm in searchResults if vm['vmDocument']['jobName'].lower() == jobname.lower() or altJobName in vm['vmDocument']['jobName'].lower() or altJobName2 in vm['vmDocument']['jobName'].lower()]
+
+    if len(searchResults) == 0:
+        print('%s not protected by %s' % (sourceserver, jobname))
+        continue
+
+    searchResults = [r for r in searchResults if 'versions' in r['vmDocument'] and len(r['vmDocument']['versions']) > 0]
+
+    if len(searchResults) == 0:
+        print('No backups available for %s in %s' % (sourceserver, jobname))
+        continue
+
+    allVersions = []
+    for searchResult in searchResults:
+        for version in searchResult['vmDocument']['versions']:
+            version['doc'] = searchResult['vmDocument']
+            allVersions.append(version)
+    allVersions = sorted(allVersions, key=lambda r: r['snapshotTimestampUsecs'], reverse=True)
+
+    if showversions or start is not None or end is not None or listfiles:
+        if start is not None:
+            startusecs = dateToUsecs(start)
+            allVersions = [v for v in allVersions if startusecs <= v['snapshotTimestampUsecs']]
+        if end is not None:
+            endusecs = dateToUsecs(end)
+            allVersions = [v for v in allVersions if endusecs >= v['snapshotTimestampUsecs']]
+        if listfiles:
+            for version in allVersions:
+                print("\n==============================")
+                print("   runId: %s" % version['instanceId']['jobInstanceId'])
+                print(" runDate: %s" % usecsToDate(version['instanceId']['jobStartTimeUsecs']))
+                print("==============================\n")
+                showFiles(version['doc'], version)
+        else:
+            print('%10s  %s' % ('runId', 'runDate'))
+            print('%10s  %s' % ('-----', '-------'))
+            for version in allVersions:
+                print('%10d  %s' % (version['instanceId']['jobInstanceId'], usecsToDate(version['instanceId']['jobStartTimeUsecs'])))
+        continue
+
+    # select version
+    if runid is not None:
+        # select version with matching runId
+        versions = [v for v in allVersions if runid == v['instanceId']['jobInstanceId']]
+        if len(versions) == 0:
+            print('Run ID not found')
+            continue
+        else:
+            version = versions[0]
+            showFiles(version['doc'], version)
+    elif filedate is not None:
+        # select version just after requested date
+        filedateusecs = dateToUsecs(filedate)
+        versions = [v for v in allVersions if filedateusecs <= v['snapshotTimestampUsecs']]
+        if versions:
+            version = versions[-1]
+            showFiles(version['doc'], version)
+        else:
+            print('No backups from the specified date')
+            continue
+    else:
+        # just use latest version
+        version = allVersions[0]
+        showFiles(version['doc'], version)
