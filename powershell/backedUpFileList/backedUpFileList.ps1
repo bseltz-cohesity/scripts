@@ -1,4 +1,5 @@
-# version 2023.01.26
+# version 2023.03.05
+
 # usage: ./backedUpFileList.ps1 -vip mycluster \
 #                               -username myuser \
 #                               -domain mydomain.net \
