@@ -14,11 +14,11 @@
 from pyhesity import *
 from datetime import datetime
 import codecs
-import sys
 import argparse
-if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
+
+try:
     from urllib.parse import quote_plus
-else:
+except Exception:
     from urllib import quote_plus
 
 # command line arguments
