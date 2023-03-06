@@ -36,7 +36,8 @@ if($helios -or $mcm){
     }
 }
 
-$jobs = api get "protectionJobs?environments=kView&isActive=false"
+$jobs = api get -v2 "data-protect/protection-groups?isActive=false&environments=kView"
+$jobs | ConvertTo-Json -Depth 99 | Out-File "jobs-$($targetCluster).json"
 $views = api get views
 
 # gather view list
@@ -100,3 +101,4 @@ foreach($viewName in $myViews){
         Write-Host "View $viewName not found" -ForegroundColor Yellow
     }
 }
+
