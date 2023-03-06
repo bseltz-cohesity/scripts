@@ -36,6 +36,7 @@ if($helios -or $mcm){
 }
 
 $views = api get -v2 file-services/views
+$jobs = api get -v2 "data-protect/protection-groups?isActive=true&isPaused=true&environments=kView"
 
 # gather view list
 if($viewList){
@@ -63,6 +64,7 @@ foreach($viewName in $myViews){
     }
 }
 
+# delete old jobs from target cluster
 $jobs = api get -v2 "data-protect/protection-groups?isActive=true&isPaused=true&environments=kView"
 foreach($job in $jobs.protectionGroups){
     if($job.viewParams.objects -eq $null){
@@ -83,6 +85,8 @@ if($helios -or $mcm){
     }
 }
 
+$views = api get -v2 file-services/views
+
 # change policy
 $policies = api get -v2 data-protect/policies
 $policy = $policies.policies | Where-Object name -eq $policyName
@@ -91,36 +95,65 @@ if(!$policy){
     exit
 }
 
-$jobs = api get -v2 "data-protect/protection-groups?isActive=true&isPaused=true&environments=kView"
-$failoverJobs = api get -v2 "data-protect/protection-groups?isActive=false&environments=kView"
-
+# delete temp jobs
+$jobs = api get -v2 "data-protect/protection-groups?isActive=true&environments=kView"
 foreach($job in $jobs.protectionGroups){
-    if($job.viewParams.objects -eq $null){
+    foreach($viewName in $myViews){
+        $viewName = [string]$viewName
+        if($viewName -in $job.viewParams.objects.name){
+            $job.viewParams.objects = @($job.viewParams.objects | Where-Object name -ne $viewName)
+        }
+    }
+    if($job.viewParams.objects -eq $null -or $job.viewParams.objects.Count -eq 0){
+        Write-Host "Deleting old job $($job.name)"
+        $null = api delete -v2 data-protect/protection-groups/$($job.id)
+    }else{
+        $job | ConvertTo-Json -Depth 99
+        exit
+        Write-Host "Updating job $($job.name)"
+        $null = api put -v2 data-protect/protection-groups/$($job.id) $job
+    }
+}
+
+# delete old remote jobs
+$jobs = api get -v2 "data-protect/protection-groups?isActive=false&environments=kView"
+foreach($job in $jobs.protectionGroups){
+    $deleteJob = $False
+    foreach($viewName in $myViews){
+        $viewName = [string]$viewName
+        if($viewName -in $job.viewParams.objects.name){
+            $deleteJob = $True
+        }
+    }
+    if($deleteJob){
         Write-Host "Deleting old job $($job.name)"
         $null = api delete -v2 data-protect/protection-groups/$($job.id)
     }
 }
 
-$jobs = api get -v2 "data-protect/protection-groups?isActive=true&environments=kView"
+# create new jobs
+$jobs = get-content "jobs-$($sourceCluster).json" | ConvertFrom-Json
 foreach($job in $jobs.protectionGroups){
-    $updateJob = $False
+    $createJob = $False
+    $job.policyId = $policy.id
+    $newObjects = @()
+    $job.viewParams.replicationParams.viewNameConfigList = @()
     foreach($viewName in $myViews){
         $viewName = [string]$viewName
-        if($viewName -in $job.viewParams.objects.name){
-            $updateJob = $True
+        $view = $views.views | Where-Object name -eq $viewName
+        if($view){
+            if($viewName -in @($job.viewParams.objects.name)){
+                $createJob = $True
+                $newObjects = @($newObjects + @{'id' = $view.viewId; 'name' = $view.name})
+            }
+            $job.viewParams.replicationParams.viewNameConfigList = @($job.viewParams.replicationParams.viewNameConfigList + @{'sourceViewId' = $view.viewId; 'useSameViewName' = $True})
+        }else{
+            Write-Host "View $viewName not found" -ForegroundColor Yellow
         }
     }
-    if($updateJob){
-        $job.policyId = $policy.id
-        $job.name = $job.name.replace('failover_', '')
-        $theseFailoverJobs = $failoverJobs.protectionGroups | Where-Object name -eq $job.name
-        if($theseFailoverJobs){
-            foreach($thisFailoverJob in $theseFailoverJobs){
-                Write-Host "Deleting old $($job.name)"
-                $null = api delete -v2 data-protect/protection-groups/$($thisFailoverJob.id)
-            }
-        }
-        Write-Host "Updating job $($job.name)"
-        $null = api put -v2 data-protect/protection-groups/$($job.id) $job
+    if($createJob -eq $True){
+        Write-Host "Creating job $($job.name)"
+        $job.viewParams.objects = $newObjects
+        $null = api post -v2 "data-protect/protection-groups" $job
     }
 }
