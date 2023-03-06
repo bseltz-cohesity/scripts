@@ -108,8 +108,6 @@ foreach($job in $jobs.protectionGroups){
         Write-Host "Deleting old job $($job.name)"
         $null = api delete -v2 data-protect/protection-groups/$($job.id)
     }else{
-        $job | ConvertTo-Json -Depth 99
-        exit
         Write-Host "Updating job $($job.name)"
         $null = api put -v2 data-protect/protection-groups/$($job.id) $job
     }
