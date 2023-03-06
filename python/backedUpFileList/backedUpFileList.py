@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2023.03.05
+# version 2023.03.06
 
 # usage: ./backedUpFileList.py -v mycluster \
 #                              -u myuser \
