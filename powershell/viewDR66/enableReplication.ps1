@@ -59,8 +59,6 @@ foreach($viewName in $myViews){
             Write-Host "Deleting old remote view $viewName"
             $null = api delete views/$viewName
         }
-    }else{
-        Write-Host "View $viewName not found" -ForegroundColor Yellow
     }
 }
 
@@ -98,9 +96,11 @@ if(!$policy){
 # delete temp jobs
 $jobs = api get -v2 "data-protect/protection-groups?isActive=true&environments=kView"
 foreach($job in $jobs.protectionGroups){
+    $updateJob = $False
     foreach($viewName in $myViews){
         $viewName = [string]$viewName
         if($viewName -in $job.viewParams.objects.name){
+            $updateJob = $True
             $job.viewParams.objects = @($job.viewParams.objects | Where-Object name -ne $viewName)
         }
     }
@@ -108,8 +108,10 @@ foreach($job in $jobs.protectionGroups){
         Write-Host "Deleting old job $($job.name)"
         $null = api delete -v2 data-protect/protection-groups/$($job.id)
     }else{
-        Write-Host "Updating job $($job.name)"
-        $null = api put -v2 data-protect/protection-groups/$($job.id) $job
+        if($updateJob -eq $True){
+            Write-Host "Updating job $($job.name)"
+            $null = api put -v2 data-protect/protection-groups/$($job.id) $job
+        }
     }
 }
 
