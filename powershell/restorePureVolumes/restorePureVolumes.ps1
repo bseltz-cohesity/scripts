@@ -9,8 +9,8 @@ param (
     [Parameter(Mandatory = $True)][string]$pureName, # name of registered Pure array
     [Parameter()][array]$volumeName, # name(s) of volumes(s) to recover
     [Parameter()][string]$volumeList = $null, # file list of volumes to recover
-    [Parameter(Mandatory = $True)][string]$prefix, # prefix for recovered volumes
-    [Parameter(Mandatory = $True)][string]$suffix # suffix for recovered volumes
+    [Parameter()][string]$prefix, # prefix for recovered volumes
+    [Parameter()][string]$suffix # suffix for recovered volumes
 )
 
 # source the cohesity-api helper code
@@ -83,6 +83,15 @@ foreach($volumeName in $volumes){
         "renameRestoredObjectParam" = @{
             "prefix" = $prefix;
             "suffix" = $suffix
+        }
+    }
+    if($prefix -or $suffix){
+        $restoreParams["renameRestoredObjectParam"]= @{}
+        if($prefix){
+            $restoreParams["renameRestoredObjectParam"]["prefix"] = $prefix
+        }
+        if($suffix){
+            $restoreParams["renameRestoredObjectParam"]["suffix"] = $suffix
         }
     }
     "Restoring $pureName/$volumeName as $pureName/$prefix$volumeName$suffix"
