@@ -97,7 +97,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
         }
         runstoreplicate = {}
         endUsecs = nowUsecs
-        while(1):
+        while 1:
             runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&endTimeUsecs=%s&includeTenants=true' % (job['id'], numruns, endUsecs), v=2)
             if len(runs['runs']) > 0:
                 endUsecs = int(runs['runs'][-1]['id'].split(':')[1]) - 1
@@ -134,7 +134,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                             thisrun = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&excludeTasks=true&id=%s' % (startdateusecs, jobuid['id']))
                             expireTimeUsecs = thisrun[0]['backupJobRuns']['protectionRuns'][0]['copyRun']['finishedTasks'][0]['expiryTimeUsecs']
 
-                        daysToKeep = int(round((expireTimeUsecs - nowUsecs) / 86400000000, 0))
+                        daysToKeep = int(round((expireTimeUsecs - nowUsecs) / 86400000000, 0)) + 1
                         if daysToKeep == 0:
                             daysToKeep = 1
 
