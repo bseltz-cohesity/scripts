@@ -147,7 +147,7 @@ foreach($job in $jobs | Sort-Object -Property name| Where-Object {$_.isDeleted -
                         $expireTimeUsecs = $run.copyRun[0].expiryTimeUsecs
                     }
                     $now = dateToUsecs $(get-date)
-                    $daysToKeep = [math]::Round(($expireTimeUsecs - $now) / 86400000000) 
+                    $daysToKeep = [math]::Round(($expireTimeUsecs - $now) / 86400000000) + 1
                     if($daysToKeep -eq 0){
                         $daysToKeep = 1
                     }
