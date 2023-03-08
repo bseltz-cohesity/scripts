@@ -63,6 +63,13 @@ if($clusterNames.length -gt 0){
     }
 }
 
+$regions = api get -mcmv2 dms/regions
+if($clusterNames.length -eq 0){
+    foreach($region in $regions.regions){
+        $selectedClusters = @($selectedClusters + $region)
+    }
+}
+
 # date range
 $today = Get-Date
 
@@ -149,7 +156,6 @@ $Global:html = '<html>
 
         td {
             width: 25ch;
-            max-width: 250px;
             text-align: left;
             padding: 10px;
             word-wrap:break-word;
@@ -158,7 +164,6 @@ $Global:html = '<html>
 
         td.nowrap {
             width: 25ch;
-            max-width: 250px;
             text-align: left;
             padding: 10px;
             padding-right: 15px;
@@ -167,11 +172,10 @@ $Global:html = '<html>
         }
 
         th {
-            width: 25ch;
-            max-width: 250px;
+            width: 50ch;
             text-align: left;
             padding: 6px;
-            white-space: nowrap;
+            white-space:nowrap;
         }
     </style>
 </head>
@@ -268,6 +272,11 @@ $headings = @()
 Write-Host "Retrieving report data..."
 
 foreach($cluster in ($selectedClusters | Sort-Object -Property name)){
+    if($cluster.name -in @($regions.regions.name)){
+        $systemId = $cluster.id
+    }else{
+        $systemId = "$($cluster.clusterId):$($cluster.clusterIncarnationId)"
+    }
     Write-Host "$($cluster.name)"
     foreach($range in $ranges){
         $csvlines = @()
@@ -285,7 +294,7 @@ foreach($cluster in ($selectedClusters | Sort-Object -Property name)){
                     "attribute" = "systemId";
                     "filterType" = "Systems";
                     "systemsFilterParams" = @{
-                        "systemIds" = @("$($cluster.clusterId):$($cluster.clusterIncarnationId)");
+                        "systemIds" = @("$systemId");
                         "systemNames" = @("$($cluster.name)")
                     }
                 }
