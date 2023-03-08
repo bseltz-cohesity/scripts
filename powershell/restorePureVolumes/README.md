@@ -35,19 +35,26 @@ Place both files in a folder together and run the main script like so:
 # end example
 ```
 
-```text
-Connected!
-Restoring mypure/myserver_lun1 as mypure/restore-myserver_lun1-0410
-Restoring mypure/myserver_lun2 as mypure/restore-myserver_lun2-0410
-```
+## Authentication Parameters
 
-## Parameters
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
 
-* -vip: Cohesity Cluster to connect to
-* -username: Cohesity username
-* -domain: Active Directory domain of user (defaults to local)
+## Other Parameters
+
 * -pureName: name of registered pure array
-* -volumeName: volume name(s) to recover (comma separated)
-* -volumeList: text file with volume names to recover
-* -prefix: prefix to apply to recovered volumes
-* -suffix: suffix to apply to recovered volumes
+* -volumeName: (optional) volume name(s) to recover (comma separated)
+* -volumeList: (optional) text file with volume names to recover (one per line)
+* -prefix: (optional) prefix to apply to recovered volumes
+* -suffix: (optional) suffix to apply to recovered volumes
+* -showVersions: (optional) show available versions and exit
+* -runId: (optional) specify runId (from showVersions) to use for restore
