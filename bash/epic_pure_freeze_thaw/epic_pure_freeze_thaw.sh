@@ -37,6 +37,13 @@ fi
 #### If my lock already exists, we're good, exit and perform the backup
 if [[ -e /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY ]]; then
     echo "Found Lock. Main Script Ran Already"
+    if [[ -e /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.failed ]]; then
+       echo "Failing on signal from leader ***"
+       echo "Removing Lock  /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY. Exiting"
+       echo "$(date) : $COHESITY_BACKUP_ENTITY : Failing on signal from leader" >> /tmp/cohesity_snap.log
+       rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY
+       exit 1
+    fi
     echo "Removing Lock  /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY. Exiting"
     echo "$(date) : $COHESITY_BACKUP_ENTITY : Script Completed Successfully" >> /tmp/cohesity_snap.log
     rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY
@@ -61,6 +68,13 @@ if [[ $mkdirstatus -ne 0 ]]; then
         sleep 1
     done 
     echo "Done Waiting."
+    if [[ -e /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.failed ]]; then
+        echo "Failing on signal from leader ***"
+        echo "$(date) : $COHESITY_BACKUP_ENTITY : Failing on signal from leader" >> /tmp/cohesity_snap.log
+        echo "Removing Lock  /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY. Exiting"
+        rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY
+        exit 1
+    fi
     echo "$(date) : $COHESITY_BACKUP_ENTITY : Script Completed Successfully" >> /tmp/cohesity_snap.log
     echo "Removing Lock  /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY. Exiting"
     rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY
@@ -71,6 +85,14 @@ fi
 ## I'm the leader, continue to freeze, snap, thaw
 #################################################
 
+echo "" >> /tmp/cohesity_snap.log
+echo "################# Backup For $(date) #########################" >> /tmp/cohesity_snap.log
+echo "COHESITY_BACKUP_ENTITY:$COHESITY_BACKUP_ENTITY" 
+echo "COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX:$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX" 
+echo "Cohesity Pre Script Starting.\n"
+echo "################# Script Leader ########################"
+echo "$(date) : $COHESITY_BACKUP_ENTITY : Script Running as Leader" >> /tmp/cohesity_snap.log
+echo "$(date) : $COHESITY_BACKUP_ENTITY : Cohesity Pre-Script starting with PID $$" >> /tmp/cohesity_snap.log
 echo "$(date) Created Lock /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX" 
 
 ############################
@@ -84,8 +106,9 @@ if [[ $? -ne 0 ]]; then
     echo "Obtaining Pure Source LUNs Failed"
     echo "$(date) : $COHESITY_BACKUP_ENTITY : Obtaining Pure Source LUNs Failed ****" >> /tmp/cohesity_snap.log
     echo "$(date) : $COHESITY_BACKUP_ENTITY : Script Completed with Error ****" >> /tmp/cohesity_snap.log
+    mkdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.failed
     rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX >> /tmp/cohesity_snap.log 2>&1
-    echo "Removing Lock  /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY. Exiting"
+    # echo "Removing Lock  /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY. Exiting"
     rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY
     exit 4
 fi
@@ -105,19 +128,10 @@ if [[ ! -e /tmp/$COHESITY_JOB_ID ]]; then
 fi
 
 if [[ $journalStatus -ne 0 ]]; then
-    echo "Found Current Snapshot Suffix  $COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX> in Journal, Exiting."
+    echo "Found Current Snapshot Suffix  $COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX in Journal, Exiting."
     echo "$(date) : $COHESITY_BACKUP_ENTITY : Script Completed Successfully" >> /tmp/cohesity_snap.log
     exit 0
 fi
-
-echo "" >> /tmp/cohesity_snap.log
-echo "################# Backup For $(date) #########################" >> /tmp/cohesity_snap.log
-echo "COHESITY_BACKUP_ENTITY:$COHESITY_BACKUP_ENTITY" 
-echo "COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX:$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX" 
-echo "Cohesity Pre Script Starting.\n"
-echo "################# Script Leader ########################"
-echo "$(date) : $COHESITY_BACKUP_ENTITY : Script Running as Leader" >> /tmp/cohesity_snap.log
-echo "$(date) : $COHESITY_BACKUP_ENTITY : Cohesity Pre-Script starting with PID $$" >> /tmp/cohesity_snap.log
 
 ##################
 ## Freeze Database
@@ -139,8 +153,9 @@ if [[ $freeze_status -ne 0 ]]; then
     echo "$(date) : $COHESITY_BACKUP_ENTITY : Database Freeze Failed: $freeze_status"  >> /tmp/cohesity_snap.log
     echo "Database Freeze Failed: $freeze_status"
     echo "$(date) : $COHESITY_BACKUP_ENTITY : Script Completed with Error ****" >> /tmp/cohesity_snap.log
+    mkdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.failed
 	rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX >> /tmp/cohesity_snap.log 2>&1
-    echo "Removing Lock  /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY. Exiting"
+    # echo "Removing Lock  /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY. Exiting"
     rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY
     exit 1
 else
@@ -207,6 +222,7 @@ if [[ $fsfreeze_status -gt 0 ]]; then
     fi
 
     echo "$(date) : $COHESITY_BACKUP_ENTITY : Script Completed with Error ****" >> /tmp/cohesity_snap.log
+    mkdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.failed
 	rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX >> /tmp/cohesity_snap.log 2>&1
     echo "Removing Lock  /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY. Exiting"
     rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY
@@ -222,7 +238,7 @@ else
     echo "FileSystem Freeze Successful."
 	echo "$(date) : $COHESITY_BACKUP_ENTITY : Snapshotting Pure Volumes" >> /tmp/cohesity_snap.log
 	echo "Running purevol snap."
-	echo "/usr/bin/ssh ${PRIVKEY_PATH} ${PURE_USER}@${PURE_ARRAY} purevol snap --suffix ${COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX} ${PURE_SRC_LUNS}" 
+	# echo "/usr/bin/ssh ${PRIVKEY_PATH} ${PURE_USER}@${PURE_ARRAY} purevol snap --suffix ${COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX} ${PURE_SRC_LUNS}" 
 	/usr/bin/ssh ${PRIVKEY_PATH} ${PURE_USER}@${PURE_ARRAY} "purevol snap --suffix ${COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX} ${PURE_SRC_LUNS}" 
   	if [[ $? -eq 0 ]]; then
     	echo "$(date) : $COHESITY_BACKUP_ENTITY : Pure Volume Snaps Successful" >> /tmp/cohesity_snap.log
@@ -255,13 +271,15 @@ else
     #     done
     # fi
 
-	rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX >> /tmp/cohesity_snap.log 2>&1
-	echo "Removing Lock: rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX"
-    echo "Removing Lock  /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY. Exiting"
+	# echo "Removing Lock: rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX"
+    # echo "Removing Lock  /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY. Exiting"
     rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY
     if [[ $snap_status -eq 0 ]]; then
+        rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX >> /tmp/cohesity_snap.log 2>&1
         echo "$(date) : $COHESITY_BACKUP_ENTITY : Script Completed Successfully" >> /tmp/cohesity_snap.log
     else
+        mkdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.failed
+        rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX >> /tmp/cohesity_snap.log 2>&1
         echo "$(date) : $COHESITY_BACKUP_ENTITY : Script Completed with Error ****" >> /tmp/cohesity_snap.log
     fi
     echo "" >> /tmp/cohesity_snap.log
