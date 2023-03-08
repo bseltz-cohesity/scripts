@@ -72,6 +72,13 @@ function searchVolume($pureName, $volumeName){
     if(!$volumeResult){
         return $null
     }else{
+        if($runId){
+            $version = $volumeResult.vmDocument[0].versions | Where-Object {$_.instanceId.jobInstanceId -eq $runId}
+            if(! $version){
+                Write-Host "Volume $volumeName not present in runId $runId" -ForegroundColor Yellow
+                exit
+            }
+        }
         return $volumeResult.vmDocument[0]
     }
 }
