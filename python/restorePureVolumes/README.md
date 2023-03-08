@@ -23,32 +23,38 @@ Place both files in a folder together and run the main script like so:
 
 ```bash
 # example
-./restorePureVolumes.py -c mycluster \
+./restorePureVolumes.py -v mycluster \
                         -u myusername \  
                         -a mypure \
-                        -v myserver_lun1 \
-                        -v myserver_lun2 \
+                        -n myserver_lun1 \
+                        -n myserver_lun2 \
                         -p restore- \
-                        -s -0410
+                        -s 0410
 # end example
 ```
 
-```text
-Connected!
-Restoring mypure/myserver_lun1 as mypure/restore-myserver_lun1-0410
-Restoring mypure/myserver_lun2 as mypure/restore-myserver_lun2-0410
-```
+## Authentication Parameters
 
-## Parameters
+* -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
+* -d, --domain: (optional) domain of username (defaults to local)
+* -i, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: (optional) password or API key
+* -np, --noprompt: (optional) do not prompt for password
+* -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) helios/mcm cluster to connect to
+* -m, --mfacode: (optional) MFA code for authentication
+* -e, --emailmfacode: (optional) send MFA code via email
 
-* -c', '--cluster': Cohesity cluster name or IP
-* -u', '--username': Cohesity Username
-* -d', '--domain': Cohesity User Domain
-* -a', '--purename': name of registered pure array
-* -v', '--volumename': volume name(s) to recover
-* -l', '--volumelist': file of volumes names to recover
-* -p', '--prefix': prefix to apply to recovered volumes
-* -s', '--suffix': suffix to apply to recovered volumes
+## Other Parameters
+
+* -a, --purename: name of registered pure array
+* -v, --volumename: (optional) volume name to recover (repeat for multiple)
+* -l, --volumelist: (optional) text file of volumes names to recover (one per line)
+* -p, --prefix: (optional) prefix to apply to recovered volumes
+* -s, --suffix: (optional) suffix to apply to recovered volumes (dash will be added automatically)
+* -x, --showversions: (optional) show available versions
+* -r, --runid: (optional) specifiy runid (from showversions) to use for restore
 
 ## The Python Helper Module - pyhesity.py
 

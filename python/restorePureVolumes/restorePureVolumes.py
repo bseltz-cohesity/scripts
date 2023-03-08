@@ -10,25 +10,50 @@ from datetime import datetime
 # command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-c', '--cluster', type=str, required=True)  # Cohesity cluster name or IP
-parser.add_argument('-u', '--username', type=str, required=True)  # Cohesity Username
-parser.add_argument('-d', '--domain', type=str, default='local')  # Cohesity User Domain
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
+parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-m', '--mfacode', type=str, default=None)
+parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-a', '--purename', type=str, required=True)  # name of registered pure array
-parser.add_argument('-v', '--volumename', action='append', type=str)  # volume name(s) to recover
+parser.add_argument('-n', '--volumename', action='append', type=str)  # volume name(s) to recover
 parser.add_argument('-l', '--volumelist', type=str)  # file of volumes names to recover
-parser.add_argument('-p', '--prefix', type=str, required=True)  # prefix to apply to recovered volumes
-parser.add_argument('-s', '--suffix', type=str, required=True)  # suffix to apply to recovered volumes
+parser.add_argument('-p', '--prefix', type=str, default=None)  # prefix to apply to recovered volumes
+parser.add_argument('-s', '--suffix', type=str, default=None)  # suffix to apply to recovered volumes
+parser.add_argument('-x', '--showversions', action='store_true')      # show available snapshots
+parser.add_argument('-r', '--runid', type=int, default=None)          # choose specific job run id
 
 args = parser.parse_args()
 
-vip = args.cluster
+vip = args.vip
 username = args.username
 domain = args.domain
+clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
+emailmfacode = args.emailmfacode
 purename = args.purename
 volumes = args.volumename
 volumelist = args.volumelist
 prefix = args.prefix
 suffix = args.suffix
+showversions = args.showversions
+runid = args.runid
+
+if suffix is None and prefix is None:
+    print('--prefix or --suffix required!')
+    exit()
+
+if suffix and suffix[0] != '-':
+    suffix = "-%s" % suffix
 
 # gather volume list
 if volumes is None:
@@ -41,8 +66,21 @@ if len(volumes) == 0:
     print("No volumes specified")
     exit(1)
 
-# authenticate to Cohesity
-apiauth(vip, username, domain)
+# authenticate
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), emailMfaCode=emailmfacode, mfaCode=mfacode)
+
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    if clustername is not None:
+        heliosCluster(clustername)
+    else:
+        print('-clustername is required when connecting to Helios or MCM')
+        exit()
+
+# exit if not authenticated
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
 
 
 # volume search function
@@ -64,6 +102,16 @@ for volumename in volumes:
     if volume is None:
         print("Volume %s/%s not found!" % (purename, volumename))
         exit(1)
+    else:
+        if showversions:
+            for version in volume['versions']:
+                print('%10d  %s' % (version['instanceId']['jobInstanceId'], usecsToDate(version['instanceId']['jobStartTimeUsecs'])))
+            exit()
+        if runid is not None:
+            version = [v for v in volume['versions'] if v['instanceId']['jobInstanceId'] == runid]
+            if version is None or len(version) == 0:
+                print('volume %s is not present in runId %s' % (volumename, runid))
+                exit(1)
 
 taskdate = datetime.now().strftime("%h_%d_%Y_%H-%M%p")
 
@@ -75,6 +123,14 @@ for volumename in volumes:
         print("Volume %s/%s not found!" % (purename, volumename))
         exit(1)
     else:
+        if runid is not None:
+            version = [v for v in volume['versions'] if v['instanceId']['jobInstanceId'] == runid]
+            if version is None or len(version) == 0:
+                print('volume %s is not present in runId %s' % (volumename, runid))
+                exit(1)
+            version = version[0]
+        else:
+            version = volume['versions'][0]
         # define restore params
         taskname = "Recover-pure_%s-%s" % (taskdate, volumename)
         restoreParams = {
@@ -85,17 +141,18 @@ for volumename in volumes:
                     'jobId': volume['objectId']['jobId'],
                     'jobUid': volume['objectId']['jobUid'],
                     'entity': volume['objectId']['entity'],
-                    'jobInstanceId': volume['versions'][0]['instanceId']['jobInstanceId'],
-                    'attemptNum': volume['versions'][0]['instanceId']['attemptNum'],
-                    'startTimeUsecs': volume['versions'][0]['instanceId']['jobStartTimeUsecs']
+                    'jobInstanceId': version['instanceId']['jobInstanceId'],
+                    'attemptNum': version['instanceId']['attemptNum'],
+                    'startTimeUsecs': version['instanceId']['jobStartTimeUsecs']
                 }
             ],
             'restoreParentSource': volume['registeredSource'],
-            'renameRestoredObjectParam': {
-                'prefix': prefix,
-                'suffix': suffix
-            }
+            'renameRestoredObjectParam': {}
         }
+        if prefix is not None:
+            restoreParams['renameRestoredObjectParam']['prefix'] = prefix
+        if suffix is not None:
+            restoreParams['renameRestoredObjectParam']['suffix'] = suffix
         # perform restore
         print("Restoring %s/%s as %s/%s%s%s" % (purename, volumename, purename, prefix, volumename, suffix))
         result = api('post', '/restore', restoreParams)
