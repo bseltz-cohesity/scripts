@@ -35,6 +35,34 @@ Place both files in a folder together and run the main script like so:
 # end example
 ```
 
+By default, the latest backup will be used. If you want to use a previous backup, use -showVersions to list the backups available:
+
+```powershell
+# example
+./restorePureVolumes.ps1 -vip mycluster `
+                         -username myusername `
+                         -pureName mypure `
+                         -volumeName myserver_lun1, myserver_lun2 `
+                         -prefix 'restore-' `
+                         -suffix '-0410' `
+                         -showVersions
+# end example
+```
+
+From the output, find the runId if the backup you want, then use -runId:
+
+```powershell
+# example
+./restorePureVolumes.ps1 -vip mycluster `
+                         -username myusername `
+                         -pureName mypure `
+                         -volumeName myserver_lun1, myserver_lun2 `
+                         -prefix 'restore-' `
+                         -suffix '-0410' `
+                         -runId 14799238
+# end example
+```
+
 ## Authentication Parameters
 
 * -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
