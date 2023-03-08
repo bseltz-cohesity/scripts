@@ -26,6 +26,7 @@ Place both files in a folder together and run the main script like so:
 ./restorePureVolumes.py -v mycluster \
                         -u myusername \  
                         -a mypure \
+                        -j 'my pure backup' \
                         -n myserver_lun1 \
                         -n myserver_lun2 \
                         -p restore- \
@@ -40,6 +41,7 @@ By default, the latest backup will be restored, but if you want to use a previou
 ./restorePureVolumes.py -v mycluster \
                         -u myusername \  
                         -a mypure \
+                        -j 'my pure backup' \
                         -n myserver_lun1 \
                         -n myserver_lun2 \
                         -p restore- \
@@ -55,6 +57,7 @@ From the ouput, find the runid you want and use -r, --runid to specify that back
 ./restorePureVolumes.py -v mycluster \
                         -u myusername \  
                         -a mypure \
+                        -j 'my pure backup' \
                         -n myserver_lun1 \
                         -n myserver_lun2 \
                         -p restore- \
@@ -78,6 +81,7 @@ From the ouput, find the runid you want and use -r, --runid to specify that back
 
 ## Other Parameters
 
+* -j, --jobname: name of Cohesity protection group to restore from
 * -a, --purename: name of registered pure array
 * -v, --volumename: (optional) volume name to recover (repeat for multiple)
 * -l, --volumelist: (optional) text file of volumes names to recover (one per line)

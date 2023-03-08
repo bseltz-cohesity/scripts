@@ -20,6 +20,7 @@ parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-e', '--emailmfacode', action='store_true')
+parser.add_argument('-j', '--jobname', type=str, required=True)  # name of registered pure array
 parser.add_argument('-a', '--purename', type=str, required=True)  # name of registered pure array
 parser.add_argument('-n', '--volumename', action='append', type=str)  # volume name(s) to recover
 parser.add_argument('-l', '--volumelist', type=str)  # file of volumes names to recover
@@ -40,6 +41,7 @@ password = args.password
 noprompt = args.noprompt
 mfacode = args.mfacode
 emailmfacode = args.emailmfacode
+jobname = args.jobname
 purename = args.purename
 volumes = args.volumename
 volumelist = args.volumelist
@@ -89,7 +91,7 @@ def searchvolume(purename, volumename):
     if len(searchresult) == 0 or not ('vms' in searchresult):
         return None
     else:
-        volume = [v for v in searchresult['vms'] if v['vmDocument']['objectName'].lower() == volumename.lower() and v['vmDocument']['registeredSource']['displayName'].lower() == purename.lower()]
+        volume = [v for v in searchresult['vms'] if v['vmDocument']['objectName'].lower() == volumename.lower() and v['vmDocument']['registeredSource']['displayName'].lower() == purename.lower() and v['vmDocument']['jobName'].lower() == jobname.lower()]
         if not volume:
             return None
         else:

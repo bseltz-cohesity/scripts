@@ -15,6 +15,7 @@ param (
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName = $null,
     [Parameter(Mandatory = $True)][string]$pureName, # name of registered Pure array
+    [Parameter(Mandatory = $True)][string]$jobName, # name of protection group
     [Parameter()][array]$volumeName, # name(s) of volumes(s) to recover
     [Parameter()][string]$volumeList = $null, # file list of volumes to recover
     [Parameter()][string]$prefix, # prefix for recovered volumes
@@ -68,7 +69,7 @@ if ($volumeList){
 
 function searchVolume($pureName, $volumeName){
     $searchResult = api get "/searchvms?entityTypes=kPure&vmName=$volumeName"
-    $volumeResult = $searchResult.vms | Where-Object {$_.vmDocument.objectName -eq $volumeName -and $_.vmDocument.registeredSource.displayName -eq $pureName}
+    $volumeResult = $searchResult.vms | Where-Object {$_.vmDocument.objectName -eq $volumeName -and $_.vmDocument.registeredSource.displayName -eq $pureName -and $_.vmDocument.jobName -eq $jobName}
     if(!$volumeResult){
         return $null
     }else{

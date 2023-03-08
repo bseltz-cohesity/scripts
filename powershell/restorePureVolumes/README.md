@@ -29,6 +29,7 @@ Place both files in a folder together and run the main script like so:
 ./restorePureVolumes.ps1 -vip mycluster `
                          -username myusername `
                          -pureName mypure `
+                         -jobName 'my pure backup' `
                          -volumeName myserver_lun1, myserver_lun2 `
                          -prefix 'restore-' `
                          -suffix '-0410'
@@ -42,6 +43,7 @@ By default, the latest backup will be used. If you want to use a previous backup
 ./restorePureVolumes.ps1 -vip mycluster `
                          -username myusername `
                          -pureName mypure `
+                         -jobName 'my pure backup' `
                          -volumeName myserver_lun1, myserver_lun2 `
                          -prefix 'restore-' `
                          -suffix '-0410' `
@@ -56,6 +58,7 @@ From the output, find the runId if the backup you want, then use -runId:
 ./restorePureVolumes.ps1 -vip mycluster `
                          -username myusername `
                          -pureName mypure `
+                         -jobName 'my pure backup' `
                          -volumeName myserver_lun1, myserver_lun2 `
                          -prefix 'restore-' `
                          -suffix '-0410' `
@@ -79,6 +82,7 @@ From the output, find the runId if the backup you want, then use -runId:
 
 ## Other Parameters
 
+* -jobName: name of Cohesity protection group to restore from
 * -pureName: name of registered pure array
 * -volumeName: (optional) volume name(s) to recover (comma separated)
 * -volumeList: (optional) text file with volume names to recover (one per line)
