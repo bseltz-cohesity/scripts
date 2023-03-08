@@ -3,21 +3,51 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, # Cohesity cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, # Cohesity username (local or AD)
-    [Parameter()][string]$domain = 'local', # local or AD domain
+    [Parameter()][string]$vip = 'helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant = $null,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password = $null,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode = $null,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName = $null,
     [Parameter(Mandatory = $True)][string]$pureName, # name of registered Pure array
     [Parameter()][array]$volumeName, # name(s) of volumes(s) to recover
     [Parameter()][string]$volumeList = $null, # file list of volumes to recover
     [Parameter()][string]$prefix, # prefix for recovered volumes
-    [Parameter()][string]$suffix # suffix for recovered volumes
+    [Parameter()][string]$suffix, # suffix for recovered volumes
+    [Parameter()][Int64]$runId,
+    [Parameter()][switch]$showVersions
 )
+
+if(! $prefix -and ! $suffix){
+    Write-Host "-prefix or -suffix required!" -ForegroundColor Yellow
+    exit
+}
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
 
 # gather list of volumes to recover
 $volumes = @()
@@ -53,6 +83,11 @@ foreach($volumeName in $volumes){
         write-host "Volume $pureName/$volumeName not found!" -ForegroundColor Yellow
         exit 1
     }
+    # show versions
+    if($showVersions){
+        $volume.versions | Select-Object -Property @{label='runId'; expression={$_.instanceId.jobInstanceId}}, @{label='runDate'; expression={usecsToDate $_.instanceId.jobStartTimeUsecs}}
+        exit 0
+    }
 }
 
 $taskDate = Get-Date -UFormat "%b_%d_%Y_%H-%M"
@@ -60,6 +95,11 @@ $taskDate = Get-Date -UFormat "%b_%d_%Y_%H-%M"
 # proceed with restores
 foreach($volumeName in $volumes){
     $volume = searchVolume $pureName $volumeName
+    if($runId){
+        $version = $volume.versions | Where-Object {$_.instanceId.jobInstanceId -eq $runId}
+    }else{
+        $version = $volume.versions[0]
+    }
     if(!$volume){
         write-host "Volume $pureName/$volumeName not found!" -ForegroundColor Yellow
         exit 1
@@ -74,19 +114,15 @@ foreach($volumeName in $volumes){
                 "jobId"          = $volume.objectId.jobId;
                 "jobUid"         = $volume.objectId.jobUid;
                 "entity"         = $volume.objectId.entity;
-                "jobInstanceId"  = $volume.versions[0].instanceId.jobInstanceId;
-                "attemptNum"     = $volume.versions[0].instanceId.attemptNum;
-                "startTimeUsecs" = $volume.versions[0].instanceId.jobStartTimeUsecs
+                "jobInstanceId"  = $version.instanceId.jobInstanceId;
+                "attemptNum"     = $version.instanceId.attemptNum;
+                "startTimeUsecs" = $version.instanceId.jobStartTimeUsecs
             }
         );
         "restoreParentSource"       = $volume.registeredSource;
-        "renameRestoredObjectParam" = @{
-            "prefix" = $prefix;
-            "suffix" = $suffix
-        }
+        "renameRestoredObjectParam" = @{}
     }
     if($prefix -or $suffix){
-        $restoreParams["renameRestoredObjectParam"]= @{}
         if($prefix){
             $restoreParams["renameRestoredObjectParam"]["prefix"] = $prefix
         }
