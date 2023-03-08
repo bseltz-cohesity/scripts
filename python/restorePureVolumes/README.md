@@ -33,6 +33,36 @@ Place both files in a folder together and run the main script like so:
 # end example
 ```
 
+By default, the latest backup will be restored, but if you want to use a previous backup, you can list the avaiable versions using -x, --showversions:
+
+```bash
+# example
+./restorePureVolumes.py -v mycluster \
+                        -u myusername \  
+                        -a mypure \
+                        -n myserver_lun1 \
+                        -n myserver_lun2 \
+                        -p restore- \
+                        -s 0410 \
+                        -x
+# end example
+```
+
+From the ouput, find the runid you want and use -r, --runid to specify that backup:
+
+```bash
+# example
+./restorePureVolumes.py -v mycluster \
+                        -u myusername \  
+                        -a mypure \
+                        -n myserver_lun1 \
+                        -n myserver_lun2 \
+                        -p restore- \
+                        -s 0410 \
+                        -r 1477739
+# end example
+```
+
 ## Authentication Parameters
 
 * -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
