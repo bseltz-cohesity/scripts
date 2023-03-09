@@ -2,7 +2,7 @@
 
 ##########################################################################################
 ##
-## Last updated: 2023.02.24 - Brian Seltzer @ Cohesity
+## Last updated: 2023.03.09 - Brian Seltzer @ Cohesity
 ##
 ## - change first line to #!/bin/ksh (AIX) or #!/bin/bash (Linux)
 ## - edit /etc/ssh/sshd_cohfig: MaxStartups 50:30:150 (first number must be 24 or higher) 
@@ -11,6 +11,12 @@
 ## - pass in comma separated list of volume groups to freeze (AIX) as pre-script parameter
 ## - uncomment and inspect file system freeze sections (AIX)
 ## - testing=1 means we will not skip freezing, testing=0 means we will freeze
+##
+##########################################################################################
+##
+## - Version History ----------------------
+## - 2023-03-08 - added leader failure flag
+## - 2023-03-09 - added failure on no PPG membership, added leader log indicator
 ##
 ##########################################################################################
 
@@ -37,6 +43,10 @@ fi
 #### If my lock already exists, we're good, exit and perform the backup
 if [[ -e /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY ]]; then
     echo "Found Lock. Main Script Ran Already"
+    if [[ -e /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX-leader ]]; then
+        leader=$(ls /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX-leader)
+        echo "----- $leader is the leader -----"
+    fi
     if [[ -e /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.failed ]]; then
        echo "Failing on signal from leader ***"
        echo "$(date) : $COHESITY_BACKUP_ENTITY : Failing on signal from leader" >> /tmp/cohesity_snap.log
@@ -59,17 +69,28 @@ if [[ ! -e /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX ]]; then
     mkdirstatus=$?
 fi
 
-#### If not the leader, wait for my lock to appear then exit and perform the backup
+#### If not the leader, wait for leader then exit and perform the backup
 if [[ $mkdirstatus -ne 0 ]]; then
     echo "Snapshot script already running. Waiting for Main Script to complete"
     while [[ -e /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX ]]; do
         sleep 1
-    done 
+    done
     echo "Done Waiting."
+    if [[ -e /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX-leader ]]; then
+        leader=$(ls /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX-leader)
+        echo "----- $leader is the leader -----"
+    fi
+    # fail on leader failed
     if [[ -e /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.failed ]]; then
         echo "Failing on signal from leader ***"
         echo "$(date) : $COHESITY_BACKUP_ENTITY : Failing on signal from leader" >> /tmp/cohesity_snap.log
         rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY
+        exit 1
+    fi
+    # I'm not in the PPG?
+    if [[ ! -e /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY ]]; then
+        echo "*** NOT A MEMBER of PURE PROTECTION GROUP ***"
+        echo "$(date) : $COHESITY_BACKUP_ENTITY : Not a member of Pure protection group ***"  >> /tmp/cohesity_snap.log
         exit 1
     fi
     echo "$(date) : $COHESITY_BACKUP_ENTITY : Script Completed Successfully" >> /tmp/cohesity_snap.log
@@ -80,6 +101,9 @@ fi
 #################################################
 ## I'm the leader, continue to freeze, snap, thaw
 #################################################
+
+leader=$(echo "$COHESITY_BACKUP_ENTITY" | tr / -)
+mkdir -p /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX-leader/$leader
 
 echo "" >> /tmp/cohesity_snap.log
 echo "################# Backup For $(date) #########################" >> /tmp/cohesity_snap.log
@@ -264,13 +288,25 @@ else
     #     done
     # fi
 
-	# echo "Removing Lock: rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX"
-    # echo "Removing Lock  /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY. Exiting"
-    rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY
+    # Snapshot was successful
     if [[ $snap_status -eq 0 ]]; then
         rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX >> /tmp/cohesity_snap.log 2>&1
+        # I'm not in the PPG (and I'm the leader)
+        if [[ ! -e /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY ]]; then
+            echo "*** NOT A MEMBER of PURE PROTECTION GROUP ***"
+            echo "$(date) : $COHESITY_BACKUP_ENTITY : Not a member of Pure protection group ***"  >> /tmp/cohesity_snap.log
+            exit 1
+        fi
+        rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY
         echo "$(date) : $COHESITY_BACKUP_ENTITY : Script Completed Successfully" >> /tmp/cohesity_snap.log
+    # Snapshot failed
     else
+        # I'm not in the PPG (and I'm the leader)
+        if [[ ! -e /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY ]]; then
+            echo "*** NOT A MEMBER of PURE PROTECTION GROUP ***"
+            echo "$(date) : $COHESITY_BACKUP_ENTITY : Not a member of Pure protection group ***"  >> /tmp/cohesity_snap.log
+        fi
+        rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY
         mkdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.failed
         rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX >> /tmp/cohesity_snap.log 2>&1
         echo "$(date) : $COHESITY_BACKUP_ENTITY : Script Completed with Error ****" >> /tmp/cohesity_snap.log
