@@ -52,21 +52,22 @@ function toUnits($val){
 # authenticate
 apiauth -vip $vip -username $username -domain 'local' -helios
 
+$allClusters = heliosClusters
+$regions = api get -mcmv2 dms/regions
+foreach($region in $regions.regions){
+    $allClusters = @($allClusters + $region)
+}
+
+
 # select clusters to include
-$selectedClusters = heliosClusters
+$selectedClusters = $allClusters
 if($clusterNames.length -gt 0){
-    $selectedClusters = heliosClusters | Where-Object {$_.name -in $clusterNames}
-    $unknownClusters = $clusterNames | Where-Object {$_ -notin (heliosClusters).name}
+    $selectedClusters = $allClusters | Where-Object {$_.name -in $clusterNames -or $_.id -in $clusterNames}
+    $selectedClusters | ft
+    $unknownClusters = $clusterNames | Where-Object {$_ -notin @($allClusters.name) -and $_ -notin @($allClusters.id)}
     if($unknownClusters){
         Write-Host "Clusters not found:`n $($unknownClusters -join ', ')" -ForegroundColor Yellow
         exit
-    }
-}
-
-$regions = api get -mcmv2 dms/regions
-if($clusterNames.length -eq 0){
-    foreach($region in $regions.regions){
-        $selectedClusters = @($selectedClusters + $region)
     }
 }
 
