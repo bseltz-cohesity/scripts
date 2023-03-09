@@ -58,12 +58,10 @@ foreach($region in $regions.regions){
     $allClusters = @($allClusters + $region)
 }
 
-
 # select clusters to include
 $selectedClusters = $allClusters
 if($clusterNames.length -gt 0){
     $selectedClusters = $allClusters | Where-Object {$_.name -in $clusterNames -or $_.id -in $clusterNames}
-    $selectedClusters | ft
     $unknownClusters = $clusterNames | Where-Object {$_ -notin @($allClusters.name) -and $_ -notin @($allClusters.id)}
     if($unknownClusters){
         Write-Host "Clusters not found:`n $($unknownClusters -join ', ')" -ForegroundColor Yellow
