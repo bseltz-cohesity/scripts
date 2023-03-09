@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2022.10.17"""
+"""Cohesity Python REST API Wrapper Module - 2023.03.09"""
 
 ##########################################################################################
 # Change Log
@@ -17,6 +17,8 @@
 # 2022.09.11 - store password when passed from script, added caller to api log
 # 2022.09.13 - added specific failure mode logging
 # 2022.09.21 - better handling of bad API key scenarios
+# 2022.11.26 - added v2 file download
+# 2023.03.09 - added impersonate and switchback functions and improved tenant ID lookup
 #
 ##########################################################################################
 # Install Notes
@@ -69,7 +71,9 @@ __all__ = ['api_version',
            'heliosClusters',
            'getContext',
            'setContext',
-           'getDate']
+           'getDate',
+           'impersonate',
+           'switchback']
 
 COHESITY_API = {
     'APIROOT': '',
@@ -162,9 +166,9 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                 print(e)
     elif useApiKey is True:
         COHESITY_API['HEADER'] = {'accept': 'application/json', 'content-type': 'application/json', 'apiKey': pwd}
-        if tenantId is not None:
-            COHESITY_API['HEADER']['x-impersonate-tenant-id'] = '%s/' % tenantId
         COHESITY_API['AUTHENTICATED'] = True
+        if tenantId is not None:
+            impersonate(tenantId)
         COHESITY_API['LAST_ERROR'] = 'OK'
         cluster = api('get', 'cluster', quiet=True)
         if cluster is not None and 'id' in cluster:
@@ -199,9 +203,9 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                     COHESITY_API['HEADER'] = {'accept': 'application/json',
                                               'content-type': 'application/json',
                                               'authorization': tokenType + ' ' + accessToken}
-                    if tenantId is not None:
-                        COHESITY_API['HEADER']['x-impersonate-tenant-id'] = '%s/' % tenantId
                     COHESITY_API['AUTHENTICATED'] = True
+                    if tenantId is not None:
+                        impersonate(tenantId)
                     COHESITY_API['LAST_ERROR'] = 'OK'
                     if quiet is None:
                         print("Connected!")
@@ -221,9 +225,9 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                                     COHESITY_API['HEADER'] = {'accept': 'application/json',
                                                               'content-type': 'application/json',
                                                               'session-id': sessionId}
-                                    if tenantId is not None:
-                                        COHESITY_API['HEADER']['x-impersonate-tenant-id'] = '%s/' % tenantId
                                     COHESITY_API['AUTHENTICATED'] = True
+                                    if tenantId is not None:
+                                        impersonate(tenantId)
                                     COHESITY_API['LAST_ERROR'] = 'OK'
                                     if quiet is None:
                                         print("Connected!")
@@ -273,6 +277,24 @@ def apiconnected():
 def apidrop():
     global COHESITY_API
     COHESITY_API['AUTHENTICATED'] = False
+
+
+def impersonate(tenantId):
+    if COHESITY_API['AUTHENTICATED'] is True:
+        tenants = api('get', 'tenants')
+        if tenants is not None and len(tenants) > 0:
+            thistenant = [t for t in tenants if t['name'].lower() == tenantId.lower()]
+            if thistenant is not None and len(thistenant) > 0:
+                COHESITY_API['HEADER']['x-impersonate-tenant-id'] = thistenant[0]['tenantId']
+            else:
+                print('tenant %s not found' % tenantId)
+        else:
+            print('tenant %s not found' % tenantId)
+
+
+def switchback():
+    if 'x-impersonate-tenant-id' in COHESITY_API['HEADER']:
+        del COHESITY_API['HEADER']['x-impersonate-tenant-id']
 
 
 def heliosCluster(clusterName=None, verbose=False):
@@ -500,10 +522,6 @@ def __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, 
 
 # store password in PWFILE
 def setpwd(v='helios.cohesity.com', u='helios', d='local', useApiKey=False, helios=False, password=None):
-    print("v = %s" % v)
-    print("u = %s" % u)
-    print("d = %s" % d)
-    print("useApiKey = %s" % useApiKey)
     if d.lower() != 'local' and helios is False and v != 'helios.cohesity.com' and useApiKey is False:
         v = '--'  # wildcard vip
     if password is None:
@@ -596,13 +614,16 @@ def display(myjson):
         print(json.dumps(myjson, sort_keys=True, indent=4, separators=(', ', ': ')))
 
 
-def fileDownload(uri, fileName):
+def fileDownload(uri, fileName, v=1):
     """download file"""
     if COHESITY_API['AUTHENTICATED'] is False:
         return "Not Connected"
-    if uri[0] != '/':
-        uri = '/public/' + uri
-    response = requests.get(COHESITY_API['APIROOT'] + uri, headers=COHESITY_API['HEADER'], verify=False, timeout=300, stream=True)
+    if v == 2:
+        response = requests.get(COHESITY_API['APIROOTv2'] + uri, headers=COHESITY_API['HEADER'], verify=False, timeout=300, stream=True)
+    else:
+        if uri[0] != '/':
+            uri = '/public/' + uri
+        response = requests.get(COHESITY_API['APIROOT'] + uri, headers=COHESITY_API['HEADER'], verify=False, timeout=300, stream=True)
     f = open(fileName, 'wb')
     for chunk in response.iter_content(chunk_size=1048576):
         if chunk:
