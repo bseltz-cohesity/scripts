@@ -73,11 +73,19 @@ if units.lower() == 'gib':
 # authenticate
 apiauth(vip=vip, username=username, domain='local', helios=True)
 
+allClusters = heliosClusters()
+for selectedCluster in allClusters:
+    selectedCluster['id'] = '%s:%s' % (selectedCluster['clusterId'], selectedCluster['clusterIncarnationId'])
+regions = api('get', 'dms/regions', mcmv2=True)
+for region in regions['regions']:
+    allClusters.append(region)
+
+selectedClusters = allClusters
+
 # select clusters to include
-selectedClusters = heliosClusters()
 if clusternames is not None and len(clusternames) > 0:
-    selectedClusters = [s for s in selectedClusters if s['name'].lower() in [n.lower() for n in clusternames]]
-    unknownClusters = [c.lower() for c in clusternames if c not in [n['name'].lower() for n in heliosClusters()]]
+    selectedClusters = [s for s in allClusters if s['name'].lower() in [n.lower() for n in clusternames] or str(s['id']).lower() in [n.lower() for n in clusternames]]
+    unknownClusters = [c for c in clusternames if c.lower() not in [n['name'].lower() for n in allClusters] and c.lower() not in [str(n['id']).lower() for n in allClusters]]
     if unknownClusters is not None and len(unknownClusters) > 0:
         print('Clusters not found:\n %s' % ', '.join(unknownClusters))
         exit()
@@ -305,7 +313,7 @@ for cluster in sorted(selectedClusters, key=lambda c: c['name'].lower()):
                     "attribute": "systemId",
                     "filterType": "Systems",
                     "systemsFilterParams": {
-                        "systemIds": ['%s:%s' % (cluster['clusterId'], cluster['clusterIncarnationId'])],
+                        "systemIds": [cluster['id']],
                         "systemNames": [cluster['name']]
                     }
                 }
