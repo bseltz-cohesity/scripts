@@ -14,14 +14,16 @@ parser.add_argument('-v', '--vip', type=str, required=True)         # cluster to
 parser.add_argument('-u', '--username', type=str, required=True)    # username
 parser.add_argument('-d', '--domain', type=str, default='local')    # (optional) domain - defaults to local
 parser.add_argument('-i', '--useApiKey', action='store_true')       # use API key authentication
-parser.add_argument('-pwd', '--password', type=str, default=None)   # optional password
-parser.add_argument('-j', '--jobname', action='append', type=str)
-parser.add_argument('-l', '--joblist', type=str)
+parser.add_argument('-pwd', '--password', type=str, default=None)   # (optional) password
+parser.add_argument('-j', '--jobname', action='append', type=str)   # (optional) job names to inspect
+parser.add_argument('-l', '--joblist', type=str)                    # (optional) text file of job names to inspect
 parser.add_argument('-k', '--daystokeep', type=int, required=True)  # number of days of snapshots to retain
 parser.add_argument('-e', '--expire', action='store_true')          # (optional) expire snapshots older than k days
-parser.add_argument('-r', '--confirmreplication', action='store_true')  # (optional) confirm replication before expiring
-parser.add_argument('-a', '--confirmarchive', action='store_true')  # (optional) confirm archival before expiring
-parser.add_argument('-n', '--numruns', type=int, default=1000)
+parser.add_argument('-r', '--confirmreplication', action='store_true')     # (optional) confirm replication before expiring
+parser.add_argument('-rt', '--replicationtarget', type=str, default=None)  # (optional) replication target to confirm
+parser.add_argument('-a', '--confirmarchive', action='store_true')     # (optional) confirm archival before expiring
+parser.add_argument('-at', '--archivetarget', type=str, default=None)  # (optional) archive target to confirm
+parser.add_argument('-n', '--numruns', type=int, default=1000)      # (optional) page size per API call
 
 args = parser.parse_args()
 
@@ -35,7 +37,9 @@ joblist = args.joblist
 daystokeep = args.daystokeep
 expire = args.expire
 confirmreplication = args.confirmreplication
+replicationtarget = args.replicationtarget
 confirmarchive = args.confirmarchive
+archivetarget = args.archivetarget
 numruns = args.numruns
 
 # authenticate
@@ -80,7 +84,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
     if len(jobnames) == 0 or job['name'].lower() in [j.lower() for j in jobnames]:
         print('\n%s' % job['name'])
         endUsecs = nowUsecs
-        while(1):
+        while 1:
             runs = api('get', 'protectionRuns?jobId=%s&numRuns=%s&endTimeUsecs=%s&excludeTasks=true' % (job['id'], numruns, endUsecs))
             if len(runs) > 0:
                 endUsecs = runs[-1]['backupRun']['stats']['startTimeUsecs'] - 1
@@ -95,23 +99,31 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                 for copyRun in run['copyRun']:
                     if copyRun['target']['type'] == 'kRemote':
                         if copyRun['status'] == 'kSuccess':
-                            replicated = True
+                            if replicationtarget is None or copyRun['target']['replicationTarget']['clusterName'].lower() == replicationtarget.lower():
+                                replicated = True
 
                 # check for archive
                 archived = False
                 for copyRun in run['copyRun']:
                     if copyRun['target']['type'] == 'kArchival':
                         if copyRun['status'] == 'kSuccess':
-                            archived = True
+                            if archivetarget is None or copyRun['target']['archivalTarget']['vaultName'].lower() == archivetarget.lower():
+                                archived = True
 
                 if startdateusecs < timeAgo(daystokeep, 'days') and run['backupRun']['snapshotsDeleted'] is False:
                     skip = False
                     if replicated is False and confirmreplication is True:
                         skip = True
-                        print("    Skipping %s (not replicated)" % startdate)
+                        if replicationtarget is not None:
+                            print("    Skipping %s (not replicated to %s)" % (startdate, replicationtarget))
+                        else:
+                            print("    Skipping %s (not replicated)" % startdate)
                     elif archived is False and confirmarchive is True:
                         skip = True
-                        print("    Skipping %s (not archived)" % startdate)
+                        if archivetarget is not None:
+                            print("    Skipping %s (not archived to %s)" % (startdate, archivetarget))
+                        else:
+                            print("    Skipping %s (not archived)" % startdate)
                     if skip is False:
                         if expire:
                             exactRun = api('get', '/backupjobruns?exactMatchStartTimeUsecs=%s&id=%s' % (startdateusecs, job['id']))

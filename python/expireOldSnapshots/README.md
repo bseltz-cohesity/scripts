@@ -73,8 +73,10 @@ Skipping SQL Gold - lab3 snapshot from 2019-04-13 01:01:12 (not replicated)
 * -l, --joblist: (optional) text file of job names to focus on (one per line)
 * -k, --daystokeep: number of days to keep local snapshots
 * -e, --expire: (optional) expire snapshots older than k days
-* -r, --confirmreplication: (optional) do not expire local snapshot if not replicated
+* -r, --confirmreplication: (optional) do not expire if not replicated
+* -rt, --replicationtarget: (optional) specific cluster name to use for confirmreplication
 * -a, --confirmarchive: (optional) do not expire local snapshot if not archived
+* -at, --arcvhivetarget: (optional) specific target name to use for confirmarchive
 * -n, --numruns: (optional) number of runs to retrieve at a time (default is 1000)
 
 ## The Python Helper Module - pyhesity.py
