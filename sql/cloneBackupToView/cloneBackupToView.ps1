@@ -15,6 +15,7 @@ param (
     [Parameter()][array]$access,
     [Parameter()][string]$objectName,
     [Parameter()][string]$jobName,
+    [Parameter()][string]$dirPath = '/',
     [Parameter()][string]$viewName,
     [Parameter()][switch]$listRuns,
     [Parameter()][switch]$deleteView,
@@ -336,9 +337,16 @@ foreach($run in $runs){
                         'destinationParentDirectoryPath' = "/$viewName";
                         'sourceDirectoryPath' = "/$sourceView/$SourcePath"
                     }
+                    if($dirPath -ne '/'){
+                        $CloneDirectoryParams['sourceDirectoryPath'] = "{0}{1}" -f $CloneDirectoryParams['sourceDirectoryPath'], $dirPath
+                    }
                     $folderPath = "\\$vip\$viewName\$destinationPath"
                     Write-Host "Cloning $thisObjectName backup files to $folderPath"
-                    $null = api post views/cloneDirectory $CloneDirectoryParams -quiet
+                    $null = api post views/cloneDirectory $CloneDirectoryParams  # -quiet
+                    if($cohesity_api.last_api_error -match 'kPermissionDenied'){
+                        Write-Host "`nAccess Denied. Cluster config must be modified. Add:`n`n    bridge_enable_secure_view_access: false`n" -ForegroundColor Yellow
+                        exit
+                    }
                     $paths += @{'path' = $folderPath; 'runDate' = $runDate; 'runType' = $run.backupRun.runType; 'sourceName' = $sourceInfo.source.name}
                     $x = $x + 1
                 }

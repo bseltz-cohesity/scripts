@@ -110,6 +110,7 @@ To refresh a view (on a schedule):
 * -objectName: (optional) name of sqlServer whose backup to clone
 * -viewName: (optional) name of new or existing view to clone backup files to
 * -waitForRun: (optional) wait for currently run to complete
+* -dirPath: (optional) clone a subdirectory (e.g /home/myuser/mydir or /C/users/myuser/mydir)
 
 ## Parameters for Run Selection
 
