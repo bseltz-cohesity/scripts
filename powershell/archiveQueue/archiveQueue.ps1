@@ -47,15 +47,15 @@ $finishedStates = @('kCanceled', 'kCanceling', 'kSuccess', 'kFailure', 'kWarning
 
 $cluster = api get cluster
 $dateString = (get-date).ToString('yyyy-MM-dd')
-$outfileName = "ArchiveQueue-$($cluster.name)-$dateString.csv"
-"Job ID,Job Name,Run Date,Logical $unit,Status,Target,Start Time,End Time" | Out-File -FilePath $outfileName
+$outfileName = "ArchiveQueue-$($cluster.name)-$dateString.tsv"
+"Job ID`tJob Name`tRun Date`tLogical $unit`tPhysical $unit`tStatus`tTarget`tStart Time`tEnd Time" | Out-File -FilePath $outfileName
 
 $nowUsecs = dateToUsecs (get-date)
 $thenUsecs = [int64]($nowUsecs + ($daysTilExpire * 24 * 60 * 60 * 1000000))
 
 $runningTasks = 0
 
-foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -and $_.isActive -ne $false} | Sort-Object -Property name)){
+foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True} | Sort-Object -Property name)){
 
     $jobId = $job.id
     $jobName = $job.name
@@ -80,7 +80,7 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -
                 foreach($copyRun in ($run.copyRun | Where-Object {$_.target.type -eq 'kArchival'})){
                     $archiveTasksFound = $True
                     $target = $copyRun.target.archivalTarget.vaultName
-                    $status = $copyRun.status.subString(1)
+                    $status = $copyRun.status #.subString(1)
                     $startTimeUsecs = $copyRun.stats.startTimeUsecs
                     $endTimeUsecs = $copyRun.stats.endTimeUsecs
                     $noLongerNeeded = ''
@@ -92,7 +92,11 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -
                     }else{
                         $transferred = 0
                     }
-                    
+                    if($copyRun.stats.physicalBytesTransferred){
+                        $physicalTransferred = $copyRun.stats.physicalBytesTransferred
+                    }else{
+                        $physicalTransferred = 0
+                    }
                     if($copyRun.stats.isIncremental -eq $False){
                         $referenceFull = '(Reference Full)'
                     }else{
@@ -100,7 +104,7 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -
                     }
 
                     if($copyRun.status -notin $finishedStates){
-                        # cancel outdates
+                        # cancel outdated
                         if($cancelOutdated){
                             $thisrun = api get "/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=$($runStartTimeUsecs)&id=$($jobId)"
                             foreach($task in $thisrun.backupJobRuns.protectionRuns[0].copyRun.activeTasks){
@@ -125,7 +129,7 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -
                         }
 
                         "        {0,25}:    ({1} $unit)    {2}  {3}  {4}" -f (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $referenceFull, $noLongerNeeded, $cancelling
-                        "{0},{1},{2},{3},{4},{5},{6}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status, $target, (usecsToDate $startTimeUsecs) | Out-File -FilePath $outfileName -Append
+                        "{0}`t{1}`t{2}`t{3}`t{4}`t{5}`t{6}`t{7}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), (toUnits $transferred), (toUnits $physicalTransferred), $status, $target, (usecsToDate $startTimeUsecs) | Out-File -FilePath $outfileName -Append
                         $runningTasks += 1
                         # cancel archive task
                         if($cancel -eq $True){
@@ -138,7 +142,7 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True -
                     }else{
                         if($showFinished){
                             "        {0,25}:    ({1} $unit)    {2}  {3}" -f (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status, $referenceFull
-                            "{0},{1},{2},{3},{4},{5},{6},{7}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status, $target, (usecsToDate $startTimeUsecs), (usecsToDate $endTimeUsecs) | Out-File -FilePath $outfileName -Append
+                            "{0}`t{1}`t{2}`t{3}`t{4}`t{5}`t{6}`t{7}`t{8}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), (toUnits $transferred), (toUnits $physicalTransferred), $status, $target, (usecsToDate $startTimeUsecs), (usecsToDate $endTimeUsecs) | Out-File -FilePath $outfileName -Append
                         }else{
                             if($quickScan){
                                 $breakOut = $True
