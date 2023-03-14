@@ -270,7 +270,7 @@ $headings = @()
 
 Write-Host "Retrieving report data..."
 
-foreach($cluster in ($selectedClusters | Sort-Object -Property name)){
+foreach($cluster in ($selectedClusters)){  # | Sort-Object -Property name)){
     if($cluster.name -in @($regions.regions.name)){
         $systemId = $cluster.id
     }else{
@@ -326,7 +326,7 @@ foreach($cluster in ($selectedClusters | Sort-Object -Property name)){
                         $headings = @($headings + "$($attribute.customLabel)")
                     }
                 }else{
-                    if($attribute.attributeName -match 'byteds'){
+                    if($attribute.attributeName -match 'bytes'){
                         $headings = @($headings + $($attribute.attributeName -replace 'bytes', $unit))
                     }elseif($attribute.attributeName -match 'read' -or
                             $attribute.attributeName -match 'written' -or
