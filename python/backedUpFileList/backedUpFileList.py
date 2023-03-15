@@ -1,14 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2023.03.06
-
-# usage: ./backedUpFileList.py -v mycluster \
-#                              -u myuser \
-#                              -d mydomain.net \
-#                              -s server1.mydomain.net \
-#                              -j myjob \
-#                              -f '2020-06-29 12:00:00'
+# version 2023.03.15
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -98,8 +91,12 @@ def showFiles(doc, version):
     if 'numEntriesIndexed' not in version or version['numEntriesIndexed'] == 0:
         useLibrarian = ''  # False
     else:
-        useLibrarian = '&useLibrarian=true'
-
+        if 'indexingStatus' not in version or version['indexingStatus'] != 2:
+            useLibrarian = ''  # False
+        else:
+            useLibrarian = '&useLibrarian=true'
+    if noindex:
+        useLibrarian = ''  # False
     instance = ("attemptNum=%s&clusterId=%s&clusterIncarnationId=%s&entityId=%s&jobId=%s&jobInstanceId=%s&jobStartTimeUsecs=%s&jobUidObjectId=%s" %
                 (version['instanceId']['attemptNum'],
                     doc['objectId']['jobUid']['clusterId'],

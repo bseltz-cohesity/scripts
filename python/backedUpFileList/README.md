@@ -71,6 +71,6 @@ To choose the backup at or after the specified file date:
 * -r, --runid: use specific run ID
 * -f, --filedate: (optional) date to inspect (next backup after date will be inspected)
 * -p, --startpath: (optional) start listing files at path (default is /)
-* -n, --noindex: (optional) if omitted, indexer will be used
+* -n, --noindex: (optional) do not use the index (otherwise index usage will be automatic)
 * -ss, --showstats: (optional) include file date and size in the output
 * -nt, --newerthan: (optional) show files added/modified in the last X days
