@@ -37,7 +37,7 @@ Place both files in a folder together and run the main script like so:
 * -password: (optional) will use cached password or will be prompted
 * -noPrompt: (optional) do not prompt for password
 * -mcm: (optional) endpoint is mcm
-* -clusterName: (optional) helios clusters to include (comma separated) defaults to all helios clusters
+* -clusterName: (optional) one or more helios clusters to include (comma separated)
 * -unit: (optional) display sizes in KiB, MiB, GiB, TiB (default is MiB)
 * -days: (optional) days back to look for workloads (default is back to cluster creation)
 * -includeObjectDetails: (optional) display object level details
