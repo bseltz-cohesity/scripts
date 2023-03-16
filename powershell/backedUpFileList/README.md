@@ -82,6 +82,6 @@ Or simply use the latest version:
 * -runId: (optional) use snapshot version with specific job run ID
 * -fileDate: (optional) use snapshot version at or after date specified
 * -startPath: (optional) start listing files at path (default is /)
-* -noIndex: (optional) if omitted, indexer will be used
+* -noIndex: (optional) force do not use index
 * -showStats: (optional) include file date and size in the output
 * -newerThan: (optional) only list files that were added/modified in the last X days
