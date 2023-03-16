@@ -1,5 +1,4 @@
-# version 2023.03.05
-
+# version 2023.01.26
 # usage: ./backedUpFileList.ps1 -vip mycluster \
 #                               -username myuser \
 #                               -domain mydomain.net \
@@ -99,7 +98,14 @@ function showFiles($doc, $version){
     if($version.numEntriesIndexed -eq 0){
         $useLibrarian = $False
     }else{
-        $useLibrarian = $True
+        if($version.indexingStatus -ne 2){
+            $useLibrarian = $False
+        }else{
+            $useLibrarian = $True
+        }
+    }
+    if($noIndex){
+        $useLibrarian = $False
     }
     if($newerThan -gt 0){
         Write-Host "`nSearching for files added/modified in the past $newerThan days...`n"
