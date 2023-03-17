@@ -31,7 +31,7 @@ yum localinstall el-cohesity-agent-6.6.0d_u2-1.x86_64.rpm
 
 `Note`: If a local firewall is running on the GPFS node, ensure that port 50051/tcp is open for inbound connections from the Cohesity cluster.
 
-Copy the pre and post scripts onto the host, user_scripts directory under the installation directory of the Cohesity agent, typically `/opt/cohesity/agent/software/crux/bin/user_scripts/` and make the scripts executable:
+Copy the pre and post scripts into `user_scripts` directory under the installation directory of the Cohesity agent, typically `/opt/cohesity/agent/software/crux/bin/user_scripts/` and make the scripts executable:
 
 ```bash
 chmod +x prescript.sh
