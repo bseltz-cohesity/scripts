@@ -40,7 +40,7 @@ chmod +x postscript.sh
 
 ## On the Cohesity Cluster
 
-Register the GPFS nodes as physical protection sources. Note the name of the registered sources, which will be an FQDN like gpfsnode1.mydomain.net (preferred) or an IP address.
+Register the GPFS nodes as physical protection sources. Note the name of the registered sources, which will typically be an FQDN like `gpfsnode1.mydomain.net` (preferred) or an IP address.
 
 Create a physical file-based protection group (one for each GPFS node that you want to protect)
 
