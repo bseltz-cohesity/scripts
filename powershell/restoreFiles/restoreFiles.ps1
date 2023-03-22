@@ -1,4 +1,4 @@
-# version 2023.01.28
+# version 2023.03.22
 ### usage: ./restoreFiles.ps1 -vip mycluster -username myuser -domain mydomain.net `
 #                             -sourceServer server1.mydomain.net `
 #                             -targetServer server2.mydomain.net `
@@ -35,7 +35,8 @@ param (
     [Parameter()][switch]$showLog,
     [Parameter()][switch]$overwrite,
     [Parameter()][switch]$rangeRestore,
-    [Parameter()][switch]$showVersions
+    [Parameter()][switch]$showVersions,
+    [Parameter()][switch]$noIndex
 )
 
 if($overWrite){
@@ -101,7 +102,6 @@ if(!$targetEntity){
 }
 
 # find backups for source server
-# $searchResults = api get "/searchvms?entityTypes=kPhysical&vmName=$sourceServer"
 $searchResults = api get "/searchvms?vmName=$sourceServer"
 $searchResults = $searchResults.vms | Where-Object {$_.vmDocument.objectName -eq $sourceServer}
 
@@ -309,8 +309,6 @@ if($False -eq $independentRestores){
     # perform blind restore from selected version
     if($rangeRestore){
         foreach($version in $doc.versions){
-            # $version | ConvertTo-Json -Depth 99
-            # exit
             restore $files $doc $version $targetEntity $False
             Start-Sleep 5
             $override = $False
@@ -320,13 +318,13 @@ if($False -eq $independentRestores){
     }
 }else{
     # perform independent restores
-    if($doc.versions | Where-Object numEntriesIndexed -eq 0){
+    if($noIndex -or ($doc.versions | Where-Object {$_.numEntriesIndexed -eq 0 -or $_.indexingStatus -ne 2})){
         Write-Host "Crawling for files..."
     }
     foreach($file in $files){
         $fileRestored = $False
         $encodedFile = [System.Web.HttpUtility]::UrlEncode($file)
-        if($doc.versions | Where-Object numEntriesIndexed -eq 0){
+        if($noIndex -or ($doc.versions | Where-Object {$_.numEntriesIndexed -eq 0 -or $_.indexingStatus -ne 2})){
             # there are non indexed snapshots, try non indexed search
             $global:foundFile = $false
             foreach($version in $doc.versions){
@@ -412,8 +410,6 @@ if($False -eq $independentRestores){
                         }else{
                             if($rangeRestore){
                                 foreach($fileversion in $fileversions.versions){
-                                    # $fileversion | ConvertTo-Json -Depth 99
-                                    # exit
                                     restore $filedoc.filename $doc $fileversion $targetEntity $True
                                     Start-Sleep 5
                                     $override = $False
