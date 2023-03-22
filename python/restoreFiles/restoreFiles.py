@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """restore files using python"""
 
-# version 2023.01.22
+# version 2023.03.22
 
 # usage: ./restoreFiles.py -v mycluster \
 #                          -u myusername \
@@ -46,6 +46,7 @@ parser.add_argument('-o', '--newonly', action='store_true')           # abort if
 parser.add_argument('-l', '--latest', action='store_true')            # only use latest version
 parser.add_argument('-w', '--wait', action='store_true')              # wait for completion and report result
 parser.add_argument('-k', '--taskname', type=str, default=None)       # recoverytask name
+parser.add_argument('-x', '--noindex', action='store_true')           # force no index usage
 args = parser.parse_args()
 
 vip = args.vip
@@ -76,6 +77,7 @@ latest = args.latest
 newonly = args.newonly
 wait = args.wait
 taskname = args.taskname
+noindex = args.noindex
 
 if sys.version_info > (3,):
     long = int
@@ -299,13 +301,13 @@ def listdir(searchPath, dirPath, instance, volumeInfoCookie=None, volumeName=Non
 if independentRestores is False:
     restore(files, doc, version, targetEntity, False)
 else:
-    unindexedSnapshots = [s for s in doc['versions'] if 'numEntriesIndexed' not in s or s['numEntriesIndexed'] == 0]
-    if unindexedSnapshots is not None and len(unindexedSnapshots) > 0:
+    unindexedSnapshots = [s for s in doc['versions'] if 'numEntriesIndexed' not in s or s['numEntriesIndexed'] == 0 or 'indexingStatus' not in s or s['indexingStatus'] != 2]
+    if noindex or (unindexedSnapshots is not None and len(unindexedSnapshots) > 0):
         print('Crawling for files...')
     for file in files:
         encodedFile = quote_plus(file)
         fileRestored = False
-        if unindexedSnapshots is not None and len(unindexedSnapshots) > 0:
+        if noindex or (unindexedSnapshots is not None and len(unindexedSnapshots) > 0):
             foundFile = None
             for version in doc['versions']:
                 if foundFile is None:
