@@ -1,31 +1,25 @@
-#./chargebackReport.ps1 -vip mycluster -username myusername [ -domain mydomain.net ] -costPerGB .10 [ -prefix demo, test ] -sendTo myuser@mydomain.net, anotheruser@mydomain.net -smtpServer 192.168.1.95 -sendFrom backupreport@mydomain.net
- 
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][string]$vip = 'helios.cohesity.com',   # the cluster to connect to (DNS name or IP)
-    [Parameter()][string]$username = 'helios',           # username (local or AD)
-    [Parameter()][string]$domain = 'local',              # local or AD domain
-    [Parameter()][switch]$useApiKey,                     # use API key for authentication
-    [Parameter()][string]$password,                      # optional password
-    [Parameter()][switch]$noPrompt,                      # do not prompt for password
-    [Parameter()][string]$tenant,                        # org to impersonate
-    [Parameter()][switch]$mcm,                           # connect to MCM endpoint
-    [Parameter()][string]$mfaCode = $null,               # MFA code
-    [Parameter()][switch]$emailMfaCode,                  # email MFA code
-    [Parameter()][string]$clusterName = $null,           # helios cluster to access
-    [Parameter()][string]$startDate = '',
-    [Parameter()][string]$endDate = '',
-    [Parameter()][switch]$lastCalendarMonth,
-    [Parameter()][int]$lastXDays = 0,
-    [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'MiB',
-    [Parameter()][switch]$includeClones,
-    [Parameter()][string]$nameMatch = '',
-    [Parameter()][ValidateSet('Success','Failure','Canceled','All')][string]$status = 'All',
-    [Parameter()][string]$smtpServer, #outbound smtp server '192.168.1.95'
-    [Parameter()][string]$smtpPort = 25, #outbound smtp port
-    [Parameter()][array]$sendTo, #send to address
-    [Parameter()][string]$sendFrom #send from address
+   [Parameter()][array]$vip = 'helios.cohesity.com', #the cluster to connect to (DNS name or IP)
+   [Parameter()][string]$username = 'helios', #username (local or AD)
+   [Parameter()][array]$clusterName,
+   [Parameter()][string]$domain = 'local', #local or AD domain
+   [Parameter()][switch]$useApiKey,                     # use API key for authentication
+   [Parameter()][string]$password,                      # optional password
+   [Parameter()][switch]$noPrompt,                      # do not prompt for password
+   [Parameter()][string]$startDate = '',
+   [Parameter()][string]$endDate = '',
+   [Parameter()][switch]$lastCalendarMonth,
+   [Parameter()][int]$lastXDays = 0,
+   [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'MiB',
+   [Parameter()][switch]$includeClones,
+   [Parameter()][string]$nameMatch = '',
+   [Parameter()][ValidateSet('Success','Failure','Canceled','All')][string]$status = 'All',
+   [Parameter()][string]$smtpServer, #outbound smtp server '192.168.1.95'
+   [Parameter()][string]$smtpPort = 25, #outbound smtp port
+   [Parameter()][array]$sendTo, #send to address
+   [Parameter()][string]$sendFrom #send from address
 )
 
 $conversion = @{'Kib' = 1024; 'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
@@ -33,26 +27,8 @@ function toUnits($val){
     return "{0:n0}" -f ($val/($conversion[$unit]))
 }
 
-# source the cohesity-api helper code
+### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
-
-# authenticate
-apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
-
-# select helios/mcm managed cluster
-if($USING_HELIOS){
-    if($clusterName){
-        $thisCluster = heliosCluster $clusterName
-    }else{
-        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
-        exit 1
-    }
-}
-
-if(!$cohesity_api.authorized){
-    Write-Host "Not authenticated" -ForegroundColor Yellow
-    exit 1
-}
 
 ### determine start and end dates
 $today = Get-Date
@@ -73,16 +49,14 @@ if($startDate -ne '' -and $endDate -ne ''){
 $start = (usecsToDate $uStart).ToString('yyyy-MM-dd')
 $end = (usecsToDate $uEnd).ToString('yyyy-MM-dd')
 
-$cluster = api get cluster
-
 $title = "SQL Restore Report for $($cluster.name) ($start - $end)"
 
 $date = (get-date).ToString()
 
 $now = (Get-Date).ToString("yyyy-MM-dd")
-$csvFile = "sqlRestoreReport-$($cluster.name)-$now.tsv"
+$csvFile = "sqlRestoreReport-$now.tsv"
 
-"Date`tTask`tObject`tSize ($unit)`tTarget`tStatus`tDuration (Min)`tUser" | Out-File $csvFile
+"Cluster Name`tDate`tTask`tObject`tSize ($unit)`tTarget`tStatus`tDuration (Min)`tUser" | Out-File $csvFile
 
 $html = '<html>
 <head>
@@ -195,15 +169,16 @@ $html += "</span>
 </p>
 <table>
 <tr>
-        <th>Date</th>
-        <th>Task</th>
-        <th>Object</th>
-        <th>Size ($unit)</th>
-        <th>Target</th>
-        <th>Status</th>
-        <th>Duration (Min)</th>
-        <th>User</th>
-      </tr>"
+    <th>Cluster Name</th>
+    <th>Date</th>
+    <th>Task</th>
+    <th>Object</th>
+    <th>Size ($unit)</th>
+    <th>Target</th>
+    <th>Status</th>
+    <th>Duration (Min)</th>
+    <th>User</th>
+</tr>"
 
 $entityType=@('Unknown', 'VMware', 'HyperV', 'SQL', 'View', 'Puppeteer',
               'Physical', 'Pure', 'Azure', 'Netapp', 'Agent', 'GenericNas',
@@ -214,83 +189,105 @@ $entityType=@('Unknown', 'VMware', 'HyperV', 'SQL', 'View', 'Puppeteer',
               'Nimble', 'AzureSnapshotManager', 'Elastifile', 'Cassandra', 'MongoDB',
               'HBase', 'Hive', 'Hdfs', 'Couchbase', 'Unknown', 'Unknown', 'Unknown')
 
-$restoresCount = 0
-$lastTaskId = 0
-$endUsecs = $uEnd
-while(1){
-    $restores = api get "/restoretasks?restoreTypes=kRestoreApp&_includeTenantInfo=true&endTimeUsecs=$endUsecs&startTimeUsecs=$uStart"
-    foreach ($restore in $restores | Sort-Object -Property {$_.restoreTask.performRestoreTaskState.base.startTimeUsecs} -Descending){
-        $taskId = $restore.restoreTask.performRestoreTaskState.base.taskId
-        $taskName = $restore.restoreTask.performRestoreTaskState.base.name
-        if($nameMatch -eq '' -or $taskName -match $nameMatch){
-            $thisstatus = ($restore.restoreTask.performRestoreTaskState.base.publicStatus).Substring(1)
-            if($status -eq 'All' -or $thisstatus -eq $status){
-                $startTime = usecsToDate $restore.restoreTask.performRestoreTaskState.base.startTimeUsecs
-                $duration = '-'
-                if($restore.restoreTask.performRestoreTaskState.base.PSObject.properties['endTimeUsecs']){
-                    $endTime = usecsToDate $restore.restoreTask.performRestoreTaskState.base.endTimeUsecs
-                    $duration = [math]::Round(($endTime - $startTime).TotalMinutes)
-                    $endUsecs = $restore.restoreTask.performRestoreTaskState.base.endTimeUsecs - 1
-                }
-                $link = "https://$vip/protection/recovery/detail/local/$taskId/"
-        
-                if($restore.restoreTask.performRestoreTaskState.PSObject.properties['restoreAppTaskState']){
-                    if($restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.PSObject.Properties['restoreAppObjectVec']){
-                        $targetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
-                        $restoreAppObjects = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec
-                    }else{
-                        $targetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.childRestoreAppParamsVec[0].ownerRestoreInfo.ownerObject.entity.displayName
-                        $restoreAppObjects = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.childRestoreAppParamsVec[0].restoreAppObjectVec
-                    }
+foreach($v in $vip){
+    ### authenticate
+    apiauth -vip $v -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -noPromptForPassword $noPrompt -quiet
+
+    if($USING_HELIOS -and ! $clusterName){
+        $clusterName = @((heliosClusters).name)
+    }
+
+    if(!$cohesity_api.authorized){
+        Write-Host "$v Not authenticated" -ForegroundColor Yellow
+    }else{
+        if(!$USING_HELIOS){
+            $clusterName = @((api get cluster).name)
+        }
+        foreach($cluster in $clusterName){
+            if($USING_HELIOS){
+                $null = heliosCluster $cluster
+            }
+            $restoresCount = 0
+            $lastTaskId = 0
+            $endUsecs = $uEnd
+            while(1){
+                $restores = api get "/restoretasks?restoreTypes=kRestoreApp&_includeTenantInfo=true&endTimeUsecs=$endUsecs&startTimeUsecs=$uStart"
+                foreach ($restore in $restores | Sort-Object -Property {$_.restoreTask.performRestoreTaskState.base.startTimeUsecs} -Descending){
+                    $taskId = $restore.restoreTask.performRestoreTaskState.base.taskId
+                    $taskName = $restore.restoreTask.performRestoreTaskState.base.name
+                    if($nameMatch -eq '' -or $taskName -match $nameMatch){
+                        $thisstatus = ($restore.restoreTask.performRestoreTaskState.base.publicStatus).Substring(1)
+                        if($status -eq 'All' -or $thisstatus -eq $status){
+                            $startTime = usecsToDate $restore.restoreTask.performRestoreTaskState.base.startTimeUsecs
+                            $duration = '-'
+                            if($restore.restoreTask.performRestoreTaskState.base.PSObject.properties['endTimeUsecs']){
+                                $endTime = usecsToDate $restore.restoreTask.performRestoreTaskState.base.endTimeUsecs
+                                $duration = [math]::Round(($endTime - $startTime).TotalMinutes)
+                                $endUsecs = $restore.restoreTask.performRestoreTaskState.base.endTimeUsecs - 1
+                            }
+                            $link = "https://$cluster/protection/recovery/detail/local/$taskId/"
                     
-                    foreach ($restoreAppObject in $restoreAppObjects){
-                        $objectName = $restoreAppObject.appEntity.displayName
-                        $objectType = $entityType[$restoreAppObject.appEntity.type]
-                        if($objectType -eq 'SQL' -and ($includeClones -or $restore.restoreTask.performRestoreTaskState.base.type -eq 4)){
-                            $restoresCount += 1
-                            $totalSize = toUnits $restoreAppObject.appEntity.sqlEntity.totalSizeBytes
-                            if($restoreAppObject.restoreParams.targetHost.displayName){
-                                $targetServer = $restoreAppObject.restoreParams.targetHost.displayName
+                            if($restore.restoreTask.performRestoreTaskState.PSObject.properties['restoreAppTaskState']){
+                                if($restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.PSObject.Properties['restoreAppObjectVec']){
+                                    $targetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
+                                    $restoreAppObjects = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec
+                                }else{
+                                    $targetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.childRestoreAppParamsVec[0].ownerRestoreInfo.ownerObject.entity.displayName
+                                    $restoreAppObjects = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.childRestoreAppParamsVec[0].restoreAppObjectVec
+                                }
+                                
+                                foreach ($restoreAppObject in $restoreAppObjects){
+                                    $objectName = $restoreAppObject.appEntity.displayName
+                                    $objectType = $entityType[$restoreAppObject.appEntity.type]
+                                    if($objectType -eq 'SQL' -and ($includeClones -or $restore.restoreTask.performRestoreTaskState.base.type -eq 4)){
+                                        $restoresCount += 1
+                                        $totalSize = toUnits $restoreAppObject.appEntity.sqlEntity.totalSizeBytes
+                                        if($restoreAppObject.restoreParams.targetHost.displayName){
+                                            $targetServer = $restoreAppObject.restoreParams.targetHost.displayName
+                                        }
+                                        $targetObject = $targetServer
+                                        # sql target
+                                        if($restoreAppObject.restoreParams.sqlRestoreParams.instanceName){
+                                            $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.instanceName)"
+                                        }
+                                        if($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName){
+                                            $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName)"
+                                        }
+                                        if($targetObject -eq $targetServer){
+                                            $targetObject = "$targetServer/$objectName"
+                                        }
+                                        if($thisstatus -eq 'Failure'){
+                                            $html += "<tr style='color:BA3415;'>"
+                                        }elseif($thisstatus -eq 'Canceled'){
+                                            $html += "<tr style='color:FF9800;'>"
+                                        }else{
+                                            $html += "<tr>"
+                                        }
+                                        $html += "<td>$cluster</td>
+                                        <td>$startTime</td>
+                                        <td><a href=$link>$taskName</a></td>
+                                        <td>$sourceServer/$objectName</td>
+                                        <td>$totalSize</td>
+                                        <td>$targetObject</td>
+                                        <td>$thisstatus</td>
+                                        <td>$duration</td>
+                                        <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
+                                        </tr>"
+                                        "$cluster`t$startTime`t$taskName`t$objectName`t$totalSize`t$targetObject`t$thisstatus`t$duration`t$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append    
+                                    }
+                                }
                             }
-                            $targetObject = $targetServer
-                            # sql target
-                            if($restoreAppObject.restoreParams.sqlRestoreParams.instanceName){
-                                $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.instanceName)"
-                            }
-                            if($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName){
-                                $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName)"
-                            }
-                            if($targetObject -eq $targetServer){
-                                $targetObject = "$targetServer/$objectName"
-                            }
-                            if($thisstatus -eq 'Failure'){
-                                $html += "<tr style='color:BA3415;'>"
-                            }elseif($thisstatus -eq 'Canceled'){
-                                $html += "<tr style='color:FF9800;'>"
-                            }else{
-                                $html += "<tr>"
-                            }
-                            $html += "<td>$startTime</td>
-                            <td><a href=$link>$taskName</a></td>
-                            <td>$sourceServer/$objectName</td>
-                            <td>$totalSize</td>
-                            <td>$targetObject</td>
-                            <td>$thisstatus</td>
-                            <td>$duration</td>
-                            <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
-                            </tr>"
-                            "$startTime`t$taskName`t$objectName`t$totalSize`t$targetObject`t$thisstatus`t$duration`t$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append    
                         }
                     }
                 }
+                if($lastTaskId -eq $taskId){
+                    break
+                }else{
+                    $lastTaskId = $taskId
+                    Write-Host "Retrieved $($restoresCount) restore tasks..."
+                }
             }
         }
-    }
-    if($lastTaskId -eq $taskId){
-        break
-    }else{
-        $lastTaskId = $taskId
-        Write-Host "Retrieved $($restoresCount) restore tasks..."
     }
 }
 
@@ -299,7 +296,7 @@ $html += "</table>
 </body>
 </html>"
 
-$html | out-file "sqlRestoreReport-$($cluster.name)-$($now).html"
+$html | out-file "sqlRestoreReport-$($now).html"
 
 "Saving output to sqlRestoreReport-$now.html and sqlRestoreReport-$now.tsv"
 
