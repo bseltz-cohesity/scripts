@@ -216,7 +216,13 @@ foreach($v in $vip){
                     $taskId = $restore.restoreTask.performRestoreTaskState.base.taskId
                     $taskName = $restore.restoreTask.performRestoreTaskState.base.name
                     if($nameMatch -eq '' -or $taskName -match $nameMatch){
-                        $thisstatus = ($restore.restoreTask.performRestoreTaskState.base.publicStatus).Substring(1)
+                        $thisstatus = $restore.restoreTask.performRestoreTaskState.base.publicStatus
+                        if($thisstatus -ne $null){
+                            $thisstatus = $thisstatus.subString(1)
+                        }else{
+                            $restore | ConvertTo-Json -Depth 99 | Out-File -FilePath ./restore-debug.json
+                            continue
+                        }
                         if($status -eq 'All' -or $thisstatus -eq $status){
                             $startTime = usecsToDate $restore.restoreTask.performRestoreTaskState.base.startTimeUsecs
                             $duration = '-'
