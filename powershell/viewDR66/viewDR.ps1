@@ -36,8 +36,11 @@ if($helios -or $mcm){
     }
 }
 
-$jobs = api get -v2 "data-protect/protection-groups?isActive=false&environments=kView"
-$jobs | ConvertTo-Json -Depth 99 | Out-File "jobs-$($targetCluster).json"
+if($prepareForFailover -or $unplannedFailover){
+    $jobs = api get -v2 "data-protect/protection-groups?isActive=false&environments=kView"
+    $jobs | ConvertTo-Json -Depth 99 | Out-File "jobs-$($targetCluster).json"
+}
+
 $views = api get views
 
 # gather view list
