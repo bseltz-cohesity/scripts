@@ -212,7 +212,7 @@ foreach($v in $vip){
             $endUsecs = $uEnd
             while(1){
                 $restores = api get "/restoretasks?restoreTypes=kRestoreApp&_includeTenantInfo=true&endTimeUsecs=$endUsecs&startTimeUsecs=$uStart"
-                foreach ($restore in $restores | Sort-Object -Property {$_.restoreTask.performRestoreTaskState.base.startTimeUsecs} -Descending){
+                foreach ($restore in $restores | Where-Object {$_ -ne $null} | Sort-Object -Property {$_.restoreTask.performRestoreTaskState.base.startTimeUsecs} -Descending){
                     $taskId = $restore.restoreTask.performRestoreTaskState.base.taskId
                     $taskName = $restore.restoreTask.performRestoreTaskState.base.name
                     if($nameMatch -eq '' -or $taskName -match $nameMatch){
@@ -220,7 +220,6 @@ foreach($v in $vip){
                         if($thisstatus -ne $null){
                             $thisstatus = $thisstatus.subString(1)
                         }else{
-                            $restore | ConvertTo-Json -Depth 99 | Out-File -FilePath ./restore-debug.json
                             continue
                         }
                         if($status -eq 'All' -or $thisstatus -eq $status){
@@ -290,7 +289,7 @@ foreach($v in $vip){
                     break
                 }else{
                     $lastTaskId = $taskId
-                    Write-Host "Retrieved $($restoresCount) restore tasks..."
+                    Write-Host "$($cluster): retrieved $($restoresCount) restore tasks..."
                 }
             }
         }
