@@ -30,40 +30,12 @@ $dateString = $now.ToString('yyyy-MM-dd')
 $outfileName = "protectionRunsReport-$dateString.tsv"
 
 # headings
-$headings = "Cluster Name
-Tenant
-Job Name
-Environment
-Policy Name
-Run Type
-Run Start Time
-Run End Time
-Duration (Min)
-Run Status
-Logical ($unit)
-Read ($unit)
-Written ($unit)"
+$headings = "Cluster Name`tTenant`tJob Name`tEnvironment`tPolicy Name`tRun Type`tRun Start Time`tRun End Time`tDuration (Min)`tRun Status`tLogical ($unit)`tRead ($unit)`tWritten ($unit)"
 
 if($includeObjectDetails){
-   $headings = "Cluster Name
-Tenant
-Job Name
-Environment
-Policy Name
-Run Type
-Run Start Time
-Registered Source
-Object Name
-Start Time
-End Time
-Duration (Min)
-Status
-Logical ($unit)
-Read ($unit)
-Written ($unit)"
+   $headings = "Cluster Name`tTenant`tJob Name`tEnvironment`tPolicy Name`tRun Type`tRun Start Time`tRegistered Source`tObject Name`tStart Time`tEnd Time`tDuration (Min)`tStatus`tLogical ($unit)`tRead ($unit)`tWritten ($unit)"
 }
-$headings = $headings -split "`n" -join "`t"
-$headings | Out-File -FilePath $outfileName -Encoding utf8
+$headings | Out-File -FilePath $outfileName # -Encoding utf8
 
 
 # convert to units
