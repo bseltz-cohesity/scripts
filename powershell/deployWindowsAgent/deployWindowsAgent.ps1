@@ -5,9 +5,15 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, #Cohesity cluster to connect to
-    [Parameter(Mandatory = $True)][string]$username, #Cohesity username
-    [Parameter()][string]$domain = 'local', #Cohesity user domain name
+    [Parameter(Mandatory=$True)][string]$vip,
+    [Parameter(Mandatory=$True)][string]$username,
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$serverList, #Servers to add as physical source
     [Parameter()][string]$server,
     [Parameter()][switch]$storePassword,
@@ -45,8 +51,14 @@ Function Set-ServiceAcctCreds([string]$strCompName,[string]$strServiceName,[stri
     $service.StartService()
 }
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -tenant $tenant -noPromptForPassword $noPrompt
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit 1
+}
+
 
 ### get sqlAccount Password
 if($serviceAccount){
