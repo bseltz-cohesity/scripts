@@ -56,6 +56,7 @@ Place both files in a folder together and run the main script like so:
 * -includeClones: (optional) also show SQL clone tasks
 * -status: (optional) filter on status - Success, Failure, Canceled, All (default is All)
 * -nameMatch: (optional) filter on task name substring match
+* -targetServer: (optional) filter on target server
 
 ## Date Range Parameters
 

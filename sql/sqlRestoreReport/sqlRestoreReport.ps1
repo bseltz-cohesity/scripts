@@ -15,7 +15,8 @@ param (
    [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'MiB',
    [Parameter()][switch]$includeClones,
    [Parameter()][string]$nameMatch = '',
-   [Parameter()][ValidateSet('Success','Failure','Canceled','All')][string]$status = 'All',
+   [Parameter()][string]$targetServer,
+   [Parameter()][ValidateSet('Success','Failure','Canceled','Running','Accepted','All')][string]$status = 'All',
    [Parameter()][string]$smtpServer, #outbound smtp server '192.168.1.95'
    [Parameter()][string]$smtpPort = 25, #outbound smtp port
    [Parameter()][array]$sendTo, #send to address
@@ -234,10 +235,10 @@ foreach($v in $vip){
                     
                             if($restore.restoreTask.performRestoreTaskState.PSObject.properties['restoreAppTaskState']){
                                 if($restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.PSObject.Properties['restoreAppObjectVec']){
-                                    $targetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
+                                    $thisTargetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
                                     $restoreAppObjects = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec
                                 }else{
-                                    $targetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.childRestoreAppParamsVec[0].ownerRestoreInfo.ownerObject.entity.displayName
+                                    $thisTargetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.childRestoreAppParamsVec[0].ownerRestoreInfo.ownerObject.entity.displayName
                                     $restoreAppObjects = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.childRestoreAppParamsVec[0].restoreAppObjectVec
                                 }
                                 
@@ -245,12 +246,11 @@ foreach($v in $vip){
                                     $objectName = $restoreAppObject.appEntity.displayName
                                     $objectType = $entityType[$restoreAppObject.appEntity.type]
                                     if($objectType -eq 'SQL' -and ($includeClones -or $restore.restoreTask.performRestoreTaskState.base.type -eq 4)){
-                                        $restoresCount += 1
                                         $totalSize = toUnits $restoreAppObject.appEntity.sqlEntity.totalSizeBytes
                                         if($restoreAppObject.restoreParams.targetHost.displayName){
-                                            $targetServer = $restoreAppObject.restoreParams.targetHost.displayName
+                                            $thisTargetServer = $restoreAppObject.restoreParams.targetHost.displayName
                                         }
-                                        $targetObject = $targetServer
+                                        $targetObject = $thisTargetServer
                                         # sql target
                                         if($restoreAppObject.restoreParams.sqlRestoreParams.instanceName){
                                             $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.instanceName)"
@@ -258,27 +258,30 @@ foreach($v in $vip){
                                         if($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName){
                                             $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName)"
                                         }
-                                        if($targetObject -eq $targetServer){
-                                            $targetObject = "$targetServer/$objectName"
+                                        if($targetObject -eq $thisTargetServer){
+                                            $targetObject = "$thisTargetServer/$objectName"
                                         }
-                                        if($thisstatus -eq 'Failure'){
-                                            $html += "<tr style='color:BA3415;'>"
-                                        }elseif($thisstatus -eq 'Canceled'){
-                                            $html += "<tr style='color:FF9800;'>"
-                                        }else{
-                                            $html += "<tr>"
+                                        if(! $targetServer -or $targetServer -eq $thisTargetServer){
+                                            if($thisstatus -eq 'Failure'){
+                                                $html += "<tr style='color:BA3415;'>"
+                                            }elseif($thisstatus -eq 'Canceled'){
+                                                $html += "<tr style='color:FF9800;'>"
+                                            }else{
+                                                $html += "<tr>"
+                                            }
+                                            $html += "<td>$cluster</td>
+                                            <td>$startTime</td>
+                                            <td><a href=$link>$taskName</a></td>
+                                            <td>$sourceServer/$objectName</td>
+                                            <td>$totalSize</td>
+                                            <td>$targetObject</td>
+                                            <td>$thisstatus</td>
+                                            <td>$duration</td>
+                                            <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
+                                            </tr>"
+                                            "$cluster`t$startTime`t$taskName`t$objectName`t$totalSize`t$targetObject`t$thisstatus`t$duration`t$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
+                                            $restoresCount += 1 
                                         }
-                                        $html += "<td>$cluster</td>
-                                        <td>$startTime</td>
-                                        <td><a href=$link>$taskName</a></td>
-                                        <td>$sourceServer/$objectName</td>
-                                        <td>$totalSize</td>
-                                        <td>$targetObject</td>
-                                        <td>$thisstatus</td>
-                                        <td>$duration</td>
-                                        <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
-                                        </tr>"
-                                        "$cluster`t$startTime`t$taskName`t$objectName`t$totalSize`t$targetObject`t$thisstatus`t$duration`t$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append    
                                     }
                                 }
                             }
@@ -290,6 +293,7 @@ foreach($v in $vip){
                 }else{
                     $lastTaskId = $taskId
                     Write-Host "$($cluster): retrieved $($restoresCount) restore tasks..."
+                    break
                 }
             }
         }
