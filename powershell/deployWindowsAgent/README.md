@@ -64,11 +64,20 @@ managing Cohesity Agent on sqlserver2.mydomain.net
     Registering as SQL protection source...
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: name of the Cohesity cluster to connect to
-* -username: Cohesity user name
-* -domain: (optional) Cohesity user domain (defaults to local)
+* -vip: name or IP of Cohesity cluster
+* -username: name of user to connect to Cohesity
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+
+## Other Parameters
+
 * -serverList: (optional) path to file containing servernames to deploy to
 * -server: (optional) name of one server to deploy to
 * -storePassword: (optional) store service account password (encrypted) for later script runs
