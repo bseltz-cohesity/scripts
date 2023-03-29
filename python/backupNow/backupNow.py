@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.03.27
+# version 2023.03.29
 
 # version history
 # ===============
 # 2023.01.10 - enforce sleeptimesecs >= 30 and newruntimeoutsecs >= 720
 # 2023.02.17 - implement retry on get protectionJobs - added error code 7
+# 2023.03.29 - version bump
 
 # extended error codes
 # ====================
