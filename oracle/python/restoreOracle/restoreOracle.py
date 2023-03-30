@@ -228,6 +228,18 @@ if logtime is not None or latest is True:
                 validLogTime = True
                 break
 
+            if logEnd < logusecs:
+                logusecs = logEnd - 1000000
+                validLogTime = True
+                print('Using latest log backup: %s' % usecsToDate(logEnd))
+                break
+
+        if logtime is not None and version['instanceId']['jobStartTimeUsecs'] < logusecs:
+            print('Using latest DB backup: %s' % usecsToDate(version['instanceId']['jobStartTimeUsecs']))
+            logtime = None
+            latest = None
+            break
+
         versionNum += 1
 
 taskName = "Restore-Oracle"
@@ -419,7 +431,6 @@ taskId = response['restoreTask']['performRestoreTaskState']['base']['taskId']
 if taskId is None:
     print('Failed to get restore task ID')
     exit(1)
-# status = api('get', '/restoretasks/%s' % taskId)
 
 if wait is True:
     status = 'unknown'
