@@ -12,7 +12,7 @@ param (
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName,
     [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'GiB',
-    [Parameter()][int]$daysBack = 8,
+    [Parameter()][int]$daysBack = 14,
     [Parameter()][Int64]$numRuns = 100,
     [Parameter()][Int64]$backDays = 0
 )
@@ -80,7 +80,7 @@ foreach($job in (api get -v2 "data-protect/protection-groups?includeTenants=true
     if($policyName -notin $sizingData.Keys){
         $sizingData[$policyName] = @{}
     }
-    if($jobType -notin $sizingData[$policyName]){
+    if($jobType -notin $sizingData[$policyName].Keys){
         $sizingData[$policyName][$jobType] = @{}
     }
     $endUsecs = dateToUsecs $now
@@ -129,10 +129,10 @@ foreach($job in (api get -v2 "data-protect/protection-groups?includeTenants=true
                     }else{
                         $logicalBytes = $server.localSnapshotInfo.snapshotInfo.stats.logicalSizeBytes
                     }
-                    if($sourceName -notin $sizingData[$policyName][$jobType][$owner].Keys){
+                    if($sourceName -notin $sizingData["$policyName"]["$jobType"]["$owner"].Keys){
                         if($logicalBytes -gt 0){
-                            $sizingData[$policyName][$jobType][$owner][$sourceName] = $logicalBytes
-                            $sizingData[$policyName][$jobType][$owner]['total'] += $logicalBytes
+                            $sizingData["$policyName"]["$jobType"]["$owner"]["$sourceName"] = $logicalBytes
+                            $sizingData["$policyName"]["$jobType"]["$owner"]['total'] += $logicalBytes
                         }
                     }
                 }
@@ -150,17 +150,19 @@ foreach($view in $views.views){
     }
 }
 
-# $sizingData | ConvertTo-Json -Depth 99
-
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $fileName = "reverseSizingReport-SizingInfo-$($cluster.name)-$dateString.tsv"
 "Owner`tJob Type`tPolicy Name`tLogical Size $unit`tWorkload Size TB" | Out-File -FilePath $fileName -Encoding utf8
 
 foreach($policyName in $sizingData.Keys){
-    foreach($jobType in $sizingData[$policyName].Keys){
-        foreach($owner in $sizingData[$policyName][$jobType].Keys){
-            $total = toUnits ($sizingData[$policyName][$jobType][$owner]['total'])
-            $totalTB = [math]::Round($sizingData[$policyName][$jobType][$owner]['total'] / (1000 * 1000 * 1000 * 1000), 2)
+
+    foreach($jobType in $sizingData["$policyName"].Keys){
+
+        foreach($owner in $sizingData["$policyName"]["$jobType"].Keys){
+ 
+            $total = toUnits ($sizingData["$policyName"]["$jobType"]["$owner"]['total'])
+
+            $totalTB = [math]::Round($sizingData["$policyName"]["$jobType"]["$owner"]['total'] / (1000 * 1000 * 1000 * 1000), 2)
             "$owner`t$jobType`t$policyName`t$total`t$totalTB" | Out-File -FilePath $fileName -Encoding utf8 -Append
         }
     }
