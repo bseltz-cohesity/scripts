@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2023.03.09"""
+"""Cohesity Python REST API Wrapper Module - 2023.03.30"""
 
 ##########################################################################################
 # Change Log
@@ -19,6 +19,7 @@
 # 2022.09.21 - better handling of bad API key scenarios
 # 2022.11.26 - added v2 file download
 # 2023.03.09 - added impersonate and switchback functions and improved tenant ID lookup
+# 2023.03.30 - added try/except for log file
 #
 ##########################################################################################
 # Install Notes
@@ -583,21 +584,27 @@ def __writelog(logmessage):
     apierrordatestring = apidate.strftime("%Y-%m-%d-%H-%M-%S")
     apierrorusecs = dateToUsecs(apidate)
 
-    # rotate log
-    if os.path.exists(LOGFILE):
-        logsize = os.path.getsize(LOGFILE)
-        if logsize > 1048576:
-            os.rename(LOGFILE, '%s-%s.txt' % (LOGFILE, apierrordatestring))
+    try:
+        # rotate log
+        if os.path.exists(LOGFILE):
+            logsize = os.path.getsize(LOGFILE)
+            if logsize > 1048576:
+                os.rename(LOGFILE, '%s-%s.txt' % (LOGFILE, apierrordatestring))
+    except:
+        pass
 
     # avoid race condition
     callstack = traceback.format_stack()[0].replace('\n', ' ').strip()
     apierror = '%s :: %s' % (callstack, logmessage)
     if apierror == lastapierror and apierrorusecs < (lastapierrorusecs + 5000000):
         time.sleep(5)
-    # output log message
-    debuglog = open(LOGFILE, 'a')
-    debuglog.write('%s: %s\n' % (apierrordatestring, apierror))
-    debuglog.close()
+    try:
+        # output log message
+        debuglog = open(LOGFILE, 'a')
+        debuglog.write('%s: %s\n' % (apierrordatestring, apierror))
+        debuglog.close()
+    except:
+        pass
     lastapierrorusecs = apierrorusecs
     lastapierror = apierror
 
