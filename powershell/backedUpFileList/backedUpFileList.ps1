@@ -25,7 +25,8 @@ param (
     [Parameter()][Int64]$runId,
     [Parameter()][datetime]$fileDate,
     [Parameter()][string]$startPath = '/',
-    [Parameter()][switch]$noIndex,  # deprecated
+    [Parameter()][switch]$noIndex,
+    [Parameter()][switch]$forceIndex,
     [Parameter()][switch]$showStats,
     [Parameter()][Int64]$newerThan = 0
 )
@@ -72,7 +73,7 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
         }
     }
     if($dirList.PSObject.Properties['entries'] -and $dirList.entries.Count -gt 0){
-        $Global:filesFound = $True
+        $Script:filesFound = $True
         foreach($entry in $dirList.entries | Sort-Object -Property name){
             if($entry.type -eq 'kDirectory'){
                 listdir "$dirPath/$($entry.name)" $instance $volumeInfoCookie $volumeName
@@ -81,9 +82,11 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
                     $filesize = $entry.fstatInfo.size
                     $mtime = usecsToDate $entry.fstatInfo.mtimeUsecs
                     if($mtime -ge $daysAgo -or $newerThan -eq 0){
+                        $Script:fileCount += 1
                         "{0} ({1}) [{2} bytes]" -f $entry.fullPath, $mtime, $filesize | Tee-Object -FilePath $outputfile -Append
                     }
                 }else{
+                    $Script:fileCount += 1
                     "{0}" -f $entry.fullPath | Tee-Object -FilePath $outputfile -Append  
                 }
             }
@@ -104,13 +107,17 @@ function showFiles($doc, $version){
             $useLibrarian = $True
         }
     }
+    if($forceIndex -and $version.indexingStatus -eq 2){
+        $useLibrarian = $True
+    }
     if($noIndex){
         $useLibrarian = $False
     }
     if($newerThan -gt 0){
         Write-Host "`nSearching for files added/modified in the past $newerThan days...`n"
     }
-    $Global:filesFound = $False
+    $Script:filesFound = $False
+    $Script:fileCount = 0
     $versionDate = (usecsToDate $version.instanceId.jobStartTimeUsecs).ToString('yyyy-MM-dd_hh-mm-ss')
     $sourceServerString = $sourceServer.Replace('\','-').Replace('/','-')
     $outputfile = $(Join-Path -Path $PSScriptRoot -ChildPath "backedUpFiles-$($version.instanceId.jobInstanceId)-$($sourceServerString)-$versionDate.txt")
@@ -139,8 +146,10 @@ function showFiles($doc, $version){
     }else{
         listdir $startPath $instance
     }
-    if($Global:filesFound -eq $False){
+    if($Script:filesFound -eq $False){
         "No Files Found" | Tee-Object -FilePath $outputfile -Append
+    }else{
+        "`n$($Script:fileCount) files found" | Tee-Object -FilePath $outputfile -Append
     }
 }
 
@@ -194,7 +203,7 @@ foreach($sourceServer in $sourceServers){
         continue
     }
 
-    $Global:filesFound = $False
+    $Script:filesFound = $False
 
     # select version
     if($runId){
