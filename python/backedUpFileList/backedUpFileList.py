@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2023.03.15
+# version 2023.04.01
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -30,7 +30,8 @@ parser.add_argument('-e', '--end', type=str, default=None)            # show sna
 parser.add_argument('-r', '--runid', type=int, default=None)          # choose specific job run id
 parser.add_argument('-f', '--filedate', type=str, default=None)       # show snapshots after date
 parser.add_argument('-p', '--startpath', type=str, default='/')       # show files under this path
-parser.add_argument('-n', '--noindex', action='store_true')           # do not use librarian (deprecated)
+parser.add_argument('-n', '--noindex', action='store_true')           # do not use librarian
+parser.add_argument('-x', '--forceindex', action='store_true')           # do not use librarian
 parser.add_argument('-ss', '--showstats', action='store_true')        # show file last modified date and size
 parser.add_argument('-nt', '--newerthan', type=int, default=0)        # show files newer than X days
 
@@ -53,9 +54,11 @@ startpath = args.startpath
 noindex = args.noindex
 showstats = args.showstats
 newerthan = args.newerthan
+forceIndex = args.forceindex
 
 
 def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None, cookie=None):
+    global fileCount
     thisDirPath = quote_plus(dirPath).replace('%2F%2F', '%2F')
     if cookie is not None:
         if volumeName is not None:
@@ -77,9 +80,11 @@ def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None, cookie
                     mtime = usecsToDate(entry['fstatInfo']['mtimeUsecs'])
                     mtimeusecs = entry['fstatInfo']['mtimeUsecs']
                     if newerthan == 0 or mtimeusecs > timeAgo(newerthan, 'days'):
+                        fileCount += 1
                         print('%s (%s) [%s bytes]' % (entry['fullPath'], mtime, filesize))
                         f.write('%s (%s) [%s bytes]\n' % (entry['fullPath'], mtime, filesize))
                 else:
+                    fileCount += 1
                     print('%s' % entry['fullPath'])
                     f.write('%s\n' % entry['fullPath'])
     if dirList and 'cookie' in dirList:
@@ -88,6 +93,9 @@ def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None, cookie
 
 def showFiles(doc, version):
     global useLibrarian
+    global fileCount
+    filecount = 0
+
     if 'numEntriesIndexed' not in version or version['numEntriesIndexed'] == 0:
         useLibrarian = ''  # False
     else:
@@ -95,6 +103,8 @@ def showFiles(doc, version):
             useLibrarian = ''  # False
         else:
             useLibrarian = '&useLibrarian=true'
+    if forceIndex and 'indexingStatus' in version and version['indexingStatus'] == 2:
+        useLibrarian = '&useLibrarian=true'
     if noindex:
         useLibrarian = ''  # False
     instance = ("attemptNum=%s&clusterId=%s&clusterIncarnationId=%s&entityId=%s&jobId=%s&jobInstanceId=%s&jobStartTimeUsecs=%s&jobUidObjectId=%s" %
@@ -122,7 +132,7 @@ def showFiles(doc, version):
                 listdir(startpath, instance, f, volumeInfoCookie, volumeName)
     else:
         listdir(startpath, instance, f)
-
+    print('\n%s files found' % fileCount)
     f.close()
 
 
@@ -136,6 +146,7 @@ else:
     statfile = False
 
 useLibrarian = '&useLibrarian=true'  # True
+fileCount = 0
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
