@@ -33,7 +33,7 @@ Place both files in a folder together and run the main script like so:
 * -vip: Cohesity cluster to connect to
 * -username: Cohesity username
 * -domain: (optional) Active Directory domain (defaults to 'local')
-* -searchString: last few characters of the file extention you are looking for
+* -searchString: (optional) last few characters of the file extention you are looking for
 * -jobName: (optional) filter results by jobName
 * -objectName: (optional) filter results by objectName
 * -objectType: (optional) filter results by objectType (e.g. kVMware)

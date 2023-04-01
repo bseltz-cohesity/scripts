@@ -4,7 +4,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vip,
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
-    [Parameter(Mandatory = $True)][string]$searchString,
+    [Parameter()][string]$searchString,
     [Parameter()][string]$objectName = '',
     [Parameter()][string]$objectType = '',
     [Parameter()][string]$jobName = '',
@@ -79,46 +79,55 @@ if($objectName){
     $query = $query + "&sourceIds=$($sourceId)"
 }
 
-$results = api get "restore/files?paginate=true&pageSize=$pageSize&search=$($searchString)$query"
+if($searchString){
+    $query = $query + "&search=$($searchString)"
+}
+
+$results = api get "restore/files?paginate=true&pageSize=$($pageSize)$($query)"
+$fileCount = 0
 
 $oldcookie = $null
 while($True){
     if($results.files.count -gt 0){
         $output = $results.files | where-object { $_.isFolder -ne $True } | Sort-Object -Property {$_.protectionSource.name}, {$_.filename}
-        if($extensionOnly){
+        if($extensionOnly -and $searchString){
             $output = $output | Where-Object {$_.fileName -match $searchString+'$'}
         }
-        foreach($result in $output){                       
-            $objectName = $result.protectionSource.name
-            $fileName = $result.filename
-            $parentName = ''
-            $parentId = $result.protectionSource.parentId
-            $jobId = $result.jobUid.id
-            $clusterId = $result.jobUid.clusterId
-            if(!$localOnly -or $clusterId -eq $cluster.id){
-                $clusterIncarnationId = $result.jobUid.clusterIncarnationId
-                $sourceId = $result.protectionSource.id
-                $jobName = ($jobs | Where-Object id -eq $jobId).name
-                if($parentId){
-                    $parent = $rootNodes | Where-Object {$_.protectionSource.id -eq $parentId}
-                    if($parent){
-                        $parentName = $parent.protectionSource.name
-                    }
-                }
-                if($getMtime){
-                    $mtime = ''
-                    $thisFileName = [System.Web.HttpUtility]::UrlEncode($result.fileName)  # [System.Web.HttpUtility]::UrlEncode($result.fileName).Replace('%2f%2f','%2F')
-                    $snapshots = api get -v2 "data-protect/objects/$sourceId/protection-groups/$clusterId`:$clusterIncarnationId`:$jobId/indexed-objects/snapshots?indexedObjectName=$thisFileName&includeIndexedSnapshotsOnly=true"
-                    if($snapshots.snapshots.Count -gt 0){
-                        $mtimeUsecs = $snapshots.snapshots[0].lastModifiedTimeUsecs
-                        if($mtimeUsecs){
-                            $mtime = usecsToDate $mtimeUsecs
+        foreach($result in $output){
+            if($result.type -ne 'kDirectory' -and $result.type -ne 'kSymLink'){
+                $objectName = $result.protectionSource.name
+                $fileName = $result.filename
+                $parentName = ''
+                $parentId = $result.protectionSource.parentId
+                $jobId = $result.jobUid.id
+                $clusterId = $result.jobUid.clusterId
+                if(!$localOnly -or $clusterId -eq $cluster.id){
+                    $clusterIncarnationId = $result.jobUid.clusterIncarnationId
+                    $sourceId = $result.protectionSource.id
+                    $jobName = ($jobs | Where-Object id -eq $jobId).name
+                    if($parentId){
+                        $parent = $rootNodes | Where-Object {$_.protectionSource.id -eq $parentId}
+                        if($parent){
+                            $parentName = $parent.protectionSource.name
                         }
                     }
-                } 
-                write-host ("{0},{1},{2},{3}" -f $parentName, $objectName, $fileName, $mtime)
-                "{0}`t{1}`t{2}`t{3}`t{4}" -f $jobName, $parentName, $objectName, $fileName, $mtime | Out-File -FilePath foundFiles.tsv -Append    
-            }
+                    if($getMtime){
+                        $mtime = ''
+                        $thisFileName = [System.Web.HttpUtility]::UrlEncode($result.fileName)  # [System.Web.HttpUtility]::UrlEncode($result.fileName).Replace('%2f%2f','%2F')
+                        $snapshots = api get -v2 "data-protect/objects/$sourceId/protection-groups/$clusterId`:$clusterIncarnationId`:$jobId/indexed-objects/snapshots?indexedObjectName=$thisFileName&includeIndexedSnapshotsOnly=true"
+                        if($snapshots.snapshots.Count -gt 0){
+                            $snapshots.snapshots[0] | ConvertTo-Json -Depth 99
+                            $mtimeUsecs = $snapshots.snapshots[0].lastModifiedTimeUsecs
+                            if($mtimeUsecs){
+                                $mtime = usecsToDate $mtimeUsecs
+                            }
+                        }
+                    } 
+                    write-host ("{0},{1},{2},{3}" -f $parentName, $objectName, $fileName, $mtime)
+                    "{0}`t{1}`t{2}`t{3}`t{4}" -f $jobName, $parentName, $objectName, $fileName, $mtime | Out-File -FilePath foundFiles.tsv -Append
+                    $fileCount += 1
+                }
+            }           
         }
     }else{
         break
@@ -129,15 +138,17 @@ while($True){
         }
         $oldcookie = $results.paginationCookie
         while($results.paginationCookie -eq $oldcookie -and $results){
-                $results = api get "restore/files?paginate=true&pageSize=$pageSize&paginationCookie=$($results.paginationCookie)&search=$($searchString)$query"
-                if(! $results){
-                    "retrying..."
-                    Start-Sleep 2
-                }
+            $results = api get "restore/files?paginate=true&pageSize=$pageSize&paginationCookie=$($results.paginationCookie)$($query)"
+            if(! $results){
+                "retrying..."
+                Start-Sleep 2
+            }
         }
     }else{
         break
     }
 }
+
+"`n$fileCount indexed files found"
 
 "`nsaving results to foundFiles.csv"
