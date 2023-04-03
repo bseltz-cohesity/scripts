@@ -11,6 +11,7 @@ param (
 )
 
 $volumeTypes = @(1, 6)
+$Script:fsType = ''
 
 $environments = @('Unknown', 'VMware', 'HyperV', 'SQL', 'View',
                   'RemoteAdapter', 'Physical', 'Pure', 'Azure', 'Netapp',
@@ -152,11 +153,13 @@ $Global:html += '</span>
     <th>Job Name</th>
     <th>Job Type</th>
     <th>Object Name</th>
+    <th>Policy Name</th>
     <th>Latest Backup</th>
+    <th>FS Type</th>
     <th>Path</th>
 </tr>'
 
-"Job Name,Job Type,Protected Object,Latest Backup Date,Path" | Out-File -FilePath $csvFileName
+"Job Name,Job Type,Protected Object,Policy Name,Latest Backup Date,FS Type,Path" | Out-File -FilePath $csvFileName
 
 function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null){
     $thisDirPath = $dirPath
@@ -169,24 +172,28 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
         foreach($entry in $dirList.entries | Sort-Object -Property name){           
             if($entry.type -eq 'kDirectory'){
                 "{0} ({1}): {2} - {3}: {4}" -f $jobName, $jobType, $objectName, $lastBackup, $entry.fullPath
-                "{0},{1},{2},{3},{4}" -f $jobName, $jobType, $objectName, $lastBackup, $entry.fullPath | Out-File -FilePath $csvFileName -Append
+                "{0},{1},{2},{3},{4},{5},{6}" -f $jobName, $jobType, $objectName, $policyName, $lastBackup, $Script:fsType, $entry.fullPath | Out-File -FilePath $csvFileName -Append
                 if($Global:firstEntry){
-                    $Global:html += '<tr style="border: 1px solid {5} background-color: {5}">
+                    $Global:html += '<tr style="border: 1px solid {6} background-color: {6}">
                     <td>{0}</td>
                     <td>{1}</td>
                     <td>{2}</td>
                     <td>{3}</td>
                     <td>{4}</td>
-                    </tr>' -f $jobName, $jobType, $objectName, $lastBackup, $entry.fullPath, $Global:trColor
+                    <td>{5}</td>
+                    <td>{6}</td>
+                    </tr>' -f $jobName, $jobType, $objectName, $policyName, $lastBackup, $Script:fsType, $entry.fullPath, $Global:trColor
                     $Global:firstEntry = $false
                 }else{
-                    $Global:html += '<tr style="border: 1px solid {1} background-color: {1}">
+                    $Global:html += '<tr style="border: 1px solid {2} background-color: {1}">
+                    <td></td>
                     <td></td>
                     <td></td>
                     <td></td>
                     <td></td>
                     <td>{0}</td>
-                    </tr>' -f $entry.fullPath, $Global:trColor
+                    <td>{1}</td>
+                    </tr>' -f $Script:fsType, $entry.fullPath, $Global:trColor
                 }
             }
         }
@@ -210,33 +217,53 @@ function showFiles($doc, $version){
         $volumeList = api get "/vm/volumeInfo?$instance&statFileEntries=false"
         if($volumeList.PSObject.Properties['volumeInfos']){
             foreach($volume in $volumeList.volumeInfos | Sort-Object -Property name){
+                $Script:fsType = $volume.filesystemType
                 "{0} ({1}): {2} - {3}: {4}" -f $jobName, $jobType, $objectName, $lastBackup, $volume.name
-                "{0},{1},{2},{3},{4}" -f $jobName, $jobType, $objectName, $lastBackup, $volume.name | Out-File -FilePath $csvFileName -Append
+                "{0},{1},{2},{3},{4},{5},{6}" -f $jobName, $jobType, $objectName, $policyName, $lastBackup, $Script:fsType, $volume.name | Out-File -FilePath $csvFileName -Append
                 if($Global:firstEntry){
-                    $Global:html += '<tr style="border: 1px solid {5} background-color: {5}">
+                    $Global:html += '<tr style="border: 1px solid {6} background-color: {6}">
                     <td>{0}</td>
                     <td>{1}</td>
                     <td>{2}</td>
                     <td>{3}</td>
                     <td>{4}</td>
-                    </tr>' -f $jobName, $jobType, $objectName, $lastBackup, $volume.name, $Global:trColor
+                    <td>{5}</td>
+                    <td>{6}</td>
+                    </tr>' -f $jobName, $jobType, $objectName, $policyName, $lastBackup, $Script:fsType, $volume.name, $Global:trColor
                     $Global:firstEntry = $false
                 }else{
-                    $Global:html += '<tr style="border: 1px solid {1} background-color: {1}">
+                    $Global:html += '<tr style="border: 1px solid {2} background-color: {1}">
+                    <td></td>
                     <td></td>
                     <td></td>
                     <td></td>
                     <td></td>
                     <td>{0}</td>
-                    </tr>' -f $volume.name, $Global:trColor
+                    <td>{1}</td>
+                    </tr>' -f $Script:fsType, $volume.name, $Global:trColor
                 }
-
             }
         }
     }else{
+        $Script:fsType = ''
+        if($doc.objectId.entity.PSObject.Properties['physicalEntity']){
+            $volumeInfo = $doc.objectId.entity.physicalEntity.volumeInfoVec | Where-Object {'/' -in $_.mountPointVec}
+            $Script:fsType = $volumeInfo.mountType
+        }elseif($doc.objectId.entity.PSObject.Properties['genericNasEntity']){
+            if($doc.objectId.entity.genericNasEntity.protocol -eq 2){
+                $Script:fsType = 'SMB'
+            }else{
+                $Script:fsType = 'NFS'
+            }
+        }else{
+            $Script:fsType = $jobType
+        }
         listdir '/' $instance
     }
 }
+
+$jobs = api get protectionJobs
+$policies = api get protectionPolicies
 
 $searchResults = api get "/searchvms?entityTypes=kFlashBlade&entityTypes=kGenericNas&entityTypes=kIsilon&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware&vmName=*"
 
@@ -249,6 +276,12 @@ foreach($searchResult in $searchResults.vms | Sort-Object -Property {$_.vmDocume
     $objectName = $doc.objectName
     $jobName = $doc.jobName
     $jobType = $environments[$doc.backupType]
+    $job = $jobs | Where-Object name -eq $jobName
+    $policyName = '-'
+    $policy = $policies | Where-Object id -eq $job.policyId
+    if($policy){
+        $policyName = $policy.name
+    }
     $lastBackup = (usecsToDate $doc.versions[0].instanceId.jobStartTimeUsecs).ToString('yyyy-MM-dd hh:mm')
     if($doc.backupType -le 22){
         $version = $doc.versions[0]
