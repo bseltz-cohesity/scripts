@@ -23,6 +23,7 @@ parser.add_argument('-st', '--starttime', type=str, default='21:00')
 parser.add_argument('-is', '--incrementalsla', type=int, default=60)    # incremental SLA minutes
 parser.add_argument('-fs', '--fullsla', type=int, default=120)          # full SLA minutes
 parser.add_argument('-z', '--pause', action='store_true')
+parser.add_argument('-a', '--appconsistent', action='store_true')
 
 args = parser.parse_args()
 
@@ -42,11 +43,17 @@ timezone = args.timezone              # time zone for new job
 incrementalsla = args.incrementalsla  # incremental SLA for new job
 fullsla = args.fullsla                # full SLA for new job
 pause = args.pause                    # pause new job
+appconsistent = args.appconsistent
 
 if pause:
     isPaused = True
 else:
     isPaused = False
+
+if appconsistent:
+    appconsistency = True
+else:
+    appconsistency = False
 
 # authenticate to Cohesity
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
@@ -200,7 +207,7 @@ else:
             "excludeObjectIds": [],
             "vmTagIds": [],
             "excludeVmTagIds": [],
-            "appConsistentSnapshot": False,
+            "appConsistentSnapshot": appconsistency,
             "fallbackToCrashConsistentSnapshot": False,
             "skipPhysicalRDMDisks": False,
             "globalExcludeDisks": [],
