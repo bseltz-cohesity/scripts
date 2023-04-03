@@ -9,7 +9,8 @@ param (
     [Parameter()][switch]$mcm,
     [Parameter()][string]$mfaCode = $null,
     [Parameter()][switch]$emailMfaCode,
-    [Parameter()][string]$clusterName = $null
+    [Parameter()][string]$clusterName = $null,
+    [Parameter()][string]$jobName
 )
 
 # source the cohesity-api helper code
@@ -52,40 +53,43 @@ $jobs = (api get -v2 "data-protect/protection-groups?environments=kO365")
 $sourceIdIndex = @{}
 $lastCursor = 0
 
+$jobFound = $false
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
-    $sourceId = $job.office365Params.sourceId
-    if("$sourceId" -notin $sourceIdIndex.Keys){
-        $sourceIdIndex["$sourceId"] = @()
-        $rootSource = api get "protectionSources/rootNodes?environments=kO365&id=$sourceId"
-        $sourceIdIndex[$sourceId] = @($sourceIdIndex[$sourceId] + $rootSource.protectionSource.id)
-        $source = api get "protectionSources?id=$($rootSource.protectionSource.id)&excludeOffice365Types=$entityTypes&allUnderHierarchy=false"
-        foreach($objectNode in $source.nodes){
-            $sourceIdIndex[$sourceId] = @($sourceIdIndex[$sourceId] + $objectNode.protectionSource.id)
-            Write-Host "`nDiscovering $($objectNode.protectionSource.office365ProtectionSource.name) from $($rootSource.protectionSource.name)"
-            $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false"
-            $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
-            while(1){
-                foreach($node in $objects.nodes){
-                    $sourceIdIndex[$sourceId] = @($sourceIdIndex[$sourceId] + $node.protectionSource.id)
-                    $lastCursor = $node.protectionSource.id
-                }
-                Write-Host "    $(@($sourceIdIndex[$sourceId]).Count)"
-                if($cursor){
-                    $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&afterCursorEntityId=$cursor"
-                    $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
-                }else{
-                    break
-                }
-                # patch for 6.8.1
-                if($objects.nodes -eq $null){
-                    if($cursor -gt $lastCursor){
-                        $node = api get protectionSources?id=$cursor
+    if((! $jobName) -or $job.name -eq $jobName){
+        $sourceId = $job.office365Params.sourceId
+        if("$sourceId" -notin $sourceIdIndex.Keys){
+            $sourceIdIndex["$sourceId"] = @()
+            $rootSource = api get "protectionSources/rootNodes?environments=kO365&id=$sourceId"
+            $sourceIdIndex[$sourceId] = @($sourceIdIndex[$sourceId] + $rootSource.protectionSource.id)
+            $source = api get "protectionSources?id=$($rootSource.protectionSource.id)&excludeOffice365Types=$entityTypes&allUnderHierarchy=false"
+            foreach($objectNode in $source.nodes){
+                $sourceIdIndex[$sourceId] = @($sourceIdIndex[$sourceId] + $objectNode.protectionSource.id)
+                Write-Host "`nDiscovering $($objectNode.protectionSource.office365ProtectionSource.name) from $($rootSource.protectionSource.name)"
+                $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false"
+                $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
+                while(1){
+                    foreach($node in $objects.nodes){
                         $sourceIdIndex[$sourceId] = @($sourceIdIndex[$sourceId] + $node.protectionSource.id)
                         $lastCursor = $node.protectionSource.id
                     }
-                }
-                if($cursor -eq $lastCursor){
-                    break
+                    Write-Host "    $(@($sourceIdIndex[$sourceId]).Count)"
+                    if($cursor){
+                        $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&afterCursorEntityId=$cursor"
+                        $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
+                    }else{
+                        break
+                    }
+                    # patch for 6.8.1
+                    if($objects.nodes -eq $null){
+                        if($cursor -gt $lastCursor){
+                            $node = api get protectionSources?id=$cursor
+                            $sourceIdIndex[$sourceId] = @($sourceIdIndex[$sourceId] + $node.protectionSource.id)
+                            $lastCursor = $node.protectionSource.id
+                        }
+                    }
+                    if($cursor -eq $lastCursor){
+                        break
+                    }
                 }
             }
         }
@@ -95,15 +99,22 @@ Write-Host "`nReviewing Protection Groups...`n"
 
 # updage protection groups
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
-    $protectedCount = @($job.office365Params.objects).Count
-    $job.office365Params.objects = @($job.office365Params.objects | Where-Object {$_.id -in $sourceIdIndex[$sourceId]})
-    $newProtectedCount = @($job.office365Params.objects).Count
-    if($newProtectedCount -lt $protectedCount){
-        Write-Host  "    $($job.name) (updated)" -ForegroundColor Yellow
-        $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
-    }else{
-        Write-Host "    $($job.name) (unchanged)"
+    if((! $jobName) -or $job.name -eq $jobName){
+        $jobFound -eq $True
+        $protectedCount = @($job.office365Params.objects).Count
+        $job.office365Params.objects = @($job.office365Params.objects | Where-Object {$_.id -in $sourceIdIndex[$sourceId]})
+        $newProtectedCount = @($job.office365Params.objects).Count
+        if($newProtectedCount -lt $protectedCount){
+            Write-Host  "    $($job.name) (updated)" -ForegroundColor Yellow
+            $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
+        }else{
+            Write-Host "    $($job.name) (unchanged)"
+        }
     }
 }
+if($jobName -and $jobFound -eq $false){
+    Write-Host "$jobName not found" -foregroundcolor Yellow
+}
+
 Write-Host ""
 

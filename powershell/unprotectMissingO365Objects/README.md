@@ -43,3 +43,7 @@ Place all files in a folder together, then run the main script like so:
 * -mfaCode: (optional) TOTP MFA code
 * -emailMfaCode: (optional) send MFA code via email
 * -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
+* -jobName: (optional) remove missing objects from only this job (defaults to all jobs)
