@@ -75,14 +75,14 @@ foreach($v in $vip){
         if($null -ne $objectId){
             $foundObject[$object] = $True
             # find protection job
-            $jobs = $jobs | Where-Object {
+            $object_jobs = $jobs | Where-Object {
                 $objectId -in $_.sourceIds -or
                 $objectId -in $_.sourceSpecialParameters.oracleSpecialParameters.applicationEntityIds -or
                 $objectId -in $_.sourceSpecialParameters.sqlSpecialParameters.applicationEntityIds
             }
-            if($null -ne $jobs){
+            if($null -ne $object_jobs){
                 $objectProtected[$object] = $True
-                foreach($job in $jobs){
+                foreach($job in $object_jobs){
                     "`n$($cluster.name): $global:object ($($job.name))`n"
                     "Start Time          End Time            Type         Object   Read       Logical Size"
                     "------------------  ------------------  -----------  -------  ---------  ------------"
