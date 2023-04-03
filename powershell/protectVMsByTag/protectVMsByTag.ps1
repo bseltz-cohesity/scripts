@@ -17,7 +17,8 @@ param (
     [Parameter()][string]$policyName,  # protection policy name
     [Parameter()][switch]$paused,  # pause future runs (new job only)
     [Parameter()][ValidateSet('kBackupHDD', 'kBackupSSD')][string]$qosPolicy = 'kBackupHDD',
-    [Parameter()][switch]$disableIndexing
+    [Parameter()][switch]$disableIndexing,
+    [Parameter()][switch]$appConsistent
 )
 
 # source the cohesity-api helper code
@@ -65,6 +66,12 @@ if($disableIndexing){
     $enableIndexing = $false
 }else{
     $enableIndexing = $True
+}
+
+if($appConsistent){
+    $appConsistency = $True
+}else{
+    $appConsistency = $false
 }
 
 $vCenter = api get protectionSources?environments=kVMware | Where-Object {$_.protectionSource.name -eq $vCenterName}
@@ -187,7 +194,7 @@ if($job){
         "vmwareParams"     = @{
             "objects"                           = @();
             "excludeObjectIds"                  = @();
-            "appConsistentSnapshot"             = $false;
+            "appConsistentSnapshot"             = $appConsistency;
             "fallbackToCrashConsistentSnapshot" = $false;
             "skipPhysicalRDMDisks"              = $false;
             "globalExcludeDisks"                = @();

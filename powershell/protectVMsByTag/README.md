@@ -77,3 +77,4 @@ For a compound tag (where a VM must have both tags to be included):
 * -paused: (optional) pause future runs (new job only)
 * -qosPolicy: (optional) kBackupHDD or kBackupSSD (default is kBackupHDD)
 * -disableIndexing: (optional) disable indexing (indexing is enabled by default)
+* -appConsistent: (optional) quiesce VMs during backup
