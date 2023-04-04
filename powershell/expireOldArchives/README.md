@@ -47,6 +47,12 @@ Then, if you're happy with the list of archives that will be deleted, run the sc
 ./expireOldArchives.ps1 -vip 10.99.1.64 -username admin -olderThan 120 -expire
 ```
 
+To expire archives from only one specific target:
+
+```powershell
+./expireOldArchives.ps1 -vip 10.99.1.64 -username admin -target mytarget -olderThan 120 -expire
+```
+
 You can run the script again you should see no results.
 
 Also note that data in the archive target may not be immediately deleted if a newer reference archive has not yet been created.
