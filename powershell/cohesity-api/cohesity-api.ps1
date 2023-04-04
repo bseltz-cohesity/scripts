@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.02.10 - Brian Seltzer
+#  Version 2023.03.22 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2022.01.12 - fixed storePasswordForUser
@@ -21,15 +21,16 @@
 # 2022.09.22 - fixed 404 error output format
 # 2022.09.27 - fixed error log not found error
 # 2023.02.10 - added -region to api function (for DMaaS)
+# 2023.03.22 - added accessCluster function
+# 2023.04.04 - exit 1 on old PowerShell version
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2023.02.10'
+$versionCohesityAPI = '2023.04.04'
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
-    Pause
-    exit
+    exit 1
 }
 
 # state cache
@@ -99,8 +100,8 @@ function __writeLog($logmessage){
         $logfile = Get-Item -Path "$apilogfile" -ErrorAction SilentlyContinue
         if($logfile){
             $size = $logfile.Length
-            if($size -gt 1048576){
-                Move-Item -Path "$apilogfile" -Destination "$apilogfile-$(get-date -UFormat '%Y-%m-%d-%H-%M-%S').txt"
+            if($size -gt 262144){
+                Move-Item -Path "$apilogfile" -Destination "$apilogfile-$(get-date -UFormat '%Y-%m-%d-%H-%M-%S').log"
             }
         }
     }catch{
@@ -523,6 +524,27 @@ function setContext($context){
         $Global:cohesity_api = $context.Clone()
     }else{
         Write-Host "Invalid context" -ForegroundColor Yellow
+    }
+}
+
+function accessCluster($remoteClusterName=$null){
+    if($cohesity_api.heliosConnectedClusters -eq $null){
+        if($remoteClusterName -eq $null -or $remoteClusterName -eq '-'){
+            $cohesity_api.header.Remove('clusterId')        
+        }else{
+            $remoteClusters = api get remoteClusters | Where-Object purposeRemoteAccess -eq $True
+            if($remoteClusterName -in $remoteClusters.name){
+                $remoteCluster = $remoteClusters | Where-Object name -eq $remoteClusterName
+                if($remoteCluster){
+                    $cohesity_api.header['clusterId'] = $remoteCluster.clusterId
+                    Write-Host "Connecting to $($remoteCluster.name)"              
+                }
+            }else{
+                Write-Host "$remoteClusterName not found" -ForegroundColor Yellow
+            }
+        }
+    }else{
+        heliosCluster $remoteClusterName
     }
 }
 
