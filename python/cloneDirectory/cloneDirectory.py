@@ -6,6 +6,8 @@
 
 # import pyhesity wrapper module
 from pyhesity import *
+from datetime import datetime
+from time import sleep
 
 # command line arguments
 import argparse
@@ -22,6 +24,7 @@ parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-s', '--sourcepath', type=str, required=True)
 parser.add_argument('-t', '--targetpath', type=str, required=True)
+parser.add_argument('-l', '--log', action='store_true')
 
 args = parser.parse_args()
 
@@ -37,6 +40,7 @@ mfacode = args.mfacode
 emailmfacode = args.emailmfacode
 sourcepath = args.sourcepath
 targetpath = args.targetpath
+log = args.log
 
 sourcepath = sourcepath.replace('\\', '/').replace('//', '/')
 targetpath = targetpath.replace('\\', '/').replace('//', '/')
@@ -50,7 +54,7 @@ if targetpath[0] == '/':
 if '/' not in targetpath:
     print('targetPath must be a new folder name')
     exit()
-# print(targetpath.split('/',2))
+
 (targetview, targetpath) = targetpath.rsplit('/', 1)
 
 if targetpath == '':
@@ -81,7 +85,19 @@ CloneDirectoryParams = {
 }
 
 # clone directory
+if log:
+    now = datetime.now()
+    nowstring = now.strftime("%Y-%m-%d-%H-%M-%S")
+    sleep(5)
+    logfile = open('cloneLog-%s.txt' % nowstring, 'w')
+    logfile.write("Cloning %s to %s/%s...\n" % (sourcepath, targetview, targetpath))
 print("Cloning %s to %s/%s..." % (sourcepath, targetview, targetpath))
 result = api('post', 'views/cloneDirectory', CloneDirectoryParams)
 if result is not None and 'error' in result:
+    if log:
+        logfile.write('%s\n' % result['error'])
+        logfile.close()
     exit(1)
+if log:
+    logfile.close()
+    sleep(5)
