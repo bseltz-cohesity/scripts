@@ -100,7 +100,7 @@ Write-Host "`nReviewing Protection Groups...`n"
 # updage protection groups
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     if((! $jobName) -or $job.name -eq $jobName){
-        $jobFound -eq $True
+        $jobFound = $True
         $protectedCount = @($job.office365Params.objects).Count
         $job.office365Params.objects = @($job.office365Params.objects | Where-Object {$_.id -in $sourceIdIndex[$sourceId]})
         $newProtectedCount = @($job.office365Params.objects).Count
