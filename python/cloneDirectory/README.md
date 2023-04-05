@@ -46,6 +46,6 @@ Place both files in a folder together and run the main script like so:
 
 * -s, --sourcepath: view/path of source folder to copy
 * -t, --targetpath: view/path of new folder to create as copy destination
-* -l, --log: (optional) create log file
+* -l, --logdir: (optional) path to create log file (default is '.')
 
 Note: if you use '\' in your paths then the paths must be quoted, like '\\view1\myfolder`
