@@ -49,7 +49,7 @@ Restoring a DB to an alternate location:
                        -oracleData /opt/oracle/oradata/testdb
 ```
 
-Restoring a PDB to the original location:
+Restoring a PDB to the original location. Note: when restoring a PDB name, the source DB should be in the form of CDBNAME/PDBName:
 
 ```powershell
 ./restoreOracle-v2.ps1 -vip mycluster -username myusername -domain mydomain.net `
@@ -57,7 +57,7 @@ Restoring a PDB to the original location:
                        -latest -overwrite
 ```
 
-Restoring a PDB to an alternate location:
+Restoring a PDB to an alternate location. Note: when restoring a PDB name, the source DB should be in the form of CDBNAME/PDBName:
 
 ```powershell
 ./restoreOracle-v2.ps1 -vip mycluster -username myusername -domain mydomain.net `
