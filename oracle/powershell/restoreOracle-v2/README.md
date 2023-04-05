@@ -81,6 +81,19 @@ Restore a CDB with two PDBs to an alternate location:
                        -pdbNames pdb1, pdb2 -latest
 ```
 
+Restoring an Oracle RAC DB:
+
+```powershell
+./restoreOracle-v2.ps1 -vip mycluster -username myusername -domain mydomain.net `
+                       -sourceServer orascan1 -sourceDB RacDB `
+                       -targetServer orascan2 -targetDB RacDB2 `
+                       -oracleHome /opt/oracle/product/19c/dbhome_1 `
+                       -oracleBase /opt/oracle `
+                       -oracleData /opt/oracle/oradata/RacDB2 `
+                       -channelNode orarac1.mydomain.net `
+                       -channels 4
+```
+
 ## Authentication Parameters
 
 * -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
