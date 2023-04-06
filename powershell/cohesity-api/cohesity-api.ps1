@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.03.22 - Brian Seltzer
+#  Version 2023.04.06 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2022.01.12 - fixed storePasswordForUser
@@ -25,7 +25,8 @@
 # 2023.04.04 - exit 1 on old PowerShell version
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2023.04.04'
+$versionCohesityAPI = '2023.04.06'
+$userAgent = "cohesity-api/$versionCohesityAPI"
 
 # demand modern powershell version (must support TLSv1.2)
 if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
@@ -276,9 +277,9 @@ function apiauth($vip='helios.cohesity.com',
             if($emailMfaCode){
                 $emailUrl = $cohesity_api.apiRootv2 + 'email-otp'
                 if($PSVersionTable.PSEdition -eq 'Core'){
-                    $email = Invoke-RestMethod -Method Post -Uri $emailUrl -header $cohesity_api.header -Body $emailMfaBody -SkipCertificateCheck  -TimeoutSec 300
+                    $email = Invoke-RestMethod -Method Post -Uri $emailUrl -header $cohesity_api.header -Body $emailMfaBody -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec 300
                 }else{
-                    $email = Invoke-RestMethod -Method Post -Uri $emailUrl -header $cohesity_api.header -Body $emailMfaBody -TimeoutSec 300
+                    $email = Invoke-RestMethod -Method Post -Uri $emailUrl -header $cohesity_api.header -Body $emailMfaBody -UserAgent $userAgent -TimeoutSec 300
                 }
                 $mfaCode = Read-Host -Prompt "Enter emailed MFA code"
                 $body = ConvertTo-Json @{
@@ -292,9 +293,9 @@ function apiauth($vip='helios.cohesity.com',
             }
             # authenticate
             if($PSVersionTable.PSEdition -eq 'Core'){
-                $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -TimeoutSec 300
+                $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec 300
             }else{
-                $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -TimeoutSec 300
+                $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec 300
             }
             # set file transfer details
             if($PSVersionTable.Platform -eq 'Unix'){
@@ -333,9 +334,9 @@ function apiauth($vip='helios.cohesity.com',
                         }
                         # authenticate
                         if($PSVersionTable.PSEdition -eq 'Core'){
-                            $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -TimeoutSec 300
+                            $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec 300
                         }else{
-                            $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -TimeoutSec 300
+                            $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec 300
                         }
                         # set file transfer details
                         if($PSVersionTable.Platform -eq 'Unix'){
@@ -629,15 +630,15 @@ function api($method,
             }
             if($PSVersionTable.PSEdition -eq 'Core'){
                 if($body){
-                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $header -SkipCertificateCheck -TimeoutSec 300
+                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $header -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec 300
                 }else{
-                    $result = Invoke-RestMethod -Method $method -Uri $url -header $header -SkipCertificateCheck -TimeoutSec 300
+                    $result = Invoke-RestMethod -Method $method -Uri $url -header $header -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec 300
                 }
             }else{
                 if($body){
-                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $header -TimeoutSec 300
+                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $header -UserAgent $userAgent -TimeoutSec 300
                 }else{
-                    $result = Invoke-RestMethod -Method $method -Uri $url -header $header -TimeoutSec 300
+                    $result = Invoke-RestMethod -Method $method -Uri $url -header $header -UserAgent $userAgent -TimeoutSec 300
                 }
             }
             $cohesity_api.last_api_error = 'OK'

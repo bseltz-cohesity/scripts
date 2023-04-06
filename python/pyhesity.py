@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2023.03.30"""
+"""Cohesity Python REST API Wrapper Module - 2023.04.06"""
 
 ##########################################################################################
 # Change Log
@@ -76,7 +76,10 @@ __all__ = ['api_version',
            'impersonate',
            'switchback']
 
+api_version = '2023.04.06'
+
 COHESITY_API = {
+    'User-Agent': 'pyhesity/%s' % api_version,
     'APIROOT': '',
     'APIROOTv2': '',
     'HEADER': {},
@@ -89,7 +92,6 @@ CONFIGDIR = expanduser("~") + '/.pyhesity'
 SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
 PWFILE = os.path.join(SCRIPTDIR, 'YWRtaW4')
 LOGFILE = os.path.join(SCRIPTDIR, 'pyhesity-debug.log')
-api_version = '2022.09.13'
 
 
 ### get last error
