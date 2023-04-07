@@ -149,6 +149,7 @@ if($logTime){
 $pdbList = @()
 $isCDB = $false
 $granularRestore = $false
+
 foreach($object in $objects){
     $sourceDB = $object.name
     if($object.objectType -eq 'kPDB'){
@@ -196,15 +197,17 @@ foreach($object in $objects){
                 $latestSnapshotTimeStamp = $snapshots[0].snapshotTimestampUsecs
                 $latestSnapshotObject = $object
             }
-        }else{
-            if($logTime){
-                write-host "No snapshots found for oracle entity $sourceServer from before $logTime" -foregroundcolor yellow
-                exit 1
-            }else{
-                write-host "No snapshots found for oracle entity $sourceServer" -foregroundcolor yellow
-                exit 1
-            }
         }
+    }
+}
+
+if(! $latestSnapshotObject){
+    if($logTime){
+        write-host "No snapshots found for oracle entity $sourceServer from before $logTime" -foregroundcolor yellow
+        exit 1
+    }else{
+        write-host "No snapshots found for oracle entity $sourceServer" -foregroundcolor yellow
+        exit 1
     }
 }
 
@@ -442,20 +445,21 @@ if($shellVarName.Count -ne $shellVarValue.Count){
 # handle channels
 if($channels){
     if($channelNode -and $targetSource.protectionSource.physicalProtectionSource.PSObject.Properties['networkingInfo']){
-        $channelNodes = $targetSource.protectionSource.physicalProtectionSource.networkingInfo.resourceVec | Where-Object type -eq 'kServer'
+        $channelNodes = $targetSource.protectionSource.physicalProtectionSource.networkingInfo.resourceVec # | Where-Object type -eq 'kServer'
         $channelNodes = $channelNodes | Where-Object {$channelNode -in $_.endpoints.fqdn}
         if(! $channelNodes){
             Write-Host "$channelNode not found" -foregroundcolor Yellow
             exit 1
         }
         $endPoint = ($channelNodes[0].endpoints | Where-Object {$_.ipv4Addr -ne $null})[0]
+        $agent = $targetSource.protectionSource.physicalProtectionSource.agents | Where-Object name -eq $endPoint.fqdn
         $channelConfig  = @{
             "databaseUniqueName" = $latestSnapshotObject.name;
             "databaseUuid" = $latestSnapshotObject.uuid;
             "databaseNodeList" = @(
                 @{
                     "hostAddress" = $endPoint.ipv4Addr;
-                    "hostId" = [string]$targetEntity.rootNode.id;
+                    "hostId" = [string]$agent.id;
                     "fqdn" = $endPoint.fqdn;
                     "channelCount" = $channels;
                     "port" = $null
@@ -466,13 +470,14 @@ if($channels){
             "credentials" = $null
         }
     }else{
+        $agent = $targetSource.protectionSource.physicalProtectionSource.agents | Where-Object name -eq $targetServer
         $channelConfig = @{
             "databaseUniqueName" = $latestSnapshotObject.name;
             "databaseUuid" = $latestSnapshotObject.uuid;
             "databaseNodeList" = @(
                 @{
                     "hostAddress" = $targetSource.protectionSource.name;
-                    "hostId" = [string]$targetSource.protectionSource.id;
+                    "hostId" = [string]$agent.id;
                     "fqdn" = $targetSource.protectionSource.physicalProtectionSource.hostName;
                     "channelCount" = $channels;
                     "port" = $null
@@ -490,17 +495,19 @@ if($channels){
     }
 }
 
-# debug output API payload
-if($dbg){
-    $restoreParams | ConvertTo-Json -Depth 99
-    exit
-}
-
 # perform the restore
 $reportTarget = $targetDB
 if($targetCDB){
     $reportTarget = "$targetCDB/$targetDB"
 }
+
+# debug output API payload
+if($dbg){
+    $restoreParams | ConvertTo-Json -Depth 99 | Tee-Object -FilePath "./ora-restore.json"
+    Write-Host "Would restore $sourceServer/$originalSourceDB to $targetServer/$reportTarget (Point in time: $recoverTime)"
+    exit
+}
+
 Write-Host "Restoring $sourceServer/$originalSourceDB to $targetServer/$reportTarget (Point in time: $recoverTime)"
 $response = api post -v2 data-protect/recoveries $restoreParams
 
