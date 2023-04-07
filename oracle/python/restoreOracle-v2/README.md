@@ -98,7 +98,7 @@ Restore a CDB with two PDBs to an alternate location:
 Restoring an Oracle RAC DB:
 
 ```powershell
-./restoreOracle-v2.ps1 -v mycluster \
+./restoreOracle-v2.py -v mycluster \
                       -u myuser \
                       -d mydomain.net \
                       -ss orascan1 -sd RacDB \
