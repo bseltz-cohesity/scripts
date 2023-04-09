@@ -83,8 +83,12 @@ Or you can specify an existing second snapahot:
 * -username: user name to connect to pure
 * -password: (optional) will prompt if omitted
 * -volumeName: name of volume to test
+* -diffTest: (optional) perform diff test
 * -listSnapshots: (optional) list available snapshots for the specified volume and exit
 * -firstSnapshot: (optional) name of existing snapshot to use for diff test
 * -secondSnapshot: (optional) name of existing snapshot to use for diff test
 * -createSnapshot: (optional) create a snapshot for the specified volume and exit
 * -deleteSnapshot: (optional) delete specified snapshot and exit
+* -blockSizeMB: (optional) default is 10
+* -unit: (optional) MiB or GiB (default is GiB)
+* -lengthDivisor: (optional) 2, 4, 8, 16... (default is 1)
