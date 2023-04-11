@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.03.29
+# version 2023.04.11
 
 # version history
 # ===============
 # 2023.01.10 - enforce sleeptimesecs >= 30 and newruntimeoutsecs >= 720
 # 2023.02.17 - implement retry on get protectionJobs - added error code 7
 # 2023.03.29 - version bump
+# 2023.04.11 - fixed bug in line 70 - last run is None error
 
 # extended error codes
 # ====================
@@ -567,7 +568,7 @@ if wait is True:
             runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=1&includeObjectDetails=false' % v2JobId, v=2)
             if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
                 runs = runs['runs']
-        if runs is not None and len(runs) > 0:
+        if runs is not None and 'runs' not in runs and len(runs) > 0:
             newRunId = runs[0]['protectionGroupInstanceId']
             v2RunId = runs[0]['id']
         if debugger:
