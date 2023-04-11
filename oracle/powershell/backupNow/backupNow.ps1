@@ -1,10 +1,11 @@
-# version 2023.03.29
+# version 2023.04.11
 
 # version history
 # ===============
 # 2023.01.10 - enforce sleeptimesecs >= 30 and waitForNewRunMinutes >= 12
 # 2023.02.17 - implement retry on get protectionJobs - added error code 7
 # 2023.03.29 - version bump
+# 2023.04.11 - fixed bug in line 70 - last run is None error, added metafile check for new run
 
 # extended error codes
 # ====================
@@ -581,7 +582,20 @@ if($wait -or $progress){
                 $runs = @($runs.runs)
             }
         }
-        if($null -ne $runs -and $runs.Count -ne "0"){
+        if($runs.PSObject.Properties['runs']){
+            $runs = @($runs.runs)
+        }
+        if($null -ne $runs -and $runs.Count -ne "0" -and $metaDataFile){
+            foreach($run in $runs){
+                $runDetail = api get "/backupjobruns?exactMatchStartTimeUsecs=$($run.localBackupInfo.startTimeUsecs)&id=$($job.id)"
+                $metadataFilePath = $runDetail[0].backupJobRuns.protectionRuns[0].backupRun.additionalParamVec[0].physicalParams.metadataFilePath
+                if($metadataFilePath -eq $metaDataFile){
+                    $newRunId = $run.protectionGroupInstanceId
+                    $v2RunId = $run.id
+                    break
+                }
+            }
+        }elseif($null -ne $runs -and $runs.Count -ne "0"){
             $newRunId = $runs[0].protectionGroupInstanceId
             $v2RunId = $runs[0].id
         }
