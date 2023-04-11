@@ -31,7 +31,7 @@ Place the files in a folder together and run the main script like so:
                        -vmName vm1, vm2 `
                        -scvmmName scvmm-01.mydomain.net `
                        -hostName hyperv-01.mydomain.net `
-                       -volumeName D:\ `
+                       -volumeName C:\ClusterStorage\Vol1\ `
                        -networkName vm-switch `
                        -prefix 'copy1' `
                        -wait
@@ -59,7 +59,7 @@ Place the files in a folder together and run the main script like so:
 * -scvmmName: (optional) scvmm protection source to recover to
 * -hostName: (optional) name of vSphere host to recover to
 * -networkName: (optional) VM Network to attach the VM to
-* -volumeName: (optional) volume to recover the VM to
+* -volumeName: (optional) volume to recover the VM to (trailing slash required, e.g. C:\ClusterStorage\Vol1\ not C:\ClusterStorage\Vol1)
 
 ## Other Parameters
 
