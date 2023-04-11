@@ -432,9 +432,17 @@ else:
                 paramval = paramparts[1].strip()
             if len(paramparts) == 3:
                 paramval = paramval + "=" + paramparts[2].strip()
+            existingParam = False
             for pfileparam in sourceConfig['recoverDatabaseParams']['pfileParameterMap']:
                 if pfileparam['key'].lower() == paramname.lower():
+                    existingParam = True
                     pfileparam['value'] = paramval
+            if existingParam is False:
+                sourceConfig['recoverDatabaseParams']['pfileParameterMap'].append({
+                    "key": paramname,
+                    "value": paramval
+                })
+
     if len(shellvars) > 0:
         sourceConfig.recoverDatabaseParams.shellEvironmentVars = []
         for shellvar in shellvars:
