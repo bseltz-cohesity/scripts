@@ -5,6 +5,7 @@
 from pyhesity import *
 from datetime import datetime, timedelta
 import codecs
+import os
 
 # command line arguments
 import argparse
@@ -26,6 +27,7 @@ parser.add_argument('-sr', '--showrecord', action='store_true')
 parser.add_argument('-f', '--filter', action='append', type=str)
 parser.add_argument('-fl', '--filterlist', type=str, default=None)
 parser.add_argument('-fp', '--filterproperty', type=str, default=None)
+parser.add_argument('-o', '--outputpath', type=str, default='.')
 
 args = parser.parse_args()
 
@@ -46,6 +48,7 @@ showrecord = args.showrecord
 filters = args.filter
 filterlist = args.filterlist
 filterproperty = args.filterproperty
+outputpath = args.outputpath
 
 
 # gather server list
@@ -144,11 +147,11 @@ reportNumber = report[0]['componentIds'][0]
 title = report[0]['title']
 
 # CSV output
-csvFileName = "%s_%s_%s.tsv" % (title.replace('/', '-').replace('\\', '-'), start, end)
+csvFileName = os.path.join(outputpath, "%s_%s_%s.tsv" % (title.replace('/', '-').replace('\\', '-'), start, end))
 csv = codecs.open(csvFileName, 'w', 'utf-8')
 
 # HTML output
-htmlFileName = "%s_%s_%s.html" % (title.replace('/', '-').replace('\\', '-'), start, end)
+htmlFileName = os.path.join(outputpath, "%s_%s_%s.html" % (title.replace('/', '-').replace('\\', '-'), start, end))
 htmlFile = codecs.open(htmlFileName, 'w', 'utf-8')
 
 html = '''<html>
