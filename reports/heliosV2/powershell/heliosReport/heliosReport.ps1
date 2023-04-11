@@ -15,7 +15,8 @@ param (
     [Parameter()][switch]$showRecord,
     [Parameter()][array]$filters,
     [Parameter()][string]$filterList,
-    [Parameter()][string]$filterProperty
+    [Parameter()][string]$filterProperty,
+    [Parameter()][string]$outputPath = '.'
 )
 
 # gather list from command line params and file
@@ -120,10 +121,10 @@ $reportNumber = $report.componentIds[0]
 $title = $report.title
 
 # CSV output
-$csvFileName = "$($title.replace('/','-').replace('\','-'))_$($start)_$($end).tsv"
+$csvFileName = $(Join-Path -Path $outputPath -ChildPath "$($title.replace('/','-').replace('\','-'))_$($start)_$($end).tsv")
 
 # HTML output
-$htmlFileName = "$($title.replace('/','-').replace('\','-'))_$($start)_$($end).html"
+$htmlFileName = $(Join-Path -Path $outputPath -ChildPath "$($title.replace('/','-').replace('\','-'))_$($start)_$($end).html")
 
 $trColors = @('#FFFFFF;', '#F1F1F1;')
 

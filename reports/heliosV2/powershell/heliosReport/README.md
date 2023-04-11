@@ -46,6 +46,7 @@ Place all files in a folder together, then run the main script like so:
 * -filters: (optional) one or more filters, e.g. 'numSnapshots==0', 'protectionStatus==protected'
 * -filterList: (optional) text file of items to search for (e.g. server names)
 * -filterProperty: (optional) property to search for items (e.g. objectName)
+* -outputPath: (optional) path to write output files (default is '.')
 
 ## Filters
 
