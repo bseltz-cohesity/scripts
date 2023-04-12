@@ -135,12 +135,10 @@ foreach($job in $jobs | Sort-Object -Property name| Where-Object {$_.isDeleted -
 
                 $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
                 $thisJobName = $run.jobName
-
+                $startTimeUsecs = $run.backupRun.stats.startTimeUsecs
                 if($alreadyReplicated -eq $false){
 
                     ### calculate daysToKeep
-                    $startTimeUsecs = $run.backupRun.stats.startTimeUsecs
-
                     if($keepFor -gt 0){
                         $expireTimeUsecs = $startTimeUsecs + ([int]$keepFor * 86400000000)
                     }else{
