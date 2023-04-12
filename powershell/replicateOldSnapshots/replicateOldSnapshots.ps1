@@ -136,40 +136,37 @@ foreach($job in $jobs | Sort-Object -Property name| Where-Object {$_.isDeleted -
                 $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
                 $thisJobName = $run.jobName
                 $startTimeUsecs = $run.backupRun.stats.startTimeUsecs
-                if($alreadyReplicated -eq $false){
-
-                    ### calculate daysToKeep
-                    if($keepFor -gt 0){
-                        $expireTimeUsecs = $startTimeUsecs + ([int]$keepFor * 86400000000)
-                    }else{
-                        $expireTimeUsecs = $run.copyRun[0].expiryTimeUsecs
-                    }
-                    $now = dateToUsecs $(get-date)
-                    $daysToKeep = [math]::Round(($expireTimeUsecs - $now) / 86400000000) + 1
-                    if($daysToKeep -eq 0){
-                        $daysToKeep = 1
-                    }
-
-                    ### create replication task definition
-                    $replicationTask = @{
-                        'jobRuns' = @(
-                            @{
-                                'copyRunTargets'    = @(
-                                    @{
-                                        "replicationTarget" = @{
-                                            "clusterId" = $remote.clusterId;
-                                            "clusterName" = $remote.name
-                                        };
-                                        'daysToKeep'     = [int] $daysToKeep;
-                                        'type'           = 'kRemote'
-                                    }
-                                );
-                                'runStartTimeUsecs' = $run.copyRun[0].runStartTimeUsecs;
-                                'jobUid'            = $run.jobUid
-                            }
-                        )
-                    }
-        
+                ### calculate daysToKeep
+                if($keepFor -gt 0){
+                    $expireTimeUsecs = $startTimeUsecs + ([int]$keepFor * 86400000000)
+                }else{
+                    $expireTimeUsecs = $run.copyRun[0].expiryTimeUsecs
+                }
+                $now = dateToUsecs $(get-date)
+                $daysToKeep = [math]::Round(($expireTimeUsecs - $now) / 86400000000) + 1
+                if($daysToKeep -eq 0){
+                    $daysToKeep = 1
+                }
+                ### create replication task definition
+                $replicationTask = @{
+                    'jobRuns' = @(
+                        @{
+                            'copyRunTargets'    = @(
+                                @{
+                                    "replicationTarget" = @{
+                                        "clusterId" = $remote.clusterId;
+                                        "clusterName" = $remote.name
+                                    };
+                                    'daysToKeep'     = [int] $daysToKeep;
+                                    'type'           = 'kRemote'
+                                }
+                            );
+                            'runStartTimeUsecs' = $run.copyRun[0].runStartTimeUsecs;
+                            'jobUid'            = $run.jobUid
+                        }
+                    )
+                }
+                if($alreadyReplicated -eq $false -or $resync){
                     ### If the Local Snapshot is not expiring soon...
                     if($daysToKeep -gt $IfExpiringAfter){
                         if($replicate){
@@ -182,35 +179,6 @@ foreach($job in $jobs | Sort-Object -Property name| Where-Object {$_.isDeleted -
                     }
                     else {
                         Write-Host "    $runDate  (skipping, expiring in $daysToKeep days)" -ForegroundColor Gray
-                    }
-                }else{
-                    if($resync){
-                        ### create replication task definition
-                        $replicationTask = @{
-                            'jobRuns' = @(
-                                @{
-                                    'copyRunTargets'    = @(
-                                        @{
-                                            "replicationTarget" = @{
-                                                "clusterId" = $remote.clusterId;
-                                                "clusterName" = $remote.name
-                                            };
-                                            'type'           = 'kRemote'
-                                        }
-                                    );
-                                    'runStartTimeUsecs' = $run.copyRun[0].runStartTimeUsecs;
-                                    'jobUid'            = $run.jobUid
-                                }
-                            )
-                        }
-                        if($replicate){
-                            Write-Host "    $runDate  (will resync)" -ForegroundColor Green
-                            $theseRuns["$startTimeUsecs"] = $replicationTask
-                        }else{
-                            Write-Host "    $runDate  (would resync)" -ForegroundColor Green
-                        }
-                    }else{
-                        Write-Host "    $runDate  (already replicated)" -ForegroundColor Blue
                     }
                 }
             }
