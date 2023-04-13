@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.04.11
+# version 2023.04.13
 
 # version history
 # ===============
@@ -9,6 +9,7 @@
 # 2023.02.17 - implement retry on get protectionJobs - added error code 7
 # 2023.03.29 - version bump
 # 2023.04.11 - fixed bug in line 70 - last run is None error, added metafile check for new run
+# 2023.04.13 - fixed log archiving bug
 
 # extended error codes
 # ====================
@@ -27,6 +28,7 @@
 from pyhesity import *
 from time import sleep
 from datetime import datetime
+from sys import exit
 import codecs
 
 # command line arguments
@@ -451,7 +453,7 @@ if localonly is not True and noreplica is not True:
                     "type": "kRemote"
                 })
 # archival
-if localonly is not True and noarchive is not True:
+if localonly is not True and noarchive is not True and backupType != 'kLog':
     if 'snapshotArchivalCopyPolicies' in policy and archiveTo is None:
         for archive in policy['snapshotArchivalCopyPolicies']:
             if archive['target'] not in [p.get('archivalTarget', None) for p in jobData['copyRunTargets']]:

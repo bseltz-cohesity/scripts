@@ -1,4 +1,4 @@
-# version 2023.04.11
+# version 2023.04.13
 
 # version history
 # ===============
@@ -6,6 +6,7 @@
 # 2023.02.17 - implement retry on get protectionJobs - added error code 7
 # 2023.03.29 - version bump
 # 2023.04.11 - fixed bug in line 70 - last run is None error, added metafile check for new run
+# 2023.04.13 - fixed log archiving bug
 
 # extended error codes
 # ====================
@@ -412,7 +413,7 @@ if((! $localOnly) -and (! $noReplica)){
 
 
 # archival
-if((! $localOnly) -and (! $noArchive)){
+if((! $localOnly) -and (! $noArchive) -and ($backupType -ne 'kLog')){
     if($policy.PSObject.Properties['snapshotArchivalCopyPolicies'] -and (! $archiveTo)){
         foreach($archive in $policy.snapshotArchivalCopyPolicies){
             if(!($copyRunTargets | Where-Object {$_.archivalTarget.vaultName -eq $archive.target.vaultName})){
