@@ -1,8 +1,8 @@
-# Restore DMaaS M365 Mailboxes using PowerShell
+# Restore DMaaS M365 OneDrives using PowerShell
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This powershell script restores DMaaS M365 Mailboxes.
+This powershell script restores DMaaS M365 OneDrives.
 
 ## Download the script
 
@@ -10,7 +10,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-$scriptName = 'restoreDmaasM365Mailbox'
+$scriptName = 'restoreDmaasM365OneDrive'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/dmaas/powershell/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
@@ -19,28 +19,28 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 ## Components
 
-* restoreDmaasM365Mailbox.ps1: the main powershell script
+* restoreDmaasM365OneDrive.ps1: the main powershell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./restoreDmaasM365Mailbox.ps1 -mailboxName user1.mydomain.onmicrosoft.com, user2.mydomain.onmicrosoft.com
+./restoreDmaasM365OneDrive.ps1 -oneDriveName user1.mydomain.onmicrosoft.com, user2.mydomain.onmicrosoft.com
 ```
 
 ## Basic Parameters
 
 * -username: (optional) used for password storage only (default is 'DMaaS')
-* -mailboxName: (optional) one or more mailbox names (comma separated)
-* -mailboxList: (optional) text file of mailbox names (one per line)
+* -oneDriveName: (optional) one or more oneDrive names (comma separated)
+* -oneDriveList: (optional) text file of oneDrive names (one per line)
 * -pageSize: (optional) limit number of objects returned pr page (default is 1000)
 
 ## Alternate Location Parameters
 
 * -targetSource: (optional) registered M365 protection source to restore to
-* -targetMailbox: (optional) mailbox name to restore to
+* -targetOneDrive: (optional) oneDrive name to restore to
 * -recoverDate: (optional) restore latest snashot on or before this date (default is latest backup)
-* -folderPrefix: (optional) folder prefix when restoring to alternate mailbox (default is 'restore')
+* -folderPrefix: (optional) folder prefix when restoring to alternate oneDrive (default is 'restore')
 
 ## Authenticating to DMaaS
 
