@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2023.04.01
+# version 2023.04.13
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -67,7 +67,7 @@ def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None, cookie
             dirList = api('get', '/vm/directoryList?%s%s&statFileEntries=%s&dirPath=%s&cookie=%s' % (instance, useLibrarian, statfile, thisDirPath, cookie))
     else:
         if volumeName is not None:
-            dirList = api('get', '/vm/directoryList?%s%ss&statFileEntries=%s&dirPath=%s&volumeInfoCookie=%s&volumeName=%s' % (instance, useLibrarian, statfile, thisDirPath, volumeInfoCookie, volumeName))
+            dirList = api('get', '/vm/directoryList?%s%s&statFileEntries=%s&dirPath=%s&volumeInfoCookie=%s&volumeName=%s' % (instance, useLibrarian, statfile, thisDirPath, volumeInfoCookie, volumeName))
         else:
             dirList = api('get', '/vm/directoryList?%s%s&statFileEntries=%s&dirPath=%s' % (instance, useLibrarian, statfile, thisDirPath))
     if dirList and 'entries' in dirList:
