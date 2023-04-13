@@ -3,7 +3,7 @@
 param (
     [Parameter()][string]$username = 'DMaaS',
     [Parameter()][array]$mailboxName,  # optional names of mailboxes protect
-    [Parameter()][string]$mailboxListList = '',  # optional textfile of mailboxes to protect
+    [Parameter()][string]$mailboxList = '',  # optional textfile of mailboxes to protect
     [Parameter()][datetime]$recoverDate,
     [Parameter()][string]$targetSource,
     [Parameter()][string]$targetMailbox,
