@@ -4,7 +4,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This is a binary version of backupNow for Linux. It performs a runNow on a protection job and optionally replicates and/or archives the backup to the specified targets. Also, the script will optionally enable a disabled job to run it, and disable it when done. The script will wait for the job to fimish and report the end status of the job.
 
-Note: the binary was tested successfully on CentOS 7 and Fedora 35.
+Note: the binary was tested successfully on CentOS 7, Ubuntu 18.04.4 and Fedora 35.
 
 ## Download the tool
 
