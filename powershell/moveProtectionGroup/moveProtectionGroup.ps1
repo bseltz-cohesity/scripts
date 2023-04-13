@@ -4,7 +4,8 @@ param (
     [Parameter(Mandatory = $True)][string]$vip,
     [Parameter(Mandatory = $True)][string]$username,
     [Parameter()][string]$domain = 'local',
-    [Parameter(Mandatory = $True)][string]$jobName,
+    [Parameter()][array]$jobName,
+    [Parameter()][string]$jobList,
     [Parameter()][string]$prefix = '',
     [Parameter()][string]$suffix = '',
     [Parameter()][switch]$deleteOldJob,
@@ -13,6 +14,29 @@ param (
     [Parameter()][switch]$pauseNewJob,
     [Parameter()][switch]$pauseOldJob
 )
+
+
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
+        }
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
+        exit
+    }
+    return ($items | Sort-Object -Unique)
+}
+
 
 if($prefix -eq '' -and $suffix -eq '' -and !$deleteOldJob){
     Write-Host "You must use either -prefix or -suffix or -deleteOldJob" -foregroundcolor Yellow
@@ -30,35 +54,50 @@ if(! $AUTHORIZED -and ! $cohesity_api.authorized){
     exit
 }
 
-$job = (api get -v2 'data-protect/protection-groups?isActive=true').protectionGroups | Where-Object name -eq $jobName
+$jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Required $True)
 
-if($job){
-    if($job.Count -gt 1){
-        Write-Host "There is more than one job with the same name, please rename one of them" -foregroundcolor Yellow
+$jobs = api get -v2 'data-protect/protection-groups?isActive=true'
+$newStorageDomain = api get viewBoxes | Where-Object name -eq $newStorageDomainName
+if($newPolicyName){
+    $newPolicy = (api get -v2 data-protect/policies).policies | Where-Object name -eq $newPolicyName
+    if(!$newPolicy){
+        Write-Host "Policy $newPolicyName not found" -ForegroundColor Yellow
         exit
     }
+}
 
+if(!$newStorageDomain){
+    Write-Host "Storage Domain $newStorageDomainName not found" -ForegroundColor Yellow
+    exit
+}
+
+if($jobNames.Count -gt 0){
+    $notfoundJobs = $jobNames | Where-Object {$_ -notin $jobs.protectionGroups.name}
+    if($notfoundJobs){
+        Write-Host "Jobs not found $($notfoundJobs -join ', ')" -ForegroundColor Yellow
+        exit
+    }
+}
+
+foreach($thisJobName in $jobNames){
+    $job = $jobs.protectionGroups | Where-Object name -eq $thisJobName
+    if($job.Count -gt 1){
+        Write-Host "There is more than one job with the name $thisJobName, please rename one of them" -foregroundcolor Yellow
+        exit
+    }
+}
+
+foreach($thisJobName in $jobNames){
+    $job = $jobs.protectionGroups | Where-Object name -eq $thisJobName
     if($pauseOldJob -and !$deleteOldJob){
         $job.isPaused = $True
         $updateJob = api put -v2 data-protect/protection-groups/$($job.id) $job
     }
 
-    $newStorageDomain = api get viewBoxes | Where-Object name -eq $newStorageDomainName
-    if(!$newStorageDomain){
-        Write-Host "Storage Domain $newStorageDomainName not found" -ForegroundColor Yellow
-        exit
-    }else{
-        $job.storageDomainId = $newStorageDomain.id
-    }
+    $job.storageDomainId = $newStorageDomain.id
 
     if($newPolicyName){
-        $newPolicy = (api get -v2 data-protect/policies).policies | Where-Object name -eq $newPolicyName
-        if(!$newPolicy){
-            Write-Host "Policy $newPolicyName not found" -ForegroundColor Yellow
-            exit
-        }else{
-            $job.policyId = $newPolicy.id
-        }
+        $job.policyId = $newPolicy.id
     }
 
     "Moving protection group $($job.name) to $newStorageDomainName..."
@@ -82,7 +121,4 @@ if($job){
     }
 
     $newjob = api post -v2 data-protect/protection-groups $job
-
-}else{
-    Write-Host "Job $jobName not found" -ForegroundColor Yellow
 }
