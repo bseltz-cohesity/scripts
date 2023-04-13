@@ -101,7 +101,9 @@ foreach($job in $jobs | Sort-Object -Property name){
                         "copyType" = $copyType;
                         "status" = $status
                     }
-                    $runningTasks[$startTimeUsecs] = $runningTask
+                    if($runStartTimeUsecs -notin $runningTasks.Keys -or $status -notin $finishedStates){
+                        $runningTasks[$startTimeUsecs] = $runningTask
+                    }
                 }
             }
         }
