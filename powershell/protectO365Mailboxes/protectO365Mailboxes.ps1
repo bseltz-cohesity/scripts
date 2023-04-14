@@ -24,7 +24,8 @@ param (
     [Parameter()][switch]$allMailboxes,
     [Parameter()][int]$maxMailboxesPerJob = 5000,
     [Parameter()][string]$sourceName,
-    [Parameter()][switch]$autoProtectRemaining
+    [Parameter()][switch]$autoProtectRemaining,
+    [Parameter()][switch]$force
 )
 
 # gather list from command line params and file
@@ -299,9 +300,20 @@ if($autoProtectRemaining){
     $job.office365Params.excludeObjectIds = $protectedIndex | Sort-Object -Unique
 }elseif($allmailboxes){
     $mailboxesAdded = 0
-    if($unprotectedIndex.Count -eq 0){
-        Write-Host "All mailboxes are protected" -ForegroundColor Green
-        exit
+    if($force){
+        $autoprotectedIndex = $protectedIndex | Where-Object {$_ -notin $jobs.office365Params.objects.id}
+        foreach($mailboxId in $autoprotectedIndex){
+            if($job.office365Params.objects.Count -ge $maxmailboxesPerJob){
+                break
+            }
+            $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $mailboxId})
+            $mailboxesAdded += 1
+        }
+    }else{
+        if($unprotectedIndex.Count -eq 0){
+            Write-Host "All mailboxes are protected" -ForegroundColor Green
+            exit
+        }
     }
     foreach($mailboxId in $unprotectedIndex){
         if($job.office365Params.objects.Count -ge $maxmailboxesPerJob){
