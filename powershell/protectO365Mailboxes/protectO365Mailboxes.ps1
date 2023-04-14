@@ -86,10 +86,18 @@ if($cluster.clusterSoftwareVersion -lt '6.6'){
 # get the protectionJob
 $jobs = (api get -v2 "data-protect/protection-groups?environments=kO365&isActive=true&isDeleted=false").protectionGroups | Where-Object {$_.office365Params.protectionTypes -eq 'kMailbox'}
 $job = $jobs | Where-Object {$_.name -eq $jobName}
+$otherJobs = $jobs | Where-Object {$_.name -ne $jobName}
+
 if($job){
 
     # existing protection job
     $newJob = $false
+    if($autoProtectRemaining){
+        $job.office365Params.excludeObjectIds = $otherJobs.office365Params.objects.id
+        "Updating protection job $($job.name)"
+        $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
+        exit
+    }
 
 }else{
 
