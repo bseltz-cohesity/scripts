@@ -25,7 +25,8 @@ param (
     [Parameter()][int]$maxSitesPerJob = 5000,
     [Parameter()][string]$sourceName,
     [Parameter()][switch]$autoProtectRemaining,
-    [Parameter()][switch]$dbg
+    [Parameter()][switch]$dbg,
+    [Parameter()][switch]$force
 )
 
 # gather list from command line params and file
@@ -79,18 +80,26 @@ if($cluster.clusterSoftwareVersion -gt '6.8'){
     $environment = 'kO365'
 }
 if($cluster.clusterSoftwareVersion -lt '6.6'){
-    $entityTypes = 'kMailbox,kUser,kGroup,kSite,kPublicFolder'
+    $entityTypes = 'kUser,kGroup,kSite,kPublicFolder'
 }else{
-    $entityTypes = 'kMailbox,kUser,kGroup,kSite,kPublicFolder,kO365Exchange,kO365OneDrive,kO365Sharepoint'
+    $entityTypes = 'kUser,kGroup,kSite,kPublicFolder,kO365Exchange,kO365OneDrive,kO365Sharepoint'
 }
 
 # get the protectionJob
-$job = (api get -v2 "data-protect/protection-groups").protectionGroups | Where-Object {$_.name -eq $jobName}
+$jobs = (api get -v2 "data-protect/protection-groups?environments=kO365&isActive=true&isDeleted=false").protectionGroups | Where-Object {$_.office365Params.protectionTypes -eq 'kSharePoint'}
+$job = $jobs | Where-Object {$_.name -eq $jobName}
+$otherJobs = $jobs | Where-Object {$_.name -ne $jobName}
 
 if($job){
 
     # existing protection job
     $newJob = $false
+    if($autoProtectRemaining){
+        $job.office365Params.excludeObjectIds = $otherJobs.office365Params.objects.id
+        "Updating protection job $($job.name)"
+        $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
+        exit
+    }
 
 }else{
 
@@ -288,9 +297,20 @@ if($autoProtectRemaining){
     $job.office365Params.excludeObjectIds = $protectedIndex
 }elseif($allSites){
     $sitesAdded = 0
-    if($unprotectedIndex.Count -eq 0){
-        Write-Host "All sites are protected" -ForegroundColor Green
-        exit
+    if($force){
+        $autoprotectedIndex = $protectedIndex | Where-Object {$_ -notin $jobs.office365Params.objects.id}
+        foreach($siteId in $autoprotectedIndex){
+            if($job.office365Params.objects.Count -ge $maxsitesPerJob){
+                break
+            }
+            $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $siteId})
+            $sitesAdded += 1
+        }
+    }else{
+        if($unprotectedIndex.Count -eq 0){
+            Write-Host "All sites are protected" -ForegroundColor Green
+            exit
+        }
     }
     foreach($siteId in $unprotectedIndex){
         if($job.office365Params.objects.Count -ge $maxSitesPerJob){

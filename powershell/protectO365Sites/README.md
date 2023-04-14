@@ -95,6 +95,7 @@ To create an autoprotect job that excludes sites that are already protected:
 * -maxSitesPerJob: (optional) default is 5000
 * -sourceName: (optional) name of registered O365 protection source (required for new job)
 * -autoProtectRemaining: (optional) autoprotect at the source and exclude already protected sites
+* -force: (optional) force protect mailboxes that may be autoprotected in another job
 
 ## New Job Parameters
 
@@ -106,6 +107,33 @@ To create an autoprotect job that excludes sites that are already protected:
 * -storageDomainName: (optional) default is 'DefaultStorageDomain'
 * -paused: (optional) pause future runs (new job only)
 * -disableIndexing: (optional) disable indexing (indexing is enabled by default)
+
+## Using the force option
+
+If your auto protect job is getting too large (too many sites protected), then you can use the force switch to add some of these sites to a static job:
+
+```powershell
+# example
+./protectO365Sites.ps1 -vip mycluster `
+                       -username myusername `
+                       -domain mydomain.net `
+                       -jobName 'My Static Job' `
+                       -allSites `
+                       -force
+# end example
+```
+
+After that, you should update your autoprotect job to exclude those sites that are now statically protected:
+
+```powershell
+# example
+./protectO365Sites.ps1 -vip mycluster `
+                       -username myusername `
+                       -domain mydomain.net `
+                       -jobName 'My Autoprotect Job' `
+                       -autoProtectRemaining
+# end example
+```
 
 ## Notes
 
