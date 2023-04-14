@@ -25,7 +25,8 @@ param (
     [Parameter()][int]$maxteamsPerJob = 5000,
     [Parameter()][string]$sourceName,
     [Parameter()][switch]$autoProtectRemaining,
-    [Parameter()][switch]$dbg
+    [Parameter()][switch]$dbg,
+    [Parameter()][switch]$force
 )
 
 # gather list from command line params and file
@@ -85,12 +86,20 @@ if($cluster.clusterSoftwareVersion -lt '6.6'){
 }
 
 # get the protectionJob
-$job = (api get -v2 "data-protect/protection-groups").protectionGroups | Where-Object {$_.name -eq $jobName}
+$jobs = (api get -v2 "data-protect/protection-groups?environments=kO365&isActive=true&isDeleted=false").protectionGroups | Where-Object {$_.office365Params.protectionTypes -eq 'kTeams'}
+$job = $jobs | Where-Object {$_.name -eq $jobName}
+$otherJobs = $jobs | Where-Object {$_.name -ne $jobName}
 
 if($job){
 
     # existing protection job
     $newJob = $false
+    if($autoProtectRemaining){
+        $job.office365Params.excludeObjectIds = $otherJobs.office365Params.objects.id
+        "Updating protection job $($job.name)"
+        $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
+        exit
+    }
 
 }else{
 
@@ -284,9 +293,20 @@ if($autoProtectRemaining){
     $job.office365Params.excludeObjectIds = $protectedIndex
 }elseif($allteams){
     $teamsAdded = 0
-    if($unprotectedIndex.Count -eq 0){
-        Write-Host "All teams are protected" -ForegroundColor Green
-        exit
+    if($force){
+        $autoprotectedIndex = $protectedIndex | Where-Object {$_ -notin $jobs.office365Params.objects.id}
+        foreach($teamId in $autoprotectedIndex){
+            if($job.office365Params.objects.Count -ge $maxteamsPerJob){
+                break
+            }
+            $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $teamId})
+            $teamsAdded += 1
+        }
+    }else{
+        if($unprotectedIndex.Count -eq 0){
+            Write-Host "All teams are protected" -ForegroundColor Green
+            exit
+        }
     }
     foreach($teamId in $unprotectedIndex){
         if($job.office365Params.objects.Count -ge $maxteamsPerJob){
