@@ -95,7 +95,7 @@ To create an autoprotect job that excludes mailboxes that are already protected:
 * -maxMailboxesPerJob: (optional) default is 5000
 * -sourceName: (optional) name of registered O365 protection source (required for new job)
 * -autoProtectRemaining: (optional) autoprotect at the source and exclude already protected mailboxes
-* -force: (optional): force protect mailboxes that may be autoprotected in another job
+* -force: (optional) force protect mailboxes that may be autoprotected in another job
 
 ## New Job Parameters
 

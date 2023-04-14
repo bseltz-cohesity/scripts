@@ -24,7 +24,8 @@ param (
     [Parameter()][switch]$allUsers,
     [Parameter()][int]$maxUsersPerJob = 5000,
     [Parameter()][string]$sourceName,
-    [Parameter()][switch]$autoProtectRemaining
+    [Parameter()][switch]$autoProtectRemaining,
+    [Parameter()][switch]$force
 )
 
 # gather list from command line params and file
@@ -86,11 +87,18 @@ if($cluster.clusterSoftwareVersion -lt '6.6'){
 # get the protectionJob
 $jobs = (api get -v2 "data-protect/protection-groups?environments=kO365&isActive=true&isDeleted=false").protectionGroups | Where-Object {$_.office365Params.protectionTypes -eq 'kOneDrive'}
 $job = $jobs | Where-Object {$_.name -eq $jobName}
+$otherJobs = $jobs | Where-Object {$_.name -ne $jobName}
 
 if($job){
 
     # existing protection job
     $newJob = $false
+    if($autoProtectRemaining){
+        $job.office365Params.excludeObjectIds = $otherJobs.office365Params.objects.id
+        "Updating protection job $($job.name)"
+        $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
+        exit
+    }
 
 }else{
 
@@ -296,9 +304,20 @@ if($autoProtectRemaining){
     $job.office365Params.excludeObjectIds = $protectedIndex | Sort-Object -Unique
 }elseif($allUsers){
     $usersAdded = 0
-    if($unprotectedIndex.Count -eq 0){
-        Write-Host "All users are protected" -ForegroundColor Green
-        exit
+    if($force){
+        $autoprotectedIndex = $protectedIndex | Where-Object {$_ -notin $jobs.office365Params.objects.id}
+        foreach($userId in $autoprotectedIndex){
+            if($job.office365Params.objects.Count -ge $maxUsersPerJob){
+                break
+            }
+            $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $userId})
+            $usersAdded += 1
+        }
+    }else{
+        if($unprotectedIndex.Count -eq 0){
+            Write-Host "All users are protected" -ForegroundColor Green
+            exit
+        }
     }
     foreach($userId in $unprotectedIndex){
         if($job.office365Params.objects.Count -ge $maxUsersPerJob){
