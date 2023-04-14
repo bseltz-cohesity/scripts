@@ -88,14 +88,14 @@ To create an autoprotect job that excludes sites that are already protected:
 
 ## Other Parameters
 
-* -jobName: name of the O365 protection job to exclude mailboxes from
+* -jobName: name of the O365 protection job
 * -site: (optional) a comma separated list of site names to protect
 * -siteList: (optional) a text file list of site names to protect
 * -allSites: (optional) protect unprotected sites (up to the maxSitesPerJob)
 * -maxSitesPerJob: (optional) default is 5000
 * -sourceName: (optional) name of registered O365 protection source (required for new job)
 * -autoProtectRemaining: (optional) autoprotect at the source and exclude already protected sites
-* -force: (optional) force protect mailboxes that may be autoprotected in another job
+* -force: (optional) force protect sites that may be autoprotected in another job
 
 ## New Job Parameters
 

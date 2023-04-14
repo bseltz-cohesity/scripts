@@ -95,7 +95,7 @@ To create an autoprotect job that excludes users that are already protected:
 * -maxUsersPerJob: (optional) default is 5000
 * -sourceName: (optional) name of registered O365 protection source (required for new job)
 * -autoProtectRemaining: (optional) autoprotect at the source and exclude already protected users
-* -force: (optional) force protect mailboxes that may be autoprotected in another job
+* -force: (optional) force protect users that may be autoprotected in another job
 
 ## New Job Parameters
 
@@ -110,7 +110,7 @@ To create an autoprotect job that excludes users that are already protected:
 
 ## Using the force option
 
-If your auto protect job is getting too large (too many mailboxes protected), then you can use the force switch to add some of these mailboxes to a static job:
+If your auto protect job is getting too large (too many users protected), then you can use the force switch to add some of these users to a static job:
 
 ```powershell
 # example
@@ -123,7 +123,7 @@ If your auto protect job is getting too large (too many mailboxes protected), th
 # end example
 ```
 
-After that, you should update your autoprotect job to exclude those mailboxes that are now statically protected:
+After that, you should update your autoprotect job to exclude those users that are now statically protected:
 
 ```powershell
 # example
