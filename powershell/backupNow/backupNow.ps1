@@ -7,6 +7,7 @@
 # 2023.03.29 - version bump
 # 2023.04.11 - fixed bug in line 70 - last run is None error, added metafile check for new run
 # 2023.04.13 - fixed log archiving bug
+# 2023.04.14 - fixed metadatafile watch bug
 
 # extended error codes
 # ====================
@@ -503,17 +504,28 @@ $jobdata = @{
 }
 
 # add sourceIds if specified
+$useMetadataFile = $false
 if($objects){
     if($environment -eq 'kSQL' -or $environment -eq 'kOracle'){ # -and $job.environmentParameters.sqlParameters.backupType -in @('kSqlVSSFile', 'kSqlNative')
         $jobdata['runNowParameters'] = $runNowParameters
     }else{
         if($metaDataFile){
+            $useMetadataFile = $True
             $jobdata['runNowParameters'] = @()
             foreach($sourceId in $sourceIds){
                 $jobdata['RunNowParameters'] += @{'sourceId' = $sourceId; 'physicalParams' = @{'metadataFilePath' = $metaDataFile}}
             }
         }else{
             $jobdata['sourceIds'] = $sourceIds
+        }
+    }
+}else{
+    if($metaDataFile){
+        output '-objects is required when using -metadataFile' -warn
+        if($extendedErrorCodes){
+            exit 3
+        }else{
+            exit 1
         }
     }
 }
@@ -586,7 +598,7 @@ if($wait -or $progress){
         if($runs.PSObject.Properties['runs']){
             $runs = @($runs.runs)
         }
-        if($null -ne $runs -and $runs.Count -ne "0" -and $metaDataFile){
+        if($null -ne $runs -and $runs.Count -ne "0" -and $useMetadataFile -eq $True){
             foreach($run in $runs){
                 $runDetail = api get "/backupjobruns?exactMatchStartTimeUsecs=$($run.localBackupInfo.startTimeUsecs)&id=$($job.id)"
                 $metadataFilePath = $runDetail[0].backupJobRuns.protectionRuns[0].backupRun.additionalParamVec[0].physicalParams.metadataFilePath
