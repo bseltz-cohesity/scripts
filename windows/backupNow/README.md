@@ -4,6 +4,12 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This is a compiled version of backupNow for Windows. It performs a runNow on a protection job and optionally replicates and/or archives the backup to the specified targets. Also, the script will optionally enable a disabled job to run it, and disable it when done. The script will wait for the job to fimish and report the end status of the job.
 
+## Download the Binary
+
+<https://github.com/bseltz-cohesity/scripts/raw/master/windows/backupNow/backupNow.exe>
+
+## Example
+
 ```bash
 # example
 ./backupNow.exe -v mycluster -u myuser -d mydomain.net -j "My Backup Job" -w
