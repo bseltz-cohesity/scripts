@@ -24,16 +24,19 @@ param (
     [Parameter()][ValidateSet('mailbox','onedrive','sites','teams','publicfolders')][string]$objectType = 'mailbox'
 )
 
+$queryParam = ''
 if($objectType -eq 'mailbox'){
     $objectString = 'Mailboxes'
     $nodeString = 'users'
     $objectKtype = 'kMailbox'
     $environment68 = 'kO365Exchange'
+    $queryParam = '&hasValidMailbox=true'
 }elseif($objectType -eq 'onedrive'){
     $objectString = 'OneDrives'
     $nodeString = 'users'
     $objectKtype = 'kOneDrive'
     $environment68 = 'kO365OneDrive'
+    $queryParam = '&hasValidOnedrive=true'
 }elseif($objectType -eq 'sites'){
     $objectString = 'Sites'
     $nodeString = 'Sites'
@@ -114,7 +117,7 @@ $jobs = (api get -v2 "data-protect/protection-groups?environments=kO365&isActive
 $protectedIndex = @($jobs.office365Params.objects.id | Where-Object {$_ -ne $null})
 $unprotectedIndex = @($jobs.office365Params.excludeObjectIds | Where-Object {$_ -ne $null -and $_ -notin $protectedIndex})
 
-$objects = api get "protectionSources?pageSize=50000&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false&hasValidMailbox=true&useCachedData=false"
+$objects = api get "protectionSources?pageSize=50000&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false$($queryParam)&useCachedData=false"
 $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
 if($objectsNode.protectionSource.id -in $protectedIndex){
     $autoProtected = $True
