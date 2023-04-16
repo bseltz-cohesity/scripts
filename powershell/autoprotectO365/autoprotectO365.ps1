@@ -28,22 +28,27 @@ if($objectType -eq 'mailbox'){
     $objectString = 'Mailboxes'
     $nodeString = 'users'
     $objectKtype = 'kMailbox'
+    $environment68 = 'kO365Exchange'
 }elseif($objectType -eq 'onedrive'){
     $objectString = 'OneDrives'
     $nodeString = 'users'
     $objectKtype = 'kOneDrive'
+    $environment68 = 'kO365OneDrive'
 }elseif($objectType -eq 'sites'){
     $objectString = 'Sites'
     $nodeString = 'Sites'
     $objectKtype = 'kSharePoint'
+    $environment68 = 'kO365Sharepoint'
 }elseif($objectType -eq 'teams'){
     $objectString = 'Teams'
     $nodeString = 'Teams'
     $objectKtype = 'kTeams'
+    $environment68 = 'kO365Teams'
 }elseif($objectType -eq 'publicfolders'){
     $objectString = 'PublicFolders'
     $nodeString = 'PublicFolders'
     $objectKtype = 'kPublicFolders'
+    $environment68 = 'kO365PublicFolders'
 }else{
     Write-Host "Invalid objectType" -ForegroundColor Yellow
     exit
@@ -72,7 +77,7 @@ if(!$cohesity_api.authorized){
 
 $cluster = api get cluster
 if($cluster.clusterSoftwareVersion -gt '6.8'){
-    $environment = 'kO365Exchange'
+    $environment = $environment68
 }else{
     $environment = 'kO365'
 }
