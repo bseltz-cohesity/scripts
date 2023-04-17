@@ -140,7 +140,7 @@ while(1){
         $lastCursor = $node.protectionSource.id
     }
     if($cursor){
-        $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false&hasValidMailbox=true&useCachedData=false&afterCursorEntityId=$cursor"
+        $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false$($queryParam)&useCachedData=false&afterCursorEntityId=$cursor"
         $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
     }else{
         break
