@@ -152,8 +152,6 @@ foreach($job in $jobs.protectionGroups | Where-Object isDeleted -ne $True | Sort
                         }
                     }
                 }
-                
-                
             }
         }
     }
