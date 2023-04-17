@@ -15,6 +15,7 @@ param (
     [Parameter()][string]$clusterName,
     [Parameter()][array]$vmName,  # name of VM to protect
     [Parameter()][string]$vmList = '',  # text file of vm names
+    [Parameter()][string]$vmMatch,
     [Parameter()][array]$jobName,
     [Parameter()][switch]$removeExclusion
 )
@@ -59,23 +60,30 @@ if ('' -ne $vmList){
         exit
     }
 }
-if($vmsToExclude.Count -eq 0){
+if($vmsToExclude.Count -eq 0 -and ! $vmMatch){
     Write-Host "No VMs to add" -ForegroundColor Yellow
     exit
 }
 
 $vmsAdded = $false
 $vmcache = @{}
+$vCenterCache = @{}
 
 foreach($job in $jobs.protectionGroups){
     if($job.name -in $jobName -or $jobName.Count -eq 0){
+        if($vCenterCache["$($job.vmwareParams.sourceId)"]){
+            $vms = $vCenterCache["$($job.vmwareParams.sourceId)"]
+        }else{
+            $vms = api get protectionSources/virtualMachines?vCenterId=$($job.vmwareParams.sourceId)
+            $vCenterCache["$($job.vmwareParams.sourceId)"] = $vms
+        }
+        if($vmMatch){
+            $matchVMs = $vms | Where-Object {$_.name -match $vmMatch}
+            $vmsToExclude = @($vmsToExclude + $matchVMs.name | Sort-Object -Unique)
+        }
         foreach($vmName in $vmsToExclude){
             ### get the VM
-            if($vmcache[$vmName]){
-                $vm = $vmcache[$vmName]
-            }else{
-                $vm = api get protectionSources/virtualMachines?vCenterId=$($job.vmwareParams.sourceId) | Where-Object {$_.name -ieq $vmName}
-            }
+            $vm = $vms | Where-Object {$_.name -ieq $vmName}
             if(!$vm){
                 Write-Host "VM $vmName not found!" -ForegroundColor Yellow
             }else{
