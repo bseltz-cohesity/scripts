@@ -45,6 +45,7 @@ Please note that there may be some delay before the deletions are reflected in s
 * -domain: (optional) Active Directory domain (defaults to 'local')
 * -objectName: (optional) one or more vm names (comma separated)
 * -objectList: (optional) text file with vm names (one per line)
+* -objectMatch: (optional) search string for patial name match (e.g. 'indows')
 * -jobName: (optional) limit search to specific job name (default is all jobs)
 * -olderThan: (optional) only delete snapshots/archives older than X days (defaults to 0)
 * -delete: (optional) if omitted, script will only display what would be deleted

@@ -6,6 +6,7 @@ param (
     [Parameter()][string]$domain = 'local', # local or AD domain
     [Parameter()][array]$objectName,  # optional names of vms to expunge (comma separated)
     [Parameter()][string]$objectList = '',  # optional textfile of vms to expunge (one per line)
+    [Parameter()][string]$objectMatch,
     [Parameter()][string]$jobName,
     [Parameter()][string]$tenantId = $null,
     [Parameter()][int]$olderThan = 0,
@@ -33,6 +34,13 @@ if ('' -ne $objectList){
     }else{
         Write-Warning "VM list $objectList not found!"
         exit
+    }
+}
+
+if($objectMatch){
+    $search = api get "/searchvms?vmName=*$($objectMatch)*"
+    if($search){
+        $vms = @($vms + $search.vms.vmDocument.objectName)
     }
 }
 
