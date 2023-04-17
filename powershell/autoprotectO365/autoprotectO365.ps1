@@ -30,13 +30,13 @@ if($objectType -eq 'mailbox'){
     $nodeString = 'users'
     $objectKtype = 'kMailbox'
     $environment68 = 'kO365Exchange'
-    $queryParam = '&hasValidMailbox=true'
+    $queryParam = '&hasValidMailbox=true&hasValidOnedrive=false'
 }elseif($objectType -eq 'onedrive'){
     $objectString = 'OneDrives'
     $nodeString = 'users'
     $objectKtype = 'kOneDrive'
     $environment68 = 'kO365OneDrive'
-    $queryParam = '&hasValidOnedrive=true'
+    $queryParam = '&hasValidOnedrive=true&hasValidMailbox=false'
 }elseif($objectType -eq 'sites'){
     $objectString = 'Sites'
     $nodeString = 'Sites'
