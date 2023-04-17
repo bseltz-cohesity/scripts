@@ -148,7 +148,7 @@ while(1){
     # patch for 6.8.1
     if($objects.nodes -eq $null){
         if($cursor -gt $lastCursor){
-            $node = api get protectionSources?id=$cursor
+            $node = api get "protectionSources?id=$cursor$($queryParam)"
             $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
             $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
             if($node.protectionSource.office365ProtectionSource.PSObject.Properties['primarySMTPAddress']){
