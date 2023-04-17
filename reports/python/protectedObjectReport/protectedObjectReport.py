@@ -87,7 +87,7 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
         else:
             jobPriority = ''
 
-        if 'sla' in job:
+        if 'sla' in job and job['sla'] is not None and len(job['sla']) > 1:
             fullSla = job['sla'][1]['slaMinutes']
             incrementalSla = job['sla'][0]['slaMinutes']
         else:
