@@ -20,13 +20,13 @@ if($objectType -eq 'mailbox'){
     $nodeString = 'users'
     $objectKtype = 'kMailbox'
     $environment68 = 'kO365Exchange'
-    $queryParam = '&hasValidMailbox=true'
+    $queryParam = '&hasValidMailbox=true&hasValidOnedrive=false'
 }elseif($objectType -eq 'onedrive'){
     $objectString = 'OneDrives'
     $nodeString = 'users'
     $objectKtype = 'kOneDrive'
     $environment68 = 'kO365OneDrive'
-    $queryParam = '&hasValidOnedrive=true'
+    $queryParam = '&hasValidOnedrive=true&hasValidMailbox=false'
 }elseif($objectType -eq 'sites'){
     $objectString = 'Sites'
     $nodeString = 'Sites'
@@ -140,7 +140,7 @@ while(1){
     # patch for 6.8.1
     if($objects.nodes -eq $null){
         if($cursor -gt $lastCursor){
-            $node = api get protectionSources?id=$cursor
+            $node = api get "protectionSources?id=$cursor$($queryParam)"
             $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
             $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
             if($node.protectionSource.office365ProtectionSource.PSObject.Properties['primarySMTPAddress']){
