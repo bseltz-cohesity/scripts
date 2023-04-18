@@ -239,9 +239,9 @@ for object in objects:
         snapshots = api('get', 'data-protect/objects/%s/snapshots?protectionGroupIds=%s' % (object['id'], jobInfo['protectionGroupId']), v=2)
         snapshots = [s for s in snapshots['snapshots'] if s['snapshotTimestampUsecs'] <= desiredPIT]
         if snapshots is not None and len(snapshots) > 0:
-            if snapshots[0]['snapshotTimestampUsecs'] > latestSnapshotTimeStamp:
-                latestSnapshot = snapshots[0]
-                latestSnapshotTimeStamp = snapshots[0]['snapshotTimestampUsecs']
+            if snapshots[-1]['snapshotTimestampUsecs'] > latestSnapshotTimeStamp:
+                latestSnapshot = snapshots[-1]
+                latestSnapshotTimeStamp = snapshots[-1]['snapshotTimestampUsecs']
                 latestSnapshotObject = object
 
 if latestSnapshotObject is None:
