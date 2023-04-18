@@ -192,9 +192,9 @@ foreach($object in $objects){
         $snapshots = api get -v2 "data-protect/objects/$($object.id)/snapshots?protectionGroupIds=$($jobInfo.protectionGroupId)"
         $snapshots = $snapshots.snapshots | Where-Object {$_.snapshotTimestampUsecs -le $desiredPIT}
         if($snapshots.Count -gt 0){
-            if($snapshots[0].snapshotTimestampUsecs -gt $latestSnapshotTimeStamp){
-                $latestSnapshot = $snapshots[0]
-                $latestSnapshotTimeStamp = $snapshots[0].snapshotTimestampUsecs
+            if($snapshots[-1].snapshotTimestampUsecs -gt $latestSnapshotTimeStamp){
+                $latestSnapshot = $snapshots[-1]
+                $latestSnapshotTimeStamp = $snapshots[-1].snapshotTimestampUsecs
                 $latestSnapshotObject = $object
             }
         }
