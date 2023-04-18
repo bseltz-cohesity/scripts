@@ -54,7 +54,7 @@ $sourceIdIndex = @{}
 $lastCursor = 0
 
 $jobFound = $false
-foreach($job in $jobs.protectionGroups | Where-Object isDeleted -ne $True | Sort-Object -Property name){
+foreach($job in $jobs.protectionGroups | Where-Object {$_.isDeleted -ne $True -and $_.isActive -eq $True} | Sort-Object -Property name){
     if((! $jobName) -or $job.name -eq $jobName){
         $sourceId = $job.office365Params.sourceId
         if("$sourceId" -notin $sourceIdIndex.Keys){
@@ -174,7 +174,7 @@ foreach($job in $jobs.protectionGroups | Where-Object isDeleted -ne $True | Sort
         $newProtectedCount = @($job.office365Params.objects).Count
         if($newProtectedCount -lt $protectedCount){
             Write-Host  "    $($job.name) (updated)" -ForegroundColor Yellow
-            # $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
+            $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
         }else{
             Write-Host "    $($job.name) (unchanged)"
         }
