@@ -35,9 +35,7 @@ Place both files in a folder together and run the main script like so:
 * -days: (optional) defaults to 7
 * -objectName: (optional) linit to just one object name
 * -anomalyStrength: (optional) defaults to 10
-* -sleepTime: (optional) wait for file list retrieval - default is 10 (seconds))
-* -retryCount: (optional) retry file list retrieval - defaults is 10
-* -maxFiles: (optional) number of files to retrieve - default is 100
+* -unit: (optional) MiB or GiB (default is GiB)
 
 ## Authenticating to Helios
 
