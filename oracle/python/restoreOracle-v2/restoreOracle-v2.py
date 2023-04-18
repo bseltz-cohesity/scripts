@@ -16,8 +16,10 @@
 # import pyhesity wrapper module
 from pyhesity import *
 import codecs
+import json
 from datetime import datetime
 from time import sleep
+
 
 # command line arguments
 import argparse
@@ -461,7 +463,10 @@ else:
 # set pit
 if pit is not None:
     restoreParams['oracleParams']['objects'][0]['pointInTimeUsecs'] = pit
-    sourceConfig['restoreTimeUsecs'] = pit
+    if sameDB is True:
+        sourceConfig['restoreTimeUsecs'] = pit
+    else:
+        sourceConfig['recoverDatabaseParams']['restoreTimeUsecs'] = pit
     recoverTime = usecsToDate(pit)
 else:
     recoverTime = usecsToDate(latestSnapshotTimeStamp)
@@ -529,7 +534,7 @@ if targetcdb is not None:
 if dbg:
     display(restoreParams)
     dbgoutput = codecs.open('./ora-restore.json', 'w')
-    dbgoutput.write(str(restoreParams))
+    json.dump(restoreParams, dbgoutput)
     dbgoutput.close()
     print('\nWould restore %s/%s to %s/%s (Point in time: %s)' % (sourceserver, originalSourceDB, targetserver, reportTarget, recoverTime))
     exit(0)

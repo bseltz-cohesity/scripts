@@ -401,7 +401,12 @@ if($sameDB){
 # set pit
 if($pit){
     $restoreParams.oracleParams.objects[0]['pointInTimeUsecs'] = $pit
-    $sourceConfig['restoreTimeUsecs'] = $pit
+    if($sameDB -eq $True){
+        $sourceConfig['restoreTimeUsecs'] = $pit
+    }else{
+        $sourceConfig.recoverDatabaseParams['restoreTimeUsecs'] = $pit
+    }
+    
     $recoverTime = usecsToDate $pit
 }else{
     $recoverTime = usecsToDate $latestSnapshotTimeStamp
