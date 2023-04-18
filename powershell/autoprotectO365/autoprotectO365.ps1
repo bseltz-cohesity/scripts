@@ -330,6 +330,7 @@ while($unprotectedCount -gt 0){
         $null = api post -v2 "data-protect/protection-groups" $job
     }else{
         "Updating protection job $($job.name)"
+        $job.office365Params.objects = @($job.office365Params.objects | Where-Object {$_.id -in $nodeIdIndex})
         $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
     }
 
