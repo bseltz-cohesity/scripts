@@ -47,3 +47,4 @@ Place all files in a folder together, then run the main script like so:
 ## Other Parameters
 
 * -jobName: (optional) remove missing objects from only this job (defaults to all jobs)
+* -objectType: (optional) mailbox, onedrive, sites, teams, publicfolders, or all (default is all)

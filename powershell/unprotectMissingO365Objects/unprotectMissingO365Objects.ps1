@@ -10,8 +10,38 @@ param (
     [Parameter()][string]$mfaCode = $null,
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName = $null,
-    [Parameter()][string]$jobName
+    [Parameter()][string]$jobName,
+    [Parameter()][ValidateSet('mailbox','onedrive','sites','teams','publicfolders','all')][string]$objectType = 'all'
 )
+
+if($objectType -eq 'mailbox'){
+    $objectString = 'Mailboxes'
+    $nodeString = 'users'
+    $objectKtype = 'kMailbox'
+    $environment68 = 'kO365Exchange'
+    $queryParam = '&hasValidMailbox=true&hasValidOnedrive=false'
+}elseif($objectType -eq 'onedrive'){
+    $objectString = 'OneDrives'
+    $nodeString = 'users'
+    $objectKtype = 'kOneDrive'
+    $environment68 = 'kO365OneDrive'
+    $queryParam = '&hasValidOnedrive=true&hasValidMailbox=false'
+}elseif($objectType -eq 'sites'){
+    $objectString = 'Sites'
+    $nodeString = 'Sites'
+    $objectKtype = 'kSharePoint'
+    $environment68 = 'kO365Sharepoint'
+}elseif($objectType -eq 'teams'){
+    $objectString = 'Teams'
+    $nodeString = 'Teams'
+    $objectKtype = 'kTeams'
+    $environment68 = 'kO365Teams'
+}elseif($objectType -eq 'publicfolders'){
+    $objectString = 'PublicFolders'
+    $nodeString = 'PublicFolders'
+    $objectKtype = 'kPublicFolders'
+    $environment68 = 'kO365PublicFolders'
+}
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -47,14 +77,22 @@ if($cluster.clusterSoftwareVersion -lt '6.6'){
 }
 
 # get the protectionJob
-$jobs = (api get -v2 "data-protect/protection-groups?environments=kO365")
+$jobs = (api get -v2 "data-protect/protection-groups?environments=kO365").protectionGroups | Where-Object {$_.isDeleted -ne $True -and $_.isActive -eq $True}
+if($objectType -ne 'all'){
+    $jobs = $jobs | Where-Object {$_.office365Params.protectionTypes -eq $objectKtype}
+}
+
+if(!$jobs){
+    Write-Host "No jobs found for O365 ($objectType)"
+    exit
+}
 
 # build source ID index
 $sourceIdIndex = @{}
 $lastCursor = 0
 
 $jobFound = $false
-foreach($job in $jobs.protectionGroups | Where-Object {$_.isDeleted -ne $True -and $_.isActive -eq $True} | Sort-Object -Property name){
+foreach($job in $jobs | Where-Object {$_.isDeleted -ne $True -and $_.isActive -eq $True} | Sort-Object -Property name){
     if((! $jobName) -or $job.name -eq $jobName){
         $sourceId = $job.office365Params.sourceId
         if("$sourceId" -notin $sourceIdIndex.Keys){
@@ -65,90 +103,99 @@ foreach($job in $jobs.protectionGroups | Where-Object {$_.isDeleted -ne $True -a
             $sourceIdIndex["$sourceId"]['onedrives'] = @($sourceIdIndex["$sourceId"]['onedrives'] + $rootSource.protectionSource.id)
             $source = api get "protectionSources?id=$($rootSource.protectionSource.id)&excludeOffice365Types=$entityTypes&allUnderHierarchy=false"
             foreach($objectNode in $source.nodes){
-                Write-Host "`nDiscovering $($objectNode.protectionSource.office365ProtectionSource.name) from $($rootSource.protectionSource.name)"
                 if($objectNode.protectionSource.office365ProtectionSource.name -eq 'Users'){
+                    if($objectType -in @('all', 'mailbox', 'onedrive')){
+                        Write-Host "`nDiscovering $($objectNode.protectionSource.office365ProtectionSource.name) from $($rootSource.protectionSource.name)"
+                    }
                     # get mailboxes
-                    $sourceIdIndex["$sourceId"]['mailboxes'] = @($sourceIdIndex["$sourceId"]['mailboxes'] + $objectNode.protectionSource.id)
-                    $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNode.protectionSource.id)&allUnderHierarchy=false&hasValidMailbox=true&hasValidOnedrive=false&useCachedData=false"
-                    $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
-                    while(1){
-                        foreach($node in $objects.nodes){
-                            $sourceIdIndex["$sourceId"]['mailboxes'] = @($sourceIdIndex["$sourceId"]['mailboxes'] + $node.protectionSource.id)
-                            $lastCursor = $node.protectionSource.id
-                        }
-                        Write-Host "    $(@($sourceIdIndex["$sourceId"]['mailboxes']).Count) Mailboxes"
-                        if($cursor){
-                            $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&hasValidMailbox=true&hasValidOnedrive=false&afterCursorEntityId=$cursor"
-                            $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
-                        }else{
-                            break
-                        }
-                        # patch for 6.8.1
-                        if($objects.nodes -eq $null){
-                            if($cursor -gt $lastCursor){
-                                $node = api get "protectionSources?id=$cursor&hasValidMailbox=true&hasValidOnedrive=false"
+                    if($objectType -in @('all', 'mailbox')){
+                        $sourceIdIndex["$sourceId"]['mailboxes'] = @($sourceIdIndex["$sourceId"]['mailboxes'] + $objectNode.protectionSource.id)
+                        $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNode.protectionSource.id)&allUnderHierarchy=false&hasValidMailbox=true&hasValidOnedrive=false&useCachedData=false"
+                        $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
+                        while(1){
+                            foreach($node in $objects.nodes){
                                 $sourceIdIndex["$sourceId"]['mailboxes'] = @($sourceIdIndex["$sourceId"]['mailboxes'] + $node.protectionSource.id)
                                 $lastCursor = $node.protectionSource.id
                             }
-                        }
-                        if($cursor -eq $lastCursor){
-                            break
+                            Write-Host "    $(@($sourceIdIndex["$sourceId"]['mailboxes']).Count) Mailboxes"
+                            if($cursor){
+                                $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&hasValidMailbox=true&hasValidOnedrive=false&afterCursorEntityId=$cursor"
+                                $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
+                            }else{
+                                break
+                            }
+                            # patch for 6.8.1
+                            if($objects.nodes -eq $null){
+                                if($cursor -gt $lastCursor){
+                                    $node = api get "protectionSources?id=$cursor&hasValidMailbox=true&hasValidOnedrive=false"
+                                    $sourceIdIndex["$sourceId"]['mailboxes'] = @($sourceIdIndex["$sourceId"]['mailboxes'] + $node.protectionSource.id)
+                                    $lastCursor = $node.protectionSource.id
+                                }
+                            }
+                            if($cursor -eq $lastCursor){
+                                break
+                            }
                         }
                     }
                     # get onedrives
-                    $sourceIdIndex["$sourceId"]['onedrives'] = @($sourceIdIndex["$sourceId"]['onedrives'] + $objectNode.protectionSource.id)
-                    $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNode.protectionSource.id)&allUnderHierarchy=false&hasValidOnedrive=true&hasValidMailbox=false&useCachedData=false"
-                    $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
-                    while(1){
-                        foreach($node in $objects.nodes){
-                            $sourceIdIndex["$sourceId"]['onedrives'] = @($sourceIdIndex["$sourceId"]['onedrives'] + $node.protectionSource.id)
-                            $lastCursor = $node.protectionSource.id
-                        }
-                        Write-Host "    $(@($sourceIdIndex["$sourceId"]['onedrives']).Count) OneDrives"
-                        if($cursor){
-                            $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNNode.protectionSource.id)&allUnderHierarchy=false&hasValidOnedrive=true&hasValidMailbox=false&useCachedData=false&afterCursorEntityId=$cursor"
-                            $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
-                        }else{
-                            break
-                        }
-                        # patch for 6.8.1
-                        if($objects.nodes -eq $null){
-                            if($cursor -gt $lastCursor){
-                                $node = api get "protectionSources?id=$cursor&hasValidOnedrive=true&hasValidMailbox=false"
+                    if($objectType -in @('all', 'onedrive')){
+                        $sourceIdIndex["$sourceId"]['onedrives'] = @($sourceIdIndex["$sourceId"]['onedrives'] + $objectNode.protectionSource.id)
+                        $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNode.protectionSource.id)&allUnderHierarchy=false&hasValidOnedrive=true&hasValidMailbox=false&useCachedData=false"
+                        $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
+                        while(1){
+                            foreach($node in $objects.nodes){
                                 $sourceIdIndex["$sourceId"]['onedrives'] = @($sourceIdIndex["$sourceId"]['onedrives'] + $node.protectionSource.id)
                                 $lastCursor = $node.protectionSource.id
                             }
-                        }
-                        if($cursor -eq $lastCursor){
-                            break
+                            Write-Host "    $(@($sourceIdIndex["$sourceId"]['onedrives']).Count) OneDrives"
+                            if($cursor){
+                                $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNNode.protectionSource.id)&allUnderHierarchy=false&hasValidOnedrive=true&hasValidMailbox=false&useCachedData=false&afterCursorEntityId=$cursor"
+                                $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
+                            }else{
+                                break
+                            }
+                            # patch for 6.8.1
+                            if($objects.nodes -eq $null){
+                                if($cursor -gt $lastCursor){
+                                    $node = api get "protectionSources?id=$cursor&hasValidOnedrive=true&hasValidMailbox=false"
+                                    $sourceIdIndex["$sourceId"]['onedrives'] = @($sourceIdIndex["$sourceId"]['onedrives'] + $node.protectionSource.id)
+                                    $lastCursor = $node.protectionSource.id
+                                }
+                            }
+                            if($cursor -eq $lastCursor){
+                                break
+                            }
                         }
                     }
                 }else{
-                    $sourceIdIndex["$sourceId"]['other'] = @($sourceIdIndex["$sourceId"]['other'] + $objectNode.protectionSource.id)
-                    $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false"
-                    $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
-                    while(1){
-                        foreach($node in $objects.nodes){
-                            $sourceIdIndex["$sourceId"]['other'] = @($sourceIdIndex["$sourceId"]['other'] + $node.protectionSource.id)
-                            $lastCursor = $node.protectionSource.id
-                        }
-                        Write-Host "    $(@($sourceIdIndex["$sourceId"]['other']).Count)"
-                        if($cursor){
-                            $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&afterCursorEntityId=$cursor"
-                            $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
-                        }else{
-                            break
-                        }
-                        # patch for 6.8.1
-                        if($objects.nodes -eq $null){
-                            if($cursor -gt $lastCursor){
-                                $node = api get protectionSources?id=$cursor
+                    if($objectType -notin @('mailbox', 'onedrive')){
+                        Write-Host "`nDiscovering $($objectNode.protectionSource.office365ProtectionSource.name) from $($rootSource.protectionSource.name)"
+                        $sourceIdIndex["$sourceId"]['other'] = @($sourceIdIndex["$sourceId"]['other'] + $objectNode.protectionSource.id)
+                        $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false"
+                        $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
+                        while(1){
+                            foreach($node in $objects.nodes){
                                 $sourceIdIndex["$sourceId"]['other'] = @($sourceIdIndex["$sourceId"]['other'] + $node.protectionSource.id)
                                 $lastCursor = $node.protectionSource.id
                             }
-                        }
-                        if($cursor -eq $lastCursor){
-                            break
+                            Write-Host "    $(@($sourceIdIndex["$sourceId"]['other']).Count)"
+                            if($cursor){
+                                $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&afterCursorEntityId=$cursor"
+                                $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
+                            }else{
+                                break
+                            }
+                            # patch for 6.8.1
+                            if($objects.nodes -eq $null){
+                                if($cursor -gt $lastCursor){
+                                    $node = api get protectionSources?id=$cursor
+                                    $sourceIdIndex["$sourceId"]['other'] = @($sourceIdIndex["$sourceId"]['other'] + $node.protectionSource.id)
+                                    $lastCursor = $node.protectionSource.id
+                                }
+                            }
+                            if($cursor -eq $lastCursor){
+                                break
+                            }
                         }
                     }
                 }
@@ -159,7 +206,7 @@ foreach($job in $jobs.protectionGroups | Where-Object {$_.isDeleted -ne $True -a
 Write-Host "`nReviewing Protection Groups...`n"
 
 # updage protection groups
-foreach($job in $jobs.protectionGroups | Where-Object isDeleted -ne $True | Sort-Object -Property name){
+foreach($job in $jobs | Where-Object isDeleted -ne $True | Sort-Object -Property name){
     if((! $jobName) -or $job.name -eq $jobName){
         if($job.office365Params.protectionTypes -eq 'kOneDrive'){
             $objIndex = $sourceIdIndex["$sourceId"]['onedrives']
