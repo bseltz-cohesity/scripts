@@ -16,6 +16,7 @@ param (
     [Parameter()][array]$vmName,  # name of VM to protect
     [Parameter()][string]$vmList = '',  # text file of vm names
     [Parameter()][string]$vmMatch,
+    [Parameter()][switch]$prefixMatch,
     [Parameter()][array]$jobName,
     [Parameter()][switch]$removeExclusion
 )
@@ -65,6 +66,9 @@ if($vmsToExclude.Count -eq 0 -and ! $vmMatch){
     exit
 }
 
+if($prefixMatch){
+    $vmMatch = "^$vmMatch"
+}
 $vmsAdded = $false
 $vmcache = @{}
 $vCenterCache = @{}

@@ -51,5 +51,6 @@ Place both files in a folder together and run the main script like so:
 * -vmName: (optional) one or more VMs to exclude the proctection job (comma separated)
 * -vmList: (optional) text file containing list of VMs to exclude (one per line)
 * -vmMatch: (optional) search string for partial name match
+* -prefixMatch: (optional) vmMatch only at the start of the VM name
 * -jobName: (optional) one or more protection jobs to process (default is all VMware jobs)
 * -removeExclusion
