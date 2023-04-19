@@ -86,4 +86,6 @@ To protect OneDrives:
 * -storageDomainName: (optional) default is 'DefaultStorageDomain'
 * -paused: (optional) pause future runs (new job only)
 * -disableIndexing: (optional) disable indexing (indexing is enabled by default)
-* -maxObjectsPerJob: (optional) default is 5000
+* -maxObjectsPerJob: (optional) default is 2000
+* -createFirstJob: (optional) if no jobs match prefix, allow creation of first job
+* -firstJobNum: (optional) default is '001'
