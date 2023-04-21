@@ -12,7 +12,7 @@ param (
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName,
     [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'GiB',
-    [Parameter()][int]$daysBack = 8,
+    [Parameter()][int]$daysBack = 14,
     [Parameter()][Int64]$numRuns = 100,
     [Parameter()][Int64]$backDays = 0
 )
@@ -57,10 +57,11 @@ $policyNames = @()
 $policies = (api get -v2 "data-protect/policies").policies
 $frequentSchedules = @('Minutes', 'Hours', 'Days')
 
-$views = api get -v2 file-services/views?fetchStats=true
+$views = api get -v2 file-services/views?includeStats=true
 $protectedViews = @()
 
 foreach($job in (api get -v2 "data-protect/protection-groups?includeTenants=true").protectionGroups | Sort-Object -Property name){
+    $maxRunBytes = 0
     $jobId = $job.id
     $jobName = $job.name
     Write-Host "$jobName"
@@ -80,7 +81,7 @@ foreach($job in (api get -v2 "data-protect/protection-groups?includeTenants=true
     if($policyName -notin $sizingData.Keys){
         $sizingData[$policyName] = @{}
     }
-    if($jobType -notin $sizingData[$policyName]){
+    if($jobType -notin $sizingData[$policyName].Keys){
         $sizingData[$policyName][$jobType] = @{}
     }
     $endUsecs = dateToUsecs $now
@@ -88,55 +89,69 @@ foreach($job in (api get -v2 "data-protect/protection-groups?includeTenants=true
         if($endUsecs -le $daysBackUsecs){
             break
         }
-        $runs = api get -v2 "data-protect/protection-groups/$jobId/runs?endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=True&numRuns=$numRuns&runTypes=kIncremental,kFull"
+        $runs = api get -v2 "data-protect/protection-groups/$jobId/runs?endTimeUsecs=$endUsecs&includeTenants=true&numRuns=$numRuns&runTypes=kIncremental,kFull&includeObjectDetails=True" # &includeObjectDetails=True
         if($runs.runs.Count -gt 0){
             $endUsecs = $runs.runs[-1].localBackupInfo.startTimeUsecs - 1
         }else{
             break
         }
         foreach($run in $runs.runs){
-            if($run.PSObject.Properties['originalBackupInfo']){
-                $runStartTimeUsecs = $run.originalBackupInfo.startTimeUsecs
-                $owner = $run.originClusterIdentifier.clusterName
-                if($owner -notin $remotes){
-                    $remotes = @($remotes + $owner)
-                }
-            }else{
-                $runStartTimeUsecs = $run.localBackupInfo.startTimeUsecs
-                $owner = $cluster.name
-            }
-            if($owner -notin $sizingData[$policyName][$jobType].Keys){
-                $sizingData[$policyName][$jobType][$owner] = @{'total' = 0}
-            }
-            if($runStartTimeUsecs -lt $daysBackUsecs){
-                break
-            }
-            
-            # per object stats
-            foreach($server in ($run.objects | Sort-Object -Property {$_.object.name})){
-                $sourceName = $server.object.name
-                if($jobType -eq 'Oracle' -or $jobType -eq 'SQL'){
-                    if($server.object.objectType -ne 'kDatabase'){
-                        Continue
+            if(! $run.PSObject.Properties['isLocalSnapshotsDeleted']){
+                if($run.PSObject.Properties['originalBackupInfo']){
+                    $runBytes = $run.originalBackupInfo.localSnapshotStats.logicalSizeBytes
+                    $runStartTimeUsecs = $run.originalBackupInfo.startTimeUsecs
+                    $owner = $run.originClusterIdentifier.clusterName
+                    if($owner -notin $remotes){
+                        $remotes = @($remotes + $owner)
                     }
+                }else{
+                    $runBytes = $run.localBackupInfo.localSnapshotStats.logicalSizeBytes
+                    $runStartTimeUsecs = $run.localBackupInfo.startTimeUsecs
+                    $owner = $cluster.name
                 }
-                if($jobType -eq 'View'){
-                    $protectedViews = @($protectedViews + $sourceName)
+                if($runBytes -gt $maxRunBytes){
+                    $maxRunBytes = $runBytes
                 }
-                if(!($run.environment -eq 'kAD' -and $server.object.objectType -eq 'kDomainController')){
-                    if($server.PSObject.Properties['originalBackupInfo']){
-                        $logicalBytes = $server.originalBackupInfo.snapshotInfo.stats.logicalSizeBytes
-                    }else{
-                        $logicalBytes = $server.localSnapshotInfo.snapshotInfo.stats.logicalSizeBytes
-                    }
-                    if($sourceName -notin $sizingData[$policyName][$jobType][$owner].Keys){
-                        if($logicalBytes -gt 0){
-                            $sizingData[$policyName][$jobType][$owner][$sourceName] = $logicalBytes
-                            $sizingData[$policyName][$jobType][$owner]['total'] += $logicalBytes
-                        }
-                    }
+                if($owner -notin $sizingData[$policyName][$jobType].Keys){
+                    $sizingData[$policyName][$jobType][$owner] = @{'total' = 0}
                 }
+                if($runStartTimeUsecs -lt $daysBackUsecs){
+                    break
+                }
+                # per object stats
+                # foreach($server in ($run.objects | Sort-Object -Property {$_.object.name})){
+                #     $sourceName = $server.object.name
+                #     if($jobType -eq 'Oracle' -or $jobType -eq 'SQL'){
+                #         if($server.object.objectType -ne 'kDatabase'){
+                #             Continue
+                #         }
+                #     }
+                #     if($jobType -eq 'View'){
+                #         $protectedViews = @($protectedViews + $sourceName)
+                #     }
+                #     if(!($run.environment -eq 'kAD' -and $server.object.objectType -eq 'kDomainController')){
+                #         if($server.PSObject.Properties['originalBackupInfo']){
+                #             $logicalBytes = $server.originalBackupInfo.snapshotInfo.stats.logicalSizeBytes
+                #         }else{
+                #             $logicalBytes = $server.localSnapshotInfo.snapshotInfo.stats.logicalSizeBytes
+                #         }
+                #         if($sourceName -notin $sizingData["$policyName"]["$jobType"]["$owner"].Keys){
+                #             if($logicalBytes -gt 0){
+                #                 # Write-Host "    $sourceName $([math]::Round($logicalBytes / (1024 * 1024 * 1024 * 1024), 1))"
+                #                 $sizingData["$policyName"]["$jobType"]["$owner"]["$sourceName"] = $logicalBytes
+                #                 $sizingData["$policyName"]["$jobType"]["$owner"]['total'] += $logicalBytes
+                #             }
+                #         }
+                #     }
+                # }
             }
+        }
+    }
+    if($jobName -notin $sizingData["$policyName"]["$jobType"]["$owner"].Keys){
+        if($maxRunBytes -gt 0){
+            Write-Host "    $([math]::Round($maxRunBytes / (1024 * 1024 * 1024 * 1024), 1))"
+            $sizingData["$policyName"]["$jobType"]["$owner"]["$jobName"] = $maxRunBytes
+            $sizingData["$policyName"]["$jobType"]["$owner"]['total'] += $maxRunBytes
         }
     }
 }
@@ -150,17 +165,19 @@ foreach($view in $views.views){
     }
 }
 
-# $sizingData | ConvertTo-Json -Depth 99
-
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $fileName = "reverseSizingReport-SizingInfo-$($cluster.name)-$dateString.tsv"
 "Owner`tJob Type`tPolicy Name`tLogical Size $unit`tWorkload Size TB" | Out-File -FilePath $fileName -Encoding utf8
 
 foreach($policyName in $sizingData.Keys){
-    foreach($jobType in $sizingData[$policyName].Keys){
-        foreach($owner in $sizingData[$policyName][$jobType].Keys){
-            $total = toUnits ($sizingData[$policyName][$jobType][$owner]['total'])
-            $totalTB = [math]::Round($sizingData[$policyName][$jobType][$owner]['total'] / (1000 * 1000 * 1000 * 1000), 2)
+
+    foreach($jobType in $sizingData["$policyName"].Keys){
+
+        foreach($owner in $sizingData["$policyName"]["$jobType"].Keys){
+ 
+            $total = toUnits ($sizingData["$policyName"]["$jobType"]["$owner"]['total'])
+
+            $totalTB = [math]::Round($sizingData["$policyName"]["$jobType"]["$owner"]['total'] / (1000 * 1000 * 1000 * 1000), 2)
             "$owner`t$jobType`t$policyName`t$total`t$totalTB" | Out-File -FilePath $fileName -Encoding utf8 -Append
         }
     }
