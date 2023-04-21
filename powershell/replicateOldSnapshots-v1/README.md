@@ -10,7 +10,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-$scriptName = 'replicateOldSnapshots'
+$scriptName = 'replicateOldSnapshots-v1'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
@@ -19,7 +19,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* replicateOldSnapshots.ps1: the main powershell script
+* replicateOldSnapshots-v1.ps1: the main powershell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place both files in a folder together, then we can run the script.
@@ -27,22 +27,24 @@ Place both files in a folder together, then we can run the script.
 First, run the script WITHOUT the -replicate switch to see what would be replicated.
 
 ```powershell
-./replicateOldSnapshots.ps1 -vip mycluster `
+./replicateOldSnapshots-v1.ps1 -vip mycluster `
                             -username myuser `
                             -domain mydomain.net `
                             -replicateTo othercluster `
-                            -olderThan 1
+                            -olderThan 1 `
+                            -IfExpiringAfter 3
 ```
 
 Then, if you're happy with the list of snapshots that will be replicated, run the script again and include the -replicate switch. This will execute the replication tasks
 
 ```powershell
-./replicateOldSnapshots.ps1 -vip mycluster `
+./replicateOldSnapshots-v1.ps1 -vip mycluster `
                             -username myuser `
                             -domain mydomain.net `
                             -replicateTo othercluster `
                             -olderThan 1 `
-                            -commmit
+                            -IfExpiringAfter 3 `
+                            -replicate
 ```
 
 ## Authentication Parameters
@@ -62,23 +64,11 @@ Then, if you're happy with the list of snapshots that will be replicated, run th
 * -replicateTo: name of remote cluster to replicate to
 * -jobName: (optional) one or more job names (comma separated) to process (default is all jobs)
 * -jobList: (optional) text file of job names (one per line) to process (default is all jobs)
-* -keepFor: (optional) days to keep replica (default is same as local) from the original backup date
+* -keepFor: (optional) days to keep replica (default is same as local) existing age is subtracted
 * -olderThan: (optional) only replicate if older than X days (default is 0)
 * -newerThan: (optional) only replicate if newer than X days (default is time of cluster creation)
-* -commit: (optional) actually replicate (otherwise only a test run)
-* -resync: (optional) re-replicate to same target (see below!)
-* -excludeLogs: (optional) do not replicate logs (logs will replicate by default)
+* -IfExpiringAfter: (optional) only replicate if there are X or more days left before expiration
+* -replicate: (optional) actually replicate (otherwise only a test run)
+* -resync: (optional) re-replicate to same target
+* -includeLogs: (optional) replicate logs (default is to skip logs)
 * -numRuns: (optional) number of runs to gather per API query (default is 1000)
-
-## About Resync
-
-Be cautious using the -resync option. The valid reasons for using -resync are:
-
-1) Previously replicated backups have been inadvertantly deleted from the replica cluster and you want them to replicate again
-2) You want to extend the retention of the replicated backups on the replica cluster
-
-In case #1 (where the replica does not exist), if -keepFor is used, the expiration of the replica will be `runStartTime + keepFor (days)`. If -keepFor is not used, the expiration of the replica will be the same as the local snapshot.
-
-In case #2 (where the replica exists), if -keepFor is used, the expiration of the replica will be `increased` by the number of days specified in -keepFor, or `increased` by the number of days remaining on the local snapshot retention.
-
-So using -resync when the replica exists can result in unintended retention of the replica. For example, for a backup that occured on April 1st and the current expiration date of the replica is May 1st, -keepFor 30 means that retention will be extended to Jun 1st (60 day retention). IF you run the script again, it will be extended to Aug 1st and so on. So be careful with this! You must review the current expiration on the replica cluster and do the math to determine how many days you wish to add.
