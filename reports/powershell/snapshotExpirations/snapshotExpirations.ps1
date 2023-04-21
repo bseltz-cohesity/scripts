@@ -46,7 +46,7 @@ $outfileName = "snapshotExpirationReport-$($cluster.name)-$dateString.tsv"
 
 # headings
 $headings = "Cluster Name`tTenant`tJob Name`tEnvironment`tRun Type`tRun Start Time`tExpiration"
-$headings | Out-File -FilePath $outfileName -Encoding utf8
+$headings | Out-File -FilePath $outfileName # -Encoding utf8
 
 
 # gather list from command line params and file
