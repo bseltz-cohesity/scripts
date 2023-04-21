@@ -21,7 +21,8 @@ param (
     [Parameter()][string]$smtpServer, #outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, #outbound smtp port
     [Parameter()][array]$sendTo, #send to address
-    [Parameter()][string]$sendFrom #send from address
+    [Parameter()][string]$sendFrom, #send from address
+    [Parameter()][switch]$destroyable
 )
 
 # source the cohesity-api helper code
@@ -206,9 +207,16 @@ $entityType=@('Unknown', 'VMware', 'HyperV', 'SQL', 'View', 'Puppeteer',
               'HBase', 'Hive', 'Hdfs', 'Couchbase', 'Unknown', 'Unknown', 'Unknown')
 
 $endUsecs = $uEnd
+
+$restoresCounted = 0
 while(1){
     $restores = api get "/restoretasks?_includeTenantInfo=true&endTimeUsecs=$endUsecs&startTimeUsecs=$uStart"
-    foreach ($restore in $restores | Sort-Object -Property {$_.restoreTask.performRestoreTaskState.base.startTimeUsecs} -Descending){
+    $theseRestores = $restores
+    if($destroyable){
+        $theseRestores = $theseRestores | Where-Object {$_.restoreTask.performRestoreTaskState.canTeardown -eq $True}
+        $theseRestores = $theseRestores | Where-Object {$_.restoreTask.destroyClonedTaskStateVec.Count -eq 0}
+    }
+    foreach ($restore in $theseRestores | Sort-Object -Property {$_.restoreTask.performRestoreTaskState.base.startTimeUsecs} -Descending){
         $taskId = $restore.restoreTask.performRestoreTaskState.base.taskId
         $taskName = $restore.restoreTask.performRestoreTaskState.base.name
         $status = ($restore.restoreTask.performRestoreTaskState.base.publicStatus).Substring(1)
@@ -290,15 +298,17 @@ while(1){
                 <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
                 </tr>"
                 "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
+                $restoresCounted += 1
             }
         }else{
             "***************more types****************"
         }
     }
+    
     if(!$restores -or $restores.Count -eq 0 -or $lastUsecs -eq $endUsecs){
+        Write-Host "Retrieved $restoresCounted restore tasks..."
         break
     }else{
-        Write-Host "Retrieved $($restores.Count) restore tasks..."
         $lastUsecs = $endUsecs
     }
 }

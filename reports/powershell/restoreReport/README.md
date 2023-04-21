@@ -54,6 +54,10 @@ Place both files in a folder together and run the main script like so:
 * -smtpPort: SMTP port to use (default is 25)
 * -sendFrom: email address to show in the from field
 
+## Filter Parameters
+
+* -destroyable: (optional) show only restores/clones that can be torn down
+
 ## Date Range Parameters
 
 If no date range parameters are specified, the date range will default to the last 31 days. Otherwise you can use one of the following:
