@@ -19,7 +19,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 ## Components
 
-* vmJobSelections.ps1: the main python script
+* vmJobSelections.ps1: the main powershell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script.
