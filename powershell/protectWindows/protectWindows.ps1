@@ -4,6 +4,8 @@ param (
     [Parameter(Mandatory = $True)][string]$vip,  # the cluster to connect to (DNS name or IP)
     [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
     [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password = $null,
     [Parameter()][array]$servers = '',  # optional names of servers to protect (comma separated)
     [Parameter()][string]$serverList = '',  # optional textfile of servers to protect
     [Parameter()][array]$inclusions = '', # optional paths to exclude (comma separated)
@@ -106,7 +108,11 @@ if($skipNestedMountPoints){
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain -password $password
+if($useApiKey){
+    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
+}else{
+    apiauth -vip $vip -username $username -domain $domain -password $password
+}
 
 # get cluster info
 $cluster = api get cluster
