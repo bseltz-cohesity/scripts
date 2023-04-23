@@ -14,7 +14,8 @@ param (
     [Parameter()][string]$clusterName = $null,           # helios cluster to access
     [Parameter()][array]$jobName,
     [Parameter()][string]$jobList,
-    [Parameter()][switch]$showExclusions
+    [Parameter()][switch]$showExclusions,
+    [Parameter()][switch]$vmNamesOnly
 )
 
 # source the cohesity-api helper code
@@ -61,7 +62,7 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 
 $jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Required $false)
 
-"Getting protection groups..."
+Write-Host "Getting protection groups..."
 $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&environments=kVMware"
 
 if($jobNames.Count -gt 0){
@@ -149,7 +150,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         $vCenterName = $vCenter.protectionSource.name
         if($vCenterName -notin $script:vmHierarchy.Keys){
             $script:vmHierarchy[$vCenterName] = @()
-            "Inspecting $vCenterName hierarchy..."
+            # "Inspecting $vCenterName hierarchy..."
             indexChildren $vCenterName $vCenter @()
             $script:vmHierarchy[$vCenterName] = $script:vmHierarchy[$vCenterName] | ConvertTo-Json -Depth 99 | ConvertFrom-Json
         }
@@ -210,23 +211,29 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         }
 
         # output
-        "`n========================================`nProtection Group: $($job.name)"
-        "Inclusions by: $(@($selectedVMs.'selected by' | Sort-Object -Unique) -join ', ')"
-        if($excludedVMs.Count -gt 0){
-            "Exclusions by: $(@($excludedVMs.'selected by' | Sort-Object -Unique) -join ', ')"
-        }
-        "========================================`n"
-        "Inclusions:"
-        $selectedVMs | Sort-Object -Property name | Select-Object -Property name, 'selected by', 'selected entity' | Format-Table
-        foreach($selectedVM in $selectedVMs){
-            "$($cluster.name)`t$($job.name)`t$($selectedVM.name)`tIncluded`t$($selectedVM.'selected by')`t$($selectedVM.'selected entity')`t$($selectedVM.canonical)" | Out-File -FilePath $outfileName -Append
-        }
-        if($showExclusions){
+        if($vmNamesOnly){
+            Write-Host ""
+            $selectedVMs.name | Sort-Object
+            Write-Host ""
+        }else{
+            "`n========================================`nProtection Group: $($job.name)"
+            "Inclusions by: $(@($selectedVMs.'selected by' | Sort-Object -Unique) -join ', ')"
             if($excludedVMs.Count -gt 0){
-                "Exclusions:"
-                $excludedVMs | Sort-Object -Property name | Select-Object -Property name, 'selected by', 'selected entity' | Format-Table
-                foreach($excludedVM in $excludedVMs){
-                    "$($cluster.name)`t$($job.name)`t$($excludedVM.name)`tExcluded`t$($excludedVM.'selected by')`t$($excludedVM.'selected entity')`t$($excludedVM.canonical)" | Out-File -FilePath $outfileName -Append
+                "Exclusions by: $(@($excludedVMs.'selected by' | Sort-Object -Unique) -join ', ')"
+            }
+            "========================================`n"
+            "Inclusions:"
+            $selectedVMs | Sort-Object -Property name | Select-Object -Property name, 'selected by', 'selected entity' | Format-Table
+            foreach($selectedVM in $selectedVMs){
+                "$($cluster.name)`t$($job.name)`t$($selectedVM.name)`tIncluded`t$($selectedVM.'selected by')`t$($selectedVM.'selected entity')`t$($selectedVM.canonical)" | Out-File -FilePath $outfileName -Append
+            }
+            if($showExclusions){
+                if($excludedVMs.Count -gt 0){
+                    "Exclusions:"
+                    $excludedVMs | Sort-Object -Property name | Select-Object -Property name, 'selected by', 'selected entity' | Format-Table
+                    foreach($excludedVM in $excludedVMs){
+                        "$($cluster.name)`t$($job.name)`t$($excludedVM.name)`tExcluded`t$($excludedVM.'selected by')`t$($excludedVM.'selected entity')`t$($excludedVM.canonical)" | Out-File -FilePath $outfileName -Append
+                    }
                 }
             }
         }
