@@ -132,9 +132,9 @@ function getTaggedVMs($vCenterName, $tags){
         }
     }
     foreach($matchVM in $matchVMs){
-        $matchVM['selected by'] = "Tag"
-        $matchVM['selected entity'] = "$($matchTags -join ', ')"
-        $matchVM['canonical'] = '-'
+        $matchVM.'selected by' = "Tag"
+        $matchVM.'selected entity' = "$($matchTags -join ', ')"
+        $matchVM.canonical = '-'
     }
     return $matchVMs
 }
@@ -151,6 +151,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
             $script:vmHierarchy[$vCenterName] = @()
             "Inspecting $vCenterName hierarchy..."
             indexChildren $vCenterName $vCenter @()
+            $script:vmHierarchy[$vCenterName] = $script:vmHierarchy[$vCenterName] | ConvertTo-Json -Depth 99 | ConvertFrom-Json
         }
         $protectedIds = @($job.vmwareParams.objects.id)
         $selectedVMs = @()
@@ -161,14 +162,14 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
             $vms = getChildren $vCenterName $protectedId
             foreach($vm in $vms){
                 if($vm.id -eq $protectedId){
-                    $vm['selected by'] = "Name"
-                    $vm['selected entity'] = '-'
-                    $vm['canonical'] = "$($vm.parent)"
+                    $vm.'selected by' = "Name"
+                    $vm.'selected entity' = '-'
+                    $vm.canonical = "$($vm.parent)"
                 }else{
                     $folder = $script:vmHierarchy[$vCenterName] | Where-Object {$_.id -eq $protectedId}
-                    $vm['selected by'] = $folder.type.subString(1)
-                    $vm['selected entity'] = $folder.name
-                    $vm['canonical'] = "$($folder.parent)/$($folder.name)"
+                    $vm.'selected by' = $folder.type.subString(1)
+                    $vm.'selected entity' = $folder.name
+                    $vm.canonical = "$($folder.parent)/$($folder.name)"
                 }
             }
             $selectedVMs = @($selectedVMs + $vms)
@@ -187,14 +188,14 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
             foreach($excludeVM in $excludeVMs){
                 $selectedVMs = @($selectedVMs | Where-Object {$_.id -ne $excludeVM.id})
                 if($excludeVM.id -eq $exclusion){
-                    $excludeVM['selected by'] = "Name"
-                    $excludeVM['selected entity'] = '-'
-                    $excludeVM['canonical'] = "$($excludeVM.parent)"
+                    $excludeVM.'selected by' = "Name"
+                    $excludeVM.'selected entity' = '-'
+                    $excludeVM.canonical = "$($excludeVM.parent)"
                 }else{
                     $folder = $script:vmHierarchy[$vCenterName] | Where-Object {$_.id -eq $exclusion}
-                    $excludeVM['selected by'] = $folder.type.subString(1)
-                    $excludeVM['selected entity'] = $folder.name
-                    $excludeVM['canonical'] = "$($folder.parent)/$($folder.name)"
+                    $excludeVM.'selected by' = $folder.type.subString(1)
+                    $excludeVM.'selected entity' = $folder.name
+                    $excludeVM.canonical = "$($folder.parent)/$($folder.name)"
                 }
             }
         }
