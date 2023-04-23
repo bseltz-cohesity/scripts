@@ -12,49 +12,224 @@ param (
     [Parameter()][string]$mfaCode = $null,               # MFA code
     [Parameter()][switch]$emailMfaCode,                  # email MFA code
     [Parameter()][string]$clusterName = $null,           # helios cluster to access
-    [Parameter()][int]$numRuns = 20
+    [Parameter()][array]$jobName,
+    [Parameter()][string]$jobList,
+    [Parameter()][switch]$showExclusions
 )
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -noPromptForPassword $noPrompt
 
 # select helios/mcm managed cluster
-if($USING_HELIOS){
+if($USING_HELIOS -and !$region){
     if($clusterName){
         $thisCluster = heliosCluster $clusterName
     }else{
-        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
         exit 1
     }
 }
 
 if(!$cohesity_api.authorized){
-    Write-Host "Not authenticated" -ForegroundColor Yellow
+    Write-Host "Not authenticated"
     exit 1
 }
 
-# outfile
-$cluster = api get cluster
-$dateString = (get-date).ToString('yyyy-MM-dd')
-$outfileName = "VMSelections-$($cluster.name)-$dateString.csv"
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
+        }
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
+        exit
+    }
+    return ($items | Sort-Object -Unique)
+}
 
-# headings
-"""Job Name"",""vCenter Name"",""VM Name""" | Out-File -FilePath $outfileName
+$jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Required $false)
 
-$jobs = (api get -v2 'data-protect/protection-groups?environments=kVMware&isActive=true').protectionGroups
+"Getting protection groups..."
+$jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&environments=kVMware"
 
-foreach($job in $jobs){
-    $protectedVMs = @()
-    $jobName = $job.name
-    $vCenterName = $job.vmwareParams.sourceName
-    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?includeObjectDetails=true&numRuns=$numRuns"
-    $protectedVMs = $runs.runs.objects.object.name | Sort-Object -Unique
-    foreach($protectedVM in $protectedVMs){
-        """{0}"",""{1}"",""{2}""" -f $jobName, $vCenterName, $protectedVM | Out-File -FilePath $outfileName -Append
+if($jobNames.Count -gt 0){
+    $notfoundJobs = $jobNames | Where-Object {$_ -notin $jobs.protectionGroups.name}
+    if($notfoundJobs){
+        Write-Host "Jobs not found $($notfoundJobs -join ', ')" -ForegroundColor Yellow
+        exit 1
     }
 }
 
-Write-Host "Output saved to $outfileName"
+$cluster = api get cluster
+$outFileName = join-path -Path $PSScriptRoot -ChildPath "vmSelections-$($cluster.name).tsv"
+"Cluster`tProtection Group`tVM`tDisposition`tSelected By`tSelected Entity`tContainer Path" | Out-File -FilePath $outfileName
+
+$script:vmHierarchy = @{}
+
+function indexChildren($vCenterName, $source, $parents = @(), $parent = ''){
+    if($source.protectionSource.vmWareProtectionSource.PSObject.Properties['tagAttributes']){
+        $parents = @($parents + $source.protectionSource.vmWareProtectionSource.tagAttributes.id)
+    }
+    $thisNode = $script:vmHierarchy[$vCenterName] | Where-Object id -eq $source.protectionSource.id
+    if(! $thisNode){
+        $thisNode = @{'id' = $source.protectionSource.id; 
+                      'name' = $source.protectionSource.name; 
+                      'type' = $source.protectionSource.vmWareProtectionSource.type; 
+                      'parents' = $parents;
+                      'parent' = $parent;
+                      'alreadyIndexed' = $false;
+                      'selected by' = $null;
+                      'selected entity' = $null;
+                      'autoprotected' = $false;
+                      'canonical' = $null}
+        $script:vmHierarchy[$vCenterName] = @($script:vmHierarchy[$vCenterName] + $thisNode) 
+    }
+    $thisNode.parents = @($thisNode.parents + $parents | Sort-Object -Unique)
+    if($source.PSObject.Properties['nodes']){
+        if($thisNode.alreadyIndexed -eq $false){
+            $thisNode.alreadyIndexed = $True
+            $parents = @($thisNode.parents + $source.protectionSource.id | Sort-Object -Unique)
+            foreach($node in $source.nodes){
+                indexChildren $vCenterName $node $parents "$parent/$($source.protectionSource.name)"
+            }
+        }
+    }
+}
+
+function getChildren($vCenterName, $protectedObjectId){
+    $vms = $script:vmHierarchy[$vCenterName] | Where-Object {$_.type -eq 'kVirtualMachine' -and ($protectedObjectId -in $_.parents -or $protectedObjectId -eq $_.id)}
+    return $vms
+}
+
+function getTaggedVMs($vCenterName, $tags){
+    $matchVMs = @()
+    $matchTags = @()
+    foreach($tag in $tags){
+        $thisTag = $script:vmHierarchy[$vCenterName] | Where-Object {$_.id -eq $tag}
+        $matchTags = @($matchTags + $thisTag.name)
+        $tagVMs = getChildren $vCenterName $tag
+        if($matchVMs.Count -eq 0){
+            $matchVMs = @($tagVMs)
+        }else{
+            foreach($matchVM in $matchVMs){
+                $matchingVM = $tagVMs | Where-Object {$_.id -eq $matchVM.id}
+                if(!$matchingVM){
+                    $matchVMs = @($matchVMs | Where-Object {$_.id -ne $matchVM.id})
+                }
+            }
+        }
+    }
+    foreach($matchVM in $matchVMs){
+        $matchVM['selected by'] = "Tag"
+        $matchVM['selected entity'] = "$($matchTags -join ', ')"
+        $matchVM['canonical'] = '-'
+    }
+    return $matchVMs
+}
+
+$vCenters = api get "protectionSources?includeVMFolders=true"
+
+foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
+
+    if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
+        $vCenterId = $job.vmwareParams.sourceId
+        $vCenter = $vCenters | Where-Object {$_.protectionSource.id -eq $vCenterId}
+        $vCenterName = $vCenter.protectionSource.name
+        if($vCenterName -notin $script:vmHierarchy.Keys){
+            $script:vmHierarchy[$vCenterName] = @()
+            "Inspecting $vCenterName hierarchy..."
+            indexChildren $vCenterName $vCenter @()
+        }
+        $protectedIds = @($job.vmwareParams.objects.id)
+        $selectedVMs = @()
+        $excludedVMs = @()
+
+        # explicit and folder selections
+        foreach($protectedId in $protectedIds){
+            $vms = getChildren $vCenterName $protectedId
+            foreach($vm in $vms){
+                if($vm.id -eq $protectedId){
+                    $vm['selected by'] = "Name"
+                    $vm['selected entity'] = '-'
+                    $vm['canonical'] = "$($vm.parent)"
+                }else{
+                    $folder = $script:vmHierarchy[$vCenterName] | Where-Object {$_.id -eq $protectedId}
+                    $vm['selected by'] = $folder.type.subString(1)
+                    $vm['selected entity'] = $folder.name
+                    $vm['canonical'] = "$($folder.parent)/$($folder.name)"
+                }
+            }
+            $selectedVMs = @($selectedVMs + $vms)
+        }
+
+        # tag selections
+        foreach($tags in $job.vmwareParams.vmTagIds){
+            $matchVMs = getTaggedVMs $vCenterName $tags
+            $selectedVMs = @($selectedVMs + $matchVMs)
+        }
+
+        # explicit and folder exclusions
+        foreach($exclusion in $job.vmwareParams.excludeObjectIds){
+            $excludeVMs = getChildren $vCenterName $exclusion
+            $excludedVMs = @($excludedVMs + $excludeVMs)
+            foreach($excludeVM in $excludeVMs){
+                $selectedVMs = @($selectedVMs | Where-Object {$_.id -ne $excludeVM.id})
+                if($excludeVM.id -eq $exclusion){
+                    $excludeVM['selected by'] = "Name"
+                    $excludeVM['selected entity'] = '-'
+                    $excludeVM['canonical'] = "$($excludeVM.parent)"
+                }else{
+                    $folder = $script:vmHierarchy[$vCenterName] | Where-Object {$_.id -eq $exclusion}
+                    $excludeVM['selected by'] = $folder.type.subString(1)
+                    $excludeVM['selected entity'] = $folder.name
+                    $excludeVM['canonical'] = "$($folder.parent)/$($folder.name)"
+                }
+            }
+        }
+
+        # tag exclusions
+        foreach($tags in $job.vmwareParams.excludeVmTagIds){
+            $matchVMs = getTaggedVMs $vCenterName $tags
+            foreach($matchVM in $matchVMs){
+                $selectedVMs = @($selectedVMs | Where-Object {$_.id -ne $matchVM.id})
+                $excludedVMs = @($excludedVMs + $matchVM)
+            }
+        }
+
+        # output
+        "`n========================================`nProtection Group: $($job.name)"
+        "Inclusions by: $(@($selectedVMs.'selected by' | Sort-Object -Unique) -join ', ')"
+        if($excludedVMs.Count -gt 0){
+            "Exclusions by: $(@($excludedVMs.'selected by' | Sort-Object -Unique) -join ', ')"
+        }
+        "========================================`n"
+        "Inclusions:"
+        $selectedVMs | Sort-Object -Property name | Select-Object -Property name, 'selected by', 'selected entity' | Format-Table
+        foreach($selectedVM in $selectedVMs){
+            "$($cluster.name)`t$($job.name)`t$($selectedVM.name)`tIncluded`t$($selectedVM.'selected by')`t$($selectedVM.'selected entity')`t$($selectedVM.canonical)" | Out-File -FilePath $outfileName -Append
+        }
+        if($showExclusions){
+            if($excludedVMs.Count -gt 0){
+                "Exclusions:"
+                $excludedVMs | Sort-Object -Property name | Select-Object -Property name, 'selected by', 'selected entity' | Format-Table
+                foreach($excludedVM in $excludedVMs){
+                    "$($cluster.name)`t$($job.name)`t$($excludedVM.name)`tExcluded`t$($excludedVM.'selected by')`t$($excludedVM.'selected entity')`t$($excludedVM.canonical)" | Out-File -FilePath $outfileName -Append
+                }
+            }
+        }
+    }
+}
+
+"Output saved to $outfileName`n"
