@@ -6,7 +6,7 @@ param (
     [Parameter()][string]$domain = 'local',
     [Parameter()][switch]$useApiKey,
     [Parameter()][string]$password = $null,
-    [Parameter(Mandatory = $True)][string]$sourceName
+    [Parameter(Mandatory = $True)][array]$sourceName
 )
 
 ### source the cohesity-api helper code
@@ -44,6 +44,7 @@ function waitForRefresh($server){
             foreach($app in $rootNode.registrationInfo.registeredAppsInfo){
                 if($app.authenticationStatus -eq 'kFinished'){
                     $appsFinished = $True
+                    return $rootNode.rootNode.id
                 }else{
                     $appsFinished = $false
                 }
@@ -58,11 +59,14 @@ function waitForRefresh($server){
     return $rootNode.rootNode.id
 }
 
-$objectId = getObjectId $sourceName
-if($objectId){
-    write-host "refreshing $sourceName..."
-    $result = api post protectionSources/refresh/$($objectId)
-    $result = waitForRefresh($sourceName)
-}else{
-    write-host "$sourceName not found" -ForegroundColor Yellow
+foreach($thisSource in $sourceName){
+    $objectId = getObjectId $thisSource
+    if($objectId){
+        write-host "refreshing $thisSource..."
+        $result = api post protectionSources/refresh/$($objectId)
+        $result = waitForRefresh($thisSource)
+    }else{
+        write-host "$thisSource not found" -ForegroundColor Yellow
+    }
 }
+

@@ -36,3 +36,12 @@ Connected!
 
 Refreshing vcenter.mydomain.net...
 ```
+
+## Parameters
+
+* -vip: name or IP of Cohesity cluster
+* -username: name of user to connect to Cohesity
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key as password
+* -password: (optional) will prompt or use stored password if omitted
+* -sourceName: one or more source names to refresh (comma separated)
