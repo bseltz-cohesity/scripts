@@ -26,8 +26,8 @@ Place both files in a folder together and run the main script like so:
 
 ```powershell
 ./refreshSource.ps1 -vip mycluster `
-                    -username myuser 
-                    -domain mydomain.net 
+                    -username myuser `
+                    -domain mydomain.net `
                     -sourceName server1.mydomain.net, server2.mydomain.net
 ```
 
