@@ -145,6 +145,7 @@ $vCenters = api get "protectionSources?includeVMFolders=true"
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
 
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
+        $autoprotected = $false
         $vCenterId = $job.vmwareParams.sourceId
         $vCenter = $vCenters | Where-Object {$_.protectionSource.id -eq $vCenterId}
         $vCenterName = $vCenter.protectionSource.name
@@ -167,6 +168,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                     $vm.'selected entity' = '-'
                     $vm.canonical = "$($vm.parent)"
                 }else{
+                    $autoprotected = $True
                     $folder = $script:vmHierarchy[$vCenterName] | Where-Object {$_.id -eq $protectedId}
                     $vm.'selected by' = $folder.type.subString(1)
                     $vm.'selected entity' = $folder.name
@@ -178,6 +180,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
 
         # tag selections
         foreach($tags in $job.vmwareParams.vmTagIds){
+            $autoprotected = $True
             $matchVMs = getTaggedVMs $vCenterName $tags
             $selectedVMs = @($selectedVMs + $matchVMs)
         }
@@ -217,6 +220,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
             Write-Host ""
         }else{
             "`n========================================`nProtection Group: $($job.name)"
+            "Autoprotected: $autoprotected"
             "Inclusions by: $(@($selectedVMs.'selected by' | Sort-Object -Unique) -join ', ')"
             if($excludedVMs.Count -gt 0){
                 "Exclusions by: $(@($excludedVMs.'selected by' | Sort-Object -Unique) -join ', ')"
