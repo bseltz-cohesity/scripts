@@ -241,6 +241,9 @@ for object in objects:
         snapshots = api('get', 'data-protect/objects/%s/snapshots?protectionGroupIds=%s' % (object['id'], jobInfo['protectionGroupId']), v=2)
         snapshots = [s for s in snapshots['snapshots'] if s['snapshotTimestampUsecs'] <= desiredPIT]
         if snapshots is not None and len(snapshots) > 0:
+            localsnapshots = [s for s in snapshots if s['snapshotTargetType'] == 'Local']
+            if localsnapshots is not None and len(localsnapshots) > 0:
+                snapshots = localsnapshots
             if snapshots[-1]['snapshotTimestampUsecs'] > latestSnapshotTimeStamp:
                 latestSnapshot = snapshots[-1]
                 latestSnapshotTimeStamp = snapshots[-1]['snapshotTimestampUsecs']
