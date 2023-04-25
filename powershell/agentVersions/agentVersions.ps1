@@ -3,28 +3,65 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
-    [Parameter()][string]$domain = 'local' #local or AD domain
+    [Parameter()][string]$vip = 'helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant = $null,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password = $null,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode = $null,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName = $null
 )
 
-### source the cohesity-api helper code
-. ./cohesity-api
+# source the cohesity-api helper code
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
+
+# outfile
+$cluster = api get cluster
+$clusterName = $cluster.name
+$now = Get-Date
+$dateString = $now.ToString('yyyy-MM-dd')
+$outfileName = "agentVersions-$clusterName-$dateString.tsv"
+
+# headings
+$headings = "Cluster Name`tSource Name`tAgent Version`tOS Type`tOS Name"
+$headings | Out-File -FilePath $outfileName # -Encoding utf8
 
 ### list agent info
 $nodes = api get protectionSources/registrationInfo?environments=kPhysical
 $nodes.rootNodes | Sort-Object -Property {$_.rootNode.physicalProtectionSource.name} | `
-         Select-Object -Property @{label='Name'; expression={$_.rootNode.physicalProtectionSource.name}},
-                                 @{label='Version'; expression={$_.rootNode.physicalProtectionSource.agents[0].version}},
-                                 @{label='Host Type'; expression={$_.rootNode.physicalProtectionSource.hostType.subString(1)}},
+         Select-Object -Property @{label='Source Name'; expression={$_.rootNode.physicalProtectionSource.name}},
+                                 @{label='Agent Version'; expression={$_.rootNode.physicalProtectionSource.agents[0].version}},
+                                 @{label='OS Type'; expression={$_.rootNode.physicalProtectionSource.hostType.subString(1)}},
                                  @{label='OS Name'; expression={$_.rootNode.physicalProtectionSource.osName}} 
-# foreach ($node in $nodes){
-#     $name = $node.protectionSource.physicalProtectionSource.name
-#     $version = $node.protectionSource.physicalProtectionSource.agents[0].version
-#     $hostType = $node.protectionSource.physicalProtectionSource.hostType.subString(1)
-#     $osName = $node.protectionSource.physicalProtectionSource.osName
-    
-# }
+
+foreach ($node in $nodes.rootNodes){
+    $name = $node.rootNode.physicalProtectionSource.name
+    $version = $node.rootNode.physicalProtectionSource.agents[0].version
+    $hostType = $node.rootNode.physicalProtectionSource.hostType.subString(1)
+    $osName = $node.rootNode.physicalProtectionSource.osName
+    "$clusterName`t$name`t$version`t$hostType`t$osName" | Out-File -FilePath $outfileName -Append
+}
+
+"`nOutput saved to $outfilename`n"
