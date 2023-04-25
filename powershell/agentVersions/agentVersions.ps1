@@ -15,9 +15,16 @@ param (
 apiauth -vip $vip -username $username -domain $domain
 
 ### list agent info
-$agents = api get protectionSources | Where-Object { $_.protectionSource.name -eq 'Physical Servers' }
-foreach ($node in $agents.nodes){
-    $name = $node.protectionSource.physicalProtectionSource.agents[0].name
-    $version = $node.protectionSource.physicalProtectionSource.agents[0].version
-    "$version`t$name"
-}
+$nodes = api get protectionSources/registrationInfo?environments=kPhysical
+$nodes.rootNodes | Sort-Object -Property {$_.rootNode.physicalProtectionSource.name} | `
+         Select-Object -Property @{label='Name'; expression={$_.rootNode.physicalProtectionSource.name}},
+                                 @{label='Version'; expression={$_.rootNode.physicalProtectionSource.agents[0].version}},
+                                 @{label='Host Type'; expression={$_.rootNode.physicalProtectionSource.hostType.subString(1)}},
+                                 @{label='OS Name'; expression={$_.rootNode.physicalProtectionSource.osName}} 
+# foreach ($node in $nodes){
+#     $name = $node.protectionSource.physicalProtectionSource.name
+#     $version = $node.protectionSource.physicalProtectionSource.agents[0].version
+#     $hostType = $node.protectionSource.physicalProtectionSource.hostType.subString(1)
+#     $osName = $node.protectionSource.physicalProtectionSource.osName
+    
+# }
