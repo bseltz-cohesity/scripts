@@ -1,4 +1,4 @@
-# Report Agent Certificate Expirations using Python
+# Report Agent Certificates using Python
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
@@ -8,23 +8,23 @@ Note: this script will only run on Linux where the openssl command is available.
 
 ## Components
 
-* agentCertificateExpiry.py: the main python script
+* agentCertificateCheck.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/agentCertificateExpiry/agentCertificateExpiry.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/agentCertificateCheck/agentCertificateCheck.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-chmod +x agentCertificateExpiry.py
+chmod +x agentCertificateCheck.py
 # end download commands
 ```
 
 Running the script against one cluster (with direct authentication):
 
 ```bash
-./agentCertificateExpiry.py -v mycluster \
+./agentCertificateCheck.py -v mycluster \
                          -u myuser \
                          -d local \
                          -ad mydomain.net
@@ -33,13 +33,13 @@ Running the script against one cluster (with direct authentication):
 Running the script against all Helios clusters:
 
 ```bash
-./agentCertificateExpiry.py -u myuser@mydomain.net
+./agentCertificateCheck.py -u myuser@mydomain.net
 ```
 
 Running the script against selected Helios clusters:
 
 ```bash
-./agentCertificateExpiry.py -u myuser@mydomain.net \
+./agentCertificateCheck.py -u myuser@mydomain.net \
                             -c cluster1 -c cluster2
 ```
 
