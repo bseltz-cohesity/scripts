@@ -110,30 +110,37 @@ for clustername in clusternames:
             if 'agents' in node['rootNode']['physicalProtectionSource']:
                 version = node['rootNode']['physicalProtectionSource']['agents'][0]['version']
                 hostType = node['rootNode']['physicalProtectionSource']['hostType'][1:]
+                osName = node['rootNode']['physicalProtectionSource']['osName']
                 if includewindows is True or hostType != 'Windows':
+                    agentGflag = [f['value'] for f in gflaglist if f['name'] == 'magneto_agent_port_number' % hostType.lower()]
+                    if agentGflag is not None and len(agentGflag) > 0:
+                        port = agentGflag[0]
                     agentGflag = [f['value'] for f in gflaglist if f['name'] == 'magneto_%s_agent_port_number' % hostType.lower()]
                     if agentGflag is not None and len(agentGflag) > 0:
                         port = agentGflag[0]
-                    osName = node['rootNode']['physicalProtectionSource']['osName']
                     try:
+                        if 'authenticationErrorMessage' in node['registrationInfo'] and node['registrationInfo']['authenticationErrorMessage'] is not None:
+                            errorMessage = node['registrationInfo']['authenticationErrorMessage'].split(',')[0].split('\n')[0]
+                            print('-- %s' % errorMessage)
                         if 'refreshErrorMessage' in node['registrationInfo'] and node['registrationInfo']['refreshErrorMessage'] is not None and node['registrationInfo']['refreshErrorMessage'] != '':
                             errorMessage = node['registrationInfo']['refreshErrorMessage'].split(',')[0].split('\n')[0]
-                        elif 'authenticationErrorMessage' in node['registrationInfo'] and node['registrationInfo']['authenticationErrorMessage'] is not None and node['registrationInfo']['authenticationErrorMessage'] != '':
-                            errorMessage = node['registrationInfo']['authenticationErrorMessage'].split(',')[0].split('\n')[0]
+                            print('-- %s' % errorMessage)
                     except Exception:
                         pass
-
-                    certinfo = os.popen('timeout 5 openssl s_client -showcerts -connect %s:%s </dev/null 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null' % (testname, port))
-                    cilines = certinfo.readlines()
-                    if len(cilines) >= 2:
-                        expdate = cilines[2]
-                        expires = expdate.strip().split('=')[1].replace('  ', ' ')
-                        datetime_object = datetime.strptime(expires, '%b %d %H:%M:%S %Y %Z')
-                        expiresUsecs = dateToUsecs(datetime_object)
-                        if expiresUsecs < expwarningusecs:
-                            expiringSoon = True
-                        expires = datetime.strftime(datetime_object, "%m/%d/%Y %H:%M:%S")
-                    else:
+                    try:
+                        certinfo = os.popen('timeout 5 openssl s_client -showcerts -connect %s:%s </dev/null 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null' % (testname, port))
+                        cilines = certinfo.readlines() 
+                        if len(cilines) >= 2:
+                            expdate = cilines[2]
+                            expires = expdate.strip().split('=')[1].replace('  ', ' ')
+                            datetime_object = datetime.strptime(expires, '%b %d %H:%M:%S %Y %Z')
+                            expiresUsecs = dateToUsecs(datetime_object)
+                            if expiresUsecs < expwarningusecs:
+                                expiringSoon = True
+                            expires = datetime.strftime(datetime_object, "%m/%d/%Y %H:%M:%S")
+                        else:
+                            expires = 'unknown'
+                    except Exception:
                         expires = 'unknown'
         except Exception:
             pass
