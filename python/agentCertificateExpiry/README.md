@@ -35,13 +35,12 @@ chmod +x agentCertificateExpiry.py
 * -pwd, --password: (optional) password or API key
 * -np, --noprompt: (optional) do not prompt for password
 * -mcm, --mcm: (optional) connect through MCM
-* -c, --clustername: (optional) helios/mcm cluster to connect to
+* -c, --clustername: (optional) helios/mcm cluster to connect to (will loop through all clusters if connected to helios)
 * -m, --mfacode: (optional) MFA code for authentication
 * -e, --emailmfacode: (optional) send MFA code via email
 
 ## Other Parameters
 
-* -w, --includewindows: (optional)
 * -x', --expirywarningdate: (optional) default is '2023-06-01 00:00:00'
 
 ## The Python Helper Module - pyhesity.py

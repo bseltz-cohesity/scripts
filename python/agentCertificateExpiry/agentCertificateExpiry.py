@@ -14,7 +14,7 @@ parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
 parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
 parser.add_argument('-t', '--tenant', type=str, default=None)
-parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-c', '--clustername', type=str, action='append')
 parser.add_argument('-mcm', '--mcm', action='store_true')
 parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
@@ -29,7 +29,7 @@ vip = args.vip
 username = args.username
 domain = args.domain
 tenant = args.tenant
-clustername = args.clustername
+clusternames = args.clustername
 mcm = args.mcm
 useApiKey = args.useApiKey
 password = args.password
@@ -44,14 +44,6 @@ expwarningusecs = dateToUsecs(expirywarningdate)
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), emailMfaCode=emailmfacode, mfaCode=mfacode, tenantId=tenant)
 
-# if connected to helios or mcm, select access cluster
-if mcm or vip.lower() == 'helios.cohesity.com':
-    if clustername is not None:
-        heliosCluster(clustername)
-    else:
-        print('-clustername is required when connecting to Helios or MCM')
-        exit()
-
 # exit if not authenticated
 if apiconnected() is False:
     print('authentication failed')
@@ -60,53 +52,68 @@ if apiconnected() is False:
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 
-# outfile
-cluster = api('get', 'cluster')
-dateString = now.strftime("%Y-%m-%d")
-outfile = 'agentVersions-%s-%s.csv' % (cluster['name'], dateString)
-f = codecs.open(outfile, 'w')
+if mcm or vip.lower() == 'helios.cohesity.com':
+    # outfile
+    dateString = now.strftime("%Y-%m-%d")
+    outfile = 'agentVersions-helios-%s.csv' % dateString
+    f = codecs.open(outfile, 'w')
+    f.write('Cluster Name,Source Name,Agent Version,OS Type,OS Name,Cert Expires,Expires Soon\n')
+    if clusternames is None or len(clusternames) == 0:
+        clusternames = [c['name'] for c in heliosClusters()]
+else:
+    cluster = api('get', 'cluster')
+    clusternames = [cluster['name']]
+    # outfile
+    cluster = api('get', 'cluster')
+    dateString = now.strftime("%Y-%m-%d")
+    outfile = 'agentVersions-%s-%s.csv' % (cluster['name'], dateString)
+    f = codecs.open(outfile, 'w')
+    f.write('Cluster Name,Source Name,Agent Version,OS Type,OS Name,Cert Expires,Expires Soon\n')
 
-# headings
-f.write('Cluster Name,Source Name,Agent Version,OS Type,OS Name,Cert Expires,Expires Soon\n')
+for clustername in clusternames:
+    if mcm or vip.lower() == 'helios.cohesity.com':
+        heliosCluster(clustername)
 
-nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical')
-hosts = api('get', '/nexus/cluster/get_hosts_file')
+    cluster = api('get', 'cluster')
 
-for node in nodes['rootNodes']:
-    name = node['rootNode']['physicalProtectionSource']['name']
-    testname = name
-    if hosts is not None and 'hosts' in hosts and hosts['hosts'] is not None and len(hosts['hosts']) > 0:
-        ip = [h['ip'] for h in hosts['hosts'] if name.lower() in [d.lower() for d in h['domainName']]]
-        if ip is not None and len(ip) > 0:
-            testname = ip[0]
-    hostType = 'unknown'
-    osName = 'unknown'
-    version = 'unknown'
-    expiringSoon = False
-    expires = 'unknown'
-    try:
-        if 'agents' in node['rootNode']['physicalProtectionSource']:
-            version = node['rootNode']['physicalProtectionSource']['agents'][0]['version']
-            hostType = node['rootNode']['physicalProtectionSource']['hostType'][1:]
-            osName = node['rootNode']['physicalProtectionSource']['osName']
-            if includewindows is True or hostType != 'Windows':
-                certinfo = os.popen('timeout 5 openssl s_client -showcerts -connect %s:50051 </dev/null 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null' % testname)
-                cilines = certinfo.readlines()
-                if len(cilines) >= 2:
-                    expdate = cilines[2]
-                    expires = expdate.strip().split('=')[1].replace('  ', ' ')
-                    datetime_object = datetime.strptime(expires, '%b %d %H:%M:%S %Y %Z')
-                    expiresUsecs = dateToUsecs(datetime_object)
-                    if expiresUsecs < expwarningusecs:
-                        expiringSoon = True
-                    expires = datetime.strftime(datetime_object, "%m/%d/%Y %H:%M:%S")
-                else:
-                    expires = 'unknown'
-    except Exception:
-        pass
-    if includewindows is True or hostType != 'Windows':
-        print('%s,%s,(%s) %s -> %s' % (name, version, hostType, osName, expires))
-        f.write('%s,%s,%s,%s,%s,%s,%s\n' % (cluster['name'], name, version, hostType, osName, expires, expiringSoon))
+    nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical')
+    hosts = api('get', '/nexus/cluster/get_hosts_file')
+
+    for node in nodes['rootNodes']:
+        name = node['rootNode']['physicalProtectionSource']['name']
+        testname = name
+        if hosts is not None and 'hosts' in hosts and hosts['hosts'] is not None and len(hosts['hosts']) > 0:
+            ip = [h['ip'] for h in hosts['hosts'] if name.lower() in [d.lower() for d in h['domainName']]]
+            if ip is not None and len(ip) > 0:
+                testname = ip[0]
+        hostType = 'unknown'
+        osName = 'unknown'
+        version = 'unknown'
+        expiringSoon = False
+        expires = 'unknown'
+        try:
+            if 'agents' in node['rootNode']['physicalProtectionSource']:
+                version = node['rootNode']['physicalProtectionSource']['agents'][0]['version']
+                hostType = node['rootNode']['physicalProtectionSource']['hostType'][1:]
+                osName = node['rootNode']['physicalProtectionSource']['osName']
+                if includewindows is True or hostType != 'Windows':
+                    certinfo = os.popen('openssl s_client -showcerts -connect %s:50051 </dev/null 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null' % testname)
+                    cilines = certinfo.readlines()
+                    if len(cilines) >= 2:
+                        expdate = cilines[2]
+                        expires = expdate.strip().split('=')[1].replace('  ', ' ')
+                        datetime_object = datetime.strptime(expires, '%b %d %H:%M:%S %Y %Z')
+                        expiresUsecs = dateToUsecs(datetime_object)
+                        if expiresUsecs < expwarningusecs:
+                            expiringSoon = True
+                        expires = datetime.strftime(datetime_object, "%m/%d/%Y %H:%M:%S")
+                    else:
+                        expires = 'unknown'
+        except Exception:
+            pass
+        if includewindows is True or hostType != 'Windows':
+            print('%s,%s,(%s) %s -> %s' % (name, version, hostType, osName, expires))
+            f.write('%s,%s,%s,%s,%s,%s,%s\n' % (cluster['name'], name, version, hostType, osName, expires, expiringSoon))
 
 f.close()
 print('\nOutput saved to %s\n' % outfile)
