@@ -58,7 +58,7 @@ Running the script against selected Helios clusters:
 
 ## Other Parameters
 
-* -x', --expirywarningdate: (optional) default is '2023-06-01 00:00:00'
+* -x, --expirywarningdate: (optional) default is '2023-06-01 00:00:00'
 
 ## The Python Helper Module - pyhesity.py
 
