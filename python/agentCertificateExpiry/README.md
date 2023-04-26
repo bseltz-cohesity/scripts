@@ -4,6 +4,8 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This script will report certificate expirations for registered agents.
 
+Note: this script will only run on Linux where the openssl command is available. You can run it directly on the Cohesity cluster if shell access is available, or on a linux host. The script requires direct network access to the hosts via port 50051/tcp, so inter-site firewall rules would be problematic.
+
 ## Components
 
 * agentCertificateExpiry.py: the main python script
@@ -19,11 +21,26 @@ chmod +x agentCertificateExpiry.py
 # end download commands
 ```
 
+Running the script against one cluster (with direct authentication):
+
 ```bash
 ./agentCertificateExpiry.py -v mycluster \
                          -u myuser \
                          -d local \
                          -ad mydomain.net
+```
+
+Running the script against all Helios clusters:
+
+```bash
+./agentCertificateExpiry.py -u myuser@mydomain.net
+```
+
+Running the script against selected Helios clusters:
+
+```bash
+./agentCertificateExpiry.py -u myuser@mydomain.net \
+                            -c cluster1 -c cluster2
 ```
 
 ## Authentication Parameters
