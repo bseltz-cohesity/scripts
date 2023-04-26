@@ -127,7 +127,7 @@ for clustername in clusternames:
                             pass
                         try:
                             certinfo = os.popen('timeout 5 openssl s_client -showcerts -connect %s:%s </dev/null 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null' % (testname, port))
-                            cilines = certinfo.readlines() 
+                            cilines = certinfo.readlines()
                             if len(cilines) >= 2:
                                 expdate = cilines[2]
                                 expires = expdate.strip().split('=')[1].replace('  ', ' ')
