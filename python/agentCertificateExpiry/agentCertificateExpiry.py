@@ -75,7 +75,7 @@ hosts = api('get', '/nexus/cluster/get_hosts_file')
 for node in nodes['rootNodes']:
     name = node['rootNode']['physicalProtectionSource']['name']
     testname = name
-    if hosts is not None and 'hosts' in hosts and len(hosts['hosts']) > 0:
+    if hosts is not None and 'hosts' in hosts and hosts['hosts'] is not None and len(hosts['hosts']) > 0:
         ip = [h['ip'] for h in hosts['hosts'] if name.lower() in [d.lower() for d in h['domainName']]]
         if ip is not None and len(ip) > 0:
             testname = ip[0]
@@ -89,8 +89,8 @@ for node in nodes['rootNodes']:
             version = node['rootNode']['physicalProtectionSource']['agents'][0]['version']
             hostType = node['rootNode']['physicalProtectionSource']['hostType'][1:]
             osName = node['rootNode']['physicalProtectionSource']['osName']
-            if includewindows or hostType != 'Windows':
-                certinfo = os.popen('timeout 5 openssl s_client -showcerts -connect %s:50051 </dev/null 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null' % testname)
+            if includewindows is True or hostType != 'Windows':
+                certinfo = os.popen('openssl s_client -showcerts -connect %s:50051 </dev/null 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null' % testname)
                 cilines = certinfo.readlines()
                 if len(cilines) >= 2:
                     expdate = cilines[2]
@@ -104,8 +104,9 @@ for node in nodes['rootNodes']:
                     expires = 'unknown'
     except Exception:
         pass
-    print('%s,%s,(%s) %s -> %s' % (name, version, hostType, osName, expires))
-    f.write('%s,%s,%s,%s,%s,%s,%s\n' % (cluster['name'], name, version, hostType, osName, expires, expiringSoon))
+    if includewindows is True or hostType != 'Windows':
+        print('%s,%s,(%s) %s -> %s' % (name, version, hostType, osName, expires))
+        f.write('%s,%s,%s,%s,%s,%s,%s\n' % (cluster['name'], name, version, hostType, osName, expires, expiringSoon))
 
 f.close()
 print('\nOutput saved to %s\n' % outfile)
