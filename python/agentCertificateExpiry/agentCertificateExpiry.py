@@ -84,26 +84,26 @@ for node in nodes['rootNodes']:
     version = 'unknown'
     expiringSoon = False
     expires = 'unknown'
-    # try:
-    if 'agents' in node['rootNode']['physicalProtectionSource']:
-        version = node['rootNode']['physicalProtectionSource']['agents'][0]['version']
-        hostType = node['rootNode']['physicalProtectionSource']['hostType'][1:]
-        osName = node['rootNode']['physicalProtectionSource']['osName']
-        if includewindows or hostType != 'Windows':
-            certinfo = os.popen('timeout 5 openssl s_client -showcerts -connect %s:50051 </dev/null 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null' % testname)
-            cilines = certinfo.readlines()
-            if len(cilines) >= 2:
-                expdate = cilines[2]
-                expires = expdate.strip().split('=')[1].replace('  ', ' ')
-                datetime_object = datetime.strptime(expires, '%b %d %H:%M:%S %Y %Z')
-                expiresUsecs = dateToUsecs(datetime_object)
-                if expiresUsecs < expwarningusecs:
-                    expiringSoon = True
-                expires = datetime.strftime(datetime_object, "%m/%d/%Y %H:%M:%S")
-            else:
-                expires = 'unknown'
-    # except Exception:
-    #     pass
+    try:
+        if 'agents' in node['rootNode']['physicalProtectionSource']:
+            version = node['rootNode']['physicalProtectionSource']['agents'][0]['version']
+            hostType = node['rootNode']['physicalProtectionSource']['hostType'][1:]
+            osName = node['rootNode']['physicalProtectionSource']['osName']
+            if includewindows or hostType != 'Windows':
+                certinfo = os.popen('timeout 5 openssl s_client -showcerts -connect %s:50051 </dev/null 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null' % testname)
+                cilines = certinfo.readlines()
+                if len(cilines) >= 2:
+                    expdate = cilines[2]
+                    expires = expdate.strip().split('=')[1].replace('  ', ' ')
+                    datetime_object = datetime.strptime(expires, '%b %d %H:%M:%S %Y %Z')
+                    expiresUsecs = dateToUsecs(datetime_object)
+                    if expiresUsecs < expwarningusecs:
+                        expiringSoon = True
+                    expires = datetime.strftime(datetime_object, "%m/%d/%Y %H:%M:%S")
+                else:
+                    expires = 'unknown'
+    except Exception:
+        pass
     print('%s\t%s\t(%s) %s -> %s' % (name, version, hostType, osName, expires))
     f.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (cluster['name'], name, version, hostType, osName, expires, expiringSoon))
 
