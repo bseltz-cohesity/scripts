@@ -63,11 +63,11 @@ nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 # outfile
 cluster = api('get', 'cluster')
 dateString = now.strftime("%Y-%m-%d")
-outfile = 'agentVersions-%s-%s.tsv' % (cluster['name'], dateString)
+outfile = 'agentVersions-%s-%s.csv' % (cluster['name'], dateString)
 f = codecs.open(outfile, 'w')
 
 # headings
-f.write('Cluster Name\tSource Name\tAgent Version\tOS Type\tOS Name\tCert Expires\tExpires Soon\n')
+f.write('Cluster Name,Source Name,Agent Version,OS Type,OS Name,Cert Expires,Expires Soon\n')
 
 nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical')
 hosts = api('get', '/nexus/cluster/get_hosts_file')
@@ -104,8 +104,8 @@ for node in nodes['rootNodes']:
                     expires = 'unknown'
     except Exception:
         pass
-    print('%s\t%s\t(%s) %s -> %s' % (name, version, hostType, osName, expires))
-    f.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (cluster['name'], name, version, hostType, osName, expires, expiringSoon))
+    print('%s,%s,(%s) %s -> %s' % (name, version, hostType, osName, expires))
+    f.write('%s,%s,%s,%s,%s,%s,%s\n' % (cluster['name'], name, version, hostType, osName, expires, expiringSoon))
 
 f.close()
 print('\nOutput saved to %s\n' % outfile)
