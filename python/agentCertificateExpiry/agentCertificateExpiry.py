@@ -50,25 +50,20 @@ if apiconnected() is False:
     exit(1)
 
 now = datetime.now()
-nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
+dateString = now.strftime("%Y-%m-%d-%H-%M-%S")
 
 if mcm or vip.lower() == 'helios.cohesity.com':
-    # outfile
-    dateString = now.strftime("%Y-%m-%d")
     outfile = 'agentVersions-helios-%s.csv' % dateString
-    f = codecs.open(outfile, 'w')
-    f.write('Cluster Name,Source Name,Agent Version,OS Type,OS Name,Cert Expires,Expires Soon\n')
     if clusternames is None or len(clusternames) == 0:
         clusternames = [c['name'] for c in heliosClusters()]
 else:
     cluster = api('get', 'cluster')
     clusternames = [cluster['name']]
-    # outfile
     cluster = api('get', 'cluster')
-    dateString = now.strftime("%Y-%m-%d")
     outfile = 'agentVersions-%s-%s.csv' % (cluster['name'], dateString)
-    f = codecs.open(outfile, 'w')
-    f.write('Cluster Name,Source Name,Agent Version,OS Type,OS Name,Cert Expires,Expires Soon\n')
+
+f = codecs.open(outfile, 'w')
+f.write('Cluster Name,Agent Name,Status,Cluster Version,Agent Version,OS Type,OS Name,Cert Expires\n')
 
 for clustername in clusternames:
     print('Connecting to %s...' % clustername)
@@ -76,6 +71,7 @@ for clustername in clusternames:
         heliosCluster(clustername)
 
     cluster = api('get', 'cluster')
+    clusterVersion = cluster['clusterSoftwareVersion']
 
     nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical')
     hosts = api('get', '/nexus/cluster/get_hosts_file')
@@ -114,7 +110,13 @@ for clustername in clusternames:
             pass
         if includewindows is True or hostType != 'Windows':
             print('%s,%s,(%s) %s -> %s' % (name, version, hostType, osName, expires))
-            f.write('%s,%s,%s,%s,%s,%s,%s\n' % (cluster['name'], name, version, hostType, osName, expires, expiringSoon))
-
+            if expires == 'unknown':
+                status = 'unreachable'
+            else:
+                if expiringSoon is True:
+                    status = 'impacted'
+                else:
+                    status = 'not impacted'
+            f.write('%s,%s,%s,%s,%s,%s,%s,%s\n' % (cluster['name'], name, status, clusterVersion, version, hostType, osName, expires))
 f.close()
 print('\nOutput saved to %s\n' % outfile)
