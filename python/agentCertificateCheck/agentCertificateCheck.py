@@ -121,10 +121,8 @@ for clustername in clusternames:
                     try:
                         if 'authenticationErrorMessage' in node['registrationInfo'] and node['registrationInfo']['authenticationErrorMessage'] is not None:
                             errorMessage = node['registrationInfo']['authenticationErrorMessage'].split(',')[0].split('\n')[0]
-                            print('-- %s' % errorMessage)
                         if 'refreshErrorMessage' in node['registrationInfo'] and node['registrationInfo']['refreshErrorMessage'] is not None and node['registrationInfo']['refreshErrorMessage'] != '':
                             errorMessage = node['registrationInfo']['refreshErrorMessage'].split(',')[0].split('\n')[0]
-                            print('-- %s' % errorMessage)
                     except Exception:
                         pass
                     try:
