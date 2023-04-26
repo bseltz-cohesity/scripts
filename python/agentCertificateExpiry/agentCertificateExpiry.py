@@ -74,11 +74,12 @@ hosts = api('get', '/nexus/cluster/get_hosts_file')
 
 for node in nodes['rootNodes']:
     name = node['rootNode']['physicalProtectionSource']['name']
-    ip = [h['ip'] for h in hosts['hosts'] if name.lower() in [d.lower() for d in h['domainName']]]
-    if ip is not None and len(ip) > 0:
-        testname = ip
-    else:
-        testname = name
+    testname = name
+    if hosts is not None and 'hosts' in hosts and len(hosts['hosts']) > 0:
+        ip = [h['ip'] for h in hosts['hosts'] if name.lower() in [d.lower() for d in h['domainName']]]
+        if ip is not None and len(ip) > 0:
+            testname = ip[0]
+    print(testname)
     hostType = 'unknown'
     osName = 'unknown'
     version = 'unknown'
@@ -101,7 +102,6 @@ for node in nodes['rootNodes']:
                     expiringSoon = True
                 expires = datetime.strftime(datetime_object, "%m/%d/%Y %H:%M:%S")
             else:
-                print(cilines)
                 expires = 'unknown'
     # except Exception:
     #     pass
