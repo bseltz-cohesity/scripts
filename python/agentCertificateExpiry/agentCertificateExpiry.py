@@ -79,7 +79,6 @@ for node in nodes['rootNodes']:
         ip = [h['ip'] for h in hosts['hosts'] if name.lower() in [d.lower() for d in h['domainName']]]
         if ip is not None and len(ip) > 0:
             testname = ip[0]
-    print(testname)
     hostType = 'unknown'
     osName = 'unknown'
     version = 'unknown'
