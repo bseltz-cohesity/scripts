@@ -70,16 +70,27 @@ f = codecs.open(outfile, 'w')
 f.write('Cluster Name\tSource Name\tAgent Version\tOS Type\tOS Name\tCert Expires\tExpires Soon\n')
 
 nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical')
+hosts = api('get', '/nexus/cluster/get_hosts_file')
 
 for node in nodes['rootNodes']:
     name = node['rootNode']['physicalProtectionSource']['name']
+    ip = [h['ip'] for h in hosts['hosts'] if name.lower() in [d.lower() for d in h['domainName']]]
+    if ip is not None and len(ip) > 0:
+        testname = ip
+    else:
+        testname = name
+    hostType = 'unknown'
+    osName = 'unknown'
+    version = 'unknown'
+    expiringSoon = False
+    expires = 'unknown'
+    # try:
     if 'agents' in node['rootNode']['physicalProtectionSource']:
-        expiringSoon = False
         version = node['rootNode']['physicalProtectionSource']['agents'][0]['version']
         hostType = node['rootNode']['physicalProtectionSource']['hostType'][1:]
         osName = node['rootNode']['physicalProtectionSource']['osName']
         if includewindows or hostType != 'Windows':
-            certinfo = os.popen('timeout 5 openssl s_client -showcerts -connect %s:50051 </dev/null 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null' % name)
+            certinfo = os.popen('timeout 5 openssl s_client -showcerts -connect %s:50051 </dev/null 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null' % testname)
             cilines = certinfo.readlines()
             if len(cilines) >= 2:
                 expdate = cilines[2]
@@ -90,9 +101,12 @@ for node in nodes['rootNodes']:
                     expiringSoon = True
                 expires = datetime.strftime(datetime_object, "%m/%d/%Y %H:%M:%S")
             else:
+                print(cilines)
                 expires = 'unknown'
-            print('%s\t%s\t(%s) %s -> %s' % (name, version, hostType, osName, expires))
-            f.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (cluster['name'], name, version, hostType, osName, expires, expiringSoon))
+    # except Exception:
+    #     pass
+    print('%s\t%s\t(%s) %s -> %s' % (name, version, hostType, osName, expires))
+    f.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (cluster['name'], name, version, hostType, osName, expires, expiringSoon))
 
 f.close()
 print('\nOutput saved to %s\n' % outfile)
