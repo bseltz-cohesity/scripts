@@ -90,7 +90,7 @@ for node in nodes['rootNodes']:
             hostType = node['rootNode']['physicalProtectionSource']['hostType'][1:]
             osName = node['rootNode']['physicalProtectionSource']['osName']
             if includewindows is True or hostType != 'Windows':
-                certinfo = os.popen('openssl s_client -showcerts -connect %s:50051 </dev/null 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null' % testname)
+                certinfo = os.popen('timeout 5 openssl s_client -showcerts -connect %s:50051 </dev/null 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null' % testname)
                 cilines = certinfo.readlines()
                 if len(cilines) >= 2:
                     expdate = cilines[2]
