@@ -27,16 +27,52 @@ Running the script against one cluster (with direct authentication):
 ./agentCertificateCheck.py -v mycluster -u myuser -d local  # -d myAdDomain.net (for active directory)
 ```
 
+If running the script directly from the cluster (with direct authentication):
+
+```bash
+python3 agentCertificateCheck.py -v mycluster -u myuser -d local  # -d myAdDomain.net (for active directory)
+```
+
+Depending on the python version on the Cohesity Cluster node, this command may be:
+
+```bash
+python agentCertificateCheck.py -v mycluster -u myuser -d local  # -d myAdDomain.net (for active directory)
+```
+
 Running the script against all Helios clusters (note: you will need to create an API key in helios and use that as the password when prompted):
 
 ```bash
 ./agentCertificateCheck.py -u myuser@mydomain.net
 ```
 
+If running the script directly from the cluster against all Helios clusters (note: you will need to create an API key in helios and use that as the password when prompted):
+
+```bash
+python3 agentCertificateCheck.py -u myuser@mydomain.net
+```
+
+Depending on the python version on the Cohesity Cluster node, this command may be:
+
+```bash
+python agentCertificateCheck.py -u myuser@mydomain.net
+```
+
 Running the script against selected Helios clusters (note: you will need to create an API key in helios and use that as the password when prompted):
 
 ```bash
 ./agentCertificateCheck.py -u myuser@mydomain.net -c cluster1 -c cluster2
+```
+
+If running the script directly from the cluster against selected Helios clusters (note: you will need to create an API key in helios and use that as the password when prompted):
+
+```bash
+python3 agentCertificateCheck.py -u myuser@mydomain.net -c cluster1 -c cluster2
+```
+
+Depending on the python version on the Cohesity Cluster node, this command may be:
+
+```bash
+python agentCertificateCheck.py -u myuser@mydomain.net -c cluster1 -c cluster2
 ```
 
 ## Authentication Parameters
