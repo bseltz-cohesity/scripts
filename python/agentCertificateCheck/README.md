@@ -21,22 +21,30 @@ chmod +x agentCertificateCheck.py
 # end download commands
 ```
 
+## Prerequisites To Run The Script
+
+```bash
+chmod +x agentCertificateCheck.py
+```
+
+If the 'chmod' prerequsite cannot be run for any reason, please run the script with the precurser 'python3' (or 'python' depending on the version python currently installed on the system) like:
+
+```bash
+python3 agentCertificateCheck.py -v mycluster -u myuser -d local
+```
+
+To verify the version of python currently installed on the system:
+
+```bash
+python --version
+```
+
+## Examples
+
 Running the script against one cluster (with direct authentication):
 
 ```bash
 ./agentCertificateCheck.py -v mycluster -u myuser -d local  # -d myAdDomain.net (for active directory)
-```
-
-If running the script directly from the cluster (with direct authentication):
-
-```bash
-python3 agentCertificateCheck.py -v mycluster -u myuser -d local  # -d myAdDomain.net (for active directory)
-```
-
-Depending on the python version on the Cohesity Cluster node, this command may be:
-
-```bash
-python agentCertificateCheck.py -v mycluster -u myuser -d local  # -d myAdDomain.net (for active directory)
 ```
 
 Running the script against all Helios clusters (note: you will need to create an API key in helios and use that as the password when prompted):
@@ -45,34 +53,10 @@ Running the script against all Helios clusters (note: you will need to create an
 ./agentCertificateCheck.py -u myuser@mydomain.net
 ```
 
-If running the script directly from the cluster against all Helios clusters (note: you will need to create an API key in helios and use that as the password when prompted):
-
-```bash
-python3 agentCertificateCheck.py -u myuser@mydomain.net
-```
-
-Depending on the python version on the Cohesity Cluster node, this command may be:
-
-```bash
-python agentCertificateCheck.py -u myuser@mydomain.net
-```
-
 Running the script against selected Helios clusters (note: you will need to create an API key in helios and use that as the password when prompted):
 
 ```bash
 ./agentCertificateCheck.py -u myuser@mydomain.net -c cluster1 -c cluster2
-```
-
-If running the script directly from the cluster against selected Helios clusters (note: you will need to create an API key in helios and use that as the password when prompted):
-
-```bash
-python3 agentCertificateCheck.py -u myuser@mydomain.net -c cluster1 -c cluster2
-```
-
-Depending on the python version on the Cohesity Cluster node, this command may be:
-
-```bash
-python agentCertificateCheck.py -u myuser@mydomain.net -c cluster1 -c cluster2
 ```
 
 ## Authentication Parameters
@@ -92,6 +76,10 @@ python agentCertificateCheck.py -u myuser@mydomain.net -c cluster1 -c cluster2
 
 * -w, --excludewindows: (optional) skip windows sources
 * -x, --expirywarningdate: (optional) default is '2023-06-01 00:00:00'
+
+## What Does Unknown Mean
+
+There are several failure modes that can result in a lack of response or lack of details returned for an agent, resulting in 'unknown' in the script output.
 
 ## The Python Helper Module - pyhesity.py
 
