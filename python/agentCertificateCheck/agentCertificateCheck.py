@@ -155,8 +155,10 @@ for clustername in clusternames:
                 print('%s:%s,%s,(%s) %s -> %s (%s)' % (name, port, version, hostType, osName, expires, status))
                 f.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (cluster['name'], name, status, clusterVersion, orgsenabled, version, port, hostType, osName, expires, errorMessage))
         if nodesCounted == 0:
-            print('** No physical protection sources interrogated **')
+            print('** No agents interrogated (all filtered by command line options) **')
+            f.write('%s,No agents interrogated (all filtered by command line options),,%s\n' % (cluster['name'], clusterVersion))
     else:
         print('** No physical protection sources found on the cluster **')
+        f.write('%s,No agents registered on the cluster,,%s\n' % (cluster['name'], clusterVersion))
 f.close()
 print('\nOutput saved to %s\n' % outfile)
