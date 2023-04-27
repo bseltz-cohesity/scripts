@@ -39,7 +39,7 @@ Running the script against selected Helios clusters (note: you will need to crea
 
 ```bash
 ./agentCertificateCheck.py -u myuser@mydomain.net \
-                            -c cluster1 -c cluster2
+                           -c cluster1 -c cluster2
 ```
 
 ## Authentication Parameters
