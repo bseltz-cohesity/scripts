@@ -24,9 +24,7 @@ chmod +x agentCertificateCheck.py
 Running the script against one cluster (with direct authentication):
 
 ```bash
-./agentCertificateCheck.py -v mycluster \
-                           -u myuser \
-                           -d local
+./agentCertificateCheck.py -v mycluster -u myuser -d local
 ```
 
 Running the script against all Helios clusters (note: you will need to create an API key in helios and use that as the password when prompted):
@@ -38,8 +36,7 @@ Running the script against all Helios clusters (note: you will need to create an
 Running the script against selected Helios clusters (note: you will need to create an API key in helios and use that as the password when prompted):
 
 ```bash
-./agentCertificateCheck.py -u myuser@mydomain.net \
-                           -c cluster1 -c cluster2
+./agentCertificateCheck.py -u myuser@mydomain.net -c cluster1 -c cluster2
 ```
 
 ## Authentication Parameters
