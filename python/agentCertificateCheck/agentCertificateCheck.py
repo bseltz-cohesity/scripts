@@ -66,7 +66,7 @@ f = codecs.open(outfile, 'w')
 f.write('Cluster Name,Agent Name,Status,Cluster Version,MultiTenancy,Agent Version,Agent Port,OS Type,OS Name,Cert Expires,Error Message\n')
 
 for clustername in clusternames:
-    print('Connecting to %s...' % clustername)
+    print('\nConnecting to %s...\n' % clustername)
     if mcm or vip.lower() == 'helios.cohesity.com':
         heliosCluster(clustername)
 
@@ -92,6 +92,7 @@ for clustername in clusternames:
     nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical&allUnderHierarchy=true')
     hosts = api('get', '/nexus/cluster/get_hosts_file')
     if nodes is not None and 'rootNodes' in nodes and nodes['rootNodes'] is not None:
+        nodesCounted = 0
         for node in nodes['rootNodes']:
             port = 50051
             name = node['rootNode']['physicalProtectionSource']['name']
@@ -112,6 +113,7 @@ for clustername in clusternames:
                     hostType = node['rootNode']['physicalProtectionSource']['hostType'][1:]
                     osName = node['rootNode']['physicalProtectionSource']['osName']
                     if excludewindows is not True or hostType != 'Windows':
+                        nodesCounted += 1
                         agentGflag = [f['value'] for f in gflaglist if f['name'] == 'magneto_agent_port_number' % hostType.lower()]
                         if agentGflag is not None and len(agentGflag) > 0:
                             port = agentGflag[0]
@@ -152,5 +154,9 @@ for clustername in clusternames:
                         status = 'not impacted'
                 print('%s:%s,%s,(%s) %s -> %s (%s)' % (name, port, version, hostType, osName, expires, status))
                 f.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (cluster['name'], name, status, clusterVersion, orgsenabled, version, port, hostType, osName, expires, errorMessage))
+        if nodesCounted == 0:
+            print('** No physical protection sources interrogated **')
+    else:
+        print('** No physical protection sources found on the cluster **')
 f.close()
 print('\nOutput saved to %s\n' % outfile)
