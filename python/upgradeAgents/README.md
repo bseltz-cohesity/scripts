@@ -64,6 +64,7 @@ Running the script against selected Helios clusters (note: you will need to crea
 * -n, --agentname: (optional) only include agents with this name (repeat for multiple)
 * -l, --agentlist: (optional) text file of agents to include (one per line)
 * -k, --skipwarnings: (optional) exclude agents that have registration/refresh errors
+* -r, --refresh: (optional) perform refresh before show/upgrade operation (may be slow!)
 
 ## The Python Helper Module - pyhesity.py
 

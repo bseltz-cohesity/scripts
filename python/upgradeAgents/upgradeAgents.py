@@ -28,6 +28,7 @@ parser.add_argument('-s', '--showcurrent', action='store_true')
 parser.add_argument('-n', '--agentname', action='append', type=str)
 parser.add_argument('-l', '--agentlist', type=str)
 parser.add_argument('-k', '--skipwarnings', action='store_true')
+parser.add_argument('-r', '--refresh', action='store_true')
 
 args = parser.parse_args()
 
@@ -48,6 +49,7 @@ execute = args.execute
 agentnames = args.agentname
 agentlist = args.agentlist
 skipwarnings = args.skipwarnings
+refresh = args.refresh
 
 
 # gather server list
@@ -95,7 +97,7 @@ f.write('Cluster Name,Cluster Version,Agent Name,Agent Version,OS Type,OS Name,S
 reportNextSteps = False
 
 for clustername in clusternames:
-    print('Connecting to %s...\n' % clustername)
+    print('\nConnecting to %s...\n' % clustername)
     if mcm or vip.lower() == 'helios.cohesity.com':
         heliosCluster(clustername)
 
@@ -103,6 +105,40 @@ for clustername in clusternames:
 
     ### get Physical Servers
     nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical&allUnderHierarchy=true')
+
+    if refresh is True:
+        if nodes is not None and 'rootNodes' in nodes and nodes['rootNodes'] is not None:
+            for node in nodes['rootNodes']:
+                name = node['rootNode']['physicalProtectionSource']['name']
+                hostType = 'unknown'
+                errorMessage = ''
+                tenant = ''
+                if 'entityPermissionInfo' in node['rootNode']:
+                    if tenant in node['rootNode']['entityPermissionInfo']:
+                        if 'name' in node['rootNode']['entityPermissionInfo']['tenant']:
+                            tenant = node['rootNode']['entityPermissionInfo']['tenant']['name']
+                try:
+                    if 'authenticationErrorMessage' in node['registrationInfo'] and node['registrationInfo']['authenticationErrorMessage'] is not None:
+                        errorMessage = node['registrationInfo']['authenticationErrorMessage'].split(',')[0].split('\n')[0]
+                    if 'refreshErrorMessage' in node['registrationInfo'] and node['registrationInfo']['refreshErrorMessage'] is not None and node['registrationInfo']['refreshErrorMessage'] != '':
+                        errorMessage = node['registrationInfo']['refreshErrorMessage'].split(',')[0].split('\n')[0]
+                except Exception:
+                    pass
+                try:
+                    hostType = node['rootNode']['physicalProtectionSource']['hostType'][1:]
+                except Exception:
+                    pass
+                if len(agentnames) == 0 or name.lower() in [a.lower() for a in agentnames]:
+                    if ostype is None or ostype.lower() == hostType.lower():
+                        if errorMessage == '':
+                            print('    Refreshing %s' % name)
+                            if tenant != '':
+                                impersonate(tenant)
+                            result = api('post', 'protectionSources/refresh/%s' % node['rootNode']['id'])
+                            if tenant != '':
+                                switchback()
+        nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical&allUnderHierarchy=true')
+        print('')
 
     if nodes is not None and 'rootNodes' in nodes and nodes['rootNodes'] is not None:
         for node in nodes['rootNodes']:
