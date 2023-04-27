@@ -21,7 +21,7 @@ parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-e', '--emailmfacode', action='store_true')
-parser.add_argument('-w', '--includewindows', action='store_true')
+parser.add_argument('-w', '--excludewindows', action='store_true')
 parser.add_argument('-x', '--expirywarningdate', type=str, default='2023-06-01 00:00:00')
 args = parser.parse_args()
 
@@ -36,7 +36,7 @@ password = args.password
 noprompt = args.noprompt
 mfacode = args.mfacode
 emailmfacode = args.emailmfacode
-includewindows = args.includewindows
+excludewindows = args.excludewindows
 expirywarningdate = args.expirywarningdate
 
 expwarningusecs = dateToUsecs(expirywarningdate)
@@ -111,7 +111,7 @@ for clustername in clusternames:
                     version = node['rootNode']['physicalProtectionSource']['agents'][0]['version']
                     hostType = node['rootNode']['physicalProtectionSource']['hostType'][1:]
                     osName = node['rootNode']['physicalProtectionSource']['osName']
-                    if includewindows is True or hostType != 'Windows':
+                    if excludewindows is not True or hostType != 'Windows':
                         agentGflag = [f['value'] for f in gflaglist if f['name'] == 'magneto_agent_port_number' % hostType.lower()]
                         if agentGflag is not None and len(agentGflag) > 0:
                             port = agentGflag[0]
@@ -142,7 +142,7 @@ for clustername in clusternames:
                             expires = 'unknown'
             except Exception:
                 pass
-            if includewindows is True or hostType != 'Windows':
+            if excludewindows is not True or hostType != 'Windows':
                 if expires == 'unknown':
                     status = 'unreachable'
                 else:

@@ -90,6 +90,7 @@ python agentCertificateCheck.py -u myuser@mydomain.net -c cluster1 -c cluster2
 
 ## Other Parameters
 
+* -w, --excludewindows: (optional) skip windows sources
 * -x, --expirywarningdate: (optional) default is '2023-06-01 00:00:00'
 
 ## The Python Helper Module - pyhesity.py
