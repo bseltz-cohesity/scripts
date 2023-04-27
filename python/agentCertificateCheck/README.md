@@ -79,7 +79,13 @@ Running the script against selected Helios clusters (note: you will need to crea
 
 ## What Does Unknown Mean
 
-There are several failure modes that can result in a lack of response or lack of details returned for an agent, resulting in 'unknown' in the script output.
+There are several failure modes that can result in a lack of response or lack of details returned for an agent, resulting in 'unknown' in the script output. For example:
+
+* Agent never successfully registered: this can happen if the agent was already registered with another cluster when registration was attempted. In this case, the agent will appear unreachable and most of the details will remain unknown.
+
+* Agent was successfully registered but is now offline: in this case we will have some of the details from the last time the cluster conversed with the agent, but since it's now offline, it will appear unreachable and the certificate date will remain unknown.
+
+* Agent is not reachable over the network: this may be caused by running the script from a jump host that does not have direct access to the agent hosts, likely due to firewall rules or air gapped networks that the jump host can't reach. Running the script directly on the cluster may alleviate some of these issues. It may also be that Hybrid Extender (HyX) is in use and therefore no direct network access is possible. Again, we will successfully retrieve some of the agent details but the agent will appear unreachable and the certificate date will remain unknown.
 
 ## The Python Helper Module - pyhesity.py
 
