@@ -21,22 +21,16 @@ chmod +x agentCertificateCheck.py
 # end download commands
 ```
 
+## Prerequisites to running this script:
+```bash
+chmod +x agentCertificateCheck.py
+chmod 777 agentCertificateCheck.py
+```
+
 Running the script against one cluster (with direct authentication):
 
 ```bash
 ./agentCertificateCheck.py -v mycluster -u myuser -d local  # -d myAdDomain.net (for active directory)
-```
-
-If running the script directly from the cluster (with direct authentication):
-
-```bash
-python3 agentCertificateCheck.py -v mycluster -u myuser -d local  # -d myAdDomain.net (for active directory)
-```
-
-Depending on the python version on the Cohesity Cluster node, this command may be:
-
-```bash
-python agentCertificateCheck.py -v mycluster -u myuser -d local  # -d myAdDomain.net (for active directory)
 ```
 
 Running the script against all Helios clusters (note: you will need to create an API key in helios and use that as the password when prompted):
@@ -45,34 +39,21 @@ Running the script against all Helios clusters (note: you will need to create an
 ./agentCertificateCheck.py -u myuser@mydomain.net
 ```
 
-If running the script directly from the cluster against all Helios clusters (note: you will need to create an API key in helios and use that as the password when prompted):
-
-```bash
-python3 agentCertificateCheck.py -u myuser@mydomain.net
-```
-
-Depending on the python version on the Cohesity Cluster node, this command may be:
-
-```bash
-python agentCertificateCheck.py -u myuser@mydomain.net
-```
-
 Running the script against selected Helios clusters (note: you will need to create an API key in helios and use that as the password when prompted):
 
 ```bash
 ./agentCertificateCheck.py -u myuser@mydomain.net -c cluster1 -c cluster2
 ```
 
-If running the script directly from the cluster against selected Helios clusters (note: you will need to create an API key in helios and use that as the password when prompted):
+If the 'chmod' prerequsite cannot be run for any reason, please run the script with the precurser 'python3' (or 'python' depending on the version python currently installed on the system):
 
 ```bash
-python3 agentCertificateCheck.py -u myuser@mydomain.net -c cluster1 -c cluster2
+python3 agentCertificateCheck.py -v mycluster -u myuser -d local
 ```
-
-Depending on the python version on the Cohesity Cluster node, this command may be:
+To verify the version of python currently installed on the system:
 
 ```bash
-python agentCertificateCheck.py -u myuser@mydomain.net -c cluster1 -c cluster2
+python --version
 ```
 
 ## Authentication Parameters
