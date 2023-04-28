@@ -24,22 +24,30 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 Place all files in a folder together, then run the main script like so:
 
-To report on current upgradability of all hosts
+To report on current upgradability of all agents:
 
 ```powershell
 ./upgradeAgents.ps1 -vip mycluster `
                     -username myusername `
-                    -domain mydomain.net `
-                    -all
+                    -domain local # or mydomain.net for AD user
 ```
 
-To perform the upgrade on all upgradable hosts:
+To perform the upgrade:
 
 ```powershell
 ./upgradeAgents.ps1 -vip mycluster `
                     -username myusername `
-                    -domain mydomain.net `
-                    -all `
+                    -domain local `
+                    -upgrade
+```
+
+To filter on OS type:
+
+```powershell
+./upgradeAgents.ps1 -vip mycluster `
+                    -username myusername `
+                    -domain local `
+                    -osType linux `
                     -upgrade
 ```
 
@@ -48,8 +56,8 @@ To specify a few hosts on the command line:
 ```powershell
 ./upgradeAgents.ps1 -vip mycluster `
                     -username myusername `
-                    -domain mydomain.net `
-                    -serverNames server1.mydomain.net, server2.mydomain.net `
+                    -domain local `
+                    -agentNames server1.mydomain.net, server2.mydomain.net `
                     -upgrade
 ```
 
@@ -59,16 +67,38 @@ or use a text file (one server per line):
 ./upgradeAgents.ps1 -vip mycluster `
                     -username myusername `
                     -domain mydomain.net `
-                    -serverList ./myservers.txt `
+                    -agentList ./myservers.txt `
                     -upgrade
 ```
 
+To perform a refresh:
+
+```powershell
+./upgradeAgents.ps1 -vip mycluster `
+                    -username myusername `
+                    -domain mydomain.net `
+                    -skipWarnings `
+                    -refresh
+```
+
+## Authentication Parameters
+
+* -vip: (optional) one or more clusters to connect to (comma separated) (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -clusterName: (optional) one or more clusters (comma separated) to connect to when connecting through Helios (defaults to all helios clusters)
+* -mfaCode: (optional) totp for MFA (only works when connecting directly to one cluster)
+* -emailMfaCode: (optional) email MFA code (only works when connecting directly to clusters)
+
 ## Parameters
 
-* -vip: name or IP of Cohesity cluster
-* -username: name of user to connect to Cohesity
-* -domain: your AD domain (defaults to local)
-* -serverNames: one or more servers (comma separated) to report or upgrade
-* -serverList: file containing list of servers
-* -all: report or upgrade all servers
-* -upgrade: perform upgrades (just report if omitted)
+* -agentName: (optional) one or more protection source names to include (comma separated)
+* -agentList: (optional) text file of protection source names to include (one per line)
+* -osType: (optional) filter on OS type (e.g. windows, linux, aix)
+* -skipWarnings: (optional) skip sources that have registration/refresh errors
+* -upgrade: (optional) initiate agent upgrades (will just show status if omitted)
+* -excludeCurrent: (optional) do not display agents that are up to date
+* -refresh: (optional) force refresh (this can be slow, recommend using -skipWarnings when using this)
