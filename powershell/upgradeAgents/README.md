@@ -91,7 +91,6 @@ To perform a refresh:
 * -noPrompt: (optional) do not prompt for password
 * -clusterName: (optional) one or more clusters (comma separated) to connect to when connecting through Helios (defaults to all helios clusters)
 * -mfaCode: (optional) totp for MFA (only works when connecting directly to one cluster)
-* -emailMfaCode: (optional) email MFA code (only works when connecting directly to clusters)
 
 ## Parameters
 

@@ -11,7 +11,6 @@ param (
     [Parameter()][switch]$noPrompt,
     [Parameter()][switch]$mcm,
     [Parameter()][string]$mfaCode = $null,
-    [Parameter()][switch]$emailMfaCode,
     [Parameter()][array]$clusterName,
     [Parameter()][array]$agentName,
     [Parameter()][string]$agentList,
@@ -58,7 +57,7 @@ $reportNextSteps = $False
 foreach($v in $vip){
     ### authenticate
     "`nConnecting to $v"
-    apiauth -vip $v -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -noPromptForPassword $noPrompt
+    apiauth -vip $v -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -noPromptForPassword $noPrompt -mfaCode $mfaCode
     if(!$USING_HELIOS){
         ""
     }
