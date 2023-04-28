@@ -15,7 +15,8 @@ param (
     [Parameter()][array]$jobName,
     [Parameter()][string]$jobList,
     [Parameter()][switch]$showExclusions,
-    [Parameter()][switch]$vmNamesOnly
+    [Parameter()][switch]$vmNamesOnly,
+    [Parameter()][switch]$summary
 )
 
 # source the cohesity-api helper code
@@ -151,16 +152,20 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         $vCenterName = $vCenter.protectionSource.name
         if($vCenterName -notin $script:vmHierarchy.Keys){
             $script:vmHierarchy[$vCenterName] = @()
-            # "Inspecting $vCenterName hierarchy..."
             indexChildren $vCenterName $vCenter @()
             $script:vmHierarchy[$vCenterName] = $script:vmHierarchy[$vCenterName] | ConvertTo-Json -Depth 99 | ConvertFrom-Json
         }
         $protectedIds = @($job.vmwareParams.objects.id)
         $selectedVMs = @()
         $excludedVMs = @()
-
+        $inclusionBy = @()
+        $exclusionBy = @()
         # explicit and folder selections
         foreach($protectedId in $protectedIds){
+            $protectedEntity = $script:vmHierarchy[$vCenterName] | Where-Object {$_.id -eq $protectedId}
+            if($protectedEntity){
+                $inclusionBy = @($inclusionBy + $protectedEntity.type.subString(1) | Sort-Object -Unique)
+            }      
             $vms = getChildren $vCenterName $protectedId
             foreach($vm in $vms){
                 if($vm.id -eq $protectedId){
@@ -180,6 +185,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
 
         # tag selections
         foreach($tags in $job.vmwareParams.vmTagIds){
+            $inclusionBy = @($inclusionBy + 'Tag' | Sort-Object -Unique)
             $autoprotected = $True
             $matchVMs = getTaggedVMs $vCenterName $tags
             $selectedVMs = @($selectedVMs + $matchVMs)
@@ -187,6 +193,10 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
 
         # explicit and folder exclusions
         foreach($exclusion in $job.vmwareParams.excludeObjectIds){
+            $excludedEntity = $script:vmHierarchy[$vCenterName] | Where-Object {$_.id -eq $exclusion}
+            if($excludedEntity){
+                $exclusionBy = @($exclusionBy + $excludedEntity.type.subString(1) | Sort-Object -Unique)
+            }
             $excludeVMs = getChildren $vCenterName $exclusion
             $excludedVMs = @($excludedVMs + $excludeVMs)
             foreach($excludeVM in $excludeVMs){
@@ -206,6 +216,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
 
         # tag exclusions
         foreach($tags in $job.vmwareParams.excludeVmTagIds){
+            $exclusionBy = @($exclusionBy + 'Tag' | Sort-Object -Unique)
             $matchVMs = getTaggedVMs $vCenterName $tags
             foreach($matchVM in $matchVMs){
                 $selectedVMs = @($selectedVMs | Where-Object {$_.id -ne $matchVM.id})
@@ -221,22 +232,25 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         }else{
             "`n========================================`nProtection Group: $($job.name)"
             "Autoprotected: $autoprotected"
-            "Inclusions by: $(@($selectedVMs.'selected by' | Sort-Object -Unique) -join ', ')"
+            "Inclusions by: $(@($inclusionBy | Sort-Object -Unique) -join ', ')"
             if($excludedVMs.Count -gt 0){
-                "Exclusions by: $(@($excludedVMs.'selected by' | Sort-Object -Unique) -join ', ')"
+                "Exclusions by: $(@($exclusionBy | Sort-Object -Unique) -join ', ')"
+                # "Exclusions by: $(@($excludedVMs.'selected by' | Sort-Object -Unique) -join ', ')"
             }
             "========================================`n"
-            "Inclusions:"
-            $selectedVMs | Sort-Object -Property name | Select-Object -Property name, 'selected by', 'selected entity' | Format-Table
-            foreach($selectedVM in $selectedVMs){
-                "$($cluster.name)`t$($job.name)`t$($selectedVM.name)`tIncluded`t$($selectedVM.'selected by')`t$($selectedVM.'selected entity')`t$($selectedVM.canonical)" | Out-File -FilePath $outfileName -Append
-            }
-            if($showExclusions){
-                if($excludedVMs.Count -gt 0){
-                    "Exclusions:"
-                    $excludedVMs | Sort-Object -Property name | Select-Object -Property name, 'selected by', 'selected entity' | Format-Table
-                    foreach($excludedVM in $excludedVMs){
-                        "$($cluster.name)`t$($job.name)`t$($excludedVM.name)`tExcluded`t$($excludedVM.'selected by')`t$($excludedVM.'selected entity')`t$($excludedVM.canonical)" | Out-File -FilePath $outfileName -Append
+            if(!$summary){
+                "Inclusions:"
+                $selectedVMs | Sort-Object -Property name | Select-Object -Property name, 'selected by', 'selected entity' | Format-Table
+                foreach($selectedVM in $selectedVMs){
+                    "$($cluster.name)`t$($job.name)`t$($selectedVM.name)`tIncluded`t$($selectedVM.'selected by')`t$($selectedVM.'selected entity')`t$($selectedVM.canonical)" | Out-File -FilePath $outfileName -Append
+                }
+                if($showExclusions){
+                    if($excludedVMs.Count -gt 0){
+                        "Exclusions:"
+                        $excludedVMs | Sort-Object -Property name | Select-Object -Property name, 'selected by', 'selected entity' | Format-Table
+                        foreach($excludedVM in $excludedVMs){
+                            "$($cluster.name)`t$($job.name)`t$($excludedVM.name)`tExcluded`t$($excludedVM.'selected by')`t$($excludedVM.'selected entity')`t$($excludedVM.canonical)" | Out-File -FilePath $outfileName -Append
+                        }
                     }
                 }
             }

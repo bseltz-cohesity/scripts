@@ -49,3 +49,4 @@ Place both files in a folder together and run the main script.
 * -jobName: (optional) one or more job names to include (comma separated)
 * -jobList: (optional) text file of job names to include (one per line)
 * -showExclusions: (optional) show exclusions (only inclusions shown by default)
+* -summary: (optional) only show job summary headings (do not show VMs)
