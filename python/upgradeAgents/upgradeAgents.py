@@ -21,7 +21,6 @@ parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
-parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-o', '--ostype', type=str, default=None)
 parser.add_argument('-x', '--execute', action='store_true')
 parser.add_argument('-s', '--showcurrent', action='store_true')
@@ -42,7 +41,6 @@ useApiKey = args.useApiKey
 password = args.password
 noprompt = args.noprompt
 mfacode = args.mfacode
-emailmfacode = args.emailmfacode
 ostype = args.ostype
 showcurrent = args.showcurrent
 execute = args.execute
@@ -71,7 +69,7 @@ def gatherList(param=None, filename=None, name='items', required=True):
 agentnames = gatherList(agentnames, agentlist, name='agents', required=False)
 
 # authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), emailMfaCode=emailmfacode, mfaCode=mfacode, tenantId=tenant)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, tenantId=tenant)
 
 # exit if not authenticated
 if apiconnected() is False:
