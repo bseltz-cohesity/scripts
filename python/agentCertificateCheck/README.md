@@ -70,7 +70,6 @@ Running the script against selected Helios clusters (note: you will need to crea
 * -mcm, --mcm: (optional) connect through MCM
 * -c, --clustername: (optional) helios/mcm cluster to connect to (will loop through all clusters if connected to helios)
 * -m, --mfacode: (optional) MFA code for authentication
-* -e, --emailmfacode: (optional) send MFA code via email
 
 ## Other Parameters
 

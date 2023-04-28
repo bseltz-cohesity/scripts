@@ -20,7 +20,6 @@ parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
-parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-w', '--excludewindows', action='store_true')
 parser.add_argument('-x', '--expirywarningdate', type=str, default='2023-06-01 00:00:00')
 args = parser.parse_args()
@@ -35,14 +34,13 @@ useApiKey = args.useApiKey
 password = args.password
 noprompt = args.noprompt
 mfacode = args.mfacode
-emailmfacode = args.emailmfacode
 excludewindows = args.excludewindows
 expirywarningdate = args.expirywarningdate
 
 expwarningusecs = dateToUsecs(expirywarningdate)
 
 # authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), emailMfaCode=emailmfacode, mfaCode=mfacode, tenantId=tenant)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, tenantId=tenant)
 
 # exit if not authenticated
 if apiconnected() is False:
@@ -61,7 +59,9 @@ else:
     clusternames = [cluster['name']]
     cluster = api('get', 'cluster')
     outfile = 'agentCertificateCheck-%s-%s.csv' % (cluster['name'], dateString)
+    impactfile = 'impactedAgents-%s-%s.txt' % (cluster['name'], dateString)
 
+i = codecs.open(impactfile, 'w')
 f = codecs.open(outfile, 'w')
 f.write('Cluster Name,Agent Name,Status,Cluster Version,MultiTenancy,Agent Version,Agent Port,OS Type,OS Name,Cert Expires,Error Message\n')
 
@@ -153,6 +153,7 @@ for clustername in clusternames:
                 else:
                     if expiringSoon is True:
                         status = 'impacted'
+                        i.write('%s\n' % name)
                     else:
                         status = 'not impacted'
                 print('%s:%s,%s,(%s) %s -> %s (%s)' % (name, port, version, hostType, osName, expires, status))
@@ -164,4 +165,6 @@ for clustername in clusternames:
         print('** No physical protection sources found on the cluster **')
         f.write('%s,No agents registered on the cluster,,%s\n' % (cluster['name'], clusterVersion))
 f.close()
-print('\nOutput saved to %s\n' % outfile)
+i.close()
+print('\nOutput saved to %s' % outfile)
+print('Impacted agent names saved to %s\n' % impactfile)
