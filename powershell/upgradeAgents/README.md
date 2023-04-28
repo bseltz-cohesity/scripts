@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* upgradeAgents.ps1: the main PowerShell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* upgradeAgents.ps1: the main PowerShell script - md5 checksum: 63c729dd6c23582c781826e5cddc74f4
+* cohesity-api.ps1: the Cohesity REST API helper module - md5 checksum: 109f7298165aa8a84de045932d76476c
 
 Place all files in a folder together, then run the main script like so:
 
