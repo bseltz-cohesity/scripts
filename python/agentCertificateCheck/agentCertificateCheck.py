@@ -75,19 +75,22 @@ for clustername in clusternames:
     orgsenabled = cluster['multiTenancyEnabled']
 
     # agent gflags
-    flags = api('get', '/nexus/cluster/list_gflags')
-    gflaglist = []
+    try:
+        flags = api('get', '/nexus/cluster/list_gflags')
+        gflaglist = []
 
-    for service in flags['servicesGflags']:
-        servicename = service['serviceName']
-        if servicename == 'magneto':
-            gflags = service['gflags']
-            for gflag in gflags:
-                if 'agent_port_number' in gflag['name']:
-                    gflaglist.append({
-                        'name': gflag['name'],
-                        'value': gflag['value']
-                    })
+        for service in flags['servicesGflags']:
+            servicename = service['serviceName']
+            if servicename == 'magneto':
+                gflags = service['gflags']
+                for gflag in gflags:
+                    if 'agent_port_number' in gflag['name']:
+                        gflaglist.append({
+                            'name': gflag['name'],
+                            'value': gflag['value']
+                        })
+    except Exception:
+        pass
 
     nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical&allUnderHierarchy=true')
     hosts = api('get', '/nexus/cluster/get_hosts_file')
