@@ -2,13 +2,13 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script will report certificate expirations for registered agents.
+This script will report certificate expirations for registered agents. The script will output two files: agentCertificateCheck-clusterName-DateTime.csv wil contain a detailed report, and impactedAgents-clusterName-dateTime.txt will contain the names of agents that require urgent upgrade. This text file can be used as input to the upgradeAgents.py script: <https://github.com/bseltz-cohesity/scripts/tree/master/python/upgradeAgents>
 
 Note: this script will only run on Linux where the openssl command is available. You can run it directly on the Cohesity cluster if shell access is available, or on a linux host. The script requires direct network access to the hosts via port 50051/tcp, so inter-site firewall rules would be problematic.
 
 ## Components
 
-* agentCertificateCheck.py: the main python script - md5 checksum: d1a24550eef62cc9ca1ac627382ae321
+* agentCertificateCheck.py: the main python script - md5 checksum: 56b6f847ce892f72e3c8db690bb0a383
 * pyhesity.py: the Cohesity REST API helper module - md5 checksum: 2147a0db6ec080eb3a489b4a0325e0ce
 
 You can download the scripts using the following commands:
