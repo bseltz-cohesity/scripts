@@ -6,8 +6,8 @@ This script will initiate upgrade for registered agents.
 
 ## Components
 
-* upgradeAgents.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* upgradeAgents.py: the main python script - md5 checksum: 5d45665d3bdba645caa3afab79a7a7b4
+* pyhesity.py: the Cohesity REST API helper module - md5 checksum: 2147a0db6ec080eb3a489b4a0325e0ce
 
 You can download the scripts using the following commands:
 
