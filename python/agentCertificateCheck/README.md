@@ -77,6 +77,20 @@ Running the script against selected Helios clusters (note: you will need to crea
 * -w, --excludewindows: (optional) skip windows sources
 * -x, --expirywarningdate: (optional) default is '2023-06-01 00:00:00'
 
+## Authenticating to Helios
+
+See official doc here: <https://docs.cohesity.com/WebHelios/Content/Helios/Access_Management.htm#ManageAPIKeys>
+
+Helios uses an API key for authentication. To acquire an API key:
+
+* log onto Helios
+* click the gear icon (settings) -> access management -> API Keys
+* click Add API Key
+* enter a name for your key
+* click Save
+
+Immediately copy the API key (you only have one chance to copy the key. Once you leave the screen, you can not access it again). When connecting to helios, if you are prompted for a password, enter the API key as the password.
+
 ## What Does Unknown Mean
 
 There are several failure modes that can result in a lack of response or lack of details returned for an agent, resulting in 'unknown' in the script output. For example:

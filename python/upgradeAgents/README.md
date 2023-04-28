@@ -66,6 +66,20 @@ Running the script against selected Helios clusters (note: you will need to crea
 * -k, --skipwarnings: (optional) exclude agents that have registration/refresh errors
 * -r, --refresh: (optional) perform refresh before show/upgrade operation (may be slow!)
 
+## Authenticating to Helios
+
+See official doc here: <https://docs.cohesity.com/WebHelios/Content/Helios/Access_Management.htm#ManageAPIKeys>
+
+Helios uses an API key for authentication. To acquire an API key:
+
+* log onto Helios
+* click the gear icon (settings) -> access management -> API Keys
+* click Add API Key
+* enter a name for your key
+* click Save
+
+Immediately copy the API key (you only have one chance to copy the key. Once you leave the screen, you can not access it again). When connecting to helios, if you are prompted for a password, enter the API key as the password.
+
 ## The Python Helper Module - pyhesity.py
 
 The helper module provides functions to simplify operations such as authentication, api calls, storing encrypted passwords, and converting date formats. The module requires the requests python module.

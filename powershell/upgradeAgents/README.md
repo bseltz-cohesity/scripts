@@ -105,6 +105,8 @@ To perform a refresh:
 
 ## Authenticating to Helios
 
+See official doc here: <https://docs.cohesity.com/WebHelios/Content/Helios/Access_Management.htm#ManageAPIKeys>
+
 Helios uses an API key for authentication. To acquire an API key:
 
 * log onto Helios
