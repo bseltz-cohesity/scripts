@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This PowerShell script detects and upgrades any upgradable agents for physical protection sources registered to the Cohesity cluster.
+This PowerShell script detects and upgrades any upgradable agents for physical protection sources registered to the Cohesity cluster. This script can be run from anywhere that can connect to the Cohesity clusters(s) or can connect to helios.
 
 ## Download the script
 
@@ -102,3 +102,15 @@ To perform a refresh:
 * -upgrade: (optional) initiate agent upgrades (will just show status if omitted)
 * -excludeCurrent: (optional) do not display agents that are up to date
 * -refresh: (optional) force refresh (this can be slow, recommend using -skipWarnings when using this)
+
+## Authenticating to Helios
+
+Helios uses an API key for authentication. To acquire an API key:
+
+* log onto Helios
+* click the gear icon (settings) -> access management -> API Keys
+* click Add API Key
+* enter a name for your key
+* click Save
+
+Immediately copy the API key (you only have one chance to copy the key. Once you leave the screen, you can not access it again). When connecting to helios, if you are prompted for a password, enter the API key as the password.
