@@ -17,7 +17,7 @@ $clusterName = $cluster.name
 $dateString = (get-date).ToString("yyyy-MM-dd")
 $outfileName = "$clusterName-ArchivedObjects-$dateString.csv"
 
-"Job Name,Job Type,Protected Object,Latest Backup Date,Latest Archive Date,Archive Target" | Out-File -FilePath $outfileName
+"Job Name,Job Type,Protected Object,Latest Backup Date,Latest Archive Date,Archive Target,ArchiveExpiry" | Out-File -FilePath $outfileName
 
 ### find recoverable objects
 $ro = api get /searchvms
@@ -49,11 +49,11 @@ if($ro.count -gt 0){
         }
         $latestVersion = 0
         $latestArchiveVersion = 0
+        $archiveExpiryUsecs = 0
         $vaultName = ''
         $doc.versions | ForEach-Object {  
             $version = $_
             $startTime = $version.instanceId.jobStartTimeUsecs
-            $archive = 0
             if($latestVersion -eq 0){
                 $latestVersion = $startTime
             }
@@ -63,8 +63,8 @@ if($ro.count -gt 0){
                         $latestArchiveVersion = $startTime
                         $vaultName = $_.target.archivalTarget.name
                     }
-                    if($_.expiryTimeUsecs -gt $archive){
-                        $archive = $_.expiryTimeUsecs
+                    if($archiveExpiryUsecs -eq 0){
+                        $archiveExpiryUsecs = $_.expiryTimeUsecs
                     }
                 }
             }
@@ -74,9 +74,14 @@ if($ro.count -gt 0){
         }else{
             $archiveVersion = (usecsToDate $latestArchiveVersion).ToString("yyyy-MM-dd hh:mm")
         }
+        if($archiveExpiryUsecs -eq 0){
+            $archiveExpiry = ''
+        }else{
+            $archiveExpiry = (usecsToDate $archiveExpiryUsecs).ToString("yyyy-MM-dd hh:mm")
+        }
         $runDate = (usecsToDate $latestVersion).ToString("yyyy-MM-dd hh:mm")
         write-host ("{0}, {1}, {2}, {3}, {4}, {5}" -f $jobName, $objType, $objName, $runDate, $archiveVersion, $vaultName)
-        "$jobName,$objType,$objName,$runDate,$archiveVersion,$vaultName" | Out-File -FilePath $outfileName -Append
+        "$jobName,$objType,$objName,$runDate,$archiveVersion,$vaultName,$archiveExpiry" | Out-File -FilePath $outfileName -Append
     }
     write-host "`nReport Saved to $outFileName`n" -ForegroundColor Blue
 }
