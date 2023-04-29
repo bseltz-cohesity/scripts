@@ -36,7 +36,7 @@ To connect directly to a cluster using a username and password:
 
 ```bash
 -v mycluster -u myuser -d local -s view1 -t view2 -pwd Sw0rdFish!
-# for an AD acccount use -d mydomain.net (FQDN)
+# for an AD account use -d mydomain.net (FQDN)
 ```
 
 To connect directly to a cluster using an API Key
