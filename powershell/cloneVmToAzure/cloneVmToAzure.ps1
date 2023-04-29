@@ -1,8 +1,14 @@
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,
-    [Parameter(Mandatory = $True)][string]$username,
+    [Parameter()][string]$vip = 'helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
     [Parameter()][string]$domain = 'local',
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password = $null,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode = $null,
+    [Parameter()][string]$clusterName,
     [Parameter(Mandatory = $True)][string]$vmName,
     [Parameter()][datetime]$recoverDate,
     [Parameter()][string]$prefix,

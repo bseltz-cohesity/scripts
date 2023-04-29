@@ -44,14 +44,14 @@ Place the files in a folder together and run the main script like so:
 
 ## Authentication Parameters
 
-* -vip: (optional) one or more clusters to connect to (comma separated) (defaults to helios.cohesity.com)
+* -vip: (optional) cluster to connect to (defaults to helios.cohesity.com)
 * -username: (optional) name of user to connect to Cohesity (defaults to helios)
 * -domain: (optional) your AD domain (defaults to local)
 * -useApiKey: (optional) use API key for authentication
 * -password: (optional) will use cached password or will be prompted
 * -noPrompt: (optional) do not prompt for password
-* -clusterName: (optional) one or more clusters (comma separated) to connect to when connecting through Helios (defaults to all helios clusters)
-* -mfaCode: (optional) totp for MFA (only works when connecting directly to one cluster)
+* -clusterName: (optional) cluster to connect to when connect to when connecting through Helios
+* -mfaCode: (optional) OTP code for MFA
 
 ## Other Parameters
 
