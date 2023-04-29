@@ -38,13 +38,20 @@ curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/easyScr
 
 ## Example
 
-To connect directly to a cluster:
+To connect directly to a cluster using a username and password:
 
 ```bash
--v mycluster -u myuser -d mydomain.net -s view1 -t view2 -pwd Sw0rdFish!
+-v mycluster -u myuser -d local -s view1 -t view2 -pwd Sw0rdFish!
+# for an AD acccount use -d mydomain.net (FQDN)
 ```
 
-To connect via Helios:
+To connect directly to a cluster using an API Key
+
+```bash
+-v mycluster -u myuser -d local -s view1 -t view2 -i -pwd 3abd0bc2-4fc4-57b0-412b-3c01d54d2727
+```
+
+To connect via Helios using an API Key:
 
 ```bash
 -c mycluster -u myuser@mydomain.net -s view1 -t view2 -pwd 3abd0bc2-4fc4-57b0-412b-3c01d54d2727
