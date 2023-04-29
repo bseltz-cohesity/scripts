@@ -48,7 +48,7 @@ To connect directly to a cluster using an API Key
 To connect via Helios using an API Key:
 
 ```bash
--c mycluster -u myuser@mydomain.net -s view1 -t view2 -pwd 3abd0bc2-4fc4-57b0-412b-3c01d54d2727
+-c mycluster -s view1 -t view2 -pwd 3abd0bc2-4fc4-57b0-412b-3c01d54d2727
 ```
 
 ## Getting an API Key for Helios
