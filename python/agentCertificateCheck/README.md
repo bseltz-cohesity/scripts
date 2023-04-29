@@ -86,7 +86,7 @@ Customer `firewall rules` may block access to the Cohesity cluster. This causes 
 
 ## Running the script on the cluster
 
-This has the best chance of success, even if it means contacting support to get host shell access (6.7x and later). All dependencies are already installed and the firewall will allow the script to reach the agents. Use `-v localhost` as some clusters can't resolve their own DNS name. You can use an IP address (node IP or VIP) but using localhost saves you the trouble of finding an IP.
+This has the best chance of success, even if it means contacting support to enable host shell access (6.7x and later). All dependencies are already installed and the firewall will allow the script to reach the agents. Use `-v localhost` as some clusters can't resolve their own DNS name. You can use an IP address (node IP or VIP) but using localhost saves you the trouble of finding an IP.
 
 Use an account with `admin rights`. This allows the discovery of gflags that customize agent port numbers. Without these rights, gflag discovery is skipped leading to unreachable/unknown agents if they are using custom port numbers (this is uncommon).
 
