@@ -42,11 +42,19 @@ Place the files in a folder together and run the main script like so:
                      -wait
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: Cohesity cluster to connect to
-* -username: Cohesity username (e.g. admin)
-* -domain: (optional) Active Directory domain (defaults to 'local')
+* -vip: (optional) one or more clusters to connect to (comma separated) (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -clusterName: (optional) one or more clusters (comma separated) to connect to when connecting through Helios (defaults to all helios clusters)
+* -mfaCode: (optional) totp for MFA (only works when connecting directly to one cluster)
+
+## Other Parameters
+
 * -vmName: Name of VM to recover
 * -recoverDate: (optional) e.g. '2021-08-18 23:30:00' (will use most recent at or before this date)
 * -prefix: (optional) add a prefix to the VM name during restore
