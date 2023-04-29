@@ -18,6 +18,7 @@ You can download the zip file here: <https://github.com/bseltz-cohesity/scripts/
 4. enter a description (optional)
 5. enter the arguments (see below)
 6. browse and upload the zip file
+7. Optionally configure a schedule
 
 ## Arguments
 
