@@ -78,23 +78,23 @@ Running the script against selected Helios clusters (note: you will need to crea
 
 ## Running the script on a linux jump host
 
-Running the script from a jump host can be problematic because the script requires a python module called requests to be installed. If not already installed, customers may face confusion around error messages, python versions, and module installation steps, requiring someone with python expertise to assist.
+Running the script from a jump host can be problematic because the script requires a python module called `requests` to be installed. If not already installed, customers may face confusion around error messages, python versions, and module installation steps, requiring someone with python expertise to assist.
 
-Customer firewall rules may block access to the Cohesity cluster. This causes the script to hang for some time until the connection times out.
+Customer `firewall rules` may block access to the Cohesity cluster. This causes the script to hang for some time until the connection times out.
 
-Firewall rules may also block the jump host from reaching the cluster's agents. This causes agents to be reported as unreachable with a certificate expiration date of unknown, thus defeating the purpose of the script.
+`Firewall rules` may also block the jump host from reaching the cluster's agents. This causes agents to be reported as `unreachable` with a certificate expiration date of `unknown`, thus defeating the purpose of the script.
 
 ## Running the script on the cluster
 
-This has the best chance of success, even if it means contacting support to get secure shell access. All dependencies are already installed and the firewall will allow the script to reach the agents. Use -v localhost as some clusters can't resolve their own DNS name. You can use an IP address (node IP or VIP) but using localhost saves you the trouble of finding an IP.
+This has the best chance of success, even if it means contacting support to get secure shell access. All dependencies are already installed and the firewall will allow the script to reach the agents. Use `-v localhost` as some clusters can't resolve their own DNS name. You can use an IP address (node IP or VIP) but using localhost saves you the trouble of finding an IP.
 
-Use an account with admin rights. This allows the discovery of gflags that customize agent port numbers. Without these rights, gflag discovery is skipped leading to unreachable/unknown agents if they are using custom port numbers (this is uncommon).
+Use an account with `admin rights`. This allows the discovery of gflags that customize agent port numbers. Without these rights, gflag discovery is skipped leading to unreachable/unknown agents if they are using custom port numbers (this is uncommon).
 
-If using an account that has MFA enabled, add -m xxxxxx to the command line (replace xxxxxx with the current OTP code from your authenticator app).
+If using an account that has `MFA` enabled, add `-m xxxxxx` to the command line (replace xxxxxx with the current OTP code from your authenticator app).
 
 ## Using Helios
 
-Connecting through helios is great because the script can loop through all of the customer's clusters in one shot, but again, if customer firewall rules are tightly controlled, the script running on clusterA may not be able to reach clusterB's agents, causing agents again to be reported as unreachable/unknown. In this case, you must run the script from each cluster, one at a time.
+Connecting through helios is great because the script can loop through all of the customer's clusters in one shot, but again, if customer `firewall rules` are tightly controlled, the script running on clusterA may not be able to reach clusterB's agents, causing agents again to be reported as unreachable/unknown. In this case, you must run the script from each cluster, one at a time.
 
 ## Authenticating to Helios
 
