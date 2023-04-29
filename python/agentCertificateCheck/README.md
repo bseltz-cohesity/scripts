@@ -76,7 +76,7 @@ Running the script against selected Helios clusters (note: you will need to crea
 * -w, --excludewindows: (optional) skip windows sources
 * -x, --expirywarningdate: (optional) default is '2023-06-01 00:00:00'
 
-## Running the script on a linux jump host
+## Running the Script on a Linux Jump Host
 
 Running the script from a jump host can be problematic because the script requires a python module called `requests` to be installed. If not already installed, customers may face confusion around error messages, python versions, and module installation steps, requiring someone with python expertise to assist.
 
@@ -84,7 +84,7 @@ Customer `firewall rules` may block access to the Cohesity cluster. This causes 
 
 `Firewall rules` may also block the jump host from reaching the cluster's agents. This causes agents to be reported as `unreachable` with a certificate expiration date of `unknown`, thus defeating the purpose of the script.
 
-## Running the script on the cluster
+## Running the Script on the Cluster
 
 This has the best chance of success, even if it means contacting support to enable host shell access (6.7x and later). All dependencies are already installed and the firewall will allow the script to reach the agents. Use `-v localhost` as some clusters can't resolve their own DNS name. You can use an IP address (node IP or VIP) but using localhost saves you the trouble of finding an IP.
 
