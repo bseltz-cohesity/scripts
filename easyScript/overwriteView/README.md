@@ -8,13 +8,7 @@ Warning: this script will overwrite data on the target view. Make sure you kknow
 
 ## Download the Script
 
-You can download the scripts using the following commands:
-
-```bash
-# download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/easyScript/overwriteView/overwriteView.zip
-# end download commands
-```
+You can download the zip file here: <https://github.com/bseltz-cohesity/scripts/raw/master/easyScript/overwriteView/overwriteView.zip>
 
 ## Uploading the script to EasyScript
 
@@ -48,7 +42,7 @@ To connect directly to a cluster using a username and password:
 To connect directly to a cluster using an API Key
 
 ```bash
--v mycluster -u myuser -d local -s view1 -t view2 -i -pwd 3abd0bc2-4fc4-57b0-412b-3c01d54d2727
+-v mycluster -s view1 -t view2 -i -pwd 3abd0bc2-4fc4-57b0-412b-3c01d54d2727
 ```
 
 To connect via Helios using an API Key:
