@@ -51,6 +51,7 @@ now = datetime.now()
 dateString = now.strftime("%Y-%m-%d-%H-%M-%S")
 
 if mcm or vip.lower() == 'helios.cohesity.com':
+    impactfile = 'impactedAgents-helios-%s.txt' % dateString
     outfile = 'agentCertificateCheck-helios-%s.csv' % dateString
     if clusternames is None or len(clusternames) == 0:
         clusternames = [c['name'] for c in heliosClusters()]
