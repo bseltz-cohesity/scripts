@@ -12,12 +12,12 @@ You can download the zip file here: <https://github.com/bseltz-cohesity/scripts/
 
 ## Uploading the script to EasyScript
 
-* In EasyScript, click "Upload a Script"
-* Enter a descriptive name for the script
-* Select Python 2.7 or 3.7 (both work for this script)
-* enter a description (optional)
-* enter the arguments (see below)
-* browse and upload the zip file
+1. In EasyScript, click "Upload a Script"
+2. Enter a descriptive name for the script
+3. Select Python 2.7 or 3.7 (both work for this script)
+4. enter a description (optional)
+5. enter the arguments (see below)
+6. browse and upload the zip file
 
 ## Arguments
 
@@ -55,10 +55,10 @@ To connect via Helios using an API Key:
 
 Helios uses an API key for authentication. To acquire an API key:
 
-* log onto Helios
-* click Settings -> access management -> API Keys
-* click Add API Key
-* enter a name for your key
-* click Save
+1. log onto Helios
+2. click Settings -> access management -> API Keys
+3. click Add API Key
+4. enter a name for your key
+5. click Save
 
 Immediately copy the API key (you only have one chance to copy the key. Once you leave the screen, you can not access it again).
