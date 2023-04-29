@@ -31,7 +31,7 @@ Place the files in a folder together and run the main script like so:
                      -vmName myvm `
                      -prefix 'restore' `
                      -powerOn `
-                     -azureSource '0f2537ad-bf52-2711-ac6e-b2f5d2bc737c `
+                     -azureSource 0f2537ad-bf52-2711-ac6e-b2f5d2bc737c `
                      -resourceGroup rg1cloudazure66 `
                      -storageAccount sa1cloudazure66 `
                      -storageContainer sc1cloudazure66 `
