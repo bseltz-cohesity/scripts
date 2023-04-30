@@ -51,7 +51,7 @@ apiauth supports the following parameters:
 * -helios: (optional) will use Helios api key for authentication (switch)
 * -regionid: (optional) DMaaS region
 * -mfaCode: (optional) Totp MFA code
-* -emailMfaCode: (optional) send MFA code via email (switch)
+* -emailMfaCode: (deprecated) ***
 * -quiet: (optional) hide output from authentication (switch)
 * -noprompt: (optional) do not prompt for password (switch)
 * -useApiKey: (optional) use API key for authentication (switch)
@@ -60,6 +60,7 @@ apiauth supports the following parameters:
 * -heliosAuthentication: (optional) use Helios authentication (boolean - default is $false)
 * -sendMfaCode: (optional) send MFA code via email (boolean - default is $false)
 * -noPromptForPassword: (optional) do not prompt for password (boolean - default is $false)
+* -timoout: (optional) default is 300 (seconds)
 
 You can combine the domain and username like this:
 
