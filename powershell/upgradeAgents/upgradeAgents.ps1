@@ -18,7 +18,8 @@ param (
     [Parameter()][switch]$skipWarnings,
     [Parameter()][switch]$upgrade,
     [Parameter()][switch]$excludeCurrent,
-    [Parameter()][switch]$refresh
+    [Parameter()][switch]$refresh,
+    [Parameter()][Int]$timeout = 10
 )
 
 # gather list from command line params and file
@@ -137,7 +138,7 @@ foreach($v in $vip){
                                             if($upgrade){
                                                 $result = api post physicalAgents/upgrade $thisUpgrade
                                             }else{
-                                                $result = api post "protectionSources/refresh/$($node.rootNode.id)"
+                                                $result = api post "protectionSources/refresh/$($node.rootNode.id)" -timeout $timeout -quiet
                                             }
                                             if($tenant){
                                                 switchback

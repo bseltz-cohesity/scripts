@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* upgradeAgents.ps1: the main PowerShell script - md5 checksum: 0564bb838752190b2a5d647b74a9f61c
-* cohesity-api.ps1: the Cohesity REST API helper module - md5 checksum: 109f7298165aa8a84de045932d76476c
+* upgradeAgents.ps1: the main PowerShell script - md5 checksum: 7da10e3e153dbec1c5b9fdb15125b4d0
+* cohesity-api.ps1: the Cohesity REST API helper module - md5 checksum: 6713f57c974e5acc8ee0075c3f1fb6bf
 
 Place all files in a folder together, then run the main script like so:
 
@@ -101,6 +101,7 @@ To perform a refresh:
 * -upgrade: (optional) initiate agent upgrades (will just show status if omitted)
 * -excludeCurrent: (optional) do not display agents that are up to date
 * -refresh: (optional) force refresh (this can be slow, recommend using -skipWarnings when using this)
+* -timeout: (optional) timeout after X seconds waiting for response from refresh (default is 10)
 
 ## Authenticating to Helios
 
