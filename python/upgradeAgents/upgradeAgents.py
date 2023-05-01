@@ -120,20 +120,6 @@ for clustername in clusternames:
                     paramkey = node['rootNode']['hypervProtectionSource']
                     osName = 'HyperV'
                     hostType = 'Windows'
-                    # try:
-                    #     thisSource = api('get', 'protectionSources?id=%s' % node['rootNode']['id'])
-                    #     if thisSource is not None and len(thisSource) > 0:
-                    #         if 'nodes' in thisSource[0] and thisSource[0]['nodes'] is not None and len(thisSource[0]['nodes']) > 0:
-                    #             for thisNode in thisSource[0]['nodes']:
-                    #                 if thisNode['protectionSource']['name'] == 'All Hosts':
-                    #                     if 'nodes' in thisNode and thisNode['nodes'] is not None and len(thisNode['nodes']) > 0:
-                    #                         for hostNode in thisNode['nodes']:
-                    #                             if hostNode['protectionSource']['hypervProtectionSource']['type'] == 'kHypervHost':
-                    #                                 nodes['rootNodes'].append({
-                    #                                     'rootNode': hostNode['protectionSource']
-                    #                                 })
-                    # except Exception:
-                    #     pass
                 name = node['rootNode']['name']
                 hostType = 'unknown'
                 errorMessage = ''
@@ -189,13 +175,16 @@ for clustername in clusternames:
                     if thisSource is not None and len(thisSource) > 0:
                         if 'nodes' in thisSource[0] and thisSource[0]['nodes'] is not None and len(thisSource[0]['nodes']) > 0:
                             for thisNode in thisSource[0]['nodes']:
-                                if thisNode['protectionSource']['name'] == 'All Hosts':
-                                    if 'nodes' in thisNode and thisNode['nodes'] is not None and len(thisNode['nodes']) > 0:
-                                        for hostNode in thisNode['nodes']:
-                                            if hostNode['protectionSource']['hypervProtectionSource']['type'] == 'kHypervHost':
-                                                nodes['rootNodes'].append({
-                                                    'rootNode': hostNode['protectionSource']
-                                                })
+                                if thisNode['protectionSource']['hypervProtectionSource']['type'] in ['kHostGroup', 'kHostCluster', 'kHypervHost']:
+                                    if 'nodes' in thisNode:
+                                        nodes['rootNodes'].append({
+                                            'rootNode': thisNode['protectionSource'],
+                                            'nodes': thisNode['nodes']
+                                        })
+                                    else:
+                                        nodes['rootNodes'].append({
+                                            'rootNode': thisNode['protectionSource'],
+                                        })
                 except Exception:
                     pass
             if 'entityPermissionInfo' in node['rootNode']:
@@ -211,19 +200,16 @@ for clustername in clusternames:
                 pass
             if len(agentnames) == 0 or name.lower() in [a.lower() for a in agentnames]:
                 if 'agents' in paramkey and paramkey['agents'] is not None and len(paramkey['agents']) > 0:
-                    try:
-                        version = paramkey['agents'][0]['version']
-                        # hostType = node['rootNode']['physicalProtectionSource']['hostType'][1:]
-                        # osName = node['rootNode']['physicalProtectionSource']['osName']
-                    except Exception:
-                        pass
                     for agent in paramkey['agents']:
+                        if 'version' in agent:
+                            version = agent['version']
                         if 'upgradability' in agent and agent['upgradability'] is not None:
                             if agent['upgradability'] == 'kUpgradable':
                                 status = 'upgradable'
                                 agentIds.append(agent['id'])
                             else:
                                 status = 'current'
+                            break
                 if ostype is None or ostype.lower() == hostType.lower():
                     if len(agentIds) > 0:
                         if errorMessage != '':
@@ -247,7 +233,8 @@ for clustername in clusternames:
                                 reportNextSteps = True
                     else:
                         if showcurrent is True or name.lower() in [a.lower() for a in agentnames]:
-                            print('    %s (%s): %s  %s' % (name, hostType, status, errors))
+                            if 'agents' in paramkey:
+                                print('    %s (%s): %s  %s' % (name, hostType, status, errors))
                 f.write('%s,%s,%s,%s,%s,%s,%s,%s\n' % (cluster['name'], cluster['clusterSoftwareVersion'], name, version, hostType, osName, status, errorMessage))
 
 if reportNextSteps is True:
