@@ -128,9 +128,10 @@ for clustername in clusternames:
                                     if thisNode['protectionSource']['name'] == 'All Hosts':
                                         if 'nodes' in thisNode and thisNode['nodes'] is not None and len(thisNode['nodes']) > 0:
                                             for hostNode in thisNode['nodes']:
-                                                nodes['rootNodes'].append({
-                                                    'rootNode': hostNode['protectionSource']
-                                                })
+                                                if hostNode['protectionSource']['hypervProtectionSource']['type'] == 'kHypervHost':
+                                                    nodes['rootNodes'].append({
+                                                        'rootNode': hostNode['protectionSource']
+                                                    })
                     except Exception:
                         pass
                 if 'agents' in paramkey:
