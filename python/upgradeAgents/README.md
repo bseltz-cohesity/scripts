@@ -6,7 +6,7 @@ This script will initiate upgrade for registered agents.
 
 ## Components
 
-* upgradeAgents.py: the main python script - md5 checksum: eba8c4b4fd3664702a696f8506b6b057
+* upgradeAgents.py: the main python script - md5 checksum: 8dee3b20a3a18f556bf2073cca42cbac
 * pyhesity.py: the Cohesity REST API helper module - md5 checksum: 2147a0db6ec080eb3a489b4a0325e0ce
 
 You can download the scripts using the following commands:
@@ -64,6 +64,8 @@ Running the script against selected Helios clusters (note: you will need to crea
 * -l, --agentlist: (optional) text file of agents to include (one per line)
 * -k, --skipwarnings: (optional) exclude agents that have registration/refresh errors
 * -r, --refresh: (optional) perform refresh before show/upgrade operation (may be slow!)
+* -w, --sleeptime: (optional) number of seconds to wait after throttle limit is reached
+* -t, --throttle: (optional) number of upgrades to start before sleeping (default is 12)
 
 ## Authenticating to Helios
 

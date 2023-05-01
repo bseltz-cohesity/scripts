@@ -6,6 +6,7 @@
 ### import pyhesity wrapper module
 from pyhesity import *
 from datetime import datetime
+from time import sleep
 import codecs
 
 ### command line arguments
@@ -14,7 +15,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
 parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
-parser.add_argument('-t', '--tenant', type=str, default=None)
 parser.add_argument('-c', '--clustername', type=str, action='append')
 parser.add_argument('-mcm', '--mcm', action='store_true')
 parser.add_argument('-i', '--useApiKey', action='store_true')
@@ -28,13 +28,15 @@ parser.add_argument('-n', '--agentname', action='append', type=str)
 parser.add_argument('-l', '--agentlist', type=str)
 parser.add_argument('-k', '--skipwarnings', action='store_true')
 parser.add_argument('-r', '--refresh', action='store_true')
+parser.add_argument('-rt', '--timeout', type=int, default=35)
+parser.add_argument('-w', '--sleeptime', type=int, default=60)
+parser.add_argument('-t', '--throttle', type=int, default=12)
 
 args = parser.parse_args()
 
 vip = args.vip
 username = args.username
 domain = args.domain
-tenant = args.tenant
 clusternames = args.clustername
 mcm = args.mcm
 useApiKey = args.useApiKey
@@ -48,6 +50,9 @@ agentnames = args.agentname
 agentlist = args.agentlist
 skipwarnings = args.skipwarnings
 refresh = args.refresh
+timeout = args.timeout
+sleeptime = args.sleeptime
+throttle = args.throttle
 
 
 # gather server list
@@ -69,7 +74,7 @@ def gatherList(param=None, filename=None, name='items', required=True):
 agentnames = gatherList(agentnames, agentlist, name='agents', required=False)
 
 # authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, tenantId=tenant)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode)
 
 # exit if not authenticated
 if apiconnected() is False:
@@ -103,10 +108,10 @@ for clustername in clusternames:
 
     ### get Physical Servers
     nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical&allUnderHierarchy=true')
-
+    nodesCounted = 0
     if refresh is True:
         if nodes is not None and 'rootNodes' in nodes and nodes['rootNodes'] is not None:
-            for node in nodes['rootNodes']:
+            for node in sorted(nodes['rootNodes'], key=lambda node: node['rootNode']['name']):
                 name = node['rootNode']['physicalProtectionSource']['name']
                 hostType = 'unknown'
                 errorMessage = ''
@@ -128,18 +133,18 @@ for clustername in clusternames:
                     pass
                 if len(agentnames) == 0 or name.lower() in [a.lower() for a in agentnames]:
                     if ostype is None or ostype.lower() == hostType.lower():
-                        if errorMessage == '':
+                        if errorMessage == '' or skipwarnings is False:
                             print('    Refreshing %s' % name)
                             if tenant != '':
                                 impersonate(tenant)
-                            result = api('post', 'protectionSources/refresh/%s' % node['rootNode']['id'])
+                            result = api('post', 'protectionSources/refresh/%s' % node['rootNode']['id'])  # , timeout=timeout, quiet=True)
                             if tenant != '':
                                 switchback()
         nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical&allUnderHierarchy=true')
         print('')
 
     if nodes is not None and 'rootNodes' in nodes and nodes['rootNodes'] is not None:
-        for node in nodes['rootNodes']:
+        for node in sorted(nodes['rootNodes'], key=lambda node: node['rootNode']['name']):
             tenant = ''
             agentIds = []  # list of agents to upgrade
             name = node['rootNode']['physicalProtectionSource']['name']
@@ -187,6 +192,10 @@ for clustername in clusternames:
                                 if tenant != '':
                                     impersonate(tenant)
                                 result = api('post', 'physicalAgents/upgrade', thisUpgrade)
+                                nodesCounted += 1
+                                if nodesCounted % throttle == 0:
+                                    print('    sleeping for %s seconds' % sleeptime)
+                                    sleep(sleeptime)
                                 if tenant != '':
                                     switchback()
                             else:
