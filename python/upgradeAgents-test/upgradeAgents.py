@@ -162,7 +162,7 @@ for clustername in clusternames:
                             result = api('post', 'protectionSources/refresh/%s' % node['rootNode']['id'])  # , timeout=timeout, quiet=True)
                             if tenant != '':
                                 switchback()
-        nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical&allUnderHierarchy=true')
+        nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical&nodes=kHyperV&allUnderHierarchy=true')
         print('')
 
     if nodes is not None and 'rootNodes' in nodes and nodes['rootNodes'] is not None:
