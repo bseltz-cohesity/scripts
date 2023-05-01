@@ -125,24 +125,17 @@ for clustername in clusternames:
                         if thisSource is not None and len(thisSource) > 0:
                             if 'nodes' in thisSource[0] and thisSource[0]['nodes'] is not None and len(thisSource[0]['nodes']) > 0:
                                 for thisNode in thisSource[0]['nodes']:
-                                    # print(thisNode['protectionSource']['hypervProtectionSource']['type'])
                                     if thisNode['protectionSource']['hypervProtectionSource']['type'] in ['kHostGroup', 'kHostCluster', 'kHypervHost']:
-                                        nodes['rootNodes'].append({
-                                            'rootNode': thisNode['protectionSource'],
-                                            'nodes': thisNode['nodes']
-                                        })
-                                    # if hostNode['protectionSource']['hypervProtectionSource']['type'] in ['kHypervHost', 'kHostGroup', 'kHostCluster']:
-                                    #                 nodes['rootNodes'].append({
-                                    #                     'rootNode': hostNode['protectionSource']
-                                    #                 })
-                                    #     if 'nodes' in thisNode and thisNode['nodes'] is not None and len(thisNode['nodes']) > 0:
-                                    #         for hostNode in thisNode['nodes']:
-                                    #             if hostNode['protectionSource']['hypervProtectionSource']['type'] in ['kHypervHost', 'kHostGroup', 'kHostCluster']:
-                                    #                 nodes['rootNodes'].append({
-                                    #                     'rootNode': hostNode['protectionSource']
-                                    #                 })
+                                        if 'nodes' in thisNode:
+                                            nodes['rootNodes'].append({
+                                                'rootNode': thisNode['protectionSource'],
+                                                'nodes': thisNode['nodes']
+                                            })
+                                        else:
+                                            nodes['rootNodes'].append({
+                                                'rootNode': thisNode['protectionSource'],
+                                            })
                     except Exception:
-                        print('exception')
                         pass
                 if 'agents' in paramkey:
                     version = paramkey['agents'][0]['version']
@@ -197,6 +190,7 @@ for clustername in clusternames:
         print('** No physical protection sources found on the cluster **')
         f.write('%s,No agents registered on the cluster,,%s\n' % (cluster['name'], clusterVersion))
 f.close()
+
 i.close()
 print('\nOutput saved to %s' % outfile)
 print('Impacted agent names saved to %s\n' % impactfile)
