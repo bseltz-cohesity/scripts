@@ -125,14 +125,24 @@ for clustername in clusternames:
                         if thisSource is not None and len(thisSource) > 0:
                             if 'nodes' in thisSource[0] and thisSource[0]['nodes'] is not None and len(thisSource[0]['nodes']) > 0:
                                 for thisNode in thisSource[0]['nodes']:
-                                    if thisNode['protectionSource']['name'] == 'All Hosts':
-                                        if 'nodes' in thisNode and thisNode['nodes'] is not None and len(thisNode['nodes']) > 0:
-                                            for hostNode in thisNode['nodes']:
-                                                if hostNode['protectionSource']['hypervProtectionSource']['type'] == 'kHypervHost':
-                                                    nodes['rootNodes'].append({
-                                                        'rootNode': hostNode['protectionSource']
-                                                    })
+                                    # print(thisNode['protectionSource']['hypervProtectionSource']['type'])
+                                    if thisNode['protectionSource']['hypervProtectionSource']['type'] in ['kHostGroup', 'kHostCluster', 'kHypervHost']:
+                                        nodes['rootNodes'].append({
+                                            'rootNode': thisNode['protectionSource'],
+                                            'nodes': thisNode['nodes']
+                                        })
+                                    # if hostNode['protectionSource']['hypervProtectionSource']['type'] in ['kHypervHost', 'kHostGroup', 'kHostCluster']:
+                                    #                 nodes['rootNodes'].append({
+                                    #                     'rootNode': hostNode['protectionSource']
+                                    #                 })
+                                    #     if 'nodes' in thisNode and thisNode['nodes'] is not None and len(thisNode['nodes']) > 0:
+                                    #         for hostNode in thisNode['nodes']:
+                                    #             if hostNode['protectionSource']['hypervProtectionSource']['type'] in ['kHypervHost', 'kHostGroup', 'kHostCluster']:
+                                    #                 nodes['rootNodes'].append({
+                                    #                     'rootNode': hostNode['protectionSource']
+                                    #                 })
                     except Exception:
+                        print('exception')
                         pass
                 if 'agents' in paramkey:
                     version = paramkey['agents'][0]['version']
@@ -177,8 +187,9 @@ for clustername in clusternames:
                         i.write('%s\n' % name)
                     else:
                         status = 'not impacted'
-                print('%s:%s,%s,(%s) %s -> %s (%s)' % (name, port, version, hostType, osName, expires, status))
-                f.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (cluster['name'], name, status, clusterVersion, orgsenabled, version, port, hostType, osName, expires, errorMessage))
+                if 'agents' in paramkey:
+                    print('%s:%s,%s,(%s) %s -> %s (%s)' % (name, port, version, hostType, osName, expires, status))
+                    f.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (cluster['name'], name, status, clusterVersion, orgsenabled, version, port, hostType, osName, expires, errorMessage))
         if nodesCounted == 0:
             print('** No agents interrogated (all filtered by command line options) **')
             f.write('%s,No agents interrogated (all filtered by command line options),,%s\n' % (cluster['name'], clusterVersion))
