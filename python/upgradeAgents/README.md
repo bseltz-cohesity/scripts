@@ -64,7 +64,7 @@ Running the script against selected Helios clusters (note: you will need to crea
 * -l, --agentlist: (optional) text file of agents to include (one per line)
 * -k, --skipwarnings: (optional) exclude agents that have registration/refresh errors
 * -r, --refresh: (optional) perform refresh before show/upgrade operation (may be slow!)
-* -w, --sleeptime: (optional) number of seconds to wait after throttle limit is reached
+* -w, --sleeptime: (optional) number of seconds to wait after throttle limit is reached (default is 60)
 * -t, --throttle: (optional) number of upgrades to start before sleeping (default is 12)
 
 ## Authenticating to Helios

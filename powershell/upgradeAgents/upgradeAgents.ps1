@@ -17,9 +17,11 @@ param (
     [Parameter()][string]$osType,
     [Parameter()][switch]$skipWarnings,
     [Parameter()][switch]$upgrade,
-    [Parameter()][switch]$excludeCurrent,
+    [Parameter()][switch]$skipCurrent,
     [Parameter()][switch]$refresh,
-    [Parameter()][Int]$timeout = 10
+    [Parameter()][Int]$timeout = 35,
+    [Parameter()][Int]$throttle = 12,
+    [Parameter()][Int]$sleepTime = 60
 )
 
 # gather list from command line params and file
@@ -82,6 +84,7 @@ foreach($v in $vip){
             $nodes = api get "protectionSources/registrationInfo?environments=kPhysical&allUnderHierarchy=true"
             $nodesFound = 0
             $nodesCounted = 0
+            $nodesUpgraded = 0
             foreach($node in $nodes.rootNodes | Sort-Object -Property {$_.rootNode.physicalProtectionSource.name}){
                 $nodesFound += 1
                 $tenant = $null
@@ -137,8 +140,13 @@ foreach($v in $vip){
                                             }
                                             if($upgrade){
                                                 $result = api post physicalAgents/upgrade $thisUpgrade
+                                                $nodesUpgraded += 1
+                                                if($nodesUpgraded % $throttle -eq 0){
+                                                    "    sleeping $sleepTime seconds"
+                                                    Start-Sleep $sleepTime
+                                                }
                                             }else{
-                                                $result = api post "protectionSources/refresh/$($node.rootNode.id)" -timeout $timeout -quiet
+                                                $result = api post "protectionSources/refresh/$($node.rootNode.id)"  # -timeout $timeout -quiet
                                             }
                                             if($tenant){
                                                 switchback
@@ -149,9 +157,11 @@ foreach($v in $vip){
                                         }
                                     }
                                 }else{
-                                    if(!$excludeCurrent){
+                                    if(!$skipCurrent){
                                         $nodesCounted += 1
-                                        "    {0} ({1}): {2}  {3}" -f $name, $hostType, $status, $errors
+                                        if(!$upgrade){
+                                            "    {0} ({1}): {2}  {3}" -f $name, $hostType, $status, $errors
+                                        }
                                     }
                                 }
                                 "{0},{1},{2},{3},{4},{5},{6},{7}" -f $cluster.name, $cluster.clusterSoftwareVersion, $name, $version, $hostType, $osName, $status, $errorMessage | Out-File -FilePath $csvFile -Append
@@ -168,24 +178,7 @@ foreach($v in $vip){
         }
     }
 }
+if($reportNextSteps){
+    "`nTo perform the upgrades, rerun the script with the -upgrade switch"
+}
 ""
-exit
-
-
-# ### list agent info
-# $nodes = api get protectionSources/registrationInfo?environments=kPhysical&allUnderHierarchy=true
-# $nodes.rootNodes | Sort-Object -Property {$_.rootNode.physicalProtectionSource.name} | `
-#          Select-Object -Property @{label='Source Name'; expression={$_.rootNode.physicalProtectionSource.name}},
-#                                  @{label='Agent Version'; expression={$_.rootNode.physicalProtectionSource.agents[0].version}},
-#                                  @{label='OS Type'; expression={$_.rootNode.physicalProtectionSource.hostType.subString(1)}},
-#                                  @{label='OS Name'; expression={$_.rootNode.physicalProtectionSource.osName}} 
-
-# foreach ($node in $nodes.rootNodes){
-#     $name = $node.rootNode.physicalProtectionSource.name
-#     $version = $node.rootNode.physicalProtectionSource.agents[0].version
-#     $hostType = $node.rootNode.physicalProtectionSource.hostType.subString(1)
-#     $osName = $node.rootNode.physicalProtectionSource.osName
-#     "$clusterName`t$name`t$version`t$hostType`t$osName" | Out-File -FilePath $csvFile -Append
-# }
-
-# "`nOutput saved to $csvFile`n"
