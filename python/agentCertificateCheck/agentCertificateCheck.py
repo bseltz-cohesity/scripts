@@ -120,6 +120,19 @@ for clustername in clusternames:
                     paramkey = node['rootNode']['hypervProtectionSource']
                     osName = 'HyperV'
                     hostType = 'Windows'
+                    try:
+                        thisSource = api('get', 'protectionSources?id=%s' % node['rootNode']['id'])
+                        if thisSource is not None and len(thisSource) > 0:
+                            if 'nodes' in thisSource[0] and thisSource[0]['nodes'] is not None and len(thisSource[0]['nodes']) > 0:
+                                for thisNode in thisSource[0]['nodes']:
+                                    if thisNode['protectionSource']['name'] == 'All Hosts':
+                                        if 'nodes' in thisNode and thisNode['nodes'] is not None and len(thisNode['nodes']) > 0:
+                                            for hostNode in thisNode['nodes']:
+                                                nodes['rootNodes'].append({
+                                                    'rootNode': hostNode['protectionSource']
+                                                })
+                    except Exception:
+                        pass
                 if 'agents' in paramkey:
                     version = paramkey['agents'][0]['version']
                     if excludewindows is not True or hostType != 'Windows':
