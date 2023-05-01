@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""base V2 example"""
+"""agent certificate check 2023-01-05-17-28"""
 
 # import pyhesity wrapper module
 from pyhesity import *
