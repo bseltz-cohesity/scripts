@@ -111,7 +111,7 @@ for clustername in clusternames:
     nodesCounted = 0
     if refresh is True:
         if nodes is not None and 'rootNodes' in nodes and nodes['rootNodes'] is not None:
-            for node in sorted(nodes['rootNodes'], key=lambda node: node['rootNode']['name']):
+            for node in nodes['rootNodes']:
                 if 'physicalProtectionSource' in node['rootNode']:
                     paramkey = node['rootNode']['physicalProtectionSource']
                     hostType = paramkey['hostType'][1:]
@@ -166,7 +166,7 @@ for clustername in clusternames:
         print('')
 
     if nodes is not None and 'rootNodes' in nodes and nodes['rootNodes'] is not None:
-        for node in sorted(nodes['rootNodes'], key=lambda node: node['rootNode']['name']):
+        for node in nodes['rootNodes']:
             tenant = ''
             agentIds = []  # list of agents to upgrade
             name = node['rootNode']['name']
