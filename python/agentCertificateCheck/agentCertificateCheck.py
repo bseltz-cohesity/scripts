@@ -93,13 +93,13 @@ for clustername in clusternames:
     except Exception:
         pass
 
-    nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical&allUnderHierarchy=true')
+    nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical&environments=kHyperV&allUnderHierarchy=true')
     hosts = api('get', '/nexus/cluster/get_hosts_file')
     if nodes is not None and 'rootNodes' in nodes and nodes['rootNodes'] is not None:
         nodesCounted = 0
         for node in nodes['rootNodes']:
             port = 50051
-            name = node['rootNode']['physicalProtectionSource']['name']
+            name = node['rootNode']['name']
             testname = name
             if hosts is not None and 'hosts' in hosts and hosts['hosts'] is not None and len(hosts['hosts']) > 0:
                 ip = [h['ip'] for h in hosts['hosts'] if name.lower() in [d.lower() for d in h['domainName']]]
@@ -112,10 +112,16 @@ for clustername in clusternames:
             expires = 'unknown'
             errorMessage = 'None'
             try:
-                if 'agents' in node['rootNode']['physicalProtectionSource']:
-                    version = node['rootNode']['physicalProtectionSource']['agents'][0]['version']
-                    hostType = node['rootNode']['physicalProtectionSource']['hostType'][1:]
+                if 'physicalProtectionSource' in node['rootNode']:
+                    paramkey = node['rootNode']['physicalProtectionSource']
+                    hostType = paramkey['hostType'][1:]
                     osName = node['rootNode']['physicalProtectionSource']['osName']
+                if 'hypervProtectionSource' in node['rootNode']:
+                    paramkey = node['rootNode']['hypervProtectionSource']
+                    osName = 'HyperV'
+                    hostType = 'Windows'
+                if 'agents' in paramkey:
+                    version = paramkey['agents'][0]['version']
                     if excludewindows is not True or hostType != 'Windows':
                         nodesCounted += 1
                         agentGflag = [f['value'] for f in gflaglist if f['name'] == 'magneto_agent_port_number' % hostType.lower()]
