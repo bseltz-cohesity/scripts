@@ -107,12 +107,34 @@ for clustername in clusternames:
     cluster = api('get', 'cluster')
 
     ### get Physical Servers
-    nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical&allUnderHierarchy=true')
+    nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical&environments=kHyperV&allUnderHierarchy=true')
     nodesCounted = 0
     if refresh is True:
         if nodes is not None and 'rootNodes' in nodes and nodes['rootNodes'] is not None:
-            for node in sorted(nodes['rootNodes'], key=lambda node: node['rootNode']['name']):
-                name = node['rootNode']['physicalProtectionSource']['name']
+            for node in nodes['rootNodes']:
+                if 'physicalProtectionSource' in node['rootNode']:
+                    paramkey = node['rootNode']['physicalProtectionSource']
+                    hostType = paramkey['hostType'][1:]
+                    osName = node['rootNode']['physicalProtectionSource']['osName']
+                if 'hypervProtectionSource' in node['rootNode']:
+                    paramkey = node['rootNode']['hypervProtectionSource']
+                    osName = 'HyperV'
+                    hostType = 'Windows'
+                    # try:
+                    #     thisSource = api('get', 'protectionSources?id=%s' % node['rootNode']['id'])
+                    #     if thisSource is not None and len(thisSource) > 0:
+                    #         if 'nodes' in thisSource[0] and thisSource[0]['nodes'] is not None and len(thisSource[0]['nodes']) > 0:
+                    #             for thisNode in thisSource[0]['nodes']:
+                    #                 if thisNode['protectionSource']['name'] == 'All Hosts':
+                    #                     if 'nodes' in thisNode and thisNode['nodes'] is not None and len(thisNode['nodes']) > 0:
+                    #                         for hostNode in thisNode['nodes']:
+                    #                             if hostNode['protectionSource']['hypervProtectionSource']['type'] == 'kHypervHost':
+                    #                                 nodes['rootNodes'].append({
+                    #                                     'rootNode': hostNode['protectionSource']
+                    #                                 })
+                    # except Exception:
+                    #     pass
+                name = node['rootNode']['name']
                 hostType = 'unknown'
                 errorMessage = ''
                 tenant = ''
@@ -128,7 +150,7 @@ for clustername in clusternames:
                 except Exception:
                     pass
                 try:
-                    hostType = node['rootNode']['physicalProtectionSource']['hostType'][1:]
+                    hostType = paramkey['hostType'][1:]
                 except Exception:
                     pass
                 if len(agentnames) == 0 or name.lower() in [a.lower() for a in agentnames]:
@@ -140,20 +162,42 @@ for clustername in clusternames:
                             result = api('post', 'protectionSources/refresh/%s' % node['rootNode']['id'])  # , timeout=timeout, quiet=True)
                             if tenant != '':
                                 switchback()
-        nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical&allUnderHierarchy=true')
+        nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical&nodes=kHyperV&allUnderHierarchy=true')
         print('')
 
     if nodes is not None and 'rootNodes' in nodes and nodes['rootNodes'] is not None:
-        for node in sorted(nodes['rootNodes'], key=lambda node: node['rootNode']['name']):
+        for node in nodes['rootNodes']:
             tenant = ''
             agentIds = []  # list of agents to upgrade
-            name = node['rootNode']['physicalProtectionSource']['name']
+            name = node['rootNode']['name']
             version = 'unknown'
             hostType = 'unknown'
             osName = 'unknown'
             status = 'unknown'
             errorMessage = ''
             errors = ''
+            if 'physicalProtectionSource' in node['rootNode']:
+                paramkey = node['rootNode']['physicalProtectionSource']
+                hostType = paramkey['hostType'][1:]
+                osName = node['rootNode']['physicalProtectionSource']['osName']
+            if 'hypervProtectionSource' in node['rootNode']:
+                paramkey = node['rootNode']['hypervProtectionSource']
+                osName = 'HyperV'
+                hostType = 'Windows'
+                try:
+                    thisSource = api('get', 'protectionSources?id=%s' % node['rootNode']['id'])
+                    if thisSource is not None and len(thisSource) > 0:
+                        if 'nodes' in thisSource[0] and thisSource[0]['nodes'] is not None and len(thisSource[0]['nodes']) > 0:
+                            for thisNode in thisSource[0]['nodes']:
+                                if thisNode['protectionSource']['name'] == 'All Hosts':
+                                    if 'nodes' in thisNode and thisNode['nodes'] is not None and len(thisNode['nodes']) > 0:
+                                        for hostNode in thisNode['nodes']:
+                                            if hostNode['protectionSource']['hypervProtectionSource']['type'] == 'kHypervHost':
+                                                nodes['rootNodes'].append({
+                                                    'rootNode': hostNode['protectionSource']
+                                                })
+                except Exception:
+                    pass
             if 'entityPermissionInfo' in node['rootNode']:
                 if tenant in node['rootNode']['entityPermissionInfo']:
                     if 'name' in node['rootNode']['entityPermissionInfo']['tenant']:
@@ -166,14 +210,14 @@ for clustername in clusternames:
             except Exception:
                 pass
             if len(agentnames) == 0 or name.lower() in [a.lower() for a in agentnames]:
-                if 'agents' in node['rootNode']['physicalProtectionSource'] and node['rootNode']['physicalProtectionSource']['agents'] is not None and len(node['rootNode']['physicalProtectionSource']['agents']) > 0:
+                if 'agents' in paramkey and paramkey['agents'] is not None and len(paramkey['agents']) > 0:
                     try:
-                        version = node['rootNode']['physicalProtectionSource']['agents'][0]['version']
-                        hostType = node['rootNode']['physicalProtectionSource']['hostType'][1:]
-                        osName = node['rootNode']['physicalProtectionSource']['osName']
+                        version = paramkey['agents'][0]['version']
+                        # hostType = node['rootNode']['physicalProtectionSource']['hostType'][1:]
+                        # osName = node['rootNode']['physicalProtectionSource']['osName']
                     except Exception:
                         pass
-                    for agent in node['rootNode']['physicalProtectionSource']['agents']:
+                    for agent in paramkey['agents']:
                         if 'upgradability' in agent and agent['upgradability'] is not None:
                             if agent['upgradability'] == 'kUpgradable':
                                 status = 'upgradable'
