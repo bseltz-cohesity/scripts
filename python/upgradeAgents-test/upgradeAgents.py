@@ -107,7 +107,7 @@ for clustername in clusternames:
     cluster = api('get', 'cluster')
 
     ### get Physical Servers
-    nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical&allUnderHierarchy=true')
+    nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical&environments=kHyperV&allUnderHierarchy=true')
     nodesCounted = 0
     if refresh is True:
         if nodes is not None and 'rootNodes' in nodes and nodes['rootNodes'] is not None:
@@ -210,7 +210,7 @@ for clustername in clusternames:
             except Exception:
                 pass
             if len(agentnames) == 0 or name.lower() in [a.lower() for a in agentnames]:
-                if 'agents' in node['rootNode']['physicalProtectionSource'] and node['rootNode']['physicalProtectionSource']['agents'] is not None and len(node['rootNode']['physicalProtectionSource']['agents']) > 0:
+                if 'agents' in paramkey and paramkey['agents'] is not None and len(paramkey['agents']) > 0:
                     try:
                         version = paramkey['agents'][0]['version']
                         # hostType = node['rootNode']['physicalProtectionSource']['hostType'][1:]
