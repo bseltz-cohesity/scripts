@@ -12,7 +12,6 @@ param (
     [Parameter()][switch]$noPrompt,
     [Parameter()][switch]$mcm,
     [Parameter()][string]$mfaCode,
-    [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName,
     [Parameter(Mandatory = $True)][string]$shareName, #sharename as listed in sources
     [Parameter(Mandatory = $True)][string]$viewName, #name of the view to create
@@ -28,7 +27,7 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
 
 # select helios/mcm managed cluster
 if($USING_HELIOS -and !$region){
@@ -69,7 +68,7 @@ if(! $exactShares){
     exit
 }
 ### if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot 
-$latestsnapshot = ($exactShares | sort-object -property @{Expression={$_.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
+$latestsnapshot = ($exactShares | sort-object -property @{Expression={$_.versions[0].snapshotTimestampUsecs}; Descending = $True})[0]
 
 $nasRecovery = @{
     "name" = "Recover-$shareName";

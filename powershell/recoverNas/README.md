@@ -41,7 +41,6 @@ Place both files in a folder together, then run the script like so:
 * -noPrompt: (optional) do not prompt for password
 * -mcm: (optional) connect through MCM
 * -mfaCode: (optional) TOTP MFA code
-* -emailMfaCode: (optional) send MFA code via email
 * -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
 
 ## Other Parameters
