@@ -10,7 +10,8 @@ param (
     [Parameter(Mandatory = $True)][string]$sourceCluster,
     [Parameter(Mandatory = $True)][string]$targetCluster,
     [Parameter()][array]$viewNames,
-    [Parameter()][string]$viewList
+    [Parameter()][string]$viewList,
+    [Parameter()][switch]$allViews
 )
 
 ### source the cohesity-api helper code
@@ -22,8 +23,10 @@ if($viewList){
 }elseif($viewNames){
     $myViews = @($viewNames)
 }else{
-    Write-Host "No Views Specified" -ForegroundColor Yellow
-    exit
+    if(!$allViews){
+        Write-Host "No Views Specified" -ForegroundColor Yellow
+        exit
+    }
 }
 
 # connect to source cluster to fix the remote view name in the source job
@@ -39,6 +42,9 @@ if($helios -or $mcm){
 }
 
 $views = api get -v2 file-services/views
+if($allViews){
+    $myViews = @($views.views.name)
+}
 
 $oldRemoteViewNames = @()
 
@@ -70,7 +76,6 @@ foreach($job in $jobs.protectionGroups){
 }
 
 # connect to target cluster and delete the old remote views
-### authenticate
 if($helios -or $mcm){
     if($mcm){
         $vip = $mcm
@@ -105,4 +110,3 @@ foreach($viewName in $oldRemoteViewNames){
         Write-Host "View $viewName not found" -ForegroundColor Yellow
     }
 }
-
