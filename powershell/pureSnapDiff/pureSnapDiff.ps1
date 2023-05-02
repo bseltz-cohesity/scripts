@@ -16,7 +16,7 @@ param (
     [Parameter()][switch]$createSnapshot
 )
 
-$conversion = @{'MiB' = 1; 'GiB' = 1024}
+$conversion = @{'MiB' = (1024 * 1024); 'GiB' = (1024 * 1024 * 1024)}
 function toUnits($val){
     return "{0:n1}" -f ($val/($conversion[$unit]))
 }
@@ -109,17 +109,22 @@ if($diffTest){
     # calculate change
     $dayDiff = $ageDays - $sageDays
     $volumeSize = $volume.size
-    $volumeSizeMB = $volumeSize / (1024 * 1024)
+    # $volumeSizeMB = $volumeSize / (1024 * 1024)
     $offSet = 0
     $blockCount = 0
+    $diff = 0
     While($offSet -lt $volumeSize){
         $volumediff = papi get "volume/$($secondSnapshot)/diff?base=$($firstSnapshot)`&block_size=$($blockSizeMB * 1048576)`&length=$($length)`&offset=$($offset)"
         $blockCount += $volumediff.Count
+        foreach($result in $volumeDiff){
+            $diff = $diff + $result.length
+        }
         $offSet += $length
     }
-    $changeRateMB = $blockCount * $blockSizeMB
-    $changeRateMBPerDay = $changeRateMB / $dayDiff
-    $changeRatePerDay = toUnits $changeRateMBPerDay
-    $pctPerDay = "{0:n1}" -f (100 * $changeRateMBPerDay / $volumeSizeMB)
-    Write-Host "`nChange Rate: $($changeRatePerDay) $($unit)/day ($($pctPerDay)%/day)`n"
+    $changeRatePerDay = $diff / $dayDiff
+    $pctPerDay = "{0:n1}" -f (100 * $changeRatePerDay / $volumeSize)
+    "`n     Days Elapsed: {0:n1}" -f $dayDiff
+    "     Data Changed: $(toUnits $diff) $unit"
+    "      Volume Size: $(toUnits $volumeSize) $unit"
+    "Daily Change Rate: $(toUnits $changeRatePerDay) $($unit)/day ($($pctPerDay)%/day)`n"
 }
