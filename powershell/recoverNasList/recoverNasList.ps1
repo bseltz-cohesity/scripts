@@ -12,7 +12,6 @@ param (
     [Parameter()][switch]$noPrompt,
     [Parameter()][switch]$mcm,
     [Parameter()][string]$mfaCode,
-    [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName,
     [Parameter()][array]$fullControl,                 # list of users to grant full control
     [Parameter()][array]$readWrite,                   # list of users to grant read/write
@@ -25,7 +24,7 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
 
 # select helios/mcm managed cluster
 if($USING_HELIOS -and !$region){
@@ -115,7 +114,7 @@ foreach($shareName in $nasListFile){
         $newViewName = $shareName.split('\')[-1].split('/')[-1]
 
         # select latest snapshot to recover
-        $latestsnapshot = ($exactShares | sort-object -property @{Expression={$_.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
+        $latestsnapshot = ($exactShares | sort-object -property @{Expression={$_.versions[0].snapshotTimestampUsecs}; Descending=$True})[0]
 
         # new view parameters
         $nasRecovery = @{
