@@ -109,7 +109,6 @@ if($diffTest){
     # calculate change
     $dayDiff = $ageDays - $sageDays
     $volumeSize = $volume.size
-    # $volumeSizeMB = $volumeSize / (1024 * 1024)
     $offSet = 0
     $blockCount = 0
     $diff = 0
