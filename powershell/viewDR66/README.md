@@ -28,6 +28,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 (Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/prepareForFailover.ps1).content | Out-File prepareForFailover.ps1; (Get-Content prepareForFailover.ps1) | Set-Content prepareForFailover.ps1
 (Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/prepareForFailback.ps1).content | Out-File prepareForFailback.ps1; (Get-Content prepareForFailback.ps1) | Set-Content prepareForFailback.ps1
 (Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/failoverMonitor.ps1).content | Out-File failoverMonitor.ps1; (Get-Content failoverMonitor.ps1) | Set-Content failoverMonitor.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR66/updateReplication.ps1).content | Out-File updateReplication.ps1; (Get-Content updateReplication.ps1) | Set-Content updateReplication.ps1
 (Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
@@ -37,6 +38,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 * viewDR.ps1: performs failover/failback operations
 * failoverMonitor.ps1: displays the status of failover tasks
 * enableReplication.ps1: assigns replication policy and cleans up old objects
+* updateReplication.ps1: converts old 6.5.1 remote view settings to 6.6
 * cleanupUnmergedViews.ps1: delete unmerged views
 * cnameFailover.ps1: failover cname and SPN records
 * dfsFailover.ps1: failover DFS folder targets
