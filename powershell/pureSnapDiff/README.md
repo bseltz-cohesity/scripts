@@ -93,3 +93,4 @@ Or you can specify an existing second snapahot:
 * -blockSizeMB: (optional) default is 10
 * -unit: (optional) MiB or GiB (default is GiB)
 * -lengthDivisor: (optional) 2, 4, 8, 16... (default is 1)
+* -stopAfter: (optional) stop after X queries (e.g. -stopAfter 2)

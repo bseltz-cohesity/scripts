@@ -14,7 +14,8 @@ param (
     [Parameter()][int64]$blockSizeMB = 10,   # block size in MB - e,g, 10, 4, 2
     [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'GiB',
     [Parameter()][switch]$createSnapshot,
-    [Parameter()][switch]$storePassword
+    [Parameter()][switch]$storePassword,
+    [Parameter()][int]$stopAfter
 )
 
 $conversion = @{'MiB' = (1024 * 1024); 'GiB' = (1024 * 1024 * 1024)}
@@ -119,18 +120,24 @@ if($diffTest){
     $diff = 0
     "`nDiff Started"
     $diffStart = Get-Date
+    $counted = 0
     While($offSet -lt $volumeSize){
+        Write-Host "Querying blocks at offset $offset..."
         $volumediff = papi get "volume/$($secondSnapshot)/diff?base=$($firstSnapshot)`&block_size=$($blockSizeMB * 1048576)`&length=$($length)`&offset=$($offset)"
         $blockCount += $volumediff.Count
         foreach($result in $volumeDiff){
             $diff = $diff + $result.length
         }
         $offSet += $length
+        $counted += 1
+        if($stopAfter -and $counted -ge $stopAfter){
+            break
+        }
     }
     $diffEnd = Get-Date
     $diffSeconds = ($diffEnd - $diffStart).TotalSeconds
     "Diff Completed"
-    "Duration: {0:n0} Seconds" -f $diffSeconds
+    "`nDuration: {0:n0} Seconds" -f $diffSeconds
     
     $changeRatePerDay = $diff / $dayDiff
     $pctPerDay = "{0:n1}" -f (100 * $changeRatePerDay / $volumeSize)
