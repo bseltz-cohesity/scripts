@@ -65,7 +65,7 @@ if(!$cohesity_api.authorized){
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "log-deleteProtectionJob-$dateString.txt"
 
-$jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true"
+$jobs = api get -v2 "data-protect/protection-groups?includeTenants=true"
 
 $notfoundJobs = $jobNames | Where-Object {$_ -notin $jobs.protectionGroups.name}
 if($notfoundJobs){
