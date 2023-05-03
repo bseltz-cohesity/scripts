@@ -82,6 +82,7 @@ Or you can specify an existing second snapahot:
 * -pure: DNS name or IP of the pure to connect to
 * -username: user name to connect to pure
 * -password: (optional) will prompt if omitted
+* -storePassword: (optional) store password for future use
 * -volumeName: name of volume to test
 * -diffTest: (optional) perform diff test
 * -listSnapshots: (optional) list available snapshots for the specified volume and exit
