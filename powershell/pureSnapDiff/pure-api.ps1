@@ -8,14 +8,14 @@
 # =====================================
 
 # token authentication function =================================================================================
-function papiauth($endpoint, $username, $version = '1.19', $password=$null){
+function papiauth($endpoint, $username, $version = '1.19', $password=$null, [switch]$storePassword){
     if(!$password){
-        $password = Get-APIPassword -endpoint $endpoint -username $username
+        $password = pGet-APIPassword -endpoint $endpoint -username $username
         if(!$password){
-            $password = Set-APIPassword -endpoint $endpoint -username $username
+            $password = pSet-APIPassword -endpoint $endpoint -username $username -storePassword $storePassword
         }
     }else{
-        $password = Set-APIPassword -endpoint $endpoint -username $username -passwd $password
+        $password = pSet-APIPassword -endpoint $endpoint -username $username -passwd $password -storePassword $storePassword
     }
 
     $body = ConvertTo-Json @{
@@ -62,9 +62,19 @@ function papiauth($endpoint, $username, $version = '1.19', $password=$null){
         exit 1
     }
 
-    # Write-Host $Session
     $basic_api.base_url = "https://$($endpoint)/api/$($version)/"
     $basic_api.session = $SessionVar 
+}
+
+# logout
+function papidrop(){
+    Write-Host "Disconnected" -ForegroundColor Green
+    $deleteSession = papi delete auth/session
+    $basic_api = @{
+        'base_url' = '';
+        'headers' = @{'accept' = 'application/json'; 'Content-Type' = 'application/json'}
+        'session' = $null
+    }
 }
 
 # api call function =======================================================================================
@@ -129,7 +139,7 @@ function usecsToDate($usecs, $format=$null){
 
 # password storage functions ==============================================================================
 
-function Get-APIPassword($endpoint, $username){
+function pGet-APIPassword($endpoint, $username){
     if($endpoint -match ':'){
         $endpoint = $endpoint.replace(':','--')
     }
@@ -154,7 +164,7 @@ function Get-APIPassword($endpoint, $username){
     return $null
 }
 
-function Set-APIPassword($endpoint, $username, $passwd=$null){
+function pSet-APIPassword($endpoint, $username, $passwd=$null, $storePassword = $false){
 
     if(!$passwd){
         $secureString = Read-Host -Prompt "Enter password for $username@$endpoint" -AsSecureString
@@ -166,23 +176,25 @@ function Set-APIPassword($endpoint, $username, $passwd=$null){
         $endpoint = $endpoint.replace(':','--')
     }
 
-    $keyName = "$endpoint`-$username"
-
-    if($PSVersionTable.Platform -eq 'Unix'){
-        # Unix
-        $keyFile = "$CONFDIR/$keyName"
-        $opwd | Out-File $keyFile
-    }else{
-        # Windows
-        if($null -ne $passwd -and $passwd -ne ''){
-            $securePassword = ConvertTo-SecureString -String $passwd -AsPlainText -Force
-            $encryptedPasswordText = $securePassword | ConvertFrom-SecureString
-            if(!(Test-Path $registryPath)){
-                New-Item -Path $registryPath -Force | Out-Null
+    if($storePassword -eq $True){
+        $keyName = "$endpoint`-$username"
+        if($PSVersionTable.Platform -eq 'Unix'){
+            # Unix
+            $keyFile = "$CONFDIR/$keyName"
+            $opwd | Out-File $keyFile
+        }else{
+            # Windows
+            if($null -ne $passwd -and $passwd -ne ''){
+                $securePassword = ConvertTo-SecureString -String $passwd -AsPlainText -Force
+                $encryptedPasswordText = $securePassword | ConvertFrom-SecureString
+                if(!(Test-Path $registryPath)){
+                    New-Item -Path $registryPath -Force | Out-Null
+                }
+                Set-ItemProperty -Path "$registryPath" -Name "$keyName" -Value "$encryptedPasswordText" -Force
             }
-            Set-ItemProperty -Path "$registryPath" -Name "$keyName" -Value "$encryptedPasswordText" -Force
         }
     }
+
     return $passwd
 }
 

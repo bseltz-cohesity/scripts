@@ -13,7 +13,8 @@ param (
     [Parameter()][int64]$lengthDivisor = 1,  # reduce length of diff query by X - e.g. 2, 4, 8
     [Parameter()][int64]$blockSizeMB = 10,   # block size in MB - e,g, 10, 4, 2
     [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'GiB',
-    [Parameter()][switch]$createSnapshot
+    [Parameter()][switch]$createSnapshot,
+    [Parameter()][switch]$storePassword
 )
 
 $conversion = @{'MiB' = (1024 * 1024); 'GiB' = (1024 * 1024 * 1024)}
@@ -31,7 +32,11 @@ if($diffTest -and !$firstSnapshot){
 }
 
 # authenticate
-papiauth -endpoint $pure -username $username -password $password
+if($storePassword){
+    papiauth -endpoint $pure -username $username -password $password -storePassword
+}else{
+    papiauth -endpoint $pure -username $username -password $password
+}
 
 # get volume
 $volume = papi get volume/$volumeName
@@ -47,7 +52,7 @@ $nowUsecs = dateToUsecs
 if($deleteSnapshot){
     $snapToDelete = $snaps | Where-Object name -eq $deleteSnapshot
     if(!$snapToDelete){
-        Write-Host "Snapshot $deleteSnapshot not found" -foregroundcolor Yellow
+        Write-Host "`nSnapshot $deleteSnapshot not found" -foregroundcolor Yellow
         exit 1
     }
     Write-Host "`nDeleting snapshot $deleteSnapshot`n"
@@ -62,7 +67,7 @@ if($deleteSnapshot){
 if($createSnapshot){
     $newsnap = papi post volume @{'snap' = $True; 'source' = @($volume.name)}
     $secondSnapshot = $newsnap.name
-    "Creating new snapshot $secondSnapshot"
+    "`nCreating new snapshot $secondSnapshot"
     exit
 }
 
@@ -79,7 +84,7 @@ if($listSnapshots){
 
 if($diffTest){
     if($firstSnapshot -notin $snaps.name){
-        Write-Host "Snapshot $firstSnapshot not found" -foregroundcolor Yellow
+        Write-Host "`nSnapshot $firstSnapshot not found" -foregroundcolor Yellow
         exit 1
     }
 
@@ -93,11 +98,11 @@ if($diffTest){
     if(!$secondSnapshot){
         $newsnap = papi post volume @{'snap' = $True; 'source' = @($volume.name)}
         $secondSnapshot = $newsnap.name
-        "Creating new snapshot $secondSnapshot"
+        "`nCreating new snapshot $secondSnapshot"
         $sageDays = 0
     }else{
         if($secondSnapshot -notin $snaps.name){
-            Write-Host "Snapshot $secondSnapshot not found" -foregroundcolor Yellow
+            Write-Host "`nSnapshot $secondSnapshot not found" -foregroundcolor Yellow
             exit 1
         }
         $snap = $snaps | Where-Object name -eq $secondSnapshot
@@ -112,6 +117,8 @@ if($diffTest){
     $offSet = 0
     $blockCount = 0
     $diff = 0
+    "`nDiff Started"
+    $diffStart = Get-Date
     While($offSet -lt $volumeSize){
         $volumediff = papi get "volume/$($secondSnapshot)/diff?base=$($firstSnapshot)`&block_size=$($blockSizeMB * 1048576)`&length=$($length)`&offset=$($offset)"
         $blockCount += $volumediff.Count
@@ -120,6 +127,11 @@ if($diffTest){
         }
         $offSet += $length
     }
+    $diffEnd = Get-Date
+    $diffSeconds = ($diffEnd - $diffStart).TotalSeconds
+    "Diff Completed"
+    "Duration: {0:n0} Seconds" -f $diffSeconds
+    
     $changeRatePerDay = $diff / $dayDiff
     $pctPerDay = "{0:n1}" -f (100 * $changeRatePerDay / $volumeSize)
     "`n     Days Elapsed: {0:n1}" -f $dayDiff
@@ -127,3 +139,4 @@ if($diffTest){
     "      Volume Size: $(toUnits $volumeSize) $unit"
     "Daily Change Rate: $(toUnits $changeRatePerDay) $($unit)/day ($($pctPerDay)%/day)`n"
 }
+papidrop
