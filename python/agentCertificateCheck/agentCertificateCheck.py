@@ -93,7 +93,7 @@ for clustername in clusternames:
     except Exception:
         pass
 
-    nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical&environments=kHyperV&allUnderHierarchy=true')
+    nodes = api('get', 'protectionSources/registrationInfo?allUnderHierarchy=true')
     hosts = api('get', '/nexus/cluster/get_hosts_file')
     if nodes is not None and 'rootNodes' in nodes and nodes['rootNodes'] is not None:
         nodesCounted = 0
@@ -111,7 +111,15 @@ for clustername in clusternames:
             expiringSoon = False
             expires = 'unknown'
             errorMessage = 'None'
+            paramkey = None
             try:
+                if 'vmWareProtectionSource' in node['rootNode']:
+                    paramkey = node['rootNode']['vmWareProtectionSource']
+                    try:
+                        hostType = paramkey['hostType'][1:]
+                        osName = 'VMware VM'
+                    except Exception:
+                        pass
                 if 'physicalProtectionSource' in node['rootNode']:
                     paramkey = node['rootNode']['physicalProtectionSource']
                     hostType = paramkey['hostType'][1:]
@@ -141,7 +149,7 @@ for clustername in clusternames:
                     version = paramkey['agents'][0]['version']
                     if excludewindows is not True or hostType != 'Windows':
                         nodesCounted += 1
-                        agentGflag = [f['value'] for f in gflaglist if f['name'] == 'magneto_agent_port_number' % hostType.lower()]
+                        agentGflag = [f['value'] for f in gflaglist if f['name'] == 'magneto_agent_port_number']
                         if agentGflag is not None and len(agentGflag) > 0:
                             port = agentGflag[0]
                         agentGflag = [f['value'] for f in gflaglist if f['name'] == 'magneto_%s_agent_port_number' % hostType.lower()]
@@ -155,8 +163,8 @@ for clustername in clusternames:
                         except Exception:
                             pass
                         try:
-                            certinfo = os.popen('timeout 5 openssl s_client -showcerts -connect %s:%s </dev/null 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null' % (testname, port))
-                            cilines = certinfo.readlines()
+                            certinfo = os.popen('openssl s_client -showcerts -connect %s:%s </dev/null 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null' % (testname, port))
+                            cilines = certinfo.readlines()  # timeout 5
                             if len(cilines) >= 2:
                                 expdate = cilines[2]
                                 expires = expdate.strip().split('=')[1].replace('  ', ' ')
@@ -180,7 +188,7 @@ for clustername in clusternames:
                         i.write('%s\n' % name)
                     else:
                         status = 'not impacted'
-                if 'agents' in paramkey:
+                if paramkey is not None and 'agents' in paramkey:
                     print('%s:%s,%s,(%s) %s -> %s (%s)' % (name, port, version, hostType, osName, expires, status))
                     f.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (cluster['name'], name, status, clusterVersion, orgsenabled, version, port, hostType, osName, expires, errorMessage))
         if nodesCounted == 0:
