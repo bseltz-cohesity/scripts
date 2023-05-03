@@ -31,7 +31,45 @@ Place both files in a folder together and run the main script like so:
                           -jobName myjob
 ```
 
-Note: server names must exactly match what is shown in protection sources.
+To also delete the existing snapshots:
+
+```powershell
+./deleteProtectionJob.ps1 -vip mycluster `
+                          -username myusername `
+                          -domain mydomain.net `
+                          -jobName myjob `
+                          -deleteSnapshots
+```
+
+To delete the existing snapshhots for a job that has already been deleted:
+
+```powershell
+./deleteProtectionJob.ps1 -vip mycluster `
+                          -username myusername `
+                          -domain mydomain.net `
+                          -jobName _DELETED_myjob `
+                          -deleteSnapshots
+```
+
+To specify more than one job to process, you can provide multiple job names on the command line:
+
+```powershell
+./deleteProtectionJob.ps1 -vip mycluster `
+                          -username myusername `
+                          -domain mydomain.net `
+                          -jobName myjob1, myjob2 `
+                          -deleteSnapshots
+```
+
+Or provide a text file of job names (one per line):
+
+```powershell
+./deleteProtectionJob.ps1 -vip mycluster `
+                          -username myusername `
+                          -domain mydomain.net `
+                          -jobList .\myjobs.txt `
+                          -deleteSnapshots
+```
 
 ## Authentication Parameters
 
