@@ -30,26 +30,29 @@ You can download the zip file here: <https://github.com/bseltz-cohesity/scripts/
 * -c, --clustername: (optional) helios/mcm cluster to connect to (will loop through all clusters if connected to helios)
 * -s, --sourceview: name of source view
 * -t, --targetview: name of target view to overwrite
+* -j, --waitforjob: (optional) name of protection group to wait for (will wait for archival task)
+* -l, --lookbackhours: (optional) look back X hours for protection group run (default is 23)
+* -z, --sleeptime: (optional) seconds to sleep between run queries (default is 60)
 
 ## Example
 
 To connect directly to a cluster using a username and password:
 
 ```bash
--v mycluster -u myuser -d local -s view1 -t view2 -pwd Sw0rdFish!
+-v mycluster -u myuser -d local -s view1 -t view2 -pwd Sw0rdFish! -j 'my view backup'
 # for an AD account use -d mydomain.net (FQDN)
 ```
 
 To connect directly to a cluster using an API Key
 
 ```bash
--v mycluster -s view1 -t view2 -i -pwd 3abd0bc2-4fc4-57b0-412b-3c01d54d2727
+-v mycluster -s view1 -t view2 -i -pwd 3abd0bc2-4fc4-57b0-412b-3c01d54d2727 -j 'my view backup'
 ```
 
 To connect via Helios using an API Key:
 
 ```bash
--c mycluster -s view1 -t view2 -pwd 3abd0bc2-4fc4-57b0-412b-3c01d54d2727
+-c mycluster -s view1 -t view2 -pwd 3abd0bc2-4fc4-57b0-412b-3c01d54d2727 -j 'my view backup'
 ```
 
 ## Getting an API Key for Helios
