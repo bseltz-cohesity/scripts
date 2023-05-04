@@ -77,6 +77,31 @@ Or you can specify an existing second snapahot:
                    -diffTest
 ```
 
+You can specify the block size (in KiB) to test with:
+
+```powershell
+./pureSnapDiff.ps1 -pure mypure `
+                   -username myusername `
+                   -volumeName myvolume `
+                   -firstSnapshot myvolume.1 `
+                   -secondSnapshot myvolume.2 `
+                   -blockSize1 10240 `
+                   -diffTest
+```
+
+Or you can compare two block sizes (in KiB):
+
+```powershell
+./pureSnapDiff.ps1 -pure mypure `
+                   -username myusername `
+                   -volumeName myvolume `
+                   -firstSnapshot myvolume.1 `
+                   -secondSnapshot myvolume.2 `
+                   -blockSize1 10240 `
+                   -blockSize2 1024 `
+                   -diffTest
+```
+
 ## Basic Parameters
 
 * -pure: DNS name or IP of the pure to connect to
@@ -96,8 +121,8 @@ Or you can specify an existing second snapahot:
 ## Diff Test Parameters
 
 * -diffTest: (optional) perform diff test
-* -blockSize1: (optional) in KiB default is 10240 (10 MiB)
-* -blockSize2: (optional) in KiB default is None
+* -blockSize1: (optional) in KiB - default is 10240 (10 MiB)
+* -blockSize2: (optional) in KiB - default is None
 * -unit: (optional) MiB or GiB (default is GiB)
 * -lengthDivisor: (optional) 2, 4, 8, 16... (default is 1)
 * -stopAfter: (optional) stop after X queries (e.g. -stopAfter 2)
