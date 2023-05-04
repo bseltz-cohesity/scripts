@@ -77,20 +77,27 @@ Or you can specify an existing second snapahot:
                    -diffTest
 ```
 
-## Parameters
+## Basic Parameters
 
 * -pure: DNS name or IP of the pure to connect to
 * -username: user name to connect to pure
 * -password: (optional) will prompt if omitted
 * -storePassword: (optional) store password for future use
 * -volumeName: name of volume to test
-* -diffTest: (optional) perform diff test
+
+## Snapshot Selection Parameters
+
 * -listSnapshots: (optional) list available snapshots for the specified volume and exit
 * -firstSnapshot: (optional) name of existing snapshot to use for diff test
 * -secondSnapshot: (optional) name of existing snapshot to use for diff test
 * -createSnapshot: (optional) create a snapshot for the specified volume and exit
 * -deleteSnapshot: (optional) delete specified snapshot and exit
-* -blockSizeMB: (optional) default is 10
+
+## Diff Test Parameters
+
+* -diffTest: (optional) perform diff test
+* -blockSize1: (optional) in KiB default is 10240 (10 MiB)
+* -blockSize2: (optional) in KiB default is None
 * -unit: (optional) MiB or GiB (default is GiB)
 * -lengthDivisor: (optional) 2, 4, 8, 16... (default is 1)
 * -stopAfter: (optional) stop after X queries (e.g. -stopAfter 2)

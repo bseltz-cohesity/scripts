@@ -11,7 +11,8 @@ param (
     [Parameter()][string]$secondSnapshot,    # specify name of second snapshot
     [Parameter()][string]$deleteSnapshot,    # delete the specified snapshot and exit
     [Parameter()][int64]$lengthDivisor = 1,  # reduce length of diff query by X - e.g. 2, 4, 8
-    [Parameter()][int64]$blockSizeMB = 10,   # block size in MB - e,g, 10, 4, 2
+    [Parameter()][int64]$blockSize1 = 10240,  # block size in KB - e,g, 10240, 1024, 512, 256
+    [Parameter()][int64]$blockSize2 = 0,   # block size in KB - e,g, 10240, 1024, 512, 256
     [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'GiB',
     [Parameter()][switch]$createSnapshot,
     [Parameter()][switch]$storePassword,
@@ -23,6 +24,7 @@ function toUnits($val){
     return "{0:n1}" -f ($val/($conversion[$unit]))
 }
 
+# default $length = 1 TiB / $lengthDivisor = 1
 $length = 1099511627776 / $lengthDivisor
 
 . $(Join-Path -Path $PSScriptRoot -ChildPath pure-api.ps1)
@@ -116,34 +118,73 @@ if($diffTest){
     $dayDiff = $ageDays - $sageDays
     $volumeSize = $volume.size
     $offSet = 0
-    $blockCount = 0
-    $diff = 0
+
+    # blockSize1
+    $diff1 = 0
+    $duration1 = 0
+
+    # blockSize2
+    if($blockSize2 -gt 0){
+        $diff2 = 0
+        $duration2 = 0
+    }
+
     "`nDiff Started"
-    $diffStart = Get-Date
+    
     $counted = 0
     While($offSet -lt $volumeSize){
-        Write-Host "Querying blocks at offset $offset..."
-        $volumediff = papi get "volume/$($secondSnapshot)/diff?base=$($firstSnapshot)`&block_size=$($blockSizeMB * 1048576)`&length=$($length)`&offset=$($offset)"
-        $blockCount += $volumediff.Count
+        # blockSize1
+        $diffStart = Get-Date
+        Write-Host "Querying blocks (block size: $blockSize1 KiB) - offset $($offset / (1024 * 1024 * 1024)) GiB"
+        $volumediff = papi get "volume/$($secondSnapshot)/diff?base=$($firstSnapshot)`&block_size=$($blockSize1 * 1024)`&length=$($length)`&offset=$($offset)"
+        $diffEnd = Get-Date
+        $diffSeconds = ($diffEnd - $diffStart).TotalSeconds
+        $duration1 += $diffSeconds
         foreach($result in $volumeDiff){
-            $diff = $diff + $result.length
+            $diff1 += $result.length
         }
+
+        # blockSize2
+        if($blockSize2 -gt 0){
+            $diffStart = Get-Date
+            Write-Host "Querying blocks (block size: $blockSize2 KiB) - offset $($offset / (1024 * 1024 * 1024)) GiB"
+            $volumediff = papi get "volume/$($secondSnapshot)/diff?base=$($firstSnapshot)`&block_size=$($blockSize2 * 1024)`&length=$($length)`&offset=$($offset)"
+            $diffEnd = Get-Date
+            $diffSeconds = ($diffEnd - $diffStart).TotalSeconds
+            $duration2 += $diffSeconds
+            foreach($result in $volumeDiff){
+                $diff2 += $result.length
+            }
+        }
+
         $offSet += $length
         $counted += 1
         if($stopAfter -and $counted -ge $stopAfter){
             break
         }
     }
-    $diffEnd = Get-Date
-    $diffSeconds = ($diffEnd - $diffStart).TotalSeconds
-    "Diff Completed"
-    "`nDuration: {0:n0} Seconds" -f $diffSeconds
     
-    $changeRatePerDay = $diff / $dayDiff
+    "Diff Completed"
+
+    "`n               Volume Size: $(toUnits $volumeSize) $unit"
+    "Snapshot Difference (Days): {0:n1}" -f $dayDiff
+
+    # blockSize1
+    $changeRatePerDay = $diff1 / $dayDiff
     $pctPerDay = "{0:n1}" -f (100 * $changeRatePerDay / $volumeSize)
-    "`n     Days Elapsed: {0:n1}" -f $dayDiff
-    "     Data Changed: $(toUnits $diff) $unit"
-    "      Volume Size: $(toUnits $volumeSize) $unit"
-    "Daily Change Rate: $(toUnits $changeRatePerDay) $($unit)/day ($($pctPerDay)%/day)`n"
+    "`n                 BlockSize: $blockSize1 KiB"
+    "                  Duration: {0:n0} Seconds" -f $duration1
+    "              Data Changed: $(toUnits $diff1) $unit"
+    "         Daily Change Rate: $(toUnits $changeRatePerDay) $($unit)/day ($($pctPerDay)%/day)`n"
+
+    # blockSize2
+    if($blockSize2 -gt 0){
+        $changeRatePerDay = $diff2 / $dayDiff
+        $pctPerDay = "{0:n1}" -f (100 * $changeRatePerDay / $volumeSize)
+        "                 BlockSize: $blockSize2 KiB"
+        "                  Duration: {0:n0} Seconds" -f $duration2
+        "              Data Changed: $(toUnits $diff2) $unit"
+        "         Daily Change Rate: $(toUnits $changeRatePerDay) $($unit)/day ($($pctPerDay)%/day)`n"
+    }
 }
 papidrop
