@@ -140,22 +140,36 @@ if($diffTest){
         $diffEnd = Get-Date
         $diffSeconds = ($diffEnd - $diffStart).TotalSeconds
         $duration1 += $diffSeconds
+        if($blockSize2 -and $volumeDiff.Count -gt 0){
+            Write-Host "Querying blocks (block size: $blockSize2 KiB) - offset $($offset / (1024 * 1024 * 1024)) GiB"
+        }
         foreach($result in $volumeDiff){
             $diff1 += $result.length
+            if($blockSize2){
+                $diffStart = Get-Date
+                $volumediff2 = papi get "volume/$($secondSnapshot)/diff?base=$($firstSnapshot)`&block_size=$($blockSize2 * 1024)`&length=$($result.length)`&offset=$($result.offset)"
+                $diffEnd = Get-Date
+                $diffSeconds = ($diffEnd - $diffStart).TotalSeconds
+                $duration2 += $diffSeconds
+                foreach($result2 in $volumeDiff2){
+                    Write-Host "$($result2.length)        $(($result2.offset / (1024 * 1024 * 1024)))"
+                    $diff2 += $result2.length
+                }
+            }
         }
 
         # blockSize2
-        if($blockSize2 -gt 0){
-            $diffStart = Get-Date
-            Write-Host "Querying blocks (block size: $blockSize2 KiB) - offset $($offset / (1024 * 1024 * 1024)) GiB"
-            $volumediff = papi get "volume/$($secondSnapshot)/diff?base=$($firstSnapshot)`&block_size=$($blockSize2 * 1024)`&length=$($length)`&offset=$($offset)"
-            $diffEnd = Get-Date
-            $diffSeconds = ($diffEnd - $diffStart).TotalSeconds
-            $duration2 += $diffSeconds
-            foreach($result in $volumeDiff){
-                $diff2 += $result.length
-            }
-        }
+        # if($blockSize2 -gt 0){
+        #     $diffStart = Get-Date
+        #     Write-Host "Querying blocks (block size: $blockSize2 KiB) - offset $($offset / (1024 * 1024 * 1024)) GiB"
+        #     $volumediff = papi get "volume/$($secondSnapshot)/diff?base=$($firstSnapshot)`&block_size=$($blockSize2 * 1024)`&length=$($length)`&offset=$($offset)"
+        #     $diffEnd = Get-Date
+        #     $diffSeconds = ($diffEnd - $diffStart).TotalSeconds
+        #     $duration2 += $diffSeconds
+        #     foreach($result in $volumeDiff){
+        #         $diff2 += $result.length
+        #     }
+        # }
 
         $offSet += $length
         $counted += 1
