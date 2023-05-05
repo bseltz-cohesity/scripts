@@ -37,7 +37,7 @@ Place the files in a folder together and run the main script like so:
                             -search somefile.txt
 ```
 
-The search results will be displayed. Other file names that are not an exact match may appear in the list. To narrow the search, you can use the -exactMatch switch:
+The search results will be displayed. Other file names that are not an exact match may appear in the list. To narrow the search, you can use the `-exactMatch` switch:
 
 ```powershell
 ./expungeDataSpillageV2.ps1 -vip mycluster `
@@ -47,7 +47,7 @@ The search results will be displayed. Other file names that are not an exact mat
                             -exactMatch
 ```
 
-To narrow the search to a specific object name, use the -objectName parameter:
+To narrow the search to a specific object name, use the `-objectName` parameter:
 
 ```powershell
 ./expungeDataSpillageV2.ps1 -vip mycluster `
@@ -58,7 +58,7 @@ To narrow the search to a specific object name, use the -objectName parameter:
                             -exactMatch
 ```
 
-To narrow the search to a specific job name, use the -jobName parameter:
+To narrow the search to a specific job name, use the `-jobName` parameter:
 
 ```powershell
 ./expungeDataSpillageV2.ps1 -vip mycluster `
@@ -70,7 +70,7 @@ To narrow the search to a specific job name, use the -jobName parameter:
                             -exactMatch
 ```
 
-To show the versions where the file exists, use the -showVersions switch:
+To show the versions where the file exists, use the `-showVersions` switch:
 
 ```powershell
 ./expungeDataSpillageV2.ps1 -vip mycluster `
@@ -83,7 +83,7 @@ To show the versions where the file exists, use the -showVersions switch:
                             -showVersions
 ```
 
-You can limit the date range using the -olderThan and -newerThan parameters (days):
+You can limit the date range using the `-olderThan` and `-newerThan` parameters (days):
 
 ```powershell
 ./expungeDataSpillageV2.ps1 -vip mycluster `
@@ -98,7 +98,7 @@ You can limit the date range using the -olderThan and -newerThan parameters (day
                             -newerThan 14
 ```
 
-Finally, when you're happy with the list of backups that would be deleted, use the -expunge switch:
+Finally, when you're happy with the list of backups that would be deleted, use the `-expunge` switch:
 
 ```powershell
 ./expungeDataSpillageV2.ps1 -vip mycluster `
