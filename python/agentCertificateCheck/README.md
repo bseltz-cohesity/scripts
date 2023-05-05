@@ -74,7 +74,7 @@ Running the script against selected Helios clusters (note: you will need to crea
 ## Other Parameters
 
 * -w, --excludewindows: (optional) skip windows sources
-* -x, --expirywarningdate: (optional) default is '2023-06-01 00:00:00'
+* -x, --expirywarningmonths: (optional) report impacted if agent will expire in within X months( default is 6)
 
 ## Running the Script on a Linux Jump Host
 

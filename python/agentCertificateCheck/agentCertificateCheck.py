@@ -21,7 +21,7 @@ parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-w', '--excludewindows', action='store_true')
-parser.add_argument('-x', '--expirywarningdate', type=str, default='2023-06-01 00:00:00')
+parser.add_argument('-x', '--expirywarningmonths', type=int, default=6)
 args = parser.parse_args()
 
 vip = args.vip
@@ -35,9 +35,9 @@ password = args.password
 noprompt = args.noprompt
 mfacode = args.mfacode
 excludewindows = args.excludewindows
-expirywarningdate = args.expirywarningdate
+expirywarningmonths = args.expirywarningmonths
 
-expwarningusecs = dateToUsecs(expirywarningdate)
+expwarningusecs = dateToUsecs() + (expirywarningmonths * 2592000000000)
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, tenantId=tenant)
