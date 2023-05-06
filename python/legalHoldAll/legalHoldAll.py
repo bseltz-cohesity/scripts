@@ -11,7 +11,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
 parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
-parser.add_argument('-t', '--tenant', type=str, default=None)
 parser.add_argument('-c', '--clustername', type=str, default=None)
 parser.add_argument('-mcm', '--mcm', action='store_true')
 parser.add_argument('-i', '--useApiKey', action='store_true')
@@ -23,14 +22,13 @@ parser.add_argument('-l', '--joblist', type=str)
 parser.add_argument('-n', '--numruns', type=int, default=5000)
 parser.add_argument('-a', '--addhold', action='store_true')
 parser.add_argument('-r', '--removehold', action='store_true')
-parser.add_argument('-st', '--showtrue', action='store_true')
-parser.add_argument('-sf', '--showfalse', action='store_true')
+parser.add_argument('-t', '--showtrue', action='store_true')
+parser.add_argument('-f', '--showfalse', action='store_true')
 args = parser.parse_args()
 
 vip = args.vip
 username = args.username
 domain = args.domain
-tenant = args.tenant
 clustername = args.clustername
 mcm = args.mcm
 useApiKey = args.useApiKey
@@ -46,7 +44,7 @@ showtrue = args.showtrue
 showfalse = args.showfalse
 
 # authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, tenantId=tenant)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode)
 
 # if connected to helios or mcm, select access cluster
 if mcm or vip.lower() == 'helios.cohesity.com':
