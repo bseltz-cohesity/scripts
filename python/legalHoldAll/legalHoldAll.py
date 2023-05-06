@@ -20,10 +20,11 @@ parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-j', '--jobname', action='append', type=str)
 parser.add_argument('-l', '--joblist', type=str)
-parser.add_argument('-n', '--numruns', type=int, default=1000)
+parser.add_argument('-n', '--numruns', type=int, default=5000)
 parser.add_argument('-a', '--addhold', action='store_true')
 parser.add_argument('-r', '--removehold', action='store_true')
-
+parser.add_argument('-st', '--showtrue', action='store_true')
+parser.add_argument('-sf', '--showfalse', action='store_true')
 args = parser.parse_args()
 
 vip = args.vip
@@ -41,6 +42,8 @@ joblist = args.joblist
 numruns = args.numruns
 addhold = args.addhold
 removehold = args.removehold
+showtrue = args.showtrue
+showfalse = args.showfalse
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, tenantId=tenant)
@@ -98,8 +101,10 @@ elif removehold:
     holdValue = False
     actionString = 'removing hold'
 else:
-    print('no action specified')
-    exit()
+    actionString = 'checking'
+    if not showtrue and not showfalse:
+        showtrue = True
+        showfalse = True
 
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
     if len(jobnames) == 0 or job['name'].lower() in [j.lower() for j in jobnames]:
@@ -112,31 +117,40 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
             else:
                 break
             for run in runs:
+                held = False
                 copyRunsFound = False
                 for copyRun in run['copyRun']:
                     if 'expiryTimeUsecs' in copyRun and copyRun['expiryTimeUsecs'] > dateToUsecs():
                         copyRunsFound = True
+                        if 'holdForLegalPurpose' in copyRun and copyRun['holdForLegalPurpose'] is True:
+                            held = True
                 if copyRunsFound is True:
-                    thisRun = api('get', '/backupjobruns?id=%s&exactMatchStartTimeUsecs=%s' % (run['jobId'], run['backupRun']['stats']['startTimeUsecs']))
-                    jobUid = {
-                        "clusterId": thisRun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']['clusterId'],
-                        "clusterIncarnationId": thisRun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']['clusterIncarnationId'],
-                        "id": thisRun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']['objectId']
-                    }
-                    runParams = {
-                        "jobRuns": [
-                            {
-                                "copyRunTargets": [],
-                                "runStartTimeUsecs": run['backupRun']['stats']['startTimeUsecs'],
-                                "jobUid": jobUid
-                            }
-                        ]
-                    }
-                    for copyRun in run['copyRun']:
-                        if 'expiryTimeUsecs' in copyRun and copyRun['expiryTimeUsecs'] > dateToUsecs():
-                            copyRunTarget = copyRun['target']
-                            copyRunTarget['holdForLegalPurpose'] = holdValue
-                            runParams['jobRuns'][0]['copyRunTargets'].append(copyRunTarget)
-                    # display(runParams)
-                    print('    %s - %s' % (usecsToDate(run['backupRun']['stats']['startTimeUsecs']), actionString))
-                    result = api('put', 'protectionRuns', runParams)
+                    if (addhold and held is False) or (removehold and held is True):
+                        thisRun = api('get', '/backupjobruns?id=%s&exactMatchStartTimeUsecs=%s' % (run['jobId'], run['backupRun']['stats']['startTimeUsecs']))
+                        jobUid = {
+                            "clusterId": thisRun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']['clusterId'],
+                            "clusterIncarnationId": thisRun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']['clusterIncarnationId'],
+                            "id": thisRun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']['objectId']
+                        }
+                        runParams = {
+                            "jobRuns": [
+                                {
+                                    "copyRunTargets": [],
+                                    "runStartTimeUsecs": run['backupRun']['stats']['startTimeUsecs'],
+                                    "jobUid": jobUid
+                                }
+                            ]
+                        }
+                        for copyRun in run['copyRun']:
+                            if 'expiryTimeUsecs' in copyRun and copyRun['expiryTimeUsecs'] > dateToUsecs():
+                                copyRunTarget = copyRun['target']
+                                copyRunTarget['holdForLegalPurpose'] = holdValue
+                                runParams['jobRuns'][0]['copyRunTargets'].append(copyRunTarget)
+                        # display(runParams)
+                        print('    %s - %s' % (usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), actionString))
+                        result = api('put', 'protectionRuns', runParams)
+                    else:
+                        if (showtrue and held is True) or (addhold and held is True):
+                            print('    %s - %s' % (usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), 'on hold'))
+                        if (showfalse and held is False) or (removehold and held is False):
+                            print('    %s - %s' % (usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), 'not on hold'))

@@ -50,6 +50,8 @@ To remove legal hold from all backups::
 * -n, --numruns: (optional) runs per api querty (default is 1000)
 * -a, --addhold: (optional) add legal holds
 * -r, --removehold: (optional) remove legal holds
+* -st, --showtrue: (optional) show runs where legal hold is present
+* -sf, --showfalse: (optional) show runs where legal hold is not present
 
 ## The Python Helper Module - pyhesity.py
 
