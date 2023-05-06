@@ -24,6 +24,7 @@ parser.add_argument('-t', '--backupType', type=str, choices=['kLog', 'kRegular',
 parser.add_argument('-log', '--includelogs', action='store_true')
 parser.add_argument('-o', '--olderthan', type=int, default=0)
 parser.add_argument('-n', '--newerthan', type=int, default=0)
+parser.add_argument('-g', '--greaterthan', type=int, default=0)
 parser.add_argument('-a', '--allowreduction', action='store_true')
 parser.add_argument('-x', '--commit', action='store_true')
 args = parser.parse_args()
@@ -43,6 +44,7 @@ backupType = args.backupType
 includelogs = args.includelogs
 olderthan = args.olderthan
 newerthan = args.newerthan
+greaterthan = args.greaterthan
 allowreduction = args.allowreduction
 commit = args.commit
 
@@ -73,6 +75,8 @@ if newerthan > 0:
 olderthanusecs = nowUsecs
 if olderthan > 0:
     olderthanusecs = timeAgo(olderthan, 'days')
+if greaterthan > 0:
+    greaterthanusecs = greaterthan * 86400000000
 
 
 # gather server list
@@ -119,51 +123,53 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                             if runStartTimeUsecs > newerthanusecs and runStartTimeUsecs < olderthanusecs:
                                 runStartTime = usecsToDate(runStartTimeUsecs, fmt='%Y-%m-%d %H:%M')
                                 currentExpireTimeUsecs = run['copyRun'][0]['expiryTimeUsecs']
-                                newExpireTimeUsecs = runStartTimeUsecs + (keepfor * 86400000000)
-                                extendByDays = dayDiff(newExpireTimeUsecs, currentExpireTimeUsecs)
-                                actionString = ''
-                                if allowreduction is False and extendByDays < 0:
-                                    actionString = 'reduction disallowed'
-                                if extendByDays == 0:
-                                    actionString = 'no change'
-                                if (allowreduction is True and extendByDays < 0) or extendByDays > 0:
-                                    if extendByDays > 0:
-                                        actionString = 'would extend'
-                                    else:
-                                        actionString = 'would reduce'
-                                    if commit:
+                                retentionUsecs = currentExpireTimeUsecs - runStartTimeUsecs
+                                if greaterthan == 0 or retentionUsecs > (greaterthanusecs + 3600000000):
+                                    newExpireTimeUsecs = runStartTimeUsecs + (keepfor * 86400000000)
+                                    extendByDays = dayDiff(newExpireTimeUsecs, currentExpireTimeUsecs)
+                                    actionString = ''
+                                    if allowreduction is False and extendByDays < 0:
+                                        actionString = 'reduction disallowed'
+                                    if extendByDays == 0:
+                                        actionString = 'no change'
+                                    if (allowreduction is True and extendByDays < 0) or extendByDays > 0:
                                         if extendByDays > 0:
-                                            actionString = 'extended'
+                                            actionString = 'would extend'
                                         else:
-                                            actionString = 'reduced'
-                                        thisRun = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&id=%s' % (runStartTimeUsecs, job['id']))
-                                        jobUid = thisRun[0]['backupJobRuns']['jobDescription']['primaryJobUid']
-                                        # update retention of job run
-                                        runParameters = {
-                                            "jobRuns": [
-                                                {
-                                                    "jobUid": {
-                                                        "clusterId": jobUid['clusterId'],
-                                                        "clusterIncarnationId": jobUid['clusterIncarnationId'],
-                                                        "id": jobUid['objectId']
-                                                    },
-                                                    "runStartTimeUsecs": run['copyRun'][0]['runStartTimeUsecs'],
-                                                    "copyRunTargets": [
-                                                        {
-                                                            "daysToKeep": extendByDays,
-                                                            "type": "kLocal"
-                                                        }
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                        result = api('put', 'protectionRuns', runParameters)
-                                if extendByDays == 0:
-                                    print("    %s:    %s -> %s    (%s)" % (runStartTime, usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString))
-                                elif extendByDays < 0 and allowreduction is not True:
-                                    print("    %s:    %s -> %s    (%s: %s days)" % (runStartTime, usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
-                                else:
-                                    print("    %s:    %s -> %s    (%s by %s days)" % (runStartTime, usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
+                                            actionString = 'would reduce'
+                                        if commit:
+                                            if extendByDays > 0:
+                                                actionString = 'extended'
+                                            else:
+                                                actionString = 'reduced'
+                                            thisRun = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&id=%s' % (runStartTimeUsecs, job['id']))
+                                            jobUid = thisRun[0]['backupJobRuns']['jobDescription']['primaryJobUid']
+                                            # update retention of job run
+                                            runParameters = {
+                                                "jobRuns": [
+                                                    {
+                                                        "jobUid": {
+                                                            "clusterId": jobUid['clusterId'],
+                                                            "clusterIncarnationId": jobUid['clusterIncarnationId'],
+                                                            "id": jobUid['objectId']
+                                                        },
+                                                        "runStartTimeUsecs": run['copyRun'][0]['runStartTimeUsecs'],
+                                                        "copyRunTargets": [
+                                                            {
+                                                                "daysToKeep": extendByDays,
+                                                                "type": "kLocal"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                            result = api('put', 'protectionRuns', runParameters)
+                                    if extendByDays == 0:
+                                        print("    %s:    %s -> %s    (%s)" % (runStartTime, usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString))
+                                    elif extendByDays < 0 and allowreduction is not True:
+                                        print("    %s:    %s -> %s    (%s: %s days)" % (runStartTime, usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
+                                    else:
+                                        print("    %s:    %s -> %s    (%s by %s days)" % (runStartTime, usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
                                 f.write('%s,%s,%s,%s,%s,%s\n' % (job['name'], runStartTime, usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
                 except Exception:
                     pass

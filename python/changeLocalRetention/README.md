@@ -50,6 +50,7 @@ If you're happy with the output you can commit the change by adding -x (--commit
 * -x, --commit: (optional) perform updates (otherwise just show what would happen)
 * -n, --newerthan: (optional) only process snapshots newer than X days
 * -o, --olderthan: (optional) only process snapshots olderthan than X days
+* -g, --greaterthan: (optional) only process snapshots with existing retentions older than X days
 * -j, --jobname: (optional) one or more protection job names to include
 * -l, --joblist: (optional) text file of job names to include
 * -n, --numruns: (optional) runs per api querty (default is 1000)
