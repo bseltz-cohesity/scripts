@@ -19,7 +19,7 @@ chmod +x changeArchiveRetention.py
 # end download commands
 ```
 
-First, perform a test run. To extend the retention of snapshots to 14 days (after the original backup date):
+First, perform a test run. To extend the retention of archives to 14 days (after the original backup date):
 
 ```bash
 ./changeArchiveRetention.py -v mycluster -u myuser -k 14
@@ -43,14 +43,14 @@ If you're happy with the output you can commit the change by adding -x (--commit
 
 ## Other Parameters
 
-* -k, --keepfor: number of days (from original backup date) to retain the snapshots
+* -k, --keepfor: number of days (from original backup date) to retain the archives
 * -t, --backupType: (optional) kLog, kRegular, kFull, kSystem or kAll (default is kAll)
 * -log, --includelogs: (optional) update retention for log backups (will skip logs by default)
 * -a, --allowreduction: (optional) allow retention to be reduced
 * -x, --commit: (optional) perform updates (otherwise just show what would happen)
-* -n, --newerthan: (optional) only process snapshots newer than X days
-* -o, --olderthan: (optional) only process snapshots olderthan than X days
-* -g, --greaterthan: (optional) only process snapshots with existing retentions longer than X days
+* -n, --newerthan: (optional) only process archives newer than X days
+* -o, --olderthan: (optional) only process archives olderthan than X days
+* -g, --greaterthan: (optional) only process archives with existing retentions longer than X days
 * -j, --jobname: (optional) one or more protection job names to include (default is all jobs)
 * -l, --joblist: (optional) text file of job names to include (default is all jobs)
 * -n, --numruns: (optional) runs per api querty (default is 1000)
