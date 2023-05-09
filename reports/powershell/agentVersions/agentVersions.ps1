@@ -58,7 +58,10 @@ $nodes.rootNodes | Sort-Object -Property {$_.rootNode.physicalProtectionSource.n
 
 foreach ($node in $nodes.rootNodes){
     $name = $node.rootNode.physicalProtectionSource.name
-    $version = $node.rootNode.physicalProtectionSource.agents[0].version
+    $version = ''
+    if($node.rootNode.physicalProtectionSource.PSObject.Properties['agents'] -and $node.rootNode.physicalProtectionSource.agents.Count -gt 0){
+        $version = $node.rootNode.physicalProtectionSource.agents[0].version
+    }
     $hostType = $node.rootNode.physicalProtectionSource.hostType.subString(1)
     $osName = $node.rootNode.physicalProtectionSource.osName
     "$clusterName`t$name`t$version`t$hostType`t$osName" | Out-File -FilePath $outfileName -Append
