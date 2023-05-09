@@ -17,7 +17,8 @@ parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
-parser.add_argument('-j', '--jobname', required=True, type=str)
+parser.add_argument('-j', '--jobname', action='append', type=str)
+parser.add_argument('-l', '--joblist', type=str)
 args = parser.parse_args()
 
 vip = args.vip
@@ -30,7 +31,8 @@ useApiKey = args.useApiKey
 password = args.password
 noprompt = args.noprompt
 mfacode = args.mfacode
-jobname = args.jobname
+jobnames = args.jobname
+joblist = args.joblist
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, tenantId=tenant)
@@ -48,13 +50,38 @@ if apiconnected() is False:
     print('authentication failed')
     exit(1)
 
-jobs = api('get', 'data-protect/protection-groups?isDeleted=false&isActive=true&names=%s' % jobname, v=2)
-if jobs['protectionGroups'] is not None and len(jobs['protectionGroups']) > 0:
-    job = [j for j in jobs['protectionGroups'] if j['name'].lower() == jobname.lower()]
-    if job is not None and len(job) > 0:
-        print('updating job %s' % jobname)
-        result = api('put', 'data-protect/protection-groups/%s' % job[0]['id'], job[0], v=2)
-    else:
-        print('job %s not found' % jobname)
-else:
-    print('job %s not found' % jobname)
+
+# gather server list
+def gatherList(param=None, filename=None, name='items', required=True):
+    items = []
+    if param is not None:
+        for item in param:
+            items.append(item)
+    if filename is not None:
+        f = open(filename, 'r')
+        items += [s.strip() for s in f.readlines() if s.strip() != '']
+        f.close()
+    if required is True and len(items) == 0:
+        print('no %s specified' % name)
+        exit()
+    return items
+
+
+jobnames = gatherList(jobnames, joblist, name='jobs', required=False)
+
+jobs = api('get', 'data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true', v=2)
+
+# catch invalid job names
+notfoundjobs = [n for n in jobnames if n.lower() not in [j['name'].lower() for j in jobs['protectionGroups']]]
+if len(notfoundjobs) > 0:
+    print('Jobs not found: %s' % ', '.join(notfoundjobs))
+    exit(1)
+
+if jobs['protectionGroups'] is None:
+    print('no jobs found')
+    exit()
+
+for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower()):
+    if len(jobnames) == 0 or job['name'].lower() in [j.lower() for j in jobnames]:
+        print('updating job %s' % job['name'])
+        result = api('put', 'data-protect/protection-groups/%s' % job['id'], job, v=2)

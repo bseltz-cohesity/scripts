@@ -52,7 +52,8 @@ To connect via helios:
 
 ## Other Parameters
 
-* -j, --jobname: name of job to update
+* -j, --jobname: (optional) job name to update (repeat for multiple)
+* -l, --joblist: (optional) text file of job names to update (one per line)
 
 ## Authenticating to Helios
 
