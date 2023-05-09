@@ -25,6 +25,18 @@ Run the script like so:
 ./touchJob.py -v mycluster -u myuser -d local -j 'my job' 
 ```
 
+To update multple jobs:
+
+```bash
+./touchJob.py -v mycluster -u myuser -d local -j 'my job1' -j 'my job2' 
+```
+
+Or provide a text file of job names (one per line):
+
+```bash
+./touchJob.py -v mycluster -u myuser -d local -l ./myjobs.txt 
+```
+
 To us an active directory account:
 
 ```bash
