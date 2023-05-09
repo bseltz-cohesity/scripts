@@ -42,10 +42,10 @@ $cluster = api get cluster
 $clusterName = $cluster.name
 $now = Get-Date
 $dateString = $now.ToString('yyyy-MM-dd')
-$outfileName = "agentVersions-$clusterName-$dateString.tsv"
+$outfileName = "agentVersions-$clusterName-$dateString.csv"
 
 # headings
-$headings = "Cluster Name`tSource Name`tAgent Version`tOS Type`tOS Name"
+$headings = """Cluster Name"",""Source Name"",""Agent Version"",""OS Type"",""OS Name"""
 $headings | Out-File -FilePath $outfileName # -Encoding utf8
 
 ### list agent info
@@ -64,7 +64,7 @@ foreach ($node in $nodes.rootNodes){
     }
     $hostType = $node.rootNode.physicalProtectionSource.hostType.subString(1)
     $osName = $node.rootNode.physicalProtectionSource.osName
-    "$clusterName`t$name`t$version`t$hostType`t$osName" | Out-File -FilePath $outfileName -Append
+    """$clusterName"",""$name"",""$version"",""$hostType"",""$osName""" | Out-File -FilePath $outfileName -Append
 }
 
 "`nOutput saved to $outfilename`n"
