@@ -42,6 +42,8 @@ archivetargetid=1036695   # ID of archive target
 keeparchivefor=31         # days to retain archive
 ```
 
+You can discover the numeric IDs of the various objects by clicking around the UI and noting the IDs that appear in the URL for that object.
+
 If replication and archiving is not required you can remove those sections (and remove the associated copyTargets from the JSON payload at the end of the file).
 
 Then run the script like so:
