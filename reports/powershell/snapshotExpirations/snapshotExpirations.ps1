@@ -14,7 +14,7 @@ param (
     [Parameter()][string]$clusterName = $null,
     [Parameter()][array]$jobName,
     [Parameter()][string]$jobList,
-    [Parameter()][int]$numRuns = 1000
+    [Parameter()][int]$numRuns = 2000
 )
 
 # source the cohesity-api helper code
@@ -95,19 +95,21 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         while($True){
             $runs = api get "/backupjobruns?allUnderHierarchy=true&endTimeUsecs=$endUsecs&id=$v1JobId&excludeTasks=true&numRuns=$numRuns&excludeNonRestoreableRuns=true"
             foreach($run in $runs.backupJobRuns.protectionRuns){
-                $runType = $runTypes[$run.backupRun.base.backupType]
-                $runStartTime = usecsToDate $run.backupRun.base.startTimeUsecs
-                $expireTimeUsecs = $run.copyRun.finishedTasks[0].expiryTimeUsecs
-                if($expireTimeUsecs -gt $nowUsecs){
-                    "    {0} ({1})" -f $runStartTime, $runType
-                    $expiration = usecsToDate $expireTimeUsecs
-                    "{0}`t{1}`t{2}`t{3}`t{4}`t{5}`t{6}" -f $cluster.name, $tenant, $job.name, $environment, $runType, $runStartTime, $expiration | Out-File -FilePath $outfileName -Append
+                if($run.backupRun.base.startTimeUsecs -ne $lastRunId){
+                    $runType = $runTypes[$run.backupRun.base.backupType]
+                    $runStartTime = usecsToDate $run.backupRun.base.startTimeUsecs
+                    $expireTimeUsecs = $run.copyRun.finishedTasks[0].expiryTimeUsecs
+                    if($expireTimeUsecs -gt $nowUsecs){
+                        "    {0} ({1})" -f $runStartTime, $runType
+                        $expiration = usecsToDate $expireTimeUsecs
+                        "{0}`t{1}`t{2}`t{3}`t{4}`t{5}`t{6}" -f $cluster.name, $tenant, $job.name, $environment, $runType, $runStartTime, $expiration | Out-File -FilePath $outfileName -Append
+                    }
                 }
             }
-            $endUsecs = $run.backupRun.base.endTimeUsecs - 1
             if($run.backupRun.base.startTimeUsecs -eq $lastRunId){
                 break
             }
+            $endUsecs = $run.backupRun.base.endTimeUsecs - 61000000
             $lastRunId = $run.backupRun.base.startTimeUsecs
         }
     }
