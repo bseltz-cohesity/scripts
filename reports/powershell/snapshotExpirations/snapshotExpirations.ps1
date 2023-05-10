@@ -41,6 +41,7 @@ if(!$cohesity_api.authorized){
 # outfile
 $cluster = api get cluster
 $now = Get-Date
+$nowUsecs = dateToUsecs
 $dateString = $now.ToString('yyyy-MM-dd')
 $outfileName = "snapshotExpirationReport-$($cluster.name)-$dateString.tsv"
 
@@ -96,10 +97,12 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
             foreach($run in $runs.backupJobRuns.protectionRuns){
                 $runType = $runTypes[$run.backupRun.base.backupType]
                 $runStartTime = usecsToDate $run.backupRun.base.startTimeUsecs
-                "    {0} ({1})" -f $runStartTime, $runType
                 $expireTimeUsecs = $run.copyRun.finishedTasks[0].expiryTimeUsecs
-                $expiration = usecsToDate $expireTimeUsecs
-                "{0}`t{1}`t{2}`t{3}`t{4}`t{5}`t{6}" -f $cluster.name, $tenant, $job.name, $environment, $runType, $runStartTime, $expiration | Out-File -FilePath $outfileName -Append
+                if($expireTimeUsecs -gt $nowUsecs){
+                    "    {0} ({1})" -f $runStartTime, $runType
+                    $expiration = usecsToDate $expireTimeUsecs
+                    "{0}`t{1}`t{2}`t{3}`t{4}`t{5}`t{6}" -f $cluster.name, $tenant, $job.name, $environment, $runType, $runStartTime, $expiration | Out-File -FilePath $outfileName -Append
+                }
             }
             $endUsecs = $run.backupRun.base.endTimeUsecs - 1
             if($run.backupRun.base.startTimeUsecs -eq $lastRunId){
