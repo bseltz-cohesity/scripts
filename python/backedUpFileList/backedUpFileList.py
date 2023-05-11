@@ -119,7 +119,8 @@ def showFiles(doc, version):
 
     fileDateString = datetime.strptime(usecsToDate(version['instanceId']['jobStartTimeUsecs']), '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d_%H-%M-%S')
 
-    f = codecs.open('backedUpFiles-%s-%s-%s.txt' % (sourceserver, version['instanceId']['jobInstanceId'], fileDateString), 'w', 'utf-8')
+    fsourceserver = sourceserver.replace('/', '-').replace('\\', '-')
+    f = codecs.open('backedUpFiles-%s-%s-%s.txt' % (fsourceserver, version['instanceId']['jobInstanceId'], fileDateString), 'w', 'utf-8')
 
     volumeTypes = [1, 6]
     backupType = doc['backupType']
