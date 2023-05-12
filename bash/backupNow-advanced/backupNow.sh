@@ -30,8 +30,7 @@ api () {
         echo 'no api method specified'
         return 1
     else
-        method=$1
-        method=${method^^}
+        method=$(echo "$1" | tr '[:lower:]' '[:upper:]')
     fi
     if [ -z "$2" ]
     then
@@ -54,7 +53,6 @@ api () {
     fi
     if [ method = 'POST' ]
     then
-    echo "hello"
         echo "${data}"
     fi
     API_RESPONSE=$(curl --location -k --request $method "${uri}" \
@@ -64,6 +62,7 @@ api () {
 }
 
 # get protection group
+
 PROTECTION_GROUP=$(api get "https://${CLUSTER_ENDPOINT}/v2/data-protect/protection-groups?isActive=true&isDeleted=false&names=${JOBNAME}" $APIKEY)
 PROTECTION_GROUP_NAME=$(echo $PROTECTION_GROUP | jq --raw-output '.protectionGroups[0].name')
 if [ "${PROTECTION_GROUP_NAME}" == "null" ]
@@ -141,12 +140,13 @@ if [ "${PROTECTION_GROUP_ENVIRONMENT}" == "kPhysical" ]
 then
     if [ ! -z "${SOURCENAME}" ]
     then
+        SOURCENAME=$(echo "${SOURCENAME}" | tr '[:lower:]' '[:upper:]')
         FOUND_OBJECT=0
         for i in $(echo $PROTECTION_GROUP_OBJECTS | jq -c '.[]')
         do
-            OBJECT_NAME=$(echo $i | jq -c '.name' | tr -d '"')
+            OBJECT_NAME=$(echo $i | jq -c '.name' | tr -d '"' | tr '[:lower:]' '[:upper:]')
             OBJECT_ID=$(echo $i | jq -c '.id')
-            if [ "${OBJECT_NAME,,}" = "${SOURCENAME,,}" ]; then
+            if [ "${OBJECT_NAME}" = "${SOURCENAME}" ]; then
                 RUN_PARAMS=$(echo "${RUN_PARAMS}" | jq '.runNowParameters += [{"sourceId": '$OBJECT_ID'}]')
                 FOUND_OBJECT=1
                 break
