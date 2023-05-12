@@ -6,7 +6,7 @@ This bash script runs a protection job. It will use the policy settings to inclu
 
 ## Dependencies
 
-This script requires `curl` and `jq` and has been tested on Fedora 35, CentOS 7, and AIX 7.3.
+This script requires `curl` and `jq` and has been tested on Fedora 35, CentOS 7, AIX 7.3 and MacOS Ventura.
 
 ## Download the script
 
