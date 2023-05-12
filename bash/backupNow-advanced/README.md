@@ -12,7 +12,7 @@ This script requires `curl` and `jq` and has been tested on Fedora 35, CentOS 7,
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/backupNow/backupNow.sh
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/backupNow-advanced/backupNow.sh
 chmod +x backupNow.sh
 # End download commands
 ```
