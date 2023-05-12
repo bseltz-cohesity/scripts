@@ -11,7 +11,7 @@ This script requires `curl` and `jq` and has been tested on:
 * Fedora 35
 * CentOS 7
 * AIX 7.3
-* MacOS Ventura.
+* MacOS Ventura
 
 ## Download the script
 
