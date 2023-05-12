@@ -19,7 +19,7 @@ chmod +x backupNow.sh
 
 ## Parameters
 
--v: cluster vip or endpoint to connect to
+-v: cluster vip or endpoint to connect to x
 -j: name of protection job to run
 -k: api key for authentication
 -o: (optional) name of server to backup (for physical protection groups only)
