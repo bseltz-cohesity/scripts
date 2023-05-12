@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This bash script runs a protection job.
+This bash script runs a protection job. It will use the policy settings to include replication and archive copies. Note that the base retention is used (extended retentions are not applied). For physical server backups, you can optionally specify one server to backup (otherwise all servers are backed up). The script supports API key authentication only.
 
 ## Dependencies
 
