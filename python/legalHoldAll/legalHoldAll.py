@@ -4,6 +4,7 @@
 # import pyhesity wrapper module
 from pyhesity import *
 from datetime import datetime
+import codecs
 
 # command line arguments
 import argparse
@@ -64,6 +65,12 @@ nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 
 # outfile
 cluster = api('get', 'cluster')
+dateString = now.strftime("%Y-%m-%d")
+outfile = 'legalHoldReport-%s-%s.csv' % (cluster['name'], dateString)
+f = codecs.open(outfile, 'w')
+
+# headings
+f.write('Job Name,Run Date,Status\n')
 
 
 # gather server list
@@ -146,9 +153,15 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                                 runParams['jobRuns'][0]['copyRunTargets'].append(copyRunTarget)
                         # display(runParams)
                         print('    %s - %s' % (usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), actionString))
+                        f.write('%s,%s,%s\n' % (job['name'], usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), actionString))
                         result = api('put', 'protectionRuns', runParams)
                     else:
                         if (showtrue and held is True) or (addhold and held is True):
                             print('    %s - %s' % (usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), 'on hold'))
+                            f.write('%s,%s,%s\n' % (job['name'], usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), 'on hold'))
                         if (showfalse and held is False) or (removehold and held is False):
                             print('    %s - %s' % (usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), 'not on hold'))
+                            f.write('%s,%s,%s\n' % (job['name'], usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), 'not on hold'))
+
+f.close()
+print('\nOutput saved to %s\n' % outfile)
