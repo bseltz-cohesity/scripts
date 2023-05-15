@@ -56,6 +56,6 @@ Tearing down mount points...
 
 ## Version Update
 
-- Added monitoring for task completion
-- Added mountPoint report
-- Added taskId report for teardown
+* Added monitoring for task completion
+* Added mountPoint report
+* Added taskId report for teardown
