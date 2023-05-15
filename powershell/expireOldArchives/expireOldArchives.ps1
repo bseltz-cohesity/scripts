@@ -8,7 +8,8 @@ param (
     [Parameter()][string]$domain = 'local', #local or AD domain
     [Parameter()][string]$jobName, # optional jobName 
     [Parameter()][string]$target, # optional target name
-    [Parameter()][string]$olderThan = 0, #archive snapshots older than x days
+    [Parameter()][int]$olderThan = 0, # expire archives older than x days
+    [Parameter()][int]$newerThan = 0, # expire archives newer than X days
     [Parameter()][switch]$expire,
     [Parameter()][switch]$showUnsuccessful
 )
@@ -24,6 +25,7 @@ $clusterId = (api get cluster).id
 
 ### olderThan days in usecs
 $olderThanUsecs = timeAgo $olderThan days
+$newerThanUsecs = timeAgo $newerThan days
 
 ### find protectionRuns with old local snapshots with archive tasks and sort oldest to newest
 "searching for old snapshots..."
@@ -39,6 +41,10 @@ foreach ($job in $jobs) {
         Where-Object { $_.copyRun[0].runStartTimeUsecs -le $olderThanUsecs } | `
         Where-Object { 'kArchival' -in $_.copyRun.target.type } | `
         Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
+
+    if($newerThan -gt 0){
+        $runs = $runs | Where-Object { $_.copyRun[0].runStartTimeUsecs -ge $newerThanUsecs }
+    }
 
     foreach ($run in $runs) {
 
@@ -79,5 +85,3 @@ foreach ($job in $jobs) {
         }
     }
 }
-
-
