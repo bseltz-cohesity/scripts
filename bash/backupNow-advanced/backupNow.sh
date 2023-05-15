@@ -20,7 +20,7 @@ fi
 
 if [ -z "$SLEEP_TIME" ]
 then
-    SLEEP_TIME=60
+    SLEEP_TIME=120
 fi
 
 # api call function
@@ -217,6 +217,6 @@ then
 # exit if job was already running
 elif [ "$LAST_RUN_STATUS" == "Accepted" ] || [ "$LAST_RUN_STATUS" == "Running" ] || [ "$LAST_RUN_STATUS" == "Cancelling" ] || [ "$LAST_RUN_STATUS" == "OnHold" ]
 then
-    echo "**EXISTING RUN IS IN $LAST_RUN_STATUS STATE. EXITING"
+    echo "**Existing run is in $LAST_RUN_STATUS state. Exiting"
 fi
 exit 1
