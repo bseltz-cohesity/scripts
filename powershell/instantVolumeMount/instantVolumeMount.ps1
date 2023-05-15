@@ -12,11 +12,12 @@ param (
     [Parameter(Mandatory = $True)][string]$sourceServer, #source server that was backed up
     [Parameter()][string]$targetServer = $sourceServer, #target server to mount the volumes to
     [Parameter()][string]$targetUsername = '', #credentials to ensure disks are online (optional, only needed if it's a VM with no agent)
-    [Parameter()][string]$targetPw = '' #credentials to ensure disks are online (optional, only needed if it's a VM with no agent)
+    [Parameter()][string]$targetPw = '', #credentials to ensure disks are online (optional, only needed if it's a VM with no agent)
+    [Parameter()][string]$before
 )
 
 ### source the cohesity-api helper code
-. ./cohesity-api
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
 apiauth -vip $vip -username $username -domain $domain
@@ -32,6 +33,15 @@ $latestResult = ($searchResults2 | sort-object -property @{Expression={$_.vmDocu
 
 if(!$latestResult){
     write-host "Source Server $sourceServer Not Found" -foregroundcolor yellow
+    exit
+}
+
+if($before){
+    $beforeUsecs = dateToUsecs $before
+    $latestResult.vmDocument.versions = $latestResult.vmDocument.versions | Where-Object { $_.snapshotTimestampUsecs -lt $beforeUsecs }
+}
+if($latestResult.vmDocument.versions.count -eq 0){
+    Write-Host "No backups available from before $before"
     exit
 }
 

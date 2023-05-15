@@ -6,11 +6,12 @@ This script demonstrates how to perform an Instant Volume Mount using PowerShell
 
 The script takes the following parameters:
 
-- -vip (DNS or IP of the Cohesity Cluster)
-- -username (Cohesity User Name)
-- -domain (optional - defaults to 'local')
-- -sourceServer (source Server Name)
-- -targetServer (optional - Server to attach to, defaults to same as sourceServer)
+* -vip: DNS or IP of the Cohesity Cluster
+* -username:Cohesity User Name
+* -domain: (optional) defaults to 'local'
+* -sourceServer: source Server Name
+* -targetServer: (optional) Server to attach to, defaults to same as sourceServer)
+* -before: (optional) choose most recent backup before this date (e.g. '2023-05-15 00:00:00')
 
 ## Download the script
 
