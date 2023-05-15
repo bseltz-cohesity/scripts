@@ -129,11 +129,11 @@ if($runId){
     $snapshot = $snapshots.snapshots[-1]
 }
 $snapshotId = $snapshot.id
-if($snapshot.PSObject.Properties['indexingStatus'] -and $snapshot.indexingStatus -eq 'Done'){
-    $noIndex = $False
-}else{
-    $noIndex = $True
-}
+# if($snapshot.PSObject.Properties['indexingStatus'] -and $snapshot.indexingStatus -eq 'Done'){
+#     $noIndex = $False
+# }else{
+#     $noIndex = $True
+# }
 
 $dateString = get-date -UFormat '%Y-%m-%d_%H-%M-%S'
 
