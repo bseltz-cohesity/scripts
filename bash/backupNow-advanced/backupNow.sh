@@ -202,6 +202,12 @@ then
         then
             Finished=true
             echo "Job finished with status: ${NEW_RUN_STATUS}"
+            if [ "$NEW_RUN_STATUS" == "Succeeded" ] || [ "$NEW_RUN_STATUS" == "SucceededWithWarning" ]
+            then
+                exit 0
+            else
+                exit 1
+            fi
         else
             sleep $SLEEP_TIME
         fi
