@@ -65,7 +65,7 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
-$jobs = api get protectionJobs | Where-Object {$_.isDeleted -ne $True -and $_.isActive -ne $false}
+$jobs = api get protectionJobs # | Where-Object {$_.isDeleted -ne $True -and $_.isActive -ne $false}
 
 # catch invalid job names
 if($jobNames.Count -gt 0){
