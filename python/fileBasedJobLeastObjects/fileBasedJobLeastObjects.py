@@ -16,8 +16,8 @@ parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
-parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-n', '--namematch', type=str, default=None)
+parser.add_argument('-l', '--showlist', action='store_true')
 
 args = parser.parse_args()
 
@@ -30,11 +30,11 @@ useApiKey = args.useApiKey
 password = args.password
 noprompt = args.noprompt
 mfacode = args.mfacode
-emailmfacode = args.emailmfacode
 namematch = args.namematch
+showlist = args.showlist
 
 # authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), emailMfaCode=emailmfacode, mfaCode=mfacode, quiet=True)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, quiet=True)
 
 # if connected to helios or mcm, select access cluster
 if mcm or vip.lower() == 'helios.cohesity.com':
@@ -56,7 +56,12 @@ if 'protectionGroups' in jobs and jobs['protectionGroups'] is not None:
         jobs = [job for job in jobs if namematch.lower() in job['name'].lower()]
     if len(jobs) > 0:
         jobs = sorted(jobs, key=lambda job: len(job['physicalParams']['fileProtectionTypeParams']['objects']))
-        print(jobs[0]['name'])
+        if showlist:
+            for job in jobs:
+                mytuple = (job['name'], len(job['physicalParams']['fileProtectionTypeParams']['objects']))
+                print(mytuple)
+        else:
+            print(jobs[0]['name'])
     else:
         print('None')
 else:

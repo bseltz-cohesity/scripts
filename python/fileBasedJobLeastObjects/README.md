@@ -49,7 +49,7 @@ To filter the protection groups based on a string match:
 * -mcm, --mcm: (optional) connect through MCM
 * -c, --clustername: (optional) helios/mcm cluster to connect to
 * -m, --mfacode: (optional) MFA code for authentication
-* -e, --emailmfacode: (optional) send MFA code via email
+* -l, --showlist: (optional) return list of matching jobs
 
 ## Other Parameters
 
