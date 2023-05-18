@@ -65,7 +65,8 @@ or:
 * -jobname: name of protection job (new or existing)
 * -servername: (optional) one or more names of Oracle servers to protect (comma separated)
 * -serverlist: (optional) text file of names of Oracle servers to protect (one per line)
-* -dbname: (optional) name of database to protect (defaults to all dbs)
+* -dbName: (optional) one or more database names to unprotect (comma separated)
+* -dbList: (optional) text file of database names to unprotect (one per line)
 * -channels: (optional) number of RMAN channels to use
 * -channelNode: (optional) name of RAC oracle node to use for backup
 * -channelPort: (optional) Oracle port (Default is 1521)

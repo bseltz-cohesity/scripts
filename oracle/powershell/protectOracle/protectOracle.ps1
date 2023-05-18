@@ -17,7 +17,8 @@ param (
     [Parameter(Mandatory = $True)][string]$jobname,
     [Parameter()][array]$servername,
     [Parameter()][string]$serverlist,
-    [Parameter()][string]$dbname = $null,
+    [Parameter()][array]$dbName,
+    [Parameter()][string]$dbList,
     [Parameter()][int]$channels,
     [Parameter()][string]$channelNode,
     [Parameter()][int]$channelPort = 1521,
@@ -54,6 +55,7 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 }
 
 $serverNames = @(gatherList -Param $servername -FilePath $serverlist -Name 'servers' -Required $True)
+$dbNames = @(gatherList -Param $dbName -FilePath $dbList -Name 'jobs' -Required $false)
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -184,7 +186,7 @@ foreach($servername in $serverNames){
             }
         }
         foreach($dbNode in $server.applicationNodes){
-            if(!$dbname -or $dbNode.protectionSource.name -eq $dbname){
+            if($dbNames.Count -eq 0 -or $dbNode.protectionSource.name -in $dbNames){
                 Write-Host "Adding $($dbNode.protectionSource.name) to $jobName"
                 $thisDB = $thisObject.dbParams | Where-Object {$_.databaseId -eq $dbNode.protectionSource.id}
                 $thisObject.dbParams = @($thisObject.dbParams | Where-Object {$_.databaseId -ne $dbNode.protectionSource.id})
