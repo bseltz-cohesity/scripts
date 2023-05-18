@@ -53,8 +53,8 @@ To list policies:
 * -frequencyUnit: (optional) runs, minutes, hours, days, weeks, months, years (default is runs)
 * -retries: (optional) default is 3
 * -retryMinutes: (optional) number of minutes to wait between retries (default is 5)
-* -lockDuration: (optional) datalock duration
-* -lockUnit: (optional) days, weeks, months, years (default is days)
+* -lockDuration: (optional) datalock duration (requires data security role to edit)
+* -lockUnit: (optional) days, weeks, months, years (default is days) (requires data security role to edit)
 * -targetName: (optional) name of remote cluster or external target
 * -all: (optional) delete all replications for the specified target
 
