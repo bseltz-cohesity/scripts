@@ -44,6 +44,7 @@ Place both files in a folder together and run the main script like so:
 * -domain: Active Directory domain of user (defaults to local)
 * -prefix: job name prefixes to include in the report (comma separated, defaults to all jobs if omitted)
 * -costPerGB: Cost per GB per date range (e.g. per month)
+* -numRuns: number of runs per API query (default is 1000)
 * -sendTo: email addresses to send report to (comma separated)
 * -smtpServer: SMTP gateway to forward email through
 * -smtpPort: SMTP port to use (default is 25)

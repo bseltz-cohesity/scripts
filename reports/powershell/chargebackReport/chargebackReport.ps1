@@ -18,6 +18,7 @@ param (
     [Parameter()][string]$endDate = '',
     [Parameter()][switch]$lastCalendarMonth,
     [Parameter()][int]$lastXDays = 0,
+    [Parameter()][int]$numRuns = 1000,
     [Parameter(Mandatory = $True)][string]$costPerGB,
     [Parameter()][array]$prefix = 'ALL', #report jobs with 'prefix' only
     [Parameter(Mandatory = $True)][string]$smtpServer, #outbound smtp server '192.168.1.95'
@@ -203,12 +204,18 @@ foreach($job in $jobs){
     }
     if($includeRecord){
         "  $($job.name)"
+        $endUsecs = $uEnd
         # walk through date range looking for eneties and their sizes
         $thisDate = $startingDate
-        while($thisDate -ne $endingDate){
-            $runs = api get "/backupjobruns?id=$($job.id)&numRuns=1&startTimeUsecs=$(dateToUsecs $thisDate)&runTypes=kRegular,kFull"
-            foreach($run in $runs){
-                foreach($task in $run.backupJobRuns.protectionRuns.backupRun.latestFinishedTasks){
+        while($True){
+            $runs = api get "/backupjobruns?id=$($job.id)&numRuns=$numRuns&endTimeUsecs=$endUsecs&runTypes=kRegular,kFull"
+            foreach($run in $runs.backupJobRuns.protectionRuns){
+                $runStart = $run.backupRun.base.startTimeUsecs
+                $runEnd = $run.backupRun.base.endTimeUsecs
+                if($runStart -le $uStart){
+                    break
+                }
+                foreach($task in $run.backupRun.latestFinishedTasks){
                     if($task){
                         $displayName = $task.base.sources[0].source.displayName
                         $size = $task.base.totalLogicalBackupSizeBytes
@@ -235,7 +242,14 @@ foreach($job in $jobs){
                     }
                 }
             }
-            $thisDate = $thisDate.AddDays(1)
+            if($runs.backupJobRuns.protectionRuns.Count -gt 2){
+                $endUsecs = $runEnd
+                if($runStart -le $uStart){
+                    break
+                }
+            }else{
+                break
+            }
         }
     }
 }
