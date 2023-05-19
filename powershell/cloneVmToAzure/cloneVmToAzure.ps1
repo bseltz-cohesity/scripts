@@ -16,6 +16,8 @@ param (
     [Parameter()][switch]$powerOn,
     [Parameter(Mandatory = $True)][string]$azureSource,
     [Parameter(Mandatory = $True)][string]$resourceGroup,
+    [Parameter()][string]$storageResourceGroup,
+    [Parameter()][string]$vnetResourceGroup,
     [Parameter(Mandatory = $True)][string]$storageAccount,
     [Parameter(Mandatory = $True)][string]$storageContainer,
     [Parameter(Mandatory = $True)][string]$virtualNetwork,
@@ -81,6 +83,28 @@ if(!$rg){
     exit 1
 }
 
+# get storage resource group
+if(!$storageResourceGroup){
+    $srg = $rg
+}else{
+    $srg = $subscriptionEntity.children | Where-Object {$_.entity.azureEntity.type -eq 1 -and $_.entity.displayName -eq $storageResourceGroup}
+}
+if(!$srg){
+    Write-Host "Storage Resource Group $resourceGroup not found" -ForegroundColor Yellow
+    exit 1
+}
+
+# get vnet resource group
+if(!$vnetResourceGroup){
+    $vrg = $rg
+}else{
+    $vrg = $subscriptionEntity.children | Where-Object {$_.entity.azureEntity.type -eq 1 -and $_.entity.displayName -eq $vnetResourceGroup}
+}
+if(!$vrg){
+    Write-Host "VNET Resource Group $resourceGroup not found" -ForegroundColor Yellow
+    exit 1
+}
+
 # get compute
 $compute = $rg.children | Where-Object {$_.entity.azureEntity.type -eq 7 -and $_.entity.displayName -eq $instanceType}
 if(! $compute){
@@ -89,7 +113,8 @@ if(! $compute){
 }
 
 # get storage account
-$sa = $rg.children | Where-Object {$_.entity.azureEntity.type -eq 3 -and $_.entity.displayName -eq $storageAccount}
+
+$sa = $srg.children | Where-Object {$_.entity.azureEntity.type -eq 3 -and $_.entity.displayName -eq $storageAccount}
 if(! $sa){
     Write-Host "Storage account $storageAccount not found" -ForegroundColor Yellow
     exit 1
@@ -103,7 +128,7 @@ if(! $sc){
 }
 
 # get vnet
-$vnet = $rg.children | Where-Object {$_.entity.azureEntity.type -eq 5 -and $_.entity.displayName -eq $virtualNetwork}
+$vnet = $vrg.children | Where-Object {$_.entity.azureEntity.type -eq 5 -and $_.entity.displayName -eq $virtualNetwork}
 if(! $vnet){
     Write-Host "Virtual network $virtualNetwork not found" -ForegroundColor Yellow
     exit 1
@@ -144,9 +169,9 @@ $cloneParams = @{
             "computeOptions" = $compute.entity;
             "storageAccount" = $sa.entity;
             "storageContainer" = $sc.entity;
-            "storageResourceGroup" = $rg.entity;
+            "storageResourceGroup" = $srg.entity;
             "virtualNetwork" = $vnet.entity;
-            "networkResourceGroup" = $rg.entity;
+            "networkResourceGroup" = $vrg.entity;
             "subnet" = $vsubnet.entity
         }
     };

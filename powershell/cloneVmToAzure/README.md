@@ -63,8 +63,10 @@ Place the files in a folder together and run the main script like so:
 * -azureSource: Azure protection source to restore to
 * -instanceType: compute option to use
 * -resourceGroup: resource group to restor to
+* -storageResourceGroup: (optional) defaults to same as resource group
 * -storageAccount: storage account to restore to
 * -storageContainer: storage container to restore to
+* -vnetResourceGroup: (optional) defaults to same as resource group
 * -virtualNetwork: VNet to connect the VM to
 * -subnet: Subnet to connect to
 * -wait: (optional) wait for completion and return new instance IP address
