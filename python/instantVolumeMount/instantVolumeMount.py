@@ -130,6 +130,7 @@ else:
     version = allVersions[0]
 
 doc = version['doc']
+sourceEntityType = doc['objectId']['entity']['type']
 
 # find source and target servers
 entities = api('get', '/entitiesOfType?awsEntityTypes=kEC2Instance&azureEntityTypes=kVirtualMachine&environmentTypes=kVMware&environmentTypes=kPhysical&environmentTypes=kView&environmentTypes=kGenericNas&environmentTypes=kIsilon&environmentTypes=kNetapp&environmentTypes=kAzure&environmentTypes=kAWS&environmentTypes=kGCP&gcpEntityTypes=kVirtualMachine&genericNasEntityTypes=kHost&isProtected=true&isilonEntityTypes=kMountPoint&netappEntityTypes=kVolume&physicalEntityTypes=kHost&viewEntityTypes=kView&vmwareEntityTypes=kVirtualMachine')
@@ -144,6 +145,10 @@ if len(targetEntity) == 0:
     print('target server %s not found' % targetserver)
     exit(1)
 
+if targetEntity[0]['type'] != sourceEntityType:
+    print('%s is not compatible with volumes from %s' % (targetserver, sourceserver))
+    exit(1)
+exit
 mountTask = {
     'name': 'myMountOperation',
     'objects': [
