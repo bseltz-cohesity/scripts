@@ -23,7 +23,10 @@ param (
     [Parameter(Mandatory = $True)][string]$virtualNetwork,
     [Parameter(Mandatory = $True)][string]$subnet,
     [Parameter(Mandatory = $True)][string]$instanceType,
-    [Parameter()][switch]$wait
+    [Parameter()][switch]$wait,
+    [Parameter()][switch]$useManagedDisks,
+    [Parameter()][ValidateSet('kStandardSSD', 'kPremiumSSD', 'kStandardHDD')]$osDiskType = 'kStandardSSD',
+    [Parameter()][ValidateSet('kStandardSSD', 'kPremiumSSD', 'kStandardHDD')]$dataDiskType = 'kStandardSSD'
 )
 
 # source the cohesity-api helper code
@@ -180,6 +183,13 @@ $cloneParams = @{
         "glacier" = @{
             "retrievalType" = "kStandard"
         }
+    }
+}
+
+if($useManagedDisks){
+    $cloneParams.deployVmsToCloudParams.deployVmsToAzureParams['azureManagedDiskParams'] = @{
+        "osDiskSKUType" = $osDiskType;
+        "dataDisksSKUType" = $dataDiskType
     }
 }
 

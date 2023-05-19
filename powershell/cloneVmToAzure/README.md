@@ -69,4 +69,7 @@ Place the files in a folder together and run the main script like so:
 * -vnetResourceGroup: (optional) defaults to same as resource group
 * -virtualNetwork: VNet to connect the VM to
 * -subnet: Subnet to connect to
+* -useManagedDisks: (optional) use Azure managed disks
+* -osDiskType: (optional) kStandardSSD, kPremiumSSD or kStandardHDD (default is kStandardSSD)
+* -dataDiskType: (optional) kStandardSSD, kPremiumSSD or kStandardHDD (default is kStandardSSD)
 * -wait: (optional) wait for completion and return new instance IP address
