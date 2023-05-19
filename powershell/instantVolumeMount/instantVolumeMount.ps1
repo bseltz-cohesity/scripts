@@ -45,11 +45,18 @@ if($latestResult.vmDocument.versions.count -eq 0){
     exit
 }
 
+$sourceEntityType = $latestResult.vmDocument.objectId.entity.type
+
 ### get source and target entity info
-$physicalEntities = api get "/entitiesOfType?environmentTypes=kVMware&environmentTypes=kPhysical&physicalEntityTypes=kHost&vmwareEntityTypes=kVCenter"
+$physicalEntities = api get "/entitiesOfType?environmentTypes=kVMware&environmentTypes=kPhysical&physicalEntityTypes=kHost" # &vmwareEntityTypes=kVCenter"
 $virtualEntities = api get "/entitiesOfType?environmentTypes=kVMware&environmentTypes=kPhysical&isProtected=true&physicalEntityTypes=kHost&vmwareEntityTypes=kVirtualMachine" #&vmwareEntityTypes=kVCenter
 $sourceEntity = (($physicalEntities + $virtualEntities) | Where-Object { $_.displayName -ieq $sourceServer })[0]
 $targetEntity = (($physicalEntities + $virtualEntities) | Where-Object { $_.displayName -ieq $targetServer })[0]
+
+if($targetEntity.type -ne $sourceEntityType){
+    Write-Host "$targetServer is not compatible with volumes from $sourceServer" -ForegroundColor Yellow
+    exit
+}
 
 if(!$sourceEntity){
     Write-Host "Source Server $sourceServer Not Found" -ForegroundColor Yellow
