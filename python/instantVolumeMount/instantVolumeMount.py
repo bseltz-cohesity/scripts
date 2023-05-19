@@ -148,7 +148,7 @@ if len(targetEntity) == 0:
 if targetEntity[0]['type'] != sourceEntityType:
     print('%s is not compatible with volumes from %s' % (targetserver, sourceserver))
     exit(1)
-exit
+
 mountTask = {
     'name': 'myMountOperation',
     'objects': [
