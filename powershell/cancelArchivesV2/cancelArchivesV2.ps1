@@ -19,6 +19,7 @@ param (
     [Parameter()][int]$cancelOlderThan = 0,
     [Parameter()][switch]$showFinished,
     [Parameter()][int]$numRuns = 1000,
+    [Parameter()][switch]$commit,
     [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB'
 )
 
@@ -121,17 +122,33 @@ foreach($job in $jobs){
                     $reason = '(Outdated)'
                     if($cancelOutdated){
                         $cancelling = '(Cancelling)'
+                        if(!$commit){
+                            $cancelling = '(Would Cancel)'
+                        }
                     }
                 }
                 if($cancelQueued){
                     $reason = '(Queued)'
                     $cancelling = '(Cancelling)'
+                    if(!$commit){
+                        $cancelling = '(Would Cancel)'
+                    }
+                }
+                if($cancelOlderThan -gt 0){
+                    $reason = "(older than $cancelOlderThan)"
+                    $cancelling = '(Cancelling)'
+                    if(!$commit){
+                        $cancelling = '(Would Cancel)'
+                    }
                 }
                 if($cancelAll){
                     $cancelling = '(Cancelling)'
+                    if(!$commit){
+                        $cancelling = '(Would Cancel)'
+                    }
                 }
                 "    $($run.status)  $(usecsToDate $($run.startTimeUsecs))  ($($run.transferred))  $referenceFull  $reason  $cancelling"
-                if($cancelling -ne ''){
+                if($commit -and $cancelling -ne ''){
                     if($cluster.clusterSoftwareVersion -gt '6.8'){
                         $cancelParams = @{
                             "action" = "Cancel";
