@@ -46,17 +46,19 @@ To list policies:
 ## Other Parameters
 
 * -policyName: (optional) name of policy to create or edit
-* -action: (optional): list, create, edit, delete, addextension, deleteextension, logbackup, addreplica, deletereplica, addarchive, deletearchive, editretries (default is list
+* -action: (optional): list, create, edit, delete, addfull, deletefull, addextension, deleteextension, logbackup, addreplica, deletereplica, addarchive, deletearchive, editretries (default is list
 * -retention: (optional) number of days/weeks/years to retain
 * -retentionUnit: (optional) days, weeks, months, years (default is days)
 * -frequency: (optional) frequency of backup (default is 1)
 * -frequencyUnit: (optional) runs, minutes, hours, days, weeks, months, years (default is runs)
+* -dayOfWeek: (optional) one or more weekdays (comma separated) default is Sunday
+* -weekOfMonth: (optional) First, Second, Third, Fourth, Last (default is first)
 * -retries: (optional) default is 3
 * -retryMinutes: (optional) number of minutes to wait between retries (default is 5)
 * -lockDuration: (optional) datalock duration (requires data security role to edit)
 * -lockUnit: (optional) days, weeks, months, years (default is days) (requires data security role to edit)
 * -targetName: (optional) name of remote cluster or external target
-* -all: (optional) delete all replications for the specified target
+* -deleteAll: (optional) delete all replications/archives for the specified target
 
 ## Behavior
 

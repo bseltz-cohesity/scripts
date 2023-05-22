@@ -12,9 +12,9 @@ param (
     [Parameter()][string]$mfaCode = $null,
     [Parameter()][string]$clusterName = $null,
     [Parameter()][string]$policyName,
-    [Parameter()][ValidateSet('list', 'create', 'edit', 'delete', 'addextension', 'deleteextension', 'logbackup', 'addreplica', 'deletereplica', 'addarchive', 'deletearchive', 'editretries')][string]$action = 'list',
+    [Parameter()][ValidateSet('list', 'create', 'edit', 'delete', 'addextension', 'deleteextension', 'logbackup', 'addreplica', 'deletereplica', 'addarchive', 'deletearchive', 'editretries', 'addfull', 'deletefull')][string]$action = 'list',
     [Parameter()][int]$retention,
-    [Parameter()][ValidateSet('days', 'weeks', 'months', 'years')]$retentionUnit = 'days',
+    [Parameter()][ValidateSet('days', 'weeks', 'months', 'years', $null)]$retentionUnit = $null,
     [Parameter()][int]$frequency = 1,
     [Parameter()][ValidateSet('runs', 'minutes', 'hours', 'days', 'weeks', 'months', 'years')][string]$frequencyUnit = 'runs',
     [Parameter()][ValidateSet('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday')][array]$dayOfWeek = 'Sunday',
@@ -24,7 +24,8 @@ param (
     [Parameter()][int]$lockDuration,
     [Parameter()][ValidateSet('days', 'weeks', 'months', 'years')]$lockUnit = 'days',
     [Parameter()][string]$targetName,
-    [Parameter()][switch]$all
+    [Parameter()][switch]$deleteAll,
+    [Parameter()][switch]$removeDataLock
 )
 
 $textInfo = (Get-Culture).TextInfo
@@ -89,6 +90,9 @@ if($action -eq 'create'){
     if(!$retention){
         Write-Host "-retention is required" -ForegroundColor Yellow
         exit
+    }
+    if(!$retentionUnit){
+        $retentionUnit = 'days'
     }
     if(!$frequency){
         $frequency = 1
@@ -167,6 +171,19 @@ if($action -eq 'delete'){
     exit
 }
 
+function lock($object){
+    $object = @{
+        "dataLockConfig" = @{
+            "mode" = "Compliance";
+            "unit" = $textInfo.ToTitleCase($lockUnit.ToLower());
+            "duration" = $lockDuration
+        };
+        "unit" = $textInfo.ToTitleCase($retentionUnit.ToLower());
+        "duration" = $retention
+    }
+    $object
+}
+
 # edit policy
 if($action -eq 'edit'){
     if(!$retention){
@@ -174,6 +191,15 @@ if($action -eq 'edit'){
     }
     if(!$retentionUnit){
         $retentionUnit = $policy.backupPolicy.regular.retention.unit
+    }
+    if($frequencyUnit -eq 'runs'){
+        if($policy.backupPolicy.regular.PSObject.Properties['incremental']){
+            $frequencyUnit = $policy.backupPolicy.regular.incremental.schedule.unit
+            $unitPath = "{0}Schedule" -f ($frequencyUnit.ToLower() -replace ".$")
+            if($frequency -eq 1){
+                $frequency = $policy.backupPolicy.regular.incremental.schedule.$unitPath.frequency
+            }
+        }
     }
     if(!$frequency){
         Write-Host "-frequency is required" -ForegroundColor Yellow
@@ -238,34 +264,85 @@ if($action -eq 'edit'){
         "unit" = $textInfo.ToTitleCase($retentionUnit.ToLower())
         "duration" = $retention
     }
-    if($lockDuration){
+    if($lockDuration -gt 0){
+        Write-Host $lockDuration
         if($cluster.clusterSoftwareVersion -lt '6.6.0d'){
             setApiProperty -object $policy -name 'dataLock' -value 'Compliance'
         }else{
-            $policy.backupPolicy.regular.retention = @{
-                "dataLockConfig" = @{
-                    "mode" = "Compliance";
-                    "unit" = $textInfo.ToTitleCase($lockUnit.ToLower());
-                    "duration" = $lockDuration
-                };
-                "unit" = $textInfo.ToTitleCase($retentionUnit.ToLower());
-                "duration" = $retention
-            }
+            $policy.backupPolicy.regular.retention = lock $policy.backupPolicy.regular.retention
+            # add datalock to extended retentions if not set
             foreach($extendedRetention in $policy.extendedRetention){
                 if(!$extendedRetention.retention.PSObject.Properties['dataLockConfig']){
-                    $extendedRetention.retention = @{
-                        "dataLockConfig" = @{
-                            "mode" = "Compliance";
-                            "unit" = $textInfo.ToTitleCase($lockUnit.ToLower());
-                            "duration" = $lockDuration
-                        };
-                        "unit" = $extendedRetention.retention.unit;
-                        "duration" = $extendedRetention.retention.duration
-                    }
+                    $extendedRetention.retention = lock $extendedRetention.retention
                 }
             }
         }
     }
+    if($removeDataLock){
+        if($cluster.clusterSoftwareVersion -lt '6.6.0d'){
+            delApiProperty -object $policy -name 'dataLock'
+        }else{
+            delApiProperty -object $policy.backupPolicy.regular.retention -name 'dataLockConfig'
+            foreach($extendedRetention in $policy.extendedRetention){
+                delApiProperty -object $extendedRetention.retention -name 'dataLockConfig'
+            }
+            if($policy.backupPolicy.PSObject.Properties['log']){
+                delApiProperty -object $policy.backupPolicy.log.retention -name 'dataLockConfig'
+            }
+        }
+    }
+    $updatedPolicy = api put -v2 data-protect/policies/$($policy.id) $policy
+    $policies = @($updatedPolicy)
+}
+
+# addfull
+if($action -eq 'addfull'){
+    if($frequencyUnit -notin @('days', 'weeks', 'months')){
+        Write-Host "-frequencyUnit must be days, weeks, or months" -ForegroundColor Yellow
+        exit
+    }
+    if($frequencyUnit -eq 'months'){
+        setApiProperty -object $policy.backupPolicy.regular -name 'full' -value @{
+            "schedule" = @{
+                "unit" = "Months";
+                "monthSchedule" = @{
+                    "dayOfWeek" = @(
+                        $dayOfWeek
+                    );
+                    "weekOfMonth" = $weekOfMonth
+                }
+            }
+        }
+    }
+    if($frequencyUnit -eq 'weeks'){
+        setApiProperty -object $policy.backupPolicy.regular -name 'full' -value @{
+            "schedule" = @{
+                "unit" = "Weeks";
+                "weekSchedule" = @{
+                    "dayOfWeek" = @(
+                        $dayOfWeek
+                    )
+                }
+            }
+        }
+    }
+    if($frequencyUnit -eq 'days'){
+        setApiProperty -object $policy.backupPolicy.regular -name 'full' -value @{
+            "schedule" = @{
+                "unit" = "Days";
+                "daySchedule" = @{
+                    "frequency" = 1
+                }
+            }
+        }
+    }
+    $updatedPolicy = api put -v2 data-protect/policies/$($policy.id) $policy
+    $policies = @($updatedPolicy)
+}
+
+# deletefull
+if($action -eq 'deletefull'){
+    delApiProperty -object $policy.backupPolicy.regular -name full
     $updatedPolicy = api put -v2 data-protect/policies/$($policy.id) $policy
     $policies = @($updatedPolicy)
 }
@@ -309,19 +386,18 @@ if($action -eq 'addextension'){
                 "duration" = $retention
             }
         }
+        # if base policy has datalock then apply same datalock here by default
+        if(!$lockDuration){
+            if($policy.backupPolicy.regular.retention.PSObject.Properties['dataLockConfig']){
+                $lockDuration = $policy.backupPolicy.regular.retention.dataLockConfig.duration
+                $lockUnit = $policy.backupPolicy.regular.retention.dataLockConfig.unit
+            }
+        }
         if($lockDuration){
             if($cluster.clusterSoftwareVersion -lt '6.6.0d'){
                 setApiProperty -object $policy -name 'dataLock' -value 'Compliance'
             }else{
-                $newRetention.retention = @{
-                    "dataLockConfig" = @{
-                        "mode" = "Compliance";
-                        "unit" = $textInfo.ToTitleCase($lockUnit.ToLower());
-                        "duration" = $lockDuration
-                    };
-                    "unit" = $textInfo.ToTitleCase($retentionUnit.ToLower());
-                    "duration" = $retention
-                }
+                $newRetention.retention = lock $newRetention.retention
             }
         }
         $policy.extendedRetention = @($policy.extendedRetention + $newRetention)
@@ -332,15 +408,7 @@ if($action -eq 'addextension'){
             if($cluster.clusterSoftwareVersion -lt '6.6.0d'){
                 setApiProperty -object $policy -name 'dataLock' -value 'Compliance'
             }else{
-                $existingRetention.retention = @{
-                    "dataLockConfig" = @{
-                        "mode" = "Compliance";
-                        "unit" = $textInfo.ToTitleCase($lockUnit.ToLower());
-                        "duration" = $lockDuration
-                    };
-                    "unit" = $textInfo.ToTitleCase($retentionUnit.ToLower());
-                    "duration" = $retention
-                }
+                $existingRetention.retention = lock $existingRetention.retention
             }
         }
     }
@@ -398,15 +466,14 @@ if($action -eq 'logbackup'){
         if($cluster.clusterSoftwareVersion -lt '6.6.0d'){
             setApiProperty -object $policy -name 'dataLock' -value 'Compliance'
         }else{
-            $policy.backupPolicy.retention = @{
-                "dataLockConfig" = @{
-                    "mode" = "Compliance";
-                    "unit" = $textInfo.ToTitleCase($lockUnit.ToLower());
-                    "duration" = $lockDuration
-                };
-                "unit" = $textInfo.ToTitleCase($retentionUnit.ToLower());
-                "duration" = $retention
-            }
+            $policy.backupPolicy.log.retention = lock $policy.backupPolicy.log.retention
+        }
+    }
+    if($removeDataLock){
+        if($cluster.clusterSoftwareVersion -lt '6.6.0d'){
+            delApiProperty -object $policy -name 'dataLock'
+        }else{
+            delApiProperty -object $policy.backupPolicy.log.retention -name 'dataLockConfig'
         }
     }
     if($frequencyUnit -eq 'hours'){
@@ -434,10 +501,6 @@ if($action -eq 'addreplica'){
         Write-Host "-targetName required" -ForegroundColor Yellow
         exit
     }
-    if(!$retention){
-        Write-Host "-retention required" -ForegroundColor Yellow
-        exit
-    }
     if($frequencyUnit -eq 'minutes'){
         Write-Host "-frequencyUnit "minutes" not valid for replication" -ForegroundColor Yellow
         exit
@@ -460,6 +523,13 @@ if($action -eq 'addreplica'){
                                                                                      (!$_.schedule.PSObject.Properties['frequency'] -or
                                                                                       $_.schedule.frequency -eq $frequency)}
     if(!$existingReplica){
+        if(!$retention){
+            Write-Host "-retention required" -ForegroundColor Yellow
+            exit
+        }
+        if(!$retentionUnit){
+            $retentionUnit = 'days'
+        }
         $newReplica = @{
             "schedule" = @{
                 "unit" = $textInfo.ToTitleCase($frequencyUnit.ToLower());
@@ -482,30 +552,35 @@ if($action -eq 'addreplica'){
             if($cluster.clusterSoftwareVersion -lt '6.6.0d'){
                 setApiProperty -object $policy -name 'dataLock' -value 'Compliance'
             }else{
-                $newReplica.retention['dataLockConfig'] = @{
-                    "mode" = "Compliance";
-                    "unit" = $textInfo.ToTitleCase($lockUnit.ToLower());
-                    "duration" = $lockDuration
-                }
+                $newReplica.retention = lock $newReplica.retention
             }
         }
         $policy.remoteTargetPolicy.replicationTargets = @($policy.remoteTargetPolicy.replicationTargets + $newReplica)
     }else{
+        if(!$retention){
+            $retention = $existingReplica.retention.duration
+        }
+        if(!$retentionUnit){
+            $retentionUnit = $existingReplica.retention.unit
+        }
         $existingReplica.retention.unit = $textInfo.ToTitleCase($retentionUnit.ToLower());
         $existingReplica.retention.duration = $retention
         if($lockDuration){
             if($cluster.clusterSoftwareVersion -lt '6.6.0d'){
                 setApiProperty -object $policy -name 'dataLock' -value 'Compliance'
             }else{
-                $existingReplica.retention = @{
-                    "unit" = $textInfo.ToTitleCase($retentionUnit.ToLower());
-                    "duration" = $retention;
-                    "dataLockConfig" = @{
-                        "mode" = "Compliance";
-                        "unit" = $textInfo.ToTitleCase($lockUnit.ToLower());
-                        "duration" = $lockDuration
-                    }
-                }
+                $existingReplica.retention = lock $existingReplica.retention
+            }
+        }
+    }
+    if($removeDataLock){
+        $existingReplicas = $policy.remoteTargetPolicy.replicationTargets | Where-Object {$_.targetType -eq "RemoteCluster" -and 
+                                                                                          $_.remoteTargetConfig.clusterName -eq $targetName }
+        foreach($existingReplica in $existingReplicas){
+            if($cluster.clusterSoftwareVersion -lt '6.6.0d'){
+                delApiProperty -object $policy -name 'dataLock'
+            }else{
+                delApiProperty -object $existingReplica.retention -name 'dataLockConfig'
             }
         }
     }
@@ -528,7 +603,7 @@ if($action -eq 'deletereplica'){
     foreach($replicationTarget in $policy.remoteTargetPolicy.replicationTargets){
         $includeThisReplica = $True
         if($replicationTarget.targetType -eq "RemoteCluster" -and $replicationTarget.remoteTargetConfig.clusterName -eq $targetName){
-            if($all){
+            if($deleteAll){
                 $includeThisReplica = $false
             }else{
                 if($replicationTarget.schedule.unit -eq $frequencyUnit -and (!$replicationTarget.schedule.PSObject.Properties['frequency'] -or $replicationTarget.schedule.frequency -eq $frequency)){
@@ -563,6 +638,7 @@ if($action -eq 'addarchive'){
         Write-Host "-frequencyUnit "minutes" not valid for archive" -ForegroundColor Yellow
         exit
     }
+    Write-Host $frequencyUnit
     $vaults = api get vaults
     $thisVault = $vaults | Where-Object name -eq $targetName
     if(!$thisVault){
@@ -574,8 +650,18 @@ if($action -eq 'addarchive'){
     }elseif(!$policy.remoteTargetPolicy.PSObject.Properties['archivalTargets']){
         setApiProperty -object $policy.remoteTargetPolicy -name 'archivalTargets' -value @()
     }
-    $existingTarget = $policy.remoteTargetPolicy.archivalTargets | Where-Object targetId -eq $thisVault.id
+    $existingTarget = $policy.remoteTargetPolicy.archivalTargets | Where-Object {$_.targetId -eq $thisVault.id -and
+                                                                                 $_.schedule.unit -eq $frequencyUnit -and
+                                                                                 (!$_.schedule.PSObject.Properties['frequency'] -or
+                                                                                 $_.schedule.frequency -eq $frequency)}
     if(!$existingTarget){
+        if(!$retention){
+            Write-Host "-retention required" -ForegroundColor Yellow
+            exit
+        }
+        if(!$retentionUnit){
+            $retentionUnit = 'days'
+        }
         $newTarget = @{
             "schedule" = @{
                 "unit" = $textInfo.ToTitleCase($frequencyUnit.ToLower())
@@ -593,15 +679,7 @@ if($action -eq 'addarchive'){
             if($cluster.clusterSoftwareVersion -lt '6.6.0d'){
                 setApiProperty -object $policy -name 'dataLock' -value 'Compliance'
             }else{
-                $newTarget.retention = @{
-                    "unit" = $textInfo.ToTitleCase($retentionUnit.ToLower());
-                    "duration" = $retention;
-                    "dataLockConfig" = @{
-                        "mode" = "Compliance";
-                        "unit" = $textInfo.ToTitleCase($lockUnit.ToLower());
-                        "duration" = $lockDuration
-                    }
-                }
+                $newTarget.retention = lock $newTarget.retention
             }
         }
         if($frequencyUnit -ne 'runs'){
@@ -609,6 +687,12 @@ if($action -eq 'addarchive'){
         }
         $policy.remoteTargetPolicy.archivalTargets = @($policy.remoteTargetPolicy.archivalTargets + $newTarget)
     }else{
+        if(!$retention){
+            $retention = $existingTarget.retention.duration
+        }
+        if(!$retentionUnit){
+            $retentionUnit = $existingTarget.retention.unit
+        }
         $existingTarget.retention.unit = $textInfo.ToTitleCase($retentionUnit.ToLower())
         $existingTarget.retention.duration = $retention
         $existingTarget.schedule.unit = $textInfo.ToTitleCase($frequencyUnit.ToLower())
@@ -619,17 +703,19 @@ if($action -eq 'addarchive'){
             if($cluster.clusterSoftwareVersion -lt '6.6.0d'){
                 setApiProperty -object $policy -name 'dataLock' -value 'Compliance'
             }else{
-                $existingTarget.retention = @{
-                    "unit" = $textInfo.ToTitleCase($retentionUnit.ToLower());
-                    "duration" = $retention;
-                    "dataLockConfig" = @{
-                        "mode" = "Compliance";
-                        "unit" = $textInfo.ToTitleCase($lockUnit.ToLower());
-                        "duration" = $lockDuration
-                    }
-                }
+                $existingTarget.retention = lock $existingTarget.retention
             }
         }
+    }
+    if($removeDataLock){
+        $existingArchives = $policy.remoteTargetPolicy.archivalTargets | Where-Object {$_.targetName -eq $targetName }
+        foreach($existingArchive in $existingArchives){
+            if($cluster.clusterSoftwareVersion -lt '6.6.0d'){
+                delApiProperty -object $policy -name 'dataLock'
+            }else{
+                delApiProperty -object $existingArchive.retention -name 'dataLockConfig'
+            }
+        }   
     }
     $updatedPolicy = api put -v2 data-protect/policies/$($policy.id) $policy
     $policies = @($updatedPolicy)
@@ -641,20 +727,17 @@ if($action -eq 'deletearchive'){
         Write-Host "-targetName required" -ForegroundColor Yellow
         exit
     }
-    if($frequencyUnit -eq 'minutes'){
-        Write-Host "-frequencyUnit "minutes" not valid for replication" -ForegroundColor Yellow
-        exit
-    }
-    if(!$policy.PSObject.Properties['remoteTargetPolicy']){
-        setApiProperty -object $policy -name 'remoteTargetPolicy' -value @{}
-    }
     if($policy.remoteTargetPolicy.PSObject.Properties['archivalTargets']){
         $newArchivalTargets = @()
         $changedArchivalTargets = $false
         foreach($archivalTarget in $policy.remoteTargetPolicy.archivalTargets){
             $includeThisArchive = $True
-            if($archiveTarget['targetName'] -eq $targetName){
+            if($deleteAll){
                 $includeThisArchive = $false
+            }else{
+                if($archivalTarget.schedule.unit -eq $frequencyUnit -and (!$archivalTarget.schedule.PSObject.Properties['frequency'] -or $archivalTarget.schedule.frequency -eq $frequency)){
+                    $includeThisArchive = $false
+                }
             }
             if($includeThisArchive -eq $True){
                 $newArchivalTargets = @($newArchivalTargets + $archivalTarget)
