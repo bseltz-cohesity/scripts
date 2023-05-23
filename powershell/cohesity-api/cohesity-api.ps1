@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.05.18 - Brian Seltzer
+#  Version 2023.05.23 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2022.01.12 - fixed storePasswordForUser
@@ -25,9 +25,10 @@
 # 2023.04.04 - exit 1 on old PowerShell version
 # 2023.04.30 - disable email MFA and add timeout parameter
 # 2023.05.18 - fixed setApiProperty function
+# 2023.05.23 - fixed setContext
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2023.05.18'
+$versionCohesityAPI = '2023.05.23'
 $userAgent = "cohesity-api/$versionCohesityAPI"
 
 # demand modern powershell version (must support TLSv1.2)
@@ -528,7 +529,7 @@ function getContext(){
 
 function setContext($context){
     if($context['header'] -and $context['apiRoot'] -and $context['apiRootv2']){
-        $Global:cohesity_api = $context.Clone()
+        $script:cohesity_api = $context.Clone()
     }else{
         Write-Host "Invalid context" -ForegroundColor Yellow
     }
