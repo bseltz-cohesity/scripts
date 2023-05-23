@@ -82,21 +82,48 @@ $dateString = (Get-Date).ToString('yyyy-MM-dd')
 $outfile = "legalHolds-$($cluster.name)-$dateString.csv"
 "JobName,RunDate,LegalHold" | Out-File -FilePath $outfile
 
-foreach($job in $jobs | Sort-Object -Property name| Where-Object {$_.isDeleted -ne $true}){
+if($removeHold){
+    $holdValue = $false
+}else{
+    $holdValue = $True
+}
+
+foreach($job in $jobs | Sort-Object -Property name | Where-Object {$_.isDeleted -ne $true}){
     $endUsecs = dateToUsecs (Get-Date)
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         "{0}" -f $job.name
         while($True){
             $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&endTimeUsecs=$endUsecs&excludeTasks=true"
             foreach($run in $runs){
-                $copyRunsFound = $false
-                foreach($copyRun in $run.copyRun){
-                    if($copyRun.expiryTimeUsecs -gt (dateToUsecs)){
-                        $copyRunsFound = $True
-                    }
-                }
+                # $copyRunsFound = $false
+                # foreach($copyRun in $run.copyRun){
+                #     if($copyRun.expiryTimeUsecs -gt (dateToUsecs)){
+                #         $copyRunsFound = $True
+                #     }
+                # }
                 if($addHold -or $removeHold){
-                    if($copyRunsFound -eq $True){
+                    $runParams = @{
+                        "jobRuns" = @(
+                            @{
+                                "copyRunTargets"    = @();
+                                "runStartTimeUsecs" = $run.backupRun.stats.startTimeUsecs;
+                                "jobUid"            = $jobUid
+                            }
+                        )
+                    }
+                    $update = $false
+                    foreach($copyRun in $run.copyRun){
+                        if($copyRun.PSObject.Properties['holdForLegalPurpose'] -and $copyRun.holdForLegalPurpose -eq $True){
+                            $update = $True
+                        }
+                        if(($addHold -and $copyRun.expiryTimeUsecs -gt (dateToUsecs)) -or $update -eq $True){
+                            $update = $True
+                            $copyRunTarget = $copyRun.target
+                            setApiProperty -object $copyRunTarget -name "holdForLegalPurpose" -value $holdValue
+                            $runParams.jobRuns[0].copyRunTargets += $copyRunTarget
+                        }
+                    }
+                    if($update -eq $True){
                         if($removeHold){
                             $holdValue = $false
                             "    Removing legal hold from $($job.name): $(usecsToDate $run.backupRun.stats.startTimeUsecs)..."
@@ -110,26 +137,11 @@ foreach($job in $jobs | Sort-Object -Property name| Where-Object {$_.isDeleted -
                             "clusterIncarnationId" = $thisRun.backupJobRuns.protectionRuns[0].backupRun.base.jobUid.clusterIncarnationId;
                             "id" = $thisRun.backupJobRuns.protectionRuns[0].backupRun.base.jobUid.objectId;
                         }
-                        $runParams = @{
-                            "jobRuns" = @(
-                                @{
-                                    "copyRunTargets"    = @();
-                                    "runStartTimeUsecs" = $run.backupRun.stats.startTimeUsecs;
-                                    "jobUid"            = $jobUid
-                                }
-                            )
-                        }
-                        foreach($copyRun in $run.copyRun){
-                            if($copyRun.expiryTimeUsecs -gt (dateToUsecs)){
-                                $copyRunTarget = $copyRun.target
-                                setApiProperty -object $copyRunTarget -name "holdForLegalPurpose" -value $holdValue
-                                $runParams.jobRuns[0].copyRunTargets += $copyRunTarget
-                            }
-                        }
+                        $runParams.jobRuns[0]['jobUid'] = $jobUid
                         $null = api put protectionRuns $runParams
                     }
                 }else{
-                    if($copyRunsFound -eq $True){
+                    # if($copyRunsFound -eq $True){
                         $legalHoldState = $false
                         foreach($copyRun in $run.copyRun){
                             if($True -eq $copyRun.holdForLegalPurpose){
@@ -141,7 +153,7 @@ foreach($job in $jobs | Sort-Object -Property name| Where-Object {$_.isDeleted -
                             write-host "    $runDate : LegalHold = $legalHoldState"
                             """{0}"",""{1}"",""{2}""" -f $job.name, $runDate, $legalHoldState | Out-File -FilePath $outfile -Append
                         }
-                    }
+                    # }
                 }
             }
             if($runs.Count -eq $numRuns){
