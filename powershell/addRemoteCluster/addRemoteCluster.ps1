@@ -24,17 +24,22 @@ param (
 )
 
 ### source the cohesity-api helper code
-. $(Join-Path -Path $PSScriptRoot -ChildPath cohesityCluster.ps1)
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate with both clusters
-$localCluster = connectCohesityCluster -server $localVip -username $localUsername -domain $localDomain -password $localPassword
-$remoteCluster = connectCohesityCluster -server $remoteVip -username $remoteUsername -domain $remoteDomain -password $remotePassword
+apiauth -vip $localVip -username $localUsername -domain $localDomain -password $localPassword
+$localCluster = getContext
+$localClusterInfo = api get cluster
+$localStorageDomainId = (api get viewBoxes | Where-Object { $_.name -eq $localStorageDomain }).id
+$localPassword = Get-CohesityAPIPassword -vip $localVip -username $localUsername -domain $localDomain
+$localNodeIp = (api get nodes)[0].ip
 
-### get cluster info
-$localClusterInfo= $localCluster.get('cluster')
-$remoteClusterInfo= $remoteCluster.get('cluster')
-$localStorageDomainId = ($localCluster.get('viewBoxes') | Where-Object { $_.name -eq $localStorageDomain }).id
-$remoteStorageDomainId = ($remoteCluster.get('viewBoxes') | Where-Object { $_.name -eq $remoteStorageDomain }).id
+apiauth -vip $remoteVip -username $remoteUsername -domain $remoteDomain -password $remotePassword
+$remoteCluster = getContext
+$remoteClusterInfo = api get cluster
+$remoteStorageDomainId = (api get viewBoxes | Where-Object { $_.name -eq $remoteStorageDomain }).id
+$remotePassword = Get-CohesityAPIPassword -vip $remoteVip -username $remoteUsername -domain $remoteDomain
+$remoteNodeIp = (api get nodes)[0].ip
 
 ### add remoteCluster as partner on localCluster
 $localToRemote = @{
@@ -42,7 +47,7 @@ $localToRemote = @{
     'clusterIncarnationId' = $remoteClusterInfo.incarnationId;
     'clusterId' = $remoteClusterInfo.id;
     'remoteIps' = @(
-        $remoteVip
+        $remoteNodeIp
     );
     'allEndpointsReachable' = $true;
     'viewBoxPairInfo' = @(
@@ -54,7 +59,7 @@ $localToRemote = @{
         }
     );
     'userName' = $remoteUsername;
-    'password' = $remoteCluster.getPwd();
+    'password' = $remotePassword;
     'compressionEnabled' = $true;
     'purposeReplication' = $true;
     'purposeRemoteAccess' = $false
@@ -66,7 +71,7 @@ $remoteToLocal = @{
     'clusterIncarnationId' = $localClusterInfo.incarnationId;
     'clusterId' = $localClusterInfo.id;
     'remoteIps' = @(
-        $localVip
+        $localNodeIp
     );
     'allEndpointsReachable' = $true;
     'viewBoxPairInfo' = @(
@@ -78,7 +83,7 @@ $remoteToLocal = @{
         }
     );
     'userName' = $localUsername;
-    'password' = $localCluster.getPwd();
+    'password' = $localPassword;
     'compressionEnabled' = $true;
     'purposeReplication' = $true;
     'purposeRemoteAccess' = $false
@@ -90,13 +95,9 @@ if($remoteAccess){
 }
 
 ### join clusters
+Write-Host "Adding replication partnership $($localClusterInfo.name) <- $($remoteClusterInfo.name)"
+$remotePartner = api post remoteClusters $remoteToLocal
 
-$localPartner = $localCluster.post('remoteClusters', $localToRemote)
-if($localPartner.name){
-    "Added replication partnership $($localClusterInfo.name) -> $($localPartner.name)"
-}
-
-$remotePartner = $remoteCluster.post('remoteClusters', $remoteToLocal)
-if($remotePartner.name){
-    "Added replication partnership $($remotePartner.name) <- $($remoteClusterInfo.name)"
-}
+setContext $localCluster
+Write-Host "Adding replication partnership $($localClusterInfo.name) -> $($remoteClusterInfo.name)"
+$localPartner = api post remoteClusters $localToRemote
