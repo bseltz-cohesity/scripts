@@ -35,7 +35,7 @@ $headings = "Cluster Name`tTenant`tJob Name`tEnvironment`tPolicy Name`tRun Type`
 if($includeObjectDetails){
    $headings = "Cluster Name`tTenant`tJob Name`tEnvironment`tPolicy Name`tRun Type`tRun Start Time`tRegistered Source`tObject Name`tStart Time`tEnd Time`tDuration (Min)`tStatus`tLogical ($unit)`tRead ($unit)`tWritten ($unit)"
 }
-$headings | Out-File -FilePath $outfileName -Encoding utf8
+$headings | Out-File -FilePath $outfileName
 
 # convert to units
 $conversion = @{'KiB' = 1024; 'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
