@@ -8,9 +8,11 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,  # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
-    [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter(Mandatory=$True)][string]$vip,
+    [Parameter(Mandatory=$True)][string]$username,
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password = $null,
     [Parameter(Mandatory = $True)][string]$search,  # file name or path to search for
     [Parameter()][switch]$delete  # delete or just a test run
 )
@@ -48,6 +50,7 @@ if ($delete) {
 $archiveType = @{'0' = "kCloud"; '1' = "kTape" }
 
 $clusters = @()
+$contexts = @{}
 $instanceList = @()
 $instanceNum = 1
 $clusterNames = @{}
@@ -57,34 +60,42 @@ $affectedObjects = @{}
 $processedObjects = @()
 
 # source the cohesity-api helper code
-. ./cohesityCluster.ps1
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate to local and remote clusters
 log "`nConnecting to local cluster $vip..."
-$localCluster = connectCohesityCluster -server $vip -username $username -domain $domain -quiet
-$localClusterInfo = $localCluster.get('cluster')
-$localClusterId = $localClusterInfo.id
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey
 
-$clusters += $localCluster
-$clusterNames[[string]$localClusterId] = $localClusterInfo.name
+$localCluster = api get cluster
+$localClusterId = $localCluster.id
+$localClusterContext = getContext
 
-$remotes = $localCluster.get('remoteClusters')
+$contexts["$($localCluster.name)"] = $localClusterContext
+
+$clusters += $localCluster.name
+$clusterNames[[string]$localClusterId] = $localCluster.name
+
+$remotes = api get remoteClusters
 foreach ($remote in $remotes){
     $remoteIP = $remote.remoteIps[0]
     log "Connecting to remote cluster $($remote.name)..."
-    $cluster = connectCohesityCluster -server $remoteIP -username $username -domain $domain -quiet
-    $clusters += $cluster
-    $clusterInfo = $cluster.get('cluster')
-    $clusterId = $clusterInfo.id
-    $clusterNames[[string]$clusterId] = $clusterInfo.name
+    apiauth -vip $remoteIP -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey
+    $cluster = api get cluster
+    $clusters += $cluster.name
+    $clusterId = $cluster.id
+    $clusterNames[[string]$clusterId] = $cluster.name
+    $clusterContext = getContext
+    $contexts["$($cluster.name)"] = $clusterContext
 }
+
+setContext $localClusterContext
 
 # search for files
 $fileSearch = $search
 log "`nSearching for $fileSearch...`n"
 
-$jobs = $localCluster.get('protectionJobs')
-$restoreFiles = $localCluster.get("/searchfiles?filename=$fileSearch")
+$jobs = api get protectionJobs
+$restoreFiles = api get "/searchfiles?filename=$fileSearch" # $localCluster.get("/searchfiles?filename=$fileSearch")
 $highestId = $restoreFiles.files.count - 1
 
 if($highestId -ge 0){   
@@ -98,6 +109,7 @@ if($highestId -ge 0){
             $policyId = $job.policyId
             $policyClusterId = $policyId.split(':')[0]
             $objectName = $restoreFile.fileDocument.objectId.entity.displayName
+            write-host $objectName
             $objectId = $restoreFile.fileDocument.objectId.entity.id
             $affectedObjects["$jobName`:$objectName"] = 'retained'
             if($policyClusterId -eq $localClusterId){
@@ -136,9 +148,11 @@ function deleteInstance($instance){
     log "Deleting object $($instance.objectName) from affected runs of job: $($instance.jobName)"
     $affectedObjects["$($instance.jobName)`:$($instance.objectName)"] = 'processed'
     foreach($cluster in $clusters){
-        $clusterName = $cluster.get('cluster').name
-        $jobs = $cluster.get('protectionJobs')
-        $restoreFiles = $cluster.get("/searchfiles?filename=$($instance.fileName)")
+
+        $clusterName = $cluster
+        setContext $contexts["$($clusterName)"]
+        $jobs = api get protectionJobs
+        $restoreFiles = api get "/searchfiles?filename=$($instance.fileName)"
         foreach ($restoreFile in $restoreFiles.files){
             $job = $jobs | Where-Object { $_.id -eq $restoreFile.fileDocument.objectId.jobId }
             if($instance.objectName -eq $restoreFile.fileDocument.objectId.entity.displayName -and `
@@ -154,12 +168,12 @@ function deleteInstance($instance){
                 $policyClusterId = $policyId.split(':')[0]
                 if($policyClusterId -eq $localClusterId){
                     if(! $runcache.ContainsKey("$clusterId-$jobId")){
-                        $runs = $cluster.get("protectionRuns?jobId=$jobId&numRuns=999999&excludeNonRestoreableRuns=true&excludeTasks=true")
+                        $runs = api get "protectionRuns?jobId=$jobId&numRuns=999999&excludeNonRestoreableRuns=true&excludeTasks=true"
                         $runcache["$clusterId-$jobId"] = $runs
                     }else{
                         $runs = $runcache["$clusterId-$jobId"]
                     }
-                    $versions = $cluster.get("/file/versions?clusterId=$clusterId&clusterIncarnationId=$clusterIncarnationId&entityId=$entityId&filename=$encodedFileName&fromObjectSnapshotsOnly=false&jobId=$origJobId")
+                    $versions = api get "/file/versions?clusterId=$clusterId&clusterIncarnationId=$clusterIncarnationId&entityId=$entityId&filename=$encodedFileName&fromObjectSnapshotsOnly=false&jobId=$origJobId"
 
                     foreach ($version in $versions.versions) {
                         $exactRun = $runs | Where-Object {$_.backupRun.jobRunId -eq $version.instanceId.jobInstanceId }
@@ -198,7 +212,7 @@ function deleteInstance($instance){
                                     if ($updateProtectionJobRunsParam.jobRuns[0].copyRunTargets.count -gt 0){
                                         $deletions++
                                         if($delete){
-                                            $null = $cluster.put("protectionRuns", $updateProtectionJobRunsParam)
+                                            $null = api put "protectionRuns" $updateProtectionJobRunsParam
                                         }
                                     }
                                 }
