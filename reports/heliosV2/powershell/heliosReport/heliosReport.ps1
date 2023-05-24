@@ -7,7 +7,7 @@ param (
     [Parameter()][switch]$thisCalendarMonth,
     [Parameter()][switch]$lastCalendarMonth,
     [Parameter()][int]$days = 7,
-    [Parameter()][int]$dayRange = 7,
+    [Parameter()][int]$dayRange = 180,
     [Parameter()][array]$clusterNames,
     [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB',
     [Parameter()][string]$reportName = 'Protection Runs',
@@ -278,6 +278,8 @@ foreach($cluster in ($selectedClusters)){  # | Sort-Object -Property name)){
         $systemId = "$($cluster.clusterId):$($cluster.clusterIncarnationId)"
     }
     Write-Host "$($cluster.name)"
+  
+
     foreach($range in $ranges){
         $csvlines = @()
         $reportParams = @{
@@ -311,33 +313,14 @@ foreach($cluster in ($selectedClusters)){  # | Sort-Object -Property name)){
             exit
         }
         $attributes = $preview.component.config.xlsxParams.attributeConfig
+        # $attributes | ConvertTo-Json -Depth 99
         # headings
         if(!$gotHeadings){
             foreach($attribute in $attributes){
                 if($attribute.PSObject.Properties['customLabel']){
-                    if($attribute.customLabel -match 'bytes'){
-                        $headings = @($headings + $($attribute.customLabel -replace 'bytes', $unit))
-                    }elseif($attribute.customLabel -match 'read' -or
-                            $attribute.customLabel -match 'written' -or
-                            $attribute.customLabel -match 'size' -or
-                            $attribute.customLabel -match 'daily' -or
-                            $attribute.customLabel -match 'data'){
-                        $headings = @($headings + "$($attribute.customLabel) $unit") 
-                    }else{
-                        $headings = @($headings + "$($attribute.customLabel)")
-                    }
+                    $headings = @($headings + "$($attribute.customLabel)")
                 }else{
-                    if($attribute.attributeName -match 'bytes'){
-                        $headings = @($headings + $($attribute.attributeName -replace 'bytes', $unit))
-                    }elseif($attribute.attributeName -match 'read' -or
-                            $attribute.attributeName -match 'written' -or
-                            $attribute.attributeName -match 'size' -or
-                            $attribute.attributeName -match 'daily' -or
-                            $attribute.attributeName -match 'data'){
-                        $headings = @($headings + "$($attribute.attributeName) $unit")
-                    }else{
-                        $headings = @($headings + $($attribute.attributeName))
-                    }
+                    $headings = @($headings + $($attribute.attributeName))
                 }
             }
             $gotHeadings = $True
@@ -418,23 +401,30 @@ foreach($cluster in ($selectedClusters)){  # | Sort-Object -Property name)){
                 }elseif($attribute.attributeName -match 'usecs'){
                     $data = [int]($data / 1000000)
                 }
-                if($attribute.PSObject.Properties['customLabel'] -and ($($attribute.customLabel -match 'bytes' -or
-                                                                         $attribute.customLabel -match 'read' -or
-                                                                         $attribute.customLabel -match 'written' -or
-                                                                         $attribute.customLabel -match 'size' -or
-                                                                         $attribute.customLabel -match 'daily' -or
-                                                                         $attribute.customLabel -match 'data'))){
-                    $data = toUnits $data
-                }elseif(!$attribute.PSObject.Properties['customLabel'] -and ($($attribute.attributeName -match 'bytes' -or
-                                                                               $attribute.attributeName -match 'read' -or
-                                                                               $attribute.attributeName -match 'written' -or
-                                                                               $attribute.attributeName -match 'size' -or
-                                                                               $attribute.attributeName -match 'daily' -or
-                                                                               $attribute.attributeName -match 'data'))){
-                    $data = toUnits $data
-                }
                 if($attribute.attributeName -match 'percent'){
-                    $data = [math]::Round($data, 1)
+                    $data = "{0:n1}" -f $data
+                }elseif($attribute.PSObject.Properties['customLabel'] -and 
+                       ($($attribute.customLabel -match 'consumed' -or
+                       $attribute.customLabel -match 'capacity' -or
+                       $attribute.customLabel -match 'bytes' -or
+                       $attribute.customLabel -match 'read' -or
+                       $attribute.customLabel -match 'written' -or
+                       $attribute.customLabel -match 'size' -or
+                       $attribute.customLabel -match 'daily' -or
+                       $attribute.customLabel -match 'data'))){
+                    $data = toUnits $data
+                }elseif(!$attribute.PSObject.Properties['customLabel'] -and 
+                       ($($attribute.attributeName -match 'consumed' -or
+                       $attribute.attributeName -match 'capacity' -or
+                       $attribute.attributeName -match 'bytes' -or
+                       $attribute.attributeName -match 'read' -or
+                       $attribute.attributeName -match 'written' -or
+                       $attribute.attributeName -match 'size' -or
+                       $attribute.attributeName -match 'daily' -or
+                       $attribute.attributeName -match 'data'))){
+                    $data = toUnits $data
+                }elseif($data -match "^[\d\.]+$" ){
+                    $data = "{0:n1}" -f $data
                 }
                 $csvColumns = @($csvColumns + $data)
                 $Global:html += "<td>$data</td>"
