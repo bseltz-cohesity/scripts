@@ -6,6 +6,7 @@ from pyhesity import *
 from datetime import datetime, timedelta
 import codecs
 import os
+import numbers
 
 # command line arguments
 import argparse
@@ -17,9 +18,9 @@ parser.add_argument('-e', '--enddate', type=str, default='')
 parser.add_argument('-t', '--thismonth', action='store_true')
 parser.add_argument('-l', '--lastmonth', action='store_true')
 parser.add_argument('-y', '--days', type=int, default=7)
-parser.add_argument('-x', '--dayrange', type=int, default=7)
+parser.add_argument('-x', '--dayrange', type=int, default=180)
 parser.add_argument('-hr', '--hours', type=int, default=0)
-parser.add_argument('-n', '--units', type=str, choices=['MiB', 'GiB'], default='MiB')
+parser.add_argument('-n', '--units', type=str, choices=['MiB', 'GiB', 'TiB'], default='GiB')
 parser.add_argument('-r', '--reportname', type=str, default='Protection Runs')
 parser.add_argument('-c', '--clustername', action='append', type=str)
 parser.add_argument('-z', '--timezone', type=str, default='America/New_York')
@@ -69,9 +70,11 @@ def gatherList(param=None, filename=None, name='items', required=True):
 
 filterTextList = gatherList(filename=filterlist, name='filter text list', required=False)
 
-multiplier = 1024 * 1024
-if units.lower() == 'gib':
-    multiplier = 1024 * 1024 * 1024
+multiplier = 1024 * 1024 * 1024  # GiB
+if units.lower() == 'mib':
+    multiplier = 1024 * 1024
+if units.lower() == 'tib':
+    multiplier = 1024 * 1024 * 1024 * 1024
 
 # authenticate
 apiauth(vip=vip, username=username, domain='local', helios=True)
@@ -339,25 +342,11 @@ for cluster in sorted(selectedClusters, key=lambda c: c['name'].lower()):
                 if 'customLabel' in attribute:
                     if 'bytes' in attribute['customLabel'].lower():
                         headings.append((attribute['customLabel'].replace('bytes', units).replace('Bytes', units)))
-                    elif 'read' in attribute['customLabel'].lower() or \
-                         'written' in attribute['customLabel'].lower() or \
-                         'size' in attribute['customLabel'].lower() or \
-                         'daily' in attribute['customLabel'].lower() or \
-                         'data' in attribute['customLabel'].lower():
-                        headings.append('%s %s' % (attribute['customLabel'], units))
-                    else:
-                        headings.append(attribute['customLabel'])
+                    headings.append(attribute['customLabel'])
                 else:
                     if 'bytes' in attribute['attributeName'].lower():
                         headings.append((attribute['attributeName'].replace('bytes', units).replace('Bytes', units)))
-                    elif 'read' in attribute['attributeName'].lower() or \
-                         'written' in attribute['attributeName'].lower() or \
-                         'size' in attribute['attributeName'].lower() or \
-                         'daily' in attribute['attributeName'].lower() or \
-                         'data' in attribute['attributeName'].lower():
-                        headings.append('%s %s' % (attribute['attributeName'], units))
-                    else:
-                        headings.append(attribute['attributeName'])
+                    headings.append(attribute['attributeName'])
             gotHeadings = True
             csvHeadings = '\t'.join(headings)
             csv.write('%s\n' % csvHeadings)
@@ -423,8 +412,12 @@ for cluster in sorted(selectedClusters, key=lambda c: c['name'].lower()):
                     data = usecsToDate(data)
                 elif 'usecs' in attribute['attributeName'].lower():
                     data = int(data / 1000000)
-                if 'customLabel' in attribute:
+                if 'percent' in attribute['attributeName'].lower():
+                    data = round(data, 1)
+                elif 'customLabel' in attribute:
                     if 'bytes' in attribute['customLabel'].lower() or \
+                       'consumed' in attribute['customLabel'].lower() or \
+                       'capacity' in attribute['customLabel'].lower() or \
                        'read' in attribute['customLabel'].lower() or \
                        'written' in attribute['customLabel'].lower() or \
                        'size' in attribute['customLabel'].lower() or \
@@ -433,21 +426,22 @@ for cluster in sorted(selectedClusters, key=lambda c: c['name'].lower()):
                         data = round(data / multiplier, 1)
                 else:
                     if 'bytes' in attribute['attributeName'].lower() or \
+                       'consumed' in attribute['attributeName'].lower() or \
+                       'capacity' in attribute['attributeName'].lower() or \
                        'read' in attribute['attributeName'].lower() or \
                        'written' in attribute['attributeName'].lower() or \
                        'size' in attribute['attributeName'].lower() or \
                        'daily' in attribute['attributeName'].lower() or \
                        'data' in attribute['attributeName'].lower():
                         data = round(data / multiplier, 1)
-                if 'percent' in attribute['attributeName'].lower():
+                if isinstance(data, numbers.Number):
                     data = round(data, 1)
-
                 csvColumns.append(data)
                 html += '<td>%s</td>' % data
             html += '</tr>'
             csvLine = '\t'.join([str(i) for i in csvColumns])
-            csvLines.append(csvLine)
-        csv.write('\n'.join(sorted(csvLines)))
+            csvLines.append('%s\n' % csvLine)
+        csv.write(''.join(sorted(csvLines)))
 
 html += '''</table>
 </div>

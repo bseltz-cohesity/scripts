@@ -9,7 +9,7 @@ param (
     [Parameter()][int]$days = 7,
     [Parameter()][int]$dayRange = 180,
     [Parameter()][array]$clusterNames,
-    [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB',
+    [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'GiB',
     [Parameter()][string]$reportName = 'Protection Runs',
     [Parameter()][string]$timeZone = 'America/New_York',
     [Parameter()][switch]$showRecord,
