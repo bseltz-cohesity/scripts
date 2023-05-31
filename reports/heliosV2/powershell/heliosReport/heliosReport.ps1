@@ -318,9 +318,17 @@ foreach($cluster in ($selectedClusters)){  # | Sort-Object -Property name)){
         if(!$gotHeadings){
             foreach($attribute in $attributes){
                 if($attribute.PSObject.Properties['customLabel']){
-                    $headings = @($headings + "$($attribute.customLabel)")
+                    if($attribute.customLabel -match 'bytes'){
+                        $headings = @($headings + $($attribute.customLabel -replace 'bytes', $unit))
+                    }else{
+                        $headings = @($headings + "$($attribute.customLabel)")
+                    }
                 }else{
-                    $headings = @($headings + $($attribute.attributeName))
+                    if($attribute.attributeName -match 'bytes'){
+                        $headings = @($headings + $($attribute.attributeName -replace 'bytes', $unit))
+                    }else{
+                        $headings = @($headings + $($attribute.attributeName))
+                    }
                 }
             }
             $gotHeadings = $True
