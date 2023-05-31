@@ -342,11 +342,13 @@ for cluster in sorted(selectedClusters, key=lambda c: c['name'].lower()):
                 if 'customLabel' in attribute:
                     if 'bytes' in attribute['customLabel'].lower():
                         headings.append((attribute['customLabel'].replace('bytes', units).replace('Bytes', units)))
-                    headings.append(attribute['customLabel'])
+                    else:
+                        headings.append(attribute['customLabel'])
                 else:
                     if 'bytes' in attribute['attributeName'].lower():
                         headings.append((attribute['attributeName'].replace('bytes', units).replace('Bytes', units)))
-                    headings.append(attribute['attributeName'])
+                    else:
+                        headings.append(attribute['attributeName'])
             gotHeadings = True
             csvHeadings = '\t'.join(headings)
             csv.write('%s\n' % csvHeadings)
