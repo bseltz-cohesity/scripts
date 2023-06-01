@@ -151,4 +151,4 @@ while($True){
 
 "`n$fileCount indexed files found"
 
-"`nsaving results to foundFiles.csv"
+"`nsaving results to foundFiles.tsv"
