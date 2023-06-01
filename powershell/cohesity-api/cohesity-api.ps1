@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.05.23 - Brian Seltzer
+#  Version 2023.06.01 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2022.01.12 - fixed storePasswordForUser
@@ -26,9 +26,10 @@
 # 2023.04.30 - disable email MFA and add timeout parameter
 # 2023.05.18 - fixed setApiProperty function
 # 2023.05.23 - fixed setContext
+# 2023.06.01 - fixed setApiProperty function
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2023.05.23'
+$versionCohesityAPI = '2023.06.01'
 $userAgent = "cohesity-api/$versionCohesityAPI"
 
 # demand modern powershell version (must support TLSv1.2)
@@ -1075,7 +1076,9 @@ function setApiProperty{
     )
     if(! $object.PSObject.Properties[$name]){
         $object | Add-Member -MemberType NoteProperty -Name $name -Value $value
-        $object.$name = $($object.$name | ConvertTo-Json -Depth 99 | ConvertFrom-Json)
+        if($object.$name.GetType().Name -eq 'HashTable'){
+            $object.$name = $object.$name | ConvertTo-Json -Depth 99 | ConvertFrom-Json
+        }
     }else{
         $object.$name = $value
     }
