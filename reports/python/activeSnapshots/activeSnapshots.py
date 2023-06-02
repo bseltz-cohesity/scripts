@@ -62,7 +62,7 @@ if days is not None:
     daysBackUsecs = timeAgo(days, 'days')
 
 f = codecs.open(outfileName, 'w', 'utf-8')
-f.write('"Job Name","Job Type","Protected Object","Active Snapshots","Newest Snapshot","Oldest Snapshot"\n')
+f.write('"Job Name","Job Type","Protected Object","Active Snapshots","Oldest Snapshot","Newest Snapshot"\n')
 
 ### find recoverable objects
 startfrom = 0
@@ -104,14 +104,18 @@ if len(ro) > 0:
 
             if objAlias != '':
                 objName = '%s/%s' % (objAlias, objName)
+            versions = sorted(doc['versions'], key=lambda s: s['instanceId']['jobStartTimeUsecs'])
             if days is not None:
-                doc['versions'] = [v for v in doc['versions'] if v['instanceId']['jobStartTimeUsecs'] >= daysBackUsecs]
-            versionCount = len(doc['versions'])
+                versions = [v for v in versions if v['instanceId']['jobStartTimeUsecs'] >= daysBackUsecs]
+            versionCount = len(versions)
             if versionCount > 0:
-                oldestSnapshotDate = usecsToDate(doc['versions'][-1]['instanceId']['jobStartTimeUsecs'])
-                newsetSnapshotDate = usecsToDate(doc['versions'][0]['instanceId']['jobStartTimeUsecs'])
+                oldestSnapshotDate = usecsToDate(versions[0]['instanceId']['jobStartTimeUsecs'])
+                newsetSnapshotDate = usecsToDate(versions[-1]['instanceId']['jobStartTimeUsecs'])
+            else:
+                oldestSnapshotDate = ''
+                newsetSnapshotDate = ''
             print("%s(%s) %s: %s" % (jobName, objType, objName, versionCount))
-            f.write('"%s","%s","%s","%s","%s","%s"\n' % (jobName, objType, objName, versionCount, newsetSnapshotDate, oldestSnapshotDate))
+            f.write('"%s","%s","%s","%s","%s","%s"\n' % (jobName, objType, objName, versionCount, oldestSnapshotDate, newsetSnapshotDate))
         if ro['count'] > (pagesize + startfrom):
             startfrom += pagesize
             ro = api('get', '/searchvms?size=%s&from=%s%s' % (pagesize, startfrom, etail))
