@@ -9,7 +9,8 @@ param (
     [Parameter()][switch]$mcm,                          # connect through mcm
     [Parameter()][string]$mfaCode = $null,              # mfa code
     [Parameter()][string]$clusterName = $null,          # cluster to connect to via helios/mcm
-    [Parameter()][int64]$pageSize = 100
+    [Parameter()][int64]$pageSize = 100,
+    [Parameter()][int64]$days
 )
 
 ### source the cohesity-api helper code
@@ -36,7 +37,11 @@ if(!$cohesity_api.authorized){
 $cluster = api get cluster
 $clusterName = $cluster.name
 $outfileName = "activeSnapshots-$clusterName.csv"
-"""Job Name"",""Job Type"",""Protected Object"",""Active Snapshots""" | Out-File -FilePath $outfileName
+"""Job Name"",""Job Type"",""Protected Object"",""Active Snapshots"",""Newest Snapshot"",""Oldest Snapshot""" | Out-File -FilePath $outfileName
+
+if($days){
+    $daysBackUsecs = timeAgo $days days
+}
 
 ### find recoverable objects
 $from = 0
@@ -70,9 +75,14 @@ if($ro.count -gt 0){
             if($objAlias -ne ''){
                 $objName = "$objAlias/$objName"
             }
+            if($days){
+                $doc.versions = $doc.versions | Where-Object {$_.instanceId.jobStartTimeUsecs -ge $daysBackUsecs}
+            }
             $versionCount = $doc.versions.Count
+            $newestSnapshotDate = usecsToDate $doc.versions[-1].instanceId.jobStartTimeUsecs
+            $oldestSnapshotDate = usecsToDate $doc.versions[0].instanceId.jobStartTimeUsecs
             write-host ("{0} ({1}) {2}: {3}" -f $jobName, $objType, $objName, $versionCount)
-            """$jobName"",""$objType"",""$objName"",""$versionCount""" | Out-File -FilePath $outfileName -Append
+            """$jobName"",""$objType"",""$objName"",""$versionCount"",""$oldestSnapshotDate"",""$newestSnapshotDate""" | Out-File -FilePath $outfileName -Append
         }
         if($ro.count -gt ($pageSize + $from)){
             $from += $pageSize

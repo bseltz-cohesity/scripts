@@ -42,4 +42,5 @@ Place both files in a folder together and run the main script like so:
 
 ## Other Parameters
 
+* -days: (optional) limit query to the last X days
 * -pageSize: (optional) API paging (default is 100)
