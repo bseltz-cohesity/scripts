@@ -38,7 +38,7 @@ if(!$cohesity_api.authorized){
 $cluster = api get cluster
 $clusterName = $cluster.name
 $outfileName = "activeSnapshots-$clusterName.csv"
-"""Job Name"",""Job Type"",""Protected Object"",""Active Snapshots"",""Newest Snapshot"",""Oldest Snapshot""" | Out-File -FilePath $outfileName
+"""Job Name"",""Job Type"",""Protected Object"",""Active Snapshots"",""Oldest Snapshot"",""Newest Snapshot""" | Out-File -FilePath $outfileName
 
 if($days){
     $daysBackUsecs = timeAgo $days days
@@ -81,12 +81,19 @@ if($ro.count -gt 0){
             if($objAlias -ne ''){
                 $objName = "$objAlias/$objName"
             }
+            $versions = $doc.versions | Sort-Object -Property {$_.instanceId.jobStartTimeUsecs}
             if($days){
-                $doc.versions = $doc.versions | Where-Object {$_.instanceId.jobStartTimeUsecs -ge $daysBackUsecs}
+                $versions = $versions | Where-Object {$_.instanceId.jobStartTimeUsecs -ge $daysBackUsecs}
             }
-            $versionCount = $doc.versions.Count
-            $newestSnapshotDate = usecsToDate $doc.versions[-1].instanceId.jobStartTimeUsecs
-            $oldestSnapshotDate = usecsToDate $doc.versions[0].instanceId.jobStartTimeUsecs
+            
+            $versionCount = $versions.Count
+            if($versionCount -gt 0){
+                $newestSnapshotDate = usecsToDate $versions[-1].instanceId.jobStartTimeUsecs
+                $oldestSnapshotDate = usecsToDate $versions[0].instanceId.jobStartTimeUsecs
+            }else{
+                $newestSnapshotDate = ''
+                $oldestSnapshotDate = ''
+            }
             write-host ("{0} ({1}) {2}: {3}" -f $jobName, $objType, $objName, $versionCount)
             """$jobName"",""$objType"",""$objName"",""$versionCount"",""$oldestSnapshotDate"",""$newestSnapshotDate""" | Out-File -FilePath $outfileName -Append
         }
