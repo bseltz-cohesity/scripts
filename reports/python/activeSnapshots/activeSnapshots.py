@@ -10,15 +10,18 @@ import codecs
 ### command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)
-parser.add_argument('-u', '--username', type=str, required=True)
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
 parser.add_argument('-i', '--useApiKey', action='store_true')
-parser.add_argument('-pwd', '--password', type=str)
-parser.add_argument('-of', '--outfolder', type=str, default='.')
-parser.add_argument('-j', '--jobname', type=str, default=None)
-parser.add_argument('-o', '--objectname', type=str, default=None)
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-n', '--pagesize', type=int, default=100)
+parser.add_argument('-y', '--days', type=int, default=None)
+parser.add_argument('-e', '--environment', type=str, default=None)
 
 
 args = parser.parse_args()
@@ -26,38 +29,48 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
-password = args.password
-folder = args.outfolder
+clustername = args.clustername
+mcm = args.mcm
 useApiKey = args.useApiKey
-jobname = args.jobname
-objectname = args.objectname
+password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
 pagesize = args.pagesize
+days = args.days
+environment = args.environment
 
-### authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+# authenticate
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode)
+
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    if clustername is not None:
+        heliosCluster(clustername)
+    else:
+        print('-clustername is required when connecting to Helios or MCM')
+        exit()
+
+# exit if not authenticated
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
 
 cluster = api('get', 'cluster')
-outfileName = '%s/activeSnapshots-%s.csv' % (folder, cluster['name'])
+outfileName = 'activeSnapshots-%s.csv' % cluster['name']
+
+if days is not None:
+    daysBackUsecs = timeAgo(days, 'days')
 
 f = codecs.open(outfileName, 'w', 'utf-8')
-f.write('"Job Name","Object Type","Object Name","Active Snapshots"\n')
-
-jobtail = ''
-if jobname is not None:
-    jobs = api('get', 'protectionJobs')
-    job = [j for j in jobs if j['name'].lower() == jobname.lower()]
-    if len(job) == 0:
-        print("Job %s not found" % jobname)
-        exit(1)
-    jobtail = '?jobIds=%s' % job[0]['id']
-
-objtail = ''
-if objectname is not None:
-    objtail = '&vmName=%s' % objectname
+f.write('"Job Name","Job Type","Protected Object","Active Snapshots","Newest Snapshot","Oldest Snapshot"\n')
 
 ### find recoverable objects
 startfrom = 0
-ro = api('get', '/searchvms?size=%s&from=%s%s%s' % (pagesize, startfrom, jobtail, objtail))
+etail = ''
+if environment is not None:
+    etail = '&entityTypes=%s' % environment
+
+ro = api('get', '/searchvms?size=%s&from=%s%s' % (pagesize, startfrom, etail))
 
 environments = ['Unknown', 'VMware', 'HyperV', 'SQL', 'View',
                 'RemoteAdapter', 'Physical', 'Pure', 'Azure', 'Netapp',
@@ -91,12 +104,17 @@ if len(ro) > 0:
 
             if objAlias != '':
                 objName = '%s/%s' % (objAlias, objName)
+            if days is not None:
+                doc['versions'] = [v for v in doc['versions'] if v['instanceId']['jobStartTimeUsecs'] >= daysBackUsecs]
             versionCount = len(doc['versions'])
+            if versionCount > 0:
+                oldestSnapshotDate = usecsToDate(doc['versions'][-1]['instanceId']['jobStartTimeUsecs'])
+                newsetSnapshotDate = usecsToDate(doc['versions'][0]['instanceId']['jobStartTimeUsecs'])
             print("%s(%s) %s: %s" % (jobName, objType, objName, versionCount))
-            f.write('"%s","%s","%s","%s"\n' % (jobName, objType, objName, versionCount))
+            f.write('"%s","%s","%s","%s","%s","%s"\n' % (jobName, objType, objName, versionCount, newsetSnapshotDate, oldestSnapshotDate))
         if ro['count'] > (pagesize + startfrom):
             startfrom += pagesize
-            ro = api('get', '/searchvms?size=%s&from=%s%s%s' % (pagesize, startfrom, jobtail, objtail))
+            ro = api('get', '/searchvms?size=%s&from=%s%s' % (pagesize, startfrom, etail))
         else:
             break
 
