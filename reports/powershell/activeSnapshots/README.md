@@ -44,3 +44,4 @@ Place both files in a folder together and run the main script like so:
 
 * -days: (optional) limit query to the last X days
 * -pageSize: (optional) API paging (default is 100)
+* -environment: (optional) limit query to specific type (e.g. kSQL)

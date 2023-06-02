@@ -10,7 +10,8 @@ param (
     [Parameter()][string]$mfaCode = $null,              # mfa code
     [Parameter()][string]$clusterName = $null,          # cluster to connect to via helios/mcm
     [Parameter()][int64]$pageSize = 100,
-    [Parameter()][int64]$days
+    [Parameter()][int64]$days,
+    [Parameter()][string]$environment = $null
 )
 
 ### source the cohesity-api helper code
@@ -43,9 +44,14 @@ if($days){
     $daysBackUsecs = timeAgo $days days
 }
 
+$etail = ""
+if($environment){
+    $etail = "&&entityTypes=$environment"
+}
+
 ### find recoverable objects
 $from = 0
-$ro = api get "/searchvms?size=$pageSize&from=$from"
+$ro = api get "/searchvms?size=$pageSize&from=$from$etail"
 
 $environments = @('Unknown', 'VMware', 'HyperV', 'SQL', 'View', 'Puppeteer',
                 'Physical', 'Pure', 'Azure', 'Netapp', 'Agent', 'GenericNas',
@@ -86,7 +92,7 @@ if($ro.count -gt 0){
         }
         if($ro.count -gt ($pageSize + $from)){
             $from += $pageSize
-            $ro = api get "/searchvms?size=$pageSize&from=$from"
+            $ro = api get "/searchvms?size=$pageSize&from=$from$etail"
         }else{
             break
         }
