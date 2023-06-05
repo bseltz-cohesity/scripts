@@ -83,6 +83,7 @@ Restoring cohesitydb to sqldev01 as restoreTest
 * -noRecovery: Restore the DB with NORECOVER option (default is to recover)
 * -resume: Resume recovery of previously restored database (left in NORECOVERY mode)
 * -update: short hand for -resume -noRecovery -latest
+* -restoreFromArchive: force restore from archive even if local snapshot exists
 
 ## Other Parameters
 
