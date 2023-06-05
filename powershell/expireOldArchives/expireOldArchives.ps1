@@ -11,7 +11,8 @@ param (
     [Parameter()][int]$olderThan = 0, # expire archives older than x days
     [Parameter()][int]$newerThan = 0, # expire archives newer than X days
     [Parameter()][switch]$expire,
-    [Parameter()][switch]$showUnsuccessful
+    [Parameter()][switch]$showUnsuccessful,
+    [Parameter()][switch]$skipFirstOfMonth
 )
 
 ### source the cohesity-api helper code
@@ -50,35 +51,35 @@ foreach ($job in $jobs) {
 
         $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
         $jobName = $run.jobName
-
-        ### Display Status of archive task
-        foreach ($copyRun in $run.copyRun) {
-            if ($copyRun.target.type -eq 'kArchival') {
-                if (($copyRun.status -eq 'kSuccess' -or $copyRun.status -eq 4) -and (! $showUnsuccessful)) {
-                    if ($copyRun.expiryTimeUsecs -gt 0) {
-                        if( ! $target -or $copyRun.target.archivalTarget.vaultName -eq $target){
-                            write-host "$runDate  $jobName" -ForegroundColor Green
-                            $expireRun = @{'jobRuns' = @(
-                                    @{'expiryTimeUsecs'     = 0;
-                                        'jobUid'            = $run.jobUid;
-                                        'runStartTimeUsecs' = $run.backupRun.stats.startTimeUsecs;
-                                        'copyRunTargets'    = @(
-                                            @{'daysToKeep'       = 0;
-                                                'type'           = 'kArchival';
-                                                'archivalTarget' = $copyRun.target.archivalTarget
-                                            }
-                                        )
-                                    }
-                                )
-                            }
-                            if ($expire) {
-                                api put protectionRuns $expireRun
+        if(! $skipFirstOfMonth -or $runDate.Day -ne 1){
+            foreach ($copyRun in $run.copyRun) {
+                if ($copyRun.target.type -eq 'kArchival') {
+                    if (($copyRun.status -eq 'kSuccess' -or $copyRun.status -eq 4) -and (! $showUnsuccessful)) {
+                        if ($copyRun.expiryTimeUsecs -gt 0) {
+                            if( ! $target -or $copyRun.target.archivalTarget.vaultName -eq $target){
+                                write-host "$runDate  $jobName" -ForegroundColor Green
+                                $expireRun = @{'jobRuns' = @(
+                                        @{'expiryTimeUsecs'     = 0;
+                                            'jobUid'            = $run.jobUid;
+                                            'runStartTimeUsecs' = $run.backupRun.stats.startTimeUsecs;
+                                            'copyRunTargets'    = @(
+                                                @{'daysToKeep'       = 0;
+                                                    'type'           = 'kArchival';
+                                                    'archivalTarget' = $copyRun.target.archivalTarget
+                                                }
+                                            )
+                                        }
+                                    )
+                                }
+                                if ($expire) {
+                                    api put protectionRuns $expireRun
+                                }
                             }
                         }
-                    }
-                }else{
-                    if($copyRun.status -ne 'kSuccess' -and $showUnsuccessful){
-                        write-host "$runDate  $jobName $($copyRun.status)" -ForegroundColor Yellow
+                    }else{
+                        if($copyRun.status -ne 'kSuccess' -and $showUnsuccessful){
+                            write-host "$runDate  $jobName $($copyRun.status)" -ForegroundColor Yellow
+                        }
                     }
                 }
             }

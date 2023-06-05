@@ -68,3 +68,4 @@ Also note that data in the archive target may not be immediately deleted if a ne
 * -newerThan: show/expire snapshots newer than this many days
 * -expire: (optional) expire the snapshots (if omitted, the script will only show what 'would' be expired)
 * -showUnsuccessful: (optional) just display unsuccessful archive runs
+* -skipFirstOfMonth: (optional) do not expire archives that occured on the first day of the month
