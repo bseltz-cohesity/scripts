@@ -39,7 +39,7 @@ if(!$cohesity_api.authorized){
 $cluster = api get cluster
 $clusterName = $cluster.name
 $outfileName = $(Join-Path -Path $outputPath -ChildPath "activeSnapshots-$clusterName.csv")
-"""Job Name"",""Job Type"",""Source Name"",""Object Name"",""Active Snapshots"",""Oldest Snapshot"",""Newest Snapshot""" | Out-File -FilePath $outfileName
+"""Cluster Name"",""Job Name"",""Job Type"",""Source Name"",""Object Name"",""Active Snapshots"",""Oldest Snapshot"",""Newest Snapshot""" | Out-File -FilePath $outfileName
 
 if($days){
     $daysBackUsecs = timeAgo $days days
@@ -102,7 +102,7 @@ if($ro.count -gt 0){
                 $oldestSnapshotDate = ''
             }
             write-host ("{0} ({1}) {2}: {3}" -f $jobName, $objType, $objName, $versionCount)
-            """$jobName"",""$objType"",""$sourceName"",""$objName"",""$versionCount"",""$oldestSnapshotDate"",""$newestSnapshotDate""" | Out-File -FilePath $outfileName -Append
+            """$($cluster.name)"",""$jobName"",""$objType"",""$sourceName"",""$objName"",""$versionCount"",""$oldestSnapshotDate"",""$newestSnapshotDate""" | Out-File -FilePath $outfileName -Append
         }
         if($ro.count -gt ($pageSize + $from)){
             $from += $pageSize
