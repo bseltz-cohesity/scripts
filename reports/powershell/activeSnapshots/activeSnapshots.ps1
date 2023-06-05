@@ -11,7 +11,8 @@ param (
     [Parameter()][string]$clusterName = $null,          # cluster to connect to via helios/mcm
     [Parameter()][int64]$pageSize = 100,
     [Parameter()][int64]$days,
-    [Parameter()][string]$environment = $null
+    [Parameter()][string]$environment = $null,
+    [Parameter()][string]$outputPath = '.'
 )
 
 ### source the cohesity-api helper code
@@ -37,8 +38,8 @@ if(!$cohesity_api.authorized){
 
 $cluster = api get cluster
 $clusterName = $cluster.name
-$outfileName = "activeSnapshots-$clusterName.csv"
-"""Job Name"",""Job Type"",""Protected Object"",""Active Snapshots"",""Oldest Snapshot"",""Newest Snapshot""" | Out-File -FilePath $outfileName
+$outfileName = $(Join-Path -Path $outputPath -ChildPath "activeSnapshots-$clusterName.csv")
+"""Job Name"",""Job Type"",""Source Name"",""Object Name"",""Active Snapshots"",""Oldest Snapshot"",""Newest Snapshot""" | Out-File -FilePath $outfileName
 
 if($days){
     $daysBackUsecs = timeAgo $days days
@@ -67,6 +68,7 @@ if($ro.count -gt 0){
     while($True){
         $ro.vms | Sort-Object -Property {$_.vmDocument.jobName}, {$_.vmDocument.objectName } | ForEach-Object {
             $doc = $_.vmDocument
+            # $doc | ConvertTo-Json -Depth 2
             $jobId = $doc.objectId.jobId
             $jobName = $doc.jobName
             $objName = $doc.objectName
@@ -77,10 +79,15 @@ if($ro.count -gt 0){
                 if($objAlias -eq "$objName.vmx" -or $objType -eq 'VMware'){
                     $objAlias = ''
                 }
+                if($objAlias -ne ''){
+                    $sourceName = $objAlias
+                    # $objName = "$objAlias/$objName"
+                }
             }
-            if($objAlias -ne ''){
-                $objName = "$objAlias/$objName"
+            if($objAlias -eq ''){
+                $sourceName = $doc.registeredSource.displayName
             }
+
             $versions = $doc.versions | Sort-Object -Property {$_.instanceId.jobStartTimeUsecs}
             if($days){
                 $versions = $versions | Where-Object {$_.instanceId.jobStartTimeUsecs -ge $daysBackUsecs}
@@ -95,7 +102,7 @@ if($ro.count -gt 0){
                 $oldestSnapshotDate = ''
             }
             write-host ("{0} ({1}) {2}: {3}" -f $jobName, $objType, $objName, $versionCount)
-            """$jobName"",""$objType"",""$objName"",""$versionCount"",""$oldestSnapshotDate"",""$newestSnapshotDate""" | Out-File -FilePath $outfileName -Append
+            """$jobName"",""$objType"",""$sourceName"",""$objName"",""$versionCount"",""$oldestSnapshotDate"",""$newestSnapshotDate""" | Out-File -FilePath $outfileName -Append
         }
         if($ro.count -gt ($pageSize + $from)){
             $from += $pageSize
