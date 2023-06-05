@@ -51,6 +51,7 @@ param (
     [Parameter()][switch]$update,
     [Parameter()][switch]$noStop,
     [Parameter()][switch]$captureTailLogs,
+    [Parameter()][switch]$restoreFromArchive,
     [Parameter()][int64]$sleepTimeSecs = 30,
     [Parameter()][string]$withClause,
     [Parameter()][array]$sourceNodes                       # limit results to these AAG nodes
@@ -357,7 +358,7 @@ $restoreTask = @{
 $localreplica = $dbVersions[$versionNum].replicaInfo.replicaVec | Where-Object {$_.target.type -eq 1}
 $archivereplica = $dbVersions[$versionNum].replicaInfo.replicaVec | Where-Object {$_.target.type -eq 3}
 
-if(! $localreplica -and $archivereplica){
+if($archivereplica -and (! $localreplica -or $restoreFromArchive)){
     $restoreTask.restoreAppParams.ownerRestoreInfo.ownerObject['archivalTarget'] = $archivereplica[0].target.archivalTarget
 }
 

@@ -48,6 +48,7 @@ param (
     [Parameter()][switch]$importFileInfo,                  # import DB file paths
     [Parameter()][switch]$resume,                          # resume recovery of previously restored DB
     [Parameter()][switch]$update,                          # resume norecovery latest
+    [Parameter()][switch]$restoreFromArchive,
     [Parameter()][array]$sourceNodes                       # limit results to these AAG nodes
 )
 
@@ -353,10 +354,10 @@ function restoreDB($db){
     $localreplica = $dbVersions[$versionNum].replicaInfo.replicaVec | Where-Object {$_.target.type -eq 1}
     $archivereplica = $dbVersions[$versionNum].replicaInfo.replicaVec | Where-Object {$_.target.type -eq 3}
 
-    if(! $localreplica -and $archivereplica){
+    if($archivereplica -and (! $localreplica -or $restoreFromArchive)){
         $restoreTask.restoreAppParams.ownerRestoreInfo.ownerObject['archivalTarget'] = $archivereplica[0].target.archivalTarget
     }
-    
+
     if($noRecovery){
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.withNoRecovery = $True
     }
