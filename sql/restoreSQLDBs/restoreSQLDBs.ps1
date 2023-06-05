@@ -349,6 +349,14 @@ function restoreDB($db){
         }
     }
 
+    # allow cloudRetrieve
+    $localreplica = $dbVersions[$versionNum].replicaInfo.replicaVec | Where-Object {$_.target.type -eq 1}
+    $archivereplica = $dbVersions[$versionNum].replicaInfo.replicaVec | Where-Object {$_.target.type -eq 3}
+
+    if(! $localreplica -and $archivereplica){
+        $restoreTask.restoreAppParams.ownerRestoreInfo.ownerObject['archivalTarget'] = $archivereplica[0].target.archivalTarget
+    }
+    
     if($noRecovery){
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.withNoRecovery = $True
     }
