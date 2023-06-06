@@ -49,18 +49,18 @@ if($viewList){
 }
 
 # delete old remote views from target cluster
-foreach($viewName in $myViews){
-    $viewName = [string]$viewName
-    $view = $views.views | Where-Object name -eq $viewName
-    if($view){
-        if($view.isReadOnly -ne $True){
-            Write-Host "View $viewName is live. Skipping..."
-        }else{
-            Write-Host "Deleting old remote view $viewName"
-            $null = api delete views/$viewName
-        }
-    }
-}
+# foreach($viewName in $myViews){
+#     $viewName = [string]$viewName
+#     $view = $views.views | Where-Object name -eq $viewName
+#     if($view){
+#         if($view.isReadOnly -ne $True){
+#             Write-Host "View $viewName is live. Skipping..."
+#         }else{
+#             Write-Host "Deleting old remote view $viewName"
+#             $null = api delete views/$viewName
+#         }
+#     }
+# }
 
 # delete old jobs from target cluster
 $jobs = api get -v2 "data-protect/protection-groups?isActive=true&isPaused=true&environments=kView"
