@@ -65,7 +65,7 @@ Then, if you're happy with the list of snapshots that will be archived, run the 
 * -username: Cohesity username
 * -domain: (optional) Cohesity logon domain (defaults to local)
 * -vault: Name of archive target
-* -jobNames: (optional) One or more job names to archive (comma separated)
+* -jobName: (optional) One or more job names to archive (comma separated)
 * -jobList: (optional) text file of job names (one per line)
 * -keepFor: (optional) keep archive for X days (from original backup date)
 * -ifExpiringAfter: (optional) skip if local snapshot set to expire in X or less days
