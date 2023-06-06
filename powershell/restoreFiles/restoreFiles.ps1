@@ -1,4 +1,4 @@
-# version 2023.03.22
+# version 2023.06.06
 ### usage: ./restoreFiles.ps1 -vip mycluster -username myuser -domain mydomain.net `
 #                             -sourceServer server1.mydomain.net `
 #                             -targetServer server2.mydomain.net `
@@ -36,7 +36,8 @@ param (
     [Parameter()][switch]$overwrite,
     [Parameter()][switch]$rangeRestore,
     [Parameter()][switch]$showVersions,
-    [Parameter()][switch]$noIndex
+    [Parameter()][switch]$noIndex,
+    [Parameter()][switch]$restoreFromArchive
 )
 
 if($overWrite){
@@ -207,6 +208,9 @@ function restore($thesefiles, $doc, $version, $targetEntity, $singleFile){
 
     # select local or cloud archive copy
     $fromTarget = "(local)"
+    if($restoreFromArchive){
+        $version.replicaInfo.replicaVec = @($version.replicaInfo.replicaVec | Where-Object {$_.target.type -ne 1})
+    }
     if(($version.replicaInfo.replicaVec | Sort-Object -Property {$_.target.type})[0].target.type -eq 3){
         $fromTarget = "(archive)"
         $restoreParams.sourceObjectInfo['archivalTarget'] = $version.replicaInfo.replicaVec[0].target.archivalTarget
