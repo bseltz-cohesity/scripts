@@ -46,3 +46,4 @@ Place both files in a folder together and run the main script like so:
 * -pageSize: (optional) API paging (default is 100)
 * -environment: (optional) limit query to specific type (e.g. kSQL)
 * -ouputPath: (optional) path to write output file (default is '.')
+* -localOnly: (optional) include only local protection groups
