@@ -16,7 +16,10 @@ param (
     [Parameter()][array]$filters,
     [Parameter()][string]$filterList,
     [Parameter()][string]$filterProperty,
-    [Parameter()][string]$outputPath = '.'
+    [Parameter()][string]$outputPath = '.',
+    [Parameter()][switch]$includeCCS,
+    [Parameter()][switch]$excludeLogs,
+    [Parameter()][string]$environment
 )
 
 # gather list from command line params and file
@@ -55,8 +58,10 @@ apiauth -vip $vip -username $username -domain 'local' -helios
 
 $allClusters = heliosClusters
 $regions = api get -mcmv2 dms/regions
-foreach($region in $regions.regions){
-    $allClusters = @($allClusters + $region)
+if($includeCCS){
+    foreach($region in $regions.regions){
+        $allClusters = @($allClusters + $region)
+    }
 }
 
 # select clusters to include
@@ -105,6 +110,38 @@ while($gotAllRanges -eq $False){
     }else{
         $ranges = @($ranges + @{'start' = $uStart; 'end' = $thisUend})
         $gotAllRanges = $True
+    }
+}
+
+$excludeLogsFilter = @{
+    "attribute" = "backupType";
+    "filterType" = "In";
+    "inFilterParams" = @{
+        "attributeDataType" = "String";
+        "stringFilterValues" = @(
+            "kRegular",
+            "kFull",
+            "kSystem"
+        );
+        "attributeLabels" = @(
+            "Incremental",
+            "Full",
+            "System"
+        )
+    }
+}
+
+$environmentFilter = @{
+    "attribute" = "environment";
+    "filterType" = "In";
+    "inFilterParams" = @{
+        "attributeDataType" = "String";
+        "stringFilterValues" = @(
+            $environment
+        );
+        "attributeLabels" = @(
+            $environment
+        )
     }
 }
 
@@ -269,7 +306,7 @@ $Global:html += '</span>
 $gotHeadings = $False
 $headings = @()
 
-Write-Host "Retrieving report data..."
+Write-Host "`nRetrieving report data...`n"
 
 foreach($cluster in ($selectedClusters)){  # | Sort-Object -Property name)){
     if($cluster.name -in @($regions.regions.name)){
@@ -306,6 +343,12 @@ foreach($cluster in ($selectedClusters)){  # | Sort-Object -Property name)){
             "limit"    = @{
                 "size" = 10000;
             }
+        }
+        if($excludeLogs){
+            $reportParams.filters = @($reportParams.filters + $excludeLogsFilter)
+        }
+        if($environment){
+            $reportParams.filters = @($reportParams.filters + $environmentFilter)
         }
         $preview = api post -reportingV2 "components/$reportNumber/preview" $reportParams
         if($preview.component.data.Count -eq 10000){
