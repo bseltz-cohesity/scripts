@@ -150,6 +150,8 @@ while(1){
 }
 
 $nodeIdIndex = @($nodeIdIndex | Sort-Object -Unique)
+$protectedIndex = @($protectedIndex | Sort-Object -Unique)
+$unprotectedIndex = @($unprotectedIndex | Sort-Object -Unique)
 
 $objectCount = $nodeIdIndex.Count
 $protectedCount = $protectedIndex.Count
