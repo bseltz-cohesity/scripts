@@ -103,7 +103,6 @@ $unprotectedObjects = @()
 $jobs = (api get -v2 "data-protect/protection-groups?environments=kO365&isActive=true&isDeleted=false").protectionGroups | Where-Object {$_.office365Params.protectionTypes -eq $objectKtype}
 
 $protectedIndex = @($jobs.office365Params.objects.id | Where-Object {$_ -ne $null})
-$unprotectedIndex = @()
 
 $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false$($queryParam)&useCachedData=false"
 $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
