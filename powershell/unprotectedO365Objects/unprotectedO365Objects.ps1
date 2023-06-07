@@ -8,7 +8,6 @@ param (
     [Parameter()][string]$password = $null,
     [Parameter()][switch]$mcm,
     [Parameter()][string]$mfaCode = $null,
-    [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName = $null,
     [Parameter(Mandatory = $True)][string]$sourceName,
     [Parameter()][ValidateSet('mailbox','onedrive','sites','teams','publicfolders')][string]$objectType = 'mailbox'
@@ -20,13 +19,13 @@ if($objectType -eq 'mailbox'){
     $nodeString = 'users'
     $objectKtype = 'kMailbox'
     $environment68 = 'kO365Exchange'
-    $queryParam = '&hasValidMailbox=true&hasValidOnedrive=false'
+    $queryParam = '&hasValidMailbox=true'
 }elseif($objectType -eq 'onedrive'){
     $objectString = 'OneDrives'
     $nodeString = 'users'
     $objectKtype = 'kOneDrive'
     $environment68 = 'kO365OneDrive'
-    $queryParam = '&hasValidOnedrive=true&hasValidMailbox=false'
+    $queryParam = '&hasValidOnedrive=true'
 }elseif($objectType -eq 'sites'){
     $objectString = 'Sites'
     $nodeString = 'Sites'
@@ -51,7 +50,7 @@ if($objectType -eq 'mailbox'){
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 ### authenticate
-apiauth -vip $vip -username $username -domain $domain -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region
+apiauth -vip $vip -username $username -domain $domain -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -heliosAuthentication $mcm
 
 ### select helios/mcm managed cluster
 if($USING_HELIOS){
@@ -95,8 +94,6 @@ if(!$objectsNode){
     exit
 }
 
-$nameIndex = @{}
-$smtpIndex = @{}
 $unprotectedIndex = @()
 $protectedIndex = @()
 $nodeIdIndex = @()
@@ -106,7 +103,6 @@ $unprotectedObjects = @()
 $jobs = (api get -v2 "data-protect/protection-groups?environments=kO365&isActive=true&isDeleted=false").protectionGroups | Where-Object {$_.office365Params.protectionTypes -eq $objectKtype}
 
 $protectedIndex = @($jobs.office365Params.objects.id | Where-Object {$_ -ne $null})
-# $unprotectedIndex = @($jobs.office365Params.excludeObjectIds | Where-Object {$_ -ne $null -and $_ -notin $protectedIndex})
 $unprotectedIndex = @()
 
 $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false$($queryParam)&useCachedData=false"
@@ -119,10 +115,6 @@ if($objectsNode.protectionSource.id -in $protectedIndex){
 while(1){
     foreach($node in $objects.nodes){
         $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
-        $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
-        if($node.protectionSource.office365ProtectionSource.PSObject.Properties['primarySMTPAddress']){
-            $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
-        }
         if($autoProtected -eq $True -and $node.protectionSource.id -notin $unprotectedIndex){
             $protectedIndex = @($protectedIndex + $node.protectionSource.id)
         }
@@ -143,10 +135,6 @@ while(1){
         if($cursor -gt $lastCursor){
             $node = api get "protectionSources?id=$cursor$($queryParam)"
             $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
-            $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
-            if($node.protectionSource.office365ProtectionSource.PSObject.Properties['primarySMTPAddress']){
-                $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
-            }
             if($autoProtected -eq $True -and $node.protectionSource.id -notin $unprotectedIndex){
                 $protectedIndex = @($protectedIndex + $node.protectionSource.id)
             }
@@ -167,10 +155,9 @@ $objectCount = $nodeIdIndex.Count
 $protectedCount = $protectedIndex.Count
 $unprotectedCount = $unprotectedIndex.Count
 
-Write-Host "`n$($nodeIdIndex.Count) $objectString discovered ($($protectedIndex.Count) protected, $($unprotectedIndex.Count) unprotected)`n"
-
 if($unprotectedCount -gt 0){
-    Write-Host "Unprotected $($objectString):`n"
-    Write-Host "$(($unprotectedObjects | Sort-Object) -join "`n")`n"
+    Write-Host "`nUnprotected $($objectString):`n"
+    Write-Host "$(($unprotectedObjects | Sort-Object) -join "`n")"
 }
 
+Write-Host "`n$objectCount $objectString discovered ($protectedCount protected, $unprotectedCount unprotected)`n"
