@@ -41,7 +41,7 @@ $cluster = api get cluster
 $clusterId = $cluster.id
 $clusterName = $cluster.name
 $outfileName = $(Join-Path -Path $outputPath -ChildPath "activeSnapshots-$clusterName.csv")
-"""Cluster Name"",""Job Name"",""Job Type"",""Source Name"",""Object Name"",""Active Snapshots"",""Oldest Snapshot"",""Newest Snapshot""" | Out-File -FilePath $outfileName
+"""Cluster Name"",""Job Name"",""Job Type"",""Source Name"",""Object Name"",""SQL AAG Name"",""Active Snapshots"",""Oldest Snapshot"",""Newest Snapshot""" | Out-File -FilePath $outfileName
 
 if($days){
     $daysBackUsecs = timeAgo $days days
@@ -71,12 +71,15 @@ if($ro.count -gt 0){
         $ro.vms | Sort-Object -Property {$_.vmDocument.jobName}, {$_.vmDocument.objectName } | ForEach-Object {
             $doc = $_.vmDocument
             if(! $localOnly -or $doc.objectId.jobUid.clusterId -eq $clusterId){
-                # $doc | ConvertTo-Json -Depth 2
                 $jobId = $doc.objectId.jobId
                 $jobName = $doc.jobName
                 $objName = $doc.objectName
                 $objType = $environments[$doc.registeredSource.type]
                 $objAlias = ''
+                $sqlAagName = ''
+                if($doc.objectId.entity.PSObject.Properties['sqlEntity'] -and $doc.objectId.entity.sqlEntity.PSObject.Properties['dbAagName']){
+                    $sqlAagName = $doc.objectId.entity.sqlEntity.dbAagName
+                }
                 if('objectAliases' -in $doc.PSobject.Properties.Name){
                     $objAlias = $doc.objectAliases[0]
                     if($objAlias -eq "$objName.vmx" -or $objType -eq 'VMware'){
@@ -84,7 +87,6 @@ if($ro.count -gt 0){
                     }
                     if($objAlias -ne ''){
                         $sourceName = $objAlias
-                        # $objName = "$objAlias/$objName"
                     }
                 }
                 if($objAlias -eq ''){
@@ -95,8 +97,7 @@ if($ro.count -gt 0){
                 if($days){
                     $versions = $versions | Where-Object {$_.instanceId.jobStartTimeUsecs -ge $daysBackUsecs}
                 }
-                # $doc | ConvertTo-Json -Depth 99
-                # exit
+                
                 $versionCount = $versions.Count
                 if($versionCount -gt 0){
                     $newestSnapshotDate = usecsToDate $versions[-1].instanceId.jobStartTimeUsecs
@@ -106,7 +107,7 @@ if($ro.count -gt 0){
                     $oldestSnapshotDate = ''
                 }
                 write-host ("{0} ({1}) {2}: {3}" -f $jobName, $objType, $objName, $versionCount)
-                """$($cluster.name)"",""$jobName"",""$objType"",""$sourceName"",""$objName"",""$versionCount"",""$oldestSnapshotDate"",""$newestSnapshotDate""" | Out-File -FilePath $outfileName -Append
+                """$($cluster.name)"",""$jobName"",""$objType"",""$sourceName"",""$objName"",""$sqlAagName"",""$versionCount"",""$oldestSnapshotDate"",""$newestSnapshotDate""" | Out-File -FilePath $outfileName -Append
             }
         }
         if($ro.count -gt ($pageSize + $from)){
