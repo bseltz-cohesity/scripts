@@ -341,7 +341,7 @@ foreach($cluster in ($selectedClusters)){  # | Sort-Object -Property name)){
             "sort"     = $null;
             "timezone" = $timeZone;
             "limit"    = @{
-                "size" = 10000;
+                "size" = 50000;
             }
         }
         if($excludeLogs){
