@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.04.14
+# version 2023.06.08
 
 # version history
 # ===============
@@ -11,6 +11,7 @@
 # 2023.04.11 - fixed bug in line 70 - last run is None error, added metafile check for new run
 # 2023.04.13 - fixed log archiving bug
 # 2023.04.14 - fixed metadatafile watch bug
+# 2023.06.08 - added -pl --purgeoraclelogs
 
 # extended error codes
 # ====================
@@ -72,6 +73,7 @@ parser.add_argument('-s', '--sleeptimesecs', type=int, default=120)
 parser.add_argument('-es', '--exitstring', type=str, default=None)
 parser.add_argument('-est', '--exitstringtimeoutsecs', type=int, default=120)
 parser.add_argument('-sr', '--statusretries', type=int, default=10)
+parser.add_argument('-pl', '--purgeoraclelogs', action='store_true')
 
 args = parser.parse_args()
 
@@ -112,6 +114,7 @@ progress = args.progress
 exitstring = args.exitstring
 exitstringtimeoutsecs = args.exitstringtimeoutsecs
 statusretries = args.statusretries
+purgeoraclelogs = args.purgeoraclelogs
 
 # enforce sleep time
 if sleeptimesecs < 30:
@@ -294,6 +297,11 @@ else:
             sources = api('get', 'protectionSources?environments=kAWS')
         else:
             sources = api('get', 'protectionSources?environments=%s' % environment)
+
+# purge oracle logs
+if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
+    v2Job = api('get', 'data-protect/protection-groups/%s' % v2JobId, v=2)
+    v2OrigJob = v2Job.copy()
 
 # handle run now objects
 sourceIds = []
@@ -534,6 +542,24 @@ if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
 else:
     newRunId = lastRunId = 1
 
+if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
+    for obj in v2Job['oracleParams']['objects']:
+        for dbparam in obj['dbParams']:
+            if objectnames is not None:
+                for objectname in objectnames:
+                    if len(parts) == 2:
+                        (server, instance) = parts
+                    else:
+                        server = parts[0]
+                        instance = None
+                        db = None
+                    if server.lower() == obj['sourceName'].lower():
+                        if instance is None or instance.lower() == dbparam['dbChannels'][0]['databaseUniqueName'].lower():
+                            dbparam['dbChannels'][0]['archiveLogRetentionDays'] = 0
+            else:
+                dbparam['dbChannels'][0]['archiveLogRetentionDays'] = 0
+    updatejob = api('put', 'data-protect/protection-groups/%s' % v2JobId, v2Job, v=2)
+
 # run protectionJob
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
@@ -610,6 +636,9 @@ if wait is True:
             break
         sleep(sleeptimesecs)
     out("New Job Run ID: %s" % v2RunId)
+
+if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
+    updatejob = api('put', 'data-protect/protection-groups/%s' % v2JobId, v2OrigJob, v=2)
 
 # wait for job run to finish and report completion
 if wait is True:

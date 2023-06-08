@@ -61,6 +61,7 @@ Place all files in a folder together. then, run the main script like so:
 * -ka, --keepArchiveFor: (optional) days to keep in archive (defaults to policy settings)
 * -r, --replicateTo: (optional) name of remote cluster to replicate to (defaults to policy settings)
 * -kr, --keepReplicaFor: (optional) days to keep replica for (defaults to policy settings)
+* -pl, --purgeoraclelogs: (optional) delete Oracle archived logs after log backup (only if backupType == 'kLog')
 
 ## Monitoring Parameters
 

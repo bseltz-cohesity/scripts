@@ -50,6 +50,7 @@ Place all files in a folder together. then, run the main script like so:
 * -o, --objectname: (optional) name of object to backup (repeat this parameter for multiple objects)
 * -m, --metadatafile: (optional) path to directive file for backup
 * -t, --backupType: (optional) choose one of kRegular, kFull or kLog backup types. Default is kRegular (incremental)
+* -pl, --purgeoraclelogs: (optional) delete Oracle archived logs after log backup (only if backupType == 'kLog')
 
 ## Policy Overrides
 
