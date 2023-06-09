@@ -157,10 +157,9 @@ if(! $report){
 $reportNumber = $report.componentIds[0]
 $title = $report.title
 
-# CSV output
-$csvFileName = $(Join-Path -Path $outputPath -ChildPath "$($title.replace('/','-').replace('\','-'))_$($start)_$($end).tsv")
-
-# HTML output
+# output files
+$csvFileName = $(Join-Path -Path $outputPath -ChildPath "$($title.replace('/','-').replace('\','-'))_$($start)_$($end).csv")
+$tsvFileName = $(Join-Path -Path $outputPath -ChildPath "$($title.replace('/','-').replace('\','-'))_$($start)_$($end).tsv")
 $htmlFileName = $(Join-Path -Path $outputPath -ChildPath "$($title.replace('/','-').replace('\','-'))_$($start)_$($end).html")
 
 $trColors = @('#FFFFFF;', '#F1F1F1;')
@@ -308,7 +307,7 @@ $headings = @()
 
 Write-Host "`nRetrieving report data...`n"
 
-foreach($cluster in ($selectedClusters)){  # | Sort-Object -Property name)){
+foreach($cluster in ($selectedClusters)){
     if($cluster.name -in @($regions.regions.name)){
         $systemId = $cluster.id
     }else{
@@ -316,7 +315,6 @@ foreach($cluster in ($selectedClusters)){  # | Sort-Object -Property name)){
     }
     Write-Host "$($cluster.name)"
   
-
     foreach($range in $ranges){
         $csvlines = @()
         $reportParams = @{
@@ -356,7 +354,6 @@ foreach($cluster in ($selectedClusters)){  # | Sort-Object -Property name)){
             exit
         }
         $attributes = $preview.component.config.xlsxParams.attributeConfig
-        # $attributes | ConvertTo-Json -Depth 99
         # headings
         if(!$gotHeadings){
             foreach($attribute in $attributes){
@@ -375,8 +372,12 @@ foreach($cluster in ($selectedClusters)){  # | Sort-Object -Property name)){
                 }
             }
             $gotHeadings = $True
-            $csvHeadings = $headings -join "`t"
-            $csvHeadings | Out-File -FilePath $csvFileName
+            $tsvHeadings = $headings -join "`t"
+            # $csvHeadings = $headings -join ""","""
+            $csvHeadings = $headings -join ","
+            $tsvHeadings | Out-File -FilePath $tsvFileName
+            # """$csvHeadings""" | Out-File -FilePath $csvFileName
+            "$csvHeadings" | Out-File -FilePath $csvFileName
             $htmlHeadings = $htmlHeadings = ($headings | ForEach-Object {"<th>$_</th>"}) -join "`n"
             $Global:html += $htmlHeadings
             $Global:html += '</tr>'
@@ -477,13 +478,19 @@ foreach($cluster in ($selectedClusters)){  # | Sort-Object -Property name)){
                 }elseif($data -match "^[\d\.]+$" ){
                     $data = "{0:n1}" -f $data
                 }
+                $data = "$data".replace(',','')
                 $csvColumns = @($csvColumns + $data)
                 $Global:html += "<td>$data</td>"
             }
             $Global:html += '</tr>'
-            $csvLine = $csvColumns -join "`t"
+            $tsvLine = $csvColumns -join "`t"
+            $tsvLines = @($tsvLines + $tsvLine)
+            # $csvLine = $csvColumns -join ""","""
+            # $csvLines = @($csvLines + """$csvLine""")
+            $csvLine = $csvColumns -join ","
             $csvLines = @($csvLines + $csvLine)
         }
+        $tsvLines -join "`n" | Sort-Object | Out-File $tsvFileName -Append
         $csvLines -join "`n" | Sort-Object | Out-File $csvFileName -Append
     }
 }
@@ -495,4 +502,4 @@ $Global:html += "</table>
 
 $Global:html | Out-File -FilePath $htmlFileName
 
-Write-Host "`nOutput saved to $csvFileName`nAlso saved as $htmlFileName`n"
+Write-Host "`nCSV output saved to $csvFileName`nTSV output saved to $tsvFileName`nHTML output saved to $htmlFileName`n"
