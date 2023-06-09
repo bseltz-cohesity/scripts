@@ -64,12 +64,16 @@ Wildcard and Regex exclusions are supported and are entered in the format host/i
 
 Wildcard exclusions can use * and ? wildcards:
 
+```text
 * myhost/myinstance/database1
 * myhost/myinstance/test*
 * myhost/myinstance/
 * */mssqlserver/*junk*
+```
 
 Regex exclusions can use regex rules:
 
+```text
 * myhost/myinstance/test.*
 * .*/mssqlserver/.*junk.*
+```
