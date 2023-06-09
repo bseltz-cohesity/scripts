@@ -91,6 +91,7 @@ if($jobNames.Count -gt 0){
 
 "Getting SQL protection run status..."
 foreach($job in $jobs | Sort-Object -Property name){
+    $refreshSourceIds = @()
     $endUsecs = dateToUsecs (Get-Date)
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         "    {0}" -f $job.name
@@ -123,7 +124,7 @@ foreach($job in $jobs | Sort-Object -Property name){
                     foreach($source in $run.backupRun.sourceBackupStatus){
                         if($source.status -eq 'kFailure'){
                             $sourceId = $source.source.id
-
+                            $refreshSourceIds = @($refreshSourceIds + $sourceId)
                             $runNowParameter = @{
                                 "sourceId" = $sourceId;
                             }
@@ -146,7 +147,7 @@ foreach($job in $jobs | Sort-Object -Property name){
         # run incremental if needed
         if($needsRun){
             "        Refreshing sources..."
-            foreach($sourceId in $job.sourceIds){
+            foreach($sourceId in $refreshSourceIds){
                 $result = api post "protectionSources/refresh/$sourceId"
                 waitForRefresh($sourceId)
             }
