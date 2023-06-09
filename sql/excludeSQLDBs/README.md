@@ -64,12 +64,12 @@ Wildcard and Regex exclusions are supported and are entered in the format host/i
 
 Wildcard exclusions can use * and ? wildcards:
 
-myhost/myinstance/database1
-myhost/myinstance/test*
-myhost/myinstance/
-*/mssqlserver/*junk*
+* myhost/myinstance/database1
+* myhost/myinstance/test*
+* myhost/myinstance/
+* */mssqlserver/*junk*
 
 Regex exclusions can use regex rules:
 
-myhost/myinstance/test.*
-.*/mssqlserver/.*junk.*
+* myhost/myinstance/test.*
+* .*/mssqlserver/.*junk.*
