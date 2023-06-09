@@ -36,7 +36,25 @@ $policy = (api get -v2 'data-protect/policies').policies | Where-Object name -eq
 $vaults = api get vaults
 $remotes = api get remoteClusters
 
+function clearConfigId($element){
+    foreach($prop in $element.PSObject.Properties){
+        if($prop.name -eq 'configId'){
+            delApiProperty -object $element -name configId
+        }else{
+            if($prop.TypeNameOfValue -eq "System.Object[]"){
+                foreach($child in $element.$($prop.name)){
+                    clearConfigId $child
+                }
+            }
+            if($prop.TypeNameOfValue -eq "System.Management.Automation.PSCustomObject"){
+                clearConfigId $element.$($prop.name)
+            }
+        }
+    }
+}
+
 if($policy){
+    clearConfigId $policy
 
     "Connecting to target cluster..."
     apiauth -vip $targetCluster -username $targetUser -domain $targetDomain -quiet
@@ -59,7 +77,7 @@ if($policy){
                 $policy.remoteTargetPolicy.replicationTargets = @()
             }else{
                 foreach($replica in $policy.remoteTargetPolicy.replicationTargets){
-                    delApiProperty -object $replica -name configId
+                    # delApiProperty -object $replica -name configId
                     $migrateReplica = $True
                     $remoteClusterName = $replica.remoteTargetConfig.clusterName
                     if($remoteClusterName -eq $cluster.name){
@@ -94,7 +112,7 @@ if($policy){
                 $policy.remoteTargetPolicy.archivalTargets = @()
             }else{
                 foreach($archival in $policy.remoteTargetPolicy.archivalTargets){
-                    delApiProperty -object $archival -name configId
+                    # delApiProperty -object $archival -name configId
                     $targetName = $archival.targetName                   
                     if($newTargetNames[$targetName]){
                         $targetName = $newTargetNames[$targetName]
