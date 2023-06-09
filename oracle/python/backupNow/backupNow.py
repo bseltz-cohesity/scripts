@@ -639,7 +639,6 @@ if wait is True:
     out("New Job Run ID: %s" % v2RunId)
 
 if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
-    display(v2OrigJob)
     updatejob = api('put', 'data-protect/protection-groups/%s' % v2JobId, v2OrigJob, v=2)
 
 # wait for job run to finish and report completion
