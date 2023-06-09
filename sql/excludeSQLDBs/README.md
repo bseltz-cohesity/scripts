@@ -57,3 +57,19 @@ Place all files in a folder together. And run the script like so:
 * -regex: (optional) one or more regex exclusions to add (comma separated)
 * -regexList: (optional) text file of regex exclusions to add (one per line)
 * -clear: (optional) clear existing exclusions
+
+## Exclusion Formats
+
+Wildcard and Regex exclusions are supported and are entered in the format host/instance/database
+
+Wildcard exclusions can use * and ? wildcards:
+
+myhost/myinstance/database1
+myhost/myinstance/test*
+myhost/myinstance/
+*/mssqlserver/*junk*
+
+Regex exclusions can use regex rules:
+
+myhost/myinstance/test.*
+.*/mssqlserver/.*junk.*
