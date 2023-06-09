@@ -32,6 +32,7 @@ from time import sleep
 from datetime import datetime
 from sys import exit
 import codecs
+import copy
 
 # command line arguments
 import argparse
@@ -301,7 +302,7 @@ else:
 # purge oracle logs
 if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
     v2Job = api('get', 'data-protect/protection-groups/%s' % v2JobId, v=2)
-    v2OrigJob = v2Job.copy()
+    v2OrigJob = copy.deepcopy(v2Job)
 
 # handle run now objects
 sourceIds = []
@@ -638,6 +639,7 @@ if wait is True:
     out("New Job Run ID: %s" % v2RunId)
 
 if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
+    display(v2OrigJob)
     updatejob = api('put', 'data-protect/protection-groups/%s' % v2JobId, v2OrigJob, v=2)
 
 # wait for job run to finish and report completion
