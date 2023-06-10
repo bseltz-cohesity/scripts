@@ -10,6 +10,7 @@ param (
     [Parameter()][string]$mfaCode = $null,
     [Parameter()][int]$days,
     [Parameter()][switch]$includeLogs,
+    [Parameter()][switch]$localOnly,
     [Parameter()][string]$objectType,
     [Parameter()][ValidateSet('KiB','MiB','GiB','TiB')][string]$unit = 'GiB',
     [Parameter()][int]$numRuns = 500
@@ -26,17 +27,22 @@ if($days){
 # outfile
 $now = Get-Date
 $dateString = $now.ToString('yyyy-MM-dd')
-$outfileName = "protectionRunsReport-$dateString.tsv"
+$outfileName = "protectionRunsReport-$dateString.csv"
 
 # headings
-$headings = "Start Time`tEnd Time`tDuration`tstatus`tslaStatus`tsnapshotStatus`tobjectName`tsourceName`tgroupName`tpolicyName`tObject Type`tbackupType`tSystem Name`tLogical Size $unit`tData Read $unit`tData Written $unit`tOrganization Name"
+$headings = "Start Time,End Time,Duration,status,slaStatus,snapshotStatus,objectName,sourceName,groupName,policyName,Object Type,backupType,System Name,Logical Size $unit,Data Read $unit,Data Written $unit,Organization Name"
 
 $headings | Out-File -FilePath $outfileName
 
 # convert to units
 $conversion = @{'KiB' = 1024; 'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
 function toUnits($val){
-    return "{0:n1}" -f ($val/($conversion[$unit]))
+    return ("{0:n1}" -f ($val/($conversion[$unit]))).replace(',','')
+}
+
+$query = ''
+if($localOnly){
+    $query = '&isActive=true'
 }
 
 foreach($v in $vip){
@@ -48,7 +54,7 @@ foreach($v in $vip){
     }
 
     $cluster = api get cluster
-    $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&includeTenants=true"
+    $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false$query&includeTenants=true"
     $sources = api get "protectionSources/registrationInfo?includeApplicationsTreeInfo=false"
     $policies = api get -v2 data-protect/policies
 
@@ -111,18 +117,24 @@ foreach($v in $vip){
                                     if($objectStatus -eq 'kSuccessful'){
                                         $objectStatus = 'kSuccess'
                                     }
-                                    $objectStartTime = usecsToDate $object.$snapshotInfo.snapshotInfo.startTimeUsecs
+                                    if($object.$snapshotInfo.snapshotInfo.startTimeUsecs){
+                                        $objectStartTime = usecsToDate $object.$snapshotInfo.snapshotInfo.startTimeUsecs
+                                    }else{
+                                        $objectStartTime = $runStartTime
+                                    }
+                                    
                                     $objectEndTime = $null
-                                    $objectDurationSeconds = "{0:n0}" -f ($now - $objectStartTime).totalSeconds
+                                    $objectDurationSeconds = '-'
+                                    # $objectDurationSeconds = "{0:n0}" -f ($now - $objectStartTime).totalSeconds
                                     if($object.$snapshotInfo.snapshotInfo.PSObject.Properties['endTimeUsecs']){
                                         $objectEndTime = usecsToDate $object.$snapshotInfo.snapshotInfo.endTimeUsecs
-                                        $objectDurationSeconds = "{0:n0}" -f ($objectEndTime - $objectStartTime).totalSeconds
+                                        $objectDurationSeconds = ("{0:n0}" -f ($objectEndTime - $objectStartTime).totalSeconds).replace(',','')
                                     }
                                     $objectLogicalSizeBytes = toUnits $object.$snapshotInfo.snapshotInfo.stats.logicalSizeBytes
                                     $objectBytesWritten = toUnits $object.$snapshotInfo.snapshotInfo.stats.bytesWritten
                                     $objectBytesRead = toUnits $object.$snapshotInfo.snapshotInfo.stats.bytesRead
                                     "        {0}" -f $objectName
-                                    $objectStartTime, $objectEndTime, $objectDurationSeconds, $objectStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $cluster.name, $objectLogicalSizeBytes, $objectBytesRead, $objectBytesWritten, $tenant -join "`t" | Out-File -FilePath $outfileName -Append
+                                    $objectStartTime, $objectEndTime, $objectDurationSeconds, $objectStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $cluster.name, $objectLogicalSizeBytes, $objectBytesRead, $objectBytesWritten, $tenant -join "," | Out-File -FilePath $outfileName -Append
                                 }
                             }
                         }
