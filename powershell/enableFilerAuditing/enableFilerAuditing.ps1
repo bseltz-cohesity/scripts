@@ -38,13 +38,12 @@ foreach($share in $shares){
         $isView = $True
         $thisView = $views.views | Where-Object name -eq $share.viewName
         if(! $thisView.isReadOnly){
-            $thisView.enableFilerAuditLogging = $enable
+            setApiProperty -object $thisView -name enableFilerAuditLogging -value $enable
             $null = api put -v2 file-services/views/$($thisView.viewId) $thisView
         }
     }else{
         setApiProperty -object $share -name 'aliasName' -value $share.shareName
-        $share.enableFilerAuditLog = $enable
+        setApiProperty -object $share -name enableFilerAuditLog -value $enable
         $null = api put viewAliases $share
     }
 }
-
