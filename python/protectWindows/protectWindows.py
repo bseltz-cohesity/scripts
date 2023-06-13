@@ -110,8 +110,9 @@ apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=
 # get job info
 newJob = False
 protectionGroups = api('get', 'data-protect/protection-groups?isDeleted=false&isActive=true', v=2)
-jobs = protectionGroups['protectionGroups']
-job = [job for job in jobs if job['name'].lower() == jobname.lower()]
+if protectionGroups is not None and len(protectionGroups) > 0 and 'protectionGroups' in protectionGroups and protectionGroups['protectionGroups'] is not None:
+    jobs = protectionGroups['protectionGroups']
+    job = [job for job in jobs if job['name'].lower() == jobname.lower()]
 
 if not job or len(job) < 1:
     newJob = True

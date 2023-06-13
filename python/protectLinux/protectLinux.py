@@ -1,19 +1,6 @@
 #!/usr/bin/env python
 """Add Physical Linux Servers to File-based Protection Job Using Python"""
 
-### usage: ./protectLinux.py -v mycluster \
-#                            -u myuser \
-#                            -d mydomain.net \
-#                            -j 'My Backup Job' \
-#                            -s myserver1.mydomain.net \
-#                            -s myserver2.mydomain.net \
-#                            -l serverlist.txt \
-#                            -i /var \
-#                            -i /home \
-#                            -e /var/log \
-#                            -e /home/oracle \
-#                            -f excludes.txt
-
 ### import pyhesity wrapper module
 from pyhesity import *
 
@@ -141,8 +128,9 @@ apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=
 # get job info
 newJob = False
 protectionGroups = api('get', 'data-protect/protection-groups?isDeleted=false&isActive=true', v=2)
-jobs = protectionGroups['protectionGroups']
-job = [job for job in jobs if job['name'].lower() == jobname.lower()]
+if protectionGroups is not None and len(protectionGroups) > 0 and 'protectionGroups' in protectionGroups and protectionGroups['protectionGroups'] is not None:
+    jobs = protectionGroups['protectionGroups']
+    job = [job for job in jobs if job['name'].lower() == jobname.lower()]
 
 if not job or len(job) < 1:
     newJob = True
