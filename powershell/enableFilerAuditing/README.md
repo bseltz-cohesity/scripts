@@ -22,12 +22,21 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 * enableFilerAuditing.ps1: the main powershell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
-Place both files in a folder together, then run the script like so:
+Place both files in a folder together, then run the script like so. To enable audit logging:
 
 ```powershell
 ./enableFilerAuditing.ps1 -vip mycluster `
                           -username myuser `
                           -domain mydomain.net
+```
+
+Or to disable audit logging:
+
+```powershell
+./enableFilerAuditing.ps1 -vip mycluster `
+                          -username myuser `
+                          -domain mydomain.net `
+                          -disable
 ```
 
 ## Authentication Parameters
