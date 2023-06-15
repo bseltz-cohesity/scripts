@@ -1,4 +1,4 @@
-# version 2023.06.06
+# version 2023.06.15
 ### usage: ./restoreFiles.ps1 -vip mycluster -username myuser -domain mydomain.net `
 #                             -sourceServer server1.mydomain.net `
 #                             -targetServer server2.mydomain.net `
@@ -89,9 +89,11 @@ if($files.Length -eq 0){
 
 # convert to unix style file paths
 if($restorePath){
-    $restorePath = ("/" + $restorePath.Replace('\','/').replace(':','')).Replace('//','/')
+    $restorePath = ("/" + $restorePath.replace(':\','/').Replace('\','/')).Replace('//','/')
 }
-$files = [string[]]$files | ForEach-Object {("/" + $_.Replace('\','/').replace(':','')).Replace('//','/')}
+
+# $files = [string[]]$files | ForEach-Object {("/" + $_.Replace('\','/').replace(':','')).Replace('//','/')}
+$files = [string[]]$files | ForEach-Object {("/" + $_.Replace(':\','/').Replace('\','/')).Replace('//','/')}
 
 # find source and target server
 $entities = api get "/entitiesOfType?environmentTypes=kFlashblade&environmentTypes=kGenericNas&environmentTypes=kGPFS&environmentTypes=kIsilon&environmentTypes=kNetapp&environmentTypes=kPhysical&flashbladeEntityTypes=kFileSystem&genericNasEntityTypes=kHost&gpfsEntityTypes=kFileset&isilonEntityTypes=kMountPoint&netappEntityTypes=kVolume&physicalEntityTypes=kHost&physicalEntityTypes=kWindowsCluster"
