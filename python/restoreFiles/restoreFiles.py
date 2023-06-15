@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """restore files using python"""
 
-# version 2023.04.04
+# version 2023.06.15
 
 # usage: ./restoreFiles.py -v mycluster \
 #                          -u myusername \
@@ -93,9 +93,9 @@ if len(files) == 0:
     print("No files selected for restore")
     exit(1)
 
-files = [('/' + item).replace('\\', '/').replace(':', '').replace('//', '/') for item in files]
+files = [('/' + item).replace(':\\', '/').replace('\\', '/').replace('//', '/') for item in files]
 if restorepath is not None:
-    restorepath = ('/' + restorepath).replace('\\', '/').replace(':', '').replace('//', '/')
+    restorepath = ('/' + restorepath).replace(':\\', '/').replace('\\', '/').replace('//', '/')
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, noretry=True)
