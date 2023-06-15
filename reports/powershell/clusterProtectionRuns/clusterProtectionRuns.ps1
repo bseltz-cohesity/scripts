@@ -13,6 +13,7 @@ param (
     [Parameter()][switch]$localOnly,
     [Parameter()][string]$objectType,
     [Parameter()][ValidateSet('KiB','MiB','GiB','TiB')][string]$unit = 'GiB',
+    [Parameter()][string]$outputPath = '.',
     [Parameter()][int]$numRuns = 500
 )
 
@@ -27,7 +28,7 @@ if($days){
 # outfile
 $now = Get-Date
 $dateString = $now.ToString('yyyy-MM-dd')
-$outfileName = "protectionRunsReport-$dateString.csv"
+$outfileName = $(Join-Path -Path $outputPath -ChildPath "protectionRunsReport-$dateString.csv")
 
 # headings
 $headings = "Start Time,End Time,Duration,status,slaStatus,snapshotStatus,objectName,sourceName,groupName,policyName,Object Type,backupType,System Name,Logical Size $unit,Data Read $unit,Data Written $unit,Organization Name"
