@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.06.08
+# version 2023.06.22
 
 # version history
 # ===============
@@ -556,9 +556,13 @@ if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
                         db = None
                     if server.lower() == obj['sourceName'].lower():
                         if instance is None or instance.lower() == dbparam['dbChannels'][0]['databaseUniqueName'].lower():
-                            dbparam['dbChannels'][0]['archiveLogRetentionDays'] = 0
+                            for channel in dbparam['dbChannels']:
+                                if 'archiveLogRetentionDays' in channel:
+                                    channel['archiveLogRetentionDays'] = 0
             else:
-                dbparam['dbChannels'][0]['archiveLogRetentionDays'] = 0
+                for channel in dbparam['dbChannels']:
+                    if 'archiveLogRetentionDays' in channel:
+                        channel['archiveLogRetentionDays'] = 0
     updatejob = api('put', 'data-protect/protection-groups/%s' % v2JobId, v2Job, v=2)
 
 # run protectionJob
