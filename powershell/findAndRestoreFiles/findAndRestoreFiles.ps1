@@ -520,6 +520,11 @@ if($restore){
                         $restoreParams.params.restoreFilesPreferences.restoreToOriginalPaths = $false
                         $restoreParams.params.restoreFilesPreferences["alternateRestoreBaseDirectory"] = $thisRestorePath
                     }
+
+                    if(($version.replicaInfo.replicaVec | Sort-Object -Property {$_.target.type})[0].target.type -eq 3){
+                        $restoreParams.sourceObjectInfo['archivalTarget'] = $version.replicaInfo.replicaVec[0].target.archivalTarget
+                    }
+
                     # $restoreParams | ConvertTo-Json -Depth 99
                     Write-Host "Restore Task: $restoreTaskName"
                     $restoreTask = api post /restoreFiles $restoreParams
