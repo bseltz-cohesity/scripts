@@ -57,8 +57,8 @@ To list policies:
 * -retryMinutes: (optional) number of minutes to wait between retries (default is 5)
 * -lockDuration: (optional) datalock duration (requires data security role to edit)
 * -lockUnit: (optional) days, weeks, months, years (default is days) (requires data security role to edit)
-* -addQuietTime: (optional) one or more quiet times to add (comma separated) in the format "Monday,Friday;00:00;02:30" or "All;00:00;02:30"
-* -removeQuietTime: (optional) one or more quiet times to remove (comma separated) in the format "Monday,Friday;00:00;02:30" or "All;00:00;02:30"
+* -addQuietTime: (optional) one or more quiet times to add (comma separated) see quite time format belowin the format "Monday,Friday;00:00;02:30" or "All;00:00;02:30"
+* -removeQuietTime: (optional) one or more quiet times to remove (comma separated) see quite time format belowin the format "Monday,Friday;00:00;02:30" or "All;00:00;02:30"
 * -targetName: (optional) name of remote cluster or external target
 * -deleteAll: (optional) delete all replications/archives for the specified target
 
@@ -67,3 +67,21 @@ To list policies:
 The script performs one action at a time. So If you want to create a new policy, use `-action create` and it will create the local policy with base retention.
 
 If you then want to add extended retention, a replication target, an archive target, a log backup, etc, then run the script again for each of these you want to add.
+
+## Quiet Time Format
+
+Quite times can be entered as a quoted string in the format:
+
+`"*days*;*start time*;*end time*"`
+
+For example:
+
+`"Saturday,Sunday;00:00;02:30"`
+
+To specify all days of the week, use 'All':
+
+`"All;00:00;02:30"`
+
+To add or remove multiple quite times, enter a comma separated list of quiet times:
+
+`"Saturday,Sunday;00:00;02:30", "Saturday,Sunday;23:00;23:30"`
