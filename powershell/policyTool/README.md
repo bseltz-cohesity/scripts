@@ -72,7 +72,7 @@ If you then want to add extended retention, a replication target, an archive tar
 
 Quite times can be entered as a quoted string in the format:
 
-`"_days_;_start time_;_end time_"`
+`"days;startTime;endTime"`
 
 For example:
 
