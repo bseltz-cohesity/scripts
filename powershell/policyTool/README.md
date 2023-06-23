@@ -57,6 +57,8 @@ To list policies:
 * -retryMinutes: (optional) number of minutes to wait between retries (default is 5)
 * -lockDuration: (optional) datalock duration (requires data security role to edit)
 * -lockUnit: (optional) days, weeks, months, years (default is days) (requires data security role to edit)
+* -addQuietTime: (optional) one or more quiet times to add (comma separated) in the format "Monday,Friday;00:00;02:30" or "All;00:00;02:30"
+* -removeQuietTime: (optional) one or more quiet times to remove (comma separated) in the format "Monday,Friday;00:00;02:30" or "All;00:00;02:30"
 * -targetName: (optional) name of remote cluster or external target
 * -deleteAll: (optional) delete all replications/archives for the specified target
 

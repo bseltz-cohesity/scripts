@@ -25,6 +25,8 @@ param (
     [Parameter()][ValidateSet('days', 'weeks', 'months', 'years')]$lockUnit = 'days',
     [Parameter()][string]$targetName,
     [Parameter()][switch]$deleteAll,
+    [Parameter()][array]$addQuietTime,
+    [Parameter()][array]$removeQuietTime,
     [Parameter()][switch]$removeDataLock
 )
 
@@ -753,6 +755,115 @@ if($action -eq 'deletearchive'){
     }
 }
 
+# quiet times
+$textInfo = (Get-Culture).TextInfo
+$updatedQuietTimes = $false
+foreach($quietTime in $addQuietTime){
+    $days, $startTime, $endTime = $quietTime.split(';')
+    # parse startTime
+    $hour, $minute = $startTime.split(':')
+    $tempInt = ''
+    if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]::TryParse($minute,[ref]$tempInt)))){
+        Write-Host "Quiet time startTime invalid: $quietTime" -ForegroundColor Yellow
+        exit 1
+    }
+    $startTimeHour = [int]$hour
+    $startTimeMinute = [int]$minute
+    # parse endTime
+    $hour, $minute = $endTime.split(':')
+    $tempInt = ''
+    if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]::TryParse($minute,[ref]$tempInt)))){
+        Write-Host "Quiet time endTime invalid: $quietTime" -ForegroundColor Yellow
+        exit 1
+    }
+    $endTimeHour =[int]$hour
+    $endTimeMinute = [int]$minute
+    # parse days
+    if($days -eq 'All'){
+        $days = 'Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday'
+    }
+    $days = $days.split(',')
+    foreach($day in $days){
+        $day = $day.Trim()
+        if($day -notin @('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday')){
+            Write-Host "Quiet time day invalid: $quietTime" -ForegroundColor Yellow
+            exit 1
+        }
+        if(! $policy.PSObject.Properties['blackoutWindow']){
+            setApiProperty -object $policy -name 'blackoutWindow' -value @()
+        }
+        $policy.blackoutWindow = @($policy.blackoutWindow | Where-Object {$_ -ne $null -and !(
+            $_.day -eq $day -and 
+            $_.startTime.hour -eq $startTimeHour -and
+            $_.startTime.minute -eq $startTimeMinute -and
+            $_.endTime.hour -eq $endTimeHour -and
+            $_.endTime.minute -eq $endTimeMinute
+        )})
+        $policy.blackoutWindow = @($policy.blackoutWindow + @{
+            "day" = $textInfo.ToTitleCase($day.ToLower());
+            "startTime" = @{
+                "hour" = $startTimeHour;
+                "minute" = $startTimeMinute
+            };
+            "endTime" = @{
+                "hour" = $endTimeHour;
+                "minute" = $endTimeMinute
+            }
+        })
+        $updatedQuietTimes = $True
+    }
+}
+
+foreach($quietTime in $removeQuietTime){
+    $days, $startTime, $endTime = $quietTime.split(';')
+    # parse startTime
+    $hour, $minute = $startTime.split(':')
+    $tempInt = ''
+    if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]::TryParse($minute,[ref]$tempInt)))){
+        Write-Host "Quiet time startTime invalid: $quietTime" -ForegroundColor Yellow
+        exit 1
+    }
+    $startTimeHour = [int]$hour
+    $startTimeMinute = [int]$minute
+    # parse endTime
+    $hour, $minute = $endTime.split(':')
+    $tempInt = ''
+    if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]::TryParse($minute,[ref]$tempInt)))){
+        Write-Host "Quiet time endTime invalid: $quietTime" -ForegroundColor Yellow
+        exit 1
+    }
+    $endTimeHour =[int]$hour
+    $endTimeMinute = [int]$minute
+    # parse days
+    if($days -eq 'All'){
+        $days = 'Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday'
+    }
+    $days = $days.split(',')
+    foreach($day in $days){
+        $day = $day.Trim()
+        if($day -notin @('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday')){
+            Write-Host "Quiet time day invalid: $quietTime" -ForegroundColor Yellow
+            exit 1
+        }
+        if(! $policy.PSObject.Properties['blackoutWindow']){
+            setApiProperty -object $policy -name 'blackoutWindow' -value @()
+        }
+        $policy.blackoutWindow = @($policy.blackoutWindow | Where-Object {$_ -ne $null -and !(
+            $_.day -eq $day -and 
+            $_.startTime.hour -eq $startTimeHour -and
+            $_.startTime.minute -eq $startTimeMinute -and
+            $_.endTime.hour -eq $endTimeHour -and
+            $_.endTime.minute -eq $endTimeMinute
+        )})
+        $updatedQuietTimes = $True
+    }
+}
+
+if($updatedQuietTimes -eq $True){
+    $updatedPolicy = api put -v2 data-protect/policies/$($policy.id) $policy
+    $policies = @($updatedPolicy)
+}
+
 # list policies
 "" | Out-File -FilePath $outfileName
 foreach($policy in $policies){
@@ -826,6 +937,13 @@ foreach($policy in $policies){
             $dataLock = ", datalock for $($logRetention.duration) $($logRetention.unit)"
         }
         "          Log backup:  Every $($frequency) $($unit)  (keep for $($logRetention.duration) $($logRetention.unit)$($dataLock))" | Tee-Object -FilePath $outfileName -Append
+    }
+    # quiet times
+    if($policy.PSObject.Properties['blackoutWindow'] -and $policy.blackoutWindow.Count -gt 0){
+        "         Quiet times:" | Tee-Object -FilePath $outfileName -Append
+        foreach($bw in $policy.blackoutWindow){
+            "                       $("{0,-9}" -f $bw.day) $("{0:d2}" -f $bw.startTime.hour):$("{0:d2}" -f $bw.startTime.minute) - $("{0:d2}" -f $bw.endTime.hour):$("{0:d2}" -f $bw.endTime.minute)" | Tee-Object -FilePath $outfileName -Append
+        }
     }
     # extended retention
     if($policy.PSObject.Properties['extendedRetention'] -and $policy.extendedRetention){
