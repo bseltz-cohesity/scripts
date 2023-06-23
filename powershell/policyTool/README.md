@@ -57,8 +57,8 @@ To list policies:
 * -retryMinutes: (optional) number of minutes to wait between retries (default is 5)
 * -lockDuration: (optional) datalock duration (requires data security role to edit)
 * -lockUnit: (optional) days, weeks, months, years (default is days) (requires data security role to edit)
-* -addQuietTime: (optional) one or more quiet times to add (comma separated) see quite time format belowin the format "Monday,Friday;00:00;02:30" or "All;00:00;02:30"
-* -removeQuietTime: (optional) one or more quiet times to remove (comma separated) see quite time format belowin the format "Monday,Friday;00:00;02:30" or "All;00:00;02:30"
+* -addQuietTime: (optional) one or more quiet times to add (comma separated) see quiet time format below
+* -removeQuietTime: (optional) one or more quiet times to remove (comma separated) see quiet time format below
 * -targetName: (optional) name of remote cluster or external target
 * -deleteAll: (optional) delete all replications/archives for the specified target
 
@@ -72,7 +72,7 @@ If you then want to add extended retention, a replication target, an archive tar
 
 Quite times can be entered as a quoted string in the format:
 
-`"*days*;*start time*;*end time*"`
+`"_days_;_start time_;_end time_"`
 
 For example:
 
