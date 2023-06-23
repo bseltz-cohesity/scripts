@@ -564,6 +564,7 @@ if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
                     if 'archiveLogRetentionDays' in channel:
                         channel['archiveLogRetentionDays'] = 0
     updatejob = api('put', 'data-protect/protection-groups/%s' % v2JobId, v2Job, v=2)
+    sleep(30)
 
 # run protectionJob
 now = datetime.now()
@@ -642,9 +643,6 @@ if wait is True:
         sleep(sleeptimesecs)
     out("New Job Run ID: %s" % v2RunId)
 
-if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
-    updatejob = api('put', 'data-protect/protection-groups/%s' % v2JobId, v2OrigJob, v=2)
-
 # wait for job run to finish and report completion
 if wait is True:
     status = 'unknown'
@@ -721,6 +719,9 @@ if wait is True:
         out('Error: %s' % run['localBackupInfo']['messages'][0])
     if run['localBackupInfo']['status'] == 'SucceededWithWarning':
         out('Warning: %s' % run['localBackupInfo']['messages'][0])
+
+if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
+    updatejob = api('put', 'data-protect/protection-groups/%s' % v2JobId, v2OrigJob, v=2)
 
 # return exit code
 if wait is True:
