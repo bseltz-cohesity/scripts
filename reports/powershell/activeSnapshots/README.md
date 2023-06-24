@@ -43,7 +43,8 @@ Place both files in a folder together and run the main script like so:
 ## Other Parameters
 
 * -days: (optional) limit query to the last X days
-* -pageSize: (optional) API paging (default is 100)
-* -environment: (optional) limit query to specific type (e.g. kSQL)
+* -pageSize: (optional) API paging (default is 500)
+* -environment: (optional) one or more types (comma separated) to include in query (e.g. kSQL, kVMware)
+* -excludeEnvironment: (optional) one or more types (comma seaparated) to exclude from query  (e.g. kSQL, kVMware)
 * -ouputPath: (optional) path to write output file (default is '.')
 * -localOnly: (optional) include only local protection groups

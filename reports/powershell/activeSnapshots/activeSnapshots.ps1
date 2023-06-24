@@ -9,9 +9,10 @@ param (
     [Parameter()][switch]$mcm,                          # connect through mcm
     [Parameter()][string]$mfaCode = $null,              # mfa code
     [Parameter()][string]$clusterName = $null,          # cluster to connect to via helios/mcm
-    [Parameter()][int64]$pageSize = 100,
+    [Parameter()][int64]$pageSize = 1000,
     [Parameter()][int64]$days,
-    [Parameter()][string]$environment = $null,
+    [Parameter()][array]$environment,
+    [Parameter()][array]$excludeEnvironment,
     [Parameter()][string]$outputPath = '.',
     [Parameter()][switch]$localOnly
 )
@@ -49,21 +50,21 @@ if($days){
 
 $etail = ""
 if($environment){
-    $etail = "&&entityTypes=$environment"
+    $etail = "&&entityTypes=$($environment -join ',')"
 }
 
 ### find recoverable objects
 $from = 0
 $ro = api get "/searchvms?size=$pageSize&from=$from$etail"
 
-$environments = @('Unknown', 'VMware', 'HyperV', 'SQL', 'View', 'Puppeteer',
-                'Physical', 'Pure', 'Azure', 'Netapp', 'Agent', 'GenericNas',
-                'Acropolis', 'PhysicalFiles', 'Isilon', 'KVM', 'AWS', 'Exchange',
-                'HyperVVSS', 'Oracle', 'GCP', 'FlashBlade', 'AWSNative', 'VCD',
-                'O365', 'O365Outlook', 'HyperFlex', 'GCPNative', 'AzureNative', 
-                'AD', 'AWSSnapshotManager', 'GPFS', 'RDSSnapshotManager', 'Unknown', 'Kubernetes',
-                'Nimble', 'AzureSnapshotManager', 'Elastifile', 'Cassandra', 'MongoDB',
-                'HBase', 'Hive', 'Hdfs', 'Couchbase', 'Unknown', 'Unknown', 'Unknown')
+$environments = @('kUnknown', 'kVMware', 'kHyperV', 'kSQL', 'kView', 'kPuppeteer',
+                'kPhysical', 'kPure', 'kAzure', 'kNetapp', 'kAgent', 'kGenericNas',
+                'kAcropolis', 'kPhysicalFiles', 'kIsilon', 'kKVM', 'kAWS', 'kExchange',
+                'kHyperVVSS', 'kOracle', 'kGCP', 'kFlashBlade', 'kAWSNative', 'kVCD',
+                'kO365', 'kO365Outlook', 'kHyperFlex', 'kGCPNative', 'kAzureNative', 
+                'kAD', 'kAWSSnapshotManager', 'kGPFS', 'kRDSSnapshotManager', 'kUnknown', 'kKubernetes',
+                'kNimble', 'kAzureSnapshotManager', 'kElastifile', 'kCassandra', 'kMongoDB',
+                'kHBase', 'kHive', 'kHdfs', 'kCouchbase', 'kUnknown', 'kUnknown', 'kUnknown')
 
 if($ro.count -gt 0){
 
@@ -74,40 +75,42 @@ if($ro.count -gt 0){
                 $jobId = $doc.objectId.jobId
                 $jobName = $doc.jobName
                 $objName = $doc.objectName
-                $objType = $environments[$doc.registeredSource.type]
-                $objAlias = ''
-                $sqlAagName = ''
-                if($doc.objectId.entity.PSObject.Properties['sqlEntity'] -and $doc.objectId.entity.sqlEntity.PSObject.Properties['dbAagName']){
-                    $sqlAagName = $doc.objectId.entity.sqlEntity.dbAagName
-                }
-                if('objectAliases' -in $doc.PSobject.Properties.Name){
-                    $objAlias = $doc.objectAliases[0]
-                    if($objAlias -eq "$objName.vmx" -or $objType -eq 'VMware'){
-                        $objAlias = ''
+                if($environments[$doc.registeredSource.type] -notin $excludeEnvironment){
+                    $objType = $environments[$doc.registeredSource.type].subString(1)
+                    $objAlias = ''
+                    $sqlAagName = ''
+                    if($doc.objectId.entity.PSObject.Properties['sqlEntity'] -and $doc.objectId.entity.sqlEntity.PSObject.Properties['dbAagName']){
+                        $sqlAagName = $doc.objectId.entity.sqlEntity.dbAagName
                     }
-                    if($objAlias -ne ''){
-                        $sourceName = $objAlias
+                    if('objectAliases' -in $doc.PSobject.Properties.Name){
+                        $objAlias = $doc.objectAliases[0]
+                        if($objAlias -eq "$objName.vmx" -or $objType -eq 'VMware'){
+                            $objAlias = ''
+                        }
+                        if($objAlias -ne ''){
+                            $sourceName = $objAlias
+                        }
                     }
+                    if($objAlias -eq ''){
+                        $sourceName = $doc.registeredSource.displayName
+                    }
+    
+                    $versions = $doc.versions | Sort-Object -Property {$_.instanceId.jobStartTimeUsecs}
+                    if($days){
+                        $versions = $versions | Where-Object {$_.instanceId.jobStartTimeUsecs -ge $daysBackUsecs}
+                    }
+                    
+                    $versionCount = $versions.Count
+                    if($versionCount -gt 0){
+                        $newestSnapshotDate = usecsToDate $versions[-1].instanceId.jobStartTimeUsecs
+                        $oldestSnapshotDate = usecsToDate $versions[0].instanceId.jobStartTimeUsecs
+                    }else{
+                        $newestSnapshotDate = ''
+                        $oldestSnapshotDate = ''
+                    }
+                    write-host ("{0} ({1}) {2}: {3}" -f $jobName, $objType, $objName, $versionCount)
+                    """$($cluster.name)"",""$jobName"",""$objType"",""$sourceName"",""$objName"",""$sqlAagName"",""$versionCount"",""$oldestSnapshotDate"",""$newestSnapshotDate""" | Out-File -FilePath $outfileName -Append
                 }
-                if($objAlias -eq ''){
-                    $sourceName = $doc.registeredSource.displayName
-                }
-
-                $versions = $doc.versions | Sort-Object -Property {$_.instanceId.jobStartTimeUsecs}
-                if($days){
-                    $versions = $versions | Where-Object {$_.instanceId.jobStartTimeUsecs -ge $daysBackUsecs}
-                }
-                
-                $versionCount = $versions.Count
-                if($versionCount -gt 0){
-                    $newestSnapshotDate = usecsToDate $versions[-1].instanceId.jobStartTimeUsecs
-                    $oldestSnapshotDate = usecsToDate $versions[0].instanceId.jobStartTimeUsecs
-                }else{
-                    $newestSnapshotDate = ''
-                    $oldestSnapshotDate = ''
-                }
-                write-host ("{0} ({1}) {2}: {3}" -f $jobName, $objType, $objName, $versionCount)
-                """$($cluster.name)"",""$jobName"",""$objType"",""$sourceName"",""$objName"",""$sqlAagName"",""$versionCount"",""$oldestSnapshotDate"",""$newestSnapshotDate""" | Out-File -FilePath $outfileName -Append
             }
         }
         if($ro.count -gt ($pageSize + $from)){
