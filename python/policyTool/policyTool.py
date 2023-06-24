@@ -26,6 +26,8 @@ parser.add_argument('-n', '--targetname', type=str, default=None)
 parser.add_argument('-all', '--all', action='store_true')
 parser.add_argument('-t', '--retries', type=int, default=3)
 parser.add_argument('-m', '--retryminutes', type=int, default=5)
+parser.add_argument('-aq', '--addquiettime', action='append', type=str)
+parser.add_argument('-rq', '--removequiettime', action='append', type=str)
 args = parser.parse_args()
 
 vip = args.vip                        # cluster name/ip
@@ -45,6 +47,8 @@ targetname = args.targetname          # name of remote cluster or external targe
 allfortarget = args.all               # delete all entries for the specified target
 retries = args.retries                # number of retries
 retryminutes = args.retryminutes      # number of minutes to wait between retries
+addquiettime = args.addquiettime      # add quiet time
+removequiettime = args.removequiettime  # remove quiettime
 
 if frequencyunit != 'runs' and frequency is None:
     frequency = 1
@@ -56,6 +60,11 @@ if frequencyunit == 'runs' and frequency is not None:
         frequencyunit = 'days'
 
 frequentSchedules = ['Minutes', 'Hours', 'Days']
+
+if addquiettime is None:
+    addquiettime = []
+if removequiettime is None:
+    removequiettime = []
 
 # authenticate to Cohesity
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
@@ -491,6 +500,123 @@ if action == 'deletearchive':
             if 'error' in result:
                 exit(1)
 
+# add quiet time
+updatedQuietTimes = False
+for quiettime in addquiettime:
+    parts = quiettime.split(';')
+    if len(parts) < 3:
+        print('invalid quite time specified')
+        exit(1)
+    days = parts[0]
+    starttime = parts[1]
+    endtime = parts[2]
+    # parse starttime
+    try:
+        (hour, minute) = starttime.split(':')
+        hour = int(hour)
+        minute = int(minute)
+        if hour < 0 or hour > 23 or minute < 0 or minute > 59:
+            print('quiet time starttime is invalid!')
+            exit(1)
+        starthour = hour
+        startminute = minute
+    except Exception:
+        print('quite time starttime is invalid!')
+        exit(1)
+    # parse endttime
+    try:
+        (hour, minute) = endtime.split(':')
+        hour = int(hour)
+        minute = int(minute)
+        if hour < 0 or hour > 23 or minute < 0 or minute > 59:
+            print('quiet time endtime is invalid!')
+            exit(1)
+        endhour = hour
+        endminute = minute
+    except Exception:
+        print('quiet time endtime is invalid!')
+        exit(1)
+    if days == 'All':
+        days = 'Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday'
+    days = days.split(',')
+    for day in days:
+        day = day.strip().title()
+        if day not in ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']:
+            print('quite time day invalid')
+            exit(1)
+        if 'blackoutWindow' not in policy:
+            policy['blackoutWindow'] = []
+        policy['blackoutWindow'] = [bw for bw in policy['blackoutWindow'] if bw is not None and not (
+            bw['day'] == day and bw['startTime']['hour'] == starthour and bw['startTime']['minute'] == startminute and bw['endTime']['hour'] == endhour and bw['endTime']['minute'] == endminute
+        )]
+        policy['blackoutWindow'].append({
+            "day": day,
+            "startTime": {
+                "hour": starthour,
+                "minute": startminute
+            },
+            "endTime": {
+                "hour": endhour,
+                "minute": endminute
+            }
+        })
+        updatedQuietTimes = True
+
+# remove quiet times
+for quiettime in removequiettime:
+    parts = quiettime.split(';')
+    if len(parts) < 3:
+        print('invalid quite time specified')
+        exit(1)
+    days = parts[0]
+    starttime = parts[1]
+    endtime = parts[2]
+    # parse starttime
+    try:
+        (hour, minute) = starttime.split(':')
+        hour = int(hour)
+        minute = int(minute)
+        if hour < 0 or hour > 23 or minute < 0 or minute > 59:
+            print('quiet time starttime is invalid!')
+            exit(1)
+        starthour = hour
+        startminute = minute
+    except Exception:
+        print('quite time starttime is invalid!')
+        exit(1)
+    # parse endttime
+    try:
+        (hour, minute) = endtime.split(':')
+        hour = int(hour)
+        minute = int(minute)
+        if hour < 0 or hour > 23 or minute < 0 or minute > 59:
+            print('quiet time endtime is invalid!')
+            exit(1)
+        endhour = hour
+        endminute = minute
+    except Exception:
+        print('quiet time endtime is invalid!')
+        exit(1)
+    if days == 'All':
+        days = 'Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday'
+    days = days.split(',')
+    for day in days:
+        day = day.strip().title()
+        if day not in ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']:
+            print('quite time day invalid')
+            exit(1)
+        if 'blackoutWindow' not in policy:
+            policy['blackoutWindow'] = []
+        policy['blackoutWindow'] = [bw for bw in policy['blackoutWindow'] if bw is not None and not (
+            bw['day'] == day and bw['startTime']['hour'] == starthour and bw['startTime']['minute'] == startminute and bw['endTime']['hour'] == endhour and bw['endTime']['minute'] == endminute
+        )]
+        updatedQuietTimes = True
+
+if updatedQuietTimes is True:
+    result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
+    if 'error' in result:
+        exit(1)
+
 # list policies
 for policy in policies:
     print('\n%s' % policy['name'])
@@ -532,6 +658,11 @@ for policy in policies:
                 print('         Full backup:  Monthly on the %s %s  (keep for %s %s%s)' % (backupSchedule[unitPath]['weekOfMonth'], backupSchedule[unitPath]['dayOfWeek'][0], baseRetention['duration'], baseRetention['unit'], dataLock))
             if unit == 'ProtectOnce':
                 print('         Full backup:  Once (keep for %s %s%s)' % (baseRetention['duration'], baseRetention['unit'], dataLock))
+    # quiet times
+    if 'blackoutWindow' in policy and policy['blackoutWindow'] is not None and len(policy['blackoutWindow']) > 0:
+        print('         Quiet times:')
+        for bw in policy['blackoutWindow']:
+            print('                       %-9s %02d:%02d - %02d:%02d' % (bw['day'], bw['startTime']['hour'], bw['startTime']['minute'], bw['endTime']['hour'], bw['endTime']['minute']))
     # extended retention
     if 'extendedRetention' in policy and policy['extendedRetention'] is not None and len(policy['extendedRetention']) > 0:
         print('  Extended retention:')

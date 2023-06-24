@@ -128,6 +128,8 @@ To delete all replicas for a remote cluster:
 * -lu, --lockunit: (optional) default is days
 * -a, --action: (optional) see below (default is list)
 * -all, --all: (optional) delete all entries for the specified target
+* -aq, --addquiettime: (optional) add quiet time (see format below) repeat for multiple
+* -rq, --removequiettime: (optional) remove quiet time (see format below) repeat for multiple
 
 ## Actions
 
@@ -143,3 +145,17 @@ To delete all replicas for a remote cluster:
 * deletereplica: delete a replication
 * addarchive: add or edit an archive
 * deletearchive: delete an archive
+
+## Quiet Time Format
+
+Quite times can be entered as a quoted string in the format:
+
+`'days;startTime;endTime'`
+
+For example:
+
+`'Saturday,Sunday;00:00;02:30'`
+
+To specify all days of the week, use 'All':
+
+`'All;00:00;02:30'`
