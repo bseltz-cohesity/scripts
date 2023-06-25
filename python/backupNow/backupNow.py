@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.06.22
+# version 2023.06.25
 
 # version history
 # ===============
@@ -11,7 +11,7 @@
 # 2023.04.11 - fixed bug in line 70 - last run is None error, added metafile check for new run
 # 2023.04.13 - fixed log archiving bug
 # 2023.04.14 - fixed metadatafile watch bug
-# 2023.06.08 - added -pl --purgeoraclelogs
+# 2023.06.25 - added -pl --purgeoraclelogs (first added 2023-06-08)
 
 # extended error codes
 # ====================
@@ -564,7 +564,9 @@ if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
                     if 'archiveLogRetentionDays' in channel:
                         channel['archiveLogRetentionDays'] = 0
     updatejob = api('put', 'data-protect/protection-groups/%s' % v2JobId, v2Job, v=2)
-    sleep(30)
+    out('setting job to purge oracle logs...')
+    sleep(15)
+    wait = True
 
 # run protectionJob
 now = datetime.now()
