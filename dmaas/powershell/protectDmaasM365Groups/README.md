@@ -38,6 +38,7 @@ Place both files in a folder together and run the main script like so:
 * -policyName: name of protection policy to use
 * -objectNames: (optional) one or more group names (comma separated)
 * -objectList: (optional) text file of group names (one per line)
+* -autoselect: (optional) protect first X unprotected groups (unspecified)
 * -startTime: (optional) e.g. '18:30' (defaults to 8PM)
 * -timeZone: (optional) e.g. 'America/New_York' (default is 'America/New_York')
 * -incrementalSlaMinutes: (optional) default 60

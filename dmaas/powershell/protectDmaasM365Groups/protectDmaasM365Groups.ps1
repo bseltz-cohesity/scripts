@@ -10,6 +10,7 @@ param (
     [Parameter()][string]$timeZone = 'America/New_York', # e.g. 'America/New_York'
     [Parameter()][int]$incrementalSlaMinutes = 1440,  # incremental SLA minutes
     [Parameter()][int]$fullSlaMinutes = 1440,  # full SLA minutes
+    [Parameter()][int]$autoselect = 0,
     [Parameter()][int]$pageSize = 50000
 )
 
@@ -34,7 +35,12 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
     return ($items | Sort-Object -Unique)
 }
 
-$objectsToAdd = @(gatherList -Param $objectNames -FilePath $objectList -Name 'groups' -Required $True)
+$objectsToAdd = @(gatherList -Param $objectNames -FilePath $objectList -Name 'groups' -Required $False)
+
+if($objectsToAdd.Count -eq 0 -and $autoselect -eq 0){
+    Write-Host "No groups specified" -ForegroundColor Yellow
+    exit 1
+}
 
 # parse startTime
 $hour, $minute = $startTime.split(':')
@@ -81,12 +87,13 @@ if(!$objectsNode){
 }
 
 $nameIndex = @{}
-$webUrlIndex = @{}
+$idIndex = @{}
 $unprotectedIndex = @()
 $objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false" -region $regionId
 while(1){
     foreach($node in $objects.nodes){
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
+        $idIndex["$($node.protectionSource.id)"] = $node.protectionSource.name
         if(($node.unprotectedSourcesSummary | Where-Object environment -eq 'kO365Group').leavesCount -eq 1){
             $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
         }
@@ -98,11 +105,15 @@ while(1){
     }
 }
 
+if($objectsToAdd.Count -eq 0){
+    0..($autoselect - 1) | ForEach-Object {
+        $objectsToAdd = @($objectsToAdd + $idIndex["$($unprotectedIndex[$_])"])
+    }
+}
+
 foreach($objName in $objectsToAdd){
     $objId = $null
-    if($webUrlIndex.ContainsKey($objName)){
-        $objId = $wevUrlIndex[$objName]
-    }elseif($nameIndex.ContainsKey($objName)){
+    if($nameIndex.ContainsKey($objName)){
         $objId = $nameIndex[$objName]
     }
     if($objId -and $objId -in $unprotectedIndex){
