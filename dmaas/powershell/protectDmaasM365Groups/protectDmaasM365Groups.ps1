@@ -11,7 +11,8 @@ param (
     [Parameter()][int]$incrementalSlaMinutes = 1440,  # incremental SLA minutes
     [Parameter()][int]$fullSlaMinutes = 1440,  # full SLA minutes
     [Parameter()][int]$autoselect = 0,
-    [Parameter()][int]$pageSize = 50000
+    [Parameter()][int]$pageSize = 50000,
+    [Parameter()][string]$logPath = '.'
 )
 
 # gather list from command line params and file
@@ -55,6 +56,8 @@ if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]:
 
 # authenticate
 apiauth -username $username #  -regionid $region
+
+$logFile = $(Join-Path -Path $logPath -ChildPath "m365GroupsProtected.txt")
 
 $sessionUser = api get sessionUser
 $tenantId = $sessionUser.profiles[0].tenantId
@@ -114,6 +117,8 @@ if($objectsToAdd.Count -eq 0){
     }
 }
 
+$scriptRunDate = get-date -UFormat '%Y-%m-%d %H-%M'
+
 foreach($objName in $objectsToAdd){
     $objId = $null
     if($nameIndex.ContainsKey($objName)){
@@ -157,10 +162,14 @@ foreach($objName in $objectsToAdd){
             )
         }
         Write-Host "Protecting $objName"
+        "$($scriptRunDate): $objName protected" | Out-File -FilePath $logFile -Append
         $null = api post -v2 data-protect/protected-objects $protectionParams -region $regionId
     }elseif($objId -and $objId -notin $unprotectedIndex){
         Write-Host "Group $objName already protected" -ForegroundColor Magenta
+        "$($scriptRunDate): $objName already protected +++++" | Out-File -FilePath $logFile -Append
     }else{
         Write-Host "Group $objName not found" -ForegroundColor Yellow
+        "$($scriptRunDate): $objName not found -----" | Out-File -FilePath $logFile -Append
     }
 }
+Write-Host "`nLog saved to $logFile`n"
