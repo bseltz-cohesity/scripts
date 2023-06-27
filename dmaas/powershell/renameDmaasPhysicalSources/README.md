@@ -30,6 +30,8 @@ current,new
 10.19.0.68,server2.mydomain.net
 ```
 
+Then run the script like so:
+
 ```powershell
 ./renameDmaasPhysicalSources.ps1 -csvFile .\mysources.csv
 ```
