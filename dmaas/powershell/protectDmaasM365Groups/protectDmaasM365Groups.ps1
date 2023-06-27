@@ -106,6 +106,9 @@ while(1){
 }
 
 if($objectsToAdd.Count -eq 0){
+    if($autoselect -gt $unprotectedIndex.Count){
+        $autoselect = $unprotectedIndex.Count
+    }
     0..($autoselect - 1) | ForEach-Object {
         $objectsToAdd = @($objectsToAdd + $idIndex["$($unprotectedIndex[$_])"])
     }
