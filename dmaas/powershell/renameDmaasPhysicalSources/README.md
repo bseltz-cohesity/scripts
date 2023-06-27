@@ -26,8 +26,8 @@ Place both files in a folder together, then create a csv file that contains the 
 
 ```text
 current,new
-10.19.0.67,server1.mydomain.net
-10.19.0.68,server2.mydomain.net
+10.10.1.67,server1.mydomain.net
+10.10.1.68,server2.mydomain.net
 ```
 
 Then run the script like so:
