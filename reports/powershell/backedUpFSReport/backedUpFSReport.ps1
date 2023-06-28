@@ -4,6 +4,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
     [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
     [Parameter()][string]$domain = 'local', # local or AD domain
+    [Parameter()][int]$daysAgo = 0,
     [Parameter()][string]$smtpServer, # outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, # outbound smtp port
     [Parameter()][array]$sendTo, # send to address
@@ -12,6 +13,7 @@ param (
 
 $volumeTypes = @(1, 6)
 $Script:fsType = ''
+$Script:useLibrarian = 'false'
 
 $environments = @('Unknown', 'VMware', 'HyperV', 'SQL', 'View',
                   'RemoteAdapter', 'Physical', 'Pure', 'Azure', 'Netapp',
@@ -159,20 +161,20 @@ $Global:html += '</span>
     <th>Path</th>
 </tr>'
 
-"Job Name,Job Type,Protected Object,Policy Name,Latest Backup Date,FS Type,Path" | Out-File -FilePath $csvFileName
+"Job Name,Job Type,Protected Object,Policy Name,Latest Backup Date,Run ID,FS Type,Path" | Out-File -FilePath $csvFileName
 
 function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null){
     $thisDirPath = $dirPath
     if($null -ne $volumeName){
-        $dirList = api get "/vm/directoryList?$instance&dirPath=$thisDirPath&statFileEntries=false&volumeInfoCookie=$volumeInfoCookie&volumeName=$volumeName"
+        $dirList = api get "/vm/directoryList?$instance&dirPath=$thisDirPath&statFileEntries=false&volumeInfoCookie=$volumeInfoCookie&volumeName=$volumeName&useLibrarian=$($Script:useLibrarian)"
     }else{
-        $dirList = api get "/vm/directoryList?$instance&dirPath=$thisDirPath&statFileEntries=false"
+        $dirList = api get "/vm/directoryList?$instance&dirPath=$thisDirPath&statFileEntries=false&useLibrarian=$($Script:useLibrarian)"
     }
     if($dirList.PSObject.Properties['entries']){
         foreach($entry in $dirList.entries | Sort-Object -Property name){           
             if($entry.type -eq 'kDirectory'){
                 "{0} ({1}): {2} - {3}: {4}" -f $jobName, $jobType, $objectName, $lastBackup, $entry.fullPath
-                "{0},{1},{2},{3},{4},{5},{6}" -f $jobName, $jobType, $objectName, $policyName, $lastBackup, $Script:fsType, $entry.fullPath | Out-File -FilePath $csvFileName -Append
+                "{0},{1},{2},{3},{4},{5},{6},{7}" -f $jobName, $jobType, $objectName, $policyName, $lastBackup, $runId, $Script:fsType, $entry.fullPath | Out-File -FilePath $csvFileName -Append
                 if($Global:firstEntry){
                     $Global:html += '<tr style="border: 1px solid {6} background-color: {6}">
                     <td>{0}</td>
@@ -201,7 +203,9 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
 }
 
 function showFiles($doc, $version){
-    
+    if($version.replicaInfo.replicaVec[0].target.type -eq 3){
+        $Script:useLibrarian = 'true'
+    }
     $instance = "attemptNum={0}&clusterId={1}&clusterIncarnationId={2}&entityId={3}&jobId={4}&jobInstanceId={5}&jobStartTimeUsecs={6}&jobUidObjectId={7}" -f
                 $version.instanceId.attemptNum,
                 $doc.objectId.jobUid.clusterId,
@@ -219,7 +223,7 @@ function showFiles($doc, $version){
             foreach($volume in $volumeList.volumeInfos | Sort-Object -Property name){
                 $Script:fsType = $volume.filesystemType
                 "{0} ({1}): {2} - {3}: {4}" -f $jobName, $jobType, $objectName, $lastBackup, $volume.name
-                "{0},{1},{2},{3},{4},{5},{6}" -f $jobName, $jobType, $objectName, $policyName, $lastBackup, $Script:fsType, $volume.name | Out-File -FilePath $csvFileName -Append
+                "{0},{1},{2},{3},{4},{5},{6},{7}" -f $jobName, $jobType, $objectName, $policyName, $lastBackup, $runId, $Script:fsType, $volume.name | Out-File -FilePath $csvFileName -Append
                 if($Global:firstEntry){
                     $Global:html += '<tr style="border: 1px solid {6} background-color: {6}">
                     <td>{0}</td>
@@ -247,8 +251,11 @@ function showFiles($doc, $version){
     }else{
         $Script:fsType = ''
         if($doc.objectId.entity.PSObject.Properties['physicalEntity']){
+            $Script:fsType = 'ntfs'
             $volumeInfo = $doc.objectId.entity.physicalEntity.volumeInfoVec | Where-Object {'/' -in $_.mountPointVec}
-            $Script:fsType = $volumeInfo.mountType
+            if($volumeInfo){
+                $Script:fsType = $volumeInfo.mountType
+            } 
         }elseif($doc.objectId.entity.PSObject.Properties['genericNasEntity']){
             if($doc.objectId.entity.genericNasEntity.protocol -eq 2){
                 $Script:fsType = 'SMB'
@@ -282,12 +289,15 @@ foreach($searchResult in $searchResults.vms | Sort-Object -Property {$_.vmDocume
     if($policy){
         $policyName = $policy.name
     }
-    $lastBackup = (usecsToDate $doc.versions[0].instanceId.jobStartTimeUsecs).ToString('yyyy-MM-dd hh:mm')
-    if($doc.backupType -le 22){
-        $version = $doc.versions[0]
-        showFiles $doc $version
+    $doc.versions = $doc.versions | Where-Object {$_.instanceId.jobStartTimeUsecs -lt $(timeAgo $daysAgo days)}
+    if($doc.versions.Count -gt 0){
+        $runId = $doc.versions[0].instanceId.jobInstanceId
+        $lastBackup = (usecsToDate $doc.versions[0].instanceId.jobStartTimeUsecs).ToString('yyyy-MM-dd hh:mm')
+        if($doc.backupType -le 22){
+            $version = $doc.versions[0]
+            showFiles $doc $version
+        }
     }
-    # $Global:html += '<tr style="background-color: #FFFFFF;"><td></td><td></td><td></td><td></td><td></td></tr>' 
 }
 
 $Global:html += "</table>                
@@ -300,10 +310,9 @@ $Global:html | Out-File -FilePath $Global:htmlFileName
 Write-Host "`nsaving report as $Global:htmlFileName"
 Write-Host "also as csv file $csvFileName"
 
+# send email
 if($smtpServer -and $sendTo -and $sendFrom){
     Write-Host "`nsending report to $([string]::Join(", ", $sendTo))`n"
-
-    # send email report
     foreach($toaddr in $sendTo){
         Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject $title -BodyAsHtml $Global:html -WarningAction SilentlyContinue
     }

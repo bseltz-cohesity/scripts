@@ -38,6 +38,7 @@ Place the files in a folder together and run the script like so:
 * -vip: name or IP of Cohesity cluster
 * -username: name of user to connect to Cohesity
 * -domain: (optional) your AD domain (defaults to local)
+* -daysAgo: (optional) report on lastest backup older than X days (default is 0)
 * -smtpServer: (optional) SMTP gateway to forward email through
 * -smtpPort: (optional) SMTP port to use (default is 25)
 * -sendTo: (optional) email addresses to send report to (comma separated)
