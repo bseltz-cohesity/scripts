@@ -2,7 +2,6 @@
 [CmdletBinding()]
 param (
     [Parameter()][string]$username = 'DMaaS',
-    [Parameter(Mandatory = $True)][string]$region,  # DMaaS region
     [Parameter(Mandatory = $True)][string]$policyName = '',  # protection policy name
     [Parameter(Mandatory = $True)][string]$sourceName,  # name of registered O365 source
     [Parameter()][array]$mailboxes,  # optional names of mailboxes protect
@@ -11,6 +10,7 @@ param (
     [Parameter()][string]$timeZone = 'America/New_York', # e.g. 'America/New_York'
     [Parameter()][int]$incrementalSlaMinutes = 60,  # incremental SLA minutes
     [Parameter()][int]$fullSlaMinutes = 120,  # full SLA minutes
+    [Parameter()][int]$autoselect = 0,
     [Parameter()][int]$pageSize = 50000,
     [Parameter()][array]$excludeFolders
 )
@@ -34,7 +34,7 @@ if ('' -ne $mailboxList){
 
 $mailboxesToAdd = @($mailboxesToAdd | Where-Object {$_ -ne ''})
 
-if($mailboxesToAdd.Count -eq 0){
+if($mailboxesToAdd.Count -eq 0 -and $autoselect -eq 0){
     Write-Host "No mailboxes specified" -ForegroundColor Yellow
     exit
 }
@@ -56,7 +56,12 @@ if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]:
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -username $username -regionid $region
+apiauth -username $username
+
+$sessionUser = api get sessionUser
+$tenantId = $sessionUser.profiles[0].tenantId
+$regions = api get -mcmv2 dms/tenants/regions?tenantId=$tenantId
+$regionList = $regions.tenantRegionInfoList.regionId -join ','
 
 $policy = (api get -mcmv2 data-protect/policies?types=DMaaSPolicy).policies | Where-Object name -eq $policyName
 if(!$policy){
@@ -65,12 +70,17 @@ if(!$policy){
 }
 
 # find O365 source
-$rootSource = api get protectionSources/rootNodes?environments=kO365 | Where-Object {$_.protectionSource.name -eq $sourceName}
+$rootSource = (api get -mcmv2 "data-protect/sources?regionIds=$regionList&environments=kO365").sources | Where-Object name -eq $sourceName
+
 if(!$rootSource){
     Write-Host "O365 Source $sourceName not found" -ForegroundColor Yellow
     exit
 }
-$source = api get "protectionSources?id=$($rootSource.protectionSource.id)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false"
+
+$regionId = $rootSource[0].sourceInfoList[0].regionId
+$rootSourceId = $rootSource[0].sourceInfoList[0].sourceId
+
+$source = api get "protectionSources?id=$($rootSourceId)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false"  -region $regionId
 $usersNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
 if(!$usersNode){
     Write-Host "Source $sourceName is not configured for O365 Mailboxes" -ForegroundColor Yellow
@@ -79,22 +89,33 @@ if(!$usersNode){
 
 $nameIndex = @{}
 $smtpIndex = @{}
+$idIndex = @{}
 $unprotectedIndex = @()
-$users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false"
+$users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false" -region $regionId
 while(1){
     foreach($node in $users.nodes){
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
+        $idIndex["$($node.protectionSource.id)"] = $node.protectionSource.name
         $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
         if(($node.unprotectedSourcesSummary | Where-Object environment -eq 'kO365Exchange').leavesCount -eq 1){
             $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
         }
     }
     $cursor = $users.nodes[-1].protectionSource.id
-    $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false&afterCursorEntityId=$cursor"
+    $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false&afterCursorEntityId=$cursor"  -region $regionId
     if(!$users.PSObject.Properties['nodes'] -or $users.nodes.Count -eq 1){
         break
     }
 }  
+
+if($objectsToAdd.Count -eq 0){
+    if($autoselect -gt $unprotectedIndex.Count){
+        $autoselect = $unprotectedIndex.Count
+    }
+    0..($autoselect - 1) | ForEach-Object {
+        $mailboxesToAdd = @($mailboxesToAdd + $idIndex["$($unprotectedIndex[$_])"])
+    }
+}
 
 foreach($mailbox in $mailboxesToAdd){
     $userId = $null
@@ -149,7 +170,7 @@ foreach($mailbox in $mailboxesToAdd){
             )
         }
         Write-Host "Protecting $mailbox"
-        $null = api post -v2 data-protect/protected-objects $protectionParams
+        $null = api post -v2 data-protect/protected-objects $protectionParams -region $regionId
     }elseif($userId -and $userId -notin $unprotectedIndex){
         if($foldersToExclude.Count -gt 0){
             $protectionParams = @{
