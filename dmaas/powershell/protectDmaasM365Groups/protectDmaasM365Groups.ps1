@@ -121,7 +121,7 @@ $scriptRunDate = get-date -UFormat '%Y-%m-%d %H-%M'
 
 foreach($objName in $objectsToAdd){
     $objId = $null
-    if($nameIndex.ContainsKey($objName)){
+    if($objName -ne $null -and $nameIndex.ContainsKey($objName)){
         $objId = $nameIndex[$objName]
     }
     if($objId -and $objId -in $unprotectedIndex){
