@@ -119,9 +119,9 @@ if($objectsToAdd.Count -eq 0){
 
 foreach($mailbox in $mailboxesToAdd){
     $userId = $null
-    if($smtpIndex.ContainsKey($mailbox)){
+    if($mailbox -ne $null -and $smtpIndex.ContainsKey($mailbox)){
         $userId = $smtpIndex[$mailbox]
-    }elseif($nameIndex.ContainsKey($mailbox)){
+    }elseif($mailbox -ne $null -and $nameIndex.ContainsKey($mailbox)){
         $userId = $nameIndex[$mailbox]
     }
     if($userId -and $userId -in $unprotectedIndex){

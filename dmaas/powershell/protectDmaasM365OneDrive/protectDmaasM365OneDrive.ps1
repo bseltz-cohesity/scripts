@@ -149,9 +149,9 @@ if($usersToAdd.Count -eq 0){
 # find users
 foreach($driveUser in $usersToAdd){
     $userId = $null
-    if($smtpIndex.ContainsKey($driveUser)){
+    if($driveUser -ne $null -and $smtpIndex.ContainsKey($driveUser)){
         $userId = $smtpIndex[$driveUser]
-    }elseif($nameIndex.ContainsKey($driveUser)){
+    }elseif($driveUser -ne $null -and $nameIndex.ContainsKey($driveUser)){
         $userId = $nameIndex[$driveUser]
     }
     if($userId -and $userId -in $unprotectedIndex){
