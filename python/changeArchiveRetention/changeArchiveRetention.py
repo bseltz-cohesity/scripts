@@ -180,14 +180,14 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                     pass
             if run['backupRun']['stats']['startTimeUsecs'] < newerthanusecs or run['backupRun']['stats']['startTimeUsecs'] > olderthanusecs:
                 break
-    # perform archive changes in chronological order
-    if len(archiveRuns.keys()) > 0:
-        print('    performing updates in chronological order...')
-        for objectId in sorted(archiveRuns.keys()):
-            runParameters = archiveRuns[objectId]
-            try:
-                result = api('put', 'protectionRuns', runParameters)
-            except Exception:
-                pass
+        # perform archive changes in chronological order
+        if len(archiveRuns.keys()) > 0:
+            print('    performing updates in chronological order...')
+            for objectId in sorted(archiveRuns.keys()):
+                runParameters = archiveRuns[objectId]
+                try:
+                    result = api('put', 'protectionRuns', runParameters)
+                except Exception:
+                    pass
 f.close()
 print('\nOutput saved to %s\n' % outfile)
