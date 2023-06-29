@@ -35,11 +35,11 @@ Place both files in a folder together and run the main script like so:
 ## Parameters
 
 * -username: (optional) used for password storage only (default is 'DMaaS')
-* -region: DMaaS region to use
 * -sourceName: name of registered M365 protection source
 * -policyName: name of protection policy to use
 * -users: (optional) one or more user names or SMTP addresses (comma separated)
 * -userList: (optional) text file of user names or SMTP addresses (one per line)
+* -autoselect: (optional) protect first X unprotected groups (unspecified)
 * -startTime: (optional) e.g. '18:30' (defaults to 8PM)
 * -timeZone: (optional) e.g. 'America/New_York' (default is 'America/New_York')
 * -incrementalSlaMinutes: (optional) default 60

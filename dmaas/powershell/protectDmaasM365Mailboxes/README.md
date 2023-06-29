@@ -36,7 +36,6 @@ Place both files in a folder together and run the main script like so:
 ## Parameters
 
 * -username: (optional) used for password storage only (default is 'DMaaS')
-* -region: DMaaS region to use
 * -sourceName: name of registered M365 protection source
 * -policyName: name of protection policy to use
 * -mailboxes: (optional) one or more mailbox names or SMTP addresses (comma separated)
