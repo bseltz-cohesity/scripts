@@ -242,8 +242,8 @@ foreach($job in (api get -v2 "data-protect/protection-groups?isDeleted=false&inc
 
         $avgDataRead = [math]::Round($xDaysDataRead / $numDays, 2)
         $avgDataWritten = [math]::Round($xDaysDataWritten / $numDays, 2)
-        $avgReplicaDelay = [math]::Round($xDaysReplicaDelay / $numDays, 0)
-        $avgReplicaDuration = [math]::Round($xDaysReplicaDuration / $numDays, 0)
+        $avgReplicaDelay = [math]::Round($xDaysReplicaDelay / $numDays, 1)
+        $avgReplicaDuration = [math]::Round($xDaysReplicaDuration / $numDays, 1)
         $avgLogicalReplicated = [math]::Round($xDaysLogicalReplicated / $numDays, 2)
         $avgPhysicalReplicated = [math]::Round($xDaysPhysicalReplicated / $numDays, 2)
 
@@ -461,3 +461,4 @@ foreach($policy in $policies | Where-Object {$_.name -in $policyNames}){
 "     Per Job Stats saved to: {0}" -f $jobFileName
 "Per Workload Stats saved to: {0}" -f $workloadFileName
 "       Policy Info saved to: {0}`n" -f $policyFileName
+
