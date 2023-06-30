@@ -57,7 +57,7 @@ if($environment){
 if($localOnly){
     $jobs = api get protectionJobs | Where-Object {$_.isActive -ne $false}
 }else{
-    $jobs = api get protectionJobs | Where-Object {$_.isActive -ne $false}
+    $jobs = api get protectionJobs
 }
 
 $environments = @('kUnknown', 'kVMware', 'kHyperV', 'kSQL', 'kView', 'kPuppeteer',
