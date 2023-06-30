@@ -2,6 +2,7 @@
 [CmdletBinding()]
 param (
     [Parameter()][string]$username = 'DMaaS',
+    [Parameter(Mandatory = $True)][string]$region,
     [Parameter(Mandatory = $True)][string]$policyName = '',  # protection policy name
     [Parameter(Mandatory = $True)][string]$sourceName,  # name of registered O365 source
     [Parameter()][array]$users,  # optional names of mailboxes protect
@@ -50,12 +51,12 @@ if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]:
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -username $username
+apiauth -username $username -regionid $region
 
-$sessionUser = api get sessionUser
-$tenantId = $sessionUser.profiles[0].tenantId
-$regions = api get -mcmv2 dms/tenants/regions?tenantId=$tenantId
-$regionList = $regions.tenantRegionInfoList.regionId -join ','
+# $sessionUser = api get sessionUser
+# $tenantId = $sessionUser.profiles[0].tenantId
+# $regions = api get -mcmv2 dms/tenants/regions?tenantId=$tenantId
+# $regionList = $regions.tenantRegionInfoList.regionId -join ','
 
 $policy = (api get -mcmv2 data-protect/policies?types=DMaaSPolicy).policies | Where-Object name -eq $policyName
 if(!$policy){
@@ -64,17 +65,17 @@ if(!$policy){
 }
 
 # find O365 source
-$rootSource = (api get -mcmv2 "data-protect/sources?regionIds=$regionList&environments=kO365").sources | Where-Object name -eq $sourceName
+$rootSource = (api get -mcmv2 "data-protect/sources?environments=kO365").sources | Where-Object name -eq $sourceName
 
 if(!$rootSource){
     Write-Host "O365 Source $sourceName not found" -ForegroundColor Yellow
     exit
 }
 
-$regionId = $rootSource[0].sourceInfoList[0].regionId
+# $regionId = $rootSource[0].sourceInfoList[0].regionId
 $rootSourceId = $rootSource[0].sourceInfoList[0].sourceId
 
-$source = api get "protectionSources?id=$($rootSourceId)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false"  -region $regionId
+$source = api get "protectionSources?id=$($rootSourceId)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false"  # -region $regionId
 $usersNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
 if(!$usersNode){
     Write-Host "Source $sourceName is not configured for O365 Mailboxes" -ForegroundColor Yellow
@@ -86,7 +87,7 @@ $smtpIndex = @{}
 $idIndex = @{}
 $unprotectedIndex = @()
 
-$users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidOnedrive=true&allUnderHierarchy=false" -region $regionId
+$users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidOnedrive=true&allUnderHierarchy=false" # -region $regionId
 while(1){
     # implement pagination
     foreach($node in $users.nodes){
@@ -103,7 +104,7 @@ while(1){
     if(! $cursor){
         break
     }
-    $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidOnedrive=true&allUnderHierarchy=false&afterCursorEntityId=$cursor" -region $regionId
+    $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidOnedrive=true&allUnderHierarchy=false&afterCursorEntityId=$cursor" # -region $regionId
     $newcursor = $users.entityPaginationParameters.beforeCursorEntityId
     if($newcursor -eq $cursor){
         break
@@ -176,7 +177,7 @@ foreach($driveUser in $usersToAdd){
             }
         })
         Write-Host "Protecting OneDrive for $driveUser"
-        $response = api post -v2 data-protect/protected-objects $protectionParams -region $regionId
+        $response = api post -v2 data-protect/protected-objects $protectionParams  # -region $regionId
     }elseif($userId -and $userId -notin $unprotectedIndex){
         Write-Host "OneDrive $driveUser already protected" -ForegroundColor Magenta
     }else{
