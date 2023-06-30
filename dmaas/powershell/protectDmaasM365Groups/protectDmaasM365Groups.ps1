@@ -2,6 +2,7 @@
 [CmdletBinding()]
 param (
     [Parameter()][string]$username = 'DMaaS',
+    [Parameter(Mandatory = $True)][string]$region,
     [Parameter(Mandatory = $True)][string]$policyName = '',  # protection policy name
     [Parameter(Mandatory = $True)][string]$sourceName,  # name of registered O365 source
     [Parameter()][array]$objectNames,  # optional names of sites protect
@@ -55,14 +56,14 @@ if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]:
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -username $username #  -regionid $region
+apiauth -username $username -regionid $region
 
 $logFile = $(Join-Path -Path $logPath -ChildPath "m365GroupsProtected.txt")
 
-$sessionUser = api get sessionUser
-$tenantId = $sessionUser.profiles[0].tenantId
-$regions = api get -mcmv2 dms/tenants/regions?tenantId=$tenantId
-$regionList = $regions.tenantRegionInfoList.regionId -join ','
+# $sessionUser = api get sessionUser
+# $tenantId = $sessionUser.profiles[0].tenantId
+# $regions = api get -mcmv2 dms/tenants/regions?tenantId=$tenantId
+# $regionList = $regions.tenantRegionInfoList.regionId -join ','
 
 $policy = (api get -mcmv2 data-protect/policies?types=DMaaSPolicy).policies | Where-Object name -eq $policyName
 if(!$policy){
@@ -71,17 +72,17 @@ if(!$policy){
 }
 
 # find O365 source
-$rootSource = (api get -mcmv2 "data-protect/sources?regionIds=$regionList&environments=kO365").sources | Where-Object name -eq $sourceName
+$rootSource = (api get -mcmv2 "data-protect/sources?environments=kO365").sources | Where-Object name -eq $sourceName
 
 if(!$rootSource){
     Write-Host "O365 Source $sourceName not found" -ForegroundColor Yellow
     exit
 }
 
-$regionId = $rootSource[0].sourceInfoList[0].regionId
+# $regionId = $rootSource[0].sourceInfoList[0].regionId
 $rootSourceId = $rootSource[0].sourceInfoList[0].sourceId
 
-$source = api get "protectionSources?id=$($rootSourceId)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false" -region $regionId
+$source = api get "protectionSources?id=$($rootSourceId)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false" # -region $regionId
 
 $objectsNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Groups'}
 if(!$objectsNode){
@@ -92,7 +93,7 @@ if(!$objectsNode){
 $nameIndex = @{}
 $idIndex = @{}
 $unprotectedIndex = @()
-$objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false" -region $regionId
+$objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false" # -region $regionId
 while(1){
     foreach($node in $objects.nodes){
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
@@ -102,7 +103,7 @@ while(1){
         }
     }
     $cursor = $objects.nodes[-1].protectionSource.id
-    $objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false&afterCursorEntityId=$cursor" -region $regionId
+    $objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false&afterCursorEntityId=$cursor" # -region $regionId
     if(!$objects.PSObject.Properties['nodes'] -or $objects.nodes.Count -eq 1){
         break
     }
@@ -163,7 +164,7 @@ foreach($objName in $objectsToAdd){
         }
         Write-Host "Protecting $objName"
         "$($scriptRunDate): $objName protected" | Out-File -FilePath $logFile -Append
-        $null = api post -v2 data-protect/protected-objects $protectionParams -region $regionId
+        $null = api post -v2 data-protect/protected-objects $protectionParams # -region $regionId
     }elseif($objId -and $objId -notin $unprotectedIndex){
         Write-Host "Group $objName already protected" -ForegroundColor Magenta
         "$($scriptRunDate): $objName already protected +++++" | Out-File -FilePath $logFile -Append
