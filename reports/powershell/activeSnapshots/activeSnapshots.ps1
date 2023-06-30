@@ -54,8 +54,11 @@ if($environment){
 }
 
 ### find recoverable objects
-$from = 0
-$ro = api get "/searchvms?size=$pageSize&from=$from$etail"
+if($localOnly){
+    $jobs = api get protectionJobs | Where-Object {$_.isActive -ne $false}
+}else{
+    $jobs = api get protectionJobs | Where-Object {$_.isActive -ne $false}
+}
 
 $environments = @('kUnknown', 'kVMware', 'kHyperV', 'kSQL', 'kView', 'kPuppeteer',
                   'kPhysical', 'kPure', 'kAzure', 'kNetapp', 'kAgent', 'kGenericNas',
@@ -69,62 +72,68 @@ $environments = @('kUnknown', 'kVMware', 'kHyperV', 'kSQL', 'kView', 'kPuppeteer
                   'kO365OneDrive', 'kO365Sharepoint', 'kSfdc', 'kUnknown', 'kUnknown', 'kUnknown',
                   'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown')
 
-if($ro.count -gt 0){
-
-    while($True){
-        $ro.vms | Sort-Object -Property {$_.vmDocument.jobName}, {$_.vmDocument.objectName } | ForEach-Object {
-            $doc = $_.vmDocument
-            if(! $localOnly -or $doc.objectId.jobUid.clusterId -eq $clusterId){
-                $jobId = $doc.objectId.jobId
-                $jobName = $doc.jobName
-                $objName = $doc.objectName
-                if($environments[$doc.registeredSource.type] -notin $excludeEnvironment){
-                    $objType = $environments[$doc.registeredSource.type].subString(1)
-                    if($objType -eq 'Unknown'){
-                        write-host $doc.registeredSource.type
-                    }
-                    $objAlias = ''
-                    $sqlAagName = ''
-                    if($doc.objectId.entity.PSObject.Properties['sqlEntity'] -and $doc.objectId.entity.sqlEntity.PSObject.Properties['dbAagName']){
-                        $sqlAagName = $doc.objectId.entity.sqlEntity.dbAagName
-                    }
-                    if('objectAliases' -in $doc.PSobject.Properties.Name){
-                        $objAlias = $doc.objectAliases[0]
-                        if($objAlias -eq "$objName.vmx" -or $objType -eq 'VMware'){
-                            $objAlias = ''
-                        }
-                        if($objAlias -ne ''){
-                            $sourceName = $objAlias
-                        }
-                    }
-                    if($objAlias -eq ''){
-                        $sourceName = $doc.registeredSource.displayName
-                    }
+foreach($job in $jobs){
+    $from = 0
+    $ro = api get "/searchvms?jobIds=$($job.id)&size=$pageSize&from=$from$etail"
     
-                    $versions = $doc.versions | Sort-Object -Property {$_.instanceId.jobStartTimeUsecs}
-                    if($days){
-                        $versions = $versions | Where-Object {$_.instanceId.jobStartTimeUsecs -ge $daysBackUsecs}
+    if($ro.count -gt 0){
+    
+        while($True){
+            $ro.vms | Sort-Object -Property {$_.vmDocument.jobName}, {$_.vmDocument.objectName } | ForEach-Object {
+                $doc = $_.vmDocument
+                if(! $localOnly -or $doc.objectId.jobUid.clusterId -eq $clusterId){
+                    $jobId = $doc.objectId.jobId
+                    $jobName = $doc.jobName
+                    $objName = $doc.objectName
+                    if($environments[$doc.registeredSource.type] -notin $excludeEnvironment){
+                        $objType = $environments[$doc.registeredSource.type].subString(1)
+                        if($objType -eq 'Unknown'){
+                            write-host $doc.registeredSource.type
+                        }
+                        $objAlias = ''
+                        $sqlAagName = ''
+                        if($doc.objectId.entity.PSObject.Properties['sqlEntity'] -and $doc.objectId.entity.sqlEntity.PSObject.Properties['dbAagName']){
+                            $sqlAagName = $doc.objectId.entity.sqlEntity.dbAagName
+                        }
+                        if('objectAliases' -in $doc.PSobject.Properties.Name){
+                            $objAlias = $doc.objectAliases[0]
+                            if($objAlias -eq "$objName.vmx" -or $objType -eq 'VMware'){
+                                $objAlias = ''
+                            }
+                            if($objAlias -ne ''){
+                                $sourceName = $objAlias
+                            }
+                        }
+                        if($objAlias -eq ''){
+                            $sourceName = $doc.registeredSource.displayName
+                        }
+        
+                        $versions = $doc.versions | Sort-Object -Property {$_.instanceId.jobStartTimeUsecs}
+                        if($days){
+                            $versions = $versions | Where-Object {$_.instanceId.jobStartTimeUsecs -ge $daysBackUsecs}
+                        }
+                        
+                        $versionCount = $versions.Count
+                        if($versionCount -gt 0){
+                            $newestSnapshotDate = usecsToDate $versions[-1].instanceId.jobStartTimeUsecs
+                            $oldestSnapshotDate = usecsToDate $versions[0].instanceId.jobStartTimeUsecs
+                        }else{
+                            $newestSnapshotDate = ''
+                            $oldestSnapshotDate = ''
+                        }
+                        write-host ("{0} ({1}) {2}: {3}" -f $jobName, $objType, $objName, $versionCount)
+                        """$($cluster.name)"",""$jobName"",""$objType"",""$sourceName"",""$objName"",""$sqlAagName"",""$versionCount"",""$oldestSnapshotDate"",""$newestSnapshotDate""" | Out-File -FilePath $outfileName -Append
                     }
-                    
-                    $versionCount = $versions.Count
-                    if($versionCount -gt 0){
-                        $newestSnapshotDate = usecsToDate $versions[-1].instanceId.jobStartTimeUsecs
-                        $oldestSnapshotDate = usecsToDate $versions[0].instanceId.jobStartTimeUsecs
-                    }else{
-                        $newestSnapshotDate = ''
-                        $oldestSnapshotDate = ''
-                    }
-                    write-host ("{0} ({1}) {2}: {3}" -f $jobName, $objType, $objName, $versionCount)
-                    """$($cluster.name)"",""$jobName"",""$objType"",""$sourceName"",""$objName"",""$sqlAagName"",""$versionCount"",""$oldestSnapshotDate"",""$newestSnapshotDate""" | Out-File -FilePath $outfileName -Append
                 }
             }
-        }
-        if($ro.count -gt ($pageSize + $from)){
-            $from += $pageSize
-            $ro = api get "/searchvms?size=$pageSize&from=$from$etail"
-        }else{
-            break
+            if($ro.count -gt ($pageSize + $from)){
+                $from += $pageSize
+                $ro = api get "/searchvms?size=$pageSize&from=$from$etail"
+            }else{
+                break
+            }
         }
     }
-    write-host "`nReport Saved to $outFileName`n"
 }
+
+write-host "`nReport Saved to $outFileName`n"
