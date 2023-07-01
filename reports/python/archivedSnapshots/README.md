@@ -42,7 +42,6 @@ To connect directly to one cluster:
 * -mcm, --mcm: (optional) connect through MCM
 * -c, --clustername: (optional) helios/mcm cluster to connect to
 * -m, --mfacode: (optional) MFA code for authentication
-* -em, --emailmfacode: (optional) send MFA code via email
 
 ## Other Parameters
 
