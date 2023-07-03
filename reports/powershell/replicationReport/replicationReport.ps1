@@ -80,7 +80,9 @@ if($jobNames.Count -gt 0){
 $cluster = api get cluster
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $objectFileName = "replicationReport-perObject-$($cluster.name)-$dateString.csv"
-"""Job Name"",""Job Type"",""Start Time"",""Source Name"",""Replication Delay Sec"",""Replication Duration Sec"",""Logical Replicated $unit"",""Physical Replicated $unit"",""Target Cluster""" | Out-File -FilePath $objectFileName
+"""Job Name"",""Job Type"",""Run Start Time"",""Source Name"",""Replication Delay Sec"",""Replication Duration Sec"",""Logical Replicated $unit"",""Physical Replicated $unit"",""Target Cluster""" | Out-File -FilePath $objectFileName
+$runFileName = "replicationReport-perRun-$($cluster.name)-$dateString.csv"
+"""Job Name"",""Job Type"",""Run Start Time"",""Replication End Time"",""Entries Changed"",""Logical Replicated $unit"",""Physical Replicated $unit"",""Target Cluster""" | Out-File -FilePath $runFileName
 
 $now = (Get-Date).AddDays(-$backDays)
 $daysBackUsecs = dateToUsecs $now.AddDays(-$daysBack)
@@ -111,6 +113,16 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                 if($runStartTimeUsecs -lt $daysBackUsecs){
                     break
                 }
+                # per run stats
+                $repls = @{}
+                foreach($repl in $run.replicationInfo.replicationTargetResults){
+                    $repls[$repl.clusterName] = @{
+                        'endTime' = (usecsToDate $repl.endTimeUsecs);
+                        'entriesChanged' = $repl.entriesChanged;
+                        'logicalReplicated' = 0;
+                        'physicalReplicated' = 0;
+                    }
+                }
                 # per object stats
                 foreach($server in ($run.objects | Sort-Object -Property {$_.object.name})){
                     $sourceName = $server.object.name
@@ -125,14 +137,20 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                                 $replicaDuration = [math]::Round(($replicaEndTime - $replicaStartTime) / 1000000)
                                 $logicalReplicated = toUnits $target.stats.logicalBytesTransferred
                                 $physicalReplicated = toUnits $target.stats.physicalBytesTransferred
+                                $repls[$remoteCluster]['logicalReplicated'] += $logicalReplicated
+                                $repls[$remoteCluster]['physicalReplicated'] += $physicalReplicated
                                 """$jobName"",""$jobType"",""$(usecsToDate $runStartTimeUsecs)"",""$sourceName"",""$replicaDelay"",""$replicaDuration"",""$logicalReplicated"",""$physicalReplicated"",""$remoteCluster""" | Out-File -FilePath $objectFileName -Append
                             }
                         }
                     }
+                }
+                # per run stats
+                foreach($remoteCluster in $repls.Keys){
+                    """$jobName"",""$jobType"",""$(usecsToDate $runStartTimeUsecs)"",""$($repls[$remoteCluster]['endTime'])"",""$($repls[$remoteCluster]['entriesChanged'])"",""$($repls[$remoteCluster]['logicalReplicated'])"",""$($repls[$remoteCluster]['physicalReplicated'])"",""$remoteCluster""" | Out-File -FilePath $runFileName -Append
                 }
             }
         }
     }
 }
 
-"`nOutput saved to: {0}`n" -f $objectFileName
+"`nOutput saved to:`n    {0}`n    {1}`n" -f $objectFileName, $runFileName
