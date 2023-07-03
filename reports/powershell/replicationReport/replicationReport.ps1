@@ -80,9 +80,9 @@ if($jobNames.Count -gt 0){
 $cluster = api get cluster
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $objectFileName = "replicationReport-perObject-$($cluster.name)-$dateString.csv"
-"""Job Name"",""Job Type"",""Run Start Time"",""Source Name"",""Replication Delay Sec"",""Replication Duration Sec"",""Logical Replicated $unit"",""Physical Replicated $unit"",""Target Cluster""" | Out-File -FilePath $objectFileName
+"""Job Name"",""Job Type"",""Run Start Time"",""Source Name"",""Replication Delay Sec"",""Replication Duration Sec"",""Logical Replicated $unit"",""Physical Replicated $unit"",""Status"",""Target Cluster""" | Out-File -FilePath $objectFileName
 $runFileName = "replicationReport-perRun-$($cluster.name)-$dateString.csv"
-"""Job Name"",""Job Type"",""Run Start Time"",""Replication End Time"",""Entries Changed"",""Logical Replicated $unit"",""Physical Replicated $unit"",""Target Cluster""" | Out-File -FilePath $runFileName
+"""Job Name"",""Job Type"",""Run Start Time"",""Replication End Time"",""Entries Changed"",""Logical Replicated $unit"",""Physical Replicated $unit"",""Status"",""Target Cluster""" | Out-File -FilePath $runFileName
 
 $now = (Get-Date).AddDays(-$backDays)
 $daysBackUsecs = dateToUsecs $now.AddDays(-$daysBack)
@@ -121,6 +121,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                         'entriesChanged' = $repl.entriesChanged;
                         'logicalReplicated' = 0;
                         'physicalReplicated' = 0;
+                        'status' = $repl.status
                     }
                 }
                 # per object stats
@@ -129,6 +130,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                     if(!($run.environment -eq 'kAD' -and $server.object.objectType -eq 'kDomainController')){
                         if($server.PSObject.Properties['replicationInfo']){
                             foreach($target in $server.replicationInfo.replicationTargetResults){
+                                $status = $target.status
                                 $remoteCluster = $target.clusterName
                                 $replicaQueuedTime = $target.queuedTimeUsecs
                                 $replicaStartTime = $target.startTimeUsecs
@@ -139,14 +141,14 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                                 $physicalReplicated = toUnits $target.stats.physicalBytesTransferred
                                 $repls[$remoteCluster]['logicalReplicated'] += $logicalReplicated
                                 $repls[$remoteCluster]['physicalReplicated'] += $physicalReplicated
-                                """$jobName"",""$jobType"",""$(usecsToDate $runStartTimeUsecs)"",""$sourceName"",""$replicaDelay"",""$replicaDuration"",""$logicalReplicated"",""$physicalReplicated"",""$remoteCluster""" | Out-File -FilePath $objectFileName -Append
+                                """$jobName"",""$jobType"",""$(usecsToDate $runStartTimeUsecs)"",""$sourceName"",""$replicaDelay"",""$replicaDuration"",""$logicalReplicated"",""$physicalReplicated"",""$status"",""$remoteCluster""" | Out-File -FilePath $objectFileName -Append
                             }
                         }
                     }
                 }
                 # per run stats
                 foreach($remoteCluster in $repls.Keys){
-                    """$jobName"",""$jobType"",""$(usecsToDate $runStartTimeUsecs)"",""$($repls[$remoteCluster]['endTime'])"",""$($repls[$remoteCluster]['entriesChanged'])"",""$($repls[$remoteCluster]['logicalReplicated'])"",""$($repls[$remoteCluster]['physicalReplicated'])"",""$remoteCluster""" | Out-File -FilePath $runFileName -Append
+                    """$jobName"",""$jobType"",""$(usecsToDate $runStartTimeUsecs)"",""$($repls[$remoteCluster]['endTime'])"",""$($repls[$remoteCluster]['entriesChanged'])"",""$($repls[$remoteCluster]['logicalReplicated'])"",""$($repls[$remoteCluster]['physicalReplicated'])"",""$($repls[$remoteCluster]['status'])"",""$remoteCluster""" | Out-File -FilePath $runFileName -Append
                 }
             }
         }
