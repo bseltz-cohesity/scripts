@@ -76,6 +76,7 @@ Place all files in a folder together. then, run the main script like so:
 * -cancelPreviousRunMinutes: (optional) cancel previous job run if it has been running for X minutes
 * -statusRetries: (optional) quit script with failure if unable to get status X times (default is 10)
 * -extendedErrorCodes: (optional) return extended set of exit codes (see below) by default 0 = successful, 1 = not successful
+* -dbg: (optional) output payload to payload.json for debugging
 
 ## Extended Error Codes
 
