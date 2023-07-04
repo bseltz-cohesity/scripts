@@ -72,7 +72,6 @@ try:
 except Exception:
     clusterReduction = 1
 
-jobs = api('get', 'protectionJobs')
 title = 'Storage Report for %s' % cluster['name']
 
 now = datetime.now()
@@ -142,33 +141,42 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                     if 'objects' in run and run['objects'] is not None and len(run['objects']) > 0:
                         for object in [o for o in run['objects'] if o['object']['environment'] != job['environment']]:
                             sourceNames[object['object']['id']] = object['object']['name']
-                        for object in [o for o in run['objects']]:  # if o['object']['environment'] == job['environment']]:
+                        for object in [o for o in run['objects']]:
+                            if 'localSnapshotInfo' in object:
+                                snap = object['localSnapshotInfo']
+                            else:
+                                snap = object['originalBackupInfo']
                             try:
-                                if 'localSnapshotInfo' in object:
-                                    snap = object['localSnapshotInfo']
-                                else:
-                                    snap = object['originalBackupInfo']
-                                if object['object']['name'] not in objects and not (job['environment'] == 'kAD' and object['object']['environment'] == 'kAD') and not (job['environment'] in ['kSQL', 'kOracle'] and object['object']['objectType'] == 'kHost'):
-                                    objects[object['object']['name']] = {}
-                                    if 'sourceId' in object['object']:
-                                        objects[object['object']['name']]['sourceId'] = object['object']['sourceId']
-                                    objects[object['object']['name']]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
-                                    if job['environment'] == 'kVMware':
-                                        objects[object['object']['name']]['logical'] = int(float(vmfullpct) * objects[object['object']['name']]['logical'])
-                                    objects[object['object']['name']]['bytesWritten'] = 0
-                                # print('    %s  %s' % (object['object']['name'], snap['snapshotInfo']['stats']['logicalSizeBytes']))
-                                if snap['snapshotInfo']['stats']['logicalSizeBytes'] > objects[object['object']['name']]['logical']:
+                                if object['object']['name'] not in objects:
+                                    if 'logicalSizeBytes' not in snap['snapshotInfo']['stats']:
+                                        csource = api('get', 'protectionSources?id=%s' % object['object']['id'])
+                                        objects[object['object']['name']] = {}
+                                        objects[object['object']['name']]['logical'] = csource[0]['protectedSourcesSummary'][0]['totalLogicalSize']
+                                        objects[object['object']['name']]['bytesWritten'] = 0
+                                    elif not (job['environment'] == 'kAD' and object['object']['environment'] == 'kAD') and not (job['environment'] in ['kSQL', 'kOracle'] and object['object']['objectType'] == 'kHost'):
+                                        objects[object['object']['name']] = {}
+                                        if 'sourceId' in object['object']:
+                                            objects[object['object']['name']]['sourceId'] = object['object']['sourceId']
+                                        objects[object['object']['name']]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
+                                        if job['environment'] == 'kVMware':
+                                            objects[object['object']['name']]['logical'] = int(float(vmfullpct) * objects[object['object']['name']]['logical'])
+                                        objects[object['object']['name']]['bytesWritten'] = 0
+                                    else:
+                                        objects[object['object']['name']] = {}
+                                        objects[object['object']['name']]['logical'] = 0
+                                        objects[object['object']['name']]['bytesWritten'] = 0
+                                if 'logicalSizeBytes' in snap['snapshotInfo']['stats'] and snap['snapshotInfo']['stats']['logicalSizeBytes'] > objects[object['object']['name']]['logical']:
                                     objects[object['object']['name']]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
                                 if 'bytesWritten' in snap['snapshotInfo']['stats']:
                                     objects[object['object']['name']]['bytesWritten'] += snap['snapshotInfo']['stats']['bytesWritten']
                                 else:
                                     objects[object['object']['name']]['bytesWritten'] += snap['snapshotInfo']['stats']['bytesRead'] / reduction
                             except Exception:
-                                pass
+                                print('    *** unhandled exception ***')
+
         # process output
         for object in sorted(objects.keys()):
             if 'logical' in objects[object] and 'bytesWritten' in objects[object]:
-                # print('    %s  %s' % (object, objects[object]['logical']))
                 reducedData = round(((objects[object]['logical'] / reduction) + objects[object]['bytesWritten']) / multiplier, 1)
                 reducedDataWithResiliency = reducedData * resiliencyFactor
                 sourceName = ''
