@@ -147,11 +147,18 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                             else:
                                 snap = object['originalBackupInfo']
                             try:
+
                                 if object['object']['name'] not in objects:
                                     if 'logicalSizeBytes' not in snap['snapshotInfo']['stats']:
-                                        csource = api('get', 'protectionSources?id=%s' % object['object']['id'])
+                                        csource = api('get', 'protectionSources?id=%s' % object['object']['id'], quiet=True)
                                         objects[object['object']['name']] = {}
-                                        objects[object['object']['name']]['logical'] = csource[0]['protectedSourcesSummary'][0]['totalLogicalSize']
+                                        try:
+                                            if type(csource) == list:
+                                                objects[object['object']['name']]['logical'] = csource[0]['protectedSourcesSummary'][0]['totalLogicalSize']
+                                            else:
+                                                objects[object['object']['name']]['logical'] = csource['protectedSourcesSummary'][0]['totalLogicalSize']
+                                        except Exception:
+                                            objects[object['object']['name']]['logical'] = 0
                                         objects[object['object']['name']]['bytesWritten'] = 0
                                     elif not (job['environment'] == 'kAD' and object['object']['environment'] == 'kAD') and not (job['environment'] in ['kSQL', 'kOracle'] and object['object']['objectType'] == 'kHost'):
                                         objects[object['object']['name']] = {}
@@ -171,8 +178,10 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                                     objects[object['object']['name']]['bytesWritten'] += snap['snapshotInfo']['stats']['bytesWritten']
                                 else:
                                     objects[object['object']['name']]['bytesWritten'] += snap['snapshotInfo']['stats']['bytesRead'] / reduction
-                            except Exception:
+
+                            except Exception as e:
                                 print('    *** unhandled exception ***')
+                                print(repr(e))
 
         # process output
         for object in sorted(objects.keys()):
