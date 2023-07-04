@@ -1,4 +1,4 @@
-# version 2023.04.13
+# version 2023.07.04
 
 # version history
 # ===============
@@ -8,6 +8,7 @@
 # 2023.04.11 - fixed bug in line 70 - last run is None error, added metafile check for new run
 # 2023.04.13 - fixed log archiving bug
 # 2023.04.14 - fixed metadatafile watch bug
+# 2023.07.04 - added -dbg switch to output payload to payload.json file
 
 # extended error codes
 # ====================
@@ -60,7 +61,8 @@ param (
     [Parameter()][int64]$cancelPreviousRunMinutes = 0,  # cancel previous run if it has been running long
     [Parameter()][int64]$statusRetries = 10,   # give up waiting for new run to appear
     [Parameter()][switch]$extendedErrorCodes,  # report failure-specific error codes
-    [Parameter()][int64]$sleepTimeSecs = 120   # sleep seconds between status queries
+    [Parameter()][int64]$sleepTimeSecs = 120,   # sleep seconds between status queries
+    [Parameter()][switch]$dbg
 )
 
 $finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning', '3', '4', '5', '6', 'Canceled', 'Succeeded', 'Failed', 'SucceededWithWarning')
@@ -541,6 +543,10 @@ if($null -ne $runs -and $runs.Count -ne "0"){
 }
 
 # run job
+if($dbg){
+    $jobdata | ConvertTo-Json -Depth 99 | Out-File -FilePath 'payload.json'
+}
+
 $result = api post ('protectionJobs/run/' + $jobID) $jobdata -quiet
 $reportWaiting = $True
 $now = Get-Date
