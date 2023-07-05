@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.06.25
+# version 2023.07.05
 
 # version history
 # ===============
@@ -12,6 +12,7 @@
 # 2023.04.13 - fixed log archiving bug
 # 2023.04.14 - fixed metadatafile watch bug
 # 2023.06.25 - added -pl --purgeoraclelogs (first added 2023-06-08)
+# 2023.07.05 - updated payload to solve p11 error "TARGET_NOT_IN_POLICY_NOT_ALLOWED%!(EXTRA int64=0)"
 
 # extended error codes
 # ====================
@@ -421,15 +422,22 @@ if objectnames is not None:
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning', 'kCanceling', '3', '4', '5', '6', 'Canceled', 'Succeeded', 'Failed', 'SucceededWithWarning']
 
 # job parameters (base)
+# jobData = {
+#     "copyRunTargets": [
+#         {
+#             "type": "kLocal",
+#             "daysToKeep": keepLocalFor
+#         }
+#     ],
+#     "sourceIds": [],
+#     "runType": backupType
+# }
+
 jobData = {
-    "copyRunTargets": [
-        {
-            "type": "kLocal",
-            "daysToKeep": keepLocalFor
-        }
-    ],
+    "copyRunTargets": [],
     "sourceIds": [],
-    "runType": backupType
+    "runType": backupType,
+    "usePolicyDefaults": True
 }
 
 # add objects (non-DB)
@@ -456,8 +464,8 @@ if len(runNowParameters) > 0:
 
 # use base retention and copy targets from policy
 policy = api('get', 'protectionPolicies/%s' % job['policyId'])
-if keepLocalFor is None:
-    jobData['copyRunTargets'][0]['daysToKeep'] = policy['daysToKeep']
+# if keepLocalFor is None:
+#     jobData['copyRunTargets'][0]['daysToKeep'] = policy['daysToKeep']
 
 # replication
 if localonly is not True and noreplica is not True:
