@@ -37,5 +37,6 @@ Place both files in a folder together and run the main script like so:
 * -i, --useApiKey: (optional) use API Key authentication
 * -pwd, --password: (optional) specify password or API key
 * -of, --outfolder: (optional) location to write output CSV file (default is '.')
-* -j, --jobname: (optional) filter by job name
-* -o, --objectname: (optional) filter by object name
+* -e, --environment: (optional) environment (sql, vmware, oracle, etc) default is None
+* -of, --outfolder: (optional) path to write output file (default is '.')
+* -s, --pagesize: (optional) page size per API query (default is 1000)
