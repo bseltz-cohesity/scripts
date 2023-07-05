@@ -45,6 +45,7 @@ To connect directly to one cluster:
 
 ## Other Parameters
 
+* -t, --targetname: (optional) focus on specific external target
 * -j, --jobname: (optional) focus on specific job name(s) (repeat for multiple)
 * -l, --joblist: (optional) text file of job names(s) to focus on (one per line)
 * -n, --numruns: (optional) slurp X runs per API call (defaul is 100)

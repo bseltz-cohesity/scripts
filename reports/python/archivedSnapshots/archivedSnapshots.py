@@ -20,6 +20,7 @@ parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-j', '--jobname', action='append', type=str)
 parser.add_argument('-l', '--joblist', type=str)
+parser.add_argument('-t', '--targetname', type=str, default=None)
 parser.add_argument('-n', '--numruns', type=int, default=100)
 parser.add_argument('-x', '--units', type=str, choices=['MiB', 'GiB', 'mib', 'gib'], default='MiB')  # units
 
@@ -38,6 +39,7 @@ jobnames = args.jobname
 joblist = args.joblist
 numruns = args.numruns
 units = args.units
+targetname = args.targetname
 
 multiplier = 1024 * 1024 * 1024
 if units.lower() == 'mib':
@@ -63,6 +65,14 @@ if mcm or vip.lower() == 'helios.cohesity.com':
 if apiconnected() is False:
     print('authentication failed')
     exit(1)
+
+if targetname is not None:
+    vaults = api('get', 'vaults')
+    if vaults is not None and len(vaults) > 0:
+        vault = [v for v in vaults if v['name'].lower() == targetname.lower()]
+        if vault is None or len(vault) == 0:
+            print('target %s not found' % targetname)
+            exit(1)
 
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
@@ -130,8 +140,9 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                         if 'stats' in archive:
                             logicalBytesTransferred = round(archive['stats'].get('logicalBytesTransferred', 0) / multiplier, 1)
                             physicalBytesTransferred = round(archive['stats'].get('physicalBytesTransferred', 0) / multiplier, 1)
-                        print("    %s" % runStartTime)
-                        f.write('"%s","%s","%s","%s","%s","%s","%s"\n' % (job['name'], runStartTime, archiveTarget, archiveStatus, archiveExpires, logicalBytesTransferred, physicalBytesTransferred))
+                        if targetname is None or targetname.lower() == archiveTarget.lower():
+                            print("    %s" % runStartTime)
+                            f.write('"%s","%s","%s","%s","%s","%s","%s"\n' % (job['name'], runStartTime, archiveTarget, archiveStatus, archiveExpires, logicalBytesTransferred, physicalBytesTransferred))
 
 f.close()
 print('\nOutput saved to %s\n' % outfile)
