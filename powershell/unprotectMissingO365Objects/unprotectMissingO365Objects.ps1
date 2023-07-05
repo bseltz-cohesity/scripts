@@ -119,7 +119,7 @@ foreach($job in $jobs | Where-Object {$_.isDeleted -ne $True -and $_.isActive -e
                             }
                             Write-Host "    $(@($sourceIdIndex["$sourceId"]['mailboxes']).Count) Mailboxes"
                             if($cursor){
-                                $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&hasValidMailbox=true&hasValidOnedrive=false&afterCursorEntityId=$cursor"
+                                $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&hasValidMailbox=true&hasValidOnedrive=false&afterCursorEntityId=$cursor"
                                 $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
                             }else{
                                 break
@@ -140,7 +140,7 @@ foreach($job in $jobs | Where-Object {$_.isDeleted -ne $True -and $_.isActive -e
                     # get onedrives
                     if($objectType -in @('all', 'onedrive')){
                         $sourceIdIndex["$sourceId"]['onedrives'] = @($sourceIdIndex["$sourceId"]['onedrives'] + $objectNode.protectionSource.id)
-                        $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNode.protectionSource.id)&allUnderHierarchy=false&hasValidOnedrive=true&hasValidMailbox=false&useCachedData=false"
+                        $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNode.protectionSource.id)&allUnderHierarchy=false&hasValidOnedrive=true&useCachedData=false"
                         $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
                         while(1){
                             foreach($node in $objects.nodes){
@@ -149,7 +149,7 @@ foreach($job in $jobs | Where-Object {$_.isDeleted -ne $True -and $_.isActive -e
                             }
                             Write-Host "    $(@($sourceIdIndex["$sourceId"]['onedrives']).Count) OneDrives"
                             if($cursor){
-                                $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNNode.protectionSource.id)&allUnderHierarchy=false&hasValidOnedrive=true&hasValidMailbox=false&useCachedData=false&afterCursorEntityId=$cursor"
+                                $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNode.protectionSource.id)&allUnderHierarchy=false&hasValidOnedrive=true&useCachedData=false&afterCursorEntityId=$cursor"
                                 $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
                             }else{
                                 break
@@ -180,7 +180,7 @@ foreach($job in $jobs | Where-Object {$_.isDeleted -ne $True -and $_.isActive -e
                             }
                             Write-Host "    $(@($sourceIdIndex["$sourceId"]['other']).Count)"
                             if($cursor){
-                                $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&afterCursorEntityId=$cursor"
+                                $objects = api get "protectionSources?pageSize=50000&nodeId=$($objectNode.protectionSource.id)&id=$($objectNode.protectionSource.id)&allUnderHierarchy=false&useCachedData=false&afterCursorEntityId=$cursor"
                                 $cursor = $objects.entityPaginationParameters.beforeCursorEntityId
                             }else{
                                 break
