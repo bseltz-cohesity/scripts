@@ -1,4 +1,4 @@
-# version 2023.07.04
+# version 2023.07.05
 
 # version history
 # ===============
@@ -9,6 +9,7 @@
 # 2023.04.13 - fixed log archiving bug
 # 2023.04.14 - fixed metadatafile watch bug
 # 2023.07.04 - added -dbg switch to output payload to payload.json file
+# 2023.07.05 - updated payload to solve p11 error "TARGET_NOT_IN_POLICY_NOT_ALLOWED%!(EXTRA int64=0)"
 
 # extended error codes
 # ====================
@@ -381,20 +382,22 @@ if($objects){
 }
 
 # set local retention
-$copyRunTargets = @(
-    @{
-        "type" = "kLocal";
-        "daysToKeep" = $keepLocalFor
-    }
-)
+# $copyRunTargets = @(
+#     @{
+#         "type" = "kLocal";
+#         "daysToKeep" = $keepLocalFor
+#     }
+# )
+$copyRunTargets = @()
+
 
 # retrieve policy settings
 $policy = api get "protectionPolicies/$policyId"
-if(! $keepLocalFor){
-    $copyRunTargets[0].daysToKeep = $policy.daysToKeep
-}else{
+# if(! $keepLocalFor){
+#     $copyRunTargets[0].daysToKeep = $policy.daysToKeep
+# }else{
 
-}
+# }
 
 # replication
 if((! $localOnly) -and (! $noReplica)){
@@ -503,6 +506,7 @@ if((! $localOnly) -and (! $noArchive)){
 $jobdata = @{
    "runType" = $backupType
    "copyRunTargets" = $copyRunTargets
+   "usePolicyDefaults" = $True
 }
 
 # add sourceIds if specified
@@ -547,7 +551,7 @@ if($dbg){
     $jobdata | ConvertTo-Json -Depth 99 | Out-File -FilePath 'payload.json'
 }
 
-$result = api post ('protectionJobs/run/' + $jobID) $jobdata -quiet
+$result = api post ('protectionJobs/run/' + $jobID) $jobdata # -quiet
 $reportWaiting = $True
 $now = Get-Date
 $waitUntil = $now.AddMinutes($waitMinutesIfRunning)
