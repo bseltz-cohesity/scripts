@@ -4,6 +4,8 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell updates the access key and secret key used to authenticate to an AWS S3 external target (for cloud archive or cloud tier).
 
+## Download the script
+
 ```powershell
 # Download Commands
 $scriptName = 'updateAWSExternalTargetAccessKey'
