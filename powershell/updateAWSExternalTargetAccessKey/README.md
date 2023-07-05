@@ -45,9 +45,9 @@ Place both files in a folder together and run the main script like so:
 
 ## Other Required Parameters
 
--targetName: name of the external target to update
--accessKey: new access key to use
--secretKey: new secret key to use
+* -targetName: name of the external target to update
+* -accessKey: new access key to use
+* -secretKey: new secret key to use
 
 ## Using a CSV File to Update Multiple Targets
 
