@@ -37,7 +37,7 @@ Place both files in a folder together and run the main script, using a local acc
 * -domain: (optional) your AD domain (defaults to local)
 * -useApiKey: (optional) use API key for authentication
 * -password: (optional) will use cached password or will be prompted
-* -tenant: (optional) organization to impersonate
+* -noPrompt: (optional) do not prompt for password
 * -mcm: (optional) connect through MCM
 * -mfaCode: (optional) TOTP MFA code
 * -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
@@ -46,7 +46,8 @@ Place both files in a folder together and run the main script, using a local acc
 
 * -jobName: (optional) one or more job names to inspect (comma separated)
 * -jobList: (optional) text file of job names to inspect (one per line)
+* -environment: (optional) one or more types (comma separated) to include in query (e.g. kSQL, kVMware)
+* -excludeEnvironment: (optional) one or more types (comma seaparated) to exclude from query  (e.g. kSQL, kVMware)
 * -unit: (optional) display sizes in GiB or MiB (default is MiB)
 * -daysBack: (optional) number of days back to inspect (default is 7)
-* -backDays: (optional) skip the latest X days (default is 0)
 * -numRuns: (optional) page size for retrieving runs (default is 100)

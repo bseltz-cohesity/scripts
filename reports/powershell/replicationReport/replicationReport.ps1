@@ -15,7 +15,8 @@ param (
     [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'MiB',
     [Parameter()][int]$daysBack = 7,
     [Parameter()][Int64]$numRuns = 100,
-    [Parameter()][Int64]$backDays = 0
+    [Parameter()][array]$environment,
+    [Parameter()][array]$excludeEnvironment
 )
 
 ### source the cohesity-api helper code
@@ -82,17 +83,27 @@ $dateString = (get-date).ToString('yyyy-MM-dd')
 $objectFileName = "replicationReport-perObject-$($cluster.name)-$dateString.csv"
 """Job Name"",""Job Type"",""Run Start Time"",""Source Name"",""Replication Delay Sec"",""Replication Duration Sec"",""Logical Replicated $unit"",""Physical Replicated $unit"",""Status"",""Target Cluster""" | Out-File -FilePath $objectFileName
 $runFileName = "replicationReport-perRun-$($cluster.name)-$dateString.csv"
-"""Job Name"",""Job Type"",""Run Start Time"",""Replication End Time"",""Entries Changed"",""Logical Replicated $unit"",""Physical Replicated $unit"",""Status"",""Target Cluster""" | Out-File -FilePath $runFileName
+"""Job Name"",""Job Type"",""Run Start Time"",""Replication Start Time"",""Replication End Time"",""Replication Duration (Sec)"",""Entries Changed"",""Logical Replicated $unit"",""Physical Replicated $unit"",""Status"",""Target Cluster""" | Out-File -FilePath $runFileName
+$dayFileName = "replicationReport-perDay-$($cluster.name)-$dateString.csv"
+"""Job Name"",""Job Type"",""Day"",""Replication Duration (Sec)"",""Logical Replicated $unit"",""Physical Replicated $unit"",""Target Cluster""" | Out-File -FilePath $dayFileName
+$jobFileName = "replicationReport-perJob-$($cluster.name)-$dateString.csv"
+"""Job Name"",""Job Type"",""Max Replication Duration (Sec)"",""Avg Replication Duration (Sec)"",""Max Logical Replicated $unit"",""Avg Logical Replicated $unit"",""Max Physical Replicated $unit"",""Avg Physical Replicated $unit"",""Target Cluster""" | Out-File -FilePath $jobFileName
 
-$now = (Get-Date).AddDays(-$backDays)
+$now = Get-Date -Hour 0 -Minute 0 -Second 0
 $daysBackUsecs = dateToUsecs $now.AddDays(-$daysBack)
 
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         $jobId = $job.id
         $jobName = $job.name
-        "$jobName"
         $jobType = $job.environment.Substring(1)
+        if($environment -and ($job.environment -notin $environment -and $jobType -notin $environment)){
+            continue
+        }
+        if($excludeEnvironment -and ($job.environment -in $excludeEnvironment -or $jobType -in $excludeEnvironment)){
+            continue
+        }
+        "$jobName"
         $endUsecs = dateToUsecs $now
         while($True){
             if($endUsecs -le $daysBackUsecs){
@@ -104,6 +115,8 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
             }else{
                 break
             }
+            # per day stats
+            $perDayRepls = @{}
             foreach($run in $runs.runs){
                 if($run.PSObject.Properties['originalBackupInfo']){
                     $runStartTimeUsecs = $run.originalBackupInfo.startTimeUsecs
@@ -117,7 +130,8 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                 $repls = @{}
                 foreach($repl in $run.replicationInfo.replicationTargetResults){
                     $repls[$repl.clusterName] = @{
-                        'endTime' = (usecsToDate $repl.endTimeUsecs);
+                        'startTimeUsecs' = $null;
+                        'endTimeUsecs' = $repl.endTimeUsecs;
                         'entriesChanged' = $repl.entriesChanged;
                         'logicalReplicated' = 0;
                         'physicalReplicated' = 0;
@@ -141,6 +155,9 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                                 $physicalReplicated = toUnits $target.stats.physicalBytesTransferred
                                 $repls[$remoteCluster]['logicalReplicated'] += $logicalReplicated
                                 $repls[$remoteCluster]['physicalReplicated'] += $physicalReplicated
+                                if($repls[$remoteCluster]['startTimeUsecs'] -eq $null -or $replicaStartTime -lt $repls[$remoteCluster]['startTimeUsecs']){
+                                    $repls[$remoteCluster]['startTimeUsecs'] = $replicaStartTime
+                                }
                                 """$jobName"",""$jobType"",""$(usecsToDate $runStartTimeUsecs)"",""$sourceName"",""$replicaDelay"",""$replicaDuration"",""$logicalReplicated"",""$physicalReplicated"",""$status"",""$remoteCluster""" | Out-File -FilePath $objectFileName -Append
                             }
                         }
@@ -148,11 +165,63 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                 }
                 # per run stats
                 foreach($remoteCluster in $repls.Keys){
-                    """$jobName"",""$jobType"",""$(usecsToDate $runStartTimeUsecs)"",""$($repls[$remoteCluster]['endTime'])"",""$($repls[$remoteCluster]['entriesChanged'])"",""$($repls[$remoteCluster]['logicalReplicated'])"",""$($repls[$remoteCluster]['physicalReplicated'])"",""$($repls[$remoteCluster]['status'])"",""$remoteCluster""" | Out-File -FilePath $runFileName -Append
+                    if($repls[$remoteCluster]['status'] -eq 'Succeeded' -and $repls[$remoteCluster]['startTimeUsecs'] -ne $null){
+                        $replicaDuration = [math]::Round(($repls[$remoteCluster]['endTimeUsecs'] - $repls[$remoteCluster]['startTimeUsecs']) / 1000000, 0)
+                        """$jobName"",""$jobType"",""$(usecsToDate $runStartTimeUsecs)"",""$(usecsToDate $repls[$remoteCluster]['startTimeUsecs'])"",""$(usecsToDate $repls[$remoteCluster]['endTimeUsecs'])"",""$replicaDuration"",""$($repls[$remoteCluster]['entriesChanged'])"",""$($repls[$remoteCluster]['logicalReplicated'])"",""$($repls[$remoteCluster]['physicalReplicated'])"",""$($repls[$remoteCluster]['status'])"",""$remoteCluster""" | Out-File -FilePath $runFileName -Append
+                        # per day stats
+                        $replDay = usecsToDate $repls[$remoteCluster]['startTimeUsecs'] -format 'yyyy-MM-dd'
+                        if($remoteCluster -notin $perDayRepls.Keys){
+                            $perDayRepls[$remoteCluster] = @{}
+                        }
+                        if($replDay -notin $perDayRepls[$remoteCluster].Keys){
+                            $perDayRepls[$remoteCluster][$replDay] = @{
+                                'duration' = 0;
+                                'logicalReplicated' = 0;
+                                'physicalReplicated' = 0
+                            }
+                        }
+                        $perDayRepls[$remoteCluster][$replDay]['duration'] += $replicaDuration
+                        $perDayRepls[$remoteCluster][$replDay]['logicalReplicated'] += $repls[$remoteCluster]['logicalReplicated']
+                        $perDayRepls[$remoteCluster][$replDay]['physicalReplicated'] += $repls[$remoteCluster]['physicalReplicated']
+                    }
                 }
             }
+        }
+        # per day stats
+        foreach($remoteCluster in $perDayRepls.Keys | Sort-Object){
+            # per job stats
+            $maxDuration = 0
+            $totalDuration = 0
+            $days = 0
+            $maxLogical = 0
+            $totalLogical = 0
+            $maxPhysical = 0
+            $totalPhysical = 0
+            foreach($day in $perDayRepls[$remoteCluster].Keys | Sort-Object -Descending){
+                # per day stats
+                """$jobName"",""$jobType"",""$day"",""$($perDayRepls[$remoteCluster][$day]['duration'])"",""$($perDayRepls[$remoteCluster][$day]['logicalReplicated'])"",""$($perDayRepls[$remoteCluster][$day]['physicalReplicated'])"",""$remoteCluster""" | Out-File -FilePath $dayFileName -Append
+                # per job stats
+                $totalDuration += $perDayRepls[$remoteCluster][$day]['duration']
+                $totalLogical += $perDayRepls[$remoteCluster][$day]['logicalReplicated']
+                $totalPhysical += $perDayRepls[$remoteCluster][$day]['physicalReplicated']
+                if($perDayRepls[$remoteCluster][$day]['duration'] -gt $maxDuration){
+                    $maxDuration = $perDayRepls[$remoteCluster][$day]['duration']
+                }
+                if($perDayRepls[$remoteCluster][$day]['logicalReplicated'] -gt $maxLogical){
+                    $maxLogical = $perDayRepls[$remoteCluster][$day]['logicalReplicated']
+                }
+                if($perDayRepls[$remoteCluster][$day]['physicalReplicated'] -gt $maxPhysical){
+                    $maxPhysical = $perDayRepls[$remoteCluster][$day]['physicalReplicated']
+                }
+                $days += 1
+            }
+            # per job stats
+            $avgDuration = [math]::Round($totalDuration / $days, 0)
+            $avgLogical = [math]::Round($totalLogical / $days, 1)
+            $avgPhysical = [math]::Round($totalPhysical / $days, 1)
+            """$jobName"",""$jobType"",""$maxDuration"",""$avgDuration"",""$maxLogical"",""$avgLogical"",""$maxPhysical"",""$avgPhysical"",""$remoteCluster""" | Out-File -FilePath $jobFileName -Append
         }
     }
 }
 
-"`nOutput saved to:`n    {0}`n    {1}`n" -f $objectFileName, $runFileName
+"`nOutput saved to:`n    {0}`n    {1}`n    {2}`n    {3}`n" -f $objectFileName, $runFileName, $dayFileName, $jobFileName
