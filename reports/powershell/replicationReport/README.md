@@ -1,8 +1,8 @@
-# Report Per Object Replication Stats Using PowerShell
+# Report Replication Stats Using PowerShell
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This PowerShell script generates a report of local snapshots and their expiration dates.
+This PowerShell script generates a report of replication stats, per object, per run, and per day.
 
 ## Download the script
 
