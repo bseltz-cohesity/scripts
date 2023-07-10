@@ -85,10 +85,11 @@ if(!$object){
     Write-Host "VM $sourceVM not found" -ForegroundColor Yellow
     exit 1
 }
+$object = ($object | Sort-Object -Property @{Expression={$_.latestSnapshotsInfo[0].protectionRunStartTimeUsecs}; Ascending = $False})[0]
 
 # get snapshots
-$objectId = $object[0].id
-$groupId = $object[0].latestSnapshotsInfo[0].protectionGroupId
+$objectId = $object.id
+$groupId = $object.latestSnapshotsInfo[0].protectionGroupId
 $snapshots = api get "data-protect/objects/$objectId/snapshots?protectionGroupIds=$groupId" -v2
 if($localOnly){
     $snapshots.snapshots = $snapshots.snapshots | Where-Object {$_.snapshotTargetType -eq 'Local'}
