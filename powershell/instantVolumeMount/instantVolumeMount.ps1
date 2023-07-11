@@ -71,7 +71,6 @@ if($targetEntity.type -ne $sourceEntityType){
     Write-Host "$targetServer is not compatible with volumes from $sourceServer" -ForegroundColor Yellow
     exit
 }
-exit
 
 $mountTask = @{
     'name' = 'myMountOperation';
