@@ -128,7 +128,7 @@ foreach($job in $jobs){
             }
             if($ro.count -gt ($pageSize + $from)){
                 $from += $pageSize
-                $ro = api get "/searchvms?size=$pageSize&from=$from$etail"
+                $ro = api get "/searchvms?jobIds=$($job.id)&size=$pageSize&from=$from$etail"
             }else{
                 break
             }
