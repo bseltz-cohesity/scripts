@@ -44,3 +44,8 @@ Place both files in a folder together and run the main script like so:
 ## Other Parameters
 
 * -pageSize: (optional) API paging (default is 100)
+* -days: (optional) number of days back to query
+* -environment: (optional) environments to include (comma separated) like kSQL, kVMware
+* -excludeEnvironment: (optional) environments to exclude (comma separated)
+* -outputPath: (optional) default is '.'
+* -localOnly: (otional) do not include backups that are replicated in
