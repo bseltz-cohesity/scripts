@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.06.01 - Brian Seltzer
+#  Version 2023.07.12 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2022.01.12 - fixed storePasswordForUser
@@ -27,9 +27,10 @@
 # 2023.05.18 - fixed setApiProperty function
 # 2023.05.23 - fixed setContext
 # 2023.06.01 - fixed setApiProperty function
+# 2023.07.12 - ignore write failure to pwfile
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2023.06.01'
+$versionCohesityAPI = '2023.07.12'
 $userAgent = "cohesity-api/$versionCohesityAPI"
 
 # demand modern powershell version (must support TLSv1.2)
@@ -721,12 +722,17 @@ function timeAgo([int64] $age, [string] $units){
 }
 
 function usecsToDate($usecs, $format=$null){
-    $unixTime=$usecs/1000000
-    $origin = ([datetime]'1970-01-01 00:00:00')
-    if($format){
-        return $origin.AddSeconds($unixTime).ToLocalTime().ToString($format)
-    }else{
-        return $origin.AddSeconds($unixTime).ToLocalTime()
+    try{
+        $unixTime=$usecs/1000000
+        $origin = ([datetime]'1970-01-01 00:00:00')
+        if($format){
+            return $origin.AddSeconds($unixTime).ToLocalTime().ToString($format)
+        }else{
+            return $origin.AddSeconds($unixTime).ToLocalTime()
+        }
+    }catch{
+        Write-Host "usecsToDate: incorrect input type ($($usecs.GetType().name)) must be Int64" -ForegroundColor Yellow
+        return $null
     }
 }
 
@@ -831,21 +837,25 @@ function Clear-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios
     }
 
     # remove old passwords from pwfile
-    $pwlist = Get-Content -Path $pwfile -ErrorAction SilentlyContinue
-    $updatedContent = ''
-    $foundPwd = $false
-    foreach($pwitem in ($pwlist | Sort-Object)){
-        $v, $d, $u, $i, $cpwd = $pwitem.split(";", 5)
-        if($null -eq $cpwd){
-            $i = $false
-        }
-        if($v -ne $vip -or $d -ne $domain -or $u -ne $username -or $i -ne $useApiKey){
-            if($pwitem -ne ''){
-                $updatedContent += "{0}`n" -f $pwitem
+    try{
+        $pwlist = Get-Content -Path $pwfile -ErrorAction SilentlyContinue
+        $updatedContent = ''
+        $foundPwd = $false
+        foreach($pwitem in ($pwlist | Sort-Object)){
+            $v, $d, $u, $i, $cpwd = $pwitem.split(";", 5)
+            if($null -eq $cpwd){
+                $i = $false
+            }
+            if($v -ne $vip -or $d -ne $domain -or $u -ne $username -or $i -ne $useApiKey){
+                if($pwitem -ne ''){
+                    $updatedContent += "{0}`n" -f $pwitem
+                }
             }
         }
+        $updatedContent | out-file -FilePath $pwfile
+    }catch{
+
     }
-    $updatedContent | out-file -FilePath $pwfile
 }
 
 function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', $passwd=$null, [switch]$quiet, $useApiKey=$false, $helios=$false){
@@ -885,30 +895,34 @@ function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
             }
         }
     }else{
-        $pwlist = Get-Content -Path $pwfile -ErrorAction SilentlyContinue
-        $updatedContent = ''
-        $foundPwd = $false
-        foreach($pwitem in ($pwlist | Sort-Object)){
-            $v, $d, $u, $i, $cpwd = $pwitem.split(";", 5)
-            if($null -eq $cpwd){
-                $i = $false
-            }
-            # update existing
-            if($v -eq $vip -and $d -eq $domain -and $u -eq $username -and $i -eq $useApiKey){
-                $foundPwd = $true
-                $updatedContent += "{0};{1};{2};{3};{4}`n" -f $vip, $domain, $username, $useApiKey, $opwd
-            # other existing records
-            }else{
-                if($pwitem -ne ''){
-                    $updatedContent += "{0}`n" -f $pwitem
+        try{
+            $pwlist = Get-Content -Path $pwfile -ErrorAction SilentlyContinue
+            $updatedContent = ''
+            $foundPwd = $false
+            foreach($pwitem in ($pwlist | Sort-Object)){
+                $v, $d, $u, $i, $cpwd = $pwitem.split(";", 5)
+                if($null -eq $cpwd){
+                    $i = $false
+                }
+                # update existing
+                if($v -eq $vip -and $d -eq $domain -and $u -eq $username -and $i -eq $useApiKey){
+                    $foundPwd = $true
+                    $updatedContent += "{0};{1};{2};{3};{4}`n" -f $vip, $domain, $username, $useApiKey, $opwd
+                # other existing records
+                }else{
+                    if($pwitem -ne ''){
+                        $updatedContent += "{0}`n" -f $pwitem
+                    }
                 }
             }
+            # add new
+            if(!$foundPwd){
+                $updatedContent += "{0};{1};{2};{3};{4}`n" -f $vip, $domain, $username, $useApiKey, $opwd
+            }
+            $updatedContent | out-file -FilePath $pwfile
+        }catch{
+
         }
-        # add new
-        if(!$foundPwd){
-            $updatedContent += "{0};{1};{2};{3};{4}`n" -f $vip, $domain, $username, $useApiKey, $opwd
-        }
-        $updatedContent | out-file -FilePath $pwfile
     }
 
     if(!$quiet){ Write-Host "Password stored!" -ForegroundColor Green }
