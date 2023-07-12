@@ -196,7 +196,7 @@ if($vCenterName){
                 "id" = $vCenterId
             };
             "networkConfig" = @{
-                "detachNetwork" = $False;
+                "detachNetwork" = $True;
             };
             "datastores"    = @(
                 $datastores[0]
@@ -230,6 +230,7 @@ if($vCenterName){
             "disableNetwork"     = $False;
             "preserveMacAddress" = $False
         }
+        $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.recoveryTargetConfig.newSourceConfig.vCenterParams.networkConfig["detachNetwork"] = $False
         if($preserveMacAddress){
             $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.recoveryTargetConfig.newSourceConfig.vCenterParams.networkConfig.newNetworkConfig.preserveMacAddress = $True
         }
