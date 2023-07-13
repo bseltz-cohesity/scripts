@@ -51,3 +51,4 @@ Place both files in a folder together and run the main script, using a local acc
 * -unit: (optional) display sizes in GiB or MiB (default is MiB)
 * -daysBack: (optional) number of days back to inspect (default is 7)
 * -numRuns: (optional) page size for retrieving runs (default is 100)
+* -ouputPath: (optional) path to write output file (default is '.')
