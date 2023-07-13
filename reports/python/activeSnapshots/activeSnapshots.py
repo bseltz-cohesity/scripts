@@ -20,7 +20,7 @@ parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
-parser.add_argument('-n', '--pagesize', type=int, default=100)
+parser.add_argument('-n', '--pagesize', type=int, default=1000)
 parser.add_argument('-y', '--days', type=int, default=None)
 parser.add_argument('-e', '--environment', type=str, action='append')
 parser.add_argument('-x', '--excludeenvironment', type=str, action='append')
@@ -89,7 +89,7 @@ if excludeenvironment is not None and len(excludeenvironment) > 0:
 
 ### find recoverable objects
 policies = api('get', 'protectionPolicies')
-jobs = api('get', 'protectionJobs')
+jobs = sorted(api('get', 'protectionJobs'), key=lambda job: job['name'].lower())
 if localonly is True:
     jobs = [j for j in jobs if 'isActive' not in j or j['isActive'] is not False]
 
