@@ -15,6 +15,7 @@ param (
     [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'MiB',
     [Parameter()][int]$daysBack = 7,
     [Parameter()][Int64]$numRuns = 100,
+    [Parameter()][string]$outputPath = '.',
     [Parameter()][array]$environment,
     [Parameter()][array]$excludeEnvironment
 )
@@ -80,13 +81,13 @@ if($jobNames.Count -gt 0){
 
 $cluster = api get cluster
 $dateString = (get-date).ToString('yyyy-MM-dd')
-$objectFileName = "replicationReport-perObject-$($cluster.name)-$dateString.csv"
+$objectFileName = $(Join-Path -Path $outputPath -ChildPath "replicationReport-perObject-$($cluster.name)-$dateString.csv")
 """Job Name"",""Job Type"",""Run Start Time"",""Source Name"",""Replication Delay Sec"",""Replication Duration Sec"",""Logical Replicated $unit"",""Physical Replicated $unit"",""Status"",""Target Cluster""" | Out-File -FilePath $objectFileName
-$runFileName = "replicationReport-perRun-$($cluster.name)-$dateString.csv"
+$runFileName = $(Join-Path -Path $outputPath -ChildPath "replicationReport-perRun-$($cluster.name)-$dateString.csv")
 """Job Name"",""Job Type"",""Run Start Time"",""Replication Start Time"",""Replication End Time"",""Replication Duration (Sec)"",""Entries Changed"",""Logical Replicated $unit"",""Physical Replicated $unit"",""Status"",""Target Cluster""" | Out-File -FilePath $runFileName
-$dayFileName = "replicationReport-perDay-$($cluster.name)-$dateString.csv"
+$dayFileName = $(Join-Path -Path $outputPath -ChildPath "replicationReport-perDay-$($cluster.name)-$dateString.csv")
 """Job Name"",""Job Type"",""Day"",""Replication Duration (Sec)"",""Logical Replicated $unit"",""Physical Replicated $unit"",""Target Cluster""" | Out-File -FilePath $dayFileName
-$jobFileName = "replicationReport-perJob-$($cluster.name)-$dateString.csv"
+$jobFileName = $(Join-Path -Path $outputPath -ChildPath "replicationReport-perJob-$($cluster.name)-$dateString.csv")
 """Job Name"",""Job Type"",""Max Replication Duration (Sec)"",""Avg Replication Duration (Sec)"",""Max Logical Replicated $unit"",""Avg Logical Replicated $unit"",""Max Physical Replicated $unit"",""Avg Physical Replicated $unit"",""Target Cluster""" | Out-File -FilePath $jobFileName
 
 $now = Get-Date -Hour 0 -Minute 0 -Second 0
