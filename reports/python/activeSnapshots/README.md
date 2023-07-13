@@ -45,4 +45,7 @@ Place both files in a folder together and run the main script like so:
 
 * -n, --pagesize: (optional) page size for API query (default is 100)
 * -y, --days: (optional) limit query to the past X days
-* -e, --environment: (optional) limit query to specific type (e.g. kSQL)
+* -e, --environment: (optional) limit query to specific types (e.g. kSQL) repeat for multiple
+* -x, --excludeenvironment: (optional) exclude types (e.g. kSQL) repeat for multiple
+* -o, --outputpath: (optional) default is '.'
+* -l, --localonly: (optional) include only local jobs (no replicas)
