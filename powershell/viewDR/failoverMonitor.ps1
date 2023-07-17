@@ -1,36 +1,38 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][switch]$helios,
-    [Parameter()][string]$mcm,
-    [Parameter()][string]$username='helios',
-    [Parameter()][string]$domain = 'local',
-    [Parameter()][switch]$useApiKey,
-    [Parameter()][string]$password,
-    [Parameter(Mandatory = $True)][string]$targetCluster,
+    [Parameter()][string]$vip = 'helios.cohesity.com',  # the cluster to connect to (DNS name or IP)
+    [Parameter()][string]$username = 'helios',          # username (local or AD)
+    [Parameter()][string]$domain = 'local',             # local or AD domain
+    [Parameter()][switch]$useApiKey,                    # use API key for authentication
+    [Parameter()][string]$password,                     # optional password
+    [Parameter()][string]$tenant,                       # org to impersonate
+    [Parameter()][switch]$mcm,                          # connect through mcm
+    [Parameter()][string]$mfaCode = $null,              # mfa code
+    [Parameter()][string]$clusterName = $null,          # cluster to connect to via helios/mcm
     [Parameter()][array]$viewNames,
     [Parameter()][string]$viewList
 )
 
-### source the cohesity-api helper code
+# source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-if($helios -or $mcm){
-    if($mcm){
-        $vip = $mcm
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -heliosAuthentication $mcm -tenant $tenant
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
     }else{
-        $vip = 'helios.cohesity.com'
+        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
     }
-    apiauth -vip $vip -username $username -domain $domain -helios -password $password
-    heliosCluster $targetCluster
-}else{
-    $vip = $targetCluster
-    if($useApiKey){
-        apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
-    }else{
-        apiauth -vip $vip -username $username -domain $domain -password $password
-    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
 }
 
 $views = api get views
@@ -52,11 +54,13 @@ foreach($viewName in $myViews | Sort-Object){
         Write-Host "`n-------------------------------------`n       View Name: $viewName"
         Write-Host "-------------------------------------"
         if($result -and $result.PSObject.Properties['failovers']){
+            # $result.failovers | fl
             $result = ($result.failovers | Sort-Object -Property startTimeUsecs)[-1]
             Write-Host "   Failover Type: $($result.type)"
             Write-Host "       StartTime: $(usecsToDate $result.startTimeUsecs)"
             Write-Host "          Status: $($result.status)"
             if($result.replications){
+                # $result.replications | fl
                 $lastReplication = ($result.replications | Sort-Object -Property startTimeUsecs)[-1]
                 if($lastReplication.status -ne 'Succeeded'){
                     Write-Host "Last Replication: $(usecsToDate $lastReplication.startTimeUsecs) - $($lastReplication.status)"
@@ -69,6 +73,9 @@ foreach($viewName in $myViews | Sort-Object){
                 }else{
                     Write-Host "Last Replication: N/A"
                 }
+            }
+            if($result.PSObject.Properties['errorMessage']){
+                Write-Host "           Error:`n$($result.errorMessage)"
             }
         }
     }else{

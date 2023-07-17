@@ -1,44 +1,41 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][switch]$helios,
-    [Parameter()][string]$mcm,
-    [Parameter()][string]$username='helios',
-    [Parameter()][string]$domain = 'local',
-    [Parameter()][switch]$useApiKey,
-    [Parameter()][string]$password,
-    [Parameter(Mandatory = $True)][string]$targetCluster,
+    [Parameter()][string]$vip = 'helios.cohesity.com',  # the cluster to connect to (DNS name or IP)
+    [Parameter()][string]$username = 'helios',          # username (local or AD)
+    [Parameter()][string]$domain = 'local',             # local or AD domain
+    [Parameter()][switch]$useApiKey,                    # use API key for authentication
+    [Parameter()][string]$password,                     # optional password
+    [Parameter()][string]$tenant,                       # org to impersonate
+    [Parameter()][switch]$mcm,                          # connect through mcm
+    [Parameter()][string]$mfaCode = $null,              # mfa code
+    [Parameter()][string]$clusterName = $null,          # cluster to connect to via helios/mcm
     [Parameter()][array]$viewNames,
     [Parameter()][string]$viewList,
-    [Parameter()][switch]$prepareForFailover,
-    [Parameter()][switch]$plannedFailover,
+    [Parameter()][switch]$plannedFailoverStart,
+    [Parameter()][switch]$plannedFailoverFinalize,
     [Parameter()][switch]$unplannedFailover
 )
 
-### source the cohesity-api helper code
+# source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-if($helios -or $mcm){
-    if($mcm){
-        $vip = $mcm
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -heliosAuthentication $mcm -tenant $tenant
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
     }else{
-        $vip = 'helios.cohesity.com'
-    }
-    apiauth -vip $vip -username $username -domain $domain -helios -password $password
-    heliosCluster $targetCluster
-}else{
-    $vip = $targetCluster
-    if($useApiKey){
-        apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
-    }else{
-        apiauth -vip $vip -username $username -domain $domain -password $password
+        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
     }
 }
 
-if($prepareForFailover -or $unplannedFailover){
-    $jobs = api get -v2 "data-protect/protection-groups?isActive=false&environments=kView"
-    $jobs | ConvertTo-Json -Depth 99 | Out-File "jobs-$($targetCluster).json"
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
 }
 
 $views = api get views
@@ -53,24 +50,26 @@ if($viewList){
     exit
 }
 
-if($prepareForFailover){
+if($plannedFailoverStart){
     $action = "Initiating pre-failover replication"
     $params = @{
         "type" = "Planned";
         "plannedFailoverParams" = @{
             "type" = "Prepare";
             "preparePlannedFailverParams" = @{
-                "reverseReplication" = $False
+                "reverseReplication" = $True
             }
         }
     }
-}elseif($plannedFailover){
+}elseif($plannedFailoverFinalize){
     $action = "Executing planned failover"
     $params = @{
         "type" = "Planned";
         "plannedFailoverParams" = @{
             "type" = "Finalize";
-            "preparePlannedFailverParams" = @{}
+            "preparePlannedFailverParams" = @{
+                "reverseReplication" = $True
+            }
         }
     }
 }elseif($unplannedFailover){
@@ -78,7 +77,7 @@ if($prepareForFailover){
     $params = @{
         "type" = "Unplanned";
         "unplannedFailoverParams" = @{
-            "reverseReplication" = $False
+            "reverseReplication" = $True
         }
     }
 }else{
@@ -100,8 +99,8 @@ foreach($viewName in $myViews){
                 "$($alias.aliasName)" | Out-File -FilePath $migratedShares -Append
             }
         }
+        Start-Sleep 15
     }else{
         Write-Host "View $viewName not found" -ForegroundColor Yellow
     }
 }
-
