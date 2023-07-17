@@ -81,7 +81,7 @@ The protection jobs should be configured to create a Remote View (with the same 
                   -disableTarget "\\clusterA" `
                   -enableTarget "\\clusterB"
 
-# after post-failover replication has been completed you can clean up the old jobs and new job names
+# after post-failover replication has been completed you can clean up the jobs
 
 # cleanup jobs on the now live clusterB
 ./cleanupJobs.ps1 -vip clusterB `
