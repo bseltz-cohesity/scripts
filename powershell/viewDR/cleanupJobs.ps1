@@ -83,7 +83,7 @@ if($liveCluster){
             }
         }
         if($renameJob){
-            $newJobName = ($job.name -replace "^failover_", "") -replace "-\d+$", ""
+            $newJobName = ($job.name -replace "^failover_", "") # -replace "-\d+$", ""
             Write-Host "Renaming job $($job.name) -> $($newJobName)"
             $job.name = $newJobName
             $null = api put -v2 data-protect/protection-groups/$($job.id) $job
