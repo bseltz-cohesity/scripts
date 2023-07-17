@@ -5,11 +5,17 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
-    [Parameter()][string]$domain = 'local', # local or AD domain
-    [Parameter()][switch]$useApiKey,
-    [Parameter()][string]$password = $null,
+    [Parameter()][string]$vip = 'helios.cohesity.com',   # the cluster to connect to (DNS name or IP)
+    [Parameter()][string]$username = 'helios',           # username (local or AD)
+    [Parameter()][string]$domain = 'local',              # local or AD domain
+    [Parameter()][switch]$useApiKey,                     # use API key for authentication
+    [Parameter()][string]$password,                      # optional password
+    [Parameter()][switch]$noPrompt,                      # do not prompt for password
+    [Parameter()][string]$tenant,                        # org to impersonate
+    [Parameter()][switch]$mcm,                           # connect to MCM endpoint
+    [Parameter()][string]$mfaCode = $null,               # MFA code
+    [Parameter()][switch]$emailMfaCode,                  # email MFA code
+    [Parameter()][string]$clusterName = $null,           # helios cluster to access
     [Parameter(Mandatory = $True)][string]$sourceServer, # protection source where the DB was backed up
     [Parameter()][array]$sourceDB, # name of the source DB we want to clone
     [Parameter()][string]$sourceDBList, # text file of DB names
@@ -21,14 +27,25 @@ param (
     [Parameter()][switch]$latest # very latest point in time log replay
 )
 
-### source the cohesity-api helper code
+# source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-if($useApiKey){
-    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
-}else{
-    apiauth -vip $vip -username $username -domain $domain -password $password
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+### select helios/mcm managed cluster
+if($USING_HELIOS){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
 }
 
 # gather list from command line params and file

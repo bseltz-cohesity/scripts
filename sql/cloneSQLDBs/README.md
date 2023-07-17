@@ -35,11 +35,21 @@ Cloning CohesityDB to SQL2012DEV as CohesityDB-Dev (task name: dbClone-156253252
 Clone task completed with status: kSuccess
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: DNS or IP of the Cohesity Cluster
-* -username: Cohesity User Name
-* -domain: (optional) defaults to 'local'
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -sourceServer: source SQL Server Name
 * -sourceDB: (optional) one or more source database names (comma separated)
 * -sourceDBList: (optional) text file of database names (one per line)
