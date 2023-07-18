@@ -210,11 +210,11 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                 csv.write('"%s","%s","%s","%s","%s","%s","%s"\n' % (job['name'], job['environment'], sourceName, object, reducedData, reducedDataWithResiliency, reduction))
 
 # views
-views = api('get', 'file-services/views?maxCount=2000&includeTenants=true&includeStats=true&includeProtectionGroups=true&includeInactive=true', v=2)
+views = api('get', 'file-services/views?maxCount=2000&includeTenants=true&includeStats=true&includeProtectionGroups=true', v=2)
 if 'views' in views and views['views'] is not None and len(views['views']) > 0:
     for view in views['views']:
         try:
-            jobName = view['viewProtection']['protectionGroups'][0]['groupName']
+            jobName = view['viewProtection']['protectionGroups'][-1]['groupName']
         except Exception:
             jobName = ''
         sourceName = view['storageDomainName']
