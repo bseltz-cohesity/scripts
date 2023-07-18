@@ -14,7 +14,7 @@ param (
     [Parameter()][string]$mfaCode,
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName,
-    [Parameter(Mandatory = $True)][ValidateSet('sql','view','vm','oracle','oracle_view')][string]$cloneType,
+    [Parameter(Mandatory = $True)][ValidateSet('sql','view','vm','oracle','oracle_view','azure_vm')][string]$cloneType,
     [Parameter()][string]$viewName = '', #name of clone view to tear down
     [Parameter()][string]$vmName = '', #name of clone VM to tear down
     [Parameter()][string]$dbName = '', #name of clone DB to tear down
@@ -37,7 +37,7 @@ if ($cloneType -eq 'view' -or $cloneType -eq 'oracle_view'){
     }
 }
 
-if ($cloneType -eq 'vm'){
+if ($cloneType -eq 'vm' -or $cloneType -eq 'azure_vm'){
     if($vmName -eq ''){
         write-host "vmName parameter required" -foregroundcolor yellow
         exit  
@@ -65,7 +65,7 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
-$cloneTypes = @{ 'vm' = 2; 'view' = 5; 'sql' = 7; 'oracle' = 7; 'oracle_view' = 18}
+$cloneTypes = @{ 'vm' = 2; 'view' = 5; 'sql' = 7; 'oracle' = 7; 'oracle_view' = 18; 'azure_vm' = 9}
 
 $taskId = $null
 
@@ -73,6 +73,7 @@ $taskId = $null
 $clones = api get ("/restoretasks?restoreTypes=kCloneView&" +
                                 "restoreTypes=kCloneApp&" +
                                 "restoreTypes=kCloneVMs&" +
+                                "restoreTypes=kConvertAndDeployVMs&" +
                                 "restoreTypes=kCloneAppView") `
                                 | where-object { $_.restoreTask.destroyClonedTaskStateVec -eq $null } `
                                 | Where-Object { $_.restoreTask.performRestoreTaskState.base.type -eq $cloneTypes[$cloneType]} `
@@ -136,6 +137,16 @@ foreach ($clone in $clones){
         }
     }
 
+    ### tear down azure vm
+    if($cloneType -eq 'azure_vm'){
+        foreach($vm in $clone.restoreTask.performRestoreTaskState.objects){
+            if($vmName -eq "$($clone.restoreTask.performRestoreTaskState.renameRestoredObjectParam.prefix)$($vm.entity.displayName)"){
+                "tearing down Azure VM: $($clone.restoreTask.performRestoreTaskState.renameRestoredObjectParam.prefix)$($vm.entity.displayName)..."
+                $taskId = $thisTaskId
+                break
+            }
+        }
+    }
     ### tear down oracle view
     if($cloneType -eq 'oracle_view'){
         $cloneTaskName = $clone.restoreTask.performRestoreTaskState.base.name

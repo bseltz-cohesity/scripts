@@ -46,7 +46,7 @@ tearing down SQLDB: cohesitydb-test from sqldev01...
 
 ## Other Parameters
 
-* -cloneType: type of clone to destroy ('sql', 'view', 'vm', 'oracle', 'oracle_view')
+* -cloneType: type of clone to destroy ('sql', 'view', 'vm', 'azure_vm', 'oracle', 'oracle_view')
 * -viewName: name of clone view to tear down
 * -vmName: name of clone VM to tear down
 * -dbName: name of clone DB to tear down

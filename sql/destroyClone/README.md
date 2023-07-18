@@ -11,9 +11,9 @@ Run these commands from PowerShell to download the script(s) into your current d
 ```powershell
 # Download Commands
 $scriptName = 'destroyClone'
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
-(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/sql/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
-(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
 
@@ -46,7 +46,7 @@ tearing down SQLDB: cohesitydb-test from sqldev01...
 
 ## Other Parameters
 
-* -cloneType: type of clone to destroy ('sql', 'view', 'vm', 'oracle', 'oracle_view')
+* -cloneType: type of clone to destroy ('sql', 'view', 'vm', 'azure_vm', 'oracle', 'oracle_view')
 * -viewName: name of clone view to tear down
 * -vmName: name of clone VM to tear down
 * -dbName: name of clone DB to tear down
