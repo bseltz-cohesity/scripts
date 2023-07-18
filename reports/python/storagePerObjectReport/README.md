@@ -49,3 +49,4 @@ Place both files in a folder together and run the main script like so:
 * -x, --unit: (optional) KiB, MiB, GiB, or TiB] (default is GiB)
 * -n, --numruns: (optional) number of runs per API query (default is 500)
 * -f, --vmfullpct: (optional) estimated full factor for VMware VMs (default is 0.75)
+* -s, --skipdeleted: (optional) skip deleted protection groups

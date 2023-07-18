@@ -22,6 +22,7 @@ parser.add_argument('-of', '--outfolder', type=str, default='.')
 parser.add_argument('-n', '--numruns', type=int, default=1000)
 parser.add_argument('-f', '--vmfullpct', type=float, default=0.75)
 parser.add_argument('-x', '--units', type=str, choices=['MiB', 'GiB', 'mib', 'gib'], default='GiB')  # units
+parser.add_argument('-s', '--skipdeleted', action='store_true')
 
 args = parser.parse_args()
 
@@ -38,6 +39,8 @@ folder = args.outfolder
 numruns = args.numruns
 units = args.units
 vmfullpct = args.vmfullpct
+skipdeleted = args.skipdeleted
+
 multiplier = 1024 * 1024 * 1024
 if units.lower() == 'mib':
     multiplier = 1024 * 1024
@@ -81,7 +84,11 @@ csvfileName = '%s/storagePerObjectReport-%s-%s.csv' % (folder, cluster['name'], 
 csv = codecs.open(csvfileName, 'w', 'utf-8')
 csv.write('"Job Name","Environment","Source Name","Object Name","Data Written %s","Raw Consumed %s","Reduction"\n' % (units, units))
 
-jobs = api('get', 'data-protect/protection-groups?isDeleted=false&includeTenants=true', v=2)
+if skipdeleted:
+    jobs = api('get', 'data-protect/protection-groups?isDeleted=false&includeTenants=true', v=2)
+else:
+    jobs = api('get', 'data-protect/protection-groups?includeTenants=true', v=2)
+
 storageDomains = api('get', 'viewBoxes')
 
 sourceNames = {}
@@ -180,8 +187,9 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                                     objects[object['object']['name']]['bytesWritten'] += snap['snapshotInfo']['stats']['bytesRead'] / reduction
 
                             except Exception as e:
-                                print('    *** unhandled exception ***')
-                                print(repr(e))
+                                pass
+                                # print('    *** unhandled exception ***')
+                                # print(repr(e))
 
         # process output
         for object in sorted(objects.keys()):
@@ -212,10 +220,17 @@ if 'views' in views and views['views'] is not None and len(views['views']) > 0:
         sourceName = view['storageDomainName']
         viewName = view['name']
         print(viewName)
-        dataIn = view['stats']['dataUsageStats'].get('dataInBytes', 0)
-        dataInAfterDedup = view['stats']['dataUsageStats'].get('dataInBytesAfterDedup', 0)
-        dataWritten = view['stats']['dataUsageStats'].get('dataWrittenBytes', 0)
-        consumption = view['stats']['dataUsageStats'].get('localTotalPhysicalUsageBytes', 0)
+        dataIn = 0
+        dataInAfterDedup = 0
+        dataWritten = 0
+        consumption = 0
+        try:
+            dataIn = view['stats']['dataUsageStats'].get('dataInBytes', 0)
+            dataInAfterDedup = view['stats']['dataUsageStats'].get('dataInBytesAfterDedup', 0)
+            dataWritten = view['stats']['dataUsageStats'].get('dataWrittenBytes', 0)
+            consumption = view['stats']['dataUsageStats'].get('localTotalPhysicalUsageBytes', 0)
+        except Exception:
+            pass
         if dataInAfterDedup > 0 and dataWritten > 0:
             dedup = round(float(dataIn) / dataInAfterDedup, 1)
             compression = round(float(dataInAfterDedup) / dataWritten, 1)
