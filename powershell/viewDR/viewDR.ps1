@@ -99,7 +99,7 @@ foreach($viewName in $myViews){
                 "$($alias.aliasName)" | Out-File -FilePath $migratedShares -Append
             }
         }
-        Start-Sleep 15
+        # Start-Sleep 5
     }else{
         Write-Host "View $viewName not found" -ForegroundColor Yellow
     }
