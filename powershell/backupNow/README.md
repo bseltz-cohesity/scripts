@@ -54,14 +54,16 @@ Place all files in a folder together. then, run the main script like so:
 
 ## Copy Retention Parameters
 
-* -localOnly: (optional) skip replicas and archivals
-* -keepLocalFor: (optional) days to keep local snapshot (default is to use policy setting)
 * -noArchive: (optional) skip archive tasks
 * -archiveTo: (optional) name of archival target to archive to (default is to use policy setting)
 * -keepArchiveFor: (optional) days to keep in archive (default is to use policy setting)
 * -noReplica: (optional) skip replication tasks
 * -replicateTo: (optional) name of remote cluster to replicate to (default is to use policy setting)
 * -keepReplicaFor: (optional) days to keep replica for (default is to use policy setting)
+* -localOnly: (optional) skip replicas and archivals
+* -keepLocalFor: (optional) days to keep local snapshot (default is to use policy setting)
+
+Note: -keepLocalFor no longer has any affect in recent releases of 6.6 and later. Policy setting is enforced.
 
 ## Other Runtime Parameters
 
@@ -87,3 +89,4 @@ Place all files in a folder together. then, run the main script like so:
 * 4: Timed out waiting for existing run to finish (existing run still running)
 * 5: Timed out waiting for status update (failed to get status updates)
 * 6: Timed out waiting for new run to appear (new run accepted but not started)
+* 7: Timed out getting protection jobs

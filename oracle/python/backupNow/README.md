@@ -50,18 +50,20 @@ Place all files in a folder together. then, run the main script like so:
 * -o, --objectname: (optional) name of object to backup (repeat this parameter for multiple objects)
 * -m, --metadatafile: (optional) path to directive file for backup
 * -t, --backupType: (optional) choose one of kRegular, kFull or kLog backup types. Default is kRegular (incremental)
+* -pl, --purgeoraclelogs: (optional) delete Oracle archived logs after log backup (only if backupType == 'kLog')
 
 ## Policy Overrides
 
 * -l, --localonly: (optional) skip replicas and archivals
 * -nr, --noreplica: (optional) skip replicas
 * -na, --noarchive: (optional) skip archives
-* -k, --keepLocalFor: (optional) days to keep local snapshot (defaults to policy settings)
 * -a, --archiveTo: (optional) name of archival target to archive to (defaults to policy settings)
 * -ka, --keepArchiveFor: (optional) days to keep in archive (defaults to policy settings)
 * -r, --replicateTo: (optional) name of remote cluster to replicate to (defaults to policy settings)
 * -kr, --keepReplicaFor: (optional) days to keep replica for (defaults to policy settings)
-* -pl, --purgeoraclelogs: (optional) delete Oracle archived logs after log backup (only if backupType == 'kLog')
+* -k, --keepLocalFor: (optional) days to keep local snapshot (defaults to policy settings)
+
+Note: -k, --keepLocalFor no longer has any affect in recent releases of 6.6 and later. Policy setting is enforced.
 
 ## Monitoring Parameters
 
@@ -88,6 +90,7 @@ Place all files in a folder together. then, run the main script like so:
 * 4: Timed out waiting for existing run to finish (existing run still running)
 * 5: Timed out waiting for new run / status update (failed to get status updates)
 * 6: Timed out waiting for new run to appear (new run accepted but not started)
+* 7: Timed out getting protection jobs
 
 ## Using -o (--objectname) Parameter
 
