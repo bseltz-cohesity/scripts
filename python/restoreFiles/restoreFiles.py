@@ -18,6 +18,7 @@
 from pyhesity import *
 from datetime import datetime
 from time import sleep
+from sys import exit
 import sys
 import argparse
 try:
