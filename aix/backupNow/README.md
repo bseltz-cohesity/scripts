@@ -8,7 +8,7 @@ Note: the binary was tested successfully on AIX 7.3.
 
 ## Download the tool
 
-Run these commands from PowerShell to download the script(s) into your current directory
+Run these commands to download the tool into your current directory
 
 ```bash
 # Begin download commands
