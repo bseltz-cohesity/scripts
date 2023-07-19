@@ -4,7 +4,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This is a compiled binary version of restoreFiles. It restores files from a Cohesity physical server backup.
 
-## Download the Tools
+## Download the Tool
 
 You can download the tool using the following commands:
 
