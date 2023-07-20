@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2023.04.13
+# version 2023.07.20
 
 # import pyhesity wrapper module
 from pyhesity import *
 from datetime import datetime
+from sys import exit
 import codecs
 import argparse
 
