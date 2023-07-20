@@ -73,21 +73,24 @@ def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None, cookie
             dirList = api('get', '/vm/directoryList?%s%s&statFileEntries=%s&dirPath=%s' % (instance, useLibrarian, statfile, thisDirPath))
     if dirList and 'entries' in dirList:
         for entry in sorted(dirList['entries'], key=lambda e: e['name']):
-            if entry['type'] == 'kDirectory':
-                listdir('%s/%s' % (dirPath, entry['name']), instance, f, volumeInfoCookie, volumeName)
-            else:
-                if statfile is True:
-                    filesize = entry['fstatInfo']['size']
-                    mtime = usecsToDate(entry['fstatInfo']['mtimeUsecs'])
-                    mtimeusecs = entry['fstatInfo']['mtimeUsecs']
-                    if newerthan == 0 or mtimeusecs > timeAgo(newerthan, 'days'):
-                        fileCount += 1
-                        print('%s (%s) [%s bytes]' % (entry['fullPath'], mtime, filesize))
-                        f.write('%s (%s) [%s bytes]\n' % (entry['fullPath'], mtime, filesize))
+            try:
+                if entry['type'] == 'kDirectory':
+                    listdir('%s/%s' % (dirPath, entry['name']), instance, f, volumeInfoCookie, volumeName)
                 else:
-                    fileCount += 1
-                    print('%s' % entry['fullPath'])
-                    f.write('%s\n' % entry['fullPath'])
+                    if statfile is True:
+                        filesize = entry['fstatInfo']['size']
+                        mtime = usecsToDate(entry['fstatInfo']['mtimeUsecs'])
+                        mtimeusecs = entry['fstatInfo']['mtimeUsecs']
+                        if newerthan == 0 or mtimeusecs > timeAgo(newerthan, 'days'):
+                            fileCount += 1
+                            print('%s (%s) [%s bytes]' % (entry['fullPath'], mtime, filesize))
+                            f.write('%s (%s) [%s bytes]\n' % (entry['fullPath'], mtime, filesize))
+                    else:
+                        fileCount += 1
+                        print('%s' % entry['fullPath'])
+                        f.write('%s\n' % entry['fullPath'])
+            except Exception:
+                pass
     if dirList and 'cookie' in dirList:
         listdir('%s' % dirPath, instance, f, volumeInfoCookie, volumeName, dirList['cookie'])
 
