@@ -2,10 +2,10 @@
 
 ## 2023-06-26
 
-### sql/restoreSQL/restoreSQL.ps1
+### <https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQL>
 
-Fix: Updated search timerange for the latest log backup that might be arbitrarily old (previously only looked 3 days back).
+Fix: Updated search time range for the latest log backup that might be arbitrarily old (previously only looked 3 days back).
 
-### sql/restoreSQL/restoreSQLDBs.ps1
+### <https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQLDBs>
 
-Fix: Updated search timerange for the latest log backup that might be arbitrarily old (previously only looked 3 days back).
+Fix: Updated search time range for the latest log backup that might be arbitrarily old (previously only looked 3 days back).
