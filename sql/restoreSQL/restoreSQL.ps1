@@ -204,13 +204,15 @@ if ($logTime -or $latest -or $noStop){
         $logUsecsDayStart = $dbVersions[-1].instanceId.jobStartTimeUsecs
         $logUsecsDayEnd = [int64] (dateToUsecs (get-date $logTime).Date.AddDays(1).AddSeconds(-1))
     }elseif($latest -or $noStop){
-        $logUsecsDayStart = [int64]( dateToUsecs (get-date).AddDays(-3))
         $logUsecsDayEnd = [int64]( dateToUsecs (get-date))
     }
     if($logTime){
         $dbVersions = $dbVersions | Where-Object {$_.snapshotTimestampUsecs -lt ($logUsecs + 60000000)}
     }
     foreach ($version in $dbVersions) {
+        if($latest -or $noStop){
+            $logUsecsDayStart = [int64] $version.snapshotTimestampUsecs
+        }
         $snapshotTimestampUsecs = $version.snapshotTimestampUsecs
         $oldestUsecs = $snapshotTimestampUsecs
         $timeRangeQuery = @{

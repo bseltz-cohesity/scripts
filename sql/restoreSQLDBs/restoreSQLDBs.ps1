@@ -234,11 +234,13 @@ function restoreDB($db){
             $logUsecsDayStart = [int64] (dateToUsecs (get-date $logTime).Date) 
             $logUsecsDayEnd = [int64] (dateToUsecs (get-date $logTime).Date.AddDays(1).AddSeconds(-1))
         }elseif($latest -or $noStop){
-            $logUsecsDayStart = [int64]( dateToUsecs (get-date).AddDays(-3))
             $logUsecsDayEnd = [int64]( dateToUsecs (get-date))
         }
         
         foreach ($version in $dbVersions) {
+            if($latest -or $noStop){
+                $logUsecsDayStart = [int64] $version.snapshotTimestampUsecs
+            }
             $snapshotTimestampUsecs = $version.snapshotTimestampUsecs
             $oldestUsecs = $snapshotTimestampUsecs
             $timeRangeQuery = @{
