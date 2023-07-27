@@ -76,11 +76,28 @@ if($liveCluster){
     $jobs = api get -v2 "data-protect/protection-groups?isActive=true&environments=kView"
     foreach($job in $jobs.protectionGroups){
         $renameJob = $False
+        $allViewsReplicated = $True
+        $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=1&includeObjectDetails=true"
+        $run = $runs.runs[0]
+        if(!$run){
+            $allViewsReplicated = $False
+        }
         foreach($viewName in $myViews){
             $viewName = [string]$viewName
             if($viewName -in $job.viewParams.objects.name){
                 $renameJob = $True
+                $runObject = $run.objects | Where-Object {$_.object.name -eq $viewName}
+                if(!$runObject){
+                    $allViewsReplicated = $False
+                }
+                if($runObject.replicationInfo.replicationTargetResults.status -ne 'Succeeded'){
+                    $allViewsReplicated = $False
+                }
             }
+        }
+        if($allViewsReplicated -ne $True){
+            $renameJob = $False
+            Write-Host "$($job.name) has not replicated all views yet. Skipping rename..." -ForegroundColor Yellow
         }
         if($renameJob){
             $newJobName = ($job.name -replace "^failover_", "") # -replace "-\d+$", ""
