@@ -32,7 +32,8 @@ Place both files in a folder together and run the main script like so:
 
 * -username: (optional) used for password storage only (default is 'DMaaS')
 * -region: DMaaS region to use (e.g. us-east-2)
-* -environment: (optional) e.g. kVMware
+* -environment: (optional) e.g. kO365
+* -subType: (optional) e.g. kO365Sharepoint
 
 ## Authenticating to DMaaS
 
