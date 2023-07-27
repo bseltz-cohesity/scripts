@@ -108,21 +108,28 @@ while(1){
     }
 }
 
+$useIds = $false
 if($objectsToAdd.Count -eq 0){
+    $useIds = $True
     if($autoselect -gt $unprotectedIndex.Count){
         $autoselect = $unprotectedIndex.Count
     }
     0..($autoselect - 1) | ForEach-Object {
-        $objectsToAdd = @($objectsToAdd + $idIndex["$($unprotectedIndex[$_])"])
+        $objectsToAdd = @($objectsToAdd + $unprotectedIndex[$_])
     }
 }
 
 foreach($objName in $objectsToAdd){
     $objId = $null
-    if($smtpIndex.ContainsKey($objName)){
-        $objId = $smtpIndex[$objName]
-    }elseif($nameIndex.ContainsKey($objName)){
-        $objId = $nameIndex[$objName]
+    if($useIds -eq $True){
+        $objId = $objName
+        $objName = $idIndex["$objId"]
+    }else{
+        if($smtpIndex.ContainsKey($objName)){
+            $objId = $smtpIndex[$objName]
+        }elseif($nameIndex.ContainsKey($objName)){
+            $objId = $nameIndex[$objName]
+        }
     }
     if($objId -and $objId -in $unprotectedIndex){
         $protectionParams = @{
