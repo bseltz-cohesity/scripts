@@ -55,7 +55,7 @@ PURE_SRC_PGROUP="EpicProtectionGroup"  # Name of Pure Protection Group on Pure F
 Also, edit the `/etc/ssh/sshd_cohfig` and set:
 
 ```bash
-MaxStartups 50:30:150  # the first number must be 24 or higher
+MaxStartups 34:30:124  # default is 10:30:100, add 24 to the first and last numbers
 ```
 
 And restart sshd:
