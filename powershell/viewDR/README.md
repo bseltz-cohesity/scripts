@@ -20,6 +20,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 (Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/cleanupUnmergedViews.ps1).content | Out-File cleanupUnmergedViews.ps1; (Get-Content cleanupUnmergedViews.ps1) | Set-Content cleanupUnmergedViews.ps1
 (Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/cleanupJobs.ps1).content | Out-File cleanupJobs.ps1; (Get-Content cleanupJobs.ps1) | Set-Content cleanupJobs.ps1
 (Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/failoverMonitor.ps1).content | Out-File failoverMonitor.ps1; (Get-Content failoverMonitor.ps1) | Set-Content failoverMonitor.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/replicateViews.ps1).content | Out-File replicateViews.ps1; (Get-Content replicateViews.ps1) | Set-Content replicateViews.ps1
 (Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
@@ -28,6 +29,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 * viewDR.ps1: performs failover/failback operations
 * failoverMonitor.ps1: displays the status of failover tasks
+* replicateViews.ps1: initiates backup/replication of views
 * cleanupJobs.ps1: assigns replication policy and cleans up old objects
 * cleanupUnmergedViews.ps1: delete unmerged views
 * cnameFailover.ps1: failover cname and SPN records
@@ -81,6 +83,11 @@ The protection jobs should be configured to create a Remote View (with the same 
                   -shareList .\migratedShares.txt `
                   -disableTarget "\\clusterA" `
                   -enableTarget "\\clusterB"
+
+# initiate post-failover replication
+./replicateViews.ps1 -vip clusterB `
+                     -username admin `
+                     -viewList ./myviews.txt
 
 # after post-failover replication has been completed you can clean up the jobs
 
