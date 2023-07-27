@@ -108,8 +108,9 @@ while(1){
     }
 }
 
-
+$useIds = $false
 if($objectsToAdd.Count -eq 0){
+    $useIds = $True
     if($autoselect -gt $unprotectedIndex.Count){
         $autoselect = $unprotectedIndex.Count
     }
@@ -120,10 +121,15 @@ if($objectsToAdd.Count -eq 0){
 
 foreach($objName in $objectsToAdd){
     $objId = $null
-    if($webUrlIndex.ContainsKey($objName)){
-        $objId = $wevUrlIndex[$objName]
-    }elseif($nameIndex.ContainsKey($objName)){
-        $objId = $nameIndex[$objName]
+    if($useIds -eq $True){
+        $objId = $objName
+        $objName = $idIndex["$objId"]
+    }else{
+        if($webUrlIndex.ContainsKey($objName)){
+            $objId = $wevUrlIndex[$objName]
+        }elseif($nameIndex.ContainsKey($objName)){
+            $objId = $nameIndex[$objName]
+        }
     }
     if($objId -and $objId -in $unprotectedIndex){
         $protectionParams = @{
