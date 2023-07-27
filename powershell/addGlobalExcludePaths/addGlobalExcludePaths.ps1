@@ -13,9 +13,9 @@ param (
     [Parameter()][string]$mfaCode = $null,  # MFA code
     [Parameter()][switch]$emailMfaCode,  # email MFA code
     [Parameter()][string]$clusterName = $null,  # cluster name to connect to when connected to Helios/MCM
-    [Parameter()][array]$jobName = '',  # optional name of one server protect
+    [Parameter()][array]$jobName,  # optional name of one server protect
     [Parameter()][string]$jobList = '',  # optional textfile of servers to protect
-    [Parameter()][array]$exclusions = '',  # optional name of one server protect
+    [Parameter()][array]$exclusions,  # optional name of one server protect
     [Parameter()][string]$exclusionList = '',  # required list of exclusions
     [Parameter()][switch]$overwrite
 )
