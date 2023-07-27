@@ -97,8 +97,11 @@ if(!$dataCenterSource){
     exit
 }
 
+# get host folder
+$hostFolder = $dataCenterSource.nodes | Where-Object {$_.protectionSource.vmWareProtectionSource.folderType -eq 'kHostFolder'}
+
 # select host
-$hostSource = $dataCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $computeResource}
+$hostSource = $hostFolder.nodes | Where-Object {$_.protectionSource.name -eq $computeResource}
 if(!$hostSource){
     Write-Host "ESXi Cluster/Host $computeResource not found (use HA cluster name if ESXi hosts are clustered)" -ForegroundColor Yellow
     exit
