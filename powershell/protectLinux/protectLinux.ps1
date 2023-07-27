@@ -14,11 +14,11 @@ param (
     [Parameter()][string]$mfaCode,
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName,
-    [Parameter()][array]$servers = '',  # optional name of one server protect
+    [Parameter()][array]$servers,  # optional name of one server protect
     [Parameter()][string]$serverList = '',  # optional textfile of servers to protect
-    [Parameter()][array]$inclusions = '', # optional paths to exclude (comma separated)
+    [Parameter()][array]$inclusions, # optional paths to exclude (comma separated)
     [Parameter()][string]$inclusionList = '',  # optional list of exclusions in file
-    [Parameter()][array]$exclusions = '',  # optional name of one server protect
+    [Parameter()][array]$exclusions,  # optional name of one server protect
     [Parameter()][string]$exclusionList = '',  # required list of exclusions
     [Parameter(Mandatory = $True)][string]$jobName,  # name of the job to add server to
     [Parameter()][switch]$skipNestedMountPoints,  # 6.3 and below - skip all nested mount points
@@ -94,6 +94,7 @@ $excludePaths = @()
 foreach($exclusion in $exclusions){
     $excludePaths += $exclusion
 }
+
 if('' -ne $exclusionList){
     if(Test-Path -Path $exclusionList -PathType Leaf){
         $exclusions = Get-Content $exclusionList
@@ -349,10 +350,10 @@ foreach($sourceId in @([array]$sourceIds + [array]$newSourceIds) | Sort-Object -
                 $excludePath = $excludePath.ToString()
                 $parentPath = $params.filePaths | Where-Object {$excludePath.contains($_.includedPath)} | Sort-Object -Property {$_.includedPath.Length} -Descending | Select-Object -First 1
                 if($parentPath){
-                    $parentPath.excludedPaths = @($parentPath.excludedPaths | Where-Object {$_ -ne $excludePath}) + $excludePath
+                    $parentPath.excludedPaths = @($parentPath.excludedPaths | Where-Object {$_ -ne $excludePath -and $_ -ne $null}) + $excludePath
                 }else{
                     foreach($parentPath in $params.filePaths){
-                        $parentPath.excludedPaths = @($parentPath.excludedPaths | Where-Object {$_ -ne $excludePath}) + $excludePath
+                        $parentPath.excludedPaths = @($parentPath.excludedPaths | Where-Object {$_ -ne $excludePath -and $_ -ne $null}) + $excludePath
                     }
                 }
             }
