@@ -27,6 +27,21 @@ ssh-keygen
 chmod +x epic_pure_freeze_thaw.sh
 ```
 
+* Edit the script and change first line to `#!/bin/ksh` (AIX) or `#!/bin/bash` (Linux)
+
+* Also, edit the `/etc/ssh/sshd_cohfig` and set:
+
+```bash
+MaxStartups 34:30:124  # default is 10:30:100, add 24 to the first and last numbers
+```
+
+* And restart sshd:
+
+```bash
+systemctl restart sshd.service  # Linux
+stopsrc -s ssh && startsrc -s ssh  # AIX
+```
+
 ## On the Pure FlashArray
 
 Log into the Pure FlashArray and perform the following steps:
@@ -34,36 +49,6 @@ Log into the Pure FlashArray and perform the following steps:
 * Create or select a user for the script to use to log into the Pure FlashArray
 * Paste the ssh public key for the AIX / Linux user into the field provided
 * Create a Pure Protection Group and add all EPIC related volumes to the group
-
-## Back on the Script Host
-
-Edit the script and make the following changes:
-
-* Change first line to `#!/bin/ksh` (AIX) or `#!/bin/bash` (Linux)
-* Modify the settings section of the script:
-
-```bash
-testing=1      # 1 = skip freeze/thaw (for testing), 0 = perform freeze/thaw (production)
-PRIVKEY_PATH="-i /root/.ssh/id_rsa"    # path to ssh private key
-PURE_USER="puresnap"                   # user name on Pure FlashArray
-PURE_ARRAY="10.1.1.10"                 # FQDN or IP of Pure FlashArray
-PURE_SRC_PGROUP="EpicProtectionGroup"  # Name of Pure Protection Group on Pure FlashArray
-```
-
-* Uncomment and inspect file system freeze sections of the script where needed
-
-Also, edit the `/etc/ssh/sshd_cohfig` and set:
-
-```bash
-MaxStartups 34:30:124  # default is 10:30:100, add 24 to the first and last numbers
-```
-
-And restart sshd:
-
-```bash
-systemctl restart sshd.service  # Linux
-stopsrc -s ssh && startsrc -s ssh  # AIX
-```
 
 ## Create a Cohesity Pure FlashArray (SAN) Protection Group
 
@@ -75,11 +60,31 @@ Under Additional Settings, under the Pre and Post Scripts option, configure the 
 * The AIX/Linux username
 * Enable `Pre Script`
 * The full path to the script, e.g. /home/root/scripts/freezethaw.sh
-* Enter a comma-separated list of volume groups (AIX) to freeze (if any), e.g. volgrp1,volgrp2,volgrp3
+* Enter script parameters (see parameters and examples below)
 * Disable `Continue Backup if Script Fails`
 * Disable `Post Script`
+* Copy the cluster SSH public key provided and add that to the AIX/Linux user's `authorized_keys` file on the script host.
 
-Also, copy the Cluster SSH Public Key provided and add that to the AIX/Linux user's `authorized_keys` file on the script host.
+## Parameters
+
+* -t: set to 1 for testing (don't freeze/thaw epic), set to 0 (or omit) to freeze/thaw epic
+* -k: private key path for ssh to pure array (e.g. /home/root/.ssh/id_rsa)
+* -p: pure array username
+* -a: pure array DNS name or IP
+* -g: pure protection group name
+* -i: epic instance name
+* -e: epic user (e.g. epicadm)
+* -v: volume groups to freeze (AIX only) e.g. EpicVolGroup1,EpicVolGroup2,EpicVolGroup3
+
+## Example Parameters
+
+```bash
+# linux example parameters
+-t 0 -k /home/root/.ssh/id_rsa -p puresnap -a 10.1.1.39 -g EpicProtectionGroup26 -i prod -e epicadm
+
+# AIX example parameters
+-t 0 -k /home/root/.ssh/id_rsa -p puresnap -a 10.1.1.39 -g EpicProtectionGroup26 -i prod -e epicadm -v EpicVolGroup1,EpicVolGroup2,EpicVolGroup3
+```
 
 ## Testing the Script
 
