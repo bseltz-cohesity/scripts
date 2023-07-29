@@ -54,9 +54,7 @@ Log into the Pure FlashArray and perform the following steps:
 
 ## Create a Cohesity Pure FlashArray (SAN) Protection Group
 
-Log into the Cohesity UI
-
-Create Cohesity (SAN) protection group and select all of the EPIC-related volumes. 
+Log into the Cohesity UI and create a Cohesity (SAN) protection group and select all of the EPIC-related volumes (the same volumes in the Pure protection group).
 
 * Choose or create a protection policy that has `retries set to 0`.
 
