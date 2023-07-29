@@ -29,28 +29,32 @@ chmod +x epic_pure_freeze_thaw.sh
 
 * Edit the script and change first line to `#!/bin/ksh` (AIX) or `#!/bin/bash` (Linux)
 
-* Also, edit the `/etc/ssh/sshd_cohfig` and set:
+* Edit the `/etc/ssh/sshd_cohfig` and set:
 
 ```bash
 MaxStartups 34:30:124  # default is 10:30:100, add 24 to the first and last numbers
 ```
 
-* And restart sshd:
+* Restart sshd:
 
 ```bash
 systemctl restart sshd.service  # Linux
 stopsrc -s ssh && startsrc -s ssh  # AIX
 ```
 
+* Copy the AIX / Linux user's SSH public key (will use this in the next steps)
+
 ## On the Pure FlashArray
 
 Log into the Pure FlashArray and perform the following steps:
 
-* Create or select a user for the script to use to log into the Pure FlashArray
+* Create or select a Pure user for the script to use to log into the Pure FlashArray
 * Paste the ssh public key for the AIX / Linux user into the field provided
-* Create a Pure Protection Group and add all EPIC related volumes to the group
+* Create or identify a Pure Protection Group and add all EPIC related volumes to the group
 
 ## Create a Cohesity Pure FlashArray (SAN) Protection Group
+
+Log into the Cohesity UI
 
 Create Cohesity (SAN) protection group and select all of the EPIC-related volumes. Choose or create a protection policy that has retries set to 0.
 
