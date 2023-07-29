@@ -65,7 +65,7 @@ Under Additional Settings, under the Pre and Post Scripts option, configure the 
 * The hostname or IP of the script host
 * The AIX/Linux username
 * Enable `Pre Script`
-* The full path to the script, e.g. /home/root/scripts/freezethaw.sh
+* The full path to the script, e.g. /home/root/scripts/epic_pure_freeze_thaw.sh
 * Enter script parameters (see parameters and examples below)
 * Disable `Continue Backup if Script Fails`
 * Disable `Post Script`
