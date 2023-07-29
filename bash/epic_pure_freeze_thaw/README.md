@@ -58,7 +58,7 @@ Log into the Cohesity UI
 
 Create Cohesity (SAN) protection group and select all of the EPIC-related volumes. 
 
-* Choose or create a protection policy that has `retries set to 0``.
+* Choose or create a protection policy that has `retries set to 0`.
 
 Under Additional Settings, under the Pre and Post Scripts option, configure the following:
 
