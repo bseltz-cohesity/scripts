@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-07-29
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/bash/epic_pure_freeze_thaw> Updated: parameterized configuration variables and added autodetection of OS (Linux or AIX)
+
 ## 2023-07-27
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/cancelDmaasProtectionRuns> Feature: added -subType filter (e.g. kO365Sharepoint)
