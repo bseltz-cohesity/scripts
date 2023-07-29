@@ -60,6 +60,11 @@ Create Cohesity (SAN) protection group and select all of the EPIC-related volume
 
 * Choose or create a protection policy that has `retries set to 0`.
 
+Under Additional Settings, under the Retain on Pure Storage Array option:
+
+* Select `Last Snapshots`
+* Set the value to 1. If `SafeMode` is enabled on the pure, set the value to the SafeMode value plus 1
+
 Under Additional Settings, under the Pre and Post Scripts option, configure the following:
 
 * The hostname or IP of the script host
@@ -100,4 +105,4 @@ When the Cohesity Protection Group runs, the Pre Script will run once for each p
 tail -f /tmp/cohesity_snap.log
 ```
 
-The first instance of the script (the leader) will perform the EPIC freeze / Pure snapshots / EPIC thaw while the others will wait for the leader to finish. Once the snapshots are created and the database and file systems are thawed, the Pure volume backups will begin. Note that these snapshots will be deleted at a later time, as configured in the Cohesity protection group (see the `Retain on Pure Storage Array` setting under Additional Settings).
+The first instance of the script (the leader) will perform the EPIC freeze / Pure snapshots / EPIC thaw while the others will wait for the leader to finish. Once the snapshots are created and the database and file systems are thawed, the Pure volume backups will begin.
