@@ -2,10 +2,11 @@
 
 ## 2023-07-29
 
-* <https://github.com/bseltz-cohesity/scripts/tree/master/bash/epic_pure_freeze_thaw> Updated: parameterized configuration variables and added autodetection of OS (Linux or AIX)
+* <https://github.com/bseltz-cohesity/scripts/tree/master/bash/epic_pure_freeze_thaw> [improvement] parameterized configuration variables and added autodetection of OS (Linux or AIX)
 
 ## 2023-07-27
 
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/addGlobalExcludePaths> Fix: remove null entry from exclude paths
 * <https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/cancelDmaasProtectionRuns> Feature: added -subType filter (e.g. kO365Sharepoint)
 * <https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/protectDmaasM365Groups> Fix: updated to support autoselect of groups with non-unique names
 * <https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/protectDmaasM365Teams> Fix: updated to support autoselect of teams with non-unique names
