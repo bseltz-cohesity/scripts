@@ -8,9 +8,9 @@
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/addGlobalExcludePaths> [`Fix`] remove null entry from exclude paths
 * <https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/cancelDmaasProtectionRuns> [`Update`] added -subType filter (e.g. kO365Sharepoint)
-* <https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/protectDmaasM365Groups> [`Fix`] updated to support autoselect of groups with non-unique names
-* <https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/protectDmaasM365Teams> [`Fix`] updated to support autoselect of teams with non-unique names
-* <https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/protectDmaasM365Sites> [`Fix`] updated to support autoselect of sites with non-unique names
+* <https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/protectDmaasM365Groups> [`Update`] updated to support autoselect of groups with non-unique names
+* <https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/protectDmaasM365Teams> [`Update`] updated to support autoselect of teams with non-unique names
+* <https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/protectDmaasM365Sites> [`Update`] updated to support autoselect of sites with non-unique names
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectLinux> [`Fix`] remove null entry from exclude paths
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cloneVM> [`Fix`] cluster/host not found error due to unexpected sorting in object hierarchy
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/viewDR> [`Update`] replicateViews.ps1 and added replication completion check to cleanupJobs.ps1
