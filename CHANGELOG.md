@@ -2,7 +2,7 @@
 
 ## 2023-07-29
 
-* <https://github.com/bseltz-cohesity/scripts/tree/master/bash/epic_pure_freeze_thaw> [improvement] parameterized configuration variables and added autodetection of OS (Linux or AIX)
+* <https://github.com/bseltz-cohesity/scripts/tree/master/bash/epic_pure_freeze_thaw> [`improvement`] parameterized configuration variables and added autodetection of OS (Linux or AIX)
 
 ## 2023-07-27
 
