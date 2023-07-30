@@ -6,11 +6,11 @@ param (
     [Parameter()][string]$domain = 'local',  # local or AD domain
     [Parameter()][switch]$useApiKey,
     [Parameter()][string]$password = $null,
-    [Parameter()][array]$servers = '',  # optional names of servers to protect (comma separated)
+    [Parameter()][array]$servers,  # optional names of servers to protect (comma separated)
     [Parameter()][string]$serverList = '',  # optional textfile of servers to protect
-    [Parameter()][array]$inclusions = '', # optional paths to exclude (comma separated)
+    [Parameter()][array]$inclusions, # optional paths to exclude (comma separated)
     [Parameter()][string]$inclusionList = '',  # optional list of exclusions in file
-    [Parameter()][array]$exclusions = '', # optional paths to exclude (comma separated)
+    [Parameter()][array]$exclusions, # optional paths to exclude (comma separated)
     [Parameter()][string]$exclusionList = '',  # optional list of exclusions in file
     [Parameter(Mandatory = $True)][string]$jobName,  # name of the job to add server to
     [Parameter()][switch]$skipNestedMountPoints,  # if omitted, nested mountpoints will not be skipped
