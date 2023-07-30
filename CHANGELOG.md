@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-07-30
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectWindows> [`Fix`] remove null entry from exclude paths
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/globalExcludePaths> [`Fix`] remove null entry from exclude paths
+
 ## 2023-07-29
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/bash/epic_pure_freeze_thaw> [`Update`] parameterized configuration variables and added autodetection of OS (Linux or AIX)
