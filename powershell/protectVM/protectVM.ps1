@@ -216,6 +216,7 @@ if($newJob){
 
 foreach($vmName in $vmsToAdd){
     $vm = api get protectionSources/virtualMachines?vCenterId=$($job.vmwareParams.sourceId) | Where-Object {$_.name -ieq $vmName}
+    $vm = api get protectionSources/objects/$($vm.id)
     if(!$vm){
         Write-Host "VM $vmName not found!" -ForegroundColor Yellow
     }else{
