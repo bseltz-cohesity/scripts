@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-07-21
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectVM> [`Fix`] fixed disk exclusions
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/protectMongoDB> [`Update`] exit with 0 on no databases to protect
+
 ## 2023-07-30
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectWindows> [`Fix`] remove null entry from exclude paths
