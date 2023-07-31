@@ -116,6 +116,10 @@ if registeredSource is None or len(registeredSource) == 0:
 source = api('get', 'protectionSources?id=%s' % registeredSource[0]['rootNode']['id'])
 source = source[0]
 objectIds = {}
+if 'nodes' not in source or source['nodes'] is None or len(source['nodes']) == 0:
+    print('no databases on %s' % sourcename)
+    exit(0)
+
 for database in source['nodes']:
     objectIds[database['protectionSource']['name']] = database['protectionSource']['id']
     for collection in database['nodes']:
@@ -228,6 +232,10 @@ for oName in objects:
                 print('%s already protected' % oName)
     else:
         print('%s not found' % oName)
+
+if len(job['mongodbParams']['objects']) == 0:
+    print('noting to protect')
+    exit(0)
 
 if newJob is True:
     result = api('post', 'data-protect/protection-groups', job, v=2)
