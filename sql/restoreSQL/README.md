@@ -29,10 +29,29 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./restoreSQL.ps1 -vip mycluster -username admin -sourceServer sql2012 -sourceDB cohesitydb -targetServer sqldev01 -targetDB restoreTest -mdfFolder c:\sqldata -ndfFolder c:\sqldata\ndf -ldfFolder c:\sqldata\logs
+# examples
 
-Connected!
-Restoring cohesitydb to sqldev01 as restoreTest
+# restore to the original location
+./restoreSQL.ps1 -vip mycluster `
+                 -username myuser `
+                 -domain mydomain.net `
+                 -sourceServer mysqlserver `
+                 -sourceDB mydb `
+                 -overwrite `
+                 -latest
+
+# restore to an alternate location
+./restoreSQL.ps1 -vip mycluster `
+                 -username myuser `
+                 -domain mydomain.net `
+                 -sourceServer mysqlserver `
+                 -sourceDB mydb `
+                 -targetServer sqlserver2 `
+                 -targetDB restoredb `
+                 -mdfFolder c:\sqldata `
+                 -ldfFolder c:\sqllogs `
+                 -latest
+# end examples
 ```
 
 ## Authentication Parameters
