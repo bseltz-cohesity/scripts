@@ -20,6 +20,7 @@ parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-of', '--outfolder', type=str, default='.')
 parser.add_argument('-n', '--numruns', type=int, default=1000)
+parser.add_argument('-y', '--growthdays', type=int, default=7)
 parser.add_argument('-f', '--vmfullpct', type=float, default=0.75)
 parser.add_argument('-x', '--units', type=str, choices=['MiB', 'GiB', 'mib', 'gib'], default='GiB')  # units
 parser.add_argument('-s', '--skipdeleted', action='store_true')
@@ -37,6 +38,7 @@ noprompt = args.noprompt
 mfacode = args.mfacode
 folder = args.outfolder
 numruns = args.numruns
+growthdays = args.growthdays
 units = args.units
 vmfullpct = args.vmfullpct
 skipdeleted = args.skipdeleted
@@ -79,10 +81,11 @@ title = 'Storage Report for %s' % cluster['name']
 
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
+growthdaysusecs = timeAgo(growthdays, 'days')
 datestring = now.strftime("%Y-%m-%d")
 csvfileName = '%s/storagePerObjectReport-%s-%s.csv' % (folder, cluster['name'], datestring)
 csv = codecs.open(csvfileName, 'w', 'utf-8')
-csv.write('"Job Name","Environment","Source Name","Object Name","Data Written %s","Raw Consumed %s","Reduction"\n' % (units, units))
+csv.write('"Job Name","Environment","Source Name","Object Name","%s Ingested","%s Ingested plus Resiliency","Reduction Ratio","%s Ingested Last %s Days"\n' % (units, units, units, growthdays))
 
 if skipdeleted:
     jobs = api('get', 'data-protect/protection-groups?isDeleted=false&includeTenants=true', v=2)
@@ -167,6 +170,7 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                                         except Exception:
                                             objects[object['object']['name']]['logical'] = 0
                                         objects[object['object']['name']]['bytesWritten'] = 0
+                                        objects[object['object']['name']]['growth'] = 0
                                     elif not (job['environment'] == 'kAD' and object['object']['environment'] == 'kAD') and not (job['environment'] in ['kSQL', 'kOracle'] and object['object']['objectType'] == 'kHost'):
                                         objects[object['object']['name']] = {}
                                         if 'sourceId' in object['object']:
@@ -175,17 +179,22 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                                         if job['environment'] == 'kVMware':
                                             objects[object['object']['name']]['logical'] = int(float(vmfullpct) * objects[object['object']['name']]['logical'])
                                         objects[object['object']['name']]['bytesWritten'] = 0
+                                        objects[object['object']['name']]['growth'] = 0
                                     else:
                                         objects[object['object']['name']] = {}
                                         objects[object['object']['name']]['logical'] = 0
                                         objects[object['object']['name']]['bytesWritten'] = 0
+                                        objects[object['object']['name']]['growth'] = 0
                                 if 'logicalSizeBytes' in snap['snapshotInfo']['stats'] and snap['snapshotInfo']['stats']['logicalSizeBytes'] > objects[object['object']['name']]['logical']:
                                     objects[object['object']['name']]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
                                 if 'bytesWritten' in snap['snapshotInfo']['stats']:
                                     objects[object['object']['name']]['bytesWritten'] += snap['snapshotInfo']['stats']['bytesWritten']
+                                    if snap['snapshotInfo']['startTimeUsecs'] > growthdaysusecs:
+                                        objects[object['object']['name']]['growth'] += snap['snapshotInfo']['stats']['bytesWritten']
                                 else:
                                     objects[object['object']['name']]['bytesWritten'] += snap['snapshotInfo']['stats']['bytesRead'] / reduction
-
+                                    if snap['snapshotInfo']['startTimeUsecs'] > growthdaysusecs:
+                                        objects[object['object']['name']]['growth'] += snap['snapshotInfo']['stats']['bytesRead'] / reduction
                             except Exception as e:
                                 pass
                                 # print('    *** unhandled exception ***')
@@ -194,6 +203,7 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
         # process output
         for object in sorted(objects.keys()):
             if 'logical' in objects[object] and 'bytesWritten' in objects[object]:
+                growthData = round(objects[object]['growth'] / multiplier, 1)
                 reducedData = round(((objects[object]['logical'] / reduction) + objects[object]['bytesWritten']) / multiplier, 1)
                 reducedDataWithResiliency = reducedData * resiliencyFactor
                 sourceName = ''
@@ -202,21 +212,22 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                         sourceName = sourceNames[objects[object]['sourceId']]
                     else:
                         source = api('get', 'protectionSources?id=%s' % objects[object]['sourceId'])
-                        if source and len(source) > 0:
-                            sourceName = source[0]['protectionSource']['name']
+                        if source is not None and len(source) > 0 and 'protectionSource' in source:
+                            sourceName = source['protectionSource']['name']
                             sourceNames[objects[object]['sourceId']] = sourceName
                 else:
                     sourceName = object
-                csv.write('"%s","%s","%s","%s","%s","%s","%s"\n' % (job['name'], job['environment'], sourceName, object, reducedData, reducedDataWithResiliency, reduction))
+                csv.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (job['name'], job['environment'], sourceName, object, reducedData, reducedDataWithResiliency, reduction, growthData))
 
 # views
 views = api('get', 'file-services/views?maxCount=2000&includeTenants=true&includeStats=true&includeProtectionGroups=true', v=2)
 if 'views' in views and views['views'] is not None and len(views['views']) > 0:
+    stats = api('get', 'stats/consumers?msecsBeforeCurrentTimeToCompare=%s&consumerType=kViews' % (growthdays * 86400000))
     for view in views['views']:
         try:
             jobName = view['viewProtection']['protectionGroups'][-1]['groupName']
         except Exception:
-            jobName = ''
+            jobName = '-'
         sourceName = view['storageDomainName']
         viewName = view['name']
         print(viewName)
@@ -237,7 +248,13 @@ if 'views' in views and views['views'] is not None and len(views['views']) > 0:
             reduction = round((float(dataIn) / dataInAfterDedup) * (float(dataInAfterDedup) / dataWritten), 1)
         else:
             reduction = 1
-        csv.write('"%s","%s","%s","%s","%s","%s","%s"\n' % (jobName, 'kView', sourceName, viewName, round(dataWritten / multiplier, 1), round(consumption / multiplier, 1), reduction))
+        try:
+            stat = [s for s in stats['statsList'] if s['name'] == viewName]
+            if stat is not None and len(stat) > 0:
+                growthData = round((stat[0]['stats']['storageConsumedBytes'] - stat[0]['stats']['storageConsumedBytesPrev']) / multiplier, 1)
+        except Exception:
+            growthData = 0
+        csv.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (jobName, 'kView', sourceName, viewName, round(dataWritten / multiplier, 1), round(consumption / multiplier, 1), reduction, growthData))
 
 csv.close()
 print('\nOutput saved to %s\n' % csvfileName)
