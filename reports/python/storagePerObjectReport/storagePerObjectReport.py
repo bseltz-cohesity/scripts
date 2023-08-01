@@ -85,7 +85,7 @@ growthdaysusecs = timeAgo(growthdays, 'days')
 datestring = now.strftime("%Y-%m-%d")
 csvfileName = '%s/storagePerObjectReport-%s-%s.csv' % (folder, cluster['name'], datestring)
 csv = codecs.open(csvfileName, 'w', 'utf-8')
-csv.write('"Job Name","Environment","Source Name","Object Name","%s Ingested","%s Ingested plus Resiliency","Reduction Ratio","%s Ingested Last %s Days"\n' % (units, units, units, growthdays))
+csv.write('"Job Name","Environment","Source Name","Object Name","Full Backup-Restore %s","%s Ingested","%s Ingested plus Resiliency","Reduction Ratio","%s Ingested Last %s Days"\n' % (units, units, units, units, growthdays))
 
 if skipdeleted:
     jobs = api('get', 'data-protect/protection-groups?isDeleted=false&includeTenants=true', v=2)
@@ -203,6 +203,7 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
         # process output
         for object in sorted(objects.keys()):
             if 'logical' in objects[object] and 'bytesWritten' in objects[object]:
+                fullSize = round(objects[object]['logical'] / multiplier, 1)
                 growthData = round(objects[object]['growth'] / multiplier, 1)
                 reducedData = round(((objects[object]['logical'] / reduction) + objects[object]['bytesWritten']) / multiplier, 1)
                 reducedDataWithResiliency = reducedData * resiliencyFactor
@@ -211,13 +212,15 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                     if objects[object]['sourceId'] in sourceNames:
                         sourceName = sourceNames[objects[object]['sourceId']]
                     else:
-                        source = api('get', 'protectionSources?id=%s' % objects[object]['sourceId'])
-                        if source is not None and len(source) > 0 and 'protectionSource' in source:
+                        source = api('get', 'protectionSources?id=%s&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag' % objects[object]['sourceId'])
+                        if source is not None and 'protectionSource' not in source and len(source) > 0:
+                            source = source[0]
+                        if source is not None and 'protectionSource' in source:
                             sourceName = source['protectionSource']['name']
                             sourceNames[objects[object]['sourceId']] = sourceName
                 else:
                     sourceName = object
-                csv.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (job['name'], job['environment'], sourceName, object, reducedData, reducedDataWithResiliency, reduction, growthData))
+                csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (job['name'], job['environment'], sourceName, object, fullSize, reducedData, reducedDataWithResiliency, reduction, growthData))
 
 # views
 views = api('get', 'file-services/views?maxCount=2000&includeTenants=true&includeStats=true&includeProtectionGroups=true', v=2)
@@ -230,6 +233,10 @@ if 'views' in views and views['views'] is not None and len(views['views']) > 0:
             jobName = '-'
         sourceName = view['storageDomainName']
         viewName = view['name']
+        try:
+            fullSize = round(view['stats']['totalLogicalUsageBytes'] / multiplier, 1)
+        except Exception:
+            fullSize = 0
         print(viewName)
         dataIn = 0
         dataInAfterDedup = 0
@@ -254,7 +261,7 @@ if 'views' in views and views['views'] is not None and len(views['views']) > 0:
                 growthData = round((stat[0]['stats']['storageConsumedBytes'] - stat[0]['stats']['storageConsumedBytesPrev']) / multiplier, 1)
         except Exception:
             growthData = 0
-        csv.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (jobName, 'kView', sourceName, viewName, round(dataWritten / multiplier, 1), round(consumption / multiplier, 1), reduction, growthData))
+        csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (jobName, 'kView', sourceName, viewName, fullSize, round(dataWritten / multiplier, 1), round(consumption / multiplier, 1), reduction, growthData))
 
 csv.close()
 print('\nOutput saved to %s\n' % csvfileName)
