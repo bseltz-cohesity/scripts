@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-08-01
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storagePerObjectReport> [`Update`] added recent growth column to the output
+
 ## 2023-07-31
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectVM> [`Fix`] fixed disk exclusions
