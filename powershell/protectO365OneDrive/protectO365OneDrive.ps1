@@ -228,6 +228,7 @@ Write-Host "Discovering users..."
 
 $nameIndex = @{}
 $smtpIndex = @{}
+$uuidIndex = @{}
 $unprotectedIndex = @()
 $protectedIndex = @()
 $nodeIdIndex = @()
@@ -247,6 +248,7 @@ while(1){
     foreach($node in $users.nodes){
         $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
+        $uuidIndex[$node.protectionSource.office365ProtectionSource.uuid] = $node.protectionSource.id
         if($node.protectionSource.office365ProtectionSource.PSObject.Properties['primarySMTPAddress']){
             $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
         }
@@ -270,6 +272,7 @@ while(1){
             $node = api get protectionSources?id=$cursor
             $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
             $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
+            $uuidIndex[$node.protectionSource.office365ProtectionSource.uuid] = $node.protectionSource.id
             if($node.protectionSource.office365ProtectionSource.PSObject.Properties['primarySMTPAddress']){
                 $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
             }
@@ -346,11 +349,13 @@ if($autoProtectRemaining){
                 continue
             }
             if($userName -ne '' -and $null -ne $userName){
-                if($nameIndex.ContainsKey($userName) -or $smtpIndex.ContainsKey("$userName")){
+                if($nameIndex.ContainsKey($userName) -or $smtpIndex.ContainsKey($userName) -or $uuidIndex.ContainsKey($userName)){
                     if($nameIndex.ContainsKey($userName)){
                         $userId = $nameIndex[$userName]
+                    }elseif($smtpIndex.ContainsKey($userName)){
+                        $userId = $smtpIndex[$userName]
                     }else{
-                        $userId = $smtpIndex["$userName"]
+                        $userId = $uuidIndex[$userName]
                     }
                     if($userId -in $protectedIndex){
                         Write-Host "$userName already protected" -ForegroundColor Green

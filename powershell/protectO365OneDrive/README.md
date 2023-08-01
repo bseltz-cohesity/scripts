@@ -89,8 +89,8 @@ To create an autoprotect job that excludes users that are already protected:
 ## Other Parameters
 
 * -jobName: name of the O365 protection job to exclude users from
-* -user: (optional) a comma separated list of user names to protect
-* -userList: (optional) a text file list of user names to protect
+* -user: (optional) a comma separated list of user names, SMTP addresses or UUIDs to protect
+* -userList: (optional) a text file list of user names, SMTP addresses or UUIDs to protect
 * -allUsers: (optional) protect unprotected users (up to the maxUsersPerJob)
 * -maxUsersPerJob: (optional) default is 5000
 * -sourceName: (optional) name of registered O365 protection source (required for new job)
