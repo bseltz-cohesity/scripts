@@ -2,6 +2,7 @@
 
 ## 2023-08-01
 
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectO365OneDrive> [`Update`] added support for UUIDs as input list of users to protect
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storagePerObjectReport> [`Update`] added recent growth column to the output
 
 ## 2023-07-31
