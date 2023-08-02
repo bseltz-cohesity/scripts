@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-08-02
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/protectedFilePathReport> [`Update`] added output column for skipNestedVolumes
+
 ## 2023-08-01
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectO365OneDrive> [`Update`] added support for UUIDs as input list of users to protect
