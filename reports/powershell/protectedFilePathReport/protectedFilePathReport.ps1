@@ -138,9 +138,10 @@ $Global:html += '</span>
     <th>Server Name</th>
     <th>Path</th>
     <th>Included/Excluded</th>
+    <th>Skip Nested Volumes</th>
 </tr>'
 
-"Job Name,Server Name,Path,Include/Exclude" | Out-File -FilePath $csvFileName
+"Job Name,Server Name,Path,Include/Exclude,Skip Nested Volumes" | Out-File -FilePath $csvFileName
 
 $protectionGroups = api get -v2 "data-protect/protection-groups?isDeleted=false&includeTenants=true&includeLastRunInfo=true&environments=kPhysical"
 $jobs = $protectionGroups.protectionGroups | Where-Object {$_.physicalParams.protectionType -eq 'kFile'}
@@ -160,54 +161,54 @@ foreach($job in $jobs){
         $excludedPaths = @()
         $excludedPaths = @($params.globalExcludePaths)
         foreach($filePath in $object.filePaths){
-            $includedPaths = @($includedPaths + $filePath.includedPath)
+            $includedPath = $filePath.includedPath
+            $skipNestedVolumes = $filePath.skipNestedVolumes
+            if($True -eq $jobprinted){
+                $jobName = ''
+            }else{
+                $jobName = $job.name
+                $jobprinted = $True
+            }
+            if($True -eq $objectprinted){
+                $objectName = ''
+            }else{
+                $objectName = $object.name
+                $objectprinted = $True
+            }
+            $Global:html += '<tr style="border: 1px solid {4} background-color: {4}">
+                    <td>{0}</td>
+                    <td>{1}</td>
+                    <td>{2}</td>
+                    <td>{3}</td>
+                    <td>{4}</td>
+                    </tr>' -f $jobName, $objectName, $includedPath, 'Included', $skipNestedVolumes, $Global:trColor
+            "{0},{1},{2},{3},{4}" -f $jobName, $objectName, $includedPath, 'Included', $skipNestedVolumes | Out-File -FilePath $csvFileName -Append
+            # $includedPaths = @($includedPaths + $filePath.includedPath)
             foreach($excludedPath in $filePath.excludedPaths){
-                $excludedPaths = @($excludedPaths + $excludedPath) 
+                # $excludedPaths = @($excludedPaths + $excludedPath)
+                if($True -eq $jobprinted){
+                    $jobName = ''
+                }else{
+                    $jobName = $job.name
+                    $jobprinted = $True
+                }
+                if($True -eq $objectprinted){
+                    $objectName = ''
+                }else{
+                    $objectName = $object.name
+                    $objectprinted = $True
+                }
+                $Global:html += '<tr style="border: 1px solid {4} background-color: {4}">
+                        <td>{0}</td>
+                        <td>{1}</td>
+                        <td>{2}</td>
+                        <td>{3}</td>
+                        <td>{4}</td>
+                        </tr>' -f $jobName, $objectName, $excludedPath, 'Excluded', $skipNestedVolumes, $Global:trColor
+                "{0},{1},{2},{3},{4}" -f $jobName, $objectName, $excludedPath, 'Excluded', $skipNestedVolumes | Out-File -FilePath $csvFileName -Append
             }
         }
         "  {0}" -f $object.name
-        foreach($includedPath in ($includedPaths | Sort-Object)){
-            if($True -eq $jobprinted){
-                $jobName = ''
-            }else{
-                $jobName = $job.name
-                $jobprinted = $True
-            }
-            if($True -eq $objectprinted){
-                $objectName = ''
-            }else{
-                $objectName = $object.name
-                $objectprinted = $True
-            }
-            $Global:html += '<tr style="border: 1px solid {4} background-color: {4}">
-                    <td>{0}</td>
-                    <td>{1}</td>
-                    <td>{2}</td>
-                    <td>{3}</td>
-                    </tr>' -f $jobName, $objectName, $includedPath, 'Included', $Global:trColor
-            "{0},{1},{2},{3}" -f $jobName, $objectName, $includedPath, 'Included' | Out-File -FilePath $csvFileName -Append
-        }
-        foreach($excludedPath in ($excludedPaths | Sort-Object)){
-            if($True -eq $jobprinted){
-                $jobName = ''
-            }else{
-                $jobName = $job.name
-                $jobprinted = $True
-            }
-            if($True -eq $objectprinted){
-                $objectName = ''
-            }else{
-                $objectName = $object.name
-                $objectprinted = $True
-            }
-            $Global:html += '<tr style="border: 1px solid {4} background-color: {4}">
-                    <td>{0}</td>
-                    <td>{1}</td>
-                    <td>{2}</td>
-                    <td>{3}</td>
-                    </tr>' -f $jobName, $objectName, $excludedPath, 'Excluded', $Global:trColor
-            "{0},{1},{2},{3}" -f $jobName, $objectName, $excludedPath, 'Excluded' | Out-File -FilePath $csvFileName -Append
-        }
     }
 }
 
