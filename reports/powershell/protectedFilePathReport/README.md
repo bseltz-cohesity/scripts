@@ -26,12 +26,17 @@ Place the files in a folder together and run the script like so:
 
 ```powershell
 ./protectedFilePathReport.ps1 -vip mycluster `
-                       -username myusername `
-                       -domain mydomain.net
+                              -username myusername `
+                              -domain mydomain.net
 ```
 
 ## Parameters
 
-* -vip: name or IP of Cohesity cluster
-* -username: name of user to connect to Cohesity
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
 * -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
