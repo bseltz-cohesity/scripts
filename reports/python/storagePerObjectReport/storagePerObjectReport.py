@@ -21,7 +21,6 @@ parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-of', '--outfolder', type=str, default='.')
 parser.add_argument('-n', '--numruns', type=int, default=1000)
 parser.add_argument('-y', '--growthdays', type=int, default=7)
-parser.add_argument('-f', '--vmfullpct', type=float, default=0.75)
 parser.add_argument('-x', '--units', type=str, choices=['MiB', 'GiB', 'mib', 'gib'], default='GiB')  # units
 parser.add_argument('-s', '--skipdeleted', action='store_true')
 
@@ -40,7 +39,6 @@ folder = args.outfolder
 numruns = args.numruns
 growthdays = args.growthdays
 units = args.units
-vmfullpct = args.vmfullpct
 skipdeleted = args.skipdeleted
 
 multiplier = 1024 * 1024 * 1024
@@ -73,7 +71,7 @@ print('Collecting report data...')
 cluster = api('get', 'cluster?fetchStats=true')
 
 try:
-    clusterReduction = round(cluster['stats']['usagePerfStats']['dataInBytes'] / cluster['stats']['usagePerfStats']['dataInBytesAfterReduction'], 1)
+    clusterReduction = round(cluster['stats']['usagePerfStats']['dataInBytes'] / cluster['stats']['usagePerfStats']['dataInBytesAfterjobReduction'], 1)
 except Exception:
     clusterReduction = 1
 
@@ -85,7 +83,7 @@ growthdaysusecs = timeAgo(growthdays, 'days')
 datestring = now.strftime("%Y-%m-%d")
 csvfileName = '%s/storagePerObjectReport-%s-%s.csv' % (folder, cluster['name'], datestring)
 csv = codecs.open(csvfileName, 'w', 'utf-8')
-csv.write('"Job Name","Environment","Source Name","Object Name","Full Backup-Restore %s","%s Ingested","%s Ingested plus Resiliency","Reduction Ratio","%s Ingested Last %s Days"\n' % (units, units, units, units, growthdays))
+csv.write('"Job Name","Environment","Source Name","Object Name","Logical %s","%s Written","%s Written plus Resiliency","Job Reduction Ratio","%s Written Last %s Days"\n' % (units, units, units, units, growthdays))
 
 if skipdeleted:
     jobs = api('get', 'data-protect/protection-groups?isDeleted=false&includeTenants=true', v=2)
@@ -116,22 +114,26 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
         print(job['name'])
         v1JobId = job['id'].split(':')[2]
 
-        # get reduction factor
-        stats = api('get', 'stats/consumers?consumerType=kProtectionRuns&consumerIdList=%s' % v1JobId)
+        # get jobReduction factor
+        if job['isActive'] is True:
+            stats = api('get', 'stats/consumers?consumerType=kProtectionRuns&consumerIdList=%s' % v1JobId)
+        else:
+            stats = api('get', 'stats/consumers?consumerType=kReplicationRuns&consumerIdList=%s' % v1JobId)
         if 'statsList' in stats and stats['statsList'] is not None:
             dataIn = stats['statsList'][0]['stats'].get('dataInBytes', 0)
             dataInAfterDedup = stats['statsList'][0]['stats'].get('dataInBytesAfterDedup', 0)
-            dataWritten = stats['statsList'][0]['stats'].get('dataWrittenBytes', 0)
-            if dataInAfterDedup > 0 and dataWritten > 0:
+            jobWritten = stats['statsList'][0]['stats'].get('dataWrittenBytes', 0)
+            if dataInAfterDedup > 0 and jobWritten > 0:
                 dedup = round(float(dataIn) / dataInAfterDedup, 1)
-                compression = round(float(dataInAfterDedup) / dataWritten, 1)
-                reduction = round((float(dataIn) / dataInAfterDedup) * (float(dataInAfterDedup) / dataWritten), 1)
+                compression = round(float(dataInAfterDedup) / jobWritten, 1)
+                jobReduction = round((float(dataIn) / dataInAfterDedup) * (float(dataInAfterDedup) / jobWritten), 1)
             else:
-                reduction = 1
+                jobReduction = 1
         else:
-            reduction = clusterReduction
-        if reduction == 0:
-            reduction = 1
+            jobWritten = 0
+            jobReduction = clusterReduction
+        if jobReduction == 0:
+            jobReduction = 1
         endUsecs = nowUsecs
 
         # get protection runs in retention
@@ -146,7 +148,6 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                 break
             for run in runs['runs']:
                 if 'isLocalSnapshotsDeleted' not in run:
-
                     # per object stats
                     if 'objects' in run and run['objects'] is not None and len(run['objects']) > 0:
                         for object in [o for o in run['objects'] if o['object']['environment'] != job['environment']]:
@@ -157,70 +158,74 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                             else:
                                 snap = object['originalBackupInfo']
                             try:
+                                if object['object']['id'] not in objects and not (job['environment'] == 'kAD' and object['object']['environment'] == 'kAD') and not (job['environment'] in ['kSQL', 'kOracle'] and object['object']['objectType'] == 'kHost'):
 
-                                if object['object']['name'] not in objects:
+                                    objects[object['object']['id']] = {}
+                                    objects[object['object']['id']]['name'] = object['object']['name']
+                                    objects[object['object']['id']]['logical'] = 0
+                                    objects[object['object']['id']]['bytesRead'] = 0
+                                    objects[object['object']['id']]['growth'] = 0
+                                    if 'sourceId' in object['object']:
+                                        objects[object['object']['id']]['sourceId'] = object['object']['sourceId']
                                     if 'logicalSizeBytes' not in snap['snapshotInfo']['stats']:
                                         csource = api('get', 'protectionSources?id=%s' % object['object']['id'], quiet=True)
-                                        objects[object['object']['name']] = {}
                                         try:
                                             if type(csource) == list:
-                                                objects[object['object']['name']]['logical'] = csource[0]['protectedSourcesSummary'][0]['totalLogicalSize']
+                                                objects[object['object']['id']]['logical'] = csource[0]['protectedSourcesSummary'][0]['totalLogicalSize']
                                             else:
-                                                objects[object['object']['name']]['logical'] = csource['protectedSourcesSummary'][0]['totalLogicalSize']
+                                                objects[object['object']['id']]['logical'] = csource['protectedSourcesSummary'][0]['totalLogicalSize']
                                         except Exception:
-                                            objects[object['object']['name']]['logical'] = 0
-                                        objects[object['object']['name']]['bytesWritten'] = 0
-                                        objects[object['object']['name']]['growth'] = 0
-                                    elif not (job['environment'] == 'kAD' and object['object']['environment'] == 'kAD') and not (job['environment'] in ['kSQL', 'kOracle'] and object['object']['objectType'] == 'kHost'):
-                                        objects[object['object']['name']] = {}
-                                        if 'sourceId' in object['object']:
-                                            objects[object['object']['name']]['sourceId'] = object['object']['sourceId']
-                                        objects[object['object']['name']]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
-                                        if job['environment'] == 'kVMware':
-                                            objects[object['object']['name']]['logical'] = int(float(vmfullpct) * objects[object['object']['name']]['logical'])
-                                        objects[object['object']['name']]['bytesWritten'] = 0
-                                        objects[object['object']['name']]['growth'] = 0
+                                            pass
                                     else:
-                                        objects[object['object']['name']] = {}
-                                        objects[object['object']['name']]['logical'] = 0
-                                        objects[object['object']['name']]['bytesWritten'] = 0
-                                        objects[object['object']['name']]['growth'] = 0
-                                if 'logicalSizeBytes' in snap['snapshotInfo']['stats'] and snap['snapshotInfo']['stats']['logicalSizeBytes'] > objects[object['object']['name']]['logical']:
-                                    objects[object['object']['name']]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
-                                if 'bytesWritten' in snap['snapshotInfo']['stats']:
-                                    objects[object['object']['name']]['bytesWritten'] += snap['snapshotInfo']['stats']['bytesWritten']
-                                    if snap['snapshotInfo']['startTimeUsecs'] > growthdaysusecs:
-                                        objects[object['object']['name']]['growth'] += snap['snapshotInfo']['stats']['bytesWritten']
-                                else:
-                                    objects[object['object']['name']]['bytesWritten'] += snap['snapshotInfo']['stats']['bytesRead'] / reduction
-                                    if snap['snapshotInfo']['startTimeUsecs'] > growthdaysusecs:
-                                        objects[object['object']['name']]['growth'] += snap['snapshotInfo']['stats']['bytesRead'] / reduction
+                                        objects[object['object']['id']]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
+                                if object['object']['id'] in objects and 'logicalSizeBytes' in snap['snapshotInfo']['stats'] and snap['snapshotInfo']['stats']['logicalSizeBytes'] > objects[object['object']['id']]['logical']:
+                                    objects[object['object']['id']]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
+                                objects[object['object']['id']]['bytesRead'] += snap['snapshotInfo']['stats']['bytesRead']
+                                if snap['snapshotInfo']['startTimeUsecs'] > growthdaysusecs:
+                                    if 'bytesWritten' in snap['snapshotInfo']['stats']:
+                                        objects[object['object']['id']]['growth'] += snap['snapshotInfo']['stats']['bytesWritten']
+                                    else:
+                                        objects[object['object']['id']]['growth'] += (snap['snapshotInfo']['stats']['bytesRead'] / jobReduction)
                             except Exception as e:
                                 pass
-                                # print('    *** unhandled exception ***')
-                                # print(repr(e))
 
         # process output
+        jobFESize = 0
         for object in sorted(objects.keys()):
-            if 'logical' in objects[object] and 'bytesWritten' in objects[object]:
-                fullSize = round(objects[object]['logical'] / multiplier, 1)
-                growthData = round(objects[object]['growth'] / multiplier, 1)
-                reducedData = round(((objects[object]['logical'] / reduction) + objects[object]['bytesWritten']) / multiplier, 1)
-                reducedDataWithResiliency = reducedData * resiliencyFactor
+            thisObject = objects[object]
+            if 'logical' in thisObject:
+                jobFESize += thisObject['logical']
+            if 'bytesRead' in thisObject:
+                jobFESize += thisObject['bytesRead']
+
+        for object in sorted(objects.keys()):
+            thisObject = objects[object]
+            if 'logical' in thisObject and 'bytesRead' in thisObject:
+                objFESize = round(thisObject['logical'] / multiplier, 1)
+                objGrowth = round(thisObject['growth'] / multiplier, 1)
+                if jobFESize > 0:
+                    objWeight = (thisObject['logical'] + thisObject['bytesRead']) / jobFESize
+                else:
+                    objWeight = 0
+                if jobWritten > 0:
+                    objWritten = round(objWeight * jobWritten / multiplier, 1)
+                else:
+                    objWritten = round(objFESize / jobReduction, 1)
+                objWrittenWithResiliency = objWritten * resiliencyFactor
                 sourceName = ''
-                if 'sourceId' in objects[object]:
-                    if objects[object]['sourceId'] in sourceNames:
-                        sourceName = sourceNames[objects[object]['sourceId']]
+                if 'sourceId' in thisObject:
+                    if thisObject['sourceId'] in sourceNames:
+                        sourceName = sourceNames[thisObject['sourceId']]
                     else:
-                        source = api('get', 'protectionSources?id=%s&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag' % objects[object]['sourceId'])
-                        if source is not None and 'protectionSource' not in source and len(source) > 0:
+                        source = api('get', 'protectionSources?id=%s&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag' % thisObject['sourceId'])
+                        if source is not None and 'protectionSource' not in source and 'error' not in source and len(source) > 0:
                             source = source[0]
                         if source is not None and 'protectionSource' in source:
                             sourceName = source['protectionSource']['name']
-                            sourceNames[objects[object]['sourceId']] = sourceName
+                            sourceNames[thisObject['sourceId']] = sourceName
                 else:
-                    sourceName = object
-                csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (job['name'], job['environment'], sourceName, object, fullSize, reducedData, reducedDataWithResiliency, reduction, growthData))
+                    sourceName = thisObject['name']
+                csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (job['name'], job['environment'], sourceName, thisObject['name'], objFESize, objWritten, objWrittenWithResiliency, jobReduction, objGrowth))
 
 # views
 views = api('get', 'file-services/views?maxCount=2000&includeTenants=true&includeStats=true&includeProtectionGroups=true', v=2)
@@ -233,35 +238,32 @@ if 'views' in views and views['views'] is not None and len(views['views']) > 0:
             jobName = '-'
         sourceName = view['storageDomainName']
         viewName = view['name']
-        try:
-            fullSize = round(view['stats']['totalLogicalUsageBytes'] / multiplier, 1)
-        except Exception:
-            fullSize = 0
         print(viewName)
         dataIn = 0
         dataInAfterDedup = 0
-        dataWritten = 0
+        jobWritten = 0
         consumption = 0
         try:
+            objFESize = round(view['stats']['dataUsageStats']['totalLogicalUsageBytes'] / multiplier, 1)
             dataIn = view['stats']['dataUsageStats'].get('dataInBytes', 0)
             dataInAfterDedup = view['stats']['dataUsageStats'].get('dataInBytesAfterDedup', 0)
-            dataWritten = view['stats']['dataUsageStats'].get('dataWrittenBytes', 0)
+            jobWritten = view['stats']['dataUsageStats'].get('dataWrittenBytes', 0)
             consumption = view['stats']['dataUsageStats'].get('localTotalPhysicalUsageBytes', 0)
         except Exception:
             pass
-        if dataInAfterDedup > 0 and dataWritten > 0:
+        if dataInAfterDedup > 0 and jobWritten > 0:
             dedup = round(float(dataIn) / dataInAfterDedup, 1)
-            compression = round(float(dataInAfterDedup) / dataWritten, 1)
-            reduction = round((float(dataIn) / dataInAfterDedup) * (float(dataInAfterDedup) / dataWritten), 1)
+            compression = round(float(dataInAfterDedup) / jobWritten, 1)
+            jobReduction = round((float(dataIn) / dataInAfterDedup) * (float(dataInAfterDedup) / jobWritten), 1)
         else:
-            reduction = 1
+            jobReduction = 1
         try:
             stat = [s for s in stats['statsList'] if s['name'] == viewName]
             if stat is not None and len(stat) > 0:
-                growthData = round((stat[0]['stats']['storageConsumedBytes'] - stat[0]['stats']['storageConsumedBytesPrev']) / multiplier, 1)
+                objGrowth = round((stat[0]['stats']['storageConsumedBytes'] - stat[0]['stats']['storageConsumedBytesPrev']) / multiplier, 1)
         except Exception:
-            growthData = 0
-        csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (jobName, 'kView', sourceName, viewName, fullSize, round(dataWritten / multiplier, 1), round(consumption / multiplier, 1), reduction, growthData))
+            objGrowth = 0
+        csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (jobName, 'kView', sourceName, viewName, objFESize, round(jobWritten / multiplier, 1), round(consumption / multiplier, 1), jobReduction, objGrowth))
 
 csv.close()
 print('\nOutput saved to %s\n' % csvfileName)
