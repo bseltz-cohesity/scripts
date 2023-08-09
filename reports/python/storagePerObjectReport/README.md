@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This python script creates a report of estimated storage consumption per object. Note that this report performs estimation so is not expected to be completely accurate. Not all object types will be included in the report (Cassandra for example), and VMware sizes are expected to be overreported.
+This python script creates a report of estimated storage consumption per object. Note that this report performs estimation so is not expected to be completely accurate.
 
 ## Download the script
 
