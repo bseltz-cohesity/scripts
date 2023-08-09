@@ -78,6 +78,7 @@ Skipping SQL Gold - lab3 snapshot from 2019-04-13 01:01:12 (not replicated)
 * -a, --confirmarchive: (optional) do not expire local snapshot if not archived
 * -at, --arcvhivetarget: (optional) specific target name to use for confirmarchive
 * -n, --numruns: (optional) number of runs to retrieve at a time (default is 1000)
+* -s, --skipmonthlies: (optional) don't expire snapshots from the first day of the month
 
 ## The Python Helper Module - pyhesity.py
 

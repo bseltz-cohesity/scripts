@@ -24,7 +24,7 @@ parser.add_argument('-rt', '--replicationtarget', type=str, default=None)  # (op
 parser.add_argument('-a', '--confirmarchive', action='store_true')     # (optional) confirm archival before expiring
 parser.add_argument('-at', '--archivetarget', type=str, default=None)  # (optional) archive target to confirm
 parser.add_argument('-n', '--numruns', type=int, default=1000)      # (optional) page size per API call
-
+parser.add_argument('-s', '--skipmonthlies', action='store_true')   # skip snapshots that land on the first of the month
 args = parser.parse_args()
 
 vip = args.vip
@@ -41,6 +41,7 @@ replicationtarget = args.replicationtarget
 confirmarchive = args.confirmarchive
 archivetarget = args.archivetarget
 numruns = args.numruns
+skipmonthlies = args.skipmonthlies
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, noretry=True)
@@ -79,6 +80,7 @@ now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 
 print("Searching for old snapshots...")
+finishedStates = ['kSuccess', 'kFailure', 'kWarning']
 
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
     if len(jobnames) == 0 or job['name'].lower() in [j.lower() for j in jobnames]:
@@ -91,9 +93,20 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
             else:
                 break
             for run in runs:
-                startdate = usecsToDate(run['copyRun'][0]['runStartTimeUsecs'])
-                startdateusecs = run['copyRun'][0]['runStartTimeUsecs']
-
+                if 'backupRun' in run:
+                    status = run['backupRun']['status']
+                    if status in finishedStates:
+                        startdate = usecsToDate(run['backupRun']['stats']['startTimeUsecs'])
+                        startdateusecs = run['backupRun']['stats']['startTimeUsecs']
+                    else:
+                        continue
+                elif 'copyRun' in run and len(run['copyRun']) > 0:
+                    status = run['copyRun'][0]['status']
+                    if status in finishedStates:
+                        startdate = usecsToDate(run['copyRun'][0]['runStartTimeUsecs'])
+                        startdateusecs = run['copyRun'][0]['runStartTimeUsecs']
+                    else:
+                        continue
                 # check for replication
                 replicated = False
                 for copyRun in run['copyRun']:
@@ -124,6 +137,10 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                             print("    Skipping %s (not archived to %s)" % (startdate, archivetarget))
                         else:
                             print("    Skipping %s (not archived)" % startdate)
+                    startdatetime = datetime.strptime(startdate, '%Y-%m-%d %H:%M:%S')
+                    if skipmonthlies is True and startdatetime.day == 1:
+                        skip = True
+                        print("    Skipping %s (monthly)" % startdate)
                     if skip is False:
                         if expire:
                             exactRun = api('get', '/backupjobruns?exactMatchStartTimeUsecs=%s&id=%s' % (startdateusecs, job['id']))
