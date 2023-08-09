@@ -21,7 +21,7 @@ parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-of', '--outfolder', type=str, default='.')
 parser.add_argument('-n', '--numruns', type=int, default=1000)
 parser.add_argument('-y', '--growthdays', type=int, default=7)
-parser.add_argument('-x', '--units', type=str, choices=['MiB', 'GiB', 'mib', 'gib'], default='GiB')  # units
+parser.add_argument('-x', '--units', type=str, choices=['MiB', 'GiB', 'mib', 'gib'], default='GiB')
 parser.add_argument('-s', '--skipdeleted', action='store_true')
 
 args = parser.parse_args()
@@ -153,39 +153,40 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                         for object in [o for o in run['objects'] if o['object']['environment'] != job['environment']]:
                             sourceNames[object['object']['id']] = object['object']['name']
                         for object in [o for o in run['objects']]:
+                            objId = object['object']['id']
                             if 'localSnapshotInfo' in object:
                                 snap = object['localSnapshotInfo']
                             else:
                                 snap = object['originalBackupInfo']
                             try:
-                                if object['object']['id'] not in objects and not (job['environment'] == 'kAD' and object['object']['environment'] == 'kAD') and not (job['environment'] in ['kSQL', 'kOracle'] and object['object']['objectType'] == 'kHost'):
+                                if objId not in objects and not (job['environment'] == 'kAD' and object['object']['environment'] == 'kAD') and not (job['environment'] in ['kSQL', 'kOracle'] and object['object']['objectType'] == 'kHost'):
 
-                                    objects[object['object']['id']] = {}
-                                    objects[object['object']['id']]['name'] = object['object']['name']
-                                    objects[object['object']['id']]['logical'] = 0
-                                    objects[object['object']['id']]['bytesRead'] = 0
-                                    objects[object['object']['id']]['growth'] = 0
+                                    objects[objId] = {}
+                                    objects[objId]['name'] = object['object']['name']
+                                    objects[objId]['logical'] = 0
+                                    objects[objId]['bytesRead'] = 0
+                                    objects[objId]['growth'] = 0
                                     if 'sourceId' in object['object']:
-                                        objects[object['object']['id']]['sourceId'] = object['object']['sourceId']
+                                        objects[objId]['sourceId'] = object['object']['sourceId']
                                     if 'logicalSizeBytes' not in snap['snapshotInfo']['stats']:
-                                        csource = api('get', 'protectionSources?id=%s' % object['object']['id'], quiet=True)
+                                        csource = api('get', 'protectionSources?id=%s' % objId, quiet=True)
                                         try:
                                             if type(csource) == list:
-                                                objects[object['object']['id']]['logical'] = csource[0]['protectedSourcesSummary'][0]['totalLogicalSize']
+                                                objects[objId]['logical'] = csource[0]['protectedSourcesSummary'][0]['totalLogicalSize']
                                             else:
-                                                objects[object['object']['id']]['logical'] = csource['protectedSourcesSummary'][0]['totalLogicalSize']
+                                                objects[objId]['logical'] = csource['protectedSourcesSummary'][0]['totalLogicalSize']
                                         except Exception:
                                             pass
                                     else:
-                                        objects[object['object']['id']]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
-                                if object['object']['id'] in objects and 'logicalSizeBytes' in snap['snapshotInfo']['stats'] and snap['snapshotInfo']['stats']['logicalSizeBytes'] > objects[object['object']['id']]['logical']:
-                                    objects[object['object']['id']]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
-                                objects[object['object']['id']]['bytesRead'] += snap['snapshotInfo']['stats']['bytesRead']
+                                        objects[objId]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
+                                if objId in objects and 'logicalSizeBytes' in snap['snapshotInfo']['stats'] and snap['snapshotInfo']['stats']['logicalSizeBytes'] > objects[objId]['logical']:
+                                    objects[objId]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
+                                objects[objId]['bytesRead'] += snap['snapshotInfo']['stats']['bytesRead']
                                 if snap['snapshotInfo']['startTimeUsecs'] > growthdaysusecs:
                                     if 'bytesWritten' in snap['snapshotInfo']['stats']:
-                                        objects[object['object']['id']]['growth'] += snap['snapshotInfo']['stats']['bytesWritten']
+                                        objects[objId]['growth'] += snap['snapshotInfo']['stats']['bytesWritten']
                                     else:
-                                        objects[object['object']['id']]['growth'] += (snap['snapshotInfo']['stats']['bytesRead'] / jobReduction)
+                                        objects[objId]['growth'] += (snap['snapshotInfo']['stats']['bytesRead'] / jobReduction)
                             except Exception as e:
                                 pass
 
