@@ -1,5 +1,15 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-08-10
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/clusterProtectedObjects> [`New`] cluster-direct API script to generate protected objects report
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/clusterProtectionRuns> [`Fix`] performance improvement
+
+## 2023-08-09
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/expireOldSnapshots> [`Update`] added `-s`, `--skipmonthlies` parameter
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storagePerObjectReport> [`Update`] updated storage calculations
+
 ## 2023-08-02
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/protectedFilePathReport> [`Update`] added output column for skipNestedVolumes
