@@ -7,7 +7,7 @@ param (
     [Parameter()][string]$password = $null,
     [Parameter()][switch]$noPrompt,
     [Parameter()][string]$mfaCode = $null,
-    [Parameter()][int64]$pageSize = 1000,
+    [Parameter()][int64]$pageSize = 120,
     [Parameter()][int64]$days,
     [Parameter()][array]$environment,
     [Parameter()][array]$excludeEnvironment,
@@ -130,8 +130,13 @@ foreach($v in $vip){
                 }
             }
             # get runs
+            $endUsecs = dateToUsecs
             while($True){
-                $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true"
+                if($includeLogs){
+                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true"
+                }else{
+                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&runTypes=kIncremental,kFull"
+                }
                 foreach($run in $runs.runs){
                     $localSources = @{}
                     if($run.PSObject.Properties['localBackupInfo']){
@@ -144,7 +149,7 @@ foreach($v in $vip){
                     $runType = $backupInfo.runType
                     if($includeLogs -or $runType -ne 'kLog'){
                         $runStartTime = usecsToDate $backupInfo.startTimeUsecs
-                        if($days -and $daysBack -gt $runStartTime){
+                        if($days -and $daysBackUsecs -gt $backupInfo.startTimeUsecs){
                             break
                         }
                         if($backupInfo.isSlaViolated){
