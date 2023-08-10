@@ -14,7 +14,7 @@ param (
     [Parameter()][string]$objectType,
     [Parameter()][ValidateSet('KiB','MiB','GiB','TiB')][string]$unit = 'GiB',
     [Parameter()][string]$outputPath = '.',
-    [Parameter()][int]$numRuns = 500
+    [Parameter()][int]$numRuns = 120
 )
 
 # source the cohesity-api helper code
@@ -70,7 +70,11 @@ foreach($v in $vip){
                 $policyName = '-'
             }
             while($True){
-                $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true"
+                if($includeLogs){
+                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true"
+                }else{
+                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&runTypes=kIncremental,kFull"
+                }
                 foreach($run in $runs.runs){
                     $localSources = @{}
                     if(! $run.PSObject.Properties['isLocalSnapshotsDeleted']){
@@ -126,7 +130,6 @@ foreach($v in $vip){
                                     
                                     $objectEndTime = $null
                                     $objectDurationSeconds = '-'
-                                    # $objectDurationSeconds = "{0:n0}" -f ($now - $objectStartTime).totalSeconds
                                     if($object.$snapshotInfo.snapshotInfo.PSObject.Properties['endTimeUsecs']){
                                         $objectEndTime = usecsToDate $object.$snapshotInfo.snapshotInfo.endTimeUsecs
                                         $objectDurationSeconds = ("{0:n0}" -f ($objectEndTime - $objectStartTime).totalSeconds).replace(',','')

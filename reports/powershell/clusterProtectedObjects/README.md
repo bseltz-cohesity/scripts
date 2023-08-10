@@ -42,8 +42,9 @@ Place both files in a folder together and run the main script like so:
 
 ## Other Parameters
 
-* -days: (optional) limit query to the last X days
-* -pageSize: (optional) API paging (default is 1000)
+* -days: (optional) limit recovery point query to the last X days
+* -numRuns: (optional) runs API paging (default is 120)
+* -pageSize: (optional) recovery API paging (default is 1000)
 * -environment: (optional) one or more types (comma separated) to include in query (e.g. kSQL, kVMware)
 * -excludeEnvironment: (optional) one or more types (comma seaparated) to exclude from query  (e.g. kSQL, kVMware)
 * -ouputPath: (optional) path to write output file (default is '.')

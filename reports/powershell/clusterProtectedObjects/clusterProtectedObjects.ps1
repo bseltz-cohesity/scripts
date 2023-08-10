@@ -7,7 +7,8 @@ param (
     [Parameter()][string]$password = $null,
     [Parameter()][switch]$noPrompt,
     [Parameter()][string]$mfaCode = $null,
-    [Parameter()][int64]$pageSize = 120,
+    [Parameter()][int64]$numRuns = 120,
+    [Parameter()][int64]$pageSize = 1000,
     [Parameter()][int64]$days,
     [Parameter()][array]$environment,
     [Parameter()][array]$excludeEnvironment,
@@ -100,11 +101,7 @@ foreach($v in $vip){
                                 if($objAlias -eq ''){
                                     $sourceName = $doc.registeredSource.displayName
                                 }
-                
                                 $versions = $doc.versions | Sort-Object -Property {$_.instanceId.jobStartTimeUsecs}
-                                # if($days){
-                                #     $versions = $versions | Where-Object {$_.instanceId.jobStartTimeUsecs -ge $daysBackUsecs}
-                                # }
                                 $versionCount = $versions.Count
                                 $jobObjects["$($doc.objectId.entity.id)"] = @{
                                     'sourceName' = $sourceName;
