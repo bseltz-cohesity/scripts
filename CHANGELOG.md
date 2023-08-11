@@ -2,6 +2,8 @@
 
 ## 2023-08-11
 
+* <https://github.com/bseltz-cohesity/scripts/tree/master/linux/backedUpFileList> [`New`] compiled binary version of backedUpFileList for Linux
+* <https://github.com/bseltz-cohesity/scripts/tree/master/linux/restoreFiles> [`New`] compiled binary version of restoreFiles for Linux
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/gflagList> [`New`] get complete list of gflags for a service
 * <https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/unprotectDmaasM365Mailboxes> [`New`] unprotect M365 mailboxes in CCS
 
