@@ -8,7 +8,7 @@ Note: the binary was tested successfully on CentOS 7, Ubuntu 18.04.4 and Fedora 
 
 ## Download the tool
 
-Run these commands from PowerShell to download the script(s) into your current directory
+Run these commands from bash to download the tool into your current directory
 
 ```bash
 # Begin download commands
