@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-08-11
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/gflagList> [`New`] get complete list of gflags for a service
+* <https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/unprotectDmaasM365Mailboxes> [`New`] unprotect M365 mailboxes in CCS
+
 ## 2023-08-10
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/clusterProtectedObjects> [`New`] cluster-direct API script to generate protected objects report
