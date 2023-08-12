@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-08-12
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/usersAndGroups> [`New`] report list of users and groups
+
 ## 2023-08-11
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/linux/backedUpFileList> [`New`] compiled binary version of backedUpFileList for Linux
