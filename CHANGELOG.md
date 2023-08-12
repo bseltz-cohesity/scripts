@@ -2,6 +2,7 @@
 
 ## 2023-08-12
 
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/updateArchiveRetention> [`Fix`] fixed filter by policy names
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/usersAndGroups> [`New`] report list of users and groups
 
 ## 2023-08-11
