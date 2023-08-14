@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-08-14
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow> [`Fix`] updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED"
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/backupNow> [`Fix`] updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED"
+
 ## 2023-08-12
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/updateArchiveRetention> [`Fix`] fixed filter by policy names
