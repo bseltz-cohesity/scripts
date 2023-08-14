@@ -1,4 +1,4 @@
-# version 2023.07.05
+# version 2023.08.14
 
 # version history
 # ===============
@@ -10,6 +10,7 @@
 # 2023.04.14 - fixed metadatafile watch bug
 # 2023.07.04 - added -dbg switch to output payload to payload.json file
 # 2023.07.05 - updated payload to solve p11 error "TARGET_NOT_IN_POLICY_NOT_ALLOWED%!(EXTRA int64=0)"
+# 2023-08-14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED"
 
 # extended error codes
 # ====================
@@ -21,6 +22,7 @@
 # 5: Timed out waiting for status update
 # 6: Timed out waiting for new run to appear
 # 7: Timed out getting protection jobs
+# 8: Target not in policy not allowed
 
 # process commandline arguments
 [CmdletBinding()]
@@ -556,6 +558,14 @@ $reportWaiting = $True
 $now = Get-Date
 $waitUntil = $now.AddMinutes($waitMinutesIfRunning)
 while($result -ne ""){
+    if(($cohesity_api.last_api_error | ConvertFrom-Json).message -match "TARGET_NOT_IN_POLICY_NOT_ALLOWED"){
+        output "TARGET_NOT_IN_POLICY_NOT_ALLOWED" -quiet
+        if($extendedErrorCodes){
+            exit 8
+        }else{
+            exit 1
+        }
+    }
     if((Get-Date) -gt $waitUntil){
         output "Timed out waiting for existing run to finish" -warn
         if($extendedErrorCodes){
