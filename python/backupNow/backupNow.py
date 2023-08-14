@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.07.05
+# version 2023.08.14
 
 # version history
 # ===============
@@ -13,6 +13,7 @@
 # 2023.04.14 - fixed metadatafile watch bug
 # 2023.06.25 - added -pl --purgeoraclelogs (first added 2023-06-08)
 # 2023.07.05 - updated payload to solve p11 error "TARGET_NOT_IN_POLICY_NOT_ALLOWED%!(EXTRA int64=0)"
+# 2023-08-14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED"
 
 # extended error codes
 # ====================
@@ -24,6 +25,7 @@
 # 5: Timed out waiting for status update
 # 6: Timed out waiting for new run to appear
 # 7: Timed out getting job
+# 8: Target not in policy not allowed
 
 ### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
@@ -586,6 +588,12 @@ if debugger:
     print(':DEBUG: waiting for new run to be accepted')
 runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData, quiet=True)
 while runNow != "":
+    if 'TARGET_NOT_IN_POLICY_NOT_ALLOWED' in LAST_API_ERROR():
+        out(LAST_API_ERROR())
+        if extendederrorcodes is True:
+            bail(8)
+        else:
+            bail(1)
     if cancelpreviousrunminutes > 0:
         cancelRunningJob(job, cancelpreviousrunminutes)
     if reportWaiting is True:
