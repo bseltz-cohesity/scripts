@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Storage Report for Python"""
+"""Storage Per Object Report for Python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -94,7 +94,6 @@ else:
 storageDomains = api('get', 'viewBoxes')
 
 sourceNames = {}
-
 for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower()):
     if job['environment'] not in ['kView', 'kRemoteAdapter']:
 
