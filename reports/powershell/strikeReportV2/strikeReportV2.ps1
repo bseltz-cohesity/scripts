@@ -112,7 +112,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     }
     foreach($failureKey in $reportFailures.Keys | Sort-Object){
         $totalStrikeouts += 1
-        $jobName, $objectName, $runType = $failureKey.split(';;')
+        $jobName, $objectName, $runType = $failureKey -split ';;'
         $message = [string]$reportFailures[$failureKey].replace("`n", "").replace(",",";")
         if($message.length -gt 150){
             $message = $message.subString(0,150)
