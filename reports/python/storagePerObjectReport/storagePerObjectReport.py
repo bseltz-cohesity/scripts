@@ -265,6 +265,8 @@ if 'views' in views and views['views'] is not None and len(views['views']) > 0:
         try:
             stat = [s for s in stats['statsList'] if s['name'] == viewName]
             if stat is not None and len(stat) > 0:
+                if 'storageConsumedBytesPrev' not in stat[0]['stats']:
+                    stat[0]['stats']['storageConsumedBytesPrev'] = 0
                 objGrowth = round((stat[0]['stats']['storageConsumedBytes'] - stat[0]['stats']['storageConsumedBytesPrev']) / multiplier, 1)
         except Exception:
             objGrowth = 0
