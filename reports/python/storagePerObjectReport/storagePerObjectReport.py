@@ -80,6 +80,7 @@ title = 'Storage Report for %s' % cluster['name']
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 growthdaysusecs = timeAgo(growthdays, 'days')
+msecsBeforeCurrentTimeToCompare = growthdays * 24 * 60 * 60 * 1000
 datestring = now.strftime("%Y-%m-%d")
 csvfileName = '%s/storagePerObjectReport-%s-%s.csv' % (folder, cluster['name'], datestring)
 csv = codecs.open(csvfileName, 'w', 'utf-8')
@@ -113,16 +114,21 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
         objects = {}
         print(job['name'])
         v1JobId = job['id'].split(':')[2]
-
+        jobObjGrowth = 0
+        jobGrowth = 0
         # get jobReduction factor
         if job['isActive'] is True:
-            stats = api('get', 'stats/consumers?consumerType=kProtectionRuns&consumerIdList=%s' % v1JobId)
+            stats = api('get', 'stats/consumers?consumerType=kProtectionRuns&consumerIdList=%s&msecsBeforeCurrentTimeToCompare=%s' % (v1JobId, msecsBeforeCurrentTimeToCompare))
         else:
-            stats = api('get', 'stats/consumers?consumerType=kReplicationRuns&consumerIdList=%s' % v1JobId)
+            stats = api('get', 'stats/consumers?consumerType=kReplicationRuns&consumerIdList=%s&msecsBeforeCurrentTimeToCompare=%s' % (v1JobId, msecsBeforeCurrentTimeToCompare))
         if 'statsList' in stats and stats['statsList'] is not None:
             dataIn = stats['statsList'][0]['stats'].get('dataInBytes', 0)
             dataInAfterDedup = stats['statsList'][0]['stats'].get('dataInBytesAfterDedup', 0)
             jobWritten = stats['statsList'][0]['stats'].get('dataWrittenBytes', 0)
+            storageConsumedBytes = stats['statsList'][0]['stats'].get('storageConsumedBytes', 0)
+            storageConsumedBytesPrev = stats['statsList'][0]['stats'].get('storageConsumedBytesPrev', 0)
+            if storageConsumedBytes > 0 and storageConsumedBytesPrev > 0:
+                jobGrowth = (storageConsumedBytes - storageConsumedBytesPrev) / resiliencyFactor
             if dataInAfterDedup > 0 and jobWritten > 0:
                 dedup = round(float(dataIn) / dataInAfterDedup, 1)
                 compression = round(float(dataInAfterDedup) / jobWritten, 1)
@@ -183,10 +189,8 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                                     objects[objId]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
                                 objects[objId]['bytesRead'] += snap['snapshotInfo']['stats']['bytesRead']
                                 if snap['snapshotInfo']['startTimeUsecs'] > growthdaysusecs:
-                                    if 'bytesWritten' in snap['snapshotInfo']['stats']:
-                                        objects[objId]['growth'] += snap['snapshotInfo']['stats']['bytesWritten']
-                                    else:
-                                        objects[objId]['growth'] += (snap['snapshotInfo']['stats']['bytesRead'] / jobReduction)
+                                    objects[objId]['growth'] += snap['snapshotInfo']['stats']['bytesRead']
+                                    jobObjGrowth += snap['snapshotInfo']['stats']['bytesRead']
                             except Exception as e:
                                 pass
 
@@ -198,12 +202,13 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                 jobFESize += thisObject['logical']
             if 'bytesRead' in thisObject:
                 jobFESize += thisObject['bytesRead']
-
         for object in sorted(objects.keys()):
             thisObject = objects[object]
             if 'logical' in thisObject and 'bytesRead' in thisObject:
                 objFESize = round(thisObject['logical'] / multiplier, 1)
-                objGrowth = round(thisObject['growth'] / multiplier, 1)
+                objGrowth = round(thisObject['growth'] / (jobReduction * multiplier), 1)
+                if jobObjGrowth != 0:
+                    objGrowth = round(jobGrowth * thisObject['growth'] / (jobObjGrowth * multiplier), 1)
                 if jobFESize > 0:
                     objWeight = (thisObject['logical'] + thisObject['bytesRead']) / jobFESize
                 else:
