@@ -2,6 +2,7 @@
 
 ## 2023-08-14
 
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/strikeReportV2> [`Fix`] parsing misbehavior on Windows PowerShell 5.1
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow> [`Fix`] updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED"
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/backupNow> [`Fix`] updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED"
 
