@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.07.12 - Brian Seltzer
+#  Version 2023.08.15 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2022.01.12 - fixed storePasswordForUser
@@ -28,9 +28,10 @@
 # 2023.05.23 - fixed setContext
 # 2023.06.01 - fixed setApiProperty function
 # 2023.07.12 - ignore write failure to pwfile
+# 2023.08.15 - enforce Tls12
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2023.07.12'
+$versionCohesityAPI = '2023.08.15'
 $userAgent = "cohesity-api/$versionCohesityAPI"
 
 # demand modern powershell version (must support TLSv1.2)
@@ -302,7 +303,7 @@ function apiauth($vip='helios.cohesity.com',
             }
             # authenticate
             if($PSVersionTable.PSEdition -eq 'Core'){
-                $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout
+                $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout -SslProtocol Tls12
             }else{
                 $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec $timeout
             }
@@ -343,7 +344,7 @@ function apiauth($vip='helios.cohesity.com',
                         }
                         # authenticate
                         if($PSVersionTable.PSEdition -eq 'Core'){
-                            $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout
+                            $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout -SslProtocol Tls12
                         }else{
                             $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec $timeout
                         }
@@ -640,9 +641,9 @@ function api($method,
             }
             if($PSVersionTable.PSEdition -eq 'Core'){
                 if($body){
-                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $header -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout
+                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $header -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout -SslProtocol Tls12
                 }else{
-                    $result = Invoke-RestMethod -Method $method -Uri $url -header $header -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout
+                    $result = Invoke-RestMethod -Method $method -Uri $url -header $header -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout -SslProtocol Tls12
                 }
             }else{
                 if($body){
