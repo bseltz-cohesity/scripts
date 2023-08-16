@@ -74,7 +74,7 @@ $date = (get-date).ToString()
 $now = (Get-Date).ToString("yyyy-MM-dd")
 $csvFile = "restoreReport-$($cluster.name)-$now.csv"
 
-"Date,Task,Object,Type,Target,Status,Duration (Min),User" | Out-File $csvFile
+"Date,Task,Object,Type,Target,Status,Duration (Min),Restore Point,User" | Out-File $csvFile
 
 $html = '<html>
 <head>
@@ -194,6 +194,7 @@ $html += '</span>
         <th>Target</th>
         <th>Status</th>
         <th>Duration (Min)</th>
+        <th>Restore Point</th>
         <th>User</th>
       </tr>'
 
@@ -217,6 +218,9 @@ while(1){
         $theseRestores = $theseRestores | Where-Object {$_.restoreTask.destroyClonedTaskStateVec.Count -eq 0}
     }
     foreach ($restore in $theseRestores | Sort-Object -Property {$_.restoreTask.performRestoreTaskState.base.startTimeUsecs} -Descending){
+        # $restore | ConvertTo-Json -Depth 99 | Out-File -Path restore.json
+        # exit
+        $restorePoint = ''
         $taskId = $restore.restoreTask.performRestoreTaskState.base.taskId
         $taskName = $restore.restoreTask.performRestoreTaskState.base.name
         $status = ($restore.restoreTask.performRestoreTaskState.base.publicStatus).Substring(1)
@@ -230,9 +234,10 @@ while(1){
         $link = "https://$vip/protection/recovery/detail/local/$taskId/"
         if($restore.restoreTask.performRestoreTaskState.PSObject.properties['objects']){
             foreach ($object in $restore.restoreTask.performRestoreTaskState.objects){
-    
+                $restorePoint = ''
                 $objectType = $entityType[$object.entity.type]
                 $targetObject = $objectName = $object.entity.displayName
+                $restorePoint = usecsToDate $object.startTimeUsecs
                 # vmware prefix/suffix
                 if($restore.restoreTask.performRestoreTaskState.renameRestoredObjectParam.prefix){
                     $targetObject = "$($restore.restoreTask.performRestoreTaskState.renameRestoredObjectParam.prefix)$targetObject"
@@ -256,11 +261,13 @@ while(1){
                 <td>$targetObject</td>
                 <td>$status</td>
                 <td>$duration</td>
+                <td>$restorePoint</td>
                 <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
                 </tr>"
-                "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
+                "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$restorePoint,$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
             }
         }elseif($restore.restoreTask.performRestoreTaskState.PSObject.properties['restoreAppTaskState']){
+            $restorePoint = usecsToDate $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.startTimeUsecs
             $targetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
             foreach ($restoreAppObject in $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec){
                 $objectName = $restoreAppObject.appEntity.displayName
@@ -276,6 +283,12 @@ while(1){
                 if($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName){
                     $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName)"
                 }
+                # if($restoreAppObject.restoreParams.sqlRestoreParams.restoreTimeSecs){
+                #     $restorePoint = usecsToDate ($restoreAppObject.restoreParams.sqlRestoreParams.restoreTimeSecs * 1000000)
+                # }
+                # if($restoreAppObject.restoreParams.oracleRestoreParams.restoreTimeSecs){
+                #     $restorePoint = usecsToDate ($restoreAppObject.restoreParams.oracleRestoreParams.restoreTimeSecs * 1000000)
+                # }
                 # oracle target
                 if($restoreAppObject.restoreParams.oracleRestoreParams.alternateLocationParams.newDatabaseName){
                     $targetObject += "/$($restoreAppObject.restoreParams.oracleRestoreParams.alternateLocationParams.newDatabaseName)"
@@ -295,10 +308,15 @@ while(1){
                 <td>$targetObject</td>
                 <td>$status</td>
                 <td>$duration</td>
+                <td>$restorePoint</td>
                 <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
                 </tr>"
-                "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
+                "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$restorePoint,$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
                 $restoresCounted += 1
+            }
+            if($restorePoint -eq ''){
+                $restore | ConvertTo-Json -Depth 99 | Out-File -Path restore.json
+                exit
             }
         }else{
             "***************more types****************"
