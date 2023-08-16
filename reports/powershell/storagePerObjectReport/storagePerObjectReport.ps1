@@ -201,7 +201,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                 $objWeight = 0
             }
             if($jobWritten -gt 0){
-                $objWritten = toUnits ($objWeight * $jobWritten)
+                $objWritten = $objWeight * $jobWritten
             }else{
                 $objWritten = [math]::Round($objFESize / $jobReduction, 1)
             }
@@ -220,7 +220,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
             }else{
                 $sourceName = $thisObject['name']
             }
-            """$($job.name)"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$objFESize"",""$objWritten"",""$objWrittenWithResiliency"",""$jobReduction"",""$objGrowth""" | Out-File -FilePath $outfileName -Append
+            """$($job.name)"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$objFESize"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth""" | Out-File -FilePath $outfileName -Append
         }
     }
 }
