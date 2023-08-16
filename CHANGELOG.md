@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-08-16
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQL> [`Fix`] Fixed cosmetic error "Cannot index into a null array" when checking previous restores during resume recovery
+
 ## 2023-08-15
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api> [`Fix`] Enforce TLSv1.2 to solve TLSv1.3 handshake failures with PowerShell.Core on Windows Server 2022
