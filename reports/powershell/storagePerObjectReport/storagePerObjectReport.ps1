@@ -19,7 +19,8 @@ param (
 
 $conversion = @{'Kib' = 1024; 'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
 function toUnits($val){
-    return "{0:n1}" -f ($val/($conversion[$unit]))
+    return [math]::Round($val/$conversion[$unit], 1)
+    # return "{0:n1}" -f ($val/($conversion[$unit]))
 }
 
 # source the cohesity-api helper code
@@ -53,8 +54,19 @@ try{
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "storagePerObjectReport-$($cluster.name)-$dateString.csv"
 
+$vaults = api get vaults
+if($vaults){
+    $nowMsecs = [Int64]((dateToUsecs) / 1000)
+    $weekAgoMsecs = $nowMsecs - (86400000)
+    $cloudStatURL = "reports/dataTransferToVaults?endTimeMsecs=$nowMsecs&startTimeMsecs=$weekAgoMsecs"
+    foreach($vault in $vaults){
+        $cloudStatURL += "&vaultIds=$($vault.id)"
+    }
+    $cloudStats = api get $cloudStatURL 
+}
+
 # headings
-"""Job Name"",""Environment"",""Source Name"",""Object Name"",""Logical $unit"",""$unit Written"",""$unit Written plus Resiliency"",""Job Reduction Ratio"",""$unit Written Last $growthDays Days""" | Out-File -FilePath $outfileName
+"""Job Name"",""Environment"",""Source Name"",""Object Name"",""Logical $unit"",""$unit Written"",""$unit Written plus Resiliency"",""Job Reduction Ratio"",""$unit Written Last $growthDays Days"",""$unit Archived"",""$unit per Archive Target""" | Out-File -FilePath $outfileName
 
 if($skipDeleted){
     $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&includeTenants=true"
@@ -157,8 +169,11 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                         }
                         if(! $snap.snapshotInfo.stats.PSObject.Properties['logicalSizeBytes']){
                             $csource = api get protectionSources?id=$objId -quiet
-                            $objects[$objId]['logical'] = $csource.protectedSourcesSummary[0].totalLogicalSize
-
+                            if( $csource.protectedSourcesSummary.Count -gt 0){
+                                $objects[$objId]['logical'] = $csource.protectedSourcesSummary[0].totalLogicalSize
+                            }else{
+                                $objects[$objId]['logical'] = 0
+                            }
                         }else{
                             $objects[$objId]['logical'] = $snap.snapshotInfo.stats.logicalSizeBytes
                         }
@@ -188,6 +203,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
             $jobFESize += $thisObject['logical']
             $jobFESize += $thisObject['bytesRead']
         }
+        
         foreach($objId in $objects.Keys | Sort-Object){
             $thisObject = $objects[$objId]
             $objFESize = toUnits $thisObject['logical']
@@ -220,7 +236,22 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
             }else{
                 $sourceName = $thisObject['name']
             }
-            """$($job.name)"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$objFESize"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth""" | Out-File -FilePath $outfileName -Append
+            # archive Stats
+            $totalArchived = 0
+            $vaultStats = ''
+            if($cloudStats){
+                foreach($vaultSummary in $cloudStats.dataTransferSummary){
+                    foreach($cloudJob in $vaultSummary.dataTransferPerProtectionJob){
+                        if($cloudJob.protectionJobName -eq $job.name){
+                            if($cloudJob.storageConsumed -gt 0){
+                                $totalArchived += ($objWeight * $cloudJob.storageConsumed)
+                                $vaultStats += "[$($vaultSummary.vaultName)]$(toUnits ($objWeight * $cloudJob.storageConsumed)) "
+                            }
+                        }
+                    }
+                }
+            }
+            """$($job.name)"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$objFESize"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$(toUnits $totalArchived)"",""$vaultStats""" | Out-File -FilePath $outfileName -Append
         }
     }
 }
@@ -228,6 +259,21 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
 # views
 $views = api get -v2 "file-services/views?maxCount=2000&includeTenants=true&includeStats=true&includeProtectionGroups=true"
 $stats = api get "stats/consumers?msecsBeforeCurrentTimeToCompare=$msecsBeforeCurrentTimeToCompare&consumerType=kViews"
+$viewJobStats = @{}
+
+# build total job FE sizes
+foreach($view in $views.views){
+    try{
+        $jobName = $view.viewProtection.protectionGroups[-1].groupName
+    }catch{
+        $jobName = '-'
+    }
+    if($jobName -notin $viewJobStats.Keys){
+        $viewJobStats[$jobName]
+    }
+    $viewJobStats[$jobName] += $view.stats.dataUsageStats.totalLogicalUsageBytes
+}
+
 foreach($view in $views.views){
     try{
         $jobName = $view.viewProtection.protectionGroups[-1].groupName
@@ -242,6 +288,12 @@ foreach($view in $views.views){
     $jobWritten = 0
     $consumption = 0
     $objFESize = toUnits $view.stats.dataUsageStats.totalLogicalUsageBytes
+    if($jobName -ne '-'){
+        $objWeight = $view.stats.dataUsageStats.totalLogicalUsageBytes / $viewJobStats[$jobName]
+    }else{
+        $objWeight = 1
+    }
+    Write-Host "    $objWeight"
     $dataIn = $view.stats.dataUsageStats.dataInBytes
     $dataInAfterDedup = $view.stats.dataUsageStats.dataInBytesAfterDedup
     $jobWritten = $view.stats.dataUsageStats.dataWrittenBytes
@@ -258,7 +310,22 @@ foreach($view in $views.views){
     if($stat){
         $objGrowth = toUnits ($stat.stats.storageConsumedBytes - $stat.stats.storageConsumedBytesPrev)
     }
-    """$($job.name)"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth""" | Out-File -FilePath $outfileName -Append
+    # archive stats
+    $totalArchived = 0
+    $vaultStats = ''
+    if($cloudStats){
+        foreach($vaultSummary in $cloudStats.dataTransferSummary){
+            foreach($cloudJob in $vaultSummary.dataTransferPerProtectionJob){
+                if($cloudJob.protectionJobName -eq $jobName){
+                    if($cloudJob.storageConsumed -gt 0){
+                        $totalArchived += ($objWeight * $cloudJob.storageConsumed)
+                        $vaultStats += "[$($vaultSummary.vaultName)]$(toUnits ($objWeight * $cloudJob.storageConsumed)) "
+                    }
+                }
+            }
+        }
+    }
+    """$($jobName)"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$(toUnits $totalArchived)"",""$vaultStats""" | Out-File -FilePath $outfileName -Append
 }
 
 "`nOutput saved to $outfilename`n"
