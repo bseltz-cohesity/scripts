@@ -2,6 +2,8 @@
 
 ## 2023-08-17
 
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport> [`Updated`] added estimated archival usage per object
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/activeSnapshots> [`Updated`] added support for multitenancy
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/updateJobDescriptions> [`New`] PowerShell script to update protection group descriptions from a CSV file
 
 ## 2023-08-16
