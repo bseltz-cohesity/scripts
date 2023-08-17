@@ -88,58 +88,62 @@ if excludeenvironment is not None and len(excludeenvironment) > 0:
     excludeenvironment = [e.lower() for e in excludeenvironment]
 
 ### find recoverable objects
-policies = api('get', 'protectionPolicies')
-jobs = sorted(api('get', 'protectionJobs'), key=lambda job: job['name'].lower())
+policies = api('get', 'protectionPolicies?allUnderHierarchy=true')
+jobs = sorted(api('get', 'protectionJobs?allUnderHierarchy=true'), key=lambda job: job['name'].lower())
 if localonly is True:
     jobs = [j for j in jobs if 'isActive' not in j or j['isActive'] is not False]
 
 for job in jobs:
+    tenantTail = ''
+    if 'tenantId' in job:
+        tenantTail = '&tenantId=%s' % job['tenantId']
     if excludeenvironment is None or len(excludeenvironment) == 0 or (job['environment'].lower() not in excludeenvironment and job['environment'][1:].lower() not in excludeenvironment):
 
         startfrom = 0
-        ro = api('get', '/searchvms?jobIds=%s&size=%s&from=%s%s' % (job['id'], pagesize, startfrom, etail))
+        ro = api('get', '/searchvms?allUnderHierarchy=true&jobIds=%s&size=%s&from=%s%s%s' % (job['id'], pagesize, startfrom, etail, tenantTail))
         if len(ro) > 0:
             while True:
-                ro['vms'].sort(key=lambda obj: obj['vmDocument']['jobName'])
-                for vm in ro['vms']:
-                    doc = vm['vmDocument']
-                    jobId = doc['objectId']['jobId']
-                    jobName = doc['jobName']
-                    objName = doc['objectName']
-                    objType = environments[doc['registeredSource']['type']]
-                    objSource = doc['registeredSource']['displayName']
-                    policyName = [p['name'] for p in policies if p['id'] == job['policyId']]
-                    if policyName is not None and len(policyName) > 0:
-                        policyName = policyName[0]
-                    else:
-                        policyName = ''
-                    objAlias = ''
-                    if 'objectAliases' in doc:
-                        objAlias = doc['objectAliases'][0]
-                        if objAlias == objName + '.vmx':
-                            objAlias = ''
-                        if objType == 'VMware':
-                            objAlias = ''
-                    if objType == 'View':
-                        objSource = ''
+                if 'vms' in ro:
+                    ro['vms'].sort(key=lambda obj: obj['vmDocument']['jobName'])
+                    for vm in ro['vms']:
+                        doc = vm['vmDocument']
+                        jobId = doc['objectId']['jobId']
+                        jobName = doc['jobName']
+                        objName = doc['objectName']
+                        objType = environments[doc['registeredSource']['type']]
+                        objSource = doc['registeredSource']['displayName']
+                        policyName = [p['name'] for p in policies if p['id'] == job['policyId']]
+                        if policyName is not None and len(policyName) > 0:
+                            policyName = policyName[0]
+                        else:
+                            policyName = ''
+                        objAlias = ''
+                        if 'objectAliases' in doc:
+                            objAlias = doc['objectAliases'][0]
+                            if objAlias == objName + '.vmx':
+                                objAlias = ''
+                            if objType == 'VMware':
+                                objAlias = ''
+                        if objType == 'View':
+                            objSource = ''
 
-                    if objAlias != '':
-                        objName = '%s/%s' % (objAlias, objName)
-                    versions = sorted(doc['versions'], key=lambda s: s['instanceId']['jobStartTimeUsecs'])
-                    if days is not None:
-                        versions = [v for v in versions if v['instanceId']['jobStartTimeUsecs'] >= daysBackUsecs]
-                    versionCount = len(versions)
-                    if versionCount > 0:
-                        oldestSnapshotDate = usecsToDate(versions[0]['instanceId']['jobStartTimeUsecs'])
-                        newsetSnapshotDate = usecsToDate(versions[-1]['instanceId']['jobStartTimeUsecs'])
-                    else:
-                        oldestSnapshotDate = ''
-                        newsetSnapshotDate = ''
-                    print("%s (%s) %s: %s" % (jobName, objType, objName, versionCount))
-                    f.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], jobName, objType, objName, versionCount, oldestSnapshotDate, newsetSnapshotDate, policyName))
+                        if objAlias != '':
+                            objName = '%s/%s' % (objAlias, objName)
+                        versions = sorted(doc['versions'], key=lambda s: s['instanceId']['jobStartTimeUsecs'])
+                        if days is not None:
+                            versions = [v for v in versions if v['instanceId']['jobStartTimeUsecs'] >= daysBackUsecs]
+                        versionCount = len(versions)
+                        if versionCount > 0:
+                            oldestSnapshotDate = usecsToDate(versions[0]['instanceId']['jobStartTimeUsecs'])
+                            newsetSnapshotDate = usecsToDate(versions[-1]['instanceId']['jobStartTimeUsecs'])
+                        else:
+                            oldestSnapshotDate = ''
+                            newsetSnapshotDate = ''
+                        print("%s (%s) %s: %s" % (jobName, objType, objName, versionCount))
+                        f.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], jobName, objType, objName, versionCount, oldestSnapshotDate, newsetSnapshotDate, policyName))
                 if ro['count'] > (pagesize + startfrom):
                     startfrom += pagesize
-                    ro = api('get', '/searchvms?jobIds=%s&size=%s&from=%s%s' % (job['id'], pagesize, startfrom, etail))
+                    ro = api('get', '/searchvms?allUnderHierarchy=truejobIds=%s&size=%s&from=%s%s%s' % (job['id'], pagesize, startfrom, etail, tenantTail))
                 else:
                     break
 f.close()
