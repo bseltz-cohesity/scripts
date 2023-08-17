@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-08-17
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/updateJobDescriptions> [`New`] PowerShell script to update protection group descriptions from a CSV file
+
 ## 2023-08-16
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQL> [`Fix`] Fixed cosmetic error "Cannot index into a null array" when checking previous restores during resume recovery
