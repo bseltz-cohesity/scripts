@@ -2,6 +2,7 @@
 
 ## 2023-08-17
 
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/updateGCPExternalTargetPrivateKey> [`New`] PowerShell script to update the private key on a Google Cloud archive target
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/expireOldSnaps> [`Update`] added modern authentication methods (API keys, MFA, Helios, etc)
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storagePerObjectReport> [`Update`] added estimated archival usage per object
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport> [`Update`] added estimated archival usage per object
