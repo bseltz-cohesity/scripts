@@ -84,7 +84,17 @@ msecsBeforeCurrentTimeToCompare = growthdays * 24 * 60 * 60 * 1000
 datestring = now.strftime("%Y-%m-%d")
 csvfileName = '%s/storagePerObjectReport-%s-%s.csv' % (folder, cluster['name'], datestring)
 csv = codecs.open(csvfileName, 'w', 'utf-8')
-csv.write('"Job Name","Environment","Source Name","Object Name","Logical %s","%s Written","%s Written plus Resiliency","Job Reduction Ratio","%s Written Last %s Days"\n' % (units, units, units, units, growthdays))
+csv.write('"Job Name","Environment","Source Name","Object Name","Logical %s","%s Written","%s Written plus Resiliency","Job Reduction Ratio","%s Written Last %s Days","%s Archived","%s per Archive Target"\n' % (units, units, units, units, growthdays, units, units))
+
+vaults = api('get', 'vaults')
+if vaults is not None and len(vaults) > 0:
+    nowMsecs = int((dateToUsecs()) / 1000)
+    weekAgoMsecs = nowMsecs - 86400000
+    cloudStatURL = 'reports/dataTransferToVaults?endTimeMsecs=%s&startTimeMsecs=%s' % (nowMsecs, weekAgoMsecs)
+    for vault in vaults:
+        cloudStatURL += '&vaultIds=%s' % vault['id']
+    cloudStats = api('get', cloudStatURL)
+
 
 if skipdeleted:
     jobs = api('get', 'data-protect/protection-groups?isDeleted=false&includeTenants=true', v=2)
@@ -230,12 +240,35 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                             sourceNames[thisObject['sourceId']] = sourceName
                 else:
                     sourceName = thisObject['name']
-                csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (job['name'], job['environment'], sourceName, thisObject['name'], objFESize, objWritten, objWrittenWithResiliency, jobReduction, objGrowth))
+                # archive Stats
+                totalArchived = 0
+                vaultStats = ''
+                if cloudStats is not None and 'dataTransferSummary' in cloudStats and len(cloudStats['dataTransferSummary']) > 0:
+                    for vaultSummary in cloudStats['dataTransferSummary']:
+                        if vaultSummary is not None and 'dataTransferPerProtectionJob' in vaultSummary and len(vaultSummary['dataTransferPerProtectionJob']) > 0:
+                            for cloudJob in vaultSummary['dataTransferPerProtectionJob']:
+                                if cloudJob['protectionJobName'] == job['name']:
+                                    if cloudJob['storageConsumed'] > 0:
+                                        totalArchived += (objWeight * cloudJob['storageConsumed'])
+                                        vaultStats += '[%s]%s ' % (vaultSummary['vaultName'], round((objWeight * cloudJob['storageConsumed']) / multiplier, 1))
+                totalArchived = round(totalArchived / multiplier, 1)
+                csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (job['name'], job['environment'], sourceName, thisObject['name'], objFESize, objWritten, objWrittenWithResiliency, jobReduction, objGrowth, totalArchived, vaultStats))
 
 # views
 views = api('get', 'file-services/views?maxCount=2000&includeTenants=true&includeStats=true&includeProtectionGroups=true', v=2)
 if 'views' in views and views['views'] is not None and len(views['views']) > 0:
     stats = api('get', 'stats/consumers?msecsBeforeCurrentTimeToCompare=%s&consumerType=kViews' % (growthdays * 86400000))
+    # build total job FE sizes
+    viewJobStats = {}
+    for view in views['views']:
+        try:
+            jobName = view['viewProtection']['protectionGroups'][-1]['groupName']
+        except Exception:
+            jobName = '-'
+        if jobName not in viewJobStats:
+            viewJobStats[jobName] = 0
+        viewJobStats[jobName] += view['stats']['dataUsageStats']['totalLogicalUsageBytes']
+
     for view in views['views']:
         try:
             jobName = view['viewProtection']['protectionGroups'][-1]['groupName']
@@ -248,12 +281,15 @@ if 'views' in views and views['views'] is not None and len(views['views']) > 0:
         dataInAfterDedup = 0
         jobWritten = 0
         consumption = 0
+        objWeight = 1
         try:
             objFESize = round(view['stats']['dataUsageStats']['totalLogicalUsageBytes'] / multiplier, 1)
             dataIn = view['stats']['dataUsageStats'].get('dataInBytes', 0)
             dataInAfterDedup = view['stats']['dataUsageStats'].get('dataInBytesAfterDedup', 0)
             jobWritten = view['stats']['dataUsageStats'].get('dataWrittenBytes', 0)
             consumption = view['stats']['dataUsageStats'].get('localTotalPhysicalUsageBytes', 0)
+            if jobName != '-':
+                objWeight = view['stats']['dataUsageStats']['totalLogicalUsageBytes'] / viewJobStats[jobName]
         except Exception:
             pass
         if dataInAfterDedup > 0 and jobWritten > 0:
@@ -270,7 +306,19 @@ if 'views' in views and views['views'] is not None and len(views['views']) > 0:
                 objGrowth = round((stat[0]['stats']['storageConsumedBytes'] - stat[0]['stats']['storageConsumedBytesPrev']) / multiplier, 1)
         except Exception:
             objGrowth = 0
-        csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (jobName, 'kView', sourceName, viewName, objFESize, round(jobWritten / multiplier, 1), round(consumption / multiplier, 1), jobReduction, objGrowth))
-
+        # archive Stats
+        totalArchived = 0
+        vaultStats = ''
+        if cloudStats is not None and 'dataTransferSummary' in cloudStats and len(cloudStats['dataTransferSummary']) > 0:
+            for vaultSummary in cloudStats['dataTransferSummary']:
+                if vaultSummary is not None and 'dataTransferPerProtectionJob' in vaultSummary and len(vaultSummary['dataTransferPerProtectionJob']) > 0:
+                    for cloudJob in vaultSummary['dataTransferPerProtectionJob']:
+                        if cloudJob['protectionJobName'] == jobName:
+                            print(cloudJob['storageConsumed'])
+                            if cloudJob['storageConsumed'] > 0:
+                                totalArchived += (objWeight * cloudJob['storageConsumed'])
+                                vaultStats += '[%s]%s ' % (vaultSummary['vaultName'], round((objWeight * cloudJob['storageConsumed']) / multiplier, 1))
+        totalArchived = round(totalArchived / multiplier, 1)
+        csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (jobName, 'kView', sourceName, viewName, objFESize, round(jobWritten / multiplier, 1), round(consumption / multiplier, 1), jobReduction, objGrowth, totalArchived, vaultStats))
 csv.close()
 print('\nOutput saved to %s\n' % csvfileName)
