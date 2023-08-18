@@ -42,5 +42,6 @@ if(! $vault){
 }
 
 Write-Host "updating private key for $targetName..."
+$privateKey = $privateKey.replace("\n", "`n")
 setApiProperty -object $vault.config.google -name clientPrivateKey -value $privateKey
 $result = api put vaults/$($vault.id) $vault
