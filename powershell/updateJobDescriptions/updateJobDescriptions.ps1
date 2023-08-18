@@ -11,7 +11,8 @@ param (
     [Parameter()][switch]$mcm,
     [Parameter()][string]$mfaCode = $null,
     [Parameter()][string]$clusterName = $null,
-    [Parameter(Mandatory=$True)][string]$csvFile
+    [Parameter(Mandatory=$True)][string]$csvFile,
+    [Parameter()][switch]$export
 )
 
 # source the cohesity-api helper code
@@ -35,13 +36,20 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
+$jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true"
+
+if($export){
+    Write-Host "Exporting protection groups name, description to $csvFile"
+    $jobs.protectionGroups | Select-Object -Property name, description | Export-Csv -Path $csvFile
+    exit
+}
+
 $csv = Import-Csv -Path $csvFile
 if(!$csv){
     Write-Host "csv $csvFile file not found" -ForegroundColor Yellow
     exit
 }
 
-$jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true"
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     $csvItem = $csv | Where-Object name -eq $job.name
     if(! $csvItem){
