@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-08-19
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/addObjectToUserAccessList> [`Update`] added support for AD groups
+
 ## 2023-08-17
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/updateGCPExternalTargetPrivateKey> [`New`] PowerShell script to update the private key on a Google Cloud archive target
