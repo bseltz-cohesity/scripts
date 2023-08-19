@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""get cluster vips by least busy CPU"""
+"""add objects to user restricted objects list"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -7,48 +7,59 @@ from pyhesity import *
 # command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)         # cluster to connect to
-parser.add_argument('-u', '--username', type=str, required=True)    # username
-parser.add_argument('-d', '--domain', type=str, default='local')    # (optional) domain - defaults to local
-parser.add_argument('-i', '--useApiKey', action='store_true')       # use API key authentication
-parser.add_argument('-pwd', '--password', type=str, default=None)   # optional password
-parser.add_argument('-o', '--objectname', action='append', type=str)
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
+parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-t', '--tenant', type=str, default=None)
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-m', '--mfacode', type=str, default=None)
+parser.add_argument('-on', '--objectname', action='append', type=str)
+parser.add_argument('-ol', '--objectlist', type=str, default=None)
 parser.add_argument('-vn', '--viewname', action='append', type=str)
-parser.add_argument('-n', '--aduser', type=str, required=True)       # AD user to onboard
-parser.add_argument('-a', '--addomain', type=str, default='local')     # AD user to onboard
+parser.add_argument('-vl', '--viewlist', type=str, default=None)
+parser.add_argument('-pn', '--principalname', action='append', type=str)
+parser.add_argument('-pl', '--principallist', type=str, default=None)
+parser.add_argument('-r', '--remove', action='store_true')
 
 args = parser.parse_args()
 
 vip = args.vip
 username = args.username
 domain = args.domain
+tenant = args.tenant
+clustername = args.clustername
+mcm = args.mcm
 useApiKey = args.useApiKey
 password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
 objectnames = args.objectname
+objectlist = args.objectlist
 viewnames = args.viewname
-aduser = args.aduser
-addomain = args.addomain
+viewlist = args.viewlist
+principalnames = args.principalname
+principallist = args.principallist
+remove = args.remove
 
 # authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, noretry=True, quiet=True)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, tenantId=tenant)
 
-views = api('get', 'views')
-sources = api('get', 'protectionSources')
-users = api('get', 'users')
-user = [u for u in users if u['username'].lower() == aduser.lower() and u['domain'].lower() == addomain.lower()]
-if user is None or len(user) == 0:
-    print('user %s\\%s not found' % (addomain, aduser))
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    if clustername is not None:
+        heliosCluster(clustername)
+    else:
+        print('-clustername is required when connecting to Helios or MCM')
+        exit()
+
+# exit if not authenticated
+if apiconnected() is False:
+    print('authentication failed')
     exit(1)
-user = user[0]
-access = api('get', 'principals/protectionSources?sids=%s' % user['sid'])
-access = access[0]
-
-protectionSourceIds = []
-if 'protectionSources' in access:
-    protectionSourceIds = [p['id'] for p in access['protectionSources']]
-theseviewnames = []
-if 'views' in access:
-    theseviewnames = [v['name'] for v in access['views']]
 
 
 ### get object ID
@@ -73,44 +84,108 @@ def getObjectId(objectName):
                     exit
 
     for source in sources:
-        if d['_object_id'] is None:
+        if d['_object_id'] is None and source['protectionSource']['name'] != 'Registered Agents':
             get_nodes(source)
 
     return d['_object_id']
 
 
-newAccess = {
-    "sourcesForPrincipals": [
-        {
-            "sid": user['sid'],
-            "protectionSourceIds": protectionSourceIds,
-            "viewNames": theseviewnames
-        }
-    ]
-}
+def gatherList(param=None, filename=None, name='items', required=True):
+    items = []
+    if param is not None:
+        for item in param:
+            items.append(item)
+    if filename is not None:
+        f = open(filename, 'r')
+        items += [s.strip() for s in f.readlines() if s.strip() != '']
+        f.close()
+    if required is True and len(items) == 0:
+        print('no %s specified' % name)
+        exit()
+    return items
 
-for objectname in objectnames:
-    objectid = getObjectId(objectname)
-    if objectid is None:
-        print('Object %s not found' % objectname)
-        exit(1)
-    print('Granting %s\\%s rights to %s' % (addomain, aduser, objectname))
-    newAccess['sourcesForPrincipals'][0]['protectionSourceIds'].append(objectid)
 
-for viewname in viewnames:
-    thisviewname = [v['name'] for v in views['views'] if v['name'].lower() == viewname.lower()]
-    if thisviewname is None or len(thisviewname) == 0:
-        print('View %s not found' % viewname)
-        exit(1)
-    print('Granting %s\\%s rights to %s' % (addomain, aduser, thisviewname[0]))
-    newAccess['sourcesForPrincipals'][0]['viewNames'].append(thisviewname[0])
+principalnames = gatherList(principalnames, principallist, name='principals', required=True)
+viewnames = gatherList(viewnames, viewlist, name='views', required=False)
+objectnames = gatherList(objectnames, objectlist, name='objects', required=False)
 
-newAccess['sourcesForPrincipals'][0]['protectionSourceIds'] = list(set(newAccess['sourcesForPrincipals'][0]['protectionSourceIds']))
-newAccess['sourcesForPrincipals'][0]['viewNames'] = list(set(newAccess['sourcesForPrincipals'][0]['viewNames']))
+if len(objectnames) == 0 and len(viewnames) == 0:
+    print('no objects/views specified')
+    exit(0)
 
-if user['restricted'] is False:
-    user['restricted'] = True
-    result = api('put', 'users', user)
+views = api('get', 'views')
+sources = api('get', 'protectionSources')
+users = api('get', 'users')
+groups = api('get', 'groups')
 
-result = api('put', 'principals/protectionSources', newAccess)
-exit(0)
+for p in principalnames:
+    if '/' in p:
+        (d, p) = p.split('/')
+    elif '\\' in p:
+        (d, p) = p.split('\\')
+    else:
+        d = 'local'
+    ptype = 'user'
+    thisPrincipal = [u for u in users if u['username'].lower() == p.lower() and u['domain'].lower() == d.lower()]
+    if thisPrincipal is None or len(thisPrincipal) == 0:
+        ptype = 'group'
+        thisPrincipal = [g for g in groups if g['name'].lower() == p.lower() and g['domain'].lower() == d.lower()]
+    if thisPrincipal is None or len(thisPrincipal) == 0:
+        print('Principal %s/%s not found' % (d, p))
+        continue
+    else:
+        thisPrincipal = thisPrincipal[0]
+        print('%s/%s' % (d, p))
+    access = api('get', 'principals/protectionSources?sids=%s' % thisPrincipal['sid'])
+    access = access[0]
+    protectionSourceIds = []
+    if 'protectionSources' in access:
+        protectionSourceIds = [p['id'] for p in access['protectionSources']]
+    theseviewnames = []
+    if 'views' in access:
+        theseviewnames = [v['name'] for v in access['views']]
+    newAccess = {
+        "sourcesForPrincipals": [
+            {
+                "sid": thisPrincipal['sid'],
+                "protectionSourceIds": protectionSourceIds,
+                "viewNames": theseviewnames
+            }
+        ]
+    }
+
+    for o in objectnames:
+        objectId = getObjectId(o)
+        if objectId is None:
+            print('    Object %s not found!' % o)
+            continue
+        if remove:
+            print('    Removing %s' % o)
+            newAccess['sourcesForPrincipals'][0]['protectionSourceIds'] = [i for i in newAccess['sourcesForPrincipals'][0]['protectionSourceIds'] if i != objectId]
+        else:
+            print('    Adding %s' % o)
+            newAccess['sourcesForPrincipals'][0]['protectionSourceIds'].append(objectId)
+
+    for v in viewnames:
+        view = [w for w in views['views'] if w['name'].lower() == v.lower()]
+        if view is None or len(view) == 0:
+            print('    View %s not found' % v)
+            continue
+        else:
+            view = view[0]
+        if remove:
+            print('    Removing %s' % v)
+            newAccess['sourcesForPrincipals'][0]['viewNames'] = [i for i in newAccess['sourcesForPrincipals'][0]['viewNames'] if i != view['name']]
+        else:
+            print('    Adding %s' % v)
+            newAccess['sourcesForPrincipals'][0]['viewNames'].append(view['name'])
+
+    newAccess['sourcesForPrincipals'][0]['protectionSourceIds'] = list(set(newAccess['sourcesForPrincipals'][0]['protectionSourceIds']))
+    newAccess['sourcesForPrincipals'][0]['viewNames'] = list(set(newAccess['sourcesForPrincipals'][0]['viewNames']))
+
+    thisPrincipal['restricted'] = True
+    if ptype == 'user':
+        result = api('put', 'users', thisPrincipal)
+    else:
+        result = api('put', 'groups', thisPrincipal)
+    result = api('put', 'principals/protectionSources', newAccess)
