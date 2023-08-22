@@ -57,11 +57,20 @@ You can run the script again you should see no results.
 
 Also note that data in the archive target may not be immediately deleted if a newer reference archive has not yet been created.
 
-## Parameters
+## Authentication Parameters
 
-* -vip: Cohesity cluster to connect to
-* -username: Cohesity username (e.g. admin)
-* -domain: (optional) Active Directory domain (defaults to 'local')
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -tenant: (optional) impersonate a multitenancy org
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -jobName: (optional) Name of protection job to expire archives from (default is all jobs)
 * -target: (optional) narrow scope to a specific archive target
 * -olderThan: show/expire snapshots older than this many days
