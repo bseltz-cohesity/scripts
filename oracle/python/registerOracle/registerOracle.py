@@ -87,10 +87,11 @@ for server in servernames:
 
     if sourceId is not None:
         # see if server is already registered as Oracle
-        existingOracleSource = [o for o in oracleSources[0]['nodes'] if o['protectionSource']['id'] == sourceId]
-        if len(existingOracleSource) > 0:
-            print("%s is already registered as an Oracle protection source" % server)
-            exit()
+        if oracleSources is not None and len(oracleSources) > 0:
+            existingOracleSource = [o for o in oracleSources[0]['nodes'] if o['protectionSource']['id'] == sourceId]
+            if len(existingOracleSource) > 0:
+                print("%s is already registered as an Oracle protection source" % server)
+                exit()
 
         # register server as Oracle
         print("Registering %s as an Oracle protection source..." % server)
