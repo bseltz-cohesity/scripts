@@ -30,7 +30,7 @@ To autoprotect a vSphere cluster:
 ./autoProtectVMs.ps1 -vip mycluster `
                      -username myusername `
                      -domain mydomain.net `
-                     -vCenter myvcenter.mydomain.net `
+                     -vCenterName myvcenter.mydomain.net `
                      -dataCenter myDataCenter `
                      -jobName 'vm backup' `
                      -objectName myHACluster1
@@ -42,7 +42,7 @@ To autoprotect a folder:
 ./autoProtectVMs.ps1 -vip mycluster `
                      -username myusername `
                      -domain mydomain.net `
-                     -vCenter myvcenter.mydomain.net `
+                     -vCenterName myvcenter.mydomain.net `
                      -dataCenter myDataCenter `
                      -jobName 'vm backup' `
                      -objectName myfolder1
@@ -54,7 +54,7 @@ If a folder is nested, you can specify the canonical folder path:
 ./autoProtectVMs.ps1 -vip mycluster `
                      -username myusername `
                      -domain mydomain.net `
-                     -vCenter myvcenter.mydomain.net `
+                     -vCenterName myvcenter.mydomain.net `
                      -dataCenter myDataCenter `
                      -jobName 'vm backup' `
                      -objectName 'myfolder1/mysubfolder'
