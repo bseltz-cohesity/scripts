@@ -165,6 +165,8 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True} 
 
 if($runningTasks -eq 0){
     "`nNo active archive tasks found"
+    exit 0
 }else{
     "`nOutput saved to $outfilename"
+    exit 1
 }
