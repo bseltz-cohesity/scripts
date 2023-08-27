@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+@@ 2032-08-27
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/archiveQueue> [`Update`] added exit 0 when no active archive tasks found, exit 1 if tasks are found
+
 ## 2023-08-22
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/expireOldArchives> [`Update`] added modern authentication support
