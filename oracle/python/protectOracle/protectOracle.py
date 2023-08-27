@@ -33,6 +33,10 @@ parser.add_argument('-z', '--timezone', type=str, default='America/Los_Angeles')
 parser.add_argument('-is', '--incrementalsla', type=int, default=60)    # incremental SLA minutes
 parser.add_argument('-fs', '--fullsla', type=int, default=120)          # full SLA minutes
 parser.add_argument('-sd', '--storagedomain', type=str, default='DefaultStorageDomain')  # storage domain
+parser.add_argument('-l', '--deletelogdays', type=int, default=None)
+parser.add_argument('-pause', '--pause', action='store_true')
+parser.add_argument('-np', '--nopersistmounts', action='store_true')
+parser.add_argument('-pm', '--persistmounts', action='store_true')
 
 args = parser.parse_args()
 
@@ -52,6 +56,10 @@ timezone = args.timezone
 incrementalsla = args.incrementalsla
 fullsla = args.fullsla
 storagedomain = args.storagedomain
+deletelogdays = args.deletelogdays
+pause = args.pause
+nopersistmounts = args.nopersistmounts
+persistmounts = args.persistmounts
 
 # parse starttime
 try:
@@ -123,6 +131,11 @@ if len(job) < 1:
             "sourceIds": [],
             "indexingPolicy": {
                 "disableIndexing": True
+            },
+            "environmentParameters": {
+                "oracleParameters": {
+                    "persistMountpoints": True
+                }
             }
         }
     else:
@@ -139,11 +152,21 @@ if len(server) < 1:
 serverId = server[0]['protectionSource']['id']
 job['sourceIds'].append(serverId)
 
+if 'applicationNodes' not in server[0]:
+    print('No databases found on %s' % servername)
+    exit(1)
+
+dbUuids = {}
+dbNames = {}
+for db in server[0]['applicationNodes']:
+    dbUuids[db['protectionSource']['id']] = db['protectionSource']['oracleProtectionSource']['uuid']
+    dbNames[db['protectionSource']['id']] = db['protectionSource']['name']
+
 if dbname is not None:
     # find db to add to job
     db = [a for a in server[0]['applicationNodes'] if a['protectionSource']['name'].lower() == dbname.lower()]
     if len(db) < 1:
-        print("Database %s not found!" % dbname)
+        print('Database %s not found!' % dbname)
         exit(1)
     dbIds = [db[0]['protectionSource']['id']]
     print('Adding %s/%s to protection job %s...' % (servername, dbname, jobname))
@@ -156,11 +179,77 @@ else:
 sourceSpecialParameter = [s for s in job['sourceSpecialParameters'] if s['sourceId'] == serverId]
 if len(sourceSpecialParameter) < 1:
     job['sourceSpecialParameters'].append({"sourceId": serverId, "oracleSpecialParameters": {"applicationEntityIds": dbIds}})
+    if deletelogdays is not None:
+        sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'] = []
+        for dbId in dbIds:
+            sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'].append({
+                "databaseAppId": dbId,
+                "nodeChannelList": [
+                    {
+                        "databaseUuid": "%s" % dbUuids[dbId],
+                        "databaseUniqueName": "%s" % dbNames[dbId],
+                        "archiveLogKeepDays": deletelogdays,
+                        "enableDgPrimaryBackup": True,
+                        "rmanBackupType": 1
+                    }
+                ]
+            })
 else:
     for dbId in dbIds:
         sourceSpecialParameter[0]['oracleSpecialParameters']['applicationEntityIds'].append(dbId)
         sourceSpecialParameter[0]['oracleSpecialParameters']['applicationEntityIds'] = list(set(sourceSpecialParameter[0]['oracleSpecialParameters']['applicationEntityIds']))
+        if deletelogdays is not None:
+            if 'appParamsList' not in sourceSpecialParameter[0]['oracleSpecialParameters']:
+                sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'] = []
+            appParam = [a for a in sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'] if a['databaseAppId'] == dbId]
+            otherAppParams = [a for a in sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'] if a['databaseAppId'] != dbId]
+            if len(appParam) < 1:
+                sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'].append(
+                    {
+                        "databaseAppId": dbId,
+                        "nodeChannelList": [
+                            {
+                                "databaseUuid": "%s" % dbUuids[dbId],
+                                "databaseUniqueName": "%s" % dbNames[dbId],
+                                "archiveLogKeepDays": deletelogdays,
+                                "enableDgPrimaryBackup": True,
+                                "rmanBackupType": 1
+                            }
+                        ]
+                    }
+                )
+            else:
+                appParam[0] = {
+                    "databaseAppId": dbId,
+                    "nodeChannelList": [
+                        {
+                            "databaseUuid": "%s" % dbUuids[dbId],
+                            "databaseUniqueName": "%s" % dbNames[dbId],
+                            "archiveLogKeepDays": deletelogdays,
+                            "enableDgPrimaryBackup": True,
+                            "rmanBackupType": 1
+                        }
+                    ]
+                }
+                otherAppParams.append(appParam[0])
+                sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'] = otherAppParams
+
 job['sourceIds'] = list(set(job['sourceIds']))
+
+if pause is True:
+    job['isPaused'] = True
+
+if nopersistmounts:
+    if 'environmentParameters' not in job:
+        job['environmentParameters'] = {
+            "oracleParameters": {
+                "persistMountpoints": False
+            }
+        }
+    else:
+        job['environmentParameters']['oracleParameters']['persistMountpoints'] = False
+if persistmounts:
+    job['environmentParameters']['oracleParameters']['persistMountpoints'] = True
 
 if newJob is True:
     # create new job
