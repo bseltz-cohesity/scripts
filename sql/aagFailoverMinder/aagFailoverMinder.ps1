@@ -154,12 +154,7 @@ foreach($job in $jobs | Sort-Object -Property name){
             $jobId = $job.id
             $policy = api get protectionPolicies | Where-Object {$_.id -eq $job.policyId}
             # local retention from policy
-            $copyRunTargets = @(
-                @{
-                    "type" = "kLocal";
-                    "daysToKeep" = $policy.daysToKeep
-                }
-            )
+            $copyRunTargets = @()
             # replicas from policy
             if($policy.PSObject.Properties['snapshotReplicationCopyPolicies']){
                 foreach($replica in $policy.snapshotReplicationCopyPolicies){
