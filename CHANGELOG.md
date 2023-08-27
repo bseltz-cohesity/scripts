@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-08-22
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/expireOldArchives> [`Update`] added modern authentication support
+* <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/registerOracle> [`Fix`] fixed error that occured when no Oracle sources were present on the cluster
+
 ## 2023-08-19
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/addObjectToUserAccessList> [`Update`] added support for AD groups
