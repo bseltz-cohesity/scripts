@@ -4,6 +4,7 @@
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/archiveQueue> [`Update`] added exit 0 when no active archive tasks found, exit 1 if tasks are found
 * <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/protectOracle> [`Updated`] added additional parameters
+* <https://github.com/bseltz-cohesity/scripts/tree/master/sql/aagFailoverMinder> [`Fixed`] updated run payload to remove kLocal copyRun
 
 ## 2023-08-22
 
