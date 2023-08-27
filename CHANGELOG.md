@@ -1,8 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
-@@ 2032-08-27
+## 2032-08-27
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/archiveQueue> [`Update`] added exit 0 when no active archive tasks found, exit 1 if tasks are found
+* <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/protectOracle> [`Updated`] added additional parameters
 
 ## 2023-08-22
 
