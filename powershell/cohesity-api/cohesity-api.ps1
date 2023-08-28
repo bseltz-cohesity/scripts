@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.08.15 - Brian Seltzer
+#  Version 2023.08.28 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2022.01.12 - fixed storePasswordForUser
@@ -29,9 +29,11 @@
 # 2023.06.01 - fixed setApiProperty function
 # 2023.07.12 - ignore write failure to pwfile
 # 2023.08.15 - enforce Tls12
+# 2023.08.28 - add line number to cohesity-api-log
 #
 # . . . . . . . . . . . . . . . . . . .
-$versionCohesityAPI = '2023.08.15'
+
+$versionCohesityAPI = '2023.08.28'
 $userAgent = "cohesity-api/$versionCohesityAPI"
 
 # demand modern powershell version (must support TLSv1.2)
@@ -97,7 +99,10 @@ function __writeLog($logmessage){
     # get call stack
     $caller = ''
     try{
-        $caller = (Get-PSCallStack).Command -join ', '
+        $callStack = Get-PSCallStack
+        $caller = $callStack.Command -join ', '
+        $lineNumber = $callStack.ScriptLineNumber[-2]
+        # $caller = (Get-PSCallStack).Command -join ', '
     }catch{
         # nothing
     }
@@ -117,14 +122,14 @@ function __writeLog($logmessage){
 
     # avoid race condition
     $apiErrorDate = Get-Date
-    if($Global:lastAPIerror -eq "($caller) $logmessage" -and $apiErrorDate -lt $Global:lastAPIerrorDate.AddSeconds(5)){
+    if($Global:lastAPIerror -eq "($caller) line: $lineNumber $logmessage" -and $apiErrorDate -lt $Global:lastAPIerrorDate.AddSeconds(5)){
         Start-Sleep 5
     }
     $Global:lastAPIerror = "($caller) $logmessage"
     $Global:lastAPIerrorDate = $apiErrorDate
 
     # output message
-    "$($apiErrorDate): ($caller) $logmessage" | Out-File -FilePath "$apilogfile" -Append -Encoding ascii
+    "$($apiErrorDate): ($caller) line: $lineNumber $logmessage" | Out-File -FilePath "$apilogfile" -Append -Encoding ascii
 }
 
 # authentication functions ========================================================================
