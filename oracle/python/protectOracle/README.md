@@ -75,7 +75,8 @@ Place both files in a folder together and run the main script like so:
 
 ## Other Parameters
 
-* -s, --servername: name of source oracle server
+* -s, --servername: name of source oracle server to protect (repeat for multiple)
+* -f, --serverlist: text file of server names to protect (one per line)
 * -db, --dbname: name of oracle DB (optional: default is all databases)
 * -j, --jobname: name of protection job
 * -p, --policyname: name of protection policy (optional: only required if job doesn't already exist)
