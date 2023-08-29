@@ -3,6 +3,7 @@
 ## 2023-08-28
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/protectOracle> [`Updated`] added additional parameters
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api> [`Updated`] added offending line number to cohesity-api-debug.log
 
 ## 2023-08-27
 
