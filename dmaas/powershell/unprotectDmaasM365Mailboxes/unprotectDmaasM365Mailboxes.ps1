@@ -59,13 +59,16 @@ if(!$usersNode){
 
 $nameIndex = @{}
 $smtpIndex = @{}
+$uuidIndex = @{}
 $idIndex = @{}
 $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false"  # -region $regionId
 while(1){
     foreach($node in $users.nodes){
+        # Write-Host "$($node.protectionSource.name) $($node.protectionSource.office365ProtectionSource.uuid)"
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
         $idIndex["$($node.protectionSource.id)"] = $node.protectionSource.name
         $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
+        $uuidIndex[$node.protectionSource.office365ProtectionSource.uuid] = $node.protectionSource.id
     }
     $cursor = $users.nodes[-1].protectionSource.id
     $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false&afterCursorEntityId=$cursor"  # -region $regionId
@@ -86,6 +89,8 @@ foreach($mailbox in $mailboxesToUnprotect){
         $userId = $smtpIndex[$mailbox]
     }elseif($mailbox -ne $null -and $nameIndex.ContainsKey($mailbox)){
         $userId = $nameIndex[$mailbox]
+    }elseif($mailbox -ne $null -and $uuidIndex.ContainsKey($mailbox)){
+        $userId = $uuidIndex[$mailbox]
     }
     if($userId){
         $unprotectParams = @{
