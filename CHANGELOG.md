@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-08-30
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/updateJobSettings> [`New`] New script to update common protection group settings
+
 ## 2023-08-28
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/protectOracle> [`Updated`] added additional parameters
