@@ -25,7 +25,6 @@ parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
-parser.add_argument('-em', '--emailmfacode', action='store_true')
 parser.add_argument('-s', '--sourceserver', type=str, required=True)   # job name
 parser.add_argument('-t', '--targetserver', type=str, default=None)   # run date to archive in military format with 00 seconds
 parser.add_argument('-n', '--targetusername', type=str, default='')    # (optional) will use policy retention if omitted
@@ -35,7 +34,7 @@ parser.add_argument('-vol', '--volume', action='append', type=str)
 parser.add_argument('-l', '--showversions', action='store_true')      # show available snapshots
 parser.add_argument('-start', '--start', type=str, default=None)          # show snapshots after date
 parser.add_argument('-end', '--end', type=str, default=None)            # show snapshots before date
-parser.add_argument('-r', '--runid', type=int, default=None)          # choose specific job run id
+parser.add_argument('-r', '--runid', type=str, default=None)          # choose specific job run id
 
 args = parser.parse_args()
 
@@ -48,7 +47,6 @@ useApiKey = args.useApiKey
 password = args.password
 noprompt = args.noprompt
 mfacode = args.mfacode
-emailmfacode = args.emailmfacode
 sourceserver = args.sourceserver
 targetserver = args.targetserver
 targetusername = args.targetusername
@@ -64,7 +62,7 @@ if targetserver is None:
     targetserver = sourceserver
 
 # authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), emailMfaCode=emailmfacode, mfaCode=mfacode)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode)
 
 # if connected to helios or mcm, select access cluster
 if mcm or vip.lower() == 'helios.cohesity.com':
@@ -118,8 +116,15 @@ if showversions:
 
 # select version
 if runid is not None:
+    runidisint = False
+    try:
+        runid = int(runid)
+        runidisint = True
+    except Exception:
+        pass
     # select version with matching runId
-    versions = [v for v in allVersions if runid == v['instanceId']['jobInstanceId']]
+    # print('%s:%s' % (allVersions[0]['doc']['objectId']['jobId'], allVersions[0]['instanceId']['jobStartTimeUsecs']))
+    versions = [v for v in allVersions if (runidisint is True and runid == v['instanceId']['jobInstanceId']) or (runidisint is not True and runid == '%s:%s' % (v['doc']['objectId']['jobId'], v['instanceId']['jobStartTimeUsecs']))]
     if len(versions) == 0:
         print('Run ID not found')
         exit(1)
@@ -191,7 +196,7 @@ taskid = result['restoreTask']['performRestoreTaskState']['base']['taskId']
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
 status = 'unknown'
 while status not in finishedStates:
-    sleep(3)
+    sleep(10)
     restoreTask = api('get', '/restoretasks/%s' % taskid)
     status = restoreTask[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus']
 print('Volume mount ended with status %s' % status)

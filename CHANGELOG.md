@@ -2,6 +2,7 @@
 
 ## 2023-08-30
 
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/instantVolumeMount> [`Updated`] added support for v2 runid format
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/updateJobSettings> [`New`] New script to update common protection group settings
 
 ## 2023-08-28
