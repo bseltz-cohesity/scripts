@@ -461,7 +461,8 @@ if($resume){
     $uStart = dateToUsecs ((get-date).AddDays(-32))
     $restores = api get "/restoretasks?_includeTenantInfo=true&restoreTypes=kRecoverApp&startTimeUsecs=$uStart&targetType=kLocal"
     if($restores){
-        $restores = $restores | Where-Object{($_.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].appEntity.displayName -eq "$targetDB" -or 
+        $restores = $restores | Where-Object{$_.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec.Count -gt 0 -and
+        ($_.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].appEntity.displayName -eq "$targetDB" -or 
         $_.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.newDatabaseName -eq "$targetDB") -and 
         $_.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.instanceName -eq $targetInstance -and
         $_.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec[0].restoreParams.targetHost.displayName -eq $targetServer}
