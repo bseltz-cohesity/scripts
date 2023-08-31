@@ -20,7 +20,7 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 $outfileName = $(Join-Path -Path $outputPath -ChildPath "protectedObjectsReport.csv")
-"""objectName"",""lastRunStatus"",""environment"",""objectType"",""sourceName"",""policyName"",""groupName"",""lastRunTime"",""Number of Successful Backups"",""Number of Unsuccessful Backups"",""Last Successful Backup"",""Active Snapshots"",""backupStatus"",""protectionStatus"",""System Name"",""Organization Name""" | Out-File -FilePath $outfileName
+"""objectName"",""lastRunStatus"",""environment"",""objectType"",""sourceName"",""AAG Name"",""policyName"",""groupName"",""lastRunTime"",""Number of Successful Backups"",""Number of Unsuccessful Backups"",""Last Successful Backup"",""Active Snapshots"",""backupStatus"",""protectionStatus"",""System Name"",""Organization Name""" | Out-File -FilePath $outfileName
 
 if($days){
     $daysBackUsecs = timeAgo $days days
@@ -106,6 +106,7 @@ foreach($v in $vip){
                                 $jobObjects["$($doc.objectId.entity.id)"] = @{
                                     'sourceName' = $sourceName;
                                     'objName' = $objName;
+                                    'sqlAagName' = $sqlAagName;
                                     'versionCount' = $versionCount;
                                     'lastRunTime' = '';
                                     'lastSuccessfulBackup' = '';
@@ -241,7 +242,7 @@ foreach($v in $vip){
                     if($jobObject["versionCount"] -gt 0){
                         $backupStatus = "HasSuccessfulBackups"
                     }
-                    """$($jobObject["objName"])"",""$($jobObject["lastRunStatus"])"",""$($job.environment)"",""$($jobObject["objectType"])"",""$($jobObject["sourceName"])"",""$policyName"",""$($job.name)"",""$($jobObject["lastRunTime"])"",""$($jobObject["successfulBackups"])"",""$($jobObject["unsuccessfulBackups"])"",""$($jobObject["lastSuccessfulBackup"])"",""$($jobObject["versionCount"])"",""$backupStatus"",""$($jobObject["protected"])"",""$clusterName"",""$tenant""" | Out-File -FilePath $outfileName -Append
+                    """$($jobObject["objName"])"",""$($jobObject["lastRunStatus"])"",""$($job.environment)"",""$($jobObject["objectType"])"",""$($jobObject["sourceName"])"",""$($jobObject["sqlAagName"])"",""$policyName"",""$($job.name)"",""$($jobObject["lastRunTime"])"",""$($jobObject["successfulBackups"])"",""$($jobObject["unsuccessfulBackups"])"",""$($jobObject["lastSuccessfulBackup"])"",""$($jobObject["versionCount"])"",""$backupStatus"",""$($jobObject["protected"])"",""$clusterName"",""$tenant""" | Out-File -FilePath $outfileName -Append
                 }
             }
         }
