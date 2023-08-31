@@ -44,7 +44,7 @@ outfileName = 'ArchiveQueue-%s-%s.csv' % (cluster['name'], dateString)
 f = open(outfileName, 'w')
 f.write('JobName,RunDate,%s Transferred\n' % units)
 
-runningTasks = {}
+runningTasks = 0
 
 # for each active job
 jobs = sorted(api('get', 'protectionJobs'), key=lambda j: j['name'].lower())
@@ -55,7 +55,7 @@ for job in jobs:
         print("Getting tasks for %s" % jobName)
         # find runs with unfinished archive tasks
         endUsecs = nowUsecs
-        while(1):
+        while 1:
             runs = [r for r in api('get', 'protectionRuns?jobId=%s&numRuns=%s&endTimeUsecs=%s&excludeTasks=true' % (jobId, numruns, endUsecs)) if 'endTimeUsecs' not in r['backupRun']['stats'] or r['backupRun']['stats']['endTimeUsecs'] < endUsecs]
             if len(runs) > 0:
                 endUsecs = runs[-1]['backupRun']['stats']['startTimeUsecs']
@@ -74,6 +74,7 @@ for job in jobs:
                                     for task in thisrun[0]['backupJobRuns']['protectionRuns'][0]['copyRun']['activeTasks']:
                                         # for task in thisrun[0]['backupJobRuns']['protectionRuns'][0]['copyRun']['activeTasks']:
                                         if task['snapshotTarget']['type'] == 3:
+                                            runningTasks += 1
                                             # determine if run is now older than the intended retention
                                             noLongerNeeded = ''
                                             cancelling = ''
@@ -107,6 +108,11 @@ for job in jobs:
                                                 result = api('post', 'protectionRuns/cancel/%s' % jobId, cancelTaskParams)
                                             unitstransferred = round(float(transferred) / multiplier, 2)
                                             print('                       %s:  %s %s transferred %s %s' % (usecsToDate(runStartTimeUsecs), unitstransferred, units, noLongerNeeded, cancelling))
+                                            print('    %s' % copyRun['status'])
                                             f.write('%s,%s,%s\n' % (jobName, (usecsToDate(runStartTimeUsecs)), unitstransferred))
 f.close()
 print("output saved to %s" % outfileName)
+if runningTasks == 0:
+    exit(0)
+else:
+    exit(1)
