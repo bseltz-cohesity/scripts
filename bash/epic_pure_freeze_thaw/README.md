@@ -80,7 +80,7 @@ Under Additional Settings, under the Pre and Post Scripts option, configure the 
 * -k: private key path for ssh to pure array (e.g. /home/root/.ssh/id_rsa)
 * -p: pure array username
 * -a: pure array DNS name or IP
-* -g: pure protection group name
+* -g: pure protection group name (comma separate multiple, e.g. pg1,pg2,pg3)
 * -i: epic instance name
 * -e: epic user (e.g. epicadm)
 * -v: volume groups to freeze (AIX only) e.g. EpicVolGroup1,EpicVolGroup2,EpicVolGroup3

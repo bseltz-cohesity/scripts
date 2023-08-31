@@ -2,7 +2,7 @@
 
 ##########################################################################################
 ##
-## Last updated: 2023.07.29 - Brian Seltzer @ Cohesity
+## Last updated: 2023.08.31 - Brian Seltzer @ Cohesity
 ##
 ## - change first line to #!/bin/ksh (AIX) or #!/bin/bash (Linux)
 ## - edit /etc/ssh/sshd_cohfig: MaxStartups 50:30:150 (first number must be 24 or higher) 
@@ -16,6 +16,8 @@
 ## - 2023-03-08 - added leader failure flag
 ## - 2023-03-09 - added failure on no PPG membership, added leader log indicator
 ## - 2023-07-29 - parameterized arguments and autodetect OS (Linux or AIX)
+## - 2023-08-31 - added support for multiple pure protection groups
+##
 ##########################################################################################
 
 # example parameters: -t 1 -k /root/.ssh/id_rsa -p puresnap -a 10.12.1.39 -g EpicProtectionGroup26 -i test -v EpicVolGrp1,EpicVolGrp2
@@ -110,9 +112,9 @@ if [[ -e /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY ]]
     exit 0
 fi
 
-##########################
-## If Not Create Lock File
-##########################
+##############################
+## Assume Leader Role (or not)
+##############################
 
 #### Try to take leader role
 mkdirstatus=1
@@ -167,27 +169,30 @@ echo "$(date) : $COHESITY_BACKUP_ENTITY : Script Running as Leader" >> /tmp/cohe
 echo "$(date) : $COHESITY_BACKUP_ENTITY : Cohesity Pre-Script starting with PID $$" >> /tmp/cohesity_snap.log
 echo "$(date) Created Lock /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX" 
 
-############################
-## Generate Source LUN Locks
-############################
-
 #### Get list of volumes in pure protection group
-echo "Generating Source LUN File /tmp/cohesity_SRCLUNS.txt" 
-/usr/bin/ssh -i ${PRIVKEY_PATH} ${PURE_USER}@${PURE_ARRAY} "purepgroup listobj --type vol ${PURE_SRC_PGROUP}"  > /tmp/cohesity_SRCLUNS.txt
-if [[ $? -ne 0 ]]; then
-    echo "Obtaining Pure Source LUNs Failed"
-    echo "$(date) : $COHESITY_BACKUP_ENTITY : Obtaining Pure Source LUNs Failed ****" >> /tmp/cohesity_snap.log
-    echo "$(date) : $COHESITY_BACKUP_ENTITY : Script Completed with Error ****" >> /tmp/cohesity_snap.log
-    mkdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.failed
-    rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX >> /tmp/cohesity_snap.log 2>&1
-    rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY
-    exit 4
+echo "Generating Source LUN File /tmp/cohesity_SRCLUNS.txt"
+if [[ -e /tmp/cohesity_SRCLUNS.txt ]]; then
+    rm -f /tmp/cohesity_SRCLUNS.txt
 fi
+PURE_SRC_PGROUPS=$(echo $PURE_SRC_PGROUP | sed 's/,/ /')
+for pg in $PURE_SRC_PGROUPS
+do
+    /usr/bin/ssh -i ${PRIVKEY_PATH} ${PURE_USER}@${PURE_ARRAY} "purepgroup listobj --type vol ${PURE_SRC_PGROUP}"  >> /tmp/cohesity_SRCLUNS.txt
+    if [[ $? -ne 0 ]]; then
+        echo "Obtaining Pure Source LUNs Failed"
+        echo "$(date) : $COHESITY_BACKUP_ENTITY : Obtaining Pure Source LUNs Failed ****" >> /tmp/cohesity_snap.log
+        echo "$(date) : $COHESITY_BACKUP_ENTITY : Script Completed with Error ****" >> /tmp/cohesity_snap.log
+        mkdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.failed
+        rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX >> /tmp/cohesity_snap.log 2>&1
+        rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY
+        exit 4
+    fi
+done
 
 PURE_SRC_LUNS=$(sed -e :a -e '$!N; s/\n/ /; ta' /tmp/cohesity_SRCLUNS.txt)
 echo "PURE_SOURCE_LUNS: $PURE_SRC_LUNS"
 
-#### make volume locks
+#### make source LUN locks
 for jj in $PURE_SRC_LUNS
 do
     mkdir -p /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$jj
@@ -204,11 +209,7 @@ if [[ $journalStatus -ne 0 ]]; then
     exit 0
 fi
 
-##################
-## Freeze Database
-##################
-
-##### TESTING
+#### Freeze Database
 if [[ $TESTING -eq 1 ]]; then
     freeze_status=0
     fsfreeze_status=0
@@ -229,11 +230,7 @@ if [[ $freeze_status -ne 0 ]]; then
     exit 1
 fi
 
-#####################
-## Freeze Filesystems
-#####################
-
-##### comma separated list of volgroups to freeze (from script parameter)
+#### Freeze AIX File Systems
 # typeset -i fsfreeze_status=0
 fsfreeze_status=0
 if [[ -n $VOL_GROUPS ]] && [[ $TESTING -eq 0 ]] && [[ $OS == "AIX" ]]; then
@@ -257,17 +254,13 @@ if [[ -n $VOL_GROUPS ]] && [[ $TESTING -eq 0 ]] && [[ $OS == "AIX" ]]; then
     fi
 fi
 
-################
-## Freeze Failed
-################
-
+### Freeze Failed
 if [[ $fsfreeze_status -gt 0 ]]; then
 
     echo "Freeze Failed. Rolling Back:"
     echo "$(date) : $COHESITY_BACKUP_ENTITY : Freeze Failed. Rolling Back ****" >> /tmp/cohesity_snap.log
 
-    #### Thaw file systems
-    
+    #### Thaw AIX file systems
     if [[ $TESTING -ne 1 ]]; then
         for vgs in $volgrps
         do
@@ -294,10 +287,7 @@ if [[ $fsfreeze_status -gt 0 ]]; then
     exit 2
 else
 
-    ####################
-    ## Freeze Successful
-    ####################
-
+    #### Freeze Successful
     #### create snapshots
     echo "$(date) : $COHESITY_BACKUP_ENTITY : FileSystem Freeze Successful" >> /tmp/cohesity_snap.log
 	echo "$(date) : $COHESITY_BACKUP_ENTITY : Snapshotting Pure Volumes" >> /tmp/cohesity_snap.log
@@ -322,7 +312,7 @@ else
         ${THAW_CMD}
     fi
 
-    #### Thaw file systems
+    #### Thaw AIX file systems
     if [[ -n $VOL_GROUPS ]] && [[ $TESTING -eq 0 ]] && [[ $OS -eq "AIX" ]]; then
         for vgs in $volgrps
         do
