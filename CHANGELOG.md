@@ -2,6 +2,7 @@
 
 ## 2023-08-30
 
+* <https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/unprotectDmaasM365Mailboxes> [`Update`] added support for mailbox selection by UUID
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storagePerVMReport> [`New`] new script to report storage consumed per VMware VM
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/instantVolumeMount> [`Updated`] added support for v2 runid format
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/updateJobSettings> [`New`] New script to update common protection group settings
