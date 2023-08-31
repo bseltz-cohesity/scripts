@@ -57,7 +57,8 @@ Place the files in a folder together and run the main script like so:
 ## Alternate Restore Location Parameters
 
 * -scvmmName: (optional) scvmm protection source to recover to
-* -hostName: (optional) name of vSphere host to recover to
+* -failoverClusterName: (optional) stand alone Hyper-V failover cluster to recover to
+* -hostName: (optional) Hyper-V host to recover to
 * -networkName: (optional) VM Network to attach the VM to
 * -volumeName: (optional) volume to recover the VM to (trailing slash required, e.g. C:\ClusterStorage\Vol1\ not C:\ClusterStorage\Vol1)
 
