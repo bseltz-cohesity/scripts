@@ -15,6 +15,7 @@ param (
     [Parameter()][string]$vmlist = '', # list of VMs to recover
     [Parameter()][datetime]$recoverDate,
     [Parameter()][string]$scvmmName,
+    [Parameter()][string]$failoverClusterName,
     [Parameter()][string]$hostName,  # hyper-v cluster or stand alone host
     [Parameter()][string]$networkName,
     [Parameter()][string]$volumeName,
@@ -96,7 +97,14 @@ $restoreParams = @{
 }
 
 # alternate restore location params
-if($scvmmName){
+if($scvmmName -or $failoverClusterName -or $hostName){
+    $standAloneHost = $False
+    if($hostName -and !($scvmmName -or $failoverClusterName)){
+        $standAloneHost = $True
+        $scvmmName = $hostName
+    }elseif($failoverClusterName){
+        $scvmmName = $failoverClusterName
+    }
     # require alternate location params
     if(!$hostName){
         Write-Host "hostName required" -ForegroundColor Yellow
@@ -107,40 +115,84 @@ if($scvmmName){
         exit
     }
 
-    # select scvmmServer
+    # select scvmmServer/failover cluster
     $scvmmSource = api get protectionSources/rootNodes?environments=kHyperV | Where-Object {$_.protectionSource.name -eq $scvmmName}
     if(!$scvmmSource){
         Write-Host "$scvmmName is not a registered source" -ForegroundColor Yellow
         exit
     }
     # select host
-    $hostEntity = api get "/entitiesOfType?environmentTypes=kHyperV,kHyperVVSS&hypervEntityTypes=kHypervHost" | Where-Object {$_.parentId -eq $scvmmSource.protectionSource.id -and $_.displayName -eq $hostName}
-    if(!$hostEntity){
-        Write-Host "host $hostName not found" -ForegroundColor Yellow
-        exit
+    if($standAloneHost -eq $True){
+        $hostEntityId = $scvmmSource.protectionSource.id
+    }else{
+        $hostEntity = api get "/entitiesOfType?environmentTypes=kHyperV,kHyperVVSS&hypervEntityTypes=kHypervHost" | Where-Object {$_.parentId -eq $scvmmSource.protectionSource.id -and $_.displayName -eq $hostName}
+        if(!$hostEntity){
+            Write-Host "host $hostName not found" -ForegroundColor Yellow
+            exit
+        }
+        $hostEntityId = $hostEntity.id
     }
+    
     # select volume
-    $volEntity = api get "/entitiesOfType?environmentTypes=kHyperV,kHyperVVSS&hypervEntityTypes=kDatastore&rootEntityId=$($scvmmSource.protectionSource.id)&parentEntityId=$($hostEntity.id)" | Where-Object {$(($_.hypervEntity.datastoreInfo.mountPointVec -split ' ')[0]) -eq $volumeName}
+    $volEntity = api get "/entitiesOfType?environmentTypes=kHyperV,kHyperVVSS&hypervEntityTypes=kDatastore&rootEntityId=$($scvmmSource.protectionSource.id)&parentEntityId=$($hostEntityId)" | Where-Object {$(($_.hypervEntity.datastoreInfo.mountPointVec -split ' ')[0]) -eq $volumeName}
     if(!$volEntity){
         Write-Host "$volumeName not found" -ForegroundColor Yellow
         exit
     }
 
     $restoreParams.hypervParams.recoverVmParams.hypervTargetParams.recoveryTargetConfig.recoverToNewSource = $True
-    $restoreParams.hypervParams.recoverVmParams.hypervTargetParams.recoveryTargetConfig["newSourceConfig"] = @{
-        "sourceType" = "kSCVMMServer";
-        "scvmmServerParams" = @{
-            "source" = @{
-                "id" = $scvmmSource.protectionSource.id
-            };
-            "volume" = @{
-                "id" = $volEntity.id
-            };
-            "networkConfig" = @{
-                "detachNetwork" = $true
-            };
-            "host" = @{
-                "id" = $hostEntity.id
+    if($standAloneHost -eq $True){
+        $restoreParams.hypervParams.recoverVmParams.hypervTargetParams.recoveryTargetConfig["newSourceConfig"] = @{
+            "sourceType" = "kStandaloneHost";
+            "standaloneHostParams" = @{
+                "source" = @{
+                    "id" = $scvmmSource.protectionSource.id
+                };
+                "volume" = @{
+                    "id" = $volEntity.id
+                };
+                "networkConfig" = @{
+                    "detachNetwork" = $true
+                };
+                "host" = @{
+                    "id" = $hostEntityId
+                }
+            }
+        }
+    }elseif($failoverClusterName){
+        $restoreParams.hypervParams.recoverVmParams.hypervTargetParams.recoveryTargetConfig["newSourceConfig"] = @{
+            "sourceType" = "kStandaloneCluster";
+            "standaloneClusterParams" = @{
+                "source" = @{
+                    "id" = $scvmmSource.protectionSource.id
+                };
+                "volume" = @{
+                    "id" = $volEntity.id
+                };
+                "networkConfig" = @{
+                    "detachNetwork" = $true
+                };
+                "host" = @{
+                    "id" = $hostEntityId
+                }
+            }
+        }
+    }else{
+        $restoreParams.hypervParams.recoverVmParams.hypervTargetParams.recoveryTargetConfig["newSourceConfig"] = @{
+            "sourceType" = "kSCVMMServer";
+            "scvmmServerParams" = @{
+                "source" = @{
+                    "id" = $scvmmSource.protectionSource.id
+                };
+                "volume" = @{
+                    "id" = $volEntity.id
+                };
+                "networkConfig" = @{
+                    "detachNetwork" = $true
+                };
+                "host" = @{
+                    "id" = $hostEntityId
+                }
             }
         }
     }
@@ -151,14 +203,26 @@ if($scvmmName){
             Write-Host "network name required" -ForegroundColor Yellow
             exit
         }
-        $network = api get "/entitiesOfType?environmentTypes=kHyperV,kHyperVVSS&hypervEntityTypes=kNetwork&rootEntityId=$($scvmmSource.protectionSource.id)&parentEntityId=$($hostEntity.id)"  | Where-Object displayName -eq $networkName
+        $network = api get "/entitiesOfType?environmentTypes=kHyperV,kHyperVVSS&hypervEntityTypes=kNetwork&rootEntityId=$($scvmmSource.protectionSource.id)&parentEntityId=$($hostEntityId)"  | Where-Object displayName -eq $networkName
         if(! $network){
             Write-Host "network $networkName not found" -ForegroundColor Yellow
             exit
         }
-        $restoreParams.hypervParams.recoverVmParams.hypervTargetParams.recoveryTargetConfig.newSourceConfig.scvmmServerParams.networkConfig.detachNetwork = $false
-        $restoreParams.hypervParams.recoverVmParams.hypervTargetParams.recoveryTargetConfig.newSourceConfig.scvmmServerParams.networkConfig['virtualSwitch'] = @{
-            "id" = $network[0].id
+        if($standAloneHost -eq $True){
+            $restoreParams.hypervParams.recoverVmParams.hypervTargetParams.recoveryTargetConfig.newSourceConfig.standaloneHostParams.networkConfig.detachNetwork = $false
+            $restoreParams.hypervParams.recoverVmParams.hypervTargetParams.recoveryTargetConfig.newSourceConfig.standaloneHostParams.networkConfig['virtualSwitch'] = @{
+                "id" = $network[0].id
+            }
+        }elseif($failoverClusterName){
+            $restoreParams.hypervParams.recoverVmParams.hypervTargetParams.recoveryTargetConfig.newSourceConfig.standaloneClusterParams.networkConfig.detachNetwork = $false
+            $restoreParams.hypervParams.recoverVmParams.hypervTargetParams.recoveryTargetConfig.newSourceConfig.standaloneClusterParams.networkConfig['virtualSwitch'] = @{
+                "id" = $network[0].id
+            }
+        }else{
+            $restoreParams.hypervParams.recoverVmParams.hypervTargetParams.recoveryTargetConfig.newSourceConfig.scvmmServerParams.networkConfig.detachNetwork = $false
+            $restoreParams.hypervParams.recoverVmParams.hypervTargetParams.recoveryTargetConfig.newSourceConfig.scvmmServerParams.networkConfig['virtualSwitch'] = @{
+                "id" = $network[0].id
+            }
         }
     }
 }else{
