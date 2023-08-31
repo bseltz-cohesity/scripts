@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-08-31
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/recoverHyperVVMs> [`Update`] added support for restore to stand alone failover clusters and stand alone hosts
+
 ## 2023-08-30
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/unprotectDmaasM365Mailboxes> [`Update`] added support for mailbox selection by UUID
