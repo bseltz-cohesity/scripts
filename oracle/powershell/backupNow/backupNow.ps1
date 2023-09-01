@@ -255,7 +255,7 @@ if($job){
         $environment = 'kPhysical'
     }
     if($objects -and $environment -in @('kOracle', 'kSQL')){
-        $backupJob = api get "/backupjobs/$jobID&useCachedData=true"
+        $backupJob = api get "/backupjobs/$jobID?useCachedData=true"
         $backupSources = api get "/backupsources?allUnderHierarchy=false&entityId=$($backupJob.backupJob.parentSource.id)&excludeTypes=5&useCachedData=true"    
     }
     if($environment -notin ('kOracle', 'kSQL') -and $backupType -eq 'kLog'){
