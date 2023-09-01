@@ -31,26 +31,25 @@ Place both files in a folder together, then we can run the script.
 First, run the script WITHOUT the -expire switch to see what would be deleted.
 
 ```powershell
-powershell> ./expireOldArchives.ps1 -vip 10.99.1.64 -username admin -olderThan 120
-Connected!
-searching for old snapshots...
-07/01/2018 00:38:02  hdname
-08/01/2018 07:42:44  hdname
-08/03/2018 13:39:18  JZ Cloud Archive
-08/03/2018 15:51:37  JZ Cloud Archive
-08/04/2018 13:38:00  JZ Cloud Archive
+# example
+./expireOldArchives.ps1 -vip mycluster -username myusername -domain mydomain.net -olderThan 120
+# end example
 ```
 
 Then, if you're happy with the list of archives that will be deleted, run the script again and include the -expire switch. THIS WILL DELETE THE OLD ARCHIVES!!!
 
 ```powershell
-./expireOldArchives.ps1 -vip 10.99.1.64 -username admin -olderThan 120 -expire
+# example
+./expireOldArchives.ps1 -vip mycluster -username myusername -domain mydomain.net -olderThan 120 -expire
+# end example
 ```
 
 To expire archives from only one specific target:
 
 ```powershell
-./expireOldArchives.ps1 -vip 10.99.1.64 -username admin -target mytarget -olderThan 120 -expire
+# example
+./expireOldArchives.ps1 -vip mycluster -username myusername -domain mydomain.net -target mytarget -olderThan 120 -expire
+# end example
 ```
 
 You can run the script again you should see no results.
@@ -73,8 +72,8 @@ Also note that data in the archive target may not be immediately deleted if a ne
 
 * -jobName: (optional) Name of protection job to expire archives from (default is all jobs)
 * -target: (optional) narrow scope to a specific archive target
-* -olderThan: show/expire snapshots older than this many days
-* -newerThan: show/expire snapshots newer than this many days
+* -olderThan: (optional) show/expire snapshots older than this many days
+* -newerThan: (optional) show/expire snapshots newer than this many days
 * -expire: (optional) expire the snapshots (if omitted, the script will only show what 'would' be expired)
 * -showUnsuccessful: (optional) just display unsuccessful archive runs
 * -skipFirstOfMonth: (optional) do not expire archives that occured on the first day of the month
