@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.09.01
+# version 2023.09.01b
 
 # version history
 # ===============
@@ -15,6 +15,7 @@
 # 2023.07.05 - updated payload to solve p11 error "TARGET_NOT_IN_POLICY_NOT_ALLOWED%!(EXTRA int64=0)"
 # 2023-08-14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED"
 # 2023-09-01 - updated to use "protectionJobs?isActive=true&onlyReturnBasicSummary=true", increased sleeptimesecs to 360, increased newruntimeoutsecs to 3000
+# 2023-09-01b - added support for read replica
 
 # extended error codes
 # ====================
@@ -245,7 +246,7 @@ def cancelRunningJob(job, durationMinutes):
         durationUsecs = durationMinutes * 60000000
         nowUsecs = dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         cancelTime = nowUsecs - durationUsecs
-        runningRuns = api('get', 'protectionRuns?jobId=%s&numRuns=10000&excludeTasks=true' % job['id'])
+        runningRuns = api('get', 'protectionRuns?jobId=%s&numRuns=10000&excludeTasks=true&useCachedData=true' % job['id'])
         if runningRuns is not None and len(runningRuns) > 0:
             for run in runningRuns:
                 if 'backupRun' in run and 'status' in run['backupRun']:
@@ -259,7 +260,7 @@ def cancelRunningJob(job, durationMinutes):
 jobs = None
 jobRetries = 0
 while jobs is None:
-    jobs = api('get', 'protectionJobs?isActive=true&onlyReturnBasicSummary=true')
+    jobs = api('get', 'protectionJobs?isActive=true&onlyReturnBasicSummary=true&useCachedData=true')
     if jobs is None or 'error' in jobs:
         jobs = None
         jobRetries += 1
@@ -294,16 +295,16 @@ else:
             bail(1)
     if objectnames is not None:
         if environment in ['kOracle', 'kSQL']:
-            backupJob = api('get', '/backupjobs/%s' % job['id'])
-            backupSources = api('get', '/backupsources?allUnderHierarchy=false&entityId=%s&excludeTypes=5&includeVMFolders=true' % backupJob[0]['backupJob']['parentSource']['id'])
+            backupJob = api('get', '/backupjobs/%s&useCachedData=true' % job['id'])
+            backupSources = api('get', '/backupsources?allUnderHierarchy=false&entityId=%s&excludeTypes=5&useCachedData=true' % backupJob[0]['backupJob']['parentSource']['id'])
         if 'kAWS' in environment:
-            sources = api('get', 'protectionSources?environments=kAWS')
+            sources = api('get', 'protectionSources?environments=kAWS&useCachedData=true')
         else:
-            sources = api('get', 'protectionSources?environments=%s' % environment)
+            sources = api('get', 'protectionSources?environments=%s&useCachedData=true' % environment)
 
 # purge oracle logs
 if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
-    v2Job = api('get', 'data-protect/protection-groups/%s' % v2JobId, v=2)
+    v2Job = api('get', 'data-protect/protection-groups/%s?useCachedData=true' % v2JobId, v=2)
     v2OrigJob = copy.deepcopy(v2Job)
 
 # handle run now objects
@@ -546,7 +547,7 @@ if archiveTo is not None:
             bail(1)
 
 # get last run ID
-runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=1&includeObjectDetails=false' % v2JobId, v=2)
+runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=1&includeObjectDetails=false&useCachedData=true' % v2JobId, v=2)
 if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
     newRunId = lastRunId = runs['runs'][0]['protectionGroupInstanceId']
 else:
@@ -622,16 +623,16 @@ if wait is True:
     while newRunId <= lastRunId:
         sleep(15)
         if len(selectedSources) > 0:
-            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=10&includeObjectDetails=true' % v2JobId, v=2)
+            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=10&includeObjectDetails=true&useCachedData=true' % v2JobId, v=2)
             if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
                 runs = [r for r in runs['runs'] if selectedSources[0] in [o['object']['id'] for o in r['objects']]]
         else:
-            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=1&includeObjectDetails=false' % v2JobId, v=2)
+            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=1&includeObjectDetails=false&useCachedData=true' % v2JobId, v=2)
             if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
                 runs = runs['runs']
         if runs is not None and 'runs' not in runs and len(runs) > 0 and usemetadatafile is True:  # metadatafile is not None:
             for run in runs:
-                runDetail = api('get', '/backupjobruns?exactMatchStartTimeUsecs=%s&id=%s' % (run['localBackupInfo']['startTimeUsecs'], job['id']))
+                runDetail = api('get', '/backupjobruns?exactMatchStartTimeUsecs=%s&id=%s&useCachedData=true' % (run['localBackupInfo']['startTimeUsecs'], job['id']))
                 try:
                     metadataFilePath = runDetail[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['additionalParamVec'][0]['physicalParams']['metadataFilePath']
                     if metadataFilePath == metadatafile:
@@ -671,9 +672,9 @@ if wait is True:
         sleep(15)
         try:
             if exitstring:
-                run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=true' % (v2JobId, v2RunId), v=2)
+                run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=true&useCachedData=true' % (v2JobId, v2RunId), v=2)
             else:
-                run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=false' % (v2JobId, v2RunId), v=2)
+                run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=false&useCachedData=true' % (v2JobId, v2RunId), v=2)
             status = run['localBackupInfo']['status']
             if exitstring:
                 while x < len(run['objects']) and s < exitstringtimeoutsecs:
