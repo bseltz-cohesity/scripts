@@ -69,12 +69,12 @@ Note: -k, --keepLocalFor no longer has any affect in recent releases of 6.6 and 
 
 * -w, --wait: (optional) wait for backup run to complete and report result
 * -pr, --progress: (optional) display percent complete
-* -s, --sleeptimesecs: (optional) seconds to sleep between status queries (default is 120)
+* -s, --sleeptimesecs: (optional) seconds to sleep between status queries (default is 360)
 * -x, --abortifrunning: (optional) exit if job is already running (default is to wait and run after existing run is finished)
 * -f, --logfile: (optional) filename to log output
 * -n, --waitminutesifrunning: (optional) exit after X minutes if job is already running (default is 60)
 * -cp, --cancelpreviousrunminutes: (optional) cancel previous job run if it's been running for X minutes
-* -nrt, --newruntimeoutsecs: (optional) exit after X seconds if new run fails to start (default is 1800)
+* -nrt, --newruntimeoutsecs: (optional) exit after X seconds if new run fails to start (default is 3000)
 * -debug, --debug: (optional) display verbose error and state messages
 * -ex, --extendederrorcodes: (optional) return extended set of exit codes
 * -es, --exitstring: (optional) search for string in pulse logs and exit 0 when found
@@ -91,6 +91,7 @@ Note: -k, --keepLocalFor no longer has any affect in recent releases of 6.6 and 
 * 5: Timed out waiting for new run / status update (failed to get status updates)
 * 6: Timed out waiting for new run to appear (new run accepted but not started)
 * 7: Timed out getting protection jobs
+* 8: Target not in policy not allowed
 
 ## Using -o (--objectname) Parameter
 

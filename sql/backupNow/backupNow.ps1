@@ -1,4 +1,4 @@
-# version 2023.08.14
+# version 2023.09.01
 
 # version history
 # ===============
@@ -10,7 +10,8 @@
 # 2023.04.14 - fixed metadatafile watch bug
 # 2023.07.04 - added -dbg switch to output payload to payload.json file
 # 2023.07.05 - updated payload to solve p11 error "TARGET_NOT_IN_POLICY_NOT_ALLOWED%!(EXTRA int64=0)"
-# 2023-08-14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED"
+# 2023-08-14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED" and added extended error code 8
+# 2023-09-01 - updated to use "protectionJobs?isActive=true&onlyReturnBasicSummary=true", increased sleepTimeSecs to 360, increased waitForNewRunMinutes to 50
 
 # extended error codes
 # ====================
@@ -60,11 +61,11 @@ param (
     [Parameter()][string]$metaDataFile,      # backup file list
     [Parameter()][switch]$abortIfRunning,    # exit if job is already running
     [Parameter()][int64]$waitMinutesIfRunning = 60,     # give up and exit if existing run is still running
-    [Parameter()][int64]$waitForNewRunMinutes = 30,     # give up and exit if new run fails to appear
+    [Parameter()][int64]$waitForNewRunMinutes = 50,     # give up and exit if new run fails to appear
     [Parameter()][int64]$cancelPreviousRunMinutes = 0,  # cancel previous run if it has been running long
     [Parameter()][int64]$statusRetries = 10,   # give up waiting for new run to appear
     [Parameter()][switch]$extendedErrorCodes,  # report failure-specific error codes
-    [Parameter()][int64]$sleepTimeSecs = 120,   # sleep seconds between status queries
+    [Parameter()][int64]$sleepTimeSecs = 360,   # sleep seconds between status queries
     [Parameter()][switch]$dbg
 )
 
@@ -220,7 +221,7 @@ $cluster = api get cluster
 $jobs = $null
 $jobRetries = 0
 while(! $jobs){
-    $jobs = api get protectionJobs
+    $jobs = api get "protectionJobs?isActive=true&onlyReturnBasicSummary=true"
     if(! $jobs){
         $jobRetries += 1
         if($jobRetries -eq 3){

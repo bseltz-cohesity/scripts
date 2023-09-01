@@ -67,14 +67,14 @@ Note: -keepLocalFor no longer has any affect in recent releases of 6.6 and later
 
 ## Other Runtime Parameters
 
-* -sleepTimeSecs: (optional) seconds to sleep between status queries (default is 120)
+* -sleepTimeSecs: (optional) seconds to sleep between status queries (default is 360)
 * -progress: (optional) display percent complete
 * -wait: (optional) wait for job to complete and return exit code, otherwise exit immediately after starting the job
 * -abortIfRunning: (optional) exit if job is already running (default is to wait and run when existing run is finished)
 * -outputlog: (optional) enable output logging
 * -logfile: (optional) path/name of log file (default is ./log-backupNow.log)
 * -waitMinutesIfRunning: (optional) exit after X minutes if job is already running (default is 60)
-* -waitForNewRunMinutes: (optional) exit after X minutes if new run fails to appear (Default is 30)
+* -waitForNewRunMinutes: (optional) exit after X minutes if new run fails to appear (Default is 50)
 * -cancelPreviousRunMinutes: (optional) cancel previous job run if it has been running for X minutes
 * -statusRetries: (optional) quit script with failure if unable to get status X times (default is 10)
 * -extendedErrorCodes: (optional) return extended set of exit codes (see below) by default 0 = successful, 1 = not successful
@@ -90,3 +90,4 @@ Note: -keepLocalFor no longer has any affect in recent releases of 6.6 and later
 * 5: Timed out waiting for status update (failed to get status updates)
 * 6: Timed out waiting for new run to appear (new run accepted but not started)
 * 7: Timed out getting protection jobs
+* 8: Target not in policy not allowed

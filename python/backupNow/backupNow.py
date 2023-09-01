@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.08.14
+# version 2023.09.01
 
 # version history
 # ===============
@@ -14,6 +14,7 @@
 # 2023.06.25 - added -pl --purgeoraclelogs (first added 2023-06-08)
 # 2023.07.05 - updated payload to solve p11 error "TARGET_NOT_IN_POLICY_NOT_ALLOWED%!(EXTRA int64=0)"
 # 2023-08-14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED"
+# 2023-09-01 - updated to use "protectionJobs?isActive=true&onlyReturnBasicSummary=true", increased sleeptimesecs to 360, increased newruntimeoutsecs to 3000
 
 # extended error codes
 # ====================
@@ -26,8 +27,6 @@
 # 6: Timed out waiting for new run to appear
 # 7: Timed out getting job
 # 8: Target not in policy not allowed
-
-### usage: ./backupNow.py -v mycluster -u admin -j 'Generic NAS' [-r mycluster2] [-a S3] [-kr 5] [-ka 10] [-e] [-w] [-t kLog]
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -70,10 +69,10 @@ parser.add_argument('-x', '--abortifrunning', action='store_true')
 parser.add_argument('-f', '--logfile', type=str, default=None)
 parser.add_argument('-n', '--waitminutesifrunning', type=int, default=60)
 parser.add_argument('-cp', '--cancelpreviousrunminutes', type=int, default=0)
-parser.add_argument('-nrt', '--newruntimeoutsecs', type=int, default=1800)
+parser.add_argument('-nrt', '--newruntimeoutsecs', type=int, default=3000)
 parser.add_argument('-debug', '--debug', action='store_true')
 parser.add_argument('-ex', '--extendederrorcodes', action='store_true')
-parser.add_argument('-s', '--sleeptimesecs', type=int, default=120)
+parser.add_argument('-s', '--sleeptimesecs', type=int, default=360)
 parser.add_argument('-es', '--exitstring', type=str, default=None)
 parser.add_argument('-est', '--exitstringtimeoutsecs', type=int, default=120)
 parser.add_argument('-sr', '--statusretries', type=int, default=10)
@@ -260,7 +259,7 @@ def cancelRunningJob(job, durationMinutes):
 jobs = None
 jobRetries = 0
 while jobs is None:
-    jobs = api('get', 'protectionJobs')
+    jobs = api('get', 'protectionJobs?isActive=true&onlyReturnBasicSummary=true')
     if jobs is None or 'error' in jobs:
         jobs = None
         jobRetries += 1
