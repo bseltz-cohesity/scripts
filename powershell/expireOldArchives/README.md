@@ -78,3 +78,4 @@ Also note that data in the archive target may not be immediately deleted if a ne
 * -expire: (optional) expire the snapshots (if omitted, the script will only show what 'would' be expired)
 * -showUnsuccessful: (optional) just display unsuccessful archive runs
 * -skipFirstOfMonth: (optional) do not expire archives that occured on the first day of the month
+* -numRuns: (optional) page size for API call (default is 1000)

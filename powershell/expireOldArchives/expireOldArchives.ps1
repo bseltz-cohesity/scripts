@@ -19,7 +19,8 @@ param (
     [Parameter()][int]$newerThan = 0, # expire archives newer than X days
     [Parameter()][switch]$expire,
     [Parameter()][switch]$showUnsuccessful,
-    [Parameter()][switch]$skipFirstOfMonth
+    [Parameter()][switch]$skipFirstOfMonth,
+    [Parameter()][int]$numRuns = 1000
 )
 
 ### source the cohesity-api helper code
@@ -43,68 +44,73 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
-### cluster Id
-$clusterId = (api get cluster).id
-
-### olderThan days in usecs
 $olderThanUsecs = timeAgo $olderThan days
 $newerThanUsecs = timeAgo $newerThan days
+$nowUsecs = timeAgo 1 second
 
-### find protectionRuns with old local snapshots with archive tasks and sort oldest to newest
-"searching for old snapshots..."
+Write-Host "searching for old archives..."
 
-$jobs = api get protectionJobs # | Where-Object { $_.policyId.split(':')[0] -eq $clusterId }
+$jobs = api get protectionJobs
 if($jobName){
     $jobs = $jobs | Where-Object name -eq $jobName
 }
 
 foreach ($job in $jobs) {
-    $job.name
-    $runs = (api get protectionRuns?jobId=$($job.id)`&excludeTasks=true`&excludeNonRestoreableRuns=true`&numRuns=999999`&runTypes=kRegular`&runTypes=kFull`&endTimeUsecs=$olderThanUsecs) | `
-        Where-Object { $_.copyRun[0].runStartTimeUsecs -le $olderThanUsecs } | `
-        Where-Object { 'kArchival' -in $_.copyRun.target.type } | `
-        Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
+    $endUsecs = $olderThanUsecs
+    Write-Host $job.name
+    while($True){
+        $runs = api get "protectionRuns?jobId=$($job.id)&excludeTasks=true&excludeNonRestoreableRuns=true&numRuns=$numRuns&endTimeUsecs=$endUsecs"
+        $runCount = $runs.Count
+        $runs = $runs | Where-Object { $_.copyRun[0].runStartTimeUsecs -le $olderThanUsecs } | `
+                        Where-Object { 'kArchival' -in $_.copyRun.target.type } | `
+                        Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
 
-    if($newerThan -gt 0){
-        $runs = $runs | Where-Object { $_.copyRun[0].runStartTimeUsecs -ge $newerThanUsecs }
-    }
+        if($newerThan -gt 0){
+            $runs = $runs | Where-Object { $_.copyRun[0].runStartTimeUsecs -ge $newerThanUsecs }
+        }
 
-    foreach ($run in $runs) {
+        foreach ($run in $runs) {
 
-        $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
-        $jobName = $run.jobName
-        if(! $skipFirstOfMonth -or $runDate.Day -ne 1){
-            foreach ($copyRun in $run.copyRun) {
-                if ($copyRun.target.type -eq 'kArchival') {
-                    if (($copyRun.status -eq 'kSuccess' -or $copyRun.status -eq 4) -and (! $showUnsuccessful)) {
-                        if ($copyRun.expiryTimeUsecs -gt 0) {
-                            if( ! $target -or $copyRun.target.archivalTarget.vaultName -eq $target){
-                                write-host "$runDate  $jobName" -ForegroundColor Green
-                                $expireRun = @{'jobRuns' = @(
-                                        @{'expiryTimeUsecs'     = 0;
-                                            'jobUid'            = $run.jobUid;
-                                            'runStartTimeUsecs' = $run.backupRun.stats.startTimeUsecs;
-                                            'copyRunTargets'    = @(
-                                                @{'daysToKeep'       = 0;
-                                                    'type'           = 'kArchival';
-                                                    'archivalTarget' = $copyRun.target.archivalTarget
-                                                }
-                                            )
-                                        }
-                                    )
-                                }
-                                if ($expire) {
-                                    api put protectionRuns $expireRun
+            $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
+            $jobName = $run.jobName
+            if(! $skipFirstOfMonth -or $runDate.Day -ne 1){
+                foreach ($copyRun in $run.copyRun) {
+                    if ($copyRun.target.type -eq 'kArchival') {
+                        if (($copyRun.status -eq 'kSuccess' -or $copyRun.status -eq 4) -and (! $showUnsuccessful)) {
+                            if ($copyRun.expiryTimeUsecs -gt $nowUsecs) {
+                                if( ! $target -or $copyRun.target.archivalTarget.vaultName -eq $target){
+                                    Write-Host "$runDate  $jobName" -ForegroundColor Green
+                                    $expireRun = @{'jobRuns' = @(
+                                            @{'expiryTimeUsecs'     = 0;
+                                                'jobUid'            = $run.jobUid;
+                                                'runStartTimeUsecs' = $run.backupRun.stats.startTimeUsecs;
+                                                'copyRunTargets'    = @(
+                                                    @{'daysToKeep'       = 0;
+                                                        'type'           = 'kArchival';
+                                                        'archivalTarget' = $copyRun.target.archivalTarget
+                                                    }
+                                                )
+                                            }
+                                        )
+                                    }
+                                    if ($expire) {
+                                        $null = api put protectionRuns $expireRun
+                                    }
                                 }
                             }
-                        }
-                    }else{
-                        if($copyRun.status -ne 'kSuccess' -and $showUnsuccessful){
-                            write-host "$runDate  $jobName $($copyRun.status)" -ForegroundColor Yellow
+                        }else{
+                            if($copyRun.status -ne 'kSuccess' -and $showUnsuccessful){
+                                Write-Host "$runDate  $jobName $($copyRun.status)" -ForegroundColor Yellow
+                            }
                         }
                     }
                 }
             }
+        }
+        if($runCount -eq $numRuns){
+            $endUsecs = $runs[-1].backupRun.stats.endTimeUsecs - 1
+        }else{
+            break
         }
     }
 }
