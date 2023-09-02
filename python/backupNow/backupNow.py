@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.09.01b
+# version 2023.09.02
 
 # version history
 # ===============
@@ -16,6 +16,7 @@
 # 2023-08-14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED"
 # 2023-09-01 - updated to use "protectionJobs?isActive=true&onlyReturnBasicSummary=true", increased sleeptimesecs to 360, increased newruntimeoutsecs to 3000
 # 2023-09-01b - added support for read replica
+# 2023-09-02 - optimized object ID lookup for Oracle/SQL
 
 # extended error codes
 # ====================
@@ -295,12 +296,12 @@ else:
             bail(1)
     if objectnames is not None:
         if environment in ['kOracle', 'kSQL']:
-            backupJob = api('get', '/backupjobs/%s&useCachedData=true' % job['id'])
+            backupJob = api('get', '/backupjobs/%s?useCachedData=true' % job['id'])
             backupSources = api('get', '/backupsources?allUnderHierarchy=false&entityId=%s&excludeTypes=5&useCachedData=true' % backupJob[0]['backupJob']['parentSource']['id'])
-        if 'kAWS' in environment:
-            sources = api('get', 'protectionSources?environments=kAWS&useCachedData=true')
+        elif 'kAWS' in environment:
+            sources = api('get', 'protectionSources?environments=kAWS&useCachedData=true&id=' % job['parentSourceId'])
         else:
-            sources = api('get', 'protectionSources?environments=%s&useCachedData=true' % environment)
+            sources = api('get', 'protectionSources?environments=%s&useCachedData=true&is=%s' % (environment, job['parentSourceId']))
 
 # purge oracle logs
 if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
@@ -332,8 +333,10 @@ if objectnames is not None:
                     server = parts[0]
                     instance = None
                     db = None
-
-            serverObjectId = getObjectId(server)
+            serverObjectId = None
+            serverObject = [o for o in backupSources['entityHierarchy']['children'] if o['entity']['displayName'].lower() == server.lower()]
+            if serverObject is not None and len(serverObject) > 0:
+                serverObjectId = serverObject[0]['entity']['id']
             if serverObjectId is not None:
                 if serverObjectId not in job['sourceIds']:
                     out("%s not protected by %s" % (server, jobName))
@@ -349,7 +352,7 @@ if objectnames is not None:
                     )
                     selectedSources.append(serverObjectId)
                 if instance is not None or db is not None:
-                    if environment == 'kOracle' or environment == 'kSQL':  # and job['environmentParameters']['sqlParameters']['backupType'] in ['kSqlVSSFile', 'kSqlNative']):
+                    if environment == 'kOracle' or environment == 'kSQL':
                         for runNowParameter in runNowParameters:
                             if runNowParameter['sourceId'] == serverObjectId:
                                 if 'databaseIds' not in runNowParameter:
@@ -423,18 +426,6 @@ if objectnames is not None:
 
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning', 'kCanceling', '3', '4', '5', '6', 'Canceled', 'Succeeded', 'Failed', 'SucceededWithWarning']
 
-# job parameters (base)
-# jobData = {
-#     "copyRunTargets": [
-#         {
-#             "type": "kLocal",
-#             "daysToKeep": keepLocalFor
-#         }
-#     ],
-#     "sourceIds": [],
-#     "runType": backupType
-# }
-
 jobData = {
     "copyRunTargets": [],
     "sourceIds": [],
@@ -466,8 +457,6 @@ if len(runNowParameters) > 0:
 
 # use base retention and copy targets from policy
 policy = api('get', 'protectionPolicies/%s' % job['policyId'])
-# if keepLocalFor is None:
-#     jobData['copyRunTargets'][0]['daysToKeep'] = policy['daysToKeep']
 
 # replication
 if localonly is not True and noreplica is not True:
