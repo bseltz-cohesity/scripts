@@ -1,4 +1,4 @@
-# version 2023.09.01b
+# version 2023.09.02
 
 # version history
 # ===============
@@ -13,6 +13,7 @@
 # 2023-08-14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED" and added extended error code 8
 # 2023-09-01 - updated to use "protectionJobs?isActive=true&onlyReturnBasicSummary=true", increased sleepTimeSecs to 360, increased waitForNewRunMinutes to 50
 # 2023-09-01b - added support for read replica
+# 2023-09-02 - optimized object ID lookup for Oracle/SQL
 
 # extended error codes
 # ====================
@@ -178,7 +179,7 @@ function getObjectId($objectName){
         if($obj.name -eq $objectName){
             $global:_object_id = $obj.id
             break
-        }        
+        }
         if($obj.PSObject.Properties['nodes']){
             foreach($node in $obj.nodes){
                 if($null -eq $global:_object_id){
@@ -254,10 +255,6 @@ if($job){
     if($environment -eq 'kPhysicalFiles'){
         $environment = 'kPhysical'
     }
-    if($objects -and $environment -in @('kOracle', 'kSQL')){
-        $backupJob = api get "/backupjobs/$jobID?useCachedData=true"
-        $backupSources = api get "/backupsources?allUnderHierarchy=false&entityId=$($backupJob.backupJob.parentSource.id)&excludeTypes=5&useCachedData=true"    
-    }
     if($environment -notin ('kOracle', 'kSQL') -and $backupType -eq 'kLog'){
         output "BackupType kLog not applicable to $environment jobs" -warn
         if($extendedErrorCodes){
@@ -267,10 +264,13 @@ if($job){
         }
     }
     if($objects){
-        if($environment -match 'kAWS'){
-            $sources = api get "protectionSources?environments=kAWS&useCachedData=true"
+        if($environment -in @('kOracle', 'kSQL')){
+            $backupJob = api get "/backupjobs/$($jobID)?useCachedData=true"
+            $backupSources = api get "/backupsources?allUnderHierarchy=false&entityId=$($backupJob.backupJob.parentSource.id)&excludeTypes=5&useCachedData=true"
+        }elseif($environment -match 'kAWS'){
+            $sources = api get "protectionSources?environments=kAWS&useCachedData=true&id=$($job.parentSourceId)"
         }else{
-            $sources = api get "protectionSources?environments=$environment&useCachedData=true"
+            $sources = api get "protectionSources?environments=$environment&useCachedData=true&id=$($job.parentSourceId)"
         }
     }
 }else{
@@ -294,7 +294,10 @@ if($objects){
             }else{
                 $server, $db = $object.split('/')
             }
-            $serverObjectId = getObjectId $server
+            $serverObject = $backupSources.entityHierarchy.children | Where-Object {$_.entity.displayName -eq $server}
+            if($serverObject){
+                $serverObjectId = $serverObject.entity.id
+            }
             if($serverObjectId){
                 if($serverObjectId -in $job.sourceIds){
                     if(! ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId})){
@@ -385,23 +388,11 @@ if($objects){
     }
 }
 
-# set local retention
-# $copyRunTargets = @(
-#     @{
-#         "type" = "kLocal";
-#         "daysToKeep" = $keepLocalFor
-#     }
-# )
 $copyRunTargets = @()
 
 
 # retrieve policy settings
 $policy = api get "protectionPolicies/$policyId"
-# if(! $keepLocalFor){
-#     $copyRunTargets[0].daysToKeep = $policy.daysToKeep
-# }else{
-
-# }
 
 # replication
 if((! $localOnly) -and (! $noReplica)){
@@ -516,7 +507,7 @@ $jobdata = @{
 # add sourceIds if specified
 $useMetadataFile = $false
 if($objects){
-    if($environment -eq 'kSQL' -or $environment -eq 'kOracle'){ # -and $job.environmentParameters.sqlParameters.backupType -in @('kSqlVSSFile', 'kSqlNative')
+    if($environment -eq 'kSQL' -or $environment -eq 'kOracle'){
         $jobdata['runNowParameters'] = $runNowParameters
     }else{
         if($metaDataFile){
