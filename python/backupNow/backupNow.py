@@ -632,6 +632,8 @@ if wait is True:
             runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=1&includeObjectDetails=false&useCachedData=true' % v2JobId, v=2)
             if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
                 runs = runs['runs']
+        if runs is not None and 'runs' not in runs and len(runs) > 0:
+            runs = [r for r in runs if r['protectionGroupInstanceId'] > lastRunId]
         if runs is not None and 'runs' not in runs and len(runs) > 0 and usemetadatafile is True:  # metadatafile is not None:
             for run in runs:
                 runDetail = api('get', '/backupjobruns?exactMatchStartTimeUsecs=%s&id=%s&useCachedData=true' % (run['localBackupInfo']['startTimeUsecs'], job['id']))
@@ -660,7 +662,7 @@ if wait is True:
                 bail(1)
         if newRunId > lastRunId:
             break
-        sleep(sleeptimesecs)
+        sleep(sleeptimesecs - 15)
     out("New Job Run ID: %s" % v2RunId)
 
 # wait for job run to finish and report completion
@@ -733,7 +735,7 @@ if wait is True:
                 else:
                     bail(1)
         if status not in finishedStates:
-            sleep(sleeptimesecs)
+            sleep(sleeptimesecs - 15)
     out("Job finished with status: %s" % run['localBackupInfo']['status'])
     if run['localBackupInfo']['status'] == 'Failed':
         out('Error: %s' % run['localBackupInfo']['messages'][0])
