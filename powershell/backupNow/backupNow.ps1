@@ -13,7 +13,7 @@
 # 2023-08-14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED" and added extended error code 8
 # 2023-09-01 - updated to use "protectionJobs?isActive=true&onlyReturnBasicSummary=true", increased sleepTimeSecs to 360, increased waitForNewRunMinutes to 50
 # 2023-09-01b - added support for read replica
-# 2023-09-02 - optimized object ID lookup for Oracle/SQL and VMware
+# 2023-09-02 - optimized object ID lookup for Oracle, SQL and VMware
 
 # extended error codes
 # ====================
