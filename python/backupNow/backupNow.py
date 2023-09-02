@@ -299,7 +299,7 @@ else:
             backupJob = api('get', '/backupjobs/%s?useCachedData=true' % job['id'])
             backupSources = api('get', '/backupsources?allUnderHierarchy=false&entityId=%s&excludeTypes=5&useCachedData=true' % backupJob[0]['backupJob']['parentSource']['id'])
         elif environment == 'kVMware':
-            sources = api('get', 'protectionSources/virtualMachines?id=%s' % job['parentSourceId'])
+            sources = api('get', 'protectionSources/virtualMachines?id=%s&protected=true&useCachedData=true' % job['parentSourceId'])
         elif 'kAWS' in environment:
             sources = api('get', 'protectionSources?environments=kAWS&useCachedData=true&id=' % job['parentSourceId'])
         else:
