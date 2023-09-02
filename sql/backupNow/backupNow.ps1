@@ -13,7 +13,7 @@
 # 2023-08-14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED" and added extended error code 8
 # 2023-09-01 - updated to use "protectionJobs?isActive=true&onlyReturnBasicSummary=true", increased sleepTimeSecs to 360, increased waitForNewRunMinutes to 50
 # 2023-09-01b - added support for read replica
-# 2023-09-02 - optimized object ID lookup for Oracle/SQL
+# 2023-09-02 - optimized object ID lookup for Oracle/SQL and VMware
 
 # extended error codes
 # ====================
@@ -267,6 +267,8 @@ if($job){
         if($environment -in @('kOracle', 'kSQL')){
             $backupJob = api get "/backupjobs/$($jobID)?useCachedData=true"
             $backupSources = api get "/backupsources?allUnderHierarchy=false&entityId=$($backupJob.backupJob.parentSource.id)&excludeTypes=5&useCachedData=true"
+        }elseif($environment -eq 'kVMware'){
+            $sources = api get "protectionSources/virtualMachines?useCachedData=true&id=$($job.parentSourceId)"
         }elseif($environment -match 'kAWS'){
             $sources = api get "protectionSources?environments=kAWS&useCachedData=true&id=$($job.parentSourceId)"
         }else{
@@ -365,6 +367,18 @@ if($objects){
                 }
             }else{
                 output "Server $server not found" -warn
+                if($extendedErrorCodes){
+                    exit 3
+                }else{
+                    exit 1
+                }
+            }
+        }elseif($environment -eq 'kVMware'){
+            $thisObject = $sources | Where-Object name -eq $object
+            if($thisObject){
+                $objectId = $object.id
+            }else{
+                output "Object $object not found" -warn
                 if($extendedErrorCodes){
                     exit 3
                 }else{
