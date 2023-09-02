@@ -298,6 +298,8 @@ else:
         if environment in ['kOracle', 'kSQL']:
             backupJob = api('get', '/backupjobs/%s?useCachedData=true' % job['id'])
             backupSources = api('get', '/backupsources?allUnderHierarchy=false&entityId=%s&excludeTypes=5&useCachedData=true' % backupJob[0]['backupJob']['parentSource']['id'])
+        elif environment == 'kVMware':
+            sources = api('get', 'protectionSources/virtualMachines?id=%s' % job['parentSourceId'])
         elif 'kAWS' in environment:
             sources = api('get', 'protectionSources?environments=kAWS&useCachedData=true&id=' % job['parentSourceId'])
         else:
@@ -408,6 +410,17 @@ if objectnames is not None:
                             bail(1)
             else:
                 out('Object %s not found (server name)' % server)
+                if extendederrorcodes is True:
+                    bail(3)
+                else:
+                    bail(1)
+        elif environment == 'kVMware':
+            sourceId = None
+            thisSource = [s for s in sources if s['name'].lower() == objectname.lower()]
+            if thisSource is not None and len(thisSource) > 0:
+                sourceId = thisSource[0]['id']
+            else:
+                out('Object %s not found!' % objectname)
                 if extendederrorcodes is True:
                     bail(3)
                 else:
