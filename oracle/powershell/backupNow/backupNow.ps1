@@ -625,6 +625,7 @@ if($wait -or $progress){
         if($runs.PSObject.Properties['runs']){
             $runs = @($runs.runs)
         }
+        $runs = $runs | Where-Object protectionGroupInstanceId -gt $lastRunId
         if($null -ne $runs -and $runs.Count -ne "0" -and $useMetadataFile -eq $True){
             foreach($run in $runs){
                 $runDetail = api get "/backupjobruns?exactMatchStartTimeUsecs=$($run.localBackupInfo.startTimeUsecs)&id=$($job.id)&useCachedData=true"
@@ -693,7 +694,7 @@ if($wait -or $progress){
         if($lastStatus -in $finishedStates){
             break
         }
-        Start-Sleep $sleepTimeSecs
+        Start-Sleep ($sleepTimeSecs - 15)
         if($bumpStatusCount -eq $True){
             $statusRetryCount += 1
         }
