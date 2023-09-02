@@ -268,7 +268,7 @@ if($job){
             $backupJob = api get "/backupjobs/$($jobID)?useCachedData=true"
             $backupSources = api get "/backupsources?allUnderHierarchy=false&entityId=$($backupJob.backupJob.parentSource.id)&excludeTypes=5&useCachedData=true"
         }elseif($environment -eq 'kVMware'){
-            $sources = api get "protectionSources/virtualMachines?useCachedData=true&id=$($job.parentSourceId)"
+            $sources = api get "protectionSources/virtualMachines?protected=true&useCachedData=true&id=$($job.parentSourceId)"
         }elseif($environment -match 'kAWS'){
             $sources = api get "protectionSources?environments=kAWS&useCachedData=true&id=$($job.parentSourceId)"
         }else{
