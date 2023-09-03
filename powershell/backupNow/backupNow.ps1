@@ -1,4 +1,4 @@
-# version 2023.09.02
+# version 2023.09.03
 
 # version history
 # ===============
@@ -11,9 +11,7 @@
 # 2023.07.04 - added -dbg switch to output payload to payload.json file
 # 2023.07.05 - updated payload to solve p11 error "TARGET_NOT_IN_POLICY_NOT_ALLOWED%!(EXTRA int64=0)"
 # 2023-08-14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED" and added extended error code 8
-# 2023-09-01 - updated to use "protectionJobs?isActive=true&onlyReturnBasicSummary=true", increased sleepTimeSecs to 360, increased waitForNewRunMinutes to 50
-# 2023-09-01b - added support for read replica
-# 2023-09-02 - optimized object ID lookup for Oracle, SQL and VMware
+# 2023-09-03 - added support for read replica, various optimizations and fixes, increased sleepTimeSecs to 360, increased waitForNewRunMinutes to 50
 
 # extended error codes
 # ====================
@@ -268,7 +266,7 @@ if($job){
             $backupJob = api get "/backupjobs/$($jobID)?useCachedData=true"
             $backupSources = api get "/backupsources?allUnderHierarchy=false&entityId=$($backupJob.backupJob.parentSource.id)&excludeTypes=5&useCachedData=true"
         }elseif($environment -eq 'kVMware'){
-            $sources = api get "protectionSources/virtualMachines?protected=true&useCachedData=true&id=$($job.parentSourceId)"
+            $sources = api get "protectionSources/virtualMachines?protected=true&useCachedData=true&vCenterId=$($job.parentSourceId)"
         }elseif($environment -match 'kAWS'){
             $sources = api get "protectionSources?environments=kAWS&useCachedData=true&id=$($job.parentSourceId)"
         }else{
@@ -376,7 +374,9 @@ if($objects){
         }elseif($environment -eq 'kVMware'){
             $thisObject = $sources | Where-Object name -eq $object
             if($thisObject){
-                $objectId = $object.id
+                $objectId = $thisObject.id
+                $sourceIds += $objectId
+                $selectedSources = @($selectedSources + $objectId)
             }else{
                 output "Object $object not found" -warn
                 if($extendedErrorCodes){
@@ -516,6 +516,10 @@ $jobdata = @{
    "runType" = $backupType
    "copyRunTargets" = $copyRunTargets
    "usePolicyDefaults" = $True
+}
+
+if($backupType -ne 'kRegular'){
+    $jobdata['usePolicyDefaults'] = $false
 }
 
 # add sourceIds if specified

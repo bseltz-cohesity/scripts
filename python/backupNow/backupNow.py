@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.09.02
+# version 2023.09.03
 
 # version history
 # ===============
@@ -14,9 +14,7 @@
 # 2023.06.25 - added -pl --purgeoraclelogs (first added 2023-06-08)
 # 2023.07.05 - updated payload to solve p11 error "TARGET_NOT_IN_POLICY_NOT_ALLOWED%!(EXTRA int64=0)"
 # 2023-08-14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED"
-# 2023-09-01 - updated to use "protectionJobs?isActive=true&onlyReturnBasicSummary=true", increased sleeptimesecs to 360, increased newruntimeoutsecs to 3000
-# 2023-09-01b - added support for read replica
-# 2023-09-02 - optimized object ID lookup for Oracle, SQL and VMware
+# 2023-09-03 - added support for read replica, various optimizations and fixes, increased sleepTimeSecs to 360, increased waitForNewRunMinutes to 50
 
 # extended error codes
 # ====================
@@ -299,7 +297,7 @@ else:
             backupJob = api('get', '/backupjobs/%s?useCachedData=true' % job['id'])
             backupSources = api('get', '/backupsources?allUnderHierarchy=false&entityId=%s&excludeTypes=5&useCachedData=true' % backupJob[0]['backupJob']['parentSource']['id'])
         elif environment == 'kVMware':
-            sources = api('get', 'protectionSources/virtualMachines?id=%s&protected=true&useCachedData=true' % job['parentSourceId'])
+            sources = api('get', 'protectionSources/virtualMachines?vCenterId=%s&protected=true&useCachedData=true' % job['parentSourceId'])
         elif 'kAWS' in environment:
             sources = api('get', 'protectionSources?environments=kAWS&useCachedData=true&id=' % job['parentSourceId'])
         else:
@@ -419,6 +417,8 @@ if objectnames is not None:
             thisSource = [s for s in sources if s['name'].lower() == objectname.lower()]
             if thisSource is not None and len(thisSource) > 0:
                 sourceId = thisSource[0]['id']
+                sourceIds.append(sourceId)
+                selectedSources.append(sourceId)
             else:
                 out('Object %s not found!' % objectname)
                 if extendederrorcodes is True:
@@ -445,6 +445,8 @@ jobData = {
     "runType": backupType,
     "usePolicyDefaults": True
 }
+if backupType != 'kRegular':
+    jobData['usePolicyDefaults'] = False
 
 # add objects (non-DB)
 usemetadatafile = False
