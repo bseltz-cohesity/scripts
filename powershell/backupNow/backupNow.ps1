@@ -555,7 +555,8 @@ if($null -ne $runs -and $runs.PSObject.Properties['runs']){
     $runs = @($runs.runs)
 }
 
-$lastRunId = 0
+$lastRunId = 1
+$newRunId = 1
 $lastRunUsecs = 1662164882000000
 if($null -ne $runs -and $runs.Count -ne "0"){
     $newRunId = $lastRunId = $runs[0].protectionGroupInstanceId
