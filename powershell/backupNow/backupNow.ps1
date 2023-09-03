@@ -551,8 +551,11 @@ if($null -ne $runs -and $runs.PSObject.Properties['runs']){
     $runs = @($runs.runs)
 }
 
+$lastRunId = 0
+$lastRunUsecs = 1662164882000000
 if($null -ne $runs -and $runs.Count -ne "0"){
     $newRunId = $lastRunId = $runs[0].protectionGroupInstanceId
+    $lastRunUsecs = $runs[0].localBackupInfo.startTimeUsecs
 }
 
 # run job
@@ -612,12 +615,12 @@ if($wait -or $progress){
         }
         Start-Sleep 15
         if($selectedSources.Count -gt 0){
-            $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=10&includeObjectDetails=true&useCachedData=true"
+            $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=10&includeObjectDetails=true&useCachedData=true&startTimeUsecs=$lastRunUsecs"
             if($null -ne $runs -and $runs.PSObject.Properties['runs']){
                 $runs = @($runs.runs | Where-Object {$selectedSources[0] -in $_.objects.object.id})
             }
         }else{
-            $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=1&includeObjectDetails=false&useCachedData=true"
+            $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=1&includeObjectDetails=false&useCachedData=true&startTimeUsecs=$lastRunUsecs"
             if($null -ne $runs -and $runs.PSObject.Properties['runs']){
                 $runs = @($runs.runs)
             }

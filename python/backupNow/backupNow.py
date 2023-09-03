@@ -552,8 +552,10 @@ if archiveTo is not None:
 runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=1&includeObjectDetails=false&useCachedData=true' % v2JobId, v=2)
 if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
     newRunId = lastRunId = runs['runs'][0]['protectionGroupInstanceId']
+    lastRunUsecs = runs['runs'][0]['localBackupInfo']['startTimeUsecs']
 else:
     newRunId = lastRunId = 1
+    lastRunUsecs = 1662164882000000
 
 if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
     for obj in v2Job['oracleParams']['objects']:
