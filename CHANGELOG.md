@@ -1,6 +1,6 @@
 # Change Log for bseltz-cohesity/scripts
 
-## 2023-09-02
+## 2023-09-03
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow> [`Update`] performance improvements
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/backupNow> [`Update`] performance improvements
