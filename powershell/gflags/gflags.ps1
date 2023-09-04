@@ -35,6 +35,10 @@ if($vip -eq 'helios.cohesity.com'){
         exit
     }
     
+}else{
+    if($accessCluster){
+        accessCluster $accessCluster
+    }
 }
 
 $port = @{
@@ -161,7 +165,6 @@ if($flagname){
         Write-Host "-servicename, -flagname, -flagvalue and -reason are all required to set a gflag" -ForegroundColor Yellow
         exit
     }
-    exit
 }
 
 # import list of gflags

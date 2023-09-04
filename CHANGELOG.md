@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-09-04
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/gflags> [`Fix`] Fixed service restart function
+
 ## 2023-09-03
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow> [`Update`] performance improvements
