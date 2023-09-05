@@ -205,7 +205,10 @@ for sname in servernames:
         print('Adding %s/* to protection job %s...' % (sname, jobname))
 
     # update dblist for server
+    if 'sourceSpecialParameters' not in job:
+        job['sourceSpecialParameters'] = []
     sourceSpecialParameter = [s for s in job['sourceSpecialParameters'] if s['sourceId'] == serverId]
+
     if len(sourceSpecialParameter) < 1:
         job['sourceSpecialParameters'].append({"sourceId": serverId, "oracleSpecialParameters": {"applicationEntityIds": dbIds}})
         if deletelogdays is not None:
