@@ -70,7 +70,6 @@ Place all files in a folder together. then, run the main script like so:
 * -cacheWaitTime: (optional) wait for read replica update (default is 60)
 * -retryWaitTime: (optional) wait to retry API call (default is 120)
 * -timeoutSec: (optional) timeout waiting for API response (default is 300)
-* -interactiveSleepTimeSecs: (optional) seconds to sleep between status queries when in interactive mode (default is 30)
 * -interactiveStartWaitTime: (optional) wait for job run to start when in interactive mode (default is 15)
 * -interactiveRetryWaitTime: (optional) wait to retry API call  when in interactive mode (default is 30)
 * -waitMinutesIfRunning: (optional) exit after X minutes if job is already running (default is 60)
@@ -80,9 +79,9 @@ Place all files in a folder together. then, run the main script like so:
 ## Other Parameters
 
 * -interactive: (optional) use quicker interactive wait times
+* -wait: (optional) wait for job to complete and return exit code, otherwise exit immediately after starting the job
 * -noCache: (optional) do not use read replica for API GET queries
 * -progress: (optional) display percent complete
-* -wait: (optional) wait for job to complete and return exit code, otherwise exit immediately after starting the job
 * -abortIfRunning: (optional) exit if job is already running (default is to wait and run when existing run is finished)
 * -outputlog: (optional) enable output logging
 * -logfile: (optional) path/name of log file (default is ./log-backupNow.log)
