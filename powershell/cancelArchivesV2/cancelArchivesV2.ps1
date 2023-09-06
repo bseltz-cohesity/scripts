@@ -20,6 +20,7 @@ param (
     [Parameter()][switch]$showFinished,
     [Parameter()][int]$numRuns = 1000,
     [Parameter()][switch]$commit,
+    [Parameter()][string]$targetName,
     [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB'
 )
 
@@ -85,20 +86,24 @@ foreach($job in $jobs){
             $runId = $run.id
             $startTimeUsecs = $run.localBackupInfo.startTimeUsecs
             foreach($archivalInfo in $run.archivalInfo.archivalTargetResults){
-                $taskId = $archivalInfo.archivalTaskId
-                $status = $archivalInfo.status
-                $transferred = toUnits $archivalInfo.stats.logicalBytesTransferred
-                $expiryTime = $archivalInfo.expiryTimeUsecs
-                $isIncremental = $archivalInfo.isIncremental
-                $runInfo = @($runInfo + @{
-                    'runId' = $runId;
-                    'taskId' = $taskId;
-                    'status' = $status;
-                    'transferred' = $transferred;
-                    'expiryTime' = $expiryTime;
-                    'isIncremental' = $isIncremental;
-                    'startTimeUsecs' = $startTimeUsecs;
-                })
+                if($archivalInfo.targetName -eq $targetName -or ! $targetName){
+                    $taskId = $archivalInfo.archivalTaskId
+                    $status = $archivalInfo.status
+                    $transferred = toUnits $archivalInfo.stats.logicalBytesTransferred
+                    $expiryTime = $archivalInfo.expiryTimeUsecs
+                    $isIncremental = $archivalInfo.isIncremental
+                    $runInfo = @($runInfo + @{
+                        'runId' = $runId;
+                        'taskId' = $taskId;
+                        'status' = $status;
+                        'transferred' = $transferred;
+                        'expiryTime' = $expiryTime;
+                        'isIncremental' = $isIncremental;
+                        'startTimeUsecs' = $startTimeUsecs;
+                        'targetName' = $archivalInfo.targetName;
+                    })
+                }
+                
             }
         }
 
@@ -147,7 +152,7 @@ foreach($job in $jobs){
                         $cancelling = '(Would Cancel)'
                     }
                 }
-                "    $($run.status)  $(usecsToDate $($run.startTimeUsecs))  ($($run.transferred))  $referenceFull  $reason  $cancelling"
+                "    $($run.status)  $(usecsToDate $($run.startTimeUsecs))  [$($run.targetName)]  ($($run.transferred))  $referenceFull  $reason  $cancelling"
                 if($commit -and $cancelling -ne ''){
                     if($cluster.clusterSoftwareVersion -gt '6.8'){
                         $cancelParams = @{
@@ -173,7 +178,7 @@ foreach($job in $jobs){
                 }
             }else{
                 if($showFinished){
-                    "    $($run.status)  $(usecsToDate $($run.startTimeUsecs))  ($($run.transferred))  $referenceFull"
+                    "    $($run.status)  $(usecsToDate $($run.startTimeUsecs))  [$($run.targetName)]  ($($run.transferred))  $referenceFull"
                 }
             }
         }

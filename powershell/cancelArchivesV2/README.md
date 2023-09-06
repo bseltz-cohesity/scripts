@@ -42,3 +42,4 @@ Place both files in a folder together and run the main script like so:
 * -showFinished: (optional) display historical finished archive tasks
 * -numRuns: (optional) number of runs to get per API call (default is 1000)
 * -unit: (optional) units for display (MiB, GiB, TiB) default is MiB
+* -targetName: (optional) limit actions to specific archive target
