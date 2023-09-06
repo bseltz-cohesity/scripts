@@ -65,20 +65,30 @@ Place all files in a folder together. then, run the main script like so:
 
 Note: -k, --keepLocalFor no longer has any affect in recent releases of 6.6 and later. Policy setting is enforced.
 
-## Monitoring Parameters
+## Timing Parameters
 
-* -w, --wait: (optional) wait for backup run to complete and report result
-* -pr, --progress: (optional) display percent complete
-* -s, --sleeptimesecs: (optional) seconds to sleep between status queries (default is 360)
-* -x, --abortifrunning: (optional) exit if job is already running (default is to wait and run after existing run is finished)
-* -f, --logfile: (optional) filename to log output
+* -s, --sleeptimesecs: (optional) seconds to sleep between status queries (default is 3000)
+* -swt, --startwaittime: (optional) wait for job run to start (default is 60)
+* -cwt, --cachewaittime: (optional) wait for read replica update (default is 60)
+* -rwt, --retrywaittime: (optional) wait to retry API call (default is 120)
+* -to, --timeoutsec: (optional) timeout waiting for API response (default is 300)
+* -iswt, --interactivestartwaittime: (optional) wait for job run to start when in interactive mode (default is 15)
+* -irwt, ==interactiveretrywaittime: (optional) wait to retry API call  when in interactive mode (default is 30)
 * -n, --waitminutesifrunning: (optional) exit after X minutes if job is already running (default is 60)
 * -cp, --cancelpreviousrunminutes: (optional) cancel previous job run if it's been running for X minutes
 * -nrt, --newruntimeoutsecs: (optional) exit after X seconds if new run fails to start (default is 3000)
+* -est, --exitstringtimeoutsecs: (optional) timeout searching for string and exit 1 if not found
+
+## Monitoring Parameters
+
+* -int, --interactive: (optional) use quicker interactive wait times
+* -w, --wait: (optional) wait for backup run to complete and report result
+* -pr, --progress: (optional) display percent complete
+* -x, --abortifrunning: (optional) exit if job is already running (default is to wait and run after existing run is finished)
+* -f, --logfile: (optional) filename to log output
 * -debug, --debug: (optional) display verbose error and state messages
 * -ex, --extendederrorcodes: (optional) return extended set of exit codes
 * -es, --exitstring: (optional) search for string in pulse logs and exit 0 when found
-* -est, --exitstringtimeoutsecs: (optional) timeout searching for string and exit 1 if not found
 * -sr, --statusretries: (optional) give up trying to get status update after X tries (default is 30)
 
 ## Extended Error Codes

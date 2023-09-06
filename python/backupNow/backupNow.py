@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.09.03
+# version 2023.09.06
 
 # version history
 # ===============
@@ -15,6 +15,7 @@
 # 2023.07.05 - updated payload to solve p11 error "TARGET_NOT_IN_POLICY_NOT_ALLOWED%!(EXTRA int64=0)"
 # 2023-08-14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED"
 # 2023-09-03 - added support for read replica, various optimizations and fixes, increased sleepTimeSecs to 360, increased newruntimeoutsecs to 3000
+# 2023-09-06 - added --timeoutsec 300, --nocache, granular sleep times, interactive mode, default sleepTimeSecs 3000
 
 # extended error codes
 # ====================
@@ -72,12 +73,19 @@ parser.add_argument('-cp', '--cancelpreviousrunminutes', type=int, default=0)
 parser.add_argument('-nrt', '--newruntimeoutsecs', type=int, default=3000)
 parser.add_argument('-debug', '--debug', action='store_true')
 parser.add_argument('-ex', '--extendederrorcodes', action='store_true')
-parser.add_argument('-s', '--sleeptimesecs', type=int, default=360)
+parser.add_argument('-s', '--sleeptimesecs', type=int, default=3000)
 parser.add_argument('-es', '--exitstring', type=str, default=None)
 parser.add_argument('-est', '--exitstringtimeoutsecs', type=int, default=120)
 parser.add_argument('-sr', '--statusretries', type=int, default=10)
 parser.add_argument('-pl', '--purgeoraclelogs', action='store_true')
-
+parser.add_argument('-nc', '--nocache', action='store_true')
+parser.add_argument('-swt', '--startwaittime', type=int, default=60)
+parser.add_argument('-cwt', '--cachewaittime', type=int, default=60)
+parser.add_argument('-rwt', '--retrywaittime', type=int, default=120)
+parser.add_argument('-to', '--timeoutsec', type=int, default=300)
+parser.add_argument('-iswt', '--interactivestartwaittime', type=int, default=15)
+parser.add_argument('-irwt', '--interactiveretrywaittime', type=int, default=30)
+parser.add_argument('-int', '--interactive', action='store_true')
 args = parser.parse_args()
 
 vip = args.vip
@@ -118,6 +126,26 @@ exitstring = args.exitstring
 exitstringtimeoutsecs = args.exitstringtimeoutsecs
 statusretries = args.statusretries
 purgeoraclelogs = args.purgeoraclelogs
+nocache = args.nocache
+startwaittime = args.startwaittime
+cachewaittime = args.cachewaittime
+retrywaittime = args.retrywaittime
+timeoutsec = args.timeoutsec
+interactivestartwaittime = args.interactivestartwaittime
+interactiveretrywaittime = args.interactiveretrywaittime
+interactive = args.interactive
+
+cacheSetting = 'true'
+if nocache:
+    cacheSetting = 'false'
+    cachewaittime = 0
+
+if interactive:
+    cachewaittime = 0
+    startwaittime = interactivestartwaittime
+    retrywaittime = interactiveretrywaittime
+
+sleep(cachewaittime)
 
 # enforce sleep time
 if sleeptimesecs < 30:
@@ -209,7 +237,7 @@ if apiconnected() is False:
         bail(1)
 
 sources = {}
-cluster = api('get', 'cluster')
+cluster = api('get', 'cluster', timeout=timeoutsec)
 
 
 # get object ID
@@ -245,13 +273,13 @@ def cancelRunningJob(job, durationMinutes):
         durationUsecs = durationMinutes * 60000000
         nowUsecs = dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         cancelTime = nowUsecs - durationUsecs
-        runningRuns = api('get', 'protectionRuns?jobId=%s&numRuns=10000&excludeTasks=true&useCachedData=true' % job['id'])
+        runningRuns = api('get', 'protectionRuns?jobId=%s&numRuns=100&excludeTasks=true&useCachedData=%s' % (job['id'], cacheSetting), timeout=timeoutsec)
         if runningRuns is not None and len(runningRuns) > 0:
             for run in runningRuns:
                 if 'backupRun' in run and 'status' in run['backupRun']:
                     if run['backupRun']['status'] not in finishedStates and 'stats' in run['backupRun'] and 'startTimeUsecs' in run['backupRun']['stats']:
                         if run['backupRun']['stats']['startTimeUsecs'] < cancelTime:
-                            result = api('post', 'protectionRuns/cancel/%s' % job['id'], {"jobRunId": run['backupRun']['jobRunId']})
+                            result = api('post', 'protectionRuns/cancel/%s' % job['id'], {"jobRunId": run['backupRun']['jobRunId']}, timeout=timeoutsec)
                             out('Canceling previous job run')
 
 
@@ -259,7 +287,7 @@ def cancelRunningJob(job, durationMinutes):
 jobs = None
 jobRetries = 0
 while jobs is None:
-    jobs = api('get', 'protectionJobs?isActive=true&onlyReturnBasicSummary=true&useCachedData=true')
+    jobs = api('get', 'protectionJobs?isActive=true&onlyReturnBasicSummary=true&useCachedData=%s' % cacheSetting)
     if jobs is None or 'error' in jobs:
         jobs = None
         jobRetries += 1
@@ -270,7 +298,7 @@ while jobs is None:
             else:
                 bail(1)
         else:
-            sleep(15)
+            sleep(retrywaittime)
 
 job = [job for job in jobs if job['name'].lower() == jobName.lower() and ('isActive' not in job or job['isActive'] is not False)]
 
@@ -294,18 +322,18 @@ else:
             bail(1)
     if objectnames is not None:
         if environment in ['kOracle', 'kSQL']:
-            backupJob = api('get', '/backupjobs/%s?useCachedData=true' % job['id'])
-            backupSources = api('get', '/backupsources?allUnderHierarchy=false&entityId=%s&excludeTypes=5&useCachedData=true' % backupJob[0]['backupJob']['parentSource']['id'])
+            backupJob = api('get', '/backupjobs/%s?useCachedData=%s' % (job['id'], cacheSetting), timeout=timeoutsec)
+            backupSources = api('get', '/backupsources?allUnderHierarchy=false&entityId=%s&excludeTypes=5&useCachedData=%s' % (backupJob[0]['backupJob']['parentSource']['id'], cacheSetting), timeout=timeoutsec)
         elif environment == 'kVMware':
-            sources = api('get', 'protectionSources/virtualMachines?vCenterId=%s&protected=true&useCachedData=true' % job['parentSourceId'])
+            sources = api('get', 'protectionSources/virtualMachines?vCenterId=%s&protected=true&useCachedData=%s' % (job['parentSourceId'], cacheSetting), timeout=timeoutsec)
         elif 'kAWS' in environment:
-            sources = api('get', 'protectionSources?environments=kAWS&useCachedData=true&id=' % job['parentSourceId'])
+            sources = api('get', 'protectionSources?environments=kAWS&useCachedData=%s&id=%s' % (cacheSetting, job['parentSourceId']), timeout=timeoutsec)
         else:
-            sources = api('get', 'protectionSources?environments=%s&useCachedData=true&is=%s' % (environment, job['parentSourceId']))
+            sources = api('get', 'protectionSources?environments=%s&useCachedData=%s&id=%s' % (environment, cacheSetting, job['parentSourceId']), timeout=timeoutsec)
 
 # purge oracle logs
 if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
-    v2Job = api('get', 'data-protect/protection-groups/%s?useCachedData=true' % v2JobId, v=2)
+    v2Job = api('get', 'data-protect/protection-groups/%s?useCachedData=true' % v2JobId, v=2, timeout=timeoutsec)
     v2OrigJob = copy.deepcopy(v2Job)
 
 # handle run now objects
@@ -471,7 +499,7 @@ if len(runNowParameters) > 0:
     jobData['runNowParameters'] = runNowParameters
 
 # use base retention and copy targets from policy
-policy = api('get', 'protectionPolicies/%s' % job['policyId'])
+policy = api('get', 'protectionPolicies/%s' % job['policyId'], timeout=timeoutsec)
 
 # replication
 if localonly is not True and noreplica is not True:
@@ -506,7 +534,7 @@ if replicateTo is not None:
             bail(3)
         else:
             bail(1)
-    remote = [remote for remote in api('get', 'remoteClusters') if remote['name'].lower() == replicateTo.lower()]
+    remote = [remote for remote in api('get', 'remoteClusters', timeout=timeoutsec) if remote['name'].lower() == replicateTo.lower()]
     if len(remote) > 0:
         remote = remote[0]
         jobData['copyRunTargets'].append({
@@ -531,7 +559,7 @@ if archiveTo is not None:
             bail(3)
         else:
             bail(1)
-    vault = [vault for vault in api('get', 'vaults') if vault['name'].lower() == archiveTo.lower()]
+    vault = [vault for vault in api('get', 'vaults', timeout=timeoutsec) if vault['name'].lower() == archiveTo.lower()]
     if len(vault) > 0:
         vault = vault[0]
         jobData['copyRunTargets'].append({
@@ -551,7 +579,7 @@ if archiveTo is not None:
             bail(1)
 
 # get last run ID
-runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=1&includeObjectDetails=false&useCachedData=true' % v2JobId, v=2)
+runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=1&includeObjectDetails=false&useCachedData=%s' % (v2JobId, cacheSetting), v=2, timeout=timeoutsec)
 if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
     newRunId = lastRunId = runs['runs'][0]['protectionGroupInstanceId']
     lastRunUsecs = runs['runs'][0]['localBackupInfo']['startTimeUsecs']
@@ -579,9 +607,9 @@ if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
                 for channel in dbparam['dbChannels']:
                     if 'archiveLogRetentionDays' in channel:
                         channel['archiveLogRetentionDays'] = 0
-    updatejob = api('put', 'data-protect/protection-groups/%s' % v2JobId, v2Job, v=2)
+    updatejob = api('put', 'data-protect/protection-groups/%s' % v2JobId, v2Job, v=2, timeout=timeoutsec)
     out('setting job to purge oracle logs...')
-    sleep(15)
+    sleep(cachewaittime + startwaittime)
     wait = True
 
 # run protectionJob
@@ -592,7 +620,7 @@ waitUntil = nowUsecs + (waitminutesifrunning * 60000000)
 reportWaiting = True
 if debugger:
     print(':DEBUG: waiting for new run to be accepted')
-runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData, quiet=True)
+runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData, quiet=True, timeout=timeoutsec)
 while runNow != "":
     if 'TARGET_NOT_IN_POLICY_NOT_ALLOWED' in LAST_API_ERROR():
         out(LAST_API_ERROR())
@@ -616,31 +644,31 @@ while runNow != "":
             bail(4)
         else:
             bail(1)
-    sleep(sleeptimesecs)
+    sleep(retrywaittime)
     if debugger:
-        runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData)
+        runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData, timeout=timeoutsec)
     else:
-        runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData, quiet=True)
+        runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData, quiet=True, timeout=timeoutsec)
 out("Running %s..." % jobName)
 
 # wait for new job run to appear
 if wait is True:
     timeOutUsecs = dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     while newRunId <= lastRunId:
-        sleep(15)
+        sleep(startwaittime)
         if len(selectedSources) > 0:
-            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=10&includeObjectDetails=true&useCachedData=true' % v2JobId, v=2)
+            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=10&includeObjectDetails=true&useCachedData=%s' % (v2JobId, cacheSetting), v=2, timeout=timeoutsec)
             if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
                 runs = [r for r in runs['runs'] if selectedSources[0] in [o['object']['id'] for o in r['objects']]]
         else:
-            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=1&includeObjectDetails=false&useCachedData=true' % v2JobId, v=2)
+            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=1&includeObjectDetails=false&useCachedData=%s' % (v2JobId, cacheSetting), v=2, timeout=timeoutsec)
             if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
                 runs = runs['runs']
         if runs is not None and 'runs' not in runs and len(runs) > 0:
             runs = [r for r in runs if r['protectionGroupInstanceId'] > lastRunId]
         if runs is not None and 'runs' not in runs and len(runs) > 0 and usemetadatafile is True:  # metadatafile is not None:
             for run in runs:
-                runDetail = api('get', '/backupjobruns?exactMatchStartTimeUsecs=%s&id=%s&useCachedData=true' % (run['localBackupInfo']['startTimeUsecs'], job['id']))
+                runDetail = api('get', '/backupjobruns?exactMatchStartTimeUsecs=%s&id=%s&useCachedData=%s' % (run['localBackupInfo']['startTimeUsecs'], job['id'], cacheSetting), timeout=timeoutsec)
                 try:
                     metadataFilePath = runDetail[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['additionalParamVec'][0]['physicalParams']['metadataFilePath']
                     if metadataFilePath == metadatafile:
@@ -666,7 +694,7 @@ if wait is True:
                 bail(1)
         if newRunId > lastRunId:
             break
-        sleep(sleeptimesecs - 15)
+        sleep(retrywaittime)
     out("New Job Run ID: %s" % v2RunId)
 
 # wait for job run to finish and report completion
@@ -677,12 +705,12 @@ if wait is True:
     while status not in finishedStates:
         x = 0
         s = 0
-        sleep(15)
+        sleep(sleeptimesecs)
         try:
             if exitstring:
-                run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=true&useCachedData=true' % (v2JobId, v2RunId), v=2)
+                run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=true&useCachedData=%s' % (v2JobId, v2RunId, cacheSetting), v=2, timeout=timeoutsec)
             else:
-                run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=false&useCachedData=true' % (v2JobId, v2RunId), v=2)
+                run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=false&useCachedData=%s' % (v2JobId, v2RunId, cacheSetting), v=2, timeout=timeoutsec)
             status = run['localBackupInfo']['status']
             if exitstring:
                 while x < len(run['objects']) and s < exitstringtimeoutsecs:
@@ -693,7 +721,7 @@ if wait is True:
                     x = 0
                     try:
                         progressPath = run['localBackupInfo']['progressTaskId']
-                        taskMon = api('get', '/progressMonitors?taskPathVec=%s' % progressPath)
+                        taskMon = api('get', '/progressMonitors?taskPathVec=%s' % progressPath, timeout=timeoutsec)
                         sources = taskMon['resultGroupVec'][0]['taskVec'][0]['subTaskVec']
                         for source in sources:
                             if source['taskPath'] != 'post_processing':
@@ -719,7 +747,7 @@ if wait is True:
             if progress and lastProgress < 100 and 'progressTaskId' in run['localBackupInfo']:
                 sleep(15)
                 progressPath = run['localBackupInfo']['progressTaskId']
-                progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&excludeSubTasks=true&includeFinishedTasks=false' % progressPath)
+                progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&excludeSubTasks=true&includeFinishedTasks=false' % progressPath, timeout=timeoutsec)
                 progressTotal = progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']
                 percentComplete = int(round(progressTotal))
                 if percentComplete > lastProgress:
@@ -738,8 +766,8 @@ if wait is True:
                     bail(5)
                 else:
                     bail(1)
-        if status not in finishedStates:
-            sleep(sleeptimesecs - 15)
+        # if status not in finishedStates:
+        #     sleep(sleeptimesecs - 15)
     out("Job finished with status: %s" % run['localBackupInfo']['status'])
     if run['localBackupInfo']['status'] == 'Failed':
         out('Error: %s' % run['localBackupInfo']['messages'][0])
@@ -747,7 +775,7 @@ if wait is True:
         out('Warning: %s' % run['localBackupInfo']['messages'][0])
 
 if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
-    updatejob = api('put', 'data-protect/protection-groups/%s' % v2JobId, v2OrigJob, v=2)
+    updatejob = api('put', 'data-protect/protection-groups/%s' % v2JobId, v2OrigJob, v=2, timeout=timeoutsec)
 
 # return exit code
 if wait is True:
