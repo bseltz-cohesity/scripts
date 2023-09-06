@@ -210,7 +210,9 @@ for sname in servernames:
     sourceSpecialParameter = [s for s in job['sourceSpecialParameters'] if s['sourceId'] == serverId]
 
     if len(sourceSpecialParameter) < 1:
+
         job['sourceSpecialParameters'].append({"sourceId": serverId, "oracleSpecialParameters": {"applicationEntityIds": dbIds}})
+        sourceSpecialParameter = [s for s in job['sourceSpecialParameters'] if s['sourceId'] == serverId]
         if deletelogdays is not None:
             sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'] = []
             for dbId in dbIds:
