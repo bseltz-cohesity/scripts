@@ -61,21 +61,31 @@ Place all files in a folder together. then, run the main script like so:
 * -replicateTo: (optional) name of remote cluster to replicate to (default is to use policy setting)
 * -keepReplicaFor: (optional) days to keep replica for (default is to use policy setting)
 * -localOnly: (optional) skip replicas and archivals
-* -keepLocalFor: (optional) days to keep local snapshot (default is to use policy setting)
+* -keepLocalFor: (optional) days to keep local snapshot (deprecated, does nothing)
 
-Note: -keepLocalFor no longer has any affect in recent releases of 6.6 and later. Policy setting is enforced.
+## Timing Parameters
 
-## Other Runtime Parameters
+* -sleepTimeSecs: (optional) seconds to sleep between status queries (default is 3000)
+* -startWaitTime: (optional) wait for job run to start (default is 60)
+* -cacheWaitTime: (optional) wait for read replica update (default is 60)
+* -retryWaitTime: (optional) wait to retry API call (default is 120)
+* -timeoutSec: (optional) timeout waiting for API response (default is 300)
+* -interactiveSleepTimeSecs: (optional) seconds to sleep between status queries when in interactive mode (default is 30)
+* -interactiveStartWaitTime: (optional) wait for job run to start when in interactive mode (default is 15)
+* -interactiveRetryWaitTime: (optional) wait to retry API call  when in interactive mode (default is 30)
+* -waitMinutesIfRunning: (optional) exit after X minutes if job is already running (default is 60)
+* -waitForNewRunMinutes: (optional) exit after X minutes if new run fails to appear (Default is 50)
+* -cancelPreviousRunMinutes: (optional) cancel previous job run if it has been running for X minutes
 
-* -sleepTimeSecs: (optional) seconds to sleep between status queries (default is 360)
+## Other Parameters
+
+* -interactive: (optional) use quicker interactive wait times
+* -noCache: (optional) do not use read replica for API GET queries
 * -progress: (optional) display percent complete
 * -wait: (optional) wait for job to complete and return exit code, otherwise exit immediately after starting the job
 * -abortIfRunning: (optional) exit if job is already running (default is to wait and run when existing run is finished)
 * -outputlog: (optional) enable output logging
 * -logfile: (optional) path/name of log file (default is ./log-backupNow.log)
-* -waitMinutesIfRunning: (optional) exit after X minutes if job is already running (default is 60)
-* -waitForNewRunMinutes: (optional) exit after X minutes if new run fails to appear (Default is 50)
-* -cancelPreviousRunMinutes: (optional) cancel previous job run if it has been running for X minutes
 * -statusRetries: (optional) quit script with failure if unable to get status X times (default is 10)
 * -extendedErrorCodes: (optional) return extended set of exit codes (see below) by default 0 = successful, 1 = not successful
 * -dbg: (optional) output payload to payload.json for debugging
