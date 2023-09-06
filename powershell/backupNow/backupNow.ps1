@@ -74,7 +74,6 @@ param (
     [Parameter()][int64]$timeoutSec = 300,
     [Parameter()][int64]$interactiveStartWaitTime = 15,
     [Parameter()][int64]$interactiveRetryWaitTime = 30,
-    [Parameter()][int64]$interactiveSleepTimeSecs = 30,
     [Parameter()][switch]$interactive,
     [Parameter()][switch]$dbg
 )
@@ -89,7 +88,6 @@ if($interactive){
     $cacheWaitTime = 0
     $startWaitTime = $interactiveStartWaitTime
     $retryWaitTime = $interactiveRetryWaitTime
-    $sleepTimeSecs = $interactiveSleepTimeSecs
 }
 
 $payloadCache = @{}
