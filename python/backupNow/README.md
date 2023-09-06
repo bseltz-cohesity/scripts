@@ -67,7 +67,7 @@ Note: -k, --keepLocalFor no longer has any affect in recent releases of 6.6 and 
 
 ## Timing Parameters
 
-* -s, --sleeptimesecs: (optional) seconds to sleep between status queries (default is 3000)
+* -s, --sleeptimesecs: (optional) seconds to sleep between status queries (default is 360)
 * -swt, --startwaittime: (optional) wait for job run to start (default is 60)
 * -cwt, --cachewaittime: (optional) wait for read replica update (default is 60)
 * -rwt, --retrywaittime: (optional) wait to retry API call (default is 300)

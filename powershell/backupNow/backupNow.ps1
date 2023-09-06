@@ -67,7 +67,7 @@ param (
     [Parameter()][int64]$statusRetries = 10,   # give up waiting for new run to appear
     [Parameter()][switch]$extendedErrorCodes,  # report failure-specific error codes
     [Parameter()][switch]$noCache,
-    [Parameter()][int64]$sleepTimeSecs = 3000,  # sleep seconds between status queries
+    [Parameter()][int64]$sleepTimeSecs = 360,  # sleep seconds between status queries
     [Parameter()][int64]$startWaitTime = 60,
     [Parameter()][int64]$cacheWaitTime = 60,
     [Parameter()][int64]$retryWaitTime = 300,
