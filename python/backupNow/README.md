@@ -70,7 +70,7 @@ Note: -k, --keepLocalFor no longer has any affect in recent releases of 6.6 and 
 * -s, --sleeptimesecs: (optional) seconds to sleep between status queries (default is 3000)
 * -swt, --startwaittime: (optional) wait for job run to start (default is 60)
 * -cwt, --cachewaittime: (optional) wait for read replica update (default is 60)
-* -rwt, --retrywaittime: (optional) wait to retry API call (default is 120)
+* -rwt, --retrywaittime: (optional) wait to retry API call (default is 300)
 * -to, --timeoutsec: (optional) timeout waiting for API response (default is 300)
 * -iswt, --interactivestartwaittime: (optional) wait for job run to start when in interactive mode (default is 15)
 * -irwt, ==interactiveretrywaittime: (optional) wait to retry API call  when in interactive mode (default is 30)

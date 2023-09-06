@@ -70,7 +70,7 @@ param (
     [Parameter()][int64]$sleepTimeSecs = 3000,  # sleep seconds between status queries
     [Parameter()][int64]$startWaitTime = 60,
     [Parameter()][int64]$cacheWaitTime = 60,
-    [Parameter()][int64]$retryWaitTime = 120,
+    [Parameter()][int64]$retryWaitTime = 300,
     [Parameter()][int64]$timeoutSec = 300,
     [Parameter()][int64]$interactiveStartWaitTime = 15,
     [Parameter()][int64]$interactiveRetryWaitTime = 30,

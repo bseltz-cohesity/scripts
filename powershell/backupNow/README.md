@@ -68,7 +68,7 @@ Place all files in a folder together. then, run the main script like so:
 * -sleepTimeSecs: (optional) seconds to sleep between status queries (default is 3000)
 * -startWaitTime: (optional) wait for job run to start (default is 60)
 * -cacheWaitTime: (optional) wait for read replica update (default is 60)
-* -retryWaitTime: (optional) wait to retry API call (default is 120)
+* -retryWaitTime: (optional) wait to retry API call (default is 300)
 * -timeoutSec: (optional) timeout waiting for API response (default is 300)
 * -interactiveStartWaitTime: (optional) wait for job run to start when in interactive mode (default is 15)
 * -interactiveRetryWaitTime: (optional) wait to retry API call  when in interactive mode (default is 30)
