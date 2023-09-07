@@ -10,6 +10,7 @@
 
 ## 2023-09-06
 
+* <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/pyhesity> [`Update`] added timeout parameter to apiauth and api functions (required for latest version of backupNow.py)
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cancelArchivesV2> [`Update`] added support to filter on target name
 * <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/protectOracle> [`Fix`] fixed edge case bug that caused unhandled exception
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow> [`Update`] performance improvements
