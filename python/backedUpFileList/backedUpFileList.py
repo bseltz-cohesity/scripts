@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2023.00.07
+# version 2023.09.07
 
 # import pyhesity wrapper module
 from pyhesity import *
