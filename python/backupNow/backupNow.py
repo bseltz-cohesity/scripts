@@ -49,6 +49,7 @@ parser.add_argument('-p', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-mcm', '--mcm', action='store_true')
 parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mfacode', '--mfacode', type=str, default=None)
 parser.add_argument('-j', '--jobName', type=str, required=True)
 parser.add_argument('-j2', '--jobName2', type=str, default=None)
 parser.add_argument('-y', '--usepolicy', action='store_true')
@@ -97,6 +98,7 @@ password = args.password
 noprompt = args.noprompt
 clustername = args.clustername
 mcm = args.mcm
+mfacode = args.mfacode
 jobName = args.jobName
 jobName2 = args.jobName2
 keepLocalFor = args.keepLocalFor
@@ -196,10 +198,7 @@ if 'api_version' not in globals() or api_version < '2022.09.13':
         bail(1)
 
 # authenticate
-if mcm:
-    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=True, prompt=prompt)
-else:
-    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, prompt=prompt)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode)
 
 # if connected to helios or mcm, select to access cluster
 if mcm or vip.lower() == 'helios.cohesity.com':
