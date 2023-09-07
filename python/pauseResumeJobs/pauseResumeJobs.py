@@ -11,10 +11,11 @@ parser.add_argument('-v', '--vip', type=str, required=True)
 parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
 parser.add_argument('-i', '--useApiKey', action='store_true')
-parser.add_argument('-p', '--password', type=str, default=None)
+parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-j', '--jobName', action='append', type=str)
 parser.add_argument('-l', '--jobList', type=str)
 parser.add_argument('-r', '--resume', action='store_true')
+parser.add_argument('-p', '--pause', action='store_true')
 
 args = parser.parse_args()
 
@@ -25,6 +26,7 @@ password = args.password
 jobNames = args.jobName
 jobList = args.jobList
 useApiKey = args.useApiKey
+pause = args.pause
 resume = args.resume
 
 # gather job names
@@ -45,10 +47,11 @@ if apiconnected() is False:
 if resume is True:
     action = 'kResume'
     actiontext = 'Resuming'
-else:
+elif pause is True:
     action = 'kPause'
     actiontext = 'Pausing'
-
+else:
+    action = 'show'
 jobIds = []
 
 for jobName in jobNames:
@@ -58,8 +61,14 @@ for jobName in jobNames:
         print("Job '%s' not found" % jobName)
     else:
         job = job[0]
-        print("%s - %s" % (actiontext, job['name']))
-        jobIds.append(job['id'])
+        if action == 'show':
+            if 'isPaused' in job and job['isPaused'] is True:
+                print("%s (paused)" % job['name'])
+            else:
+                print("%s (active)" % job['name'])
+        else:
+            print("%s - %s" % (actiontext, job['name']))
+            jobIds.append(job['id'])
 
 if len(jobIds) > 0:
     result = api('post', 'protectionJobs/states', {"action": action, "jobIds": jobIds})

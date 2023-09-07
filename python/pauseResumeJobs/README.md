@@ -24,6 +24,12 @@ chmod +x pauseResumeJobs.py
 To pause some protection jobs, place all files in a folder together. then, run the main script like so:
 
 ```bash
+./pauseResumeJobs.py -v mycluster -u myuser -d mydomain.net -j 'My Backup Job 1' -j 'My Backup Job 2' -p
+```
+
+To show the state of the jobs:
+
+```bash
 ./pauseResumeJobs.py -v mycluster -u myuser -d mydomain.net -j 'My Backup Job 1' -j 'My Backup Job 2'
 ```
 
@@ -39,7 +45,8 @@ To resume the same jobs, add the -r switch:
 * -u, --username: short username to authenticate to the cluster (default is helios)
 * -d, --domain: active directory domain of user (default is local)
 * -i, --useApiKey: use API key for authentication
-* -p, --password: send password in clear text (not recommended, use default stored password behavior)
+* -pwd, --password: send password in clear text (not recommended, use default stored password behavior)
 * -j, --jobName: name of protection job to run (repeat for multiple jobs)
 * -l, --jobList: text file containing job names to run (one job per line)
-* -r, --resume: resume jobs (pause jobs if omitted)
+* -p, --pause: pause jobs
+* -r, --resume: resume jobs
