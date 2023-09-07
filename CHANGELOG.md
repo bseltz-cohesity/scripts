@@ -2,6 +2,7 @@
 
 ## 2023-09-07
 
+* <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/protectOracle> [`Update`] added --noalert option
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/refreshSource> [`Fix`] wait for app/DB refresh
 * <https://github.com/bseltz-cohesity/scripts/tree/master/aix> [`Update`] Added MFA support to compiled binaries for AIX
 * <https://github.com/bseltz-cohesity/scripts/tree/master/linux> [`Update`] Added MFA support to compiled binaries for Linux
