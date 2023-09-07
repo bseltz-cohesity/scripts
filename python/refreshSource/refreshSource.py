@@ -3,6 +3,7 @@
 
 ### import pyhesity wrapper module
 from pyhesity import *
+from time import sleep
 
 ### command line arguments
 import argparse
@@ -43,10 +44,35 @@ def getObjectId(sourcename):
     return None
 
 
+def waitForRefresh(sourcename):
+    authStatus = ''
+    while authStatus != 'Finished':
+        rootFinished = False
+        appsFinished = False
+        sleep(2)
+        rootNodes = api('get', 'protectionSources/registrationInfo?includeApplicationsTreeInfo=false')
+        rootNode = [r for r in rootNodes['rootNodes'] if r['rootNode']['name'].lower() == sourcename.lower()]
+        if rootNode[0]['registrationInfo']['authenticationStatus'] == 'kFinished':
+            rootFinished = True
+        if 'registeredAppsInfo' in rootNode[0]['registrationInfo']:
+            for app in rootNode[0]['registrationInfo']['registeredAppsInfo']:
+                if app['authenticationStatus'] == 'kFinished':
+                    appsFinished = True
+                    return rootNode[0]['rootNode']['id']
+                else:
+                    appsFinished = False
+        else:
+            appsFinished = True
+        if rootFinished is True and appsFinished is True:
+            authStatus = 'Finished'
+    return rootNode[0]['rootNode']['id']
+
+
 for sourcename in sourceNames:
     objectId = getObjectId(sourcename)
     if objectId is not None:
         print('refreshing %s...' % sourcename)
         result = api('post', 'protectionSources/refresh/%s' % objectId)
+        result = waitForRefresh(sourcename)
     else:
         print('%s not found' % sourcename)
