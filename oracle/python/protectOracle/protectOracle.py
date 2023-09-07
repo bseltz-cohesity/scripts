@@ -40,6 +40,7 @@ parser.add_argument('-l', '--deletelogdays', type=int, default=None)
 parser.add_argument('-pause', '--pause', action='store_true')
 parser.add_argument('-np', '--nopersistmounts', action='store_true')
 parser.add_argument('-pm', '--persistmounts', action='store_true')
+parser.add_argument('-na', '--noalert', action='store_true')
 
 args = parser.parse_args()
 
@@ -66,6 +67,7 @@ deletelogdays = args.deletelogdays
 pause = args.pause
 nopersistmounts = args.nopersistmounts
 persistmounts = args.persistmounts
+noalert = args.noalert
 
 
 # gather server list
@@ -284,6 +286,9 @@ if nopersistmounts:
         job['environmentParameters']['oracleParameters']['persistMountpoints'] = False
 if persistmounts:
     job['environmentParameters']['oracleParameters']['persistMountpoints'] = True
+
+if noalert:
+    job['alertingPolicy'] = []
 
 if newJob is True:
     # create new job

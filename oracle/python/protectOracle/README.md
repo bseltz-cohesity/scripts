@@ -91,3 +91,4 @@ Place both files in a folder together and run the main script like so:
 * -pause, --pause: (optional) pause future runs
 * -np, --nopersistmounts: (optional) do not persist mount points (default is to persist)
 * -pm, --persistmounts: (optional) re-enable persist mount points (if it was previously disabled)
+* -na, --noalert: (optional) do not send alerts
