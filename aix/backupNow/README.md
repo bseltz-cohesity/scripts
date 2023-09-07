@@ -35,6 +35,7 @@ chmod +x backupNow
 * -np, --noprompt: (optional) do not prompt for password
 * -mcm, --mcm: (optional) connect through MCM
 * -c, --clustername: (optional) helios/mcm cluster to connect to
+* -mfacode, --mfacode: (optional) Totp code to send for MFA
 
 ## Selection Parameters
 
@@ -42,32 +43,45 @@ chmod +x backupNow
 * -o, --objectname: (optional) name of object to backup (repeat this parameter for multiple objects)
 * -m, --metadatafile: (optional) path to directive file for backup
 * -t, --backupType: (optional) choose one of kRegular, kFull or kLog backup types. Default is kRegular (incremental)
+* -pl, --purgeoraclelogs: (optional) delete Oracle archived logs after log backup (only if backupType == 'kLog')
 
 ## Policy Overrides
 
 * -l, --localonly: (optional) skip replicas and archivals
 * -nr, --noreplica: (optional) skip replicas
 * -na, --noarchive: (optional) skip archives
-* -k, --keepLocalFor: (optional) days to keep local snapshot (defaults to policy settings)
 * -a, --archiveTo: (optional) name of archival target to archive to (defaults to policy settings)
 * -ka, --keepArchiveFor: (optional) days to keep in archive (defaults to policy settings)
 * -r, --replicateTo: (optional) name of remote cluster to replicate to (defaults to policy settings)
 * -kr, --keepReplicaFor: (optional) days to keep replica for (defaults to policy settings)
+* -k, --keepLocalFor: (optional) days to keep local snapshot (defaults to policy settings)
+
+Note: -k, --keepLocalFor no longer has any affect in recent releases of 6.6 and later. Policy setting is enforced.
+
+## Timing Parameters
+
+* -s, --sleeptimesecs: (optional) seconds to sleep between status queries (default is 360)
+* -swt, --startwaittime: (optional) wait for job run to start (default is 60)
+* -cwt, --cachewaittime: (optional) wait for read replica update (default is 60)
+* -rwt, --retrywaittime: (optional) wait to retry API call (default is 300)
+* -to, --timeoutsec: (optional) timeout waiting for API response (default is 300)
+* -iswt, --interactivestartwaittime: (optional) wait for job run to start when in interactive mode (default is 15)
+* -irwt, ==interactiveretrywaittime: (optional) wait to retry API call  when in interactive mode (default is 30)
+* -n, --waitminutesifrunning: (optional) exit after X minutes if job is already running (default is 60)
+* -cp, --cancelpreviousrunminutes: (optional) cancel previous job run if it's been running for X minutes
+* -nrt, --newruntimeoutsecs: (optional) exit after X seconds if new run fails to start (default is 3000)
+* -est, --exitstringtimeoutsecs: (optional) timeout searching for string and exit 1 if not found
 
 ## Monitoring Parameters
 
+* -int, --interactive: (optional) use quicker interactive wait times
 * -w, --wait: (optional) wait for backup run to complete and report result
 * -pr, --progress: (optional) display percent complete
-* -s, --sleeptimesecs: (optional) seconds to sleep between status queries (default is 120)
 * -x, --abortifrunning: (optional) exit if job is already running (default is to wait and run after existing run is finished)
 * -f, --logfile: (optional) filename to log output
-* -n, --waitminutesifrunning: (optional) exit after X minutes if job is already running (default is 60)
-* -cp, --cancelpreviousrunminutes: (optional) cancel previous job run if it's been running for X minutes
-* -nrt, --newruntimeoutsecs: (optional) exit after X seconds if new run fails to start (default is 1800)
 * -debug, --debug: (optional) display verbose error and state messages
 * -ex, --extendederrorcodes: (optional) return extended set of exit codes
 * -es, --exitstring: (optional) search for string in pulse logs and exit 0 when found
-* -est, --exitstringtimeoutsecs: (optional) timeout searching for string and exit 1 if not found
 * -sr, --statusretries: (optional) give up trying to get status update after X tries (default is 30)
 
 ## Extended Error Codes
@@ -79,6 +93,8 @@ chmod +x backupNow
 * 4: Timed out waiting for existing run to finish (existing run still running)
 * 5: Timed out waiting for new run / status update (failed to get status updates)
 * 6: Timed out waiting for new run to appear (new run accepted but not started)
+* 7: Timed out getting protection jobs
+* 8: Target not in policy not allowed
 
 ## Using -o (--objectname) Parameter
 
