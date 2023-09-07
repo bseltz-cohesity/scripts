@@ -49,7 +49,7 @@ def waitForRefresh(sourcename):
     while authStatus != 'Finished':
         rootFinished = False
         appsFinished = False
-        sleep(2)
+        sleep(5)
         rootNodes = api('get', 'protectionSources/registrationInfo?includeApplicationsTreeInfo=false')
         rootNode = [r for r in rootNodes['rootNodes'] if r['rootNode']['name'].lower() == sourcename.lower()]
         if rootNode[0]['registrationInfo']['authenticationStatus'] == 'kFinished':
