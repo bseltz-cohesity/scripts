@@ -58,7 +58,7 @@ def waitForRefresh(sourcename):
             for app in rootNode[0]['registrationInfo']['registeredAppsInfo']:
                 if app['authenticationStatus'] == 'kFinished':
                     appsFinished = True
-                    return rootNode[0]['rootNode']['id']
+                    # return rootNode[0]['rootNode']['id']
                 else:
                     appsFinished = False
         else:
