@@ -1,5 +1,19 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-09-07
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/linux> [`Update`] Added MFA support to compiled binaries for Linux
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/backupNow> [`Update`] Added MFA support
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/backedUpFileList> [`Update`] Added MFA support
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/restoreFiles> [`Update`] Added MFA support
+
+## 2023-09-06
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cancelArchivesV2> [`Update`] added support to filter on target name
+* <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/protectOracle> [`Fix`] fixed edge case bug that caused unhandled exception
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow> [`Update`] performance improvements
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/backupNow> [`Update`] performance improvements
+
 ## 2023-09-04
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/gflags> [`Fix`] Fixed service restart function
