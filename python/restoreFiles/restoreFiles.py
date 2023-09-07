@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """restore files using python"""
 
-# version 2023.06.15
+# version 2023.09.07
 
 # usage: ./restoreFiles.py -v mycluster \
 #                          -u myusername \
@@ -34,6 +34,9 @@ parser.add_argument('-d', '--domain', type=str, default='local')      # domain -
 parser.add_argument('-i', '--useApiKey', action='store_true')         # use API key authentication
 parser.add_argument('-pwd', '--password', type=str, default=None)       # optional password
 parser.add_argument('-c', '--clustername', type=str, default=None)   # name of helios cluster to connect to
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-s', '--sourceserver', type=str, action='append')  # name of source server
 parser.add_argument('-t', '--targetserver', type=str, default=None)   # name of target server
 parser.add_argument('-j', '--jobname', type=str, default=None)        # narrow search by job name
@@ -56,6 +59,9 @@ domain = args.domain
 password = args.password
 useApiKey = args.useApiKey
 clustername = args.clustername
+mcm = args.mcm
+noprompt = args.noprompt
+mfacode = args.mfacode
 sourceservers = args.sourceserver
 
 if sourceservers is None or len(sourceservers) == 0:
@@ -99,17 +105,20 @@ if restorepath is not None:
     restorepath = ('/' + restorepath).replace(':\\', '/').replace('\\', '/').replace('//', '/')
 
 # authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, noretry=True)
-if apiconnected() is False:
-    print('authentication failed')
-    exit(1)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode)
 
-if vip.lower() == 'helios.cohesity.com':
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
     if clustername is not None:
         heliosCluster(clustername)
     else:
-        print('--clustername is required when connecting to Helios')
+        print('-clustername is required when connecting to Helios or MCM')
         exit()
+
+# exit if not authenticated
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
 
 # find target server
 physicalEntities = api('get', '/entitiesOfType?environmentTypes=kPhysical&physicalEntityTypes=kHost&physicalEntityTypes=kOracleAPCluster')
