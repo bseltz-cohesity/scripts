@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2023.07.20
+# version 2023.00.07
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -17,11 +17,15 @@ except Exception:
 
 # command line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)           # cluster to connect to
-parser.add_argument('-u', '--username', type=str, default='helios')   # username
-parser.add_argument('-d', '--domain', type=str, default='local')      # domain - defaults to local
-parser.add_argument('-i', '--useApiKey', action='store_true')         # use API key authentication
-parser.add_argument('-pwd', '--password', type=str, default=None)     # optional password
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
+parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-s', '--sourceserver', type=str, action='append')  # name of source server
 parser.add_argument('-j', '--jobname', type=str, required=True)       # narrow search by job name
 parser.add_argument('-l', '--showversions', action='store_true')      # show available snapshots
@@ -41,8 +45,12 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
-password = args.password
+clustername = args.clustername
+mcm = args.mcm
 useApiKey = args.useApiKey
+password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
 sourceservers = args.sourceserver
 jobname = args.jobname
 showversions = args.showversions
@@ -77,6 +85,7 @@ def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None, cookie
                 if entry['type'] == 'kDirectory':
                     listdir('%s/%s' % (dirPath, entry['name']), instance, f, volumeInfoCookie, volumeName)
                 else:
+                    # entry['fullPath'] = entry['fullPath'].encode('ascii', 'replace').decode('ascii')
                     if statfile is True:
                         filesize = entry['fstatInfo']['size']
                         mtime = usecsToDate(entry['fstatInfo']['mtimeUsecs'])
@@ -154,7 +163,20 @@ useLibrarian = '&useLibrarian=true'  # True
 fileCount = 0
 
 # authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode)
+
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    if clustername is not None:
+        heliosCluster(clustername)
+    else:
+        print('-clustername is required when connecting to Helios or MCM')
+        exit()
+
+# exit if not authenticated
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
 
 for sourceserver in sourceservers:
     print('\n============================\n %s\n============================\n' % sourceserver)

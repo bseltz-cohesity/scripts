@@ -56,19 +56,29 @@ To choose the backup at or after the specified file date:
                       -f '2020-06-30 13:00:00'
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -v, --vip: name of Cohesity cluster to connect to
-* -u, --username: short username to authenticate to the cluster
-* -d, --domain: active directory domain of user (default is local)
-* -i, --useApiKey: use API key for authentication
-* -pwd, --password: (optional) password for Cohesity user
+* -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
+* -d, --domain: (optional) domain of username (defaults to local)
+* -i, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: (optional) password or API key
+* -np, --noprompt: (optional) do not prompt for password
+* -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) helios/mcm cluster to connect to
+* -m, --mfacode: (optional) MFA code for authentication
+
+## Mandatory Parameters
+
 * -s, --sourceserver: name of server to inspect (repeat for multiple)
 * -j, --jobname: name of protection job to run
-* -l, --showversions: show available versions
-* -t, --start: show versions after date
-* -e, --end: show versions before date
-* -r, --runid: use specific run ID
+
+## Other Parameters
+
+* -l, --showversions: (optional) show available versions
+* -t, --start: (optional) filter on versions after date
+* -e, --end: (optional) filter on versions before date
+* -r, --runid: (optional) use specific run ID
 * -f, --filedate: (optional) date to inspect (next backup after date will be inspected)
 * -p, --startpath: (optional) start listing files at path (default is /)
 * -n, --noindex: (optional) do not use the index (otherwise index usage will be automatic)
