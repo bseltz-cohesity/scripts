@@ -2,6 +2,7 @@
 
 ## 2023-09-07
 
+* <https://github.com/bseltz-cohesity/scripts/tree/master/aix> [`Update`] Added MFA support to compiled binaries for AIX
 * <https://github.com/bseltz-cohesity/scripts/tree/master/linux> [`Update`] Added MFA support to compiled binaries for Linux
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/backupNow> [`Update`] Added MFA support
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/backedUpFileList> [`Update`] Added MFA support
