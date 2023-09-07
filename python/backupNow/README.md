@@ -43,6 +43,7 @@ Place all files in a folder together. then, run the main script like so:
 * -np, --noprompt: (optional) do not prompt for password
 * -mcm, --mcm: (optional) connect through MCM
 * -c, --clustername: (optional) helios/mcm cluster to connect to
+* -mfacode, --mfacode: (optional) Totp code to send for MFA
 
 ## Selection Parameters
 
