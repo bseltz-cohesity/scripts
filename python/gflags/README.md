@@ -47,7 +47,7 @@ Place both files in a folder together and run the main script like so:
 * -f, --flagvalue: (optional) gflag value to set
 * -r, --reason: (optional) reason for setting the flag
 * -c, --clear: (optional) reset gflag to default value
-* -e, --effectivenow: (optional) make setting effective now
+* -e, --effectivenow: (optional) make setting effective now (not effective now if omitted)
 * -i, --importfile: (optional) name of file to import
 * -x, --restartservices: (optional) restart services if gflags were set
 
