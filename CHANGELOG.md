@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-09-08
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/protectGPFS> [`New`] python script to protect GPFS Filesets (agent-based approach)
+
 ## 2023-09-07
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/pauseResumeJobs.py> [`Update`] added show mode
