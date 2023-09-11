@@ -1,6 +1,6 @@
 # Change Log for bseltz-cohesity/scripts
 
-## 2023-09-08
+## 2023-09-11
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/resetMyExpiredPassword> [`New`] reset my expired password
 
