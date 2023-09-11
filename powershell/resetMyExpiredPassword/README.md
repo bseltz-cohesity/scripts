@@ -18,9 +18,24 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Example
 
+The script will prompt for passwords if omitted:
+
 ```powershell
 # example
-./resetMyExpiredPassword.ps1 -vip mycluster -username myusername
+./resetMyExpiredPassword.ps1 -vip mycluster `
+                             -username myusername
+# end example
+```
+
+Or you can provide them on the command line:
+
+```powershell
+# example
+./resetMyExpiredPassword.ps1 -vip mycluster `
+                             -username myusername `
+                             -currentPassword prevPassw0rd! `
+                             -newPassword newPassw0rd! `
+                             -confirmNewPassword newPassw0rd!
 # end example
 ```
 
