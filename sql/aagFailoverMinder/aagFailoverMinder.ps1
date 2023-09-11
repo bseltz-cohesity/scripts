@@ -181,8 +181,9 @@ foreach($job in $jobs | Sort-Object -Property name){
             }
             $runParams = @{
                 "runType" = 'kRegular';
-                "copyRunTargets" = @($copyRunTargets)
-                "runNowParameters" = $runNowParameters
+                "usePolicyDefaults" = $True;
+                "copyRunTargets" = @($copyRunTargets);
+                "runNowParameters" = $runNowParameters;
             }
 
             $newRun = api post "protectionJobs/run/$jobId" $runParams
