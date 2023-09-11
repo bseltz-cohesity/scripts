@@ -42,6 +42,6 @@ if($newPassword -cne $confirmNewPassword){
     $user.user | Add-Member -MemberType NoteProperty -Name 'currentPassword' -Value $currentPassword
     $user.user | Add-Member -MemberType NoteProperty -Name 'password' -Value $newPassword
     Write-Host "Setting password..."
-    $URL = 'https://ve681-1/irisservices/api/v1/public/users'
+    $URL = "https://$vip/irisservices/api/v1/public/users"
     $userupdate = Invoke-RestMethod -Method Put -Uri $URL -Header $HEADER -Body ($user.user | ConvertTo-Json) -SkipCertificateCheck -WebSession $session
 }
