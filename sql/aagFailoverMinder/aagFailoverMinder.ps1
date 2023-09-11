@@ -45,7 +45,7 @@ if(Test-Path -Path $outfileName){
     $log = Get-Content -Path $outfileName
     $logLength = $log.Length
     if($logLength -gt 200){
-        $log[100..$logLength] | Out-File -Path $outfileName
+        $log[100..$logLength] | Out-File -FilePath $outfileName
     }
 }
 
