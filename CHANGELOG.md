@@ -2,6 +2,10 @@
 
 ## 2023-09-08
 
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/resetMyExpiredPassword> [`New`] reset my expired password
+
+## 2023-09-08
+
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/protectGPFS> [`New`] python script to protect GPFS Filesets (agent-based approach)
 
 ## 2023-09-07
