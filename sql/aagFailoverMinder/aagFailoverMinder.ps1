@@ -71,12 +71,39 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 }
 
 function waitForRefresh($id){
+    # $authStatus = ""
+    # while($authStatus -ne 'kFinished'){
+    #     Start-Sleep 3
+    #     $rootNode = (api get "protectionSources/registrationInfo?ids=$id").rootNodes[0]
+    #     $authStatus = $rootNode.registrationInfo.authenticationStatus
+    # }
     $authStatus = ""
-    while($authStatus -ne 'kFinished'){
-        Start-Sleep 3
+    while($authStatus -ne 'Finished'){
+        $rootFinished = $false
+        $appsFinished = $false
+        Start-Sleep 5
         $rootNode = (api get "protectionSources/registrationInfo?ids=$id").rootNodes[0]
-        $authStatus = $rootNode.registrationInfo.authenticationStatus
+        # $rootNode = (api get "protectionSources/registrationInfo?includeApplicationsTreeInfo=false").rootNodes | Where-Object {$_.rootNode.name -eq $server}
+        if($rootNode.registrationInfo.authenticationStatus -eq 'kFinished'){
+            $rootFinished = $True
+        }
+        if($rootNode.registrationInfo.PSObject.Properties['registeredAppsInfo']){
+            foreach($app in $rootNode.registrationInfo.registeredAppsInfo){
+                if($app.authenticationStatus -eq 'kFinished'){
+                    $appsFinished = $True
+                    return $rootNode.rootNode.id
+                }else{
+                    $appsFinished = $false
+                }
+            }
+        }else{
+            $appsFinished = $True
+        }
+        if($rootFinished -and $appsFinished){
+            $authStatus = 'Finished'
+        }
     }
+    # return $rootNode.rootNode.id
 }
 
 $jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Required $false)
@@ -108,7 +135,7 @@ foreach($job in $jobs | Sort-Object -Property name){
                 if($run.backupRun.PSObject.Properties['error']){
                     $runNowParameters = @()
                     $message = $run.backupRun.error
-                    if($message -match 'Detected AAG metadata changes on the host'){
+                    if($message -match 'Detected AAG metadata changes'){
                         $needsRun = $True
                     }
                     if($message -match 'No matching replica found for the backup preference'){
