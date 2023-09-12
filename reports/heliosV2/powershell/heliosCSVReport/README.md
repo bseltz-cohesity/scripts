@@ -45,6 +45,7 @@ Place all files in a folder together, then run the main script like so:
 * -includeCCS: (optional) include CCS region data
 * -excludeLogs: (optional) skip backup type kLog
 * -environment: (optional) filter on specific environment type (e.g. kSQL)
+* -replicationOnly: (optional) filter protection activities report to show replication tasks only
 
 ## Authenticating to Helios
 
