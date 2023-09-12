@@ -153,6 +153,13 @@ $headings = @()
 
 Write-Host "`nRetrieving report data...`n"
 
+$usecColumns = @()
+$epochColums = @()
+$sortColumn = ''
+$sortDecending = $False
+
+$data = @()
+
 foreach($cluster in ($selectedClusters)){
     if($cluster.name -in @($regions.regions.name)){
         $systemId = $cluster.id
@@ -201,12 +208,51 @@ foreach($cluster in ($selectedClusters)){
             exit
         }
         $attributes = $preview.component.config.xlsxParams.attributeConfig
+        # sort data on first colums
+        $sortColumn = $attributes[0].attributeName
+        if($attributes[0].PSObject.Properties['format'] -and $attributes[0].format -eq 'timestamp'){
+            $sortDecending = $True
+        }
+
+        foreach($attribute in $attributes){
+            if($attribute.PSObject.Properties['format'] -and $attribute.format -eq 'timestamp'){
+                $epochColums = @($epochColums + $attribute.attributeName)
+            }elseif($attribute.attributeName -match 'usecs'){
+                $usecColumns = @($usecColumns + $attribute.attributeName)
+            }
+        }
         # headings
         if(!$gotHeadings){
             $attributes.attributeName -join ',' | Out-File -FilePath $csvFileName
         }
-        $preview.component.data | Export-CSV -Append -Path $csvFileName -Force
+        $data = @($data + $preview.component.data) # | Export-CSV -Append -Path $csvFileName
     }
 }
+
+$data | Export-CSV -Append -Path $csvFileName
+
+$csv = Import-CSV -Path $csvFileName
+
+# convert timestamps to dates
+foreach($epochColum in ($epochColums | Sort-Object -Unique)){
+    $csv | Where-Object{ $_.$epochColum -ne $null -and $_.$epochColum -ne 0} | ForEach-Object{
+        $_.$epochColum = usecsToDate $_.$epochColum
+    }
+}
+
+# convert usecs to seconds
+foreach($usecColumn in ($usecColumns | Sort-Object -Unique)){
+    $csv | ForEach-Object{
+        $_.$usecColumn = [int]($_.$usecColumn / 1000000)
+    }
+}
+
+if($sortDecending){
+    $csv = $csv | Sort-Object -Property $sortColumn -Descending
+}else{
+    $csv = $csv | Sort-Object -Property $sortColumn
+}
+
+$csv | Export-CSV -Path $csvFileName
 
 Write-Host "`nCSV output saved to $csvFileName`n"
