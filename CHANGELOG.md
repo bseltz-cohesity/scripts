@@ -1,8 +1,13 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-09-12
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/sql/aagFailoverMinder> [`Fix`] wait for application refresh
+
 ## 2023-09-11
 
-* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/resetMyExpiredPassword> [`New`] reset my expired password
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/heliosV2/powershell/heliosCSVReport> [`New`] script to generate Helios reports in raw CSV format (much faster than heliosReport.ps1)
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/resetMyExpiredPassword> [`New`] script to reset my expired password
 
 ## 2023-09-08
 
