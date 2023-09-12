@@ -14,7 +14,8 @@ param (
     [Parameter()][string]$outputPath = '.',
     [Parameter()][switch]$includeCCS,
     [Parameter()][switch]$excludeLogs,
-    [Parameter()][string]$environment
+    [Parameter()][string]$environment,
+    [Parameter()][switch]$replicationOnly
 )
 
 # gather list from command line params and file
@@ -133,6 +134,20 @@ $environmentFilter = @{
     }
 }
 
+$replicationFilter = @{
+    "attribute" = "activityType";
+    "filterType" = "In";
+    "inFilterParams" = @{
+        "attributeDataType" = "String";
+        "stringFilterValues" = @(
+            "Replication"
+        );
+        "attributeLabels" = @(
+            "Replication"
+        )
+    }
+}
+
 # get list of available reports
 $reports = api get -reportingV2 reports
 $report = $reports.reports | Where-Object {$_.title -eq $reportName}
@@ -200,6 +215,9 @@ foreach($cluster in ($selectedClusters)){
         }
         if($environment){
             $reportParams.filters = @($reportParams.filters + $environmentFilter)
+        }
+        if($replicationOnly){
+            $reportParams.filters = @($reportParams.filters + $replicationFilter)
         }
         $preview = api post -reportingV2 "components/$reportNumber/preview" $reportParams
         Write-Host "($($preview.component.data.Count) rows)" 
