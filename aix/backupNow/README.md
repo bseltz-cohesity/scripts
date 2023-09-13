@@ -66,7 +66,7 @@ Note: -k, --keepLocalFor no longer has any affect in recent releases of 6.6 and 
 * -rwt, --retrywaittime: (optional) wait to retry API call (default is 300)
 * -to, --timeoutsec: (optional) timeout waiting for API response (default is 300)
 * -iswt, --interactivestartwaittime: (optional) wait for job run to start when in interactive mode (default is 15)
-* -irwt, ==interactiveretrywaittime: (optional) wait to retry API call  when in interactive mode (default is 30)
+* -irwt, --interactiveretrywaittime: (optional) wait to retry API call  when in interactive mode (default is 30)
 * -n, --waitminutesifrunning: (optional) exit after X minutes if job is already running (default is 60)
 * -cp, --cancelpreviousrunminutes: (optional) cancel previous job run if it's been running for X minutes
 * -nrt, --newruntimeoutsecs: (optional) exit after X seconds if new run fails to start (default is 3000)
