@@ -1,4 +1,4 @@
-# version 2023.09.06
+# version 2023.09.13
 
 # version history
 # ===============
@@ -12,7 +12,8 @@
 # 2023.07.05 - updated payload to solve p11 error "TARGET_NOT_IN_POLICY_NOT_ALLOWED%!(EXTRA int64=0)"
 # 2023-08-14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED" and added extended error code 8
 # 2023-09-03 - added support for read replica, various optimizations and fixes, increased sleepTimeSecs to 360, increased waitForNewRunMinutes to 50
-# 2023-09-06 - added -timeoutSec 300, -noCache, granular sleep times, interactive mode, default sleepTimeSecs 3000
+# 2023-09-06 - added -timeoutSec 300, -noCache, granular sleep times, interactive mode
+# 2023-09-13 - improved error handling on start request, exit on kInvalidRequest
 
 # extended error codes
 # ====================
@@ -457,7 +458,7 @@ if((! $localOnly) -and (! $noReplica)){
 
 
 # archival
-if((! $localOnly) -and (! $noArchive) -and ($backupType -ne 'kLog')){
+if((! $localOnly) -and (! $noArchive) -and ($backupType -ne 'kLog' -or $environment -ne 'kSQL')){
     if($policy.PSObject.Properties['snapshotArchivalCopyPolicies'] -and (! $archiveTo)){
         foreach($archive in $policy.snapshotArchivalCopyPolicies){
             if(!($copyRunTargets | Where-Object {$_.archivalTarget.vaultName -eq $archive.target.vaultName})){
@@ -597,19 +598,49 @@ if($backupType -ne 'kRegular'){
     $jobdata['usePolicyDefaults'] = $false
 }
 
-$result = api post ('protectionJobs/run/' + $jobID) $jobdata -timeout $timeoutSec # -quiet
+$result = api post ('protectionJobs/run/' + $jobID) $jobdata -timeout $timeoutSec -quiet
 $reportWaiting = $True
 $now = Get-Date
 $waitUntil = $now.AddMinutes($waitMinutesIfRunning)
 while($result -ne ""){
-    if(($cohesity_api.last_api_error | ConvertFrom-Json).message -match "TARGET_NOT_IN_POLICY_NOT_ALLOWED"){
-        output "TARGET_NOT_IN_POLICY_NOT_ALLOWED" -quiet
-        if($extendedErrorCodes){
-            exit 8
+    $runError = $cohesity_api.last_api_error
+    if($runError -match "message"){
+        $runError = $runError | ConvertFrom-Json
+        $errorCode = $runError.errorCode
+        $message = $runError.message
+        if($message -notmatch "Backup job has an existing active backup run" -and $message -notmatch "Protection group can only have one active backup run at a time"){
+            output $message -warn
+            if($message -match "TARGET_NOT_IN_POLICY_NOT_ALLOWED"){
+                if($extendedErrorCodes){
+                    exit 8
+                }else{
+                    exit 1
+                }
+            }
+            if($errorCode -eq "KInvalidRequest"){
+                if($extendedErrorCodes){
+                    exit 3
+                }else{
+                    exit 1
+                }
+            }
         }else{
-            exit 1
+            if($cancelPreviousRunMinutes -gt 0){
+                cancelRunningJob $job $cancelPreviousRunMinutes
+            }
+            if($reportWaiting){
+                if($abortIfRunning){
+                    output "job is already running"
+                    exit 0
+                }
+                output "Waiting for existing job run to finish..."
+                $reportWaiting = $false
+            }
         }
+    }else{
+        output $runError -warn
     }
+
     if((Get-Date) -gt $waitUntil){
         output "Timed out waiting for existing run to finish" -warn
         if($extendedErrorCodes){
@@ -618,17 +649,7 @@ while($result -ne ""){
             exit 1
         }
     }
-    if($cancelPreviousRunMinutes -gt 0){
-        cancelRunningJob $job $cancelPreviousRunMinutes
-    }
-    if($reportWaiting){
-        if($abortIfRunning){
-            output "job is already running"
-            exit 0
-        }
-        output "Waiting for existing job run to finish..."
-        $reportWaiting = $false
-    }
+
     Start-Sleep $retryWaitTime
     $result = api post ('protectionJobs/run/' + $jobID) $jobdata -timeout $timeoutSec -quiet
 }
