@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.09.06
+# version 2023.09.13
 
 # version history
 # ===============
@@ -16,6 +16,7 @@
 # 2023-08-14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED"
 # 2023-09-03 - added support for read replica, various optimizations and fixes, increased sleepTimeSecs to 360, increased newruntimeoutsecs to 3000
 # 2023-09-06 - added --timeoutsec 300, --nocache, granular sleep times, interactive mode, default sleepTimeSecs 3000
+# 2023-09-13 - improved error handling on start request, exit on kInvalidRequest
 
 # extended error codes
 # ====================
@@ -513,7 +514,7 @@ if localonly is not True and noreplica is not True:
                     "type": "kRemote"
                 })
 # archival
-if localonly is not True and noarchive is not True and backupType != 'kLog':
+if localonly is not True and noarchive is not True and (backupType != 'kLog' or environment != 'kSQL'):
     if 'snapshotArchivalCopyPolicies' in policy and archiveTo is None:
         for archive in policy['snapshotArchivalCopyPolicies']:
             if archive['target'] not in [p.get('archivalTarget', None) for p in jobData['copyRunTargets']]:
@@ -621,20 +622,28 @@ if debugger:
     print(':DEBUG: waiting for new run to be accepted')
 runNow = api('post', "protectionJobs/run/%s" % job['id'], jobData, quiet=True, timeout=timeoutsec)
 while runNow != "":
-    if 'TARGET_NOT_IN_POLICY_NOT_ALLOWED' in LAST_API_ERROR():
-        out(LAST_API_ERROR())
-        if extendederrorcodes is True:
-            bail(8)
-        else:
-            bail(1)
-    if cancelpreviousrunminutes > 0:
-        cancelRunningJob(job, cancelpreviousrunminutes)
-    if reportWaiting is True:
-        if abortIfRunning:
-            out('job is already running')
-            bail(0)
-        out('Waiting for existing run to finish')
-        reportWaiting = False
+    runError = LAST_API_ERROR()
+    if 'Protection group can only have one active backup run at a time' not in runError and 'Backup job has an existing active backup run' not in runError:
+        out(runError)
+        if 'TARGET_NOT_IN_POLICY_NOT_ALLOWED' in runError:
+            if extendederrorcodes is True:
+                bail(8)
+            else:
+                bail(1)
+        if 'InvalidRequest' in runError:
+            if extendederrorcodes is True:
+                bail(3)
+            else:
+                bail(1)
+    else:
+        if cancelpreviousrunminutes > 0:
+            cancelRunningJob(job, cancelpreviousrunminutes)
+        if reportWaiting is True:
+            if abortIfRunning:
+                out('job is already running')
+                bail(0)
+            out('Waiting for existing run to finish')
+            reportWaiting = False
     now = datetime.now()
     nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
     if nowUsecs >= waitUntil:
