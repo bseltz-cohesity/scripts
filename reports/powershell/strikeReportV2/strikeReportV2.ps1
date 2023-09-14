@@ -47,9 +47,10 @@ $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "strikeReport-$($cluster.name)-$dateString.csv"
 
 # headings
-"Job Name,Latest Backup,Backup Type,Object Name,Message" | Out-File -FilePath $outfileName
+"Job Name,Latest Backup,Backup Type,Source Name,Object Name,Message" | Out-File -FilePath $outfileName
 
 $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true"
+$rootNodes = api get "protectionSources/registrationInfo"
 
 $startUsecs = timeAgo $days 'days'
 $totalStrikeouts = 0
@@ -66,44 +67,57 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         if('Succeeded' -notin $status -and 'SucceededWithWarning' -notin $status){
             $runStartTime = usecsToDate $runs.runs[0].localBackupInfo.startTimeUsecs
             foreach($run in $runs.runs){
-                foreach($object in $run.objects){
+                foreach($object in $run.objects | Where-Object {$_.object.environment -eq $job.environment}){
                     $objectName = $object.object.name
+                    if($object.object.PSObject.Properties['sourceId']){
+                        $source = $rootNodes.rootNodes | Where-Object {$_.rootNode.id -eq $object.object.sourceId}
+                        $sourceName = $source.rootNode.name
+                    }else{
+                        $sourceName = $objectName
+                    }
                     if($object.localSnapshotInfo.snapshotInfo.status -eq 'kFailed'){
                         $message = $object.localSnapshotInfo.failedAttempts[0].message
                         if("$($job.name);;$($objectName);;Backup" -notin $failures.Keys){
-                            $failures["$($job.name);;$($objectName);;Backup"] = 1
-                            $messages["$($job.name);;$($objectName);;Backup"] = $message
+                            $failures["$($job.name);;$($objectName);;$($sourceName);;Backup"] = 1
+                            $messages["$($job.name);;$($objectName);;$($sourceName);;Backup"] = $message
                         }else{
-                            $failures["$($job.name);;$($objectName);;Backup"] += 1
+                            $failures["$($job.name);;$($objectName);;$($sourceName);;Backup"] += 1
                         }
-                        if($failures["$($job.name);;$($objectName);;Backup"] -ge $failureCount){
-                            $reportFailures["$($job.name);;$($objectName);;Backup"] = $messages["$($job.name);;$($objectName);;Backup"]
-                            $failureTime["$($job.name);;$($objectName);;Backup"] = $runStartTime
+                        if($failures["$($job.name);;$($objectName);;$($sourceName);;Backup"] -ge $failureCount){
+                            $reportFailures["$($job.name);;$($objectName);;$($sourceName);;Backup"] = $messages["$($job.name);;$($sourceName);;$($objectName);;Backup"]
+                            $failureTime["$($job.name);;$($objectName);;$($sourceName);;Backup"] = $runStartTime
                         }
                     }
                 }
             }
         }
     }
-    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=1000&startTimeUsecs=$startUsecs&includeTenants=true&includeObjectDetails=true&runTypes=kLog"
+    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$failureCount&startTimeUsecs=$startUsecs&includeTenants=true&includeObjectDetails=true&runTypes=kLog"
     if($runs.runs.Count -gt 0){
         $status = $runs.runs.localBackupInfo.status
         if('Succeeded' -notin $status -and 'SucceededWithWarning' -notin $status){
             $runStartTime = usecsToDate $runs.runs[0].localBackupInfo.startTimeUsecs
             foreach($run in $runs.runs){
-                foreach($object in $run.objects){
+                foreach($object in $run.objects | Where-Object {$_.object.environment -eq $job.environment}){
                     $objectName = $object.object.name
+                    if($object.object.PSObject.Properties['sourceId']){
+                        $source = $rootNodes.rootNodes | Where-Object {$_.rootNode.id -eq $object.object.sourceId}
+                        $sourceName = $source.rootNode.name
+                    }else{
+                        $sourceName = $objectName
+                    }
                     if($object.localSnapshotInfo.snapshotInfo.status -eq 'kFailed'){
                         $message = $object.localSnapshotInfo.failedAttempts[0].message
                         if("$($job.name);;$($objectName);;Log Backup" -notin $failures.Keys){
-                            $failures["$($job.name);;$($objectName);;Log Backup"] = 1
-                            $messages["$($job.name);;$($objectName);;Log Backup"] = $message
+                            Write-Host "    $($objectName)"
+                            $failures["$($job.name);;$($objectName);;$($sourceName);;Log Backup"] = 1
+                            $messages["$($job.name);;$($objectName);;$($sourceName);;Log Backup"] = $message
                         }else{
-                            $failures["$($job.name);;$($objectName);;Log Backup"] += 1
+                            $failures["$($job.name);;$($objectName);;$($sourceName);;Log Backup"] += 1
                         }
-                        if($failures["$($job.name);;$($objectName);;Log Backup"] -ge $failureCount){
-                            $reportFailures["$($job.name);;$($objectName);;Log Backup"] = $messages["$($job.name);;$($objectName);;Log Backup"]
-                            $failureTime["$($job.name);;$($objectName);;Log Backup"] = $runStartTime
+                        if($failures["$($job.name);;$($objectName);;$($sourceName);;Log Backup"] -ge $failureCount){
+                            $reportFailures["$($job.name);;$($objectName);;$($sourceName);;Log Backup"] = $messages["$($job.name);;$($objectName);;$($sourceName);;Log Backup"]
+                            $failureTime["$($job.name);;$($objectName);;$($sourceName);;Log Backup"] = $runStartTime
                         }
                     }
                 }
@@ -112,14 +126,19 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     }
     foreach($failureKey in $reportFailures.Keys | Sort-Object){
         $totalStrikeouts += 1
-        $jobName, $objectName, $runType = $failureKey -split ';;'
+        $jobName, $objectName, $sourceName, $runType = $failureKey -split ';;'
         $message = [string]$reportFailures[$failureKey].replace("`n", "").replace(",",";")
         if($message.length -gt 150){
             $message = $message.subString(0,150)
         }
         $runStartTime = $failureTime[$failureKey]
-        "    {0} ({1}) [{2}] {3}" -f $jobName, $runStartTime, $runType, $objectName
-        "{0},{1},{2},{3},{4}" -f $jobName, $runStartTime, $runType, $objectName, $message | Out-File -FilePath $outfileName -Append
+        if($sourceName -eq $objectName){
+            "    {0} ({1}) [{2}] {3}" -f $jobName, $runStartTime, $runType, $objectName
+        }else{
+            "    {0} ({1}) [{2}] {3}/{4}" -f $jobName, $runStartTime, $runType, $sourceName, $objectName
+        }
+        
+        "{0},{1},{2},{3},{4},{5}" -f $jobName, $runStartTime, $runType, $sourceName, $objectName, $message | Out-File -FilePath $outfileName -Append
     }
 }
 
