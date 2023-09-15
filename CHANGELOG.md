@@ -2,6 +2,7 @@
 
 ## 2023-09-15
 
+* <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/oracleLogDeletionDaysReport> [`New`] report oracle archive log deletion settings
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/dataReadPerVMReport> [`Update`] Improved dataRead adjustment logic
 
 ## 2023-09-14
