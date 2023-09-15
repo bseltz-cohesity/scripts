@@ -46,7 +46,7 @@ Place both files in a folder together and run the main script like so:
 ## Other Parameters
 
 * -of: --outfolder: (optional) where to write report html (default is current directory)
-* -x, --unit: (optional) KiB, MiB, GiB, or TiB] (default is GiB)
-* -n, --numruns: (optional) number of runs per API query (default is 500)
+* -x, --units: (optional) KiB, MiB, GiB, or TiB] (default is GiB)
+* -n, --pagesize: (optional) number of runs per API query (default is 500)
 * -s, --skipdeleted: (optional) skip deleted protection groups
 * -y, --days: (optional) look back X days (defaul is 30)
