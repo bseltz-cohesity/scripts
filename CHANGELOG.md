@@ -1,5 +1,18 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-09-15
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/dataReadPerVMReport> [`Update`] Improved dataRead adjustment logic
+
+## 2023-09-14
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/strikeReportV2> [`Update`] added sourceName column
+
+## 2023-09-13
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow> [`Update`] Improved error handling on start
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/backupNow> [`Update`] Improved error handling on start
+
 ## 2023-09-12
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/sql/aagFailoverMinder> [`Fix`] wait for application refresh
