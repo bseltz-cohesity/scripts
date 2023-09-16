@@ -3,9 +3,16 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,  # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username,  # username (local or AD)
-    [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter()][array]$vmName,  # name of VM to protect
     [Parameter()][string]$vmList = '',  # text file of vm names
     [Parameter(Mandatory = $True)][string]$jobName,  # name of the job to add VM to
@@ -49,7 +56,22 @@ if($vmsToAdd.Count -eq 0){
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -heliosAuthentication $mcm -tenant $tenant -noPromptForPassword $noPrompt
+
+# select helios/mcm managed cluster
+if($USING_HELIOS -and !$region){
+    if($clusterName){
+        $thisCluster = heliosCluster $clusterName
+    }else{
+        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated"
+    exit 1
+}
 
 # validate exclude disks
 foreach($disk in $excludeDisk){
@@ -208,15 +230,8 @@ if($job){
     }     
 }
 
-if($newJob){
-    "Creating protection job $jobName"
-}else{
-    "Updating protection job $($job.name)"
-}
-
 foreach($vmName in $vmsToAdd){
     $vm = api get protectionSources/virtualMachines?vCenterId=$($job.vmwareParams.sourceId) | Where-Object {$_.name -ieq $vmName}
-    $vm = api get protectionSources/objects/$($vm.id)
     if(!$vm){
         Write-Host "VM $vmName not found!" -ForegroundColor Yellow
     }else{
@@ -235,6 +250,7 @@ foreach($vmName in $vmsToAdd){
             $excludedDisks = @()
         }
         if($excludeDisk.Count -gt 0 -or $includeDisk.Count -gt 0 -or $includeFirstDiskOnly){
+            $vm = api get protectionSources/objects/$($vm.id)
             $vdisks = $vm.vmWareProtectionSource.virtualDisks
             foreach($vdisk in $vdisks){
                 $disk = "{0}:{1}" -f $vdisk.busNumber, $vdisk.unitNumber
@@ -271,7 +287,9 @@ foreach($vmName in $vmsToAdd){
 }
 
 if($newJob){
+    "Creating protection job $jobName"
     $null = api post -v2 "data-protect/protection-groups" $job
 }else{
+    "Updating protection job $($job.name)"
     $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
 }

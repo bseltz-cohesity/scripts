@@ -25,19 +25,36 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./protectVM.ps1 -vip mycluster -username admin -jobName 'vm backup' -vmName mongodb
+./protectVM.ps1 -vip mycluster `
+                -username myuser `
+                -domain mydomain.net `
+                -jobName 'vm backup' `
+                -vmName mongodb
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: name or IP of Cohesity cluster
-* -username: name of user to connect to Cohesity
-* -domain: your AD domain (defaults to local)
-* -vmName: one or more VMs to add to the proctection job (comma separated)
-* -vmList: file containing list of VMs to add (one per line)
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Selection Parameters
+
 * -jobName: name of protection job
+* -vmName: (optional) one or more VMs to add to the proctection job (comma separated)
+* -vmList: (optional) file containing list of VMs to add (one per line)
+* -includeFirstDiskOnly: (optional) exclude all but the first disk
+* -includeDisk: (optional) one or more disks to include (comma separated), e.g. 0:1, 0:2
+* -excludeDisk: (optional) one of more disks to exclude (comma separated), e.g. 0:1, 0:2
 
-## Optional Parameters
+## New Job Parameters
 
 * -vCenterName: (optional) name of registered vCenter source (required for new job)
 * -policyName: (optional) name of the protection policy to use (required for new job)
@@ -49,6 +66,3 @@ Place both files in a folder together and run the main script like so:
 * -paused: (optional) pause future runs (new job only)
 * -qosPolicy: (optional) kBackupHDD, kBackupSSD, or kBackupAll (default is kBackupHDD)
 * -disableIndexing: (optional) disable indexing (indexing is enabled by default)
-* -includeFirstDiskOnly: (optional) exclude all but the first disk
-* -includeDisk: (optional) one or more disks to include (comma separated), e.g. 0:1, 0:2
-* -excludeDisk: (optional) one of more disks to exclude (comma separated), e.g. 0:1, 0:2
