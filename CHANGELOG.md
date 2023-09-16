@@ -1,5 +1,14 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-09-16
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/unregisterProtectionSource> [`Update`] modernized authentication (added MFA, multi-tenancy, etc)
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectVM> [`Update`] modernized authentication (added MFA, multi-tenancy, etc)
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/unprotectVM> [`Update`] modernized authentication (added MFA, multi-tenancy, etc)
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/migratePhysicalProtectionGroup> [`Update`] added support for multi-tenancy
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/migrateSQLProtectionGroup> [`Update`] added support for multi-tenancy
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/migrateVMProtectionGroup> [`Update`] added support for multi-tenancy
+
 ## 2023-09-15
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/oracleLogDeletionDaysReport> [`New`] report oracle archive log deletion settings
