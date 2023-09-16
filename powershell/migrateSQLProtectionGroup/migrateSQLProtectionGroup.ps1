@@ -9,6 +9,7 @@ param (
     [Parameter()][string]$targetUser = $sourceUser,
     [Parameter()][string]$targetDomain = $sourceDomain,
     [Parameter()][string]$targetPassword = $null,
+    [Parameter()][string]$tenant,
     [Parameter(Mandatory = $True)][string]$jobName,
     [Parameter()][string]$prefix = '',
     [Parameter()][string]$suffix = '',
@@ -66,7 +67,7 @@ function waitForAppRefresh($server){
 }
 
 "`nConnecting to source cluster..."
-apiauth -vip $sourceCluster -username $sourceUser -domain $sourceDomain -passwd $sourcePassword -quiet
+apiauth -vip $sourceCluster -username $sourceUser -domain $sourceDomain -passwd $sourcePassword -tenant $tenant -quiet
 
 if($prefix){
     $newJobName = "$prefix-$newJobName"
@@ -86,7 +87,7 @@ if($job){
     # connect to target cluster for sanity check
     if(!$cleanupSourceObjectsAndExit){
         "Connecting to target cluster..."
-        apiauth -vip $targetCluster -username $targetUser -domain $targetDomain -passwd $targetPassword -quiet
+        apiauth -vip $targetCluster -username $targetUser -domain $targetDomain -passwd $targetPassword -tenant $tenant -quiet
 
         # check for existing job
         $existingJob = (api get -v2 'data-protect/protection-groups').protectionGroups | Where-Object name -eq $newJobName
@@ -119,7 +120,7 @@ if($job){
             Write-Host "Policy $($oldPolicy.name) not found" -ForegroundColor Yellow
             exit
         }
-        apiauth -vip $sourceCluster -username $sourceUser -domain $sourceDomain -passwd $sourcePassword -quiet
+        apiauth -vip $sourceCluster -username $sourceUser -domain $sourceDomain -passwd $sourcePassword -tenant $tenant -quiet
     }
 
     # gather old job details
@@ -223,7 +224,7 @@ if($job){
     }
 
     # connect to target cluster
-    apiauth -vip $targetCluster -username $targetUser -domain $targetDomain -passwd $targetPassword -quiet
+    apiauth -vip $targetCluster -username $targetUser -domain $targetDomain -passwd $targetPassword -tenant $tenant -quiet
 
     # register servers
     foreach($server in $serversToMigrate){
