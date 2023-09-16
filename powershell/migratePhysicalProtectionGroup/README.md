@@ -89,6 +89,7 @@ Note that if you want to delete existing snapshots when cleaning up, use the `-d
 * -targetUser: (optional) username for target cluster (defaults to sourceUser)
 * -targetDomain: (optional) domain for target cluster user (defaults to sourceDomain)
 * -targetPassword: (optional) password for target user
+* -tenant: (optional) organization to impersonate
 * -jobName: name of job to migrate
 
 ## Target Job Parameters
