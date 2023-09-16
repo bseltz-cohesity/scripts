@@ -25,13 +25,26 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 Place all files in a folder together (see download instructions below), and run the script like so:
 
 ```powershell
-./unprotectVM.ps1 -vip mycluster -username myuser -domain local -vmName myvm
+./unprotectVM.ps1 -vip mycluster `
+                  -username myuser `
+                  -domain mydomain.net `
+                  -vmName myvm
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: Cohesity cluster to connect to
-* -username: Cohesity username (e.g. admin)
-* -domain: (optional) Active Directory domain (defaults to 'local')
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -vmName: (optional) comma separated list of VM names to remove from jobs
 * -vmList: (optional) text file containing VM names to remove from jobs (one per line)
