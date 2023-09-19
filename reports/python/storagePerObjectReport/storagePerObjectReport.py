@@ -84,7 +84,7 @@ msecsBeforeCurrentTimeToCompare = growthdays * 24 * 60 * 60 * 1000
 datestring = now.strftime("%Y-%m-%d")
 csvfileName = '%s/storagePerObjectReport-%s-%s.csv' % (folder, cluster['name'], datestring)
 csv = codecs.open(csvfileName, 'w', 'utf-8')
-csv.write('"Job Name","Environment","Source Name","Object Name","Logical %s","%s Written","%s Written plus Resiliency","Job Reduction Ratio","%s Written Last %s Days","%s Archived","%s per Archive Target"\n' % (units, units, units, units, growthdays, units, units))
+csv.write('"Job Name","Tenant","Environment","Source Name","Object Name","Logical %s","%s Written","%s Written plus Resiliency","Job Reduction Ratio","%s Written Last %s Days","%s Archived","%s per Archive Target"\n' % (units, units, units, units, growthdays, units, units))
 
 vaults = api('get', 'vaults')
 if vaults is not None and len(vaults) > 0:
@@ -106,6 +106,9 @@ storageDomains = api('get', 'viewBoxes')
 sourceNames = {}
 for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower()):
     if job['environment'] not in ['kView', 'kRemoteAdapter']:
+        tenant = ''
+        if 'permissions' in job and len(job['permissions']) > 0 and 'name' in job['permissions'][0]:
+            tenant = job['permissions'][0]['name']
 
         # get resiliency factor
         resiliencyFactor = 0
@@ -252,7 +255,7 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                                         totalArchived += (objWeight * cloudJob['storageConsumed'])
                                         vaultStats += '[%s]%s ' % (vaultSummary['vaultName'], round((objWeight * cloudJob['storageConsumed']) / multiplier, 1))
                 totalArchived = round(totalArchived / multiplier, 1)
-                csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (job['name'], job['environment'], sourceName, thisObject['name'], objFESize, objWritten, objWrittenWithResiliency, jobReduction, objGrowth, totalArchived, vaultStats))
+                csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (job['name'], tenant, job['environment'], sourceName, thisObject['name'], objFESize, objWritten, objWrittenWithResiliency, jobReduction, objGrowth, totalArchived, vaultStats))
 
 # views
 views = api('get', 'file-services/views?maxCount=2000&includeTenants=true&includeStats=true&includeProtectionGroups=true', v=2)
@@ -277,6 +280,9 @@ if 'views' in views and views['views'] is not None and len(views['views']) > 0:
         sourceName = view['storageDomainName']
         viewName = view['name']
         print(viewName)
+        tenant = ''
+        if 'tenantId' in view and view['tenantId'] is not None:
+            tenant = view['tenantId'][:-1]
         dataIn = 0
         dataInAfterDedup = 0
         jobWritten = 0
@@ -319,6 +325,6 @@ if 'views' in views and views['views'] is not None and len(views['views']) > 0:
                                 totalArchived += (objWeight * cloudJob['storageConsumed'])
                                 vaultStats += '[%s]%s ' % (vaultSummary['vaultName'], round((objWeight * cloudJob['storageConsumed']) / multiplier, 1))
         totalArchived = round(totalArchived / multiplier, 1)
-        csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (jobName, 'kView', sourceName, viewName, objFESize, round(jobWritten / multiplier, 1), round(consumption / multiplier, 1), jobReduction, objGrowth, totalArchived, vaultStats))
+        csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (jobName, tenant, 'kView', sourceName, viewName, objFESize, round(jobWritten / multiplier, 1), round(consumption / multiplier, 1), jobReduction, objGrowth, totalArchived, vaultStats))
 csv.close()
 print('\nOutput saved to %s\n' % csvfileName)
