@@ -14,7 +14,7 @@ param (
     [Parameter()][string]$jobList,
     [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'MiB',
     [Parameter()][int]$daysBack = 7,
-    [Parameter()][Int64]$numRuns = 100,
+    [Parameter()][Int64]$numRuns = 1000,
     [Parameter()][string]$outputPath = '.',
     [Parameter()][array]$environment,
     [Parameter()][array]$excludeEnvironment
@@ -110,7 +110,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
             if($endUsecs -le $daysBackUsecs){
                 break
             }
-            $runs = api get -v2 "data-protect/protection-groups/$jobId/runs?endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=True&numRuns=$numRuns"
+            $runs = api get -v2 "data-protect/protection-groups/$jobId/runs?startTimeUsecs=$daysBackUsecs&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=True&numRuns=$numRuns"
             if($runs.runs.Count -gt 0){
                 $endUsecs = $runs.runs[-1].localBackupInfo.startTimeUsecs - 1
             }else{
@@ -186,6 +186,9 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                         $perDayRepls[$remoteCluster][$replDay]['physicalReplicated'] += $repls[$remoteCluster]['physicalReplicated']
                     }
                 }
+            }
+            if($runs.runs.Count -lt $numRuns){
+                break
             }
         }
         # per day stats
