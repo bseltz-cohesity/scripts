@@ -66,7 +66,7 @@ if($vaults){
 }
 
 # headings
-"""Job Name"",""Environment"",""Source Name"",""Object Name"",""Logical $unit"",""$unit Written"",""$unit Written plus Resiliency"",""Job Reduction Ratio"",""$unit Written Last $growthDays Days"",""$unit Archived"",""$unit per Archive Target""" | Out-File -FilePath $outfileName
+"""Job Name"",""Tenant"",""Environment"",""Source Name"",""Object Name"",""Logical $unit"",""$unit Written"",""$unit Written plus Resiliency"",""Job Reduction Ratio"",""$unit Written Last $growthDays Days"",""$unit Archived"",""$unit per Archive Target""" | Out-File -FilePath $outfileName
 
 if($skipDeleted){
     $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&includeTenants=true"
@@ -84,6 +84,7 @@ $nowUsecs = dateToUsecs
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     if($job.environment -notin @('kView', 'kRemoteAdapter')){
         Write-Host $job.name
+        $tenant = $job.permissions.name
         # get resiliency factor
         $resiliencyFactor = 0
         if($job.PSObject.Properties['storageDomainId']){
@@ -251,7 +252,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                     }
                 }
             }
-            """$($job.name)"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$objFESize"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$(toUnits $totalArchived)"",""$vaultStats""" | Out-File -FilePath $outfileName -Append
+            """$($job.name)"",""$tenant"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$objFESize"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$(toUnits $totalArchived)"",""$vaultStats""" | Out-File -FilePath $outfileName -Append
         }
     }
 }
@@ -269,7 +270,7 @@ foreach($view in $views.views){
         $jobName = '-'
     }
     if($jobName -notin $viewJobStats.Keys){
-        $viewJobStats[$jobName]
+        $viewJobStats[$jobName] = 0
     }
     $viewJobStats[$jobName] += $view.stats.dataUsageStats.totalLogicalUsageBytes
 }
@@ -293,7 +294,6 @@ foreach($view in $views.views){
     }else{
         $objWeight = 1
     }
-    Write-Host "    $objWeight"
     $dataIn = $view.stats.dataUsageStats.dataInBytes
     $dataInAfterDedup = $view.stats.dataUsageStats.dataInBytesAfterDedup
     $jobWritten = $view.stats.dataUsageStats.dataWrittenBytes
@@ -325,7 +325,7 @@ foreach($view in $views.views){
             }
         }
     }
-    """$($jobName)"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$(toUnits $totalArchived)"",""$vaultStats""" | Out-File -FilePath $outfileName -Append
+    """$($jobName)"",""$($view.tenantId -replace “.$”)"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$(toUnits $totalArchived)"",""$vaultStats""" | Out-File -FilePath $outfileName -Append
 }
 
 "`nOutput saved to $outfilename`n"
