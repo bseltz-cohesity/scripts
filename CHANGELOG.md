@@ -2,6 +2,7 @@
 
 ## 2023-09-19
 
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/replicationReport> [`Update`] Performance improvement
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storagePerObjectReport> [`Update`] added tenant column
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport> [`Update`] added tenant column
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/findFilesV2> [`New`] New script to search for indexed files
