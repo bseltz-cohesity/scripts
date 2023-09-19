@@ -1,5 +1,14 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-09-19
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storagePerObjectReport> [`Update`] added tenant column
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport> [`Update`] added tenant column
+
+## 2023-09-18
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/oracleLogDeletionDaysReport> [`Fix`] abend on missing database ID
+
 ## 2023-09-16
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/unregisterProtectionSource> [`Update`] modernized authentication (added MFA, multi-tenancy, etc)
