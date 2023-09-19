@@ -80,10 +80,11 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
             logDeletionDays = 'n/a'
             if len(dbParam['dbChannels']) > 0:
                 logDeletionDays = dbParam['dbChannels'][0]['archiveLogRetentionDays']
-                thisObject = objectName["%s" % dbParam['databaseId']]
-                (thisServer, thisDB) = thisObject.split('/')
-            # csv.write('"Cluster Name","Job Name","Source Name","Databased Name","Log Deletion Days"\n')
-            print("  %s: %s" % (objectName["%s" % dbParam['databaseId']], logDeletionDays))
-            csv.write('"%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], thisServer, thisDB, logDeletionDays))
+                if ("%s" % dbParam['databaseId']) in objectName.keys():
+                    thisObject = objectName["%s" % dbParam['databaseId']]
+                    (thisServer, thisDB) = thisObject.split('/')
+            if ("%s" % dbParam['databaseId']) in objectName.keys():
+                print("  %s: %s" % (objectName["%s" % dbParam['databaseId']], logDeletionDays))
+                csv.write('"%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], thisServer, thisDB, logDeletionDays))
 csv.close()
 print('\nOutput saved to %s\n' % csvfileName)
