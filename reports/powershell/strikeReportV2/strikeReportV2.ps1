@@ -77,14 +77,14 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                     }
                     if($object.localSnapshotInfo.snapshotInfo.status -eq 'kFailed'){
                         $message = $object.localSnapshotInfo.failedAttempts[0].message
-                        if("$($job.name);;$($objectName);;Backup" -notin $failures.Keys){
+                        if("$($job.name);;$($objectName);;$($sourceName);;Backup" -notin $failures.Keys){
                             $failures["$($job.name);;$($objectName);;$($sourceName);;Backup"] = 1
                             $messages["$($job.name);;$($objectName);;$($sourceName);;Backup"] = $message
                         }else{
                             $failures["$($job.name);;$($objectName);;$($sourceName);;Backup"] += 1
                         }
                         if($failures["$($job.name);;$($objectName);;$($sourceName);;Backup"] -ge $failureCount){
-                            $reportFailures["$($job.name);;$($objectName);;$($sourceName);;Backup"] = $messages["$($job.name);;$($sourceName);;$($objectName);;Backup"]
+                            $reportFailures["$($job.name);;$($objectName);;$($sourceName);;Backup"] = $messages["$($job.name);;$($objectName);;$($sourceName);;Backup"]
                             $failureTime["$($job.name);;$($objectName);;$($sourceName);;Backup"] = $runStartTime
                         }
                     }
@@ -108,7 +108,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                     }
                     if($object.localSnapshotInfo.snapshotInfo.status -eq 'kFailed'){
                         $message = $object.localSnapshotInfo.failedAttempts[0].message
-                        if("$($job.name);;$($objectName);;Log Backup" -notin $failures.Keys){
+                        if("$($job.name);;$($objectName);;$($sourceName);;Log Backup" -notin $failures.Keys){
                             Write-Host "    $($objectName)"
                             $failures["$($job.name);;$($objectName);;$($sourceName);;Log Backup"] = 1
                             $messages["$($job.name);;$($objectName);;$($sourceName);;Log Backup"] = $message
