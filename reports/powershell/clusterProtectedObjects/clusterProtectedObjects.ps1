@@ -22,8 +22,10 @@ param (
 $outfileName = $(Join-Path -Path $outputPath -ChildPath "protectedObjectsReport.csv")
 """objectName"",""lastRunStatus"",""environment"",""objectType"",""sourceName"",""AAG Name"",""policyName"",""groupName"",""lastRunTime"",""Number of Successful Backups"",""Number of Unsuccessful Backups"",""Last Successful Backup"",""Active Snapshots"",""backupStatus"",""protectionStatus"",""System Name"",""Organization Name""" | Out-File -FilePath $outfileName
 
+$tail = ''
 if($days){
     $daysBackUsecs = timeAgo $days days
+    $tail = "&startTimeUsecs=$daysBackUsecs"
 }
 
 $etail = ""
@@ -131,9 +133,9 @@ foreach($v in $vip){
             $endUsecs = dateToUsecs
             while($True){
                 if($includeLogs){
-                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true"
+                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true$tail"
                 }else{
-                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&runTypes=kIncremental,kFull"
+                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&runTypes=kIncremental,kFull$tail"
                 }
                 foreach($run in $runs.runs){
                     $localSources = @{}
