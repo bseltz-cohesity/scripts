@@ -36,8 +36,10 @@ objecttype = args.objecttype
 includelogs = args.includelogs
 numruns = args.numruns
 
+tail = ''
 if days is not None:
     daysBackUsecs = timeAgo(days, 'days')
+    tail = '&startTimeUsecs=%s' % daysBackUsecs
 
 multiplier = 1024 * 1024 * 1024
 if unit == 'TiB':
@@ -90,7 +92,7 @@ for vip in vips:
                 policyName = '-'
             endUsecs = nowUsecs
             while 1:
-                runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&endTimeUsecs=%s&includeTenants=true&includeObjectDetails=true' % (job['id'], numruns, endUsecs), v=2)
+                runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&endTimeUsecs=%s&includeTenants=true&includeObjectDetails=true%s' % (job['id'], numruns, endUsecs, tail), v=2)
                 if len(runs['runs']) > 0:
                     if 'localBackupInfo' in runs['runs'][-1]:
                         endUsecs = runs['runs'][-1]['localBackupInfo']['startTimeUsecs'] - 1
