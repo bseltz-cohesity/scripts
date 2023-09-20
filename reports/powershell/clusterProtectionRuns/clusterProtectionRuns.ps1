@@ -20,9 +20,11 @@ param (
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
+$tail = ''
 if($days){
     $daysBack = (Get-Date).AddDays(-$days)
     $daysBackUsecs = dateToUsecs $daysBack
+    $tail = "&startTimeUsecs=$daysBackUsecs"
 }
 
 # outfile
@@ -71,9 +73,9 @@ foreach($v in $vip){
             }
             while($True){
                 if($includeLogs){
-                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true"
+                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true$tail"
                 }else{
-                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&runTypes=kIncremental,kFull"
+                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&runTypes=kIncremental,kFull$tail"
                 }
                 foreach($run in $runs.runs){
                     $localSources = @{}
