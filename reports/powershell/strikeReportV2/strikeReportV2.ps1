@@ -77,15 +77,16 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                     }
                     if($object.localSnapshotInfo.snapshotInfo.status -eq 'kFailed'){
                         $message = $object.localSnapshotInfo.failedAttempts[0].message
-                        if("$($job.name);;$($objectName);;$($sourceName);;Backup" -notin $failures.Keys){
-                            $failures["$($job.name);;$($objectName);;$($sourceName);;Backup"] = 1
-                            $messages["$($job.name);;$($objectName);;$($sourceName);;Backup"] = $message
+                        $failureKey = "$($job.name);;$($objectName);;$($sourceName);;Backup"
+                        if($failureKey -notin $failures.Keys){
+                            $failures[$failureKey] = 1
+                            $messages[$failureKey] = $message
                         }else{
-                            $failures["$($job.name);;$($objectName);;$($sourceName);;Backup"] += 1
+                            $failures[$failureKey] += 1
                         }
-                        if($failures["$($job.name);;$($objectName);;$($sourceName);;Backup"] -ge $failureCount){
-                            $reportFailures["$($job.name);;$($objectName);;$($sourceName);;Backup"] = $messages["$($job.name);;$($objectName);;$($sourceName);;Backup"]
-                            $failureTime["$($job.name);;$($objectName);;$($sourceName);;Backup"] = $runStartTime
+                        if($failures[$failureKey] -ge $failureCount){
+                            $reportFailures[$failureKey] = $messages[$failureKey]
+                            $failureTime[$failureKey] = $runStartTime
                         }
                     }
                 }
@@ -108,16 +109,17 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                     }
                     if($object.localSnapshotInfo.snapshotInfo.status -eq 'kFailed'){
                         $message = $object.localSnapshotInfo.failedAttempts[0].message
-                        if("$($job.name);;$($objectName);;$($sourceName);;Log Backup" -notin $failures.Keys){
+                        $failureKey = "$($job.name);;$($objectName);;$($sourceName);;Log Backup"
+                        if($failureKey -notin $failures.Keys){
                             Write-Host "    $($objectName)"
-                            $failures["$($job.name);;$($objectName);;$($sourceName);;Log Backup"] = 1
-                            $messages["$($job.name);;$($objectName);;$($sourceName);;Log Backup"] = $message
+                            $failures[$failureKey] = 1
+                            $messages[$failureKey] = $message
                         }else{
-                            $failures["$($job.name);;$($objectName);;$($sourceName);;Log Backup"] += 1
+                            $failures[$failureKey] += 1
                         }
-                        if($failures["$($job.name);;$($objectName);;$($sourceName);;Log Backup"] -ge $failureCount){
-                            $reportFailures["$($job.name);;$($objectName);;$($sourceName);;Log Backup"] = $messages["$($job.name);;$($objectName);;$($sourceName);;Log Backup"]
-                            $failureTime["$($job.name);;$($objectName);;$($sourceName);;Log Backup"] = $runStartTime
+                        if($failures[$failureKey] -ge $failureCount){
+                            $reportFailures[$failureKey] = $messages[$failureKey]
+                            $failureTime[$failureKey] = $runStartTime
                         }
                     }
                 }
