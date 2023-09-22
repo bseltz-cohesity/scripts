@@ -48,7 +48,7 @@ $licenseParams = @{
 $newLicense = api post -mcm licenses $licenseParams
 fileDownload "https://$heliosVip/mcm/licenses?accountId=$accountId&clusterId=$clusterId" license
 
-# connect to cluster to upload new licnse
+# connect to cluster to upload new license
 Write-Host "`nConnecting to $vip"
 apiauth -vip $vip -username $username -domain $domain -password $password -quiet
 if(!$cohesity_api.authorized){
