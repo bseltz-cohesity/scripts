@@ -56,8 +56,6 @@ $cohesity_api = @{
     'header' = @{'accept' = 'application/json'; 'content-type' = 'application/json'};
     'clusterReadOnly' = $false;
     'heliosConnectedClusters' = $null;
-    'curlHeader' = @();
-    'webcli' = $null;
     'version' = 1;
     'pwscope' = 'user';
     'api_version' = $versionCohesityAPI;
@@ -70,7 +68,6 @@ $apilogfile = $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api-debug.log)
 # platform detection ==========================================================================
 
 if($PSVersionTable.Platform -ne 'Unix'){
-    $cohesity_api.webcli = New-Object System.Net.webclient;
     $registryPath = 'HKCU:\Software\Cohesity-API' 
 }else{
     $CONFDIR = '~/.cohesity-api'
@@ -234,12 +231,6 @@ function apiauth($vip='helios.cohesity.com',
     if($useApiKey -or $helios -or ($vip -eq 'helios.cohesity.com')){
         $cohesity_api.header['apiKey'] = $passwd
         $cohesity_api.authorized = $true
-        # set file transfer details
-        if($PSVersionTable.Platform -eq 'Unix'){
-            $cohesity_api.curlHeader = @("apiKey: $passwd")
-        }else{
-            $cohesity_api.webcli.headers['apiKey'] = $passwd;
-        }
         # validate cluster API key authorization
         if($useApiKey -and (($vip -ne 'helios.cohesity.com') -and $helios -ne $True)){
             $cluster = api get cluster -quiet -version 1 -data $null
@@ -313,12 +304,6 @@ function apiauth($vip='helios.cohesity.com',
             }else{
                 $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec $timeout
             }
-            # set file transfer details
-            if($PSVersionTable.Platform -eq 'Unix'){
-                $cohesity_api.curlHeader = @("authorization: $($auth.tokenType) $($auth.accessToken)")
-            }else{
-                $cohesity_api.webcli.headers['authorization'] = $auth.tokenType + ' ' + $auth.accessToken;
-            }
             # add token to header
             $cohesity_api.authorized = $true
             $cohesity_api.clusterReadOnly = $false
@@ -353,12 +338,6 @@ function apiauth($vip='helios.cohesity.com',
                             $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout -SslProtocol Tls12
                         }else{
                             $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec $timeout
-                        }
-                        # set file transfer details
-                        if($PSVersionTable.Platform -eq 'Unix'){
-                            $cohesity_api.curlHeader = @("session-id: $($auth.sessionId)")
-                        }else{
-                            $cohesity_api.webcli.headers['session-id'] = $auth.sessionId;
                         }
                         # add token to header
                         $cohesity_api.authorized = $true
@@ -453,25 +432,11 @@ function heliosCluster($clusterName){
             $cohesity_api.header.accessClusterId = $cluster.clusterId
             $cohesity_api.header.clusterId = $cluster.clusterId
             $cohesity_api.clusterReadOnly = (api get /mcm/config -version 1).mcmReadOnly
-            if($PSVersionTable.Platform -eq 'Unix'){
-                $cohesity_api.curlHeader = @($cohesity_api.curlHeader | Where-Object {$_.subString(0,9) -ne 'accessClu' -and $_.subString(0,9) -ne 'clusterId'})
-                $cohesity_api.curlHeader += "accessClusterId: $($cluster.clusterId)"
-                $cohesity_api.curlHeader += "clusterId: $($cluster.clusterId)"
-            }else{
-                $cohesity_api.webcli.headers['accessClusterId'] = $cluster.clusterId;
-                $cohesity_api.webcli.headers['clusterId'] = $cluster.clusterId;
-            }
             return "Connected to $clusterName"
         }else{
             Write-Host "Cluster $clusterName not connected to Helios" -ForegroundColor Yellow
             $cohesity_api.header.remove('accessClusterId')
             $cohesity_api.header.remove('clusterId')
-            if($PSVersionTable.Platform -eq 'Unix'){
-                $cohesity_api.curlHeader = @($cohesity_api.curlHeader | Where-Object {$_.subString(0,9) -ne 'accessClu' -and $_.subString(0,9) -ne 'clusterId'})
-            }else{
-                $cohesity_api.webcli.headers.remove('accessClusterId')
-                $cohesity_api.webcli.headers.remove('clusterId')
-            }
             return $null
         }
     }else{
@@ -499,10 +464,6 @@ function apidrop([switch] $quiet){
     $cohesity_api.header = @{'accept' = 'application/json'; 'content-type' = 'application/json'}
     $cohesity_api.clusterReadOnly = $false
     $cohesity_api.heliosConnectedClusters = $null
-    $cohesity_api.curlHeader = @()
-    if($cohesity_api.webcli){
-        $cohesity_api.webcli = New-Object System.Net.webclient
-    }
     if(!$quiet){ Write-Host "Disonnected!" -foregroundcolor green }
     $Global:AUTHORIZED = $cohesity_api.authorized
     $Global:AUTHORIZED | Out-Null
@@ -515,11 +476,6 @@ function impersonate($tenant){
         $thisTenant = api get tenants -version 1 | Where-Object {$_.name -eq $tenant}
         if($thisTenant){
             $cohesity_api.header['x-impersonate-tenant-id'] = $thisTenant.tenantId
-            if($PSVersionTable.Platform -eq 'Unix'){
-                $cohesity_api.curlHeader += @("x-impersonate-tenant-id: $($thisTenant.tenantId)")
-            }else{
-                $cohesity_api.webcli.headers['x-impersonate-tenant-id'] = $thisTenant.tenantId;
-            }
         }else{
             Write-Host "Tenant $tenant not found" -ForegroundColor Yellow
         }
@@ -732,41 +688,6 @@ function fileUpload($uri, $fileName, $version=1, [switch]$v2){
         reportError $_
     }
 }
-
-# file download function ========================================================================
-
-# function fileDownload($uri, $fileName, $version=1, [switch]$v2){
-
-#     if(-not $cohesity_api.authorized){ Write-Host 'Please use apiauth to connect to a cohesity cluster' -foregroundcolor yellow; return $null }
-#     try {
-#         if($version -eq 2 -or $v2){
-#             $url = $cohesity_api.apiRootv2 + $uri
-#         }else{
-#             if($uri[0] -ne '/'){ $uri = '/public/' + $uri}
-#             $url = $cohesity_api.apiRoot + $uri
-#         }
-#         if($PSVersionTable.Platform -eq 'Unix'){
-#             $ch = ''
-#             foreach($h in $cohesity_api.curlHeader){
-#                 $ch += '-H "' + $h + '" '
-#             }
-#             Invoke-Expression -Command "curl -k -s $ch -o $fileName $url"
-#         }else{
-#             if($fileName -notmatch '\\'){
-#                 $fileName = $(Join-Path -Path $PSScriptRoot -ChildPath $fileName)
-#             }
-#             $cohesity_api.webcli.DownloadFile($url, $fileName)
-#         } 
-#     }catch{
-#         __writeLog $_.ToString()
-#         $_.ToString()
-#         if($_.ToString().contains('"message":')){
-#             Write-Host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
-#         }else{
-#             Write-Host $_.ToString() -foregroundcolor yellow
-#         }                
-#     }
-# }
 
 # date functions ==================================================================================
 
