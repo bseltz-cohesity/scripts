@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.08.28 - Brian Seltzer
+#  Version 2023.09.22 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2022.01.12 - fixed storePasswordForUser
@@ -30,10 +30,11 @@
 # 2023.07.12 - ignore write failure to pwfile
 # 2023.08.15 - enforce Tls12
 # 2023.08.28 - add line number to cohesity-api-log
+# 2023.09.22 - added fileUpload function
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2023.08.28'
+$versionCohesityAPI = '2023.09.22'
 $userAgent = "cohesity-api/$versionCohesityAPI"
 
 # demand modern powershell version (must support TLSv1.2)
@@ -680,37 +681,92 @@ function api($method,
 # file download function ========================================================================
 
 function fileDownload($uri, $fileName, $version=1, [switch]$v2){
-
     if(-not $cohesity_api.authorized){ Write-Host 'Please use apiauth to connect to a cohesity cluster' -foregroundcolor yellow; return $null }
     try {
-        if($version -eq 2 -or $v2){
+        if($uri -match "://"){
+            $url = $uri
+        }elseif($version -eq 2 -or $v2){
             $url = $cohesity_api.apiRootv2 + $uri
         }else{
             if($uri[0] -ne '/'){ $uri = '/public/' + $uri}
             $url = $cohesity_api.apiRoot + $uri
         }
-        if($PSVersionTable.Platform -eq 'Unix'){
-            $ch = ''
-            foreach($h in $cohesity_api.curlHeader){
-                $ch += '-H "' + $h + '" '
-            }
-            Invoke-Expression -Command "curl -k -s $ch -o $fileName $url"
+        if($fileName -notmatch '\\'){
+            $fileName = $(Join-Path -Path $PSScriptRoot -ChildPath $fileName)
+        }
+        if($PSVersionTable.PSEdition -eq 'Core'){
+            Invoke-WebRequest -Uri $url -OutFile $fileName -Header $cohesity_api.header -UserAgent $userAgent -SslProtocol Tls12 -SkipCertificateCheck
         }else{
-            if($fileName -notmatch '\\'){
-                $fileName = $(Join-Path -Path $PSScriptRoot -ChildPath $fileName)
-            }
-            $cohesity_api.webcli.DownloadFile($url, $fileName)
-        } 
+            Invoke-WebRequest -Uri $url -OutFile $fileName -Header $cohesity_api.header -UserAgent $userAgent
+        }
+        $cohesity_api.last_api_error = 'OK'
     }catch{
-        __writeLog $_.ToString()
-        $_.ToString()
-        if($_.ToString().contains('"message":')){
-            Write-Host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
-        }else{
-            Write-Host $_.ToString() -foregroundcolor yellow
-        }                
+        reportError $_          
     }
 }
+
+# file upload function ========================================================================
+
+function fileUpload($uri, $fileName, $version=1, [switch]$v2){
+    if(-not $cohesity_api.authorized){ Write-Host 'Please use apiauth to connect to a cohesity cluster' -foregroundcolor yellow; return $null }
+    try {
+        if($uri -match "://"){
+            $url = $uri
+        }elseif($version -eq 2 -or $v2){
+            $url = $cohesity_api.apiRootv2 + $uri
+        }else{
+            if($uri[0] -ne '/'){ $uri = '/public/' + $uri}
+            $url = $cohesity_api.apiRoot + $uri
+        }
+        if($fileName -notmatch '\\' -and $fileName -notmatch '/'){
+            $fileName = $(Join-Path -Path $PSScriptRoot -ChildPath $fileName)
+        }
+        if($PSVersionTable.PSEdition -eq 'Core'){
+            $result = Invoke-WebRequest -Method Post -Uri $url -InFile $fileName -Header $cohesity_api.header -UserAgent $userAgent -SslProtocol Tls12 -SkipCertificateCheck
+        }else{
+            $result = Invoke-WebRequest -Method Post -Uri $url -InFile $fileName -Header $cohesity_api.header -UserAgent $userAgent
+        }
+        $cohesity_api.last_api_error = 'OK'
+        return $result
+    }catch{
+        reportError $_
+    }
+}
+
+# file download function ========================================================================
+
+# function fileDownload($uri, $fileName, $version=1, [switch]$v2){
+
+#     if(-not $cohesity_api.authorized){ Write-Host 'Please use apiauth to connect to a cohesity cluster' -foregroundcolor yellow; return $null }
+#     try {
+#         if($version -eq 2 -or $v2){
+#             $url = $cohesity_api.apiRootv2 + $uri
+#         }else{
+#             if($uri[0] -ne '/'){ $uri = '/public/' + $uri}
+#             $url = $cohesity_api.apiRoot + $uri
+#         }
+#         if($PSVersionTable.Platform -eq 'Unix'){
+#             $ch = ''
+#             foreach($h in $cohesity_api.curlHeader){
+#                 $ch += '-H "' + $h + '" '
+#             }
+#             Invoke-Expression -Command "curl -k -s $ch -o $fileName $url"
+#         }else{
+#             if($fileName -notmatch '\\'){
+#                 $fileName = $(Join-Path -Path $PSScriptRoot -ChildPath $fileName)
+#             }
+#             $cohesity_api.webcli.DownloadFile($url, $fileName)
+#         } 
+#     }catch{
+#         __writeLog $_.ToString()
+#         $_.ToString()
+#         if($_.ToString().contains('"message":')){
+#             Write-Host (ConvertFrom-Json $_.ToString()).message -foregroundcolor yellow
+#         }else{
+#             Write-Host $_.ToString() -foregroundcolor yellow
+#         }                
+#     }
+# }
 
 # date functions ==================================================================================
 
