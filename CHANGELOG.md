@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-09-23
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api> [`Update`] switched to web session authentication, added support for password reset. email MFA
+
 ## 2023-09-22
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/replicationQueue> [`Update`] added option to cancel outdated/all replications per job, per target
