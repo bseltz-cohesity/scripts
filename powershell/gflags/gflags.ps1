@@ -1,12 +1,11 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][string]$vip='helios.cohesity.com',   # the cluster to connect to (DNS name or IP)
-    [Parameter()][string]$username='helios',           # username (local or AD)
+    [Parameter(Mandatory=$True)][string]$vip,   # the cluster to connect to (DNS name or IP)
+    [Parameter(Mandatory=$True)][string]$username,           # username (local or AD)
     [Parameter()][string]$domain = 'local',            # domain (local or AD FQDN)
     [Parameter()][string]$password,                    # optional password
     [Parameter()][switch]$useApiKey,                   # use API key for authentication
-    [Parameter()][string]$accessCluster,               # access cluster (if connectig to helios)
     [Parameter()][switch]$clear,                       # switch to clear a gflag
     [Parameter()][string]$import = '',                 # import from an export file
     [Parameter()][string]$servicename = $null,         # service name to set gflag
@@ -19,26 +18,17 @@ param (
 
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+if($cohesity_api.api_version -lt '2023.09.23'){
+    Write-Host "This script requires cohesity-api.ps1 version 2023.09.23 or later" -foregroundColor Yellow
+    Write-Host "Please download it from https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api" -ForegroundColor Yellow
+    exit
+}
 
 ### authenticate
 if($useApiKey){
     apiauth -vip $vip -username $username -domain $domain -password $password -useApiKey 
 }else{
     apiauth -vip $vip -username $username -domain $domain -password $password 
-}
-
-if($vip -eq 'helios.cohesity.com'){
-    if($accessCluster){
-        heliosCluster $accessCluster
-    }else{
-        Write-Host "-accessCluster is required"
-        exit
-    }
-    
-}else{
-    if($accessCluster){
-        accessCluster $accessCluster
-    }
 }
 
 $port = @{
@@ -86,7 +76,6 @@ $port = @{
 $cluster = api get cluster
 if($effectiveNow){
     $nodes = api get nodes
-    $context = getContext
     if($PSVersionTable.PSEdition -eq 'Desktop'){
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
@@ -131,21 +120,22 @@ function setGflag($servicename, $flagname, $flagvalue, $reason){
         Write-Host "    making effective now on all nodes:"
         foreach($node in $nodes){
             Write-Host "        $($node.ip)"
-            $ProgressPreference = 'SilentlyContinue'
+            if($servicename -eq 'iris'){
+                copySessionCookie $node.ip
+            }
             if($PSVersionTable.PSEdition -eq 'Core'){
                 if($servicename -eq 'iris'){
-                    $null = Invoke-WebRequest -UseBasicParsing -Uri "https://$($node.ip):443/flagz?$flagname=$flagvalue" -Headers $cohesity_api.header -SkipCertificateCheck
+                    $null = Invoke-WebRequest -UseBasicParsing -Uri "https://$($node.ip):443/flagz?$flagname=$flagvalue" -Headers $cohesity_api.header -SkipCertificateCheck -WebSession $thisContext.session
                 }else{
-                    $null = Invoke-WebRequest -UseBasicParsing -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=http%3A%2F%2F$($node.ip)%3A$($port[$servicename])%2Fflagz%3F$flagname=$flagvalue" -Headers $cohesity_api.header -SkipCertificateCheck
+                    $null = Invoke-WebRequest -UseBasicParsing -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=http%3A%2F%2F$($node.ip)%3A$($port[$servicename])%2Fflagz%3F$flagname=$flagvalue" -Headers $cohesity_api.header -SkipCertificateCheck -WebSession $thisContext.session
                 }
             }else{
                 if($servicename -eq 'iris'){
-                    $null = Invoke-WebRequest -UseBasicParsing -Uri "https://$($node.ip):443/flagz?$flagname=$flagvalue" -Headers $cohesity_api.header
+                    $null = Invoke-WebRequest -UseBasicParsing -Uri "https://$($node.ip):443/flagz?$flagname=$flagvalue" -Headers $cohesity_api.header -WebSession $thisContext.session
                 }else{
-                    $null = Invoke-WebRequest -UseBasicParsing -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=http%3A%2F%2F$($node.ip)%3A$($port[$servicename])%2Fflagz%3F$flagname=$flagvalue" -Headers $cohesity_api.header
+                    $null = Invoke-WebRequest -UseBasicParsing -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=http%3A%2F%2F$($node.ip)%3A$($port[$servicename])%2Fflagz%3F$flagname=$flagvalue" -Headers $cohesity_api.header -WebSession $thisContext.session
                 }
             }
-            $ProgressPreference = 'Continue'
         }
     }
 }
@@ -185,7 +175,6 @@ if($import -ne ''){
             $flagvalue = $i.flagValue
             $reason = $i.reason
 
-            # Write-Host ("setting {0} / {1} : {2} ({3})" -f $servicename, $flagname, $flagvalue, $reason)
             if($servicename -and $flagname -and $flagvalue -and $reason){
                 setGflag -servicename $servicename -flagname $flagname -flagvalue $flagvalue -reason $reason
                 $restartServices += $servicename

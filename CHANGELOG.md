@@ -3,6 +3,7 @@
 ## 2023-09-23
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api> [`Update`] switched to web session authentication, added support for password reset. email MFA
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/gflags> [`Update`] switched to web session authentication
 
 ## 2023-09-22
 
