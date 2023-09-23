@@ -100,7 +100,8 @@ f = codecs.open(exportfile, 'w', 'utf-8')
 
 nodes = api('get', 'nodes')
 context = getContext()
-cookies = context['SESSION'].cookies.get_dict()
+# cookies = context['SESSION'].cookies.get_dict()
+cookies = context['COOKIES']
 for node in nodes:
     try:
         if servicename in port:

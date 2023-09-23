@@ -134,7 +134,7 @@ def setGflag(servicename, flagname, flagvalue, reason):
     if effectivenow is True:
         print('    making effective now on all nodes')
         context = getContext()
-        cookies = context['SESSION'].cookies.get_dict()
+        cookies = context['COOKIES']
         nodes = api('get', 'nodes')
         for node in nodes:
             print('        %s' % node['ip'])

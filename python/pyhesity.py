@@ -163,6 +163,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                     COHESITY_API['LAST_ERROR'] = 'OK'
                     if quiet is None:
                         print("Connected!")
+            COHESITY_API['COOKIES'] = COHESITY_API['SESSION'].cookies.get_dict()
         except requests.exceptions.RequestException as e:
             COHESITY_API['AUTHENTICATED'] = False
             COHESITY_API['LAST_ERROR'] = e
@@ -183,6 +184,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
         if cluster is not None and 'id' in cluster:
             if quiet is None:
                 print("Connected!")
+                COHESITY_API['COOKIES'] = COHESITY_API['SESSION'].cookies.get_dict()
         else:
             if 'message' in cluster:
                 COHESITY_API['LAST_ERROR'] = cluster['message']
@@ -284,6 +286,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                     COHESITY_API['LAST_ERROR'] = 'OK'
                     if quiet is None:
                         print("Connected!")
+                    COHESITY_API['COOKIES'] = COHESITY_API['SESSION'].cookies.get_dict()
                 else:
                     COHESITY_API['AUTHENTICATED'] = False
                     if response.status_code == 400 or response.status_code == 401:
