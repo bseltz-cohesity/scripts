@@ -11,7 +11,7 @@ pyhesity.py contains a set of functions that make it easy to use the Cohesity RE
 Use the following command to download the module:
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py
 ```
 
 ### Installing the Prerequisites
