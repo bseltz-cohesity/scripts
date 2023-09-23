@@ -80,7 +80,7 @@ __all__ = ['api_version',
            'impersonate',
            'switchback']
 
-api_version = '2023.04.06'
+api_version = '2023.09.23'
 
 COHESITY_API = {
     'User-Agent': 'pyhesity/%s' % api_version,
