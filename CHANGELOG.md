@@ -1,5 +1,15 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-09-22
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/replicationQueue> [`Update`] added option to cancel outdated/all replications per job, per target
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/licenseCluster> [`New`] generates a license from Helios and applies it to a cluster
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api> [`Update`] added file upload function to support the new licenseCluster script
+
+## 2023-09-21
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/strikeReportV2> [`Fix`] bug fix
+
 ## 2023-09-19
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/replicationReport> [`Update`] Performance improvement
