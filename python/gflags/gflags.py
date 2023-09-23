@@ -139,9 +139,9 @@ def setGflag(servicename, flagname, flagvalue, reason):
             print('        %s' % node['ip'])
             if clear is True:
                 if servicename == 'iris':
-                    currentflags = requests.get('https://%s:%s/flagz' % (node['ip'], port[servicename]), verify=False, headers=context['HEADER'])
+                    currentflags = context['SESSION'].get('https://%s:%s/flagz' % (node['ip'], port[servicename]), verify=False, headers=context['HEADER'])
                 else:
-                    currentflags = requests.get('https://%s/siren/v1/remote?relPath=&remoteUrl=http' % vip + quote_plus('://') + node['ip'] + quote_plus(':') + port[servicename] + quote_plus('/flagz'), verify=False, headers=context['HEADER'])
+                    currentflags = context['SESSION'].get('https://%s/siren/v1/remote?relPath=&remoteUrl=http' % vip + quote_plus('://') + node['ip'] + quote_plus(':') + port[servicename] + quote_plus('/flagz'), verify=False, headers=context['HEADER'])
                 for existingflag in currentflags.content.split('\n'):
                     parts = str(existingflag).split('=')
                     existingflagname = parts[0][2:]
@@ -149,9 +149,9 @@ def setGflag(servicename, flagname, flagvalue, reason):
                         if len(parts) > 2:
                             flagvalue = parts[2][0:-1]
             if servicename == 'iris':
-                response = requests.get('https://%s:%s/flagz?%s=%s' % (node['ip'], port[servicename], flagname, flagvalue), verify=False, headers=context['HEADER'])
+                response = context['SESSION'].get('https://%s:%s/flagz?%s=%s' % (node['ip'], port[servicename], flagname, flagvalue), verify=False, headers=context['HEADER'])
             else:
-                response = requests.get('https://%s/siren/v1/remote?relPath=&remoteUrl=http' % vip + quote_plus('://') + node['ip'] + quote_plus(':') + port[servicename] + quote_plus('/flagz?') + '%s=%s' % (flagname, flagvalue), verify=False, headers=context['HEADER'])
+                response = context['SESSION'].get('https://%s/siren/v1/remote?relPath=&remoteUrl=http' % vip + quote_plus('://') + node['ip'] + quote_plus(':') + port[servicename] + quote_plus('/flagz?') + '%s=%s' % (flagname, flagvalue), verify=False, headers=context['HEADER'])
 
 
 servicestorestart = []
