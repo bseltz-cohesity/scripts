@@ -100,13 +100,14 @@ f = codecs.open(exportfile, 'w', 'utf-8')
 
 nodes = api('get', 'nodes')
 context = getContext()
+cookies = context['SESSION'].cookies.get_dict()
 for node in nodes:
     try:
         if servicename in port:
             if servicename == 'iris':
-                currentflags = requests.get('https://%s:%s/flagz' % (node['ip'], port[servicename]), verify=False, headers=context['HEADER'])
+                currentflags = context['SESSION'].get('https://%s:%s/flagz' % (vip, port[servicename]), verify=False, headers=context['HEADER'], cookies=cookies)
             else:
-                currentflags = requests.get('https://%s/siren/v1/remote?relPath=&remoteUrl=http' % vip + quote_plus('://') + node['ip'] + quote_plus(':') + port[servicename] + quote_plus('/flagz'), verify=False, headers=context['HEADER'])
+                currentflags = context['SESSION'].get('https://%s/siren/v1/remote?relPath=&remoteUrl=http' % vip + quote_plus('://') + node['ip'] + quote_plus(':') + port[servicename] + quote_plus('/flagz'), verify=False, headers=context['HEADER'])
             existingflags = str(currentflags.content).split('\\n')
             for existingflag in existingflags:
                 parts = str(existingflag).split('=')
