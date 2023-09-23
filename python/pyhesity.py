@@ -65,6 +65,7 @@ __all__ = ['api_version',
            'dayDiff',
            'display',
            'fileDownload',
+           'fileUpload',
            'apiconnected',
            'apidrop',
            'pw',
@@ -666,7 +667,8 @@ def display(myjson):
 def fileDownload(uri, fileName, v=1, timeout=300):
     """download file"""
     if COHESITY_API['AUTHENTICATED'] is False:
-        return "Not Connected"
+        print('Not Connected')
+        return None
     if 'https://' in uri.lower():
         url = uri
     else:
@@ -682,6 +684,27 @@ def fileDownload(uri, fileName, v=1, timeout=300):
         if chunk:
             f.write(chunk)
     f.close()
+
+
+def fileUpload(uri, fileName, v=1, timeout=300):
+    """upload file"""
+    if COHESITY_API['AUTHENTICATED'] is False:
+        print('Not Connected')
+        return None
+    if 'https://' in uri.lower():
+        url = uri
+    else:
+        if v == 2:
+            url = COHESITY_API['APIROOTv2'] + uri
+        else:
+            if uri[0] != '/':
+                uri = '/public/' + uri
+            url = COHESITY_API['APIROOT'] + uri
+    try:
+        files = {'file': open(fileName, 'rb')}
+        response = COHESITY_API['SESSION'].post(url, files=files, headers=COHESITY_API['HEADER'], verify=False, timeout=timeout, cookies=COHESITY_API['COOKIES'])
+    except Exception as e:
+        print('fileUpload Error: %s' % e)
 
 
 def showProps(obj, parent='myobject', search=None):
