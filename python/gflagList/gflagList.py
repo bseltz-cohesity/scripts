@@ -13,6 +13,10 @@ if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
 else:
     from urllib import quote_plus
 
+if api_version < '2023.09.23':
+    print('This script requires pyhesity.py version 2023.09.23 or later')
+    exit()
+
 ### command line arguments
 import argparse
 parser = argparse.ArgumentParser()
