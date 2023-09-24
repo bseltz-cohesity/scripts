@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-09-24
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity> [`Update`] minor refactoring
+
 ## 2023-09-23
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api> [`Update`] switched to web session authentication, added support for password reset. email MFA
