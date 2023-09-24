@@ -3,6 +3,7 @@
 ## 2023-09-24
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity> [`Update`] minor refactoring
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api> [`Update`] minor refactoring
 
 ## 2023-09-23
 

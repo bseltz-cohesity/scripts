@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.09.23 - Brian Seltzer
+#  Version 2023.09.24 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2023.02.10 - added -region to api function (for DMaaS)
@@ -14,11 +14,11 @@
 # 2023.08.15 - enforce Tls12
 # 2023.08.28 - add offending line number to cohesity-api-log
 # 2023.09.22 - added fileUpload function
-# 2023.09.23 - web session authentication, added support for password reset. email MFA
+# 2023.09.24 - web session authentication, added support for password reset. email MFA
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2023.09.23'
+$versionCohesityAPI = '2023.09.24'
 
 # state cache
 $cohesity_api = @{
@@ -207,7 +207,7 @@ function apiauth($vip='helios.cohesity.com',
         }
     }
 
-    $cohesity_api.header = @{'accept' = 'application/json'; 'content-type' = 'application/json'}
+    $cohesity_api.header = @{'accept' = 'application/json'; 'content-type' = 'application/json'; 'User-Agent' = "cohesity-api/$versionCohesityAPI"}
     $cohesity_api.apiRoot = 'https://' + $vip + '/irisservices/api/v1'
     $cohesity_api.apiRootv2 = 'https://' + $vip + '/v2/'
     $cohesity_api.apiRootmcm = "https://$vip/mcm/"
@@ -444,7 +444,7 @@ function apidrop([switch] $quiet){
     $cohesity_api.authorized = $false
     $cohesity_api.apiRoot = ''
     $cohesity_api.apiRootv2 = ''
-    $cohesity_api.header = @{'accept' = 'application/json'; 'content-type' = 'application/json'}
+    $cohesity_api.header = @{'accept' = 'application/json'; 'content-type' = 'application/json'; 'User-Agent' = "cohesity-api/$versionCohesityAPI"}
     $cohesity_api.clusterReadOnly = $false
     $cohesity_api.heliosConnectedClusters = $null
     $cohesity_api.session = $null
