@@ -58,4 +58,7 @@ if(!$cohesity_api.authorized){
 
 Write-Host "- Uploading license"
 $result = fileUpload "https://$vip/irisservices/api/v1/nexus/license/upload" license
+$cluster = api get cluster
+setApiProperty -object $cluster -name 'licenseState' -value @{'state' = 'kClaimed'}
+$null = api put cluster $cluster
 Write-Host "`nCompleted`n"
