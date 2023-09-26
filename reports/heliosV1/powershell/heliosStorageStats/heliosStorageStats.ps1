@@ -17,7 +17,7 @@ function toUnits($val){
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
+apiauth -vip $vip -username $username -domain $domain -password $password -helios
 
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "heliosStorageStats-$dateString.csv"

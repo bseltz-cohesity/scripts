@@ -41,7 +41,7 @@ if($outPath){
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain
+apiauth -vip $vip -username $username -domain $domain -helios
 
 foreach($cluster in heliosClusters){
 

@@ -37,7 +37,7 @@ $outFile = Join-Path -Path $outPath -ChildPath "ProtectionSummaryByCluster-$date
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain
+apiauth -vip $vip -username $username -domain $domain -helios
 
 "`nGathering report data...`n"
 
