@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-09-26
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports> [`Update`] Renamed heliosV2 folder to helios and renamed heliosV1 folder to helios-old
+
 ## 2023-09-24
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity> [`Update`] minor refactoring
