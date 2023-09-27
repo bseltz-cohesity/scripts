@@ -80,7 +80,7 @@ daysAgoUsecs = timeAgo(days, 'days')
 datestring = now.strftime("%Y-%m-%d")
 csvfileName = '%s/dataReadPerVMReport-%s-%s.csv' % (folder, cluster['name'], datestring)
 csv = codecs.open(csvfileName, 'w', 'utf-8')
-csv.write('"Cluster Name","Job Name","Source Name","Object Name","%s Provisioned","%s Used","%s Read","%s Read (adjuested)"\n' % (units, units, units, units))
+csv.write('"Cluster Name","Job Name","Start Time","Source Name","Object Name","%s Provisioned","%s Used","%s Read","%s Read (adjuested)"\n' % (units, units, units, units))
 
 if skipdeleted:
     jobs = sorted(api('get', 'protectionJobs?environments=kVMware&allUnderHierarchy=true&isActive=true&isDeleted=false'), key=lambda job: job['name'].lower())
@@ -105,20 +105,22 @@ for job in jobs:
                     vCenter = doc['registeredSource']['displayName']
                     versions = [v for v in doc['versions'] if v['snapshotTimestampUsecs'] >= daysAgoUsecs]
                     if versions is not None and len(versions) > 0:
-                        provisioned = versions[0]['logicalSizeBytes']
                         used = doc['objectId']['entity']['vmwareEntity']['frontEndSizeInfo']['sizeBytes']
-                        dataRead = sum([v['deltaSizeBytes'] for v in versions])
-                        if dataRead > used:
-                            adjustedRead = dataRead - (provisioned - used)
-                            if adjustedRead < 0:
-                                adjustedRead = dataRead - ((1.1 * provisioned) - used)
-                        else:
-                            adjustedRead = dataRead
-                        provisioned = round(provisioned / multiplier, 1)
                         used = round(used / multiplier, 1)
-                        dataRead = round(dataRead / multiplier, 1)
-                        adjustedRead = round(adjustedRead / multiplier, 1)
-                        csv.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], vCenter, vmName, provisioned, used, dataRead, adjustedRead))
+                        for version in versions:
+                            startTime = usecsToDate(version['instanceId']['jobStartTimeUsecs'])
+                            provisioned = version['logicalSizeBytes']
+                            provisioned = round(provisioned / multiplier, 1)
+                            dataRead = version['deltaSizeBytes']
+                            if dataRead > used:
+                                adjustedRead = dataRead - (provisioned - used)
+                                if adjustedRead < 0:
+                                    adjustedRead = used
+                            else:
+                                adjustedRead = dataRead
+                            dataRead = round(dataRead / multiplier, 1)
+                            adjustedRead = round(adjustedRead / multiplier, 1)
+                            csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], startTime, vCenter, vmName, provisioned, used, dataRead, adjustedRead))
             if ro['count'] > (pagesize + startfrom):
                 startfrom += pagesize
                 ro = api('get', '/searchvms?environments=kVMware&allUnderHierarchy=true&jobIds=%s&size=%s&from=%s%s' % (job['id'], pagesize, startfrom, tenantTail))
