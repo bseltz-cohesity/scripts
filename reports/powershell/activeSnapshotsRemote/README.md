@@ -29,13 +29,23 @@ Place both files in a folder together and run the main script like so:
 Faster option (query run info directly from cluster):
 
 ```bash
-./activeSnapshotsRemote.ps1 -heliosUser helios -clusterName mycluster1 -clusterUsername myusername -domain mydomain.net -remoteCluster mycluster2
+# example
+./activeSnapshotsRemote.ps1 -heliosUser helios `
+                            -clusterName mycluster1 `
+                            -clusterUsername myusername `
+                            -domain mydomain.net `
+                            -remoteCluster mycluster2
+# end example
 ```
 
 Slower option (query run info proxied through Helios):
 
 ```bash
-./activeSnapshotsRemote.ps1 -heliosUser helios -clusterName mycluster1 -remoteCluster mycluster2
+# example
+./activeSnapshotsRemote.ps1 -heliosUser helios `
+                            -clusterName mycluster1 `
+                            -remoteCluster mycluster2
+# end example
 ```
 
 ## Helios Authentication Parameters
