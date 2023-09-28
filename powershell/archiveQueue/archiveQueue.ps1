@@ -69,7 +69,7 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True} 
             if($breakOut){
                 break
             }
-            $runs = api get "protectionRuns?jobId=$jobId&numRuns=$numRuns&endTimeUsecs=$endUsecs&excludeTasks=true"
+            $runs = api get "protectionRuns?jobId=$jobId&numRuns=$numRuns&endTimeUsecs=$endUsecs&excludeTasks=true&excludeNonRestorableRuns=true"
             if($runs){
                 $endUsecs = $runs[-1].backupRun.stats.startTimeUsecs - 1
             }else{
@@ -140,7 +140,7 @@ foreach($job in (api get protectionJobs | Where-Object {$_.isDeleted -ne $True} 
                             $null = api post "protectionRuns/cancel/$($jobId)" $cancelTaskParams 
                         }
                     }else{
-                        if($showFinished){
+                        if($showFinished -and $expiryTimeUsecs -gt $nowUsecs){
                             "        {0,25}:    ({1} $unit)    {2}  {3}" -f (usecsToDate $runStartTimeUsecs), (toUnits $transferred), $status, $referenceFull
                             "{0}`t{1}`t{2}`t{3}`t{4}`t{5}`t{6}`t{7}`t{8}" -f $jobId, $jobName, (usecsToDate $runStartTimeUsecs), (toUnits $transferred), (toUnits $physicalTransferred), $status, $target, (usecsToDate $startTimeUsecs), (usecsToDate $endTimeUsecs) | Out-File -FilePath $outfileName -Append
                         }else{
