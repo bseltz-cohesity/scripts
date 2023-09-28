@@ -1,0 +1,64 @@
+# List Active Replicated Snapshot Counts Per Protected Object
+
+Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
+
+This PowerShell script lists the active snapshot count for every protected object that wass replicated to the specified Cohesity cluster.
+
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download Commands
+$scriptName = 'activeSnapshotsRemote'
+$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/reports/powershell/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
+```
+
+## Components
+
+* activeSnapshotsRemote.ps1: the main python script
+* cohesity-api.ps1: the Cohesity REST API helper module
+
+Place both files in a folder together and run the main script like so:
+
+Faster option (query run info directly from cluster):
+
+```bash
+./activeSnapshotsRemote.ps1 -heliosUser helios -clusterName mycluster1 -clusterUsername myusername -domain mydomain.net -remoteCluster mycluster2
+```
+
+Slower option (query run info proxied through Helios):
+
+```bash
+./activeSnapshotsRemote.ps1 -heliosUser helios -clusterName mycluster1 -remoteCluster mycluster2
+```
+
+## Helios Authentication Parameters
+
+* -heliosVip: (optional) name or IP of helios or MCM (defaults to helios.cohesity.com)
+* -heliosUsername: (optional) name of user to connect to Cohesity (defaults to helios)
+* -clusterName: cluster to connect to when connecting through Helios or MCM
+
+## Cluster Authentication Parameters
+
+* -clusterVip: (optional) will use clusterName if omitted
+* -clusterUsername: (optional) will connect via Helios/MCM if omitted (slower)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+
+## Other Parameters
+
+* -remoteCluster: name of replica cluster to inspect
+* -days: (optional) limit query to the last X days (default is 90)
+* -dayRange: (optional) chunk helios query to X day ranges (default is 7)
+* -pageSize: (optional) API paging (default is 1000)
+* -environment: (optional) one or more types (comma separated) to include in query (e.g. kSQL, kVMware)
+* -excludeEnvironment: (optional) one or more types (comma seaparated) to exclude from query  (e.g. kSQL, kVMware)
+* -ouputPath: (optional) path to write output file (default is '.')
