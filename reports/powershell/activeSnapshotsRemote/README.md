@@ -4,6 +4,8 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This PowerShell script lists the active snapshot count for every protected object that wass replicated to the specified Cohesity cluster.
 
+Note: this script requires the source cluster to be connected to Helios.
+
 ## Download the script
 
 Run these commands from PowerShell to download the script(s) into your current directory
@@ -40,7 +42,7 @@ Slower option (query run info proxied through Helios):
 
 * -heliosVip: (optional) name or IP of helios or MCM (defaults to helios.cohesity.com)
 * -heliosUsername: (optional) name of user to connect to Cohesity (defaults to helios)
-* -clusterName: cluster to connect to when connecting through Helios or MCM
+* -clusterName: name of the Helios-connected cluster that is the source of the replications
 
 ## Cluster Authentication Parameters
 
@@ -55,7 +57,7 @@ Slower option (query run info proxied through Helios):
 
 ## Other Parameters
 
-* -remoteCluster: name of replica cluster to inspect
+* -remoteCluster: name of replica cluster to inspect (target of the replications)
 * -days: (optional) limit query to the last X days (default is 90)
 * -dayRange: (optional) chunk helios query to X day ranges (default is 7)
 * -pageSize: (optional) API paging (default is 1000)

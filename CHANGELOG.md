@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-09-28
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/activeSnapshotsRemote> [`New`] Script to determine count, oldest, and newest backups available on replica cluster (that can't be queried directly, e.g. isolated vault cluster)
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/archiveQueue> [`Update`] don't show expired archives when using `-showFinished``
+
 ## 2023-09-26
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports> [`Update`] Renamed heliosV2 folder to helios and renamed heliosV1 folder to helios-old
