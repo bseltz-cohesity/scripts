@@ -2,6 +2,7 @@
 param (
     [Parameter()][string]$heliosVip = 'helios.cohesity.com',  # the cluster to connect to (DNS name or IP)
     [Parameter()][string]$heliosUsername = 'helios',          # username (local or AD)
+    [Parameter()][string]$heliosPassword,
     [Parameter()][string]$clusterVip,
     [Parameter()][string]$clusterUserName,
     [Parameter()][string]$domain = 'local',             # local or AD domain
@@ -25,7 +26,7 @@ param (
 
 ### authenticate
 "Connecting to Helios..."
-apiauth -vip $heliosVip -username $heliosUsername -domain 'local' -helios
+apiauth -vip $heliosVip -username $heliosUsername -domain 'local' -passwd $heliosPassword -helios
 
 # select helios/mcm managed cluster
 if($USING_HELIOS){
