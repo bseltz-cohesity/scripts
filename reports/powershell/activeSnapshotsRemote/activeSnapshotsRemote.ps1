@@ -1,17 +1,17 @@
 [CmdletBinding()]
 param (
-    [Parameter()][string]$heliosVip = 'helios.cohesity.com',  # the cluster to connect to (DNS name or IP)
-    [Parameter()][string]$heliosUsername = 'helios',          # username (local or AD)
+    [Parameter()][string]$heliosVip = 'helios.cohesity.com',
+    [Parameter()][string]$heliosUsername = 'helios',
     [Parameter()][string]$heliosPassword,
     [Parameter()][string]$clusterVip,
     [Parameter()][string]$clusterUserName,
-    [Parameter()][string]$domain = 'local',             # local or AD domain
-    [Parameter()][switch]$useApiKey,                    # use API key for authentication
-    [Parameter()][string]$password,                     # optional password
-    [Parameter()][string]$tenant,                       # org to impersonate
-    [Parameter()][switch]$mcm,                          # connect through mcm
-    [Parameter()][string]$mfaCode = $null,              # mfa code
-    [Parameter(Mandatory=$True)][string]$clusterName = $null,          # cluster to connect to via helios/mcm
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode = $null,
+    [Parameter(Mandatory=$True)][string]$sourceCluster = $null,
     [Parameter()][int64]$pageSize = 1000,
     [Parameter()][int64]$days = 90,
     [Parameter()][array]$environment,
@@ -31,10 +31,10 @@ apiauth -vip $heliosVip -username $heliosUsername -domain 'local' -passwd $helio
 
 # select helios/mcm managed cluster
 if($USING_HELIOS){
-    if($clusterName){
-        $thisCluster = heliosCluster $clusterName
+    if($sourceCluster){
+        $thisCluster = heliosCluster $sourceCluster
     }else{
-        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        Write-Host "Please provide -sourceCluster when connecting through helios" -ForegroundColor Yellow
         exit 1
     }
 }

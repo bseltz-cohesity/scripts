@@ -31,10 +31,9 @@ Faster option (query run info directly from cluster):
 ```bash
 # example
 ./activeSnapshotsRemote.ps1 -heliosUser helios `
-                            -clusterName mycluster1 `
+                            -sourceCluster mycluster1 `
                             -clusterUsername myusername `
-                            -domain mydomain.net `
-                            -remoteCluster mycluster2
+                            -domain mydomain.net
 # end example
 ```
 
@@ -43,8 +42,7 @@ Slower option (query run info proxied through Helios):
 ```bash
 # example
 ./activeSnapshotsRemote.ps1 -heliosUser helios `
-                            -clusterName mycluster1 `
-                            -remoteCluster mycluster2
+                            -sourceCluster mycluster1
 # end example
 ```
 
@@ -52,12 +50,12 @@ Slower option (query run info proxied through Helios):
 
 * -heliosVip: (optional) name or IP of helios or MCM (defaults to helios.cohesity.com)
 * -heliosUsername: (optional) name of user to connect to Cohesity (defaults to helios)
-* -clusterName: name of the Helios-connected cluster that is the source of the replications
+* -sourceCluster: name of the Helios-connected cluster that is the source of the replications
 
 ## Cluster Authentication Parameters
 
 * -clusterVip: (optional) will use clusterName if omitted
-* -clusterUsername: (optional) will connect via Helios/MCM if omitted (slower)
+* -clusterUsername: (optional) will connect through Helios/MCM if omitted (slower)
 * -domain: (optional) your AD domain (defaults to local)
 * -useApiKey: (optional) use API key for authentication
 * -password: (optional) will use cached password or will be prompted
