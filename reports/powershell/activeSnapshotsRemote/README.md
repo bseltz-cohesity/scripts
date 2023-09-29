@@ -67,10 +67,11 @@ Slower option (query run info proxied through Helios):
 
 ## Other Parameters
 
-* -remoteCluster: name of replica cluster to inspect (target of the replications)
+* -remoteCluster: (optional) name of replica cluster to inspect (target of the replications)
 * -days: (optional) limit query to the last X days (default is 90)
 * -dayRange: (optional) chunk helios query to X day ranges (default is 7)
 * -pageSize: (optional) API paging (default is 1000)
 * -environment: (optional) one or more types (comma separated) to include in query (e.g. kSQL, kVMware)
 * -excludeEnvironment: (optional) one or more types (comma seaparated) to exclude from query  (e.g. kSQL, kVMware)
 * -ouputPath: (optional) path to write output file (default is '.')
+* -omitSourceClusterColumn: (optional) do not include source cluster column in the output file

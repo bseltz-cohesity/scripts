@@ -18,7 +18,8 @@ param (
     [Parameter()][array]$excludeEnvironment,
     [Parameter()][string]$outputPath = '.',
     [Parameter()][int]$dayRange = 7,
-    [Parameter(Mandatory=$True)][string]$remoteCluster
+    [Parameter()][string]$remoteCluster,
+    [Parameter()][switch]$omitSourceClusterColumn
 )
 
 ### source the cohesity-api helper code
@@ -43,18 +44,30 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
-$remoteClusters = api get remoteClusters
-$thisRemoteCluster = $remoteClusters | Where-Object name -eq $remoteCluster
-if(! $thisRemoteCluster){
-    Write-Host "remote cluster $remoteCluster not found!" -ForegroundColor Yellow
-    exit 1
+if($remoteCluster){
+    $remoteClusters = api get remoteClusters
+    $thisRemoteCluster = $remoteClusters | Where-Object name -eq $remoteCluster
+    if(! $thisRemoteCluster){
+        Write-Host "remote cluster $remoteCluster not found!" -ForegroundColor Yellow
+        exit 1
+    }
 }
+
 
 $cluster = api get cluster
 $clusterId = $cluster.id
 $clusterName = $cluster.name
-$outfileName = $(Join-Path -Path $outputPath -ChildPath "activeSnapshots-$clusterName-$remoteCluster.csv")
-"""Cluster Name"",""Job Name"",""Job Type"",""Source Name"",""Object Name"",""SQL AAG Name"",""Active Snapshots"",""Oldest Snapshot"",""Newest Snapshot""" | Out-File -FilePath $outfileName
+if($remoteCluster){
+    $outfileName = $(Join-Path -Path $outputPath -ChildPath "activeSnapshots-$remoteCluster-replicatedFrom-$clusterName.csv")
+}else{
+    $outfileName = $(Join-Path -Path $outputPath -ChildPath "activeSnapshots-ALL-replicatedFrom-$clusterName.csv")
+}
+
+if($omitSourceClusterColumn){
+    """Cluster Name"",""Job Name"",""Job Type"",""Source Name"",""Object Name"",""SQL AAG Name"",""Active Snapshots"",""Oldest Snapshot"",""Newest Snapshot""" | Out-File -FilePath $outfileName
+}else{
+    """Cluster Name"",""Job Name"",""Job Type"",""Source Name"",""Object Name"",""SQL AAG Name"",""Active Snapshots"",""Oldest Snapshot"",""Newest Snapshot"",""Source Cluster""" | Out-File -FilePath $outfileName
+}
 
 $nowUsecs = dateToUsecs (Get-Date)
 if($days){
@@ -209,6 +222,7 @@ if($environment){
 foreach($job in $jobs | Sort-Object -Property name){
     $endUsecs = $nowUsecs
     $replicatedRuns = @{}
+    $replicaCluster = @{}
     $jobObjects = @{}
     $job.name
     $aagName = @{}
@@ -217,11 +231,16 @@ foreach($job in $jobs | Sort-Object -Property name){
         $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$pageSize&startTimeUsecs=$daysBackUsecs&endTimeUsecs=$endUsecs&runTypes=kRegular&runTypes=kFull&excludeTasks=true&useCachedData=true"
         foreach($run in $runs){
             $runStartTime = usecsToDate $run.backupRun.stats.startTimeUsecs
-            $copyRun = $run.copyRun | Where-Object {$_.target.type -eq 'kRemote' -and $_.target.replicationTarget.clusterName -eq $remoteCluster -and $_.status -eq 'kSuccess'}
-            if($copyRun){
+            if($remoteCluster){
+                $copyRuns = $run.copyRun | Where-Object {$_.target.type -eq 'kRemote' -and $_.target.replicationTarget.clusterName -eq $remoteCluster -and $_.status -eq 'kSuccess'}
+            }else{
+                $copyRuns = $run.copyRun | Where-Object {$_.target.type -eq 'kRemote' -and $_.status -eq 'kSuccess'}
+            }
+            foreach($copyRun in $copyRuns){
                 $expiry = $copyRun.expiryTimeUsecs
                 if($expiry -gt $nowUsecs){
                     $replicatedRuns["$([Int64]($run.backupRun.stats.startTimeUsecs / 900000000) * 900000000)"] = $expiry
+                    $replicaCluster["$([Int64]($run.backupRun.stats.startTimeUsecs / 900000000) * 900000000)"] = $copyRun.target.replicationTarget.clusterName
                 }
             }
         }
@@ -242,6 +261,7 @@ foreach($job in $jobs | Sort-Object -Property name){
                     'active' = 1;
                     'newest' = $o.runStartTimeUsecs;
                     'oldest' = $o.runStartTimeUsecs;
+                    'target' = $replicaCluster["$([Int64]($o.runStartTimeUsecs / 900000000) * 900000000)"]
                 }
             }else{
                 if($o.runStartTimeUsecs -gt $jobObjects[$keyName]['newest']){
@@ -291,7 +311,11 @@ foreach($job in $jobs | Sort-Object -Property name){
 
         foreach($keyName in $jobObjects.Keys | Sort-Object){
             "    {0}: {1}" -f $jobObjects[$keyName]['objectName'], $jobObjects[$keyName]['active']
-            """$($cluster.name)"",""$($job.name)"",""$($job.environment)"",""$($jobObjects[$keyName]['sourceName'])"",""$($jobObjects[$keyName]['objectName'])"",""$($aagName[$keyName])"",""$($jobObjects[$keyName]['active'])"",""$(usecsToDate $jobObjects[$keyName]['oldest'])"",""$(usecsToDate $jobObjects[$keyName]['newest'])""" | Out-File -FilePath $outfileName -Append
+            if($omitSourceClusterColumn){
+                """$($jobObjects[$keyName]['target'])"",""$($job.name)"",""$($job.environment)"",""$($jobObjects[$keyName]['sourceName'])"",""$($jobObjects[$keyName]['objectName'])"",""$($aagName[$keyName])"",""$($jobObjects[$keyName]['active'])"",""$(usecsToDate $jobObjects[$keyName]['oldest'])"",""$(usecsToDate $jobObjects[$keyName]['newest'])""" | Out-File -FilePath $outfileName -Append
+            }else{
+                """$($jobObjects[$keyName]['target'])"",""$($job.name)"",""$($job.environment)"",""$($jobObjects[$keyName]['sourceName'])"",""$($jobObjects[$keyName]['objectName'])"",""$($aagName[$keyName])"",""$($jobObjects[$keyName]['active'])"",""$(usecsToDate $jobObjects[$keyName]['oldest'])"",""$(usecsToDate $jobObjects[$keyName]['newest'])"",""$clusterName""" | Out-File -FilePath $outfileName -Append
+            }
         }
     }
 }
