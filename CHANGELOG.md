@@ -3,6 +3,7 @@
 ## 2023-09-29
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/featureFlags> [`New`] Python script to get, set, export and import feature flags
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/featureFlags> [`New`] PowerShell script to get, set, export and import feature flags
 
 ## 2023-09-28
 
