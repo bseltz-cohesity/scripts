@@ -222,7 +222,6 @@ if($environment){
 foreach($job in $jobs | Sort-Object -Property name){
     $endUsecs = $nowUsecs
     $replicatedRuns = @{}
-    $replicaCluster = @{}
     $jobObjects = @{}
     $job.name
     $aagName = @{}
@@ -239,8 +238,12 @@ foreach($job in $jobs | Sort-Object -Property name){
             foreach($copyRun in $copyRuns){
                 $expiry = $copyRun.expiryTimeUsecs
                 if($expiry -gt $nowUsecs){
-                    $replicatedRuns["$([Int64]($run.backupRun.stats.startTimeUsecs / 900000000) * 900000000)"] = $expiry
-                    $replicaCluster["$([Int64]($run.backupRun.stats.startTimeUsecs / 900000000) * 900000000)"] = $copyRun.target.replicationTarget.clusterName
+                    $timeKey = "$([Int64]($run.backupRun.stats.startTimeUsecs / 900000000) * 900000000)"
+                    if($timeKey -notin $replicatedRuns){
+                        $replicatedRuns[$timeKey] = @($copyRun.target.replicationTarget.clusterName)
+                    }else{
+                        $replicatedRuns[$timeKey] = @($replicatedRuns[$timeKey] + $copyRun.target.replicationTarget.clusterName)
+                    }
                 }
             }
         }
@@ -261,7 +264,7 @@ foreach($job in $jobs | Sort-Object -Property name){
                     'active' = 1;
                     'newest' = $o.runStartTimeUsecs;
                     'oldest' = $o.runStartTimeUsecs;
-                    'target' = $replicaCluster["$([Int64]($o.runStartTimeUsecs / 900000000) * 900000000)"]
+                    'targets' = $replicatedRuns["$([Int64]($o.runStartTimeUsecs / 900000000) * 900000000)"]
                 }
             }else{
                 if($o.runStartTimeUsecs -gt $jobObjects[$keyName]['newest']){
@@ -297,7 +300,6 @@ foreach($job in $jobs | Sort-Object -Property name){
                             $sourceName = $doc.registeredSource.displayName
                         }
                         $aagName["$($sourceName);;$($objName)"] = $sqlAagName
-                        # "$($sourceName);;$($objName)  $sqlAagName"
                     }
                     if($ro.count -gt ($pageSize + $from)){
                         $from += $pageSize
@@ -311,10 +313,12 @@ foreach($job in $jobs | Sort-Object -Property name){
 
         foreach($keyName in $jobObjects.Keys | Sort-Object){
             "    {0}: {1}" -f $jobObjects[$keyName]['objectName'], $jobObjects[$keyName]['active']
-            if($omitSourceClusterColumn){
-                """$($jobObjects[$keyName]['target'])"",""$($job.name)"",""$($job.environment)"",""$($jobObjects[$keyName]['sourceName'])"",""$($jobObjects[$keyName]['objectName'])"",""$($aagName[$keyName])"",""$($jobObjects[$keyName]['active'])"",""$(usecsToDate $jobObjects[$keyName]['oldest'])"",""$(usecsToDate $jobObjects[$keyName]['newest'])""" | Out-File -FilePath $outfileName -Append
-            }else{
-                """$($jobObjects[$keyName]['target'])"",""$($job.name)"",""$($job.environment)"",""$($jobObjects[$keyName]['sourceName'])"",""$($jobObjects[$keyName]['objectName'])"",""$($aagName[$keyName])"",""$($jobObjects[$keyName]['active'])"",""$(usecsToDate $jobObjects[$keyName]['oldest'])"",""$(usecsToDate $jobObjects[$keyName]['newest'])"",""$clusterName""" | Out-File -FilePath $outfileName -Append
+            foreach($target in $jobObjects[$keyName]['targets']){
+                if($omitSourceClusterColumn){
+                    """$target"",""$($job.name)"",""$($job.environment)"",""$($jobObjects[$keyName]['sourceName'])"",""$($jobObjects[$keyName]['objectName'])"",""$($aagName[$keyName])"",""$($jobObjects[$keyName]['active'])"",""$(usecsToDate $jobObjects[$keyName]['oldest'])"",""$(usecsToDate $jobObjects[$keyName]['newest'])""" | Out-File -FilePath $outfileName -Append
+                }else{
+                    """$target"",""$($job.name)"",""$($job.environment)"",""$($jobObjects[$keyName]['sourceName'])"",""$($jobObjects[$keyName]['objectName'])"",""$($aagName[$keyName])"",""$($jobObjects[$keyName]['active'])"",""$(usecsToDate $jobObjects[$keyName]['oldest'])"",""$(usecsToDate $jobObjects[$keyName]['newest'])"",""$clusterName""" | Out-File -FilePath $outfileName -Append
+                }
             }
         }
     }

@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-09-29
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/featureFlags> [`New`] Python script to get, set, export and import feature flags
+
 ## 2023-09-28
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/activeSnapshotsRemote> [`New`] Script to determine count, oldest, and newest backups available on replica cluster (that can't be queried directly, e.g. isolated vault cluster)
