@@ -117,7 +117,7 @@ To import feature flags from a CSV file:
 * -n, --flagname: (optional) Name of feature flag to set
 * -r, --reason: (optional) reason for setting the flag
 * -ui, --isuifeature: (optional) specify that feature flag is a UI feature (false if omitted)
-* -x, --clear: (optional) reset gflag to default value
+* -x, --clear: (optional) remove the feeature flag
 * -i, --importfile: (optional) name of file to import
 
 ## The Python Helper Module - pyhesity.py
