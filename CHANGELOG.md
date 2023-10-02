@@ -1,5 +1,11 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-10-02
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api> [`Fix`] cosmetic bug 'An item with the same key has already been added. Key: content-type'
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/registerPhysical> [`Update`] added support for multitenancy
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/chargebackReport> [`Fix`] added lower bound `startTimeUsecs` to query parameters
+
 ## 2023-09-29
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/featureFlags> [`New`] Python script to get, set, export and import feature flags
