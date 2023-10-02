@@ -3,15 +3,16 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][string]$vip = 'helios.cohesity.com',  # the cluster to connect to (DNS name or IP)
-    [Parameter()][string]$username = 'helios',          # username (local or AD)
-    [Parameter()][string]$domain = 'local',             # local or AD domain
-    [Parameter()][switch]$useApiKey,                    # use API key for authentication
-    [Parameter()][string]$password,                     # optional password
-    [Parameter()][switch]$mcm,                          # connect through mcm
-    [Parameter()][string]$mfaCode = $null,              # mfa code
-    [Parameter()][switch]$emailMfaCode,                 # send mfa code via email
-    [Parameter()][string]$clusterName = $null,          # cluster to connect to via helios/mcm
+    [Parameter()][string]$vip = 'helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant = $null,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password = $null,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode = $null,
+    [Parameter()][string]$clusterName = $null,
     [Parameter()][string]$serverName, #Server to add as physical source
     [Parameter()][string]$serverList,
     [Parameter()][switch]$force
@@ -27,27 +28,24 @@ if($serverList){
     exit
 }
 
-### source the cohesity-api helper code
+# source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-if($useApiKey){
-    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
-}else{
-    apiauth -vip $vip -username $username -domain $domain -password $password
-}
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
 
+# select helios/mcm managed cluster
 if($USING_HELIOS){
     if($clusterName){
-        heliosCluster $clusterName
+        $thisCluster = heliosCluster $clusterName
     }else{
-        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
         exit 1
     }
 }
 
 if(!$cohesity_api.authorized){
-    Write-Host "Not authenticated"
+    Write-Host "Not authenticated" -ForegroundColor Yellow
     exit 1
 }
 

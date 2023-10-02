@@ -43,9 +43,10 @@ Note that the Cohesity agent must be installed on the host and that firewall por
 * -domain: (optional) your AD domain (defaults to local)
 * -useApiKey: (optional) use API key for authentication
 * -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
 * -mcm: (optional) connect through MCM
 * -mfaCode: (optional) TOTP MFA code
-* -emailMfaCode: (optional) send MFA code via email
 * -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
 
 ## Other Parameters
