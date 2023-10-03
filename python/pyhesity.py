@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2023.09.23"""
+"""Cohesity Python REST API Wrapper Module - 2023.10.03"""
 
 ##########################################################################################
 # Change Log
@@ -23,6 +23,7 @@
 # 2023.04.30 - disabled email MFA and added timeout parameter
 # 2023-09-06 - version bump
 # 2023-09-24 - web session authentication, added support for password reset. email MFA
+# 2023-10-03 - fixed 'forcePasswordChange' error on AD authentication
 #
 ##########################################################################################
 # Install Notes
@@ -213,7 +214,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                     try:
                         changePassword = False
                         user = response.json()
-                        if user['user']['forcePasswordChange'] is True:
+                        if 'user' in user and user['user'] is not None and 'forcePasswordChange' in user['user'] and user['user']['forcePasswordChange'] is True:
                             if newPassword is not None:
                                 confirmPassword = newPassword
                                 changePassword = True
