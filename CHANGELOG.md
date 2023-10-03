@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-10-03
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity> [`Fix`] fixed 'forcePasswordChange' error on AD authentication
+
 ## 2023-10-02
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api> [`Fix`] cosmetic bug 'An item with the same key has already been added. Key: content-type'
