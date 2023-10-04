@@ -118,6 +118,8 @@ This will result in the children of /folder1 to be restored directly into /folde
 
 Note: the `/*` construct will only work for file-based backups (not block/volume based) and could be problematic if there are many immediate children of /folder1 (more than perhaps a few hundred), since each child will be restored individually, increasing restore time and increasing the restore parameter payload (too large a payload will fail).
 
+Also note that `/*` does not function as a wildcard search operator. It means "all children'. It does not support searches like /folder1/*.doc, etc.
+
 If `/*` does not work, then revert to the previous example, and after the restore, on the host you can `mv /folder2/folder1/* /folder2 && rmdir /folder2/folder1`
 
 ## The Python Helper Module - pyhesity.py
