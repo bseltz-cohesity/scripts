@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-10-04
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/restoreFiles> [`Update`] added support for wildcard restores e.g. /folder1/*
+
 ## 2023-10-03
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity> [`Fix`] fixed 'forcePasswordChange' error on AD authentication
