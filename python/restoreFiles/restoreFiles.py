@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """restore files using python"""
 
-# version 2023.09.07
+# version 2023.10.04
 
 # usage: ./restoreFiles.py -v mycluster \
 #                          -u myusername \
@@ -201,7 +201,34 @@ def restore(thesefiles, doc, version, targetEntity, singleFile):
         if taskname is None:
             restoreTaskName = "%s_%s" % (restoreTaskName, shortfile)
         thesefiles = [thesefiles]
-
+    nonwildcards = [f for f in thesefiles if f.endswith('/*') is False]
+    wildcards = [f for f in thesefiles if f.endswith('/*') is True]
+    if wildcards is not None and len(wildcards) > 0:
+        for wildcard in wildcards:
+            instance = ("attemptNum=%s&clusterId=%s&clusterIncarnationId=%s&entityId=%s&jobId=%s&jobInstanceId=%s&jobStartTimeUsecs=%s&jobUidObjectId=%s" %
+                        (version['instanceId']['attemptNum'],
+                            doc['objectId']['jobUid']['clusterId'],
+                            doc['objectId']['jobUid']['clusterIncarnationId'],
+                            doc['objectId']['entity']['id'],
+                            doc['objectId']['jobId'],
+                            version['instanceId']['jobInstanceId'],
+                            version['instanceId']['jobStartTimeUsecs'],
+                            doc['objectId']['jobUid']['objectId']))
+            thisFolder = wildcard[:-2]
+            cookie = None
+            while True:
+                if cookie is not None:
+                    dirList = api('get', '/vm/directoryList?%s&useLibrarian=false&statFileEntries=false&dirPath=%s&cookie=%s' % (instance, thisFolder, cookie))
+                else:
+                    dirList = api('get', '/vm/directoryList?%s&useLibrarian=false&statFileEntries=false&dirPath=%s' % (instance, thisFolder))
+                if dirList and 'entries' in dirList:
+                    for entry in sorted(dirList['entries'], key=lambda e: e['name']):
+                        nonwildcards.append(entry['fullPath'])
+                if dirList and 'cookie' in dirList:
+                    cookie = dirList['cookie']
+                else:
+                    break
+    thesefiles = nonwildcards
     restoreParams = {
         "filenames": thesefiles,
         "sourceObjectInfo": {
@@ -245,6 +272,7 @@ def restore(thesefiles, doc, version, targetEntity, singleFile):
         print('Restoring %s from %s %s' % (file, usecsToDate(version['instanceId']['jobStartTimeUsecs']), fromTarget))
     else:
         print('Restoring Files from %s %s' % (usecsToDate(version['instanceId']['jobStartTimeUsecs']), fromTarget))
+
     restoreTask = api('post', '/restoreFiles', restoreParams)
 
     if restoreTask:
@@ -315,6 +343,11 @@ else:
     if noindex or (unindexedSnapshots is not None and len(unindexedSnapshots) > 0):
         print('Crawling for files...')
     for file in files:
+        origFile = file
+        restoreChildren = False
+        if file.endswith('/*'):
+            restoreChildren = True
+            file = file[:-2]
         encodedFile = quote_plus(file)
         fileRestored = False
         if noindex or (unindexedSnapshots is not None and len(unindexedSnapshots) > 0):
@@ -347,6 +380,8 @@ else:
                         else:
                             listdir(file, '/', instance)
                 if foundFile is not None:
+                    if restoreChildren is True:
+                        foundFile = foundFile + '/*'
                     restore(foundFile, doc, version, targetEntity, True)
                     fileRestored = True
                     break
@@ -379,4 +414,6 @@ else:
                             print('no versions available for %s' % file)
                         else:
                             version = versions['versions'][0]
+                            if restoreChildren is True:
+                                file = file + '/*'
                             restore(file, doc, version, targetEntity, True)

@@ -82,6 +82,44 @@ File names must be specified as absolute paths like:
 * Linux: /home/myusername/file1
 * Windows: c:\Users\MyUserName\Documents\File1 or C/Users/MyUserName/Documents/File1
 
+## Restoring a Folder or All Children of a Folder
+
+You can restore an entire folder, like so:
+
+```bash
+# example
+./restoreFiles.py -v mycluster \
+                  -u myusername \
+                  -d mydomain .net \
+                  -s server1.mydomain.net \
+                  -n /folder1 \
+                  -p /folder2 \
+                  -w
+# end example
+```
+
+The above will result in the folder being restored to /folder2/folder1
+
+If, instead you wish to restore the children of /folder1 to be restored directly into /folder2, then specify `-n /folder1/*`:
+
+```bash
+# example
+./restoreFiles.py -v mycluster \
+                  -u myusername \
+                  -d mydomain .net \
+                  -s server1.mydomain.net \
+                  -n /folder1/* \
+                  -p /folder2 \
+                  -w
+# end example
+```
+
+This will result in the children of /folder1 to be restored directly into /folder2
+
+Note: the `/*` construct will only work for file-based backups (not block/volume based) and could be problematic if there are many immediate children of /folder1 (more than perhaps a few hundred), since each child will be restored individually, increasing restore time and increasing the restore parameter payload (too large a payload will fail).
+
+If `/*` does not work, then revert to the previous example, and after the restore, on the host you can `mv /folder2/folder1/* /folder2 && rmdir /folder2/folder1`
+
 ## The Python Helper Module - pyhesity.py
 
 Please find more info on the pyhesity module here: <https://github.com/bseltz-cohesity/scripts/tree/master/python>
