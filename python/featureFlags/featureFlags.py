@@ -97,7 +97,8 @@ elif importfile is not None:
     flagdata += [s.strip() for s in f.readlines() if s.strip() != '']
     f.close()
     for f in flagdata[1:]:
-        (flagname, ui, approved, reason, thistimestamp) = f.split(',')
+        (flagname, ui, approved, reason) = f.split(',', 3)
+        reason = reason.split(',')[0]
         if ui.upper() == 'FALSE':
             ui = False
         else:
