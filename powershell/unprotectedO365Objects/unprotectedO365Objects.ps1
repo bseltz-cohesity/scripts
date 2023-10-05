@@ -69,7 +69,7 @@ if(!$cohesity_api.authorized){
 
 $outfileName = "unprotected-o365-$($objectType).csv"
 # headings
-"Name,SMTP Address" | Out-File -FilePath $outfileName -Encoding utf8
+"Name,SMTP Address,WebURL,UUID" | Out-File -FilePath $outfileName -Encoding utf8
 
 
 Write-Host "`nDiscovering $objectString..."
@@ -126,8 +126,8 @@ while(1){
         if($autoProtected -ne $True -and $node.protectionSource.id -notin $protectedIndex){
             $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
             $unprotectedObjects = @($unprotectedObjects + $node.protectionSource.name)
-            "$($node.protectionSource.name),$($node.protectionSource.office365ProtectionSource.primarySMTPAddress)" | Out-File -FilePath $outfileName -Append
-            $node | ConvertTo-JSON
+            "$($node.protectionSource.name),$($node.protectionSource.office365ProtectionSource.primarySMTPAddress),$($node.protectionSource.office365ProtectionSource.webUrl),$($node.protectionSource.office365ProtectionSource.uuid)" | Out-File -FilePath $outfileName -Append
+            $node | toJson
             exit
         }
         $lastCursor = $node.protectionSource.id
