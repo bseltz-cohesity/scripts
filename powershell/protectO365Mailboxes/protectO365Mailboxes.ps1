@@ -25,7 +25,8 @@ param (
     [Parameter()][int]$maxMailboxesPerJob = 5000,
     [Parameter()][string]$sourceName,
     [Parameter()][switch]$autoProtectRemaining,
-    [Parameter()][switch]$force
+    [Parameter()][switch]$force,
+    [Parameter()][array]$includeDomain
 )
 
 # gather list from command line params and file
@@ -252,7 +253,9 @@ while(1){
             $protectedIndex = @($protectedIndex + $node.protectionSource.id)
         }
         if($autoProtected -ne $True -and $node.protectionSource.id -notin $protectedIndex){
-            $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
+            if($includeDomain.Count -eq 0 -or $(($node.protectionSource.office365ProtectionSource.primarySMTPAddress -split '@')[-1]) -in $includeDomain){
+                $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
+            }
         }
         $lastCursor = $node.protectionSource.id
     }
@@ -273,7 +276,9 @@ while(1){
                 $protectedIndex = @($protectedIndex + $node.protectionSource.id)
             }
             if($autoProtected -ne $True -and $node.protectionSource.id -notin $protectedIndex){
-                $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
+                if($includeDomain.Count -eq 0 -or $(($node.protectionSource.office365ProtectionSource.primarySMTPAddress -split '@')[-1]) -in $includeDomain){
+                    $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
+                }
             }
             $lastCursor = $node.protectionSource.id
         }
