@@ -67,6 +67,11 @@ if(!$cohesity_api.authorized){
     exit
 }
 
+$outfileName = "unprotected-o365-$($objectType).csv"
+# headings
+"Name,SMTP Address" | Out-File -FilePath $outfileName -Encoding utf8
+
+
 Write-Host "`nDiscovering $objectString..."
 
 $cluster = api get cluster
@@ -121,6 +126,9 @@ while(1){
         if($autoProtected -ne $True -and $node.protectionSource.id -notin $protectedIndex){
             $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
             $unprotectedObjects = @($unprotectedObjects + $node.protectionSource.name)
+            "$($node.protectionSource.name),$($node.protectionSource.office365ProtectionSource.primarySMTPAddress)" | Out-File -FilePath $outfileName -Append
+            $node | ConvertTo-JSON
+            exit
         }
         $lastCursor = $node.protectionSource.id
     }
@@ -163,3 +171,4 @@ if($unprotectedCount -gt 0){
 }
 
 Write-Host "`n$objectCount $objectString discovered ($protectedCount protected, $unprotectedCount unprotected)`n"
+Write-Host "Output saved to $outfilename`n"
