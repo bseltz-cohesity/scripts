@@ -127,8 +127,6 @@ while(1){
             $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
             $unprotectedObjects = @($unprotectedObjects + $node.protectionSource.name)
             "$($node.protectionSource.name),$($node.protectionSource.office365ProtectionSource.primarySMTPAddress),$($node.protectionSource.office365ProtectionSource.webUrl),$($node.protectionSource.office365ProtectionSource.uuid)" | Out-File -FilePath $outfileName -Append
-            $node | toJson
-            exit
         }
         $lastCursor = $node.protectionSource.id
     }
