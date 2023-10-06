@@ -14,7 +14,11 @@ param (
     [Parameter()][array]$environment,
     [Parameter()][array]$excludeEnvironment,
     [Parameter()][string]$outputPath = '.',
-    [Parameter()][switch]$localOnly
+    [Parameter()][switch]$localOnly,
+    [Parameter()][string]$smtpServer, #outbound smtp server '192.168.1.95'
+    [Parameter()][string]$smtpPort = 25, #outbound smtp port
+    [Parameter()][array]$sendTo, #send to address
+    [Parameter()][string]$sendFrom #send from address
 )
 
 ### source the cohesity-api helper code
@@ -137,3 +141,10 @@ foreach($job in $jobs){
 }
 
 write-host "`nReport Saved to $outFileName`n"
+
+if($smtpServer -and $sendFrom -and $sendTo){
+    write-host "Sending report to $([string]::Join(", ", $sendTo))"
+    foreach($toaddr in $sendTo){
+        Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject "active snapshots report for $($cluster.name)" -Body "active snapshots report for $($cluster.name)`n`n" -Attachments $outFileName -WarningAction SilentlyContinue
+    }
+}

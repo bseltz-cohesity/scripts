@@ -48,3 +48,10 @@ Place both files in a folder together and run the main script like so:
 * -excludeEnvironment: (optional) one or more types (comma seaparated) to exclude from query  (e.g. kSQL, kVMware)
 * -ouputPath: (optional) path to write output file (default is '.')
 * -localOnly: (optional) include only local protection groups
+
+## Email Parameters
+
+* -smtpServer: (optional) SMTP gateway to forward email through
+* -smtpPort: (optional) SMTP port to use (default is 25)
+* -sendTo: (optional) email addresses to send report to (comma separated)
+* -sendFrom: (optional) email address to show in the from field
