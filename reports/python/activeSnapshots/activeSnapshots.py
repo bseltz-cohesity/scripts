@@ -1,12 +1,15 @@
 #!/usr/bin/env python
-"""List Recovery Points for python"""
-
-### usage: ./recoveryPoints.py -v mycluster -u admin [-d local]
+"""Active Snapshots Report for python"""
 
 ### import pyhesity wrapper module
 from pyhesity import *
 import codecs
 import os
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 
 ### command line arguments
 import argparse
@@ -26,6 +29,10 @@ parser.add_argument('-e', '--environment', type=str, action='append')
 parser.add_argument('-x', '--excludeenvironment', type=str, action='append')
 parser.add_argument('-o', '--outputpath', type=str, default='.')
 parser.add_argument('-l', '--localonly', action='store_true')
+parser.add_argument('-ms', '--mailserver', type=str)
+parser.add_argument('-mp', '--mailport', type=int, default=25)
+parser.add_argument('-to', '--sendto', action='append', type=str)
+parser.add_argument('-fr', '--sendfrom', type=str)
 
 args = parser.parse_args()
 
@@ -44,6 +51,10 @@ environment = args.environment
 excludeenvironment = args.excludeenvironment
 outputpath = args.outputpath
 localonly = args.localonly
+mailserver = args.mailserver
+mailport = args.mailport
+sendto = args.sendto
+sendfrom = args.sendfrom
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode)
@@ -78,7 +89,7 @@ if days is not None:
     daysBackUsecs = timeAgo(days, 'days')
 
 f = codecs.open(outfileName, 'w', 'utf-8')
-f.write('"Cluster Name","Job Name","Job Type","Protected Object","Active Snapshots","Oldest Snapshot","Newest Snapshot","Policy Name"\n')
+f.write('"Cluster Name","Job Name","Job Type","Source Name","Object Name","SQL AAG Name","Active Snapshots","Oldest Snapshot","Newest Snapshot"\n')
 
 etail = ''
 if environment is not None and len(environment) > 0:
@@ -88,8 +99,8 @@ if excludeenvironment is not None and len(excludeenvironment) > 0:
     excludeenvironment = [e.lower() for e in excludeenvironment]
 
 ### find recoverable objects
-policies = api('get', 'protectionPolicies?allUnderHierarchy=true')
 jobs = sorted(api('get', 'protectionJobs?allUnderHierarchy=true'), key=lambda job: job['name'].lower())
+
 if localonly is True:
     jobs = [j for j in jobs if 'isActive' not in j or j['isActive'] is not False]
 
@@ -112,12 +123,10 @@ for job in jobs:
                         objName = doc['objectName']
                         objType = environments[doc['registeredSource']['type']]
                         objSource = doc['registeredSource']['displayName']
-                        policyName = [p['name'] for p in policies if p['id'] == job['policyId']]
-                        if policyName is not None and len(policyName) > 0:
-                            policyName = policyName[0]
-                        else:
-                            policyName = ''
                         objAlias = ''
+                        sqlAagName = ''
+                        if 'sqlEntity' in doc['objectId']['entity'] and 'dbAagName' in doc['objectId']['entity']['sqlEntity']:
+                            sqlAagName = doc['objectId']['entity']['sqlEntity']['dbAagName']
                         if 'objectAliases' in doc:
                             objAlias = doc['objectAliases'][0]
                             if objAlias == objName + '.vmx':
@@ -128,7 +137,10 @@ for job in jobs:
                             objSource = ''
 
                         if objAlias != '':
-                            objName = '%s/%s' % (objAlias, objName)
+                            sourceName = objAlias
+                        else:
+                            sourceName = objSource
+
                         versions = sorted(doc['versions'], key=lambda s: s['instanceId']['jobStartTimeUsecs'])
                         if days is not None:
                             versions = [v for v in versions if v['instanceId']['jobStartTimeUsecs'] >= daysBackUsecs]
@@ -140,10 +152,28 @@ for job in jobs:
                             oldestSnapshotDate = ''
                             newsetSnapshotDate = ''
                         print("%s (%s) %s: %s" % (jobName, objType, objName, versionCount))
-                        f.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], jobName, objType, objName, versionCount, oldestSnapshotDate, newsetSnapshotDate, policyName))
+                        f.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], jobName, objType, sourceName, objName, sqlAagName, versionCount, oldestSnapshotDate, newsetSnapshotDate))
                 if ro['count'] > (pagesize + startfrom):
                     startfrom += pagesize
                     ro = api('get', '/searchvms?allUnderHierarchy=truejobIds=%s&size=%s&from=%s%s%s' % (job['id'], pagesize, startfrom, etail, tenantTail))
                 else:
                     break
 f.close()
+
+if mailserver is not None and sendto is not None and sendfrom is not None:
+    msg = MIMEMultipart()
+    msg['From'] = sendfrom
+    msg['To'] = ', '.join(sendto)
+    msg['Subject'] = "active snapshots report for %s" % cluster['name']
+    body = "active snapshots report for %s\n\n" % cluster['name']
+    msg.attach(MIMEText(body, 'plain'))
+    filename = 'activeSnapshots-%s.csv' % cluster['name']
+    attachment = open(outfileName, "rb")
+    part = MIMEBase('application', 'octet-stream')
+    part.set_payload((attachment).read())
+    encoders.encode_base64(part)
+    part.add_header('Content-Disposition', "attachment; filename= %s" % filename)
+    msg.attach(part)
+    smtp = smtplib.SMTP(mailserver, mailport)
+    smtp.sendmail(sendfrom, sendto, msg.as_string())
+    print('\nSending email report to %s\n' % ', '.join(sendto))

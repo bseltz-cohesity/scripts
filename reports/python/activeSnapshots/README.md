@@ -49,3 +49,10 @@ Place both files in a folder together and run the main script like so:
 * -x, --excludeenvironment: (optional) exclude types (e.g. kSQL) repeat for multiple
 * -o, --outputpath: (optional) default is '.'
 * -l, --localonly: (optional) include only local jobs (no replicas)
+
+## Email Parameters
+
+* -ms, --mailserver: (optional) SMTP gateway to send mail to
+* -mp, --mailport: (optional) SMTP port (default is 25)
+* -to, --sendto: (optional) email address to send to (repeat for multiple)
+* -fr, --sendfrom: (optional) email address to send from
