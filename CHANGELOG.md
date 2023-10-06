@@ -1,5 +1,15 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-10-06
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/activeSnapshots> [`Update`] added email support
+
+## 2023-10-05
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectO365Mailboxes> [`Update`] added include domain filter
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/unprotectedO365Objects> [`Update`] added output to CSV
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/featureFlags> [`Update`] allow import from CSV without timestamp column
+
 ## 2023-10-04
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/restoreFiles> [`Update`] added support for wildcard restores e.g. /folder1/*
