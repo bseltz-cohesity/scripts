@@ -3,6 +3,7 @@
 ## 2023-10-06
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/activeSnapshots> [`Update`] added email support
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/activeSnapshots> [`Update`] added email support
 
 ## 2023-10-05
 
