@@ -2,6 +2,8 @@
 
 ## 2023-10-09
 
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity> [`Update`] set last error on cluster not connected to helios
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api> [`Update`] clarify password / API key prompts
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/pauseResumeJobs> [`Update`] modernized authentication
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/cancelRunningJobs> [`Update`] modernized authentication
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/archiveQueue> [`Update`] modernized authentication

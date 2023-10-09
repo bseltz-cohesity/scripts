@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.10.02 - Brian Seltzer
+#  Version 2023.10.09 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2023.02.10 - added -region to api function (for DMaaS)
@@ -15,11 +15,12 @@
 # 2023.08.28 - add offending line number to cohesity-api-log
 # 2023.09.22 - added fileUpload function
 # 2023.09.24 - web session authentication, added support for password reset. email MFA
-# 2023.10.02 - fix cosmetic error 'An item with the same key has already been added. Key: content-type'
+# 2023.10.03 - fix cosmetic error 'An item with the same key has already been added. Key: content-type'
+# 2023.10.09 - clarify password / API key prompts
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2023.10.02'
+$versionCohesityAPI = '2023.10.09'
 
 # state cache
 $cohesity_api = @{
@@ -31,7 +32,7 @@ $cohesity_api = @{
     'apiRootmcm' = '';
     'apiRootmcmV2' = ''
     'apiRootReportingV2' = '';
-    'header' = @{'accept' = 'application/json'; 'content-type' = 'application/json'; 'user-agent' = "cohesity-api/$versionCohesityAPI"};
+    'header' = @{};
     'clusterReadOnly' = $false;
     'heliosConnectedClusters' = $null;
     'pwscope' = 'user';
@@ -208,7 +209,7 @@ function apiauth($vip='helios.cohesity.com',
         }
     }
 
-    # $cohesity_api.header = @{'accept' = 'application/json'; 'content-type' = 'application/json'; 'User-Agent' = "cohesity-api/$versionCohesityAPI"}
+    $cohesity_api.header = @{'accept' = 'application/json'; 'content-type' = 'application/json'; 'User-Agent' = "cohesity-api/$versionCohesityAPI"}
     $cohesity_api.apiRoot = 'https://' + $vip + '/irisservices/api/v1'
     $cohesity_api.apiRootv2 = 'https://' + $vip + '/v2/'
     $cohesity_api.apiRootmcm = "https://$vip/mcm/"
@@ -445,7 +446,7 @@ function apidrop([switch] $quiet){
     $cohesity_api.authorized = $false
     $cohesity_api.apiRoot = ''
     $cohesity_api.apiRootv2 = ''
-    $cohesity_api.header = @{'accept' = 'application/json'; 'content-type' = 'application/json'; 'User-Agent' = "cohesity-api/$versionCohesityAPI"}
+    $cohesity_api.header = @{}
     $cohesity_api.clusterReadOnly = $false
     $cohesity_api.heliosConnectedClusters = $null
     $cohesity_api.session = $null
@@ -824,9 +825,9 @@ function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
     if(!$passwd){
         __writeLog "Prompting for Password"
         if($useApiKey -or $helios -or $vip -eq 'helios.cohesity.com'){
-            $secureString = Read-Host -Prompt "Enter your API Key" -AsSecureString
+            $secureString = Read-Host -Prompt "Enter API key for $username at $vip" -AsSecureString
         }else{
-            $secureString = Read-Host -Prompt "Enter your password" -AsSecureString
+            $secureString = Read-Host -Prompt "Enter password for $username at $vip" -AsSecureString
         }
         $passwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
     }
@@ -901,9 +902,9 @@ function storePasswordForUser($vip='helios.cohesity.com', $username='helios', $d
     $keyString = (Get-Random -Minimum 10000000000000 -Maximum 99999999999999).ToString()
     $keyBytes = [byte[]]($keyString -split(''))
     if($null -eq $passwd -or $passwd -eq ''){
-        $secureString = Read-Host -Prompt "Enter your password" -AsSecureString
+        $secureString = Read-Host -Prompt "Enter password or API key for $username at $vip" -AsSecureString
         $passwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
-        $secureString = Read-Host -Prompt "Confirm password" -AsSecureString
+        $secureString = Read-Host -Prompt "Confirm password or API key for $username at $vip" -AsSecureString
         $passwd2 = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
         if($passwd -ne $passwd2){
             Write-Host "Passwords do not match" -ForegroundColor Yellow
