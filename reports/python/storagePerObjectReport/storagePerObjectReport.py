@@ -189,7 +189,7 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                                     if 'logicalSizeBytes' not in snap['snapshotInfo']['stats']:
                                         csource = api('get', 'protectionSources?id=%s' % objId, quiet=True)
                                         try:
-                                            if type(csource) == list:
+                                            if type(csource) is list:
                                                 objects[objId]['logical'] = csource[0]['protectedSourcesSummary'][0]['totalLogicalSize']
                                             else:
                                                 objects[objId]['logical'] = csource['protectedSourcesSummary'][0]['totalLogicalSize']
