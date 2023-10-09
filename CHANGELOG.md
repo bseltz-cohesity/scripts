@@ -1,5 +1,11 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-10-09
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/pauseResumeJobs> [`Update`] modernized authentication
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/cancelRunningJobs> [`Update`] modernized authentication
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/archiveQueue> [`Update`] modernized authentication
+
 ## 2023-10-06
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/activeSnapshots> [`Update`] added email support
