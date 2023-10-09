@@ -253,6 +253,9 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                     if mfaCode is not None or emailMfaCode is True:
                         otpType = "Totp"
                         if emailMfaCode is True:
+                            if user['user']['mfaInfo']['isEmailOtpSetupDone'] is False:
+                                reportAuthError('Email MFA is not enabled for user', quiet=quiet)
+                                return None
                             url = COHESITY_API['APIROOTv2'] + 'send-email-otp'
                             response = COHESITY_API['SESSION'].post(url, data=None, headers=COHESITY_API['HEADER'], verify=False, timeout=timeout)
                             mfaCode = getpass.getpass("Enter MFA Code: ")
