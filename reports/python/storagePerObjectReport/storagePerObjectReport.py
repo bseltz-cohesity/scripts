@@ -320,7 +320,7 @@ if 'views' in views and views['views'] is not None and len(views['views']) > 0:
                 if vaultSummary is not None and 'dataTransferPerProtectionJob' in vaultSummary and len(vaultSummary['dataTransferPerProtectionJob']) > 0:
                     for cloudJob in vaultSummary['dataTransferPerProtectionJob']:
                         if cloudJob['protectionJobName'] == jobName:
-                            print(cloudJob['storageConsumed'])
+                            # print(cloudJob['storageConsumed'])
                             if cloudJob['storageConsumed'] > 0:
                                 totalArchived += (objWeight * cloudJob['storageConsumed'])
                                 vaultStats += '[%s]%s ' % (vaultSummary['vaultName'], round((objWeight * cloudJob['storageConsumed']) / multiplier, 1))
