@@ -25,11 +25,20 @@ Place both files in a folder together and run the main script like so:
 ./archiveQueue.py -v mycluster -u myuser -d mydomain.net
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -v, --vip: DNS or IP of the Cohesity cluster to connect to
-* -u, --username: username to authenticate to Cohesity cluster
-* -d, --domain: (optional) domain of username (default is local)
+* -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
+* -d, --domain: (optional) domain of username (defaults to local)
+* -i, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: (optional) password or API key
+* -np, --noprompt: (optional) do not prompt for password
+* -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) helios/mcm cluster to connect to
+* -m, --mfacode: (optional) MFA code for authentication
+
+## Other Parameters
+
 * -o, --canceloutdated: (optional) cancel running archives that are past their intended expiration
 * -q, --cancelqueued: (optional) cancel queued archives that have not started running
 * -a, --cancellall: (optional) cancel all archive tasks

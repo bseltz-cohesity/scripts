@@ -7,9 +7,16 @@ from datetime import datetime
 ### command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)
-parser.add_argument('-u', '--username', type=str, required=True)
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-t', '--tenant', type=str, default=None)
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-o', '--canceloutdated', action='store_true')
 parser.add_argument('-q', '--cancelqueued', action='store_true')
 parser.add_argument('-a', '--cancelall', action='store_true')
@@ -20,14 +27,34 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
+tenant = args.tenant
+clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
 canceloutdated = args.canceloutdated
 cancelqueued = args.cancelqueued
 cancelall = args.cancelall
 numruns = args.numruns
 units = args.units
 
-### authenticate
-apiauth(vip, username, domain)
+# authenticate
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, tenantId=tenant)
+
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    if clustername is not None:
+        heliosCluster(clustername)
+    else:
+        print('-clustername is required when connecting to Helios or MCM')
+        exit()
+
+# exit if not authenticated
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
 
 multiplier = 1024 * 1024
 if units.lower() == 'gib':
@@ -72,7 +99,6 @@ for job in jobs:
                                 thisrun = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&id=%s' % (runStartTimeUsecs, jobId))
                                 if 'activeTasks' in thisrun[0]['backupJobRuns']['protectionRuns'][0]['copyRun']:
                                     for task in thisrun[0]['backupJobRuns']['protectionRuns'][0]['copyRun']['activeTasks']:
-                                        # for task in thisrun[0]['backupJobRuns']['protectionRuns'][0]['copyRun']['activeTasks']:
                                         if task['snapshotTarget']['type'] == 3:
                                             runningTasks += 1
                                             # determine if run is now older than the intended retention
