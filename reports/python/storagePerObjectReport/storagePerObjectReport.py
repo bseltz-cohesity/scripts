@@ -98,9 +98,9 @@ if vaults is not None and len(vaults) > 0:
 
 
 if skipdeleted:
-    jobs = api('get', 'data-protect/protection-groups?isDeleted=false&includeTenants=true&useCachedData=true', v=2)
+    jobs = api('get', 'data-protect/protection-groups?isDeleted=false&includeTenants=true&useCachedData=true&onlyReturnBasicSummary=true', v=2)
 else:
-    jobs = api('get', 'data-protect/protection-groups?includeTenants=true&useCachedData=true', v=2)
+    jobs = api('get', 'data-protect/protection-groups?includeTenants=true&useCachedData=true&onlyReturnBasicSummary=true', v=2)
 
 storageDomains = api('get', 'viewBoxes')
 
