@@ -19,11 +19,11 @@ parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-of', '--outfolder', type=str, default='.')
-parser.add_argument('-n', '--numruns', type=int, default=1000)
+parser.add_argument('-n', '--numruns', type=int, default=100)
 parser.add_argument('-y', '--growthdays', type=int, default=7)
 parser.add_argument('-x', '--units', type=str, choices=['MiB', 'GiB', 'mib', 'gib'], default='GiB')
 parser.add_argument('-s', '--skipdeleted', action='store_true')
-
+parser.add_argument('-debug', '--debug', action='store_true')
 args = parser.parse_args()
 
 vip = args.vip
@@ -40,6 +40,7 @@ numruns = args.numruns
 growthdays = args.growthdays
 units = args.units
 skipdeleted = args.skipdeleted
+debug = args.debug
 
 multiplier = 1024 * 1024 * 1024
 if units.lower() == 'mib':
@@ -97,9 +98,9 @@ if vaults is not None and len(vaults) > 0:
 
 
 if skipdeleted:
-    jobs = api('get', 'data-protect/protection-groups?isDeleted=false&includeTenants=true', v=2)
+    jobs = api('get', 'data-protect/protection-groups?isDeleted=false&includeTenants=true&useCachedData=true', v=2)
 else:
-    jobs = api('get', 'data-protect/protection-groups?includeTenants=true', v=2)
+    jobs = api('get', 'data-protect/protection-groups?includeTenants=true&useCachedData=true', v=2)
 
 storageDomains = api('get', 'viewBoxes')
 
@@ -156,7 +157,9 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
 
         # get protection runs in retention
         while 1:
-            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&endTimeUsecs=%s&includeTenants=true&includeObjectDetails=true&excludeNonRestorableRuns=true' % (job['id'], numruns, endUsecs), v=2)
+            if debug is True:
+                print('    getting protection runs')
+            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&endTimeUsecs=%s&includeTenants=true&includeObjectDetails=true&excludeNonRestorableRuns=true&useCachedData=true' % (job['id'], numruns, endUsecs), v=2)
             if len(runs['runs']) > 0:
                 if 'localBackupInfo' in runs['runs'][-1]:
                     endUsecs = runs['runs'][-1]['localBackupInfo']['startTimeUsecs'] - 1
@@ -187,7 +190,9 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                                     if 'sourceId' in object['object']:
                                         objects[objId]['sourceId'] = object['object']['sourceId']
                                     if 'logicalSizeBytes' not in snap['snapshotInfo']['stats']:
-                                        csource = api('get', 'protectionSources?id=%s' % objId, quiet=True)
+                                        if debug is True:
+                                            print('   looking up source ID')
+                                        csource = api('get', 'protectionSources?id=%s&useCachedData=true' % objId, quiet=True)
                                         try:
                                             if type(csource) is list:
                                                 objects[objId]['logical'] = csource[0]['protectedSourcesSummary'][0]['totalLogicalSize']
@@ -205,6 +210,8 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                                     jobObjGrowth += snap['snapshotInfo']['stats']['bytesRead']
                             except Exception as e:
                                 pass
+            if len(runs['runs']) < numruns:
+                break
 
         # process output
         jobFESize = 0
@@ -235,7 +242,9 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                     if thisObject['sourceId'] in sourceNames:
                         sourceName = sourceNames[thisObject['sourceId']]
                     else:
-                        source = api('get', 'protectionSources?id=%s&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag' % thisObject['sourceId'])
+                        if debug is True:
+                            print('   looking up source ID (2)')
+                        source = api('get', 'protectionSources?id=%s&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true' % thisObject['sourceId'])
                         if source is not None and 'protectionSource' not in source and 'error' not in source and len(source) > 0:
                             source = source[0]
                         if source is not None and 'protectionSource' in source:
@@ -320,7 +329,6 @@ if 'views' in views and views['views'] is not None and len(views['views']) > 0:
                 if vaultSummary is not None and 'dataTransferPerProtectionJob' in vaultSummary and len(vaultSummary['dataTransferPerProtectionJob']) > 0:
                     for cloudJob in vaultSummary['dataTransferPerProtectionJob']:
                         if cloudJob['protectionJobName'] == jobName:
-                            # print(cloudJob['storageConsumed'])
                             if cloudJob['storageConsumed'] > 0:
                                 totalArchived += (objWeight * cloudJob['storageConsumed'])
                                 vaultStats += '[%s]%s ' % (vaultSummary['vaultName'], round((objWeight * cloudJob['storageConsumed']) / multiplier, 1))
