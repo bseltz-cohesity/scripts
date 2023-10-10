@@ -34,11 +34,21 @@ Place both files in a folder together, then we can run the script like so:
                         -commit
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: Cohesity Cluster to connect to
-* -username: Cohesity username
-* -domain: (optional) Active Directory domain of user (defaults to local)
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -jobNames: (optional) one or more job names (comma separated), default is all jobs
 * -vault: name of external target to archive to
 * -vaultType: (optional) type of archive target (kCloud, kTape, kNas - defaults to kCloud)
@@ -46,6 +56,7 @@ Place both files in a folder together, then we can run the script like so:
 * -localOnly: (optional) archive only jobs local to this cluster
 * -fullOnly: (optional) only archive full protection runs (not incremental)
 * -commit: (optional) execute the archive tasks (default is to show what would happen)
+* -numRuns: (optional) number of runs to review per job (default is 20)
 
 ## Running and Scheduling PowerShell Scripts
 

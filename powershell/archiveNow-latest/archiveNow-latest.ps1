@@ -10,23 +10,53 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
-    [Parameter()][string]$domain = 'local', #local or AD domain
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter()][array]$jobNames, # jobs to archive
     [Parameter(Mandatory = $True)][string]$vault, #name of archive target
     [Parameter(Mandatory = $True)][int]$keepFor, #set archive retention to x days from backup date
     [Parameter()][switch]$commit,
     [Parameter()][switch]$localOnly,
     [Parameter()][ValidateSet('kCloud','kTape','kNas')][string]$vaultType = 'kCloud',
-    [Parameter()][switch]$fullOnly
+    [Parameter()][switch]$fullOnly,
+    [Parameter()][int]$numRuns = 20
 )
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
+# authentication =============================================
+# demand clusterName for Helios/MCM
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios/MCM" -ForegroundColor Yellow
+    exit 1
+}
+
 # authenticate
-apiauth -vip $vip -username $username -domain $domain
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
+        exit 1
+    }
+}
+# end authentication =========================================
 
 # get archive target info
 $vaults = api get vaults | Where-Object { $_.name -eq $vault }
@@ -39,9 +69,12 @@ $vaultId = $vaults[0].id
 
 # find specified jobs
 $cluster = api get cluster
-$jobs = api get protectionJobs
+
 if($localOnly){
-    $jobs = $jobs | Where-Object {$_.policyId.split(':')[0] -eq $cluster.id}
+    $jobs = api get "protectionJobs?isDeleted=false&isActive=true"
+    # $jobs = $jobs | Where-Object {$_.policyId.split(':')[0] -eq $cluster.id}
+}else{
+    $jobs = api get "protectionJobs?isDeleted=false"
 }
 
 if($jobNames){
@@ -50,15 +83,15 @@ if($jobNames){
 
 $finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')
 
-foreach($job in $jobs){
+foreach($job in $jobs | Sort-Object -Property name){
 
     $jobName = $job.name
     # find latest local snapshot
-    $runs = (api get "protectionRuns?jobId=$($job.id)&numRuns=999&runTypes=kRegular&runTypes=kFull&excludeTasks=true") | `
+    $runs = (api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&runTypes=kRegular&runTypes=kFull&excludeTasks=true&excludeNonRestorableRuns=true") | `
         Where-Object { $_.backupRun.snapshotsDeleted -eq $false } | `
         Where-Object { $_.backupRun.status -eq 'kSuccess' -or $_.backupRun.status -eq 'kWarning' } | `
         Where-Object {@($_.copyRun.status | Where-Object {$finishedStates -notcontains $_}).Count -eq 0} | `
-        Where-Object { 'kArchival' -notin $_.copyRun.target.type } | ` 
+        Where-Object { 'kArchival' -notin $_.copyRun.target.type } | `
         Sort-Object -Property {$_.copyRun[0].runStartTimeUsecs} -Descending
     if($fullOnly){
         $runs = $runs | Where-Object { $_.backupRun.runType -eq 'kFull' }
