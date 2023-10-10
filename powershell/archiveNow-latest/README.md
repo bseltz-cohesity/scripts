@@ -34,6 +34,16 @@ Place both files in a folder together, then we can run the script like so:
                         -commit
 ```
 
+Connecting via Helios:
+
+```powershell
+./archiveNow-latest.ps1 -clusterName mycluster `
+                        -jobNames 'NAS Backup', 'SQL Backup' `
+                        -vault s3 `
+                        -keepFor 180 `
+                        -commit
+```
+
 ## Authentication Parameters
 
 * -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
