@@ -16,7 +16,8 @@ param (
     [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'GiB',
     [Parameter()][switch]$createSnapshot,
     [Parameter()][switch]$storePassword,
-    [Parameter()][int]$stopAfter
+    [Parameter()][int]$stopAfter,
+    [Parameter()][string]$version = '1.19'
 )
 
 $conversion = @{'MiB' = (1024 * 1024); 'GiB' = (1024 * 1024 * 1024)}
@@ -36,9 +37,9 @@ if($diffTest -and !$firstSnapshot){
 
 # authenticate
 if($storePassword){
-    papiauth -endpoint $pure -username $username -password $password -storePassword
+    papiauth -endpoint $pure -username $username -password $password -version $version -storePassword
 }else{
-    papiauth -endpoint $pure -username $username -password $password
+    papiauth -endpoint $pure -username $username -password $password -version $version
 }
 
 # get volume

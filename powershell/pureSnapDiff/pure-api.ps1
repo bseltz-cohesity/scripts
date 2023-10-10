@@ -4,6 +4,7 @@
 # =====================================
 #
 #  2022.03.19 - initial release
+#  2023.10.10 - fixed exit behavior
 #
 # =====================================
 
@@ -37,7 +38,7 @@ function papiauth($endpoint, $username, $version = '1.19', $password=$null, [swi
         }else{
             Write-Host $thisError.ToString() -ForegroundColor Yellow
         }
-        exit 1
+        return None
     }
     
     $body = ConvertTo-Json @{
@@ -55,11 +56,11 @@ function papiauth($endpoint, $username, $version = '1.19', $password=$null, [swi
             Write-Host "Connected!" -ForegroundColor Green
         }else{
             Write-Host "Not Connected" -ForegroundColor Yellow
-            exit 1
+            return None
         }
     }catch{
         Write-Host "Not Connected" -ForegroundColor Yellow
-        exit 1
+        return None
     }
 
     $basic_api.base_url = "https://$($endpoint)/api/$($version)/"

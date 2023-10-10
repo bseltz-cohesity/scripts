@@ -109,6 +109,7 @@ Or you can compare two block sizes (in KiB):
 * -password: (optional) will prompt if omitted
 * -storePassword: (optional) store password for future use
 * -volumeName: name of volume to test
+* -version: (optional) pure API version (default is 1.19)
 
 ## Snapshot Selection Parameters
 
