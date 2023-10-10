@@ -38,7 +38,7 @@ function papiauth($endpoint, $username, $version = '1.19', $password=$null, [swi
         }else{
             Write-Host $thisError.ToString() -ForegroundColor Yellow
         }
-        return None
+        return $null
     }
     
     $body = ConvertTo-Json @{
@@ -56,11 +56,11 @@ function papiauth($endpoint, $username, $version = '1.19', $password=$null, [swi
             Write-Host "Connected!" -ForegroundColor Green
         }else{
             Write-Host "Not Connected" -ForegroundColor Yellow
-            return None
+            return $null
         }
     }catch{
         Write-Host "Not Connected" -ForegroundColor Yellow
-        return None
+        return $null
     }
 
     $basic_api.base_url = "https://$($endpoint)/api/$($version)/"
