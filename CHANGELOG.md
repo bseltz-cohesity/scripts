@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-10-10
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storagePerObjectReport> [`Update`] use cached data
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport> [`Update`] use cached data
+
 ## 2023-10-09
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity> [`Update`] set last error on cluster not connected to helios
