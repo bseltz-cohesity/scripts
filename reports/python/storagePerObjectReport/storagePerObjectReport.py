@@ -160,13 +160,6 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
             if debug is True:
                 print('    getting protection runs')
             runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&endTimeUsecs=%s&includeTenants=true&includeObjectDetails=true&excludeNonRestorableRuns=true&useCachedData=true' % (job['id'], numruns, endUsecs), v=2)
-            if len(runs['runs']) > 0:
-                if 'localBackupInfo' in runs['runs'][-1]:
-                    endUsecs = runs['runs'][-1]['localBackupInfo']['startTimeUsecs'] - 1
-                else:
-                    endUsecs = runs['runs'][-1]['originalBackupInfo']['startTimeUsecs'] - 1
-            else:
-                break
             for run in runs['runs']:
                 if 'isLocalSnapshotsDeleted' not in run:
                     # per object stats
@@ -212,6 +205,11 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                                 pass
             if len(runs['runs']) < numruns:
                 break
+            else:
+                if 'localBackupInfo' in runs['runs'][-1]:
+                    endUsecs = runs['runs'][-1]['localBackupInfo']['startTimeUsecs'] - 1
+                else:
+                    endUsecs = runs['runs'][-1]['originalBackupInfo']['startTimeUsecs'] - 1
 
         # process output
         jobFESize = 0

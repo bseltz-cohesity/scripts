@@ -11,10 +11,11 @@ param (
     [Parameter()][switch]$mcm,
     [Parameter()][string]$mfaCode = $null,
     [Parameter()][string]$clusterName = $null,
-    [Parameter()][int]$numRuns = 1000,
+    [Parameter()][int]$numRuns = 100,
     [Parameter()][int]$growthDays = 7,
     [Parameter()][switch]$skipDeleted,
-    [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'GiB'
+    [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'GiB',
+    [Parameter()][switch]$dbg
 )
 
 $conversion = @{'Kib' = 1024; 'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
@@ -69,9 +70,9 @@ if($vaults){
 """Job Name"",""Tenant"",""Environment"",""Source Name"",""Object Name"",""Logical $unit"",""$unit Written"",""$unit Written plus Resiliency"",""Job Reduction Ratio"",""$unit Written Last $growthDays Days"",""$unit Archived"",""$unit per Archive Target""" | Out-File -FilePath $outfileName
 
 if($skipDeleted){
-    $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&includeTenants=true"
+    $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&includeTenants=true&useCachedData=true"
 }else{
-    $jobs = api get -v2 "data-protect/protection-groups?includeTenants=true"
+    $jobs = api get -v2 "data-protect/protection-groups?includeTenants=true&useCachedData=true"
 }
 
 $storageDomains = api get viewBoxes
@@ -147,7 +148,10 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         # runs
         $endUsecs = $nowUsecs
         while($True){
-            $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&excludeNonRestorableRuns=true"
+            if($dbg){
+                Write-Host "    getting runs"
+            }
+            $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&excludeNonRestorableRuns=true&useCachedData=true"
             foreach($run in $runs.runs | Where-Object isLocalSnapshotsDeleted -ne $True){
                 foreach($object in $run.objects | Where-Object {$_.object.environment -ne $job.environment}){
                     $sourceNames["$($object.object.id)"] = $object.object.name
@@ -169,7 +173,10 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                             $objects[$objId]['sourceId'] = $object.object.sourceId
                         }
                         if(! $snap.snapshotInfo.stats.PSObject.Properties['logicalSizeBytes']){
-                            $csource = api get protectionSources?id=$objId -quiet
+                            if($dbg){
+                                Write-Host "    getting source"
+                            }
+                            $csource = api get "protectionSources?id=$objId&useCachedData=true" -quiet
                             if( $csource.protectedSourcesSummary.Count -gt 0){
                                 $objects[$objId]['logical'] = $csource.protectedSourcesSummary[0].totalLogicalSize
                             }else{
@@ -192,7 +199,11 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                 }
             }
             if($runs.runs.Count -eq $numRuns){
-                $endUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs - 1
+                if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
+                    $endUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs - 1
+                }else{
+                    $endUsecs = $runs.runs[-1].originalBackupInfo.endTimeUsecs - 1
+                }
             }else{
                 break
             }
@@ -228,7 +239,10 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                 if("$($thisObject['sourceId'])" -in $sourceNames.Keys){
                     $sourceName = $sourceNames["$($thisObject['sourceId'])"]
                 }else{
-                    $source = api get "protectionSources?id=$($thisObject['sourceId'])&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag"
+                    if($dbg){
+                        Write-Host "    getting source (2)"
+                    }
+                    $source = api get "protectionSources?id=$($thisObject['sourceId'])&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true"
                     if($source -and $source.PSObject.Properties['protectionSource']){
                         $sourceName = $source.protectionSource.name
                         $sourceNames["$($thisObject['sourceId'])"] = $sourceName
