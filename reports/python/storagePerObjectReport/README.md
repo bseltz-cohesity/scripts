@@ -49,3 +49,4 @@ Place both files in a folder together and run the main script like so:
 * -x, --unit: (optional) KiB, MiB, GiB, or TiB] (default is GiB)
 * -n, --numruns: (optional) number of runs per API query (default is 500)
 * -s, --skipdeleted: (optional) skip deleted protection groups
+* -debug, --debug: (optional) print verbose output
