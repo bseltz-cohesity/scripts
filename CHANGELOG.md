@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-10-11
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/archiveVersionReport> [`New`] reports on the cloud archive version (v1 or v2) in use per protection group
+
 ## 2023-10-10
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/pureSnapDiff> [`Update`] added -version option to support older API versions
