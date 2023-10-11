@@ -3,10 +3,10 @@
 ## 2023-10-11
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/archiveVersionReport> [`New`] reports on the cloud archive version (v1 or v2) in use per protection group
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/pureSnapDiff> [`Update`] auto-detect Pure API version
 
 ## 2023-10-10
 
-* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/pureSnapDiff> [`Update`] added -version option to support older API versions
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/deployWindowsAgentSimple> [`New`] remotely install Cohesity windows agent and set the service account
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/archiveNow-latest> [`Update`] modernized authentication
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storagePerObjectReport> [`Update`] use cached data
