@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.10.09 - Brian Seltzer
+#  Version 2023.10.11 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2023.02.10 - added -region to api function (for DMaaS)
@@ -17,10 +17,11 @@
 # 2023.09.24 - web session authentication, added support for password reset. email MFA
 # 2023.10.03 - fix cosmetic error 'An item with the same key has already been added. Key: content-type'
 # 2023.10.09 - clarify password / API key prompts
+# 2023.10.11 - removed demand minimim powershell version, to support Start-Job
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2023.10.09'
+$versionCohesityAPI = '2023.10.11'
 
 # state cache
 $cohesity_api = @{
@@ -43,7 +44,7 @@ $cohesity_api = @{
 }
 
 # demand modern powershell version (must support TLSv1.2)
-$thisPSVersion = "$($Host.Version.Major).$($Host.Version.Minor)"
+# $thisPSVersion = "$($Host.Version.Major).$($Host.Version.Minor)"
 
 $pwfile = $(Join-Path -Path $PSScriptRoot -ChildPath YWRtaW4)
 $apilogfile = $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api-debug.log)
@@ -162,10 +163,10 @@ function apiauth($vip='helios.cohesity.com',
                  [Int]$timeout = 300){
 
     apidrop -quiet
-    if($thisPSVersion -lt '5.1'){
-        Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
-        return $null
-    }            
+    # if($thisPSVersion -lt '5.1'){
+    #     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
+    #     return $null
+    # }            
     if($apiKeyAuthentication -eq $True){
         $useApiKey = $True
     }
