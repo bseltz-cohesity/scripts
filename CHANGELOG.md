@@ -2,6 +2,7 @@
 
 ## 2023-10-11
 
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api> [`Update`] removed demand minimim powershell version, to support Start-Job
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/expungeDataSpillage> [`Update`] no longer connects to replica clusters, run script independently on separate clusters
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/archiveVersionReport> [`New`] reports on the cloud archive version (v1 or v2) in use per protection group
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/pureSnapDiff> [`Update`] auto-detect Pure API version
