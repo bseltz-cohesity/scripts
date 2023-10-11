@@ -50,7 +50,6 @@ if ($delete) {
 $archiveType = @{'0' = "kCloud"; '1' = "kTape" }
 
 $clusters = @()
-$contexts = @{}
 $instanceList = @()
 $instanceNum = 1
 $clusterNames = @{}
@@ -68,27 +67,8 @@ apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyA
 
 $localCluster = api get cluster
 $localClusterId = $localCluster.id
-$localClusterContext = getContext
-
-$contexts["$($localCluster.name)"] = $localClusterContext
-
 $clusters += $localCluster.name
 $clusterNames[[string]$localClusterId] = $localCluster.name
-
-$remotes = api get remoteClusters
-foreach ($remote in $remotes){
-    $remoteIP = $remote.remoteIps[0]
-    log "Connecting to remote cluster $($remote.name)..."
-    apiauth -vip $remoteIP -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey
-    $cluster = api get cluster
-    $clusters += $cluster.name
-    $clusterId = $cluster.id
-    $clusterNames[[string]$clusterId] = $cluster.name
-    $clusterContext = getContext
-    $contexts["$($cluster.name)"] = $clusterContext
-}
-
-setContext $localClusterContext
 
 # search for files
 $fileSearch = $search
@@ -109,33 +89,23 @@ if($highestId -ge 0){
             $policyId = $job.policyId
             $policyClusterId = $policyId.split(':')[0]
             $objectName = $restoreFile.fileDocument.objectId.entity.displayName
-            write-host $objectName
+
             $objectId = $restoreFile.fileDocument.objectId.entity.id
             $affectedObjects["$jobName`:$objectName"] = 'retained'
-            if($policyClusterId -eq $localClusterId){
-                $instance = $instanceList | Where-Object { $_.objectName -eq $objectName -and $_.jobName -eq $jobName -and $_.fileName -eq $restoreFile.fileDocument.filename}
-                if(! $instance){
-                    $instance = @{
-                        'objectName' = $objectName;
-                        'jobName' = $jobName;
-                        'fileName' = $restoreFile.fileDocument.filename
-                        'objectId' = $objectId;
-                        'jobId' = $job.id
-                        'instanceNum' = $instanceNum
-                        'jobUid' = $job.uid
-                    }
-                    $instanceNum++
-                    $instanceList += $instance
+
+            $instance = $instanceList | Where-Object { $_.objectName -eq $objectName -and $_.jobName -eq $jobName -and $_.fileName -eq $restoreFile.fileDocument.filename}
+            if(! $instance){
+                $instance = @{
+                    'objectName' = $objectName;
+                    'jobName' = $jobName;
+                    'fileName' = $restoreFile.fileDocument.filename
+                    'objectId' = $objectId;
+                    'jobId' = $job.id
+                    'instanceNum' = $instanceNum
+                    'jobUid' = $job.uid
                 }
-            }else{
-                if([string]$policyClusterId -in $clusterNames.Keys){
-                    $foreignCluster = $clusterNames[[string]$policyClusterId]
-                }else{
-                    $foreignCluster = $policyClusterId
-                }
-                if ($foreignCluster -in $foreignDetections -eq $false){
-                    $foreignDetections += $foreignCluster
-                }
+                $instanceNum++
+                $instanceList += $instance
             }
         }
     }
@@ -150,7 +120,6 @@ function deleteInstance($instance){
     foreach($cluster in $clusters){
 
         $clusterName = $cluster
-        setContext $contexts["$($clusterName)"]
         $jobs = api get protectionJobs
         $restoreFiles = api get "/searchfiles?filename=$($instance.fileName)"
         foreach ($restoreFile in $restoreFiles.files){
@@ -166,54 +135,52 @@ function deleteInstance($instance){
                 $job = $jobs | Where-Object { $_.id -eq $restoreFile.fileDocument.objectId.jobId }
                 $policyId = $job.policyId
                 $policyClusterId = $policyId.split(':')[0]
-                if($policyClusterId -eq $localClusterId){
-                    if(! $runcache.ContainsKey("$clusterId-$jobId")){
-                        $runs = api get "protectionRuns?jobId=$jobId&numRuns=999999&excludeNonRestoreableRuns=true&excludeTasks=true"
-                        $runcache["$clusterId-$jobId"] = $runs
-                    }else{
-                        $runs = $runcache["$clusterId-$jobId"]
-                    }
-                    $versions = api get "/file/versions?clusterId=$clusterId&clusterIncarnationId=$clusterIncarnationId&entityId=$entityId&filename=$encodedFileName&fromObjectSnapshotsOnly=false&jobId=$origJobId"
+                if(! $runcache.ContainsKey("$clusterId-$jobId")){
+                    $runs = api get "protectionRuns?jobId=$jobId&numRuns=999999&excludeNonRestoreableRuns=true&excludeTasks=true"
+                    $runcache["$clusterId-$jobId"] = $runs
+                }else{
+                    $runs = $runcache["$clusterId-$jobId"]
+                }
+                $versions = api get "/file/versions?clusterId=$clusterId&clusterIncarnationId=$clusterIncarnationId&entityId=$entityId&filename=$encodedFileName&fromObjectSnapshotsOnly=false&jobId=$origJobId"
 
-                    foreach ($version in $versions.versions) {
-                        $exactRun = $runs | Where-Object {$_.backupRun.jobRunId -eq $version.instanceId.jobInstanceId }
-                        foreach($replica in $version.replicaInfo.replicaVec){
-                            $updateProtectionJobRunsParam = @{
-                                'jobRuns' = @(
-                                    @{
-                                        'copyRunTargets'    = @();
-                                        'runStartTimeUsecs' = $exactRun.backupRun.stats.startTimeUsecs;
-                                        'jobUid'            = $instance.jobUid
+                foreach ($version in $versions.versions) {
+                    $exactRun = $runs | Where-Object {$_.backupRun.jobRunId -eq $version.instanceId.jobInstanceId }
+                    foreach($replica in $version.replicaInfo.replicaVec){
+                        $updateProtectionJobRunsParam = @{
+                            'jobRuns' = @(
+                                @{
+                                    'copyRunTargets'    = @();
+                                    'runStartTimeUsecs' = $exactRun.backupRun.stats.startTimeUsecs;
+                                    'jobUid'            = $instance.jobUid
+                                }
+                            )
+                        }
+                        if($replica.expiryTimeUsecs -ne 0 -and $replica.expiryTimeUsecs -gt (dateToUsecs (get-date))){
+                            if ($replica.target.type -ne 2) {
+                                if($replica.target.type -eq 1) {
+                                    log "  $clusterName ($(usecsToDate $exactRun.backupRun.stats.startTimeUsecs))"
+                                    $updateProtectionJobRunsParam.jobRuns[0].copyRunTargets += @{
+                                        'daysToKeep' = 0;
+                                        'type'       = 'kLocal'
                                     }
-                                )
-                            }
-                            if($replica.expiryTimeUsecs -ne 0 -and $replica.expiryTimeUsecs -gt (dateToUsecs (get-date))){
-                                if ($replica.target.type -ne 2) {
-                                    if($replica.target.type -eq 1) {
-                                        log "  $clusterName ($(usecsToDate $exactRun.backupRun.stats.startTimeUsecs))"
-                                        $updateProtectionJobRunsParam.jobRuns[0].copyRunTargets += @{
-                                            'daysToKeep' = 0;
-                                            'type'       = 'kLocal'
-                                        }
-                                        $updateProtectionJobRunsParam.jobRuns[0].sourceIds = @($entityId)
-                                    }
-                                    if($replica.target.type -eq 3) {
-                                        log "  $($replica.target.archivalTarget.name) ($(usecsToDate $exactRun.backupRun.stats.startTimeUsecs))"
-                                        $updateProtectionJobRunsParam.jobRuns[0].copyRunTargets += @{
-                                            'daysToKeep' = 0;
-                                            'type' = 'kArchival';
-                                            'archivalTarget' = @{
-                                                'vaultName' = $replica.target.archivalTarget.name;
-                                                'vaultId'= $replica.target.archivalTarget.vaultId;
-                                                'vaultType' = $archiveType[[string]$replica.target.archivalTarget.type]
-                                            }
+                                    $updateProtectionJobRunsParam.jobRuns[0].sourceIds = @($entityId)
+                                }
+                                if($replica.target.type -eq 3) {
+                                    log "  $($replica.target.archivalTarget.name) ($(usecsToDate $exactRun.backupRun.stats.startTimeUsecs))"
+                                    $updateProtectionJobRunsParam.jobRuns[0].copyRunTargets += @{
+                                        'daysToKeep' = 0;
+                                        'type' = 'kArchival';
+                                        'archivalTarget' = @{
+                                            'vaultName' = $replica.target.archivalTarget.name;
+                                            'vaultId'= $replica.target.archivalTarget.vaultId;
+                                            'vaultType' = $archiveType[[string]$replica.target.archivalTarget.type]
                                         }
                                     }
-                                    if ($updateProtectionJobRunsParam.jobRuns[0].copyRunTargets.count -gt 0){
-                                        $deletions++
-                                        if($delete){
-                                            $null = api put "protectionRuns" $updateProtectionJobRunsParam
-                                        }
+                                }
+                                if ($updateProtectionJobRunsParam.jobRuns[0].copyRunTargets.count -gt 0){
+                                    $deletions++
+                                    if($delete){
+                                        $null = api put "protectionRuns" $updateProtectionJobRunsParam
                                     }
                                 }
                             }
@@ -314,18 +281,6 @@ foreach($affectedObject in ($affectedObjects.Keys | Sort-Object)){
         }
     }
     log ("($processed) $jobName`:$objectName")
-}
-
-# report non-originating backups
-if($foreignDetections.count -gt 0){
-    log ("`n* Notice! ***************************************************`n*")
-    log ("* Additional Instances of {0} detected" -f $search)
-    log "* in backups originating from the following clusters"
-    log "* Please re-run the script on these clusters:`n*"
-    foreach ($clusterName in $foreignDetections){
-        log "* $clusterName"
-    }
-    log "*`n*************************************************************"
 }
 
 "`nNote: Deleted objects may still be returned in search results until the index has been purged"
