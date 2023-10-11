@@ -9,7 +9,29 @@
 # =====================================
 
 # token authentication function =================================================================================
-function papiauth($endpoint, $username, $version = '1.19', $password=$null, [switch]$storePassword){
+function papiauth($endpoint, $username, $version, $password=$null, [switch]$storePassword){
+    # check available versions
+    if(! $version){
+        $url = "https://$($endpoint)/api/api_version"
+        try{
+            if($PSVersionTable.PSEdition -eq 'Core'){
+                $api_versions = Invoke-RestMethod -Method Get -Uri $url -header $basic_api.headers -SkipCertificateCheck -TimeoutSec 300
+            }else{
+                $api_versions = Invoke-RestMethod -Method Get -Uri $url -header $basic_api.headers -TimeoutSec 300
+            }
+            $version = ($api_versions.version | Where-Object {$_ -lt 2})[-1]
+        }catch{
+            $thisError = $_
+            if($thisError.ToString().contains('"msg":')){
+                $msg = (ConvertFrom-Json $thisError.ToString()).msg
+                Write-Host $msg -ForegroundColor Yellow
+            }else{
+                Write-Host $thisError.ToString() -ForegroundColor Yellow
+            }
+            return $null
+        }
+    }
+
     if(!$password){
         $password = pGet-APIPassword -endpoint $endpoint -username $username
         if(!$password){
@@ -19,6 +41,7 @@ function papiauth($endpoint, $username, $version = '1.19', $password=$null, [swi
         $password = pSet-APIPassword -endpoint $endpoint -username $username -passwd $password -storePassword $storePassword
     }
 
+    # get an auth token
     $body = ConvertTo-Json @{
         'password' = $password;
         'username' = $username
@@ -41,6 +64,7 @@ function papiauth($endpoint, $username, $version = '1.19', $password=$null, [swi
         return $null
     }
     
+    # get a session
     $body = ConvertTo-Json @{
         'api_token' = $auth.api_token
     }

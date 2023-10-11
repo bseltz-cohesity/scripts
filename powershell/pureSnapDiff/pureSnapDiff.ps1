@@ -17,7 +17,7 @@ param (
     [Parameter()][switch]$createSnapshot,
     [Parameter()][switch]$storePassword,
     [Parameter()][int]$stopAfter,
-    [Parameter()][string]$version = '1.19'
+    [Parameter()][string]$version
 )
 
 $conversion = @{'MiB' = (1024 * 1024); 'GiB' = (1024 * 1024 * 1024)}
