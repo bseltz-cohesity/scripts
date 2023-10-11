@@ -47,7 +47,7 @@ $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "archiveVersions-$($cluster.name)-$dateString.csv"
 
 # headings
-"Job Name,Policy,Targets,Archive Version" | Out-File -FilePath $outfileName -Encoding utf8
+"Job Name,Policy,Targets,Archive Versions" | Out-File -FilePath $outfileName -Encoding utf8
 
 $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true"
 $policies = api get -v2 "data-protect/policies"
@@ -56,26 +56,19 @@ $vaults = api get vaults
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     Write-Host $job.name
     $policy = $policies.policies | Where-Object id -eq $job.policyId
-    $caVersion = ''
+    $caVersions = @()
     $targets = @()
     foreach($archiveTarget in $policy.remoteTargetPolicy.archivalTargets){
         $vault = $vaults | Where-Object id -eq $archiveTarget.targetId
-        $targets = @($targets + $vault.name | Sort-Object -Unique)
         if($vault.isForeverIncrementalArchiveEnabled -eq $True){
-            if($caVersion -in @('', 'v2')){
-                $caVersion = 'v2'
-            }else{
-                $caVersion = 'mixed'
-            }
+            $targets = @($targets + "$($vault.name)(v2)" | Sort-Object -Unique)
+            $caVersions = @($caVersions + 'v2' | Sort-Object -Unique)
         }else{
-            if($caVersion -in @('', 'v1')){
-                $caVersion = 'v1'
-            }else{
-                $caVersion = 'mixed'
-            }
+            $targets = @($targets + "$($vault.name)(v1)" | Sort-Object -Unique)
+            $caVersions = @($caVersions + 'v1' | Sort-Object -Unique)
         }
     }
-    "{0},{1},{2},{3}" -f $job.name, $policy.name, $($targets -join ' '), $caVersion | Out-File -FilePath $outfileName -Append
+    "{0},{1},{2},{3}" -f $job.name, $policy.name, $($targets -join ' '), $($caVersions -join ' ') | Out-File -FilePath $outfileName -Append
 }
 
 "`nOutput saved to $outfilename`n"
