@@ -4,7 +4,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 ## Warning! This script deletes backup data! Make sure you know what you are doing before you run it
 
-This powershell script searches for a file, and displays the ProtectionJobs/Objects where the file is stored. You can then select a ProtectionJob/Object and the script will delete all versions of the ProtectionJob/Object where that file exists. The deletion will include the local snapshots plus any remote replicas and archives.
+This powershell script searches for a file, and displays the ProtectionJobs/Objects where the file is stored. You can then select a ProtectionJob/Object and the script will delete all versions of the ProtectionJob/Object where that file exists. The deletion will include the local snapshots plus any archives. Replicas can deleted by running the script against the replica cluster.
 
 If you run the script without the -delete switch, the script will only display what it would delete. Use the -delete switch to actually perform the deletions.
 
