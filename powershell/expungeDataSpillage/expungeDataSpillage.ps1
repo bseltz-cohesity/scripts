@@ -285,6 +285,8 @@ foreach($affectedObject in ($affectedObjects.Keys | Sort-Object)){
 
 "`nNote: Deleted objects may still be returned in search results until the index has been purged"
 
+"`nWarning: please run the script against any other clusters where the spillage may have replicated to"
+
 # close log
 log "`n- Ended at $(get-date) -------`n`n"
 $global:logItem | Out-File $logfile -Append
