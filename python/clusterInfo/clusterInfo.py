@@ -115,7 +115,10 @@ if version >= '6.4':
             nodeInfo = api('get', '/nexus/node/hardware_info')
             output('\n            Node ID: %s' % node['id'])
             output('            Node IP: %s' % node['ip'].split(':')[-1])
-            output('            IPMI IP: %s' % nodeipmi[0].get('nodeIpmiIp', 'n/a'))
+            if len(nodeipmi) > 0:
+                output('            IPMI IP: %s' % nodeipmi[0].get('nodeIpmiIp', 'n/a'))
+            else:
+                output('            IPMI IP: n/a')
             output('            Slot No: %s' % node.get('slotNumber', 0))
             output('          Serial No: %s' % nodeInfo.get('cohesityNodeSerial', 'VirtualEdition'))
             output('      Product Model: %s' % nodeInfo['productModel'])
