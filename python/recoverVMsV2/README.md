@@ -80,7 +80,7 @@ To restore a VM to a new location:
 
 ## Other Parameters
 
-* -vm, --vmname: Name of VM to recover (repeast for multiple)
+* -vm, --vmname: Name of VM to recover (repeat for multiple)
 * -vl, --vmlist: text file of VM names to recover (one per line)
 * -vc, --vcentername: (optional) name of vcenter to restore to
 * -tn, --taskname: (optional) name of recovery task
