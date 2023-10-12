@@ -25,7 +25,7 @@ $dateString = $now.ToString('yyyy-MM-dd')
 $outfileName = "chargebackReport-$dateString.tsv"
 
 # headings
-$headings = "Object Name`tSource Name`tGroup Name`tPolicy Name`tObject Type`tSystem Name`tLogical GiB`tCost`tOrganization Name"
+$headings = "Object Name`tSource Name`tGroup Name`tPolicy Name`tObject Type`tSystem Name`tLogical GiB`tCost`tOrganization Name`tDescription"
 
 $headings | Out-File -FilePath $outfileName
 
@@ -122,7 +122,7 @@ foreach($v in $vip){
                                     $keyName = "{0}{1}" -f $objectName, $registeredSourceName
                                     if(! $seen[$keyName]){
                                         $cost = "{0:C}" -f ($costPerGiB * $objectLogicalSizeBytes)
-                                        $objectName, $registeredSourceName, $job.name, $policyName, $environment, $cluster.name, $objectLogicalSizeBytes, $cost, $tenant -join "`t" | Out-File -FilePath $outfileName -Append
+                                        $objectName, $registeredSourceName, $job.name, $policyName, $environment, $cluster.name, $objectLogicalSizeBytes, $cost, $tenant, $job.description -join "`t" | Out-File -FilePath $outfileName -Append
                                         $seen[$keyName] = 1
                                     }
                                 }

@@ -67,7 +67,7 @@ if($vaults){
 }
 
 # headings
-"""Job Name"",""Tenant"",""Environment"",""Source Name"",""Object Name"",""Logical $unit"",""$unit Written"",""$unit Written plus Resiliency"",""Job Reduction Ratio"",""$unit Written Last $growthDays Days"",""$unit Archived"",""$unit per Archive Target""" | Out-File -FilePath $outfileName
+"""Job Name"",""Tenant"",""Environment"",""Source Name"",""Object Name"",""Logical $unit"",""$unit Written"",""$unit Written plus Resiliency"",""Job Reduction Ratio"",""$unit Written Last $growthDays Days"",""$unit Archived"",""$unit per Archive Target"",""Description""" | Out-File -FilePath $outfileName
 
 if($skipDeleted){
     $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&includeTenants=true&useCachedData=true"
@@ -266,7 +266,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                     }
                 }
             }
-            """$($job.name)"",""$tenant"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$objFESize"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$(toUnits $totalArchived)"",""$vaultStats""" | Out-File -FilePath $outfileName -Append
+            """$($job.name)"",""$tenant"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$objFESize"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)""" | Out-File -FilePath $outfileName -Append
         }
     }
 }
@@ -339,7 +339,7 @@ foreach($view in $views.views){
             }
         }
     }
-    """$($jobName)"",""$($view.tenantId -replace “.$”)"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$(toUnits $totalArchived)"",""$vaultStats""" | Out-File -FilePath $outfileName -Append
+    """$($jobName)"",""$($view.tenantId -replace “.$”)"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($view.description)""" | Out-File -FilePath $outfileName -Append
 }
 
 "`nOutput saved to $outfilename`n"
