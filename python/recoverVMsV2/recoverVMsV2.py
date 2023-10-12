@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""Recover VM for python"""
-
-### usage: ./recoverVMjob.py -v mycluster -u admin -j 'VM Backup' -vc vcenter.mydomain.net -vh esxhost1.mydomain.net -ds datastore1 -n 'VM Network' -s recover -f myfolder
+"""Recover VMs for python"""
 
 ### import pyhesity wrapper module
 from pyhesity import *
@@ -10,10 +8,17 @@ from datetime import datetime
 ### command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)
-parser.add_argument('-u', '--username', type=str, required=True)
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
-parser.add_argument('-vm', '--vmname', type=str, required=True)
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-mfa', '--mfacode', type=str, default=None)
+parser.add_argument('-vm', '--vmname', action='append', type=str, default=None)
+parser.add_argument('-vl', '--vmlist', type=str, default=None)
 parser.add_argument('-vc', '--vcentername', type=str, default=None)
 parser.add_argument('-dc', '--datacentername', type=str, default=None)
 parser.add_argument('-vh', '--vhost', type=str, default=None)
@@ -27,13 +32,21 @@ parser.add_argument('-m', '--preservemacaddress', action='store_true')
 parser.add_argument('-t', '--recoverytype', type=str, choices=['InstantRecovery', 'CopyRecovery'], default='InstantRecovery')
 parser.add_argument('-l', '--listrecoverypoints', action='store_true')
 parser.add_argument('-r', '--recoverypoint', type=str, default=None)
+parser.add_argument('-tn', '--taskname', type=str, default=None)
 
 args = parser.parse_args()
 
 vip = args.vip
 username = args.username
 domain = args.domain
-vmname = args.vmname
+clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
+vmnames = args.vmname
+vmlist = args.vmlist
 vcentername = args.vcentername
 datacentername = args.datacentername
 vhost = args.vhost
@@ -47,6 +60,7 @@ preservemacaddress = args.preservemacaddress
 recoverytype = args.recoverytype
 listrecoverypoints = args.listrecoverypoints
 recoverypoint = args.recoverypoint
+taskname = args.taskname
 
 if vcentername is not None:
     if datacentername is None:
@@ -62,6 +76,25 @@ if vcentername is not None:
         print('networkname is required')
         exit()
 
+
+# gather list function
+def gatherList(param=None, filename=None, name='items', required=True):
+    items = []
+    if param is not None:
+        for item in param:
+            items.append(item)
+    if filename is not None:
+        f = open(filename, 'r')
+        items += [s.strip() for s in f.readlines() if s.strip() != '']
+        f.close()
+    if required is True and len(items) == 0:
+        print('no %s specified' % name)
+        exit()
+    return items
+
+
+vmnames = gatherList(vmnames, vmlist, name='VMs', required=True)
+
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 if recoverypoint is not None:
@@ -69,51 +102,30 @@ if recoverypoint is not None:
 else:
     recoverypointUsecs = nowUsecs
 
-### authenticate
-apiauth(vip, username, domain)
+# authenticate
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode)
 
-### find the VM to recover
-vms = api('get', 'data-protect/search/protected-objects?snapshotActions=RecoverVMs,RecoverVApps,RecoverVAppTemplates&searchString=%s&environments=kVMware' % vmname, v=2)
-vms = [vm for vm in vms['objects'] if vm['name'].lower() == vmname.lower()]
-if len(vms) == 0:
-    print('vm %s not found' % vmname)
-    exit()
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    if clustername is not None:
+        heliosCluster(clustername)
+    else:
+        print('-clustername is required when connecting to Helios or MCM')
+        exit()
 
-### select a snapshot
-selectedsnapshot = None
-for vm in vms:
-    snapshots = api('get', 'data-protect/objects/%s/snapshots' % vm['id'], v=2)
-    for snapshot in sorted(snapshots['snapshots'], key=lambda s: s['runStartTimeUsecs'], reverse=True):
-        runDate = usecsToDate(snapshot['runStartTimeUsecs'])
-        if listrecoverypoints:
-            print(runDate)
-        else:
-            if recoverypoint is not None:
-                if runDate == recoverypoint:
-                    selectedsnapshot = snapshot
-                    break
-            else:
-                selectedsnapshot = snapshot
-                break
+# exit if not authenticated
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
 
-if listrecoverypoints:
-    exit()
-
-if selectedsnapshot is None:
-    print('No recovery point found for %s' % usecsToDate(recoverypointUsecs))
-    exit()
-
-restoreTaskName = "Recover-VM_%s" % now.strftime("%Y-%m-%d_%H-%M-%S")
+if taskname is None:
+    taskname = "Recover-VM_%s" % now.strftime("%Y-%m-%d_%H-%M-%S")
 
 restoreParams = {
-    "name": restoreTaskName,
+    "name": taskname,
     "snapshotEnvironment": "kVMware",
     "vmwareParams": {
-        "objects": [
-            {
-                "snapshotId": selectedsnapshot['id']
-            }
-        ],
+        "objects": [],
         "recoveryAction": "RecoverVMs",
         "recoverVmParams": {
             "targetEnvironment": "kVMware",
@@ -129,6 +141,41 @@ restoreParams = {
         }
     }
 }
+
+for vmname in vmnames:
+    ### find the VM to recover
+    vms = api('get', 'data-protect/search/protected-objects?snapshotActions=RecoverVMs,RecoverVApps,RecoverVAppTemplates&searchString=%s&environments=kVMware' % vmname, v=2)
+    vms = [vm for vm in vms['objects'] if vm['name'].lower() == vmname.lower()]
+    if len(vms) == 0:
+        print('vm %s not found' % vmname)
+        exit()
+
+    ### select a snapshot
+    selectedsnapshot = None
+    for vm in vms:
+        snapshots = api('get', 'data-protect/objects/%s/snapshots' % vm['id'], v=2)
+        for snapshot in sorted(snapshots['snapshots'], key=lambda s: s['runStartTimeUsecs'], reverse=True):
+            runDate = usecsToDate(snapshot['runStartTimeUsecs'])
+            if listrecoverypoints:
+                print(runDate)
+            else:
+                if recoverypoint is not None:
+                    if runDate == recoverypoint:
+                        selectedsnapshot = snapshot
+                        break
+                else:
+                    selectedsnapshot = snapshot
+                    restoreParams['vmwareParams']['objects'].append({
+                        "snapshotId": selectedsnapshot['id']
+                    })
+                    break
+
+    if listrecoverypoints:
+        exit()
+
+    if selectedsnapshot is None:
+        print('No recovery point found for %s at %s' % (vmname, usecsToDate(recoverypointUsecs)))
+        exit()
 
 if vcentername:
     # select vCenter
@@ -236,8 +283,7 @@ if prefix != '':
     restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['renameRecoveredVmsParams'] = {
         'prefix': prefix,
     }
-    print('Recovering %s as %s%s...' % (vmname, prefix, vmname))
-else:
-    print('Recovering %s...' % vmname)
+
+print('Recovering VMs')
 
 result = api('post', 'data-protect/recoveries', restoreParams, v=2)
