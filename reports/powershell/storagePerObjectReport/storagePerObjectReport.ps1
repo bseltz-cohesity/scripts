@@ -53,7 +53,9 @@ try{
 }
 
 $dateString = (get-date).ToString('yyyy-MM-dd')
+$monthString = (get-date).ToString('yyyy-MM')
 $outfileName = "storagePerObjectReport-$($cluster.name)-$dateString.csv"
+$outfile2 = "storagePerObjectReport-format2-$($cluster.name)-$dateString.csv"
 
 $vaults = api get vaults
 if($vaults){
@@ -68,6 +70,7 @@ if($vaults){
 
 # headings
 """Job Name"",""Tenant"",""Environment"",""Source Name"",""Object Name"",""Logical $unit"",""$unit Written"",""$unit Written plus Resiliency"",""Job Reduction Ratio"",""$unit Written Last $growthDays Days"",""$unit Archived"",""$unit per Archive Target"",""Description""" | Out-File -FilePath $outfileName
+"""Month"",""Object Name"",""Description"",""$unit Archived""" | Out-File -FilePath $outfile2
 
 if($skipDeleted){
     $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&includeTenants=true&useCachedData=true"
@@ -266,7 +269,12 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                     }
                 }
             }
+            $fqObjectName = $thisObject['name']
+            if($thisObject['name'] -ne $sourceName){
+                $fqObjectName = "$($sourceName)/$($thisObject['name'])" -replace '//', '/'
+            }
             """$($job.name)"",""$tenant"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$objFESize"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)""" | Out-File -FilePath $outfileName -Append
+            """$monthString"",""$fqObjectName"",""$($job.description)"",""$(toUnits $objWrittenWithResiliency)""" | Out-File -FilePath $outfile2 -Append
         }
     }
 }
@@ -340,6 +348,8 @@ foreach($view in $views.views){
         }
     }
     """$($jobName)"",""$($view.tenantId -replace “.$”)"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($view.description)""" | Out-File -FilePath $outfileName -Append
+    """$monthString"",""$viewName"",""$($view.description)"",""$(toUnits $consumption)""" | Out-File -FilePath $outfile2 -Append
 }
 
-"`nOutput saved to $outfilename`n"
+"`nOutput saved to $outfilename"
+"Alternate format saved to $outfile2`n"
