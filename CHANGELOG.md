@@ -5,7 +5,7 @@
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/recoverVMsV2> [`New`] restore multiple VMware VMs using python
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/recoverVMsV2> [`Update`] added -taskName parameter
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/myBackupStatus> [`New`] get my current backup status
-* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport> [`Update`] added description field
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport> [`Update`] added description field and 2nd output format (custom requested format)
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/chargebackReportV2> [`Update`] added description field
 * <https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/viewStorageReport> [`New`] view storage report
 
