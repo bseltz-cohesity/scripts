@@ -106,6 +106,7 @@ foreach($chassis in $chassisList | Sort-Object -Property id){
             $nodeIpmiIp = ''
         }
         # node info
+        copySessionCookie $node.ip
         $cohesity_api.apiRoot = "https://$($nodeIp)/irisservices/api/v1"
         $nodeInfo = api get /nexus/node/hardware_info
         $nwInfo = api get /nexus/node/list_network_interfaces?cache=true
