@@ -1,8 +1,8 @@
-# Generate Estimated Storage Per Object Report using Python
+# Generate View Storage Report using Python
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This python script creates a report of estimated storage consumption per object. Note that this report performs estimation so is not expected to be completely accurate.
+This python script creates a view storage report.
 
 ## Download the script
 
@@ -10,22 +10,22 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/python/storagePerObjectReport/storagePerObjectReport.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/python/viewStorageReport/viewStorageReport.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-chmod +x storagePerObjectReport.py
+chmod +x viewStorageReport.py
 # end download commands
 ```
 
 ## Components
 
-* storagePerObjectReport.py: the main python script
+* viewStorageReport.py: the main python script
 * pyhesity.py: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 
 ```bash
 # example
-./storagePerObjectReport.py -v mycluster -u myusername -d mydomain.net
+./viewStorageReport.py -v mycluster -u myusername -d mydomain.net
 # end example
 ```
 
@@ -45,9 +45,6 @@ Place both files in a folder together and run the main script like so:
 
 ## Other Parameters
 
-* -y, --growthdays: (optional) show growth over the last X days (default is 7)
 * -of: --outfolder: (optional) where to write report html (default is current directory)
 * -x, --unit: (optional) KiB, MiB, GiB, or TiB] (default is GiB)
-* -n, --numruns: (optional) number of runs per API query (default is 500)
-* -s, --skipdeleted: (optional) skip deleted protection groups
-* -debug, --debug: (optional) print verbose output
+* -y, --growthdays: (optional) show growth over the last X days (default is 7)
