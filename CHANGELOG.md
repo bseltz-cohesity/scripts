@@ -1,5 +1,11 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-10-12
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport> [`Update`] added description field
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/chargebackReportV2> [`Update`] added description field
+* <https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/viewStorageReport> [`New`] view storage report
+
 ## 2023-10-11
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api> [`Update`] removed demand minimim powershell version, to support Start-Job
