@@ -30,6 +30,7 @@ param (
     [Parameter()][switch]$wait, # wait for restore tasks to complete
     [Parameter()][switch]$noPrompt,
     [Parameter()][ValidateSet('InstantRecovery','CopyRecovery')][string]$recoveryType = 'InstantRecovery',
+    [Parameter()][string]$taskName,
     [Parameter()][switch]$dbg
 )
 
@@ -94,8 +95,12 @@ $restoreParams = @{}
 
 $recoverDateString = (get-date).ToString('yyyy-MM-dd_hh-mm-ss')
 
+if(! $taskName){
+    $taskName = "Recover_VM_$recoverDateString"
+}
+
 $restoreParams = @{
-    "name"                = "Recover_VM_$recoverDateString";
+    "name"                = $taskName;
     "snapshotEnvironment" = "kVMware";
     "vmwareParams"        = @{
         "objects"         = @();

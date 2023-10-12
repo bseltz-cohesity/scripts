@@ -73,6 +73,7 @@ Place the files in a folder together and run the main script like so:
 * -recoveryType: (optional) InstantRecovery or CopyRecovery (default is InstantRecovery)
 * -vlan: (optional) vlan ID to choose for restore (cluster interface)
 * -noPrompt: (optional) Don't prompt to confirm
+* -taskName: (optional) name for recovery task
 * -dbg: (optional) debug mode, export JSON payload to file for analysis
 
 Note: when restoring to a standalone ESXi host, review the object hierarchy of the registered ESXi host under protection sources to determine the following information, but typically:
