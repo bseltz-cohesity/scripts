@@ -34,18 +34,29 @@ Place all files in a folder together. then, run the main script like so:
                           -newStorageDomainName otherStorageDomain
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: DNS or IP of the Cohesity Cluster
-* -username: Cohesity User Name
-* -domain: (optional) defaults to 'local'
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -jobName: (optional) one or more protection group names to migrate (comma separated)
 * -jobList: (optional) text file of protection group names to migrate (one per line)
 * -newStorageDomainName: name of storage domain to migrate to
+* -newPolicyName: (optional) change the policy used by the job
 * -prefix: (optional) add a prefix to the name of the new protection group
 * -suffix: (optional) add a suffix to the name of the new protection group
+* -renameOldJob: (optional) apply prefix and suffix to old protection group (instead of the new protection group)
 * -deleteOldJob: (optional) delete the old protection group
-* -newPolicyName: (optional) change the policy used by the job
 * -pauseOldJob: (optional) pause the old job
 * -pauseNewJob: (optional) pause the new job
 

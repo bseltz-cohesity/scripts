@@ -1,14 +1,22 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,
-    [Parameter(Mandatory = $True)][string]$username,
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
     [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter()][array]$jobName,
     [Parameter()][string]$jobList,
     [Parameter()][string]$prefix = '',
     [Parameter()][string]$suffix = '',
     [Parameter()][switch]$deleteOldJob,
+    [Parameter()][switch]$renameOldJob,
     [Parameter(Mandatory = $True)][string]$newStorageDomainName,
     [Parameter()][string]$newPolicyName,
     [Parameter()][switch]$pauseNewJob,
@@ -46,13 +54,30 @@ if($prefix -eq '' -and $suffix -eq '' -and !$deleteOldJob){
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-# authenticate
-apiauth -vip $vip -username $username -domain $domain
-
-if(! $AUTHORIZED -and ! $cohesity_api.authorized){
-    Write-Host "Failed to connect to Cohesity cluster" -foregroundcolor Yellow
-    exit
+# authentication =============================================
+# demand clusterName for Helios/MCM
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios/MCM" -ForegroundColor Yellow
+    exit 1
 }
+
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
+        exit 1
+    }
+}
+# end authentication =========================================
 
 $jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Required $True)
 
@@ -89,11 +114,24 @@ foreach($thisJobName in $jobNames){
 
 foreach($thisJobName in $jobNames){
     $job = $jobs.protectionGroups | Where-Object name -eq $thisJobName
+    $originalJobName = $job.name
     if($pauseOldJob -and !$deleteOldJob){
         $job.isPaused = $True
+    }
+
+    if($renameOldJob){
+        if($prefix -ne ''){
+            $job.name = "$($prefix)-$($job.name)"
+        }
+        if($suffix -ne ''){
+            $job.name = "$($job.name)-$($suffix)"
+        }
+    }
+    if(! $deleteOldJob){
         $updateJob = api put -v2 data-protect/protection-groups/$($job.id) $job
     }
 
+    $job.name = $originalJobName
     $job.storageDomainId = $newStorageDomain.id
 
     if($newPolicyName){
@@ -108,12 +146,14 @@ foreach($thisJobName in $jobNames){
         $job.isPaused = $false
     }
 
-    if($prefix -ne ''){
-        $job.name = "$($prefix)-$($job.name)"
-    }
-
-    if($suffix -ne ''){
-        $job.name = "$($job.name)-$($suffix)"
+    if(! $renameOldJob){
+        if($prefix -ne ''){
+            $job.name = "$($prefix)-$($job.name)"
+        }
+    
+        if($suffix -ne ''){
+            $job.name = "$($job.name)-$($suffix)"
+        }
     }
 
     if($deleteOldJob){
