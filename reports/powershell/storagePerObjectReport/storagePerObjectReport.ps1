@@ -57,7 +57,7 @@ $monthString = (get-date).ToString('yyyy-MM')
 $outfileName = "storagePerObjectReport-$($cluster.name)-$dateString.csv"
 $outfile2 = "storagePerObjectReport-format2-$($cluster.name)-$dateString.csv"
 
-$vaults = api get vaults
+$vaults = api get vaults?includeFortKnoxVault=true
 if($vaults){
     $nowMsecs = [Int64]((dateToUsecs) / 1000)
     $weekAgoMsecs = $nowMsecs - (86400000)
@@ -135,7 +135,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                 $storageConsumedBytesPrev = 0
             }
             
-            if($storageConsumedBytes -gt 0 -and $storageConsumedBytesPrev -gt 0){
+            if($storageConsumedBytes -gt 0 -and $storageConsumedBytesPrev -gt 0 -and $resiliencyFactor -gt 0){
                 $jobGrowth = ($storageConsumedBytes - $storageConsumedBytesPrev) / $resiliencyFactor
             }                
             if($dataInAfterDedup -gt 0 -and $jobWritten -gt 0){
@@ -311,7 +311,7 @@ foreach($view in $views.views){
     $jobWritten = 0
     $consumption = 0
     $objFESize = toUnits $view.stats.dataUsageStats.totalLogicalUsageBytes
-    if($jobName -ne '-'){
+    if($jobName -ne '-' -and $viewJobStats[$jobName] -gt 0){
         $objWeight = $view.stats.dataUsageStats.totalLogicalUsageBytes / $viewJobStats[$jobName]
     }else{
         $objWeight = 1
