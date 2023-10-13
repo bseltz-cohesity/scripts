@@ -87,7 +87,7 @@ csvfileName = '%s/storagePerObjectReport-%s-%s.csv' % (folder, cluster['name'], 
 csv = codecs.open(csvfileName, 'w', 'utf-8')
 csv.write('"Job Name","Tenant","Environment","Source Name","Object Name","Logical %s","%s Written","%s Written plus Resiliency","Job Reduction Ratio","%s Written Last %s Days","%s Archived","%s per Archive Target"\n' % (units, units, units, units, growthdays, units, units))
 
-vaults = api('get', 'vaults')
+vaults = api('get', 'vaults?includeFortKnoxVault=true')
 if vaults is not None and len(vaults) > 0:
     nowMsecs = int((dateToUsecs()) / 1000)
     weekAgoMsecs = nowMsecs - 86400000
@@ -140,7 +140,7 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
             jobWritten = stats['statsList'][0]['stats'].get('dataWrittenBytes', 0)
             storageConsumedBytes = stats['statsList'][0]['stats'].get('storageConsumedBytes', 0)
             storageConsumedBytesPrev = stats['statsList'][0]['stats'].get('storageConsumedBytesPrev', 0)
-            if storageConsumedBytes > 0 and storageConsumedBytesPrev > 0:
+            if storageConsumedBytes > 0 and storageConsumedBytesPrev > 0 and resiliencyFactor > 0:
                 jobGrowth = (storageConsumedBytes - storageConsumedBytesPrev) / resiliencyFactor
             if dataInAfterDedup > 0 and jobWritten > 0:
                 dedup = round(float(dataIn) / dataInAfterDedup, 1)
@@ -234,7 +234,7 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                     objWritten = round(objWeight * jobWritten / multiplier, 1)
                 else:
                     objWritten = round(objFESize / jobReduction, 1)
-                objWrittenWithResiliency = objWritten * resiliencyFactor
+                objWrittenWithResiliency = round(objWritten * resiliencyFactor, 1)
                 sourceName = ''
                 if 'sourceId' in thisObject:
                     if thisObject['sourceId'] in sourceNames:
