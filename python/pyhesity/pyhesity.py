@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2023.10.09"""
+"""Cohesity Python REST API Wrapper Module - 2023.10.13"""
 
 ##########################################################################################
 # Change Log
@@ -25,6 +25,7 @@
 # 2023-09-24 - web session authentication, added support for password reset. email MFA
 # 2023-10-03 - fixed 'forcePasswordChange' error on AD authentication
 # 2023-10-09 - set last error on cluster not connected to helios
+# 2023-10-13 - fixed password prompt for AD user
 #
 ##########################################################################################
 # Install Notes
@@ -82,7 +83,7 @@ __all__ = ['api_version',
            'impersonate',
            'switchback']
 
-api_version = '2023.10.09'
+api_version = '2023.10.13'
 
 COHESITY_API = {
     'APIROOT': '',
@@ -488,7 +489,10 @@ def dayDiff(newdate, olddate):
 ### get/store password for future runs
 def __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, prompt):
     """get/set stored password"""
+    originalUsername = username
+    originalVip = vip
     if domain.lower() != 'local' and helios is False and vip != 'helios.cohesity.com' and useApiKey is False:
+        originalUsername = "%s\\%s" % (domain, username)
         vip = '--'  # wildcard vip
     if os.path.exists(PWFILE):
         f = open(PWFILE, 'r')
@@ -534,9 +538,9 @@ def __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, 
         if prompt is not False:
             __writelog('prompting for password...')
             if useApiKey:
-                pwd = getpass.getpass("Enter API Key for %s at %s: " % (username, vip))
+                pwd = getpass.getpass("Enter API Key for %s at %s: " % (originalUsername, originalVip))
             else:
-                pwd = getpass.getpass("Enter password for %s at %s: " % (username, vip))
+                pwd = getpass.getpass("Enter password for %s at %s: " % (originalUsername, originalVip))
             try:
                 pwdfile = open(pwpath, 'w')
                 opwd = base64.b64encode(pwd.encode('utf-8')).decode('utf-8')
@@ -552,13 +556,16 @@ def __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, 
 
 # store password in PWFILE
 def setpwd(v='helios.cohesity.com', u='helios', d='local', useApiKey=False, helios=False, password=None):
+    originalUsername = u
+    originalVip = v
     if d.lower() != 'local' and helios is False and v != 'helios.cohesity.com' and useApiKey is False:
+        originalUsername = '%s\\%s' % (d, u)
         v = '--'  # wildcard vip
     if password is None:
         if useApiKey is True:
-            pwd = getpass.getpass("Enter API key for %s at %s: " % (u, v))
+            pwd = getpass.getpass("Enter API key for %s at %s: " % (originalUsername, originalVip))
         else:
-            pwd = getpass.getpass("Enter password for %s at %s: " % (u, v))
+            pwd = getpass.getpass("Enter password for %s at %s: " % (originalUsername, originalVip))
     else:
         pwd = password
     opwd = base64.b64encode(pwd.encode('utf-8')).decode('utf-8')

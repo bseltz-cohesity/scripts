@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.10.11 - Brian Seltzer
+#  Version 2023.10.13 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2023.02.10 - added -region to api function (for DMaaS)
@@ -18,10 +18,11 @@
 # 2023.10.03 - fix cosmetic error 'An item with the same key has already been added. Key: content-type'
 # 2023.10.09 - clarify password / API key prompts
 # 2023.10.11 - removed demand minimim powershell version, to support Start-Job
+# 2023.10.13 - fixed password prompt for AD user
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2023.10.11'
+$versionCohesityAPI = '2023.10.13'
 
 # state cache
 $cohesity_api = @{
@@ -820,15 +821,19 @@ function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
     }
+    $originalVip = $vip
+    $originalUsername = $username
+
     if($domain -ne 'local' -and !$helios -and $vip -ne 'helios.cohesity.com' -and $useApiKey -eq $false){
+        $originalUsername = "$domain\$username"
         $vip = '--'  # wildcard vip for AD accounts
     }
     if(!$passwd){
         __writeLog "Prompting for Password"
         if($useApiKey -or $helios -or $vip -eq 'helios.cohesity.com'){
-            $secureString = Read-Host -Prompt "Enter API key for $username at $vip" -AsSecureString
+            $secureString = Read-Host -Prompt "Enter API key for $originalUsername at $originalVip" -AsSecureString
         }else{
-            $secureString = Read-Host -Prompt "Enter password for $username at $vip" -AsSecureString
+            $secureString = Read-Host -Prompt "Enter password for $originalUsername at $originalVip" -AsSecureString
         }
         $passwd = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
     }
