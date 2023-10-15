@@ -1,5 +1,12 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-10-13
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity> [`Fix`] fixed password prompt for AD user
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api> [`Fix`] fixed password prompt for AD user
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/deleteObjectBackups> [`Update`] moderinized authentication
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/moveProtectionGroup> [`Update`] added rename old protection group option
+
 ## 2023-10-12
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/recoverVMsV2> [`New`] restore multiple VMware VMs using python
