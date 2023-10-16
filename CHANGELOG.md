@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-10-16
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/jobDumper> [`New`] Dump protection groups and sources to JSON (to aid in development and analysis)
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/jobDumper> [`New`] Dump protection groups and sources to JSON (to aid in development and analysis)
+
 ## 2023-10-13
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity> [`Fix`] fixed password prompt for AD user
