@@ -24,18 +24,18 @@ param (
     [Parameter()][switch]$renameOldJob
 )
 
-function getObjectId($objectName, $source){
+function getObjectId($fqn, $source){
     $global:_object_id = $null
 
-    function get_nodes($obj){
-        if($obj.protectionSource.name -eq $objectName){
+    function get_nodes($obj, $thisFQN){
+        if($thisFQN -eq $fqn){
             $global:_object_id = $obj.protectionSource.id
             break
         }
         if($obj.PSObject.Properties['nodes']){
             foreach($node in $obj.nodes){
                 if($null -eq $global:_object_id){
-                    get_nodes $node
+                    get_nodes $node "$thisFQN/$($node.protectionSource.name)/"
                 }
             }
         }
@@ -45,17 +45,19 @@ function getObjectId($objectName, $source){
 }
 
 function getObjectById($objectId, $source){
+    $fqn = '/'
     $global:_object = $null
 
-    function get_nodes($obj){
+    function get_nodes($obj, $fqn){
         if($obj.protectionSource.id -eq $objectId){
+            setApiProperty -object $obj -name fqn -value $fqn
             $global:_object = $obj
             break
         }     
         if($obj.PSObject.Properties['nodes']){
             foreach($node in $obj.nodes){
                 if($null -eq $global:_object){
-                    get_nodes $node
+                    get_nodes $node "$fqn/$($node.protectionSource.name)/"
                 }
             }
         }
@@ -186,7 +188,7 @@ if($job){
     foreach($vm in $job.awsParams.snapshotManagerProtectionTypeParams.objects){
         $oldObject = getObjectById $vm.id $oldAWSSource
         # $oldObject | ConvertTo-Json -Depth 99
-        $newObjectId = getObjectId $oldObject.protectionSource.name $newAWSSource
+        $newObjectId = getObjectId $oldObject.fqn $newAWSSource
         $vm.id = $newObjectId
         if($newObjectId -eq $null){
             Write-Host "`nSelected objects are missing, please edit and save selections in the old job before migrating" -foregroundcolor Yellow
@@ -199,7 +201,7 @@ if($job){
         $newExcludeIds = @()
         foreach($excludeId in $jobawsParams.snapshotManagerProtectionTypeParams.excludeObjectIds){
             $oldObject = getObjectById $excludeId $oldAWSSource
-            $newObjectId = getObjectId $oldObject.protectionSource.name $newAWSSource
+            $newObjectId = getObjectId $oldObject.fqn $newAWSSource
             $newExcludeIds = @($newExcludeIds + $newObjectId)
             if($newObjectId -eq $null){
                 Write-Host "`nExcluded objects are missing, please edit and save selections in the old job before migrating" -foregroundcolor Yellow
@@ -216,7 +218,7 @@ if($job){
             $newTag = @()
             foreach($tagId in $tag){
                 $oldObject = getObjectById $tagId $oldAWSSource
-                $newObjectId = getObjectId $oldObject.protectionSource.name $newAWSSource
+                $newObjectId = getObjectId $oldObject.fqn $newAWSSource
                 $newTag = @($newTag + $newObjectId)
                 if($newObjectId -eq $null){
                     Write-Host "`nTag objects are missing, please edit and save selections in the old job before migrating" -foregroundcolor Yellow
@@ -235,7 +237,7 @@ if($job){
             $newTag = @()
             foreach($tagId in $tag){
                 $oldObject = getObjectById $tagId $oldAWSSource
-                $newObjectId = getObjectId $oldObject.protectionSource.name $newAWSSource
+                $newObjectId = getObjectId $oldObject.fqn $newAWSSource
                 $newTag = @($newTag + $newObjectId)
                 if($newObjectId -eq $null){
                     Write-Host "`nExcluded tag objects are missing, please edit and save selections in the old job before migrating" -foregroundcolor Yellow
