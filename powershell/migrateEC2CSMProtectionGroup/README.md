@@ -4,16 +4,6 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This PowerShell script migrates an EC2 snapshot manager protection group from one Cohesity cluster to another.
 
-## Notes and Warnings
-
-If you omit the `-deleteOldJob` and `-deleteOldJobAndExit` switches, the job will be paused but left behind on the source cluster, and this is recommended in case the script fails to migrate the job to the target cluster for some reason. If a failure occurs, the script can be run again after the issue has been figured out.
-
-After the migration is successful, you can rerun the script using the `-deleteOldJobAndExit` parameter to delete the old job from the source cluster. Add `-deleteOldSnapshots` if you want to delete the existing backups on the source cluster.
-
-Alternatively, if you're comfortable that the script works fine and migrations are consistently successful, then you can include the `-deleteOldJob` switch in your command, which will delete the old job durng the migration. Again, add `-deleteOldSnapshots` if you want to delete the existing backups on the source cluster.
-
-*DO NOT* use the `-deleteOldJobAndExit` switch until *AFTER* the migration is complete, otherwise the script will simply delete the protection group from the source cluster without the job having been migrated!
-
 ## Download the script
 
 Run these commands from PowerShell to download the script(s) into your current directory
@@ -75,3 +65,13 @@ To update all VMware protection jobs:
 * -deleteOldJobAndExit: (optional) post migration delete old job
 * -deleteReplica: (optional) delete replica to avoid conflict during migration
 * -deleteOldSnapshots: (optional) delete existing snapshots when cleaning up old objects (*destructive!*)
+
+## Notes and Warnings
+
+If you omit the `-deleteOldJob` switch, the job will be paused, but left behind on the source cluster, and this is recommended in case the script fails to migrate the job to the target cluster for some reason. If a failure occurs, the script can be run again after the issue has been figured out.
+
+After the migration is successful, you can rerun the script using the `-deleteOldJobAndExit` parameter to delete the old job from the source cluster. Add `-deleteOldSnapshots` if you want to delete the existing backups on the source cluster.
+
+Alternatively, if you're comfortable that the script works fine and migrations are consistently successful, then you can include the `-deleteOldJob` switch in your command, which will delete the old job durng the migration. Again, add `-deleteOldSnapshots` if you want to delete the existing backups on the source cluster.
+
+*DO NOT* use the `-deleteOldJobAndExit` switch until *AFTER* the migration is complete, otherwise the script will simply delete the protection group from the source cluster without the job having been migrated!
