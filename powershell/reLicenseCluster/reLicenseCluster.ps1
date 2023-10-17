@@ -13,7 +13,7 @@ param (
     [Parameter()][string]$heliosKey = $null
 )
 
-#source the cohesity-api helper code
+# source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 if($cohesity_api.api_version -lt '2023.09.22'){
     Write-Host "This script requires cohesity-api.ps1 version 2023.09.22 or later" -foregroundColor Yellow
@@ -24,8 +24,6 @@ if($cohesity_api.api_version -lt '2023.09.22'){
 # connect to cluster
 Write-Host "`nConnecting to $vip"
 apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -noPromptForPassword $noPrompt -quiet
-
-# exit on failed authentication
 if(!$cohesity_api.authorized){
     Write-Host "Not authenticated" -ForegroundColor Yellow
     exit 1
