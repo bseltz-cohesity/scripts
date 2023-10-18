@@ -80,8 +80,8 @@ log = codecs.open(logfile, 'a')
 
 log.write('\nScript started at %s ********************************************************\n' % startDateString)
 log.write('\nCommand line parameters:\n\n')
-for arg, value in sorted(vars(args).items()):
-    if arg != 'password':
+for arg, value in vars(args).items():
+    if arg not in ['password', 'mfacode', 'noprompt']:
         log.write("    %s: %s\n" % (arg, value))
 log.write('\n')
 
@@ -256,5 +256,5 @@ out('')
 if action == 'kPause':
     out('Paused job list saved to %s' % outfile)
 
-out('Output logged to %s\n' % logfile)
+print('Output logged to %s\n' % logfile)
 log.close()
