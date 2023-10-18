@@ -1,5 +1,17 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-10-18
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/replicationQueue> [`Update`] added --youngerthan and --olderthan parameters
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/restartFailedJobs> [`Update`] added --jobname and --joblist parameters
+* <https://github.com/bseltz-cohesity/scripts/tree/master/python/pauseProtectionActivity> [`New`] pause or resume protection activities (backup, replication, archive) for maximum restore performance
+
+## 2023-10-17
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/reLicenseCluster> [`New`] refresh license for dark site cluster
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/migrateEC2CSMProtectionGroup> [`New`] Migrate EC2 Snapshot Manager protection group from one cluster to another
+
+
 ## 2023-10-16
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/jobDumper> [`New`] Dump protection groups and sources to JSON (to aid in development and analysis)
