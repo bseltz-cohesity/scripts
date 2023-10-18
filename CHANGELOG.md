@@ -11,7 +11,6 @@
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/reLicenseCluster> [`New`] refresh license for dark site cluster
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/migrateEC2CSMProtectionGroup> [`New`] Migrate EC2 Snapshot Manager protection group from one cluster to another
 
-
 ## 2023-10-16
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/jobDumper> [`New`] Dump protection groups and sources to JSON (to aid in development and analysis)
