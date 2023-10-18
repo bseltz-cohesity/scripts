@@ -39,6 +39,8 @@ Place both files in a folder together and run the main script like so:
 
 ## Other Parameters
 
+* -t, --olderthan: (optional) review only runs that are older than X days
+* -y, --youngerthan: (optional) review only runs that are younger than X days
 * -o, --canceloutdated: (optional) cancel replications that are already due to expire
 * -a, --cancelall: (optional) cancel all replications
 * -j, --jobname: (optional) show/cancel for this job only

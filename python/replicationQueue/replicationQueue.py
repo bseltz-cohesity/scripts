@@ -20,6 +20,8 @@ parser.add_argument('-j', '--jobname', type=str, default=None)
 parser.add_argument('-r', '--remotecluster', type=str, default=None)
 parser.add_argument('-a', '--cancelall', action='store_true')
 parser.add_argument('-o', '--canceloutdated', action='store_true')
+parser.add_argument('-t', '--olderthan', type=int, default=0)
+parser.add_argument('-y', '--youngerthan', type=int, default=0)
 parser.add_argument('-n', '--numruns', type=int, default=9999)
 args = parser.parse_args()
 
@@ -34,9 +36,16 @@ noprompt = args.noprompt
 mfacode = args.mfacode
 jobname = args.jobname
 remotecluster = args.remotecluster
-cancellall = args.cancelall
+cancelall = args.cancelall
 canceloutdated = args.canceloutdated
 numruns = args.numruns
+olderthan = args.olderthan
+youngerthan = args.youngerthan
+
+if olderthan > 0:
+    olderthanusecs = timeAgo(olderthan, 'days')
+if youngerthan > 0:
+    youngerthanusecs = timeAgo(youngerthan, 'days')
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode)
@@ -71,6 +80,10 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
             print("Getting tasks for %s" % jobName)
             # find runs with unfinished replication tasks
             runs = api('get', 'protectionRuns?jobId=%s&numRuns=%s&excludeTasks=true' % (jobId, numruns))
+            if olderthan > 0:
+                runs = [r for r in runs if r['backupRun']['stats']['startTimeUsecs'] < olderthanusecs]
+            if youngerthan > 0:
+                runs = [r for r in runs if r['backupRun']['stats']['startTimeUsecs'] > youngerthanusecs]
             for run in runs:
                 runStartTimeUsecs = run['backupRun']['stats']['startTimeUsecs']
                 if 'copyRun' in run:
@@ -111,7 +124,7 @@ if len(runningTasks.keys()) > 0:
                         timePassed = nowUsecs - runStartTimeUsecs
                         if timePassed > usecsToKeep:
                             noLongerNeeded = "NO LONGER NEEDED"
-                        if cancellall or (canceloutdated and noLongerNeeded == "NO LONGER NEEDED"):
+                        if cancelall or (canceloutdated and noLongerNeeded == "NO LONGER NEEDED"):
                             print('                       Replication Task ID: %s  %s (canceling)' % (task['taskUid']['objectId'], noLongerNeeded))
                             cancelTaskParams = {
                                 "jobId": t['jobId'],
