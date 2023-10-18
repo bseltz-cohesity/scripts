@@ -63,5 +63,5 @@ The script will output a few files for reference:
 
 * -p, --pause: (optional) pause activity
 * -r, --resume: (optional) resume activity
-* -l, --jobList: (optional) text file containing job names to resume (default is jobsPaused-clusterName.txt)
-* -o, --outpuath: (optional) path to write output files (default is '.')
+* -l, --nojoblist: (optional) resume all paused protection jobs (only needed if jobsPaused-xxxx.txt is lost)
+* -o, --outpath: (optional) path to write output files (default is '.')

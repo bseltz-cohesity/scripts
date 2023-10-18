@@ -26,10 +26,10 @@ parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
-parser.add_argument('-l', '--jobList', type=str)
 parser.add_argument('-r', '--resume', action='store_true')
 parser.add_argument('-p', '--pause', action='store_true')
 parser.add_argument('-o', '--outpath', type=str, default='.')
+parser.add_argument('-l', '--nojoblist', action='store_true')
 
 args = parser.parse_args()
 
@@ -40,10 +40,10 @@ useApiKey = args.useApiKey
 password = args.password
 noprompt = args.noprompt
 mfacode = args.mfacode
-jobList = args.jobList
 pause = args.pause
 resume = args.resume
 outpath = args.outpath
+nojoblist = args.nojoblist
 
 requests.packages.urllib3.disable_warnings()
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -85,19 +85,18 @@ for arg, value in sorted(vars(args).items()):
         log.write("    %s: %s\n" % (arg, value))
 log.write('\n')
 
-if jobList is None and resume:
-    jobList = os.path.join(outpath, 'jobsPaused-%s.txt' % cluster['name'])
-
-# read jobList
+# read job list
 jobnames = []
-if jobList is not None:
-    if not os.path.exists(jobList):
-        out('%s not found!' % jobList)
-        log.close()
-        exit(1)
-    f = open(jobList, 'r')
-    jobnames += [s.strip() for s in f.readlines() if s.strip() != '']
-    f.close()
+if resume:
+    jobList = os.path.join(outpath, 'jobsPaused-%s.txt' % cluster['name'])
+    if nojoblist is not True:
+        if not os.path.exists(jobList):
+            out('job list %s not found!' % jobList)
+            log.close()
+            exit(1)
+        f = open(jobList, 'r')
+        jobnames += [s.strip() for s in f.readlines() if s.strip() != '']
+        f.close()
 
 jobs = api('get', 'protectionJobs?isActive=true&isDeleted=false&onlyReturnBasicSummary=true')
 
@@ -132,7 +131,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                 out("%s (active)" % job['name'])
         else:
             if ('isPaused' in job and job['isPaused'] is True and action == 'kResume') or (('isPaused' not in job or job['isPaused'] is False) and action == 'kPause'):
-                out("%s protection group %s" % (actiontext, job['name']))
+                out("%s protection group: %s" % (actiontext, job['name']))
                 jobIds.append(job['id'])
                 if action == 'kPause':
                     f.write('%s\n' % job['name'])
