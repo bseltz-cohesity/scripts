@@ -43,3 +43,5 @@ Place both files in a folder together and run the main script like so:
 * -n, --hoursback: (optional) number of hours to look back (default is 24)
 * -r, --restart: (optional) perform restarts (display only is the default)
 * -t, --jobtype: (optional) filter on a specific job type (e.g. VMware, SQL, etc.)
+* -j, --jobname: (optional) name of job to replicate (repeat for multiple jobs or use joblist)
+* -l, --joblist: (optional) text file of job names to include (one per line) default is all failed jobs
