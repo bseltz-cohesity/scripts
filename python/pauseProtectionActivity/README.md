@@ -43,6 +43,41 @@ To resume protection activity:
 # end example
 ```
 
+To cancel running jobs only:
+
+```bash
+# example
+./pauseProtectionActivity.py -v mycluster \
+                             -u myuser \
+                             -d mydomain.net \
+                             -c
+# end example
+```
+
+To pause garbage collection only:
+
+```bash
+# example
+./pauseProtectionActivity.py -v mycluster \
+                             -u myuser \
+                             -d mydomain.net \
+                             -p \
+                             -g
+# end example
+```
+
+To resume garbage collection only:
+
+```bash
+# example
+./pauseProtectionActivity.py -v mycluster \
+                             -u myuser \
+                             -d mydomain.net \
+                             -r \
+                             -g
+# end example
+```
+
 The script will output a few files for reference:
 
 * a text file jobsPaused-clusterName.txt of job names that were paused
