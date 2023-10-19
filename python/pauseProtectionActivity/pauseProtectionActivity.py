@@ -168,7 +168,7 @@ if not stopgconly:
                             out('Canceling job run: %s: %s' % (job['name'], usecsToDate(run['backupRun']['stats']['startTimeUsecs'])))
                             result = api('post', 'protectionRuns/cancel/%s' % job['id'], {"jobRunId": run['backupRun']['jobRunId']})
                             foundRuns = True
-    if foundRuns is False:
+    if action == 'kPause' and foundRuns is False:
         out('No runs to cancel')
 
 # replication =================================================================
