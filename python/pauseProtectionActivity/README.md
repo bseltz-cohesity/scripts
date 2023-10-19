@@ -63,5 +63,7 @@ The script will output a few files for reference:
 
 * -p, --pause: (optional) pause activity
 * -r, --resume: (optional) resume activity
+* -c, --cancelrunsonly: (optional) cancel running jobs only (skip all other steps)
+* -g, --stopgconly: (optional) pause/resume garbage collection only (skip all other steps)
 * -l, --nojoblist: (optional) resume all paused protection jobs (only needed if jobsPaused-xxxx.txt is lost)
 * -o, --outpath: (optional) path to write output files (default is '.')
