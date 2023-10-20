@@ -47,3 +47,11 @@ Place the files in a folder together and run the script like so:
 * -smtpPort: (optional) SMTP port to use (default is 25)
 * -sendTo: (optional) email addresses to send report to (comma separated)
 * -sendFrom: (optional) email address to show in the from field
+
+## Column Descriptions
+
+* Logical: the sum of the front-end sizes of the source objects in the job, multiplied by the number of backups in retention
+* Ingested: the amount of data read from the source objects, before dedup and compression, that is in retention
+* Written: the amount of data written to disk, after dedup and compression, that is in retention, not including resiliency overhead (this is analogous to the sizing term "dedup storage required")
+* Consumed: the amount of data written plus resiliency overhead (actual raw usage)
+* Unique: the amount of data (written plus resiliency) that is unique to this job (not shared with other jobs)
