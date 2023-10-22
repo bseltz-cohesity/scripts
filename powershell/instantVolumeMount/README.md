@@ -4,15 +4,6 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This script demonstrates how to perform an Instant Volume Mount using PowerShell. The script takes a thin-provisioned clone of the latest backup of a server volume and attaches it to a server.
 
-The script takes the following parameters:
-
-* -vip: DNS or IP of the Cohesity Cluster
-* -username:Cohesity User Name
-* -domain: (optional) defaults to 'local'
-* -sourceServer: source Server Name
-* -targetServer: (optional) Server to attach to, defaults to same as sourceServer)
-* -before: (optional) choose most recent backup before this date (e.g. '2023-05-15 00:00:00')
-
 ## Download the script
 
 Run these commands from PowerShell to download the script(s) into your current directory
@@ -35,13 +26,13 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-.\instantVolumeMount.ps1 -vip mycohesity -username admin -sourceServer server1.mydomain.net -targetServer server2.mydomain.net
-Connected!
-mounting volumes to server2.mydomain.net...
-Task ID for tearDown is: 23404
-D: mounted to F:\
-lvol_2 mounted to G:\
-C: mounted to H:\
+# example
+.\instantVolumeMount.ps1 -vip mycluster `
+                         -username myusername `
+                         -domain mydomain.net ` 
+                         -sourceServer server1.mydomain.net `
+                         -targetServer server2.mydomain.net
+# end example
 ```
 
 ## Tearing Down Mounts
@@ -54,8 +45,35 @@ Connected!
 Tearing down mount points...
 ```
 
-## Version Update
+## Authentication Parameters
 
-* Added monitoring for task completion
-* Added mountPoint report
-* Added taskId report for teardown
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
+* -sourceServer: name of protected server/VM whose volume(s) to mount
+* -targetServer: (optional) name of registered server/VM to mount volume(s) to
+* -environment: (optional) filter search by environemt type 'kPhysical','kVMware', 'kHyperV'
+* -id: (optional) filter search by object id
+* -showVersions: (optional) show available run IDs and snapshot dates
+* -runId: (optional) specify exact run ID
+* -date: (optional) use latest snapshot on or before date (e.g. '2023-10-21 23:00:00')
+* -showVolumes: (optional) show available volumes
+* -volumes: (optional) one or more volumes to mount (comma separated)
+* -wait: (optional) wait and report completion status
+
+## VM Parameters
+
+* -hypervisor: (optional) vCenter, SCVMM, ESXi or HyperV instance to find target VM
+* -vmUsername: (optional) in guest username to autodeploy Cohesity agent
+* -vmPassword: (optional) in guest passwprd to autodeploy Cohesity agent
+* -useExistingAgent: (optional) use existing Cohesity agent (VMware only)

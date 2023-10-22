@@ -1,124 +1,378 @@
-
-### usage: ./instantVolumeMountV2.ps1 -vip 192.168.1.198 -username admin [ -domain local ] -sourceServer 'SQL2012' [ -targetServer 'SQLDEV01' ] [ -targetUsername 'ADuser' ] [ -targetPw 'myPassword' ]
-
-### version 2: added task monitoring and mountPoint reporting
-
-### process commandline arguments
+# process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
-    [Parameter()][string]$domain = 'local', #local or AD domain
-    [Parameter(Mandatory = $True)][string]$sourceServer, #source server that was backed up
-    [Parameter()][string]$targetServer = $sourceServer, #target server to mount the volumes to
-    [Parameter()][string]$targetUsername = '', #credentials to ensure disks are online (optional, only needed if it's a VM with no agent)
-    [Parameter()][string]$targetPw = '', #credentials to ensure disks are online (optional, only needed if it's a VM with no agent)
-    [Parameter()][string]$before
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][string]$clusterName,
+    [Parameter(Mandatory = $True)][string]$sourceServer,
+    [Parameter()][string]$targetServer,
+    [Parameter()][string]$vCenter,
+    [Parameter()][ValidateSet('kPhysical','kVMware', 'kHyperV')][string]$environment,
+    [Parameter()][int64]$id,
+    [Parameter()][int64]$runId,
+    [Parameter()][datetime]$date,
+    [Parameter()][switch]$wait,
+    [Parameter()][switch]$showVersions,
+    [Parameter()][switch]$showVolumes,
+    [Parameter()][array]$volumes,
+    [Parameter()][switch]$useExistingAgent,
+    [Parameter()][string]$vmUsername,
+    [Parameter()][string]$vmPassword
 )
 
-### source the cohesity-api helper code
+
+function getObjectId($objectName){
+    $global:_object_id = $null
+
+    function get_nodes($obj){
+        if($obj.protectionSource.name -eq $objectName){
+            $global:_object_id = $obj.protectionSource.id
+            break
+        }
+        if($obj.name -eq $objectName){
+            $global:_object_id = $obj.id
+            break
+        }
+        if($obj.PSObject.Properties['nodes']){
+            foreach($node in $obj.nodes){
+                if($null -eq $global:_object_id){
+                    get_nodes $node
+                }
+            }
+        }
+    }
+    
+    foreach($source in $sources){
+        if($null -eq $global:_object_id){
+            get_nodes $source
+        }
+    }
+    return $global:_object_id
+}
+
+
+$existingAgent = $False
+if($useExistingAgent){
+    $existingAgent = $True
+}
+
+# source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain
+# demand clusterName for Helios/MCM
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios/MCM" -ForegroundColor Yellow
+    exit 1
+}
 
-### search for the source server
-$searchResults = api get "/searchvms?entityTypes=kVMware&entityTypes=kPhysical&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kAcropolis&entityTypes=kView&vmName=$sourceServer"
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
 
-### narrow the results to the correct server
-$searchResults2 = $searchresults.vms | Where-Object { $_.vmDocument.objectName -ieq $sourceServer }
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
 
-### if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot 
-$latestResult = ($searchResults2 | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
+        exit 1
+    }
+}
 
-if(!$latestResult){
-    write-host "Source Server $sourceServer Not Found" -foregroundcolor yellow
+# search for source object
+$search = api get -v2 "data-protect/search/protected-objects?snapshotActions=InstantVolumeMount&searchString=$sourceServer&environments=kVMware,kPhysical,kHyperV"
+$search.objects = $search.objects | Where-Object name -eq $sourceServer
+if($environment){
+    $search.objects = $search.objects | Where-Object environment -eq $environment
+}else{
+    $environment = $search.objects[0].environment
+}
+if($id){
+    $search.objects = $search.objects | Where-Object id -eq $id
+}
+if($search.objects.Count -eq 0){
+    Write-Host "$sourceServer not found" -ForegroundColor Yellow
     exit
-}
-
-if($before){
-    $beforeUsecs = dateToUsecs $before
-    $latestResult.vmDocument.versions = $latestResult.vmDocument.versions | Where-Object { $_.snapshotTimestampUsecs -lt $beforeUsecs }
-}
-if($latestResult.vmDocument.versions.count -eq 0){
-    Write-Host "No backups available from before $before"
-    exit
-}
-
-$sourceEntityType = $latestResult.vmDocument.objectId.entity.type
-
-### get source and target entity info
-$physicalEntities = api get "/entitiesOfType?environmentTypes=kVMware&environmentTypes=kPhysical&physicalEntityTypes=kHost" # &vmwareEntityTypes=kVCenter"
-$virtualEntities = api get "/entitiesOfType?environmentTypes=kVMware&environmentTypes=kPhysical&isProtected=true&physicalEntityTypes=kHost&vmwareEntityTypes=kVirtualMachine" #&vmwareEntityTypes=kVCenter
-$sourceEntity = (($physicalEntities + $virtualEntities) | Where-Object { $_.displayName -ieq $sourceServer })
-$targetEntity = (($physicalEntities + $virtualEntities) | Where-Object { $_.displayName -ieq $targetServer })
-
-if(!$sourceEntity){
-    Write-Host "Source Server $sourceServer Not Found" -ForegroundColor Yellow
+}elseif($search.objects.Count -gt 1){
+    Write-Host "multiple objects found, use the -environement or -id parameters to narrow the results" -ForegroundColor Yellow
+    $search.objects | Format-Table -Property id, name, environment
     exit
 }else{
-    $sourceEntity = $sourceEntity[0]
+    $objectId = $search.objects[0].id
+    $targetSourceId = $search.objects[0].sourceInfo.id
 }
 
-if(!$targetEntity){
-    Write-Host "Target Server $targetServer Not Found" -ForegroundColor Yellow
+# get list of available snapshots
+$snapshots = api get -v2 "data-protect/objects/$objectId/snapshots?protectionGroupIds=$($search.objects[0].latestSnapshotsInfo.protectionGroupId -join ',')"
+if($runId){
+    $snapshots.snapshots = $snapshots.snapshots | Where-Object runInstanceId -eq $runId
+}
+if($date){
+    $dateUsecs = (dateToUsecs $date) + 60000000
+    $snapshots.snapshots = $snapshots.snapshots | Where-Object runStartTimeUsecs -le $dateUsecs
+}
+if($snapshots.snapshots.Count -eq 0){
+    Write-Host "no snapshots available" -ForegroundColor Yellow
     exit
-}else{
-    $targetEntity = $targetEntity[0]
 }
-
-if($targetEntity.type -ne $sourceEntityType){
-    Write-Host "$targetServer is not compatible with volumes from $sourceServer" -ForegroundColor Yellow
+if($showVersions){
+    $snapshots.snapshots | Sort-Object -Property runStartTimeUsecs -Descending | Format-Table -Property @{l='RunId'; e={$_.runInstanceId}}, @{l='Date'; e={usecsToDate $_.runStartTimeUsecs -format 'yyyy-MM-dd hh:mm:ss'}}
     exit
 }
+$snapshot = ($snapshots.snapshots | Sort-Object -Property runStartTimeUsecs -Descending)[0]
 
-$mountTask = @{
-    'name' = 'myMountOperation';
-    'objects' = @(
-        @{
-            'jobId' = $latestResult.vmDocument.objectId.jobId;
-            'jobUid' = $latestResult.vmDocument.objectId.jobUid;
-            'entity' = $sourceEntity;
-            'jobInstanceId' = $latestResult.vmDocument.versions[0].instanceId.jobInstanceId;
-            'startTimeUsecs' = $latestResult.vmDocument.versions[0].instanceId.jobStartTimeUsecs
+# volumes
+if($showVolumes -or $volumes.Count -gt 0){
+    $snapVolumes = api get -v2 "data-protect/snapshots/$($snapshot.id)/volume?includeSupportedOnly=false"
+    if($volumes.Count -gt 0){
+        $missingVolumes = $volumes | Where-Object {$_ -notin $snapVolumes.volumes.name}
+        if($missingVolumes){
+            Write-Host "volumes $($missingVolumes -join ', ') not found" -ForegroundColor Yellow
+            exit
         }
-    );
-    'mountVolumesParams' = @{
-        'targetEntity' = $targetEntity;
-        'vmwareParams' = @{
-            'bringDisksOnline' = $true;
-            'targetEntityCredentials' = @{
-                'username' = $targetUsername;
-                'password' = $targetPw;
+        $snapVolumes.volumes = $snapVolumes.volumes | Where-Object name -in $volumes
+    }
+    if($showVolumes){
+        $snapVolumes.volumes | Format-Table
+        exit
+    }
+}
+
+# recovery parameters
+$recoveryParams = @{
+    "name" = "Recover_$(Get-Date -UFormat '%Y-%m-%d_%H:%M:%S')";
+    "snapshotEnvironment" = $environment;
+}
+
+# vmware params
+if($environment -eq 'kVMware'){
+    $recoveryParams["vmwareParams"] = @{
+        "objects" = @(
+            @{
+                "snapshotId" = $snapshot.id
+            }
+        );
+        "recoveryAction" = "InstantVolumeMount";
+        "mountVolumeParams" = @{
+            "targetEnvironment" = $environment;
+            "vmwareTargetParams" = @{
+                "mountToOriginalTarget" = $True;
+                "originalTargetConfig" = @{
+                    "bringDisksOnline" = $True;
+                    "useExistingAgent" = $existingAgent;
+                    "targetVmCredentials" = $null
+                };
+                "newTargetConfig" = $null;
+                "readOnlyMount" = $false;
+                "volumeNames" = $null
+            }
+        }
+    }
+    $targetParams = $recoveryParams.vmwareParams.mountVolumeParams.vmwareTargetParams
+    $targetConfig = $targetParams.originalTargetConfig
+
+    # alternate target params
+    if($targetServer -and $targetServer -ne $sourceServer){
+
+        # find vCenter
+        if($vCenter){
+            $rootNodes = api get protectionSources/rootNodes?environments=kVMware | Where-Object {$_.protectionSource.name -eq $vCenter}
+            if(! $rootNodes){
+                Write-Host "vCenter $vCenter not found" -ForegroundColor Yellow
+                exit
+            }else{
+                $targetSourceId = $rootNodes[0].protectionSource.id
+            }
+        }
+
+        # find VM
+        $vms = api get protectionSources/virtualMachines?vCenterId=$targetSourceId
+        $vm = $vms | Where-Object name -eq $targetServer
+        if(! $vm){
+            Write-Host "VM target $targetServer not found" -ForegroundColor Yellow
+            exit
+        }
+
+        $targetParams.mountToOriginalTarget = $false
+        $targetParams.originalTargetConfig = $null
+        $targetParams.newTargetConfig = @{
+            "bringDisksOnline" = $True;
+            "useExistingAgent" = $existingAgent;
+            "targetVmCredentials" = $null;
+            "mountTarget" = @{
+                "id" = $vm[0].id
+            }
+        }
+        $targetConfig = $targetParams.newTargetConfig
+    }
+
+    # vm credentials for autodeploy agent
+    if($existingAgent -eq $False){
+        if(!$vmUsername){
+            Write-Host "-vmUsername required if not using -useExistingAgent" -ForegroundColor Yellow
+            exit
+        }
+        if(!$vmPassword){
+            $secureString = Read-Host -Prompt "Enter password for VM user ($vmUsername)" -AsSecureString
+            $vmPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
+        }
+        $targetConfig.targetVmCredentials = @{
+            "username" = $vmUsername;
+            "password" = $vmPassword
+        }
+    }
+}
+
+# physical params
+if($environment -eq 'kPhysical'){
+    $recoveryParams["physicalParams"] = @{
+        "objects" = @(
+            @{
+                "snapshotId" = $snapshot.id
+            }
+        );
+        "recoveryAction" = "InstantVolumeMount";
+        "mountVolumeParams" = @{
+            "targetEnvironment" = $environment;
+            "physicalTargetParams" = @{
+                "mountToOriginalTarget" = $True;
+                "originalTargetConfig" = @{
+                    "serverCredentials" = $null
+                };
+                "newTargetConfig" = $null;
+                "readOnlyMount" = $false;
+                "volumeNames" = $null
+            }
+        }
+    }
+    $targetParams = $recoveryParams.physicalParams.mountVolumeParams.physicalTargetParams
+    $targetConfig = $targetParams.originalTargetConfig
+
+    # alternate target params
+    if($targetServer -and $targetServer -ne $sourceServer){
+        $rootNodes = (api get protectionSources?environments=kPhysical).nodes | Where-Object {$_.protectionSource.name -eq $targetServer}
+        if(! $rootNodes){
+            Write-Host "physical target $targetServer not found" -ForegroundColor Yellow
+            exit
+        }else{
+            $targetId = $rootNodes[0].protectionSource.id
+        }
+        $targetParams.mountToOriginalTarget = $false
+        $targetParams.originalTargetConfig = $null
+        $targetParams.newTargetConfig = @{
+            "serverCredentials" = $null;
+            "mountTarget" = @{
+                "id" = $targetId
             }
         }
     }
 }
 
-if($targetEntity.parentId ){
-    $mountTask['restoreParentSource'] = @{ 'id' = $targetEntity.parentId }
-}
-
-"mounting volumes to $targetServer..."
-$result = api post /restore $mountTask
-
-$taskid = $result.restoreTask.performRestoreTaskState.base.taskId
-
-$finishedStates =  @('kCanceled', 'kSuccess', 'kFailure') 
-
-do
-{
-    sleep 3
-    $restoreTask = api get /restoretasks/$taskid
-    $restoreTaskStatus = $restoreTask.restoreTask.performRestoreTaskState.base.publicStatus
-} until ($restoreTaskStatus -in $finishedStates)
-
-if($restoreTaskStatus -eq 'kSuccess'){
-    "Task ID for tearDown is: {0}" -f $restoreTask.restoreTask.performRestoreTaskState.base.taskId
-    $mountPoints = $restoreTask.restoreTask.performRestoreTaskState.mountVolumesTaskState.mountInfo.mountVolumeResultVec
-    foreach($mountPoint in $mountPoints){
-        "{0} mounted to {1}" -f ($mountPoint.originalVolumeName, $mountPoint.mountPoint)
+# hyperV params
+if($environment -eq 'kHyperV'){
+    $recoveryParams["hypervParams"] = @{
+        "objects" = @(
+            @{
+                "snapshotId" = $snapshot.id
+            }
+        );
+        "recoveryAction" = "InstantVolumeMount";
+        "mountVolumeParams" = @{
+            "targetEnvironment" = $environment;
+            "hypervTargetParams" = @{
+                "mountToOriginalTarget" = $True;
+                "originalTargetConfig" = @{
+                    "bringDisksOnline" = $True;
+                    "targetVmCredentials" = $null
+                };
+                "newTargetConfig" = $null;
+                "readOnlyMount" = $false;
+                "volumeNames" = $null
+            }
+        }
     }
-}else{
-    Write-Warning "mount operation ended with: $restoreTaskStatus"
+    $targetParams = $recoveryParams.hypervParams.mountVolumeParams.hypervTargetParams
+    $targetConfig = $targetParams.originalTargetConfig
+
+    # alternate target params
+    if($targetServer -and $targetServer -ne $sourceServer){
+
+        # find vCenter
+        if($vCenter){
+            $rootNodes = api get protectionSources/rootNodes?environments=kHyperV | Where-Object {$_.protectionSource.name -eq $vCenter}
+            if(! $rootNodes){
+                Write-Host "HyperV source $vCenter not found" -ForegroundColor Yellow
+                exit
+            }else{
+                $targetSourceId = $rootNodes[0].protectionSource.id
+            }
+        }
+
+        # find VM
+        $sources = api get "protectionSources?id=$targetSourceId"
+        $thisVMId = getObjectId $targetServer
+        if(! $thisVMId){
+            Write-Host "VM target $targetServer not found" -ForegroundColor Yellow
+            exit
+        }
+
+        $targetParams.mountToOriginalTarget = $false
+        $targetParams.originalTargetConfig = $null
+        $targetParams.newTargetConfig = @{
+            "bringDisksOnline" = $True;
+            "targetVmCredentials" = $null;
+            "mountTarget" = @{
+                "id" = $thisVMId
+            }
+        }
+        $targetConfig = $targetParams.newTargetConfig
+    }
+
+    # vm credentials for autodeploy agent
+    if(!$vmUsername){
+        Write-Host "-vmUsername required for HyperV VMs" -ForegroundColor Yellow
+        exit
+    }
+    if(!$vmPassword){
+        $secureString = Read-Host -Prompt "Enter password for VM user ($vmUsername)" -AsSecureString
+        $vmPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
+    }
+    $targetConfig.targetVmCredentials = @{
+        "username" = $vmUsername;
+        "password" = $vmPassword
+    }
 }
+
+# specify volumes to mount
+if($volumes.Count -gt 0){
+    $targetParams.volumeNames = @($snapVolumes.volumes.name)
+}
+
+Write-Host "Performing instant volume mount..."
+$recovery = api post -v2 "data-protect/recoveries" $recoveryParams
+
+# wait
+if($recovery.PSObject.Properties['id']){
+    if($wait){
+        $finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning', 'SucceededWithWarning')
+        while($recovery.status -notin $finishedStates){
+            Start-Sleep 10
+            $recovery = api get -v2 "data-protect/recoveries/$($recovery.id)"
+        }
+        Write-Host "$($recovery.status)"
+        if($recovery.status -ne 'Succeeded'){
+            exit 1
+        }
+    }
+}
+exit 0
