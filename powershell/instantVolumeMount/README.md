@@ -62,7 +62,7 @@ Tearing down mount points...
 
 * -sourceServer: name of protected server/VM whose volume(s) to mount
 * -targetServer: (optional) name of registered server/VM to mount volume(s) to
-* -environment: (optional) filter search by environemt type 'kPhysical','kVMware', 'kHyperV'
+* -environment: (optional) filter search by environemt type 'kPhysical', 'kVMware', 'kHyperV'
 * -id: (optional) filter search by object id
 * -showVersions: (optional) show available run IDs and snapshot dates
 * -runId: (optional) specify exact run ID
@@ -74,6 +74,6 @@ Tearing down mount points...
 ## VM Parameters
 
 * -hypervisor: (optional) vCenter, SCVMM, ESXi or HyperV instance to find target VM
-* -vmUsername: (optional) in guest username to autodeploy Cohesity agent
-* -vmPassword: (optional) in guest passwprd to autodeploy Cohesity agent
 * -useExistingAgent: (optional) use existing Cohesity agent (VMware only)
+* -vmUsername: (optional) guest username to autodeploy Cohesity agent
+* -vmPassword: (optional) guest passwprd to autodeploy Cohesity agent
