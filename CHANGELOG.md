@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-10-22
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/instantVolumeMount> [`Update`] v2 rewrite, modernize authentication, support replicated backups
+
 ## 2023-10-18
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/replicationQueue> [`Update`] added --youngerthan and --olderthan parameters
