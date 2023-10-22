@@ -363,6 +363,8 @@ $recovery = api post -v2 "data-protect/recoveries" $recoveryParams
 
 # wait
 if($recovery.PSObject.Properties['id']){
+    $v1TaskId = ($recovery.id -split ':')[2]
+    Write-Host "Task ID for tearDown is: $v1TaskId" 
     if($wait){
         $finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning', 'SucceededWithWarning')
         while($recovery.status -notin $finishedStates){
