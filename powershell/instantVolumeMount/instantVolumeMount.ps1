@@ -13,7 +13,7 @@ param (
     [Parameter()][string]$clusterName,
     [Parameter(Mandatory = $True)][string]$sourceServer,
     [Parameter()][string]$targetServer,
-    [Parameter()][string]$vCenter,
+    [Parameter()][string]$hypervisor,
     [Parameter()][ValidateSet('kPhysical','kVMware', 'kHyperV')][string]$environment,
     [Parameter()][int64]$id,
     [Parameter()][int64]$runId,
@@ -185,10 +185,10 @@ if($environment -eq 'kVMware'){
     if($targetServer -and $targetServer -ne $sourceServer){
 
         # find vCenter
-        if($vCenter){
-            $rootNodes = api get protectionSources/rootNodes?environments=kVMware | Where-Object {$_.protectionSource.name -eq $vCenter}
+        if($hypervisor){
+            $rootNodes = api get protectionSources/rootNodes?environments=kVMware | Where-Object {$_.protectionSource.name -eq $hypervisor}
             if(! $rootNodes){
-                Write-Host "vCenter $vCenter not found" -ForegroundColor Yellow
+                Write-Host "VMware source $hypervisor not found" -ForegroundColor Yellow
                 exit
             }else{
                 $targetSourceId = $rootNodes[0].protectionSource.id
@@ -308,10 +308,10 @@ if($environment -eq 'kHyperV'){
     if($targetServer -and $targetServer -ne $sourceServer){
 
         # find vCenter
-        if($vCenter){
-            $rootNodes = api get protectionSources/rootNodes?environments=kHyperV | Where-Object {$_.protectionSource.name -eq $vCenter}
+        if($hypervisor){
+            $rootNodes = api get protectionSources/rootNodes?environments=kHyperV | Where-Object {$_.protectionSource.name -eq $hypervisor}
             if(! $rootNodes){
-                Write-Host "HyperV source $vCenter not found" -ForegroundColor Yellow
+                Write-Host "HyperV source $hypervisor not found" -ForegroundColor Yellow
                 exit
             }else{
                 $targetSourceId = $rootNodes[0].protectionSource.id
