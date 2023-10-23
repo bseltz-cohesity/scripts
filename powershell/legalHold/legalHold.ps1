@@ -46,7 +46,7 @@ if(!$cohesity_api.authorized){
 $job = api get protectionJobs | Where-Object name -eq $jobName
 
 if($job){
-    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=99999&excludeTasks=true" | Where-Object { $_.backupRun.snapshotsDeleted -eq $false }
+    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=99999&excludeTasks=true&excludeNonRestorableRuns=true" | Where-Object { $_.backupRun.snapshotsDeleted -eq $false }
     if($listRuns){
         $runs | Select-Object -Property @{label='RunId'; expression={$_.backupRun.jobRunId}}, @{label='RunDate'; expression={usecsToDate $_.backupRun.stats.startTimeUsecs}}
     }else{
@@ -85,7 +85,7 @@ if($job){
                                 }
                             )
                         }
-                        foreach($copyRun in $run.copyRun){
+                        foreach($copyRun in $run.copyRun | Where-Object {$_.target.type -in @('kLocal', 'kArchival')}){
                             $copyRunTarget = $copyRun.target
                             setApiProperty -object $copyRunTarget -name "holdForLegalPurpose" -value $holdValue
                             $runParams.jobRuns[0].copyRunTargets += $copyRunTarget
@@ -94,7 +94,7 @@ if($job){
                         $null = api put protectionRuns $runParams
                     }else{
                         $legalHoldState = $false
-                        foreach($copyRun in $run.copyRun){
+                        foreach($copyRun in $run.copyRun | Where-Object {$_.target.type -in @('kLocal', 'kArchival')}){
                             if($True -eq $copyRun.holdForLegalPurpose){
                                 $legalHoldState = $True
                             }
