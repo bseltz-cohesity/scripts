@@ -88,19 +88,13 @@ if($removeHold){
     $holdValue = $True
 }
 
-foreach($job in $jobs | Sort-Object -Property name | Where-Object {$_.isDeleted -ne $true}){
+foreach($job in $jobs | Sort-Object -Property name){
     $endUsecs = dateToUsecs (Get-Date)
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         "{0}" -f $job.name
         while($True){
             $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&endTimeUsecs=$endUsecs&excludeTasks=true"
             foreach($run in $runs){
-                # $copyRunsFound = $false
-                # foreach($copyRun in $run.copyRun){
-                #     if($copyRun.expiryTimeUsecs -gt (dateToUsecs)){
-                #         $copyRunsFound = $True
-                #     }
-                # }
                 if($addHold -or $removeHold){
                     $runParams = @{
                         "jobRuns" = @(
@@ -112,7 +106,7 @@ foreach($job in $jobs | Sort-Object -Property name | Where-Object {$_.isDeleted 
                         )
                     }
                     $update = $false
-                    foreach($copyRun in $run.copyRun){
+                    foreach($copyRun in $run.copyRun | Where-Object {$_.target.type -in @('kLocal', 'kArchival')}){
                         if($copyRun.PSObject.Properties['holdForLegalPurpose'] -and $copyRun.holdForLegalPurpose -eq $True){
                             $update = $True
                         }
@@ -141,19 +135,17 @@ foreach($job in $jobs | Sort-Object -Property name | Where-Object {$_.isDeleted 
                         $null = api put protectionRuns $runParams
                     }
                 }else{
-                    # if($copyRunsFound -eq $True){
-                        $legalHoldState = $false
-                        foreach($copyRun in $run.copyRun){
-                            if($True -eq $copyRun.holdForLegalPurpose){
-                                $legalHoldState = $True
-                            }
+                    $legalHoldState = $false
+                    foreach($copyRun in $run.copyRun | Where-Object {$_.target.type -in @('kLocal', 'kArchival')}){
+                        if($True -eq $copyRun.holdForLegalPurpose){
+                            $legalHoldState = $True
                         }
-                        $runDate = usecsToDate $run.backupRun.stats.startTimeUsecs
-                        if((! $showTrue -or $legalHoldState -eq $True) -and (! $showFalse -or $legalHoldState -eq $false)){
-                            write-host "    $runDate : LegalHold = $legalHoldState"
-                            """{0}"",""{1}"",""{2}""" -f $job.name, $runDate, $legalHoldState | Out-File -FilePath $outfile -Append
-                        }
-                    # }
+                    }
+                    $runDate = usecsToDate $run.backupRun.stats.startTimeUsecs
+                    if((! $showTrue -or $legalHoldState -eq $True) -and (! $showFalse -or $legalHoldState -eq $false)){
+                        write-host "    $runDate : LegalHold = $legalHoldState"
+                        """{0}"",""{1}"",""{2}""" -f $job.name, $runDate, $legalHoldState | Out-File -FilePath $outfile -Append
+                    }
                 }
             }
             if($runs.Count -eq $numRuns){
