@@ -124,7 +124,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
             for run in runs:
                 held = False
                 copyRunsFound = False
-                for copyRun in run['copyRun']:
+                for copyRun in [c for c in run['copyRun'] if c['target']['type'] in ['kLocal', 'kArchival']]:
                     if 'expiryTimeUsecs' in copyRun and copyRun['expiryTimeUsecs'] > dateToUsecs():
                         copyRunsFound = True
                     if 'holdForLegalPurpose' in copyRun and copyRun['holdForLegalPurpose'] is True:
@@ -140,7 +140,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                             ]
                         }
                         update = False
-                        for copyRun in run['copyRun']:
+                        for copyRun in [c for c in run['copyRun'] if c['target']['type'] in ['kLocal', 'kArchival']]:
                             if (addhold and 'expiryTimeUsecs' in copyRun and copyRun['expiryTimeUsecs'] > dateToUsecs()) or (removehold and held is True):
                                 update = True
                                 copyRunTarget = copyRun['target']
