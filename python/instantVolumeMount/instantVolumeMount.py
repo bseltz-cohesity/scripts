@@ -158,9 +158,9 @@ if showversions:
 snapshot = sorted(snapshots['snapshots'], key=lambda s: s['runStartTimeUsecs'], reverse=True)[0]
 
 # volumes
-if showvolumes or len(volumes) > 0:
+if showvolumes or (volumes is not None and len(volumes) > 0):
     snapVolumes = api('get', 'data-protect/snapshots/%s/volume?includeSupportedOnly=false' % snapshot['id'], v=2)
-    if len(volumes) > 0:
+    if volumes is not None and len(volumes) > 0:
         missingVolumes = [v for v in volumes if v.lower() not in [n['name'].lower() for n in snapVolumes['volumes']]]
         if len(missingVolumes) > 0:
             print('volumes %s not found' % ', '.join(missingVolumes))
@@ -368,7 +368,7 @@ if environment == 'kHyperV':
     }
 
 # specify volumes to mount
-if len(volumes) > 0:
+if volumes is not None and len(volumes) > 0:
     targetParams['volumeNames'] = [v['name'] for v in snapVolumes['volumes']]
 
 # display(recoveryParams)
