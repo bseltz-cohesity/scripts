@@ -53,6 +53,7 @@ Place the files in a folder together and run the main script like so:
 * -principalList: (optional) text file of users or groups to modify (one per line)
 * -objectName: (optional) registered objects to add/remove from access list (comma separated)
 * -objectList: (optional) text file of registered objects to add/remove from access list (one per line)
+* -environment: (optional) find object of type (e.g. kPhysical, kVMware)
 * -viewName: (optional) views to add/remove from access list (comma separated)
 * -viewList: (optional) text file of views to add/remove from access list (one per line)
 * -remove: (optional) perform remove operation (default is add)

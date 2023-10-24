@@ -17,6 +17,7 @@ param (
     [Parameter()][string]$objectList,
     [Parameter()][array]$viewName,
     [Parameter()][string]$viewList,
+    [Parameter()][string]$environment,
     [Parameter()][switch]$remove
 )
 
@@ -73,7 +74,11 @@ if(!$cohesity_api.authorized){
 
 $users = api get users?_includeTenantInfo=true
 $groups = api get groups?_includeTenantInfo=true
-$sources = api get "protectionSources?allUnderHierarchy=true&environments=kVMware&environments=kHyperV&environments=kPhysical&environments=kPure&environments=kAzure&environments=kNetapp&environments=kGenericNas&environments=kAcropolis&environments=kPhysicalFiles&environments=kIsilon&environments=kKVM&environments=kAWS&environments=kExchange&environments=kHyperVVSS&environments=kGCP&environments=kFlashBlade&environments=kAWSNative&environments=kO365&environments=kO365Outlook&environments=kGCPNative&environments=kAzureNative&environments=kAD&environments=kAWSSnapshotManager&environments=kGPFS&environments=kRDSSnapshotManager&environments=kKubernetes&environments=kNimble&environments=kAzureSnapshotManager&environments=kElastifile&environments=kCassandra&environments=kMongoDB&environments=kHBase&environments=kHive&environments=kHdfs&environments=kCouchbase&environments=kUDA&environments=kSQL&environments=kExchange&environments=kOracle&environments=kAD&includeEntityPermissionInfo=true&includeVMFolders=true&pruneNonCriticalInfo=true&includeObjectProtectionInfo=false"
+if($environment){
+    $sources = api get "protectionSources?allUnderHierarchy=true&environments=$environment&includeEntityPermissionInfo=false&includeVMFolders=true&pruneNonCriticalInfo=true&includeObjectProtectionInfo=false"
+}else{
+    $sources = api get "protectionSources?allUnderHierarchy=true&environments=kVMware&environments=kHyperV&environments=kPhysical&environments=kPure&environments=kAzure&environments=kNetapp&environments=kGenericNas&environments=kAcropolis&environments=kPhysicalFiles&environments=kIsilon&environments=kKVM&environments=kAWS&environments=kExchange&environments=kHyperVVSS&environments=kGCP&environments=kFlashBlade&environments=kAWSNative&environments=kO365&environments=kO365Outlook&environments=kGCPNative&environments=kAzureNative&environments=kAD&environments=kAWSSnapshotManager&environments=kGPFS&environments=kRDSSnapshotManager&environments=kKubernetes&environments=kNimble&environments=kAzureSnapshotManager&environments=kElastifile&environments=kCassandra&environments=kMongoDB&environments=kHBase&environments=kHive&environments=kHdfs&environments=kCouchbase&environments=kUDA&environments=kSQL&environments=kExchange&environments=kOracle&environments=kAD&includeEntityPermissionInfo=true&includeVMFolders=true&pruneNonCriticalInfo=true&includeObjectProtectionInfo=false"
+}
 $views = api get views
 
 function getObjectId($objectName){
