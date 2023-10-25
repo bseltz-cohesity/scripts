@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-10-24
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/addObjectToUserAccessList> [`Update`] added `-environment` parameter to filter on object type
+
 ## 2023-10-23
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/python/instantVolumeMount> [`Update`] v2 rewrite, modernize authentication, support replicated backups
