@@ -173,8 +173,12 @@ if showvolumes or (volumes is not None and len(volumes) > 0):
         exit()
 
 # recovery parameters
+targetName = sourceserver
+if targetserver:
+    targetName = '%s_to_%s' % (sourceserver, targetserver)
+
 recoveryParams = {
-    "name": "Recover_%s" % now.strftime('%Y-%m-%d_%H:%M:%S'),
+    "name": "Recover_%s_%s" % (targetName, now.strftime('%Y-%m-%d_%H:%M:%S')),
     "snapshotEnvironment": environment
 }
 
@@ -385,7 +389,15 @@ if 'id' in recovery:
         while recovery['status'] not in finishedStates:
             sleep(10)
             recovery = api('get', 'data-protect/recoveries/%s' % recovery['id'], v=2)
-        print(recovery['status'])
+        print('Mount operation ended with status: %s' % recovery['status'])
         if recovery['status'] != 'Succeeded':
             exit(1)
+        if environment == 'kVMware':
+            mounts = recovery['vmwareParams']['mountVolumeParams']['vmwareTargetParams']['mountedVolumeMapping']
+        elif environment == 'kPhysical':
+            mounts = recovery['physicalParams']['mountVolumeParams']['physicalTargetParams']['mountedVolumeMapping']
+        else:
+            mounts = recovery['hypervParams']['mountVolumeParams']['hypervTargetParams']['mountedVolumeMapping']
+        for mount in mounts:
+            print('%s mounted to %s' % (mount['originalVolume'], mount['mountedVolume']))
 exit(0)

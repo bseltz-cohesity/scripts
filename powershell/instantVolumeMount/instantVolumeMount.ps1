@@ -149,8 +149,13 @@ if($showVolumes -or $volumes.Count -gt 0){
 }
 
 # recovery parameters
+$targetName = $sourceServer
+if($targetServer){
+    $targetName = "$($sourceServer)_to_$($targetServer)"
+}
+
 $recoveryParams = @{
-    "name" = "Recover_$(Get-Date -UFormat '%Y-%m-%d_%H:%M:%S')";
+    "name" = "Recover_$($targetName)_$(Get-Date -UFormat '%Y-%m-%d_%H:%M:%S')";
     "snapshotEnvironment" = $environment;
 }
 
@@ -371,9 +376,19 @@ if($recovery.PSObject.Properties['id']){
             Start-Sleep 10
             $recovery = api get -v2 "data-protect/recoveries/$($recovery.id)"
         }
-        Write-Host "$($recovery.status)"
+        Write-Host "Mount operation ended with status: $($recovery.status)"
         if($recovery.status -ne 'Succeeded'){
             exit 1
+        }
+        if($environment -eq 'kVMware'){
+            $mounts = $recovery.vmwareParams.mountVolumeParams.vmwareTargetParams.mountedVolumeMapping
+        }elseif($environment -eq 'kPhysical'){
+            $mounts = $recovery.physicalParams.mountVolumeParams.physicalTargetParams.mountedVolumeMapping
+        }else{
+            $mounts = $recovery.hypervParams.mountVolumeParams.hypervTargetParams.mountedVolumeMapping
+        }
+        foreach($mount in $mounts){
+            Write-Host "$($mount.originalVolume) mounted to $($mount.mountedVolume)"
         }
     }
 }
