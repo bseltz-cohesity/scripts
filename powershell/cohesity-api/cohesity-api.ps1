@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.10.13 - Brian Seltzer
+#  Version 2023.10.26 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2023.02.10 - added -region to api function (for DMaaS)
@@ -19,10 +19,11 @@
 # 2023.10.09 - clarify password / API key prompts
 # 2023.10.11 - removed demand minimim powershell version, to support Start-Job
 # 2023.10.13 - fixed password prompt for AD user
+# 2023.10.26 - updated auth validation to use basicClusterInfo rather than cluster API
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2023.10.13'
+$versionCohesityAPI = '2023.10.26'
 
 # state cache
 $cohesity_api = @{
@@ -229,7 +230,7 @@ function apiauth($vip='helios.cohesity.com',
         # validate cluster API key authorization
         if($useApiKey -and (($vip -ne 'helios.cohesity.com') -and $helios -ne $True)){
             try{
-                $URL = "https://$vip/irisservices/api/v1/cluster"
+                $URL = "https://$vip/irisservices/api/v1/public/basicClusterInfo"
                 if($PSVersionTable.PSEdition -eq 'Core'){
                     $cluster = Invoke-RestMethod -Method Get -Uri $URL -Header $cohesity_api.header -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -TimeoutSec $timeout -SkipCertificateCheck -SessionVariable session
                 }else{
@@ -376,7 +377,7 @@ function apiauth($vip='helios.cohesity.com',
                 }
             }
             # validate authorization
-            $URL = "https://$vip/irisservices/api/v1/cluster"
+            $URL = "https://$vip/irisservices/api/v1/public/basicClusterInfo"
             if($PSVersionTable.PSEdition -eq 'Core'){
                 $cluster = Invoke-RestMethod -Method Get -Uri $URL -Header $cohesity_api.header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -SkipCertificateCheck -WebSession $cohesity_api.session
             }else{
@@ -1151,11 +1152,14 @@ function toJson(){
     Param(
         [Parameter(ValueFromPipeline)]$j
     )
-    $out = $j | ConvertTo-Json -Depth 99
-    if($out.split("`n")[1].startsWith('    ')){
+    process{
+        $out = $_ | ConvertTo-Json -Depth 99
+        if($out.split("`n")[1].startsWith('    ')){
+            $out
+        }else{
+            $out.replace('  ','    ')
+        }
         $out
-    }else{
-        $out.replace('  ','    ')
     }
 }
 
