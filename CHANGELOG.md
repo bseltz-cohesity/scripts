@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-10-27
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectO365Mailboxes> [`Fix`] Force exclude ID list uniqueness
+
 ## 2023-10-26
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api> [`Fix`] updated auth validation to use basicClusterInfo, fixed copySessionCookie function
