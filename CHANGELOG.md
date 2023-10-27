@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-10-26
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api> [`Fix`] updated auth validation to use basicClusterInfo, fixed copySessionCookie function
+
 ## 2023-10-24
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/addObjectToUserAccessList> [`Update`] added `-environment` parameter to filter on object type
