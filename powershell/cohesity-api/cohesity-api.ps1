@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.10.26 - Brian Seltzer
+#  Version 2023.10.26b - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2023.02.10 - added -region to api function (for DMaaS)
@@ -19,11 +19,11 @@
 # 2023.10.09 - clarify password / API key prompts
 # 2023.10.11 - removed demand minimim powershell version, to support Start-Job
 # 2023.10.13 - fixed password prompt for AD user
-# 2023.10.26 - updated auth validation to use basicClusterInfo rather than cluster API
+# 2023.10.26 - updated auth validation to use basicClusterInfo, fixed copySessionCookie function
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2023.10.26'
+$versionCohesityAPI = '2023.10.26b'
 
 # state cache
 $cohesity_api = @{
@@ -512,7 +512,8 @@ function accessCluster($remoteClusterName=$null){
 
 function copySessionCookie($ip){
     if($cohesity_api.session){
-        $cookies = $cohesity_api.session.Cookies.GetAllCookies()
+        $cookies = $cohesity_api.session.Cookies.GetCookies($cohesity_api.apiRoot)
+        # $cookies = $cohesity_api.session.Cookies.GetAllCookies()
         $cookie = New-Object System.Net.Cookie
         $cookie.Name = $cookies[0].Name
         $cookie.Value = $cookies[0].Value
