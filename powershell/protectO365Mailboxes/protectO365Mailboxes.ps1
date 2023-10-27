@@ -95,7 +95,7 @@ if($job){
     # existing protection job
     $newJob = $false
     if($autoProtectRemaining){
-        $job.office365Params.excludeObjectIds = $otherJobs.office365Params.objects.id
+        $job.office365Params.excludeObjectIds = @($otherJobs.office365Params.objects.id | Sort-Object -Unique)
         "Updating protection job $($job.name)"
         $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
         exit
