@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-10-08
+
+* <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/protectOracle> [`Update`] added support to specify more than one database (previously was one database or all databases)
+
 ## 2023-10-27
 
 * <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectO365Mailboxes> [`Fix`] Force exclude ID list uniqueness

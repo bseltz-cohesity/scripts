@@ -77,16 +77,16 @@ Place both files in a folder together and run the main script like so:
 
 ## Other Parameters
 
-* -s, --servername: name of source oracle server to protect (repeat for multiple)
-* -f, --serverlist: text file of server names to protect (one per line)
-* -db, --dbname: name of oracle DB (optional: default is all databases)
+* -s, --servername: (optional) name of source oracle server to protect (repeat for multiple)
+* -f, --serverlist: (optional) text file of server names to protect (one per line)
+* -db, --dbname: (optional) name of database to protect (repeat for multiple, all DBs if omitted)
 * -j, --jobname: name of protection job
-* -p, --policyname: name of protection policy (optional: only required if job doesn't already exist)
-* -t, --starttime: e.g. '21:00' (optional: default is 20:00)
-* -z, --timezone: e.g. 'America/Los_Angeles' (optional: default is America/New_York)
-* -is, --incrementalsla: (optional: default is 60)
-* -fs, --fullsla: (optional: default is 120)
-* -sd, --storagedomain: (optional) default is DefaultStorageDomain)
+* -p, --policyname: (optional) name of protection policy (required if job doesn't already exist)
+* -t, --starttime: (optional) e.g. '21:00' (default is 20:00)
+* -z, --timezone:(optional) e.g. 'America/Los_Angeles' (default is America/New_York)
+* -is, --incrementalsla: (optional) default is 60
+* -fs, --fullsla: (optional) default is 120
+* -sd, --storagedomain: (optional) default is DefaultStorageDomain
 * -l, --deletelogdays: (optional) delete logs after X days (default is none)
 * -pause, --pause: (optional) pause future runs
 * -np, --nopersistmounts: (optional) do not persist mount points (default is to persist)
