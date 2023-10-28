@@ -14,7 +14,7 @@
 
 ## 2023-10-24
 
-* [addObjectToUserAccessList.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/addObjectToUserAccessList) [Update] added `-environment` parameter to filter on object type
+* [addObjectToUserAccessList.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/addObjectToUserAccessList) [Update] added -environment parameter to filter on object type
 
 ## 2023-10-23
 
@@ -101,7 +101,7 @@
 
 * [cohesity-api.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api) [Fix] cosmetic bug 'An item with the same key has already been added. Key: content-type'
 * [registerPhysical.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/registerPhysical) [Update] added support for multitenancy
-* [chargebackReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/chargebackReport) [Fix] added lower bound `startTimeUsecs` to query parameters
+* [chargebackReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/chargebackReport) [Fix] added lower bound startTimeUsecs to query parameters
 
 ## 2023-09-29
 
@@ -111,7 +111,7 @@
 ## 2023-09-28
 
 * [activeSnapshotsRemote.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/activeSnapshotsRemote) [New] Script to determine count, oldest, and newest backups available on replica cluster (that can't be queried directly, e.g. isolated vault cluster)
-* [archiveQueue.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/archiveQueue) [Update] don't show expired archives when using `-showFinished``
+* [archiveQueue.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/archiveQueue) [Update] don't show expired archives when using -showFinished
 
 ## 2023-09-26
 
@@ -289,7 +289,7 @@
 
 ## 2023-08-09
 
-* [expireOldSnapshots.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/expireOldSnapshots) [Update] added `-s`, `--skipmonthlies` parameter
+* [expireOldSnapshots.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/expireOldSnapshots) [Update] added -s, --skipmonthlies parameter
 * [storagePerObjectReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storagePerObjectReport) [Update] updated storage calculations
 
 ## 2023-08-02
