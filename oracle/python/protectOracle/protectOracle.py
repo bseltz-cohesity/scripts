@@ -30,7 +30,7 @@ parser.add_argument('-j', '--jobname', type=str, required=True)   # name of prot
 parser.add_argument('-p', '--policyname', type=str)               # name of protection policy
 parser.add_argument('-s', '--servername', action='append', type=str)  # name of server to protect
 parser.add_argument('-f', '--serverlist', type=str)
-parser.add_argument('-db', '--dbname', type=str)                    # name of DB to protect
+parser.add_argument('-db', '--dbname', action='append', type=str)   # name of DB to protect
 parser.add_argument('-t', '--starttime', type=str, default='20:00')  # job start time
 parser.add_argument('-z', '--timezone', type=str, default='America/Los_Angeles')  # timezone for job
 parser.add_argument('-is', '--incrementalsla', type=int, default=60)    # incremental SLA minutes
@@ -57,7 +57,7 @@ jobname = args.jobname
 policyname = args.policyname
 servername = args.servername
 serverlist = args.serverlist
-dbname = args.dbname
+dbnames = args.dbname
 starttime = args.starttime
 timezone = args.timezone
 incrementalsla = args.incrementalsla
@@ -181,7 +181,6 @@ for sname in servernames:
         print('Server %s not found!' % sname)
         continue
     serverId = server[0]['protectionSource']['id']
-    job['sourceIds'].append(serverId)
 
     if 'applicationNodes' not in server[0]:
         print('No databases found on %s' % sname)
@@ -193,55 +192,72 @@ for sname in servernames:
         dbUuids[db['protectionSource']['id']] = db['protectionSource']['oracleProtectionSource']['uuid']
         dbNames[db['protectionSource']['id']] = db['protectionSource']['name']
 
-    if dbname is not None:
+    dbIds = []
+    if dbnames is not None and len(dbnames) > 0:
         # find db to add to job
-        db = [a for a in server[0]['applicationNodes'] if a['protectionSource']['name'].lower() == dbname.lower()]
-        if len(db) < 1:
-            print('Database %s not found!' % dbname)
-            continue
-        dbIds = [db[0]['protectionSource']['id']]
-        print('Adding %s/%s to protection job %s...' % (sname, dbname, jobname))
+        for dbname in dbnames:
+            db = [a for a in server[0]['applicationNodes'] if a['protectionSource']['name'].lower() == dbname.lower()]
+            if len(db) < 1:
+                print('Database %s not found!' % dbname)
+                continue
+            dbIds.append(db[0]['protectionSource']['id'])
+            print('Adding %s/%s to protection job %s...' % (sname, dbname, jobname))
     else:
         # or add all dbs to job
         dbIds = [a['protectionSource']['id'] for a in server[0]['applicationNodes']]
         print('Adding %s/* to protection job %s...' % (sname, jobname))
 
     # update dblist for server
-    if 'sourceSpecialParameters' not in job:
-        job['sourceSpecialParameters'] = []
-    sourceSpecialParameter = [s for s in job['sourceSpecialParameters'] if s['sourceId'] == serverId]
-
-    if len(sourceSpecialParameter) < 1:
-
-        job['sourceSpecialParameters'].append({"sourceId": serverId, "oracleSpecialParameters": {"applicationEntityIds": dbIds}})
+    if len(dbIds) > 0:
+        job['sourceIds'].append(serverId)
+        if 'sourceSpecialParameters' not in job:
+            job['sourceSpecialParameters'] = []
         sourceSpecialParameter = [s for s in job['sourceSpecialParameters'] if s['sourceId'] == serverId]
-        if deletelogdays is not None:
-            sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'] = []
-            for dbId in dbIds:
-                sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'].append({
-                    "databaseAppId": dbId,
-                    "nodeChannelList": [
-                        {
-                            "databaseUuid": "%s" % dbUuids[dbId],
-                            "databaseUniqueName": "%s" % dbNames[dbId],
-                            "archiveLogKeepDays": deletelogdays,
-                            "enableDgPrimaryBackup": True,
-                            "rmanBackupType": 1
-                        }
-                    ]
-                })
-    else:
-        for dbId in dbIds:
-            sourceSpecialParameter[0]['oracleSpecialParameters']['applicationEntityIds'].append(dbId)
-            sourceSpecialParameter[0]['oracleSpecialParameters']['applicationEntityIds'] = list(set(sourceSpecialParameter[0]['oracleSpecialParameters']['applicationEntityIds']))
+        if len(sourceSpecialParameter) < 1:
+
+            job['sourceSpecialParameters'].append({"sourceId": serverId, "oracleSpecialParameters": {"applicationEntityIds": dbIds}})
+            sourceSpecialParameter = [s for s in job['sourceSpecialParameters'] if s['sourceId'] == serverId]
             if deletelogdays is not None:
-                if 'appParamsList' not in sourceSpecialParameter[0]['oracleSpecialParameters']:
-                    sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'] = []
-                appParam = [a for a in sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'] if a['databaseAppId'] == dbId]
-                otherAppParams = [a for a in sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'] if a['databaseAppId'] != dbId]
-                if len(appParam) < 1:
-                    sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'].append(
-                        {
+                sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'] = []
+                for dbId in dbIds:
+                    sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'].append({
+                        "databaseAppId": dbId,
+                        "nodeChannelList": [
+                            {
+                                "databaseUuid": "%s" % dbUuids[dbId],
+                                "databaseUniqueName": "%s" % dbNames[dbId],
+                                "archiveLogKeepDays": deletelogdays,
+                                "enableDgPrimaryBackup": True,
+                                "rmanBackupType": 1
+                            }
+                        ]
+                    })
+        else:
+            for dbId in dbIds:
+                sourceSpecialParameter[0]['oracleSpecialParameters']['applicationEntityIds'].append(dbId)
+                sourceSpecialParameter[0]['oracleSpecialParameters']['applicationEntityIds'] = list(set(sourceSpecialParameter[0]['oracleSpecialParameters']['applicationEntityIds']))
+                if deletelogdays is not None:
+                    if 'appParamsList' not in sourceSpecialParameter[0]['oracleSpecialParameters']:
+                        sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'] = []
+                    appParam = [a for a in sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'] if a['databaseAppId'] == dbId]
+                    otherAppParams = [a for a in sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'] if a['databaseAppId'] != dbId]
+                    if len(appParam) < 1:
+                        sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'].append(
+                            {
+                                "databaseAppId": dbId,
+                                "nodeChannelList": [
+                                    {
+                                        "databaseUuid": "%s" % dbUuids[dbId],
+                                        "databaseUniqueName": "%s" % dbNames[dbId],
+                                        "archiveLogKeepDays": deletelogdays,
+                                        "enableDgPrimaryBackup": True,
+                                        "rmanBackupType": 1
+                                    }
+                                ]
+                            }
+                        )
+                    else:
+                        appParam[0] = {
                             "databaseAppId": dbId,
                             "nodeChannelList": [
                                 {
@@ -253,46 +269,37 @@ for sname in servernames:
                                 }
                             ]
                         }
-                    )
-                else:
-                    appParam[0] = {
-                        "databaseAppId": dbId,
-                        "nodeChannelList": [
-                            {
-                                "databaseUuid": "%s" % dbUuids[dbId],
-                                "databaseUniqueName": "%s" % dbNames[dbId],
-                                "archiveLogKeepDays": deletelogdays,
-                                "enableDgPrimaryBackup": True,
-                                "rmanBackupType": 1
-                            }
-                        ]
-                    }
-                    otherAppParams.append(appParam[0])
-                    sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'] = otherAppParams
+                        otherAppParams.append(appParam[0])
+                        sourceSpecialParameter[0]['oracleSpecialParameters']['appParamsList'] = otherAppParams
+    else:
+        print('no databases added for %s' % sname)
 
 job['sourceIds'] = list(set(job['sourceIds']))
 
-if pause is True:
-    job['isPaused'] = True
+if len(job['sourceIds']) > 0:
+    if pause is True:
+        job['isPaused'] = True
 
-if nopersistmounts:
-    if 'environmentParameters' not in job:
-        job['environmentParameters'] = {
-            "oracleParameters": {
-                "persistMountpoints": False
+    if nopersistmounts:
+        if 'environmentParameters' not in job:
+            job['environmentParameters'] = {
+                "oracleParameters": {
+                    "persistMountpoints": False
+                }
             }
-        }
+        else:
+            job['environmentParameters']['oracleParameters']['persistMountpoints'] = False
+    if persistmounts:
+        job['environmentParameters']['oracleParameters']['persistMountpoints'] = True
+
+    if noalert:
+        job['alertingPolicy'] = []
+
+    if newJob is True:
+        # create new job
+        result = api('post', 'protectionJobs', job)
     else:
-        job['environmentParameters']['oracleParameters']['persistMountpoints'] = False
-if persistmounts:
-    job['environmentParameters']['oracleParameters']['persistMountpoints'] = True
-
-if noalert:
-    job['alertingPolicy'] = []
-
-if newJob is True:
-    # create new job
-    result = api('post', 'protectionJobs', job)
+        # update existing job
+        result = api('put', 'protectionJobs/%s' % job['id'], job)
 else:
-    # update existing job
-    result = api('put', 'protectionJobs/%s' % job['id'], job)
+    print('nothing protected')
