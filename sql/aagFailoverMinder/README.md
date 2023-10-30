@@ -32,6 +32,33 @@ Place all files in a folder together. And run the script like so:
 # end example
 ```
 
+To run the script against multiple clusters:
+
+```powershell
+# example
+./aagFailoverMinder.ps1 -vip mycluster1, mycluster2 `
+                        -username myuser `
+                        -domain mydomain.net
+# end example
+```
+
+To run the script against all helios-connected clusters:
+
+```powershell
+# example
+./aagFailoverMinder.ps1 -username myuser@mydomain.net
+# end example
+```
+
+To run the script against select helios clusters:
+
+```powershell
+# example
+./aagFailoverMinder.ps1 -username myuser@mydomain.net `
+                        -clusterName mycluster1, mycluster2
+# end example
+```
+
 ## Parameters
 
 * -vip: name or IP of Cohesity cluster
