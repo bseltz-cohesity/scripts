@@ -74,7 +74,7 @@ foreach($result in $searchResults){
     $lastRunTime = $result.vmDocument.versions[0].instanceId.jobStartTimeUsecs + 1
     $sourceId = $result.vmDocument.objectId.entity.id
     $newRuns = api get "protectionRuns?jobId=$jobId&startTimeUsecs=$lastRunTime&sourceId=$sourceId&numRuns=1&useCachedData=true" -timeout $timeoutSec
-    if($newRuns.Count -gt 0){
+    if($newRuns){
         if($newRuns[0].backupRun.status -notin $finishedStates){
             $sourceBackupStatus = $newRuns[0].backupRun.sourceBackupStatus | Where-Object {$_.source.id -eq $sourceId}
             $progressPath = $sourceBackupStatus.progressMonitorTaskPath
