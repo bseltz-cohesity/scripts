@@ -68,6 +68,7 @@ if(! $searchResults){
 }
 
 foreach($result in $searchResults){
+    $backupsRunning = $False
     $jobName = $result.vmDocument.jobName
     $jobId = $result.vmDocument.objectId.jobId
     $lastRunTime = $result.vmDocument.versions[0].instanceId.jobStartTimeUsecs + 1
@@ -76,17 +77,20 @@ foreach($result in $searchResults){
     if($newRuns.Count -gt 0){
         if($newRuns[0].backupRun.status -notin $finishedStates){
             $sourceBackupStatus = $newRuns[0].backupRun.sourceBackupStatus | Where-Object {$_.source.id -eq $sourceId}
-            if($sourceBackupStatus.status -notin $finishedStates){
+            $progressPath = $sourceBackupStatus.progressMonitorTaskPath
+            $progressMonitor = api get "/progressMonitors?taskPathVec=$progressPath&excludeSubTasks=true&includeFinishedTasks=false" -timeout $timeoutSec
+            $progress = $progressMonitor.resultGroupVec[0].taskVec[0].progress
+            if(! $progress.PSObject.Properties['endTimeSecs']){
+                $backupsRunning = $True
                 Write-Host "$jobName is currently backing me up"
                 if($wait){
-                    Write-Host "waiting for backup to finish..."
-                    $progressPath = $sourceBackupStatus.progressMonitorTaskPath
+                    Write-Host "Waiting for backup to finish..."
                     while($True){
                         Start-Sleep $sleepTimeSec
                         $progressMonitor = api get "/progressMonitors?taskPathVec=$progressPath&excludeSubTasks=true&includeFinishedTasks=false" -timeout $timeoutSec
                         $progress = $progressMonitor.resultGroupVec[0].taskVec[0].progress
                         if($progress.PSObject.Properties['endTimeSecs']){
-                            Write-Host "backup completed"
+                            Write-Host "Backup completed"
                             break
                         }
                     }
@@ -95,8 +99,9 @@ foreach($result in $searchResults){
                 }
             }
         }
-    }else{
-        Write-Host "no backups running"
     }
+}
+if($backupsRunning -eq $False){
+    Write-Host "no backups running"
 }
 exit 0
