@@ -67,8 +67,8 @@ if(! $searchResults){
     exit 0
 }
 
+$backupsRunning = $False
 foreach($result in $searchResults){
-    $backupsRunning = $False
     $jobName = $result.vmDocument.jobName
     $jobId = $result.vmDocument.objectId.jobId
     $lastRunTime = $result.vmDocument.versions[0].instanceId.jobStartTimeUsecs + 1
