@@ -15,7 +15,7 @@ chmod +x restoreFiles
 # End download commands
 ```
 
-Place both files in a folder together and run the main script like so:
+## Example
 
 ```bash
 # example
