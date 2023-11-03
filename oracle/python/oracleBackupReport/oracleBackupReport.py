@@ -78,7 +78,7 @@ outfile = 'oracleBackupReport-%s-%s.csv' % (cluster['name'], dateString)
 f = codecs.open(outfile, 'w')
 
 # headings
-f.write('Job Name,Host Name,Database Name,UUID,Run Type,Start Time,End Time,Duration (Sec),DB Size (%s),Data Read (%s),Status\n' % (units, units))
+f.write('Job Name,Host Name,Database Name,UUID,Run Type,Start Time,End Time,Duration (Sec),DB Size (%s),Data Read (%s),Status,DB Type,DG Role\n' % (units, units))
 
 jobs = api('get', 'data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true&environments=kOracle', v=2)
 
@@ -104,6 +104,11 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                     if 'objects' in run:
                         for object in run['objects']:
                             if object['object']['objectType'] == 'kDatabase':
+                                dgRole = ''
+                                dbSource = api('get', 'protectionSources?id=%s' % object['object']['id'])
+                                dbType = dbSource[0]['protectionSource']['oracleProtectionSource']['dbType']
+                                if 'dataGuardInfo' in dbSource[0]['protectionSource']['oracleProtectionSource']:
+                                    dgRole = dbSource[0]['protectionSource']['oracleProtectionSource']['dataGuardInfo']['role']
                                 hostobject = [o for o in run['objects'] if o['object']['id'] == object['object']['sourceId']]
                                 hostname = hostobject[0]['object']['name']
                                 dbname = object['object']['name']
@@ -116,7 +121,7 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                                 dbsize = round(snapinfo['stats']['logicalSizeBytes'] / multiplier, 2)
                                 dataread = round(snapinfo['stats']['bytesRead'] / multiplier, 2)
                                 print("    %s  %s/%s  (%s)  %s" % (runStartTime, hostname, dbname, runtype, status))
-                                f.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (job['name'], hostname, dbname, uuid, runtype, starttime, endtime, duration, dbsize, dataread, status))
+                                f.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (job['name'], hostname, dbname, uuid, runtype, starttime, endtime, duration, dbsize, dataread, status, dbType, dgRole))
                     if lastrunonly:
                         break
 f.close()
