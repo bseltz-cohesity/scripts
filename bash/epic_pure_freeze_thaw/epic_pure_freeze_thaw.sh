@@ -2,7 +2,7 @@
 
 ##########################################################################################
 ##
-## Last updated: 2023.08.31 - Brian Seltzer @ Cohesity
+## Last updated: 2023.11.03 - Brian Seltzer @ Cohesity
 ##
 ## - change first line to #!/bin/ksh (AIX) or #!/bin/bash (Linux)
 ## - edit /etc/ssh/sshd_cohfig: MaxStartups 50:30:150 (first number must be 24 or higher) 
@@ -17,6 +17,7 @@
 ## - 2023-03-09 - added failure on no PPG membership, added leader log indicator
 ## - 2023-07-29 - parameterized arguments and autodetect OS (Linux or AIX)
 ## - 2023-08-31 - added support for multiple pure protection groups
+## - 2023-11-03 - moved make source LUN locks to after snapshot creation
 ##
 ##########################################################################################
 
@@ -192,12 +193,6 @@ done
 PURE_SRC_LUNS=$(sed -e :a -e '$!N; s/\n/ /; ta' /tmp/cohesity_SRCLUNS.txt)
 echo "PURE_SOURCE_LUNS: $PURE_SRC_LUNS"
 
-#### make source LUN locks
-for jj in $PURE_SRC_LUNS
-do
-    mkdir -p /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$jj
-done
-
 if [[ ! -e /tmp/$COHESITY_JOB_ID ]]; then
     mkdir /tmp/$COHESITY_JOB_ID
     journalStatus=$?
@@ -327,6 +322,13 @@ else
 
     # Snapshot was successful
     if [[ $snap_status -eq 0 ]]; then
+
+        #### make source LUN locks
+        for jj in $PURE_SRC_LUNS
+        do
+            mkdir -p /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$jj
+        done
+
         rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX >> /tmp/cohesity_snap.log 2>&1
         # I'm not in the PPG (and I'm the leader)
         if [[ ! -e /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$COHESITY_BACKUP_ENTITY ]]; then
@@ -347,6 +349,12 @@ else
         mkdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.failed
         rmdir /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX >> /tmp/cohesity_snap.log 2>&1
         echo "$(date) : $COHESITY_BACKUP_ENTITY : Script Completed with Error ****" >> /tmp/cohesity_snap.log
+
+        #### make source LUN locks
+        for jj in $PURE_SRC_LUNS
+        do
+            mkdir -p /tmp/$COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX.$jj
+        done
     fi
     echo "" >> /tmp/cohesity_snap.log
     exit $snap_status
