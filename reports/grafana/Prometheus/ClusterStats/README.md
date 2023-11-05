@@ -34,6 +34,7 @@ You can setup the exporter to run as a service:
 example: /lib/systemd/system/cohesity-prometheus-exporter.service
 
 ```bash
+[Unit]
 Description=Cohesity Prometheus Exporter Service
 
 [Service]
@@ -49,7 +50,7 @@ example: /usr/local/bin/exporter-start.sh
 
 ```bash
 #!/bin/bash
-/usr/local/bin/scripts/python/prometheus_test.py -v mycluster -u myuser 
+/usr/local/bin/scripts/python/prometheusClusterStatsExporter.py -v mycluster -u myuser 
 ```
 
 add the exporter to your scrape configs in prometheus.yml
