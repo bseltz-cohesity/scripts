@@ -10,7 +10,7 @@ This Grafana dashboard displays backup success rates for a Cohesity cluster.
 
 Go here to get the raw JSON file and save it to your local machine.
 
-<https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/grafana/InfluxDB/ClusterStats/Cluster-Stats-JSON-API.json>
+<https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/grafana/JSON-API/ClusterStats/Cluster-Stats-JSON-API.json>
 
 ## Create a JSON API Data Source in Grafana
 
