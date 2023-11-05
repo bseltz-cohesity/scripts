@@ -2,7 +2,7 @@
 
 ## 2023-11-05
 
-[Grafana](https://github.com/bseltz-cohesity/scripts/tree/master/reports/grafana) [`Update`] added examples for various data source types: PostgreSQL, Prometheus, InfluxDB, JSON API
+* [Grafana](https://github.com/bseltz-cohesity/scripts/tree/master/reports/grafana) [`Update`] added examples for various data source types: PostgreSQL, Prometheus, InfluxDB, JSON API
 
 ## 2023-11-03
 
