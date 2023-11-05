@@ -1,16 +1,16 @@
-# Cluster Resource Dashboard for Grafana
+# Cluster Performance Dashboard for Grafana
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This Grafana dashboard displays storage and cpu/memory usage for a Cohesity cluster.
+This Grafana dashboard displays various performance guages for a Cohesity cluster.
 
-![dashboard](../../../images/ClusterResourceDashboard.png)
+![dashboard](../../../../images/PerformanceDashboard.png)
 
 ## Get the JSON File
 
 Go here to get the raw JSON file and save it to your local machine.
 
-<https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/grafana/ClusterResourceDashboard/ClusterResourceDashboard.json>
+<https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/grafana/PostgreSQL/PerformanceDashboard/PerformanceDashboard.json>
 
 ## Create a Grafana Datasource for your Cohesity Cluster
 
