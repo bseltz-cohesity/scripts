@@ -66,14 +66,14 @@ while True:
                 .tag("tagname1", "cpu_percent")
                 .field("field1", 0.0)
             )
-            write_api.write(bucket=bucket, org="homelab", record=point)
+            write_api.write(bucket=bucket, org=org, record=point)
         elif lastCpu != timestamp:  # fresh stat
             point = (
                 Point("cpu_percent")
                 .tag("tagname1", "cpu_percent")
                 .field("field1", stats['dataPointVec'][-1]['data']['doubleValue'])
             )
-            write_api.write(bucket=bucket, org="homelab", record=point)
+            write_api.write(bucket=bucket, org=org, record=point)
             lastCpu = timestamp
     except Exception as e:
         print(e)
@@ -88,14 +88,14 @@ while True:
                 .tag("tagname1", "bytes_backed_up")
                 .field("field1", 0)
             )
-            write_api.write(bucket=bucket, org="homelab", record=point)
+            write_api.write(bucket=bucket, org=org, record=point)
         elif lastBytes != timestamp:  # fresh stat
             point = (
                 Point("bytes_backed_up")
                 .tag("tagname1", "bytes_backed_up")
                 .field("field1", stats['dataPointVec'][-1]['data']['int64Value'])
             )
-            write_api.write(bucket=bucket, org="homelab", record=point)
+            write_api.write(bucket=bucket, org=org, record=point)
             lastBytes = timestamp
         else:
             point = (
@@ -103,7 +103,7 @@ while True:
                 .tag("tagname1", "bytes_backed_up")
                 .field("field1", 0)
             )
-            write_api.write(bucket=bucket, org="homelab", record=point)
+            write_api.write(bucket=bucket, org=org, record=point)
     except Exception as e:  # no recent stat, report 0
         print(e)
         point = (
@@ -111,7 +111,7 @@ while True:
             .tag("tagname1", "bytes_backed_up")
             .field("field1", 0)
         )
-        write_api.write(bucket=bucket, org="homelab", record=point)
+        write_api.write(bucket=bucket, org=org, record=point)
 
     # write throughput
     try:
@@ -123,14 +123,14 @@ while True:
                 .tag("tagname1", "write_throughput")
                 .field("field1", 0)
             )
-            write_api.write(bucket=bucket, org="homelab", record=point)
+            write_api.write(bucket=bucket, org=org, record=point)
         elif lastThroughput != timestamp:  # fresh stat
             point = (
                 Point("write_throughput")
                 .tag("tagname1", "write_throughput")
                 .field("field1", stats['dataPointVec'][-1]['data']['int64Value'])
             )
-            write_api.write(bucket=bucket, org="homelab", record=point)
+            write_api.write(bucket=bucket, org=org, record=point)
             lastThroughput = timestamp
     except Exception as e:  # no recent stat, report 0
         print(e)
@@ -139,6 +139,6 @@ while True:
             .tag("tagname1", "write_throughput")
             .field("field1", 0)
         )
-        write_api.write(bucket=bucket, org="homelab", record=point)
+        write_api.write(bucket=bucket, org=org, record=point)
 
     sleep(60)
