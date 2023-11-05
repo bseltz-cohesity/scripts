@@ -1,23 +1,32 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-11-05
+
+[Grafana](https://github.com/bseltz-cohesity/scripts/tree/master/reports/grafana) Update: added examples for various data source types: Prometheus, InfluxDB, JSON API
+
+## 2023-11-03
+
+* [oracleBackupReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/oracleBackupReport) Update: added columns for database type and DataGuard role
+* [sqlJobSelections.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/sqlJobSelections) New: generate report of SQL protection group selections
+
 ## 2023-11-02
 
-* [replicationReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/replicationReport) [`Update`] included queued / running replications
+* [replicationReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/replicationReport) Update: included queued / running replications
 
 ## 2023-11-01
 
-* [unprotectVM](https://github.com/bseltz-cohesity/scripts/tree/master/linux/unprotectVM) [`New`] compiled binary for linux, unprotect a VM
-* [unprotectPhysicalServer](https://github.com/bseltz-cohesity/scripts/tree/master/linux/unprotectPhysicalServer) [`New`] compiled binary for linux, unprotect a physical server
-* [unprotectSQLServer](https://github.com/bseltz-cohesity/scripts/tree/master/linux/unprotectSQLServer) [`New`] compiled binary for linux, unprotect a SQL server
-* [unregisterSource](https://github.com/bseltz-cohesity/scripts/tree/master/linux/unregisterSource) [`New`] compiled binary for linux, unregister a protection source
+* [unprotectVM](https://github.com/bseltz-cohesity/scripts/tree/master/linux/unprotectVM) New: compiled binary for linux, unprotect a VM
+* [unprotectPhysicalServer](https://github.com/bseltz-cohesity/scripts/tree/master/linux/unprotectPhysicalServer) New: compiled binary for linux, unprotect a physical server
+* [unprotectSQLServer](https://github.com/bseltz-cohesity/scripts/tree/master/linux/unprotectSQLServer) New: compiled binary for linux, unprotect a SQL server
+* [unregisterSource](https://github.com/bseltz-cohesity/scripts/tree/master/linux/unregisterSource) New: compiled binary for linux, unregister a protection source
 
 ## 2023-10-31
 
-* [myBackupStatus.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/myBackupStatus) [`Fix`] fixed PowerShell 5.1 detection issue
+* [myBackupStatus.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/myBackupStatus) Fix: fixed PowerShell 5.1 detection issue
 
 ## 2023-10-30
 
-* [aagFailoverMinder.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/aagFailoverMinder) [`Update`] added support for helios / multiple clusters
+* [aagFailoverMinder.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/aagFailoverMinder) Update: added support for helios / multiple clusters
 
 ## 2023-10-28
 
