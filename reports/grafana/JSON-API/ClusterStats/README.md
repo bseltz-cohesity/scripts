@@ -24,7 +24,7 @@ Configure the data source to point to your InfluxDB instance, for example:
 
 Here is an example JSON exporter that gets some time series stats from Cohesity
 
-* [jsonExporter.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/grafana/InfluxDB/ClusterStats/influxdbClusterStatsExporter.py)
+* [jsonExporter.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/grafana/JSON-API/ClusterStats/jsonExporter.py)
 * [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py)
 
 You will also need to install the python modules flask and flask_cors
