@@ -312,43 +312,50 @@ foreach($run in $runs){
     }
 
     foreach($sourceInfo in $run.backupRun.sourceBackupStatus){
-        if(!$objectName -or $sourceInfo.source.name -eq $objectName){
-            $thisObjectName = $sourceInfo.source.name
-            if($sourceInfo.status -in @('kSuccess', 'kWarning', '4', '6')){
-                $sourceView = $sourceInfo.currentSnapshotInfo.viewName
-                $x = $attemptNum = 1
-                if($sourceInfo.currentSnapshotInfo.PSObject.Properties['relativeSnapshotDirectory']){
-                    $sourcePath = $sourceInfo.currentSnapshotInfo.relativeSnapshotDirectory
-                    $sourcePathPrefix = $sourcePath.Substring(0,$sourcePath.length - $sourcePath.split('-')[-1].length)
-                    $attemptnum = $sourcePath.split('-')[-1]
-                }else{
-                    $sourcePath = '/'
-                }
-                while($x -le $attemptnum){
+        if($job.environment -ne 'kSQL' -or $sourceInfo.PSObject.Properties['appsBackupStatus']){
+            if(!$objectName -or $sourceInfo.source.name -eq $objectName){
+                $thisObjectName = $sourceInfo.source.name
+                if($sourceInfo.status -in @('kSuccess', 'kWarning', '4', '6')){
+                    $sourceView = $sourceInfo.currentSnapshotInfo.viewName
+                    $x = $attemptNum = 1
                     if($sourceInfo.currentSnapshotInfo.PSObject.Properties['relativeSnapshotDirectory']){
-                        $sourcePath = "$sourcePathPrefix$($x)"
+                        $sourcePath = $sourceInfo.currentSnapshotInfo.relativeSnapshotDirectory
+                        $sourcePathPrefix = $sourcePath.Substring(0,$sourcePath.length - $sourcePath.split('-')[-1].length)
+                        $attemptnum = $sourcePath.split('-')[-1]
+                    }else{
+                        $sourcePath = '/'
                     }
-                    $destinationPath = "$((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss"))---$thisObjectName---$($run.backupRun.runType.substring(1))-$x"
-                    $runDate = (usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss")
-                
-                    # clone snapshot directory
-                    $CloneDirectoryParams = @{
-                        'destinationDirectoryName' = $destinationPath;
-                        'destinationParentDirectoryPath' = "/$viewName";
-                        'sourceDirectoryPath' = "/$sourceView/$SourcePath"
+                    while($x -le $attemptnum){
+                        if($sourceInfo.currentSnapshotInfo.PSObject.Properties['relativeSnapshotDirectory']){
+                            $sourcePath = "$sourcePathPrefix$($x)"
+                        }
+                        # $sourcePath
+                        $destinationPath = "$((usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss"))---$thisObjectName---$($run.backupRun.runType.substring(1))-$x"
+                        $runDate = (usecsToDate $run.backupRun.stats.startTimeUsecs).ToString("yyyy-MM-dd_HH-mm-ss")
+                    
+                        # clone snapshot directory
+                        $CloneDirectoryParams = @{
+                            'destinationDirectoryName' = $destinationPath;
+                            'destinationParentDirectoryPath' = "/$viewName";
+                            'sourceDirectoryPath' = "/$sourceView/$SourcePath"
+                        }
+                        if($dirPath -ne '/'){
+                            $CloneDirectoryParams['sourceDirectoryPath'] = "{0}{1}" -f $CloneDirectoryParams['sourceDirectoryPath'], $dirPath
+                        }
+                        $folderPath = "\\$vip\$viewName\$destinationPath"
+                        
+                            Write-Host "Cloning $thisObjectName backup files to $folderPath"
+                            $null = api post views/cloneDirectory $CloneDirectoryParams  # -quiet
+                        
+                        # Write-Host "Cloning $thisObjectName backup files to $folderPath"
+                        # $null = api post views/cloneDirectory $CloneDirectoryParams  # -quiet
+                        if($cohesity_api.last_api_error -match 'kPermissionDenied'){
+                            Write-Host "`nAccess Denied. Cluster config must be modified. Add:`n`n    bridge_enable_secure_view_access: false`n" -ForegroundColor Yellow
+                            exit
+                        }
+                        $paths += @{'path' = $folderPath; 'runDate' = $runDate; 'runType' = $run.backupRun.runType; 'sourceName' = $sourceInfo.source.name}
+                        $x = $x + 1
                     }
-                    if($dirPath -ne '/'){
-                        $CloneDirectoryParams['sourceDirectoryPath'] = "{0}{1}" -f $CloneDirectoryParams['sourceDirectoryPath'], $dirPath
-                    }
-                    $folderPath = "\\$vip\$viewName\$destinationPath"
-                    Write-Host "Cloning $thisObjectName backup files to $folderPath"
-                    $null = api post views/cloneDirectory $CloneDirectoryParams  # -quiet
-                    if($cohesity_api.last_api_error -match 'kPermissionDenied'){
-                        Write-Host "`nAccess Denied. Cluster config must be modified. Add:`n`n    bridge_enable_secure_view_access: false`n" -ForegroundColor Yellow
-                        exit
-                    }
-                    $paths += @{'path' = $folderPath; 'runDate' = $runDate; 'runType' = $run.backupRun.runType; 'sourceName' = $sourceInfo.source.name}
-                    $x = $x + 1
                 }
             }
         }
