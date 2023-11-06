@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-11-06
+
+* [cloneBackupToView.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cloneBackupToView) [`Fix`] Don't clone empty log backups (e.g. passive AAG node)
+
 ## 2023-11-05
 
 * [Grafana](https://github.com/bseltz-cohesity/scripts/tree/master/reports/grafana) [`Update`] added examples for various data source types: PostgreSQL, Prometheus, InfluxDB, JSON API
