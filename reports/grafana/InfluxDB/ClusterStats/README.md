@@ -28,6 +28,15 @@ Here is an example InfluxDB exporter that gets some time series stats from Cohes
 * [influxdbClusterStatsExporter.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/grafana/InfluxDB/ClusterStats/influxdbClusterStatsExporter.py)
 * [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py)
 
+Note: the influxdbClusterStatsExporter.py contains some settings that you will need to update:
+
+```python
+token = 'BapMQGVqAJ4CQTVWYrACnfzBVNRfhFhtZanypjjMmySIPenGhe5u_EgOBJDVT7fECcsncgFuhiv56BptlQ-DLA=='
+org = "MyCompany"
+url = "http://localhost:8086"
+bucket = "cohesity"
+```
+
 You will also need to install the python module influxdb_client
 
 ```bash
