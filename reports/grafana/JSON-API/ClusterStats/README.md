@@ -29,6 +29,10 @@ Here is an example JSON exporter that gets some time series stats from Cohesity
 
 Note: the last line of jsonExporter.py contains the port and SSL sertificate files. You will need to create your own certificates, or remove the ssl_context parameter to make the script work.
 
+```python
+app.run(host='0.0.0.0', port=8443, ssl_context=('flaskdev_crt.pem', 'flaskdev_key.pem'))
+```
+
 You will also need to install the python modules flask and flask_cors
 
 ```bash
