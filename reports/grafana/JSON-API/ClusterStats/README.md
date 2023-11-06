@@ -27,6 +27,8 @@ Here is an example JSON exporter that gets some time series stats from Cohesity
 * [jsonExporter.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/grafana/JSON-API/ClusterStats/jsonExporter.py)
 * [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py)
 
+Note: the last line of jsonExporter.py contains the port and SSL sertificate files. You will need to create your own certificates, or remove the ssl_context parameter to make the script work.
+
 You will also need to install the python modules flask and flask_cors
 
 ```bash
@@ -55,6 +57,7 @@ example: /usr/local/bin/jsonExporter-start.sh
 
 ```bash
 #!/bin/bash
+cd /usr/local/bin/scripts/python/
 /usr/local/bin/scripts/python/jsonExporter.py
 ```
 
