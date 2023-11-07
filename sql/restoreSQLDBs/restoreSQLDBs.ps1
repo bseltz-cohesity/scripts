@@ -49,7 +49,8 @@ param (
     [Parameter()][switch]$resume,                          # resume recovery of previously restored DB
     [Parameter()][switch]$update,                          # resume norecovery latest
     [Parameter()][switch]$restoreFromArchive,
-    [Parameter()][array]$sourceNodes                       # limit results to these AAG nodes
+    [Parameter()][array]$sourceNodes,                      # limit results to these AAG nodes
+    [Parameter()][int64]$pageSize = 100
 )
 
 if($update){
@@ -133,10 +134,24 @@ if((! $allDBs) -and $dbs.Length -eq 0){
 }
 
 ### search for databases on sourceServer
-$searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&vmName=$sourceServer"
+$from = 0
+$searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&vmName=$sourceServer&size=$pageSize&from=$from"
+$dbresults = @{'vms' = @()}
+if($searchresults.count -gt 0){
+    while($True){
+        $dbresults.vms = @($dbresults.vms + $searchresults.vms)
+        if($searchresults.count -gt ($pageSize + $from)){
+            $from += $pageSize
+            $searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&vmName=$sourceServer&size=$pageSize&from=$from"
+        }else{
+            break
+        }
+    }
+}
 
 ### narrow to the correct sourceServer
-$dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer}
+# $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer}
+$dbresults = $dbresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer}
 
 ### if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot
 $dbresults = $dbresults | Sort-Object -Property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Descending = $True} |

@@ -95,6 +95,7 @@ Place both files in a folder together and run the main script like so:
 
 * -wait: Wait for the restore to complete and report end status (e.g. kSuccess)
 * -progress: (optional) display percent complete
+* -pageSize: (optional) number of search results to collect at a time (default is 100)
 
 ## Always On Availability Groups
 
