@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-11-07
+
+* [pyhesity.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity) [`Update`] updated password storage after validation
+* [cohesity-api.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api) [`Update`] updated password storage after validation
+
 ## 2023-11-06
 
 * [cloneBackupToView.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cloneBackupToView) [`Fix`] Don't clone empty log backups (e.g. passive AAG node)

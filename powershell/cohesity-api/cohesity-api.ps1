@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.10.26b - Brian Seltzer
+#  Version 2023.11.07 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2023.02.10 - added -region to api function (for DMaaS)
@@ -20,10 +20,11 @@
 # 2023.10.11 - removed demand minimim powershell version, to support Start-Job
 # 2023.10.13 - fixed password prompt for AD user
 # 2023.10.26 - updated auth validation to use basicClusterInfo, fixed copySessionCookie function
+# 2023.11.07 - updated password storage after validation
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2023.10.26b'
+$versionCohesityAPI = '2023.11.07'
 
 # state cache
 $cohesity_api = @{
@@ -188,8 +189,10 @@ function apiauth($vip='helios.cohesity.com',
     if($password){ 
         $passwd = $password
     }
+    $setpasswd = $null
     if($passwd){
-        $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
+        $setpasswd = $passwd
+        #$passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
     }
     # update password
     if($updatePassword -or $clearPassword){
@@ -230,13 +233,16 @@ function apiauth($vip='helios.cohesity.com',
         # validate cluster API key authorization
         if($useApiKey -and (($vip -ne 'helios.cohesity.com') -and $helios -ne $True)){
             try{
-                $URL = "https://$vip/irisservices/api/v1/public/basicClusterInfo"
+                $URL = "https://$vip/irisservices/api/v1/public/sessionUser/preferences"
                 if($PSVersionTable.PSEdition -eq 'Core'){
                     $cluster = Invoke-RestMethod -Method Get -Uri $URL -Header $cohesity_api.header -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -TimeoutSec $timeout -SkipCertificateCheck -SessionVariable session
                 }else{
                     $cluster = Invoke-RestMethod -Method Get -Uri $URL -Header $cohesity_api.header -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session
                 }
                 $cohesity_api.session = $session
+                if($setpasswd){
+                    $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
+                }
                 if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
             }catch{
                 reportError $_
@@ -258,6 +264,9 @@ function apiauth($vip='helios.cohesity.com',
                 $cohesity_api.session = $session
                 $Global:USING_HELIOS = $true
                 $cohesity_api.heliosConnectedClusters = $heliosAllClusters | Where-Object {$_.connectedToCluster -eq $true}
+                if($setpasswd){
+                    $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
+                }
                 if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
             }catch{
                 reportError $_
@@ -377,7 +386,7 @@ function apiauth($vip='helios.cohesity.com',
                 }
             }
             # validate authorization
-            $URL = "https://$vip/irisservices/api/v1/public/basicClusterInfo"
+            $URL = "https://$vip/irisservices/api/v1/public/sessionUser/preferences"
             if($PSVersionTable.PSEdition -eq 'Core'){
                 $cluster = Invoke-RestMethod -Method Get -Uri $URL -Header $cohesity_api.header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -SkipCertificateCheck -WebSession $cohesity_api.session
             }else{
@@ -386,6 +395,9 @@ function apiauth($vip='helios.cohesity.com',
             # set state connected
             $cohesity_api.authorized = $true
             $cohesity_api.clusterReadOnly = $false
+            if($setpasswd){
+                $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
+            }
             if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
         }catch{
             $thisError = $_

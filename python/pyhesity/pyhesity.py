@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2023.10.13"""
+"""Cohesity Python REST API Wrapper Module - 2023.11.07"""
 
 ##########################################################################################
 # Change Log
@@ -26,6 +26,7 @@
 # 2023-10-03 - fixed 'forcePasswordChange' error on AD authentication
 # 2023-10-09 - set last error on cluster not connected to helios
 # 2023-10-13 - fixed password prompt for AD user
+# 2023.11.07 - updated password storage after validation
 #
 ##########################################################################################
 # Install Notes
@@ -83,7 +84,7 @@ __all__ = ['api_version',
            'impersonate',
            'switchback']
 
-api_version = '2023.10.13'
+api_version = '2023.11.07'
 
 COHESITY_API = {
     'APIROOT': '',
@@ -135,7 +136,11 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
         (domain, username) = username.split('/')
 
     pwd = password
-    pwd = __getpassword(vip=vip, username=username, password=password, domain=domain, useApiKey=useApiKey, helios=helios, updatepw=updatepw, prompt=prompt)
+    setpasswd = None
+    if pwd is not None:
+        setpasswd = pwd
+    else:
+        pwd = __getpassword(vip=vip, username=username, password=password, domain=domain, useApiKey=useApiKey, helios=helios, updatepw=updatepw, prompt=prompt)
     if pwd is None:
         reportAuthError('no password provided for %s/%s at %s' % (domain, username, vip), quiet=quiet)
         return None
@@ -174,24 +179,28 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                     COHESITY_API['LAST_ERROR'] = 'OK'
                     if quiet is None:
                         print("Connected!")
+            if setpasswd is not None:
+                pwd = __getpassword(vip=vip, username=username, password=setpasswd, domain=domain, useApiKey=useApiKey, helios=helios, updatepw=updatepw, prompt=prompt)
             COHESITY_API['COOKIES'] = COHESITY_API['SESSION'].cookies.get_dict()
         except requests.exceptions.RequestException as e:
             reportAuthError(e, quiet=quiet)
-            if 'Authentication failed' in e and noretry is False and prompt is not False:
+            if 'Authentication failed' in e and noretry is False and prompt is not False and setpasswd is None:
                 apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
     elif useApiKey is True:
         # Cluster API key authentication
         COHESITY_API['HEADER'] = {'accept': 'application/json', 'content-type': 'application/json', 'apiKey': pwd, 'User-Agent': 'pyhesity/%s' % api_version}
         COHESITY_API['AUTHENTICATED'] = True
-        if tenantId is not None:
-            impersonate(tenantId)
         COHESITY_API['LAST_ERROR'] = 'OK'
-        URL = COHESITY_API['APIROOT'] + '/public/cluster'
+        URL = COHESITY_API['APIROOT'] + '/public/sessionUser/preferences'
         cluster = (COHESITY_API['SESSION'].get(URL, headers=COHESITY_API['HEADER'], verify=False, timeout=timeout)).json()
-        if cluster is not None and 'id' in cluster:
+        if cluster is not None and 'preferences' in cluster:
+            if setpasswd is not None:
+                pwd = __getpassword(vip=vip, username=username, password=setpasswd, domain=domain, useApiKey=useApiKey, helios=helios, updatepw=updatepw, prompt=prompt)
             if quiet is None:
                 print("Connected!")
                 COHESITY_API['COOKIES'] = COHESITY_API['SESSION'].cookies.get_dict()
+            if tenantId is not None:
+                impersonate(tenantId)
         else:
             if 'message' in cluster:
                 COHESITY_API['LAST_ERROR'] = cluster['message']
@@ -199,7 +208,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
             if 'API Key does not exist' in COHESITY_API['LAST_ERROR'] or 'StatusUnauthorized' in COHESITY_API['LAST_ERROR'] or 'invalid header value' in COHESITY_API['LAST_ERROR']:
                 COHESITY_API['LAST_ERROR'] = 'API key authentication failed'
                 print('invalid API Key')
-                if prompt is not False and noretry is not True:
+                if prompt is not False and noretry is not True and setpasswd is None:
                     apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
             else:
                 print('Connection failed: %s' % COHESITY_API['LAST_ERROR'])
@@ -247,6 +256,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                                 if response.status_code == 201 or response.status_code == 200:
                                     COHESITY_API['AUTHENTICATED'] = True
                                     pwd = __getpassword(vip=vip, username=username, password=newPassword, domain=domain, useApiKey=useApiKey, helios=helios, updatepw=updatepw, prompt=prompt)
+                                    setpasswd = None
                     except Exception as e:
                         reportAuthError(e, quiet=quiet)
                         return None
@@ -279,6 +289,8 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                     if tenantId is not None:
                         impersonate(tenantId)
                     COHESITY_API['LAST_ERROR'] = 'OK'
+                    if setpasswd is not None:
+                        pwd = __getpassword(vip=vip, username=username, password=setpasswd, domain=domain, useApiKey=useApiKey, helios=helios, updatepw=updatepw, prompt=prompt)
                     if quiet is None:
                         print("Connected!")
                     COHESITY_API['COOKIES'] = COHESITY_API['SESSION'].cookies.get_dict()
@@ -292,7 +304,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                     if quiet is None:
                         print(COHESITY_API['LAST_ERROR'])
                     if (response.status_code == 400 or response.status_code == 401) and 'invalid username' in response.json()['message'].lower():
-                        if noretry is False and prompt is not False:
+                        if noretry is False and prompt is not False and setpasswd is None:
                             apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
         except requests.exceptions.RequestException as e:
             reportAuthError(e, quiet=quiet)
@@ -629,7 +641,7 @@ def __writelog(logmessage):
             logsize = os.path.getsize(LOGFILE)
             if logsize > 1048576:
                 os.rename(LOGFILE, '%s-%s.txt' % (LOGFILE, apierrordatestring))
-    except:
+    except Exception:
         pass
 
     # avoid race condition
@@ -642,7 +654,7 @@ def __writelog(logmessage):
         debuglog = open(LOGFILE, 'a')
         debuglog.write('%s: %s\n' % (apierrordatestring, apierror))
         debuglog.close()
-    except:
+    except Exception:
         pass
     lastapierrorusecs = apierrorusecs
     lastapierror = apierror
