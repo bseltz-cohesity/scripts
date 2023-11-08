@@ -11,7 +11,8 @@ param (
     [Parameter()][switch]$mcm,
     [Parameter()][string]$mfaCode,
     [Parameter()][string]$clusterName,
-    [Parameter()][switch]$showAllDatabases
+    [Parameter()][switch]$showInstances,
+    [Parameter()][switch]$showDatabases
 )
 
 # gather list from command line params and file
@@ -86,53 +87,112 @@ $outfile = "sqlJobSelections-$($cluster.name).csv"
 "`nReviewing SQL selections...`n"
 
 foreach($server in $sources.nodes | Sort-Object -Property {$_.protectionSource.name}){
+    $unprotectedDB = $False
+    $selections = @()
     "$($server.protectionSource.name)"
     $serverJobName = $null
-    $selection = 'No Selection'
+    $selection = 'Unprotected'
     $serverSelected = $false
     $serverJobName = getJobName $server.protectionSource.id
     if($serverJobName){
-        $selection = 'Auto Protect'
+        $selection = 'Auto'
         $serverSelected = $True
     }
-    "{0},{1},{2},{3},{4},{5}" -f "Server", $server.protectionSource.name, '', '', $serverJobName, $selection | Out-File -FilePath $outfile -Append
+    $serverSelection = @{
+        'entityType' = 'Server';
+        'serverName' = $server.protectionSource.name;
+        'instanceName' = '-';
+        'dbName' = '-';
+        'jobName' = $serverJobName;
+        'selection' = $selection
+    }
+    $selections = @($selections + $serverSelection)
+
     foreach($instance in $server.applicationNodes){
+        $unprotectedInstance = $True
+        $unprotectedDatabase = $false
         $instanceJobName = $null
-        $selection = 'No Selection'
+        $selection = 'Unprotected'
         $instanceSelected = $false
         if($serverSelected){
-            $selection = 'Auto Protect'
+            $selection = 'Auto'
             $instanceJobName = $serverJobName
             $instanceSelected = $True
-        }
-        if($instanceJobName -eq $null){
+        }else{
             $instanceJobName = getJobName $instance.protectionSource.id
+            if($instanceJobName){
+                $selection = 'Auto'
+                $instanceSelected = $True
+                $serverSelection.jobName = $instanceJobName
+                $serverSelection.selection = 'All'
+                $protectedInstance = $True
+                $unprotectedInstance = $false
+            }
         }
-        if($instanceJobName){
-            $selection = 'Auto Protect'
-            $instanceSelected = $True
+        $instanceSelection = @{
+            'entityType' = 'Instance';
+            'serverName' = $server.protectionSource.name;
+            'instanceName' = $instance.protectionSource.name;
+            'dbName' = '-';
+            'jobName' = $instanceJobName;
+            'selection' = $selection
         }
-        "{0},{1},{2},{3},{4},{5}" -f "Instance", $server.protectionSource.name, $instance.protectionSource.name, '', $instanceJobName, $selection | Out-File -FilePath $outfile -Append
+        $selections = @($selections + $instanceSelection)
+        
         foreach($database in $instance.nodes){
-            $selection = ''
+            $selection = 'Unprotected'
             $dbSelected = $false
             $dbJobName = $null
             if($instanceSelected){
-                $selection = 'Auto Protect'
+                $selection = 'Auto'
                 $dbJobName = $instanceJobName
                 $dbSelected = $True
             }else{
                 $dbJobName = getJobName $database.protectionSource.id
                 if($dbJobName){
-                    $selection = 'Explicitly Selected'
+                    $selection = 'Selected'
+                    $instanceSelection.selection = 'All'
+                    $instanceSelection.jobName = $dbJobName
+                    $serverSelection.selection = 'All'
+                    $serverSelection.jobName = $dbJobName
+                    $unprotectedInstance = $false
                 }else{
-                    $selection = 'Unprotected'
+                    $unprotectedDatabase = $True
+                    $unprotectedDB = $True
                 }
             }
-            if($selection -eq 'Explicitly Selected' -or $showAllDatabases){
-                "{0},{1},{2},{3},{4},{5}" -f "Database", $server.protectionSource.name, $instance.protectionSource.name, $database.protectionSource.name, $dbJobName, $selection | Out-File -FilePath $outfile -Append
+            if($showDatabases){
+                $selections = @($selections + @{
+                    'entityType' = 'Database';
+                    'serverName' = $server.protectionSource.name;
+                    'instanceName' = $instance.protectionSource.name;
+                    'dbName' = $database.protectionSource.name;
+                    'jobName' = $dbJobName;
+                    'selection' = $selection
+                })
             }
         }
+        if($unprotectedDatabase -eq $True){
+            if($instanceSelection.selection -eq 'All'){
+                $instanceSelection.selection = 'Some'
+            }
+            if($serverSelection.selection -eq 'All'){
+                $serverSelection.selection = 'Some'
+            }
+        }
+        if($unprotectedInstance -eq $True){
+            if($serverSelection.selection -eq 'All'){
+                $serverSelection.selection = 'Some'
+            }
+        }
+    }
+    if($unprotectedDB -eq $True){
+        $serverSelection.selection = 'Some'
+    }
+    foreach($s in $selections){
+        if($s.entityType -notin @('Instance', 'Database') -or $showInstances -or $showDatabases){
+            "{0},{1},{2},{3},{4},{5}" -f $s.entityType, $s.serverName, $s.instanceName, $s.dbName, $s.jobName, $s.selection | Out-File -FilePath $outfile -Append
+        }       
     }
 }
 

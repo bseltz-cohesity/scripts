@@ -47,4 +47,5 @@ Place all files in a folder together. And run the script like so:
 
 ## Other Parameters
 
-* -showAllDatabases: (optional) show auto-protected and unprotected databases
+* -showInstances: (optional) show status of instance selections (Auto, All, Some or Unprotected)
+* -showADatabases: (optional) show status of database selections (Auto, Selected or Unprotected)
