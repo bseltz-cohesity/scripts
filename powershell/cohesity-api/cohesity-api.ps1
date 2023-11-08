@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.11.07 - Brian Seltzer
+#  Version 2023.11.08 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2023.02.10 - added -region to api function (for DMaaS)
@@ -21,6 +21,7 @@
 # 2023.10.13 - fixed password prompt for AD user
 # 2023.10.26 - updated auth validation to use basicClusterInfo, fixed copySessionCookie function
 # 2023.11.07 - updated password storage after validation
+# 2023.11.08 - fixed toJson function duplicate output
 #
 # . . . . . . . . . . . . . . . . . . .
 
@@ -1172,7 +1173,6 @@ function toJson(){
         }else{
             $out.replace('  ','    ')
         }
-        $out
     }
 }
 
