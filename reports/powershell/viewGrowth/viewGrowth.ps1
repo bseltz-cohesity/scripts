@@ -21,7 +21,7 @@ $endDate = get-date
 $startDate = $endDate.AddDays(-$days)
 $startDateString = ([datetime]$startDate).ToString("yyyy-MM-dd")
 $endDateString = ([datetime]$endDate).ToString("yyyy-MM-dd")
-$outfile = "viewGrowth_$($vip -replace ':', '-'))_$($startDateString)_$($endDateString).csv"
+$outfile = "viewGrowth_$($vip -replace ':', '-')_$($startDateString)_$($endDateString).csv"
 
 $startDateMsecs = (dateToUsecs $startDate)/1000
 $endDateMsecs = (dateToUsecs $endDate)/1000
