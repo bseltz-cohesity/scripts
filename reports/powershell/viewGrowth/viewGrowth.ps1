@@ -21,7 +21,7 @@ $endDate = get-date
 $startDate = $endDate.AddDays(-$days)
 $startDateString = ([datetime]$startDate).ToString("yyyy-MM-dd")
 $endDateString = ([datetime]$endDate).ToString("yyyy-MM-dd")
-$outfile = "viewGrowth_$($vip)_$($startDateString)_$($endDateString).csv"
+$outfile = "viewGrowth_$($vip -replace ':', '-'))_$($startDateString)_$($endDateString).csv"
 
 $startDateMsecs = (dateToUsecs $startDate)/1000
 $endDateMsecs = (dateToUsecs $endDate)/1000
@@ -41,7 +41,7 @@ function formatSize($size){
     "$size $sizeUnits"
 }
 
-"View Name,Start Size,Start (Formatted),End Size,End (Formatted),Growth,Growth (Formatted)," | Out-File $outfile
+"View Name,Start Size,Start (Formatted),End Size,End (Formatted),Growth,Growth (Formatted)," | Out-File  $outfile
 
 foreach($view in $views | Sort-Object -Property name){
     $stats = api get "statistics/timeSeriesStats?endTimeMsecs=$endDateMsecs&entityId=$($view.viewId)&metricName=kSystemUsageBytes&metricUnitType=0&range=week&rollupFunction=latest&rollupIntervalSecs=14400&schemaName=kBridgeViewLogicalStats&startTimeMsecs=$startDateMsecs"
