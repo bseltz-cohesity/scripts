@@ -93,6 +93,12 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 
 $sourceDbNames = @(gatherList -Param $sourceDB -FilePath $sourceDBList -Name 'DBs' -Required $False)
 
+$cluster = api get cluster
+if($cluster.clusterSoftwareVersion -lt '6.8.1'){
+    Write-Host "This script requires Cohesity 6.8.1 or later" -ForegroundColor Yellow
+    exit 1
+}
+
 # import file paths
 $exportFilePath = Join-Path -Path $PSScriptRoot -ChildPath "$sourceServer.json"
 $importedFileInfo = $null
