@@ -1,7 +1,22 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-11-10
+
+* [validateVMBackups.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/validateVMBackups) [`Fix`] filter non-VM backup from output
+* [restoreSQLv2.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQLv2) [`New`] v2 updated script to restore SQL databases
+
+## 2023-11-09
+
+* [heliosUsers.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/helios-other/powershell/heliosUsers) [`New`] report list of Helios users
+* [viewGrowth.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/viewGrowth) [`Fix`] fix output file when there's a colon in the vip
+
+## 2023-11-08
+
+* [sqlJobSelections.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/sqlJobSelections) [`New`] report SQL job selections
+
 ## 2023-11-07
 
+* [orgAssignPolicy.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/orgAssignPolicy) [`New`] assign a policy to an organization
 * [pyhesity.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity) [`Update`] updated password storage after validation
 * [cohesity-api.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api) [`Update`] updated password storage after validation
 
