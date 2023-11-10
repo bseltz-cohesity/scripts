@@ -69,7 +69,7 @@ To restore all databases (except system databases) to an alternate server:
 * -emailMfaCode: (optional) send MFA code via email
 * -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
 
-## Source Server/Instance/Database Selections
+## Source Parameters
 
 * -sourceServer: Server name (or AAG name) where the database was backed up
 * -sourceInstance: (optional) Name of source SQL instance to restore from
@@ -78,18 +78,18 @@ To restore all databases (except system databases) to an alternate server:
 * -allDBs: (optional) restore all databases from specified server/instance
 * -includeSystemDBs: (optional) also restore system DBs (master, model, msdb)
 
-## Target Server/Instance Parameters
+## Target Parameters
 
 * -targetServer: (optional) Server name to restore to (defaults to same as sourceServer)
 * -targetInstance: (optional) SQL instance to restore to (defaults to MSSQLSERVER)
 
-## Target Database Name Parameters
+## Rename Parameters
 
 * -targetDB: (optional) name of new database (only allowed when restoring one database)
 * -prefix: (optional) Prefix to apply to database names (e.g. 'Dev')
 * -suffix: (optional) Suffix to apply to database names (e.g. 'Dev')
 
-## Target File Paths
+## File Path Parameters
 
 * -useSourcePaths: (optional) use same paths to restore to target server
 * -exportPaths: (optional) export DB file path info and exit (file name is sourceserver.json)
@@ -98,13 +98,13 @@ To restore all databases (except system databases) to an alternate server:
 * -ldfFolder: (optional) Location to place the log files (defaults to same as mdfFolder)
 * -ndfFolders: (optional) Locations to place various ndf files (see below)
 
-## Point in Time Selections
+## Point in Time Parameters
 
 * -logTime: Point in time to replay the logs to during the restore (e.g. '2019-04-10 22:31:05')
 * -latest: Replay the logs to the latest log backup date
 * -noStop: Replay the logs to the last transaction available
 
-## Recovery Parameters
+## Recovery Option Parameters
 
 * -noRecovery: (optional) Restore the DB with NORECOVER option (default is to recover)
 * -keepCdc: (optional) Keep CDC
