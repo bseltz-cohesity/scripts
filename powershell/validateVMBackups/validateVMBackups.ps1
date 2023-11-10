@@ -156,7 +156,7 @@ $objects = $vms.name
 
 foreach($object in $objects){
     $object = [string]$object
-    $search = api get "/searchvms?entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAWSSnapshotManager&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kFlashBlade&entityTypes=kGCP&entityTypes=kGenericNas&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kIsilon&entityTypes=kKVM&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware&vmName=$object"
+    $search = api get "/searchvms?entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kGCP&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kKVM&entityTypes=kVMware&vmName=$object"
     if(! $search.vms){
         Write-Host "$object no backups found" -ForegroundColor Yellow
     }else{
