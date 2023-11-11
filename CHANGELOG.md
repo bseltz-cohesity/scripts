@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-11-11
+
+* [sqlRestoreReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/sqlRestoreReport) [`Update`] added support for multi DB restores
+
 ## 2023-11-10
 
 * [validateVMBackups.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/validateVMBackups) [`Fix`] filter non-VM backup from output
