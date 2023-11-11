@@ -208,6 +208,7 @@ foreach($v in $vip){
             if($USING_HELIOS){
                 $null = heliosCluster $cluster
             }
+            $thisCluster = api get cluster
             $restoresCount = 0
             $lastTaskId = 0
             $endUsecs = $uEnd
@@ -232,18 +233,31 @@ foreach($v in $vip){
                                 $endUsecs = $restore.restoreTask.performRestoreTaskState.base.endTimeUsecs - 1
                             }
                             $link = "https://$cluster/protection/recovery/detail/local/$taskId/"
-                    
+                            if($thisCluster.clusterSoftwareVersion -gt '6.8.1'){
+                                $link = "https://$cluster/recovery/detail/$($thisCluster.id):$($thisCluster.incarnationId):$($taskId)"
+                            }
                             if($restore.restoreTask.performRestoreTaskState.PSObject.properties['restoreAppTaskState']){
                                 if($restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.PSObject.Properties['restoreAppObjectVec']){
                                     $thisTargetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
                                     $restoreAppObjects = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec
                                 }else{
                                     $thisTargetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.childRestoreAppParamsVec[0].ownerRestoreInfo.ownerObject.entity.displayName
-                                    $restoreAppObjects = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.childRestoreAppParamsVec[0].restoreAppObjectVec
+                                    $restoreAppObjects = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.childRestoreAppParamsVec.restoreAppObjectVec  # childRestoreAppParamsVec[0]
                                 }
-                                
+                                $v2Recovery = $null
+                                if($thisstatus -eq 'Failure'){
+                                    $v2Recoveries = api get -v2 "data-protect/recoveries?returnOnlyChildRecoveries=true&includeTenants=true&ids=$($thisCluster.id)%3A$($thisCluster.incarnationId)%3A$($taskId)"
+                                }
                                 foreach ($restoreAppObject in $restoreAppObjects){
                                     $objectName = $restoreAppObject.appEntity.displayName
+                                    $thisChildStatus = $thisstatus
+                                    if($v2Recoveries){
+                                        $v2Recovery = $v2Recoveries.recoveries | Where-Object {$_.mssqlParams.recoverAppParams[0].objectInfo.name -eq $objectName}
+                                        if($v2Recovery){
+                                            $thisChildStatus = $v2Recovery.status
+                                        }
+                                    }
+
                                     $objectType = $entityType[$restoreAppObject.appEntity.type]
                                     if($objectType -eq 'SQL' -and ($includeClones -or $restore.restoreTask.performRestoreTaskState.base.type -eq 4)){
                                         $totalSize = toUnits $restoreAppObject.appEntity.sqlEntity.totalSizeBytes
@@ -262,9 +276,9 @@ foreach($v in $vip){
                                             $targetObject = "$thisTargetServer/$objectName"
                                         }
                                         if(! $targetServer -or $targetServer -eq $thisTargetServer){
-                                            if($thisstatus -eq 'Failure'){
+                                            if($thisChildStatus -in @('Failure', 'Failed')){
                                                 $html += "<tr style='color:BA3415;'>"
-                                            }elseif($thisstatus -eq 'Canceled'){
+                                            }elseif($thisChildStatus -eq 'Canceled'){
                                                 $html += "<tr style='color:FF9800;'>"
                                             }else{
                                                 $html += "<tr>"
@@ -275,11 +289,11 @@ foreach($v in $vip){
                                             <td>$sourceServer/$objectName</td>
                                             <td>$totalSize</td>
                                             <td>$targetObject</td>
-                                            <td>$thisstatus</td>
+                                            <td>$thisChildStatus</td>
                                             <td>$duration</td>
                                             <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
                                             </tr>"
-                                            "$cluster`t$startTime`t$taskName`t$objectName`t$totalSize`t$targetObject`t$thisstatus`t$duration`t$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
+                                            "$cluster`t$startTime`t$taskName`t$objectName`t$totalSize`t$targetObject`t$thisChildStatus`t$duration`t$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
                                             $restoresCount += 1 
                                         }
                                     }
