@@ -17,6 +17,7 @@ param (
     [Parameter()][switch]$allDBs,
     [Parameter()][switch]$includeSystemDBs,
     [Parameter()][string]$sourceInstance,
+    [Parameter()][array]$sourceNodes,
     [Parameter()][string]$targetServer = $sourceServer,
     [Parameter()][string]$targetInstance,
     [Parameter()][string]$targetDB,
@@ -38,7 +39,8 @@ param (
     [Parameter()][switch]$captureTailLogs,
     [Parameter()][switch]$exportPaths,
     [Parameter()][switch]$importPaths,
-    [Parameter()][switch]$useSourcePaths
+    [Parameter()][switch]$useSourcePaths,
+    [Parameter()][switch]$showPaths
 )
 
 # source the cohesity-api helper code
@@ -93,10 +95,12 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 
 $sourceDbNames = @(gatherList -Param $sourceDB -FilePath $sourceDBList -Name 'DBs' -Required $False)
 
-$cluster = api get cluster
-if($cluster.clusterSoftwareVersion -lt '6.8.1'){
-    Write-Host "This script requires Cohesity 6.8.1 or later" -ForegroundColor Yellow
-    exit 1
+if(! $showPaths -and ! $exportPaths){
+    $cluster = api get cluster
+    if($cluster.clusterSoftwareVersion -lt '6.8.1'){
+        Write-Host "This script requires Cohesity 6.8.1 or later" -ForegroundColor Yellow
+        exit 1
+    }
 }
 
 # import file paths
@@ -139,6 +143,11 @@ if($allDBs -or $exportPaths){
             exit
         }
     }
+    if($sourceNodes){
+        $dbresults.vms = $dbresults.vms | Where-Object {
+            ([array]$x = Compare-Object -Referenceobject $sourceNodes -DifferenceObject $_.vmDocument.objectAliases  -excludedifferent -IncludeEqual)
+        }
+    }
     $sourceDbNames = @($dbresults.vms.vmDocument.objectName)
     if(! $includeSystemDBs){
         $sourceDbNames = $sourceDbNames | Where-Object {($_ -split '/')[-1] -notin @('Master', 'Model', 'MSDB')}
@@ -175,11 +184,11 @@ if($sourceDbNames.Count -gt 1 -and $targetDB){
 
 # find target server
 $targetEntity = (api get protectionSources/registrationInfo?environments=kSQL).rootNodes | Where-Object { $_.rootNode.name -eq $targetServer }
-if($null -eq $targetEntity){
+if($null -eq $targetEntity -and ! $showPaths){
     Write-Host "Target Server $targetServer Not Found" -ForegroundColor Yellow
     exit 1
 }
-$targetSQLApp = $targetEntity.applications | Where-Object environment -eq 'kSQL'
+# $targetSQLApp = $targetEntity.applications | Where-Object environment -eq 'kSQL'
 
 $restoreDate = Get-Date -UFormat '%Y-%m-%d_%H:%M:%S'
 
@@ -216,7 +225,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         Write-Host "$sourceDbName not found on server $sourceServer" -ForegroundColor Yellow
         continue
     }
-    Write-Host "$($search.objects[0].name)"
+    Write-Host "`n$($search.objects[0].name)"
     $thisSourceServer = $search.objects[0].mssqlParams.hostInfo.name
     if($targetServer -eq $sourceServer){
         $thisTargetServer = $thisSourceServer
@@ -227,7 +236,6 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
     $latestSnapshotInfo = ($search.objects[0].latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
     $clusterId, $clusterIncarnationId, $jobId = $latestSnapshotInfo.protectionGroupId -split ':'
 
-    # something about aag GET https://ve4/irisservices/api/v1/public/protectionSources/sqlAagHostsAndDatabases?sqlProtectionSourceIds=3705
     $pitQuery = @{
         "jobUids" = @(
             @{
@@ -285,14 +293,15 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
             $selectedPIT = $runStartTimeUsecs = $search.objects[0].latestSnapshotsInfo[0].protectionRunStartTimeUsecs
         }       
     }
-    if($logTimeUsecs -and $logTimeUsecs -gt $selectedPIT){
-        Write-Host "    Best available PIT is $(usecsToDate $selectedPIT)" -ForegroundColor Yellow
-    }elseif($logTimeUsecs -and $logTimeUsecs -lt $selectedPIT){
-        Write-Host "    Best available PIT is $(usecsToDate $selectedPIT)" -ForegroundColor Yellow
+    if(! $showPaths){
+        if($logTimeUsecs -and $logTimeUsecs -gt $selectedPIT){
+            Write-Host "    Best available PIT is $(usecsToDate $selectedPIT)" -ForegroundColor Yellow
+        }elseif($logTimeUsecs -and $logTimeUsecs -lt $selectedPIT){
+            Write-Host "    Best available PIT is $(usecsToDate $selectedPIT)" -ForegroundColor Yellow
+        }
+        Write-Host "    Selected Snapshot $(usecsToDate $runStartTimeUsecs)"
+        Write-Host "    Selected PIT $(usecsToDate $selectedPIT)"
     }
-    Write-Host "    Selected Snapshot $(usecsToDate $runStartTimeUsecs)"
-    Write-Host "    Selected PIT $(usecsToDate $selectedPIT)"
-    
     $search2 = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverApps&searchString=$sourceDbName&protectionGroupIds=$($latestSnapshotInfo.protectionGroupId)&filterSnapshotToUsecs=$runStartTimeUsecs&filterSnapshotFromUsecs=$runStartTimeUsecs&environments=kSQL"
     $search2.objects = $search2.objects | Where-Object {$_.mssqlParams.hostInfo.name -eq $thisSourceServer}
     $search2.objects = $search2.objects | Where-Object {$_.name -eq $sourceDbName}
@@ -374,7 +383,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         }
     }else{
         if($renameDB -eq $false){
-            if(! $overWrite){
+            if(! $overWrite -and ! $showPaths){
                 Write-Host "Please use -overwrite to overwrite original database(s)" -ForegroundColor Yellow
                 exit 1
             }
@@ -382,10 +391,10 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
     }
 
     # file destinations
-    if($alternateInstance -eq $True -or $renameDB -eq $True){
+    if($alternateInstance -eq $True -or $renameDB -eq $True -or $showPaths){
         # use source paths
         $secondaryFileLocation = $null
-        if($useSourcePaths){
+        if($useSourcePaths -or $showPaths){
             $dbFileInfoVec = $null
             if($importedFileInfo){
                 $importedDBFileInfo = $importedFileInfo | Where-Object {$_.name -eq $sourceDbName}
@@ -401,8 +410,12 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
             if(! $dbFileInfoVec){
                 if(! $mdfFolder){
                     Write-Host "File info not found for $sourceDBName, please use -mdfFolder, -ldfFolder, -ndfFolders" -ForegroundColor Yellow
-                    exit
+                    exit 1
                 }
+            }
+            if($showPaths){
+                $dbFileInfoVec | Format-Table -Property logicalName, @{l='Size (MiB)'; e={$_.sizeBytes / (1024 * 1024)}}, fullPath
+                # exit 0
             }
             $mdfFolderFound = $False
             $ldfFolderFound = $False
@@ -455,8 +468,10 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
     }
 
     # add this param to recovery params
-    $recoveryParams.mssqlParams.recoverAppParams = @($recoveryParams.mssqlParams.recoverAppParams + $thisParam)
-    $dbsSelected += 1
+    if(! $showPaths){
+        $recoveryParams.mssqlParams.recoverAppParams = @($recoveryParams.mssqlParams.recoverAppParams + $thisParam)
+        $dbsSelected += 1
+    }
 
     # perform recovery group
     if($dbsSelected -ge $dbsPerRecovery){
@@ -515,10 +530,10 @@ if($wait -and $recoveryIds.Count -gt 0){
         }
     }
     if($failuresDetected -or $recoveryIds.Count -eq 0){
-        Write-Host "`nFailures Detected`n"
+        Write-Host "`nFailures Detected`n" -ForegroundColor Yellow
         exit 1
     }else{
-        Write-Host "`nRestores Completed Successfully"
+        Write-Host "`nRestores Completed Successfully`n" -ForegroundColor Green
         exit 0
     }
 }
