@@ -221,6 +221,7 @@ if($logTime){
 }
 
 # recovery params
+$skippedDBs = @()
 $recoveryParamNum = 1
 $dbsSelected = 0
 $recoveryIds = @()
@@ -441,8 +442,9 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
             }
             if(! $dbFileInfoVec){
                 if(! $mdfFolder){
-                    Write-Host "File info not found for $sourceDBName, please use -mdfFolder, -ldfFolder, -ndfFolders" -ForegroundColor Yellow
-                    exit 1
+                    Write-Host "    Skipping: File info not found, please use -mdfFolder, -ldfFolder, -ndfFolders (or -importPaths)" -ForegroundColor Yellow
+                    $skippedDBs = @($skippedDBs + $sourceDbName)
+                    continue
                 }
             }
             if($showPaths){
@@ -471,10 +473,13 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
                 }
             }
         }
-
+        if($sourceDbName -in @('MSSQLSERVER/MultiDB', 'MSSQLSERVER/ProdDB')){
+            $mdfFolder = $null
+        }
         if(! $mdfFolder -or ! $ldfFolder){
-            Write-Host "-mdfFolder required when restoring to an alternate database" -ForegroundColor Yellow
-            exit 1
+            Write-Host "    Skipping: File info not found, please use -mdfFolder, -ldfFolder, -ndfFolders (or -importPaths)" -ForegroundColor Yellow
+            $skippedDBs = @($skippedDBs + $sourceDbName)
+            continue
         }
         $targetConfig['dataFileDirectoryLocation'] = $mdfFolder
         $targetConfig['logFileDirectoryLocation'] = $ldfFolder
@@ -563,9 +568,16 @@ if($wait -and $recoveryIds.Count -gt 0){
     }
     if($failuresDetected -or $recoveryIds.Count -eq 0){
         Write-Host "`nFailures Detected`n" -ForegroundColor Yellow
+        if($skippedDBs.Count -gt 0){
+            Write-Host "Skipped DBs (missing file paths):`n`n$($skippedDBs -join "`n")`n" -ForegroundColor Yellow
+        }
         exit 1
     }else{
         Write-Host "`nRestores Completed Successfully`n" -ForegroundColor Green
+        if($skippedDBs.Count -gt 0){
+            Write-Host "Skipped DBs (missing file paths):`n`n$($skippedDBs -join "`n")`n" -ForegroundColor Yellow
+            exit 1
+        }
         exit 0
     }
 }elseif($recoveryIds.Count -gt 0){
@@ -573,4 +585,9 @@ if($wait -and $recoveryIds.Count -gt 0){
 }else{
     Write-Host ""
 }
+if($skippedDBs.Count -gt 0){
+    Write-Host "Skipped DBs (missing file paths):`n`n$($skippedDBs -join "`n")`n" -ForegroundColor Yellow
+    exit 1
+}
+
 exit 0
