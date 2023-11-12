@@ -28,7 +28,6 @@ param (
     [Parameter()][hashtable]$ndfFolders,
     [Parameter()][switch]$noRecovery,
     [Parameter()][switch]$noStop,
-    [Parameter()][switch]$latest = $noStop,
     [Parameter()][datetime]$logTime,
     [Parameter()][int64]$newerThan,
     [Parameter()][switch]$overwrite,
@@ -259,6 +258,11 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
 
     $latestSnapshotInfo = ($search.objects[0].latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
     $clusterId, $clusterIncarnationId, $jobId = $latestSnapshotInfo.protectionGroupId -split ':'
+
+    # PIT lookup
+    if(! $logTime){
+        $latest = $True
+    }
 
     $pitQuery = @{
         "jobUids" = @(

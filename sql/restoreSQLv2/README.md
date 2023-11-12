@@ -103,7 +103,6 @@ To restore all databases (except system databases) to an alternate server:
 ## Point in Time Parameters
 
 * -logTime: Point in time to replay the logs to during the restore (e.g. '2019-04-10 22:31:05')
-* -latest: Replay the logs to the latest log backup date
 * -noStop: Replay the logs to the last transaction available
 
 ## Recovery Option Parameters
@@ -119,6 +118,14 @@ To restore all databases (except system databases) to an alternate server:
 * -sleepTime: (optional) number of seconds to wait between status queries
 * -pageSize: (optional) number of search results to collect at a time (default is 100)
 * -dbsPerRecovery: (optional) number of databases to restore per restore task (default is 100)
+
+## Deprecated Parameters
+
+These parameters were in the previous version of the restore script but are now default behavior
+
+* -latest: if -logTime is not specified, then the latest PIT is now automatically selected
+* -useSourcePaths: if -mdfFolder is not specified, then the restore will try to use the original source paths
+* -resume: if -overwrite is not specified, and the target DB exists and was left in NO RECOVERY mode, then a resume recovery will be performed
 
 ## Always On Availability Groups
 
