@@ -39,7 +39,8 @@ param (
     [Parameter()][int64]$sleepTime = 30,
     [Parameter()][switch]$exportPaths,
     [Parameter()][switch]$importPaths,
-    [Parameter()][switch]$showPaths
+    [Parameter()][switch]$showPaths,
+    [Parameter()][switch]$exitWithoutRestore
 )
 
 # source the cohesity-api helper code
@@ -499,7 +500,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
     }
 
     # add this param to recovery params
-    if(! $showPaths){
+    if(! $showPaths -and ! $exitWithoutRestore){
         $recoveryParams.mssqlParams.recoverAppParams = @($recoveryParams.mssqlParams.recoverAppParams + $thisParam)
         $dbsSelected += 1
     }
@@ -567,5 +568,9 @@ if($wait -and $recoveryIds.Count -gt 0){
         Write-Host "`nRestores Completed Successfully`n" -ForegroundColor Green
         exit 0
     }
+}elseif($recoveryIds.Count -gt 0){
+    Write-Host "`nPerforming recoveries...`n"
+}else{
+    Write-Host ""
 }
 exit 0

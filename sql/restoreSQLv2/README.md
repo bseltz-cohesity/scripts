@@ -114,7 +114,8 @@ To restore all databases (except system databases) to an alternate server:
 
 ## Misc Parameters
 
-* -wait: Wait for the restore to complete and report end status (e.g. kSuccess)
+* -exitWithoutRestore: (optional) show the selected databases and PIT and exit without restore
+* -wait: (optional) wait for the restore to complete and report end status (e.g. Succeeded)
 * -sleepTime: (optional) number of seconds to wait between status queries
 * -pageSize: (optional) number of search results to collect at a time (default is 100)
 * -dbsPerRecovery: (optional) number of databases to restore per restore task (default is 100)
