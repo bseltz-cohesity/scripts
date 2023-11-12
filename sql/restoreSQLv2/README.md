@@ -38,8 +38,7 @@ To restore all databases (except system databases) to the original location:
                    -domain mydomain.net `
                    -sourceServer sqlserver1.mydomain.net `
                    -allDBs `
-                   -overWrite `
-                   -latest
+                   -overWrite
 ```
 
 To restore all databases (except system databases) to an alternate server:
@@ -50,9 +49,7 @@ To restore all databases (except system databases) to an alternate server:
                    -domain mydomain.net `
                    -sourceServer sqlserver1.mydomain.net `
                    -allDBs `
-                   -latest `
-                   -targetServer sqlserver2.mydomain.net `
-                   -useSourcePaths
+                   -targetServer sqlserver2.mydomain.net
 ```
 
 ## Authentication Parameters
@@ -144,14 +141,14 @@ Including the **-overwrite** parameter will overwrite an existing database. Use 
 
 ## Point in Time Recovery
 
-If you want to replay the logs to the very latest available point in time, use the **-latest** parameter.
+By default, the last available log backup is point in time is selected. For databases with no log backups, the last full/incremental backup is selected.
 
-Or, if you want to replay logs to a specific point in time, use the **-logTime** parameter and specify a date and time in military format like so:
+If you want to replay logs to a specific point in time, use the **-logTime** parameter and specify a date and time in military format like so:
 
 ```powershell
 -logTime '2019-01-20 23:47:02'
 ```
 
-Or, if you want to ensure that you restore the very latest logs (to the millisecond) then use the **-noStop** parameter.
+For databases with no log backups, the full/incremental backup that occured at or before -logTime will be selected.
 
-Note that when the -logTime parameter is used with databases where no log backups exist, the full/incremental backup that occured at or before the specified log time will be used.
+If you want to ensure that you restore the very latest logs (to the millisecond) then use the **-noStop** parameter.
