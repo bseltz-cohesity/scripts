@@ -30,6 +30,7 @@ param (
     [Parameter()][switch]$noStop,
     [Parameter()][switch]$latest = $noStop,
     [Parameter()][datetime]$logTime,
+    [Parameter()][int64]$newerThan,
     [Parameter()][switch]$wait,
     [Parameter()][int64]$pageSize = 100,
     [Parameter()][int64]$dbsPerRecovery = 100,
@@ -39,7 +40,6 @@ param (
     [Parameter()][switch]$captureTailLogs,
     [Parameter()][switch]$exportPaths,
     [Parameter()][switch]$importPaths,
-    [Parameter()][switch]$useSourcePaths,
     [Parameter()][switch]$showPaths
 )
 
@@ -114,6 +114,10 @@ if($importPaths){
     $importedFileInfo = Get-Content -Path $exportFilePath | ConvertFrom-JSON
 }
 
+if($newerThan){
+    $newerThanUsecs = timeAgo $newerThan days
+}
+
 # find all databases on server
 if($allDBs -or $exportPaths){
     $from = 0
@@ -146,6 +150,17 @@ if($allDBs -or $exportPaths){
     if($sourceNodes){
         $dbresults.vms = $dbresults.vms | Where-Object {
             ([array]$x = Compare-Object -Referenceobject $sourceNodes -DifferenceObject $_.vmDocument.objectAliases  -excludedifferent -IncludeEqual)
+        }
+        if(! $dbresults.vms){
+            Write-Host "no DBs found for source nodes $($sourceNodes -join ', ')" -ForegroundColor Yellow
+            exit
+        }
+    }
+    if($newerThan){
+        $dbresults.vms = $dbresults.vms | Where-Object {$_.vmDocument.versions[0].instanceId.jobStartTimeUsecs -ge $newerThanUsecs}
+        if(! $dbresults.vms){
+            Write-Host "no DBs found newer than $newerThan days" -ForegroundColor Yellow
+            exit
         }
     }
     $sourceDbNames = @($dbresults.vms.vmDocument.objectName)
@@ -394,6 +409,9 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
     if($alternateInstance -eq $True -or $renameDB -eq $True -or $showPaths){
         # use source paths
         $secondaryFileLocation = $null
+        if(! $mdfFolder){
+            $useSourcePaths = $True
+        }
         if($useSourcePaths -or $showPaths){
             $dbFileInfoVec = $null
             if($importedFileInfo){

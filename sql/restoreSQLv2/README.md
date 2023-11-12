@@ -77,6 +77,7 @@ To restore all databases (except system databases) to an alternate server:
 * -sourceDBnames: (optional) One or more databases to restore (e.g. MyDB or MYINSTANCE/MyDB) (comma separated)
 * -sourceDBList: (optional) Text file of databases to restore (e.g. MyDB or MYINSTANCE/MyDB) (one per line)
 * -allDBs: (optional) restore all databases from specified server/instance
+* -newerThan: (optional) when restoring allDBs, only include databases backed up in the last X days
 * -includeSystemDBs: (optional) also restore system DBs (master, model, msdb)
 
 ## Target Parameters
@@ -93,7 +94,6 @@ To restore all databases (except system databases) to an alternate server:
 ## File Path Parameters
 
 * -showPaths: (optional) show file paths for selected databases and exit without restore
-* -useSourcePaths: (optional) use same paths to restore to target server
 * -exportPaths: (optional) export DB file path info and exit (file name is sourceserver.json)
 * -importPaths: (optional) import DB file path info (use in conjunction with -useSourcePaths)
 * -mdfFolder: (optional) Location to place the primary data file (e.g. C:\SQLData)
