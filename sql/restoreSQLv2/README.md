@@ -141,7 +141,7 @@ Including the **-overwrite** parameter will overwrite an existing database. Use 
 
 ## Point in Time Recovery
 
-By default, the last available log backup is point in time is selected. For databases with no log backups, the last full/incremental backup is selected.
+By default, the last available log backup point in time is selected. For databases with no log backups, the last full/incremental backup is selected.
 
 If you want to replay logs to a specific point in time, use the **-logTime** parameter and specify a date and time in military format like so:
 
