@@ -140,33 +140,7 @@ if($allDBs -or $exportPaths){
         Write-Host "no DBs found for $sourceServer" -ForegroundColor Yellow
         exit
     }
-    if($sourceInstance){
-        $dbresults.vms = $dbresults.vms | Where-Object {($_.vmDocument.objectName -split '/')[0] -eq $sourceInstance}
-        if(! $dbresults.vms){
-            Write-Host "no DBs found for $sourceServer/$sourceInstance" -ForegroundColor Yellow
-            exit
-        }
-    }
-    if($sourceNodes){
-        $dbresults.vms = $dbresults.vms | Where-Object {
-            ([array]$x = Compare-Object -Referenceobject $sourceNodes -DifferenceObject $_.vmDocument.objectAliases  -excludedifferent -IncludeEqual)
-        }
-        if(! $dbresults.vms){
-            Write-Host "no DBs found for source nodes $($sourceNodes -join ', ')" -ForegroundColor Yellow
-            exit
-        }
-    }
-    if($newerThan){
-        $dbresults.vms = $dbresults.vms | Where-Object {$_.vmDocument.versions[0].instanceId.jobStartTimeUsecs -ge $newerThanUsecs}
-        if(! $dbresults.vms){
-            Write-Host "no DBs found newer than $newerThan days" -ForegroundColor Yellow
-            exit
-        }
-    }
-    $sourceDbNames = @($dbresults.vms.vmDocument.objectName)
-    if(! $includeSystemDBs){
-        $sourceDbNames = $sourceDbNames | Where-Object {($_ -split '/')[-1] -notin @('Master', 'Model', 'MSDB')}
-    }
+
     # exportFileInfo
     if($exportPaths){
         $fileInfoVec = @()
@@ -183,6 +157,41 @@ if($allDBs -or $exportPaths){
         $fileInfoVec | ConvertTo-JSON -Depth 99 | Out-File -FilePath $exportFilePath
         "Exported file paths to $exportFilePath"
         exit 0
+    }
+
+    # filter by source instance
+    if($sourceInstance){
+        $dbresults.vms = $dbresults.vms | Where-Object {($_.vmDocument.objectName -split '/')[0] -eq $sourceInstance}
+        if(! $dbresults.vms){
+            Write-Host "no DBs found for $sourceServer/$sourceInstance" -ForegroundColor Yellow
+            exit
+        }
+    }
+
+    # filter by source AAG nodes
+    if($sourceNodes){
+        $dbresults.vms = $dbresults.vms | Where-Object {
+            ([array]$x = Compare-Object -Referenceobject $sourceNodes -DifferenceObject $_.vmDocument.objectAliases  -excludedifferent -IncludeEqual)
+        }
+        if(! $dbresults.vms){
+            Write-Host "no DBs found for source nodes $($sourceNodes -join ', ')" -ForegroundColor Yellow
+            exit
+        }
+    }
+
+    # filter by age of most recent backup
+    if($newerThan){
+        $dbresults.vms = $dbresults.vms | Where-Object {$_.vmDocument.versions[0].instanceId.jobStartTimeUsecs -ge $newerThanUsecs}
+        if(! $dbresults.vms){
+            Write-Host "no DBs found newer than $newerThan days" -ForegroundColor Yellow
+            exit
+        }
+    }
+
+    $sourceDbNames = @($dbresults.vms.vmDocument.objectName)
+
+    if(! $includeSystemDBs){
+        $sourceDbNames = $sourceDbNames | Where-Object {($_ -split '/')[-1] -notin @('Master', 'Model', 'MSDB')}
     }
 }
 
