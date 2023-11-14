@@ -10,6 +10,7 @@ param (
     [Parameter()][switch]$mcm,
     [Parameter()][string]$mfaCode,
     [Parameter()][string]$clusterName,
+    [Parameter()][string]$accessCluster,
     [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'GiB',
     [Parameter()][int]$daysBack = 7,
     [Parameter()][Int64]$numRuns = 100,
@@ -42,6 +43,10 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
+if($accessCluster){
+    accessCluster $accessCluster
+}
+
 Write-Host "`nGathering Sizing info...`n"
 
 $cluster = api get cluster?fetchStats=true
@@ -65,6 +70,10 @@ foreach($job in (api get -v2 "data-protect/protection-groups?includeTenants=true
     $jobName = $job.name
     Write-Host "$jobName"
     $jobType = $job.environment.Substring(1)
+    if($jobType -eq 'VMware'){
+        $vmsearch = api get "/searchvms?entityTypes=kVMware&jobIds=$(($jobId -split ':')[2])"
+        $vmbytes = $runBytes = ($vmsearch.vms.vmDocument.objectId.entity.vmwareEntity.frontEndSizeInfo.sizeBytes | Measure-Object -sum).Sum
+    }
     if($jobType -eq 'RemoteAdapter'){
         $jobType = 'View'
     }
@@ -98,14 +107,22 @@ foreach($job in (api get -v2 "data-protect/protection-groups?includeTenants=true
             if(! $run.PSObject.Properties['isLocalSnapshotsDeleted']){
                 $runBytes = 0
                 if($run.PSObject.Properties['originalBackupInfo']){
-                    $run.objects.originalBackupInfo.snapshotInfo.stats.logicalSizeBytes | %{ $runBytes += $_}
+                    if($jobType -eq 'VMware'){
+                        $runBytes = $vmbytes
+                    }else{
+                        $run.objects.originalBackupInfo.snapshotInfo.stats.logicalSizeBytes | %{ $runBytes += $_}
+                    }
                     $runStartTimeUsecs = $run.originalBackupInfo.startTimeUsecs
                     $owner = $run.originClusterIdentifier.clusterName
                     if($owner -notin $remotes){
                         $remotes = @($remotes + $owner)
                     }
                 }else{
-                    $run.objects.localSnapshotInfo.snapshotInfo.stats.logicalSizeBytes | %{ $runBytes += $_}
+                    if($jobType -eq 'VMware'){
+                        $runBytes = $vmbytes
+                    }else{
+                        $run.objects.localSnapshotInfo.snapshotInfo.stats.logicalSizeBytes | %{ $runBytes += $_}
+                    }
                     $runStartTimeUsecs = $run.localBackupInfo.startTimeUsecs
                     $owner = $cluster.name
                 }
@@ -126,7 +143,7 @@ foreach($job in (api get -v2 "data-protect/protection-groups?includeTenants=true
             if($jobType -in @('AD', 'Oracle', 'SQL')){
                 $maxRunBytes = $maxRunBytes / 2
             }
-            Write-Host "    $([math]::Round($maxRunBytes / (1024 * 1024 * 1024 * 1024), 1))"
+            # Write-Host "    $([math]::Round($maxRunBytes / (1024 * 1024 * 1024 * 1024), 1))"
             $sizingData["$policyName"]["$jobType"]["$owner"]["$jobName"] = $maxRunBytes
             $sizingData["$policyName"]["$jobType"]["$owner"]['total'] += $maxRunBytes
         }
@@ -143,8 +160,8 @@ foreach($view in $views.views){
 }
 
 $dateString = (get-date).ToString('yyyy-MM-dd')
-$fileName = "reverseSizingReport-SizingInfo-$($cluster.name)-$dateString.tsv"
-"Owner`tJob Type`tPolicy Name`tLogical Size $unit`tWorkload Size TB" | Out-File -FilePath $fileName -Encoding utf8
+$fileName = "reverseSizingReport-SizingInfo-$($cluster.name)-$dateString.csv"
+"""Owner"",""Job Type"",""Policy Name"",""Logical Size $unit"",""Workload Size TB""" | Out-File -FilePath $fileName -Encoding utf8
 
 foreach($policyName in $sizingData.Keys){
 
@@ -155,7 +172,7 @@ foreach($policyName in $sizingData.Keys){
             $total = toUnits ($sizingData["$policyName"]["$jobType"]["$owner"]['total'])
 
             $totalTB = [math]::Round($sizingData["$policyName"]["$jobType"]["$owner"]['total'] / (1000 * 1000 * 1000 * 1000), 2)
-            "$owner`t$jobType`t$policyName`t$total`t$totalTB" | Out-File -FilePath $fileName -Encoding utf8 -Append
+            """$owner"",""$jobType"",""$policyName"",""$total"",""$totalTB""" | Out-File -FilePath $fileName -Encoding utf8 -Append
         }
     }
 }
