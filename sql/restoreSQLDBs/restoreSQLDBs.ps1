@@ -1,4 +1,4 @@
-### usage:
+# usage:
 # ./restoreSQLDBs.ps1 -vip mycluster `
 #                     -username myusername `
 #                     -domain mydomain.net `
@@ -7,7 +7,7 @@
 #                     -overWrite `
 #                     -latest
 
-### process commandline arguments
+# process commandline arguments
 [CmdletBinding()]
 param (
     [Parameter()][string]$vip = 'helios.cohesity.com',   # the cluster to connect to (DNS name or IP)
@@ -59,13 +59,45 @@ if($update){
     $latest = $True
 }
 
-### source the cohesity-api helper code
+$conflictingSelections = $False
+if($allDBs){
+    if($sourceDBList -ne '' -or $sourceDBnames.Count -gt 0){
+        $conflictingSelections = $True
+    }
+}
+if($sourceDBList -ne ''){
+    if($sourceDBnames.Count -gt 0){
+        $conflictingSelections = $True
+    }
+}
+if($conflictingSelections -eq $True){
+    Write-Host "Conflicting DB selections. Please use only one of -allDBs, -sourceDBList, -sourceDBnames" -ForegroundColor Yellow
+    exit 1
+}
+
+# gather DB names
+$dbs = @()
+if($sourceDBList -ne '' -and (Test-Path $sourceDBList -PathType Leaf)){
+    $dbs += Get-Content $sourceDBList | Where-Object {$_ -ne ''}
+}elseif($sourceDBList -ne ''){
+    Write-Warning "File $sourceDBList not found!"
+    exit 1
+}
+if($sourceDBnames){
+    $dbs += $sourceDBnames
+}
+if((! $allDBs) -and $dbs.Length -eq 0){
+    Write-Host "No databases selected for restore"
+    exit 1
+}
+
+# source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
+# authenticate
 apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
 
-### select helios/mcm managed cluster
+# select helios/mcm managed cluster
 if($USING_HELIOS){
     if($clusterName){
         $thisCluster = heliosCluster $clusterName
@@ -82,7 +114,7 @@ if(!$cohesity_api.authorized){
 
 $exportFilePath = Join-Path -Path $PSScriptRoot -ChildPath "$sourceServer.json"
 
-### exportFileInfo
+# exportFileInfo
 if($exportFileInfo){
     $entities = api get "/appEntities?appEnvType=3&envType=3"
 
@@ -117,30 +149,7 @@ if($importFileInfo){
     $importedFileInfo = Get-Content -Path $exportFilePath | ConvertFrom-JSON
 }
 
-if($sourceDBList -ne '' -or $allDBs){
-    $sourceDBnames = @()
-    if($allDBs){
-        $sourceDBList = ''
-    }
-}
-
-### gather DB names
-$dbs = @()
-if($sourceDBList -ne '' -and (Test-Path $sourceDBList -PathType Leaf)){
-    $dbs += Get-Content $sourceDBList | Where-Object {$_ -ne ''}
-}elseif($sourceDBList -ne ''){
-    Write-Warning "File $sourceDBList not found!"
-    exit 1
-}
-if($sourceDBnames){
-    $dbs += $sourceDBnames
-}
-if((! $allDBs) -and $dbs.Length -eq 0){
-    Write-Host "No databases selected for restore"
-    exit 1
-}
-
-### search for databases on sourceServer
+# search for databases on sourceServer
 $from = 0
 $searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&vmName=$sourceServer&size=$pageSize&from=$from"
 $dbresults = @{'vms' = @()}
@@ -156,21 +165,21 @@ if($searchresults.count -gt 0){
     }
 }
 
-### narrow to the correct sourceServer
+# narrow to the correct sourceServer
 # $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer}
 $dbresults = $dbresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer}
 
-### if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot
+# if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot
 $dbresults = $dbresults | Sort-Object -Property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Descending = $True} |
                           Group-Object -Property @{Expression={$_.vmDocument.objectName}} |
                           ForEach-Object {$_.Group[0]}
 
-### narrow by sourceInstance
+# narrow by sourceInstance
 if($sourceInstance){
     $dbresults = $dbresults | Where-Object {($_.vmDocument.objectName -split '/')[0] -eq $sourceInstance}
 }
 
-### narrow by source AAG nodes
+# narrow by source AAG nodes
 if($sourceNodes){
     $dbresults = $dbresults | Where-Object {
         ([array]$x = Compare-Object -Referenceobject $sourceNodes -DifferenceObject $_.vmDocument.objectAliases  -excludedifferent -IncludeEqual)
@@ -182,7 +191,7 @@ if(! $dbresults){
     exit 1
 }
 
-### alert on missing DBs
+# alert on missing DBs
 $selectedDBs = @()
 foreach($db in $dbs){
     if(! $db.Contains('/')){
@@ -200,13 +209,13 @@ foreach($db in $dbs){
     }
 }
 
-### identify physical or vm
+# identify physical or vm
 $entityType = $dbresults[0].registeredSource.type
 
-### get entities
+# get entities
 $entities = api get /appEntities?appEnvType=3`&envType=$entityType
 
-### get target server entity
+# get target server entity
 if(($targetServer -ne $sourceServer) -or $forceAlternateLocation){
     $targetEntity = $entities | where-object { $_.appEntity.entity.displayName -eq $targetServer }
     if($null -eq $targetEntity){
@@ -228,7 +237,7 @@ if($prefix -or $suffix -or $targetServer -ne $sourceServer -or $differentInstanc
     }
 }
 
-### overwrite warning
+# overwrite warning
 if((! $prefix) -and (! $suffix) -and $targetServer -eq $sourceServer -and $differentInstance -eq $False){
     if(! $overWrite -and ! $showPaths){
         write-host "Please use the -overWrite parameter to confirm overwrite of the source database!" -ForegroundColor Yellow
@@ -241,7 +250,7 @@ function restoreDB($db){
     $ownerId = $db.vmDocument.objectId.entity.sqlEntity.ownerId
     $dbId = $db.vmDocument.objectId.entity.id
 
-    ### handle log replay
+    # handle log replay
     $versionNum = 0
     $validLogTime = $False
     $useLogTime = $False
@@ -335,7 +344,7 @@ function restoreDB($db){
         }
     }
 
-    ### create new clone task (RestoreAppArg Object)
+    # create new clone task (RestoreAppArg Object)
     $taskDate = (get-date).ToString('yyyy-MM-dd_HH-mm-ss')
     $taskName = "$($sourceServer)_$($targetServer)_$($sourceDBname)_$($taskDate)"
     $restoreTask = @{
@@ -386,7 +395,7 @@ function restoreDB($db){
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams.withNoRecovery = $True
     }
 
-    ### if not restoring to original server/DB
+    # if not restoring to original server/DB
     $targetDBname = "$prefix$sourceDBname$suffix"
 
     if($targetDBname -ne $sourceDBname -or $targetServer -ne $sourceServer -or $differentInstance -or $forceAlternateLocation){
@@ -435,7 +444,7 @@ function restoreDB($db){
         # Write-Host "** Restoring $targetDBName to $mdfFolder"
     }
 
-    ### apply log replay time
+    # apply log replay time
     if($useLogTime -eq $True){
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['restoreTimeSecs'] = $([int64]($logUsecs/1000000))
         $newRestoreUsecs = $logUsecs
@@ -450,7 +459,7 @@ function restoreDB($db){
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['restoreTimeSecs'] = (3600 + (datetousecs (Get-Date)) / 1000000)
     }
 
-    ### search for target server
+    # search for target server
     if($targetServer -ne $sourceServer -or $differentInstance -or $forceAlternateLocation){
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams['targetHost'] = $targetEntity.appEntity.entity;
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams['targetHostParentSource'] = @{ 'id' = $targetEntity.appEntity.entity.parentId }
@@ -463,7 +472,7 @@ function restoreDB($db){
         $targetServer = $sourceServer
     }
 
-    ### overWrite existing DB
+    # overWrite existing DB
     if($overWrite){
         $restoreTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['dbRestoreOverwritePolicy'] = 1
     }
@@ -495,7 +504,7 @@ function restoreDB($db){
         }
     }
 
-    ### execute the recovery task (post /recoverApplication api call)
+    # execute the recovery task (post /recoverApplication api call)
     $response = api post /recoverApplication $restoreTask
 
     if($response){
@@ -536,7 +545,7 @@ function restoreDB($db){
     }
 }
 
-### restore databases
+# restore databases
 foreach($db in $dbresults){
     $dbname = $db.vmDocument.objectName
     if($allDBs -or $dbname -in $selectedDBs){

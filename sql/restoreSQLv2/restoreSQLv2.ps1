@@ -44,6 +44,45 @@ param (
     [Parameter()][switch]$exitWithoutRestore
 )
 
+$conflictingSelections = $False
+if($allDBs){
+    if($sourceDBList -ne '' -or $sourceDB.Count -gt 0){
+        $conflictingSelections = $True
+    }
+}
+if($sourceDBList -ne ''){
+    if($sourceDB.Count -gt 0){
+        $conflictingSelections = $True
+    }
+}
+if($conflictingSelections -eq $True){
+    Write-Host "Conflicting DB selections. Please use only one of -allDBs, -sourceDBList, -sourceDB" -ForegroundColor Yellow
+    exit 1
+}
+
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
+        }
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
+        exit
+    }
+    return ($items | Sort-Object -Unique)
+}
+
+$sourceDbNames = @(gatherList -Param $sourceDB -FilePath $sourceDBList -Name 'DBs' -Required $False)
+
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
@@ -71,36 +110,6 @@ if($USING_HELIOS){
     }
 }
 # end authentication =========================================
-
-if($sourceDBList -or $allDBs){
-    $sourceDBnames = @()
-    if($allDBs){
-        $sourceDBList = $null
-    }
-}
-
-# gather list from command line params and file
-function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
-    $items = @()
-    if($Param){
-        $Param | ForEach-Object {$items += $_}
-    }
-    if($FilePath){
-        if(Test-Path -Path $FilePath -PathType Leaf){
-            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
-        }else{
-            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
-            exit
-        }
-    }
-    if($Required -eq $True -and $items.Count -eq 0){
-        Write-Host "No $Name specified" -ForegroundColor Yellow
-        exit
-    }
-    return ($items | Sort-Object -Unique)
-}
-
-$sourceDbNames = @(gatherList -Param $sourceDB -FilePath $sourceDBList -Name 'DBs' -Required $False)
 
 if(! $showPaths -and ! $exportPaths){
     $cluster = api get cluster
