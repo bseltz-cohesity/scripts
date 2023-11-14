@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-11-14
+
+* [heliosAagMonitor](https://github.com/bseltz-cohesity/scripts/tree/master/easyScript/heliosAagMonitor) [`New`] EasyScript for monitoring and resolving SQL log chain breaks across Helios clusters
+
 ## 2023-11-11
 
 * [sqlRestoreReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/sqlRestoreReport) [`Update`] added support for multi DB restores
