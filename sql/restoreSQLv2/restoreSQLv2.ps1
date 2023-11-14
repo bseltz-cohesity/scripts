@@ -1,3 +1,4 @@
+# version 2023-11-13
 # process commandline arguments
 [CmdletBinding()]
 param (
@@ -71,6 +72,12 @@ if($USING_HELIOS){
 }
 # end authentication =========================================
 
+if($sourceDBList -or $allDBs){
+    $sourceDBnames = @()
+    if($allDBs){
+        $sourceDBList = $null
+    }
+}
 
 # gather list from command line params and file
 function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
@@ -472,9 +479,6 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
                     }
                 }
             }
-        }
-        if($sourceDbName -in @('MSSQLSERVER/MultiDB', 'MSSQLSERVER/ProdDB')){
-            $mdfFolder = $null
         }
         if(! $mdfFolder -or ! $ldfFolder){
             Write-Host "    Skipping: File info not found, please use -mdfFolder, -ldfFolder, -ndfFolders (or -importPaths)" -ForegroundColor Yellow

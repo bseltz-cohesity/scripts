@@ -117,6 +117,13 @@ if($importFileInfo){
     $importedFileInfo = Get-Content -Path $exportFilePath | ConvertFrom-JSON
 }
 
+if($sourceDBList -ne '' -or $allDBs){
+    $sourceDBnames = @()
+    if($allDBs){
+        $sourceDBList = ''
+    }
+}
+
 ### gather DB names
 $dbs = @()
 if($sourceDBList -ne '' -and (Test-Path $sourceDBList -PathType Leaf)){
