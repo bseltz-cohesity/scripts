@@ -40,7 +40,9 @@ Use this API key as the password.
 ## Example Arguments
 
 ```bash
+# example arguments
 -u myuser@mydomain.net -pwd xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx -ms mail.mydomain.net -to myuser@mydomain.net -fr helios@mydomain.net
+# end example
 ```
 
 ## Authentication Arguments
