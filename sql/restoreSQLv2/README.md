@@ -71,7 +71,7 @@ To restore all databases (except system databases) to an alternate server:
 * -sourceServer: Server name (or AAG name) where the database was backed up
 * -sourceInstance: (optional) Name of source SQL instance to restore from
 * -sourceNodes: (optional) Filter on databases from specific AAG nodes (comma separated)
-* -sourceDBnames: (optional) One or more databases to restore (e.g. MyDB or MYINSTANCE/MyDB) (comma separated)
+* -sourceDB: (optional) One or more databases to restore (e.g. MyDB or MYINSTANCE/MyDB) (comma separated)
 * -sourceDBList: (optional) Text file of databases to restore (e.g. MyDB or MYINSTANCE/MyDB) (one per line)
 * -allDBs: (optional) restore all databases from specified server/instance
 * -newerThan: (optional) when restoring allDBs, only include databases backed up in the last X days
