@@ -41,7 +41,8 @@ param (
     [Parameter()][switch]$exportPaths,
     [Parameter()][switch]$importPaths,
     [Parameter()][switch]$showPaths,
-    [Parameter()][switch]$exitWithoutRestore
+    [Parameter()][switch]$exitWithoutRestore,
+    [Parameter()][switch]$dbg
 )
 
 $conflictingSelections = $False
@@ -211,7 +212,6 @@ if($allDBs -or $exportPaths){
     }
 }
 
-
 if($sourceDbNames.Count -eq 0){
     Write-Host "No DBs specified for restore" -ForegroundColor Yellow
     exit
@@ -228,7 +228,6 @@ if($null -eq $targetEntity -and ! $showPaths){
     Write-Host "Target Server $targetServer Not Found" -ForegroundColor Yellow
     exit 1
 }
-# $targetSQLApp = $targetEntity.applications | Where-Object environment -eq 'kSQL'
 
 $restoreDate = Get-Date -UFormat '%Y-%m-%d_%H:%M:%S'
 
@@ -543,6 +542,11 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
             }
         }
     }
+}
+
+if($dbg){
+    $recoveryParams | toJson | Out-File -FilePath debug.json
+    exit
 }
 
 # perform last recovery group (if any)
