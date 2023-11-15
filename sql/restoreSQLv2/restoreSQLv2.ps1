@@ -35,15 +35,20 @@ param (
     [Parameter()][switch]$keepCdc,
     [Parameter()][switch]$captureTailLogs,
     [Parameter()][switch]$wait,
+    [Parameter()][switch]$progress,
     [Parameter()][int64]$pageSize = 100,
     [Parameter()][int64]$dbsPerRecovery = 100,
-    [Parameter()][int64]$sleepTime = 30,
+    [Parameter()][int64]$sleepTime = 120,
     [Parameter()][switch]$exportPaths,
     [Parameter()][switch]$importPaths,
     [Parameter()][switch]$showPaths,
     [Parameter()][switch]$exitWithoutRestore,
     [Parameter()][switch]$dbg
 )
+
+if($sleepTime -lt 30){
+    $sleepTime = 30
+}
 
 $conflictingSelections = $False
 if($allDBs){
@@ -561,14 +566,50 @@ if($recoveryParams.mssqlParams.recoverAppParams.Count -gt 0){
 
 # wait for completion
 $failuresDetected = $False
-if($wait -and $recoveryIds.Count -gt 0){
+if(($wait -or $progress) -and $recoveryIds.Count -gt 0){
     $finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning', 'SucceededWithWarning')
+    $dbFinishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')
     Write-Host "`nWaiting for recoveries to complete...`n"
-    Start-Sleep $sleepTime
+    Start-Sleep 10
     foreach($recoveryId in $recoveryIds){
         $thisRecovery = api get -v2 "data-protect/recoveries/$recoveryId"
+        $finishedDBs = @()
         while($thisRecovery.status -notin $finishedStates){
-            Start-Sleep $sleepTime
+            if($progress){
+                $dbStatus = 'unknown'
+                while($dbStatus -notin $finishedStates){
+                    $dbStatus = 'Succeeded'
+                    $childRecoveries = api get -v2 "data-protect/recoveries?returnOnlyChildRecoveries=true&ids=$recoveryId"
+                    foreach($childRecovery in $childRecoveries.recoveries | Sort-Object -Property {$_.mssqlParams.recoverAppParams[0].objectInfo.name}){
+                        $dbName = $childRecovery.mssqlParams.recoverAppParams[0].objectInfo.name
+                        $status = $childRecovery.status
+                        if(! $status){
+                            $dbStatus = 'unknown'
+                        }
+                        if($status -notin $finishedStates){
+                            $dbStatus = $status
+                        }
+                        $progressTaskId = $childRecovery.progressTaskId
+                        $progressMonitor = api get "/progressMonitors?taskPathVec=$progressTaskId&excludeSubTasks=true&includeFinishedTasks=true&includeEventLogs=false&fetchLogsMaxLevel=0"
+                        $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
+                        if($percentComplete -gt 0){
+                            if($dbName -notin $finishedDBs){
+                                Write-Host "`r$($dbName): $([math]::Round($percentComplete, 0))%" -NoNewLine
+                                if([math]::Round($percentComplete, 0) -eq 100){
+                                    Write-Host " $status"
+                                    $finishedDBs = @($finishedDBs + $dbName)
+                                }
+                            }
+                        }
+                    }
+                    if($dbStatus -notin $finishedStates){
+                        Start-Sleep $sleepTime
+                    }
+                }
+                Write-Host ""
+            }else{
+                Start-Sleep $sleepTime
+            }
             $thisRecovery = api get -v2 "data-protect/recoveries/$recoveryId"
         }
         $childRecoveries = api get -v2 "data-protect/recoveries?returnOnlyChildRecoveries=true&ids=$recoveryId"
