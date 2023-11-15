@@ -618,7 +618,7 @@ if(($wait -or $progress) -and $recoveryIds.Count -gt 0){
             $status = $childRecovery.status
             Write-Host "$dbName completed with status: $status"
             if($childRecovery.messages){
-                Write-Host "$($childRecovery.messages[0])`n" -ForegroundColor Yellow
+                Write-Host "$($childRecovery.messages[0])" -ForegroundColor Yellow
             }
             if($status -ne 'Succeeded'){
                 $failuresDetected = $True
