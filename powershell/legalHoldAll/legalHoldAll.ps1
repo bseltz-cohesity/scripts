@@ -106,9 +106,11 @@ foreach($job in $jobs | Sort-Object -Property name){
                         )
                     }
                     $update = $false
-                    foreach($copyRun in $run.copyRun | Where-Object {$_.target.type -in @('kLocal', 'kArchival')}){
-                        if($copyRun.PSObject.Properties['holdForLegalPurpose'] -and $copyRun.holdForLegalPurpose -eq $True){
-                            $update = $True
+                    foreach($copyRun in $run.copyRun){ #  | Where-Object {$_.target.type -in @('kLocal', 'kArchival')}
+                        if($removeHold -or $copyRun.target.type -in @('kLocal', 'kArchival')){
+                            if($copyRun.PSObject.Properties['holdForLegalPurpose'] -and $copyRun.holdForLegalPurpose -eq $True){
+                                $update = $True
+                            }
                         }
                         if(($addHold -and $copyRun.expiryTimeUsecs -gt (dateToUsecs)) -or $update -eq $True){
                             $update = $True
