@@ -138,7 +138,7 @@ foreach($server in $sources.nodes | Sort-Object -Property {$_.protectionSource.n
             'selection' = $selection
         }
         $selections = @($selections + $instanceSelection)
-        
+
         foreach($database in $instance.nodes){
             $selection = 'Unprotected'
             $dbSelected = $false
@@ -187,7 +187,9 @@ foreach($server in $sources.nodes | Sort-Object -Property {$_.protectionSource.n
         }
     }
     if($unprotectedDB -eq $True){
-        $serverSelection.selection = 'Some'
+        if($serverSelection.selection -eq 'All'){
+            $serverSelection.selection = 'Some'
+        }
     }
     foreach($s in $selections){
         if($s.entityType -notin @('Instance', 'Database') -or $showInstances -or $showDatabases){
