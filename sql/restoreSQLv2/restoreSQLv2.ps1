@@ -1,4 +1,4 @@
-# version 2023-11-13
+# version 2023-11-15
 # process commandline arguments
 [CmdletBinding()]
 param (
@@ -358,7 +358,6 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         "sqlTargetParams" = @{
             "recoverToNewSource" = $false;
             "originalSourceConfig" = @{
-                "restoreTimeUsecs" = $selectedPIT;
                 "keepCdc" = $false;
                 "withNoRecovery" = $false;
                 "captureTailLogs" = $false
@@ -368,8 +367,10 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
     if($logsAvailable){
         if($noStop){
             $thisParam['pointInTimeUsecs'] = (3600 + (datetousecs (Get-Date)) / 1000000)
+            $thisParam.sqlTargetParams.originalSourceConfig['restoreTimeUsecs'] = (3600 + (datetousecs (Get-Date)) / 1000000)
         }else{
             $thisParam['pointInTimeUsecs'] = $selectedPIT
+            $thisParam.sqlTargetParams.originalSourceConfig['restoreTimeUsecs'] = $selectedPIT
         }
     }
     $targetConfig = $thisParam.sqlTargetParams.originalSourceConfig
