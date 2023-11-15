@@ -34,6 +34,7 @@ param (
     [Parameter()][string]$ldfFolder = $mdfFolder,          # path to restore the ldf
     [Parameter()][hashtable]$ndfFolders,                   # paths to restore the ndfs (requires Cohesity 6.0x)
     [Parameter()][string]$logTime,                         # date time to replay logs to e.g. '2019-01-20 02:01:47'
+    [Parameter()][int64]$newerThan,
     [Parameter()][switch]$wait,                            # wait for completion
     [Parameter()][string]$targetInstance,                  # SQL instance name on the targetServer
     [Parameter()][switch]$latest,                          # replay logs to loatest available point in time
@@ -183,6 +184,19 @@ if($sourceInstance){
 if($sourceNodes){
     $dbresults = $dbresults | Where-Object {
         ([array]$x = Compare-Object -Referenceobject $sourceNodes -DifferenceObject $_.vmDocument.objectAliases  -excludedifferent -IncludeEqual)
+    }
+}
+
+if($newerThan){
+    $newerThanUsecs = timeAgo $newerThan days
+}
+
+ # filter by age of most recent backup
+ if($newerThan){
+    $dbresults = $dbresults | Where-Object {$_.vmDocument.versions[0].instanceId.jobStartTimeUsecs -ge $newerThanUsecs}
+    if(! $dbresults){
+        Write-Host "no DBs found newer than $newerThan days" -ForegroundColor Yellow
+        exit
     }
 }
 

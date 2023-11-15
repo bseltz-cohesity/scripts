@@ -63,6 +63,7 @@ Place both files in a folder together and run the main script like so:
 * -sourceInstance: (optional) Name of source SQL instance to restore from
 * -sourceNodes: (optional) Limit source results to these AAG nodes (comma separated)
 * -allDBs: (optional) restore all databases from specified server/instance
+* -newerThan: (optional) when restoring allDBs, only include databases backed up in the last X days
 * -includeSystemDBs: (optional) also restore system DBs (master, model, msdb)
 
 ## Point in Time Selections
