@@ -18,7 +18,8 @@ param (
     [Parameter()][switch]$removeHold,
     [Parameter()][switch]$addHold,
     [Parameter()][switch]$showTrue,
-    [Parameter()][switch]$showFalse
+    [Parameter()][switch]$showFalse,
+    [Parameter()][switch]$pushToReplica
 )
 
 # source the cohesity-api helper code
@@ -107,16 +108,18 @@ foreach($job in $jobs | Sort-Object -Property name){
                     }
                     $update = $false
                     foreach($copyRun in $run.copyRun){ #  | Where-Object {$_.target.type -in @('kLocal', 'kArchival')}
-                        if($removeHold -or $copyRun.target.type -in @('kLocal', 'kArchival')){
+                        if($pushToReplica -or $copyRun.target.type -in @('kLocal', 'kArchival')){
+                        # if($removeHold -or $copyRun.target.type -in @('kLocal', 'kArchival')){
                             if($copyRun.PSObject.Properties['holdForLegalPurpose'] -and $copyRun.holdForLegalPurpose -eq $True){
                                 $update = $True
                             }
-                        }
-                        if(($addHold -and $copyRun.expiryTimeUsecs -gt (dateToUsecs)) -or $update -eq $True){
-                            $update = $True
-                            $copyRunTarget = $copyRun.target
-                            setApiProperty -object $copyRunTarget -name "holdForLegalPurpose" -value $holdValue
-                            $runParams.jobRuns[0].copyRunTargets += $copyRunTarget
+                        
+                            if(($addHold -and $copyRun.expiryTimeUsecs -gt (dateToUsecs)) -or $update -eq $True){
+                                $update = $True
+                                $copyRunTarget = $copyRun.target
+                                setApiProperty -object $copyRunTarget -name "holdForLegalPurpose" -value $holdValue
+                                $runParams.jobRuns[0].copyRunTargets += $copyRunTarget
+                            }
                         }
                     }
                     if($update -eq $True){
