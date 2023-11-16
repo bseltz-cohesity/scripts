@@ -392,12 +392,12 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         }       
     }
     if(! $showPaths){
+        Write-Host "    Selected Snapshot $(usecsToDate $runStartTimeUsecs)"
         if($logTimeUsecs -and $logTimeUsecs -gt $selectedPIT){
             Write-Host "    Best available PIT is $(usecsToDate $selectedPIT)" -ForegroundColor Yellow
         }elseif($logTimeUsecs -and $logTimeUsecs -lt $selectedPIT){
             Write-Host "    Best available PIT is $(usecsToDate $selectedPIT)" -ForegroundColor Yellow
         }
-        Write-Host "    Selected Snapshot $(usecsToDate $runStartTimeUsecs)"
         Write-Host "    Selected PIT $(usecsToDate $selectedPIT)"
     }
     $search2 = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverApps&searchString=$sourceDbName&protectionGroupIds=$($latestSnapshotInfo.protectionGroupId)&filterSnapshotToUsecs=$runStartTimeUsecs&filterSnapshotFromUsecs=$runStartTimeUsecs&environments=kSQL"
