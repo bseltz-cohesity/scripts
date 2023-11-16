@@ -210,7 +210,7 @@ if($allDBs -or $exportPaths){
         }
     }
 
-    $sourceDbNames = @($dbresults.vms.vmDocument.objectName)
+    $sourceDbNames = @($dbresults.vms.vmDocument.objectName | Sort-Object -Unique)
 
     if(! $includeSystemDBs){
         $sourceDbNames = $sourceDbNames | Where-Object {($_ -split '/')[-1] -notin @('Master', 'Model', 'MSDB')}
@@ -266,26 +266,61 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
     $search = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverApps&searchString=$sourceDbName&environments=kSQL"
     $search.objects = $search.objects | Where-Object name -eq $sourceDbName
     $search.objects = $search.objects | Where-Object {$_.mssqlParams.hostInfo.name -eq $sourceServer -or $_.mssqlParams.aagInfo.name -eq $sourceServer}
+    if($newerThan){
+        $search.objects = $search.objects | Where-Object {$_.latestSnapshotsInfo.protectionRunStartTimeUsecs -ge $newerThanUsecs}
+        if($search.objects.Count -eq 0){
+            Write-Host "$sourceDbName newer than $newerThan days not found on server $sourceServer" -ForegroundColor Yellow
+            continue
+        }
+    }
     if($search.objects.Count -eq 0){
         Write-Host "$sourceDbName not found on server $sourceServer" -ForegroundColor Yellow
         continue
     }
+    if(! $logTime){
+        $latest = $True
+        $search.objects = @(($search.objects | Sort-Object -Property {$_.latestSnapshotsInfo.protectionRunStartTimeUsecs})[-1])
+    }else{
+        # find object with correct time range
+        if($search.objects.Count -gt 1){
+            foreach($o in $search.objects | Sort-Object -Property {$_.latestSnapshotsInfo.protectionRunStartTimeUsecs} -Descending){
+                $thisSourceServer = $o.mssqlParams.hostInfo.name
+                $latestSnapshotInfo = ($o.latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
+                $clusterId, $clusterIncarnationId, $jobId = $latestSnapshotInfo.protectionGroupId -split ':'
+            
+                # PIT lookup
+                $pitQuery = @{
+                    "jobUids" = @(
+                        @{
+                            "clusterId" = [int64]$clusterId;
+                            "clusterIncarnationId" = [int64]$clusterIncarnationId;
+                            "id" = [int64]$jobId
+                        }
+                    );
+                    "environment" = "kSQL";
+                    "protectionSourceId" = $o.id;
+                    "startTimeUsecs" = 0;
+                    "endTimeUsecs" = $logTimeUsecs
+                }
+                $logs = api post restore/pointsForTimeRange $pitQuery
+                $fullSnapshotInfo = $logs.fullSnapshotInfo | Where-Object {$_.restoreInfo.startTimeUsecs -le $logTimeUsecs}
+                if($fullSnapshotInfo){
+                    $search.objects = $o
+                    break
+                }
+            }
+        }
+    }
     Write-Host "`n$($search.objects[0].name)"
     $thisSourceServer = $search.objects[0].mssqlParams.hostInfo.name
-    if($targetServer -eq $sourceServer){
-        $thisTargetServer = $thisSourceServer
-    }else{
-        $thisTargetServer = $targetServer
-    }
-
     $latestSnapshotInfo = ($search.objects[0].latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
     $clusterId, $clusterIncarnationId, $jobId = $latestSnapshotInfo.protectionGroupId -split ':'
 
     # PIT lookup
-    if(! $logTime){
-        $latest = $True
+    $queryTime = dateToUsecs
+    if($logTime){
+        $queryTime = $logTimeUsecs
     }
-
     $pitQuery = @{
         "jobUids" = @(
             @{
@@ -297,7 +332,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         "environment" = "kSQL";
         "protectionSourceId" = $search.objects[0].id;
         "startTimeUsecs" = 0;
-        "endTimeUsecs" = dateToUsecs
+        "endTimeUsecs" = $queryTime
     }
     $logsAvailable = $True
     $logs = api post restore/pointsForTimeRange $pitQuery
@@ -306,6 +341,13 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         $logsAvailable = $False
     }
     $fullSnapshotInfo = $logs.fullSnapshotInfo
+    if($logTime){
+        $fullSnapshotInfo = ($fullSnapshotInfo | Sort-Object -Property {$_.restoreInfo.startTimeUsecs} -Descending | Where-Object {$_.restoreInfo.startTimeUsecs -le $logTimeUsecs})
+        if(! $fullSnapshotInfo){
+            Write-Host "    No snapshots for $logTime, skipping" -ForegroundColor Yellow
+            continue
+        }
+    }
     if($logsAvailable){
         $logTimeValid = $False
         if($logTime -or $latest){
@@ -337,7 +379,13 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         }
     }else{
         if($logTime){
-            $fullSnapshot = ($fullSnapshotInfo | Sort-Object -Property {$_.restoreInfo.startTimeUsecs} -Descending | Where-Object {$_.restoreInfo.startTimeUsecs -le $logTimeUsecs})[0]
+            $fullSnapshot = ($fullSnapshotInfo | Sort-Object -Property {$_.restoreInfo.startTimeUsecs} -Descending | Where-Object {$_.restoreInfo.startTimeUsecs -le $logTimeUsecs})
+            if(! $fullSnapshot){
+                Write-Host "    No snapshots for $logTime, skipping" -ForegroundColor Yellow
+                continue
+            }else{
+                $fullSnapshot = $fullSnapshot[0]
+            }
             $selectedPIT = $runStartTimeUsecs = $fullSnapshot.restoreInfo.startTimeUsecs
         }else{
             $selectedPIT = $runStartTimeUsecs = $search.objects[0].latestSnapshotsInfo[0].protectionRunStartTimeUsecs
@@ -477,7 +525,6 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
             $secondaryFileLocation = @()
             foreach($datafile in $dbFileInfoVec){
                 $path = $datafile.fullPath.subString(0, $datafile.fullPath.LastIndexOf('\'))
-                $fileName = $datafile.fullPath.subString($datafile.fullPath.LastIndexOf('\') + 1)
                 if($datafile.type -eq 0){
                     if($mdfFolderFound -eq $False){
                         $mdfFolder = $path
@@ -568,7 +615,6 @@ if($recoveryParams.mssqlParams.recoverAppParams.Count -gt 0){
 $failuresDetected = $False
 if(($wait -or $progress) -and $recoveryIds.Count -gt 0){
     $finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning', 'SucceededWithWarning')
-    $dbFinishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')
     Write-Host "`nWaiting for recoveries to complete...`n"
     Start-Sleep 10
     foreach($recoveryId in $recoveryIds){
