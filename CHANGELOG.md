@@ -2,6 +2,7 @@
 
 ## 2023-11-17
 
+* [restoreFiles.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/restoreFiles) [`Update`] added broader support for environments (e.g. NAS)
 * [legalHoldAll.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/legalHoldAll) [`Update`] added --pushtoreplicas parameter
 
 ## 2023-11-16
