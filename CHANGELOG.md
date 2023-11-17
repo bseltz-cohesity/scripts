@@ -1,7 +1,23 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-11-17
+
+* [legalHoldAll.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/legalHoldAll) [`Update`] added --pushtoreplicas parameter
+
+## 2023-11-16
+
+* [legalHoldAll.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/legalHoldAll) [`Update`] added -pushToReplicas parameter
+* [restoreSQLv2.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQLv2) [`Update`] added -newerThan parameter
+
+## 2023-11-15
+
+* [replicationQueue.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/replicationQueue) [`Update`] added -newerThan, -olderThan, -ifExpiringBefore selection parameters
+* [restoreSQLDBs.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQLDBs) [`Update`] added -newerThan parameter
+* [sqlJobSelections.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/sqlJobSelections) [`Fix`] incorrect server-level selection status
+
 ## 2023-11-14
 
+* [reverseSizingReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/reverseSizingReport) [`Update`] use more accurate front end size info for VMware VMs
 * [heliosAagMonitor](https://github.com/bseltz-cohesity/scripts/tree/master/easyScript/heliosAagMonitor) [`New`] EasyScript for monitoring and resolving SQL log chain breaks across Helios clusters
 
 ## 2023-11-11
