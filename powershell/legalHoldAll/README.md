@@ -74,4 +74,4 @@ Or remove legal hold from all backups:
 * -removeHold: (optional) remove legal host from all backups for selected jobs (all jobs by default)
 * -showTrue: (optional) display backups where legal hold is True
 * -showFalse: (optional) display backups where legal hold is False
-* -pushToReplica: (optional) push legal host adds/removes to replicas\
+* -pushToReplica: (optional) push legal hold adds/removes to replicas

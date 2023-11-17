@@ -25,6 +25,7 @@ parser.add_argument('-a', '--addhold', action='store_true')
 parser.add_argument('-r', '--removehold', action='store_true')
 parser.add_argument('-t', '--showtrue', action='store_true')
 parser.add_argument('-f', '--showfalse', action='store_true')
+parser.add_argument('-p', '--pushtoreplicas', action='store_true')
 args = parser.parse_args()
 
 vip = args.vip
@@ -43,6 +44,7 @@ addhold = args.addhold
 removehold = args.removehold
 showtrue = args.showtrue
 showfalse = args.showfalse
+pushtoreplicas = args.pushtoreplicas
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode)
@@ -124,11 +126,12 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
             for run in runs:
                 held = False
                 copyRunsFound = False
-                for copyRun in [c for c in run['copyRun'] if c['target']['type'] in ['kLocal', 'kArchival']]:
-                    if 'expiryTimeUsecs' in copyRun and copyRun['expiryTimeUsecs'] > dateToUsecs():
-                        copyRunsFound = True
-                    if 'holdForLegalPurpose' in copyRun and copyRun['holdForLegalPurpose'] is True:
-                        held = True
+                for copyRun in run['copyRun']:
+                    if pushtoreplicas is True or copyRun['target']['type'] in ['kLocal', 'kArchival']:
+                        if 'expiryTimeUsecs' in copyRun and copyRun['expiryTimeUsecs'] > dateToUsecs():
+                            copyRunsFound = True
+                        if 'holdForLegalPurpose' in copyRun and copyRun['holdForLegalPurpose'] is True:
+                            held = True
                 if copyRunsFound is True or held is True:
                     if (addhold and copyRunsFound is True and held is False) or (removehold and held is True):
                         runParams = {
@@ -140,12 +143,13 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                             ]
                         }
                         update = False
-                        for copyRun in [c for c in run['copyRun'] if c['target']['type'] in ['kLocal', 'kArchival']]:
-                            if (addhold and 'expiryTimeUsecs' in copyRun and copyRun['expiryTimeUsecs'] > dateToUsecs()) or (removehold and held is True):
-                                update = True
-                                copyRunTarget = copyRun['target']
-                                copyRunTarget['holdForLegalPurpose'] = holdValue
-                                runParams['jobRuns'][0]['copyRunTargets'].append(copyRunTarget)
+                        for copyRun in run['copyRun']:
+                            if pushtoreplicas is True or copyRun['target']['type'] in ['kLocal', 'kArchival']:
+                                if (addhold and 'expiryTimeUsecs' in copyRun and copyRun['expiryTimeUsecs'] > dateToUsecs()) or (removehold and held is True):
+                                    update = True
+                                    copyRunTarget = copyRun['target']
+                                    copyRunTarget['holdForLegalPurpose'] = holdValue
+                                    runParams['jobRuns'][0]['copyRunTargets'].append(copyRunTarget)
                         if update is True:
                             thisRun = api('get', '/backupjobruns?id=%s&exactMatchStartTimeUsecs=%s' % (run['jobId'], run['backupRun']['stats']['startTimeUsecs']))
                             jobUid = {
@@ -164,6 +168,5 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                         if (showfalse and held is False) or (removehold and held is False):
                             print('    %s - %s' % (usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), 'not on hold'))
                             f.write('%s,%s,%s\n' % (job['name'], usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), 'not on hold'))
-
 f.close()
 print('\nOutput saved to %s\n' % outfile)

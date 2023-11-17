@@ -52,6 +52,7 @@ To remove legal hold from all backups::
 * -r, --removehold: (optional) remove legal holds
 * -t, --showtrue: (optional) show runs where legal hold is present
 * -f, --showfalse: (optional) show runs where legal hold is not present
+* -p, --pushtoreplicas: (optional) push legal hold adds/removes to replicas
 
 ## The Python Helper Module - pyhesity.py
 
