@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """restore files using python"""
 
-# version 2023.10.04
+# version 2023.11.17
 
 # usage: ./restoreFiles.py -v mycluster \
 #                          -u myusername \
@@ -121,7 +121,8 @@ if apiconnected() is False:
     exit(1)
 
 # find target server
-physicalEntities = api('get', '/entitiesOfType?environmentTypes=kPhysical&physicalEntityTypes=kHost&physicalEntityTypes=kOracleAPCluster')
+physicalEntities = api('get', '/entitiesOfType?environmentTypes=kFlashblade&environmentTypes=kGenericNas&environmentTypes=kGPFS&environmentTypes=kIsilon&environmentTypes=kNetapp&environmentTypes=kPhysical&flashbladeEntityTypes=kFileSystem&genericNasEntityTypes=kHost&gpfsEntityTypes=kFileset&isilonEntityTypes=kMountPoint&netappEntityTypes=kVolume&physicalEntityTypes=kHost&physicalEntityTypes=kWindowsCluster')
+# physicalEntities = api('get', '/entitiesOfType?environmentTypes=kPhysical&physicalEntityTypes=kHost&physicalEntityTypes=kOracleAPCluster')
 targetEntity = [e for e in physicalEntities if e['displayName'].lower() == targetserver.lower()]
 
 if len(targetEntity) == 0:
@@ -129,7 +130,7 @@ if len(targetEntity) == 0:
     exit(1)
 
 # find backups for source server
-searchResults = api('get', '/searchvms?entityTypes=kPhysical')
+searchResults = api('get', '/searchvms?entityTypes==kFlashblade&environmentTypes=kGenericNas&environmentTypes=kGPFS&environmentTypes=kIsilon&environmentTypes=kNetapp&environmentTypes=kPhysical&flashbladeEntityTypes=kFileSystem&genericNasEntityTypes=kHost&gpfsEntityTypes=kFileset&isilonEntityTypes=kMountPoint&netappEntityTypes=kVolume&physicalEntityTypes=kHost&physicalEntityTypes=kWindowsCluster')
 if searchResults:
     searchResults = [v for v in searchResults['vms'] if v['vmDocument']['objectName'].lower() in [s.lower() for s in sourceservers]]
     if jobname is not None:
