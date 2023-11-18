@@ -592,41 +592,34 @@ $now = Get-Date
 $waitUntil = $now.AddMinutes($waitMinutesIfRunning)
 while($result -ne ""){
     $runError = $cohesity_api.last_api_error
-    if($runError -match "message"){
-        $runError = $runError | ConvertFrom-Json
-        $errorCode = $runError.errorCode
-        $message = $runError.message
-        if($message -notmatch "Backup job has an existing active backup run" -and $message -notmatch "Protection group can only have one active backup run at a time"){
-            output $message -warn
-            if($message -match "TARGET_NOT_IN_POLICY_NOT_ALLOWED"){
-                if($extendedErrorCodes){
-                    exit 8
-                }else{
-                    exit 1
-                }
+    if(! ($runError -match "Backup job has an existing active backup run") -and !( $runError -match "Protection group can only have one active backup run at a time")){
+        output $runError -warn
+        if($runError -match "TARGET_NOT_IN_POLICY_NOT_ALLOWED"){
+            if($extendedErrorCodes){
+                exit 8
+            }else{
+                exit 1
             }
-            if($errorCode -eq "KInvalidRequest"){
-                if($extendedErrorCodes){
-                    exit 3
-                }else{
-                    exit 1
-                }
-            }
-        }else{
-            if($cancelPreviousRunMinutes -gt 0){
-                cancelRunningJob $v1JobId $cancelPreviousRunMinutes
-            }
-            if($reportWaiting){
-                if($abortIfRunning){
-                    output "job is already running"
-                    exit 0
-                }
-                output "Waiting for existing job run to finish..."
-                $reportWaiting = $false
+        }
+        if($runError -match "KInvalidRequest"){
+            if($extendedErrorCodes){
+                exit 3
+            }else{
+                exit 1
             }
         }
     }else{
-        output $runError -warn
+        if($cancelPreviousRunMinutes -gt 0){
+            cancelRunningJob $v1JobId $cancelPreviousRunMinutes
+        }
+        if($reportWaiting){
+            if($abortIfRunning){
+                output "job is already running"
+                exit 0
+            }
+            output "Waiting for existing job run to finish..."
+            $reportWaiting = $false
+        }
     }
 
     if((Get-Date) -gt $waitUntil){
