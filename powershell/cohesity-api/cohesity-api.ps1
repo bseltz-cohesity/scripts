@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.11.08 - Brian Seltzer
+#  Version 2023.11.18 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2023.02.10 - added -region to api function (for DMaaS)
@@ -22,10 +22,11 @@
 # 2023.10.26 - updated auth validation to use basicClusterInfo, fixed copySessionCookie function
 # 2023.11.07 - updated password storage after validation
 # 2023.11.08 - fixed toJson function duplicate output
+# 2023.11.18 - fix reportError quiet mode
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2023.11.07'
+$versionCohesityAPI = '2023.11.18'
 
 # state cache
 $cohesity_api = @{
@@ -117,7 +118,7 @@ function __writeLog($logmessage){
     "$($apiErrorDate): ($caller) line: $lineNumber $logmessage" | Out-File -FilePath "$apilogfile" -Append -Encoding ascii
 }
 
-function reportError($errorObject, $quiet){
+function reportError($errorObject, [switch]$quiet){
     $thisError = $errorObject.ToString()
     if($thisError.Contains('404 Not Found')){
         $thisError = '404 Not Found'
@@ -246,7 +247,11 @@ function apiauth($vip='helios.cohesity.com',
                 }
                 if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
             }catch{
-                reportError $_
+                if($quiet){
+                    reportError $_ -quiet
+                }else{
+                    reportError $_ 
+                }
                 apidrop -quiet
                 if(!$noprompt -and $cohesity_api.last_api_error -eq "Authentication failed: Invalid API Key"){
                     apiauth -vip $vip -username $username -domain $domain -useApiKey -updatePassword
@@ -270,7 +275,11 @@ function apiauth($vip='helios.cohesity.com',
                 }
                 if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
             }catch{
-                reportError $_
+                if($quiet){
+                    reportError $_ -quiet
+                }else{
+                    reportError $_ 
+                }
                 apidrop -quiet
                 if(!$noprompt -and $cohesity_api.last_api_error -eq "Authentication failed: Unauthorized access."){
                     apiauth -vip $vip -username $username -domain $domain -updatePassword
@@ -352,7 +361,11 @@ function apiauth($vip='helios.cohesity.com',
                     $passwd = Set-CohesityAPIPassword -vip $vip -username $username -passwd $newPassword -quiet
                 }
             }catch{
-                reportError $_
+                if($quiet){
+                    reportError $_ -quiet
+                }else{
+                    reportError $_ 
+                }
                 apidrop -quiet
                 return $null
             }
@@ -381,7 +394,11 @@ function apiauth($vip='helios.cohesity.com',
                         $verify = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body ($mfaCheck | ConvertTo-Json) -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -WebSession $cohesity_api.session
                     }
                 }catch{
-                    reportError $_
+                    if($quiet){
+                        reportError $_ -quiet
+                    }else{
+                        reportError $_ 
+                    }
                     apidrop -quiet
                     return $null
                 }
@@ -402,7 +419,11 @@ function apiauth($vip='helios.cohesity.com',
             if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
         }catch{
             $thisError = $_
-            reportError $thisError
+            if($quiet){
+                reportError $_ -quiet
+            }else{
+                reportError $_ 
+            }
             apidrop -quiet
             if($thisError.ToString().contains('"message":')){
                 $message = (ConvertFrom-Json $_.ToString()).message
@@ -614,7 +635,11 @@ function api($method,
             $cohesity_api.last_api_error = 'OK'
             return $result
         }catch{
-            reportError $_
+            if($quiet){
+                reportError $_ -quiet
+            }else{
+                reportError $_ 
+            }
         }
     }
 }
@@ -642,7 +667,11 @@ function fileDownload($uri, $fileName, [switch]$v2){
         }
         $cohesity_api.last_api_error = 'OK'
     }catch{
-        reportError $_          
+        if($quiet){
+            reportError $_ -quiet
+        }else{
+            reportError $_ 
+        }          
     }
 }
 
