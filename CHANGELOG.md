@@ -1,5 +1,11 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-11-18
+
+* [cohesity-api.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api) [`Fix`] fixed reportError quiet mode
+* [backupNow.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow) [`Update`] Improved job query parameters
+* [backupNow.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/backupNow) [`Update`] Improved job query parameters
+
 ## 2023-11-17
 
 * [restoreFiles.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/restoreFiles) [`Update`] added broader support for environments (e.g. NAS)
