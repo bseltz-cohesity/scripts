@@ -333,15 +333,16 @@ else:
         else:
             bail(1)
     if objectnames is not None:
+        v1Job = api('get', 'protectionJobs/%s' % v1JobId)
         if environment in ['kOracle', 'kSQL']:
             backupJob = api('get', '/backupjobs/%s?useCachedData=%s' % (v1JobId, cacheSetting), timeout=timeoutsec)
             backupSources = api('get', '/backupsources?allUnderHierarchy=false&entityId=%s&excludeTypes=5&useCachedData=%s' % (backupJob[0]['backupJob']['parentSource']['id'], cacheSetting), timeout=timeoutsec)
         elif environment == 'kVMware':
-            sources = api('get', 'protectionSources/virtualMachines?vCenterId=%s&protected=true&useCachedData=%s' % (job['parentSourceId'], cacheSetting), timeout=timeoutsec)
+            sources = api('get', 'protectionSources/virtualMachines?vCenterId=%s&protected=true&useCachedData=%s' % (v1Job['parentSourceId'], cacheSetting), timeout=timeoutsec)
         elif 'kAWS' in environment:
-            sources = api('get', 'protectionSources?environments=kAWS&useCachedData=%s&id=%s' % (cacheSetting, job['parentSourceId']), timeout=timeoutsec)
+            sources = api('get', 'protectionSources?environments=kAWS&useCachedData=%s&id=%s' % (cacheSetting, v1Job['parentSourceId']), timeout=timeoutsec)
         else:
-            sources = api('get', 'protectionSources?environments=%s&useCachedData=%s&id=%s' % (environment, cacheSetting, job['parentSourceId']), timeout=timeoutsec)
+            sources = api('get', 'protectionSources?environments=%s&useCachedData=%s&id=%s' % (environment, cacheSetting, v1Job['parentSourceId']), timeout=timeoutsec)
 
 # purge oracle logs
 if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
@@ -378,7 +379,7 @@ if objectnames is not None:
             if serverObject is not None and len(serverObject) > 0:
                 serverObjectId = serverObject[0]['entity']['id']
             if serverObjectId is not None:
-                if serverObjectId not in job['sourceIds']:
+                if serverObjectId not in v1Job['sourceIds']:
                     out("%s not protected by %s" % (server, jobName))
                     if extendederrorcodes is True:
                         bail(3)
@@ -600,7 +601,7 @@ else:
     lastRunUsecs = 1662164882000000
 
 if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
-    for obj in v2Job['oracleParams']['objects']:
+    for obj in job['oracleParams']['objects']:
         for dbparam in obj['dbParams']:
             if objectnames is not None:
                 for objectname in objectnames:
@@ -619,7 +620,7 @@ if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
                 for channel in dbparam['dbChannels']:
                     if 'archiveLogRetentionDays' in channel:
                         channel['archiveLogRetentionDays'] = 0
-    updatejob = api('put', 'data-protect/protection-groups/%s' % v2JobId, v2Job, v=2, timeout=timeoutsec)
+    updatejob = api('put', 'data-protect/protection-groups/%s' % v2JobId, job, v=2, timeout=timeoutsec)
     out('setting job to purge oracle logs...')
     sleep(cachewaittime + startwaittime)
     wait = True

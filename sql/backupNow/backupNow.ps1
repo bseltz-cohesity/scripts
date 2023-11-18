@@ -220,14 +220,14 @@ function getObjectId($objectName){
     return $global:_object_id
 }
 
-function cancelRunningJob($job, $durationMinutes){
+function cancelRunningJob($v1JobId, $durationMinutes){
     if($durationMinutes -gt 0){
         $durationUsecs = $durationMinutes * 60000000
         $cancelTime = (dateToUsecs) - $durationUsecs
-        $runningRuns = api get "protectionRuns?jobId=$($job.id)&numRuns=100&excludeTasks=true&useCachedData=$cacheSetting" -timeout $timeoutSec | Where-Object {$_.backupRun.status -notin $finishedStates}
+        $runningRuns = api get "protectionRuns?jobId=$($v1JobId)&numRuns=100&excludeTasks=true&useCachedData=$cacheSetting" -timeout $timeoutSec | Where-Object {$_.backupRun.status -notin $finishedStates}
         foreach($run in $runningRuns){
             if($run.backupRun.stats.startTimeUsecs -gt 0 -and $run.backupRun.stats.startTimeUsecs -le $cancelTime){
-                $null = api post "protectionRuns/cancel/$($job.id)" @{ "jobRunId" = $run.backupRun.jobRunId } -timeout $timeoutSec
+                $null = api post "protectionRuns/cancel/$($v1JobId)" @{ "jobRunId" = $run.backupRun.jobRunId } -timeout $timeoutSec
                 output "Canceling previous job run"
             }
         }
@@ -263,8 +263,8 @@ while(! $jobs){
 $job = ($jobs.protectionGroups | Where-Object name -ieq $jobName)
 if($job){
     $policyId = $job.policyId
-    $v2JobID = $job.id
-    $jobId = ($v2JobID -split ":")[2]
+    $v2JobId = $job.id
+    $v1JobId = ($v2JobId -split ":")[2]
     $jobName = $job.name
     $environment = $job.environment
     if($environment -eq 'kPhysicalFiles'){
@@ -279,15 +279,16 @@ if($job){
         }
     }
     if($objects){
+        $v1Job = api get "protectionJobs/$v1JobId"
         if($environment -in @('kOracle', 'kSQL')){
-            $backupJob = api get "/backupjobs/$($jobID)?useCachedData=$cacheSetting" -timeout $timeoutSec
+            $backupJob = api get "/backupjobs/$($v1JobId)?useCachedData=$cacheSetting" -timeout $timeoutSec
             $backupSources = api get "/backupsources?allUnderHierarchy=false&entityId=$($backupJob.backupJob.parentSource.id)&excludeTypes=5&useCachedData=$cacheSetting" -timeout $timeoutSec
         }elseif($environment -eq 'kVMware'){
-            $sources = api get "protectionSources/virtualMachines?protected=true&useCachedData=$cacheSetting&vCenterId=$($job.parentSourceId)" -timeout $timeoutSec
+            $sources = api get "protectionSources/virtualMachines?protected=true&useCachedData=$cacheSetting&vCenterId=$($v1Job.parentSourceId)" -timeout $timeoutSec
         }elseif($environment -match 'kAWS'){
-            $sources = api get "protectionSources?environments=kAWS&useCachedData=$cacheSetting&id=$($job.parentSourceId)" -timeout $timeoutSec
+            $sources = api get "protectionSources?environments=kAWS&useCachedData=$cacheSetting&id=$($v1Job.parentSourceId)" -timeout $timeoutSec
         }else{
-            $sources = api get "protectionSources?environments=$environment&useCachedData=$cacheSetting&id=$($job.parentSourceId)" -timeout $timeoutSec
+            $sources = api get "protectionSources?environments=$environment&useCachedData=$cacheSetting&id=$($v1Job.parentSourceId)" -timeout $timeoutSec
         }
     }
 }else{
@@ -316,7 +317,7 @@ if($objects){
                 $serverObjectId = $serverObject.entity.id
             }
             if($serverObjectId){
-                if($serverObjectId -in $job.sourceIds){
+                if($serverObjectId -in $v1Job.sourceIds){
                     if(! ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId})){
                         $runNowParameters += @{
                             "sourceId" = $serverObjectId;
@@ -585,7 +586,7 @@ if($backupType -ne 'kRegular'){
     $jobdata['usePolicyDefaults'] = $false
 }
 
-$result = api post ('protectionJobs/run/' + $jobID) $jobdata -timeout $timeoutSec -quiet
+$result = api post ('protectionJobs/run/' + $v1JobId) $jobdata -timeout $timeoutSec -quiet
 $reportWaiting = $True
 $now = Get-Date
 $waitUntil = $now.AddMinutes($waitMinutesIfRunning)
@@ -613,7 +614,7 @@ while($result -ne ""){
             }
         }else{
             if($cancelPreviousRunMinutes -gt 0){
-                cancelRunningJob $job $cancelPreviousRunMinutes
+                cancelRunningJob $v1JobId $cancelPreviousRunMinutes
             }
             if($reportWaiting){
                 if($abortIfRunning){
@@ -638,7 +639,7 @@ while($result -ne ""){
     }
 
     Start-Sleep $retryWaitTime
-    $result = api post ('protectionJobs/run/' + $jobID) $jobdata -timeout $timeoutSec -quiet
+    $result = api post ('protectionJobs/run/' + $v1JobId) $jobdata -timeout $timeoutSec -quiet
 }
 output "Running $jobName..."
 
@@ -673,7 +674,7 @@ if($wait -or $progress){
         $runs = $runs | Where-Object protectionGroupInstanceId -gt $lastRunId
         if($null -ne $runs -and $runs.Count -ne "0" -and $useMetadataFile -eq $True){
             foreach($run in $runs){
-                $runDetail = api get "/backupjobruns?exactMatchStartTimeUsecs=$($run.localBackupInfo.startTimeUsecs)&id=$($job.id)&useCachedData=$cacheSetting" -timeout $timeoutSec
+                $runDetail = api get "/backupjobruns?exactMatchStartTimeUsecs=$($run.localBackupInfo.startTimeUsecs)&id=$($v1JobId)&useCachedData=$cacheSetting" -timeout $timeoutSec
                 $metadataFilePath = $runDetail[0].backupJobRuns.protectionRuns[0].backupRun.additionalParamVec[0].physicalParams.metadataFilePath
                 if($metadataFilePath -eq $metaDataFile){
                     $newRunId = $run.protectionGroupInstanceId
