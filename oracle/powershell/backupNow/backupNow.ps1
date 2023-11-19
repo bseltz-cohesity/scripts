@@ -1,4 +1,4 @@
-# version 2023.11.18
+# version 2023.11.19
 
 # version history
 # ===============
@@ -14,7 +14,7 @@
 # 2023-09-03 - added support for read replica, various optimizations and fixes, increased sleepTimeSecs to 360, increased waitForNewRunMinutes to 50
 # 2023-09-06 - added -timeoutSec 300, -noCache, granular sleep times, interactive mode
 # 2023-09-13 - improved error handling on start request, exit on kInvalidRequest
-# 2023-11-18 - tighter API call to find protection job
+# 2023-11-19 - tighter API call to find protection job
 
 # extended error codes
 # ====================
@@ -245,7 +245,7 @@ Start-Sleep $cacheWaitTime
 $jobs = $null
 $jobRetries = 0
 while(! $jobs){
-    $jobs = api get -v2 "data-protect/protection-groups?names=$jobName&isActive=true&isDeleted=false&pruneSourceIds=true&pruneExcludedSourceIds=true&useCachedData=$cacheSetting"
+    $jobs = api get -v2 "data-protect/protection-groups?names=$jobName&isActive=true&isDeleted=false&pruneSourceIds=true&pruneExcludedSourceIds=true&useCachedData=$cacheSetting" -timeout $timeoutSec
     if(! $jobs){
         $jobRetries += 1
         if($jobRetries -eq $statusRetries){
@@ -279,7 +279,7 @@ if($job){
         }
     }
     if($objects){
-        $v1Job = api get "protectionJobs/$v1JobId"
+        $v1Job = api get "protectionJobs/$($v1JobId)?onlyReturnBasicSummary=true&useCachedData=$cacheSetting" -timeout $timeoutSec
         if($environment -in @('kOracle', 'kSQL')){
             $backupJob = api get "/backupjobs/$($v1JobId)?useCachedData=$cacheSetting" -timeout $timeoutSec
             $backupSources = api get "/backupsources?allUnderHierarchy=false&entityId=$($backupJob.backupJob.parentSource.id)&excludeTypes=5&useCachedData=$cacheSetting" -timeout $timeoutSec
