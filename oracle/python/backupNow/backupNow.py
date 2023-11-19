@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.11.18
+# version 2023.11.19
 
 # version history
 # ===============
@@ -17,7 +17,7 @@
 # 2023-09-03 - added support for read replica, various optimizations and fixes, increased sleepTimeSecs to 360, increased newruntimeoutsecs to 3000
 # 2023-09-06 - added --timeoutsec 300, --nocache, granular sleep times, interactive mode, default sleepTimeSecs 3000
 # 2023-09-13 - improved error handling on start request, exit on kInvalidRequest
-# 2023-11-18 - tighter API call to find protection job
+# 2023-11-19 - tighter API call to find protection job
 
 # extended error codes
 # ====================
@@ -288,7 +288,7 @@ def cancelRunningJob(job, durationMinutes, v1JobId):
 jobs = None
 jobRetries = 0
 while jobs is None:
-    jobs = api('get', 'data-protect/protection-groups?names=%s&isActive=true&isDeleted=false&pruneSourceIds=true&pruneExcludedSourceIds=true&useCachedData=%s' % (jobName, cacheSetting), v=2)
+    jobs = api('get', 'data-protect/protection-groups?names=%s&isActive=true&isDeleted=false&pruneSourceIds=true&pruneExcludedSourceIds=true&useCachedData=%s' % (jobName, cacheSetting), v=2, timeout=timeoutsec)
     # jobs = api('get', 'protectionJobs?isActive=true&onlyReturnBasicSummary=true&useCachedData=%s' % cacheSetting)
     if jobs is None or 'error' in jobs or 'protectionGroups' not in jobs:
         jobs = None
@@ -333,7 +333,7 @@ else:
         else:
             bail(1)
     if objectnames is not None:
-        v1Job = api('get', 'protectionJobs/%s' % v1JobId)
+        v1Job = api('get', 'protectionJobs/%s?onlyReturnBasicSummary=true&useCachedData=%s' % (v1JobId, cacheSetting), timeout=timeoutsec)
         if environment in ['kOracle', 'kSQL']:
             backupJob = api('get', '/backupjobs/%s?useCachedData=%s' % (v1JobId, cacheSetting), timeout=timeoutsec)
             backupSources = api('get', '/backupsources?allUnderHierarchy=false&entityId=%s&excludeTypes=5&useCachedData=%s' % (backupJob[0]['backupJob']['parentSource']['id'], cacheSetting), timeout=timeoutsec)
