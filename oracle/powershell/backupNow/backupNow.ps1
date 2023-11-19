@@ -224,7 +224,7 @@ function cancelRunningJob($v1JobId, $durationMinutes){
     if($durationMinutes -gt 0){
         $durationUsecs = $durationMinutes * 60000000
         $cancelTime = (dateToUsecs) - $durationUsecs
-        $runningRuns = api get "protectionRuns?jobId=$($v1JobId)&numRuns=100&excludeTasks=true&useCachedData=$cacheSetting" -timeout $timeoutSec | Where-Object {$_.backupRun.status -notin $finishedStates}
+        $runningRuns = api get "protectionRuns?jobId=$($v1JobId)&numRuns=10&excludeTasks=true&useCachedData=$cacheSetting" -timeout $timeoutSec | Where-Object {$_.backupRun.status -notin $finishedStates}
         foreach($run in $runningRuns){
             if($run.backupRun.stats.startTimeUsecs -gt 0 -and $run.backupRun.stats.startTimeUsecs -le $cancelTime){
                 $null = api post "protectionRuns/cancel/$($v1JobId)" @{ "jobRunId" = $run.backupRun.jobRunId } -timeout $timeoutSec

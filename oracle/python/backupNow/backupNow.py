@@ -238,7 +238,6 @@ if apiconnected() is False:
         bail(1)
 
 sources = {}
-# cluster = api('get', 'cluster', timeout=timeoutsec)
 
 
 # get object ID
@@ -274,7 +273,7 @@ def cancelRunningJob(job, durationMinutes, v1JobId):
         durationUsecs = durationMinutes * 60000000
         nowUsecs = dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         cancelTime = nowUsecs - durationUsecs
-        runningRuns = api('get', 'protectionRuns?jobId=%s&numRuns=100&excludeTasks=true&useCachedData=%s' % (v1JobId, cacheSetting), timeout=timeoutsec)
+        runningRuns = api('get', 'protectionRuns?jobId=%s&numRuns=10&excludeTasks=true&useCachedData=%s' % (v1JobId, cacheSetting), timeout=timeoutsec)
         if runningRuns is not None and len(runningRuns) > 0:
             for run in runningRuns:
                 if 'backupRun' in run and 'status' in run['backupRun']:
@@ -289,7 +288,6 @@ jobs = None
 jobRetries = 0
 while jobs is None:
     jobs = api('get', 'data-protect/protection-groups?names=%s&isActive=true&isDeleted=false&pruneSourceIds=true&pruneExcludedSourceIds=true&useCachedData=%s' % (jobName, cacheSetting), v=2, timeout=timeoutsec)
-    # jobs = api('get', 'protectionJobs?isActive=true&onlyReturnBasicSummary=true&useCachedData=%s' % cacheSetting)
     if jobs is None or 'error' in jobs or 'protectionGroups' not in jobs:
         jobs = None
         jobRetries += 1
@@ -322,7 +320,6 @@ else:
     v2JobId = job['id']
     v1JobId = v2JobId.split(':')[2]
     jobName = job['name']
-    # v2JobId = '%s:%s:%s' % (cluster['id'], cluster['incarnationId'], job['id'])
     environment = job['environment']
     if environment == 'kPhysicalFiles':
         environment = 'kPhysical'
@@ -787,8 +784,6 @@ if wait is True:
                     bail(5)
                 else:
                     bail(1)
-        # if status not in finishedStates:
-        #     sleep(sleeptimesecs - 15)
     out("Job finished with status: %s" % run['localBackupInfo']['status'])
     if run['localBackupInfo']['status'] == 'Failed':
         out('Error: %s' % run['localBackupInfo']['messages'][0])
