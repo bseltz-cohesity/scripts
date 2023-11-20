@@ -7,7 +7,7 @@
 
 ## 2023-11-19
 
-* [restoreFiles](https://github.com/bseltz-cohesity/scripts/tree/master/windows/restoreFiles) [`New`] restoreFiles for Windows
+* [restoreFiles](https://github.com/bseltz-cohesity/scripts/tree/master/windows/restoreFiles) [`New`] restoreFiles for Windows (compiled binary)
 
 ## 2023-11-18
 
