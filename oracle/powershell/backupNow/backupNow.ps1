@@ -1,4 +1,4 @@
-# version 2023.11.19
+# version 2023.11.20
 
 # version history
 # ===============
@@ -14,7 +14,7 @@
 # 2023-09-03 - added support for read replica, various optimizations and fixes, increased sleepTimeSecs to 360, increased waitForNewRunMinutes to 50
 # 2023-09-06 - added -timeoutSec 300, -noCache, granular sleep times, interactive mode
 # 2023-09-13 - improved error handling on start request, exit on kInvalidRequest
-# 2023-11-19 - tighter API call to find protection job
+# 2023-11-20 - tighter API call to find protection job, monitor completion with progress API rather than runs API
 
 # extended error codes
 # ====================
@@ -680,6 +680,7 @@ if($wait -or $progress){
             $v2RunId = $runs[0].id
         }
         if($newRunId -gt $lastRunId){
+            $run = $runs[0]
             break
         }
         Start-Sleep $retryWaitTime
@@ -693,10 +694,11 @@ if($wait -or $progress){
     $lastProgress = -1
     $lastStatus = 'unknown'
     while ($lastStatus -notin $finishedStates){
-        Start-Sleep $sleepTimeSecs
+        if($lastProgress -lt 100){
+            Start-Sleep $sleepTimeSecs
+        }
         $bumpStatusCount = $false
         try {
-            $run = api get -v2 "data-protect/protection-groups/$v2JobId/runs/$($v2RunId)?includeObjectDetails=false&useCachedData=$cacheSetting" -timeout $timeoutSec
             if($run){
                 if($run.PSObject.Properties['localBackupInfo']){
                     if($run.localBackupInfo.PSObject.Properties['status']){
@@ -706,9 +708,12 @@ if($wait -or $progress){
                 }else{
                     $bumpStatusCount = $True
                 }
-                try{
-                    if($interactive -and $progress -and $lastProgress -ne 100){
-                        Start-Sleep $startWaitTime
+                if($lastStatus -in $finishedStates){
+                    break
+                }
+                # wait for percent complete to reach 100
+                while($lastProgress -ne 100){
+                    try{
                         if($run.localBackupInfo.PSObject.Properties['progressTaskId']){
                             $progressPath = $run.localBackupInfo.progressTaskId
                             $progressMonitor = api get "/progressMonitors?taskPathVec=$progressPath&excludeSubTasks=true&includeFinishedTasks=false" -timeout $timeoutSec
@@ -717,12 +722,28 @@ if($wait -or $progress){
                         }
                         $statusRetryCount = 0
                         if($percentComplete -ne $lastProgress){
-                            "$percentComplete percent complete"
+                            if($progress){
+                                "$percentComplete percent complete"
+                            }
                             $lastProgress = $percentComplete
                         }
+                        if($percentComplete -ne 100){
+                            Start-Sleep $sleepTimeSecs
+                        }
+                    }catch{
+                        $bumpStatusCount = $True
                     }
-                }catch{
-                    $bumpStatusCount = $True
+                    if($bumpStatusCount -eq $True){
+                        $statusRetryCount += 1
+                    }
+                    if($statusRetryCount -gt $statusRetries){
+                        output "Timed out waiting for status update" -warn
+                        if($extendedErrorCodes){
+                            exit 5
+                        }else{
+                            exit 1
+                        }
+                    }
                 }
             }else{
                 $bumpStatusCount = $True
@@ -730,10 +751,7 @@ if($wait -or $progress){
         }catch{
             $bumpStatusCount = $True
         }
-        if($lastStatus -in $finishedStates){
-            break
-        }
-        # Start-Sleep ($sleepTimeSecs - $startWaitTime)
+        $run = api get -v2 "data-protect/protection-groups/$v2JobId/runs/$($v2RunId)?includeObjectDetails=false&useCachedData=$cacheSetting" -timeout $timeoutSec
         if($bumpStatusCount -eq $True){
             $statusRetryCount += 1
         }
