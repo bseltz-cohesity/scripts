@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.11.19
+# version 2023.11.20
 
 # version history
 # ===============
@@ -17,7 +17,7 @@
 # 2023-09-03 - added support for read replica, various optimizations and fixes, increased sleepTimeSecs to 360, increased newruntimeoutsecs to 3000
 # 2023-09-06 - added --timeoutsec 300, --nocache, granular sleep times, interactive mode, default sleepTimeSecs 3000
 # 2023-09-13 - improved error handling on start request, exit on kInvalidRequest
-# 2023-11-19 - tighter API call to find protection job
+# 2023-11-20 - tighter API call to find protection job, monitor completion with progress API rather than runs API
 
 # extended error codes
 # ====================
@@ -711,6 +711,7 @@ if wait is True:
             else:
                 bail(1)
         if newRunId > lastRunId:
+            run = runs[0]
             break
         sleep(retrywaittime)
     out("New Job Run ID: %s" % v2RunId)
@@ -723,14 +724,12 @@ if wait is True:
     while status not in finishedStates:
         x = 0
         s = 0
-        sleep(sleeptimesecs)
+        if lastProgress < 100:
+            sleep(sleeptimesecs)
         try:
-            if exitstring:
-                run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=true&useCachedData=%s' % (v2JobId, v2RunId, cacheSetting), v=2, timeout=timeoutsec)
-            else:
-                run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=false&useCachedData=%s' % (v2JobId, v2RunId, cacheSetting), v=2, timeout=timeoutsec)
             status = run['localBackupInfo']['status']
             if exitstring:
+                run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=true&useCachedData=%s' % (v2JobId, v2RunId, cacheSetting), v=2, timeout=timeoutsec)
                 while x < len(run['objects']) and s < exitstringtimeoutsecs:
                     sleep(15)
                     s += 15
@@ -762,16 +761,33 @@ if wait is True:
                 if x < len(run['objects']):
                     print('*** TIMED OUT WAITING FOR STRING MATCH')
                     exit(1)
-            if progress and lastProgress < 100 and 'progressTaskId' in run['localBackupInfo']:
-                sleep(15)
-                progressPath = run['localBackupInfo']['progressTaskId']
-                progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&excludeSubTasks=true&includeFinishedTasks=false' % progressPath, timeout=timeoutsec)
-                progressTotal = progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']
-                percentComplete = int(round(progressTotal))
-                if percentComplete > lastProgress:
-                    out('%s%% completed' % percentComplete)
-                    lastProgress = percentComplete
+            if status in finishedStates:
+                break
+            # wait for percent complete to reach 100
+            while lastProgress < 100:
+                try:
+                    progressPath = run['localBackupInfo']['progressTaskId']
+                    progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&excludeSubTasks=false&includeFinishedTasks=false' % progressPath, timeout=timeoutsec)
+                    progressTotal = progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']
+                    percentComplete = int(round(progressTotal))
+                    statusRetryCount = 0
+                    if percentComplete > lastProgress:
+                        if progress:
+                            out('%s%% completed' % percentComplete)
+                        lastProgress = percentComplete
+                    if percentComplete < 100:
+                        sleep(sleeptimesecs)
+                except Exception:
+                    sleep(sleeptimesecs)
+                    statusRetryCount += 1
+                    if statusRetryCount > statusretries:
+                        out("Timed out waiting for status update")
+                        if extendederrorcodes is True:
+                            bail(5)
+                        else:
+                            bail(1)
             statusRetryCount = 0
+            run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=false&useCachedData=%s' % (v2JobId, v2RunId, cacheSetting), v=2, timeout=timeoutsec)
         except Exception:
             statusRetryCount += 1
             if debugger:
