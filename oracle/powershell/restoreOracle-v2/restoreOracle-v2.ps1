@@ -243,6 +243,9 @@ if($logTime -or $latest){
         if($logRange.PSObject.Properties['timeRanges']){
             if($logRange.timeRanges[0].endTimeUsecs -gt $latestLogPIT){
                 $latestLogPIT = $logRange.timeRanges[0].endTimeUsecs
+                if($desiredPIT -gt $latestLogPIT){
+                    $pit = $latestLogPIT
+                }                        
             }
             if($latest){
                 $pit = $logRange.timeRanges[0].endTimeUsecs
@@ -255,8 +258,9 @@ if($logTime -or $latest){
             }
         }
     }
-    if(!$pit){
-        $pit = $latestLogPIT
+    if(! $pit -and $logtime){
+        Write-Host "Warning: best available point in time is $(usecsToDate $latestSnapshotTimeStamp)" -foregroundcolor Yellow
+    }elseif($desiredPIT -ne $pit -and ! $latest){
         Write-Host "Warning: best available point in time is $(usecsToDate $pit)" -foregroundcolor Yellow
     }
 }
