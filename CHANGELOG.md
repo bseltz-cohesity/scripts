@@ -2,6 +2,8 @@
 
 ## 2023-11-20
 
+* [restoreOracle-v2.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/powershell/restoreOracle-v2) [`Fix`] validation failure when no log backups are available
+* [restoreOracle-v2.py](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/restoreOracle-v2) [`Fix`] validation failure when no log backups are available
 * [backupNow.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow) [`Update`] Improved API call efficiency
 * [backupNow.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/backupNow) [`Update`] Improved API call efficiency
 
