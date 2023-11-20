@@ -286,15 +286,17 @@ if logtime is not None or latest:
             if 'timeRanges' in logRange:
                 if logRange['timeRanges'][0]['endTimeUsecs'] > latestLogPIT:
                     latestLogPIT = logRange['timeRanges'][0]['endTimeUsecs']
+                    if desiredPIT > latestLogPIT:
+                        pit = latestLogPIT
                 if latest:
                     pit = logRange['timeRanges'][0]['endTimeUsecs']
                     break
-                else:
-                    if logRange['timeRanges'][0]['endTimeUsecs'] > desiredPIT and logRange['timeRanges'][0]['startTimeUsecs'] <= desiredPIT:
-                        pit = desiredPIT
-                        break
-    if pit is None:
-        pit = latestLogPIT
+                elif logRange['timeRanges'][0]['endTimeUsecs'] > desiredPIT and logRange['timeRanges'][0]['startTimeUsecs'] <= desiredPIT:
+                    pit = desiredPIT
+                    break
+    if pit is None and logtime is not None:
+        print('Warning: best available point in time is %s' % usecsToDate(latestSnapshotTimeStamp))
+    elif desiredPIT != pit and not latest:
         print('Warning: best available point in time is %s' % usecsToDate(pit))
 
 # find target server
