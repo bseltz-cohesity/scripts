@@ -1,9 +1,12 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-11-20
+
+* [backupNow.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow) [`Update`] Improved API call efficiency
+* [backupNow.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/backupNow) [`Update`] Improved API call efficiency
+
 ## 2023-11-19
 
-* [backupNow.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow) [`Update`] Improved job query parameters
-* [backupNow.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/backupNow) [`Update`] Improved job query parameters
 * [restoreFiles](https://github.com/bseltz-cohesity/scripts/tree/master/windows/restoreFiles) [`New`] restoreFiles for Windows
 
 ## 2023-11-18
