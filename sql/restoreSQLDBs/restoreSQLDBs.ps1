@@ -368,6 +368,7 @@ function restoreDB($db){
             'type' = 3;
             'ownerRestoreInfo' = @{
                 "ownerObject" = @{
+                    "attemptNum" = $dbVersions[$versionNum].instanceId.attemptNum;
                     "jobUid" = $db.vmDocument.objectId.jobUid;
                     "jobId" = $db.vmDocument.objectId.jobId;
                     "jobInstanceId" = $dbVersions[$versionNum].instanceId.jobInstanceId;

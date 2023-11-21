@@ -327,6 +327,7 @@ $restoreTask = @{
         'type' = 3;
         'ownerRestoreInfo' = @{
             "ownerObject" = @{
+                "attemptNum" = $dbVersions[$versionNum].instanceId.attemptNum;
                 "jobUid" = $dbVersions[$versionNum].vmDocument.objectId.jobUid;
                 "jobId" = $dbVersions[$versionNum].vmDocument.objectId.jobId;
                 "jobInstanceId" = $dbVersions[$versionNum].instanceId.jobInstanceId;
