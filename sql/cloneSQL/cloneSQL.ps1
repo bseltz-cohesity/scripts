@@ -129,7 +129,7 @@ if ($logTime -or $latest) {
                     "entity" = @{
                         "id" = $ownerId
                     };
-                    'attemptNum'     = 1
+                    'attemptNum'     = $version.instanceId.attemptNum
                 }
             )
         }
