@@ -166,6 +166,7 @@ $cloneTask = @{
         "type" = 3;
         "ownerRestoreInfo" = @{
             "ownerObject" = @{
+                "attemptNum" = $latestdb.vmDocument.versions[0].instanceId.attemptNum;
                 "jobUid" = $latestdb.vmDocument.objectId.jobUid;
                 "jobId" = $latestdb.vmDocument.objectId.jobId;
                 "jobInstanceId" = $latestdb.vmDocument.versions[0].instanceId.jobInstanceId;
