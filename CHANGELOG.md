@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-11-21
+
+* [restoreSQL.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQL) [`Fix`] Fixed error 'Cannot determine the attempt number of the backup run'
+* [restoreSQLDBs.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQLDBs) [`Fix`] Fixed error 'Cannot determine the attempt number of the backup run'
+
 ## 2023-11-20
 
 * [restoreOracle-v2.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/powershell/restoreOracle-v2) [`Fix`] validation failure when no log backups are available
