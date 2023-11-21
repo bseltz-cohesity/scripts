@@ -204,7 +204,7 @@ if logtime is not None or latest is True:
                     "entity": {
                         "id": ownerId
                     },
-                    "attemptNum": 1
+                    "attemptNum": version['instanceId']['attemptNum']
                 }
             ]
         }
@@ -251,6 +251,7 @@ restoreParams = {
         "type": 19,
         "ownerRestoreInfo": {
             "ownerObject": {
+                "attemptNum": version['instanceId']['attemptNum'],
                 "jobUid": latestdb['vmDocument']['objectId']['jobUid'],
                 "jobId": latestdb['vmDocument']['objectId']['jobId'],
                 "jobInstanceId": version['instanceId']['jobInstanceId'],
@@ -440,7 +441,7 @@ if wait is True:
         try:
             task = api('get', '/restoretasks/%s' % taskId)
             status = task[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus']
-        except:
+        except Exception:
             pass
     if status == 'kSuccess':
         print('Restore Completed Successfully')

@@ -2,6 +2,11 @@
 
 ## 2023-11-21
 
+* [cloneOracle.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/powershell/cloneOracle) [`Fix`] Fixed error 'Cannot determine the attempt number of the backup run'
+* [cloneSQL.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/cloneSQL) [`Fix`] Fixed error 'Cannot determine the attempt number of the backup run'
+* [cloneSQLDBs.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/cloneSQLDBs) [`Fix`] Fixed error 'Cannot determine the attempt number of the backup run'
+* [migrateSQLDB.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/migrateSQLDB) [`Fix`] Fixed error 'Cannot determine the attempt number of the backup run'
+* [restoreOracle.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/powershell/restoreOracle) [`Fix`] Fixed error 'Cannot determine the attempt number of the backup run'
 * [restoreSQL.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQL) [`Fix`] Fixed error 'Cannot determine the attempt number of the backup run'
 * [restoreSQLDBs.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQLDBs) [`Fix`] Fixed error 'Cannot determine the attempt number of the backup run'
 

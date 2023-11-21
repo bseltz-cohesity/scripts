@@ -180,7 +180,7 @@ if logtime is not None or latest is True:
                     "entity": {
                         "id": ownerId
                     },
-                    "attemptNum": 1
+                    "attemptNum": version['instanceId']['attemptNum']
                 }
             ]
         }
@@ -214,6 +214,7 @@ cloneParams = {
         "type": 19,
         "ownerRestoreInfo": {
             "ownerObject": {
+                "attemptNum": version['instanceId']['attemptNum'],
                 "jobUid": latestdb['vmDocument']['objectId']['jobUid'],
                 "jobId": latestdb['vmDocument']['objectId']['jobId'],
                 "jobInstanceId": version['instanceId']['jobInstanceId'],
@@ -373,10 +374,10 @@ status = api('get', '/restoretasks/%s' % taskId)
 
 if wait is True:
     finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
-    while(status[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus'] not in finishedStates):
+    while status[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus'] not in finishedStates:
         sleep(1)
         status = api('get', '/restoretasks/%s' % taskId)
-    if(status[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus'] == 'kSuccess'):
+    if status[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus'] == 'kSuccess':
         print('Clone Completed Successfully')
         exit(0)
     else:
