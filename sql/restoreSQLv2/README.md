@@ -38,7 +38,8 @@ To restore all databases (except system databases) to the original location:
                    -domain mydomain.net `
                    -sourceServer sqlserver1.mydomain.net `
                    -allDBs `
-                   -overWrite
+                   -overWrite `
+                   -commit
 ```
 
 To restore all databases (except system databases) to an alternate server:
@@ -49,7 +50,8 @@ To restore all databases (except system databases) to an alternate server:
                    -domain mydomain.net `
                    -sourceServer sqlserver1.mydomain.net `
                    -allDBs `
-                   -targetServer sqlserver2.mydomain.net
+                   -targetServer sqlserver2.mydomain.net `
+                   -commit
 ```
 
 ## Authentication Parameters
@@ -111,7 +113,7 @@ To restore all databases (except system databases) to an alternate server:
 
 ## Misc Parameters
 
-* -exitWithoutRestore: (optional) show the selected databases and PIT and exit without restore
+* -commit: (optional) perform the restores (otherwise just show what would be done)
 * -wait: (optional) wait for the restore to complete and report end status (e.g. Succeeded)
 * -progress: (optional) report percent complete per database during the restore
 * -sleepTime: (optional) number of seconds to wait between status queries
