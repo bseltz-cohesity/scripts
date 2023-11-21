@@ -148,6 +148,7 @@ foreach($dbName in $dbNames){
                 );
                 'ownerObjectVec'      = @(
                     @{
+                        'attemptNum' = $version.instanceId.attemptNum;
                         'jobUid'         = $latestdb.vmDocument.objectId.jobUid;
                         'jobId'          = $latestdb.vmDocument.objectId.jobId;
                         'jobInstanceId'  = $version.instanceId.jobInstanceId;
@@ -155,7 +156,6 @@ foreach($dbName in $dbNames){
                         "entity" = @{
                             "id" = $ownerId
                         };
-                        'attemptNum'     = 1
                     }
                 )
             }
@@ -192,6 +192,7 @@ foreach($dbName in $dbNames){
             "type" = 3;
             "ownerRestoreInfo" = @{
                 "ownerObject" = @{
+                    "attemptNum" = $latestdb.vmDocument.versions[0].instanceId.attemptNum;
                     "jobUid" = $latestdb.vmDocument.objectId.jobUid;
                     "jobId" = $latestdb.vmDocument.objectId.jobId;
                     "jobInstanceId" = $latestdb.vmDocument.versions[0].instanceId.jobInstanceId;
