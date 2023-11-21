@@ -2,6 +2,7 @@
 
 ## 2023-11-21
 
+* [restoreSQLv2.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQLv2) [`Update`] added -commit parameter and removed -exitWithoutRestore parameter
 * [cloneOracle.py](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/cloneOracle) [`Fix`] Fixed error 'Cannot determine the attempt number of the backup run'
 * [restoreOracle.py](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/restoreOracle) [`Fix`] Fixed error 'Cannot determine the attempt number of the backup run'
 * [cloneOracle.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/powershell/cloneOracle) [`Fix`] Fixed error 'Cannot determine the attempt number of the backup run'
