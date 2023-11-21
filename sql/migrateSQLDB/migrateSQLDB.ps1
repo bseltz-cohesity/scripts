@@ -249,6 +249,7 @@ foreach($s in $sourceDBs){
                 'type' = 3;
                 'ownerRestoreInfo' = @{
                     "ownerObject" = @{
+                        "attemptNum" = $dbVersions[$versionNum].instanceId.attemptNum;
                         "jobUid" = $latestdb.vmDocument.objectId.jobUid;
                         "jobId" = $latestdb.vmDocument.objectId.jobId;
                         "jobInstanceId" = $dbVersions[$versionNum].instanceId.jobInstanceId;
