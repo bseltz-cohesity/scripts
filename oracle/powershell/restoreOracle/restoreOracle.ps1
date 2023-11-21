@@ -145,7 +145,7 @@ if ($logTime -or $latest) {
                     "entity"         = @{
                         "id" = $ownerId
                     }
-                    'attemptNum'     = 1
+                    'attemptNum'     = $version.instanceId.attemptNum
                 }
             )
         }
@@ -189,6 +189,7 @@ $restoreParams = @{
         "type"                = 19;
         "ownerRestoreInfo"    = @{
             "ownerObject" = @{
+                "attemptNum" = $version.instanceId.attemptNum;
                 "jobUid" = $latestdb.vmDocument.objectId.jobUid;
                 "jobId" = $latestdb.vmDocument.objectId.jobId;
                 "jobInstanceId" = $version.instanceId.jobInstanceId;
