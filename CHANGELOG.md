@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-11-22
+
+* [supportChannel.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/supportChannel) [`New`] PowerShell script to enable / disable support channel
+* [supportChannel.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/supportChannel) [`New`] Python script to enable / disable support channel
+
 ## 2023-11-21
 
 * [restoreSQLv2.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQLv2) [`Update`] added -commit parameter and removed -exitWithoutRestore parameter
