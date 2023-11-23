@@ -1,17 +1,7 @@
 #!/usr/bin/env python
 """Restore an Oracle DB Using python"""
 
-# usage: ./restoreOracle.py -v mycluster \
-#                           -u myuser \
-#                           -d mydomain.net \
-#                           -ss oracleprod.mydomain.net \
-#                           -ts oracledev.mydomain.net \
-#                           -sd proddb \
-#                           -td resdb \
-#                           -oh /home/oracle/app/oracle/product/11.2.0/dbhome_1 \
-#                           -ob /home/oracle/app/oracle \
-#                           -od /home/oracle/app/oracle/oradata/resdb
-#                           -l -w
+# version: 2023-11-23
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -62,6 +52,7 @@ parser.add_argument('-bc', '--bctfilepath', type=str, default=None)  # alternate
 parser.add_argument('-dbg', '--dbg', action='store_true')  # debug output
 parser.add_argument('-w', '--wait', action='store_true')  # wait for completion
 parser.add_argument('-pr', '--progress', action='store_true')  # display progress
+parser.add_argument('-inst', '--instant', action='store_true')  # instant recovery
 
 args = parser.parse_args()
 
@@ -80,6 +71,7 @@ sourcedb = args.sourcedb
 targetcdb = args.targetcdb
 pdbnames = args.pdbnames
 progress = args.progress
+instant = args.instant
 
 if args.targetserver is None:
     targetserver = sourceserver
@@ -148,7 +140,7 @@ if '/' in sourcedb:
 
 # overwrite warning
 sameDB = False
-if targetdb == sourcedb and targetserver == sourceserver:
+if targetdb == sourcedb and targetserver == sourceserver and instant is not True:
     sameDB = True
     if overwrite is not True:
         print('Please use the --overwrite parameter to confirm overwrite of the source database!')
@@ -385,6 +377,14 @@ else:
             "rollForwardLogPathVec": None
         }
     }
+    if instant is True:
+        sourceConfig['recoverDatabaseParams']['isMultiStageRestore'] = True
+        sourceConfig['recoverDatabaseParams']['oracleUpdateRestoreOptions'] = {
+            "delaySecs": 0,
+            "targetPathVec": [
+                oracledata
+            ]
+        }
     if granularRestore is True:
         # restore to alternate cdb
         sourceConfig['recoverDatabaseParams']['granularRestoreInfo'] = {

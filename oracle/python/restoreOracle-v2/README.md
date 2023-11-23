@@ -131,7 +131,8 @@ Restoring an Oracle RAC DB:
 * -ch, --channels: (optional) Number of restore channels
 * -cn, --channelnode: (optional) RAC node to use for channels
 * -w, --wait: (optional) wait for restore to finish and report result
-* --pr, --progress: (optional) display percent complete
+* -pr, --progress: (optional) display percent complete
+* -inst, --instant: (optional) perform instant recovery
 
 ## Container/Pluggable DB Parameters
 

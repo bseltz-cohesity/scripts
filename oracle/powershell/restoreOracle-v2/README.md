@@ -117,6 +117,7 @@ Restoring an Oracle RAC DB:
 * -channelNode: (optional) RAC node to use for channels
 * -wait: (optional) wait for restore to finish and report result
 * -progress: (optional) display percent complete
+* -instant: (optional) perform instant recovery
 
 ## Container/Pluggable DB Parameters
 

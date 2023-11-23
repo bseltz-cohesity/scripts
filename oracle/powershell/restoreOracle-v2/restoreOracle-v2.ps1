@@ -1,9 +1,4 @@
-### usage: ./restoreOracle.ps1 -vip mycluster -username myusername -domain mydomain.net `
-#                              -sourceServer oracle.mydomain.net -sourceDB cohesity `
-#                              -targetServer oracle2.mydomain.net -targetDB testdb `
-#                              -oracleHome /home/oracle/app/oracle/product/11.2.0/dbhome_1 `
-#                              -oracleBase /home/oracle/app/oracle `
-#                              -oracleData /home/oracle/app/oracle/oradata/testdb
+# version 2023-11-23
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -47,11 +42,12 @@ param (
     [Parameter()][array]$shellVarValue,                  # shell variable values
     [Parameter()][switch]$wait,                          # wait for restore to finish
     [Parameter()][switch]$progress,                      # display progress
-    [Parameter()][switch]$dbg
+    [Parameter()][switch]$dbg,
+    [Parameter()][switch]$instant
 )
 
 # validate arguments
-if($targetServer -ne $sourceServer -or $targetDB -ne $sourceDB){
+if($targetServer -ne $sourceServer -or $targetDB -ne $sourceDB -or $instant){
     if($oracleHome -eq $null -or $oracleBase -eq $null -or $oracleData -eq $null){
         Write-Warning "-oracleHome, -oracleBase, and -oracleData are required when restoring to another server/database"
         exit 1
@@ -71,7 +67,7 @@ if($sourceDB -match '/'){
 
 # overwrite warning
 $sameDB = $false
-if($targetDB -eq $sourceDB -and $targetServer -eq $sourceServer){
+if($targetDB -eq $sourceDB -and $targetServer -eq $sourceServer -and ! $instant){
     $sameDB = $True
     if(! $overWrite){
         write-host "Please use the -overWrite parameter to confirm overwrite of the source database!" -ForegroundColor Yellow
@@ -352,6 +348,15 @@ if($sameDB){
             "oracleUpdateRestoreOptions" = $null;
             "isMultiStageRestore" = $false;
             "rollForwardLogPathVec" = $null
+        }
+    }
+    if($instant){
+        $sourceConfig.recoverDatabaseParams.isMultiStageRestore = $True
+        $sourceConfig.recoverDatabaseParams['oracleUpdateRestoreOptions'] = @{
+            "delaySecs" = 0;
+            "targetPathVec" = @(
+                $oracleData
+            )
         }
     }
     if($granularRestore){
