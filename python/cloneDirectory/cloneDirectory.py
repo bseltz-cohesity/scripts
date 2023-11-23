@@ -129,6 +129,7 @@ result = api('post', 'views/cloneDirectory', CloneDirectoryParams)
 if result is not None and 'error' in result:
     if logdir:
         out('%s\n' % result['error'], quiet=True)
-    bail(1)
+    if 'KViewAlreadyExists' not in result['error']:
+        bail(1)
 sleep(5)
 bail(0)
