@@ -1,6 +1,6 @@
 # Change Log for bseltz-cohesity/scripts
 
-## 2023-11-20
+## 2023-11-23
 
 * [restoreOracle-v2.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/powershell/restoreOracle-v2) [`Update`] added support for instant recovery
 * [restoreOracle-v2.py](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/restoreOracle-v2) [`Update`] added support for instant recovery
