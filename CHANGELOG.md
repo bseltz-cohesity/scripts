@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-11-20
+
+* [restoreOracle-v2.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/powershell/restoreOracle-v2) [`Update`] added support for instant recovery
+* [restoreOracle-v2.py](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/restoreOracle-v2) [`Update`] added support for instant recovery
+
 ## 2023-11-22
 
 * [supportChannel.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/supportChannel) [`New`] PowerShell script to enable / disable support channel
