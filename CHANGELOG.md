@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-11-25
+
+* [copyCerts.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/copyCerts) [`New`] copy CA certificates from one cluster to another
+* [copyCerts.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/copyCerts) [`New`] copy CA certificates from one cluster to another
+
 ## 2023-11-23
 
 * [restoreOracle-v2.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/powershell/restoreOracle-v2) [`Update`] added support for instant recovery
