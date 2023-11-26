@@ -26,7 +26,7 @@ Place both files in a folder together and run the main script like so:
 ./gflags.py -v mycluster \
             -u myuser \
             -d mydomain.net \ 
-            -s iris \
+            -s kIris \
             -n iris_ui_flags \
             -f 'loginBanner=true' \
             -r 'Enable Banner' \
@@ -34,19 +34,26 @@ Place both files in a folder together and run the main script like so:
 # end example
 ```
 
-## Parameters
+## Authentication Parameters
 
 * -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
 * -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
-* -d, --domain: (optional) domain of username, defaults to local
-* -a, --accesscluster: (optional) cluster to connect to when connected to helios
+* -d, --domain: (optional) domain of username (defaults to local)
 * -k, --useApiKey: (optional) use API key for authentication
-* -p, --password: (optional) provide password or API key in clear text
+* -pwd, --password: (optional) password or API key
+* -np, --noprompt: (optional) do not prompt for password
+* -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) helios/mcm cluster to connect to
+* -m, --mfacode: (optional) MFA code for authentication
+* -em, --emailmfacode: (optional) send MFA code via email
+
+## Other Parameters
+
 * -s, --servicename: (optional) Name of service
 * -n, --flagname: (optional) Name of gflag to set
 * -f, --flagvalue: (optional) gflag value to set
 * -r, --reason: (optional) reason for setting the flag
-* -c, --clear: (optional) reset gflag to default value
+* -clear, --clear: (optional) reset gflag to default value
 * -e, --effectivenow: (optional) make setting effective now (if omitted, gflag changes not effective until service restart(s))
 * -i, --importfile: (optional) name of file to import
 * -x, --restartservices: (optional) restart services if gflags were set
@@ -78,11 +85,3 @@ Helios uses an API key for authentication. To acquire an API key:
 * click Save
 
 Immediately copy the API key (you only have one chance to copy the key. Once you leave the screen, you can not access it again). When running a Helios compatible script for the first time, you will be prompted for a password. Enter the API key as the password.
-
-If you enter the wrong password, you can re-enter the password like so:
-
-```python
-> from pyhesity import *
-> apiauth(updatepw=True)
-Enter your password: *********************
-```
