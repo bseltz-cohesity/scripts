@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-11-26
+
+* [gflags.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/gflags) [`Update`] switched to modern API
+* [gflags.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/gflags) [`Update`] switched to modern API
+
 ## 2023-11-25
 
 * [copyCerts.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/copyCerts) [`New`] copy CA certificates from one cluster to another

@@ -1,11 +1,16 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory=$True)][string]$vip,   # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory=$True)][string]$username,           # username (local or AD)
-    [Parameter()][string]$domain = 'local',            # domain (local or AD FQDN)
-    [Parameter()][string]$password,                    # optional password
-    [Parameter()][switch]$useApiKey,                   # use API key for authentication
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter()][switch]$clear,                       # switch to clear a gflag
     [Parameter()][string]$import = '',                 # import from an export file
     [Parameter()][string]$servicename = $null,         # service name to set gflag
@@ -18,82 +23,33 @@ param (
 
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
-if($cohesity_api.api_version -lt '2023.09.23'){
-    Write-Host "This script requires cohesity-api.ps1 version 2023.09.23 or later" -foregroundColor Yellow
-    Write-Host "Please download it from https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api" -ForegroundColor Yellow
-    exit
+# authentication =============================================
+# demand clusterName for Helios/MCM
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios/MCM" -ForegroundColor Yellow
+    exit 1
 }
 
-### authenticate
-if($useApiKey){
-    apiauth -vip $vip -username $username -domain $domain -password $password -useApiKey 
-}else{
-    apiauth -vip $vip -username $username -domain $domain -password $password 
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
 }
 
-$port = @{
-    'nexus' = '23456';
-    'statscollector' = '25680';
-    'iris' = '443';
-    'nexus_proxy' = '23457';
-    'iris_proxy' = '24567';
-    'gandalf' = '22222';
-    'yoda' = '25999';
-    'librarian' = '26000';
-    'groot' = '26999';
-    'newscribe' = '12222';
-    'rtclient' = '12321';
-    'keychain' = '22000';
-    'apollo' = '24680';
-    'bifrost' = '29994';
-    'bifrost_broker' = '29992';
-    'bridge' = '11111';
-    'eagle_agent' = '23460';
-    'magneto' = '20000';
-    'stats' = '25566';
-    'alerts' = '21111';
-    'storage_proxy' = '20001';
-    'tricorder' = '23458';
-    'vault_proxy' = '11115';
-    'smb_proxy' = '20003';
-    'smb2_proxy' = '20007';
-    'bridge_proxy' = '11116';
-    'athena' = '25681';
-    'atom' = '20005';
-    'patch' = '30000';
-    'janus' = '64001';
-    'pushclient' = '64002';
-    'nfs_proxy' = '20010';
-    'icebox' = '29999';
-    'throttler' = '20008';
-    'elrond' = '26002';
-    'heimdall' = '26200';
-    'node_exporter' = '9100';
-    'compass' = '25555';
-    'etl_server' = '23462'
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
+        exit 1
+    }
 }
+# end authentication =========================================
 
 $cluster = api get cluster
-if($effectiveNow){
-    $nodes = api get nodes
-    if($PSVersionTable.PSEdition -eq 'Desktop'){
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
-        $ignoreCerts = @"
-public class SSLHandler
-{
-    public static System.Net.Security.RemoteCertificateValidationCallback GetSSLHandler()
-    {
-        return new System.Net.Security.RemoteCertificateValidationCallback((sender, certificate, chain, policyErrors) => { return true;});
-    }
-}
-"@
-        if(!("SSLHandler" -as [type])){
-            Add-Type -TypeDefinition $ignoreCerts
-        }
-        [System.Net.ServicePointManager]::ServerCertificateValidationCallback = [SSLHandler]::GetSSLHandler()
-    }
-}
+
 
 function setGflag($servicename, $flagname, $flagvalue, $reason){
     if($clear){
@@ -101,8 +57,7 @@ function setGflag($servicename, $flagname, $flagvalue, $reason){
     }else{
         write-host "setting  $($servicename):  $flagname = $flagvalue"
     }
-    $gflagReq = @{
-        'clusterId' = $cluster.id;
+    $gflag = @{
         'gflags' = @(
             @{
                 'name' = $flagname;
@@ -111,33 +66,15 @@ function setGflag($servicename, $flagname, $flagvalue, $reason){
             }
         );
         'serviceName' = $servicename;
+        'effectiveNow' = $false
+    }
+    if($effectiveNow){
+        $gflag.effectiveNow = $True
     }
     if($clear){
-        $gflagReq['clear'] = $True
+        $gflag['clear'] = $True
     }
-    $null = api post '/nexus/cluster/update_gflags' $gflagReq
-    if($effectiveNow){
-        Write-Host "    making effective now on all nodes:"
-        foreach($node in $nodes){
-            Write-Host "        $($node.ip)"
-            if($servicename -eq 'iris'){
-                copySessionCookie $node.ip
-            }
-            if($PSVersionTable.PSEdition -eq 'Core'){
-                if($servicename -eq 'iris'){
-                    $null = Invoke-WebRequest -UseBasicParsing -Uri "https://$($node.ip):443/flagz?$flagname=$flagvalue" -Headers $cohesity_api.header -SkipCertificateCheck -WebSession $thisContext.session
-                }else{
-                    $null = Invoke-WebRequest -UseBasicParsing -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=http%3A%2F%2F$($node.ip)%3A$($port[$servicename])%2Fflagz%3F$flagname=$flagvalue" -Headers $cohesity_api.header -SkipCertificateCheck -WebSession $thisContext.session
-                }
-            }else{
-                if($servicename -eq 'iris'){
-                    $null = Invoke-WebRequest -UseBasicParsing -Uri "https://$($node.ip):443/flagz?$flagname=$flagvalue" -Headers $cohesity_api.header -WebSession $thisContext.session
-                }else{
-                    $null = Invoke-WebRequest -UseBasicParsing -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=http%3A%2F%2F$($node.ip)%3A$($port[$servicename])%2Fflagz%3F$flagname=$flagvalue" -Headers $cohesity_api.header -WebSession $thisContext.session
-                }
-            }
-        }
-    }
+    $null = api put '/clusters/gflag' $gflag
 }
 
 $restartServices = @()
@@ -190,7 +127,7 @@ if($import -ne ''){
 # show currently set gflags
 $gflaglist = @()
 
-$gflags = (api get /nexus/cluster/list_gflags).servicesGflags
+$gflags = api get /clusters/gflag
 
 foreach($service in $gflags){
     $svcName = $service.serviceName

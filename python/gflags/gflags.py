@@ -3,19 +3,7 @@
 
 # import pyhesity wrapper module
 from pyhesity import *
-import requests
-import urllib3
 import codecs
-import requests.packages.urllib3
-import sys
-if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
-    from urllib.parse import quote_plus
-else:
-    from urllib import quote_plus
-
-if api_version < '2023.09.23':
-    print('This script requires pyhesity.py version 2023.09.23 or later')
-    exit()
 
 ### command line arguments
 import argparse
@@ -23,15 +11,19 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
 parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
-parser.add_argument('-a', '--accesscluster', type=str, default=None)
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
 parser.add_argument('-k', '--useApiKey', action='store_true')
-parser.add_argument('-p', '--password', type=str, default=None)
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-m', '--mfacode', type=str, default=None)
+parser.add_argument('-em', '--emailmfacode', action='store_true')
 parser.add_argument('-s', '--servicename', type=str, default=None)
 parser.add_argument('-n', '--flagname', type=str, default=None)
 parser.add_argument('-f', '--flagvalue', type=str, default=None)
 parser.add_argument('-r', '--reason', type=str, default=None)
 parser.add_argument('-e', '--effectivenow', action='store_true')
-parser.add_argument('-c', '--clear', action='store_true')
+parser.add_argument('-clear', '--clear', action='store_true')
 parser.add_argument('-i', '--importfile', type=str, default=None)
 parser.add_argument('-x', '--restartservices', action='store_true')
 
@@ -40,9 +32,13 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
-accesscluster = args.accesscluster
+clustername = args.clustername
+mcm = args.mcm
 useApiKey = args.useApiKey
 password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
+emailmfacode = args.emailmfacode
 servicename = args.servicename
 flagname = args.flagname
 flagvalue = args.flagvalue
@@ -52,74 +48,33 @@ importfile = args.importfile
 clear = args.clear
 restartservices = args.restartservices
 
-requests.packages.urllib3.disable_warnings()
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-### constants
-port = {
-    "nexus": "23456",
-    "iris": "443",
-    "stats": "25566",
-    "eagle_agent": "23460",
-    "vault_proxy": "11115",
-    "athena": "25681",
-    "iris_proxy": "24567",
-    "atom": "20005",
-    "smb2_proxy": "20007",
-    "bifrost_broker": "29992",
-    "bifrost": "29994",
-    "alerts": "21111",
-    "bridge": "11111",
-    "keychain": "22000",
-    "smb_proxy": "20003",
-    "bridge_proxy": "11116",
-    "groot": "26999",
-    "apollo": "24680",
-    "tricorder": "23458",
-    "magneto": "20000",
-    "rtclient": "12321",
-    "nexus_proxy": "23457",
-    "gandalf": "22222",
-    "patch": "30000",
-    "librarian": "26000",
-    "yoda": "25999",
-    "storage_proxy": "20001",
-    "statscollector": "25680",
-    "newscribe": "12222",
-    "icebox": "29999",
-    "janus": "64001",
-    "pushclient": "64002",
-    "nfs_proxy": "20010",
-    "icebox": "29999",
-    "throttler": "20008",
-    "elrond": "26002",
-    "heimdall": "26200",
-    "node_exporter": "9100",
-    "compass": "25555",
-    "etl_server": "23462"
-}
+# authentication =========================================================
+# demand clustername if connecting to helios or mcm
+if (mcm or vip.lower() == 'helios.cohesity.com') and clustername is None:
+    print('-c, --clustername is required when connecting to Helios or MCM')
+    exit(1)
 
 # authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, emailMfaCode=emailmfacode)
 
-# if connected to helios, select to access cluster
-if vip.lower() == 'helios.cohesity.com':
-    if accesscluster is not None:
-        heliosCluster(accesscluster)
-    else:
-        print('-accessCluster is required')
-        exit()
+# exit if not authenticated
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
+
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    heliosCluster(clustername)
+    if LAST_API_ERROR() != 'OK':
+        exit(1)
+# end authentication =====================================================
 
 cluster = api('get', 'cluster')
-if effectivenow is True:
-    nodes = api('get', 'nodes')
 
 
 def setGflag(servicename, flagname, flagvalue, reason):
-    print('\nsetting %s: %s = %s' % (servicename, flagname, flagvalue))
+    print('Setting %s: %s = %s' % (servicename, flagname, flagvalue))
     gflag = {
-        'clusterId': cluster['id'],
         'serviceName': servicename,
         'gflags': [
             {
@@ -127,36 +82,17 @@ def setGflag(servicename, flagname, flagvalue, reason):
                 'value': flagvalue,
                 'reason': reason
             }
-        ]
+        ],
+        'effectiveNow': False
     }
+
+    if effectivenow:
+        gflag['effectiveNow'] = True
 
     if clear is True:
         gflag['clear'] = True
 
-    response = api('post', '/nexus/cluster/update_gflags', gflag)
-
-    if effectivenow is True:
-        print('    making effective now on all nodes')
-        context = getContext()
-        cookies = context['COOKIES']
-        nodes = api('get', 'nodes')
-        for node in nodes:
-            print('        %s' % node['ip'])
-            if clear is True:
-                if servicename == 'iris':
-                    currentflags = context['SESSION'].get('https://%s:%s/flagz' % (node['ip'], port[servicename]), verify=False, headers=context['HEADER'], cookies=cookies)
-                else:
-                    currentflags = context['SESSION'].get('https://%s/siren/v1/remote?relPath=&remoteUrl=http' % vip + quote_plus('://') + node['ip'] + quote_plus(':') + port[servicename] + quote_plus('/flagz'), verify=False, headers=context['HEADER'])
-                for existingflag in currentflags.content.split('\n'):
-                    parts = str(existingflag).split('=')
-                    existingflagname = parts[0][2:]
-                    if existingflagname == flagname:
-                        if len(parts) > 2:
-                            flagvalue = parts[2][0:-1]
-            if servicename == 'iris':
-                response = context['SESSION'].get('https://%s:%s/flagz?%s=%s' % (node['ip'], port[servicename], flagname, flagvalue), verify=False, headers=context['HEADER'], cookies=cookies)
-            else:
-                response = context['SESSION'].get('https://%s/siren/v1/remote?relPath=&remoteUrl=http' % vip + quote_plus('://') + node['ip'] + quote_plus(':') + port[servicename] + quote_plus('/flagz?') + '%s=%s' % (flagname, flagvalue), verify=False, headers=context['HEADER'])
+    response = api('put', '/clusters/gflag', gflag)
 
 
 servicestorestart = []
@@ -193,9 +129,9 @@ f = codecs.open(exportfile, 'w', 'utf-8')
 f.write('Service Name,Flag Name,Flag Value,Reason\n')
 
 # get currrent flags
-flags = api('get', '/nexus/cluster/list_gflags')
+flags = api('get', '/clusters/gflag')
 
-for service in flags['servicesGflags']:
+for service in flags:
     servicename = service['serviceName']
     print('\n%s:' % servicename)
     gflags = service['gflags']
