@@ -91,3 +91,5 @@ To restore to an alternate folder:
 * -fileName: (optional) one or more file paths (comma separated) to restore e.g. /Folder-01/File-01.txt
 * -fileList: (optional) text file of file paths to restore (one per line)
 * -targetFolder: (optional) path to restore files e.g. /tmp
+* -localOnly: (optional) only restore files if a local snapshot exists
+* -archiveOnly: (optional) only restore files if an archive snapshot exists

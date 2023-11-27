@@ -15,7 +15,9 @@ param (
     [Parameter()][string]$fileList,
     [Parameter(Mandatory=$True)][string]$sourceUser,
     [Parameter()][string]$targetUser,
-    [Parameter()][string]$targetFolder
+    [Parameter()][string]$targetFolder,
+    [Parameter()][switch]$localOnly,
+    [Parameter()][switch]$archiveOnly
 )
 
 # source the cohesity-api helper code
@@ -125,10 +127,15 @@ foreach($filePath in $filePaths){
     $latestSnap = ($snap | Sort-Object -Property {$_.snapshotTimestampUsecs})[-1]
     $latestSnaps = $snap | Where-Object {$_.snapshotTimestampUsecs -eq $latestSnap.snapshotTimestampUsecs}
     $localSnap = $latestSnaps | Where-Object {! $_.PSObject.Properties['externalTargetInfo']}
-    if($localSnap){
+    if($localSnap -and ! $archiveOnly){
         $snap = $localSnap
     }else{
-        $snap = $latestSnap
+        if(! $localOnly){
+            $snap = $latestSnap
+        }else{
+            Write-Host "Skipping $filePath (there is an archive snapshot but -localOnly was specified)"
+            continue
+        }
     }
 
     $taskName = $filePath -replace '/', '-'
