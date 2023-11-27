@@ -127,13 +127,19 @@ foreach($filePath in $filePaths){
     $latestSnap = ($snap | Sort-Object -Property {$_.snapshotTimestampUsecs})[-1]
     $latestSnaps = $snap | Where-Object {$_.snapshotTimestampUsecs -eq $latestSnap.snapshotTimestampUsecs}
     $localSnap = $latestSnaps | Where-Object {! $_.PSObject.Properties['externalTargetInfo']}
-    if($localSnap -and ! $archiveOnly){
-        $snap = $localSnap
+    if($localSnap){
+        if(! $archiveOnly){
+            $snap = $localSnap
+        }else{
+            Write-Host "Skipping $filePath (there is a local snapshot but -archiveOnly was specified)" -ForegroundColor Yellow
+            continue
+        }
+        
     }else{
         if(! $localOnly){
             $snap = $latestSnap
         }else{
-            Write-Host "Skipping $filePath (there is an archive snapshot but -localOnly was specified)"
+            Write-Host "Skipping $filePath (there is an archive snapshot but -localOnly was specified)" -ForegroundColor Yellow
             continue
         }
     }
