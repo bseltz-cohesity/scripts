@@ -23,10 +23,11 @@
 # 2023.11.07 - updated password storage after validation
 # 2023.11.08 - fixed toJson function duplicate output
 # 2023.11.18 - fix reportError quiet mode
+# 2023.11.27 - fix useApiKey for helios/mcm
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2023.11.18'
+$versionCohesityAPI = '2023.11.27'
 
 # state cache
 $cohesity_api = @{
@@ -742,6 +743,9 @@ function dateToUsecs($datestring=(Get-Date)){
 # password functions ==============================================================================
 
 function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', $useApiKey=$false, $helios=$false){
+    if($helios -eq $True -or $vip -eq 'helios.cohesity.com'){
+        $useApiKey = $false
+    }
     # parse domain\username or username@domain
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
@@ -806,6 +810,9 @@ function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
 }
 
 function Clear-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', [switch]$quiet, $useApiKey=$false, $helios=$false){
+    if($helios -eq $True -or $vip -eq 'helios.cohesity.com'){
+        $useApiKey = $false
+    }
     # parse domain\username or username@domain
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
@@ -860,7 +867,9 @@ function Clear-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios
 }
 
 function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', $passwd=$null, [switch]$quiet, $useApiKey=$false, $helios=$false){
-
+    if($helios -eq $True -or $vip -eq 'helios.cohesity.com'){
+        $useApiKey = $false
+    }
     # parse domain\username or username@domain
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
