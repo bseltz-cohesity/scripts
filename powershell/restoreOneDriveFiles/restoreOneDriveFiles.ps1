@@ -121,10 +121,19 @@ foreach($filePath in $filePaths){
         Write-Host "No backups found for $filePath" -ForegroundColor Yellow
         continue
     }
-    $snap = ($snap | Sort-Object -Property snapshotTimestampUsecs)[-1]
+
+    $latestSnap = ($snap | Sort-Object -Property {$_.snapshotTimestampUsecs})[-1]
+    $latestSnaps = $snap | Where-Object {$_.snapshotTimestampUsecs -eq $latestSnap.snapshotTimestampUsecs}
+    $localSnap = $latestSnaps | Where-Object {! $_.PSObject.Properties['externalTargetInfo']}
+    if($localSnap){
+        $snap = $localSnap
+    }else{
+        $snap = $latestSnap
+    }
+
     $taskName = $filePath -replace '/', '-'
     $recoveryParams = $myObject = @{
-        "name" = "Recover_OneDrive_$taskName";
+        "name" = "Recover_OneDrive$($taskName)";
         "snapshotEnvironment" = "kO365";
         "office365Params" = @{
             "recoveryAction" = "RecoverOneDrive";
