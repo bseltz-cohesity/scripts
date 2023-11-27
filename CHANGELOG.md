@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-11-27
+
+* [restoreOneDriveFiles.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/restoreOneDriveFiles) [`New`] Restore OneDrive files/folders
+
 ## 2023-11-26
 
 * [gflags.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/gflags) [`Update`] switched to modern API
