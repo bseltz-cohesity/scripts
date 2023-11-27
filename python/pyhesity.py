@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2023.11.07"""
+"""Cohesity Python REST API Wrapper Module - 2023.11.27"""
 
 ##########################################################################################
 # Change Log
@@ -27,6 +27,7 @@
 # 2023-10-09 - set last error on cluster not connected to helios
 # 2023-10-13 - fixed password prompt for AD user
 # 2023.11.07 - updated password storage after validation
+# 2023.11.27 - fix useApiKey for helios/mcm
 #
 ##########################################################################################
 # Install Notes
@@ -501,6 +502,8 @@ def dayDiff(newdate, olddate):
 ### get/store password for future runs
 def __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, prompt):
     """get/set stored password"""
+    if helios is True or vip == 'helios.cohesity.com':
+        useApiKey = False
     originalUsername = username
     originalVip = vip
     if domain.lower() != 'local' and helios is False and vip != 'helios.cohesity.com' and useApiKey is False:
