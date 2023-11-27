@@ -4,7 +4,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This PowerShell script restores OneDrive files.
 
-Note that this script is a minimum viable prototype. Additional features may be added in the future but it currently has the following limitations:
+`Note`: this script is a minimum viable prototype. Additional features may be added in the future but it currently has the following limitations:
 
 * OneDrive backups must be indexed (the script uses search, not browse)
 * Only restores latest version of each requested file/folder
