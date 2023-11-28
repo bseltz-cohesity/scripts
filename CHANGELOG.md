@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-11-28
+
+* [cloneOracleBackupsToView.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/powershell/cloneOracleBackupsToView) [`New`] Clone Oracle Backups to an SMB view
+
 ## 2023-11-27
 
 * [restoreOneDriveFiles.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/restoreOneDriveFiles) [`New`] Restore OneDrive files/folders
