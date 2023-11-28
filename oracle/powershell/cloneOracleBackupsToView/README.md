@@ -12,7 +12,7 @@ Run these commands from PowerShell to download the scripts into the current fold
 
 ```powershell
 # Download Commands
-$scriptName = 'cloneOracleBackupToView'
+$scriptName = 'cloneOracleBackupsToView'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/oracle/powershell/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
