@@ -118,29 +118,35 @@ foreach($filePath in $filePaths){
         $isFile = $True
     }
     $snaps = api get -v2 "data-protect/objects/$($userObj.id)/protection-groups/$($searchResult.protectionGroupId)/indexed-objects/snapshots?indexedObjectName=$($filePath)&useCachedData=false&includeIndexedSnapshotsOnly=true"
-    $snap = $snaps.snapshots | Where-Object indexedObjectName -eq $filePath
-    if(! $snap){
+    $snaps = $snaps.snapshots | Where-Object indexedObjectName -eq $filePath
+    if(! $snaps){
         Write-Host "No backups found for $filePath" -ForegroundColor Yellow
         continue
     }
 
-    $latestSnap = ($snap | Sort-Object -Property {$_.snapshotTimestampUsecs})[-1]
-    $latestSnaps = $snap | Where-Object {$_.snapshotTimestampUsecs -eq $latestSnap.snapshotTimestampUsecs}
-    $localSnap = $latestSnaps | Where-Object {! $_.PSObject.Properties['externalTargetInfo']}
-    if($localSnap){
-        if(! $archiveOnly){
-            $snap = $localSnap
-        }else{
-            Write-Host "Skipping $filePath (there is a local snapshot but -archiveOnly was specified)" -ForegroundColor Yellow
+    
+    $localSnaps = $snaps | Where-Object {! $_.PSObject.Properties['externalTargetInfo']}
+    $archiveSnaps = $snaps | Where-Object {$_.snapshotTimestampUsecs -notin $localSnaps.snapshotTimestampUsecs}
+    if($localOnly){
+        if(! $localSnaps){
+            Write-Host "Skipping $filePath - no local backup" -ForegroundColor Yellow
             continue
         }
-        
-    }else{
-        if(! $localOnly){
-            $snap = $latestSnap
-        }else{
-            Write-Host "Skipping $filePath (there is an archive snapshot but -localOnly was specified)" -ForegroundColor Yellow
+        $snap = ($localSnaps | Sort-Object -Property {$_.snapshotTimestampUsecs})[-1]
+    }elseif($archiveOnly){
+        if(! $archiveSnaps){
+            Write-Host "Skipping $filePath - no archive backup" -ForegroundColor Yellow
             continue
+        }
+        $snap = ($archiveSnaps | Sort-Object -Property {$_.snapshotTimestampUsecs})[-1]
+    }else{
+        $latestSnap = ($snaps | Sort-Object -Property {$_.snapshotTimestampUsecs})[-1]
+        $latestSnaps = $snaps | Where-Object {$_.snapshotTimestampUsecs -eq $latestSnap.snapshotTimestampUsecs}
+        $localSnap = $latestSnaps | Where-Object {! $_.PSObject.Properties['externalTargetInfo']}
+        if($localSnap){
+            $snap = $localSnap
+        }else{
+            $snap = $latestSnap
         }
     }
 
