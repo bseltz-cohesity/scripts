@@ -2,6 +2,7 @@
 
 ## 2023-11-28
 
+* [resqtoreSQL-CCS.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/restoreSQL-CCS) [`New`] Restore SQL DBs from CCS
 * [cloneOracleBackupsToView.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/powershell/cloneOracleBackupsToView) [`New`] Clone Oracle Backups to an SMB view
 
 ## 2023-11-27
