@@ -21,7 +21,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 ## Components
 
-* cloneOracleBackupToView.ps1: the main powershell script
+* cloneOracleBackupsToView.ps1: the main powershell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place both files in a folder together, then we can run the script.
@@ -29,7 +29,7 @@ Place both files in a folder together, then we can run the script.
 To clone all available backups:
 
 ```powershell
-./cloneOracleBackupToView.ps1 -vip mycluster `
+./cloneOracleBackupsToView.ps1 -vip mycluster `
                         -username myuser `
                         -domain mydomain.net `
                         -jobName 'My Oracle Job' `
@@ -40,7 +40,7 @@ To clone all available backups:
 To limit access to specific users:
 
 ```powershell
-./cloneOracleBackupToView.ps1 -vip mycluster `
+./cloneOracleBackupsToView.ps1 -vip mycluster `
                         -username myuser `
                         -domain mydomain.net `
                         -jobName 'My Oracle Job' `
@@ -52,7 +52,7 @@ To limit access to specific users:
 To delete a view when finished:
 
 ```powershell
-./cloneOracleBackupToView.ps1 -vip mycluster `
+./cloneOracleBackupsToView.ps1 -vip mycluster `
                         -username myuser `
                         -domain mydomain.net `
                         -viewName cloned `
