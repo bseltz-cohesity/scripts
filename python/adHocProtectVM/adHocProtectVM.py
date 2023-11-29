@@ -585,6 +585,14 @@ if wait is True:
         sleep(retrywaittime)
     out("New Job Run ID: %s" % v2RunId)
 
+# remove added VMs
+if vmsAdded is True:
+    if newJob is True:
+        result = api('delete', 'data-protect/protection-groups/%s' % job['id'], {'deleteSnapshots': False}, v=2)
+    else:
+        job['vmwareParams']['objects'] = [o for o in job['vmwareParams']['objects'] if o['id'] not in vmsToRemove]
+        job = api('put', 'data-protect/protection-groups/%s' % job['id'], job, v=2)
+
 # wait for job run to finish and report completion
 if wait is True:
     status = 'unknown'
@@ -641,14 +649,6 @@ if wait is True:
         out('Error: %s' % run['localBackupInfo']['messages'][0])
     if run['localBackupInfo']['status'] == 'SucceededWithWarning':
         out('Warning: %s' % run['localBackupInfo']['messages'][0])
-
-# remove added VMs
-if vmsAdded is True:
-    if newJob is True:
-        result = api('delete', 'data-protect/protection-groups/%s' % job['id'], {'deleteSnapshots': False}, v=2)
-    else:
-        job['vmwareParams']['objects'] = [o for o in job['vmwareParams']['objects'] if o['id'] not in vmsToRemove]
-        job = api('put', 'data-protect/protection-groups/%s' % job['id'], job, v=2)
 
 # return exit code
 if wait is True:
