@@ -10,6 +10,7 @@ param (
     [Parameter()][string]$mfaCode = $null,
     [Parameter()][int]$days,
     [Parameter()][switch]$includeLogs,
+    [Parameter()][switch]$fullOnly,
     [Parameter()][switch]$localOnly,
     [Parameter()][string]$objectType,
     [Parameter()][ValidateSet('KiB','MiB','GiB','TiB')][string]$unit = 'GiB',
@@ -72,7 +73,9 @@ foreach($v in $vip){
                 $policyName = '-'
             }
             while($True){
-                if($includeLogs){
+                if($fullOnly){
+                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&runTypes=kFull$tail"
+                }elseif($includeLogs){
                     $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true$tail"
                 }else{
                     $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&runTypes=kIncremental,kFull$tail"

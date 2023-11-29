@@ -48,5 +48,6 @@ Place both files in a folder together and run the main script.
 * -objectType: (optional) filter on specific object type (e.g. kSQL)
 * -localOnly: (optional) only include local protection jobs
 * -includeLogs: (optional) include log backups
+* -fullOnly: (optional) include only full backups
 * -outputPath: (optional) path to write output file (default is '.')
 * -numRuns: (optional) page size per API call (default is 500)
