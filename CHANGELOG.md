@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-11-29
+
+* [adHocProtectVM.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/adHocProtectVM) [`Update`] rewrite to honor policy defaults
+
 ## 2023-11-28
 
 * [resqtoreSQL-CCS.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/restoreSQL-CCS) [`New`] Restore SQL DBs from CCS
