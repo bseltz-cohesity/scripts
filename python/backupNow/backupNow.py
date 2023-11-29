@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.11.20
+# version 2023.11.29
 
 # version history
 # ===============
@@ -18,7 +18,8 @@
 # 2023-09-06 - added --timeoutsec 300, --nocache, granular sleep times, interactive mode, default sleepTimeSecs 3000
 # 2023-09-13 - improved error handling on start request, exit on kInvalidRequest
 # 2023-11-20 - tighter API call to find protection job, monitor completion with progress API rather than runs API
-
+# 2023-11-29 - fixed hang on object not in job run
+#
 # extended error codes
 # ====================
 # 0: Successful
@@ -677,14 +678,14 @@ if wait is True:
         if len(selectedSources) > 0:
             runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=10&includeObjectDetails=true&useCachedData=%s' % (v2JobId, cacheSetting), v=2, timeout=timeoutsec)
             if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
-                runs = [r for r in runs['runs'] if selectedSources[0] in [o['object']['id'] for o in r['objects']]]
+                runs = [r for r in runs['runs'] if selectedSources[0] in [o['object']['id'] for o in r['objects']] or len(r['objects']) == 0]
         else:
             runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=1&includeObjectDetails=false&useCachedData=%s' % (v2JobId, cacheSetting), v=2, timeout=timeoutsec)
             if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
                 runs = runs['runs']
         if runs is not None and 'runs' not in runs and len(runs) > 0:
             runs = [r for r in runs if r['protectionGroupInstanceId'] > lastRunId]
-        if runs is not None and 'runs' not in runs and len(runs) > 0 and usemetadatafile is True:  # metadatafile is not None:
+        if runs is not None and 'runs' not in runs and len(runs) > 0 and usemetadatafile is True:
             for run in runs:
                 runDetail = api('get', '/backupjobruns?exactMatchStartTimeUsecs=%s&id=%s&useCachedData=%s' % (run['localBackupInfo']['startTimeUsecs'], v1JobId, cacheSetting), timeout=timeoutsec)
                 try:

@@ -1,4 +1,4 @@
-# version 2023.11.20
+# version 2023.11.29
 
 # version history
 # ===============
@@ -15,7 +15,8 @@
 # 2023-09-06 - added -timeoutSec 300, -noCache, granular sleep times, interactive mode
 # 2023-09-13 - improved error handling on start request, exit on kInvalidRequest
 # 2023-11-20 - tighter API call to find protection job, monitor completion with progress API rather than runs API
-
+# 2023-11-29 - fixed hang on object not in job run
+#
 # extended error codes
 # ====================
 # 0: Successful
@@ -653,7 +654,7 @@ if($wait -or $progress){
         if($selectedSources.Count -gt 0){
             $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=10&includeObjectDetails=true&useCachedData=$cacheSetting&startTimeUsecs=$lastRunUsecs" -timeout $timeoutSec
             if($null -ne $runs -and $runs.PSObject.Properties['runs']){
-                $runs = @($runs.runs | Where-Object {$selectedSources[0] -in $_.objects.object.id})
+                $runs = @($runs.runs | Where-Object {$selectedSources[0] -in $_.objects.object.id -or ! $_.objects})
             }
         }else{
             $runs = api get -v2 "data-protect/protection-groups/$v2JobId/runs?numRuns=1&includeObjectDetails=false&useCachedData=$cacheSetting&startTimeUsecs=$lastRunUsecs" -timeout $timeoutSec
@@ -780,7 +781,7 @@ if($wait -or $progress){
         exit 0
     }else{
         if($run.localBackupInfo.status -eq 'Failed'){
-            output "Error: $($runs[0].backupRun.error)"
+            output "Error: $($run.localBackupInfo.messages[0])"  # $($runs[0].backupRun.error)"
         }
         if($run.localBackupInfo.status -eq 'SucceededWithWarning'){
             if($run.PSObject.Properties['localBackupInfo'] -and $run.localBackupInfo.PSObject.Properties['messages'] -and $run.localBackupInfo.messages.Count -gt 0){
