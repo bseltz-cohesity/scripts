@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This Python script temporarily adds VMware VMs to a new or existing VM protection group, runs the group and then removes the VMs, to affect an ad hoc backup of the VMs.
+This Python script temporarily adds VMware VMs to a new (temporary) or existing VM protection group, runs the group and then removes the VMs, to affect an ad hoc backup of the VMs.
 
 ## Download the script
 
@@ -36,7 +36,21 @@ To backup VMs using an existing protection group:
 # end example
 ```
 
-To backup VMs using a new (temporary) protection group:
+To force a source refresh (to discover brand new VMs), add -rs (--refreshsource):
+
+```bash
+# example
+./adHocProtectVM.py -v mycluster \
+                    -u myuser \
+                    -d mydomain.net \
+                    -j 'My Backup Job' \
+                    -vn myvm1 \
+                    -vn myvm2 \
+                    -rs
+# end example
+```
+
+To backup VMs using a new (temporary) protection group, we must provide the vCenter name and policy name:
 
 ```bash
 # example
@@ -67,6 +81,7 @@ To backup VMs using a new (temporary) protection group:
 * -j, --jobname: (optional) name of protection job to run
 * -vn, --vmname: (optional) name of VM to backup (repeat this parameter for multiple objects)
 * -vl, --vmlist: (optional) text file of VM names to backup (one per line)
+* -rs, --refreshsource: (optional) perform source refresh on vCenter to discover new VMs
 
 ## New Job Parameters
 
