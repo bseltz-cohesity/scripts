@@ -2,6 +2,8 @@
 
 ## 2023-11-29
 
+* [backupNow.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow) [`Fix`] fixed hang on object not in job run
+* [backupNow.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/backupNow) [`Fix`] fixed hang on object not in job run
 * [adHocProtectVM.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/adHocProtectVM) [`Update`] rewrite to honor policy defaults
 
 ## 2023-11-28
