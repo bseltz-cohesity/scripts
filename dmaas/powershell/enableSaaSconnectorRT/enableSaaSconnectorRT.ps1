@@ -15,7 +15,7 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -vip $vip -username $username -domain $domain -passwd $password -noPromptForPassword $noPrompt
+apiauth_legacy -vip $vip -username $username -domain $domain -passwd $password -noPromptForPassword $noPrompt
 
 if(!$cohesity_api.authorized){
     Write-Host "Not authenticated"

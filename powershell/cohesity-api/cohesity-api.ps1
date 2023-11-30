@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.11.18 - Brian Seltzer
+#  Version 2023.11.30 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2023.02.10 - added -region to api function (for DMaaS)
@@ -24,10 +24,11 @@
 # 2023.11.08 - fixed toJson function duplicate output
 # 2023.11.18 - fix reportError quiet mode
 # 2023.11.27 - fix useApiKey for helios/mcm
+# 2023.11.30 - implemented apiauth_legacy function
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2023.11.27'
+$versionCohesityAPI = '2023.11.30'
 
 # state cache
 $cohesity_api = @{
@@ -1257,6 +1258,281 @@ function getViews([switch]$includeInactive){
     }
     return $myViews
 }
+
+function apiauth_legacy($vip='helios.cohesity.com', 
+                 $username = 'helios', 
+                 $domain = 'local', 
+                 $passwd = $null,
+                 $password = $null,
+                 $tenant = $null,
+                 $regionid = $null,
+                 $mfaType = 'Totp',
+                 [string] $mfaCode = $null,
+                 [switch] $emailMfaCode,
+                 [switch] $helios,
+                 [switch] $quiet, 
+                 [switch] $noprompt, 
+                 [switch] $updatePassword, 
+                 [switch] $useApiKey,
+                 [switch] $v2,
+                 [boolean] $apiKeyAuthentication = $false,
+                 [boolean] $heliosAuthentication = $false,
+                 [boolean] $sendMfaCode = $false,
+                 [boolean] $noPromptForPassword = $false,
+                 [Int]$timeout = 300){
+
+    apidrop -quiet                
+    if($apiKeyAuthentication -eq $True){
+        $useApiKey = $True
+    }
+    if($heliosAuthentication -eq $True){
+        $helios = $True
+    }
+    if($sendMfaCode -eq $True){
+        $emailMfaCode = $True
+    }
+    if($noPromptForPassword -eq $True){
+        $noprompt = $True
+    }
+    # parse domain\username or username@domain
+    if($username.Contains('\')){
+        $domain, $username = $username.Split('\')
+    }
+    if($password){ 
+        $passwd = $password
+    }
+    if($passwd){
+        $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
+    }
+    # update password
+    if($updatePassword -or $clearPassword){
+        $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
+    }
+    # get stored password
+    if(!$passwd){
+        $passwd = Get-CohesityAPIPassword -vip $vip -username $username -domain $domain -useApiKey $useApiKey -helios $helios
+        if(!$passwd -and !$noprompt -and $noPromptForPassword -ne $True){
+            # prompt for password and store
+            $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -quiet -useApiKey $useApiKey -helios $helios
+        }
+        if(!$passwd){
+            # report no password
+            $cohesity_api.last_api_error = "No password provided for $domain\$username at $vip"
+            Write-Host "No password provided for $domain\$username at $vip" -ForegroundColor Yellow
+            __writeLog "No password provided for $domain\$username at $vip"
+            apidrop -quiet
+            return $null
+        }
+    }
+
+    $cohesity_api.header = @{'accept' = 'application/json'; 'content-type' = 'application/json'}
+
+    $body = ConvertTo-Json @{
+        'domain' = $domain;
+        'username' = $username;
+        'password' = $passwd;
+        'otpType' = $mfaType;
+        'otpCode' = $mfaCode
+    }
+
+    $emailMfaBody = ConvertTo-Json @{
+        'domain' = $domain;
+        'username' = $username;
+        'password' = $passwd;
+    }
+
+    $cohesity_api.apiRoot = 'https://' + $vip + '/irisservices/api/v1'
+    $cohesity_api.apiRootv2 = 'https://' + $vip + '/v2/'
+    $cohesity_api.apiRootmcm = "https://$vip/mcm/"
+    $cohesity_api.apiRootmcmV2 = "https://$vip/v2/mcm/"
+    $cohesity_api.apiRootReportingV2 = "https://$vip/heliosreporting/api/v1/public/"
+
+    $cohesity_api.version = 1
+    if($v2){
+        $cohesity_api.version = 2
+    }
+
+    if($regionid){
+        $cohesity_api.header['regionid'] = $regionid
+    }
+
+    if($useApiKey -or $helios -or ($vip -eq 'helios.cohesity.com')){
+        $cohesity_api.header['apiKey'] = $passwd
+        $cohesity_api.authorized = $true
+        # validate cluster API key authorization
+        if($useApiKey -and (($vip -ne 'helios.cohesity.com') -and $helios -ne $True)){
+            $cluster = api get cluster -quiet -version 1 -data $null
+            if($cluster.clusterSoftwareVersion -lt '6.4'){
+                $cohesity_api.version = 1
+            }
+            if($cluster){
+                if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
+            }else{
+                if($cohesity_api.last_api_error -match 'KStatusUnauthorized'){
+                    $cohesity_api.last_api_error = "api key authentication failed"
+                }
+                Write-Host $cohesity_api.last_api_error -ForegroundColor Yellow
+                __writeLog $cohesity_api.last_api_error
+                apidrop -quiet
+                if(!$noprompt -and $cohesity_api.last_api_error -eq "api key authentication failed"){
+                    apiauth -vip $vip -username $username -domain $domain -useApiKey -updatePassword
+                }
+            }
+        }
+        # validate helios/mcm authorization
+        if($vip -eq 'helios.cohesity.com' -or $helios){
+            $heliosAllClusters = api get -mcm clusters/connectionStatus -quiet
+            if($cohesity_api.last_api_error -eq 'OK'){
+                $cohesity_api.heliosConnectedClusters = $heliosAllClusters | Where-Object {$_.connectedToCluster -eq $true}
+                $cohesity_api.authorized = $true
+                $Global:USING_HELIOS = $true
+                $Global:USING_HELIOS | Out-Null
+                if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
+            }else{
+                if($cohesity_api.last_api_error -match '404 Not Found'){
+                    $cohesity_api.last_api_error = 'connection refused'
+                }
+                Write-Host $cohesity_api.last_api_error -ForegroundColor Yellow
+                __writeLog $cohesity_api.last_api_error
+                apidrop -quiet
+                if(!$noprompt){
+                    apiauth -vip $vip -username $username -domain $domain -updatePassword
+                }
+            }
+        }
+    }else{
+        # username/password authentication
+        $Global:USING_HELIOS = $false
+        $Global:USING_HELIOS | Out-Null
+        $url = $cohesity_api.apiRoot + '/public/accessTokens'
+        try {
+            if($emailMfaCode){
+                Write-Host "scripted MFA via email is disabled, please use -mfaCode xxxxxx" -ForegroundColor Yellow
+                apidrop -quiet
+                break
+            }
+            # authenticate
+            if($PSVersionTable.PSEdition -eq 'Core'){
+                $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout -SslProtocol Tls12
+            }else{
+                $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec $timeout
+            }
+            # add token to header
+            $cohesity_api.authorized = $true
+            $cohesity_api.clusterReadOnly = $false
+            $cohesity_api.header = @{'accept' = 'application/json'; 
+                'content-type' = 'application/json'; 
+                'authorization' = $auth.tokenType + ' ' + $auth.accessToken
+            }
+            $cluster = api get cluster -quiet -version 1 -data $null
+            if($cluster.clusterSoftwareVersion -lt '6.4'){
+                $cohesity_api.version = 1
+            }
+            if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
+        }catch{
+            $cohesity_api.last_api_error = $_.ToString()
+            $thisError = $_
+            # try v2 session auth
+            if($thisError.ToString().contains('"message":')){
+                $message = (ConvertFrom-Json $thisError.ToString()).message
+                $cohesity_api.last_api_error = $message
+                if($message -eq 'Access denied'){
+                    try{
+                        $url = $cohesity_api.apiRootv2 + 'users/sessions'
+                        $body = ConvertTo-Json @{
+                            'domain' = $domain;
+                            'username' = $username;
+                            'password' = $passwd;
+                            'otpType' = $mfaType.ToLower();
+                            'otpCode' = $mfaCode
+                        }
+                        # authenticate
+                        if($PSVersionTable.PSEdition -eq 'Core'){
+                            $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout -SslProtocol Tls12
+                        }else{
+                            $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec $timeout
+                        }
+                        # add token to header
+                        $cohesity_api.authorized = $true
+                        $cohesity_api.clusterReadOnly = $false
+                        $cohesity_api.header = @{'accept' = 'application/json'; 
+                            'content-type' = 'application/json'; 
+                            'session-id' = $auth.sessionId
+                        }
+                        $cluster = api get cluster -quiet -version 1 -data $null
+                        if($cluster.clusterSoftwareVersion -lt '6.4'){
+                            $cohesity_api.version = 1
+                        }
+                        if(!$quiet){
+                            Write-Host "Connected!" -foregroundcolor green
+                        }
+                    }catch{
+                        $cohesity_api.last_api_error = "user session authentication failed"
+                        apidrop -quiet
+                        __writeLog $thisError.ToString()
+                        if($cohesity_api.reportApiErrors){
+                            if($thisError.ToString().contains('"message":')){
+                                $message = (ConvertFrom-Json $_.ToString()).message
+                                Write-Host $message -foregroundcolor yellow
+                                if($message -match 'Invalid Username or Password'){
+                                    if(!$noprompt){
+                                        apiauth -vip $vip -username $username -domain $domain -updatePassword
+                                    }
+                                }
+                            }else{
+                                Write-Host $thisError.ToString() -foregroundcolor yellow
+                            }
+                        }
+                        return $null
+                    }
+                }else{
+                    # report authentication error
+                    apidrop -quiet
+                    __writeLog $thisError.ToString()
+                    $message = (ConvertFrom-Json $_.ToString()).message
+                    if($cohesity_api.reportApiErrors){
+                        Write-Host $message -foregroundcolor yellow
+                        $cohesity_api.last_api_error = $message
+                        if($message -match 'Invalid Username or Password'){
+                            if(!$noprompt){
+                                apiauth -vip $vip -username $username -domain $domain -updatePassword
+                            }
+                        }
+                    }
+                }
+            }else{
+                # report authentication error
+                apidrop -quiet
+                __writeLog $thisError.ToString()
+                if($cohesity_api.reportApiErrors){
+                    if($thisError.ToString().contains('"message":')){
+                        $message = (ConvertFrom-Json $_.ToString()).message
+                        Write-Host $message -foregroundcolor yellow
+                        if($message -match 'Invalid Username or Password'){
+                            if(!$noprompt){
+                                apiauth -vip $vip -username $username -domain $domain -updatePassword
+                            }
+                        }
+                    }else{
+                        if($thisError.ToString() -match '404 Not Found'){
+                            Write-Host 'connection refused'
+                            $cohesity_api.last_api_error = 'connection refused'
+                            apidrop -quiet
+                        }else{
+                            Write-Host $thisError.ToString() -foregroundcolor yellow
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if($tenant){
+        impersonate $tenant
+    }
+    $Global:AUTHORIZED = $cohesity_api.authorized
+    $Global:AUTHORIZED | Out-Null
+}
+
 
 # . . . . . . . . . . . . . . . . . . .
 #  Previous Updates
