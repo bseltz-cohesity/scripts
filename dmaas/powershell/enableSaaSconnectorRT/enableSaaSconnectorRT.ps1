@@ -15,7 +15,8 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth_legacy -vip $vip -username $username -domain $domain -passwd $password -noPromptForPassword $noPrompt
+# apiauth_legacy -vip $vip -username $username -domain $domain -passwd $password -noPromptForPassword $noPrompt
+apiauth -vip $vip -username $username -passwd $password -noPromptForPassword $noPrompt -noDomain
 
 if(!$cohesity_api.authorized){
     Write-Host "Not authenticated"
@@ -42,5 +43,5 @@ while($supportToken -eq ''){
     $supportToken = $token.supportUserToken
 }
 
-Write-Host "Cluster ID: $($cluster.id)"
-Write-host $supportToken
+Write-Host "`nCluster ID and Token for SaaS Connector:"
+Write-Host "$($cluster.id) $($supportToken)`n" -ForegroundColor Cyan

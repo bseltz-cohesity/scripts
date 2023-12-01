@@ -25,10 +25,11 @@
 # 2023.11.18 - fix reportError quiet mode
 # 2023.11.27 - fix useApiKey for helios/mcm
 # 2023.11.30 - implemented apiauth_legacy function
+# 2023.12.01 - added -noDomain (for SaaS connector)
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2023.11.30'
+$versionCohesityAPI = '2023.12.01'
 
 # state cache
 $cohesity_api = @{
@@ -159,6 +160,7 @@ function apiauth($vip='helios.cohesity.com',
                  [string] $mfaCode = $null,
                  [switch] $emailMfaCode,
                  [switch] $helios,
+                 [switch] $noDomain,
                  [switch] $quiet, 
                  [switch] $noprompt, 
                  [switch] $updatePassword, 
@@ -169,11 +171,7 @@ function apiauth($vip='helios.cohesity.com',
                  [boolean] $noPromptForPassword = $false,
                  [Int]$timeout = 300){
 
-    apidrop -quiet
-    # if($thisPSVersion -lt '5.1'){
-    #     Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
-    #     return $null
-    # }            
+    apidrop -quiet     
     if($apiKeyAuthentication -eq $True){
         $useApiKey = $True
     }
@@ -196,7 +194,6 @@ function apiauth($vip='helios.cohesity.com',
     $setpasswd = $null
     if($passwd){
         $setpasswd = $passwd
-        #$passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
     }
     # update password
     if($updatePassword -or $clearPassword){
@@ -299,6 +296,13 @@ function apiauth($vip='helios.cohesity.com',
             'password' = $passwd;
         }
 
+        if($noDomain){
+            $body = ConvertTo-Json @{
+                'username' = $username;
+                'password' = $passwd;
+            }
+        }
+
         try {
             $url = 'https://' + $vip + '/login'
             if($PSVersionTable.PSEdition -eq 'Core'){
@@ -308,92 +312,60 @@ function apiauth($vip='helios.cohesity.com',
             }
             $cohesity_api.session = $session
             # check force password change
-            try{
-                $changePassword = $false
-                if($user.user.forcePasswordChange -eq $True){
-                    if($newPassword){
-                        $confirmPassword = $newPassword
-                        $changePassword = $True
-                    }else{
-                        $newPassword = '1'
-                        $confirmPassword = '2'
-                        Write-Host "Password is expired" -ForegroundColor Yellow
-                    }
-                    if(!$noprompt){
-                        while($newPassword -cne $confirmPassword){
-                            $secureNewPassword = Read-Host -Prompt "  Enter new password" -AsSecureString
-                            $secureConfirmPassword = Read-Host -Prompt "Confirm new password" -AsSecureString
-                            $newPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureNewPassword ))
-                            $confirmPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureConfirmPassword ))
-                            if($newPassword -cne $confirmPassword){
-                                Write-Host "Passwords do not match" -ForegroundColor Yellow
-                            }
-                        }
-                        $changePassword = $True
-                    }
-                }else{
-                    if($newPassword){
-                        $changePassword = $True
-                    }
-                }
-                if($changePassword -eq $True){
-                    $user.user | Add-Member -MemberType NoteProperty -Name 'currentPassword' -Value $passwd
-                    $user.user | Add-Member -MemberType NoteProperty -Name 'password' -Value $newPassword
-
-                    $URL = "https://$vip/irisservices/api/v1/public/users"
-                    if($PSVersionTable.PSEdition -eq 'Core'){
-                        $userupdate = Invoke-RestMethod -Method Put -Uri $URL -Header $cohesity_api.header -Body ($user.user | ConvertTo-Json) -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SslProtocol Tls12 -WebSession $session
-                    }else{
-                        $userupdate = Invoke-RestMethod -Method Put -Uri $URL -Header $cohesity_api.header -Body ($user.user | ConvertTo-Json) -WebSession $session -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout
-                    }
-
-                    $body = ConvertTo-Json @{
-                        'domain' = $domain;
-                        'username' = $username;
-                        'password' = $newPassword;
-                    }
-
-                    $url = 'https://' + $vip + '/login'
-                    if($PSVersionTable.PSEdition -eq 'Core'){
-                        $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SslProtocol Tls12 -SessionVariable session
-                    }else{
-                        $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session
-                    }
-                    $cohesity_api.session = $session
-                    $passwd = Set-CohesityAPIPassword -vip $vip -username $username -passwd $newPassword -quiet
-                }
-            }catch{
-                if($quiet){
-                    reportError $_ -quiet
-                }else{
-                    reportError $_ 
-                }
-                apidrop -quiet
-                return $null
-            }
-            # multi-factor authentication
-            if($mfaCode -or $emailMfaCode){
-                $otpType = "Totp"
-                if($emailMfaCode){
-                    $url = "https://$vip/v2/send-email-otp"
-                    if($PSVersionTable.PSEdition -eq 'Core'){
-                        $sent = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -WebSession $cohesity_api.session -SkipCertificateCheck
-                    }else{
-                        $sent = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -WebSession $cohesity_api.session
-                    }
-                    $mfaCode = Read-Host -Prompt 'Enter MFA Code'
-                    $otpType = "Email"
-                }
+            if(! $noDomain){
                 try{
-                    $mfaCheck = @{
-                        "otpCode" = "$mfaCode";
-                        "otpType" = "$otpType"
-                    }
-                    $url = "https://$vip/irisservices/api/v1/public/verify-otp"
-                    if($PSVersionTable.PSEdition -eq 'Core'){
-                        $verify = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body ($mfaCheck | ConvertTo-Json) -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -WebSession $cohesity_api.session -SkipCertificateCheck
+                    $changePassword = $false
+                    if($user.user.forcePasswordChange -eq $True){
+                        if($newPassword){
+                            $confirmPassword = $newPassword
+                            $changePassword = $True
+                        }else{
+                            $newPassword = '1'
+                            $confirmPassword = '2'
+                            Write-Host "Password is expired" -ForegroundColor Yellow
+                        }
+                        if(!$noprompt){
+                            while($newPassword -cne $confirmPassword){
+                                $secureNewPassword = Read-Host -Prompt "  Enter new password" -AsSecureString
+                                $secureConfirmPassword = Read-Host -Prompt "Confirm new password" -AsSecureString
+                                $newPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureNewPassword ))
+                                $confirmPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureConfirmPassword ))
+                                if($newPassword -cne $confirmPassword){
+                                    Write-Host "Passwords do not match" -ForegroundColor Yellow
+                                }
+                            }
+                            $changePassword = $True
+                        }
                     }else{
-                        $verify = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body ($mfaCheck | ConvertTo-Json) -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -WebSession $cohesity_api.session
+                        if($newPassword){
+                            $changePassword = $True
+                        }
+                    }
+                    if($changePassword -eq $True){
+                        $user.user | Add-Member -MemberType NoteProperty -Name 'currentPassword' -Value $passwd
+                        $user.user | Add-Member -MemberType NoteProperty -Name 'password' -Value $newPassword
+    
+                        $URL = "https://$vip/irisservices/api/v1/public/users"
+                        if($PSVersionTable.PSEdition -eq 'Core'){
+                            $userupdate = Invoke-RestMethod -Method Put -Uri $URL -Header $cohesity_api.header -Body ($user.user | ConvertTo-Json) -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SslProtocol Tls12 -WebSession $session
+                        }else{
+                            $userupdate = Invoke-RestMethod -Method Put -Uri $URL -Header $cohesity_api.header -Body ($user.user | ConvertTo-Json) -WebSession $session -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout
+                        }
+    
+                        $body = ConvertTo-Json @{
+                            'domain' = $domain;
+                            'username' = $username;
+                            'password' = $newPassword;
+                        }
+    
+                        $url = 'https://' + $vip + '/login'
+                        if($PSVersionTable.PSEdition -eq 'Core'){
+                            $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SslProtocol Tls12 -SessionVariable session
+                        }else{
+                            $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session
+                        }
+                        $cohesity_api.session = $session
+                        $passwd = Set-CohesityAPIPassword -vip $vip -username $username -passwd $newPassword -quiet
                     }
                 }catch{
                     if($quiet){
@@ -404,14 +376,49 @@ function apiauth($vip='helios.cohesity.com',
                     apidrop -quiet
                     return $null
                 }
+                # multi-factor authentication
+                if($mfaCode -or $emailMfaCode){
+                    $otpType = "Totp"
+                    if($emailMfaCode){
+                        $url = "https://$vip/v2/send-email-otp"
+                        if($PSVersionTable.PSEdition -eq 'Core'){
+                            $sent = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -WebSession $cohesity_api.session -SkipCertificateCheck
+                        }else{
+                            $sent = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -WebSession $cohesity_api.session
+                        }
+                        $mfaCode = Read-Host -Prompt 'Enter MFA Code'
+                        $otpType = "Email"
+                    }
+                    try{
+                        $mfaCheck = @{
+                            "otpCode" = "$mfaCode";
+                            "otpType" = "$otpType"
+                        }
+                        $url = "https://$vip/irisservices/api/v1/public/verify-otp"
+                        if($PSVersionTable.PSEdition -eq 'Core'){
+                            $verify = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body ($mfaCheck | ConvertTo-Json) -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -WebSession $cohesity_api.session -SkipCertificateCheck
+                        }else{
+                            $verify = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body ($mfaCheck | ConvertTo-Json) -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -WebSession $cohesity_api.session
+                        }
+                    }catch{
+                        if($quiet){
+                            reportError $_ -quiet
+                        }else{
+                            reportError $_ 
+                        }
+                        apidrop -quiet
+                        return $null
+                    }
+                }
+                # validate authorization
+                $URL = "https://$vip/irisservices/api/v1/public/sessionUser/preferences"
+                if($PSVersionTable.PSEdition -eq 'Core'){
+                    $cluster = Invoke-RestMethod -Method Get -Uri $URL -Header $cohesity_api.header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -SkipCertificateCheck -WebSession $cohesity_api.session
+                }else{
+                    $cluster = Invoke-RestMethod -Method Get -Uri $URL -Header $cohesity_api.header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -WebSession $cohesity_api.session
+                }
             }
-            # validate authorization
-            $URL = "https://$vip/irisservices/api/v1/public/sessionUser/preferences"
-            if($PSVersionTable.PSEdition -eq 'Core'){
-                $cluster = Invoke-RestMethod -Method Get -Uri $URL -Header $cohesity_api.header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -SkipCertificateCheck -WebSession $cohesity_api.session
-            }else{
-                $cluster = Invoke-RestMethod -Method Get -Uri $URL -Header $cohesity_api.header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -WebSession $cohesity_api.session
-            }
+
             # set state connected
             $cohesity_api.authorized = $true
             $cohesity_api.clusterReadOnly = $false
