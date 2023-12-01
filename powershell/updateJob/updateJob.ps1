@@ -13,6 +13,7 @@ param (
     [Parameter()][string]$policyName,
     [Parameter()][array]$jobName,
     [Parameter()][string]$jobList,
+    [Parameter()][string]$newName,
     [Parameter()][string]$startTime, # e.g. 23:30 for 11:30 PM
     [Parameter()][string]$timeZone, # e.g. 'America/New_York'
     [Parameter()][int]$incrementalProtectionSlaTimeMins,
@@ -85,6 +86,11 @@ if($jobNames.Count -gt 0){
     }
 }
 
+if($newName -and $jobNames.Count -gt 1){
+    Write-Host "-newName can only operate on one job, exiting" -ForegroundColor Yellow
+    exit 1
+}
+
 # parse startTime
 if($startTime){
     $hour, $minute = $startTime.split(':')
@@ -109,6 +115,11 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     $updateJob = $false
     if($job.name -in $jobNames){
         Write-Host "$($job.name)"
+        if($newName){
+            $job.name = $newName
+            Write-Host "    renaming to $newName"
+            $updateJob = $True
+        }
         $jobParams = findObjectParam $job
         $isCAD = $jobParams.directCloudArchive
         # update policy

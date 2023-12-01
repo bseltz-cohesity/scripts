@@ -83,6 +83,7 @@ Changing several properties at once:
 
 * -jobName: (optional) one or more job names to modify (comma separated)
 * -jobList: (optional) text file of job names to modify (one per line)
+* -newName: (optional) rename job (one job only)
 * -policyName: (optional) name of new policy to assign to job
 * -startTime: (optional) e.g. '18:30'
 * -timeZone: (optional) e.g. 'America/New_York'
