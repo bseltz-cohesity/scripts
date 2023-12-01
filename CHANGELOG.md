@@ -1,5 +1,14 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-12-01
+
+* [cohesity-api.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api) [`Update`] added -noDomain switch to apiauth function to support SaaS connector
+* [enableSaaSconnectorRT.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/enableSaaSconnectorRT) [`Fix`] updated to support recent cohedity-api.ps1 versions
+
+## 2023-11-30
+
+* [updateJob.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/updateJob) [`Update`] added -newName (rename function)
+
 ## 2023-11-29
 
 * [backupNow.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow) [`Fix`] fixed hang on object not in job run
