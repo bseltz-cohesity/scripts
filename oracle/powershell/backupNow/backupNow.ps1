@@ -1,4 +1,4 @@
-# version 2023.11.29
+# version 2023.12.03
 
 # version history
 # ===============
@@ -16,6 +16,7 @@
 # 2023-09-13 - improved error handling on start request, exit on kInvalidRequest
 # 2023-11-20 - tighter API call to find protection job, monitor completion with progress API rather than runs API
 # 2023-11-29 - fixed hang on object not in job run
+# 2023-12-03 - version bump
 #
 # extended error codes
 # ====================
@@ -717,7 +718,7 @@ if($wait -or $progress){
                     try{
                         if($run.localBackupInfo.PSObject.Properties['progressTaskId']){
                             $progressPath = $run.localBackupInfo.progressTaskId
-                            $progressMonitor = api get "/progressMonitors?taskPathVec=$progressPath&excludeSubTasks=true&includeFinishedTasks=false" -timeout $timeoutSec
+                            $progressMonitor = api get "/progressMonitors?taskPathVec=$progressPath&excludeSubTasks=true&includeFinishedTasks=false&useCachedData=$cacheSetting" -timeout $timeoutSec
                             $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
                             $percentComplete = [math]::Round($percentComplete, 0)
                         }

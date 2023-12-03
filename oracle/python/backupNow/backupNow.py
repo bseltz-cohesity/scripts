@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.11.29
+# version 2023.12.03
 
 # version history
 # ===============
@@ -19,6 +19,7 @@
 # 2023-09-13 - improved error handling on start request, exit on kInvalidRequest
 # 2023-11-20 - tighter API call to find protection job, monitor completion with progress API rather than runs API
 # 2023-11-29 - fixed hang on object not in job run
+# 2023-12-03 - version bump
 #
 # extended error codes
 # ====================
@@ -739,7 +740,7 @@ if wait is True:
                     x = 0
                     try:
                         progressPath = run['localBackupInfo']['progressTaskId']
-                        taskMon = api('get', '/progressMonitors?taskPathVec=%s' % progressPath, timeout=timeoutsec)
+                        taskMon = api('get', '/progressMonitors?taskPathVec=%s&useCachedData=%s' % (progressPath, cacheSetting), timeout=timeoutsec)
                         sources = taskMon['resultGroupVec'][0]['taskVec'][0]['subTaskVec']
                         for source in sources:
                             if source['taskPath'] != 'post_processing':
@@ -768,7 +769,7 @@ if wait is True:
             while lastProgress < 100:
                 try:
                     progressPath = run['localBackupInfo']['progressTaskId']
-                    progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&excludeSubTasks=false&includeFinishedTasks=false' % progressPath, timeout=timeoutsec)
+                    progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&excludeSubTasks=false&includeFinishedTasks=false&useCachedData=%s' % (progressPath, cacheSetting), timeout=timeoutsec)
                     progressTotal = progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']
                     percentComplete = int(round(progressTotal))
                     statusRetryCount = 0
