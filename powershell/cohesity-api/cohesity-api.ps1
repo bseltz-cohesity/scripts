@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.11.30 - Brian Seltzer
+#  Version 2023.12.03 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2023.02.10 - added -region to api function (for DMaaS)
@@ -26,10 +26,11 @@
 # 2023.11.27 - fix useApiKey for helios/mcm
 # 2023.11.30 - implemented apiauth_legacy function
 # 2023.12.01 - added -noDomain (for SaaS connector)
+# 2023.12.03 - added support for raw URL
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2023.12.01'
+$versionCohesityAPI = '2023.12.03'
 
 # state cache
 $cohesity_api = @{
@@ -50,9 +51,6 @@ $cohesity_api = @{
     'session' = $null;
     'userAgent' = "cohesity-api/$versionCohesityAPI";
 }
-
-# demand modern powershell version (must support TLSv1.2)
-# $thisPSVersion = "$($Host.Version.Major).$($Host.Version.Minor)"
 
 $pwfile = $(Join-Path -Path $PSScriptRoot -ChildPath YWRtaW4)
 $apilogfile = $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api-debug.log)
@@ -556,7 +554,6 @@ function accessCluster($remoteClusterName=$null){
 function copySessionCookie($ip){
     if($cohesity_api.session){
         $cookies = $cohesity_api.session.Cookies.GetCookies($cohesity_api.apiRoot)
-        # $cookies = $cohesity_api.session.Cookies.GetAllCookies()
         $cookie = New-Object System.Net.Cookie
         $cookie.Name = $cookies[0].Name
         $cookie.Value = $cookies[0].Value
@@ -608,15 +605,17 @@ function api($method,
             }
             return $null
         }
-
-        if($v2){
+        
+        if($uri.StartsWith("https://")){
+            $url = $uri
+        }elseif($v2){
             $url = $cohesity_api.apiRootv2 + $uri
         }elseif($mcm){
             $url = $cohesity_api.apiRootmcm + $uri
         }elseif($mcmv2){
             $url = $cohesity_api.apiRootmcmV2 + $uri
         }elseif($reportingV2){
-            $url = $cohesity_api.apiRootReportingV2 + $uri            
+            $url = $cohesity_api.apiRootReportingV2 + $uri     
         }else{
             if($uri[0] -ne '/'){ $uri = '/public/' + $uri}
             $url = $cohesity_api.apiRoot + $uri
@@ -624,6 +623,7 @@ function api($method,
         if($url -match ' ' -and $url -notmatch '%'){
             $url = [uri]::EscapeUriString($url)
         }
+
         try {
             if($data){
                 $body = ConvertTo-Json -Compress -Depth 99 $data
