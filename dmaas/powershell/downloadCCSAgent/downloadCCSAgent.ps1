@@ -36,5 +36,3 @@ if($platform -eq 'Linux'){
 
 fileDownload -uri $downloadURL -fileName $fileName
 Write-Host "Agent downloaded: $fileName"
-# $rpmPackage = $images.agents[0].PlatformSubTypes | Where-Object packageType -eq 'RPM'
-# fileDownload -uri $rpmPackage.downloadURL -fileName cohesity-agent.rpm               
