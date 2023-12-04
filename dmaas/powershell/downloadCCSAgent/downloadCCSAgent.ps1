@@ -23,13 +23,14 @@ if(!$cohesity_api.authorized){
 
 $images = api get -mcmv2 data-protect/agents/images?platform=$platform
 if($platform -eq 'Linux'){
+    $extension = @{'RPM' = 'rpm'; 'DEB' = 'deb'; 'SuseRPM' = 'rpm'; 'Script' = 'sh'}
     $package = $images.agents[0].PlatformSubTypes | Where-Object packageType -eq $packageType
     $downloadURL = $package.downloadURL
-    $fileName = ($downloadURL -split '/')[-1]
+    $fileName = "cohesity-agent.$($extension[$packageType])"
     Write-Host "Downloading $platform agent ($packageType)..."
 }else{
     $downloadURL = $images.agents[0].downloadURL
-    $fileName = ($downloadURL -split '/')[-1]
+    $fileName = "cohesity-agent.exe"
     Write-Host "Downloading $platform agent..."
 }
 
