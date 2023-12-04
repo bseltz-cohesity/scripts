@@ -1,5 +1,11 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-12-04
+
+* [downloadCCSAgent.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/downloadCCSAgent) [`New`] PowerShell script to download CCS agents
+* [downloadCCSAgent.py](https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/python/downloadCCSAgent) [`New`] Python script to download CCS agents
+* [protectLinux.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/protectLinux) [`Fix`] Error when creating new job
+
 ## 2023-12-03
 
 * [cohesity-api.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api) [`Update`] added support for raw URL
