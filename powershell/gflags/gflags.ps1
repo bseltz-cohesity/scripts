@@ -87,7 +87,7 @@ if($flagname){
     }
     if($clear -or ($flagvalue -and $reason)){
         setGflag -servicename $servicename -flagname $flagname -flagvalue $flagvalue -reason $reason
-        $restartServices += $servicename
+        $restartServices += $servicename.Substring(1).ToLower()
     }else{
         Write-Host "-servicename, -flagname, -flagvalue and -reason are all required to set a gflag" -ForegroundColor Yellow
         exit
@@ -114,7 +114,7 @@ if($import -ne ''){
 
             if($servicename -and $flagname -and $flagvalue -and $reason){
                 setGflag -servicename $servicename -flagname $flagname -flagvalue $flagvalue -reason $reason
-                $restartServices += $servicename
+                $restartServices += $servicename.Substring(1).ToLower()
             }else{
                 Write-Host "-servicename, -flagname, -flagvalue and -reason are all required to set a gflag" -ForegroundColor Yellow
                 exit
