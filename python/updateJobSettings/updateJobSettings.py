@@ -29,6 +29,7 @@ parser.add_argument('-is', '--incrementalsla', type=int, default=None)
 parser.add_argument('-fs', '--fullsla', type=int, default=None)
 parser.add_argument('-z', '--pause', action='store_true')
 parser.add_argument('-r', '--resume', action='store_true')
+parser.add_argument('-q', '--noquiesce', action='store_true')
 
 args = parser.parse_args()
 
@@ -52,6 +53,7 @@ incrementalsla = args.incrementalsla
 fullsla = args.fullsla
 pause = args.pause
 resume = args.resume
+noquiesce = args.noquiesce
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, tenantId=tenant)
@@ -101,7 +103,7 @@ if len(jobnames) == 0 and policyname is None and newpolicyname is not None:
     exit()
 
 # require change
-if newpolicyname is None and starttime is None and timezone is None and incrementalsla is None and fullsla is None and pause is not True and resume is not True:
+if newpolicyname is None and starttime is None and timezone is None and incrementalsla is None and fullsla is None and pause is not True and resume is not True and noquiesce is not True:
     print('No changes requested\n')
     exit()
 
@@ -189,6 +191,22 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
         changedJob = True
         print('    resumed')
         f.write('    resumed\n')
+    if noquiesce is True:
+        if job['environment'] == 'kPhysical':
+            if job['physicalParams']['protectionType'] == 'kVolume':
+                paramname = 'volumeProtectionTypeParams'
+            else:
+                paramname = 'fileProtectionTypeParams'
+            if 'quiesce' in job['physicalParams'][paramname] and job['physicalParams'][paramname]['quiesce'] is True:
+                job['physicalParams'][paramname]['quiesce'] = False
+                if 'continueOnQuiesceFailure' in job['physicalParams'][paramname]:
+                    del job['physicalParams'][paramname]['continueOnQuiesceFailure']
+                changedJob = True
+        if job['environment'] == 'kVMware':
+            if job['vmwareParams']['appConsistentSnapshot'] is True:
+                job['vmwareParams']['appConsistentSnapshot'] = False
+                changedJob = True
+
     if changedJob is True:
         result = api('put', 'data-protect/protection-groups/%s' % job['id'], job, v=2)
 

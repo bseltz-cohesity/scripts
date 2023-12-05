@@ -88,3 +88,4 @@ Place both files in a folder together and run the main script like so:
 * -fs, --fullsla: (optional) full SLA minutes
 * -z, --pause: (optional) pause the job(s)
 * -r, --resume: (optional) resume the job(s)
+* -q, --noquiesce: (optional) disable app/crash consistent setting
