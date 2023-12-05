@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-12-05
+
+* [gflags.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/gflags) [`Fix`] service restart bug
+* [gflags.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/gflags) [`Fix`] service restart bug
+
 ## 2023-12-04
 
 * [downloadCCSAgent.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/downloadCCSAgent) [`New`] PowerShell script to download CCS agents
