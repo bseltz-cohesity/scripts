@@ -105,7 +105,7 @@ if flagvalue is not None:
         exit()
     else:
         setGflag(servicename=servicename, flagname=flagname, flagvalue=flagvalue, reason=reason)
-        servicestorestart.append(servicename)
+        servicestorestart.append(servicename[1:].lower())
 
 # import gflags fom export file
 flagdata = []
@@ -118,9 +118,9 @@ if importfile is not None:
         flagvalue = flagvalue.replace(';;', ',')
         setGflag(servicename=servicename, flagname=flagname, flagvalue=flagvalue, reason=reason)
         if servicename.lower() != 'nexus':
-            servicestorestart.append(servicename)
+            servicestorestart.append(servicename[1:].lower())
         else:
-            servicescantrestart.append(servicename)
+            servicescantrestart.append(servicename[1:].lower())
 
 # write gflags to export file
 print('\nCurrent GFlags:')
