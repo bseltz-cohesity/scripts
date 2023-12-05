@@ -2,6 +2,7 @@
 
 ## 2023-12-05
 
+* [updateJobSettings.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/updateJobSettings) [`Update`] added -q, --noquiesce option
 * [gflags.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/gflags) [`Fix`] service restart bug
 * [gflags.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/gflags) [`Fix`] service restart bug
 
