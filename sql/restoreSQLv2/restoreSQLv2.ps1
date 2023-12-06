@@ -449,7 +449,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         if($suffix){
             $newDbName = "$($newDbName)-$($suffix)"
         }
-        $thisParam.sqlTargetParams.originalSourceConfig.newDatabaseName = $newDbName
+        $thisParam.sqlTargetParams.originalSourceConfig['newDatabaseName'] = $newDbName
     }
 
     # recover to alternate instance
