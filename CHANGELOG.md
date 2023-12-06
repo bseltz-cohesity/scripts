@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-12-06
+
+* [restoreOracle-v2.py](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/restoreOracle-v2) [`Fix`] fixed order of pfile parameters when overriding existing parameters
+
 ## 2023-12-05
 
 * [updateJobSettings.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/updateJobSettings) [`Update`] added -q, --noquiesce option
