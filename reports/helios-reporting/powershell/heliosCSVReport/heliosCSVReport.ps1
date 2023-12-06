@@ -14,7 +14,8 @@ param (
     [Parameter()][string]$outputPath = '.',
     [Parameter()][switch]$includeCCS,
     [Parameter()][switch]$excludeLogs,
-    [Parameter()][string]$environment,
+    [Parameter()][array]$environment,
+    [Parameter()][array]$excludeEnvironment,
     [Parameter()][switch]$replicationOnly
 )
 
@@ -250,6 +251,9 @@ foreach($cluster in ($selectedClusters)){
 $data | Export-CSV -Append -Path $csvFileName
 
 $csv = Import-CSV -Path $csvFileName
+
+# exclude environments
+$csv = $csv | Where-Object environment -notin $excludeEnvironment
 
 # convert timestamps to dates
 foreach($epochColum in ($epochColums | Sort-Object -Unique)){
