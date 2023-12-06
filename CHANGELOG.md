@@ -2,6 +2,7 @@
 
 ## 2023-12-06
 
+* [restoreSQLv2.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQLv2) [`Fix`] fixed -noStop error (-noStop is now deprecated)
 * [restoreOracle-v2.py](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/restoreOracle-v2) [`Fix`] fixed order of pfile parameters when overriding existing parameters
 
 ## 2023-12-05
