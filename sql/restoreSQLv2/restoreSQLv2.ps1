@@ -423,8 +423,8 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
     }
     if($logsAvailable){
         if($noStop){
-            $thisParam['pointInTimeUsecs'] = (3600 + (datetousecs (Get-Date)) / 1000000)
-            $thisParam.sqlTargetParams.originalSourceConfig['restoreTimeUsecs'] = (3600 + (datetousecs (Get-Date)) / 1000000)
+            $thisParam['pointInTimeUsecs'] = $selectedPIT  # (3600 + (datetousecs (Get-Date)) / 1000000)
+            $thisParam.sqlTargetParams.originalSourceConfig['restoreTimeUsecs'] = $selectedPIT  # ((datetousecs (Get-Date)) / 1000000)  # (3600 + (datetousecs (Get-Date)) / 1000000)
         }else{
             $thisParam['pointInTimeUsecs'] = $selectedPIT
             $thisParam.sqlTargetParams.originalSourceConfig['restoreTimeUsecs'] = $selectedPIT
@@ -476,7 +476,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
 
         if($logsAvailable){
             if($noStop){
-                $targetConfig['restoreTimeUsecs'] = (3600 + (datetousecs (Get-Date)) / 1000000)
+                $targetConfig['restoreTimeUsecs'] = $selectedPIT  # (3600 + (datetousecs (Get-Date)) / 1000000)
             }else{
                 $targetConfig['restoreTimeUsecs'] = $selectedPIT
             }
