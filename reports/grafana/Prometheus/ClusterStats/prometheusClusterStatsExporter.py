@@ -56,54 +56,68 @@ class AdvancedDiagnosticsExporter():
             cluster = api('get', 'cluster')
 
             # cpu percent
-            metric = Metric('cpu_utilization', 'percent CPU utilization', 'summary')
+            metric_name = '%s_cpu_utilization' % vip
+            metric = Metric(metric_name, '%s CPU Utilization Pct' % vip, 'summary')
             try:
                 stats = api('get', 'statistics/timeSeriesStats?metricName=kCpuUsagePct&metricUnitType=9&rollupFunction=average&rollupIntervalSecs=180&schemaName=kSentryClusterStats&startTimeMsecs=%s&entityId=%s&endTimeMsecs=%s' % (startmsecs, cluster['id'], endmsecs))
                 timestamp = stats['dataPointVec'][-1]['timestampMsecs']
                 if timestamp < nowmsecs - 900000:  # stale stat, report 0
-                    metric.add_sample('cpu_utilization_percent', value=0, labels={})
+                    metric.add_sample(metric_name, value=0, labels={})
                     yield metric
                 elif self.lastCpu != timestamp:
-                    metric.add_sample('cpu_utilization_percent', value=stats['dataPointVec'][-1]['data']['doubleValue'], labels={})
+                    metric.add_sample(metric_name, value=stats['dataPointVec'][-1]['data']['doubleValue'], labels={})
                     yield metric
                     self.lastCpu = timestamp
             except Exception as e:
                 pass
 
             # bytes backed up
-            metric = Metric('bytes_backed_up', 'bytes backed up', 'summary')
+            metric_name = '%s_bytes_backed_up' % vip
+            metric = Metric(metric_name, '%s Bytes Backed Up' % vip, 'summary')
             try:
                 stats = api('get', 'statistics/timeSeriesStats?metricName=kNumBytesRead&metricUnitType=0&rollupFunction=max&rollupIntervalSecs=120&schemaName=kMagnetoClusterStats&startTimeMsecs=%s&entityId=%s&endTimeMsecs=%s' % (startmsecs, cluster['id'], endmsecs))
                 timestamp = stats['dataPointVec'][-1]['timestampMsecs']
                 if timestamp < nowmsecs - 120000 or stats['dataPointVec'][-1]['data']['int64Value'] == 0:  # stale stat, report 0
-                    metric.add_sample('bytes_backed_up', value=0, labels={})
+                    metric.add_sample(metric_name, value=0, labels={})
                     yield metric
                 elif self.lastBytes != timestamp:
-                    metric.add_sample('bytes_backed_up', value=stats['dataPointVec'][-1]['data']['int64Value'], labels={})
+                    metric.add_sample(metric_name, value=stats['dataPointVec'][-1]['data']['int64Value'], labels={})
                     yield metric
                     self.lastBytes = timestamp
                 else:
-                    metric.add_sample('bytes_backed_up', value=0, labels={})
+                    metric.add_sample(metric_name, value=0, labels={})
                     yield metric
             except Exception as e:  # no recent stat, report 0
-                metric.add_sample('bytes_backed_up', value=0, labels={})
+                metric.add_sample(metric_name, value=0, labels={})
                 yield metric
 
             # write throughput
-            metric = Metric('write_throughput', 'write throughput', 'summary')
+            metric_name = '%s_write_throughput' % vip
+            metric = Metric(metric_name, '%s Write Throughput' % vip, 'summary')
             try:
                 stats = api('get', 'statistics/timeSeriesStats?metricName=kNumBytesWritten&metricUnitType=5&rollupFunction=max&rollupIntervalSecs=180&schemaName=kBridgeClusterStats&startTimeMsecs=%s&entityId=%s&endTimeMsecs=%s' % (startmsecs, cluster['id'], endmsecs))
                 timestamp = stats['dataPointVec'][-1]['timestampMsecs']
                 if timestamp < nowmsecs - 180000 or stats['dataPointVec'][-1]['data']['int64Value'] == 0:  # stale stat, report 0
-                    metric.add_sample('write_throughput', value=0, labels={})
+                    metric.add_sample(metric_name, value=0, labels={})
                     yield metric
                 elif self.lastThroughput != timestamp:
-                    metric.add_sample('write_throughput', value=stats['dataPointVec'][-1]['data']['int64Value'], labels={})
+                    metric.add_sample(metric_name, value=stats['dataPointVec'][-1]['data']['int64Value'], labels={})
                     yield metric
                     self.lastThroughput = timestamp
             except Exception as e:  # no recent stat, report 0
-                metric.add_sample('write_throughput', value=0, labels={})
+                metric.add_sample(metric_name, value=0, labels={})
                 yield metric
+
+            # morphed garbage
+            metric_name = '%s_morphed_garbage' % vip
+            metric = Metric(metric_name, '%s Morphed Garbage' % vip, 'summary')
+            try:
+                stats = api('get', 'statistics/timeSeriesStats?metricName=kMorphedGarbageBytes&metricUnitType=0&range=week&rollupFunction=average&rollupIntervalSecs=720&schemaName=kBridgeClusterStats&startTimeMsecs=%s&entityId=%s&endTimeMsecs=%s' % (startmsecs, cluster['id'], endmsecs))
+                timestamp = stats['dataPointVec'][-1]['timestampMsecs']
+                metric.add_sample(metric_name, value=stats['dataPointVec'][-1]['data']['int64Value'], labels={})
+                yield metric
+            except Exception as e:  # no recent stat, report 0
+                pass
 
 
 if __name__ == '__main__':
