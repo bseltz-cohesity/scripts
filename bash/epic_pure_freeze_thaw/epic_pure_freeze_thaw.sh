@@ -2,7 +2,7 @@
 
 ##########################################################################################
 ##
-## Last updated: 2023.11.03 - Brian Seltzer @ Cohesity
+## Last updated: 2023.12.07 - Brian Seltzer @ Cohesity
 ##
 ## - change first line to #!/bin/ksh (AIX) or #!/bin/bash (Linux)
 ## - edit /etc/ssh/sshd_cohfig: MaxStartups 50:30:150 (first number must be 24 or higher) 
@@ -18,13 +18,15 @@
 ## - 2023-07-29 - parameterized arguments and autodetect OS (Linux or AIX)
 ## - 2023-08-31 - added support for multiple pure protection groups
 ## - 2023-11-03 - moved make source LUN locks to after snapshot creation
+## - 2023-12-07 - added -s to create a PPG snapshot (for safemode support)
 ##
 ##########################################################################################
 
-# example parameters: -t 1 -k /root/.ssh/id_rsa -p puresnap -a 10.12.1.39 -g EpicProtectionGroup26 -i test -v EpicVolGrp1,EpicVolGrp2
+# example parameters: -t 1 -k /root/.ssh/id_rsa -p puresnap -a 10.12.1.39 -g EpicProtectionGroup26 -i test -v EpicVolGrp1,EpicVolGrp2 -s
 
 # parameters
-while getopts "t:k:p:a:g:v:i:e:f" flag
+SNAPPG=0
+while getopts "t:k:p:a:g:v:i:e:f:s" flag
     do
         case "${flag}" in
             t) TESTING=${OPTARG};;
@@ -35,6 +37,7 @@ while getopts "t:k:p:a:g:v:i:e:f" flag
             i) EPIC_INSTANCE=${OPTARG};;
             e) EPIC_USER=${OPTARG};;
             v) VOL_GROUPS=${OPTARG};;
+            s) SNAPPG=1;;
             *) echo "invalid parameter"; exit 1;;
         esac
     done
@@ -283,8 +286,19 @@ if [[ $fsfreeze_status -gt 0 ]]; then
 else
 
     #### Freeze Successful
-    #### create snapshots
     echo "$(date) : $COHESITY_BACKUP_ENTITY : FileSystem Freeze Successful" >> /tmp/cohesity_snap.log
+
+    #### create ppg snaps
+    if [[ $SNAPPG -eq 1 ]]; then
+        echo "Running purepgroup snap."
+        echo "$(date) : $COHESITY_BACKUP_ENTITY : Snapshotting Pure Protection Groups" >> /tmp/cohesity_snap.log
+        for pg in $PURE_SRC_PGROUPS
+        do
+            /usr/bin/ssh -i ${PRIVKEY_PATH} ${PURE_USER}@${PURE_ARRAY} "purepgroup snap --apply-retention --suffix Cohesity-$(date '+%Y-%m-%d-%H-%M-%S') ${pg}"
+        done
+    fi
+
+    #### create volume snapshots
 	echo "$(date) : $COHESITY_BACKUP_ENTITY : Snapshotting Pure Volumes" >> /tmp/cohesity_snap.log
 	echo "Running purevol snap."
 	echo "/usr/bin/ssh -i ${PRIVKEY_PATH} ${PURE_USER}@${PURE_ARRAY} purevol snap --suffix ${COHESITY_BACKUP_VOLUME_SNAPSHOT_SUFFIX} ${PURE_SRC_LUNS}" >> /tmp/cohesity_snap.log 2>&1

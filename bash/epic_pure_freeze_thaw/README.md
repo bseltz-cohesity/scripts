@@ -84,15 +84,16 @@ Under Additional Settings, under the Pre and Post Scripts option, configure the 
 * -i: epic instance name
 * -e: epic user (e.g. epicadm)
 * -v: volume groups to freeze (AIX only) e.g. EpicVolGroup1,EpicVolGroup2,EpicVolGroup3
+* -s: create a pure protection group snapshot (snapshot schedule must be enabled for the PPG)
 
 ## Example Parameters
 
 ```bash
 # linux example parameters
--t 0 -k /home/root/.ssh/id_rsa -p puresnap -a 10.1.1.39 -g EpicProtectionGroup26 -i prod -e epicadm
+-t 0 -k /home/root/.ssh/id_rsa -p puresnap -a 10.1.1.39 -g EpicProtectionGroup26 -i prod -e epicadm -s
 
 # AIX example parameters
--t 0 -k /home/root/.ssh/id_rsa -p puresnap -a 10.1.1.39 -g EpicProtectionGroup26 -i prod -e epicadm -v EpicVolGroup1,EpicVolGroup2,EpicVolGroup3
+-t 0 -k /home/root/.ssh/id_rsa -p puresnap -a 10.1.1.39 -g EpicProtectionGroup26 -i prod -e epicadm -v EpicVolGroup1,EpicVolGroup2,EpicVolGroup3 -s
 ```
 
 ## Testing the Script
