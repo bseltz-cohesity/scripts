@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-12-07
+
+* [prometheusClusterStatsExporter.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/grafana/Prometheus/ClusterStats) [`Update`] Added morphed garbage metric
+
 ## 2023-12-06
 
 * [heliosCSVReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/helios-reporting/powershell/heliosCSVReport) [`Update`] added -excludeEnvironment parameter
