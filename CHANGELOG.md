@@ -2,6 +2,7 @@
 
 ## 2023-12-07
 
+* [replicationQueue.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/replicationQueue) [`Fix`] case insensitive match on jobname
 * [prometheusClusterStatsExporter.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/grafana/Prometheus/ClusterStats) [`Update`] Added morphed garbage metric
 
 ## 2023-12-06
