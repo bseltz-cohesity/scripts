@@ -75,7 +75,7 @@ jobs = api('get', 'protectionJobs')
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
     if 'isDeleted' not in job and ('isActive' not in job or job['isActive'] is not False):
         jobId = job['id']
-        if jobname is None or job['name'].lower() == jobname:
+        if jobname is None or job['name'].lower() == jobname.lower():
             jobName = job['name']
             print("Getting tasks for %s" % jobName)
             # find runs with unfinished replication tasks
