@@ -178,7 +178,7 @@ echo "Generating Source LUN File /tmp/cohesity_SRCLUNS.txt"
 if [[ -e /tmp/cohesity_SRCLUNS.txt ]]; then
     rm -f /tmp/cohesity_SRCLUNS.txt
 fi
-PURE_SRC_PGROUPS=$(echo $PURE_SRC_PGROUP | sed 's/,/ /')
+PURE_SRC_PGROUPS=$(echo $PURE_SRC_PGROUP | sed 's/,/ /g')
 for pg in $PURE_SRC_PGROUPS
 do
     /usr/bin/ssh -i ${PRIVKEY_PATH} ${PURE_USER}@${PURE_ARRAY} "purepgroup listobj --type vol ${PURE_SRC_PGROUP}"  >> /tmp/cohesity_SRCLUNS.txt
@@ -232,7 +232,7 @@ fi
 # typeset -i fsfreeze_status=0
 fsfreeze_status=0
 if [[ -n $VOL_GROUPS ]] && [[ $TESTING -eq 0 ]] && [[ $OS == "AIX" ]]; then
-    volgrps=$(echo $VOL_GROUPS | sed 's/,/ /')
+    volgrps=$(echo $VOL_GROUPS | sed 's/,/ /g')
     echo "$(date) : Volumes Groups to Freeze : $volgrps" >> /tmp/cohesity_snap.log
     if [[ $TESTING -ne 1 ]]; then
         for vgs in $volgrps
