@@ -103,6 +103,7 @@ Note: -k, --keepLocalFor no longer has any affect in recent releases of 6.6 and 
 * 6: Timed out waiting for new run to appear (new run accepted but not started)
 * 7: Timed out getting protection jobs
 * 8: Target not in policy not allowed
+* 9: Succeeded with Warnings
 
 ## Using -o (--objectname) Parameter
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.12.03
+# version 2023.12.11
 
 # version history
 # ===============
@@ -20,6 +20,7 @@
 # 2023-11-20 - tighter API call to find protection job, monitor completion with progress API rather than runs API
 # 2023-11-29 - fixed hang on object not in job run
 # 2023-12-03 - version bump
+# 2023-12-11 - Added Succeeded with Warning extended exit code 9
 #
 # extended error codes
 # ====================
@@ -32,6 +33,7 @@
 # 6: Timed out waiting for new run to appear
 # 7: Timed out getting job
 # 8: Target not in policy not allowed
+# 9: Succeeded with Warnings
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -818,8 +820,13 @@ if wait is True:
             log.write('Backup ended %s\n' % usecsToDate(run['localBackupInfo']['endTimeUsecs']))
         except Exception:
             log.write('Backup ended')
-    if run['localBackupInfo']['status'] == 'Succeeded' or run['localBackupInfo']['status'] == 'SucceededWithWarning':
+    if run['localBackupInfo']['status'] == 'Succeeded':
         bail(0)
+    elif run['localBackupInfo']['status'] == 'SucceededWithWarning':
+        if extendederrorcodes is True:
+            bail(9)
+        else:
+            bail(0)
     else:
         bail(1)
 else:

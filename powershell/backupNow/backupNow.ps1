@@ -795,9 +795,6 @@ if($wait -or $progress){
         if($run.localBackupInfo.status -eq 'Failed'){
             output "Error: $($run.localBackupInfo.messages[0])"
         }
-        if($run.localBackupInfo.status -eq 'Canceled'){
-            output "Run was Canceled"
-        }
         exit 1
     }
 }
