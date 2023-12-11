@@ -100,3 +100,4 @@ Place all files in a folder together. then, run the main script like so:
 * 6: Timed out waiting for new run to appear (new run accepted but not started)
 * 7: Timed out getting protection jobs
 * 8: Target not in policy not allowed
+* 9: Succeeded with Warnings

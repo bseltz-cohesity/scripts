@@ -1,4 +1,4 @@
-# version 2023.12.03
+# version 2023.12.09
 
 # version history
 # ===============
@@ -17,6 +17,7 @@
 # 2023-11-20 - tighter API call to find protection job, monitor completion with progress API rather than runs API
 # 2023-11-29 - fixed hang on object not in job run
 # 2023-12-03 - version bump
+# 2023-12-11 - Added Succeeded with Warning extended exit code 9
 #
 # extended error codes
 # ====================
@@ -29,6 +30,7 @@
 # 6: Timed out waiting for new run to appear
 # 7: Timed out getting protection jobs
 # 8: Target not in policy not allowed
+# 9: Succeeded with Warnings
 
 # process commandline arguments
 [CmdletBinding()]
@@ -780,14 +782,21 @@ if($wait -or $progress){
     }
     if($run.localBackupInfo.status -eq 'Succeeded'){
         exit 0
+    }elseif($run.localBackupInfo.status -eq 'SucceededWithWarning'){
+        if($run.PSObject.Properties['localBackupInfo'] -and $run.localBackupInfo.PSObject.Properties['messages'] -and $run.localBackupInfo.messages.Count -gt 0){
+            output "Warning: $($run.localBackupInfo.messages[0])"
+        }
+        if($extendedErrorCodes){
+            exit 9
+        }else{
+            exit 0
+        }
     }else{
         if($run.localBackupInfo.status -eq 'Failed'){
-            output "Error: $($run.localBackupInfo.messages[0])"  # $($runs[0].backupRun.error)"
+            output "Error: $($run.localBackupInfo.messages[0])"
         }
-        if($run.localBackupInfo.status -eq 'SucceededWithWarning'){
-            if($run.PSObject.Properties['localBackupInfo'] -and $run.localBackupInfo.PSObject.Properties['messages'] -and $run.localBackupInfo.messages.Count -gt 0){
-                output "Warning: $($run.localBackupInfo.messages[0])"
-            }
+        if($run.localBackupInfo.status -eq 'Canceled'){
+            output "Run was Canceled"
         }
         exit 1
     }
