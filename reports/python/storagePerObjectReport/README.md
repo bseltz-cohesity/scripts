@@ -51,3 +51,18 @@ Place both files in a folder together and run the main script like so:
 * -n, --numruns: (optional) number of runs per API query (default is 500)
 * -s, --skipdeleted: (optional) skip deleted protection groups
 * -debug, --debug: (optional) print verbose output
+
+## Column Descriptions
+
+* Job Name: name of protection group
+* Tenant: name of organization
+* Environment: protection group type
+* Source Name: name of registered source (e.g. vCenter, server, etc.)
+* Object Name: name of object (e.g. VM, NAS share, database, etc.)
+* Logical GiB: front-end size of object as reported by the source
+* GiB Written: amount of deduped/compressed data, for this object, resident on Cohesity (before adding resiliency striping overhead)
+* GiB Written plus Resiliency: amount of deduped/compressed data, for this object, resident on Cohesity (after adding resiliency striping overhead)
+* Job Reduction Ratio: dedup/compression ratio of protection group
+* GiB Written Last 7 Days: amount of deduped/compressed data added, for this object, in past X days
+* GiB Archived: amount of deduped/compressed data, for this object, resident on cloud archive targets
+* GiB per Archive Target: amount of deduped/compressed data, for this object, resident on each archive target
