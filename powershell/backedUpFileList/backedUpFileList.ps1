@@ -9,7 +9,7 @@
 #                               [ -fileDate '2020-06-29 12:00:00' ]
 
 ### process commandline arguments
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding=$False)]
 param (
     [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
     [Parameter()][string]$username='helios', # username (local or AD)

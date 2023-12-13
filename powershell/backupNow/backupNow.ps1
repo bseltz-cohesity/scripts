@@ -34,7 +34,7 @@
 # 9: Succeeded with Warnings
 
 # process commandline arguments
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding=$False)]
 param (
     [Parameter()][string]$vip = 'helios.cohesity.com',  # endpoint to connect to
     [Parameter()][string]$username = 'helios',  # username for authentication / password storage

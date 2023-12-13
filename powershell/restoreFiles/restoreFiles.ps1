@@ -8,7 +8,7 @@
 #                             -wait
 
 ### process commandline arguments
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding=$False)]
 param (
     [Parameter()][string]$vip = 'helios.cohesity.com',   # the cluster to connect to (DNS name or IP)
     [Parameter()][string]$username = 'helios',           # username (local or AD)
