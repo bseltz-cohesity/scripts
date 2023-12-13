@@ -1,4 +1,4 @@
-# version 2023.04.01
+# version 2023.12.13
 # usage: ./backedUpFileList.ps1 -vip mycluster \
 #                               -username myuser \
 #                               -domain mydomain.net \
@@ -13,9 +13,9 @@
 param (
     [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
     [Parameter()][string]$username='helios', # username (local or AD)
+    [Parameter()][string]$password = $null,
     [Parameter()][string]$domain = 'local', # local or AD domain
     [Parameter()][switch]$useApiKey, # use API key for authentication
-    [Parameter()][string]$password = $null,
     [Parameter(Mandatory = $True)][array]$sourceServer, # source server
     [Parameter(Mandatory = $True)][string]$jobName, # narrow search by job name
     [Parameter()][switch]$showVersions,

@@ -1,4 +1,4 @@
-# version 2023.12.11
+# version 2023.12.13
 
 # version history
 # ===============
@@ -18,6 +18,7 @@
 # 2023-11-29 - fixed hang on object not in job run
 # 2023-12-03 - version bump
 # 2023-12-11 - Added Succeeded with Warning extended exit code 9
+# 2023.12.13 - re-ordered auth parameters (to force first unnamed parameter to be interpreted as password)
 #
 # extended error codes
 # ====================
@@ -37,9 +38,9 @@
 param (
     [Parameter()][string]$vip = 'helios.cohesity.com',  # endpoint to connect to
     [Parameter()][string]$username = 'helios',  # username for authentication / password storage
+    [Parameter()][string]$password = $null,  # send password / API key via command line (not recommended)
     [Parameter()][string]$domain = 'local',  # local or AD domain
     [Parameter()][switch]$useApiKey,         # use API key authentication
-    [Parameter()][string]$password = $null,  # send password / API key via command line (not recommended)
     [Parameter()][switch]$noPrompt,          # do not prompt for password
     [Parameter()][switch]$mcm,               # connect to MCM endpoint
     [Parameter()][string]$mfaCode = $null,   # MFA code

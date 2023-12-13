@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2023.12.03 - Brian Seltzer
+#  Version 2023.12.13 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2023.02.10 - added -region to api function (for DMaaS)
@@ -27,10 +27,11 @@
 # 2023.11.30 - implemented apiauth_legacy function
 # 2023.12.01 - added -noDomain (for SaaS connector)
 # 2023.12.03 - added support for raw URL
+# 2023.12.13 - re-ordered apiauth parameters (to force first unnamed parameter to be interpreted as password)
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2023.12.03'
+$versionCohesityAPI = '2023.12.13'
 
 # state cache
 $cohesity_api = @{
@@ -146,22 +147,22 @@ function reportError($errorObject, [switch]$quiet){
 }
 
 # authentication functions ========================================================================
-function apiauth($vip='helios.cohesity.com', 
-                 $username = 'helios', 
-                 $domain = 'local', 
+function apiauth($vip='helios.cohesity.com',
+                 $username = 'helios',
                  $passwd = $null,
                  $password = $null,
+                 $newPassword = $null,
+                 $domain = 'local',
                  $tenant = $null,
                  $regionid = $null,
                  $mfaType = 'Totp',
-                 $newPassword = $null,
                  [string] $mfaCode = $null,
                  [switch] $emailMfaCode,
                  [switch] $helios,
                  [switch] $noDomain,
-                 [switch] $quiet, 
-                 [switch] $noprompt, 
-                 [switch] $updatePassword, 
+                 [switch] $quiet,
+                 [switch] $noprompt,
+                 [switch] $updatePassword,
                  [switch] $useApiKey,
                  [boolean] $apiKeyAuthentication = $false,
                  [boolean] $heliosAuthentication = $false,
@@ -1267,10 +1268,10 @@ function getViews([switch]$includeInactive){
 }
 
 function apiauth_legacy($vip='helios.cohesity.com', 
-                 $username = 'helios', 
-                 $domain = 'local', 
+                 $username = 'helios',
                  $passwd = $null,
-                 $password = $null,
+                 $password = $null, 
+                 $domain = 'local',
                  $tenant = $null,
                  $regionid = $null,
                  $mfaType = 'Totp',

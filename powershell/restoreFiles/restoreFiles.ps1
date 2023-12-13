@@ -1,4 +1,4 @@
-# version 2023.06.15
+# version 2023.12.13
 ### usage: ./restoreFiles.ps1 -vip mycluster -username myuser -domain mydomain.net `
 #                             -sourceServer server1.mydomain.net `
 #                             -targetServer server2.mydomain.net `
@@ -12,9 +12,9 @@
 param (
     [Parameter()][string]$vip = 'helios.cohesity.com',   # the cluster to connect to (DNS name or IP)
     [Parameter()][string]$username = 'helios',           # username (local or AD)
+    [Parameter()][string]$password,                      # optional password
     [Parameter()][string]$domain = 'local',              # local or AD domain
     [Parameter()][switch]$useApiKey,                     # use API key for authentication
-    [Parameter()][string]$password,                      # optional password
     [Parameter()][switch]$noPrompt,                      # do not prompt for password
     [Parameter()][string]$tenant,                        # org to impersonate
     [Parameter()][switch]$mcm,                           # connect to MCM endpoint
