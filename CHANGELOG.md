@@ -1,5 +1,17 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-12-13
+
+* [cohesity-api.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api) [`Update`] re-ordered apiauth parameters to force positional parameter to be interpreted as the password
+* [backupNow.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow) [`Update`] disallow positional parameters
+* [restoreFiles.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/restoreFiles) [`Update`] disallow positional parameters
+* [backedUpFileList.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backedUpFileList) [`Update`] disallow positional parameters
+
+## 2023-12-11
+
+* [backupNow.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow) [`Update`] added extended error code 9 'SuccessWithWarning'
+* [backupNow.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/backupNow) [`Update`] added extended error code 9 'SuccessWithWarning'
+
 ## 2023-12-07
 
 * [replicationQueue.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/replicationQueue) [`Fix`] case insensitive match on jobname
