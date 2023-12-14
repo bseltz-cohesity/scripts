@@ -52,6 +52,7 @@ To unprotect the objects after the final backup:
                            -n myvm2 \
                            -n myvm3 \
                            -x
+```
 
 ## Parameters
 
