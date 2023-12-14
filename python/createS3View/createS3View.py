@@ -1,17 +1,5 @@
 #!/usr/bin/env python
-"""Create a Cohesity SMB View Using python"""
-
-# usage: ./createSMBView.py -v mycluster \
-#                           -u myusername \
-#                           -d mydomain.net \
-#                           -n newview1 \
-#                           -w mydomain.net\server1 \
-#                           -f mydomain.net\admingroup1
-#                           -f mydomain.net\admingroup2 \
-#                           -r mydomain.net\auditors \
-#                           -q 'TestAndDev High' \
-#                           -s mystoragedomain \
-#                           -i 192.168.1.97
+"""Create a Cohesity S3 View Using python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
