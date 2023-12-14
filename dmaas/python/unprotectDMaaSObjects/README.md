@@ -10,7 +10,7 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/unprotectDMaaSObjects/unprotectDMaaSObjects.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/dmaas/python/unprotectDMaaSObjects/unprotectDMaaSObjects.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x unprotectDMaaSObjects.py
 # end download commands
