@@ -48,6 +48,8 @@ chmod +x restoreFiles
 
 * -s, --sourceserver: name of source server (repeat for multiple)
 * -t, --targetserver: (optional) name of target server (defaults to source server [0])
+* -rs, --registeredsource: (optional) name of registered source (e.g. name of registered netapp, isilon)
+* -rt, --registeredtarget: (optional) name of registered target (e.g. name of registered netapp, isilon)
 * -n, --filename: (optional) path of file to recover (repeat parameter for multiple files)
 * -f, --filelist: (optional) text file containing multiple files to restore
 * -p, --restorepath: (optional) path to restore files on target server (defaults to original location)
