@@ -58,6 +58,8 @@ Restore finished with status Success
 
 * -sourceServer: server that was backed up
 * -targetServer: (optional) server to restore to (defaults to sourceServer)
+* -registeredSource: (optional) name of registered source (e.g. name of registered netapp, isilon)
+* -registeredTarget: (optional) name of registered target (e.g. name of registered netapp, isilon)
 * -jobName: (optional) filter by job name
 * -fileNames: (optional) file names to restore (comma separated)
 * -fileList: (optional) text file of file names to restore

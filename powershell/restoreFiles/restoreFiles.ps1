@@ -1,11 +1,4 @@
-# version 2023.12.13
-### usage: ./restoreFiles.ps1 -vip mycluster -username myuser -domain mydomain.net `
-#                             -sourceServer server1.mydomain.net `
-#                             -targetServer server2.mydomain.net `
-#                             -fileNames /home/myuser/file1, /home/myuser/file2 `
-#                             -restorePath /tmp/restoretest1/ `
-#                             -fileDate '2020-04-18 18:00:00' `
-#                             -wait
+# version 2023.12.15
 
 ### process commandline arguments
 [CmdletBinding(PositionalBinding=$False)]
@@ -23,6 +16,8 @@ param (
     [Parameter()][string]$clusterName = $null,           # helios cluster to access
     [Parameter(Mandatory = $True)][string]$sourceServer, # source server
     [Parameter()][string]$targetServer = $sourceServer, # target server
+    [Parameter()][string]$registeredSource, # name of registered source
+    [Parameter()][string]$registeredTarget, # name of registered target
     [Parameter()][string]$jobName, # narrow search by job name
     [Parameter()][array]$fileNames, # one or more file paths comma separated
     [Parameter()][string]$fileList, # text file with file paths
@@ -98,6 +93,20 @@ $files = [string[]]$files | ForEach-Object {("/" + $_.Replace(':\','/').Replace(
 # find source and target server
 $entities = api get "/entitiesOfType?environmentTypes=kFlashblade&environmentTypes=kGenericNas&environmentTypes=kGPFS&environmentTypes=kIsilon&environmentTypes=kNetapp&environmentTypes=kPhysical&flashbladeEntityTypes=kFileSystem&genericNasEntityTypes=kHost&gpfsEntityTypes=kFileset&isilonEntityTypes=kMountPoint&netappEntityTypes=kVolume&physicalEntityTypes=kHost&physicalEntityTypes=kWindowsCluster"
 $targetEntity = $entities | Where-Object displayName -eq $targetServer
+if($registeredTarget){
+    $foundTarget = $false
+    $targetSource = api get "protectionSources/rootNodes?allUnderHierarchy=false&environments=kNetapp&environments=kIsilon&environments=kGenericNas&environments=kFlashBlade&environments=kGPFS&environments=kElastifile" | Where-Object {$_.protectionSource.name -eq $registeredTarget}
+    if($targetSource){
+        $targetEntity = $targetEntity | Where-Object {$_.parentId -eq $targetSource[0].protectionSource.id}
+        if($targetEntity){
+            $foundTarget = $True
+        }
+    }
+    if($foundTarget -eq $false){
+        Write-Host "registered target $registeredTarget not found" -ForegroundColor Yellow
+        exit 1
+    }
+}
 
 if(!$targetEntity){
     Write-Host "$targetServer not found" -ForegroundColor Yellow
@@ -107,6 +116,9 @@ if(!$targetEntity){
 # find backups for source server
 $searchResults = api get "/searchvms?vmName=$sourceServer"
 $searchResults = $searchResults.vms | Where-Object {$_.vmDocument.objectName -eq $sourceServer}
+if($registeredSource){
+    $searchResults = $searchResults | Where-Object {$_.registeredSource.displayName -eq $registeredSource}
+}
 
 # narrow search by job name
 if($jobName){
