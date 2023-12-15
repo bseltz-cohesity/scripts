@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 """restore files using python"""
 
-# version 2023.11.17
-
-# usage: ./restoreFiles.py -v mycluster \
-#                          -u myusername \
-#                          -d mydomain .net \
-#                          -s server1.mydomain.net \
-#                          -t server2.mydomain.net \
-#                          -n /home/myusername/file1 \
-#                          -n /home/myusername/file2 \
-#                          -p /tmp/restoretest/ \
-#                          -f '2020-04-18 18:00:00' \
-#                          -w
+# version 2023.12.15
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -39,6 +28,8 @@ parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-s', '--sourceserver', type=str, action='append')  # name of source server
 parser.add_argument('-t', '--targetserver', type=str, default=None)   # name of target server
+parser.add_argument('-rs', '--registeredsource', type=str, default=None)   # name of registered source
+parser.add_argument('-rt', '--registeredtarget', type=str, default=None)   # name of registered target
 parser.add_argument('-j', '--jobname', type=str, default=None)        # narrow search by job name
 parser.add_argument('-n', '--filename', type=str, action='append')    # file name to restore
 parser.add_argument('-f', '--filelist', type=str, default=None)       # text file list of files to restore
@@ -73,6 +64,8 @@ if args.targetserver is None:
 else:
     targetserver = args.targetserver
 
+registeredsource = args.registeredsource
+registeredtarget = args.registeredtarget
 jobname = args.jobname
 files = args.filename
 filelist = args.filelist
@@ -122,8 +115,20 @@ if apiconnected() is False:
 
 # find target server
 physicalEntities = api('get', '/entitiesOfType?environmentTypes=kFlashblade&environmentTypes=kGenericNas&environmentTypes=kGPFS&environmentTypes=kIsilon&environmentTypes=kNetapp&environmentTypes=kPhysical&flashbladeEntityTypes=kFileSystem&genericNasEntityTypes=kHost&gpfsEntityTypes=kFileset&isilonEntityTypes=kMountPoint&netappEntityTypes=kVolume&physicalEntityTypes=kHost&physicalEntityTypes=kWindowsCluster')
-# physicalEntities = api('get', '/entitiesOfType?environmentTypes=kPhysical&physicalEntityTypes=kHost&physicalEntityTypes=kOracleAPCluster')
 targetEntity = [e for e in physicalEntities if e['displayName'].lower() == targetserver.lower()]
+
+if registeredtarget is not None:
+    foundTarget = False
+    targetSources = api('get', 'protectionSources/rootNodes?allUnderHierarchy=false&environments=kNetapp&environments=kIsilon&environments=kGenericNas&environments=kFlashBlade&environments=kGPFS&environments=kElastifile')
+    if targetSources is not None and len(targetSources) > 0:
+        targetSource = [s for s in targetSources if s['protectionSource']['name'].lower() == registeredtarget.lower()]
+        if targetSource is not None and len(targetSource) > 0:
+            targetEntity = [e for e in targetEntity if e['parentId'] == targetSource[0]['protectionSource']['id']]
+            if targetEntity is not None and len(targetEntity) > 0:
+                foundTarget = True
+    if foundTarget is False:
+        print('registered target %s not found' % registeredtarget)
+        exit(1)
 
 if len(targetEntity) == 0:
     print("%s not found" % targetserver)
@@ -137,6 +142,8 @@ if searchResults:
         altJobName = 'old name: %s' % jobname.lower()
         altJobName2 = '%s (old name' % jobname.lower()
         searchResults = [vm for vm in searchResults if vm['vmDocument']['jobName'].lower() == jobname.lower() or altJobName in vm['vmDocument']['jobName'].lower() or altJobName2 in vm['vmDocument']['jobName'].lower()]
+    if registeredsource is not None:
+        searchResults = [vm for vm in searchResults if vm['registeredSource']['displayName'].lower() == registeredsource.lower()]
 
 if len(searchResults) == 0:
     if jobname is not None:
