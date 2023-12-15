@@ -2,9 +2,9 @@
 
 ## 2023-12-15
 
-* [restoreFiles](https://github.com/bseltz-cohesity/scripts/tree/master/windows/restoreFiles) (compiled windows binary) [`Update`] added --registeredsource and --registeredtarget parmaeters to filter on registered NAS sources
-* [restoreFiles](https://github.com/bseltz-cohesity/scripts/tree/master/aix/restoreFiles) (compiled aix binary) [`Update`] added --registeredsource and --registeredtarget parmaeters to filter on registered NAS sources
-* [restoreFiles](https://github.com/bseltz-cohesity/scripts/tree/master/linux/restoreFiles) (compiled linux binary) [`Update`] added --registeredsource and --registeredtarget parmaeters to filter on registered NAS sources
+* [restoreFiles](https://github.com/bseltz-cohesity/scripts/tree/master/windows/restoreFiles) (windows) [`Update`] added --registeredsource and --registeredtarget parmaeters to filter on registered NAS sources
+* [restoreFiles](https://github.com/bseltz-cohesity/scripts/tree/master/aix/restoreFiles) (aix) [`Update`] added --registeredsource and --registeredtarget parmaeters to filter on registered NAS sources
+* [restoreFiles](https://github.com/bseltz-cohesity/scripts/tree/master/linux/restoreFiles) (linux) [`Update`] added --registeredsource and --registeredtarget parmaeters to filter on registered NAS sources
 * [restoreFiles.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/restoreFiles) (python) [`Update`] added --registeredsource and --registeredtarget parmaeters to filter on registered NAS sources
 * [restoreFiles.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/restoreFiles) (PowerShell) [`Update`] added -registeredSource and -registeredTarget parmaeters to filter on registered NAS sources
 
