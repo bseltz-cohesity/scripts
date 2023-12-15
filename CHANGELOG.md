@@ -1,5 +1,18 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-12-15
+
+* [restoreFiles](https://github.com/bseltz-cohesity/scripts/tree/master/windows/restoreFiles) [`Update`] added --registeredsource and --registeredtarget parmaeters to filter on registered NAS sources
+* [restoreFiles](https://github.com/bseltz-cohesity/scripts/tree/master/aix/restoreFiles) [`Update`] added --registeredsource and --registeredtarget parmaeters to filter on registered NAS sources
+* [restoreFiles](https://github.com/bseltz-cohesity/scripts/tree/master/linux/restoreFiles) [`Update`] added --registeredsource and --registeredtarget parmaeters to filter on registered NAS sources
+* [restoreFiles.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/restoreFiles) [`Update`] added --registeredsource and --registeredtarget parmaeters to filter on registered NAS sources
+* [restoreFiles.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/restoreFiles) [`Update`] added -registeredSource and -registeredTarget parmaeters to filter on registered NAS sources
+
+## 2023-12-14
+
+* [unprotectDMaaSObjects.py](https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/python/unprotectDMaaSObjects) [`New`] python script to perform final backup and unprotect protected objects in CCS
+* [createS3View.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/createS3View) [`New`] create an S3 view using python
+
 ## 2023-12-13
 
 * [cohesity-api.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api) [`Update`] re-ordered apiauth parameters to force positional parameter to be interpreted as the password
