@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-12-16
+
+* [copyRoles.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/copyRoles) [`New`] python script to copy custom roles from one Cohesity cluster to another
+
 ## 2023-12-15
 
 * [restoreFiles](https://github.com/bseltz-cohesity/scripts/tree/master/windows/restoreFiles) (windows) [`Update`] added --registeredsource and --registeredtarget parmaeters to filter on registered NAS sources
