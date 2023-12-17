@@ -18,8 +18,8 @@ chmod +x downloadCCSAgent.py
 
 ## Components
 
-* downloadCCSAgent.py: the main powershell script
-* pyhesity.py: the Cohesity REST API helper module
+* [downloadCCSAgent.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/dmaas/python/downloadCCSAgent/downloadCCSAgent.py): the main powershell script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 
