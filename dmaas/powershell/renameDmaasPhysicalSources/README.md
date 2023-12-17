@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 ## Components
 
-* renameDmaasPhysicalSources.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [renameDmaasPhysicalSources.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/dmaas/powershell/renameDmaasPhysicalSources/renameDmaasPhysicalSources.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together, then create a csv file that contains the list of current and new names of the protection sources you want to rename, for example:
 
