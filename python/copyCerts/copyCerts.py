@@ -2,23 +2,11 @@
 
 from pyhesity import *
 import os
-import requests
-import urllib3
 import codecs
 import json
 import getpass
 import argparse
 from time import sleep
-import requests.packages.urllib3
-import sys
-if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
-    from urllib.parse import quote_plus
-else:
-    from urllib import quote_plus
-
-requests.packages.urllib3.disable_warnings()
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-tc', '--targetcluster', type=str, required=True)
@@ -51,12 +39,12 @@ def checkClusterVersion(cluster):
         exit()
 
 
-def setGflag(vip, servicename='magneto', flagname='magneto_skip_cert_upgrade_for_multi_cluster_registration', flagvalue='false', reason='Enable agent certificate update'):
+def setGflag(vip, servicename='kMagneto', flagname='magneto_skip_cert_upgrade_for_multi_cluster_registration', flagvalue='false', reason='Enable agent certificate update'):
 
     gflagAlreadySet = False
-    gflags = api('get', '/nexus/cluster/list_gflags')
+    gflags = api('get', '/clusters/gflag')
 
-    for service in gflags['servicesGflags']:
+    for service in gflags:
         svcName = service['serviceName']
         if svcName == servicename:
             serviceGflags = service['gflags']
@@ -68,7 +56,6 @@ def setGflag(vip, servicename='magneto', flagname='magneto_skip_cert_upgrade_for
     if gflagAlreadySet is False:
         print('Setting gflag  %s: %s = %s' % (servicename, flagname, flagvalue))
         gflag = {
-            'clusterId': cluster['id'],
             'serviceName': servicename,
             'gflags': [
                 {
@@ -76,17 +63,10 @@ def setGflag(vip, servicename='magneto', flagname='magneto_skip_cert_upgrade_for
                     'value': flagvalue,
                     'reason': reason
                 }
-            ]
+            ],
+            'effectiveNow': True
         }
-
-        response = api('post', '/nexus/cluster/update_gflags', gflag)
-
-        print('    making effective now on all nodes')
-        context = getContext()
-        nodes = api('get', 'nodes')
-        for node in nodes:
-            print('        %s' % node['ip'])
-            response = context['SESSION'].get('https://%s/siren/v1/remote?relPath=&remoteUrl=http' % vip + quote_plus('://') + node['ip'] + quote_plus(':') + '20000' + quote_plus('/flagz?') + '%s=%s' % (flagname, flagvalue), verify=False, headers=context['HEADER'])
+        response = api('put', '/clusters/gflag', gflag)
 
 
 def copyCerts(certs):

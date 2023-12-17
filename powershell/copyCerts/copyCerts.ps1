@@ -28,10 +28,10 @@ function checkClusterVersion(){
     }
 }
 
-function setGflag($vip, $servicename='magneto', $flagname='magneto_skip_cert_upgrade_for_multi_cluster_registration', $flagvalue='false', $reason='Enable agent certificate update'){
+function setGflag($vip, $servicename='kMagneto', $flagname='magneto_skip_cert_upgrade_for_multi_cluster_registration', $flagvalue='false', $reason='Enable agent certificate update'){
 
     $gflagAlreadySet = $false
-    $gflags = (api get /nexus/cluster/list_gflags).servicesGflags
+    $gflags = api get /clusters/gflag
 
     foreach($service in $gflags){
         $svcName = $service.serviceName
@@ -47,10 +47,8 @@ function setGflag($vip, $servicename='magneto', $flagname='magneto_skip_cert_upg
     }
 
     if(! $gflagAlreadySet){
-        $nodes = api get nodes
         write-host "Setting gflag  $($servicename):  $flagname = $flagvalue"
         $gflagReq = @{
-            'clusterId' = $cluster.id;
             'gflags' = @(
                 @{
                     'name' = $flagname;
@@ -59,17 +57,9 @@ function setGflag($vip, $servicename='magneto', $flagname='magneto_skip_cert_upg
                 }
             );
             'serviceName' = $servicename;
+            'effectiveNow' = $True
         }
-        $null = api post '/nexus/cluster/update_gflags' $gflagReq
-        Write-Host "    making effective now on all nodes:"
-        foreach($node in $nodes){
-            Write-Host "        $($node.ip)"
-            if($PSVersionTable.PSEdition -eq 'Core'){
-                $null = Invoke-WebRequest -UseBasicParsing -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=http%3A%2F%2F$($node.ip)%3A$('20000')%2Fflagz%3F$flagname=$flagvalue" -Headers $cohesity_api.header -SkipCertificateCheck -WebSession $thisContext.session
-            }else{
-                $null = Invoke-WebRequest -UseBasicParsing -Uri "https://$vip/siren/v1/remote?relPath=&remoteUrl=http%3A%2F%2F$($node.ip)%3A$('20000')%2Fflagz%3F$flagname=$flagvalue" -Headers $cohesity_api.header -WebSession $thisContext.session
-            }
-        }
+        $null = api put '/clusters/gflag' $gflagReq
     }
 }
 
