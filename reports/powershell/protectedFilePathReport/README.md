@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 ## Components
 
-* protectedFilePathReport.ps1: the main PowerShell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [protectedFilePathReport.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/powershell/protectedFilePathReport/protectedFilePathReport.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place the files in a folder together and run the script like so:
 

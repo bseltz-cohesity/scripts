@@ -18,7 +18,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 ## Components
 
-* vmAvgDiskThroughput.ps1: the main powershell script
+* [vmAvgDiskThroughput.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/powershell/vmAvgDiskThroughput/vmAvgDiskThroughput.ps1): the main powershell script
 
 Place both files in a folder together and run the main script like so:
 

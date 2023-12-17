@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 ## Components
 
-* archiveInventory.ps1: the main python script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [archiveInventory.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/powershell/archiveInventory/archiveInventory.ps1): the main python script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script.
 

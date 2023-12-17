@@ -6,8 +6,8 @@ This script exports a protection summary report to a CSV file.
 
 ## Components
 
-* summaryReport.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [summaryReport.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/powershell/summaryReport/summaryReport.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 ## Download the script
 
