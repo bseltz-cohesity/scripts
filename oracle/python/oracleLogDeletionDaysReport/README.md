@@ -6,8 +6,8 @@ This script reports the number of days to retain Oracle archived logs for each p
 
 ## Components
 
-* oracleLogDeletionDaysReport.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [oracleLogDeletionDaysReport.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/oracleLogDeletionDaysReport/oracleLogDeletionDaysReport.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 

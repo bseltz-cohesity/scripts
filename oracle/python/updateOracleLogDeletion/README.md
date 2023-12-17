@@ -6,8 +6,8 @@ This script updates the number of days to retain Oracle archived logs.
 
 ## Components
 
-* updateOracleLogDeletion.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [updateOracleLogDeletion.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/updateOracleLogDeletion/updateOracleLogDeletion.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 

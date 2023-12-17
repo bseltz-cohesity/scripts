@@ -6,8 +6,8 @@ This script demonstrates how to perform an Oracle restore using Python.
 
 ## Components
 
-* restoreOracle.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [restoreOracle.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/restoreOracle/restoreOracle.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 

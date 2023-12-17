@@ -8,8 +8,8 @@ Note: this is a major rewrite of the previous restoreOracle.py script and may ne
 
 ## Components
 
-* restoreOracle-v2.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [restoreOracle-v2.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/restoreOracle-v2/restoreOracle-v2.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 

@@ -6,8 +6,8 @@ This Python script sets the database username and password for an Oracle protect
 
 ## Components
 
-* updateOracleDbCredentials.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [updateOracleDbCredentials.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/updateOracleDbCredentials/updateOracleDbCredentials.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 

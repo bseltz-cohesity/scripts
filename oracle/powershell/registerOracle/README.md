@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 ## Components
 
-* registerOracle.ps1: the main PowerShell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [registerOracle.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/powershell/registerOracle/registerOracle.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 * servers.txt: an optional text file containing a list of serversto add to the protection job
 
 Place all files in a folder together. Optionally create a text file called servers.txt and populate with the servers that you want to protect, like so:

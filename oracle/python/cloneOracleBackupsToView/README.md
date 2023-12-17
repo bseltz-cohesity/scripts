@@ -6,8 +6,8 @@ This script clones Oracle backups to a user-accessible Cohesity View
 
 ## Components
 
-* cloneOracleBackupsToView.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [cloneOracleBackupsToView.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/cloneOracleBackupsToView/cloneOracleBackupsToView.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 

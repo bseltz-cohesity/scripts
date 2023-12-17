@@ -25,8 +25,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 ## Components
 
-* restoreOracle-v2.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [restoreOracle-v2.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/powershell/restoreOracle-v2/restoreOracle-v2.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 
