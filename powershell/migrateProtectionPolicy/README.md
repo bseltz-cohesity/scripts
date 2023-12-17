@@ -25,8 +25,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* migrateProtectionPolicy.ps1: the main PowerShell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [migrateProtectionPolicy.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/migrateProtectionPolicy/migrateProtectionPolicy.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place all files in a folder together and run the script like so:
 

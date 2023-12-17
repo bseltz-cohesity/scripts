@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* protectedVMsWithExcludedDisks.ps1: the main PowerShell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [protectedVMsWithExcludedDisks.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectedVMsWithExcludedDisks/protectedVMsWithExcludedDisks.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place all files in a folder together, then run the main script like so:
 

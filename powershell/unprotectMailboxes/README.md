@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* unprotectMailboxes.ps1: the main PowerShell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [unprotectMailboxes.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/unprotectMailboxes/unprotectMailboxes.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 * excludedMailboxes.txt: a text file containing a list of user names or primary smtp addresses to exclude from the job
 
 Place all files in a folder together. Create a text file called excludedMailboxes.txt and populate with the user names or SMTP addresses, like so:

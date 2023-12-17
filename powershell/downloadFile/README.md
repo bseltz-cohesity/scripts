@@ -17,8 +17,8 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ## Components
 
-* downloadFile.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [downloadFile.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/downloadFile/downloadFile.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

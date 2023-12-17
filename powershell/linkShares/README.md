@@ -19,10 +19,10 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ## Components
 
-* linkSharesMaster.ps1: the main powershell script (Master role)
-* linkSharesProxy.ps1: the main powershell script (Proxy role)
-* cohesity-api.ps1: the Cohesity REST API helper module
-* linkSharesStatus.json: the shared config file
+* [linkSharesMaster.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/linkShares/linkSharesMaster.ps1): the main powershell script (Master role)
+* [linkSharesProxy.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/linkShares/linkSharesProxy.ps1): the main powershell script (Proxy role)
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [linkSharesStatus.json](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/linkShares/linkSharesStatus.json): the shared config file
 
 ## Setup
 

@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* validateADBackup.ps1: the main PowerShell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [validateADBackup.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/validateADBackup/validateADBackup.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place the files in a folder together and run the script like so:
 

@@ -18,9 +18,9 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ## Components
 
-* deployWindowsAgent.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module
-* UserRights.psm1: Module for setting logon as a service right (see attribution below)
+* [deployWindowsAgent.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployWindowsAgent/deployWindowsAgent.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [UserRights.psm1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployWindowsAgent/UserRights.psm1): Module for setting logon as a service right (see attribution below)
 * servers.txt: text file containing server names to deploy to
 
 Place all files in a folder together, then we can run the script.
@@ -90,4 +90,4 @@ managing Cohesity Agent on sqlserver2.mydomain.net
 
 ## Attributions
 
-* UserRights.psm1: was downloaded from: <https://gallery.technet.microsoft.com/scriptcenter/Grant-Revoke-Query-user-26e259b0> thanks to Tony MCP: <https://social.technet.microsoft.com/profile/tony%20mcp/> just what I was looking for!
+* [UserRights.psm1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployWindowsAgent/UserRights.psm1): was downloaded from: <https://gallery.technet.microsoft.com/scriptcenter/Grant-Revoke-Query-user-26e259b0> thanks to Tony MCP: <https://social.technet.microsoft.com/profile/tony%20mcp/> just what I was looking for!

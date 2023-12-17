@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* replicateNow.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module [README](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api)
+* [replicateNow.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/replicateNow/replicateNow.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module [README](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api)
 
 Place both files in a folder together, then we can run the script like so:
 

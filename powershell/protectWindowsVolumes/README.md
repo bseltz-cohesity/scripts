@@ -23,8 +23,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* protectWindowsVolumes.ps1: the main PowerShell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [protectWindowsVolumes.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectWindowsVolumes/protectWindowsVolumes.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place all files in a folder together. Optionally create a text file called servers.txt and populate with the servers that you want to protect, like so (you can also specify servers on the command line):
 

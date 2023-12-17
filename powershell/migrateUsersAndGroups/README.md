@@ -29,8 +29,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* migrateUsersAndGroups.ps1: the main PowerShell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [migrateUsersAndGroups.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/migrateUsersAndGroups/migrateUsersAndGroups.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 At the beginning of the migration, we should use `-makeCache` to store a copy of the source state for future use later in the migration.
 

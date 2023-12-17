@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* enableDatalock.ps1: the main PowerShell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [enableDatalock.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/enableDatalock/enableDatalock.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place all files in a folder together and run the script like so:
 

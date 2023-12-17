@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* updateJobDescriptions.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [updateJobDescriptions.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/updateJobDescriptions/updateJobDescriptions.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 First, export existing protection group names, descriptions to a CSV file, like so:
 

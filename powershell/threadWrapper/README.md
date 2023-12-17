@@ -18,7 +18,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* threadWrapper.ps1: the wrapper script
+* [threadWrapper.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/threadWrapper/threadWrapper.ps1): the wrapper script
 
 Edit the wrapper script accordingly. The example provided runs two instances of backupNow.ps1
 

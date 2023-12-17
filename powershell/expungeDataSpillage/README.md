@@ -12,8 +12,8 @@ Deletions will be logged to scriptPath/expungeLog.txt
 
 ## Components
 
-* expungeDataSpillage.ps1: the main powershell script
-* cohesity-api.ps1: Cohesity REST API helper module
+* [expungeDataSpillage.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/expungeDataSpillage/expungeDataSpillage.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): Cohesity REST API helper module
 
 Place both files in a folder together, then we can run the script.
 

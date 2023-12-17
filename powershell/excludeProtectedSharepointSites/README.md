@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* excludeProtectedSharepointSites.ps1: the main PowerShell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [excludeProtectedSharepointSites.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/excludeProtectedSharepointSites/excludeProtectedSharepointSites.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 First, create a "catch-all" job that autoprotects all Sharepoint sites. You can pause future runs if you don't want it to run at this time.
 

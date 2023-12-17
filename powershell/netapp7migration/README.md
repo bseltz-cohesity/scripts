@@ -21,10 +21,10 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* netapp7Export.ps1: export netapp 7-mode configuration details
-* netapp7ImportSMB.ps1: import netapp 7-mode SMB shares
-* netapp7ImportNFS.ps1: import netapp 7-mode NFS exports
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [netapp7Export.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/netapp7migration/netapp7Export.ps1): export netapp 7-mode configuration details
+* [netapp7ImportSMB.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/netapp7migration/netapp7ImportSMB.ps1): import netapp 7-mode SMB shares
+* [netapp7ImportNFS.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/netapp7migration/netapp7ImportNFS.ps1): import netapp 7-mode NFS exports
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place the files in a folder together.
 

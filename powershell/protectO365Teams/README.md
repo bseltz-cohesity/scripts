@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* protectO365Teams.ps1: the main PowerShell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [protectO365Teams.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectO365Teams/protectO365Teams.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place all files in a folder together. You can provide a list of teams at the command line, or create a text file and populate with the team names or SMTP addresses (one per line), or you can automatically protect unprotected teams.
 

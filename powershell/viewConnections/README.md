@@ -21,8 +21,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* viewConnections.ps1: the main PowerShell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [viewConnections.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewConnections/viewConnections.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place all files in a folder together. You can provide a list of sites at the command line, or create a text file and populate with the team names (one per line), or you can automatically protect unprotected sites.
 

@@ -20,9 +20,9 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* addActiveDirectory.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module
-* exampleConfig.ps1: example configuration file
+* [addActiveDirectory.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/addActiveDirectory/addActiveDirectory.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [exampleConfig.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/addActiveDirectory/exampleConfig.ps1): example configuration file
 
 Place the files in a folder together and run the main script like so:
 

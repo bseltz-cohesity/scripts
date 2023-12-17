@@ -18,7 +18,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* agentGflags.ps1: the main powershell script
+* [agentGflags.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/agentGflags/agentGflags.ps1): the main powershell script
 
 Run the main script like so:
 

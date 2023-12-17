@@ -20,9 +20,9 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* addVlan.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module
-* vlanConfigExample.ps1: example configuration file
+* [addVlan.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/addVlan/addVlan.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [vlanConfigExample.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/addVlan/vlanConfigExample.ps1): example configuration file
 
 Place the files in a folder together and run the main script like so:
 

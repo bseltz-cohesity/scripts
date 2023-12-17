@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* includeMailboxes.ps1: the main PowerShell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [includeMailboxes.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/includeMailboxes/includeMailboxes.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place all files in a folder together. You can provide a list of users at the command line, or create a text file and populate with the user names or SMTP addresses, like so:
 

@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* backupVMsNow.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [backupVMsNow.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/backupVMsNow/backupVMsNow.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Create a text file containing a list of VMs. Note that these VMs must already be part of an existing protection job. Place all files in a folder together and run the main script like so:
 

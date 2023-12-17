@@ -22,9 +22,9 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* archiveAndExtend.ps1: the main powershell script
-* run-archiveAndExtend.ps1: launch wrapper
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [archiveAndExtend.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/archiveAndExtend/archiveAndExtend.ps1): the main powershell script
+* [run-archiveAndExtend.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/archiveAndExtend/run-archiveAndExtend.ps1): launch wrapper
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together, then we can run the script.
 

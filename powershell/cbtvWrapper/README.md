@@ -25,9 +25,9 @@ $scriptName = 'cloneBackupToView'
 
 ## Components
 
-* cbtvWrapper.ps1: the main wrapper powershell script
+* [cbtvWrapper.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cbtvWrapper/cbtvWrapper.ps1): the main wrapper powershell script
 * cloneBackupToView.ps1: the cloning script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 ## Example
 

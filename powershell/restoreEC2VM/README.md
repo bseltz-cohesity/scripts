@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* restoreEC2VM.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [restoreEC2VM.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/restoreEC2VM/restoreEC2VM.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place the files in a folder together, then you can run the script.
 

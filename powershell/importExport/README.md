@@ -31,7 +31,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 * importPolicies.ps1
 * importNasSources.ps1
 * importNasJobs.ps1
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 ## Exporting Objects
 

@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* registerPhysical.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [registerPhysical.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/registerPhysical/registerPhysical.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together, then run the script like so.
 

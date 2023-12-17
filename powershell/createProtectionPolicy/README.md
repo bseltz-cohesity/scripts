@@ -19,7 +19,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* createProtectionPolicy.ps1: the main powershell script
+* [createProtectionPolicy.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/createProtectionPolicy/createProtectionPolicy.ps1): the main powershell script
 * cohesityCluster.ps1: the multi-cluster Cohesity REST API helper module
 
 Place the files in a folder together, then we can run the script.

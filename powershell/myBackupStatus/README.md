@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* myBackupStatus.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [myBackupStatus.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/myBackupStatus/myBackupStatus.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together, then we can run the script.
 

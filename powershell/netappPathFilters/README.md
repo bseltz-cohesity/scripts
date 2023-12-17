@@ -8,8 +8,8 @@ The script will add to existing inclusions/exclusions (existing exclusions will 
 
 ## Components
 
-* netappPathFilters.ps1: the main PowerShell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [netappPathFilters.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/netappPathFilters/netappPathFilters.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place all files in a folder together (see download instructions below). The script takes a list of one or more inclusion or exclusion paths via the PowerShell input pipeline. For example to add inclusion paths:
 

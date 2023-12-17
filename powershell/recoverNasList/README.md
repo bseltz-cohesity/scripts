@@ -17,8 +17,8 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ## Components
 
-* recoverNasList.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [recoverNasList.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/recoverNasList/recoverNasList.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together. Create a text file for input, with the list of NAS UNC paths to recover, like so:
 

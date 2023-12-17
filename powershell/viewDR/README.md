@@ -27,14 +27,14 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ## Core Components
 
-* viewDR.ps1: performs failover/failback operations
-* failoverMonitor.ps1: displays the status of failover tasks
-* replicateViews.ps1: initiates backup/replication of views
-* cleanupJobs.ps1: assigns replication policy and cleans up old objects
-* cleanupUnmergedViews.ps1: delete unmerged views
-* cnameFailover.ps1: failover cname and SPN records
-* dfsFailover.ps1: failover DFS folder targets
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [viewDR.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/viewDR.ps1): performs failover/failback operations
+* [failoverMonitor.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/failoverMonitor.ps1): displays the status of failover tasks
+* [replicateViews.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/replicateViews.ps1): initiates backup/replication of views
+* [cleanupJobs.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/cleanupJobs.ps1): assigns replication policy and cleans up old objects
+* [cleanupUnmergedViews.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/cleanupUnmergedViews.ps1): delete unmerged views
+* [cnameFailover.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/cnameFailover.ps1): failover cname and SPN records
+* [dfsFailover.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/dfsFailover.ps1): failover DFS folder targets
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 ## Cohesity Setup (Initial State)
 

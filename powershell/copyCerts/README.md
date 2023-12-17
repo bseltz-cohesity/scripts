@@ -21,8 +21,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* copyCerts.ps1: the main PowerShell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [copyCerts.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/copyCerts/copyCerts.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

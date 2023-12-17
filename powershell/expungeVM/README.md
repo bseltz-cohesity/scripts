@@ -25,8 +25,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* expungeVM.ps1: the main powershell script
-* cohesity-api.ps1: Cohesity REST API helper module
+* [expungeVM.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/expungeVM/expungeVM.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): Cohesity REST API helper module
 
 Place both files in a folder together, then we can run the script.
 
