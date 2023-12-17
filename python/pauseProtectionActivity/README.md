@@ -18,8 +18,8 @@ chmod +x pauseProtectionActivity.py
 
 ## Components
 
-* pauseProtectionActivity.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [pauseProtectionActivity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pauseProtectionActivity/pauseProtectionActivity.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 To pause protection activity:
 

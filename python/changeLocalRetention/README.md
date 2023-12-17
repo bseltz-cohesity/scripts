@@ -6,8 +6,8 @@ This script changes the retention of snapshots on the locak cluster.
 
 ## Components
 
-* changeLocalRetention.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [changeLocalRetention.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/changeLocalRetention/changeLocalRetention.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 

@@ -6,8 +6,8 @@ This python script extends the retention of a monthly snappshot.
 
 ## Components
 
-* extendMonthlyRetention.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [extendMonthlyRetention.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendMonthlyRetention/extendMonthlyRetention.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 ## Download The Scripts
 

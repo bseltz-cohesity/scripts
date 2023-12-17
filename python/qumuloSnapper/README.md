@@ -23,9 +23,9 @@ chmod +x backupNow.py
 ## Components
 
 * prescript-example.sh wrapper script
-* qumuloSnap.py: python script to manage Qumulo snapshots
+* [qumuloSnap.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/qumuloSnapper/qumuloSnap.py): python script to manage Qumulo snapshots
 * backupNow.py: ptthon script to start Cohesity backups
-* pyhesity.py: the Cohesity REST API helper module
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 ## Basic Workflow
 

@@ -16,8 +16,8 @@ chmod +x createS3View.py
 
 ## Components
 
-* createS3View.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [createS3View.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/createS3View/createS3View.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

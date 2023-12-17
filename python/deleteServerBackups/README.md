@@ -20,8 +20,8 @@ chmod +x deleteServerBackups.py
 
 ## Components
 
-* deleteServerBackups.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [deleteServerBackups.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deleteServerBackups/deleteServerBackups.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

@@ -6,8 +6,8 @@ This script add or remote legal hold from all backups on the cluster.
 
 ## Components
 
-* legalHoldAll.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [legalHoldAll.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/legalHoldAll/legalHoldAll.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 

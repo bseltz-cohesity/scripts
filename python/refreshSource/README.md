@@ -18,8 +18,8 @@ chmod +x refreshSource.py
 
 ## Components
 
-* refreshSource.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [refreshSource.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/refreshSource/refreshSource.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

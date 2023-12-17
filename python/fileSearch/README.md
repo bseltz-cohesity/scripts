@@ -18,8 +18,8 @@ chmod +x backupNow.py
 
 ## Components
 
-* fileSearch.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [fileSearch.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/fileSearch/fileSearch.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place all files in a folder together. then, run the main script like so:
 

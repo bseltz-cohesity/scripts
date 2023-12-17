@@ -19,9 +19,9 @@ chmod +x protectGPFS.py
 
 ## Components
 
-* protectGPFS.py: the main python script
+* [protectGPFS.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectGPFS/protectGPFS.py): the main python script
 * basic_api.py: GPFS REST API helper module
-* pyhesity.py: Cohesity REST API helper module
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

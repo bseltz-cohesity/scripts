@@ -19,11 +19,11 @@ chmod +x awsce_control.sh
 
 ## Components
 
-* awsce_control.sh: the main bash script
-* powerCycleAWS.py: the power on/off process script
-* waitForJob.py: waits for inbound replication to complete before poweroff
-* storePassword.py: script to store passwords
-* pyhesity.py: the Cohesity REST API helper module
+* [awsce_control.sh](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAWS/awsce_control.sh): the main bash script
+* [powerCycleAWS.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAWS/powerCycleAWS.py): the power on/off process script
+* [waitForJob.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAWS/waitForJob.py): waits for inbound replication to complete before poweroff
+* [storePassword.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAWS/storePassword.py): script to store passwords
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 ### Installing the Prerequisites
 

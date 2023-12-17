@@ -18,8 +18,8 @@ chmod +x recoverVMsV2.py
 
 ## Components
 
-* recoverVMsV2.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [recoverVMsV2.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/recoverVMsV2/recoverVMsV2.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place the files in a folder together, then we can run the script. To restore a VM back to its original location with its original name and power it on:
 

@@ -6,8 +6,8 @@ This script changes the retention of archived snapshots.
 
 ## Components
 
-* changeArchiveRetention.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [changeArchiveRetention.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/changeArchiveRetention/changeArchiveRetention.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 

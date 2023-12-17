@@ -6,8 +6,8 @@ This python script registers a new generic NAS (NFS) mount point and creates a n
 
 ## Components
 
-* protectNewNFSMount.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [protectNewNFSMount.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectNewNFSMount/protectNewNFSMount.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

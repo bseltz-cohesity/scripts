@@ -20,8 +20,8 @@ chmod +x protectNetapp.py
 
 ## Components
 
-* protectNetapp.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [protectNetapp.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectNetapp/protectNetapp.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

@@ -6,12 +6,12 @@ This python script initiates an upgrade of a Cohesity cluster to a newer version
 
 ## Components
 
-* upgradeCluster.py: the main python script
-* pyhesity.py: Cohesity REST API helper module
+* [upgradeCluster.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/upgradeCluster/upgradeCluster.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): Cohesity REST API helper module
 
 ## Optional Components
 
-* upgradeServer.py: lightweight web server for hosting upgrade files
+* [upgradeServer.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/upgradeCluster/upgradeServer.py): lightweight web server for hosting upgrade files
 * cohesity-upgradeserver.service systemd-unit file to run upgradeServer as a daemon
 
 ## Download the Files

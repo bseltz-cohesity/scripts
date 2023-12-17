@@ -6,8 +6,8 @@ This python script clones a NAS volume as a Cohesity view. If the view already e
 
 ## Components
 
-* refreshNASclone.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [refreshNASclone.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/refreshNASclone/refreshNASclone.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 ## Download The Scripts
 

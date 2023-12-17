@@ -28,9 +28,9 @@ chmod +x test-deployCVE.sh
 
 ## Components
 
-* deployCVEcluster.py: the main python script
+* [deployCVEcluster.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deployCVE/deployCVEcluster.py): the main python script
 * cohesity-api.ps1: the Cohesity REST API helper module
-* test-deployCVE.sh: example command line
+* [test-deployCVE.sh](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deployCVE/test-deployCVE.sh): example command line
 * pyVmomi: Python SDK for the VMware vSphere API (see attributions below)
 
 Place all files in a folder together. then, run the main script like so:

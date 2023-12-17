@@ -6,9 +6,9 @@ This python script extends the retention of existing snapshots. It can set new e
 
 ## Components
 
-* extendRetention.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
-* smtptool.py: smtp functions to send email alerts
+* [extendRetention.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendRetention/extendRetention.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [smtptool.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendRetention/smtptool.py): smtp functions to send email alerts
 
 ## Download The Scripts
 

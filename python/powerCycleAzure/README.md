@@ -19,11 +19,11 @@ chmod +x azurece_control.sh
 
 ## Components
 
-* azurece_control.sh: the main bash script
-* powerCycleAzure.py: the power on/off process script
-* waitForJob.py: waits for inbound replication to complete before poweroff
-* storePassword.py: script to store passwords
-* pyhesity.py: the Cohesity REST API helper module
+* [azurece_control.sh](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/azurece_control.sh): the main bash script
+* [powerCycleAzure.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/powerCycleAzure.py): the power on/off process script
+* [waitForJob.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/waitForJob.py): waits for inbound replication to complete before poweroff
+* [storePassword.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/storePassword.py): script to store passwords
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 ### Installing the Prerequisites
 

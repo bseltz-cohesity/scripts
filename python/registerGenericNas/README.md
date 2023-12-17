@@ -18,8 +18,8 @@ chmod +x registerGenericNas.py
 
 ## Components
 
-* registerGenericNas.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [registerGenericNas.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/registerGenericNas/registerGenericNas.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

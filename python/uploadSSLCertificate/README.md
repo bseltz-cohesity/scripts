@@ -6,8 +6,8 @@ This python script uploads and installs an SSL certificate and private key onto 
 
 ## Components
 
-* uploadSSLCertificate.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [uploadSSLCertificate.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/uploadSSLCertificate/uploadSSLCertificate.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 

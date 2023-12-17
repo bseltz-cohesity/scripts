@@ -18,8 +18,8 @@ chmod +x detectedAnomalies.py
 
 ## Components
 
-* detectedAnomalies.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [detectedAnomalies.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/detectedAnomalies/detectedAnomalies.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

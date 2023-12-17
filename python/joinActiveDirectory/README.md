@@ -6,8 +6,8 @@ This script will join the Cohesity cluster to an Active Directory domain.
 
 ## Components
 
-* joinActiveDirectory.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [joinActiveDirectory.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/joinActiveDirectory/joinActiveDirectory.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 

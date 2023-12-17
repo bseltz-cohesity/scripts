@@ -6,8 +6,8 @@ This python script replicates old existing snapshots.
 
 ## Components
 
-* replicateOldSnapshots.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [replicateOldSnapshots.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/replicateOldSnapshots/replicateOldSnapshots.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 

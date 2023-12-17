@@ -20,8 +20,8 @@ chmod +x downloadZipFile.py
 
 ## Components
 
-* downloadZipFile.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [downloadZipFile.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/downloadZipFile/downloadZipFile.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 ## Example
 

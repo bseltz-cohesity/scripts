@@ -6,8 +6,8 @@ This script demonstrates how to tear down a cloned SQL DB, Oracle DB, VM, or Vie
 
 ## Components
 
-* destroyClone.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [destroyClone.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/destroyClone/destroyClone.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 

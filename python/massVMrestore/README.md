@@ -19,9 +19,9 @@ chmod +x massVMrestore.py
 
 ## Components
 
-* massVMrestore.py: the main python script
-* massVMrestore.json: example targets file
-* pyhesity.py: the Cohesity REST API helper module
+* [massVMrestore.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/massVMrestore/massVMrestore.py): the main python script
+* [massVMrestore.json](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/massVMrestore/massVMrestore.json): example targets file
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place the files in a folder together, then we can edit the target configuration JSON file. In the JSON file, configure host-datastore target pairs like this:
 

@@ -37,10 +37,10 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pyt
 
 ## Components
 
-* protectFlashblade.py: the main python script (creates one job for all selected volumes)
-* protectFlashblade-multi.py: alternative that creates one job per volume
-* flashBladeProtectionStatus.py: list protection status for all volumes of a flashblade
-* pyhesity.py: the Cohesity REST API helper module
+* [protectFlashblade.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectFlashblade/protectFlashblade.py): the main python script (creates one job for all selected volumes)
+* [protectFlashblade-multi.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectFlashblade/protectFlashblade-multi.py): alternative that creates one job per volume
+* [flashBladeProtectionStatus.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectFlashblade/flashBladeProtectionStatus.py): list protection status for all volumes of a flashblade
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place the files in a folder together and run the script like so:
 

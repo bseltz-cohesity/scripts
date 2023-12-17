@@ -8,8 +8,8 @@ This python script will expire old local snapshots. Optionally you can confirm r
 
 ## Components
 
-* expireOldSnapshots.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [expireOldSnapshots.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/expireOldSnapshots/expireOldSnapshots.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 

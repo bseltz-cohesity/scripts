@@ -18,8 +18,8 @@ chmod +x excludeMongoCollection.py
 
 ## Components
 
-* excludeMongoCollection.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [excludeMongoCollection.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeMongoCollection/excludeMongoCollection.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

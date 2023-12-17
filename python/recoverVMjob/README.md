@@ -19,7 +19,7 @@ chmod +x recoverVMjob.py
 ## Components
 
 * recoverVMJob.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place the files in a folder together, then we can run the script.
 

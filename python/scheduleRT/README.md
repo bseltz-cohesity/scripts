@@ -6,9 +6,9 @@ This python script schedules the opening of Cohesity support channel for some ti
 
 ## Components
 
-* scheduleRT.py: the main python script to set the schedule
-* enableRT.py: the script that runs as scheduled
-* pyhesity.py: the Cohesity REST API helper module
+* [scheduleRT.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/scheduleRT/scheduleRT.py): the main python script to set the schedule
+* [enableRT.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/scheduleRT/enableRT.py): the script that runs as scheduled
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 ## Deployment
 

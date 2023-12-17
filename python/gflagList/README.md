@@ -6,8 +6,8 @@ This python script lists to complete set of gflags for a service, and ouputs to 
 
 ## Components
 
-* gflagList.py: the main python script
-* pyhesity.py: the Cohesity python helper module
+* [gflagList.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/gflagList/gflagList.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity python helper module
 
 You can download the scripts using the following commands:
 

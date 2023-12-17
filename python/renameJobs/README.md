@@ -18,8 +18,8 @@ chmod +x renameJobs.py
 
 ## Components
 
-* renameJobs.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [renameJobs.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/renameJobs/renameJobs.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 To rename a protection job, place all files in a folder together, then run the main script like so:
 

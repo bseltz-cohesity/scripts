@@ -18,8 +18,8 @@ chmod +x adHocProtectVM.py
 
 ## Components
 
-* adHocProtectVM.py: the main PowerShell script
-* pyhesity.py: the Cohesity REST API helper module
+* [adHocProtectVM.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/adHocProtectVM/adHocProtectVM.py): the main PowerShell script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place all files in a folder together. then, run the main script like so:
 

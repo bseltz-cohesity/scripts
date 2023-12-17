@@ -6,9 +6,9 @@ This python script applies exclusions to an autoprotect VM protection job.
 
 ## Components
 
-* excludeVMs.py: the main python script (one job only)
-* excludeVMsAllJobs.py: alternate script (all jobs)
-* pyhesity.py: the Cohesity REST API helper module
+* [excludeVMs.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/excludeVMs.py): the main python script (one job only)
+* [excludeVMsAllJobs.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/excludeVMsAllJobs.py): alternate script (all jobs)
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 * pyVmomi: Python SDK for the VMware vSphere API (see attribution below)
 
 You can download the scripts using the following commands:

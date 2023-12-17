@@ -35,8 +35,8 @@ chmod +x policyTool.py
 
 ## Components
 
-* policyTool.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [policyTool.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/policyTool/policyTool.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

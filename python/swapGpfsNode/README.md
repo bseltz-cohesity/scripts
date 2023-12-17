@@ -18,8 +18,8 @@ chmod +x swapGpfsNode.py
 
 ## Components
 
-* swapGpfsNode.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [swapGpfsNode.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/swapGpfsNode/swapGpfsNode.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

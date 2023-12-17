@@ -20,9 +20,9 @@ chmod +X instantVolumeMountDestroy.py
 
 ## Components
 
-* instantVolumeMount.py: the main python script
-* instantVolumeMountDestroy.py: script to tear down the mounted volume
-* pyhesity.py: the Cohesity REST API helper module
+* [instantVolumeMount.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/instantVolumeMount/instantVolumeMount.py): the main python script
+* [instantVolumeMountDestroy.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/instantVolumeMount/instantVolumeMountDestroy.py): script to tear down the mounted volume
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place the files in a folder together and run the main script like so:
 

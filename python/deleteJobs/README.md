@@ -18,8 +18,8 @@ chmod +x deleteJobs.py
 
 ## Components
 
-* deleteJobs.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [deleteJobs.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deleteJobs/deleteJobs.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 To delete some protection jobs, place all files in a folder together, then run the main script like so:
 

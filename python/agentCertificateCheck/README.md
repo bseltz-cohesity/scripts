@@ -8,8 +8,8 @@ Note: this script will only run on Linux where the openssl command is available.
 
 ## Components
 
-* agentCertificateCheck.py: the main python script - md5 checksum: 548c078028382035f7a41c9f4308d8df
-* pyhesity.py: the Cohesity REST API helper module - md5 checksum: 2147a0db6ec080eb3a489b4a0325e0ce
+* [agentCertificateCheck.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/agentCertificateCheck/agentCertificateCheck.py): the main python script - md5 checksum: 548c078028382035f7a41c9f4308d8df
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module - md5 checksum: 2147a0db6ec080eb3a489b4a0325e0ce
 
 You can download the scripts using the following commands:
 

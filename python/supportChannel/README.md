@@ -18,8 +18,8 @@ chmod +x supportChannel.py
 
 ## Components
 
-* supportChannel.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [supportChannel.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/supportChannel/supportChannel.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

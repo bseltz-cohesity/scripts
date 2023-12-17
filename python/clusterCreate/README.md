@@ -20,9 +20,9 @@ chmod +x clusterCreate-test.sh
 
 ## Components
 
-* clusterCreate.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
-* clusterCreate-test.sh: example command line
+* [clusterCreate.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/clusterCreate/clusterCreate.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [clusterCreate-test.sh](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/clusterCreate/clusterCreate-test.sh): example command line
 
 ### Note: by running the script, you are accepting the Cohesity End User License Agreement
 

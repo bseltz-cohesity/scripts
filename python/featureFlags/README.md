@@ -6,8 +6,8 @@ This python script gets, sets, exports and imports feature flags.
 
 ## Components
 
-* featureFlags.py: the main python script
-* pyhesity.py: the Cohesity python helper module
+* [featureFlags.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/featureFlags/featureFlags.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity python helper module
 
 You can download the scripts using the following commands:
 

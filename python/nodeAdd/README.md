@@ -6,8 +6,8 @@ This python script adds a free node to a cluster.
 
 ## Components
 
-* nodeAdd.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [nodeAdd.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/nodeAdd/nodeAdd.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

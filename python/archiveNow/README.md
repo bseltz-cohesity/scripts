@@ -6,8 +6,8 @@ This python script archives the latest local snapshot from the specified jobs.
 
 ## Components
 
-* archiveNow.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [archiveNow.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/archiveNow/archiveNow.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 

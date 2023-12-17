@@ -18,8 +18,8 @@ chmod +x pauseResumeJobs.py
 
 ## Components
 
-* pauseResumeJobs.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [pauseResumeJobs.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pauseResumeJobs/pauseResumeJobs.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 To show the state of the jobs:
 

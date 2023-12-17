@@ -6,8 +6,8 @@ This python script gets, sets and imports gflags.
 
 ## Components
 
-* gflags.py: the main python script
-* pyhesity.py: the Cohesity python helper module
+* [gflags.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/gflags/gflags.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity python helper module
 
 You can download the scripts using the following commands:
 

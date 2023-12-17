@@ -6,8 +6,8 @@ This python script finds external targets that use the specified access key, and
 
 ## Components
 
-* heliosUpdateTargetSecretKey.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [heliosUpdateTargetSecretKey.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/heliosUpdateTargetSecretKey/heliosUpdateTargetSecretKey.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 

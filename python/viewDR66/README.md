@@ -22,10 +22,10 @@ chmod +x protectViews.py
 
 ## Components
 
-* viewDR.py: execute view failover/failback tasks
-* deleteOldViews.py: delete old views after failover/failback
-* protectViews.py: protect views after failover/failback
-* pyhesity.py: the Cohesity REST API helper module
+* [viewDR.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/viewDR66/viewDR.py): execute view failover/failback tasks
+* [deleteOldViews.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/viewDR66/deleteOldViews.py): delete old views after failover/failback
+* [protectViews.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/viewDR66/protectViews.py): protect views after failover/failback
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 ## Common Parameters (for all scripts)
 

@@ -18,8 +18,8 @@ chmod +x strikeReport.py
 
 ## Components
 
-* stopCluster.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [stopCluster.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/stopCluster/stopCluster.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

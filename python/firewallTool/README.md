@@ -18,8 +18,8 @@ chmod +x firewallTool.py
 
 ## Components
 
-* firewallTool.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [firewallTool.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/firewallTool/firewallTool.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

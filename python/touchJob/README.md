@@ -6,8 +6,8 @@ This script simply gets and puts a protection job, the purpose being to change t
 
 ## Components
 
-* touchJob.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [touchJob.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/touchJob/touchJob.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 

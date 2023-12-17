@@ -6,8 +6,8 @@ This script updates the acess key and secret key in an AWS source registration.
 
 ## Components
 
-* updateAWSCredentials.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [updateAWSCredentials.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/updateAWSCredentials/updateAWSCredentials.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 

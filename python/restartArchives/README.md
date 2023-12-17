@@ -6,8 +6,8 @@ This python script restarts canceled or failed archive tasks.
 
 ## Components
 
-* restartArchives.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [restartArchives.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/restartArchives/restartArchives.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
