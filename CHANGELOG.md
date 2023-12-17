@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-12-17
+
+* READMEs: [`Update`] added links to raw files for copy/paste access
+
 ## 2023-12-16
 
 * [copyRoles.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/copyRoles) [`New`] python script to copy custom roles from one Cohesity cluster to another
