@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 ## Components
 
-* migrateSQLDB.ps1: the main powershell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [migrateSQLDB.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/migrateSQLDB/migrateSQLDB.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 ## Operating Modes
 

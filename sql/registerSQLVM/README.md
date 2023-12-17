@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 ## Components
 
-* registerSQLVM.ps1: the main PowerShell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [registerSQLVM.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/registerSQLVM/registerSQLVM.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Then, run the main script like so:
 
