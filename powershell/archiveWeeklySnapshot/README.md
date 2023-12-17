@@ -19,7 +19,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* [archiveWeeklySnapshot.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/archiveWeeklySnapshot/archiveWeeklySnapshot.ps1): the main powershell script
+* [archiveWeeklySnapshot.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/archiveWeeklySnapshot/archiveWeeklySnapshot.ps1 "download"): the main powershell script
 * [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together, then we can run the script.
@@ -52,3 +52,4 @@ Then, if you're happy with the list of snapshots that will be archived, run the 
 ## Running and Scheduling PowerShell Scripts
 
 For additional help running and scheduling Cohesity PowerShell scripts, please see <https://github.com/bseltz-cohesity/scripts/blob/master/powershell/Running%20Cohesity%20PowerShell%20Scripts.pdf>
+``
