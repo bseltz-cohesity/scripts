@@ -253,7 +253,9 @@ $data | Export-CSV -Append -Path $csvFileName
 $csv = Import-CSV -Path $csvFileName
 
 # exclude environments
-$csv = $csv | Where-Object environment -notin $excludeEnvironment
+if($excludeEnvironment){
+    $csv = $csv | Where-Object environment -notin $excludeEnvironment
+}
 
 # convert timestamps to dates
 foreach($epochColum in ($epochColums | Sort-Object -Unique)){
