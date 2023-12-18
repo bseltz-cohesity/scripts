@@ -179,7 +179,7 @@ for vmname in vmnames:
 
 if vcentername:
     # select vCenter
-    vCenterSource = [v for v in api('get', 'protectionSources?environments=kVMware') if v['protectionSource']['name'].lower() == vcentername.lower()]
+    vCenterSource = [v for v in api('get', 'protectionSources?environments=kVMware&includeVMFolders=true') if v['protectionSource']['name'].lower() == vcentername.lower()]
     vCenterList = api('get', '/entitiesOfType?environmentTypes=kVMware&vmwareEntityTypes=kVCenter&vmwareEntityTypes=kStandaloneHost')
     vCenter = [v for v in vCenterList if v['displayName'].lower() == vcentername.lower()]
     if len(vCenterSource) == 0 or len(vCenter) == 0:
@@ -211,10 +211,23 @@ if vcentername:
         print('Datastore %s not found' % datastorename)
         exit()
 
-    # select VM folder
-    vmFolders = api('get', '/vmwareFolders?resourcePoolId=%s&vCenterId=%s' % (resourcePoolId, vCenterId))
-    vmFolder = [v for v in vmFolders['vmFolders'] if v['displayName'].lower() == foldername]
-    if len(vmFolder) == 0:
+    vmFolderId = {}
+
+    def walkVMFolders(node, parent=None, fullPath=''):
+        fullPath = "%s/%s" % (fullPath, node['protectionSource']['name'].lower())
+        if len(fullPath.split('vm/')) > 1:
+            relativePath = fullPath.split('vm/', 2)[1]
+            vmFolderId[fullPath] = node['protectionSource']['id']
+            vmFolderId[relativePath] = node['protectionSource']['id']
+            vmFolderId["/%s" % relativePath] = node['protectionSource']['id']
+            vmFolderId["%s" % fullPath[1:]] = node['protectionSource']['id']
+        if 'nodes' in node:
+            for subnode in node['nodes']:
+                walkVMFolders(subnode, node, fullPath)
+
+    walkVMFolders(vCenterSource[0])
+    folderId = vmFolderId.get(foldername.lower(), None)
+    if folderId is None:
         print('folder %s not found' % foldername)
         exit()
 
@@ -247,7 +260,7 @@ if vcentername:
                 "id": resourcePoolId
             },
             "vmFolder": {
-                "id": vmFolder[0]['id']
+                "id": folderId
             }
         }
     }

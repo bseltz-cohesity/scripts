@@ -97,6 +97,15 @@ To restore a VM to a new location:
 * -l, --listrecoverypoints: (optional) show available recovery points (for first VM only)
 * -r, --recoverypoint: (optional) restore from a specific date, e.g. '2021-04-12 23:45:00' (default is latest backup)
 
+## Specifying a Folder
+
+You can specify a folder to restore to using any of the following formats:
+
+* /vCenter.mydomain.net/Datacenters/DataCenter1/vm/MyFolder/MySubFolder
+* vCenter.mydomain.net/Datacenters/DataCenter1/vm/MyFolder/MySubFolder
+* /MyFolder/MySubFolder
+* MyFolder/MySubFolder
+
 ## The Python Helper Module - pyhesity.py
 
 The helper module provides functions to simplify operations such as authentication, api calls, storing encrypted passwords, and converting date formats. The module requires the requests python module.
