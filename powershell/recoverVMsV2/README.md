@@ -82,3 +82,12 @@ Note: when restoring to a standalone ESXi host, review the object hierarchy of t
 * -folderName is 'vm'
 * -vCenterName is the registered source name of the ESXi host
 * -hostName is the registered source name of the ESXi host
+
+## Specifying a Folder
+
+You can specify a folder to restore to using any of the following formats:
+
+* /vCenter.mydomain.net/Datacenters/DataCenter1/vm/MyFolder/MySubFolder
+* vCenter.mydomain.net/Datacenters/DataCenter1/vm/MyFolder/MySubFolder
+* /MyFolder/MySubFolder
+* MyFolder/MySubFolder

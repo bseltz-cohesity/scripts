@@ -147,7 +147,7 @@ if($vCenterName){
     }
 
     # select vCenter
-    $vCenterSource = api get protectionSources?environments=kVMware | Where-Object {$_.protectionSource.name -eq $vCenterName}
+    $vCenterSource = api get "protectionSources?environments=kVMware&includeVMFolders=true" | Where-Object {$_.protectionSource.name -eq $vCenterName}
     $vCenterList = api get /entitiesOfType?environmentTypes=kVMware`&vmwareEntityTypes=kVCenter`&vmwareEntityTypes=kStandaloneHost
     $vCenter = $vCenterList | Where-Object { $_.displayName -ieq $vCenterName }
     $vCenterId = $vCenter.id
@@ -184,12 +184,38 @@ if($vCenterName){
     }
 
     # select VM folder
-    $vmFolders = api get /vmwareFolders?resourcePoolId=$resourcePoolId`&vCenterId=$vCenterId
-    $vmFolder = $vmFolders.vmFolders | Where-Object displayName -eq $folderName
-    if(! $vmFolder){
+    $vmfolderId = @{}
+
+    function walkVMFolders($node, $parent=$null, $fullPath=''){
+        $fullPath = "{0}/{1}" -f $fullPath, $node.protectionSource.name
+        $relativePath = $fullPath.split('vm/', 2)[1]
+        if($relativePath){
+            $vmFolderId[$fullPath] = $node.protectionSource.id
+            $vmFolderId[$relativePath] = $node.protectionSource.id
+            $vmFolderId["/$relativePath"] = $node.protectionSource.id
+            $vmFolderId["$($fullPath.Substring(1))"] = $node.protectionSource.id
+        }
+        if($node.PSObject.Properties['nodes']){
+            foreach($subnode in $node.nodes){
+                walkVMFolders $subnode $node $fullPath
+            }
+        }
+    }
+    
+    walkVMFolders $vCenterSource
+
+    $folderId = $vmfolderId[$folderName]
+    if(! $folderId){
         write-host "folder $folderName not found" -ForegroundColor Yellow
         exit
     }
+        
+    # $vmFolders = api get /vmwareFolders?resourcePoolId=$resourcePoolId`&vCenterId=$vCenterId
+    # $vmFolder = $vmFolders.vmFolders | Where-Object displayName -eq $folderName
+    # if(! $vmFolder){
+    #     write-host "folder $folderName not found" -ForegroundColor Yellow
+    #     exit
+    # }
 
     $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.recoveryTargetConfig.recoverToNewSource = $True
     $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.recoveryTargetConfig["newSourceConfig"] = @{
@@ -208,7 +234,7 @@ if($vCenterName){
                 "id" = $resourcePoolId
             };
             "vmFolder"      = @{
-                "id" = $vmFolder.id
+                "id" = $folderId
             }
         }
     }
