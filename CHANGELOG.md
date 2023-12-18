@@ -1,5 +1,11 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-12-18
+
+* [recoverVMsV2.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/recoverVMsV2) [`Update`] added support for nested VM folders
+* [recoverVMsV2.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/recoverVMsV2) [`Update`] added support for nested VM folders
+* [heliosCSVReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/helios-reporting/powershell/heliosCSVReport) [`Fix`] empty results when report doesn't include an environment column
+
 ## 2023-12-17
 
 * READMEs: [`Update`] added links to raw files for copy/paste access
