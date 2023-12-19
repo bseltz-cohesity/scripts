@@ -12,12 +12,8 @@ This python script extends the retention of existing snapshots. It can set new e
 
 ## Download The Scripts
 
-The script is designed to run from the Cohesity cluster. To download and install the script, SSH into the cohesity cluster and run the following commands to download the scripts:
-
 ```bash
 # begin download commands
-mkdir /home/cohesity/data/scripts
-cd /home/cohesity/data/scripts
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendRetention/extendRetention.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendRetention/smtptool.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
@@ -90,19 +86,6 @@ or
 ```bash
 sudo easy_install requests
 ```
-
-### Stored Passwords
-
-There is no parameter to provide your password. The fist time you authenticate to a cluster, you will be prompted for your password. The password will be encrypted and stored in the user's home folder. The stored password will then be used automatically so that scripts can run unattended.
-
-If your password changes, use apiauth with updatepw to prompt for the new password. Run python interactively and enter the following commands:
-
-```python
-from pyhesity import *
-apiauth('mycluster', 'myuser', 'mydomain', updatepw=True)
-```
-
-If you don't want to store a password and want to be prompted to enter your password when you run your script, use prompt=True
 
 ## A Note about Timezones
 
