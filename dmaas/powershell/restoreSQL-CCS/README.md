@@ -45,7 +45,6 @@ To restore all databases (except system databases) to an alternate server:
 ./restoreSQL-CCS.ps1 -username myusername@mydomain.net `
                      -region us-west-2 `
                      -sourceServer sqlserver1.mydomain.net `
-                     -sourceServer sqlserver1.mydomain.net `
                      -allDBs `
                      -targetServer sqlserver2.mydomain.net `
                      -commit
