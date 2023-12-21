@@ -4,6 +4,11 @@
 
 * [viewDR](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/viewDR) [`Update`] added -emailMfaCode option to the viewDR scripts
 
+## 2023-12-19
+
+* [extendRetention](https://github.com/bseltz-cohesity/scripts/tree/master/windows/extendRetention) (windows) [`New`] binary version of extendRetention for windows
+* [extendRetention](https://github.com/bseltz-cohesity/scripts/tree/master/windows/extendRetention) (linux) [`New`] binary version of extendRetention for linux
+
 ## 2023-12-18
 
 * [recoverVMsV2.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/recoverVMsV2) [`Update`] added support for nested VM folders
