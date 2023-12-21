@@ -121,6 +121,7 @@ The protection jobs should be configured to create a Remote View (with the same 
 * -tenant: (optional) organization to impersonate
 * -mcm: (optional) connect through MCM
 * -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
 * -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
 
 ## Authenticating to Helios
