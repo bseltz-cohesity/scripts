@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-12-21
+
+* [viewDR](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/viewDR) [`Update`] added -emailMfaCode option to the viewDR scripts
+
 ## 2023-12-18
 
 * [recoverVMsV2.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/recoverVMsV2) [`Update`] added support for nested VM folders
