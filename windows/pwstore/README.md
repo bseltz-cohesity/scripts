@@ -1,4 +1,4 @@
-# Store and Retrieve an Encrypted Password for Linux
+# Store and Retrieve an Encrypted Password for Windows
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
@@ -6,32 +6,26 @@ This is a compiled binary that stores and retrieves a password from an encrypted
 
 ## Download The Binary
 
-<https://github.com/bseltz-cohesity/scripts/raw/master/linux/pwstore/pwstore>
+<https://github.com/bseltz-cohesity/scripts/raw/master/windows/pwstore/pwstore.exe>
 
 Run the tool like so:
 
 ```bash
 # example
 
-# grant execute permissions
-chmod +x pwstore
-
 # store a password
-./pwstore -v mycluster -u myusername -d mydomain.net
+pwstore.exe -v mycluster -u myusername -d mydomain.net
   Enter new password: ********
 Confirm new password: ********
 
 # retrieve a password
-./pwstore -v mycluster -u myusername -d mydomain.net -g
+pwstore.exe -v mycluster -u myusername -d mydomain.net -g
 Sw0rdFi$h
 
-# retrieve a password into a bash variable
-mypassword=$(./pwstore -v mycluster -u myusername -d mydomain.net -g)
-echo $mypassword
-Sw0rdFi$h
-
-# retrieve a password embedded in a command
-./iris_cli -server ve3 -username admin -password $(./pwstore -v mycluster -u myusername -d mydomain.net -g) cluster ls-gflags
+# retrieve a password into a variable and use it in a command
+@echo off
+FOR /F "tokens=*" %%g IN ('pwstore.exe -v mycluster -u myusername -d mydomain.net -g') do (SET PWTEST=%%g) > null
+iris_cli -server ve3 -username admin -password "%PWTEST%" cluster ls-gflags 2>null
 
 # end example
 ```
