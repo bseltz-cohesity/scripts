@@ -31,7 +31,7 @@ echo $mypassword
 Sw0rdFi$h
 
 # retrieve a password embedded in a command
-./iris_cli -server ve3 -username admin -password $(./pwstore -v mycluster -u myusername -d mydomain.net -g) cluster ls-gflags
+./iris_cli -server mycluster -username myusername -domain mydomain.net -password $(./pwstore -v mycluster -u myusername -d mydomain.net -g) cluster ls-gflags
 
 # end example
 ```

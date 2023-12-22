@@ -25,7 +25,7 @@ Sw0rdFi$h
 # retrieve a password into a variable and use it in a command
 @echo off
 FOR /F "tokens=*" %%g IN ('pwstore.exe -v mycluster -u myusername -d mydomain.net -g') do (SET PWTEST=%%g) > null
-iris_cli -server ve3 -username admin -password "%PWTEST%" cluster ls-gflags 2>null
+iris_cli -server mycluster -username myusername -domain mydomain.net -password "%PWTEST%" cluster ls-gflags 2>null
 
 # end example
 ```
