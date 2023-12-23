@@ -52,5 +52,5 @@ Place both files in a folder together and run the main script like so:
 * -showFinished: (optional) also display completed replications
 * -olderThan: (optional) only show/cancel replications older than X days (use with -cancelall)
 * -newerThan: (optional) only show/cancel replications newer than X days (use with -cancelall)
-* -ifExpiringBefore: (optional) consider outdated any replicas that will expire in X days or less (use with -canceloutdated)
+* -daysToKeep: (optional) consider outdated any replicas that will expire in X days or less (use with -canceloutdated)
 * -commit: (optional) perform cancelations, otherwise run in test mode

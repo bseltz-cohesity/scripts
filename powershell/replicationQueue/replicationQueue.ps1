@@ -17,7 +17,7 @@ param (
     [Parameter()][int]$numRuns = 999,
     [Parameter()][int]$olderThan,
     [Parameter()][int]$newerThan,
-    [Parameter()][int]$ifExpiringBefore,
+    [Parameter()][int]$daysToKeep = 0,
     [Parameter()][switch]$cancelAll,
     [Parameter()][switch]$cancelOutdated,
     [Parameter()][switch]$showFinished,
@@ -145,15 +145,11 @@ if($runningTasks.Keys.Count -gt 0){
                 foreach($task in $run.backupJobRuns.protectionRuns[0].copyRun.activeTasks){
                     if($task.snapshotTarget.type -eq 2){
                         $noLongerNeeded = ''
-                        $daysToKeep = $task.retentionPolicy.numDaysToKeep
                         $usecsToKeep = $daysToKeep * 1000000 * 86400
                         $expiry = $startTimeUsecs + $usecsToKeep
                         $timePassed = $nowUsecs - $runStartTimeUsecs
-                        if($ifExpiringBefore){
-                            $ifExpiringBeforeUsecs = $expiry - ($ifExpiringBefore * 1000000 * 86400)
-                            if($nowUsecs -ge $ifExpiringBeforeUsecs){
-                                $noLongerNeeded = "NO LONGER NEEDED"
-                            }
+                        if($daysToKeep -gt 0 -and $timePassed > $usecsToKeep){
+                            $noLongerNeeded = "NO LONGER NEEDED"
                         }
                         if($timePassed -gt $usecsToKeep){
                             $noLongerNeeded = "NO LONGER NEEDED"
