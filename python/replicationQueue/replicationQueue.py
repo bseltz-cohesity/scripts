@@ -22,7 +22,9 @@ parser.add_argument('-a', '--cancelall', action='store_true')
 parser.add_argument('-o', '--canceloutdated', action='store_true')
 parser.add_argument('-t', '--olderthan', type=int, default=0)
 parser.add_argument('-y', '--youngerthan', type=int, default=0)
+parser.add_argument('-k', '--daystokeep', type=int, default=0)
 parser.add_argument('-n', '--numruns', type=int, default=9999)
+parser.add_argument('-f', '--showfinished', action='store_true')
 args = parser.parse_args()
 
 vip = args.vip
@@ -41,6 +43,8 @@ canceloutdated = args.canceloutdated
 numruns = args.numruns
 olderthan = args.olderthan
 youngerthan = args.youngerthan
+daysToKeep = args.daystokeep
+showfinished = args.showfinished
 
 if olderthan > 0:
     olderthanusecs = timeAgo(olderthan, 'days')
@@ -73,7 +77,7 @@ runningTasks = {}
 # for each active job
 jobs = api('get', 'protectionJobs')
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
-    if 'isDeleted' not in job and ('isActive' not in job or job['isActive'] is not False):
+    if 'isDeleted' not in job:  # and ('isActive' not in job or job['isActive'] is not False):
         jobId = job['id']
         if jobname is None or job['name'].lower() == jobname.lower():
             jobName = job['name']
@@ -90,7 +94,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                     for copyRun in run['copyRun']:
                         # store run details in dictionary
                         if copyRun['target']['type'] == 'kRemote':
-                            if copyRun['status'] not in finishedStates:
+                            if copyRun['status'] not in finishedStates or showfinished:
                                 if remotecluster is None or copyRun['target']['replicationTarget']['clusterName'].lower() == remotecluster.lower():
                                     runningTask = {
                                         "jobname": jobName,
@@ -108,21 +112,20 @@ if len(runningTasks.keys()) > 0:
     # for each replicating run - sorted from oldest to newest
     for startTimeUsecs in sorted(runningTasks.keys()):
         t = runningTasks[startTimeUsecs]
-        print("%s  %s (%s)" % (usecsToDate(t['startTimeUsecs']), t['jobname'], t['jobId']))
         # get detailed run info
         run = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&id=%s' % (t['startTimeUsecs'], t['jobId']))
         runStartTimeUsecs = run[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['startTimeUsecs']
         # get replication task(s)
         if 'activeTasks' in run[0]['backupJobRuns']['protectionRuns'][0]['copyRun']:
+            print("%s  %s (%s)" % (usecsToDate(t['startTimeUsecs']), t['jobname'], t['jobId']))
             for task in run[0]['backupJobRuns']['protectionRuns'][0]['copyRun']['activeTasks']:
                 if task['snapshotTarget']['type'] == 2:
                     if remotecluster is None or task['snapshotTarget']['replicationTarget']['clusterName'].lower() == remotecluster.lower():
-                        # determine if run is now older than the intended retention
+                        # determine if run is now older than the desired retention
                         noLongerNeeded = ''
-                        daysToKeep = task['retentionPolicy']['numDaysToKeep']
                         usecsToKeep = daysToKeep * 1000000 * 86400
                         timePassed = nowUsecs - runStartTimeUsecs
-                        if timePassed > usecsToKeep:
+                        if daysToKeep > 0 and timePassed > usecsToKeep:
                             noLongerNeeded = "NO LONGER NEEDED"
                         if cancelall or (canceloutdated and noLongerNeeded == "NO LONGER NEEDED"):
                             print('                       Replication Task ID: %s  %s (canceling)' % (task['taskUid']['objectId'], noLongerNeeded))
@@ -137,5 +140,7 @@ if len(runningTasks.keys()) > 0:
                             result = api('post', 'protectionRuns/cancel/%s' % t['jobId'], cancelTaskParams)
                         else:
                             print('                       Replication Task ID: %s  %s' % (task['taskUid']['objectId'], noLongerNeeded))
+        elif showfinished:
+            print("%s   %s (%s) %s" % (usecsToDate(t['startTimeUsecs']), t['jobname'], t['jobId'], t['status']))
 else:
     print('\nNo active replication tasks found')

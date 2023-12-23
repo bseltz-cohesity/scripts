@@ -46,6 +46,8 @@ Place both files in a folder together and run the main script like so:
 * -j, --jobname: (optional) show/cancel for this job only
 * -r, --remotecluster: (optional) only show/cancel for thiis remote cluster only
 * -n, --numRuns: (optional) number of runs per job to inspect (default is 9999)
+* -k, --daystokeep: (optional) show as outdated if original backup time is older than X days ago
+* -f, --showfinished: (optional) show finished replications
 
 ## The Python Helper Module - pyhesity.py
 
