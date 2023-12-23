@@ -5,6 +5,11 @@
 * [replicationQueue.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/replicationQueue) [`Update`] added --daystokeep and --showfinished parameters
 * [replicationQueue.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/replicationQueue) [`Update`] added --daystokeep parameter
 
+## 2023-12-22
+
+* [pwstore](https://github.com/bseltz-cohesity/scripts/tree/master/linux/pwstore) (linux) [`New`] compiled executable to store and retrieve a password from an encrypted file
+* [pwstore.exe](https://github.com/bseltz-cohesity/scripts/tree/master/windows/pwstore) (windows) [`New`] compiled executable to store and retrieve a password from an encrypted file
+
 ## 2023-12-21
 
 * [viewDR](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/viewDR) [`Update`] added -emailMfaCode option to the viewDR scripts
