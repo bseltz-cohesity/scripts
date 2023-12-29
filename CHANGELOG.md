@@ -1,5 +1,11 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-12-29
+
+* [agentGflags](https://github.com/bseltz-cohesity/scripts/tree/master/linux/agentGflags) (linux) [`New`] set agent gflags via SSH
+* [agentGflags.exe](https://github.com/bseltz-cohesity/scripts/tree/master/windows/agentGflags) (windows) [`New`] set agent gflags via SSH
+* [agentGflags.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/agentGflags) (python) [`New`] set agent gflags via SSH
+
 ## 2023-12-23
 
 * [replicationQueue.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/replicationQueue) [`Update`] added --daystokeep and --showfinished parameters
