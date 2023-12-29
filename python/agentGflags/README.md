@@ -4,7 +4,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This python script sets Cohesity agent gflags on linux hosts, via SSH.
 
-Note: this script required the pramiko python module. See [Installing - Paramiko documentation](https://www.paramiko.org/installing.html)
+`Note`: this script requires the paramiko python module. See [Installing - Paramiko documentation](https://www.paramiko.org/installing.html)
 
 ## Download the script
 
