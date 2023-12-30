@@ -153,6 +153,7 @@ for server in servernames:
         sftp.close()
         ssh.close()
     except Exception:
+        print('  **** an error occurred ****')
         try:
             r.close()
             w.close()
