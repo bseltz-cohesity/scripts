@@ -10,8 +10,8 @@ import json
 # command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-s', '--server', type=str, default=None)
-parser.add_argument('-u', '--username', type=str, default=None)
+parser.add_argument('-s', '--server', type=str, required=True)
+parser.add_argument('-u', '--username', type=str, required=True)
 parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-n', '--flagname', action='append', type=str)
 parser.add_argument('-v', '--flagvalue', action='append', type=str)
