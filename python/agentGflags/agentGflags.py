@@ -125,9 +125,10 @@ if len(flagnames) > 0:
     _stdin.write(password + "\n")
     _stdin.flush()
     print(_stdout.read().decode())
-    sftp.close()
-    ssh.close()
 else:
     print('current settings:')
     display(userSettings)
     print('')
+
+sftp.close()
+ssh.close()
