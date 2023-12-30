@@ -36,7 +36,8 @@ agentGflags.exe -s myhost1 -u myusername -n max_rpc_context_count -v 32 -n grpc_
 
 ## Parameters
 
-* -s, --server: host to connect to (via SSH)
+* -s, --servername: (optional) one or more hosts to connect to via SSH (repeat for multiple)
+* -l, --serverlist: (optional) text file of hosts to connect to (one per line)
 * -u, --username: username for SSH connection
 * -pwd, --sourcepassword: (optional) will be prompted if omitted
 * -n, --flagname: (optional) name of flag to apply (repeat for multiple)
