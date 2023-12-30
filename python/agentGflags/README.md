@@ -11,7 +11,7 @@ This python script sets Cohesity agent gflags on linux hosts, via SSH.
 Run this commands to download the scripts into your current directory
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/copyRoles/agentGflags.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/agentGflags/agentGflags.py
 chmod +x agentGflags.py
 ```
 
