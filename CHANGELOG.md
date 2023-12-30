@@ -1,5 +1,11 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-12-30
+
+* [deployLinuxAgent](https://github.com/bseltz-cohesity/scripts/tree/master/linux/deployLinuxAgent) (linux) [`New`] deploy linux agent via SSH
+* [deployLinuxAgent.exe](https://github.com/bseltz-cohesity/scripts/tree/master/windows/deployLinuxAgent) (windows) [`New`] deploy linux agent via SSH
+* [deployLinuxAgent.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/deployLinuxAgent) (python) [`New`] deploy linux agent via SSH
+
 ## 2023-12-29
 
 * [agentGflags](https://github.com/bseltz-cohesity/scripts/tree/master/linux/agentGflags) (linux) [`New`] set agent gflags via SSH
