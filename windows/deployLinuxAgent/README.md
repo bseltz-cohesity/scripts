@@ -23,3 +23,4 @@ deployLinuxAgent.exe -s myhost1 -u myusername -f el-cohesity-agent-6.6.0d_u6-1.x
 * -u, --username: username for SSH connection
 * -pwd, --sourcepassword: (optional) will be prompted if omitted
 * -f, --filepath: path to installer file
+* -a, --agentuser: (optional) user to run agent service (default is root)

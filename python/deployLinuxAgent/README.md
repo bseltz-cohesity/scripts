@@ -34,3 +34,4 @@ Run the main script like so:
 * -u, --username: username for SSH connection
 * -pwd, --sourcepassword: (optional) will be prompted if omitted
 * -f, --filepath: path to installer file
+* -a, --agentuser: (optional) user to run agent service (default is root)

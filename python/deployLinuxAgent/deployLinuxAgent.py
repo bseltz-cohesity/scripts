@@ -14,6 +14,7 @@ parser.add_argument('-l', '--serverlist', type=str)
 parser.add_argument('-u', '--username', type=str, required=True)
 parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-f', '--filepath', type=str, required=True)
+parser.add_argument('-a', '--agentuser', type=str, default='root')
 
 args = parser.parse_args()
 
@@ -22,6 +23,7 @@ serverlist = args.serverlist
 username = args.username
 password = args.password
 filepath = args.filepath
+agentuser = args.agentuser
 
 file, file_extension = os.path.splitext(filepath)
 filename = os.path.basename(filepath)
@@ -104,13 +106,14 @@ for server in servernames:
         sftp.put(filepath, '/tmp/%s' % filename)
 
         print('  installing agent...')
-        _stdin, _stdout, _stderr = ssh.exec_command("sudo -S -p '' %s /tmp/%s" % (installer, filename))
+        _stdin, _stdout, _stderr = ssh.exec_command("printf '#!/bin/bash\nexport COHESITYUSER=%s\n%s /tmp/%s\n' > installcohesityagent.sh && chmod +x installcohesityagent.sh && sudo -S -p '' ./installcohesityagent.sh" % (agentuser, installer, filename))
         _stdin.write(password + "\n")
         _stdin.flush()
         response = _stdout.read().decode()
         print(response)
 
         print('  removing installer...')
+        _stdin, _stdout, _stderr = ssh.exec_command("rm -f installcohesityagent.sh")
         _stdin, _stdout, _stderr = ssh.exec_command("rm -f /tmp/%s" % filename)
 
         sftp.close()
