@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-01-02
+
+* [scheduleHealer.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/scheduleHealer) [`New`] schedule an Apollo healer run
+
 ## 2023-12-30
 
 * [deployLinuxAgent](https://github.com/bseltz-cohesity/scripts/tree/master/linux/deployLinuxAgent) (linux) [`New`] deploy linux agent via SSH
