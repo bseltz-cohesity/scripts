@@ -1,5 +1,11 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-01-03
+
+* [detachLinuxAgent](https://github.com/bseltz-cohesity/scripts/tree/master/linux/detachLinuxAgent) (linux) [`New`] detach linux agent from cluster via SSH
+* [detachLinuxAgent.exe](https://github.com/bseltz-cohesity/scripts/tree/master/windows/detachLinuxAgent) (windows) [`New`] detach linux agent from cluster via SSH
+* [detachLinuxAgent.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/detachLinuxAgent) (python) [`New`] detach linux agent from cluster via SSH
+
 ## 2024-01-02
 
 * [scheduleHealer.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/scheduleHealer) [`New`] schedule an Apollo healer run
