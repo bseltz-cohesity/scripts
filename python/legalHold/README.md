@@ -6,14 +6,14 @@ This script add or removes legal hold from a specified backup on the cluster.
 
 ## Components
 
-* [legalHold.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/legalHoldAll/legalHold.py): the main python script
+* [legalHold.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/legalHold/legalHold.py): the main python script
 * [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/legalHoldAll/legalHold.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/legalHold/legalHold.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x legalHold.py
 # end download commands
