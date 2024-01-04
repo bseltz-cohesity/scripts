@@ -44,6 +44,10 @@ pushtoreplicas = args.pushtoreplicas
 runid = args.runid
 rundate = args.rundate
 
+if (addhold is True or removehold is True) and rundate is None and runid is None:
+    print('Please specify a rundate or runid when adding or removing a hold')
+    exit(1)
+
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode)
 
@@ -121,7 +125,7 @@ while 1:
                 if 'holdForLegalPurpose' in copyRun and copyRun['holdForLegalPurpose'] is True:
                     held = True
         if copyRunsFound is True or held is True:
-            if (addhold and copyRunsFound is True and held is False) or (removehold and held is True):
+            if (rundate is not None or runid is not None) and ((addhold and copyRunsFound is True and held is False) or (removehold and held is True)):
                 runParams = {
                     "jobRuns": [
                         {
