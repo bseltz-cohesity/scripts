@@ -57,4 +57,4 @@ To remove legal hold from a specific run (by run date):
 * -r, --removehold: (optional) remove legal holds
 * -p, --pushtoreplicas: (optional) push legal hold adds/removes to replicas
 * -id, --runid: (optional) run ID to operate on
-* -dt, --rundate: (optional) run date to operate on
+* -dt, --rundate: (optional) run date to operate on (e.g. '2024-01-03 23:30')
