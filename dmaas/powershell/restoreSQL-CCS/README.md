@@ -135,3 +135,15 @@ If you want to replay logs to a specific point in time, use the **-logTime** par
 For databases with no log backups, the full/incremental backup that occured at or before -logTime will be selected.
 
 If you want to ensure that you restore the very latest logs (to the millisecond) then use the **-noStop** parameter.
+
+## Authenticating to DMaaS
+
+DMaaS uses an API key for authentication. To acquire an API key:
+
+* log onto DMaaS
+* click Settings -> access management -> API Keys
+* click Add API Key
+* enter a name for your key
+* click Save
+
+Immediately copy the API key (you only have one chance to copy the key. Once you leave the screen, you can not access it again). When running a DMaaS compatible script for the first time, you will be prompted for a password. Enter the API key as the password.
