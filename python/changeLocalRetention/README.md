@@ -53,6 +53,8 @@ If you're happy with the output you can commit the change by adding -x (--commit
 * -g, --greaterthan: (optional) only process snapshots with existing retentions longer than X days
 * -j, --jobname: (optional) one or more protection job names to include (default is all jobs)
 * -l, --joblist: (optional) text file of job names to include (default is all jobs)
+* -id, --runid: (optional) run ID to operate on
+* -dt, --rundate: (optional) run date to operate on (e.g. '2024-01-03 23:30')
 * -n, --numruns: (optional) runs per api querty (default is 1000)
 
 ## The Python Helper Module - pyhesity.py

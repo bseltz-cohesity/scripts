@@ -26,6 +26,8 @@ parser.add_argument('-o', '--olderthan', type=int, default=0)
 parser.add_argument('-n', '--newerthan', type=int, default=0)
 parser.add_argument('-g', '--greaterthan', type=int, default=0)
 parser.add_argument('-a', '--allowreduction', action='store_true')
+parser.add_argument('-id', '--runid', type=int, default=None)
+parser.add_argument('-dt', '--rundate', type=str, default=None)
 parser.add_argument('-x', '--commit', action='store_true')
 args = parser.parse_args()
 
@@ -46,6 +48,8 @@ olderthan = args.olderthan
 newerthan = args.newerthan
 greaterthan = args.greaterthan
 allowreduction = args.allowreduction
+runid = args.runid
+rundate = args.rundate
 commit = args.commit
 
 # authenticate
@@ -67,7 +71,7 @@ cluster = api('get', 'cluster')
 dateString = now.strftime("%Y-%m-%d")
 outfile = 'retention-%s-%s.csv' % (cluster['name'], dateString)
 f = codecs.open(outfile, 'w')
-f.write('%s,%s,%s,%s,%s,%s\n' % ('Job Name', 'Run Date', 'Old Expiration', 'New Expiration', 'Action', 'Expiration Change (Days)'))
+f.write('%s,%s,%s,%s,%s,%s,%s,%s\n' % ('Job Name', 'Run ID', 'Run Date', 'Run Type', 'Old Expiration', 'New Expiration', 'Action', 'Expiration Change (Days)'))
 
 newerthanusecs = cluster['createdTimeMsecs'] * 1000
 if newerthan > 0:
@@ -109,6 +113,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
     if len(jobnames) == 0 or job['name'].lower() in [j.lower() for j in jobnames]:
         print('\n%s' % job['name'])
         endUsecs = nowUsecs
+        runFound = False
         while 1:
             runs = api('get', 'protectionRuns?jobId=%s&numRuns=%s&endTimeUsecs=%s&excludeTasks=true&excludeNonRestoreableRuns=true&runTypes=%s' % (job['id'], numruns, endUsecs, backupType))
             if len(runs) > 0:
@@ -117,6 +122,24 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                 break
             for run in runs:
                 try:
+                    runType = run['backupRun']['runType'][1:].replace('Regular', 'Incremental')
+                    runTime = usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M')
+                    if rundate is not None:
+                        if runTime != rundate:
+                            if runTime < rundate and runFound is False:
+                                print('    Run with start time %s not found' % rundate)
+                                exit(1)
+                            continue
+                        else:
+                            runFound = True
+                    if runid is not None:
+                        if run['backupRun']['jobRunId'] != runid:
+                            if run['backupRun']['jobRunId'] < runid and runFound is False:
+                                print('    Run with ID %s not found' % runid)
+                                exit(1)
+                            continue
+                        else:
+                            runFound = True
                     if run['backupRun']['snapshotsDeleted'] is not True:
                         if includelogs is True or run['backupRun']['runType'] != 'kLog':
                             runStartTimeUsecs = run['backupRun']['stats']['startTimeUsecs']
@@ -165,12 +188,12 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                                             }
                                             result = api('put', 'protectionRuns', runParameters)
                                     if extendByDays == 0:
-                                        print("    %s:    %s -> %s    (%s)" % (runStartTime, usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString))
+                                        print("    %s - %s (%-17s%s -> %s    (%s)" % (run['backupRun']['jobRunId'], runStartTime, runType + '):', usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString))
                                     elif extendByDays < 0 and allowreduction is not True:
-                                        print("    %s:    %s -> %s    (%s: %s days)" % (runStartTime, usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
+                                        print("    %s - %s (%-17s%s -> %s    (%s: %s days)" % (run['backupRun']['jobRunId'], runStartTime, runType + '):', usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
                                     else:
-                                        print("    %s:    %s -> %s    (%s by %s days)" % (runStartTime, usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
-                                f.write('%s,%s,%s,%s,%s,%s\n' % (job['name'], runStartTime, usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
+                                        print("    %s - %s (%-17s%s -> %s    (%s by %s days)" % (run['backupRun']['jobRunId'], runStartTime, runType + '):', usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
+                                f.write('%s,%s,%s,%s,%s,%s,%s,%s\n' % (job['name'], run['backupRun']['jobRunId'], runStartTime, runType, usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
                 except Exception:
                     pass
             if run['backupRun']['stats']['startTimeUsecs'] < newerthanusecs or run['backupRun']['stats']['startTimeUsecs'] > olderthanusecs:
