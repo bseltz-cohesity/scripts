@@ -52,11 +52,11 @@ To remove legal hold from a specific run (by run date):
 ## Other Parameters
 
 * -j, --jobname: protection job name
-* -n, --numruns: (optional) runs per api query (default is 5000)
+* -id, --runid: (optional) run ID to operate on
+* -dt, --rundate: (optional) run date to operate on (e.g. '2024-01-03 23:30')
 * -a, --addhold: (optional) add legal holds
 * -r, --removehold: (optional) remove legal holds
 * -p, --pushtoreplicas: (optional) push legal hold adds/removes to replicas
 * -l, --includelogs: (optional) include log backups
 * -y, --daysback: (optional) include runs from only the last X days
-* -id, --runid: (optional) run ID to operate on
-* -dt, --rundate: (optional) run date to operate on (e.g. '2024-01-03 23:30')
+* -n, --numruns: (optional) runs per api query (default is 1000)
