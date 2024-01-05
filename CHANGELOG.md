@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-01-05
+
+* [legalHold.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/legalHold) [`New`] Add/Remove legal hold from specified protection run
+* [changeLocalRetention](https://github.com/bseltz-cohesity/scripts/tree/master/python/changeLocalRetention) [`Update`] added options to select specific run for retention change
+
 ## 2024-01-03
 
 * [detachLinuxAgent](https://github.com/bseltz-cohesity/scripts/tree/master/linux/detachLinuxAgent) (linux) [`New`] detach linux agent from cluster via SSH
