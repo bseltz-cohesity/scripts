@@ -18,10 +18,12 @@ parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-j', '--jobname', type=str, required=True)
-parser.add_argument('-n', '--numruns', type=int, default=5000)
+parser.add_argument('-n', '--numruns', type=int, default=1000)
 parser.add_argument('-a', '--addhold', action='store_true')
 parser.add_argument('-r', '--removehold', action='store_true')
 parser.add_argument('-p', '--pushtoreplicas', action='store_true')
+parser.add_argument('-l', '--includelogs', action='store_true')
+parser.add_argument('-y', '--daysback', type=int, default=None)
 parser.add_argument('-id', '--runid', type=int, default=None)
 parser.add_argument('-dt', '--rundate', type=str, default=None)
 
@@ -41,12 +43,19 @@ numruns = args.numruns
 addhold = args.addhold
 removehold = args.removehold
 pushtoreplicas = args.pushtoreplicas
+includelogs = args.includelogs
+daysback = args.daysback
 runid = args.runid
 rundate = args.rundate
 
 if (addhold is True or removehold is True) and rundate is None and runid is None:
     print('Please specify a rundate or runid when adding or removing a hold')
     exit(1)
+
+tail = ''
+if daysback is not None:
+    daysBackUsecs = timeAgo(daysback, 'days')
+    tail = '&startTimeUsecs=%s' % daysBackUsecs
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode)
@@ -93,11 +102,13 @@ else:
 endUsecs = nowUsecs
 runFound = False
 while 1:
-    runs = api('get', 'protectionRuns?jobId=%s&numRuns=%s&endTimeUsecs=%s&excludeTasks=true' % (v1JobId, numruns, endUsecs))
+    runs = api('get', 'protectionRuns?jobId=%s&numRuns=%s&endTimeUsecs=%s&excludeTasks=true%s' % (v1JobId, numruns, endUsecs, tail))
     if len(runs) > 0:
         endUsecs = runs[-1]['backupRun']['stats']['startTimeUsecs'] - 1
     else:
         break
+    if not includelogs:
+        runs = [r for r in runs if r['backupRun']['runType'] != 'kLog']
     for run in runs:
         runTime = usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M')
         if rundate is not None:
@@ -150,10 +161,10 @@ while 1:
                         "id": thisRun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']['objectId']
                     }
                     runParams['jobRuns'][0]['jobUid'] = jobUid
-                    print('    %s - %s' % (usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), actionString))
+                    print('    %s - %s (%s) - %s' % (run['backupRun']['jobRunId'], usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), run['backupRun']['runType'][1:].replace('Regular', 'Incremental'), actionString))
                     result = api('put', 'protectionRuns', runParams)
             else:
                 if held is True:
-                    print('    %s - %s - %s' % (run['backupRun']['jobRunId'], usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), 'on hold'))
+                    print('    %s - %s (%s) - %s' % (run['backupRun']['jobRunId'], usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), run['backupRun']['runType'][1:].replace('Regular', 'Incremental'), 'on hold'))
                 if held is False:
-                    print('    %s - %s - %s' % (run['backupRun']['jobRunId'], usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), 'not on hold'))
+                    print('    %s - %s (%s) - %s' % (run['backupRun']['jobRunId'], usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), run['backupRun']['runType'][1:].replace('Regular', 'Incremental'), 'not on hold'))
