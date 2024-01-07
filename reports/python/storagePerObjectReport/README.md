@@ -33,14 +33,14 @@ Place both files in a folder together and run the main script like so:
 
 ## Authentication Parameters
 
-* -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
+* -v, --vip: (optional) one or more names or IPa of Cohesity clustera to connect to (repeat for multiple) default is helios.cohesity.com
 * -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
 * -d, --domain: (optional) domain of username (defaults to local)
 * -i, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password or API key
 * -np, --noprompt: (optional) do not prompt for password
 * -mcm, --mcm: (optional) connect through MCM
-* -c, --clustername: (optional) helios/mcm cluster to connect to (repeat for multiple)
+* -c, --clustername: (optional) one or more helios/mcm clusters to connect to (repeat for multiple)
 * -m, --mfacode: (optional) MFA code for authentication
 
 ## Other Parameters
