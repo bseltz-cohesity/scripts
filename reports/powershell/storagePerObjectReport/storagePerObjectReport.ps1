@@ -30,7 +30,7 @@ $outfileName = "storagePerObjectReport-$dateString.csv"
 $outfile2 = "customFormat2-storagePerObjectReport-$dateString.csv"
 
 # headings
-"""Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Environment"",""Source Name"",""Object Name"",""Logical $unit"",""$unit Read"",""$unit Written"",""$unit Written plus Resiliency"",""Job Reduction Ratio"",""$unit Written Last $growthDays Days"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""$unit Archived"",""$unit per Archive Target"",""Description""" | Out-File -FilePath $outfileName
+"""Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Environment"",""Source Name"",""Object Name"",""Logical $unit"",""$unit Read"",""$unit Written"",""$unit Written plus Resiliency"",""Job Reduction Ratio"",""$unit Written Last $growthDays Days"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description""" | Out-File -FilePath $outfileName
 """Cluster Name"",""Month"",""Object Name"",""Description"",""$unit Written plus Resiliency""" | Out-File -FilePath $outfile2
 
 
@@ -181,87 +181,102 @@ function reportStorage(){
             }
     
             # runs
+            $archiveCount = 0
+            $oldestArchive = '-'
             $endUsecs = $nowUsecs
             while($True){
                 if($dbg){
                     Write-Host "    getting runs"
                 }
                 $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&excludeNonRestorableRuns=true&useCachedData=true"
-                foreach($run in $runs.runs | Where-Object isLocalSnapshotsDeleted -ne $True){
-                    foreach($object in $run.objects | Where-Object {$_.object.environment -ne $job.environment}){
-                        $sourceNames["$($object.object.id)"] = $object.object.name
-                    }
-                    foreach($object in $run.objects){
-                        $objId = "$($object.object.id)"
-                        if($object.PSObject.Properties['localSnapshotInfo']){
-                            $snap = $object.localSnapshotInfo
-                            $runType = $run.localBackupInfo.runType
-                        }else{
-                            $snap = $object.originalBackupInfo
-                            $runType = $run.originalBackupInfo.runType
+                foreach($run in $runs.runs){
+                    if($run.isLocalSnapshotsDeleted -ne $True){
+                        foreach($object in $run.objects | Where-Object {$_.object.environment -ne $job.environment}){
+                            $sourceNames["$($object.object.id)"] = $object.object.name
                         }
-                        if($objId -notin $objects.Keys -and !($job.environment -eq 'kAD' -and $object.object.environment -eq 'kAD') -and !($job.environment -in @('kSQL', 'kOracle') -and $object.object.objectType -eq 'kHost')){
-                            $objects[$objId] = @{}
-                            $objects[$objId]['name'] = $object.object.name
-                            $objects[$objId]['logical'] = 0
-                            $objects[$objId]['bytesRead'] = 0
-                            $objects[$objId]['growth'] = 0
-                            $objects[$objId]['numSnaps'] = 0
-                            $objects[$objId]['numLogs'] = 0
-                            $objects[$objId]['newestBackup'] = $snap.snapshotInfo.startTimeUsecs
-                            $objects[$objId]['oldestBackup'] = $snap.snapshotInfo.startTimeUsecs
-                            if($object.object.PSObject.Properties['sourceId']){
-                                $objects[$objId]['sourceId'] = $object.object.sourceId
+                        foreach($object in $run.objects){
+                            $objId = "$($object.object.id)"
+                            if($object.PSObject.Properties['localSnapshotInfo']){
+                                $snap = $object.localSnapshotInfo
+                                $runType = $run.localBackupInfo.runType
+                            }else{
+                                $snap = $object.originalBackupInfo
+                                $runType = $run.originalBackupInfo.runType
                             }
-                            if(! $snap.snapshotInfo.stats.PSObject.Properties['logicalSizeBytes']){
-                                if($dbg){
-                                    Write-Host "    getting source"
+                            if($objId -notin $objects.Keys -and !($job.environment -eq 'kAD' -and $object.object.environment -eq 'kAD') -and !($job.environment -in @('kSQL', 'kOracle') -and $object.object.objectType -eq 'kHost')){
+                                $objects[$objId] = @{}
+                                $objects[$objId]['name'] = $object.object.name
+                                $objects[$objId]['logical'] = 0
+                                $objects[$objId]['bytesRead'] = 0
+                                $objects[$objId]['growth'] = 0
+                                $objects[$objId]['numSnaps'] = 0
+                                $objects[$objId]['numLogs'] = 0
+                                $objects[$objId]['newestBackup'] = $snap.snapshotInfo.startTimeUsecs
+                                $objects[$objId]['oldestBackup'] = $snap.snapshotInfo.startTimeUsecs
+                                if($object.object.PSObject.Properties['sourceId']){
+                                    $objects[$objId]['sourceId'] = $object.object.sourceId
                                 }
-                                $csource = api get "protectionSources?id=$objId&useCachedData=true" -quiet
-                                if( $csource.protectedSourcesSummary.Count -gt 0){
-                                    $objects[$objId]['logical'] = $csource.protectedSourcesSummary[0].totalLogicalSize
+                                if(! $snap.snapshotInfo.stats.PSObject.Properties['logicalSizeBytes']){
+                                    if($dbg){
+                                        Write-Host "    getting source"
+                                    }
+                                    $csource = api get "protectionSources?id=$objId&useCachedData=true" -quiet
+                                    if( $csource.protectedSourcesSummary.Count -gt 0){
+                                        $objects[$objId]['logical'] = $csource.protectedSourcesSummary[0].totalLogicalSize
+                                    }else{
+                                        $objects[$objId]['logical'] = 0
+                                    }
                                 }else{
-                                    $objects[$objId]['logical'] = 0
-                                }
-                            }else{
-                                $objects[$objId]['logical'] = $snap.snapshotInfo.stats.logicalSizeBytes
-                            }
-                        }
-                        if($job.environment -eq 'kVMware'){
-                            $vmsearch = api get "/searchvms?allUnderHierarchy=true&entityTypes=kVMware&jobIds=$(($job.id -split ':')[2])&vmName=$($object.object.name)"
-                            $vms = $vmsearch.vms | Where-Object {$_.vmDocument.objectName -eq $object.object.name}
-                            if($vms){
-                                $vmbytes = $vms[0].vmDocument.objectId.entity.vmwareEntity.frontEndSizeInfo.sizeBytes
-                                if($vmbytes -gt 0){
-                                    $objects[$objId]['logical'] = $vmbytes
+                                    $objects[$objId]['logical'] = $snap.snapshotInfo.stats.logicalSizeBytes
                                 }
                             }
-                        }
-                        if($objId -in $objects.Keys -and $snap.snapshotInfo.stats.PSObject.Properties['logicalSizeBytes'] -and $snap.snapshotInfo.stats.logicalSizeBytes -gt $objects[$objId]['logical']){
-                            if($job.environment -ne 'kVMware' -or $objects[$objId]['logical'] -eq 0){
+                            if($job.environment -eq 'kVMware'){
+                                $vmsearch = api get "/searchvms?allUnderHierarchy=true&entityTypes=kVMware&jobIds=$(($job.id -split ':')[2])&vmName=$($object.object.name)"
+                                $vms = $vmsearch.vms | Where-Object {$_.vmDocument.objectName -eq $object.object.name}
+                                if($vms){
+                                    $vmbytes = $vms[0].vmDocument.objectId.entity.vmwareEntity.frontEndSizeInfo.sizeBytes
+                                    if($vmbytes -gt 0){
+                                        $objects[$objId]['logical'] = $vmbytes
+                                    }
+                                }
+                            }
+                            if($objId -in $objects.Keys -and $snap.snapshotInfo.stats.PSObject.Properties['logicalSizeBytes'] -and $snap.snapshotInfo.stats.logicalSizeBytes -gt $objects[$objId]['logical']){
+                                if($job.environment -ne 'kVMware' -or $objects[$objId]['logical'] -eq 0){
+                                    $objects[$objId]['logical'] = $snap.snapshotInfo.stats.logicalSizeBytes
+                                }
+                            }
+                            if($job.environment -eq 'kVMware' -and $snap.snapshotInfo.stats.logicalSizeBytes -lt $objects[$objId]['logical']){
                                 $objects[$objId]['logical'] = $snap.snapshotInfo.stats.logicalSizeBytes
                             }
-                        }
-                        if($job.environment -eq 'kVMware' -and $snap.snapshotInfo.stats.logicalSizeBytes -lt $objects[$objId]['logical']){
-                            $objects[$objId]['logical'] = $snap.snapshotInfo.stats.logicalSizeBytes
-                        }
-                        
-                        if($objId -in $objects.Keys){
-                            if($runType -eq 'kLog'){
-                                $objects[$objId]['numLogs'] += 1
-                            }else{
-                                $objects[$objId]['numSnaps'] += 1
+                            
+                            if($objId -in $objects.Keys){
+                                if($runType -eq 'kLog'){
+                                    $objects[$objId]['numLogs'] += 1
+                                }else{
+                                    $objects[$objId]['numSnaps'] += 1
+                                }
+                                $objects[$objId]['oldestBackup'] = $snap.snapshotInfo.startTimeUsecs
+                                $objects[$objId]['bytesRead'] += $snap.snapshotInfo.stats.bytesRead
+                                if($snap.snapshotInfo.startTimeUsecs -gt $growthDaysUsecs){
+                                    $objects[$objId]['growth'] += $snap.snapshotInfo.stats.bytesRead
+                                    $jobObjGrowth += $snap.snapshotInfo.stats.bytesRead
+                                } 
                             }
-                            $objects[$objId]['oldestBackup'] = $snap.snapshotInfo.startTimeUsecs
-                            $objects[$objId]['bytesRead'] += $snap.snapshotInfo.stats.bytesRead
-                            if($snap.snapshotInfo.startTimeUsecs -gt $growthDaysUsecs){
-                                $objects[$objId]['growth'] += $snap.snapshotInfo.stats.bytesRead
-                                $jobObjGrowth += $snap.snapshotInfo.stats.bytesRead
-                            } 
                         }
-
+                    }
+                    if($run.PSObject.Properties['archivalInfo'] -and $run.archivalInfo.PSObject.Properties['archivalTargetResults']){
+                        foreach($archiveResult in $run.archivalInfo.archivalTargetResults){
+                            if($archiveResult.status -eq 'Succeeded'){
+                                $archiveCount += 1
+                                $oldestArchive = usecsToDate (($run.id -split ':')[-1])
+                            }
+                        }
                     }
                 }
+                # foreach($run in $runs.runs | Where-Object isLocalSnapshotsDeleted -eq $True){
+                #     $run | toJson
+                #     exit
+                # }
                 if($runs.runs.Count -eq $numRuns){
                     if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
                         $endUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs - 1
@@ -339,7 +354,7 @@ function reportStorage(){
                 if($thisObject['name'] -ne $sourceName){
                     $fqObjectName = "$($sourceName)/$($thisObject['name'])" -replace '//', '/'
                 }
-                """$($cluster.name)"",""$origin"",""$statsAge"",""$($job.name)"",""$tenant"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$objFESize"",""$(toUnits $objDataIn)"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$($thisObject['numSnaps'])"",""$($thisObject['numLogs'])"",""$(usecsToDate $thisObject['oldestBackup'])"",""$(usecsToDate $thisObject['newestBackup'])"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)""" | Out-File -FilePath $outfileName -Append
+                """$($cluster.name)"",""$origin"",""$statsAge"",""$($job.name)"",""$tenant"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$objFESize"",""$(toUnits $objDataIn)"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$($thisObject['numSnaps'])"",""$($thisObject['numLogs'])"",""$(usecsToDate $thisObject['oldestBackup'])"",""$(usecsToDate $thisObject['newestBackup'])"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)""" | Out-File -FilePath $outfileName -Append
                 """$($cluster.name)"",""$monthString"",""$fqObjectName"",""$($job.description)"",""$(toUnits $objWrittenWithResiliency)""" | Out-File -FilePath $outfile2 -Append
             }
         }elseif($job.environment -in @('kView', 'kRemoteAdapter')){
@@ -357,23 +372,35 @@ function reportStorage(){
                     Write-Host "    getting runs"
                 }
                 $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&excludeNonRestorableRuns=true&useCachedData=true"
-                foreach($run in $runs.runs | Where-Object isLocalSnapshotsDeleted -ne $True){
-                    foreach($object in $run.objects){
-                        if($object.PSObject.Properties['localSnapshotInfo']){
-                            $snap = $object.localSnapshotInfo
-                        }else{
-                            $snap = $object.originalBackupInfo
-                        }
-                        if($object.object.name -notin $viewHistory.Keys){
-                            $viewHistory[$object.object.name] = @{}
-                            $viewHistory[$object.object.name]['stats'] = $thisStat
-                            $viewHistory[$object.object.name]['numSnaps'] = 0
-                            $viewHistory[$object.object.name]['numLogs'] = 0
-                            $viewHistory[$object.object.name]['newestBackup'] = usecsToDate $snap.snapshotInfo.startTimeUsecs
+                foreach($run in $runs.runs){
+                    if($run.isLocalSnapshotsDeleted -ne $True){
+                        foreach($object in $run.objects){
+                            if($object.PSObject.Properties['localSnapshotInfo']){
+                                $snap = $object.localSnapshotInfo
+                            }else{
+                                $snap = $object.originalBackupInfo
+                            }
+                            if($object.object.name -notin $viewHistory.Keys){
+                                $viewHistory[$object.object.name] = @{}
+                                $viewHistory[$object.object.name]['stats'] = $thisStat
+                                $viewHistory[$object.object.name]['numSnaps'] = 0
+                                $viewHistory[$object.object.name]['numLogs'] = 0
+                                $viewHistory[$object.object.name]['newestBackup'] = usecsToDate $snap.snapshotInfo.startTimeUsecs
+                                $viewHistory[$object.object.name]['oldestBackup'] = usecsToDate $snap.snapshotInfo.startTimeUsecs
+                                $viewHistory[$object.object.name]['archiveCount'] = 0
+                                $viewHistory[$object.object.name]['oldestArchive'] = '-'
+                            }
                             $viewHistory[$object.object.name]['oldestBackup'] = usecsToDate $snap.snapshotInfo.startTimeUsecs
+                            $viewHistory[$object.object.name]['numSnaps'] += 1
                         }
-                        $viewHistory[$object.object.name]['oldestBackup'] = usecsToDate $snap.snapshotInfo.startTimeUsecs
-                        $viewHistory[$object.object.name]['numSnaps'] += 1
+                    }
+                    if($run.PSObject.Properties['archivalInfo'] -and $run.archivalInfo.PSObject.Properties['archivalTargetResults']){
+                        foreach($archiveResult in $run.archivalInfo.archivalTargetResults){
+                            if($archiveResult.status -eq 'Succeeded'){
+                                $viewHistory[$object.object.name]['archiveCount'] += 1
+                                $viewHistory[$object.object.name]['oldestArchive'] = usecsToDate (($run.id -split ':')[-1])
+                            }
+                        }
                     }
                 }
                 if($runs.runs.Count -eq $numRuns){
@@ -439,11 +466,15 @@ function reportStorage(){
         $numLogs = 0
         $oldestBackup = '-'
         $newestBackup = '-'
+        $archiveCount = 0
+        $oldestArchive = '-'
         if($jobName -ne '-'){
             if($view.name -in $viewHistory.Keys){
                 $newestBackup = $viewHistory[$view.name]['newestBackup']
                 $oldestBackup = $viewHistory[$view.name]['oldestBackup']
                 $numSnaps = $viewHistory[$view.name]['numSnaps']
+                $oldestArchive = $viewHistory[$view.name]['oldestArchive']
+                $archiveCount = $viewHistory[$view.name]['archiveCount']
             }
         }
         $sourceName = $view.storageDomainName
@@ -494,7 +525,7 @@ function reportStorage(){
                 }
             }
         }
-        """$($cluster.name)"",""$origin"",""$statsAge"",""$($jobName)"",""$($view.tenantId -replace ".$")"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$(toUnits $dataIn)"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$numSnaps"",""$numLogs"",""$oldestBackup"",""$newestBackup"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($view.description)""" | Out-File -FilePath $outfileName -Append
+        """$($cluster.name)"",""$origin"",""$statsAge"",""$($jobName)"",""$($view.tenantId -replace ".$")"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$(toUnits $dataIn)"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$numSnaps"",""$numLogs"",""$oldestBackup"",""$newestBackup"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($view.description)""" | Out-File -FilePath $outfileName -Append
         """$($cluster.name)"",""$monthString"",""$viewName"",""$($view.description)"",""$(toUnits $consumption)""" | Out-File -FilePath $outfile2 -Append
     }
 }

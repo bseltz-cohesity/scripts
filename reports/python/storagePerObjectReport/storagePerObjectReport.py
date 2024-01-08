@@ -61,7 +61,7 @@ msecsBeforeCurrentTimeToCompare = growthdays * 24 * 60 * 60 * 1000
 datestring = now.strftime("%Y-%m-%d-%H-%M")
 csvfileName = '%s/storagePerObjectReport-%s.csv' % (folder, datestring)
 csv = codecs.open(csvfileName, 'w', 'utf-8')
-csv.write('"Cluster Name","Origin","Stats Age (Days)","Protection Group","Tenant","Environment","Source Name","Object Name","Logical Size %s","%s Read","%s Written","%s Written plus Resiliency","Protection Group Reduction Ratio","%s Growth Last %s Days","Snapshots","Log Backups","Oldest Backup","Newest Backup","%s Archived","%s per Archive Target"\n' % (units, units, units, units, units, growthdays, units, units))
+csv.write('"Cluster Name","Origin","Stats Age (Days)","Protection Group","Tenant","Environment","Source Name","Object Name","Logical Size %s","%s Read","%s Written","%s Written plus Resiliency","Protection Group Reduction Ratio","%s Growth Last %s Days","Snapshots","Log Backups","Oldest Backup","Newest Backup","Archive Count","Oldest Archive","%s Archived","%s per Archive Target"\n' % (units, units, units, units, units, growthdays, units, units))
 
 
 def reportStorage():
@@ -173,9 +173,11 @@ def reportStorage():
                 jobReduction = clusterReduction
             if jobReduction == 0:
                 jobReduction = 1
-            endUsecs = nowUsecs
 
             # get protection runs in retention
+            archiveCount = 0
+            oldestArchive = '-'
+            endUsecs = nowUsecs
             while 1:
                 if debug is True:
                     print('    getting protection runs')
@@ -245,6 +247,11 @@ def reportStorage():
 
                                 except Exception as e:
                                     pass
+                    if 'archivalInfo' in run and run['archivalInfo'] is not None and 'archivalTargetResults' in run['archivalInfo'] and run['archivalInfo']['archivalTargetResults'] is not None and len(run['archivalInfo']['archivalTargetResults']) > 0:
+                        for archiveResult in run['archivalInfo']['archivalTargetResults']:
+                            if 'status' in archiveResult and archiveResult['status'] == 'Succeeded':
+                                archiveCount += 1
+                                oldestArchive = usecsToDate(run['id'].split(':')[-1])
                 if len(runs['runs']) < numruns:
                     break
                 else:
@@ -308,7 +315,7 @@ def reportStorage():
                                             totalArchived += (objWeight * cloudJob['storageConsumed'])
                                             vaultStats += '[%s]%s ' % (vaultSummary['vaultName'], round((objWeight * cloudJob['storageConsumed']) / multiplier, 1))
                     totalArchived = round(totalArchived / multiplier, 1)
-                    csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, job['name'], tenant, job['environment'][1:], sourceName, thisObject['name'], objFESize, objDataIn, objWritten, objWrittenWithResiliency, jobReduction, objGrowth, thisObject['numSnaps'], thisObject['numLogs'], usecsToDate(thisObject['oldestBackup']), usecsToDate(thisObject['newestBackup']), totalArchived, vaultStats))
+                    csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, job['name'], tenant, job['environment'][1:], sourceName, thisObject['name'], objFESize, objDataIn, objWritten, objWrittenWithResiliency, jobReduction, objGrowth, thisObject['numSnaps'], thisObject['numLogs'], usecsToDate(thisObject['oldestBackup']), usecsToDate(thisObject['newestBackup']), archiveCount, oldestArchive, totalArchived, vaultStats))
         else:
             if job['isActive'] is True:
                 stats = localStats
@@ -335,10 +342,17 @@ def reportStorage():
                                     viewHistory[object['object']['name']]['stats'] = thisStat
                                     viewHistory[object['object']['name']]['numSnaps'] = 0
                                     viewHistory[object['object']['name']]['numLogs'] = 0
+                                    viewHistory[object['object']['name']]['archiveCount'] = 0
+                                    viewHistory[object['object']['name']]['oldestArchive'] = '-'
                                     viewHistory[object['object']['name']]['newestBackup'] = usecsToDate(snap['snapshotInfo']['startTimeUsecs'])
                                     viewHistory[object['object']['name']]['oldestBackup'] = usecsToDate(snap['snapshotInfo']['startTimeUsecs'])
                                 viewHistory[object['object']['name']]['oldestBackup'] = usecsToDate(snap['snapshotInfo']['startTimeUsecs'])
                                 viewHistory[object['object']['name']]['numSnaps'] += 1
+                    if 'archivalInfo' in run and run['archivalInfo'] is not None and 'archivalTargetResults' in run['archivalInfo'] and run['archivalInfo']['archivalTargetResults'] is not None and len(run['archivalInfo']['archivalTargetResults']) > 0:
+                        for archiveResult in run['archivalInfo']['archivalTargetResults']:
+                            if 'status' in archiveResult and archiveResult['status'] == 'Succeeded':
+                                viewHistory[object['object']['name']]['archiveCount'] += 1
+                                viewHistory[object['object']['name']]['oldestArchive'] = usecsToDate(run['id'].split(':')[-1])
                 if len(runs['runs']) < numruns:
                     break
                 else:
@@ -382,11 +396,15 @@ def reportStorage():
             numLogs = 0
             oldestBackup = '-'
             newestBackup = '-'
+            archiveCount = 0
+            oldestArchive = '-'
             if jobName != '-':
                 if view['name'] in viewHistory:
                     newestBackup = viewHistory[view['name']]['newestBackup']
                     oldestBackup = viewHistory[view['name']]['oldestBackup']
                     numSnaps = viewHistory[view['name']]['numSnaps']
+                    oldestArchive = viewHistory[view['name']]['oldestArchive']
+                    archiveCount = viewHistory[view['name']]['archiveCount']
             sourceName = view['storageDomainName']
             viewName = view['name']
             print('  %s' % viewName)
@@ -440,7 +458,7 @@ def reportStorage():
                                     totalArchived += (objWeight * cloudJob['storageConsumed'])
                                     vaultStats += '[%s]%s ' % (vaultSummary['vaultName'], round((objWeight * cloudJob['storageConsumed']) / multiplier, 1))
             totalArchived = round(totalArchived / multiplier, 1)
-            csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, jobName, tenant, 'View', sourceName, viewName, objFESize, round(dataIn / multiplier, 1), round(jobWritten / multiplier, 1), round(consumption / multiplier, 1), jobReduction, objGrowth, numSnaps, numLogs, oldestBackup, newestBackup, totalArchived, vaultStats))
+            csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, jobName, tenant, 'View', sourceName, viewName, objFESize, round(dataIn / multiplier, 1), round(jobWritten / multiplier, 1), round(consumption / multiplier, 1), jobReduction, objGrowth, numSnaps, numLogs, oldestBackup, newestBackup, archiveCount, oldestArchive, totalArchived, vaultStats))
 
 
 for vip in vips:
