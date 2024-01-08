@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-01-08
+
+* [storagePerObjectReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport) [`Update`] Added multi-cluster support
+* [storagePerObjectReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storagePerObjectReport) [`Update`] Added multi-cluster support
+
 ## 2024-01-05
 
 * [legalHold.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/legalHold) [`New`] Add/Remove legal hold from specified protection run
