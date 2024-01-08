@@ -440,9 +440,11 @@ function reportStorage(){
         $oldestBackup = '-'
         $newestBackup = '-'
         if($jobName -ne '-'){
-            $newestBackup = $viewHistory[$view.name]['newestBackup']
-            $oldestBackup = $viewHistory[$view.name]['oldestBackup']
-            $numSnaps = $viewHistory[$view.name]['numSnaps']
+            if($view.name -in $viewHistory.Keys){
+                $newestBackup = $viewHistory[$view.name]['newestBackup']
+                $oldestBackup = $viewHistory[$view.name]['oldestBackup']
+                $numSnaps = $viewHistory[$view.name]['numSnaps']
+            }
         }
         $sourceName = $view.storageDomainName
         $viewName = $view.name
