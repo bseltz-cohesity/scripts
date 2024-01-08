@@ -29,6 +29,22 @@ Place both files in a folder together and run the main script like so:
 # end example
 ```
 
+To report on multiple clusters:
+
+```bash
+# example
+./storagePerObjectReport.py -v mycluster1 -v mycluster2 -u myusername -d mydomain.net
+# end example
+```
+
+To connect through Helios:
+
+```bash
+# example
+./storagePerObjectReport.py -u myuser@mydomain.net -c mycluster1 -c mycluster2
+# end example
+```
+
 ## Parameters
 
 ## Authentication Parameters

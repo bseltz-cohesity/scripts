@@ -30,6 +30,22 @@ Place both files in a folder together and run the main script like so:
 # end example
 ```
 
+To report on multiple clusters:
+
+```powershell
+# example
+./storagePerObjectReport.ps1 -vip mycluster1, mycluster2 -username myusername -domain mydomain.net
+# end example
+```
+
+To connect through Helios:
+
+```powershell
+# example
+./storagePerObjectReport.ps1 -username myuser@mydomain.net -clusterName mycluster1, mycluster2
+# end example
+```
+
 ## Authentication Parameters
 
 * -vip: (optional) one or more names or IPs of Cohesity clusters, comma separated (defaults to helios.cohesity.com)
