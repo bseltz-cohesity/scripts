@@ -62,19 +62,30 @@ To connect through Helios:
 * -numRuns: (optional) number of runs per API query (default is 1000)
 * -growthDays: (optional) number of days to measure recent growth (default is 7)
 * -skipDeleted: (optional) skip deleted protection groups
-* -unit: (optional) MiB or GiB (default is GiB)
+* -unit: (optional) MiB, GiB, TiB, MB, GB or TB (default is GiB)
 
 ## Column Descriptions
 
-* Job Name: name of protection group
+* Cluster Name: name of cluster queried
+* Origin: local or replica
+* Stats Age: age (days) of stats (should be 2 or less)
+* Protection Group: name of protection group
 * Tenant: name of organization
 * Environment: protection group type
 * Source Name: name of registered source (e.g. vCenter, server, etc.)
 * Object Name: name of object (e.g. VM, NAS share, database, etc.)
 * Logical GiB: front-end size of object as reported by the source
-* GiB Written: amount of deduped/compressed data, for this object, resident on Cohesity (before adding resiliency striping overhead)
-* GiB Written plus Resiliency: amount of deduped/compressed data, for this object, resident on Cohesity (after adding resiliency striping overhead)
-* Job Reduction Ratio: dedup/compression ratio of protection group
+* GiB Read: amount of data read from the source for this object, resident on Cohesity, before dedup/compression
+* GiB Written: amount of stored for this object, resident on Cohesity, after deduped/compression (before adding resiliency striping overhead)
+* GiB Written plus Resiliency: amount of deduped/compressed data for this object, resident on Cohesity (after adding resiliency striping overhead)
+* Reduction Ratio: dedup/compression ratio of protection group
 * GiB Written Last 7 Days: amount of deduped/compressed data added, for this object, in past X days
+* Snapshots: number of local backups resident on Cohesity
+* Log Backups: number of log backups (if applicable) resident on Cohesity
+* Oldest Backup: oldest backup resident on Cohesity
+* Newest Backup: newest backup resident on Cohesity
+* Archive Count: number of archives stored in external targets
+* Oldest Archive: oldest archive available for restore
 * GiB Archived: amount of deduped/compressed data, for this object, resident on cloud archive targets
 * GiB per Archive Target: amount of deduped/compressed data, for this object, resident on each archive target
+* Description: description of protection group or view

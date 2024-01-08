@@ -14,11 +14,11 @@ param (
     [Parameter()][int]$numRuns = 100,
     [Parameter()][int]$growthDays = 7,
     [Parameter()][switch]$skipDeleted,
-    [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'GiB',
+    [Parameter()][ValidateSet('MiB','GiB','TiB','MB','GB','TB')][string]$unit = 'GiB',
     [Parameter()][switch]$dbg
 )
 
-$conversion = @{'Kib' = 1024; 'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
+$conversion = @{'KiB' = 1024; 'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024; 'KB' = 1000; 'MB' = 1000 * 1000; 'GB' = 1000 * 1000 * 1000; 'TB' = 1000 * 1000 * 1000 * 1000}
 
 function toUnits($val){
     return [math]::Round($val/$conversion[$unit], 1)
@@ -30,7 +30,7 @@ $outfileName = "storagePerObjectReport-$dateString.csv"
 $outfile2 = "customFormat2-storagePerObjectReport-$dateString.csv"
 
 # headings
-"""Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Environment"",""Source Name"",""Object Name"",""Logical $unit"",""$unit Read"",""$unit Written"",""$unit Written plus Resiliency"",""Job Reduction Ratio"",""$unit Written Last $growthDays Days"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description""" | Out-File -FilePath $outfileName
+"""Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Environment"",""Source Name"",""Object Name"",""Logical $unit"",""$unit Read"",""$unit Written"",""$unit Written plus Resiliency"",""Reduction Ratio"",""$unit Written Last $growthDays Days"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description""" | Out-File -FilePath $outfileName
 """Cluster Name"",""Month"",""Object Name"",""Description"",""$unit Written plus Resiliency""" | Out-File -FilePath $outfile2
 
 
