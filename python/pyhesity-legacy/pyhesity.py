@@ -592,7 +592,7 @@ def __writelog(logmessage):
             logsize = os.path.getsize(LOGFILE)
             if logsize > 1048576:
                 os.rename(LOGFILE, '%s-%s.txt' % (LOGFILE, apierrordatestring))
-    except:
+    except Exception:
         pass
 
     # avoid race condition
@@ -605,7 +605,7 @@ def __writelog(logmessage):
         debuglog = open(LOGFILE, 'a')
         debuglog.write('%s: %s\n' % (apierrordatestring, apierror))
         debuglog.close()
-    except:
+    except Exception:
         pass
     lastapierrorusecs = apierrorusecs
     lastapierror = apierror
