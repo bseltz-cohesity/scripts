@@ -2,11 +2,11 @@
 
 If your system does not have access to the Internet, you can get a tgz or zip of the requests module and its dependencies here:
 
-tgz: <https://github.com/bseltz-cohesity/scripts/blob/master/python/requests.tgz>
+tgz: <https://github.com/bseltz-cohesity/scripts/raw/master/python/requests.tgz>
 
 or
 
-zip: <https://github.com/bseltz-cohesity/scripts/blob/master/python/requests.zip>
+zip: <https://github.com/bseltz-cohesity/scripts/raw/master/python/requests.zip>
 
 Transfer and unzip the package on you system, then cd into the folder with the extracted files, and you can use the pip (or pip3) to install the modules.
 
