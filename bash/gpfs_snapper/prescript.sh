@@ -11,7 +11,7 @@ echo " " >> /tmp/cohesity-prescript.log
 all_snap_status=0
 # comma separated list of filesets to snap should be sent as parameter e.g. fs1/fileset1,fs2/fileset2
 if [[ -n $1 ]]; then
-    filesets=$(echo $1 | sed 's/,/ /')
+    filesets=$(echo $1 | sed 's/,/ /g')
     for fileset in $filesets
     do
         IFS='/' read -r -a fsloc <<< "$fileset"
