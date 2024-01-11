@@ -116,7 +116,7 @@ function reportStorage(){
             Write-Host "  $($job.name)"
             $tenant = $job.permissions.name
             # get resiliency factor
-            $resiliencyFactor = 0
+            $resiliencyFactor = 1
             if($job.PSObject.Properties['storageDomainId']){
                 $sd = $storageDomains | Where-Object id -eq $job.storageDomainId
                 if($sd){
