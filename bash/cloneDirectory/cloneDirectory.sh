@@ -58,7 +58,6 @@ api () {
 
 CLONE_PARAMS='{"destinationDirectoryName": "'${TARGETDIR}'", "destinationParentDirectoryPath": "/'${TARGETPATH}'", "sourceDirectoryPath": "/'${SOURCEPATH}'"}'
 echo "Cloning $SOURCEPATH to $TARGETPATH/$TARGETDIR"
-# echo $CLONE_PARAMS
 RESULT=$(api post "https://${CLUSTER_ENDPOINT}/irisservices/api/v1/public/views/cloneDirectory" $APIKEY "${CLONE_PARAMS}")
 if [[ "$RESULT" != "null" ]]; then
     echo "$RESULT"
