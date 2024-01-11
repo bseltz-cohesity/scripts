@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-01-11
+
+* [cloneDirectory.sh](https://github.com/bseltz-cohesity/scripts/tree/master/bash/cloneDirectory) [`New`] clone a directory using bash
+
 ## 2024-01-08
 
 * [storagePerObjectReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport) [`Update`] Added multi-cluster support
