@@ -124,7 +124,7 @@ def reportStorage():
             if 'permissions' in job and len(job['permissions']) > 0 and 'name' in job['permissions'][0]:
                 tenant = job['permissions'][0]['name']
             # get resiliency factor
-            resiliencyFactor = 0
+            resiliencyFactor = 1
             if 'storageDomainId' in job:
                 sd = [v for v in storageDomains if v['id'] == job['storageDomainId']]
                 if sd is not None and len(sd) > 0:
