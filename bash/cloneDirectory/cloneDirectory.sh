@@ -62,6 +62,8 @@ echo "Cloning $SOURCEPATH to $TARGETPATH/$TARGETDIR"
 RESULT=$(api post "https://${CLUSTER_ENDPOINT}/irisservices/api/v1/public/views/cloneDirectory" $APIKEY "${CLONE_PARAMS}")
 if [[ "$RESULT" != "null" ]]; then
     echo "$RESULT"
+    exit 1
 else
     echo "OK"
+    exit 0
 fi
