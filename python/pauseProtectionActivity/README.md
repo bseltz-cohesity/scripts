@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This Python script pauses (or resumes) protection groups, replication, archival and garbage collection activity with the goal of optimizing performance for restore operations.
+This Python script pauses (or resumes) protection groups, replication, archival, indexing and garbage collection activity with the goal of optimizing performance for restore operations.
 
 ## Download the script
 
