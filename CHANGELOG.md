@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-01-13
+
+* [regosterADSource.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/registerADSource) [`New`] register and Active Directory protection source
+
 ## 2024-01-11
 
 * [cloneDirectory.sh](https://github.com/bseltz-cohesity/scripts/tree/master/bash/cloneDirectory) [`New`] clone a directory using bash
