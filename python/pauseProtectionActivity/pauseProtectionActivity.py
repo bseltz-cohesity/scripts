@@ -52,6 +52,24 @@ stopgconly = args.stopgconly
 requests.packages.urllib3.disable_warnings()
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+
+def setGflag(servicename, flagname, flagvalue, reason, clear=False):
+    gflag = {
+        'serviceName': servicename,
+        'gflags': [
+            {
+                'name': flagname,
+                'value': flagvalue,
+                'reason': reason
+            }
+        ],
+        'effectiveNow': True
+    }
+    if clear is True:
+        gflag['clear'] = True
+    response = api('put', '/clusters/gflag', gflag)
+
+
 if resume and pause:
     print('please choose either -p (--pause) or -r (--resume), but not both')
     exit()
@@ -242,6 +260,20 @@ if not cancelrunsonly and not stopgconly:
         else:
             settings = {}
         result = api('put', 'vaults/bandwidthSettings', settings)
+
+# indexing ====================================================================
+if not cancelrunsonly and not stopgconly:
+    if action in ['kPause', 'kResume']:
+        out('%s indexing' % actiontext)
+        if action == 'kPause':
+            setGflag(servicename='kYoda', flagname='yoda_block_slave_dispatcher', flagvalue='true', reason='pause')
+        if action == 'kResume':
+            setGflag(servicename='kYoda', flagname='yoda_block_slave_dispatcher', flagvalue='false', reason='resume', clear=True)
+        restartParams = {
+            "clusterId": cluster['id'],
+            "services": ["yoda"]
+        }
+        restart = api('post', '/nexus/cluster/restart', restartParams)
 
 # apollo service ==============================================================
 if not cancelrunsonly:
