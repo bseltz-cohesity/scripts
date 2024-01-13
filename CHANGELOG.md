@@ -19,7 +19,7 @@
 ## 2024-01-05
 
 * [legalHold.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/legalHold) [`New`] Add/Remove legal hold from specified protection run
-* [changeLocalRetention](https://github.com/bseltz-cohesity/scripts/tree/master/python/changeLocalRetention) [`Update`] added options to select specific run for retention change
+* [changeLocalRetention.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/changeLocalRetention) [`Update`] added options to select specific run for retention change
 
 ## 2024-01-03
 
