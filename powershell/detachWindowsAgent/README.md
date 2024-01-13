@@ -20,7 +20,6 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 * [detachWindowsAgent.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/detachWindowsAgent/detachWindowsAgent.ps1): the main powershell script
 
-
 ## Example
 
 ```powershell

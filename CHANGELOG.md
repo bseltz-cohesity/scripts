@@ -2,6 +2,7 @@
 
 ## 2024-01-13
 
+* [detachWindowsAgent.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/detachWindowsAgent) [`New`] detach Windows agent from its Cohesity cluster
 * [pauseProtectionActivity.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/pauseProtectionActivity) [`Update`] added pause/resume of indexing
 * [slaStatus.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/slaStatus) [`Update`] modernized authentication and updated time range parameters
 * [regosterADSource.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/registerADSource) [`New`] register and Active Directory protection source
