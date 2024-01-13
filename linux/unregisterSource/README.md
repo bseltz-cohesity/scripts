@@ -2,11 +2,11 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script unregisters protection sources.
+This is a compiled binary that unregisters protection sources.
 
-## Download the script
+## Download the tool
 
-You can download the scripts using the following commands:
+You can download the tool using the following commands:
 
 ```bash
 # download commands
@@ -17,12 +17,12 @@ curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/linux/u
 ## Example
 
 ```bash
-./unregisterSource.py -v mycluster \
-                      -u myuser \
-                      -d mydomain.net \
-                      -s server1.mydomain.net \
-                      -s server2.mydomain.net \
-                      -l serverlist.txt
+./unregisterSource -v mycluster \
+                   -u myuser \
+                   -d mydomain.net \
+                   -s server1.mydomain.net \
+                   -s server2.mydomain.net \
+                   -l serverlist.txt
 ```
 
 ## Parameters
