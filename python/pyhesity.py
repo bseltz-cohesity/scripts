@@ -88,7 +88,7 @@ __all__ = ['api_version',
            'impersonate',
            'switchback']
 
-api_version = '2023.11.07'
+api_version = '2024.01.14'
 
 COHESITY_API = {
     'APIROOT': '',
@@ -301,7 +301,92 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                 else:
                     COHESITY_API['AUTHENTICATED'] = False
                     if response.status_code == 403 and 'user does not have the privilege to access ui' in response.json()['message'].lower():
-                        apiauth_legacy(vip=vip, username=username, domain=domain, prompt=prompt, helios=helios, useApiKey=useApiKey)
+                        # =============================================================================================================
+                        creds = json.dumps({"domain": domain, "password": pwd, "username": username, "otpType": mfaType, "otpCode": mfaCode})
+                        emailcreds = json.dumps({"domain": domain, "password": pwd, "username": username})
+
+                        url = COHESITY_API['APIROOT'] + '/public/accessTokens'
+                        try:
+                            if emailMfaCode is True:
+                                print('scripted MFA via email is disabled, please use -m xxxxxx')
+                                apidrop()
+                                return None
+
+                            response = requests.post(url, data=creds, headers=COHESITY_API['HEADER'], verify=False, timeout=timeout)
+                            if response != '':
+                                if response.status_code == 201:
+                                    accessToken = response.json()['accessToken']
+                                    tokenType = response.json()['tokenType']
+                                    COHESITY_API['HEADER'] = {
+                                        'User-Agent': 'pyhesity/%s' % api_version,
+                                        'accept': 'application/json',
+                                        'content-type': 'application/json',
+                                        'authorization': tokenType + ' ' + accessToken
+                                    }
+                                    COHESITY_API['AUTHENTICATED'] = True
+                                    if tenantId is not None:
+                                        impersonate(tenantId)
+                                    COHESITY_API['LAST_ERROR'] = 'OK'
+                                    if quiet is None:
+                                        print("Connected!")
+                                else:
+                                    # try session auth
+                                    if response.status_code == 400 and 'access denied' in response.json()['message'].lower():
+                                        try:
+                                            url = COHESITY_API['APIROOTv2'] + 'users/sessions'
+                                            creds = json.dumps({"domain": domain, "password": pwd, "username": username, "otpType": mfaType.lower(), "otpCode": mfaCode})
+                                            if emailMfaCode is True:
+                                                creds = json.dumps({"domain": domain, "password": pwd, "username": username, "otpType": 'email', "otpCode": mfaCode})
+                                            response = requests.post(url, data=creds, headers=COHESITY_API['HEADER'], verify=False, timeout=timeout)
+                                            if response != '':
+                                                if response.status_code == 201:
+                                                    sessionId = response.json()['sessionId']
+                                                    COHESITY_API['HEADER'] = {
+                                                        'User-Agent': 'pyhesity/%s' % api_version,
+                                                        'accept': 'application/json',
+                                                        'content-type': 'application/json',
+                                                        'session-id': sessionId
+                                                    }
+                                                    COHESITY_API['AUTHENTICATED'] = True
+                                                    if tenantId is not None:
+                                                        impersonate(tenantId)
+                                                    COHESITY_API['LAST_ERROR'] = 'OK'
+                                                    if quiet is None:
+                                                        print("Connected!")
+                                                else:
+                                                    COHESITY_API['AUTHENTICATED'] = False
+                                                    COHESITY_API['LAST_ERROR'] = 'Error %s' % response.status_code
+                                                    __writelog('Error %s' % response.status_code)
+                                                    if quiet is None:
+                                                        print('Error %s' % response.status_code)
+                                                    if response.status_code == 400 and 'invalid username' in response.json()['message'].lower():
+                                                        if noretry is not True and prompt is not False:
+                                                            apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
+                                        except requests.exceptions.RequestException as e2:
+                                            __writelog(e2)
+                                            COHESITY_API['AUTHENTICATED'] = False
+                                            COHESITY_API['LAST_ERROR'] = e2
+                                            if quiet is None:
+                                                print(e2)
+                                    else:
+                                        COHESITY_API['AUTHENTICATED'] = False
+                                        if response.status_code == 400:
+                                            COHESITY_API['LAST_ERROR'] = 'invalid username or password.'
+                                        else:
+                                            COHESITY_API['LAST_ERROR'] = 'Error %s' % response.status_code
+                                        __writelog(COHESITY_API['LAST_ERROR'])
+                                        if quiet is None:
+                                            print(COHESITY_API['LAST_ERROR'])
+                                        if response.status_code == 400 and 'invalid username' in response.json()['message'].lower():
+                                            if noretry is False and prompt is not False:
+                                                apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
+                        except requests.exceptions.RequestException as e:
+                            __writelog(e)
+                            COHESITY_API['AUTHENTICATED'] = False
+                            COHESITY_API['LAST_ERROR'] = e
+                            if quiet is None:
+                                print(e)
+                        # =============================================================================================================
                         return None
                     if response.status_code == 400 or response.status_code == 401:
                         COHESITY_API['LAST_ERROR'] = 'invalid username or password'
@@ -315,177 +400,6 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                             apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
         except requests.exceptions.RequestException as e:
             reportAuthError(e, quiet=quiet)
-
-
-def apiauth_legacy(vip='helios.cohesity.com', username='helios', domain='local', password=None, updatepw=None, prompt=None, quiet=None, helios=False, useApiKey=False, tenantId=None, noretry=False, regionid=None, mfaType='Totp', mfaCode=None, emailMfaCode=False, timeout=300):
-    """authentication function"""
-    global COHESITY_API
-    global HELIOSCLUSTERS
-    global CONNECTEDHELIOSCLUSTERS
-
-    COHESITY_API['APIROOTMCM'] = 'https://%s/mcm/' % vip
-    COHESITY_API['APIROOTMCMv2'] = 'https://%s/v2/mcm/' % vip
-    COHESITY_API['APIROOTREPORTINGv2'] = 'https://%s/heliosreporting/api/v1/public/' % vip
-
-    if '\\' in username:
-        (domain, username) = username.split('\\')
-    if '/' in username:
-        (domain, username) = username.split('/')
-
-    pwd = password
-    pwd = __getpassword(vip=vip, username=username, password=password, domain=domain, useApiKey=useApiKey, helios=helios, updatepw=updatepw, prompt=prompt)
-    if pwd is None:
-        COHESITY_API['AUTHENTICATED'] = False
-        COHESITY_API['LAST_ERROR'] = 'no password provided for %s/%s at %s' % (domain, username, vip)
-        return None
-    COHESITY_API['HEADER'] = {'accept': 'application/json', 'content-type': 'application/json'}
-    COHESITY_API['APIROOT'] = 'https://' + vip + '/irisservices/api/v1'
-    COHESITY_API['APIROOTv2'] = 'https://' + vip + '/v2/'
-    if vip == 'helios.cohesity.com' or helios is not False:
-        COHESITY_API['HEADER'] = {'accept': 'application/json', 'content-type': 'application/json', 'apiKey': pwd}
-        if regionid is not None:
-            COHESITY_API['HEADER']['regionid'] = regionid
-        URL = COHESITY_API['APIROOTMCM'] + 'clusters/connectionStatus'
-        try:
-            HELIOSCLUSTERS = (requests.get(URL, headers=COHESITY_API['HEADER'], verify=False, timeout=timeout)).json()
-            if HELIOSCLUSTERS is not None and 'message' in HELIOSCLUSTERS:
-                print(HELIOSCLUSTERS['message'])
-                if 'Authentication failed' in HELIOSCLUSTERS['message'] and noretry is False and prompt is not False:
-                    apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey, quiet=True)
-                else:
-                    COHESITY_API['AUTHENTICATED'] = False
-                    COHESITY_API['LAST_ERROR'] = 'Helios/MCM authentication failed'
-                    return None
-            if HELIOSCLUSTERS is not None and 'errorCode' not in HELIOSCLUSTERS:
-                CONNECTEDHELIOSCLUSTERS = [cluster for cluster in HELIOSCLUSTERS if cluster['connectedToCluster'] is True]
-                COHESITY_API['AUTHENTICATED'] = True
-                COHESITY_API['LAST_ERROR'] = 'OK'
-                if quiet is None:
-                    print("Connected!")
-            else:
-                URL = COHESITY_API['APIROOTMCMv2'] + 'dms/regions'
-                REGIONS = (requests.get(URL, headers=COHESITY_API['HEADER'], verify=False, timeout=timeout)).json()
-                if REGIONS is not None and 'message' in REGIONS:
-                    print(REGIONS['message'])
-                    COHESITY_API['AUTHENTICATED'] = False
-                    COHESITY_API['LAST_ERROR'] = 'DMaaS authentication failed'
-                    return None
-                if REGIONS is not None and 'errorCode' not in REGIONS:
-                    COHESITY_API['AUTHENTICATED'] = True
-                    COHESITY_API['LAST_ERROR'] = 'OK'
-                    if quiet is None:
-                        print("Connected!")
-        except requests.exceptions.RequestException as e:
-            COHESITY_API['AUTHENTICATED'] = False
-            COHESITY_API['LAST_ERROR'] = e
-            if 'Authentication failed' in e and noretry is False and prompt is not False:
-                apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
-            if quiet is None:
-                __writelog(e)
-                print(e)
-    elif useApiKey is True:
-        COHESITY_API['HEADER'] = {'accept': 'application/json', 'content-type': 'application/json', 'apiKey': pwd}
-        COHESITY_API['AUTHENTICATED'] = True
-        if tenantId is not None:
-            impersonate(tenantId)
-        COHESITY_API['LAST_ERROR'] = 'OK'
-        cluster = api('get', 'cluster', quiet=True)
-        if cluster is not None and 'id' in cluster:
-            if quiet is None:
-                print("Connected!")
-        else:
-            COHESITY_API['AUTHENTICATED'] = False
-            if 'StatusUnauthorized' in COHESITY_API['LAST_ERROR'] or 'invalid header value' in COHESITY_API['LAST_ERROR']:
-                COHESITY_API['LAST_ERROR'] = 'API key authentication failed'
-                print('API key authentication failed')
-                if prompt is not False and noretry is not True:
-                    apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
-            else:
-                print('Connection failed: %s' % COHESITY_API['LAST_ERROR'])
-    else:
-        creds = json.dumps({"domain": domain, "password": pwd, "username": username, "otpType": mfaType, "otpCode": mfaCode})
-        emailcreds = json.dumps({"domain": domain, "password": pwd, "username": username})
-
-        url = COHESITY_API['APIROOT'] + '/public/accessTokens'
-        try:
-            if emailMfaCode is True:
-                print('scripted MFA via email is disabled, please use -m xxxxxx')
-                apidrop()
-                return None
-                # emailurl = COHESITY_API['APIROOTv2'] + 'send-email-otp'
-                # response = requests.post(emailurl, data=emailcreds, headers=COHESITY_API['HEADER'], verify=False, timeout=timeout)
-                # mfaCode = getpass.getpass("Enter emailed MFA code: ")
-                # creds = json.dumps({"domain": domain, "password": pwd, "username": username, "otpType": 'Email', "otpCode": mfaCode})
-
-            response = requests.post(url, data=creds, headers=COHESITY_API['HEADER'], verify=False, timeout=timeout)
-            if response != '':
-                if response.status_code == 201:
-                    accessToken = response.json()['accessToken']
-                    tokenType = response.json()['tokenType']
-                    COHESITY_API['HEADER'] = {'accept': 'application/json',
-                                              'content-type': 'application/json',
-                                              'authorization': tokenType + ' ' + accessToken}
-                    COHESITY_API['AUTHENTICATED'] = True
-                    if tenantId is not None:
-                        impersonate(tenantId)
-                    COHESITY_API['LAST_ERROR'] = 'OK'
-                    if quiet is None:
-                        print("Connected!")
-                else:
-                    # try session auth
-                    if response.status_code == 400 and 'access denied' in response.json()['message'].lower():
-                        try:
-                            url = COHESITY_API['APIROOTv2'] + 'users/sessions'
-                            creds = json.dumps({"domain": domain, "password": pwd, "username": username, "otpType": mfaType.lower(), "otpCode": mfaCode})
-                            if emailMfaCode is True:
-                                creds = json.dumps({"domain": domain, "password": pwd, "username": username, "otpType": 'email', "otpCode": mfaCode})
-                            response = requests.post(url, data=creds, headers=COHESITY_API['HEADER'], verify=False, timeout=timeout)
-                            if response != '':
-                                if response.status_code == 201:
-                                    sessionId = response.json()['sessionId']
-                                    COHESITY_API['HEADER'] = {'accept': 'application/json',
-                                                              'content-type': 'application/json',
-                                                              'session-id': sessionId}
-                                    COHESITY_API['AUTHENTICATED'] = True
-                                    if tenantId is not None:
-                                        impersonate(tenantId)
-                                    COHESITY_API['LAST_ERROR'] = 'OK'
-                                    if quiet is None:
-                                        print("Connected!")
-                                else:
-                                    COHESITY_API['AUTHENTICATED'] = False
-                                    COHESITY_API['LAST_ERROR'] = 'Error %s' % response.status_code
-                                    __writelog('Error %s' % response.status_code)
-                                    if quiet is None:
-                                        print('Error %s' % response.status_code)
-                                    if response.status_code == 400 and 'invalid username' in response.json()['message'].lower():
-                                        if noretry is not True and prompt is not False:
-                                            apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
-                        except requests.exceptions.RequestException as e2:
-                            __writelog(e2)
-                            COHESITY_API['AUTHENTICATED'] = False
-                            COHESITY_API['LAST_ERROR'] = e2
-                            if quiet is None:
-                                print(e2)
-                    else:
-                        COHESITY_API['AUTHENTICATED'] = False
-                        if response.status_code == 400:
-                            COHESITY_API['LAST_ERROR'] = 'invalid username or password.'
-                        else:
-                            COHESITY_API['LAST_ERROR'] = 'Error %s' % response.status_code
-                        __writelog(COHESITY_API['LAST_ERROR'])
-                        if quiet is None:
-                            print(COHESITY_API['LAST_ERROR'])
-                        if response.status_code == 400 and 'invalid username' in response.json()['message'].lower():
-                            if noretry is False and prompt is not False:
-                                apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
-
-        except requests.exceptions.RequestException as e:
-            __writelog(e)
-            COHESITY_API['AUTHENTICATED'] = False
-            COHESITY_API['LAST_ERROR'] = e
-            if quiet is None:
-                print(e)
 
 
 def apiconnected():
