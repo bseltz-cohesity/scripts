@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-01-14
+
+* [cohesity-api.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api) [`Update`] integrated legacy access modes
+* [pyhesity.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity) [`Update`] integrated legacy access modes
+
 ## 2024-01-13
 
 * [detachWindowsAgent.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/detachWindowsAgent) [`New`] detach Windows agent from its Cohesity cluster
