@@ -28,10 +28,11 @@
 # 2023.12.01 - added -noDomain (for SaaS connector)
 # 2023.12.03 - added support for raw URL
 # 2023.12.13 - re-ordered apiauth parameters (to force first unnamed parameter to be interpreted as password)
+# 2024.01.14 - reenabled legacy access modes
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2023.12.13'
+$versionCohesityAPI = '2024.01.14'
 
 # state cache
 $cohesity_api = @{
@@ -427,6 +428,10 @@ function apiauth($vip='helios.cohesity.com',
             if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
         }catch{
             $thisError = $_
+            if($thisError -match 'User does not have the privilege to access UI'){
+                apiauth_legacy -vip $vip -username $username -domain $domain -mfaCode $mfaCode -tenant $tenant
+                break
+            }
             if($quiet){
                 reportError $_ -quiet
             }else{
