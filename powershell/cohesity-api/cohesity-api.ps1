@@ -430,7 +430,7 @@ function apiauth($vip='helios.cohesity.com',
             $thisError = $_
             if($thisError -match 'User does not have the privilege to access UI'){
                 apiauth_legacy -vip $vip -username $username -domain $domain -mfaCode $mfaCode -tenant $tenant
-                break
+                return $null
             }
             if($quiet){
                 reportError $_ -quiet
