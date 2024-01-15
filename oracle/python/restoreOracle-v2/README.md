@@ -163,8 +163,8 @@ Restoring an Oracle RAC DB:
 * -rs, --redologsizemb: (optional) size of redo log groups in MB (default is 20)
 * -rp, --redologprefix: (optional) redo log prefix
 * -bc, --bctFilePath: (optional) alternate bct file path
-* -pf, --pfileparameter: (optional) one or more parameter names to include in pfile (comma separated)
-* -sh, --shellparameter (optional) one or more shell variable names (comma separated)
+* -pf, --pfileparameter: (optional) one or more parameter names to include in pfile (repeat for multiple)
+* -sh, --shellparameter (optional) one or more shell variable names (repeat for multiple)
 * -dbg, --dbg: (optional) display api payload and exit (without restoring)
 
 ## Point in Time Recovery
