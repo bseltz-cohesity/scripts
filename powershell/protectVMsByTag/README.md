@@ -78,3 +78,4 @@ For a compound tag (where a VM must have both tags to be included):
 * -qosPolicy: (optional) kBackupHDD or kBackupSSD (default is kBackupHDD)
 * -disableIndexing: (optional) disable indexing (indexing is enabled by default)
 * -appConsistent: (optional) quiesce VMs during backup
+* -noStorageeDomain: (optional) do not specify storage domain (for CAD and NGCE deployments)
