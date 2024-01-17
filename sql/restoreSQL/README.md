@@ -52,6 +52,19 @@ Place both files in a folder together and run the main script like so:
                  -ldfFolder c:\sqllogs `
                  -latest
 # end examples
+
+# restore to an alternate location using Helios (enter Helios API Key when prompted for password)
+./restoreSQL.ps1 -clusterName mycluster `
+                 -username myuser `
+                 -domain mydomain.net `
+                 -sourceServer mysqlserver `
+                 -sourceDB mydb `
+                 -targetServer sqlserver2 `
+                 -targetDB restoredb `
+                 -mdfFolder c:\sqldata `
+                 -ldfFolder c:\sqllogs `
+                 -latest
+# end examples
 ```
 
 ## Authentication Parameters
