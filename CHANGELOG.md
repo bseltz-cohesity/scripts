@@ -1,5 +1,13 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-01-17
+
+* [restoreSQLv2.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQLv2) [`Fix`] added validation of target instance name
+
+## 2024-01-16
+
+* [protectVMsByTag.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectVMsByTag) [`Update`] added -noStorageDomain option to support NextGen Cloud Edition
+
 ## 2024-01-14
 
 * [cohesity-api.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api) [`Update`] integrated legacy access modes
