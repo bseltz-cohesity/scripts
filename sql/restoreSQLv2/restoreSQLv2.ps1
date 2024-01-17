@@ -459,13 +459,18 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         if(! $targetInstance){
             $targetInstance = 'MSSQLSERVER'
         }
+        $targetInstanceObj = ($targetEntity.applications | Where-Object environment -eq kSQL).applicationTreeInfo | Where-Object {$_.protectionSource.name -eq $targetInstance}
+        if(! $targetInstanceObj){
+            Write-Host "    Target instance $($targetEntity.rootNode.name)/$($targetInstance) not found" -ForegroundColor Yellow
+            exit 1
+        }
         $thisParam.sqlTargetParams = @{
             "recoverToNewSource" = $true;
             "newSourceConfig" = @{
                 "host" = @{
                     "id" = $targetEntity.rootNode.id
                 };
-                "instanceName" = $targetInstance;
+                "instanceName" = $targetInstanceObj.protectionSource.name;
                 "keepCdc" = $false;
                 "withNoRecovery" = $false;
                 "databaseName" = $newDbName
