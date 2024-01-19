@@ -13,7 +13,9 @@ param (
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName,
     [Parameter()][array]$viewName,
-    [Parameter()][string]$viewList
+    [Parameter()][string]$viewList,
+    [Parameter()][string]$path,
+    [Parameter()][int]$pageCount = 1000
 )
 
 # source the cohesity-api helper code
@@ -70,17 +72,36 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 
 $viewNames = @(gatherList -Param $viewName -FilePath $viewList -Name 'views' -Required $false)
 
-$fileOpens = api get smbFileOpens
+if($viewNames.Count -eq 1){
+    $fileOpens = api get "smbFileOpens?viewName=$($viewNames[0])&pageCount=$pageCount"
+}else{
+    $fileOpens = api get "smbFileOpens?pageCount=$pageCount"
+}
 
 if(! $fileOpens.PSObject.Properties['activeFilePaths']){
     Write-Host "No file opens"
 }
-foreach($filePath in $fileOpens.activeFilePaths){
-    if($viewNames.Count -eq 0 -or $filePath.viewName -in $viewNames){
-        foreach($session in $filePath.activeSessions){
-            """{0}"",""{1}"",""{2}\{3}"",""{4}""" -f $filePath.viewName, $session.clientIP, $session.domain, $session.username, $filePath.filePath | Tee-Object -FilePath $outfileName -Append
+while($True){
+    foreach($filePath in $fileOpens.activeFilePaths){
+        if($viewNames.Count -eq 0 -or $filePath.viewName -in $viewNames){
+            foreach($session in $filePath.activeSessions){
+                if(! $path -or $filePath.filePath -match $path){
+                    """{0}"",""{1}"",""{2}\{3}"",""{4}""" -f $filePath.viewName, $session.clientIP, $session.domain, $session.username, $filePath.filePath | Tee-Object -FilePath $outfileName -Append
+                }            
+            }
         }
     }
+    if($fileOpens.PSObject.Properties['cookie']){
+        Write-Host "found cookie"
+        if($viewNames.Count -eq 1){
+            $fileOpens = api get "smbFileOpens?viewName=$($viewNames[0])&pageCount=$pageCount&cookie=$($fileOpens.cookie)"
+        }else{
+            $fileOpens = api get "smbFileOpens?pageCount=$pageCount&cookie=$($fileOpens.cookie)"
+        }
+    }else{
+        break
+    }
 }
+
 
 "`nOutput saved to $outfilename`n"
