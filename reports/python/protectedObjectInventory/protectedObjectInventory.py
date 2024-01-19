@@ -42,7 +42,6 @@ policies = api('get', 'data-protect/policies', v=2)['policies']
 jobs = api('get', 'data-protect/protection-groups?includeTenants=true', v=2)
 
 # headings
-# f.write('Cluster Name,Job Name,Environment,Object Name,Object Type,Object Size (MiB),Parent,Policy Name,Policy Link,Archive Target,Direct Archive,Frequency (Minutes),Last Backup,Last Status,Last Run Type,Job Paused,Indexed,Start Time,Time Zone,QoS Policy,Priority,Full SLA,Incremental SLA\n')
 f.write('Cluster Name,Job Name,Environment,Parent,Object Name,Object Type,Object Size (MiB),Policy Name,Direct Archive,Last Backup,Last Status,Last Run Type,Job Paused,Indexed,Start Time,Time Zone,QoS Policy,Priority,Full SLA,Incremental SLA,Incremental Schedule,Full Schedule,Log Schedule,Retries,Replication Schedule,Archive Schedule\n')
 
 frequentSchedules = ['Minutes', 'Hours', 'Days']
@@ -51,7 +50,6 @@ frequentSchedules = ['Minutes', 'Hours', 'Days']
 policyDetails = {}
 
 for policy in policies:
-    # policyDetails[policy['name']] = {}
     incrementalSchedule = ''
     fullSchedule = ''
     logSchedule = ''
@@ -75,12 +73,12 @@ for policy in policies:
         unitPath = '%sSchedule' % unit.lower()[:-1]
         if unit in frequentSchedules:
             frequency = backupSchedule[unitPath]['frequency']
-            incrementalSchedule = 'Every %s %s keep for %s %s%s' % (frequency, unit, baseRetention['duration'], baseRetention['unit'], dataLock)
+            incrementalSchedule = 'Every %s %s keep for %s %s%s; ' % (frequency, unit, baseRetention['duration'], baseRetention['unit'], dataLock)
         else:
             if unit == 'Weeks':
-                incrementalSchedule += ' ; Weekly on %s keep for %s %s%s' % ((':'.join(backupSchedule[unitPath]['dayOfWeek'])), baseRetention['duration'], baseRetention['unit'], dataLock)
+                incrementalSchedule += 'Weekly on %s keep for %s %s%s; ' % ((':'.join(backupSchedule[unitPath]['dayOfWeek'])), baseRetention['duration'], baseRetention['unit'], dataLock)
             if unit == 'Months':
-                incrementalSchedule += ' ; Monthly on %s %s keep for %s %s%s' % (backupSchedule[unitPath]['weekOfMonth'], backupSchedule[unitPath]['dayOfWeek'][0], baseRetention['duration'], baseRetention['unit'], dataLock)
+                incrementalSchedule += 'Monthly on %s %s keep for %s %s%s; ' % (backupSchedule[unitPath]['weekOfMonth'], backupSchedule[unitPath]['dayOfWeek'][0], baseRetention['duration'], baseRetention['unit'], dataLock)
     # full backup
     if 'full' in policy['backupPolicy']['regular']:
         backupSchedule = policy['backupPolicy']['regular']['full']['schedule']
@@ -88,14 +86,14 @@ for policy in policies:
         unitPath = '%sSchedule' % unit.lower()[:-1]
         if unit in frequentSchedules:
             frequency = backupSchedule[unitPath]['frequency']
-            fullSchedule = 'Every %s %s keep for %s %s%s' % (frequency, unit, baseRetention['duration'], baseRetention['unit'], dataLock)
+            fullSchedule = 'Every %s %s keep for %s %s%s; ' % (frequency, unit, baseRetention['duration'], baseRetention['unit'], dataLock)
         else:
             if unit == 'Weeks':
-                fullSchedule += ' ; weekly on %s keep for %s %s%s' % ((':'.join(backupSchedule[unitPath]['dayOfWeek'])), baseRetention['duration'], baseRetention['unit'], dataLock)
+                fullSchedule += 'weekly on %s keep for %s %s%s; ' % ((':'.join(backupSchedule[unitPath]['dayOfWeek'])), baseRetention['duration'], baseRetention['unit'], dataLock)
             if unit == 'Months':
-                fullSchedule += ' ; Monthly on %s %s keep for %s %s%s' % (backupSchedule[unitPath]['weekOfMonth'], backupSchedule[unitPath]['dayOfWeek'][0], baseRetention['duration'], baseRetention['unit'], dataLock)
+                fullSchedule += 'Monthly on %s %s keep for %s %s%s; ' % (backupSchedule[unitPath]['weekOfMonth'], backupSchedule[unitPath]['dayOfWeek'][0], baseRetention['duration'], baseRetention['unit'], dataLock)
             if unit == 'ProtectOnce':
-                fullSchedule += ' ; Once keep for %s %s%s' % (baseRetention['duration'], baseRetention['unit'], dataLock)
+                fullSchedule += 'Once keep for %s %s%s; ' % (baseRetention['duration'], baseRetention['unit'], dataLock)
     # extended retention
     if 'extendedRetention' in policy and policy['extendedRetention'] is not None and len(policy['extendedRetention']) > 0:
         for extendedRetention in policy['extendedRetention']:
@@ -104,7 +102,7 @@ for policy in policies:
                 dataLock = ' : datalock for %s %s' % (extendedRetention['retention']['dataLockConfig']['duration'], extendedRetention['retention']['dataLockConfig']['unit'])
             if 'dataLock' in policy:
                 dataLock = ' : datalock for %s %s' % (extendedRetention['retention']['duration'], extendedRetention['retention']['unit'])
-            incrementalSchedule += ' ; Extend %s %s keep for %s %s%s' % (extendedRetention['schedule']['frequency'], extendedRetention['schedule']['unit'], extendedRetention['retention']['duration'], extendedRetention['retention']['unit'], dataLock)
+            incrementalSchedule += 'Extend %s %s keep for %s %s%s; ' % (extendedRetention['schedule']['frequency'], extendedRetention['schedule']['unit'], extendedRetention['retention']['duration'], extendedRetention['retention']['unit'], dataLock)
     # log backup
     if 'log' in policy['backupPolicy']:
         logRetention = policy['backupPolicy']['log']['retention']
@@ -117,7 +115,7 @@ for policy in policies:
             dataLock = ' : datalock for %s %s' % (logRetention['dataLockConfig']['duration'], logRetention['dataLockConfig']['unit'])
         if 'dataLock' in policy:
             dataLock = ' : datalock for %s %s' % (logRetention['duration'], logRetention['unit'])
-        logSchedule = 'Every %s %s keep for %s %s%s' % (frequency, unit, logRetention['duration'], logRetention['unit'], dataLock)
+        logSchedule = 'Every %s %s keep for %s %s%s; ' % (frequency, unit, logRetention['duration'], logRetention['unit'], dataLock)
     # remote targets
     if 'remoteTargetPolicy' in policy and policy['remoteTargetPolicy'] is not None and len(policy['remoteTargetPolicy']) > 0:
         # replication targets
@@ -138,7 +136,7 @@ for policy in policies:
                     dataLock = '; datalock for %s %s' % (replicationTarget['retention']['dataLockConfig']['duration'], replicationTarget['retention']['dataLockConfig']['unit'])
                 if 'dataLock' in policy:
                     dataLock = '; datalock for %s %s' % (replicationTarget['retention']['duration'], replicationTarget['retention']['unit'])
-                replicationSchedule += ' ; to %s every %s %s keep for %s %s%s' % (targetName, frequency, frequencyunit, replicationTarget['retention']['duration'], replicationTarget['retention']['unit'], dataLock)
+                replicationSchedule += 'to %s every %s %s keep for %s %s%s; ' % (targetName, frequency, frequencyunit, replicationTarget['retention']['duration'], replicationTarget['retention']['unit'], dataLock)
         if 'archivalTargets' in policy['remoteTargetPolicy'] and policy['remoteTargetPolicy']['archivalTargets'] is not None and len(policy['remoteTargetPolicy']['archivalTargets']) > 0:
             for archivalTarget in policy['remoteTargetPolicy']['archivalTargets']:
                 frequencyunit = archivalTarget['schedule']['unit']
@@ -152,8 +150,7 @@ for policy in policies:
                     dataLock = ' : datalock for %s %s' % (archivalTarget['retention']['dataLockConfig']['duration'], archivalTarget['retention']['dataLockConfig']['unit'])
                 if 'dataLock' in policy:
                     dataLock = ' : datalock for %s %s' % (archivalTarget['retention']['duration'], archivalTarget['retention']['unit'])
-                archiveSchedule += ' ; to %s every %s %s keep for %s %s%s' % (archivalTarget['targetName'], frequency, frequencyunit, archivalTarget['retention']['duration'], archivalTarget['retention']['unit'], dataLock)
-    # f.write('%s,%s,%s,%s,%s,%s,%s,%s\n' % (cluster['name'], policy['name'], incrementalSchedule, retries, fullSchedule, logSchedule, replicationSchedule, archiveSchedule))
+                archiveSchedule += 'to %s every %s %s keep for %s %s%s; ' % (archivalTarget['targetName'], frequency, frequencyunit, archivalTarget['retention']['duration'], archivalTarget['retention']['unit'], dataLock)
     policyDetails[policy['name']] = {
         "incrementalSchedule": incrementalSchedule,
         "fullSchedule": fullSchedule,
@@ -289,7 +286,7 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
                                 objects[object['id']]['objectMiB'] = objectMiB
                         if 'sourceId' in object:
                             objects[object['id']]['sourceId'] = object['sourceId']
-                    except:
+                    except Exception:
                         pass
 
     for id in objects.keys():
