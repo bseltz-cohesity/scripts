@@ -22,6 +22,7 @@ param (
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName,
     [Parameter()][array]$jobname,
+    [Parameter()][string]$jobList,
     [Parameter()][DateTime]$after,
     [Parameter()][DateTime]$before,
     [Parameter(Mandatory = $True)][string]$daysToKeep,
@@ -52,21 +53,44 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
+        }
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
+        exit
+    }
+    return ($items | Sort-Object -Unique)
+}
+
+$jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Required $false)
+
 # filter on job name
 $jobs = api get protectionJobs
-$joblist = @()
-if($jobname.Length -gt 0){
-    foreach($j in $jobname){
+$myjoblist = @()
+if($jobnames.Length -gt 0){
+    foreach($j in $jobnames){
         $job = $jobs | Where-Object {$_.name -eq $j}
         if($job){
-            $joblist += $job
+            $myjoblist += $job
         }else{
             Write-Host "Job $j not found" -ForegroundColor Yellow
             exit
         }
     }
 }else{
-    $joblist = $jobs
+    $myjoblist = $jobs
 }
 
 function changeRetention($run){
@@ -127,7 +151,7 @@ if($before){
     $beforeUsecs = dateToUsecs
 }
 
-foreach($job in $joblist){
+foreach($job in $myjoblist){
     $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$maxRuns&runTypes=$backupType&excludeTasks=true&excludeNonRestoreableRuns=true" | Where-Object {$_.backupRun.snapshotsDeleted -ne $True -and
                                                                                                                                                              $_.backupRun.stats.startTimeUsecs -gt $afterUsecs -and                                                                                                                                                     
                                                                                                                                                              $_.backupRun.stats.endTimeUsecs -le $beforeUsecs}

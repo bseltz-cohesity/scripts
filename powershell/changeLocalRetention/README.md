@@ -57,6 +57,7 @@ Warning: Any snapshots whose new expire date is set to a date in the past will e
 ## Other Parameters
 
 * -jobname: (optional) narrow scope to just the specified jobs (comma separated)
+* -jobList: (optional) text file of job names (one per line)
 * -daysToKeep: set retention to X days from original run date
 * -before: (optional) operate on runs before this date (e.g. '2022-10-10 00:00:00')
 * -after: (optional) operate on runs after this date (e.g. '2022-09-01 23:00:00')
