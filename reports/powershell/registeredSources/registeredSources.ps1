@@ -13,7 +13,8 @@ param (
    [Parameter()][string]$mfaCode = $null,               # MFA code
    [Parameter()][switch]$emailMfaCode,                  # email MFA code
    [Parameter()][string]$searchString,
-   [Parameter()][string]$searchType
+   [Parameter()][string]$searchType,
+   [Parameter()][switch]$dbg
 )
 
 $now = Get-Date
@@ -21,7 +22,7 @@ $dateString = $now.ToString('yyyy-MM-dd')
 
 $outFile = Join-Path -Path $PSScriptRoot -ChildPath "registeredSources-$dateString.csv"
 
-"Cluster,Status,Source Name, Environment,Protected,Unprotected,Auth Status,Auth Error,Last Refresh,Refresh Error,App Health Checks" | Out-File -FilePath $outFile
+"""Cluster"",""Status"",""Source Name"","" Environment"",""Protected"",""Unprotected"",""Auth Status"",""Auth Error"",""Last Refresh"",""Refresh Error"",""App Health Checks""" | Out-File -FilePath $outFile
 
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -53,6 +54,9 @@ foreach($v in $vip){
             }
             if($searchType){
                 $sources = $sources | Where-Object {$_.rootNode.environment -match $searchType}
+            }
+            if($dbg){
+                $sources | toJson | Out-File -FilePath $(Join-Path -Path $PSScriptRoot -ChildPath debug-RegisteredSources-$($cluster).json)
             }
             foreach($source in $sources | Sort-Object -Property {$_.rootNode.name}){
                 $status = 'Healthy'
@@ -116,7 +120,7 @@ foreach($v in $vip){
                         # check for app health check results
                         if($app.PSObject.Properties['hostSettingsCheckResults']){
                             $failedChecks = $app.hostSettingsCheckResults | Where-Object resultType -ne 'kPass'
-                            if($failedChecks.Count -gt 0){
+                            if($failedChecks){
                                 $healthChecks = "{0}: {1}" -f $failedChecks[0].checkType.subString(1), $failedChecks[0].userMessage.split("`n")[0]
                                 $status = 'Unhealthy'
                             }else{
@@ -125,10 +129,10 @@ foreach($v in $vip){
                         }else{
                             $healthChecks = 'n/a'
                         }
-                        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}""" -f $cluster, $status, $sourceName, $sourceType, $protected, $unprotected, $authStatus, $authError, (usecsToDate $lastRefreshUsecs), $lastRefreshError, $healthChecks | Out-File -FilePath $outFile -Append
+                        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}""" -f $cluster, $status, $sourceName, $sourceType, $protected, $unprotected, $authStatus, $authError, $(usecsToDate $lastRefreshUsecs).ToString(), $lastRefreshError, $healthChecks | Out-File -FilePath $outFile -Append
                     }
                 }else{
-                    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""n/a""" -f $cluster, $status, $sourceName, $sourceType, $protected, $unprotected, $authStatus, $authError, (usecsToDate $lastRefreshUsecs), $lastRefreshError | Out-File -FilePath $outFile -Append
+                    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""n/a""" -f $cluster, $status, $sourceName, $sourceType, $protected, $unprotected, $authStatus, $authError, $(usecsToDate $lastRefreshUsecs).ToString(), $lastRefreshError | Out-File -FilePath $outFile -Append
                 }
                 "{0}:  {1}  ({2})  {3}" -f $cluster, $sourceName, $sourceType, $status
             }
