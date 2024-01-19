@@ -29,7 +29,8 @@ param (
     [Parameter()][int]$numStreams = 3,
     [Parameter()][string]$withClause = '',
     [Parameter()][int]$logNumStreams = 3,
-    [Parameter()][string]$logWithClause = ''
+    [Parameter()][string]$logWithClause = '',
+    [Parameter()][switch]$unprotectedDBs
 )
 
 # gather list from command line params and file
@@ -313,6 +314,14 @@ foreach($servername in $serversToAdd){
             foreach($instanceSource in $serverSource.applicationNodes){
                 foreach($node in $instanceSource.nodes){
                     if(($node.protectionSource.name -split '/')[1] -in $systemDBs){
+                        $params.objects = @(@($params.objects | Where-Object {$_.id -ne $node.protectionSource.id}) + @{ 'id' = $node.protectionSource.id})
+                    }
+                }
+            }
+        }elseif($unprotectedDBs){
+            foreach($instanceSource in $serverSource.applicationNodes){
+                foreach($node in $instanceSource.nodes){
+                    if($node.unprotectedSourcesSummary[0].leavesCount -eq 1){
                         $params.objects = @(@($params.objects | Where-Object {$_.id -ne $node.protectionSource.id}) + @{ 'id' = $node.protectionSource.id})
                     }
                 }

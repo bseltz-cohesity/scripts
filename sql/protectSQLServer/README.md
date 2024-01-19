@@ -83,3 +83,4 @@ Or to update an existing job:
 * -withClause: (optional) only applicable to VDI backups (e.g. 'WITH Compression')
 * -logNumStreams: (optional) default is 3 (requires Cohesity 6.8.1 or later)
 * -logWithClause: (optional) e.g. 'WITH MAXTRANSFERSIZE = 4194304, BUFFERCOUNT = 64, COMPRESSION' (requires Cohesity 6.8.1 or later)
+* -unprotectedDBs: (optional) protect any unprotected databases on server
