@@ -13,7 +13,8 @@ param (
     [Parameter()][int]$fullSlaMinutes = 120,  # full SLA minutes
     [Parameter()][int]$autoselect = 0,
     [Parameter()][int]$pageSize = 50000,
-    [Parameter()][array]$excludeFolders
+    [Parameter()][array]$excludeFolders,
+    [Parameter()][switch]$useSecurityGroups
 )
 
 # gather list of mailboxes to protect
@@ -84,17 +85,32 @@ if(!$rootSource){
 $rootSourceId = $rootSource[0].sourceInfoList[0].sourceId
 
 $source = api get "protectionSources?id=$($rootSourceId)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false"  # -region $regionId
-$usersNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
-if(!$usersNode){
-    Write-Host "Source $sourceName is not configured for O365 Mailboxes" -ForegroundColor Yellow
-    exit
+
+if($useSecurityGroups){
+    $usersNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Groups'}
+    if(!$usersNode){
+        Write-Host "Source $sourceName is not configured for O365 Groups" -ForegroundColor Yellow
+        exit
+    }
+}else{
+    $usersNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
+    if(!$usersNode){
+        Write-Host "Source $sourceName is not configured for O365 Mailboxes" -ForegroundColor Yellow
+        exit
+    }
 }
 
 $nameIndex = @{}
 $smtpIndex = @{}
 $idIndex = @{}
 $unprotectedIndex = @()
-$users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false"  # -region $regionId
+
+if($useSecurityGroups){
+    $users = api get "protectionSources?useCachedData=false&pruneNonCriticalInfo=false&pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&isSecurityGroup=true&id=$($usersNode.protectionSource.id)"
+}else{
+    $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false"  # -region $regionId
+}
+
 while(1){
     foreach($node in $users.nodes){
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
@@ -105,13 +121,17 @@ while(1){
         }
     }
     $cursor = $users.nodes[-1].protectionSource.id
-    $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false&afterCursorEntityId=$cursor"  # -region $regionId
+    if($useSecurityGroups){
+        $users = api get "protectionSources?useCachedData=false&pruneNonCriticalInfo=false&pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&isSecurityGroup=true&id=$($usersNode.protectionSource.id)&afterCursorEntityId=$cursor"
+    }else{
+        $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false&afterCursorEntityId=$cursor"  # -region $regionId
+    }
     if(!$users.PSObject.Properties['nodes'] -or $users.nodes.Count -eq 1){
         break
     }
 }  
 
-if($objectsToAdd.Count -eq 0){
+if($mailboxesToAdd.Count -eq 0){
     if($autoselect -gt $unprotectedIndex.Count){
         $autoselect = $unprotectedIndex.Count
     }
