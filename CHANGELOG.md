@@ -1,5 +1,20 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-01-20
+
+* [registeredSources.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/registeredSources) [`Fix`] fixed windows bug and garbled date format
+
+## 2024-01-19
+
+* [protectSQLServer.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/protectSQLServer) [`Update`] added -unprotectedDBs parameter
+* [changeLocalRetention.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/changeLocalRetention) [`Update`] added -jobList parameter
+* [protectDmaasM365Mailboxes.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/protectDmaasM365Mailboxes) [`Update`] added support for security groups
+* [smbFileOpens](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/smbFileOpens) [`Update`] added path filter
+
+## 2024-01-18
+
+* [legalHoldList.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/legalHoldList) [`Update`] moderized authentication
+
 ## 2024-01-17
 
 * [restoreSQLv2.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQLv2) [`Fix`] added validation of target instance name
