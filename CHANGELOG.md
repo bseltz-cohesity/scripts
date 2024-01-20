@@ -6,6 +6,7 @@
 
 ## 2024-01-19
 
+* [agentStatus.ps1](https://github.com/bseltz-cohesity/scripts/tree/8e79c66c685157d9df2f1e3b893b4d24de70e0b0/reports/powershell/agentStatus) [`Removed`] this script has been superceded by [registeredSources.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/registeredSources)
 * [protectSQLServer.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/protectSQLServer) [`Update`] added -unprotectedDBs parameter
 * [changeLocalRetention.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/changeLocalRetention) [`Update`] added -jobList parameter
 * [protectDmaasM365Mailboxes.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/protectDmaasM365Mailboxes) [`Update`] added support for security groups
