@@ -129,10 +129,10 @@ foreach($v in $vip){
                         }else{
                             $healthChecks = 'n/a'
                         }
-                        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}""" -f $cluster, $status, $sourceName, $sourceType, $protected, $unprotected, $authStatus, $authError, $(usecsToDate $lastRefreshUsecs).ToString(), $lastRefreshError, $healthChecks | Out-File -FilePath $outFile -Append
+                        """$cluster"",""$status"",""$sourceName"",""$sourceType"",""$protected"",""$unprotected"",""$authStatus"",""$authError"",""$(usecsToDate $lastRefreshUsecs)"",""$lastRefreshError"",""$healthChecks""" | Out-File -FilePath $outFile -Append
                     }
                 }else{
-                    """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""n/a""" -f $cluster, $status, $sourceName, $sourceType, $protected, $unprotected, $authStatus, $authError, $(usecsToDate $lastRefreshUsecs).ToString(), $lastRefreshError | Out-File -FilePath $outFile -Append
+                    """$cluster"",""$status"",""$sourceName"",""$sourceType"",""$protected"",""$unprotected"",""$authStatus"",""$authError"",""$(usecsToDate $lastRefreshUsecs)"",""$lastRefreshError"",""n/a""" | Out-File -FilePath $outFile -Append
                 }
                 "{0}:  {1}  ({2})  {3}" -f $cluster, $sourceName, $sourceType, $status
             }
