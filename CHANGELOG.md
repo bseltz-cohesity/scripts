@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-01-22
+
+* [userApiKeys.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/userApiKeys) [`New`] List, activate and deactivate user API Keys
+
 ## 2024-01-20
 
 * [registeredSources.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/registeredSources) [`Fix`] fixed windows bug and garbled date format
