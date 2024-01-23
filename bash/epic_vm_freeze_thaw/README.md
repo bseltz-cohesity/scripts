@@ -8,8 +8,10 @@ This bash script can be used as a VMTools Freeze/Thaw Script for a Cohesity VMwa
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/epic_vm_freeze_thaw/epic_vm_freeze_thaw.sh
-chmod +x epic_vm_freeze_thaw.sh
+sudo mkdir /etc/vmware-tools/backupScripts.d
+cd /etc/vmware-tools/backupScripts.d
+sudo curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/epic_vm_freeze_thaw/epic_vm_freeze_thaw.sh
+sudo chmod +x epic_vm_freeze_thaw.sh
 # End download commands
 ```
 
