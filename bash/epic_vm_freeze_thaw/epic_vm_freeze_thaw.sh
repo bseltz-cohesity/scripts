@@ -15,6 +15,7 @@ then
     freeze_status=$?
     if [[ $freeze_status -ne 0 ]]; then
         echo "$(date) : Freeze failed with Error $freeze_status ****" >> /tmp/cohesity_snap.log
+        exit 1
     fi
 
 elif [[ $1 == "freezeFail" ]]
