@@ -11,7 +11,7 @@ then
 
     echo "This section is executed before the Snapshot is created"
     echo "$(date) : Freezing Database" >> /tmp/cohesity_snap.log
-	${FREEZE_CMD}
+    ${FREEZE_CMD}
     freeze_status=$?
     if [[ $freeze_status -ne 0 ]]; then
         echo "$(date) : Freeze failed with Error $freeze_status ****" >> /tmp/cohesity_snap.log
