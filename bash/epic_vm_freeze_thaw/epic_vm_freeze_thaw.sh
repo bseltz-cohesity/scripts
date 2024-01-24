@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # basic settings
-TESTING=1
+TESTING=0
 EPIC_INSTANCE='PROD'
 EPIC_USER='epic'
 FREEZE_CMD="/bin/sudo -u $EPIC_USER /epic/$EPIC_INSTANCE/bin/instfreeze"
