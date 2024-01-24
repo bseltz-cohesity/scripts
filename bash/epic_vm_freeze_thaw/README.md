@@ -37,8 +37,8 @@ sudo chmod +x /etc/vmware-tools/backupScripts.d/epic_vm_freeze_thaw.sh
 * Log into the Pure FlashArray and perform the following steps:
 * Create or select a Pure user for the script to use to log into the Pure FlashArray
 * Paste the ssh public key for the AIX / Linux user into the field provided
-* Create or identify a Pure Protection Group and add all EPIC related volumes to the group
-* Configure safe mode policy for the protection group (define the retention, but no schedule)
+* Create or identify a Pure Protection Group (PPG) and add all EPIC related VM datastores to the PPG
+* Configure safe mode policy for the PPG (define the retention, but no schedule)
 * Edit the script to set SNAPPG=1 and configure the remaining safe mode settings
 
 ## Create a Cohesity VMware Protection Group
