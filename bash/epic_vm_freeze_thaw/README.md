@@ -29,11 +29,22 @@ sudo mkdir /etc/vmware-tools/backupScripts.d
 sudo chmod +x /etc/vmware-tools/backupScripts.d/epic_vm_freeze_thaw.sh
 ```
 
-* Edit the script and change first few lines to match your Epic environment name and user
+* Edit the script and modify the basic settings to match your Epic environment
+
+## Optional Pure Storage Array Safe Mode Snapshots
+
+* Copy the root user's SSH public key (will use this in the next steps)
+* Log into the Pure FlashArray and perform the following steps:
+* Create or select a Pure user for the script to use to log into the Pure FlashArray
+* Paste the ssh public key for the AIX / Linux user into the field provided
+* Create or identify a Pure Protection Group and add all EPIC related volumes to the group
+* Configure safe mode policy for the protection group (define the retention, but no schedule)
+* Edit the script to set SNAPPG=1 and configure the remaining safe mode settings
 
 ## Create a Cohesity VMware Protection Group
 
 * Edit the VMware protection group. Under Additional Settings, enable `App Consistent Backups` and disable `Take a Crash Consistent backup if unable to perform an App Consistent backup`
+* Choose or create a protection policy that has `number of retries set to 0`.
 
 ## Testing the Script
 
