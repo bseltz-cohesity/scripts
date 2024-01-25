@@ -30,6 +30,7 @@
 # 2023.12.13 - re-ordered apiauth parameters (to force first unnamed parameter to be interpreted as password)
 # 2024.01.14 - reenabled legacy access modes
 # 2024.01.25 - added support for unicode characters for REST payloads in Windows PowerShell 5.1
+#
 # . . . . . . . . . . . . . . . . . . .
 
 $versionCohesityAPI = '2024.01.25'
