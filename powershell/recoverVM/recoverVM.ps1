@@ -64,6 +64,15 @@ $restoreParams = @{
     'continueRestoreOnError' = $False;
 }
 
+# allow cloudRetrieve
+$nowUsecs = dateToUsecs
+$localreplica = $latestsnapshot[0].vmDocument.versions[$version].replicaInfo.replicaVec | Where-Object {$_.target.type -eq 1 -and $_.expiryTimeUsecs -gt $nowUsecs}
+$archivereplica = $latestsnapshot[0].vmDocument.versions[$version].replicaInfo.replicaVec | Where-Object {$_.target.type -eq 3 -and $_.expiryTimeUsecs -gt $nowUsecs}
+
+if($archivereplica -and (! $localreplica)){
+    $restoreParams['objects'][0]['archivalTarget'] = $archivereplica[0].target.archivalTarget
+}
+
 # alternate restore location params
 if($vCenterName){
     # require alternate location params
