@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2024.01.14 - Brian Seltzer
+#  Version 2024.01.25 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2023.02.10 - added -region to api function (for DMaaS)
@@ -29,10 +29,10 @@
 # 2023.12.03 - added support for raw URL
 # 2023.12.13 - re-ordered apiauth parameters (to force first unnamed parameter to be interpreted as password)
 # 2024.01.14 - reenabled legacy access modes
-#
+# 2024.01.25 - added support for unicode characters for REST payloads in Windows PowerShell 5.1
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2024.01.14'
+$versionCohesityAPI = '2024.01.25'
 
 # state cache
 $cohesity_api = @{
@@ -298,7 +298,7 @@ function apiauth($vip='helios.cohesity.com',
         $body = ConvertTo-Json @{
             'domain' = $domain;
             'username' = $username;
-            'password' = $passwd;
+            'password' = "$passwd";
         }
 
         if($noDomain){
@@ -313,7 +313,7 @@ function apiauth($vip='helios.cohesity.com',
             if($PSVersionTable.PSEdition -eq 'Core'){
                 $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SslProtocol Tls12 -SessionVariable session
             }else{
-                $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session
+                $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session -ContentType "application/json; charset=utf-8"
             }
             $cohesity_api.session = $session
             # check force password change
@@ -354,7 +354,7 @@ function apiauth($vip='helios.cohesity.com',
                         if($PSVersionTable.PSEdition -eq 'Core'){
                             $userupdate = Invoke-RestMethod -Method Put -Uri $URL -Header $cohesity_api.header -Body ($user.user | ConvertTo-Json) -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SslProtocol Tls12 -WebSession $session
                         }else{
-                            $userupdate = Invoke-RestMethod -Method Put -Uri $URL -Header $cohesity_api.header -Body ($user.user | ConvertTo-Json) -WebSession $session -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout
+                            $userupdate = Invoke-RestMethod -Method Put -Uri $URL -Header $cohesity_api.header -Body ($user.user | ConvertTo-Json) -WebSession $session -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -ContentType "application/json; charset=utf-8"
                         }
     
                         $body = ConvertTo-Json @{
@@ -367,7 +367,7 @@ function apiauth($vip='helios.cohesity.com',
                         if($PSVersionTable.PSEdition -eq 'Core'){
                             $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SslProtocol Tls12 -SessionVariable session
                         }else{
-                            $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session
+                            $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session -ContentType "application/json; charset=utf-8"
                         }
                         $cohesity_api.session = $session
                         $passwd = Set-CohesityAPIPassword -vip $vip -username $username -passwd $newPassword -quiet
@@ -445,7 +445,7 @@ function apiauth($vip='helios.cohesity.com',
                     if($PSVersionTable.PSEdition -eq 'Core'){
                         $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout -SslProtocol Tls12 -WebSession $cohesity_api.session
                     }else{
-                        $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec $timeout -WebSession $cohesity_api.session
+                        $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec $timeout -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8"
                     }
                     $cohesity_api.session = $session
                     $cohesity_api.authorized = $true
@@ -472,7 +472,7 @@ function apiauth($vip='helios.cohesity.com',
                                 if($PSVersionTable.PSEdition -eq 'Core'){
                                     $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout -SslProtocol Tls12 -WebSession $cohesity_api.session
                                 }else{
-                                    $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec $timeout -WebSession $cohesity_api.session
+                                    $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec $timeout -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8"
                                 }
                                 $cohesity_api.session = $session
                                 $cohesity_api.authorized = $true
@@ -751,9 +751,9 @@ function api($method,
                 }
             }else{
                 if($body){
-                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $header -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -WebSession $cohesity_api.session
+                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $header -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8"
                 }else{
-                    $result = Invoke-RestMethod -Method $method -Uri $url -header $header -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -WebSession $cohesity_api.session
+                    $result = Invoke-RestMethod -Method $method -Uri $url -header $header -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8"
                 }
             }
             $cohesity_api.last_api_error = 'OK'
@@ -847,9 +847,9 @@ function usecsToDate($usecs, $format=$null){
         $unixTime=$usecs/1000000
         $origin = ([datetime]'1970-01-01 00:00:00')
         if($format){
-            return $origin.AddSeconds($unixTime).ToLocalTime().ToString($format)
+            return ($origin.AddSeconds($unixTime).ToLocalTime().ToString($format) -replace [char]8239, ' ')
         }else{
-            return $origin.AddSeconds($unixTime).ToLocalTime()
+            return ($origin.AddSeconds($unixTime).ToLocalTime()) # .ToString() -replace [char]8239, ' ')
         }
     }catch{
         Write-Host "usecsToDate: incorrect input type ($($usecs.GetType().name)) must be Int64" -ForegroundColor Yellow
