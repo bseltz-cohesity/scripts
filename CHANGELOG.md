@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-01-25
+
+* [cohesity-api.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api) [`Fix`] added support for unicode characters in JSON payloads (affected Windows PowerShell 5.1)
+
 ## 2024-01-24
 
 * [epic_vm_freeze_thaw.sh](https://github.com/bseltz-cohesity/scripts/tree/master/bash/epic_vm_freeze_thaw) [`New`] VMware Freeze/thaw script for Epic
