@@ -407,7 +407,14 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
     $search2 = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverApps&searchString=$sourceDbName&protectionGroupIds=$($latestSnapshotInfo.protectionGroupId)&filterSnapshotToUsecs=$runStartTimeUsecs&filterSnapshotFromUsecs=$runStartTimeUsecs&environments=kSQL"
     $search2.objects = $search2.objects | Where-Object {$_.mssqlParams.hostInfo.name -eq $thisSourceServer}
     $search2.objects = $search2.objects | Where-Object {$_.name -eq $sourceDbName}
-
+    if($search2.objects.Count -eq 0){
+        Write-Host "$sourceDbName on server $sourceServer not found in $($latestSnapshotInfo.protectionGroupName) (2nd search)" -ForegroundColor Yellow
+        continue
+    }
+    if($search2.objects[0].latestSnapshotsInfo.Count -eq 0){
+        Write-Host "no snapshots for $sourceDbName on server $sourceServer (2nd search)" -ForegroundColor Yellow
+        continue
+    }
     # recover to original instance
     $thisParam  = @{
         "snapshotId" = $search2.objects[0].latestSnapshotsInfo[0].localSnapshotInfo.snapshotId;
