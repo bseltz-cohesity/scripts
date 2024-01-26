@@ -27,6 +27,10 @@ To clone the /bash folder from the myscripts view to to /curl/bash2 folder in th
 
 ```bash
 # example
-./cloneDirectory.sh -v ve4 -s 'myscripts/bash' -t 'myscripts/curl' -d 'bash2' -k 1e62583e-4216-45fc-6377-d56e2c5c3776
+./cloneDirectory.sh -v ve4 \
+                    -s 'myscripts/bash' \
+                    -t 'myscripts/curl' \
+                    -d 'bash2' \
+                    -k 1e62583e-4216-45fc-6377-d56e2c5c3776
 # end example
 ```
