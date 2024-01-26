@@ -3,7 +3,7 @@
 ## 2024-01-26
 
 * [restartFailedJobs.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/restartFailedJobs) [`New`] find and restart any failed jobs
-* [restoreSQLv2.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQLv2) [`Fix`] added several validation checks for error handling
+* [restoreSQLv2.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQLv2) [`Fix`] added several validation checks for negative search results
 
 ## 2024-01-25
 
