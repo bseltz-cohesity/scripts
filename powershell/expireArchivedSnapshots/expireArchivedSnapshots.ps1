@@ -25,7 +25,7 @@ $olderThanUsecs = timeAgo $olderThan days
 
 ### find protectionRuns with old local snapshots that are archived and sort oldest to newest
 "searching for old snapshots..."
-$jobs = api get protectionJobs | Where-Object{ $_.policyId.split(':')[0] -eq $clusterId }
+$jobs = api get protectionJobs # | Where-Object{ $_.policyId.split(':')[0] -eq $clusterId }
 if($jobName){
     $jobs = $jobs | Where-Object {$_.name -eq $jobName}
     if(!$jobs){
