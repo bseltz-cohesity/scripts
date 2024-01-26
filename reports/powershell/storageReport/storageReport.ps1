@@ -45,6 +45,7 @@ function toUnits($val){
 }
 
 $cluster = api get cluster
+$storageDomains = api get viewBoxes
 
 $today = get-date
 $date = $today.ToString()
@@ -178,9 +179,11 @@ $html += "</span>
     <th>Dedup Ratio</th>
     <th>Compression</th>
     <th>Reduction</th>
+    <th>Storage Domain</th>
+    <th>Resiliency Setting</th>
 </tr>"
 
-"Job/View Name,Tenant,Environment,Origination,Storage Target,$unit Logical,$unit Ingested,$unit Consumed,$unit Written,$unit Unique,Dedup Ratio,Compression,Reduction" | Out-File -FilePath $csvFile
+"Job/View Name,Tenant,Environment,Origination,Storage Target,$unit Logical,$unit Ingested,$unit Consumed,$unit Written,$unit Unique,Dedup Ratio,Compression,Reduction,Storage Domain,Resiliency Setting" | Out-File -FilePath $csvFile
 
 $jobs = api get protectionJobs?allUnderHierarchy=true
 $vaults = api get vaults | Where-Object {$_.usageType -eq 'kArchival'}
@@ -198,7 +201,20 @@ foreach($vault in $vaults){
     }
 }
 
-function processStats($stats, $name, $environment, $location, $tenant){
+function processStats($stats, $name, $environment, $location, $tenant, $sd){
+        $rs = ''
+        $sdName = ''
+        if($sd){
+            $sdName = $sd.name
+            if($sd.storagePolicy.numFailuresTolerated -eq 0){
+                $rs = 'RF 1'
+            }else{
+                $rs = 'RF 2'
+            }
+            if($sd.storagePolicy.PSObject.Properties['erasureCodingInfo']){
+                $rs = "EC $($sd.storagePolicy.erasureCodingInfo.numDataStripes):$($sd.storagePolicy.erasureCodingInfo.numCodedStripes)"
+            }
+        }
         $logicalBytes = $stats.statsList[0].stats.totalLogicalUsageBytes
         $dataIn = $stats.statsList[0].stats.dataInBytes
         $dataInAfterDedup = $stats.statsList[0].stats.dataInBytesAfterDedup
@@ -225,7 +241,7 @@ function processStats($stats, $name, $environment, $location, $tenant){
 
         Write-Host ("{0,35}: {1,11:f2} {2}" -f $name, $consumption, $unit)
 
-        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}""" -f $name,
+        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}"",""{13}"",""{14}""" -f $name,
                                                  $tenant,
                                                  $environment,
                                                  $location,
@@ -237,7 +253,9 @@ function processStats($stats, $name, $environment, $location, $tenant){
                                                  $uniqueUnits,
                                                  $dedup,
                                                  $compression,
-                                                 $reduction | Out-File -FilePath $csvFile -Append
+                                                 $reduction,
+                                                 $sdName,
+                                                 $rs | Out-File -FilePath $csvFile -Append
         return ("<td>{0}</td>
         <td>{1}</td>
         <td>{2}</td>
@@ -251,6 +269,8 @@ function processStats($stats, $name, $environment, $location, $tenant){
         <td>{10}</td>
         <td>{11}</td>
         <td>{12}</td>
+        <td>{13}</td>
+        <td>{14}</td>
         </tr>" -f $name,
                   $tenant,
                   $environment,
@@ -263,7 +283,9 @@ function processStats($stats, $name, $environment, $location, $tenant){
                   $uniqueUnits,
                   $dedup,
                   $compression,
-                  $reduction)
+                  $reduction,
+                  $sdName,
+                  $rs)
     
 }
 
@@ -313,6 +335,11 @@ function processExternalStats($vaultName, $storageConsumed, $name, $environment,
 
 Write-Host "  Local ProtectionJobs..."
 foreach($job in $jobs | Sort-Object -Property name){
+    $sd = $null
+    if($job.viewBoxid){
+        $sd = $storageDomains | Where-Object {$_.id -eq $job.viewBoxId}
+    }
+
     $stats = $null
     if($job.PSObject.Properties['tenantId']){
         $tenant = $job.tenantId.Substring(0, $job.tenantId.length - 1)
@@ -326,7 +353,7 @@ foreach($job in $jobs | Sort-Object -Property name){
             $stats = api get "stats/consumers?consumerType=kProtectionRuns&consumerIdList=$($job.id)"
         }
         if($stats.statsList){
-            $html += processStats $stats $job.name $job.environment.subString(1) 'Local' $tenant
+            $html += processStats $stats $job.name $job.environment.subString(1) 'Local' $tenant $sd
         }
     }
     foreach($vaultStat in $vaultStats){
@@ -344,6 +371,10 @@ foreach($job in $jobs | Sort-Object -Property name){
 Write-Host "  Views..."
 $views = api get views?allUnderHierarchy=true
 foreach($view in $views.views | Sort-Object -Property name){
+    $sd = $null
+    if($view.viewBoxid){
+        $sd = $storageDomains | Where-Object {$_.id -eq $view.viewBoxId}
+    }
     $stats = $null
     if($view.PSObject.Properties['tenantId']){
         $tenant = $view.tenantId.Substring(0, $view.tenantId.length - 1)
@@ -353,13 +384,17 @@ foreach($view in $views.views | Sort-Object -Property name){
     if($cluster.clusterSoftwareVersion -le '6.5.1b' -or $null -eq $view.viewProtection){
         $stats = api get "stats/consumers?consumerType=kViews&consumerIdList=$($view.viewId)"
         if($stats.statsList){
-            $html += processStats $stats $view.name 'View' 'Local' $tenant
+            $html += processStats $stats $view.name 'View' 'Local' $tenant $sd
         }
     }
 }
 
 Write-Host "  Replicated Jobs..."
 foreach($job in $jobs | Sort-Object -Property name){
+    $sd = $null
+    if($job.viewBoxid){
+        $sd = $storageDomains | Where-Object {$_.id -eq $job.viewBoxId}
+    }
     $stats = $null
     if($job.PSObject.Properties['tenantId']){
         $tenant = $job.tenantId.Substring(0, $job.tenantId.length - 1)
@@ -373,7 +408,7 @@ foreach($job in $jobs | Sort-Object -Property name){
             $stats = api get "stats/consumers?consumerType=kReplicationRuns&consumerIdList=$($job.id)"
         }
         if($stats.statsList){
-            $html += processStats $stats $job.name $job.environment.subString(1) 'Replicated' $tenant
+            $html += processStats $stats $job.name $job.environment.subString(1) 'Replicated' $tenant $sd
         }
     }
 }
