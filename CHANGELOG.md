@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-01-26
+
+* [restartFailedJobs.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/restartFailedJobs) [`New`] find and restart any failed jobs
+
 ## 2024-01-25
 
 * [cohesity-api.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api) [`Fix`] added support for unicode characters in JSON payloads (affected Windows PowerShell 5.1)
