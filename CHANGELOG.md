@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-01-27
+
+* [restoreReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/restoreReport) [`Update`] added support for cart-based SQL restores
+
 ## 2024-01-26
 
 * [restartFailedJobs.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/restartFailedJobs) [`New`] find and restart any failed jobs
