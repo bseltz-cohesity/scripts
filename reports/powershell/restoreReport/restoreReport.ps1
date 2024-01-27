@@ -210,6 +210,8 @@ $entityType=@('Unknown', 'VMware', 'HyperV', 'SQL', 'View', 'Puppeteer',
 $endUsecs = $uEnd
 
 $restoresCounted = 0
+$endUsecs = $uEnd
+$lastUsecs = 0
 while(1){
     $restores = api get "/restoretasks?_includeTenantInfo=true&endTimeUsecs=$endUsecs&startTimeUsecs=$uStart"
     $theseRestores = $restores
@@ -218,8 +220,6 @@ while(1){
         $theseRestores = $theseRestores | Where-Object {$_.restoreTask.destroyClonedTaskStateVec.Count -eq 0}
     }
     foreach ($restore in $theseRestores | Sort-Object -Property {$_.restoreTask.performRestoreTaskState.base.startTimeUsecs} -Descending){
-        # $restore | ConvertTo-Json -Depth 99 | Out-File -Path restore.json
-        # exit
         $restorePoint = ''
         $taskId = $restore.restoreTask.performRestoreTaskState.base.taskId
         $taskName = $restore.restoreTask.performRestoreTaskState.base.name
@@ -231,7 +231,12 @@ while(1){
             $duration = [math]::Round(($endTime - $startTime).TotalMinutes)
             $endUsecs = $restore.restoreTask.performRestoreTaskState.base.endTimeUsecs - 1
         }
-        $link = "https://$vip/protection/recovery/detail/local/$taskId/"
+        $restoreType = ($restore.restoreTask.performRestoreTaskState.base.userInfo.pulseAttributeVec | Where-Object {$_.key -eq 'taskType'}).value.data.stringValue
+        if($restoreType -eq 'clone'){
+            $link = "https://$vip/more/devops/clone/detail/$taskId"
+        }else{
+            $link = "https://$vip/recovery/detail/$($cluster.id):$($cluster.incarnationId):$($taskId)"
+        }
         if($restore.restoreTask.performRestoreTaskState.PSObject.properties['objects']){
             foreach ($object in $restore.restoreTask.performRestoreTaskState.objects){
                 $restorePoint = ''
@@ -255,55 +260,8 @@ while(1){
                     $html += "<tr>"
                 }
                 $html += "<td>$startTime</td>
-                <td><a href=$link>$taskName</a></td>
+                <td><a href=$link target=""_blank"">$taskName</a></td>
                 <td>$objectName</td>
-                <td>$objectType</td>
-                <td>$targetObject</td>
-                <td>$status</td>
-                <td>$duration</td>
-                <td>$restorePoint</td>
-                <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
-                </tr>"
-                "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$restorePoint,$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
-            }
-        }elseif($restore.restoreTask.performRestoreTaskState.PSObject.properties['restoreAppTaskState']){
-            $restorePoint = usecsToDate $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.startTimeUsecs
-            $targetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
-            foreach ($restoreAppObject in $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec){
-                $objectName = $restoreAppObject.appEntity.displayName
-                $objectType = $entityType[$restoreAppObject.appEntity.type]
-                if($restoreAppObject.restoreParams.targetHost.displayName){
-                    $targetServer = $restoreAppObject.restoreParams.targetHost.displayName
-                }
-                $targetObject = $targetServer
-                # sql target
-                if($restoreAppObject.restoreParams.sqlRestoreParams.instanceName){
-                    $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.instanceName)"
-                }
-                if($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName){
-                    $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName)"
-                }
-                # if($restoreAppObject.restoreParams.sqlRestoreParams.restoreTimeSecs){
-                #     $restorePoint = usecsToDate ($restoreAppObject.restoreParams.sqlRestoreParams.restoreTimeSecs * 1000000)
-                # }
-                # if($restoreAppObject.restoreParams.oracleRestoreParams.restoreTimeSecs){
-                #     $restorePoint = usecsToDate ($restoreAppObject.restoreParams.oracleRestoreParams.restoreTimeSecs * 1000000)
-                # }
-                # oracle target
-                if($restoreAppObject.restoreParams.oracleRestoreParams.alternateLocationParams.newDatabaseName){
-                    $targetObject += "/$($restoreAppObject.restoreParams.oracleRestoreParams.alternateLocationParams.newDatabaseName)"
-                }
-                if($targetObject -eq $targetServer){
-                    $targetObject = "$targetServer/$objectName"
-                }
-                if($status -eq 'Failure'){
-                    $html += "<tr style='color:BA3415;'>"
-                }else{
-                    $html += "<tr>"
-                }
-                $html += "<td>$startTime</td>
-                <td><a href=$link>$taskName</a></td>
-                <td>$sourceServer/$objectName</td>
                 <td>$objectType</td>
                 <td>$targetObject</td>
                 <td>$status</td>
@@ -314,20 +272,102 @@ while(1){
                 "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$restorePoint,$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
                 $restoresCounted += 1
             }
-            if($restorePoint -eq ''){
-                $restore | ConvertTo-Json -Depth 99 | Out-File -Path restore.json
-                exit
+        }elseif($restore.restoreTask.performRestoreTaskState.PSObject.properties['restoreAppTaskState']){
+            if($restore.restoreTask.performRestoreTaskState.restoreAppTaskState.PSObject.Properties['childRestoreAppParamsVec']){
+                foreach ($childRestore in $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.childRestoreAppParamsVec){
+                    $restorePoint = usecsToDate $childRestore.ownerRestoreInfo.ownerObject.startTimeUsecs
+                    $targetServer = $sourceServer = $childRestore.ownerRestoreInfo.ownerObject.entity.displayName                    
+
+                    foreach($app in $childRestore.restoreAppObjectVec){
+                        $objectName = $app.appEntity.displayName
+                        $objectType = $entityType[$app.appEntity.type]
+                        if($app.restoreParams.targetHost.displayName){
+                            $targetServer = $app.restoreParams.targetHost.displayName
+                        }
+                        $targetObject = $targetServer
+                        if($app.restoreParams.sqlRestoreParams.instanceName){
+                            $targetObject += "/$($app.restoreParams.sqlRestoreParams.instanceName)"
+                        }
+                        if($app.restoreParams.sqlRestoreParams.newDatabaseName){
+                            $targetObject += "/$($app.restoreParams.sqlRestoreParams.newDatabaseName)"
+                        }
+                        if($targetObject -eq $targetServer){
+                            $targetObject = "$targetServer/$objectName"
+                        }
+                        if($status -eq 'Failure'){
+                            $html += "<tr style='color:BA3415;'>"
+                        }else{
+                            $html += "<tr>"
+                        }
+                        $html += "<td>$startTime</td>
+                        <td><a href=$link target=""_blank"">$taskName</a></td>
+                        <td>$sourceServer/$objectName</td>
+                        <td>$objectType</td>
+                        <td>$targetObject</td>
+                        <td>$status</td>
+                        <td>$duration</td>
+                        <td>$restorePoint</td>
+                        <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
+                        </tr>"
+                        "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$restorePoint,$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
+                        $restoresCounted += 1
+                    }
+                }
+            }
+            if($restore.restoreTask.performRestoreTaskState.restoreAppTaskState.PSObject.Properties['restoreAppParams']){
+
+                foreach ($restoreAppObject in $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.restoreAppObjectVec){
+                    $restorePoint = usecsToDate $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.startTimeUsecs
+                    $targetServer = $sourceServer = $restore.restoreTask.performRestoreTaskState.restoreAppTaskState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
+                    $objectName = $restoreAppObject.appEntity.displayName
+                    $objectType = $entityType[$restoreAppObject.appEntity.type]
+                    if($restoreAppObject.restoreParams.targetHost.displayName){
+                        $targetServer = $restoreAppObject.restoreParams.targetHost.displayName
+                    }
+                    $targetObject = $targetServer
+                    # sql target
+                    if($restoreAppObject.restoreParams.sqlRestoreParams.instanceName){
+                        $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.instanceName)"
+                    }
+                    if($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName){
+                        $targetObject += "/$($restoreAppObject.restoreParams.sqlRestoreParams.newDatabaseName)"
+                    }
+                    # oracle target
+                    if($restoreAppObject.restoreParams.oracleRestoreParams.alternateLocationParams.newDatabaseName){
+                        $targetObject += "/$($restoreAppObject.restoreParams.oracleRestoreParams.alternateLocationParams.newDatabaseName)"
+                    }
+                    if($targetObject -eq $targetServer){
+                        $targetObject = "$targetServer/$objectName"
+                    }
+                    if($status -eq 'Failure'){
+                        $html += "<tr style='color:BA3415;'>"
+                    }else{
+                        $html += "<tr>"
+                    }
+                    $html += "<td>$startTime</td>
+                    <td><a href=$link target=""_blank"">$taskName</a></td>
+                    <td>$sourceServer/$objectName</td>
+                    <td>$objectType</td>
+                    <td>$targetObject</td>
+                    <td>$status</td>
+                    <td>$duration</td>
+                    <td>$restorePoint</td>
+                    <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
+                    </tr>"
+                    "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$restorePoint,$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
+                    $restoresCounted += 1
+                }
             }
         }else{
             "***************more types****************"
         }
     }
-    
-    if(!$restores -or $restores.Count -eq 0 -or $lastUsecs -eq $endUsecs){
+    if(!$restores -or $lastUsecs -eq $endUsecs){
         Write-Host "Retrieved $restoresCounted restore tasks..."
         break
     }else{
         $lastUsecs = $endUsecs
+        $endUsecs = $restore.restoreTask.performRestoreTaskState.base.startTimeUsecs
     }
 }
 
@@ -348,4 +388,3 @@ if($smtpServer -and $sendFrom -and $sendTo){
         Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject $title -BodyAsHtml $html -WarningAction SilentlyContinue
     }
 }
-
