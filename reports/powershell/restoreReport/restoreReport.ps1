@@ -1,5 +1,3 @@
-#./chargebackReport.ps1 -vip mycluster -username myusername [ -domain mydomain.net ] -costPerGB .10 [ -prefix demo, test ] -sendTo myuser@mydomain.net, anotheruser@mydomain.net -smtpServer 192.168.1.95 -sendFrom backupreport@mydomain.net
- 
 ### process commandline arguments
 [CmdletBinding()]
 param (
