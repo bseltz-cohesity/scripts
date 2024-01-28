@@ -213,6 +213,46 @@ $restoresCounted = 0
 $endUsecs = $uEnd
 $lastUsecs = 0
 $lastTaskId = 0
+
+function output($startTime, $taskName, $objectName, $objectType, $targetObject, $status, $duration, $restorePoint, $baseuser, $link){
+    if($status -eq 'Failure'){
+        $script:html += "<tr style='color:BA3415;'>"
+    }else{
+        $script:html += "<tr>"
+    }
+    $script:html += "<td>$startTime</td>
+    <td><a href=$link target=""_blank"">$taskName</a></td>
+    <td>$objectName</td>
+    <td>$objectType</td>
+    <td>$targetObject</td>
+    <td>$status</td>
+    <td>$duration</td>
+    <td>$restorePoint</td>
+    <td>$baseuser</td>
+    </tr>"
+    "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$restorePoint,$baseuser" | out-file $csvFile -Append
+}
+
+function getTarget($app){
+    $appParams = $app.restoreParams
+    $objectName = $app.appEntity.displayName
+    $objectType = $entityType[$app.appEntity.type]
+    if($appParams.targetHost.displayName){
+        $targetServer = $appParams.targetHost.displayName
+    }
+    $targetObject = $targetServer
+    if($appParams.sqlRestoreParams.instanceName){
+        $targetObject += "/$($appParams.sqlRestoreParams.instanceName)"
+    }
+    if($appParams.sqlRestoreParams.newDatabaseName){
+        $targetObject += "/$($appParams.sqlRestoreParams.newDatabaseName)"
+    }
+    if($targetObject -eq $targetServer){
+        $targetObject = "$targetServer/$objectName"
+    }
+    return $targetObject, $objectName
+}
+
 while(1){
     $restores = api get "/restoretasks?_includeTenantInfo=true&endTimeUsecs=$endUsecs&startTimeUsecs=$uStart"
     $theseRestores = $restores
@@ -259,22 +299,7 @@ while(1){
                     if($state.restoreInfo.type -in @(9, 11, 14)){
                         $targetObject = $state.fullViewName
                     }
-                    if($status -eq 'Failure'){
-                        $html += "<tr style='color:BA3415;'>"
-                    }else{
-                        $html += "<tr>"
-                    }
-                    $html += "<td>$startTime</td>
-                    <td><a href=$link target=""_blank"">$taskName</a></td>
-                    <td>$objectName</td>
-                    <td>$objectType</td>
-                    <td>$targetObject</td>
-                    <td>$status</td>
-                    <td>$duration</td>
-                    <td>$restorePoint</td>
-                    <td>$($base.user)</td>
-                    </tr>"
-                    "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$restorePoint,$($base.user)" | out-file $csvFile -Append
+                    output $startTime $taskName $objectName $objectType $targetObject $status $duration $restorePoint $base.user $link
                     $restoresCounted += 1
                 }
             }elseif($state.PSObject.properties['restoreAppTaskState']){
@@ -285,84 +310,19 @@ while(1){
                         $targetServer = $sourceServer = $childRestore.ownerRestoreInfo.ownerObject.entity.displayName                    
     
                         foreach($app in $childRestore.restoreAppObjectVec){
-                            $appParams = $app.restoreParams
-                            $objectName = $app.appEntity.displayName
-                            $objectType = $entityType[$app.appEntity.type]
-                            if($appParams.targetHost.displayName){
-                                $targetServer = $appParams.targetHost.displayName
-                            }
-                            $targetObject = $targetServer
-                            if($appParams.sqlRestoreParams.instanceName){
-                                $targetObject += "/$($appParams.sqlRestoreParams.instanceName)"
-                            }
-                            if($appParams.sqlRestoreParams.newDatabaseName){
-                                $targetObject += "/$($appParams.sqlRestoreParams.newDatabaseName)"
-                            }
-                            if($targetObject -eq $targetServer){
-                                $targetObject = "$targetServer/$objectName"
-                            }
-                            if($status -eq 'Failure'){
-                                $html += "<tr style='color:BA3415;'>"
-                            }else{
-                                $html += "<tr>"
-                            }
-                            $html += "<td>$startTime</td>
-                            <td><a href=$link target=""_blank"">$taskName</a></td>
-                            <td>$sourceServer/$objectName</td>
-                            <td>$objectType</td>
-                            <td>$targetObject</td>
-                            <td>$status</td>
-                            <td>$duration</td>
-                            <td>$restorePoint</td>
-                            <td>$($base.user)</td>
-                            </tr>"
-                            "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$restorePoint,$($base.user)" | out-file $csvFile -Append
+                            $targetObject, $objectName = getTarget($app)
+                            output $startTime $taskName "$sourceServer/$objectName" $objectType $targetObject $status $duration $restorePoint $base.user $link
                             $restoresCounted += 1
                         }
                     }
                 }
                 if($appState.PSObject.Properties['restoreAppParams']){
     
-                    foreach ($restoreAppObject in $appState.restoreAppParams.restoreAppObjectVec){
+                    foreach ($app in $appState.restoreAppParams.restoreAppObjectVec){
                         $restorePoint = usecsToDate $appState.restoreAppParams.ownerRestoreInfo.ownerObject.startTimeUsecs
                         $targetServer = $sourceServer = $appState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
-                        $objectName = $restoreAppObject.appEntity.displayName
-                        $objectType = $entityType[$restoreAppObject.appEntity.type]
-                        $appParams = $restoreAppObject.restoreParams
-                        if($appParams.targetHost.displayName){
-                            $targetServer = $appParams.targetHost.displayName
-                        }
-                        $targetObject = $targetServer
-                        # sql target
-                        if($appParams.sqlRestoreParams.instanceName){
-                            $targetObject += "/$($appParams.sqlRestoreParams.instanceName)"
-                        }
-                        if($appParams.sqlRestoreParams.newDatabaseName){
-                            $targetObject += "/$($appParams.sqlRestoreParams.newDatabaseName)"
-                        }
-                        # oracle target
-                        if($appParams.oracleRestoreParams.alternateLocationParams.newDatabaseName){
-                            $targetObject += "/$($appParams.oracleRestoreParams.alternateLocationParams.newDatabaseName)"
-                        }
-                        if($targetObject -eq $targetServer){
-                            $targetObject = "$targetServer/$objectName"
-                        }
-                        if($status -eq 'Failure'){
-                            $html += "<tr style='color:BA3415;'>"
-                        }else{
-                            $html += "<tr>"
-                        }
-                        $html += "<td>$startTime</td>
-                        <td><a href=$link target=""_blank"">$taskName</a></td>
-                        <td>$sourceServer/$objectName</td>
-                        <td>$objectType</td>
-                        <td>$targetObject</td>
-                        <td>$status</td>
-                        <td>$duration</td>
-                        <td>$restorePoint</td>
-                        <td>$($base.user)</td>
-                        </tr>"
-                        "$startTime,$taskName,$objectName,$objectType,$targetObject,$status,$duration,$restorePoint,$($base.user)" | out-file $csvFile -Append
+                        $targetObject, $objectName = getTarget($app)
+                        output $startTime $taskName "$sourceServer/$objectName" $objectType $targetObject $status $duration $restorePoint $base.user $link
                         $restoresCounted += 1
                     }
                 }
