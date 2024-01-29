@@ -248,7 +248,7 @@ function getTarget($app){
     if($targetObject -eq $targetServer){
         $targetObject = "$targetServer/$objectName"
     }
-    return $targetObject, $objectName
+    return $targetObject, $objectName, $objectType
 }
 
 while(1){
@@ -283,7 +283,9 @@ while(1){
             if($state.PSObject.properties['objects']){
                 foreach ($object in $state.objects){
                     $restorePoint = ''
+                    # $object.entity | toJson
                     $objectType = $entityType[$object.entity.type]
+                    # $objectType
                     $targetObject = $objectName = $object.entity.displayName
                     $restorePoint = usecsToDate $object.startTimeUsecs
                     # vmware prefix/suffix
@@ -308,7 +310,7 @@ while(1){
                         $targetServer = $sourceServer = $childRestore.ownerRestoreInfo.ownerObject.entity.displayName                    
     
                         foreach($app in $childRestore.restoreAppObjectVec){
-                            $targetObject, $objectName = getTarget($app)
+                            $targetObject, $objectName, $objectType = getTarget($app)
                             output $startTime $taskName "$sourceServer/$objectName" $objectType $targetObject $status $duration $restorePoint $base.user $link
                             $restoresCounted += 1
                         }
@@ -319,7 +321,7 @@ while(1){
                     foreach ($app in $appState.restoreAppParams.restoreAppObjectVec){
                         $restorePoint = usecsToDate $appState.restoreAppParams.ownerRestoreInfo.ownerObject.startTimeUsecs
                         $targetServer = $sourceServer = $appState.restoreAppParams.ownerRestoreInfo.ownerObject.entity.displayName
-                        $targetObject, $objectName = getTarget($app)
+                        $targetObject, $objectName, $objectType = getTarget($app)
                         output $startTime $taskName "$sourceServer/$objectName" $objectType $targetObject $status $duration $restorePoint $base.user $link
                         $restoresCounted += 1
                     }
