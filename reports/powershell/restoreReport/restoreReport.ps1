@@ -347,7 +347,7 @@ $html += "</table>
 
 $html | out-file "restoreReport-$($cluster.name)-$($now).html"
 
-"Saving output to restoreReport-$now.html and restoreReport-$now.csv"
+"Saving output to restoreReport-$($cluster.name)-$now.html and restoreReport-$($cluster.name)-$now.csv"
 
 if($smtpServer -and $sendFrom -and $sendTo){
     write-host "sending report to $([string]::Join(", ", $sendTo))"
