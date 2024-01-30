@@ -17,7 +17,7 @@ This script requires `curl` and `jq` and has been tested on:
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/backupNow-advanced/backupNow.sh
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/backupNow/backupNow.sh
 chmod +x backupNow.sh
 # End download commands
 ```
