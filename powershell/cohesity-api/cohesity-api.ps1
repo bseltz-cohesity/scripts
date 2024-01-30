@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2024.01.25 - Brian Seltzer
+#  Version 2024.01.30 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2023.02.10 - added -region to api function (for DMaaS)
@@ -30,10 +30,11 @@
 # 2023.12.13 - re-ordered apiauth parameters (to force first unnamed parameter to be interpreted as password)
 # 2024.01.14 - reenabled legacy access modes
 # 2024.01.25 - added support for unicode characters for REST payloads in Windows PowerShell 5.1
+# 2024.01.30 - fix - clear header before auth
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2024.01.25'
+$versionCohesityAPI = '2024.01.30'
 
 # state cache
 $cohesity_api = @{
@@ -603,6 +604,11 @@ function heliosClusters(){
 
 # terminate authentication
 function apidrop([switch] $quiet){
+    $cohesity_api.header = @{
+        'accept' = 'application/json'; 
+        'content-type' = 'application/json'; 
+        'User-Agent' = "cohesity-api/$versionCohesityAPI"
+    }
     $cohesity_api.pwscope = 'user'
     $cohesity_api.authorized = $false
     $cohesity_api.apiRoot = ''
