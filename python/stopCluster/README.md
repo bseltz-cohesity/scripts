@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script starts the Cohesity cluster services.
+This script stops the Cohesity cluster services.
 
 ## Download the script
 
@@ -12,7 +12,7 @@ You can download the scripts using the following commands:
 # download commands
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/stopCluster/stopCluster.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-chmod +x strikeReport.py
+chmod +x stopCluster.py
 # end download commands
 ```
 
