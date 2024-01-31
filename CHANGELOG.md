@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-01-31
+
+* [runsExample.sh](https://github.com/bseltz-cohesity/scripts/tree/master/bash/runsExample) [`New`] bash example using curl and jq to walk through protection groups and runs
+
 ## 2024-01-27
 
 * [restoreReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/restoreReport) [`Update`] added support for cart-based SQL restores
