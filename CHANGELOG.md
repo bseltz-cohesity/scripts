@@ -2,6 +2,7 @@
 
 ## 2024-01-31
 
+* [backedUpFSReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/backedUpFSReport) [`Update`] added -s (--search) and -e (--exactmatch) parameters
 * [runsExample.sh](https://github.com/bseltz-cohesity/scripts/tree/master/bash/runsExample) [`New`] bash example using curl and jq to walk through protection groups and runs
 
 ## 2024-01-27
