@@ -19,6 +19,8 @@ parser.add_argument('-u', '--username', type=str, default='helios')   # username
 parser.add_argument('-d', '--domain', type=str, default='local')      # domain - defaults to local
 parser.add_argument('-i', '--useApiKey', action='store_true')         # use API key authentication
 parser.add_argument('-pwd', '--password', type=str, default=None)     # optional password
+parser.add_argument('-s', '--search', type=str, default='*')
+parser.add_argument('-e', '--exactmatch', action='store_true')
 
 args = parser.parse_args()
 
@@ -27,6 +29,8 @@ username = args.username
 domain = args.domain
 password = args.password
 useApiKey = args.useApiKey
+search = args.search
+exactmatch = args.exactmatch
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
@@ -310,7 +314,7 @@ def showFiles(doc, version):
         listdir('/', instance)
 
 
-searchResults = api('get', '/searchvms?entityTypes=kFlashBlade&entityTypes=kGenericNas&entityTypes=kIsilon&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware&vmName=*')
+searchResults = api('get', '/searchvms?entityTypes=kFlashBlade&entityTypes=kGenericNas&entityTypes=kIsilon&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware&vmName=%s' % search)
 
 vms = sorted(searchResults['vms'], key=lambda vm: (vm['vmDocument']['jobName'].lower(), vm['vmDocument']['objectName'].lower()))
 
@@ -318,6 +322,8 @@ for vm in vms:
     firstEntry = True
     doc = vm['vmDocument']
     objectName = doc['objectName']
+    if exactmatch is True and objectName.lower() != search.lower() and search != '*':
+        continue
     print(objectName)
     jobName = doc['jobName']
     jobType = environments[doc['backupType']]

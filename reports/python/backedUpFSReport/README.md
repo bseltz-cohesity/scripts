@@ -36,3 +36,5 @@ Place both files in a folder together and run the main script like so:
 * -d, --domain: (optional) domain of username, defaults to local
 * -i, --useApiKey: (optional) use API key for authentication
 * -pwd: --password: (optional) use password from command line instead of stored password
+* -s, --search: (optional) limit search to objectnames that match string
+* -e, --exactmatch: (optional) object name must exactly match search string
