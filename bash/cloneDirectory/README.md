@@ -9,7 +9,7 @@ This bash script clones a directory from one view to another.
 ```bash
 # Begin download commands
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/cloneDirectory/cloneDirectory.sh
-chmod +x choneDirectory.sh
+chmod +x cloneDirectory.sh
 # End download commands
 ```
 
