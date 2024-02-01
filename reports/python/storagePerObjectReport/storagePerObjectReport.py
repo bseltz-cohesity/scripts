@@ -77,8 +77,9 @@ def reportStorage():
     cloudStats = None
     if vaults is not None and len(vaults) > 0:
         nowMsecs = int((dateToUsecs()) / 1000)
-        weekAgoMsecs = nowMsecs - 86400000
-        cloudStatURL = 'reports/dataTransferToVaults?endTimeMsecs=%s&startTimeMsecs=%s' % (nowMsecs, weekAgoMsecs)
+        # weekAgoMsecs = nowMsecs - 86400000
+        cloudStart = cluster['createdTimeMsecs']
+        cloudStatURL = 'reports/dataTransferToVaults?endTimeMsecs=%s&startTimeMsecs=%s' % (nowMsecs, cloudStart)
         for vault in vaults:
             cloudStatURL += '&vaultIds=%s' % vault['id']
         cloudStats = api('get', cloudStatURL)
@@ -190,39 +191,56 @@ def reportStorage():
                                 sourceNames[object['object']['id']] = object['object']['name']
                             for object in [o for o in run['objects']]:
                                 objId = object['object']['id']
+                                archivalInfo = None
                                 if 'localSnapshotInfo' in object:
                                     snap = object['localSnapshotInfo']
                                     runType = run['localBackupInfo']['runType']
-                                else:
+                                elif 'originalBackupInfo' in object:
                                     snap = object['originalBackupInfo']
                                     runType = run['originalBackupInfo']['runType']
+                                else:
+                                    # CAD
+                                    snap = None
+                                    if 'archivalInfo' in object:
+                                        try:
+                                            archivalInfo = object['archivalInfo']['archivalTargetResults'][0]
+                                        except Exception:
+                                            archivalInfo = None
                                 try:
                                     if objId not in objects and not (job['environment'] == 'kAD' and object['object']['environment'] == 'kAD') and not (job['environment'] in ['kSQL', 'kOracle'] and object['object']['objectType'] == 'kHost'):
-
                                         objects[objId] = {}
                                         objects[objId]['name'] = object['object']['name']
                                         objects[objId]['logical'] = 0
+                                        objects[objId]['archiveLogical'] = 0
                                         objects[objId]['bytesRead'] = 0
+                                        objects[objId]['archiveBytesRead'] = 0
                                         objects[objId]['growth'] = 0
                                         objects[objId]['numSnaps'] = 0
                                         objects[objId]['numLogs'] = 0
-                                        objects[objId]['newestBackup'] = snap['snapshotInfo']['startTimeUsecs']
-                                        objects[objId]['oldestBackup'] = snap['snapshotInfo']['startTimeUsecs']
                                         if 'sourceId' in object['object']:
                                             objects[objId]['sourceId'] = object['object']['sourceId']
-                                        if 'logicalSizeBytes' not in snap['snapshotInfo']['stats']:
-                                            if debug is True:
-                                                print('   looking up source ID')
-                                            csource = api('get', 'protectionSources?id=%s&useCachedData=true' % objId, quiet=True)
-                                            try:
-                                                if type(csource) is list:
-                                                    objects[objId]['logical'] = csource[0]['protectedSourcesSummary'][0]['totalLogicalSize']
-                                                else:
-                                                    objects[objId]['logical'] = csource['protectedSourcesSummary'][0]['totalLogicalSize']
-                                            except Exception:
-                                                pass
-                                        else:
-                                            objects[objId]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
+                                        if snap is not None:
+                                            objects[objId]['newestBackup'] = snap['snapshotInfo']['startTimeUsecs']
+                                            objects[objId]['oldestBackup'] = snap['snapshotInfo']['startTimeUsecs']
+                                            if 'logicalSizeBytes' not in snap['snapshotInfo']['stats']:
+                                                if debug is True:
+                                                    print('   looking up source ID')
+                                                csource = api('get', 'protectionSources?id=%s&useCachedData=true' % objId, quiet=True)
+                                                try:
+                                                    if type(csource) is list:
+                                                        objects[objId]['logical'] = csource[0]['protectedSourcesSummary'][0]['totalLogicalSize']
+                                                    else:
+                                                        objects[objId]['logical'] = csource['protectedSourcesSummary'][0]['totalLogicalSize']
+                                                except Exception:
+                                                    pass
+                                            else:
+                                                objects[objId]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
+                                        if archivalInfo is not None:
+                                            objects[objId]['newestBackup'] = archivalInfo['startTimeUsecs']
+                                            objects[objId]['oldestBackup'] = archivalInfo['startTimeUsecs']
+                                    if objId in objects:
+                                        if snap is None and 'logicalSizeBytes' in archivalInfo['stats'] and archivalInfo['stats']['logicalSizeBytes'] > objects[objId]['archiveLogical']:
+                                            objects[objId]['archiveLogical'] = archivalInfo['stats']['logicalSizeBytes']
                                         if job['environment'] == 'kVMware':
                                             vmsearch = api('get', '/searchvms?allUnderHierarchy=true&entityTypes=kVMware&jobIds=%s&vmName=%s' % (job['id'].split(':')[2], object['object']['name']))
                                             if vmsearch is not None and 'vms' in vmsearch and vmsearch['vms'] is not None and len(vmsearch['vms']) > 0:
@@ -230,20 +248,25 @@ def reportStorage():
                                                 if len(vms) > 0:
                                                     vmbytes = vms[0]['vmDocument']['objectId']['entity']['vmwareEntity']['frontEndSizeInfo']['sizeBytes']
                                                     objects[objId]['logical'] = vmbytes
-                                    if objId in objects and 'logicalSizeBytes' in snap['snapshotInfo']['stats'] and snap['snapshotInfo']['stats']['logicalSizeBytes'] > objects[objId]['logical']:
-                                        if job['environment'] != 'kVMware' or objects[objId]['logical'] == 0:
+                                        if snap is not None and 'logicalSizeBytes' in snap['snapshotInfo']['stats'] and snap['snapshotInfo']['stats']['logicalSizeBytes'] > objects[objId]['logical']:
+                                            if job['environment'] != 'kVMware' or objects[objId]['logical'] == 0:
+                                                objects[objId]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
+                                        if snap is not None and job['environment'] == 'kVMware' and snap['snapshotInfo']['stats']['logicalSizeBytes'] < objects[objId]['logical']:
                                             objects[objId]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
-                                    if job['environment'] == 'kVMware' and snap['snapshotInfo']['stats']['logicalSizeBytes'] < objects[objId]['logical']:
-                                        objects[objId]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
-                                    objects[objId]['bytesRead'] += snap['snapshotInfo']['stats']['bytesRead']
-                                    if snap['snapshotInfo']['startTimeUsecs'] > growthdaysusecs:
-                                        objects[objId]['growth'] += snap['snapshotInfo']['stats']['bytesRead']
-                                        jobObjGrowth += snap['snapshotInfo']['stats']['bytesRead']
-                                    if runType == 'kLog':
-                                        objects[objId]['numLogs'] += 1
-                                    else:
-                                        objects[objId]['numSnaps'] += 1
-                                    objects[objId]['oldestBackup'] = snap['snapshotInfo']['startTimeUsecs']
+                                        if snap is not None:
+                                            objects[objId]['bytesRead'] += snap['snapshotInfo']['stats']['bytesRead']
+                                        if snap is not None and snap['snapshotInfo']['startTimeUsecs'] > growthdaysusecs:
+                                            objects[objId]['growth'] += snap['snapshotInfo']['stats']['bytesRead']
+                                            jobObjGrowth += snap['snapshotInfo']['stats']['bytesRead']
+                                        if runType == 'kLog':
+                                            objects[objId]['numLogs'] += 1
+                                        else:
+                                            objects[objId]['numSnaps'] += 1
+                                        if snap is not None:
+                                            objects[objId]['oldestBackup'] = snap['snapshotInfo']['startTimeUsecs']
+                                        if archivalInfo is not None:
+                                            objects[objId]['oldestBackup'] = archivalInfo['startTimeUsecs']
+                                            objects[objId]['archiveBytesRead'] += archivalInfo['stats']['bytesRead']
 
                                 except Exception as e:
                                     pass
@@ -268,25 +291,38 @@ def reportStorage():
                     jobFESize += thisObject['logical']
                 if 'bytesRead' in thisObject:
                     jobFESize += thisObject['bytesRead']
+                if 'archiveLogical' in thisObject and thisObject['archiveLogical'] > 0:
+                    jobFESize += thisObject['archiveLogical']
+                if 'archiveBytesRead' in thisObject:
+                    jobFESize += thisObject['archiveBytesRead']
+                    isCad = True
             for object in sorted(objects.keys()):
                 thisObject = objects[object]
-                if 'logical' in thisObject and 'bytesRead' in thisObject:
+                if ('logical' in thisObject and 'bytesRead' in thisObject) or ('archiveLogical' in thisObject and 'archiveBytesRead' in thisObject):
                     objFESize = round(thisObject['logical'] / multiplier, 1)
+                    if thisObject['archiveLogical'] > 0:
+                        objFESize = round(thisObject['archiveLogical'] / multiplier, 1)
                     objGrowth = round(thisObject['growth'] / (jobReduction * multiplier), 1)
                     if jobObjGrowth != 0:
                         objGrowth = round(jobGrowth * thisObject['growth'] / (jobObjGrowth * multiplier), 1)
                     if jobFESize > 0:
                         objWeight = (thisObject['logical'] + thisObject['bytesRead']) / jobFESize
+                        if thisObject['archiveLogical'] > 0:
+                            objWeight = (thisObject['archiveLogical'] + thisObject['archiveBytesRead']) / jobFESize
                     else:
                         objWeight = 0
                     if jobWritten > 0:
                         objWritten = round(objWeight * jobWritten / multiplier, 1)
-                    else:
+                    elif isCad is False:
                         objWritten = round(objFESize / jobReduction, 1)
+                    else:
+                        objWritten = 0
                     if dataIn > 0:
                         objDataIn = round(objWeight * dataIn / multiplier, 1)
-                    else:
+                    elif isCad is False:
                         objDataIn = round(objFESize / jobReduction, 1)
+                    else:
+                        objDataIn = 0
                     objWrittenWithResiliency = round(objWritten * resiliencyFactor, 1)
                     sourceName = ''
                     if 'sourceId' in thisObject:
@@ -314,6 +350,8 @@ def reportStorage():
                                         if cloudJob['storageConsumed'] > 0:
                                             totalArchived += (objWeight * cloudJob['storageConsumed'])
                                             vaultStats += '[%s]%s ' % (vaultSummary['vaultName'], round((objWeight * cloudJob['storageConsumed']) / multiplier, 1))
+                                            if isCad is True:
+                                                jobReduction = round(jobFESize / cloudJob['storageConsumed'], 1)
                     totalArchived = round(totalArchived / multiplier, 1)
                     csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, job['name'], tenant, job['environment'][1:], sourceName, thisObject['name'], objFESize, objDataIn, objWritten, objWrittenWithResiliency, jobReduction, objGrowth, thisObject['numSnaps'], thisObject['numLogs'], usecsToDate(thisObject['oldestBackup']), usecsToDate(thisObject['newestBackup']), archiveCount, oldestArchive, totalArchived, vaultStats))
         else:
