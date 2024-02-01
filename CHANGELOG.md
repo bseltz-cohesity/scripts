@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-02-01
+
+* [storagePerObjectReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport) [`Update`] Added support for CloudArchive Direct jobs
+
 ## 2024-01-31
 
 * [backedUpFSReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/backedUpFSReport) [`Update`] added -s (--search) and -e (--exactmatch) parameters
