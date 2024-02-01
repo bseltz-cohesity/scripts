@@ -49,6 +49,24 @@ function newPermission($user, $perms, $view){
     }    
 }
 
+$principals = @{'S-1-1-0' = 'Everyone'}
+function principalName($sid){
+    if($principals[$sid]){
+        $principalName = $principals[$sid]
+    }else{
+        $principal = api get principals/searchPrincipals?sids=$($sid)
+        $principalName = $principal.principalName
+        if($principal.PSObject.Properties['domain']){
+            $principalName = "$($principal.domain)\$principalName"
+        }
+        if(!$principalName){
+            $principalName = $sid
+        }
+        $principals[$sid] = $principalName
+    }
+    return $principalName
+}
+
 $thisView = api get views/$viewName
 
 if($thisView){
@@ -89,5 +107,7 @@ if($thisView){
         }
     }
     
-    $null = api put views/$($view.name) $thisView   
+    $null = api put views/$($view.name) $thisView
+
+    $thisView.smbPermissionsInfo.permissions | Format-Table -Property type, mode, access, @{label='principal'; expression={principalName $_.sid}}
 }
