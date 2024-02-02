@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-02-02
+
+* [restoreSQL-CCS.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/restoreSQL-CCS) [`Update`] added support for SQL Always On Availability Group datbases
+
 ## 2024-02-01
 
 * [storagePerObjectReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport) [`Update`] Added support for CloudArchive Direct jobs
