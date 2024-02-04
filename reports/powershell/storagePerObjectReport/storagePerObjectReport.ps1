@@ -11,10 +11,11 @@ param (
     [Parameter()][switch]$mcm,
     [Parameter()][string]$mfaCode = $null,
     [Parameter()][array]$clusterName = $null,
-    [Parameter()][int]$numRuns = 100,
+    [Parameter()][int]$numRuns = 1000,
     [Parameter()][int]$growthDays = 7,
     [Parameter()][switch]$skipDeleted,
     [Parameter()][ValidateSet('MiB','GiB','TiB','MB','GB','TB')][string]$unit = 'GiB',
+    [Parameter()][switch]$secondFormat,
     [Parameter()][switch]$dbg
 )
 
@@ -30,12 +31,14 @@ function toUnits($val){
 $dateString = (get-date).ToString('yyyy-MM-dd-HH-mm')
 $monthString = (get-date).ToString('yyyy-MM')
 $outfileName = "storagePerObjectReport-$dateString.csv"
-$outfile2 = "customFormat2-storagePerObjectReport-$dateString.csv"
 
 # headings
 """Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Environment"",""Source Name"",""Object Name"",""Logical $unit"",""$unit Read"",""$unit Written"",""$unit Written plus Resiliency"",""Reduction Ratio"",""$unit Written Last $growthDays Days"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description""" | Out-File -FilePath $outfileName
-"""Cluster Name"",""Month"",""Object Name"",""Description"",""$unit Written plus Resiliency""" | Out-File -FilePath $outfile2
 
+if($secondFormat){
+    $outfile2 = "customFormat2-storagePerObjectReport-$dateString.csv"
+    """Cluster Name"",""Month"",""Object Name"",""Description"",""$unit Written plus Resiliency""" | Out-File -FilePath $outfile2
+}
 
 function reportStorage(){
     $viewHistory = @{}
@@ -397,7 +400,9 @@ function reportStorage(){
                 }
 
                 """$($cluster.name)"",""$origin"",""$statsAge"",""$($job.name)"",""$tenant"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$objFESize"",""$(toUnits $objDataIn)"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$($thisObject['numSnaps'])"",""$($thisObject['numLogs'])"",""$(usecsToDate $thisObject['oldestBackup'])"",""$(usecsToDate $thisObject['newestBackup'])"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)""" | Out-File -FilePath $outfileName -Append
-                """$($cluster.name)"",""$monthString"",""$fqObjectName"",""$($job.description)"",""$(toUnits $objWrittenWithResiliency)""" | Out-File -FilePath $outfile2 -Append
+                if($secondFormat){
+                    """$($cluster.name)"",""$monthString"",""$fqObjectName"",""$($job.description)"",""$(toUnits $objWrittenWithResiliency)""" | Out-File -FilePath $outfile2 -Append
+                }
             }
         }elseif($job.environment -in @('kView', 'kRemoteAdapter')){
             if($job.isActive -eq $True){
@@ -568,10 +573,11 @@ function reportStorage(){
             }
         }
         """$($cluster.name)"",""$origin"",""$statsAge"",""$($jobName)"",""$($view.tenantId -replace ".$")"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$(toUnits $dataIn)"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$numSnaps"",""$numLogs"",""$oldestBackup"",""$newestBackup"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($view.description)""" | Out-File -FilePath $outfileName -Append
-        """$($cluster.name)"",""$monthString"",""$viewName"",""$($view.description)"",""$(toUnits $consumption)""" | Out-File -FilePath $outfile2 -Append
+        if($secondFormat){
+            """$($cluster.name)"",""$monthString"",""$viewName"",""$($view.description)"",""$(toUnits $consumption)""" | Out-File -FilePath $outfile2 -Append
+        }
     }
 }
-
 
 # authentication =============================================
 if(! $vip){
@@ -599,4 +605,6 @@ foreach($v in $vip){
 }
 
 "`nOutput saved to $outfilename"
-"Alternate format saved to $outfile2`n"
+if($secondFormat){
+    "Alternate format saved to $outfile2`n"
+}
