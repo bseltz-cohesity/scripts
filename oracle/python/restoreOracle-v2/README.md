@@ -164,6 +164,7 @@ Restoring an Oracle RAC DB:
 * -rp, --redologprefix: (optional) redo log prefix
 * -bc, --bctFilePath: (optional) alternate bct file path
 * -pf, --pfileparameter: (optional) one or more parameter names to include in pfile (repeat for multiple)
+* -cpf, --clearpfileparameters: (optional) delete existing pfile parameters
 * -sh, --shellparameter (optional) one or more shell variable names (repeat for multiple)
 * -dbg, --dbg: (optional) display api payload and exit (without restoring)
 

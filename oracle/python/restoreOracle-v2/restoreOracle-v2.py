@@ -53,7 +53,7 @@ parser.add_argument('-dbg', '--dbg', action='store_true')  # debug output
 parser.add_argument('-w', '--wait', action='store_true')  # wait for completion
 parser.add_argument('-pr', '--progress', action='store_true')  # display progress
 parser.add_argument('-inst', '--instant', action='store_true')  # instant recovery
-
+parser.add_argument('-cpf', '--clearpfileparameters', action='store_true')  # clear existing pfile parameters
 args = parser.parse_args()
 
 vip = args.vip
@@ -90,6 +90,7 @@ channels = args.channels
 channelnode = args.channelnode
 shellvars = args.shellvariable
 pfileparams = args.pfileparameter
+clearpfileparameters = args.clearpfileparameters
 overwrite = args.overwrite
 logtime = args.logtime
 latest = args.latest
@@ -425,8 +426,9 @@ else:
         }
     }
     # get pfile parameters
-    metaInfo = api('post', 'data-protect/snapshots/%s/metaInfo' % latestSnapshot['id'], metaParams, v=2)
-    sourceConfig['recoverDatabaseParams']['pfileParameterMap'] = metaInfo['oracleParams']['restrictedPfileParamMap'] + metaInfo['oracleParams']['inheritedPfileParamMap'] + metaInfo['oracleParams']['cohesityPfileParamMap']
+    if not clearpfileparameters:
+        metaInfo = api('post', 'data-protect/snapshots/%s/metaInfo' % latestSnapshot['id'], metaParams, v=2)
+        sourceConfig['recoverDatabaseParams']['pfileParameterMap'] = metaInfo['oracleParams']['restrictedPfileParamMap'] + metaInfo['oracleParams']['inheritedPfileParamMap'] + metaInfo['oracleParams']['cohesityPfileParamMap']
     # handle pfile parameters
     if len(pfileparams) > 0:
         for pfileparam in pfileparams:
