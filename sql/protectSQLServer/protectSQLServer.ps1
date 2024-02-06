@@ -30,7 +30,8 @@ param (
     [Parameter()][string]$withClause = '',
     [Parameter()][int]$logNumStreams = 3,
     [Parameter()][string]$logWithClause = '',
-    [Parameter()][switch]$unprotectedDBs
+    [Parameter()][switch]$unprotectedDBs,
+    [Parameter()][switch]$sourceSideDeduplication
 )
 
 # gather list from command line params and file
@@ -186,6 +187,9 @@ if(! $job){
             "excludeFilters" = $null;
             "logBackupNumStreams" = $logNumStreams;
             "logBackupWithClause" = $logWithClause;
+        }
+        if($sourceSideDeduplication){
+            $job.mssqlParams['fileProtectionTypeParams']['performSourceSideDeduplication'] = $True
         }
         $params = $job.mssqlParams.fileProtectionTypeParams
     }
