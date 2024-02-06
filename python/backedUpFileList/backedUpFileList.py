@@ -120,8 +120,12 @@ def showFiles(doc, version):
         useLibrarian = '&useLibrarian=true'
     if noindex:
         useLibrarian = ''  # False
+    if 'attemptNum' in version['instanceId']:
+        attemptNum = version['instanceId']['attemptNum']
+    else:
+        attemptNum = 0
     instance = ("attemptNum=%s&clusterId=%s&clusterIncarnationId=%s&entityId=%s&jobId=%s&jobInstanceId=%s&jobStartTimeUsecs=%s&jobUidObjectId=%s" %
-                (version['instanceId']['attemptNum'],
+                (attemptNum,
                     doc['objectId']['jobUid']['clusterId'],
                     doc['objectId']['jobUid']['clusterIncarnationId'],
                     doc['objectId']['entity']['id'],
