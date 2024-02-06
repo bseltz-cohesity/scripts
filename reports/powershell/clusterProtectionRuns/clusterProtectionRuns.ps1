@@ -85,10 +85,10 @@ foreach($v in $vip){
                     if(! $run.PSObject.Properties['isLocalSnapshotsDeleted']){
                         if($run.PSObject.Properties['localBackupInfo']){
                             $backupInfo = $run.localBackupInfo
-                            $snapshotInfo = 'localSnapshotInfo'
-                        }else{
+                        }elseif($run.PSObject.Properties['originalBackupInfo']){
                             $backupInfo = $run.originalBackupInfo
-                            $snapshotInfo = 'originalBackupInfo'
+                        }else{
+                            $backupInfo = $run.archivalInfo.archivalTargetResults[0]
                         }
                         $runType = $backupInfo.runType
                         if($includeLogs -or $runType -ne 'kLog'){
@@ -108,6 +108,13 @@ foreach($v in $vip){
                                 }
                             }
                             foreach($object in $run.objects){
+                                if($run.PSObject.Properties['localBackupInfo']){
+                                    $snapshotInfo = $object.localSnapshotInfo.snapshotInfo
+                                }elseif($run.PSObject.Properties['originalBackupInfo']){
+                                    $snapshotInfo = $object.originalBackupInfo.snapshotInfo
+                                }else{
+                                    $snapshotInfo = $object.archivalInfo.archivalTargetResults[0]
+                                }
                                 $objectName = $object.object.name
                                 if($environment -notin @('kOracle', 'kSQL') -or ($environment -in @('kOracle', 'kSQL') -and $object.object.objectType -ne 'kHost')){
                                     if($object.object.PSObject.Properties['sourceId']){
@@ -123,25 +130,25 @@ foreach($v in $vip){
                                     }else{
                                         $registeredSourceName = $objectName
                                     }
-                                    $objectStatus = $object.$snapshotInfo.snapshotInfo.status
+                                    $objectStatus = $snapshotInfo.status
                                     if($objectStatus -eq 'kSuccessful'){
                                         $objectStatus = 'kSuccess'
                                     }
-                                    if($object.$snapshotInfo.snapshotInfo.startTimeUsecs){
-                                        $objectStartTime = usecsToDate $object.$snapshotInfo.snapshotInfo.startTimeUsecs
+                                    if($snapshotInfo.startTimeUsecs){
+                                        $objectStartTime = usecsToDate $snapshotInfo.startTimeUsecs
                                     }else{
                                         $objectStartTime = $runStartTime
                                     }
                                     
                                     $objectEndTime = $null
                                     $objectDurationSeconds = '-'
-                                    if($object.$snapshotInfo.snapshotInfo.PSObject.Properties['endTimeUsecs']){
-                                        $objectEndTime = usecsToDate $object.$snapshotInfo.snapshotInfo.endTimeUsecs
+                                    if($snapshotInfo.PSObject.Properties['endTimeUsecs']){
+                                        $objectEndTime = usecsToDate $snapshotInfo.endTimeUsecs
                                         $objectDurationSeconds = ("{0:n0}" -f ($objectEndTime - $objectStartTime).totalSeconds).replace(',','')
                                     }
-                                    $objectLogicalSizeBytes = toUnits $object.$snapshotInfo.snapshotInfo.stats.logicalSizeBytes
-                                    $objectBytesWritten = toUnits $object.$snapshotInfo.snapshotInfo.stats.bytesWritten
-                                    $objectBytesRead = toUnits $object.$snapshotInfo.snapshotInfo.stats.bytesRead
+                                    $objectLogicalSizeBytes = toUnits $snapshotInfo.stats.logicalSizeBytes
+                                    $objectBytesWritten = toUnits $snapshotInfo.stats.bytesWritten
+                                    $objectBytesRead = toUnits $snapshotInfo.stats.bytesRead
                                     "        {0}" -f $objectName
                                     $objectStartTime, $objectEndTime, $objectDurationSeconds, $objectStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $cluster.name, $objectLogicalSizeBytes, $objectBytesRead, $objectBytesWritten, $tenant -join "," | Out-File -FilePath $outfileName -Append
                                 }
