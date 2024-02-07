@@ -2,6 +2,7 @@
 
 ## 2024-02-07
 
+* [findAndRestoreFiles.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/findAndRestoreFiles) [`Update`] added -targetRegisteredSource to refine selection of -targetObject
 * [legalHoldAll.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/legalHoldAll) [`Update`] report if backup on legal hold is past its intended expiration date
 
 ## 2024-02-06
