@@ -33,6 +33,7 @@ param (
     [Parameter()][string]$restoreFileList = '',
     [Parameter()][string]$targetObject = $sourceObject,
     [Parameter()][string]$targetRegisteredSource,
+    [Parameter()][string]$isilonZoneId,
     [Parameter()][string]$restorePath,
     [Parameter()][int]$maxFilesPerRestore = 500,
     [Parameter()][switch]$overwrite,
@@ -332,15 +333,18 @@ if($restore -or $restorePrevious){
         }else{
             $entities = api get "/entitiesOfType?environmentTypes=kVMware&environmentTypes=kFlashblade&environmentTypes=kGenericNas&environmentTypes=kGPFS&environmentTypes=kIsilon&environmentTypes=kNetapp&environmentTypes=kPhysical&flashbladeEntityTypes=kFileSystem&genericNasEntityTypes=kHost&gpfsEntityTypes=kFileset&isilonEntityTypes=kMountPoint&netappEntityTypes=kVolume&physicalEntityTypes=kHost&physicalEntityTypes=kWindowsCluster"
         }
+        if($isilonZoneId){
+            $entities = $entities | Where-Object {$_.isilonEntity.mountPointInfo.zoneId -eq $isilonZoneId}
+        }
         $targetEntity = $entities | Where-Object displayName -eq $targetObject
         if(!$targetEntity){
             Write-Host "$targetObject not found" -ForegroundColor Yellow
             exit 1
         }
-        # if($targetEntity.Count -gt 1){
-        #     Write-Host "ambiguous target entity selected, please use -targetRegisteredSource to narrow target selection" -ForegroundColor Yellow
-        #     exit 1
-        # }
+        if($targetEntity.Count -gt 1){
+            Write-Host "ambiguous target entity selected, please use -targetRegisteredSource to narrow target selection" -ForegroundColor Yellow
+            exit 1
+        }
     }
 }
 
