@@ -1,5 +1,16 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-02-07
+
+* [legalHoldAll.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/legalHoldAll) [`Update`] report if backup on legal hold is past its intended expiration date
+
+## 2024-02-06
+
+* [clusterProtectionRuns.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/clusterProtectionRuns) [`Update`] added support for cloudArchive Direct
+* [protectSQLServer.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/protectSQLServer) [`Update`] added option to enable source side deduplication (for file-based protection type only)
+* [backedUpFileList.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backedUpFileList) [`Fix`] handle missing attemptNum property
+* [backedUpFileList.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/backedUpFileList) [`Fix`] handle missing attemptNum property
+
 ## 2024-02-02
 
 * [restoreSQL-CCS.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/restoreSQL-CCS) [`Update`] added support for SQL Always On Availability Group datbases
