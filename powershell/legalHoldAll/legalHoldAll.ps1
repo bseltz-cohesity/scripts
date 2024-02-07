@@ -79,9 +79,11 @@ if($jobNames.Count -gt 0){
 
 $cluster = api get cluster
 
+$nowUsecs = dateToUsecs
+$nowUsecs += (86400 * 1000000 * 7)
 $dateString = (Get-Date).ToString('yyyy-MM-dd')
 $outfile = "legalHolds-$($cluster.name)-$dateString.csv"
-"JobName,RunDate,LegalHold" | Out-File -FilePath $outfile
+"JobName,RunDate,LegalHold,PastExpiration" | Out-File -FilePath $outfile
 
 if($removeHold){
     $holdValue = $false
@@ -107,13 +109,11 @@ foreach($job in $jobs | Sort-Object -Property name){
                         )
                     }
                     $update = $false
-                    foreach($copyRun in $run.copyRun){ #  | Where-Object {$_.target.type -in @('kLocal', 'kArchival')}
+                    foreach($copyRun in $run.copyRun){
                         if($pushToReplica -or $copyRun.target.type -in @('kLocal', 'kArchival')){
-                        # if($removeHold -or $copyRun.target.type -in @('kLocal', 'kArchival')){
                             if($copyRun.PSObject.Properties['holdForLegalPurpose'] -and $copyRun.holdForLegalPurpose -eq $True){
                                 $update = $True
                             }
-                        
                             if(($addHold -and $copyRun.expiryTimeUsecs -gt (dateToUsecs)) -or $update -eq $True){
                                 $update = $True
                                 $copyRunTarget = $copyRun.target
@@ -148,8 +148,20 @@ foreach($job in $jobs | Sort-Object -Property name){
                     }
                     $runDate = usecsToDate $run.backupRun.stats.startTimeUsecs
                     if((! $showTrue -or $legalHoldState -eq $True) -and (! $showFalse -or $legalHoldState -eq $false)){
-                        write-host "    $runDate : LegalHold = $legalHoldState"
-                        """{0}"",""{1}"",""{2}""" -f $job.name, $runDate, $legalHoldState | Out-File -FilePath $outfile -Append
+                        $wouldBeExpired = $false
+                        if($legalHoldState -eq $True){
+                            $expiry = ($run.copyRun | Where-Object {$_.target.type -eq 'kLocal'})[0].expiryTimeUsecs
+                            if($expiry -lt $nowUsecs){
+                                $pastExpiration = $True
+                                $expiryDate = usecsToDate $expiry
+                            }
+                        }
+                        if($pastExpiration -eq $True){
+                            write-host "    $runDate : LegalHold = $legalHoldState (past expiration: $expiryDate)"
+                        }else{
+                            write-host "    $runDate : LegalHold = $legalHoldState"
+                        }
+                        """{0}"",""{1}"",""{2}"",""{3}""" -f $job.name, $runDate, $legalHoldState, $pastExpiration | Out-File -FilePath $outfile -Append
                     }
                 }
             }
