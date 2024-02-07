@@ -32,6 +32,7 @@ param (
     [Parameter()][switch]$restorePrevious,
     [Parameter()][string]$restoreFileList = '',
     [Parameter()][string]$targetObject = $sourceObject,
+    [Parameter()][string]$targetRegisteredSource,
     [Parameter()][string]$restorePath,
     [Parameter()][int]$maxFilesPerRestore = 500,
     [Parameter()][switch]$overwrite,
@@ -150,7 +151,6 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
                                     if($entry.fullPath -notin $script:sawFiles){
                                         "{0} ({1}) [{2} bytes]" -f $entry.fullPath, $mtime, $filesize
                                         $script:sawFiles = @($script:sawFiles + $entry.fullPath)
-
                                         "$($entry.fullPath.subString(0,$($entry.fullPath.LastIndexOf('/'))))`t$($entry.name)`t$($version.instanceId.jobInstanceId)`t$($filesize)" | Out-File -FilePath "filesToRestore.tsv" -Append
                                         # "$($entry.fullPath)" | Out-File -FilePath "filesToRestore-$($version.instanceId.jobInstanceId).txt" -Append
                                         $script:fileCount += 1
@@ -196,9 +196,13 @@ function showFiles($doc, $version){
     $sourceObjectString = $sourceObject.Replace('\','-').Replace('/','-')
     $outputfile = $(Join-Path -Path $PSScriptRoot -ChildPath "backedUpFiles-$($version.instanceId.jobInstanceId)-$($sourceObjectString)-$versionDate.txt")
     $null = Remove-Item -Path $outputfile -Force -ErrorAction SilentlyContinue
-    
+    if(! $version.instanceId.PSObject.PRoperties['attemptNum']){
+        $attemptNum = 0
+    }else{
+        $attemptNum = $version.instanceId.attemptNum
+    }
     $instance = "attemptNum={0}&clusterId={1}&clusterIncarnationId={2}&entityId={3}&jobId={4}&jobInstanceId={5}&jobStartTimeUsecs={6}&jobUidObjectId={7}" -f
-                $version.instanceId.attemptNum,
+                $attemptNum,
                 $doc.objectId.jobUid.clusterId,
                 $doc.objectId.jobUid.clusterIncarnationId,
                 $doc.objectId.entity.id,
@@ -317,10 +321,24 @@ if($restore -or $restorePrevious){
         }
     }else{
         # physical / nas
-        $entities = api get "/entitiesOfType?environmentTypes=kVMware&environmentTypes=kFlashblade&environmentTypes=kGenericNas&environmentTypes=kGPFS&environmentTypes=kIsilon&environmentTypes=kNetapp&environmentTypes=kPhysical&flashbladeEntityTypes=kFileSystem&genericNasEntityTypes=kHost&gpfsEntityTypes=kFileset&isilonEntityTypes=kMountPoint&netappEntityTypes=kVolume&physicalEntityTypes=kHost&physicalEntityTypes=kWindowsCluster"
+        if($targetRegisteredSource){
+            $parent = api get protectionSources/rootNodes | Where-Object {$_.protectionSource.name -eq $targetRegisteredSource}
+            if(! $parent){
+                Write-Host "registered source $targetRegisteredSource not found" -ForegroundColor Yellow
+                exit 1
+            }
+            $parentId = $parent.protectionSource.id
+            $entities = api get "/entitiesOfType?environmentTypes=kVMware&environmentTypes=kFlashblade&environmentTypes=kGenericNas&environmentTypes=kGPFS&environmentTypes=kIsilon&environmentTypes=kNetapp&environmentTypes=kPhysical&flashbladeEntityTypes=kFileSystem&genericNasEntityTypes=kHost&gpfsEntityTypes=kFileset&isilonEntityTypes=kMountPoint&netappEntityTypes=kVolume&physicalEntityTypes=kHost&physicalEntityTypes=kWindowsCluster&parentEntityId=$parentId"
+        }else{
+            $entities = api get "/entitiesOfType?environmentTypes=kVMware&environmentTypes=kFlashblade&environmentTypes=kGenericNas&environmentTypes=kGPFS&environmentTypes=kIsilon&environmentTypes=kNetapp&environmentTypes=kPhysical&flashbladeEntityTypes=kFileSystem&genericNasEntityTypes=kHost&gpfsEntityTypes=kFileset&isilonEntityTypes=kMountPoint&netappEntityTypes=kVolume&physicalEntityTypes=kHost&physicalEntityTypes=kWindowsCluster"
+        }
         $targetEntity = $entities | Where-Object displayName -eq $targetObject
         if(!$targetEntity){
             Write-Host "$targetObject not found" -ForegroundColor Yellow
+            exit 1
+        }
+        if($targetEntity.Count -gt 1){
+            Write-Host "ambiguous target entity selected, please use -targetRegisteredSource to narrow target selection" -ForegroundColor Yellow
             exit 1
         }
     }
@@ -499,7 +517,7 @@ if($restore){
                             "jobUid"         = $doc.objectId.jobUid
                         };
                         "params"           = @{
-                            "targetEntity"            = $targetEntity;
+                            "targetEntity"            = $targetEntity[0];
                             "targetEntityCredentials" = @{
                                 "username" = "";
                                 "password" = ""
