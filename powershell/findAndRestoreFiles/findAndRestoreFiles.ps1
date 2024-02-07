@@ -337,10 +337,10 @@ if($restore -or $restorePrevious){
             Write-Host "$targetObject not found" -ForegroundColor Yellow
             exit 1
         }
-        if($targetEntity.Count -gt 1){
-            Write-Host "ambiguous target entity selected, please use -targetRegisteredSource to narrow target selection" -ForegroundColor Yellow
-            exit 1
-        }
+        # if($targetEntity.Count -gt 1){
+        #     Write-Host "ambiguous target entity selected, please use -targetRegisteredSource to narrow target selection" -ForegroundColor Yellow
+        #     exit 1
+        # }
     }
 }
 
