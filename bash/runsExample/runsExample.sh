@@ -14,13 +14,8 @@ while getopts "v:u:d:p:k:n:" flag
     done
 
 # defaults
-if [ -z "${DOMAIN}" ]; then
-    DOMAIN='local'
-fi
-
-if [ -z "$NUMRUNS" ]; then
-    NUMRUNS=10
-fi
+DOMAIN=${DOMAIN:-local}
+NUMRUNS=${NUMRUNS:-10}
 
 # usage
 usage(){
