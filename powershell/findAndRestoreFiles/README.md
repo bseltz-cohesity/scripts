@@ -87,6 +87,7 @@ The resulting list will be saved to `filesToRestore.tsv` which can be opened in 
 * -restorePrevious: (optional) restore using existing output file
 * -restoreFileList: (optional) alternate file name to use for restore
 * -targetObject: (optional) server/VM/NAS to restore to (defaults to sourceObject)
+* -targetRegisteredSource: (optional) specify target registered source object (e.g. name of registered Isilon)
 * -restorePath: (optional) restore to alternate path
 * -overwrite: (optional) overwrite existing files
 * -maxFilesPerRestore: (optional) default is 500
