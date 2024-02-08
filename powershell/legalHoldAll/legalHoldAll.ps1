@@ -80,7 +80,6 @@ if($jobNames.Count -gt 0){
 $cluster = api get cluster
 
 $nowUsecs = dateToUsecs
-$nowUsecs += (86400 * 1000000 * 7)
 $dateString = (Get-Date).ToString('yyyy-MM-dd')
 $outfile = "legalHolds-$($cluster.name)-$dateString.csv"
 "JobName,RunDate,LegalHold,PastExpiration" | Out-File -FilePath $outfile
