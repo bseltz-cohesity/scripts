@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2023-02-09
+
+* [protectedObjectReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/protectedObjectReport) [`Update`] added support for cloudArchive direct
+
 ## 2024-02-07
 
 * [findAndRestoreFiles.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/findAndRestoreFiles) [`Update`] added -targetRegisteredSource to refine selection of -targetObject
