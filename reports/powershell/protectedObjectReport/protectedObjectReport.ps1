@@ -62,14 +62,33 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     "    $($job.name)"
     $policy = $policies.policies | Where-Object id -eq $job.policyId
     $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?includeObjectDetails=true&numRuns=7"
-    if('kLog' -in $runs.runs.localBackupInfo.runType){
-        $runDates = ($runs.runs | Where-Object {$_.localBackupInfo.runType -eq 'kLog'}).localBackupInfo.startTimeUsecs
+    if($runs.runs[0].PSObject.Properties['localBackupInfo']){
+        $isCad = $false
+        if('kLog' -in $runs.runs.localBackupInfo.runType){
+            $runDates = ($runs.runs | Where-Object {$_.localBackupInfo.runType -eq 'kLog'}).localBackupInfo.startTimeUsecs
+        }else{
+            $runDates = $runs.runs.localBackupInfo.startTimeUsecs
+        }
     }else{
-        $runDates = $runs.runs.localBackupInfo.startTimeUsecs
+        $isCad = $True
+        # $runs.runs[0] | toJson
+        if('kLog' -in $runs.runs.archivalInfo.archivalTargetResults[0].runType){
+            $runDates = ($runs.runs | Where-Object {$_.archivalInfo.archivalTargetResults.runType -eq 'kLog'}).archivalInfo.archivalTargetResults[0].startTimeUsecs
+        }else{
+            $runDates = $runs.runs.archivalInfo.archivalTargetResults.startTimeUsecs
+        }
     }
+
     # $lastStatus = $runs.runs[0].localBackupInfo.status
     foreach($run in $runs.runs){
         foreach($object in $run.objects){
+            if($isCad){
+                $snapInfo = $object.archivalInfo.archivalTargetResults[0]
+                $lastStatus = $snapInfo.status
+            }else{
+                $snapInfo = $object.localSnapshotInfo.snapshotInfo
+                $lastStatus = $snapInfo.status.subString(1)
+            }
             if($object.object.id -notin $objects.Keys){
                 $objects[$object.object.id] = @{
                     'name' = $object.object.name;
@@ -82,7 +101,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                     'runDates' = $runDates;
                     'sourceId' = '';
                     'parent' = '';
-                    'lastStatus' = $object.localSnapshotInfo.snapshotInfo.status.subString(1);
+                    'lastStatus' = $lastStatus;
                     'jobPaused' = $job.isPaused
                 }
                 if($object.object.PSObject.Properties['sourceId']){
