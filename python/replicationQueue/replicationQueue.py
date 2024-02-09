@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-### import Cohesity python module
+# import Cohesity python module
 from pyhesity import *
 from datetime import datetime
 
-### command line arguments
+# command line arguments
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
@@ -25,6 +25,7 @@ parser.add_argument('-y', '--youngerthan', type=int, default=0)
 parser.add_argument('-k', '--daystokeep', type=int, default=0)
 parser.add_argument('-n', '--numruns', type=int, default=9999)
 parser.add_argument('-f', '--showfinished', action='store_true')
+parser.add_argument('-x', '--units', type=str, choices=['MiB', 'GiB'], default='MiB')
 args = parser.parse_args()
 
 vip = args.vip
@@ -45,6 +46,7 @@ olderthan = args.olderthan
 youngerthan = args.youngerthan
 daysToKeep = args.daystokeep
 showfinished = args.showfinished
+units = args.units
 
 if olderthan > 0:
     olderthanusecs = timeAgo(olderthan, 'days')
@@ -68,6 +70,10 @@ if apiconnected() is False:
     exit(1)
 
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning']
+
+multiplier = 1024 * 1024
+if units.lower() == 'gib':
+    multiplier = 1024 * 1024 * 1024
 
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
@@ -102,8 +108,14 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                                         "startTimeUsecs": runStartTimeUsecs,
                                         "copyType": copyRun['target']['type'],
                                         "remoteCluster": copyRun['target']['replicationTarget'],
-                                        "status": copyRun['status']
+                                        "status": copyRun['status'],
+                                        "numSnaps": 0,
+                                        "transferred": 0
                                     }
+                                    if 'stats' in copyRun and copyRun['stats'] is not None and 'physicalBytesTransferred' in copyRun['stats']:
+                                        runningTask['transferred'] = round(float(copyRun['stats']['physicalBytesTransferred']) / multiplier, 2)
+                                    if 'copySnapshotTasks' in copyRun and copyRun['copySnapshotTasks'] is not None and len(copyRun['copySnapshotTasks']) > 0:
+                                        runningTask['numSnaps'] = len(copyRun['copySnapshotTasks'])
                                 runningTasks[runStartTimeUsecs] = runningTask
 
 if len(runningTasks.keys()) > 0:
@@ -115,9 +127,16 @@ if len(runningTasks.keys()) > 0:
         # get detailed run info
         run = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&id=%s' % (t['startTimeUsecs'], t['jobId']))
         runStartTimeUsecs = run[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['startTimeUsecs']
+        numSnapString = ''
+        if t['numSnaps'] > 0:
+            numSnapString = '   (objects: %s)' % t['numSnaps']
+        transferredString = ''
+        if t['transferred'] > 0 or numSnapString != '':
+            transferredString = '   %s %s transferred' % (t['transferred'], units.upper())
         # get replication task(s)
         if 'activeTasks' in run[0]['backupJobRuns']['protectionRuns'][0]['copyRun']:
-            print("%s  %s (%s)" % (usecsToDate(t['startTimeUsecs']), t['jobname'], t['jobId']))
+
+            print("%s: %s%s%s" % (usecsToDate(t['startTimeUsecs']), t['jobname'], numSnapString, transferredString))
             for task in run[0]['backupJobRuns']['protectionRuns'][0]['copyRun']['activeTasks']:
                 if task['snapshotTarget']['type'] == 2:
                     if remotecluster is None or task['snapshotTarget']['replicationTarget']['clusterName'].lower() == remotecluster.lower():
@@ -141,6 +160,6 @@ if len(runningTasks.keys()) > 0:
                         else:
                             print('                       Replication Task ID: %s  %s' % (task['taskUid']['objectId'], noLongerNeeded))
         elif showfinished:
-            print("%s   %s (%s) %s" % (usecsToDate(t['startTimeUsecs']), t['jobname'], t['jobId'], t['status']))
+            print("%s: %s   %s%s%s" % (usecsToDate(t['startTimeUsecs']), t['jobname'], t['status'][1:], numSnapString, transferredString))
 else:
     print('\nNo active replication tasks found')

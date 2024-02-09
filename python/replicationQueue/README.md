@@ -48,6 +48,7 @@ Place both files in a folder together and run the main script like so:
 * -n, --numRuns: (optional) number of runs per job to inspect (default is 9999)
 * -k, --daystokeep: (optional) show as outdated if original backup time is older than X days ago
 * -f, --showfinished: (optional) show finished replications
+* -x, --units: (optional) display bytes as MiB or GiB (default is MiB)
 
 ## The Python Helper Module - pyhesity.py
 
