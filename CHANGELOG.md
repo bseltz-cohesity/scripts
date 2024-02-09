@@ -3,6 +3,7 @@
 ## 2023-02-09
 
 * [protectedObjectReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/protectedObjectReport) [`Update`] added support for cloudArchive direct
+* [protectedObjectReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/protectedObjectReport) [`Update`] added support for cloudArchive direct
 
 ## 2024-02-07
 
