@@ -107,13 +107,14 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
             policyLink = 'https://%s/protection-policy/details/%s' % (vip, policy['id'])
         else:
             continue
-
         # archive target
         archiveTarget = '-'
         if 'remoteTargetPolicy' in policy:
             if 'archivalTargets' in policy['remoteTargetPolicy'] and len(policy['remoteTargetPolicy']['archivalTargets']) > 0:
                 archiveTarget = policy['remoteTargetPolicy']['archivalTargets'][0]['targetName']
-
+        if 'backupPolicy in policy':
+            if 'regular' in policy['backupPolicy'] and 'primaryBackupTarget' in policy['backupPolicy']['regular'] and policy['backupPolicy']['regular']['primaryBackupTarget']['targetType'] == 'Archival':
+                archiveTarget = policy['backupPolicy']['regular']['primaryBackupTarget']['archivalTargetSettings']['targetName']
         # indexing
         if 'indexingPolicy' in environmentParams and environmentParams['indexingPolicy']['enableIndexing'] is True:
             indexing = 'Enabled'
@@ -139,12 +140,18 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
         # runs
         runs = api('get', 'data-protect/protection-groups/%s/runs?includeObjectDetails=true&numRuns=7' % job['id'], v=2)
         if len(runs['runs']) > 0:
-            runDates = [r['localBackupInfo']['startTimeUsecs'] for r in runs['runs'] if r['localBackupInfo']['runType'] == 'kLog']
-            if len(runDates) == 0:
-                runDates = [r['localBackupInfo']['startTimeUsecs'] for r in runs['runs']]
-
-            # status
-            lastStatus = runs['runs'][0]['localBackupInfo']['status']
+            isCad = False
+            if 'localBackupInfo' in runs['runs'][0]:
+                runDates = [r['localBackupInfo']['startTimeUsecs'] for r in runs['runs'] if r['localBackupInfo']['runType'] == 'kLog']
+                if len(runDates) == 0:
+                    runDates = [r['localBackupInfo']['startTimeUsecs'] for r in runs['runs']]
+                lastStatus = runs['runs'][0]['localBackupInfo']['status']
+            else:
+                isCad = True
+                runDates = [r['archivalInfo']['archivalTargetResults'][0]['startTimeUsecs'] for r in runs['runs'] if r['archivalInfo']['archivalTargetResults'][0]['runType'] == 'kLog']
+                if len(runDates) == 0:
+                    runDates = [r['archivalInfo']['archivalTargetResults'][0]['startTimeUsecs'] for r in runs['runs']]
+                lastStatus = runs['runs'][0]['archivalInfo']['archivalTargetResults'][0]['status']
 
             # QoS Policy
             qosPolicy = '-'
@@ -152,13 +159,22 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
                 qosPolicy = job['qosPolicy'][1:]
 
             for run in runs['runs']:
+                if isCad is False:
+                    runInfo = run['localBackupInfo']
+                else:
+                    runInfo = run['archivalInfo']['archivalTargetResults'][0]
                 for item in run['objects']:
                     object = item['object']
                     try:
-                        lastStatus = item['localSnapshotInfo']['snapshotInfo']['status'][1:]
+                        if isCad is False:
+                            snapInfo = item['localSnapshotInfo']['snapshotInfo']
+                            lastStatus = snapInfo['status'][1:]
+                        else:
+                            snapInfo = item['archivalInfo']['archivalTargetResults'][0]
+                            lastStatus = snapInfo['status']
                         # logical size
-                        if 'logicalSizeBytes' in item['localSnapshotInfo']['snapshotInfo']['stats']:
-                            objectMiB = int(item['localSnapshotInfo']['snapshotInfo']['stats']['logicalSizeBytes'] / (1024 * 1024))
+                        if 'logicalSizeBytes' in snapInfo['stats']:
+                            objectMiB = int(snapInfo['stats']['logicalSizeBytes'] / (1024 * 1024))
                         else:
                             objectMiB = 0
 
@@ -177,7 +193,7 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
                                 'sourceId': '',
                                 'parent': '',
                                 'lastStatus': lastStatus,
-                                'lastRunType': run['localBackupInfo']['runType'][1:],
+                                'lastRunType': runInfo['runType'][1:],
                                 'jobPaused': job['isPaused'],
                                 'indexing': indexing,
                                 'startTime': startTime,
@@ -194,7 +210,7 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
                                 objects[object['id']]['objectMiB'] = objectMiB
                         if 'sourceId' in object:
                             objects[object['id']]['sourceId'] = object['sourceId']
-                    except:
+                    except Exception:
                         pass
 
     for id in objects.keys():
