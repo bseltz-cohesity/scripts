@@ -89,7 +89,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
             jobName = job['name']
             print("Getting tasks for %s" % jobName)
             # find runs with unfinished replication tasks
-            runs = api('get', 'protectionRuns?jobId=%s&numRuns=%s&excludeTasks=true' % (jobId, numruns))
+            runs = api('get', 'protectionRuns?jobId=%s&numRuns=%s&excludeTasks=true&excludeNonRestoreableRuns=true' % (jobId, numruns))
             if olderthan > 0:
                 runs = [r for r in runs if r['backupRun']['stats']['startTimeUsecs'] < olderthanusecs]
             if youngerthan > 0:
