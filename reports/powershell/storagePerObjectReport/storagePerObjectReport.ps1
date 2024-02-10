@@ -16,7 +16,8 @@ param (
     [Parameter()][switch]$skipDeleted,
     [Parameter()][ValidateSet('MiB','GiB','TiB','MB','GB','TB')][string]$unit = 'GiB',
     [Parameter()][switch]$secondFormat,
-    [Parameter()][switch]$dbg
+    [Parameter()][switch]$dbg,
+    [Parameter()][string]$outfileName
 )
 
 # source the cohesity-api helper code
@@ -30,7 +31,31 @@ function toUnits($val){
 
 $dateString = (get-date).ToString('yyyy-MM-dd-HH-mm')
 $monthString = (get-date).ToString('yyyy-MM')
-$outfileName = "storagePerObjectReport-$dateString.csv"
+if(!$outfileName){
+    $outfileName = "storagePerObjectReport-$dateString.csv"
+}
+$logFileName = $outfileName -replace ".csv", ".log"
+
+# log function
+function output($msg, [switch]$warn, [switch]$quiet){
+    if(!$quiet){
+        if($warn){
+            Write-Host $msg -ForegroundColor Yellow
+        }else{
+            Write-Host $msg
+        }
+    }
+    $msg | Out-File -FilePath $logFileName -Append
+}
+
+# log command line parameters
+Get-Date | Out-File $logFileName
+"command line parameters:" | Out-File $logFileName -Append
+$CommandName = $PSCmdlet.MyInvocation.InvocationName;
+$ParameterList = (Get-Command -Name $CommandName).Parameters;
+foreach ($Parameter in $ParameterList) {
+    Get-Variable -Name $Parameter.Values.Name -ErrorAction SilentlyContinue | Where-Object name -ne 'password' | Out-File $logFileName -Append
+}
 
 # headings
 """Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Environment"",""Source Name"",""Object Name"",""Logical $unit"",""$unit Read"",""$unit Written"",""$unit Written plus Resiliency"",""Reduction Ratio"",""$unit Written Last $growthDays Days"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description""" | Out-File -FilePath $outfileName
@@ -43,7 +68,7 @@ if($secondFormat){
 function reportStorage(){
     $viewHistory = @{}
     $cluster = api get "cluster?fetchStats=true"
-    Write-Host "`n$($cluster.name)"
+    output "`n$($cluster.name)"
     try{
         $clusterReduction = [math]::Round($cluster.stats.usagePerfStats.dataInBytes / $cluster.stats.usagePerfStats.dataInBytesAfterjobReduction, 1)
     }catch{
@@ -58,6 +83,7 @@ function reportStorage(){
         foreach($vault in $vaults){
             $cloudStatURL += "&vaultIds=$($vault.id)"
         }
+        output "  getting external target stats..."
         $cloudStats = api get $cloudStatURL
     }
     
@@ -117,7 +143,7 @@ function reportStorage(){
             $origin = 'replica'
         }
         if($job.environment -notin @('kView', 'kRemoteAdapter')){
-            Write-Host "  $($job.name)"
+            output "  $($job.name)"
             $tenant = $job.permissions.name
             # get resiliency factor
             $resiliencyFactor = 1
@@ -193,7 +219,7 @@ function reportStorage(){
             $endUsecs = $nowUsecs
             while($True){
                 if($dbg){
-                    Write-Host "    getting runs"
+                    output "    getting runs"
                 }
                 $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&excludeNonRestorableRuns=true&useCachedData=true"
                 foreach($run in $runs.runs){
@@ -239,7 +265,7 @@ function reportStorage(){
                                 }
                                 if($snap -and ! $snap.snapshotInfo.stats.PSObject.Properties['logicalSizeBytes']){
                                     if($dbg){
-                                        Write-Host "    getting source"
+                                        output "    getting source"
                                     }
                                     $csource = api get "protectionSources?id=$objId&useCachedData=true" -quiet
                                     if( $csource.protectedSourcesSummary.Count -gt 0){
@@ -365,7 +391,7 @@ function reportStorage(){
                         $sourceName = $sourceNames["$($thisObject['sourceId'])"]
                     }else{
                         if($dbg){
-                            Write-Host "    getting source (2)"
+                            output "    getting source (2)"
                         }
                         $source = api get "protectionSources?id=$($thisObject['sourceId'])&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true"
                         if($source -and $source.PSObject.Properties['protectionSource']){
@@ -416,7 +442,7 @@ function reportStorage(){
             $endUsecs = $nowUsecs
             while($True){
                 if($dbg){
-                    Write-Host "    getting runs"
+                    output "    getting runs"
                 }
                 $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&excludeNonRestorableRuns=true&useCachedData=true"
                 foreach($run in $runs.runs){
@@ -526,7 +552,7 @@ function reportStorage(){
         }
         $sourceName = $view.storageDomainName
         $viewName = $view.name
-        Write-Host "  $viewName"
+        output "  $viewName"
         $dataIn = 0
         $dataInAfterDedup = 0
         $jobWritten = 0
@@ -588,7 +614,7 @@ foreach($v in $vip){
     # authenticate
     apiauth -vip $v -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt -quiet
     if(!$cohesity_api.authorized){
-        Write-Host "`n$($v): authentication failed" -ForegroundColor Yellow
+        output "`n$($v): authentication failed" -ForegroundColor Yellow
         continue
     }
     if($USING_HELIOS){
@@ -604,7 +630,9 @@ foreach($v in $vip){
     }
 }
 
-"`nOutput saved to $outfilename"
+output "`nCompleted"
+output "Output saved to $outfileName"
 if($secondFormat){
-    "Alternate format saved to $outfile2`n"
+    output "Alternate format saved to $outfile2`n"
 }
+output "Log file saved to $logFileName"

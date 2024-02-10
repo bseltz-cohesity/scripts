@@ -63,6 +63,7 @@ To connect through Helios:
 * -growthDays: (optional) number of days to measure recent growth (default is 7)
 * -skipDeleted: (optional) skip deleted protection groups
 * -unit: (optional) MiB, GiB, TiB, MB, GB or TB (default is GiB)
+* -outfileName: (optional) specify name for output csv file
 
 ## Column Descriptions
 
