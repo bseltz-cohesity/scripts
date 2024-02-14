@@ -19,12 +19,14 @@
 ## - 2023-08-31 - added support for multiple pure protection groups
 ## - 2023-11-03 - moved make source LUN locks to after snapshot creation
 ## - 2023-12-07 - added -s to create a PPG snapshot (for safemode support)
+## - 2024-02-14 - added version info to output
 ##
 ##########################################################################################
 
 # example parameters: -t 1 -k /root/.ssh/id_rsa -p puresnap -a 10.12.1.39 -g EpicProtectionGroup26 -i test -v EpicVolGrp1,EpicVolGrp2 -s
 
 # parameters
+SCRIPT_VERSION="2024-02-14"
 SNAPPG=0
 while getopts "t:k:p:a:g:v:i:e:f:s" flag
     do
@@ -84,7 +86,8 @@ if [[ $OS == "AIX" ]]; then
 fi
 
 # Start logging
-echo "$(date) : $COHESITY_BACKUP_ENTITY : Script Started" >> /tmp/cohesity_snap.log
+echo "$(date) : $COHESITY_BACKUP_ENTITY : Script version $SCRIPT_VERSION Started"
+echo "$(date) : $COHESITY_BACKUP_ENTITY : Script version $SCRIPT_VERSION Started" >> /tmp/cohesity_snap.log
 
 if [[ ! -e /tmp/cohesity_snap.log ]]; then
     touch /tmp/cohesity_snap.log
