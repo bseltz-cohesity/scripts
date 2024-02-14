@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """restore files using python"""
 
-# version 2023.12.15
+# version 2024.02.14
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -213,8 +213,11 @@ def restore(thesefiles, doc, version, targetEntity, singleFile):
     wildcards = [f for f in thesefiles if f.endswith('/*') is True]
     if wildcards is not None and len(wildcards) > 0:
         for wildcard in wildcards:
+            attemptNum = 0
+            if 'attemptNum' in version['instanceId']:
+                attemptNum = version['instanceId']['attemptNum']
             instance = ("attemptNum=%s&clusterId=%s&clusterIncarnationId=%s&entityId=%s&jobId=%s&jobInstanceId=%s&jobStartTimeUsecs=%s&jobUidObjectId=%s" %
-                        (version['instanceId']['attemptNum'],
+                        (attemptNum,
                             doc['objectId']['jobUid']['clusterId'],
                             doc['objectId']['jobUid']['clusterIncarnationId'],
                             doc['objectId']['entity']['id'],
@@ -362,8 +365,11 @@ else:
             foundFile = None
             for version in doc['versions']:
                 if foundFile is None:
+                    attemptNum = 0
+                    if 'attemptNum' in version['instanceId']:
+                        attemptNum = version['instanceId']['attemptNum']
                     instance = ("attemptNum=%s&clusterId=%s&clusterIncarnationId=%s&entityId=%s&jobId=%s&jobInstanceId=%s&jobStartTimeUsecs=%s&jobUidObjectId=%s" %
-                                (version['instanceId']['attemptNum'],
+                                (attemptNum,
                                     doc['objectId']['jobUid']['clusterId'],
                                     doc['objectId']['jobUid']['clusterIncarnationId'],
                                     doc['objectId']['entity']['id'],
