@@ -61,7 +61,7 @@ Log into the Cohesity UI and create a Cohesity (SAN) protection group and select
 Under Additional Settings, under the Retain on Pure Storage Array option:
 
 * Select `Last Snapshots`
-* Set the value to 1 (or higher if desired)
+* Set the value to at least 1 (or higher if desired)
 
 Under Additional Settings, under the Pre and Post Scripts option, configure the following:
 
