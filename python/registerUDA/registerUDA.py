@@ -20,6 +20,7 @@ parser.add_argument('-a', '--sourceargs', type=str, default=None)
 parser.add_argument('-au', '--appusername', type=str, default='')
 parser.add_argument('-ap', '--apppassword', type=str, default='')
 parser.add_argument('-m', '--mountview', action='store_true')
+parser.add_argument('-o', '--ostype', type=str, default='kLinux')
 args = parser.parse_args()
 
 vip = args.vip
@@ -36,6 +37,7 @@ sourceargs = args.sourceargs
 appusername = args.appusername
 apppassword = args.apppassword
 mountview = args.mountview
+ostype = args.ostype
 
 # authenticate
 if mcm:
@@ -92,7 +94,8 @@ regparams = {
         "scriptDir": scriptdir,
         "mountView": False,
         "viewParams": None,
-        "sourceRegistrationArgs": sourceargs
+        "sourceRegistrationArgs": sourceargs,
+        "osType": ostype
     }
 }
 
