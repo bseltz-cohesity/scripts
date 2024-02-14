@@ -1,6 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
-## 2023-02-09
+## 2024-02-14
+
+* [registerUDA.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/registerUDA) [`Fix`] added --ostype parameter
+
+## 2024-02-09
 
 * [protectedObjectReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/protectedObjectReport) [`Update`] added support for cloudArchive direct
 * [protectedObjectReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/protectedObjectReport) [`Update`] added support for cloudArchive direct
