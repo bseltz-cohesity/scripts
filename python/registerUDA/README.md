@@ -49,6 +49,7 @@ Place both files in a folder together and run the main script like so:
 * -m, --mountview: (optional) false if omitted
 * -au, --appusername: (optional) username to connect to app, e.g. postgres
 * -ap, --apppassword: (optional)  will be prompted if omitted
+* -o, --ostype: (optional) OS type for registration (default is kLinux)
 
 ## UDA Source Types
 
