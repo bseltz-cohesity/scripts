@@ -58,7 +58,7 @@ foreach ($Parameter in $ParameterList) {
 }
 
 # headings
-"""Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Environment"",""Source Name"",""Object Name"",""Logical $unit"",""$unit Read"",""$unit Written"",""$unit Written plus Resiliency"",""Reduction Ratio"",""$unit Written Last $growthDays Days"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description""" | Out-File -FilePath $outfileName
+"""Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Storage Domain ID"",""Storage Domain Name"",""Environment"",""Source Name"",""Object Name"",""Front End Allocated $unit"",""Front End Used $unit"",""$unit Read"",""$unit Written"",""$unit Written plus Resiliency"",""Reduction Ratio"",""$unit Written Last $growthDays Days"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description""" | Out-File -FilePath $outfileName # -Encoding utf8
 
 if($secondFormat){
     $outfile2 = "customFormat2-storagePerObjectReport-$dateString.csv"
@@ -150,6 +150,7 @@ function reportStorage(){
             if($job.PSObject.Properties['storageDomainId']){
                 $sd = $storageDomains | Where-Object id -eq $job.storageDomainId
                 if($sd){
+                    $sdName = $sd.name
                     if($sd.storagePolicy.PSObject.Properties['erasureCodingInfo']){
                         $r = $sd.storagePolicy.erasureCodingInfo
                         $resiliencyFactor = ($r.numDataStripes + $r.numCodedStripes) / $r.numDataStripes
@@ -160,6 +161,8 @@ function reportStorage(){
                             $resiliencyFactor = 2
                         }
                     }
+                }else{
+                    $sdName = 'DirectArchive'
                 }
             }
             $objects = @{}
@@ -246,6 +249,7 @@ function reportStorage(){
                             if($objId -notin $objects.Keys -and !($job.environment -eq 'kAD' -and $object.object.environment -eq 'kAD') -and !($job.environment -in @('kSQL', 'kOracle') -and $object.object.objectType -eq 'kHost')){
                                 $objects[$objId] = @{}
                                 $objects[$objId]['name'] = $object.object.name
+                                $objects[$objId]['alloc'] = 0
                                 $objects[$objId]['logical'] = 0
                                 $objects[$objId]['archiveLogical'] = 0
                                 $objects[$objId]['bytesRead'] = 0
@@ -270,11 +274,14 @@ function reportStorage(){
                                     $csource = api get "protectionSources?id=$objId&useCachedData=true" -quiet
                                     if( $csource.protectedSourcesSummary.Count -gt 0){
                                         $objects[$objId]['logical'] = $csource.protectedSourcesSummary[0].totalLogicalSize
+                                        $objects[$objId]['alloc'] = $csource.protectedSourcesSummary[0].totalLogicalSize
                                     }else{
                                         $objects[$objId]['logical'] = 0
+                                        $objects[$objId]['alloc'] = 0
                                     }
                                 }else{
                                     $objects[$objId]['logical'] = $snap.snapshotInfo.stats.logicalSizeBytes
+                                    $objects[$objId]['alloc'] = $snap.snapshotInfo.stats.logicalSizeBytes
                                 }
                             }
 
@@ -424,8 +431,11 @@ function reportStorage(){
                 if($thisObject['name'] -ne $sourceName){
                     $fqObjectName = "$($sourceName)/$($thisObject['name'])" -replace '//', '/'
                 }
-
-                """$($cluster.name)"",""$origin"",""$statsAge"",""$($job.name)"",""$tenant"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$objFESize"",""$(toUnits $objDataIn)"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$($thisObject['numSnaps'])"",""$($thisObject['numLogs'])"",""$(usecsToDate $thisObject['oldestBackup'])"",""$(usecsToDate $thisObject['newestBackup'])"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)""" | Out-File -FilePath $outfileName -Append
+                $alloc = toUnits $thisObject['logical']
+                if($job.environment -eq 'kVMware'){
+                    $alloc = toUnits $thisObject['alloc']
+                }
+                """$($cluster.name)"",""$origin"",""$statsAge"",""$($job.name)"",""$tenant"",""$($job.storageDomainId)"",""$sdName"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$alloc"",""$objFESize"",""$(toUnits $objDataIn)"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$($thisObject['numSnaps'])"",""$($thisObject['numLogs'])"",""$(usecsToDate $thisObject['oldestBackup'])"",""$(usecsToDate $thisObject['newestBackup'])"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)""" | Out-File -FilePath $outfileName -Append
                 if($secondFormat){
                     """$($cluster.name)"",""$monthString"",""$fqObjectName"",""$($job.description)"",""$(toUnits $objWrittenWithResiliency)""" | Out-File -FilePath $outfile2 -Append
                 }
@@ -598,7 +608,7 @@ function reportStorage(){
                 }
             }
         }
-        """$($cluster.name)"",""$origin"",""$statsAge"",""$($jobName)"",""$($view.tenantId -replace ".$")"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$(toUnits $dataIn)"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$numSnaps"",""$numLogs"",""$oldestBackup"",""$newestBackup"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($view.description)""" | Out-File -FilePath $outfileName -Append
+        """$($cluster.name)"",""$origin"",""$statsAge"",""$($jobName)"",""$($view.tenantId -replace ".$")"",""$($view.storageDomainId)"",""$($view.storageDomainName)"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$objFESize"",""$(toUnits $dataIn)"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$numSnaps"",""$numLogs"",""$oldestBackup"",""$newestBackup"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($view.description)""" | Out-File -FilePath $outfileName -Append
         if($secondFormat){
             """$($cluster.name)"",""$monthString"",""$viewName"",""$($view.description)"",""$(toUnits $consumption)""" | Out-File -FilePath $outfile2 -Append
         }
