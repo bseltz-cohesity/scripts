@@ -2,6 +2,7 @@
 
 ## 2024-02-15
 
+* [registerPhysical.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/registerPhysical) [`Update`] added option to set network throttling to X MB/sec and added ability to update existing sources
 * [storagePerObjectReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport) [`Update`] Added Storage Domain and Front End allocated columns
 * [storagePerObjectReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storagePerObjectReport) [`Update`] Added Storage Domain and Front End allocated columns
 
