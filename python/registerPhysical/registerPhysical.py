@@ -16,6 +16,7 @@ parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-s', '--servername', action='append', type=str)  # server name to register
 parser.add_argument('-l', '--serverlist', type=str, default=None)     # text list of servers to register
 parser.add_argument('-f', '--force', action='store_true')
+parser.add_argument('-t', '--throttle', type=int, default=0)
 
 args = parser.parse_args()
 
@@ -31,6 +32,7 @@ emailmfacode = args.emailmfacode
 servername = args.servername
 serverlist = args.serverlist
 force = args.force
+throttle = args.throttle
 
 
 # gather list function
@@ -77,7 +79,35 @@ forceRegister = False
 if force is True:
     forceRegister = True
 
+sources = api('get', 'protectionSources/registrationInfo?environments=kPhysical')
+
+if throttle > 0:
+    throttleParams = {
+        "throttlingPolicy": {
+            "isThrottlingEnabled": False
+        },
+        "physicalParams": {
+            "sourceThrottlingConfig": {
+                "cpuThrottlingConfig": None,
+                "networkThrottlingConfig": {
+                    "patternType": 1,
+                    "fixedThreshold": throttle
+                }
+            }
+        }
+    }
+
 for server in servernames:
+
+    if sources is not None and 'rootNodes' in sources and sources['rootNodes'] is not None and len(sources['rootNodes']) > 0:
+        existingsource = [s for s in sources['rootNodes'] if s['rootNode']['name'].lower() == server.lower()]
+    if existingsource is not None and len(existingsource) > 0:
+        existingbackupsource = api('get', '/backupsources?entityId=%s&onlyReturnOneLevel=true' % existingsource[0]['rootNode']['id'])
+        existingbackupsource['entityHierarchy']['registeredEntityInfo']['registeredEntityParams'] = throttleParams
+        existingsourceId = existingsource[0]['rootNode']['id']
+    else:
+        existingsourceId = None
+
     newSource = {
         'entity': {
             'type': 6,
@@ -99,6 +129,13 @@ for server in servernames:
         'forceRegister': forceRegister
     }
 
-    result = api('post', '/backupsources', newSource)
-    if result is not None:
-        print("%s Registered" % server)
+    if throttle > 0:
+        newSource['registeredEntityParams'] = throttleParams
+
+    if existingsourceId is None:
+        result = api('post', '/backupsources', newSource)
+        if result is not None:
+            print("%s Registered" % server)
+    else:
+        result = api('put', '/backupsources/%s' % existingsourceId, newSource)
+        print("%s Updated" % server)

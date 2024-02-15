@@ -49,3 +49,4 @@ Place both files in a folder together and run the main script like so:
 * -s, --servername: (optional) name of server to register. Repeat parameter to register multiple servers
 * -l, --serverlist: (optional) text file of server names to register (one per line)
 * -f, --force: (optional) force register
+* -t, --throttle: (optional) throttle network bandwidth to X MB/second
