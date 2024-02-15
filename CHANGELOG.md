@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-02-15
+
+* [storagePerObjectReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport) [`Update`] Added Storage Domain and Front End allocated columns
+* [storagePerObjectReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storagePerObjectReport) [`Update`] Added Storage Domain and Front End allocated columns
+
 ## 2024-02-14
 
 * [registerUDA.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/registerUDA) [`Fix`] added --ostype parameter
