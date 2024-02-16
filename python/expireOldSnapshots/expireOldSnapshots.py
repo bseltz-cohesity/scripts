@@ -112,7 +112,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                 for copyRun in run['copyRun']:
                     if copyRun['target']['type'] == 'kRemote':
                         if copyRun['status'] == 'kSuccess':
-                            if replicationtarget is None or copyRun['target']['replicationTarget']['clusterName'].lower() == replicationtarget.lower():
+                            if replicationtarget is None or ('clusterName' in copyRun['target']['replicationTarget'] and copyRun['target']['replicationTarget']['clusterName'].lower() == replicationtarget.lower()):
                                 replicated = True
 
                 # check for archive
@@ -120,7 +120,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                 for copyRun in run['copyRun']:
                     if copyRun['target']['type'] == 'kArchival':
                         if copyRun['status'] == 'kSuccess':
-                            if archivetarget is None or copyRun['target']['archivalTarget']['vaultName'].lower() == archivetarget.lower():
+                            if archivetarget is None or ('vaultName' in copyRun['target']['archivalTarget'] and copyRun['target']['archivalTarget']['vaultName'].lower() == archivetarget.lower()):
                                 archived = True
 
                 if startdateusecs < timeAgo(daystokeep, 'days') and run['backupRun']['snapshotsDeleted'] is False:
