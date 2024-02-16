@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-02-16
+
+* [expireOldSnapshots.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/expireOldSnapshots) [`Fix`] handle missing clusterName property in replication target history
+
 ## 2024-02-15
 
 * [registerPhysical.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/registerPhysical) [`Update`] added option to set network throttling to X MB/sec and added ability to update existing sources
