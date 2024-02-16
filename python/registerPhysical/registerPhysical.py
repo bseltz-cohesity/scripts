@@ -102,8 +102,6 @@ for server in servernames:
     if sources is not None and 'rootNodes' in sources and sources['rootNodes'] is not None and len(sources['rootNodes']) > 0:
         existingsource = [s for s in sources['rootNodes'] if s['rootNode']['name'].lower() == server.lower()]
     if existingsource is not None and len(existingsource) > 0:
-        existingbackupsource = api('get', '/backupsources?entityId=%s&onlyReturnOneLevel=true' % existingsource[0]['rootNode']['id'])
-        existingbackupsource['entityHierarchy']['registeredEntityInfo']['registeredEntityParams'] = throttleParams
         existingsourceId = existingsource[0]['rootNode']['id']
     else:
         existingsourceId = None
