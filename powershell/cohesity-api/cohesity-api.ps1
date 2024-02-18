@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2024.01.30 - Brian Seltzer
+#  Version 2024.02.18 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2023.02.10 - added -region to api function (for DMaaS)
@@ -31,10 +31,11 @@
 # 2024.01.14 - reenabled legacy access modes
 # 2024.01.25 - added support for unicode characters for REST payloads in Windows PowerShell 5.1
 # 2024.01.30 - fix - clear header before auth
+# 2024-02-18 - fix - toJson function - handle null input
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2024.01.30'
+$versionCohesityAPI = '2024.02.18'
 
 # state cache
 $cohesity_api = @{
@@ -107,7 +108,7 @@ function __writeLog($logmessage){
         $logfile = Get-Item -Path "$apilogfile" -ErrorAction SilentlyContinue
         if($logfile){
             $size = $logfile.Length
-            if($size -gt 262144){
+            if($size -gt 200000){
                 Move-Item -Path "$apilogfile" -Destination "$apilogfile-$(get-date -UFormat '%Y-%m-%d-%H-%M-%S').log"
             }
         }
@@ -856,7 +857,7 @@ function usecsToDate($usecs, $format=$null){
         if($format){
             return ($origin.AddSeconds($unixTime).ToLocalTime().ToString($format) -replace [char]8239, ' ')
         }else{
-            return ($origin.AddSeconds($unixTime).ToLocalTime()) # .ToString() -replace [char]8239, ' ')
+            return ($origin.AddSeconds($unixTime).ToLocalTime())  # .ToString() -replace [char]8239, ' '))
         }
     }catch{
         Write-Host "usecsToDate: incorrect input type ($($usecs.GetType().name)) must be Int64" -ForegroundColor Yellow
@@ -1335,11 +1336,15 @@ function toJson(){
         [Parameter(ValueFromPipeline)]$j
     )
     process{
-        $out = $_ | ConvertTo-Json -Depth 99
-        if($out.split("`n")[1].startsWith('    ')){
-            $out
+        if($_){
+            $out = $_ | ConvertTo-Json -Depth 99
+            if($out.split("`n")[1].startsWith('    ')){
+                $out
+            }else{
+                $out.replace('  ','    ')
+            }
         }else{
-            $out.replace('  ','    ')
+            "null"
         }
     }
 }

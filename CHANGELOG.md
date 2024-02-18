@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-02-18
+
+* [cohesity-api.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api) [`Fix`] toJson function - handle null input
+
 ## 2024-02-16
 
 * [expireOldSnapshots.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/expireOldSnapshots) [`Fix`] handle missing clusterName property in replication target history
