@@ -2,6 +2,7 @@
 
 ## 2024-02-18
 
+* [clusterProtectionRuns.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/clusterProtectionRuns) [`Fix`] fixed units in heading
 * [cohesity-api.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api) [`Fix`] toJson function - handle null input
 
 ## 2024-02-16

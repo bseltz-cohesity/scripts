@@ -56,7 +56,7 @@ nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 dateString = now.strftime("%Y-%m-%d")
 outfile = 'protectionRunsReport-%s.tsv' % dateString
 f = codecs.open(outfile, 'w')
-f.write('Start Time\tEnd Time\tDuration\tstatus\tslaStatus\tsnapshotStatus\tobjectName\tsourceName\tgroupName\tpolicyName\tObject Type\tbackupType\tSystem Name\tLogical Size $unit\tData Read $unit\tData Written $unit\tOrganization Name\n')
+f.write('Start Time\tEnd Time\tDuration\tstatus\tslaStatus\tsnapshotStatus\tobjectName\tsourceName\tgroupName\tpolicyName\tObject Type\tbackupType\tSystem Name\tLogical Size %s\tData Read %s\tData Written %s\tOrganization Name\n' % (unit, unit, unit))
 
 for vip in vips:
     # authenticate
