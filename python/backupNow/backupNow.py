@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2023.12.11
+# version 2024.02.19
 
 # version history
 # ===============
@@ -21,6 +21,7 @@
 # 2023-11-29 - fixed hang on object not in job run
 # 2023-12-03 - version bump
 # 2023-12-11 - Added Succeeded with Warning extended exit code 9
+# 2024.02.19 - expanded existing run string matches
 #
 # extended error codes
 # ====================
@@ -637,7 +638,7 @@ if debugger:
 runNow = api('post', "protectionJobs/run/%s" % v1JobId, jobData, quiet=True, timeout=timeoutsec)
 while runNow != "":
     runError = LAST_API_ERROR()
-    if 'Protection group can only have one active backup run at a time' not in runError and 'Backup job has an existing active backup run' not in runError:
+    if 'Protection Group already has a run' not in runError and 'Protection group can only have one active backup run at a time' not in runError and 'Backup job has an existing active backup run' not in runError:
         out(runError)
         if 'TARGET_NOT_IN_POLICY_NOT_ALLOWED' in runError:
             if extendederrorcodes is True:

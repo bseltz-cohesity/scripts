@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-02-19
+
+* [backupNow.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow) [`Update`] expanded existing run string matches
+* [backupNow.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/backupNow) [`Update`] expanded existing run string matches
+
 ## 2024-02-18
 
 * [clusterProtectionRuns.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/clusterProtectionRuns) [`Fix`] fixed units in heading
