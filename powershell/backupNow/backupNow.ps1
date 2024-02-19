@@ -1,4 +1,4 @@
-# version 2023.12.13
+# version 2024.02.19
 
 # version history
 # ===============
@@ -19,6 +19,7 @@
 # 2023-12-03 - version bump
 # 2023-12-11 - Added Succeeded with Warning extended exit code 9
 # 2023.12.13 - re-ordered auth parameters (to force first unnamed parameter to be interpreted as password)
+# 2024.02.19 - expanded existing run string matches
 #
 # extended error codes
 # ====================
@@ -597,7 +598,7 @@ $now = Get-Date
 $waitUntil = $now.AddMinutes($waitMinutesIfRunning)
 while($result -ne ""){
     $runError = $cohesity_api.last_api_error
-    if(! ($runError -match "Backup job has an existing active backup run") -and !( $runError -match "Protection group can only have one active backup run at a time")){
+    if(!($runError -match "Protection Group already has a run") -and !($runError -match "Backup job has an existing active backup run") -and !( $runError -match "Protection group can only have one active backup run at a time")){
         output $runError -warn
         if($runError -match "TARGET_NOT_IN_POLICY_NOT_ALLOWED"){
             if($extendedErrorCodes){
