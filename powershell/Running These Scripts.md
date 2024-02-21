@@ -2,7 +2,7 @@
 
 ## Where to Run These Scripts
 
-No, these scripts can not be run on the Cohesity cluster. PowerShell is not installed there, and we don't go around installing things on the cluster. You can run the script from almost anywhere else where PowerShell 5.1 or later is installed, including your <img src="../images/apple-1-logo-png-transparent.png" height="16"/> Macbook, a common <img src="../images/linux_PNG1.png" height="16"/> Linux distro, a <img src="../images/Windows_logo.png" height="13"/> Windows server, you name it.
+No, these scripts can not be run on the Cohesity cluster. PowerShell is not installed there, and we don't go around installing things on the cluster. You can run the script from almost anywhere else where PowerShell 5.1 or later is installed, including your <img src="../images/apple-1-logo-png-transparent.png" height="16"/> Macbook, a common <img src="../images/linux_PNG1.png" height="16"/> Linux distro, a <img src="../images/Windows_logo.png" height="13"/> Windows server, you name it. The only requirement is that the script can reach the Cohesity cluster over the network via port 443/tcp.
 
 ## Check Your PowerShell Version
 
@@ -17,6 +17,28 @@ The minimum required version is `5.1`. Older versions of Windows (like Server 20
 You can search Microsoft to find a patch bundle appropriate to your Windows version, to upgrade to PowerShell 5.1 (which often requires a reboot), or you can install PowerShell Core (no reboot required) for Windows, MacOS, and various Linux distributions here: <https://github.com/PowerShell/PowerShell#get-powershell>
 
 Please install the LTS or stable version (the preview version is often problematic).
+
+## Are You Allowed to Run Scripts?
+
+Often, the customer's PowerShell is locked down by default. The script execution policy is by default set to a restrictive setting such as `Restricted` or `RemoteSigned`. Attempts to run scripts downloaded from GitHub will fail. To check the current execution policy, type the following in PowerShell:
+
+```powershell
+Get-ExecutionPolicy
+```
+
+To adjust the policy, set the policy to something less restrictive, like Unrestricted or Bypass:
+
+```powershell
+Set-ExecutionPolicy Unrestricted
+```
+
+Depending on your level of access on host, you may have to run the above command with PowerShell started as Administrator, or you may be able to apply the setting for just your current user, like so:
+
+```powershell
+Set-ExecutionPolicy Unrestricted -Scope CurrentUser
+```
+
+There may be other restrictions being applied via Active Directory Group Policy, which we may not be able to bypass. In this case, you must contact your Active Directory administrators to create an exception to allow scripts to run.
 
 ## Dependencies
 
