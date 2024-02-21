@@ -196,3 +196,14 @@ When prompted for a password (or specifying the password on the command line), e
                 -useApiKey `
                 -password xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
+
+## Reporting Problems
+
+If you have a complaint about a script, please try getting the latest version of the script, here: <https://github.com/bseltz-cohesity/scripts?search=1>
+
+Before reporting the issue, please collect:
+
+* The name of the script (e.g. backupNow.ps1)
+* The complete command line the customer is using
+* The complete output emitted when the script ran
+* Screenshots of the Cohesity UI that prove the script should have worked (protection sources, protection groups, etc. that match what was entered on the command line)
