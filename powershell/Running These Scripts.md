@@ -101,27 +101,98 @@ Actually, `-domain` defaults to local, so you can omit the `-domain` parameter e
 
 Note that `-username myuser -domain mydomain` will `not` work. The domain name is `mydomain.net` not `mydomain`.
 
-Most scripts do `not` have a `-password` parameter. The goal is to avoid typing the password in clear text on the command line, or worse, saving the password in a clear text file. Instead, when you first run a script using a specific VIP/user/domain, you will be prompted for the password, and the password will be stored, encrypted, for later use. The next time you use the same VPI/user/domain for `any` script, the stored password will be used automatically.
+Older scripts did `not` have a `-password` parameter. The goal was to avoid typing the password in clear text on the command line, or worse, saving the password in a clear text file. Instead, when you first run a script using a specific VIP/user/domain, you will be prompted for the password, and the password will be stored, encrypted, for later use. The next time you use the same VIP/user/domain for `any` script, the stored password will be used automatically.
 
-## Incorrect Passwords
+## Multi-factor Authentication (MFA)
 
-If you fat fingered the password, or if the password has been changed in Active Directory (or in the UI), you need to update the stored password. To do this, we "dot source" the `cohesity-api.ps1` file into the current PowerShell session, so we can use the authentication function to update the password, like so:
+In recent Cohesity versions, it has become mandatory to enable multi-factor authentication (MFA) for Active Directory users added to Cohesity. This is to guard against hacked AD accounts being used in a cyber attack. When authenticating through the Cohesity REST API, if MFA is enabled, the MFA OTP code must be sent with the authentication request, or authentication will fail.
+
+In the current release of the script libraries (cohesity-api.ps1 and pyhesity.py), if the required MFA code is omitted, an error will be reported: "Authentication failed: MFA Code Required". In older versions, a less helpful error message was reported: "Please specify the mandatory parameters". In this case, you must use the -mfaCode paramter of the script, for example:
 
 ```powershell
-. .\cohesity-api.ps1
-apiauth -vip mycluster -username myuser -domain mydomain.net -updatePassword
+.\backupNow.ps1 -vip mycluster `
+                -username myuser `
+                -jobName myjob `
+                -mfaCode 123456
 ```
 
-You will be prompted for the new password and the stored password will be updated.
+Most scripts released recently have this -mfaCode parameter. If you find an older script where the -mfaCode parameters is not present, please ask to have the script updated.
 
-Alternatively, you can delete the stored password manually. In Windows, passwords are stored in the current user's registry, under `HKEY_CURRENT_USER\Software\Cohesity-API`. In MacOS and Linux, passwords are stored in the current user's home directory under `~/.cohesity-api/`.
+Since the MFA code changes frequently, it can not be used for scheduled/unattended script execution. In this case, we can avoid MFA by using API Key authentication.
 
-## Sharing Error Messages
+## API Key Authentication
 
-There are two fundamental truths about error sharing:
+In recent versions of Cohesity, multi-factor authentication (MFA) has become highly recommended and in some cases mandatory. This makes it impossible to schedule scripts to run unattended. In this case, we can avoid MFA by using API Key authentication.
 
-1) If you send me a screenshot of an PowerShell error message, you are a horrible horrible person.
+You can create an API Key by navigating to  Settings -> Access Management -> API Keys but prior to Cohesity 7.0, by default, the API Key management page was not visible in the Cohesity UI until you set a UI feature flag.
 
-2) If you didn't read everything above before sharing your error, again, horrible.
+### Temporarily Enable the API Keys Page
 
-PowerShell is text based, so you can copy and paste the entire command line and error output, which makes it much easier to see what you tried (so I can try it myself). Again, Windows PowerShell is annoying in that you can't just drag your mouse over the text and hit ctrl-c, instead you may have to click the little PS icon at the top left of the window, and select `Edit` -> `Mark`, then select the text and hit enter to copy the text.
+Note: this change will only remain in effect for your current browser session
+
+1. Log into the Cohesity UI (directly to the cluster, not via Helios)
+2. In the address bar, enter the url: https://mycluster/feature-flags
+3. In the field provided, type: api
+4. Turn on the toggle for apiKeysEnabled
+
+Now you can navigate to Settings -> Access Management -> API Keys
+
+### Permanently Enable the API Keys Page
+
+To make the API Key management page visible permanently, ask Cohesity support to help you set the iris gflag:
+
+```bash
+iris_ui_flags: apiKeysEnabled=true
+# note: iris must be stopped and started for the changes to take effect
+```
+
+### Create an API Key
+
+Now that the API Key management page is visible, to create yourself an API key:
+
+1. Go to Settings -> Access Management -> API Keys
+2. Click Add API Key
+3. Select the user to associate the new API key
+4. Enter an arbitrary name
+5. Click Add
+
+You will have one chance to copy or download the new API key (it will not be visible again once you navigate away from the page).
+
+### Using an API Key for Authentication
+
+When using an API key, there is no need to acquire an access token nor session ID. You simply add a header to your requests:
+
+```bash
+apiKey: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
+
+With this header set, you can make API calls without any further authentication. An example curl command:
+
+```bash
+curl -X GET "https://mycluster/irisservices/api/v1/public/cluster" \
+     -H "apiKey: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" \
+     -H "accept: application/json"
+```
+
+### Using an API Key in BSeltz Scripts
+
+Most BSeltz scripts released in the past several years have a -useApiKey parameter, for example:
+
+```powershell
+.\backupNow.ps1 -vip mycluster `
+                -username myuser `
+                -jobName myjob `
+                -useApiKey
+```
+
+This tells the script that the password given is an API key (it will be placed in the headers as mentioned above)
+
+When prompted for a password (or specifying the password on the command line), enter the API key instead of a password.
+
+```powershell
+.\backupNow.ps1 -vip mycluster `
+                -username myuser `
+                -jobName myjob `
+                -useApiKey `
+                -password xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
