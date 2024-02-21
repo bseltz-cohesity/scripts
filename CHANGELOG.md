@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-02-21
+
+* [nodeStatus.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/nodeStatus) [`New`] report node status
+
 ## 2024-02-19
 
 * [backupNow.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow) [`Update`] expanded existing run string matches
