@@ -6,6 +6,7 @@
 
 ## 2024-02-21
 
+* [protectCCSEC2VMs.py](https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/python/protectCCSEC2VMs) [`New`] Protect EC2 VMs in CCS
 * [nodeStatus.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/nodeStatus) [`New`] report node status
 
 ## 2024-02-19
