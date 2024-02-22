@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-02-22
+
+* [ccsSlaMonitor.py](https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/python/ccsSlaMonitor) [`New`] Monitor for SLA violations in CCS
+
 ## 2024-02-21
 
 * [nodeStatus.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/nodeStatus) [`New`] report node status
