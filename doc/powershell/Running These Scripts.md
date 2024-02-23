@@ -10,7 +10,7 @@ First, let's make sure your PowerShell version is adequate. Open a PowerShell wi
 
 `$host`
 
-<img src="../images/powershellVersion.png" height="200"/>
+<img src="../../images/powershellVersion.png" height="200"/>
 
 The minimum required version is `5.1`. Older versions of Windows (like Server 2012 R2) came with PowerShell 4.0, which won't work. Older PowerShell versions can't connect to Cohesity because they didn't have support for modern HTTPS encryption standard TLSv1.2 which is required by Cohesity (and pretty much everyone else these days).
 
@@ -76,7 +76,7 @@ If you don't follow the download instructions (if for example you clone the gith
 
 When you paste the download commands you may receive errors that look like this:
 
-<img src="../images/sslError.png"/>
+<img src="../../images/sslError.png"/>
 
 The error indicates that PowerShell doesn't trust the SSL certificate on GitHub's web site (goodness knows why). If you see this error, paste the following commands into PowerShell.
 
