@@ -2,7 +2,7 @@
 
 ## Where to Run These Scripts
 
-No, these scripts can not be run on the Cohesity cluster. PowerShell is not installed there, and we don't go around installing things on the cluster. You can run the script from almost anywhere else where PowerShell 5.1 or later is installed, including your <img src="../../images/apple-1-logo-png-transparent.png" height="16"/> Macbook, a common <img src="../../images/linux_PNG1.png" height="16"/> Linux distro, a <img src="../../images/Windows_logo.png" height="13"/> Windows server, you name it. The only requirement is that the script can reach the Cohesity cluster over the network via port 443/tcp.
+No, these scripts can not be run on the Cohesity cluster. PowerShell is not installed there, and we don't go around installing things on the cluster. You can run the script from almost anywhere else where PowerShell 5.1 or later is installed, including your <img src="../../images/apple-1-logo-png-transparent.png" height="16" alt="."/> Macbook, a common <img src="../../images/linux_PNG1.png" height="16" alt="."/> Linux distro, a <img src="../../images/Windows_logo.png" height="13" alt="."/> Windows server, you name it. The only requirement is that the script can reach the Cohesity cluster over the network via port 443/tcp.
 
 ## Check Your PowerShell Version
 
@@ -10,7 +10,7 @@ First, let's make sure your PowerShell version is adequate. Open a PowerShell wi
 
 `$host`
 
-<img src="../../images/powershellVersion.png" height="200"/>
+<img src="../../images/powershellVersion.png" height="200" alt="."/>
 
 The minimum required version is `5.1`. Older versions of Windows (like Server 2012 R2) came with PowerShell 4.0, which won't work. Older PowerShell versions can't connect to Cohesity because they didn't have support for modern HTTPS encryption standard TLSv1.2 which is required by Cohesity (and pretty much everyone else these days).
 
@@ -76,7 +76,7 @@ If you don't follow the download instructions (if for example you clone the gith
 
 When you paste the download commands you may receive errors that look like this:
 
-<img src="../../images/sslError.png"/>
+<img src="../../images/sslError.png" alt="."/>
 
 The error indicates that PowerShell doesn't trust the SSL certificate on GitHub's web site (goodness knows why). If you see this error, paste the following commands into PowerShell.
 
@@ -153,7 +153,7 @@ You can create an API Key by navigating to  Settings -> Access Management -> API
 Note: this change will only remain in effect for your current browser session
 
 1. Log into the Cohesity UI (directly to the cluster, not via Helios)
-2. In the address bar, enter the url: https://mycluster/feature-flags
+2. In the address bar, enter the url: <https://mycluster/feature-flags>
 3. In the field provided, type: api
 4. Turn on the toggle for apiKeysEnabled
 
