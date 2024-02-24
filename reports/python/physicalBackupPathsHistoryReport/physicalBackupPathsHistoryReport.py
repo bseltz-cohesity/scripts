@@ -43,7 +43,7 @@ daysBackUsecs = timeAgo(days, "days")
 
 outfile = 'physicalBackupPathsHistoryReport.csv'
 f = codecs.open(outfile, 'w')
-f.write('"Cluster","Protection Group","Start Time","Status","Server","Directive File","Inclusion Path"\n')
+f.write('"Cluster","Protection Group","Start Time","Status","Server","Directive File","Selected Path"\n')
 
 
 def getCluster():
