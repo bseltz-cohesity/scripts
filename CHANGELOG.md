@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-02-24
+
+* [physicalBackupPathsReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/physicalBackupPathsReport) [`Update`] Output to CSV
+* [physicalBackupPathsHistoryReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/physicalBackupPathsHistoryReport) [`New`] History report of paths backed up from physical servers
+
 ## 2024-02-22
 
 * [ccsSlaMonitor.py](https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/python/ccsSlaMonitor) [`New`] Monitor for SLA violations in CCS
