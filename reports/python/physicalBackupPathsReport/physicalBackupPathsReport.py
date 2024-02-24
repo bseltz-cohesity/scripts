@@ -37,7 +37,7 @@ if vips is None or len(vips) == 0:
 
 outfile = 'physicalBackupPathsReport.csv'
 f = codecs.open(outfile, 'w')
-f.write('"Cluster","Protection Group","Server","Directive File","Inclusion Path"\n')
+f.write('"Cluster","Protection Group","Server","Directive File","Path Type","Path"\n')
 
 
 def getCluster():
@@ -53,13 +53,17 @@ def getCluster():
                 if 'objects' in job['physicalParams']['fileProtectionTypeParams'] and job['physicalParams']['fileProtectionTypeParams']['objects'] is not None and len(job['physicalParams']['fileProtectionTypeParams']['objects']) > 0:
                     for obj in job['physicalParams']['fileProtectionTypeParams']['objects']:
                         print('    %s' % obj['name'])
-                        usesDirective = False
+                        if 'globalExcludePaths' in job['physicalParams']['fileProtectionTypeParams'] and job['physicalParams']['fileProtectionTypeParams']['globalExcludePaths'] is not None and len(job['physicalParams']['fileProtectionTypeParams']['globalExcludePaths']) > 0:
+                            for excludepath in job['physicalParams']['fileProtectionTypeParams']['globalExcludePaths']:
+                                f.write('"%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], obj['name'], False, "Exclude", excludepath))
                         if 'metadataFilePath' in obj and obj['metadataFilePath'] is not None:
-                            usesDirective = True
-                            f.write('"%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], obj['name'], usesDirective, obj['metadataFilePath']))
+                            f.write('"%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], obj['name'], True, "Include", obj['metadataFilePath']))
                         if 'filePaths' in obj and obj['filePaths'] is not None and len(obj['filePaths']) > 0:
                             for filepath in obj['filePaths']:
-                                f.write('"%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], obj['name'], usesDirective, filepath['includedPath']))
+                                f.write('"%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], obj['name'], False, "Include", filepath['includedPath']))
+                                if 'excludedPaths' in filepath and filepath['excludedPaths'] is not None and len(filepath['excludedPaths']) > 0:
+                                    for excludePath in filepath['excludedPaths']:
+                                        f.write('"%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], obj['name'], False, "Exclude", excludePath))
 
 
 for vip in vips:
