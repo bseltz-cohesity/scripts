@@ -55,8 +55,6 @@ To connect through Helios and report on specified clusters:
 
 ## Parameters
 
-## Authentication Parameters
-
 * -v, --vip: (optional) one or more names or IPs of Cohesity clusters to connect to (repeat for multiple) default is helios.cohesity.com
 * -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
 * -d, --domain: (optional) domain of username (defaults to local)
