@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Restore an Oracle DB Using python"""
 
-# version: 2023-11-23
+# version: 2024-02-27
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -212,9 +212,10 @@ for object in objects:
     else:
         if object['oracleParams']['databaseEntityInfo']['containerDatabaseInfo']['pluggableDatabaseList'] is not None:
             isCDB = True
-            granularRestore = True
+            # granularRestore = True
             pdblist = object['oracleParams']['databaseEntityInfo']['containerDatabaseInfo']['pluggableDatabaseList']
             if pdbnames is not None and len(pdbnames) > 0 and sameDB is False:
+                granularRestore = True
                 pdblist = [p for p in pdblist if p['databaseName'].lower() in [n.lower() for n in pdbnames]]
                 missingPDBs = [p for p in pdbnames if p.lower() not in [n['databaseName'].lower() for n in pdblist]]
                 if len(missingPDBs) > 0:
@@ -325,13 +326,12 @@ if sameDB is True:
         "dbChannels": None,
         "recoveryMode": None,
         "shellEvironmentVars": None,
-        "granularRestoreInfo": None,
         "restoreSpfileOrPfileInfo": None,
         "useScnForRestore": None,
         "rollForwardLogPathVec": None,
         "rollForwardTimeMsecs": None,
         "attemptCompleteRecovery": False
-    }
+    }  # "granularRestoreInfo": None,
     if granularRestore is True:
         # restore to same cdb
         sourceConfig['granularRestoreInfo'] = {
@@ -370,13 +370,12 @@ else:
             "dbChannels": None,
             "recoveryMode": bool_noRecovery,
             "shellEvironmentVars": None,
-            "granularRestoreInfo": None,
             "restoreSpfileOrPfileInfo": None,
             "useScnForRestore": None,
             "oracleUpdateRestoreOptions": None,
             "isMultiStageRestore": False,
             "rollForwardLogPathVec": None
-        }
+        }  # "granularRestoreInfo": None,
     }
     if instant is True:
         sourceConfig['recoverDatabaseParams']['isMultiStageRestore'] = True
