@@ -54,6 +54,8 @@ parser.add_argument('-w', '--wait', action='store_true')  # wait for completion
 parser.add_argument('-pr', '--progress', action='store_true')  # display progress
 parser.add_argument('-inst', '--instant', action='store_true')  # instant recovery
 parser.add_argument('-cpf', '--clearpfileparameters', action='store_true')  # clear existing pfile parameters
+parser.add_argument('-pi', '--printinfo', action='store_true')  # clear existing pfile parameters
+
 args = parser.parse_args()
 
 vip = args.vip
@@ -72,6 +74,7 @@ targetcdb = args.targetcdb
 pdbnames = args.pdbnames
 progress = args.progress
 instant = args.instant
+printinfo = args.printinfo
 
 if args.targetserver is None:
     targetserver = sourceserver
@@ -535,6 +538,13 @@ else:
 reportTarget = targetdb
 if targetcdb is not None:
     reportTarget = '%s/%s' % (targetcdb, targetdb)
+
+if printinfo is True:
+    print('\nYou are Connected to: %s' % vip)
+    print('Source Server: %s' % sourceserver)
+    print('Source Database: %s' % originalSourceDB)
+    print('Target Server: %s' % targetserver)
+    print('Target Database: %s\n' % reportTarget)
 
 # debug output API payload
 if dbg:

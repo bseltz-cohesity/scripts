@@ -167,6 +167,7 @@ Restoring an Oracle RAC DB:
 * -cpf, --clearpfileparameters: (optional) delete existing pfile parameters
 * -sh, --shellparameter (optional) one or more shell variable names (repeat for multiple)
 * -dbg, --dbg: (optional) display api payload and exit (without restoring)
+* -pi, --printinfo: (optional) print vip, source and target servers/databases to screen
 
 ## Point in Time Recovery
 
