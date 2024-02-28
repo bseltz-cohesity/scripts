@@ -4,6 +4,11 @@
 
 * [cohesity-api.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api) [`Update`] added support for helios.gov
 * [pyhesity.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity) [`Update`] added support for helios.gov
+* [restoreOracle-v2.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/powershell/restoreOracle-v2) [`Fix`] fixed CDB recovery (overwrite original DB)
+
+## 2024-02-27
+
+* [restoreOracle-v2.py](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/restoreOracle-v2) [`Fix`] fixed CDB recovery (overwrite original DB)
 
 ## 2024-02-24
 
