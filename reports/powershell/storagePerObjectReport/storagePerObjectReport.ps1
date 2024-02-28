@@ -1,3 +1,5 @@
+# version: 2024-02-28
+
 # process commandline arguments
 [CmdletBinding()]
 param (
@@ -58,7 +60,7 @@ foreach ($Parameter in $ParameterList) {
 }
 
 # headings
-"""Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Storage Domain ID"",""Storage Domain Name"",""Environment"",""Source Name"",""Object Name"",""Front End Allocated $unit"",""Front End Used $unit"",""$unit Read"",""$unit Written"",""$unit Written plus Resiliency"",""Reduction Ratio"",""$unit Written Last $growthDays Days"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description""" | Out-File -FilePath $outfileName # -Encoding utf8
+"""Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Storage Domain ID"",""Storage Domain Name"",""Environment"",""Source Name"",""Object Name"",""Front End Allocated $unit"",""Front End Used $unit"",""$unit Read"",""$unit Written"",""$unit Written plus Resiliency"",""Reduction Ratio"",""$unit Written Last $growthDays Days"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description"",""Cluster Used $unit"",""Cluster Reduction Ratio""" | Out-File -FilePath $outfileName # -Encoding utf8
 
 if($secondFormat){
     $outfile2 = "customFormat2-storagePerObjectReport-$dateString.csv"
@@ -70,7 +72,8 @@ function reportStorage(){
     $cluster = api get "cluster?fetchStats=true"
     output "`n$($cluster.name)"
     try{
-        $clusterReduction = [math]::Round($cluster.stats.usagePerfStats.dataInBytes / $cluster.stats.usagePerfStats.dataInBytesAfterjobReduction, 1)
+        $clusterReduction = [math]::Round($cluster.stats.usagePerfStats.dataInBytes / $cluster.stats.usagePerfStats.dataInBytesAfterReduction, 1)
+        $clusterUsed = toUnits $cluster.stats.usagePerfStats.totalPhysicalUsageBytes
     }catch{
         $clusterReduction = 1
     }
@@ -435,7 +438,7 @@ function reportStorage(){
                 if($job.environment -eq 'kVMware'){
                     $alloc = toUnits $thisObject['alloc']
                 }
-                """$($cluster.name)"",""$origin"",""$statsAge"",""$($job.name)"",""$tenant"",""$($job.storageDomainId)"",""$sdName"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$alloc"",""$objFESize"",""$(toUnits $objDataIn)"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$($thisObject['numSnaps'])"",""$($thisObject['numLogs'])"",""$(usecsToDate $thisObject['oldestBackup'])"",""$(usecsToDate $thisObject['newestBackup'])"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)""" | Out-File -FilePath $outfileName -Append
+                """$($cluster.name)"",""$origin"",""$statsAge"",""$($job.name)"",""$tenant"",""$($job.storageDomainId)"",""$sdName"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$alloc"",""$objFESize"",""$(toUnits $objDataIn)"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$($thisObject['numSnaps'])"",""$($thisObject['numLogs'])"",""$(usecsToDate $thisObject['oldestBackup'])"",""$(usecsToDate $thisObject['newestBackup'])"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)"",""$clusterUsed"",""$clusterReduction""" | Out-File -FilePath $outfileName -Append
                 if($secondFormat){
                     """$($cluster.name)"",""$monthString"",""$fqObjectName"",""$($job.description)"",""$(toUnits $objWrittenWithResiliency)""" | Out-File -FilePath $outfile2 -Append
                 }
@@ -608,7 +611,7 @@ function reportStorage(){
                 }
             }
         }
-        """$($cluster.name)"",""$origin"",""$statsAge"",""$($jobName)"",""$($view.tenantId -replace ".$")"",""$($view.storageDomainId)"",""$($view.storageDomainName)"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$objFESize"",""$(toUnits $dataIn)"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$numSnaps"",""$numLogs"",""$oldestBackup"",""$newestBackup"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($view.description)""" | Out-File -FilePath $outfileName -Append
+        """$($cluster.name)"",""$origin"",""$statsAge"",""$($jobName)"",""$($view.tenantId -replace ".$")"",""$($view.storageDomainId)"",""$($view.storageDomainName)"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$objFESize"",""$(toUnits $dataIn)"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$numSnaps"",""$numLogs"",""$oldestBackup"",""$newestBackup"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($view.description)"",""$clusterUsed"",""$clusterReduction""" | Out-File -FilePath $outfileName -Append
         if($secondFormat){
             """$($cluster.name)"",""$monthString"",""$viewName"",""$($view.description)"",""$(toUnits $consumption)""" | Out-File -FilePath $outfile2 -Append
         }
