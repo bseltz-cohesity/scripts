@@ -61,7 +61,7 @@ msecsBeforeCurrentTimeToCompare = growthdays * 24 * 60 * 60 * 1000
 datestring = now.strftime("%Y-%m-%d-%H-%M")
 csvfileName = '%s/storagePerObjectReport-%s.csv' % (folder, datestring)
 csv = codecs.open(csvfileName, 'w', 'utf-8')
-csv.write('"Cluster Name","Origin","Stats Age (Days)","Protection Group","Tenant","Storage Domain ID","Storage Domain Name","Environment","Source Name","Object Name","Front End Allocated %s","Front End Used %s","%s Read","%s Written","%s Written plus Resiliency","Protection Group Reduction Ratio","%s Growth Last %s Days","Snapshots","Log Backups","Oldest Backup","Newest Backup","Archive Count","Oldest Archive","%s Archived","%s per Archive Target"\n' % (units, units, units, units, units, units, growthdays, units, units))
+csv.write('"Cluster Name","Origin","Stats Age (Days)","Protection Group","Tenant","Storage Domain ID","Storage Domain Name","Environment","Source Name","Object Name","Front End Allocated %s","Front End Used %s","%s Read","%s Written","%s Written plus Resiliency","Protection Group Reduction Ratio","%s Growth Last %s Days","Snapshots","Log Backups","Oldest Backup","Newest Backup","Archive Count","Oldest Archive","%s Archived","%s per Archive Target","Cluster Used %s","Cluster Reduction Ratio"\n' % (units, units, units, units, units, units, growthdays, units, units, units))
 
 
 def reportStorage():
@@ -70,9 +70,11 @@ def reportStorage():
     print('\n%s' % cluster['name'])
     # print('  Collecting report data...')
     try:
-        clusterReduction = round(cluster['stats']['usagePerfStats']['dataInBytes'] / cluster['stats']['usagePerfStats']['dataInBytesAfterjobReduction'], 1)
+        clusterReduction = round(cluster['stats']['usagePerfStats']['dataInBytes'] / cluster['stats']['usagePerfStats']['dataInBytesAfterReduction'], 1)
+        clusterUsed = round(cluster['stats']['usagePerfStats']['totalPhysicalUsageBytes'] / multiplier, 1)
     except Exception:
         clusterReduction = 1
+        clusterUsed = 0
     vaults = api('get', 'vaults?includeFortKnoxVault=true')
     cloudStats = None
     if vaults is not None and len(vaults) > 0:
@@ -364,7 +366,7 @@ def reportStorage():
                     alloc = objFESize
                     if job['environment'] == 'kVMware':
                         alloc = round(thisObject['alloc'] / multiplier, 1)
-                    csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, job['name'], tenant, sdid, sdname, job['environment'][1:], sourceName, thisObject['name'], alloc, objFESize, objDataIn, objWritten, objWrittenWithResiliency, jobReduction, objGrowth, thisObject['numSnaps'], thisObject['numLogs'], usecsToDate(thisObject['oldestBackup']), usecsToDate(thisObject['newestBackup']), archiveCount, oldestArchive, totalArchived, vaultStats))
+                    csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, job['name'], tenant, sdid, sdname, job['environment'][1:], sourceName, thisObject['name'], alloc, objFESize, objDataIn, objWritten, objWrittenWithResiliency, jobReduction, objGrowth, thisObject['numSnaps'], thisObject['numLogs'], usecsToDate(thisObject['oldestBackup']), usecsToDate(thisObject['newestBackup']), archiveCount, oldestArchive, totalArchived, vaultStats, clusterUsed, clusterReduction))
         else:
             if job['isActive'] is True:
                 stats = localStats
@@ -507,7 +509,7 @@ def reportStorage():
                                     totalArchived += (objWeight * cloudJob['storageConsumed'])
                                     vaultStats += '[%s]%s ' % (vaultSummary['vaultName'], round((objWeight * cloudJob['storageConsumed']) / multiplier, 1))
             totalArchived = round(totalArchived / multiplier, 1)
-            csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, jobName, tenant, view['storageDomainId'], view['storageDomainName'], 'View', sourceName, viewName, objFESize, objFESize, round(dataIn / multiplier, 1), round(jobWritten / multiplier, 1), round(consumption / multiplier, 1), jobReduction, objGrowth, numSnaps, numLogs, oldestBackup, newestBackup, archiveCount, oldestArchive, totalArchived, vaultStats))
+            csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, jobName, tenant, view['storageDomainId'], view['storageDomainName'], 'View', sourceName, viewName, objFESize, objFESize, round(dataIn / multiplier, 1), round(jobWritten / multiplier, 1), round(consumption / multiplier, 1), jobReduction, objGrowth, numSnaps, numLogs, oldestBackup, newestBackup, archiveCount, oldestArchive, totalArchived, vaultStats, clusterUsed, clusterReduction))
 
 
 for vip in vips:
