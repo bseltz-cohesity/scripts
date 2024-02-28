@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2024.01.14"""
+"""Cohesity Python REST API Wrapper Module - 2024.02.28"""
 
 ##########################################################################################
 # Change Log
@@ -30,6 +30,7 @@
 # 2023.11.27 - fix useApiKey for helios/mcm
 # 2023.12.29 - added testProp function
 # 2024.01.14 - reenabled legacy access modes
+# 2024.02.28 - added support for helios.gov
 #
 ##########################################################################################
 # Install Notes
@@ -88,7 +89,7 @@ __all__ = ['api_version',
            'impersonate',
            'switchback']
 
-api_version = '2024.01.14'
+api_version = '2024.02.28'
 
 COHESITY_API = {
     'APIROOT': '',
@@ -106,6 +107,7 @@ CONFIGDIR = expanduser("~") + '/.pyhesity'
 SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
 PWFILE = os.path.join(SCRIPTDIR, 'YWRtaW4')
 LOGFILE = os.path.join(SCRIPTDIR, 'pyhesity-debug.log')
+HELIOSENDPOINTS = ['helios.cohesity.com', 'helios.gov-cohesity.com']
 
 
 ### get last error
@@ -151,7 +153,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
     COHESITY_API['HEADER'] = {'accept': 'application/json', 'content-type': 'application/json', 'User-Agent': 'pyhesity/%s' % api_version}
     COHESITY_API['APIROOT'] = 'https://' + vip + '/irisservices/api/v1'
     COHESITY_API['APIROOTv2'] = 'https://' + vip + '/v2/'
-    if vip == 'helios.cohesity.com' or helios is not False:
+    if vip.lower() in HELIOSENDPOINTS or helios is not False:
         # Helios/MCM API Key authentication
         COHESITY_API['HEADER'] = {'accept': 'application/json', 'content-type': 'application/json', 'apiKey': pwd, 'User-Agent': 'pyhesity/%s' % api_version}
         if regionid is not None:
@@ -593,11 +595,11 @@ def dayDiff(newdate, olddate):
 ### get/store password for future runs
 def __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, prompt):
     """get/set stored password"""
-    if helios is True or vip == 'helios.cohesity.com':
+    if helios is True or vip.lower() in HELIOSENDPOINTS:
         useApiKey = False
     originalUsername = username
     originalVip = vip
-    if domain.lower() != 'local' and helios is False and vip != 'helios.cohesity.com' and useApiKey is False:
+    if domain.lower() != 'local' and helios is False and vip.lower() not in HELIOSENDPOINTS and useApiKey is False:
         originalUsername = "%s\\%s" % (domain, username)
         vip = '--'  # wildcard vip
     if os.path.exists(PWFILE):
@@ -664,7 +666,7 @@ def __getpassword(vip, username, password, domain, useApiKey, helios, updatepw, 
 def setpwd(v='helios.cohesity.com', u='helios', d='local', useApiKey=False, helios=False, password=None):
     originalUsername = u
     originalVip = v
-    if d.lower() != 'local' and helios is False and v != 'helios.cohesity.com' and useApiKey is False:
+    if d.lower() != 'local' and helios is False and v.lower() not in HELIOSENDPOINTS and useApiKey is False:
         originalUsername = '%s\\%s' % (d, u)
         v = '--'  # wildcard vip
     if password is None:
@@ -705,7 +707,7 @@ def pw(vip, username, domain='local', password=None, updatepw=None, useApiKey=Fa
 
 ### store password from input
 def storePasswordFromInput(vip, username, password, domain='local', useApiKey=False, helios=False):
-    if domain.lower() != 'local' and helios is False and vip != 'helios.cohesity.com' and useApiKey is False:
+    if domain.lower() != 'local' and helios is False and vip.lower() not in HELIOSENDPOINTS and useApiKey is False:
         vip = '--'  # wildcard vip
     pwpath = os.path.join(CONFIGDIR, vip + '-' + domain + '-' + username + '-' + str(useApiKey))
     try:
@@ -733,7 +735,7 @@ def __writelog(logmessage):
         # rotate log
         if os.path.exists(LOGFILE):
             logsize = os.path.getsize(LOGFILE)
-            if logsize > 1048576:
+            if logsize > 200000:
                 os.rename(LOGFILE, '%s-%s.txt' % (LOGFILE, apierrordatestring))
     except Exception:
         pass

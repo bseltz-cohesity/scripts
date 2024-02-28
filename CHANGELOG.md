@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-02-28
+
+* [cohesity-api.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api) [`Update`] added support for helios.gov
+* [pyhesity.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity) [`Update`] added support for helios.gov
+
 ## 2024-02-24
 
 * [physicalBackupPathsReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/physicalBackupPathsReport) [`Update`] Output to CSV

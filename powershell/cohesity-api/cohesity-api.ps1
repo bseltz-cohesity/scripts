@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2024.02.18 - Brian Seltzer
+#  Version 2024.02.28 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2023.02.10 - added -region to api function (for DMaaS)
@@ -32,10 +32,12 @@
 # 2024.01.25 - added support for unicode characters for REST payloads in Windows PowerShell 5.1
 # 2024.01.30 - fix - clear header before auth
 # 2024-02-18 - fix - toJson function - handle null input
+# 2024-02-28 - added support for helios.gov
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2024.02.18'
+$versionCohesityAPI = '2024.02.28'
+$heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
 $cohesity_api = @{
@@ -234,13 +236,13 @@ function apiauth($vip='helios.cohesity.com',
     }
 
     # API Key authentication
-    if($useApiKey -or $helios -or ($vip -eq 'helios.cohesity.com')){
+    if($useApiKey -or $helios -or ($vip -in $heliosEndpoints)){  # -eq 'helios.cohesity.com'
         $header = $cohesity_api.header.Clone()
         $header['apiKey'] = $passwd
         #$cohesity_api.header['apiKey'] = $passwd
         $cohesity_api.authorized = $true
         # validate cluster API key authorization
-        if($useApiKey -and (($vip -ne 'helios.cohesity.com') -and $helios -ne $True)){
+        if($useApiKey -and (($vip -notin $heliosEndpoints) -and $helios -ne $True)){
             try{
                 $URL = "https://$vip/irisservices/api/v1/public/sessionUser/preferences"
                 if($PSVersionTable.PSEdition -eq 'Core'){
@@ -266,7 +268,7 @@ function apiauth($vip='helios.cohesity.com',
             }
         }
         # validate helios/mcm authorization
-        if($vip -eq 'helios.cohesity.com' -or $helios){
+        if($vip -in $heliosEndpoints -or $helios){
             try{
                 $URL = "https://$vip/mcm/clusters/connectionStatus"
                 if($PSVersionTable.PSEdition -eq 'Core'){
@@ -874,14 +876,14 @@ function dateToUsecs($datestring=(Get-Date)){
 # password functions ==============================================================================
 
 function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', $useApiKey=$false, $helios=$false){
-    if($helios -eq $True -or $vip -eq 'helios.cohesity.com'){
+    if($helios -eq $True -or $vip -in $heliosEndpoints){
         $useApiKey = $false
     }
     # parse domain\username or username@domain
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
     }
-    if($domain -ne 'local' -and $helios -eq $false -and $vip -ne 'helios.cohesity.com' -and $useApiKey -eq $false){
+    if($domain -ne 'local' -and $helios -eq $false -and $vip -notin $heliosEndpoints -and $useApiKey -eq $false){
         $vip = '--'  # wildcard vip for AD accounts
     }
     $keyName = "$vip`-$domain`-$username`-$useApiKey"
@@ -941,14 +943,14 @@ function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
 }
 
 function Clear-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', [switch]$quiet, $useApiKey=$false, $helios=$false){
-    if($helios -eq $True -or $vip -eq 'helios.cohesity.com'){
+    if($helios -eq $True -or $vip -in $heliosEndpoints){
         $useApiKey = $false
     }
     # parse domain\username or username@domain
     if($username.Contains('\')){
         $domain, $username = $username.Split('\')
     }
-    if($domain -ne 'local' -and !$helios -and $vip -ne 'helios.cohesity.com' -and $useApiKey -eq $false){
+    if($domain -ne 'local' -and !$helios -and $vip -notin $heliosEndpoints -and $useApiKey -eq $false){
         $vip = '--'  # wildcard vip for AD accounts
     }
     $keyName = "$vip`-$domain`-$username`-$useApiKey"
@@ -998,7 +1000,7 @@ function Clear-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios
 }
 
 function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', $passwd=$null, [switch]$quiet, $useApiKey=$false, $helios=$false){
-    if($helios -eq $True -or $vip -eq 'helios.cohesity.com'){
+    if($helios -eq $True -or $vip -in $heliosEndpoints){
         $useApiKey = $false
     }
     # parse domain\username or username@domain
@@ -1008,13 +1010,13 @@ function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
     $originalVip = $vip
     $originalUsername = $username
 
-    if($domain -ne 'local' -and !$helios -and $vip -ne 'helios.cohesity.com' -and $useApiKey -eq $false){
+    if($domain -ne 'local' -and !$helios -and $vip -notin $heliosEndpoints -and $useApiKey -eq $false){
         $originalUsername = "$domain\$username"
         $vip = '--'  # wildcard vip for AD accounts
     }
     if(!$passwd){
         __writeLog "Prompting for Password"
-        if($useApiKey -or $helios -or $vip -eq 'helios.cohesity.com'){
+        if($useApiKey -or $helios -or $vip -in $heliosEndpoints){
             $secureString = Read-Host -Prompt "Enter API key for $originalUsername at $originalVip" -AsSecureString
         }else{
             $secureString = Read-Host -Prompt "Enter password for $originalUsername at $originalVip" -AsSecureString
