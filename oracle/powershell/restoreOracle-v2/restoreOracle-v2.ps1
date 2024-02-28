@@ -1,4 +1,4 @@
-# version 2023-11-23
+# version 2024-02-28
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -162,9 +162,9 @@ foreach($object in $objects){
     }else{
         if($object.oracleParams.databaseEntityInfo.containerDatabaseInfo.pluggableDatabaseList -ne $null){
             $isCDB = $True
-            $granularRestore = $True
             $pdbList = $object.oracleParams.databaseEntityInfo.containerDatabaseInfo.pluggableDatabaseList
             if($pdbNames -and ($sameDB -eq $false)){
+                $granularRestore = $True
                 $pdbList = $pdbList | Where-Object {$_.databaseName -in $pdbNames}
             }
         }
@@ -296,16 +296,15 @@ if($sameDB){
         "dbChannels" = $null;
         "recoveryMode" = $null;
         "shellEvironmentVars" = $null;
-        "granularRestoreInfo" = $null;
         "restoreSpfileOrPfileInfo" = $null;
         "useScnForRestore" = $null;
         "rollForwardLogPathVec" = $null;
         "rollForwardTimeMsecs" = $null;
         "attemptCompleteRecovery" = $false
-    }
+    }  # "granularRestoreInfo" = $null;
     if($granularRestore -eq $True){
         # restore to same cdb
-        $sourceConfig.granularRestoreInfo = @{
+        $sourceConfig['granularRestoreInfo'] = @{
             "granularityType" = "kPDB";
             "pdbRestoreParams" = @{
                 "restoreToExistingCdb" = $True;
@@ -342,13 +341,12 @@ if($sameDB){
             "dbChannels" = $null;
             "recoveryMode" = $bool_noRecovery;
             "shellEvironmentVars" = $null;
-            "granularRestoreInfo" = $null;
             "restoreSpfileOrPfileInfo" = $null;
             "useScnForRestore" = $null;
             "oracleUpdateRestoreOptions" = $null;
             "isMultiStageRestore" = $false;
             "rollForwardLogPathVec" = $null
-        }
+        } # "granularRestoreInfo" = $null;
     }
     if($instant){
         $sourceConfig.recoverDatabaseParams.isMultiStageRestore = $True
@@ -361,7 +359,7 @@ if($sameDB){
     }
     if($granularRestore){
         # restore to alternate cdb
-        $sourceConfig.recoverDatabaseParams.granularRestoreInfo = @{
+        $sourceConfig.recoverDatabaseParams['granularRestoreInfo'] = @{
             "granularityType" = "kPDB";
             "pdbRestoreParams" = @{
                 "restoreToExistingCdb" = $True;
