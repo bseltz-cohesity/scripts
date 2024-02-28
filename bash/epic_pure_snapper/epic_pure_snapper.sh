@@ -9,7 +9,7 @@
 # example: ./epic_pure_snapper.sh -k /root/.ssh/id_rsa -p puresnap -a 10.12.1.39 -g EpicProtectionGroup26 -i prd
 
 # verify we are NOT running from a Cohesity backup
-if [ -z "${PRIVKEY_PATH}" ]
+if [ -z "${COHESITY_BACKUP_ENTITY}" ]
 then
     echo "Running epic_pure_snapper version 2024.02.28"
     echo "Running epic_pure_snapper version 2024.02.28" >> /tmp/cohesity_snap.log
