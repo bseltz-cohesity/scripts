@@ -2,6 +2,7 @@
 
 ## 2024-02-29
 
+* [restoreFiles.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/restoreFiles) (PowerShell) [`Update`] added -isilonZoneId parameter
 * [pauseProtectionActivity.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/pauseProtectionActivity) [`Update`] added wait for service restart at end of script
 * [storagePerObjectReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport) [`Update`] Added -consolidateDBs option
 
