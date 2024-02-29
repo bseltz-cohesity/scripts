@@ -1,14 +1,17 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory=$True)][array]$vip,
-    [Parameter(Mandatory=$True)][string]$username,
+    [Parameter()][array]$vip,
+    [Parameter()][string]$username = 'helios',
     [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant = $null,
     [Parameter()][switch]$useApiKey,
     [Parameter()][string]$password = $null,
     [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
     [Parameter()][string]$mfaCode = $null,
-    [Parameter()][int]$days,
+    [Parameter()][array]$clusterName = $null,
+    [Parameter()][int]$days = 31,
     [Parameter()][switch]$includeLogs,
     [Parameter()][switch]$fullOnly,
     [Parameter()][switch]$localOnly,
@@ -30,11 +33,12 @@ if($days){
 
 # outfile
 $now = Get-Date
+$nowUsecs = dateToUsecs $now
 $dateString = $now.ToString('yyyy-MM-dd')
 $outfileName = $(Join-Path -Path $outputPath -ChildPath "protectionRunsReport-$dateString.csv")
 
 # headings
-$headings = "Start Time,End Time,Duration,status,slaStatus,snapshotStatus,objectName,sourceName,groupName,policyName,Object Type,backupType,System Name,Logical Size $unit,Data Read $unit,Data Written $unit,Organization Name"
+$headings = "Start Time,End Time,Duration,status,slaStatus,snapshotStatus,objectName,sourceName,groupName,policyName,Object Type,backupType,System Name,Logical Size $unit,Data Read $unit,Data Written $unit,Organization Name,DataLock Expiry"
 
 $headings | Out-File -FilePath $outfileName
 
@@ -49,13 +53,11 @@ if($localOnly){
     $query = '&isActive=true'
 }
 
-foreach($v in $vip){
-    # authenticate
-    apiauth -vip $v -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -noPromptForPassword $noPrompt
-    if(!$cohesity_api.authorized){
-        Write-Host "Not authenticated to $v" -ForegroundColor Yellow
-        continue
-    }
+function dateToString($dt, $format='yyyy-MM-dd hh:mm:ss'){
+    return ($dt.ToString($format) -replace [char]8239, ' ')
+}
+
+function reportRuns(){
 
     $cluster = api get cluster
     $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false$query&includeTenants=true"
@@ -63,7 +65,7 @@ foreach($v in $vip){
     $policies = api get -v2 data-protect/policies
 
     foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
-        $endUsecs = dateToUsecs $now
+        $endUsecs = $nowUsecs
         $environment = $job.environment
         $tenant = $job.permissions.name
         if(!$objectType -or $objectType -eq $environment){
@@ -105,6 +107,12 @@ foreach($v in $vip){
                             foreach($object in $run.objects){
                                 if($environment -in @('kOracle', 'kSQL') -and $object.object.objectType -eq 'kHost'){
                                     $localSources["$($object.object.id)"] = $object.object.name
+                                }
+                            }
+                            $lockUntil = ''
+                            if($backupInfo.PSObject.Properties['dataLockConstraints']){
+                                if($backupInfo.dataLockConstraints.expiryTimeUsecs -gt $nowUsecs -and $backupInfo.dataLockConstraints.mode -eq 'Compliance'){
+                                    $lockUntil = usecsToDate $backupInfo.dataLockConstraints.expiryTimeUsecs -format 'yyyy-MM-dd hh:mm'
                                 }
                             }
                             foreach($object in $run.objects){
@@ -150,7 +158,7 @@ foreach($v in $vip){
                                     $objectBytesWritten = toUnits $snapshotInfo.stats.bytesWritten
                                     $objectBytesRead = toUnits $snapshotInfo.stats.bytesRead
                                     "        {0}" -f $objectName
-                                    $objectStartTime, $objectEndTime, $objectDurationSeconds, $objectStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $cluster.name, $objectLogicalSizeBytes, $objectBytesRead, $objectBytesWritten, $tenant -join "," | Out-File -FilePath $outfileName -Append
+                                    $(dateToString $objectStartTime), $(dateToString $objectEndTime), $objectDurationSeconds, $objectStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $cluster.name, $objectLogicalSizeBytes, $objectBytesRead, $objectBytesWritten, $tenant, $lockUntil -join "," | Out-File -FilePath $outfileName -Append
                                 }
                             }
                         }
@@ -170,6 +178,31 @@ foreach($v in $vip){
                 }
             }
         }
+    }
+}
+
+# authentication =============================================
+if(! $vip){
+    $vip = @('helios.cohesity.com')
+}
+
+foreach($v in $vip){
+    # authenticate
+    apiauth -vip $v -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt -quiet
+    if(!$cohesity_api.authorized){
+        output "`n$($v): authentication failed" -ForegroundColor Yellow
+        continue
+    }
+    if($USING_HELIOS){
+        if(! $clusterName){
+            $clusterName = @((heliosClusters).name)
+        }
+        foreach($c in $clusterName){
+            $null = heliosCluster $c
+            reportRuns
+        }
+    }else{
+        reportRuns
     }
 }
 
