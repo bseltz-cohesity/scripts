@@ -270,22 +270,26 @@ if not cancelrunsonly and not stopgconly:
         if action == 'kResume':
             setGflag(servicename='kYoda', flagname='yoda_block_slave_dispatcher', flagvalue='false', reason='resume', clear=True)
         restartParams = {
-            "clusterId": cluster['id'],
-            "services": ["yoda"]
+            'action': 'kRestart',
+            'services': ['kYoda']
         }
-        restart = api('post', '/nexus/cluster/restart', restartParams)
+        restart = api('post', 'clusters/services/states', restartParams)
 
 # apollo service ==============================================================
 if not cancelrunsonly:
     if action in ['kPause', 'kResume']:
-        restartParams = {
-            "clusterId": cluster['id'],
-            "services": ['apollo']
-        }
         if action == 'kPause':
-            response = api('post', '/nexus/cluster/stop', restartParams)
+            restartParams = {
+                'action': 'kStop',
+                'services': ['kApollo']
+            }
+            response = api('post', 'clusters/services/states', restartParams)
         if action == 'kResume':
-            response = api('post', '/nexus/cluster/start', restartParams)
+            restartParams = {
+                'action': 'kStart',
+                'services': ['kApollo']
+            }
+            response = api('post', 'clusters/services/states', restartParams)
 
 # apollo pipeline =============================================================
 if not cancelrunsonly:
