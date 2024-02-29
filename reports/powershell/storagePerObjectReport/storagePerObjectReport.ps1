@@ -249,7 +249,7 @@ function reportStorage(){
                                     $archivalInfo = $object.archivalInfo.archivalTargetResults[0]
                                 }
                             }
-                            if($objId -notin $objects.Keys -and !($job.environment -eq 'kAD' -and $object.object.environment -eq 'kAD') -and !($job.environment -in @('kSQL', 'kOracle') -and $object.object.objectType -eq 'kHost')){
+                            if($objId -notin $objects.Keys -and !($job.environment -eq 'kAD' -and $object.object.environment -eq 'kAD') -and !($job.environment -in @('kSQL', 'kOracle', 'kExchange') -and $object.object.objectType -eq 'kHost')){
                                 $objects[$objId] = @{}
                                 $objects[$objId]['name'] = $object.object.name
                                 $objects[$objId]['alloc'] = 0
