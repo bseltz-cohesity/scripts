@@ -212,7 +212,7 @@ def reportStorage():
                                         except Exception:
                                             archivalInfo = None
                                 try:
-                                    if objId not in objects and not (job['environment'] == 'kAD' and object['object']['environment'] == 'kAD') and not (job['environment'] in ['kSQL', 'kOracle'] and object['object']['objectType'] == 'kHost'):
+                                    if objId not in objects and not (job['environment'] == 'kAD' and object['object']['environment'] == 'kAD') and not (job['environment'] in ['kSQL', 'kOracle', 'kExchange'] and object['object']['objectType'] == 'kHost'):
                                         objects[objId] = {}
                                         objects[objId]['name'] = object['object']['name']
                                         objects[objId]['logical'] = 0
