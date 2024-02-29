@@ -74,6 +74,7 @@ Restore finished with status Success
 * -rangeRestore: (optional) restore all versions (of folder) newset to oldest
 * -showVersions: (optional) show available versions
 * -restoreFromArchive: (optional) force restore from archive
+* -isilonZoneId: (optional) Isilon zone name of target object
 
 ## Backup Versions
 

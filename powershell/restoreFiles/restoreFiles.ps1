@@ -1,4 +1,4 @@
-# version 2023.12.15
+# version 2024.02.29
 
 ### process commandline arguments
 [CmdletBinding(PositionalBinding=$False)]
@@ -32,6 +32,7 @@ param (
     [Parameter()][switch]$rangeRestore,
     [Parameter()][switch]$showVersions,
     [Parameter()][switch]$noIndex,
+    [Parameter()][string]$isilonZoneId,
     [Parameter()][switch]$restoreFromArchive
 )
 
@@ -104,6 +105,17 @@ if($registeredTarget){
     }
     if($foundTarget -eq $false){
         Write-Host "registered target $registeredTarget not found" -ForegroundColor Yellow
+        exit 1
+    }
+}
+if($isilonZoneId){
+    $foundTarget = $false
+    $targetEntity = $targetEntity | Where-Object {$_.isilonEntity.mountPointInfo.zoneId -eq $isilonZoneId}
+    if($targetEntity){
+        $foundTarget = $True
+    }
+    if($foundTarget -eq $false){
+        Write-Host "Isilon zone $isilonZonId not found" -ForegroundColor Yellow
         exit 1
     }
 }
