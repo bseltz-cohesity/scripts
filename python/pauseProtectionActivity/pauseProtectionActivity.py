@@ -9,6 +9,7 @@ import codecs
 import json
 import sys
 import urllib3
+from time import sleep
 import requests.packages.urllib3
 
 if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
@@ -310,10 +311,20 @@ if not cancelrunsonly:
                 out('*** exception trying to stop pipeline')
                 pass
 
-out('')
 if not cancelrunsonly and not stopgconly:
     if action == 'kPause':
         out('Paused job list saved to %s' % outfile)
 
-print('Output logged to %s\n' % logfile)
+out('waiting for service restart...')
+out('')
 log.close()
+allFinished = False
+cluster = api('get', 'cluster')
+while allFinished is False:
+    if cluster['currentOperation'] == 'kRestartServices':
+        sleep(10)
+        cluster = api('get', 'cluster')
+    else:
+        allFinished = True
+
+print('Output logged to %s\n' % logfile)
