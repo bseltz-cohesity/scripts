@@ -18,6 +18,7 @@ param (
     [Parameter()][switch]$skipDeleted,
     [Parameter()][ValidateSet('MiB','GiB','TiB','MB','GB','TB')][string]$unit = 'GiB',
     [Parameter()][switch]$secondFormat,
+    [Parameter()][switch]$consolidateDBs,
     [Parameter()][switch]$dbg,
     [Parameter()][string]$outfileName
 )
@@ -252,6 +253,7 @@ function reportStorage(){
                             if($objId -notin $objects.Keys -and !($job.environment -eq 'kAD' -and $object.object.environment -eq 'kAD') -and !($job.environment -in @('kSQL', 'kOracle', 'kExchange') -and $object.object.objectType -eq 'kHost')){
                                 $objects[$objId] = @{}
                                 $objects[$objId]['name'] = $object.object.name
+                                $objects[$objId]['parentObject'] = $false
                                 $objects[$objId]['alloc'] = 0
                                 $objects[$objId]['logical'] = 0
                                 $objects[$objId]['archiveLogical'] = 0
@@ -353,11 +355,80 @@ function reportStorage(){
                 }
             }
 
+            # consolidate DBs
+            $parentObjects = @{}
+            if($consolidateDBs){
+                foreach($objId in $objects.Keys){
+                    $thisObject = $objects[$objId]
+                    if($job.environment -in @('kOracle', 'kSQL') -and $thisObject['parentObject'] -eq $false){
+                        $sourceName = ''
+                        if('sourceId' -in $thisObject.Keys){
+                            if("$($thisObject['sourceId'])" -in $sourceNames.Keys){
+                                $sourceName = $sourceNames["$($thisObject['sourceId'])"]
+                            }else{
+                                if($dbg){
+                                    output "    getting source (2)"
+                                }
+                                $source = api get "protectionSources?id=$($thisObject['sourceId'])&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true"
+                                if($source -and $source.PSObject.Properties['protectionSource']){
+                                    $sourceName = $source.protectionSource.name
+                                    $sourceNames["$($thisObject['sourceId'])"] = $sourceName
+                                }
+                            }
+                            if($thisObject['sourceId'] -notin $parentObjects.Keys){
+                                
+                                $parentObjects[$thisObject['sourceId']] = @{}
+                                $parentObjects[$thisObject['sourceId']]['name'] = $sourceName
+                                $parentObjects[$thisObject['sourceId']]['parentObject'] = $True
+                                $parentObjects[$thisObject['sourceId']]['alloc'] = $thisObject['alloc']
+                                $parentObjects[$thisObject['sourceId']]['logical'] = $thisObject['logical']
+                                $parentObjects[$thisObject['sourceId']]['archiveLogical'] = $thisObject['archiveLogical']
+                                $parentObjects[$thisObject['sourceId']]['bytesRead'] = $thisObject['bytesRead']
+                                $parentObjects[$thisObject['sourceId']]['archiveBytesRead'] = $thisObject['archiveBytesRead']
+                                $parentObjects[$thisObject['sourceId']]['growth'] = $thisObject['growth']
+                                $parentObjects[$thisObject['sourceId']]['numSnaps'] = $thisObject['numSnaps']
+                                $parentObjects[$thisObject['sourceId']]['numLogs'] = $thisObject['numLogs']
+                                $parentObjects[$thisObject['sourceId']]['newestBackup'] = $thisObject['newestBackup']
+                                $parentObjects[$thisObject['sourceId']]['oldestBackup'] = $thisObject['oldestBackup']
+                                # Write-Host "$sourceName - $($thisObject['name']) - $($thisObject['sourceId']) - new - $($parentObjects[$thisObject['sourceId']]['bytesRead'])"
+                            }else{
+                                
+                                $parentObjects[$thisObject['sourceId']]['alloc'] += $thisObject['alloc']
+                                $parentObjects[$thisObject['sourceId']]['logical'] += $thisObject['logical']
+                                $parentObjects[$thisObject['sourceId']]['archiveLogical'] += $thisObject['archiveLogical']
+                                $parentObjects[$thisObject['sourceId']]['bytesRead'] += $thisObject['bytesRead']
+                                $parentObjects[$thisObject['sourceId']]['archiveBytesRead'] += $thisObject['archiveBytesRead']
+                                $parentObjects[$thisObject['sourceId']]['growth'] += $thisObject['growth']
+                                if($thisObject['newestBackup'] -gt $parentObjects[$thisObject['sourceId']]['newestBackup']){
+                                    $parentObjects[$thisObject['sourceId']]['newestBackup'] = $thisObject['newestBackup']
+                                }
+                                if($thisObject['oldestBackup'] -lt $parentObjects[$thisObject['sourceId']]['oldestBackup']){
+                                    $parentObjects[$thisObject['sourceId']]['oldestBackup'] = $thisObject['oldestBackup']
+                                }
+                                if($thisObject['numSnaps'] -gt $parentObjects[$thisObject['sourceId']]['numSnaps']){
+                                    $parentObjects[$thisObject['sourceId']]['numSnaps'] = $thisObject['numSnaps']
+                                }
+                                if($thisObject['numLogs'] -gt $parentObjects[$thisObject['sourceId']]['numLogs']){
+                                    $parentObjects[$thisObject['sourceId']]['numLogs'] = $thisObject['numLogs']
+                                }
+                                # Write-Host "$sourceName - $($thisObject['name']) - $($thisObject['sourceId']) - existing - $($parentObjects[$thisObject['sourceId']]['bytesRead'])"
+                            }
+                        }
+                    }
+                }
+            }
+            ForEach ($Key in $parentObjects.Keys) {
+                $objects[$Key] = $parentObjects[$Key]
+            }
+
             # process output
             $isCad = $false
             $jobFESize = 0
             foreach($objId in $objects.Keys){
                 $thisObject = $objects[$objId]
+                if($consolidateDBs -and $job.environment -in @('kSQL', 'kOracle') -and $thisObject['parentObject'] -eq $false){
+                    continue
+                }
                 $jobFESize += $thisObject['logical']
                 $jobFESize += $thisObject['bytesRead']
                 if($thisObject['archiveLogical'] -gt 0){
@@ -368,6 +439,9 @@ function reportStorage(){
             }
             foreach($objId in $objects.Keys | Sort-Object){
                 $thisObject = $objects[$objId]
+                if($consolidateDBs -and $job.environment -in @('kSQL', 'kOracle') -and $thisObject['parentObject'] -eq $false){
+                    continue
+                }
                 $objFESize = toUnits $thisObject['logical']
                 if($thisObject['archiveLogical'] -gt 0){
                     $objFESize = toUnits $thisObject['archiveLogical']

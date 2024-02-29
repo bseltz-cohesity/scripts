@@ -64,6 +64,7 @@ To connect through Helios:
 * -skipDeleted: (optional) skip deleted protection groups
 * -unit: (optional) MiB, GiB, TiB, MB, GB or TB (default is GiB)
 * -outfileName: (optional) specify name for output csv file
+* -consolidateDBs: (optional) hide Oracle and SQL databases and only show the parent host
 
 ## Column Descriptions
 
