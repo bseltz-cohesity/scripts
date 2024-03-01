@@ -154,6 +154,6 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                     isRegex = ' REGEX'
                 print('  %s: %s' % (isRegex, f['filterString']))
         if clear is True or newExclusions is True:
-            if params['excludeFilters'] is None or len(params['excludeFilters']) == 0:
+            if 'excludeFilters' in params and (params['excludeFilters'] is None or len(params['excludeFilters']) == 0):
                 del params['excludeFilters']
             response = api('put', 'data-protect/protection-groups/%s' % job['id'], job, v=2)
