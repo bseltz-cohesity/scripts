@@ -40,6 +40,25 @@ To add a regex exclusion:
                    -r 'sqlserver1.mydomain.net/.*/res.*'
 ```
 
+Remove a regex exclusion:
+
+```bash
+./excludeSQLDBs.py -v mycluster \
+                   -u myuser \
+                   -d mydomain.net \
+                   -r 'sqlserver1.mydomain.net/.*/res.*' \
+                   -remove
+```
+
+Clear all exclusions:
+
+```bash
+./excludeSQLDBs.py -v mycluster \
+                   -u myuser \
+                   -d mydomain.net \
+                   -clear
+```
+
 ## Authentication Parameters
 
 * -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
