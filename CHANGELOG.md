@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-03-01
+
+* [excludeSQLDBs.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/excludeSQLDBs) [`New`] Add/remove exclusions for SQL protection groups
+
 ## 2024-02-29
 
 * [restoreFiles.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/restoreFiles) (PowerShell) [`Update`] added -isilonZoneId parameter
