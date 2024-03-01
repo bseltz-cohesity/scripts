@@ -23,7 +23,7 @@ chmod +x excludeSQLDBs.py
 
 Place both files in a folder together and run the main script like so:
 
-To list excludions:
+To list exclusions:
 
 ```bash
 ./excludeSQLDBs.py -v mycluster \
