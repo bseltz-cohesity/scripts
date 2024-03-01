@@ -43,7 +43,7 @@ daysBackUsecs = timeAgo(days, "days")
 
 outfile = 'directiveBackupHistoryReport.csv'
 f = codecs.open(outfile, 'w')
-f.write('"Cluster","Protection Group","Start Time","Status","Server","Directive File","Link"\n')
+f.write('"Cluster","Protection Group","Start Time","Status","Server","Directive File","Run ID","Link"\n')
 
 
 def getCluster():
@@ -62,6 +62,7 @@ def getCluster():
                     print('  %s' % job['name'])
                     for run in runs['runs']:
                         runDetail = None
+                        runId = None
                         if 'isLocalSnapshotsDeleted' not in run or run['isLocalSnapshotsDeleted'] is not True:
                             runStartTime = usecsToDate(run['localBackupInfo']['startTimeUsecs'])
                             for runobject in run['objects']:
@@ -71,12 +72,13 @@ def getCluster():
                                     if 'metadataFilePath' in obj[0] and obj[0]['metadataFilePath'] is not None:
                                         if runDetail is None:
                                             runDetail = api('get', '/backupjobruns?exactMatchStartTimeUsecs=%s&id=%s' % (run['localBackupInfo']['startTimeUsecs'], v1JobId))
+                                            runId = runDetail[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobInstanceId']
                                         try:
                                             metadataFilePath = runDetail[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['additionalParamVec'][0]['physicalParams']['metadataFilePath']
                                         except Exception:
                                             metadataFilePath = obj[0]['metadataFilePath']
                                         link = 'https://%s/protection/group/run/backup/%s/%s' % (vip, job['id'], run['id'])
-                                        f.write('"%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], runStartTime, status, obj[0]['name'], metadataFilePath, link))
+                                        f.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], runStartTime, status, obj[0]['name'], metadataFilePath, runId, link))
 
 
 for vip in vips:
