@@ -2,6 +2,7 @@
 
 ## 2024-03-01
 
+* [directiveBackupHistoryReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/directiveBackupHistoryReport) [`New`] report directive files used for physical server file-based backups over the past X days
 * [excludeSQLDBs.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/excludeSQLDBs) [`New`] Add/remove exclusions for SQL protection groups
 
 ## 2024-02-29
