@@ -3,6 +3,7 @@
 ## 2024-03-02
 
 * [protectSQL.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/powershell/protectSQL) [`New`] consolidated script to protect SQL servers, instances, databases (protectSQLDB.ps1 and protectSQLServer.ps1 have been replaced)
+* [sql](https://github.com/bseltz-cohesity/scripts/tree/master/sql) [`Update`] moved SQL scripts into sql/powershell and sql/python folders
 
 ## 2024-03-01
 
