@@ -14,8 +14,10 @@ param (
     [Parameter()][string]$clusterName,
     [Parameter(Mandatory = $True)][string]$jobName,
     [Parameter()][array]$serverName,
-    [Parameter()][string]$serverList,  # optional textfile of servers to protect
+    [Parameter()][string]$serverList,
     [Parameter()][array]$instanceName,
+    [Parameter()][array]$dbName,
+    [Parameter()][string]$dbList,
     [Parameter()][ValidateSet('File','Volume','VDI')][string]$backupType = 'File',
     [Parameter()][switch]$instancesOnly,
     [Parameter()][switch]$systemDBsOnly,
@@ -56,6 +58,7 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 }
 
 $serversToAdd = @(gatherList -Param $serverName -FilePath $serverList -Name 'sources' -Required $False)
+$dbsToAdd = @(gatherList -Param $dbName -FilePath $dbList -Name 'sources' -Required $False)
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -292,11 +295,13 @@ foreach($servername in $serversToAdd){
     }
     
     if($instanceName.Count -eq 0 -and $instancesOnly){
+        Write-Host "Protecting $servername"
         foreach($instanceId in $serverSource.applicationNodes.protectionSource.id){
             $params.objects = @(@($params.objects | Where-Object {$_.id -ne $instanceId}) + @{ 'id' = $instanceId})
         }
-    }elseif($instanceName.Count -gt 0){
+    }elseif($instanceName.Count -gt 0 -and $dbsToAdd.Count -eq 0){
         foreach($instance in $instanceName){
+            Write-Host "Protecting $servername/$instance"
             $instanceSource = $serverSource.applicationNodes | Where-Object {$_.protectionSource.name -eq $instance}
             if(! $instanceSource){
                 Write-Host "Instance $instance not found on server $servername"
@@ -319,6 +324,7 @@ foreach($servername in $serversToAdd){
                 foreach($node in $instanceSource.nodes){
                     if(($node.protectionSource.name -split '/')[1] -in $systemDBs){
                         $params.objects = @(@($params.objects | Where-Object {$_.id -ne $node.protectionSource.id}) + @{ 'id' = $node.protectionSource.id})
+                        Write-Host "Protecting $servername System DBs"
                     }
                 }
             }
@@ -327,16 +333,35 @@ foreach($servername in $serversToAdd){
                 foreach($node in $instanceSource.nodes){
                     if($node.unprotectedSourcesSummary[0].leavesCount -eq 1){
                         $params.objects = @(@($params.objects | Where-Object {$_.id -ne $node.protectionSource.id}) + @{ 'id' = $node.protectionSource.id})
+                        Write-Host "Protecting $servername"
                     }
+                }
+            }
+        }elseif($dbsToAdd.Count -gt 0){
+            if($instanceName.Count -eq 0){
+                $instanceName = @('MSSQLSERVER')
+            }
+            foreach($instanceSource in $serverSource.applicationNodes | Where-Object {$_.protectionSource.name -in $instanceName}){
+                foreach($thisDBName in $dbsToAdd){
+                    $dbSource = $instanceSource.nodes | Where-Object {$_.protectionSource.name -eq "$($instanceSource.protectionSource.name)/$thisDBName"}
+                    if(! $dbSource){
+                        Write-Host "$thisDBName not found in $serverName/$($instanceSource.protectionSource.name)" -ForegroundColor Yellow
+                        continue
+                    }
+                    $params.objects = @(@($params.objects | Where-Object {$_.id -ne $dbSource.protectionSource.id}) + @{ 'id' = $dbSource.protectionSource.id})
+                    Write-Host "Protecting $serverName/$($instanceSource.protectionSource.name)/$thisDBName"
                 }
             }
         }else{
             $params.objects = @(@($params.objects | Where-Object {$_.id -ne $serverSource.protectionSource.id}) + @{ 'id' = $serverSource.protectionSource.id})
+            Write-Host "Protecting $servername"
         }
     }
-    Write-Host "Protecting $servername..."
 }
 
+if($params.objects.Count -eq 0){
+    Write-Host "Nothing protected"
+}
 if($newJob -eq $True){
     $createdJob = api post -v2 data-protect/protection-groups $job
 }else{

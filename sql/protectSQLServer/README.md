@@ -66,10 +66,12 @@ Or to update an existing job:
 ## Other Parameters
 
 * -jobname: name of protection job
-* -serverName: (optional) name of one or more registered SQL servers to protect (comma seaparated)
+* -serverName: (optional) name of one or more registered SQL servers to protect (comma separated)
 * -serverList: (optional) text file of registered SQL servers to protect (one per line)
 * -backupType: (optional) File, Volume or VDI (default is File)
 * -instanceName: (optional) one or more instance names to protect (comma separated)
+* -dbName: (optional) name of one or more databases to protect (comma separated)
+* -dbList: (optional) text file of databases to protect (one per line)
 * -policyName: (optional) name of the protection policy to use
 * -startTime: (optional) e.g. '18:30' (defaults to 8PM)
 * -timeZone: (optional) e.g. 'America/New_York' (default is 'America/Los_Angeles')
