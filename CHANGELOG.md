@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-03-02
+
+* [protectSQL.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/powershell/protectSQL) [`New`] consolidated script to protect SQL servers, instances, databases (protectSQLDB.ps1 and protectSQLServer.ps1 have been replaced)
+
 ## 2024-03-01
 
 * [directiveBackupHistoryReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/directiveBackupHistoryReport) [`New`] report directive files used for physical server file-based backups over the past X days
