@@ -29,11 +29,11 @@ To create a new protection job:
 ```powershell
 # example
 ./protectSQL.ps1 -vip mycluster `
-                       -username myuser `
-                       -domain mydomain.net `
-                       -serverName server1.mydomain.net `
-                       -policyName 'My Policy' `
-                       -jobName 'My New Job'
+                 -username myuser `
+                 -domain mydomain.net `
+                 -serverName server1.mydomain.net `
+                 -policyName 'My Policy' `
+                 -jobName 'My New Job'
 # end example
 ```
 
@@ -42,10 +42,10 @@ Or to update an existing job:
 ```powershell
 # example
 ./protectSQL.ps1 -vip mycluster `
-                       -username myuser `
-                       -domain mydomain.net `
-                       -serverName server1.mydomain.net `
-                       -jobName 'My Existing Job'
+                 -username myuser `
+                 -domain mydomain.net `
+                 -serverName server1.mydomain.net `
+                 -jobName 'My Existing Job'
 # end example
 ```
 
