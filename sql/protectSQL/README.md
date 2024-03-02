@@ -10,7 +10,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-$scriptName = 'protectSQLServer'
+$scriptName = 'protectSQL'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/sql/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
@@ -19,7 +19,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 ## Components
 
-* [protectSQLServer.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/protectSQLServer/protectSQLServer.ps1): the main PowerShell script
+* [protectSQL.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/protectSQL/protectSQL.ps1): the main PowerShell script
 * [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place all files in a folder together. And run the script like so:
@@ -28,7 +28,7 @@ To create a new protection job:
 
 ```powershell
 # example
-./protectSQLServer.ps1 -vip mycluster `
+./protectSQL.ps1 -vip mycluster `
                        -username myuser `
                        -domain mydomain.net `
                        -serverName server1.mydomain.net `
@@ -41,7 +41,7 @@ Or to update an existing job:
 
 ```powershell
 # example
-./protectSQLServer.ps1 -vip mycluster `
+./protectSQL.ps1 -vip mycluster `
                        -username myuser `
                        -domain mydomain.net `
                        -serverName server1.mydomain.net `
@@ -63,15 +63,24 @@ Or to update an existing job:
 * -emailMfaCode: (optional) send MFA code via email
 * -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
 
-## Other Parameters
+## Mandatory Parameters
 
 * -jobname: name of protection job
+
+## Selection Parameters
+
 * -serverName: (optional) name of one or more registered SQL servers to protect (comma separated)
 * -serverList: (optional) text file of registered SQL servers to protect (one per line)
-* -backupType: (optional) File, Volume or VDI (default is File)
 * -instanceName: (optional) one or more instance names to protect (comma separated)
 * -dbName: (optional) name of one or more databases to protect (comma separated)
 * -dbList: (optional) text file of databases to protect (one per line)
+* -instancesOnly: (optional) auto protect existing instances but not the root of the server (so any new instances will not be protected)
+* -systemDBsOnly: (optional) only protect system DBs (for all or specified instanceName(s))
+* -unprotectedDBs: (optional) protect any unprotected databases on server
+
+## New Job Parameters
+
+* -backupType: (optional) File, Volume or VDI (default is File)
 * -policyName: (optional) name of the protection policy to use
 * -startTime: (optional) e.g. '18:30' (defaults to 8PM)
 * -timeZone: (optional) e.g. 'America/New_York' (default is 'America/Los_Angeles')
@@ -79,11 +88,11 @@ Or to update an existing job:
 * -fullProtectionSlaTimeMins: (optional) default is 120
 * -storageDomainName: (optional) default is 'DefaultStorageDomain' (or 'Direct_Archive_Viewbox' for cloud archive direct jobs)
 * -paused: (optional) pause new protection job
-* -instancesOnly: (optional) auto protect existing instances but not the root of the server (so any new instances will not be protected)
-* -systemDBsOnly: (optional) only protect system DBs (for all or specified instanceName(s))
+
+## Other Parameters
+
 * -numStreams: (optional) only applicable to VDI backups (default is 3)
 * -withClause: (optional) only applicable to VDI backups (e.g. 'WITH Compression')
 * -logNumStreams: (optional) default is 3 (requires Cohesity 6.8.1 or later)
 * -logWithClause: (optional) e.g. 'WITH MAXTRANSFERSIZE = 4194304, BUFFERCOUNT = 64, COMPRESSION' (requires Cohesity 6.8.1 or later)
 * -sourceSideDeduplication: (optional) use source side deduplication
-* -unprotectedDBs: (optional) protect any unprotected databases on server
