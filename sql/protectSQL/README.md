@@ -72,9 +72,9 @@ Or to update an existing job:
 * -serverName: (optional) name of one or more registered SQL servers to protect (comma separated)
 * -serverList: (optional) text file of registered SQL servers to protect (one per line)
 * -instanceName: (optional) one or more instance names to protect (comma separated)
+* -instancesOnly: (optional) auto protect existing instances but not the root of the server (so any instances added later will not be protected)
 * -dbName: (optional) name of one or more databases to protect (comma separated)
 * -dbList: (optional) text file of databases to protect (one per line)
-* -instancesOnly: (optional) auto protect existing instances but not the root of the server (so any new instances will not be protected)
 * -systemDBsOnly: (optional) only protect system DBs (for all or specified instanceName(s))
 * -unprotectedDBs: (optional) protect any unprotected databases on server
 
@@ -86,7 +86,7 @@ Or to update an existing job:
 * -timeZone: (optional) e.g. 'America/New_York' (default is 'America/Los_Angeles')
 * -incrementalProtectionSlaTimeMins: (optional) default 60
 * -fullProtectionSlaTimeMins: (optional) default is 120
-* -storageDomainName: (optional) default is 'DefaultStorageDomain' (or 'Direct_Archive_Viewbox' for cloud archive direct jobs)
+* -storageDomainName: (optional) default is 'DefaultStorageDomain'
 * -paused: (optional) pause new protection job
 
 ## Other Parameters
