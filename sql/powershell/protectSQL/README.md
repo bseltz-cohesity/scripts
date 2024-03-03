@@ -77,6 +77,7 @@ Or to update an existing job:
 * -dbList: (optional) text file of databases to protect (one per line)
 * -systemDBsOnly: (optional) only protect system DBs (for all or specified instanceName(s))
 * -unprotectedDBs: (optional) protect any unprotected databases on server
+* -allDBs: (optional) protect all current databases (future new database will not be protected)
 * -replace: (optional) replace existing selections
 
 ## New Job Parameters

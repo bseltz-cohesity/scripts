@@ -34,6 +34,7 @@ param (
     [Parameter()][string]$logWithClause = '',
     [Parameter()][switch]$unprotectedDBs,
     [Parameter()][switch]$sourceSideDeduplication,
+    [Parameter()][switch]$allDBs,
     [Parameter()][switch]$replace
 )
 
@@ -367,6 +368,10 @@ foreach($servername in $serversToAdd){
                             addSelection $node
                         }
                     }
+                }elseif($allDBs -and ! $(isSelected $instanceSource)){
+                    foreach($node in $instanceSource.nodes){
+                        addSelection $node
+                    }
                 }else{
                     if(! $(isSelected $serverSource)){
                         addSelection $instanceSource
@@ -392,6 +397,23 @@ foreach($servername in $serversToAdd){
                     if($node.unprotectedSourcesSummary[0].leavesCount -eq 1){
                         addSelection $node
                         Write-Host "Protecting $servername"
+                    }
+                }
+            }
+        }elseif($allDBs -and $instanceName.Count -gt 0){
+            foreach($instanceSource in $serverSource.applicationNodes | Where-Object {$_.protectionSource.name -in $instanceName}){
+                foreach($dbSource in $instanceSource.nodes){
+                    if(! $(isSelected $serverSource) -and ! $(isSelected $instanceSource)){
+                        Write-Host "hi"
+                        addSelection $dbSource
+                    }
+                }
+            }
+        }elseif($allDBs){
+            foreach($instanceSource in $serverSource.applicationNodes){
+                foreach($dbSource in $instanceSource.nodes){
+                    if(! $(isSelected $serverSource) -and ! $(isSelected $instanceSource)){
+                        addSelection $dbSource
                     }
                 }
             }
