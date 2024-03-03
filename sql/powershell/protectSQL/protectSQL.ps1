@@ -33,7 +33,8 @@ param (
     [Parameter()][int]$logNumStreams = 3,
     [Parameter()][string]$logWithClause = '',
     [Parameter()][switch]$unprotectedDBs,
-    [Parameter()][switch]$sourceSideDeduplication
+    [Parameter()][switch]$sourceSideDeduplication,
+    [Parameter()][switch]$replace
 )
 
 # gather list from command line params and file
@@ -285,36 +286,91 @@ if(! $job){
     }
 }
 
+function clearSelection($thisSource){
+    $params.objects = @(@($params.objects | Where-Object {$_.id -ne $thisSource.protectionSource.id}))
+    if($thisSource.PSObject.Properties['applicationNodes']){
+        foreach($instance in $thisSource.applicationNodes){
+            $params.objects = @(@($params.objects | Where-Object {$_.id -ne $instance.protectionSource.id}))
+            if($instance.PSObject.Properties['nodes']){
+                foreach($node in $instance.nodes){
+                    $params.objects = @(@($params.objects | Where-Object {$_.id -ne $node.protectionSource.id}))
+                }
+            }
+        }
+    }
+    if($thisSource.PSObject.Properties['nodes']){
+        foreach($node in $thisSource.nodes){
+            $params.objects = @(@($params.objects | Where-Object {$_.id -ne $node.protectionSource.id}))
+        }
+    }
+}
+
+function addSelection($thisSource){
+    $params.objects = @(@($params.objects | Where-Object {$_.id -ne $thisSource.protectionSource.id}) + @{'id' = $thisSource.protectionSource.id})
+    if($thisSource.PSObject.Properties['applicationNodes']){
+        foreach($instance in $thisSource.applicationNodes){
+            $params.objects = @(@($params.objects | Where-Object {$_.id -ne $instance.protectionSource.id}))
+            if($instance.PSObject.Properties['nodes']){
+                foreach($node in $instance.nodes){
+                    $params.objects = @(@($params.objects | Where-Object {$_.id -ne $node.protectionSource.id}))
+                }
+            }
+        }
+    }
+    if($thisSource.PSObject.Properties['nodes']){
+        foreach($node in $thisSource.nodes){
+            $params.objects = @(@($params.objects | Where-Object {$_.id -ne $node.protectionSource.id}))
+        }
+    }
+}
+
+function isSelected($thisSource){
+    $existingSelection = @(@($params.objects | Where-Object {$_.id -eq $thisSource.protectionSource.id}))
+    if($existingSelection.Count -gt 0){
+        return $True
+    }else{
+        return $false
+    }
+}
+
 # server source
 foreach($servername in $serversToAdd){
     $serverSource = $sources[0].nodes | Where-Object {$_.protectionSource.name -eq $servername}
     if(! $serverSource){
         Write-Host "Server $servername not found!" -ForegroundColor Yellow
-        Write-Host "Make sure to enter the server name exactly as listed in Cohesity" -ForegroundColor Yellow
-        exit 1
+        continue
     }
-    
+    if($replace){
+        clearSelection $serverSource
+    }
     if($instanceName.Count -eq 0 -and $instancesOnly){
         Write-Host "Protecting $servername"
-        foreach($instanceId in $serverSource.applicationNodes.protectionSource.id){
-            $params.objects = @(@($params.objects | Where-Object {$_.id -ne $instanceId}) + @{ 'id' = $instanceId})
+        foreach($instanceSource in $serverSource.applicationNodes){
+            if(! $(isSelected $serverSource)){
+                addSelection $instanceSource
+            }
         }
     }elseif($instanceName.Count -gt 0 -and $dbsToAdd.Count -eq 0){
         foreach($instance in $instanceName){
             Write-Host "Protecting $servername/$instance"
+            if(isSelected $serverSource){
+                break
+            }
             $instanceSource = $serverSource.applicationNodes | Where-Object {$_.protectionSource.name -eq $instance}
             if(! $instanceSource){
                 Write-Host "Instance $instance not found on server $servername"
                 exit
             }else{
-                if($systemDBsOnly){
+                if($systemDBsOnly -and ! $(isSelected $instanceSource)){
                     foreach($node in $instanceSource.nodes){
                         if(($node.protectionSource.name -split '/')[1] -in $systemDBs){
-                            $params.objects = @(@($params.objects | Where-Object {$_.id -ne $node.protectionSource.id}) + @{ 'id' = $node.protectionSource.id})
+                            addSelection $node
                         }
                     }
                 }else{
-                    $params.objects = @(@($params.objects | Where-Object {$_.id -ne $instanceSource.protectionSource.id}) + @{ 'id' = $instanceSource.protectionSource.id})
+                    if(! $(isSelected $serverSource)){
+                        addSelection $instanceSource
+                    }
                 }
             }
         }
@@ -323,7 +379,9 @@ foreach($servername in $serversToAdd){
             foreach($instanceSource in $serverSource.applicationNodes){
                 foreach($node in $instanceSource.nodes){
                     if(($node.protectionSource.name -split '/')[1] -in $systemDBs){
-                        $params.objects = @(@($params.objects | Where-Object {$_.id -ne $node.protectionSource.id}) + @{ 'id' = $node.protectionSource.id})
+                        if(! $(isSelected $serverSource) -and ! $(isSelected $instanceSource)){
+                            addSelection $node
+                        }
                         Write-Host "Protecting $servername System DBs"
                     }
                 }
@@ -332,7 +390,7 @@ foreach($servername in $serversToAdd){
             foreach($instanceSource in $serverSource.applicationNodes){
                 foreach($node in $instanceSource.nodes){
                     if($node.unprotectedSourcesSummary[0].leavesCount -eq 1){
-                        $params.objects = @(@($params.objects | Where-Object {$_.id -ne $node.protectionSource.id}) + @{ 'id' = $node.protectionSource.id})
+                        addSelection $node
                         Write-Host "Protecting $servername"
                     }
                 }
@@ -348,12 +406,14 @@ foreach($servername in $serversToAdd){
                         Write-Host "$thisDBName not found in $serverName/$($instanceSource.protectionSource.name)" -ForegroundColor Yellow
                         continue
                     }
-                    $params.objects = @(@($params.objects | Where-Object {$_.id -ne $dbSource.protectionSource.id}) + @{ 'id' = $dbSource.protectionSource.id})
+                    if(! $(isSelected $serverSource) -and ! $(isSelected $instanceSource)){
+                        addSelection $dbSource
+                    }
                     Write-Host "Protecting $serverName/$($instanceSource.protectionSource.name)/$thisDBName"
                 }
             }
         }else{
-            $params.objects = @(@($params.objects | Where-Object {$_.id -ne $serverSource.protectionSource.id}) + @{ 'id' = $serverSource.protectionSource.id})
+            addSelection $serverSource
             Write-Host "Protecting $servername"
         }
     }
