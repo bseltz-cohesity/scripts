@@ -39,6 +39,7 @@ parser.add_argument('-lc', '--logclause', type=str, default='')
 parser.add_argument('-ssd', '--sourcesidededuplication', action='store_true')
 parser.add_argument('-o', '--instancesonly', action='store_true')
 parser.add_argument('-so', '--systemdbsonly', action='store_true')
+parser.add_argument('-a', '--alldbs', action='store_true')
 parser.add_argument('-ud', '--unprotecteddbs', action='store_true')
 parser.add_argument('-r', '--replace', action='store_true')
 
@@ -78,6 +79,7 @@ instancesonly = args.instancesonly
 systemdbsonly = args.systemdbsonly
 unprotecteddbs = args.unprotecteddbs
 replace = args.replace
+alldbs = args.alldbs
 
 
 # gather server list
@@ -131,7 +133,6 @@ job = [job for job in jobs if job['name'].lower() == jobname.lower()]
 
 if not job or len(job) < 1:
     newJob = True
-    print("Creating new Job '%s'" % jobname)
 
     # find protectionPolicy
     if policyname is None:
@@ -283,7 +284,6 @@ if not job or len(job) < 1:
 
 else:
     job = job[0]
-    print("Updating job %s" % jobname)
     if job['mssqlParams']['protectionType'] == 'kFile':
         params = job['mssqlParams']['fileProtectionTypeParams']
         params['logBackupNumStreams'] = logstreams
@@ -372,10 +372,14 @@ for server in servernames:
             else:
                 instanceSource = instanceSource[0]
                 if systemdbsonly is True:
-                    if not isSelected(instanceSource):
+                    if not isSelected(instanceSource) and not isSelected(serverSource):
                         for db in instanceSource['nodes']:
                             if db['protectionSource']['name'].split('/')[1] in systemDBs:
                                 addSelection(db)
+                elif alldbs:
+                    if not isSelected(instanceSource) and not isSelected(serverSource):
+                        for db in instanceSource['nodes']:
+                            addSelection(db)
                 else:
                     addSelection(instanceSource)
     else:
@@ -386,7 +390,13 @@ for server in servernames:
                         if node['protectionSource']['name'].lower().split('/')[1] in systemDBs:
                             if not isSelected(instanceSource):
                                 addSelection(node)
-            print("Protecting %s System DBs" % server)
+                    print("Protecting %s/%s System DBs" % (server, instanceSource['protectionSource']['name']))
+        elif alldbs is True:
+            print("Protecting %s" % server)
+            for instanceSource in serverSource['applicationNodes']:
+                if not isSelected(instanceSource) and not isSelected(serverSource):
+                    for node in instanceSource['nodes']:
+                        addSelection(node)
         elif unprotecteddbs is True:
             for instanceSource in serverSource['applicationNodes']:
                 for node in instanceSource['nodes']:
@@ -417,6 +427,7 @@ if len(params['objects']) == 0:
     print("Nothing protected")
 
 if newJob is True:
+    print("Creating Job '%s'" % jobname)
     result = api('post', 'data-protect/protection-groups', job, v=2)
 else:
     print("Updating Job '%s'" % jobname)

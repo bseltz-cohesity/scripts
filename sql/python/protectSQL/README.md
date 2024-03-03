@@ -84,6 +84,7 @@ Protect a SQL Database:
 * -o, --instancesonly: (optional) protect current instances (future new instances will not be protected)
 * -so, --systemdbsonly: (optional) only protect system DBs
 * -ud, --unprotecteddbs: (optional) protect unprotected DBs
+* -a, --alldbs: (optional) protect all current databases (future new database will not be protected)
 * -r, --replace: (optional) replace existing selections
 
 ## New Job Parameters
