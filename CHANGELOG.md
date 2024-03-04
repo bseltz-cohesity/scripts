@@ -1,5 +1,13 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-03-04
+
+* [cloneOracle.py](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/cloneOracle) [`Fix`] fixed error "NameError: name 'targetEntity' is not defined" when target server is not found
+
+## 2024-03-03
+
+* [protectSQL.py](https://github.com/bseltz-cohesity/scripts/tree/master/sql/python/protectSQL) [`New`] consolidated script to protect SQL servers, instances, databases
+
 ## 2024-03-02
 
 * [protectSQL.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/sql/powershell/protectSQL) [`New`] consolidated script to protect SQL servers, instances, databases (protectSQLDB.ps1 and protectSQLServer.ps1 have been replaced)
