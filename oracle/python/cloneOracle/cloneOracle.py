@@ -122,12 +122,13 @@ version = latestdb['vmDocument']['versions'][0]
 ownerId = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['ownerId']
 
 ### find target host
+targetEntity = None
 entities = api('get', '/appEntities?appEnvType=19')
 for entity in entities:
     if entity['appEntity']['entity']['displayName'].lower() == targetserver.lower():
         targetEntity = entity
 if targetEntity is None:
-    print("target server not found")
+    print("target server %s not found" % targetserver)
     exit()
 
 # handle log replay
