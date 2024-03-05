@@ -61,7 +61,7 @@ foreach ($Parameter in $ParameterList) {
 }
 
 # headings
-"""Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Storage Domain ID"",""Storage Domain Name"",""Environment"",""Source Name"",""Object Name"",""Front End Allocated $unit"",""Front End Used $unit"",""$unit Read"",""$unit Written"",""$unit Written plus Resiliency"",""Reduction Ratio"",""$unit Written Last $growthDays Days"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description"",""Cluster Used $unit"",""Cluster Reduction Ratio""" | Out-File -FilePath $outfileName # -Encoding utf8
+"""Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Storage Domain ID"",""Storage Domain Name"",""Environment"",""Source Name"",""Object Name"",""Front End Allocated $unit"",""Front End Used $unit"",""$unit Read"",""$unit Written"",""$unit Written plus Resiliency"",""Reduction Ratio"",""$unit Written Last $growthDays Days"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Newest DataLock Expiry"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description"",""Cluster Used $unit"",""Cluster Reduction Ratio""" | Out-File -FilePath $outfileName # -Encoding utf8
 
 if($secondFormat){
     $outfile2 = "customFormat2-storagePerObjectReport-$dateString.csv"
@@ -224,6 +224,7 @@ function reportStorage(){
             $archiveCount = 0
             $oldestArchive = '-'
             $endUsecs = $nowUsecs
+            $lastDataLock = '-'
             while($True){
                 if($dbg){
                     output "    getting runs"
@@ -232,6 +233,18 @@ function reportStorage(){
                 foreach($run in $runs.runs){
                     if($run.isLocalSnapshotsDeleted -ne $True){
                         $snap = $null
+                        if($run.PSObject.Properties['localBackupInfo']){
+                            $runInfo = $run.localBackupInfo
+                        }elseif($run.PSObject.Properties['originalBackupInfo']){
+                            $runInfo = $run.originalBackupInfo
+                        }else{
+                            $runInfo = $run.archivalInfo.archivalTargetResults[0]
+                        }
+                        if($lastDataLock -eq '-' -and $runInfo.PSObject.Properties['dataLockConstraints'] -and $runInfo.dataLockConstraints.PSObject.Properties['expiryTimeUsecs'] -and $runInfo.dataLockConstraints.expiryTimeUsecs -gt 0){
+                            if($runInfo.dataLockConstraints.expiryTimeUsecs -gt $nowUsecs){
+                                $lastDataLock = usecsToDate $runInfo.dataLockConstraints.expiryTimeUsecs
+                            }
+                        }
                         foreach($object in $run.objects | Where-Object {$_.object.environment -ne $job.environment}){
                             $sourceNames["$($object.object.id)"] = $object.object.name
                         }
@@ -269,6 +282,7 @@ function reportStorage(){
                                     $objects[$objId]['newestBackup'] = $snap.snapshotInfo.startTimeUsecs
                                     $objects[$objId]['oldestBackup'] = $snap.snapshotInfo.startTimeUsecs
                                 }
+                                $objects[$objId]['lastDataLock'] = $lastDataLock
                                 if($object.object.PSObject.Properties['sourceId']){
                                     $objects[$objId]['sourceId'] = $object.object.sourceId
                                 }
@@ -318,6 +332,7 @@ function reportStorage(){
                                     $objects[$objId]['numSnaps'] += 1
                                 }
                                 if($snap){
+                                    $objects[$objId]['lastDataLock'] = $lastDataLock
                                     $objects[$objId]['oldestBackup'] = $snap.snapshotInfo.startTimeUsecs
                                     $objects[$objId]['bytesRead'] += $snap.snapshotInfo.stats.bytesRead
                                     if($snap.snapshotInfo.startTimeUsecs -gt $growthDaysUsecs){
@@ -411,7 +426,6 @@ function reportStorage(){
                                 if($thisObject['numLogs'] -gt $parentObjects[$thisObject['sourceId']]['numLogs']){
                                     $parentObjects[$thisObject['sourceId']]['numLogs'] = $thisObject['numLogs']
                                 }
-                                # Write-Host "$sourceName - $($thisObject['name']) - $($thisObject['sourceId']) - existing - $($parentObjects[$thisObject['sourceId']]['bytesRead'])"
                             }
                         }
                     }
@@ -512,7 +526,7 @@ function reportStorage(){
                 if($job.environment -eq 'kVMware'){
                     $alloc = toUnits $thisObject['alloc']
                 }
-                """$($cluster.name)"",""$origin"",""$statsAge"",""$($job.name)"",""$tenant"",""$($job.storageDomainId)"",""$sdName"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$alloc"",""$objFESize"",""$(toUnits $objDataIn)"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$($thisObject['numSnaps'])"",""$($thisObject['numLogs'])"",""$(usecsToDate $thisObject['oldestBackup'])"",""$(usecsToDate $thisObject['newestBackup'])"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)"",""$clusterUsed"",""$clusterReduction""" | Out-File -FilePath $outfileName -Append
+                """$($cluster.name)"",""$origin"",""$statsAge"",""$($job.name)"",""$tenant"",""$($job.storageDomainId)"",""$sdName"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$alloc"",""$objFESize"",""$(toUnits $objDataIn)"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$($thisObject['numSnaps'])"",""$($thisObject['numLogs'])"",""$(usecsToDate $thisObject['oldestBackup'])"",""$(usecsToDate $thisObject['newestBackup'])"",""$($thisObject['lastDataLock'])"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)"",""$clusterUsed"",""$clusterReduction""" | Out-File -FilePath $outfileName -Append
                 if($secondFormat){
                     """$($cluster.name)"",""$monthString"",""$fqObjectName"",""$($job.description)"",""$(toUnits $objWrittenWithResiliency)""" | Out-File -FilePath $outfile2 -Append
                 }
@@ -527,6 +541,7 @@ function reportStorage(){
                 $thisStat = $stats.statsList | Where-Object {$_.name -eq $job.name}
             }
             $endUsecs = $nowUsecs
+            $lastDataLock = '-'
             while($True){
                 if($dbg){
                     output "    getting runs"
@@ -534,6 +549,18 @@ function reportStorage(){
                 $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&excludeNonRestorableRuns=true&useCachedData=true"
                 foreach($run in $runs.runs){
                     if($run.isLocalSnapshotsDeleted -ne $True){
+                        if($run.PSObject.Properties['localBackupInfo']){
+                            $runInfo = $run.localBackupInfo
+                        }elseif($run.PSObject.Properties['originalBackupInfo']){
+                            $runInfo = $run.originalBackupInfo
+                        }else{
+                            $runInfo = $run.archivalInfo.archivalTargetResults[0]
+                        }
+                        if($lastDataLock -eq '-' -and $runInfo.PSObject.Properties['dataLockConstraints'] -and $runInfo.dataLockConstraints.PSObject.Properties['expiryTimeUsecs'] -and $runInfo.dataLockConstraints.expiryTimeUsecs -gt 0){
+                            if($runInfo.dataLockConstraints.expiryTimeUsecs -gt $nowUsecs){
+                                $lastDataLock = usecsToDate $runInfo.dataLockConstraints.expiryTimeUsecs
+                            }
+                        }
                         foreach($object in $run.objects){
                             if($object.PSObject.Properties['localSnapshotInfo']){
                                 $snap = $object.localSnapshotInfo
@@ -549,9 +576,11 @@ function reportStorage(){
                                 $viewHistory[$object.object.name]['oldestBackup'] = usecsToDate $snap.snapshotInfo.startTimeUsecs
                                 $viewHistory[$object.object.name]['archiveCount'] = 0
                                 $viewHistory[$object.object.name]['oldestArchive'] = '-'
+                                $viewHistory[$object.object.name]['lastDataLock'] = $lastDataLock
                             }
                             $viewHistory[$object.object.name]['oldestBackup'] = usecsToDate $snap.snapshotInfo.startTimeUsecs
                             $viewHistory[$object.object.name]['numSnaps'] += 1
+                            $viewHistory[$object.object.name]['lastDataLock'] = $lastDataLock
                         }
                     }
                     if($run.PSObject.Properties['archivalInfo'] -and $run.archivalInfo.PSObject.Properties['archivalTargetResults']){
@@ -628,6 +657,7 @@ function reportStorage(){
         $newestBackup = '-'
         $archiveCount = 0
         $oldestArchive = '-'
+        $lastDataLock = '-'
         if($jobName -ne '-'){
             if($view.name -in $viewHistory.Keys){
                 $newestBackup = $viewHistory[$view.name]['newestBackup']
@@ -635,6 +665,7 @@ function reportStorage(){
                 $numSnaps = $viewHistory[$view.name]['numSnaps']
                 $oldestArchive = $viewHistory[$view.name]['oldestArchive']
                 $archiveCount = $viewHistory[$view.name]['archiveCount']
+                $lastDataLock = $viewHistory[$view.name]['lastDataLock']
             }
         }
         $sourceName = $view.storageDomainName
@@ -685,7 +716,7 @@ function reportStorage(){
                 }
             }
         }
-        """$($cluster.name)"",""$origin"",""$statsAge"",""$($jobName)"",""$($view.tenantId -replace ".$")"",""$($view.storageDomainId)"",""$($view.storageDomainName)"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$objFESize"",""$(toUnits $dataIn)"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$numSnaps"",""$numLogs"",""$oldestBackup"",""$newestBackup"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($view.description)"",""$clusterUsed"",""$clusterReduction""" | Out-File -FilePath $outfileName -Append
+        """$($cluster.name)"",""$origin"",""$statsAge"",""$($jobName)"",""$($view.tenantId -replace ".$")"",""$($view.storageDomainId)"",""$($view.storageDomainName)"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$objFESize"",""$(toUnits $dataIn)"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$numSnaps"",""$numLogs"",""$oldestBackup"",""$newestBackup"",""$lastDataLock"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($view.description)"",""$clusterUsed"",""$clusterReduction""" | Out-File -FilePath $outfileName -Append
         if($secondFormat){
             """$($cluster.name)"",""$monthString"",""$viewName"",""$($view.description)"",""$(toUnits $consumption)""" | Out-File -FilePath $outfile2 -Append
         }
