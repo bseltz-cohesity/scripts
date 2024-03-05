@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-03-05
+
+* [protectWindows.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/protectWindows) [`Update`] modernized authentication
+
 ## 2024-03-04
 
 * [cloneOracle.py](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/cloneOracle) [`Fix`] fixed error "NameError: name 'targetEntity' is not defined" when target server is not found
