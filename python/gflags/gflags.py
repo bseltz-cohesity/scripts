@@ -4,6 +4,7 @@
 # import pyhesity wrapper module
 from pyhesity import *
 import codecs
+from time import sleep
 
 ### command line arguments
 import argparse
@@ -72,34 +73,45 @@ if mcm or vip.lower() == 'helios.cohesity.com':
 cluster = api('get', 'cluster')
 
 
-def setGflag(servicename, flagname, flagvalue, reason):
-    print('Setting %s: %s = %s' % (servicename, flagname, flagvalue))
-    gflag = {
-        'serviceName': servicename,
-        'gflags': [
-            {
-                'name': flagname,
-                'value': flagvalue,
-                'reason': reason
-            }
-        ],
-        'effectiveNow': False
-    }
-
-    if effectivenow:
-        gflag['effectiveNow'] = True
+def setGflag(servicename, flagname, reason, flagvalue=None):
 
     if clear is True:
-        gflag['clear'] = True
-
+        print('Clearing %s: %s' % (servicename, flagname))
+        gflag = {
+            'serviceName': servicename,
+            'gflags': [
+                {
+                    'name': flagname,
+                    'clear': True,
+                    'reason': reason
+                }
+            ],
+            'effectiveNow': False
+        }
+    else:
+        print('Setting %s: %s = %s' % (servicename, flagname, flagvalue))
+        gflag = {
+            'serviceName': servicename,
+            'gflags': [
+                {
+                    'name': flagname,
+                    'value': flagvalue,
+                    'reason': reason
+                }
+            ],
+            'effectiveNow': False
+        }
+    if effectivenow:
+        gflag['effectiveNow'] = True
     response = api('put', '/clusters/gflag', gflag)
+    sleep(1)
 
 
 servicestorestart = []
 servicescantrestart = []
 
 # set a flag
-if flagvalue is not None:
+if flagvalue is not None or clear is True:
     if servicename is None or flagname is None or reason is None:
         print('-servicename, -flagname, -flagvalue and -reason are all required to set a gflag')
         exit()
@@ -134,14 +146,15 @@ flags = api('get', '/clusters/gflag')
 for service in flags:
     servicename = service['serviceName']
     print('\n%s:' % servicename)
-    gflags = service['gflags']
-    for gflag in gflags:
-        flagname = gflag['name']
-        flagvalue = gflag['value']
-        reason = gflag['reason']
-        print('    %s: %s (%s)' % (flagname, flagvalue, reason))
-        flagvalue = flagvalue.replace(',', ';;')
-        f.write('%s,%s,%s,%s\n' % (servicename, flagname, flagvalue, reason))
+    if 'gflags' in service:
+        gflags = service['gflags']
+        for gflag in gflags:
+            flagname = gflag['name']
+            flagvalue = gflag['value']
+            reason = gflag['reason']
+            print('    %s: %s (%s)' % (flagname, flagvalue, reason))
+            flagvalue = flagvalue.replace(',', ';;')
+            f.write('%s,%s,%s,%s\n' % (servicename, flagname, flagvalue, reason))
 
 f.close()
 
