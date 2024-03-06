@@ -62,8 +62,8 @@ Place both files in a folder together and run the main script like so:
 * -mf, --metadatafile: (optional) metadata file path
 * -i, --include: (optional) file path to include (use multiple times for multiple paths)
 * -n, --includefile: (optional) a text file full of include paths
-* -x, --exclude: (optional) file path to exclude (use multiple times for multiple paths)
-* -f, --excludefile: (optional) a text file full of exclude file paths
+* -e, --exclude: (optional) file path to exclude (use multiple times for multiple paths)
+* -x, --excludefile: (optional) a text file full of exclude file paths
 * -m, --skipnestedmountpoints: (optional - 6.3 and below) if omitted, nested mount paths are not skipped
 * -sd, --storagedomain: (optional) name of storage domain to create job in (default is DefaultStorageDomain)
 * -p, --policyname: (optional) name of protection policy to use for new job (only required for new job)
