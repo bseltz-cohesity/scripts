@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2024.02.19
+# version 2024.03.06
 
 # version history
 # ===============
@@ -22,6 +22,7 @@
 # 2023-12-03 - version bump
 # 2023-12-11 - Added Succeeded with Warning extended exit code 9
 # 2024.02.19 - expanded existing run string matches
+# 2024.03.06 - moved cache wait until after authentication
 #
 # extended error codes
 # ====================
@@ -154,8 +155,6 @@ if interactive:
     startwaittime = interactivestartwaittime
     retrywaittime = interactiveretrywaittime
 
-sleep(cachewaittime)
-
 # enforce sleep time
 if sleeptimesecs < 30:
     sleeptimesecs = 30
@@ -241,6 +240,11 @@ if apiconnected() is False:
         bail(2)
     else:
         bail(1)
+
+if cachewaittime > 0:
+    if debugger:
+        print(':DEBUG: waiting for read replica cache...')
+    sleep(cachewaittime)
 
 sources = {}
 
