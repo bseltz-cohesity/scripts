@@ -51,30 +51,39 @@ if($USING_HELIOS){
 $cluster = api get cluster
 
 
-function setGflag($servicename, $flagname, $flagvalue, $reason){
+function setGflag($servicename, $flagname, $reason, $flagvalue=$null){
     if($clear){
         write-host "clearing  $($servicename):  $flagname"
+        $gflag = @{
+            'gflags' = @(
+                @{
+                    'name' = $flagname;
+                    'reason' = $reason;
+                    'clear' = $true
+                }
+            );
+            'serviceName' = $servicename;
+            'effectiveNow' = $false
+        }
     }else{
         write-host "setting  $($servicename):  $flagname = $flagvalue"
-    }
-    $gflag = @{
-        'gflags' = @(
-            @{
-                'name' = $flagname;
-                'reason' = $reason;
-                'value' = $flagvalue
-            }
-        );
-        'serviceName' = $servicename;
-        'effectiveNow' = $false
+        $gflag = @{
+            'gflags' = @(
+                @{
+                    'name' = $flagname;
+                    'reason' = $reason;
+                    'value' = $flagvalue
+                }
+            );
+            'serviceName' = $servicename;
+            'effectiveNow' = $false
+        }
     }
     if($effectiveNow){
         $gflag.effectiveNow = $True
     }
-    if($clear){
-        $gflag['clear'] = $True
-    }
     $null = api put '/clusters/gflag' $gflag
+    sleep 1
 }
 
 $restartServices = @()

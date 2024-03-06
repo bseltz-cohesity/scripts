@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-03-06
+
+* [gflags.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/gflags) [`Fix`] fixed clear option
+* [gflags.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/gflags) [`Fix`] fixed clear option
+
 ## 2024-03-05
 
 * [protectWindows.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/protectWindows) [`Update`] modernized authentication
