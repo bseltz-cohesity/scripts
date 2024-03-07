@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2024.03.06
+# version 2024.03.07
 
 # version history
 # ===============
@@ -23,6 +23,7 @@
 # 2023-12-11 - Added Succeeded with Warning extended exit code 9
 # 2024.02.19 - expanded existing run string matches
 # 2024.03.06 - moved cache wait until after authentication
+# 2024.03.07 - minor updates to progress loop
 #
 # extended error codes
 # ====================
@@ -156,8 +157,8 @@ if interactive:
     retrywaittime = interactiveretrywaittime
 
 # enforce sleep time
-if sleeptimesecs < 30:
-    sleeptimesecs = 30
+# if sleeptimesecs < 30:
+#     sleeptimesecs = 30
 
 if newruntimeoutsecs < 720:
     newruntimeoutsecs = 720
@@ -730,11 +731,10 @@ if wait is True:
     status = 'unknown'
     lastProgress = -1
     statusRetryCount = 0
+    sleep(sleeptimesecs)
     while status not in finishedStates:
         x = 0
         s = 0
-        if lastProgress < 100:
-            sleep(sleeptimesecs)
         try:
             status = run['localBackupInfo']['status']
             if exitstring:
@@ -779,13 +779,13 @@ if wait is True:
                     progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&excludeSubTasks=false&includeFinishedTasks=false&useCachedData=%s' % (progressPath, cacheSetting), timeout=timeoutsec)
                     progressTotal = progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']
                     percentComplete = int(round(progressTotal))
-                    statusRetryCount = 0
                     if percentComplete > lastProgress:
                         if progress:
                             out('%s%% completed' % percentComplete)
-                        lastProgress = percentComplete
+                    lastProgress = percentComplete
                     if percentComplete < 100:
                         sleep(sleeptimesecs)
+                    statusRetryCount = 0
                 except Exception:
                     sleep(sleeptimesecs)
                     statusRetryCount += 1
@@ -795,9 +795,10 @@ if wait is True:
                             bail(5)
                         else:
                             bail(1)
-            statusRetryCount = 0
+            # statusRetryCount = 0
             run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=false&useCachedData=%s' % (v2JobId, v2RunId, cacheSetting), v=2, timeout=timeoutsec)
         except Exception:
+            print('err')
             statusRetryCount += 1
             if debugger:
                 ":DEBUG: error getting updated status"
