@@ -2,6 +2,7 @@
 
 ## 2024-03-06
 
+* [heliosUsers.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/helios-other/powershell/heliosUsers) [`Updated`] Added created time to report output
 * [backupNow.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/backupNow) [`Update`] moved read replica cache wait to after authentication
 * [gflags.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/gflags) [`Fix`] fixed clear option
 * [gflags.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/gflags) [`Fix`] fixed clear option
