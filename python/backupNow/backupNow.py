@@ -798,7 +798,6 @@ if wait is True:
             # statusRetryCount = 0
             run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=false&useCachedData=%s' % (v2JobId, v2RunId, cacheSetting), v=2, timeout=timeoutsec)
         except Exception:
-            print('err')
             statusRetryCount += 1
             if debugger:
                 ":DEBUG: error getting updated status"
