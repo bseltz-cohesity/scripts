@@ -56,14 +56,14 @@ Place both files in a folder together and run the main script like so:
 ## Parameters
 
 * -s, --servername: (optional) name of server to add to the job (use multiple times for multiple)
-* -l, --serverlist: (optional) list of server names in a text file
+* -l, --serverlist: (optional) list of server names in a text file (one per line)
 * -j, --jobname: name of the job to add the server to
 * -a, --alllocaldrives: (optional) protect all local drives
 * -mf, --metadatafile: (optional) metadata file path
 * -i, --include: (optional) file path to include (use multiple times for multiple paths)
-* -n, --includefile: (optional) a text file full of include paths
+* -n, --includefile: (optional) a text file of include paths (one per line)
 * -e, --exclude: (optional) file path to exclude (use multiple times for multiple paths)
-* -x, --excludefile: (optional) a text file full of exclude file paths
+* -x, --excludefile: (optional) a text file of exclude paths (one per line)
 * -m, --skipnestedmountpoints: (optional - 6.3 and below) if omitted, nested mount paths are not skipped
 * -sd, --storagedomain: (optional) name of storage domain to create job in (default is DefaultStorageDomain)
 * -p, --policyname: (optional) name of protection policy to use for new job (only required for new job)
