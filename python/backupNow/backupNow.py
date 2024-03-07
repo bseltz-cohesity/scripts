@@ -157,8 +157,8 @@ if interactive:
     retrywaittime = interactiveretrywaittime
 
 # enforce sleep time
-# if sleeptimesecs < 30:
-#     sleeptimesecs = 30
+if sleeptimesecs < 30:
+    sleeptimesecs = 30
 
 if newruntimeoutsecs < 720:
     newruntimeoutsecs = 720
