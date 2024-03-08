@@ -20,7 +20,7 @@
 # 2023-12-11 - Added Succeeded with Warning extended exit code 9
 # 2023.12.13 - re-ordered auth parameters (to force first unnamed parameter to be interpreted as password)
 # 2024.02.19 - expanded existing run string matches
-# 2024.03.08 - refactored status monitor loop, added -q --quickdemo mode
+# 2024.03.08 - refactored status monitor loop, added -quick mode
 #
 # extended error codes
 # ====================
@@ -633,7 +633,8 @@ while($result -ne ""){
                 output "job is already running"
                 exit 0
             }
-            output "Waiting for existing job run to finish..."
+            output $runError
+            # output "Waiting for existing job run to finish..."
             $reportWaiting = $false
         }
     }
