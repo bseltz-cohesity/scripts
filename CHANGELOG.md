@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-03-08
+
+* [backupNow.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow) [`Update`] refactored status monitor loop, added -quick mode
+* [backupNow.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/backupNow) [`Update`] refactored status monitor loop, added -q --quickdemo mode
+
 ## 2024-03-06
 
 * [heliosUsers.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/helios-other/powershell/heliosUsers) [`Updated`] Added created time to report output
