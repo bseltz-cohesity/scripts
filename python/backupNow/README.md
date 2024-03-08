@@ -73,16 +73,17 @@ Note: -k, --keepLocalFor no longer has any affect in recent releases of 6.6 and 
 * -cwt, --cachewaittime: (optional) wait for read replica update (default is 60)
 * -rwt, --retrywaittime: (optional) wait to retry API call (default is 300)
 * -to, --timeoutsec: (optional) timeout waiting for API response (default is 300)
-* -iswt, --interactivestartwaittime: (optional) wait for job run to start when in interactive mode (default is 15)
-* -irwt, --interactiveretrywaittime: (optional) wait to retry API call  when in interactive mode (default is 30)
 * -n, --waitminutesifrunning: (optional) exit after X minutes if job is already running (default is 60)
 * -cp, --cancelpreviousrunminutes: (optional) cancel previous job run if it's been running for X minutes
 * -nrt, --newruntimeoutsecs: (optional) exit after X seconds if new run fails to start (default is 3000)
 * -est, --exitstringtimeoutsecs: (optional) timeout searching for string and exit 1 if not found
+* -int, --interactive: (optional) use quicker interactive wait times
+* -iswt, --interactivestartwaittime: (optional) wait for job run to start when in interactive mode (default is 15)
+* -irwt, --interactiveretrywaittime: (optional) wait to retry API call  when in interactive mode (default is 30)
+* -q, --quickdemo: (optional) set short wait times for a quick demo (do not use in production!!!)
 
 ## Monitoring Parameters
 
-* -int, --interactive: (optional) use quicker interactive wait times
 * -w, --wait: (optional) wait for backup run to complete and report result
 * -pr, --progress: (optional) display percent complete
 * -x, --abortifrunning: (optional) exit if job is already running (default is to wait and run after existing run is finished)

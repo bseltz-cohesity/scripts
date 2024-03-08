@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2024.03.07
+# version 2024.03.08
 
 # version history
 # ===============
@@ -24,6 +24,7 @@
 # 2024.02.19 - expanded existing run string matches
 # 2024.03.06 - moved cache wait until after authentication
 # 2024.03.07 - minor updates to progress loop
+# 2024.03.08 - refactored status monitor loop, added -q --quickdemo mode
 #
 # extended error codes
 # ====================
@@ -96,6 +97,7 @@ parser.add_argument('-to', '--timeoutsec', type=int, default=300)
 parser.add_argument('-iswt', '--interactivestartwaittime', type=int, default=15)
 parser.add_argument('-irwt', '--interactiveretrywaittime', type=int, default=30)
 parser.add_argument('-int', '--interactive', action='store_true')
+parser.add_argument('-q', '--quickdemo', action='store_true')
 args = parser.parse_args()
 
 vip = args.vip
@@ -145,16 +147,12 @@ timeoutsec = args.timeoutsec
 interactivestartwaittime = args.interactivestartwaittime
 interactiveretrywaittime = args.interactiveretrywaittime
 interactive = args.interactive
+quickdemo = args.quickdemo
 
 cacheSetting = 'true'
 if nocache:
     cacheSetting = 'false'
     cachewaittime = 0
-
-if interactive:
-    cachewaittime = 0
-    startwaittime = interactivestartwaittime
-    retrywaittime = interactiveretrywaittime
 
 # enforce sleep time
 if sleeptimesecs < 30:
@@ -162,6 +160,18 @@ if sleeptimesecs < 30:
 
 if newruntimeoutsecs < 720:
     newruntimeoutsecs = 720
+
+if interactive:
+    cachewaittime = 0
+    startwaittime = interactivestartwaittime
+    retrywaittime = interactiveretrywaittime
+
+if quickdemo:
+    cachewaittime = 0
+    startwaittime = 10
+    retrywaittime = 10
+    sleeptimesecs = 10
+    wait = True
 
 if noprompt is True:
     prompt = False
@@ -723,7 +733,7 @@ if wait is True:
         if newRunId > lastRunId:
             run = runs[0]
             break
-        sleep(retrywaittime)
+        # sleep(retrywaittime)
     out("New Job Run ID: %s" % v2RunId)
 
 # wait for job run to finish and report completion
@@ -731,12 +741,14 @@ if wait is True:
     status = 'unknown'
     lastProgress = -1
     statusRetryCount = 0
-    sleep(sleeptimesecs)
     while status not in finishedStates:
+        sleep(sleeptimesecs)
         x = 0
         s = 0
         try:
             status = run['localBackupInfo']['status']
+            if debugger:
+                print(':DEBUG: status = %s (%s)' % (status, statusRetryCount))
             if exitstring:
                 run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=true&useCachedData=%s' % (v2JobId, v2RunId, cacheSetting), v=2, timeout=timeoutsec)
                 while x < len(run['objects']) and s < exitstringtimeoutsecs:
@@ -772,43 +784,31 @@ if wait is True:
                     exit(1)
             if status in finishedStates:
                 break
-            # wait for percent complete to reach 100
-            while lastProgress < 100:
+            if progress:
                 try:
                     progressPath = run['localBackupInfo']['progressTaskId']
                     progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&excludeSubTasks=false&includeFinishedTasks=false&useCachedData=%s' % (progressPath, cacheSetting), timeout=timeoutsec)
                     progressTotal = progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']
                     percentComplete = int(round(progressTotal))
                     if percentComplete > lastProgress:
-                        if progress:
-                            out('%s%% completed' % percentComplete)
+                        out('%s%% completed' % percentComplete)
                     lastProgress = percentComplete
-                    if percentComplete < 100:
-                        sleep(sleeptimesecs)
-                    statusRetryCount = 0
                 except Exception:
-                    sleep(sleeptimesecs)
-                    statusRetryCount += 1
-                    if statusRetryCount > statusretries:
-                        out("Timed out waiting for status update")
-                        if extendederrorcodes is True:
-                            bail(5)
-                        else:
-                            bail(1)
-            # statusRetryCount = 0
+                    pass
             run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=false&useCachedData=%s' % (v2JobId, v2RunId, cacheSetting), v=2, timeout=timeoutsec)
-        except Exception:
+            statusRetryCount = 0
+        except Exception as e:
             statusRetryCount += 1
             if debugger:
-                ":DEBUG: error getting updated status"
-            else:
-                pass
+                print(e)
+                print(':DEBUG: error getting updated status')
             if statusRetryCount > statusretries:
                 out("Timed out waiting for status update")
                 if extendederrorcodes is True:
                     bail(5)
                 else:
                     bail(1)
+
     out("Job finished with status: %s" % run['localBackupInfo']['status'])
     if run['localBackupInfo']['status'] == 'Failed':
         out('Error: %s' % run['localBackupInfo']['messages'][0])

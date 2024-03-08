@@ -1,4 +1,4 @@
-# version 2024.02.19
+# version 2024.03.08
 
 # version history
 # ===============
@@ -20,6 +20,7 @@
 # 2023-12-11 - Added Succeeded with Warning extended exit code 9
 # 2023.12.13 - re-ordered auth parameters (to force first unnamed parameter to be interpreted as password)
 # 2024.02.19 - expanded existing run string matches
+# 2024.03.08 - refactored status monitor loop, added -q --quickdemo mode
 #
 # extended error codes
 # ====================
@@ -83,7 +84,8 @@ param (
     [Parameter()][int64]$interactiveStartWaitTime = 15,
     [Parameter()][int64]$interactiveRetryWaitTime = 30,
     [Parameter()][switch]$interactive,
-    [Parameter()][switch]$dbg
+    [Parameter()][switch]$dbg,
+    [Parameter()][switch]$quick
 )
 
 $cacheSetting = 'true'
@@ -243,6 +245,14 @@ function cancelRunningJob($v1JobId, $durationMinutes){
 $backupTypeEnum = @{'Regular' = 'kRegular'; 'Full' = 'kFull'; 'Log' = 'kLog'; 'System' = 'kSystem'; 'kRegular' = 'kRegular'; 'kFull' = 'kFull'; 'kLog' = 'kLog'; 'kSystem' = 'kSystem';}
 if($backupType -in $backupTypeEnum.Keys){
     $backupType = $backupTypeEnum[$backupType]
+}
+
+if($quick){
+    $cacheWaitTime = 0
+    $startWaitTime = 10
+    $retryWaitTime = 10
+    $sleepTimeSecs = 10
+    $wait = $True
 }
 
 Start-Sleep $cacheWaitTime
@@ -689,7 +699,6 @@ if($wait -or $progress){
             $run = $runs[0]
             break
         }
-        Start-Sleep $retryWaitTime
     }
     output "New Job Run ID: $v2RunId"
 }
@@ -700,9 +709,7 @@ if($wait -or $progress){
     $lastProgress = -1
     $lastStatus = 'unknown'
     while ($lastStatus -notin $finishedStates){
-        if($lastProgress -lt 100){
-            Start-Sleep $sleepTimeSecs
-        }
+        Start-Sleep $sleepTimeSecs
         $bumpStatusCount = $false
         try {
             if($run){
@@ -717,8 +724,8 @@ if($wait -or $progress){
                 if($lastStatus -in $finishedStates){
                     break
                 }
-                # wait for percent complete to reach 100
-                while($lastProgress -ne 100){
+                # display progress
+                if($progress){
                     try{
                         if($run.localBackupInfo.PSObject.Properties['progressTaskId']){
                             $progressPath = $run.localBackupInfo.progressTaskId
@@ -726,29 +733,12 @@ if($wait -or $progress){
                             $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
                             $percentComplete = [math]::Round($percentComplete, 0)
                         }
-                        $statusRetryCount = 0
                         if($percentComplete -ne $lastProgress){
-                            if($progress){
-                                "$percentComplete percent complete"
-                            }
+                            "$percentComplete percent complete"
                             $lastProgress = $percentComplete
                         }
-                        if($percentComplete -ne 100){
-                            Start-Sleep $sleepTimeSecs
-                        }
                     }catch{
-                        $bumpStatusCount = $True
-                    }
-                    if($bumpStatusCount -eq $True){
-                        $statusRetryCount += 1
-                    }
-                    if($statusRetryCount -gt $statusRetries){
-                        output "Timed out waiting for status update" -warn
-                        if($extendedErrorCodes){
-                            exit 5
-                        }else{
-                            exit 1
-                        }
+                        # do nothing
                     }
                 }
             }else{
@@ -757,7 +747,6 @@ if($wait -or $progress){
         }catch{
             $bumpStatusCount = $True
         }
-        $run = api get -v2 "data-protect/protection-groups/$v2JobId/runs/$($v2RunId)?includeObjectDetails=false&useCachedData=$cacheSetting" -timeout $timeoutSec
         if($bumpStatusCount -eq $True){
             $statusRetryCount += 1
         }
@@ -769,6 +758,7 @@ if($wait -or $progress){
                 exit 1
             }
         }
+        $run = api get -v2 "data-protect/protection-groups/$v2JobId/runs/$($v2RunId)?includeObjectDetails=false&useCachedData=$cacheSetting" -timeout $timeoutSec
     }
 }
 
