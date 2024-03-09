@@ -32,7 +32,17 @@ First, run the script WITHOUT the -commit switch to see what would be deleted.
 ./changeLocalRetention.ps1 -vip mycluster `
                            -username myuser `
                            -domain mydomain.net `
-                           -jobname 'My Job' `
+                           -jobName 'My Job' `
+                           -daysToKeep 10
+```
+
+To limit the protection groups to those whose names match the string 'VMs':
+
+```powershell
+./changeLocalRetention.ps1 -vip mycluster `
+                           -username myuser `
+                           -domain mydomain.net `
+                           -jobMatch 'vms' `
                            -daysToKeep 10
 ```
 

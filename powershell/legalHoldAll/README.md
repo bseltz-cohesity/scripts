@@ -34,6 +34,15 @@ To list the current hold state of all backups:
                    -domain mydomain.net
 ```
 
+To list the current hold state of all backups for protection groups with names containing the string 'VMs':
+
+```powershell
+./legalHoldAll.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -jobMatch 'vms'
+```
+
 To add legal hold to all backups:
 
 ```powershell
