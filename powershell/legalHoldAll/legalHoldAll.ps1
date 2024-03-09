@@ -14,6 +14,7 @@ param (
     [Parameter()][string]$clusterName,
     [Parameter()][array]$jobName,
     [Parameter()][string]$jobList,
+    [Parameter()][array]$jobMatch,
     [Parameter()][int]$numRuns = 1000,
     [Parameter()][switch]$removeHold,
     [Parameter()][switch]$addHold,
@@ -68,6 +69,22 @@ $jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Requir
 
 $jobs = api get "protectionJobs"
 
+$matchJobList = @()
+if($jobMatch.Length -gt 0){
+    foreach($job in $jobs){
+        $includeJob = $false
+        foreach($matchString in $jobMatch){
+            if($job.name -match $matchString){
+                $includeJob = $True
+            }
+        }
+        if($includeJob -eq $True){
+            $matchJobList += $job
+        }
+    }
+    $jobs = @($matchJobList)
+}
+
 # catch invalid job names
 if($jobNames.Count -gt 0){
     $notfoundJobs = $jobNames | Where-Object {$_ -notin $jobs.name}
@@ -95,7 +112,7 @@ foreach($job in $jobs | Sort-Object -Property name){
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         "{0}" -f $job.name
         while($True){
-            $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&endTimeUsecs=$endUsecs&excludeTasks=true"
+            $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&endTimeUsecs=$endUsecs&excludeTasks=true&excludeNonRestoreableRuns=true"
             foreach($run in $runs){
                 if($addHold -or $removeHold){
                     $runParams = @{

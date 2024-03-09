@@ -21,8 +21,9 @@ param (
     [Parameter()][string]$mfaCode,
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName,
-    [Parameter()][array]$jobname,
+    [Parameter()][array]$jobName,
     [Parameter()][string]$jobList,
+    [Parameter()][array]$jobMatch,
     [Parameter()][DateTime]$after,
     [Parameter()][DateTime]$before,
     [Parameter(Mandatory = $True)][string]$daysToKeep,
@@ -79,8 +80,8 @@ $jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Requir
 # filter on job name
 $jobs = api get protectionJobs
 $myjoblist = @()
-if($jobnames.Length -gt 0){
-    foreach($j in $jobnames){
+if($jobNames.Length -gt 0){
+    foreach($j in $jobNames){
         $job = $jobs | Where-Object {$_.name -eq $j}
         if($job){
             $myjoblist += $job
@@ -91,6 +92,22 @@ if($jobnames.Length -gt 0){
     }
 }else{
     $myjoblist = $jobs
+}
+
+$matchJobList = @()
+if($jobMatch.Length -gt 0){
+    foreach($job in $myjoblist){
+        $includeJob = $false
+        foreach($matchString in $jobMatch){
+            if($job.name -match $matchString){
+                $includeJob = $True
+            }
+        }
+        if($includeJob -eq $True){
+            $matchJobList += $job
+        }
+    }
+    $myjoblist = @($matchJobList)
 }
 
 function changeRetention($run){
