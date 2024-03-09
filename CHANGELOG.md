@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-03-09
+
+* [storagePerObjectReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport) [`Update`] Added clusterStats output file
+
 ## 2024-03-08
 
 * [backupNow.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow) [`Update`] refactored status monitor loop, added -quick mode

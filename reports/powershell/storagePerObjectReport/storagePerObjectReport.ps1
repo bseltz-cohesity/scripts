@@ -37,7 +37,8 @@ $monthString = (get-date).ToString('yyyy-MM')
 if(!$outfileName){
     $outfileName = "storagePerObjectReport-$dateString.csv"
 }
-$clusterStatsFileName = $outfileName -replace ('.csv', '-clusterstats.csv')
+# $clusterStatsFileName = $outfileName -replace ('.csv', '-clusterstats.csv')
+$clusterStatsFileName = "$($outfileName.Substring(0,$outfileName.Length-4))-clusterstats.csv"
 $logFileName = $outfileName -replace ".csv", ".log"
 
 # log function
