@@ -46,7 +46,7 @@ To limit the protection groups to those whose names match the string 'VMs':
                            -daysToKeep 10
 ```
 
-If you're happy with the list of snapshots that will be changed, run the script again and include the -force switch.
+If you're happy with the list of snapshots that will be changed, run the script again and include the -commit switch.
 
 Warning: Any snapshots whose new expire date is set to a date in the past will expire immediately!
 
