@@ -37,6 +37,7 @@ $monthString = (get-date).ToString('yyyy-MM')
 if(!$outfileName){
     $outfileName = "storagePerObjectReport-$dateString.csv"
 }
+$clusterStatsFileName = $outfileName -replace ('.csv', '-clusterstats.csv')
 $logFileName = $outfileName -replace ".csv", ".log"
 
 # log function
@@ -62,6 +63,7 @@ foreach ($Parameter in $ParameterList) {
 
 # headings
 """Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Storage Domain ID"",""Storage Domain Name"",""Environment"",""Source Name"",""Object Name"",""Front End Allocated $unit"",""Front End Used $unit"",""$unit Read"",""$unit Written"",""$unit Written plus Resiliency"",""Reduction Ratio"",""$unit Written Last $growthDays Days"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Newest DataLock Expiry"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description"",""Cluster Used $unit"",""Cluster Reduction Ratio""" | Out-File -FilePath $outfileName # -Encoding utf8
+"""Cluster Name"",""Total Used $unit"",""BookKeeper Used $unit"",""Unaccounted Usage $unit"",""Unaccounted Percent"",""Data Reduction"",""Sum Objects Used $unit"",""Sum Objects Written $unit"",""Sum Objects Written with Resiliency $unit""" | Out-File -FilePath $clusterStatsFileName
 
 if($secondFormat){
     $outfile2 = "customFormat2-storagePerObjectReport-$dateString.csv"
@@ -72,6 +74,11 @@ function reportStorage(){
     $viewHistory = @{}
     $cluster = api get "cluster?fetchStats=true"
     output "`n$($cluster.name)"
+    $clusterUsed = 0
+    $sumObjectsUsed = 0
+    $sumObjectsWritten = 0
+    $sumObjectsWrittenWithResiliency = 0
+
     try{
         $clusterReduction = [math]::Round($cluster.stats.usagePerfStats.dataInBytes / $cluster.stats.usagePerfStats.dataInBytesAfterReduction, 1)
         $clusterUsed = toUnits $cluster.stats.usagePerfStats.totalPhysicalUsageBytes
@@ -526,6 +533,9 @@ function reportStorage(){
                 if($job.environment -eq 'kVMware'){
                     $alloc = toUnits $thisObject['alloc']
                 }
+                $sumObjectsUsed += $thisObject['logical']
+                $sumObjectsWritten += $objWritten
+                $sumObjectsWrittenWithResiliency += $objWrittenWithResiliency
                 """$($cluster.name)"",""$origin"",""$statsAge"",""$($job.name)"",""$tenant"",""$($job.storageDomainId)"",""$sdName"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$alloc"",""$objFESize"",""$(toUnits $objDataIn)"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$($thisObject['numSnaps'])"",""$($thisObject['numLogs'])"",""$(usecsToDate $thisObject['oldestBackup'])"",""$(usecsToDate $thisObject['newestBackup'])"",""$($thisObject['lastDataLock'])"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)"",""$clusterUsed"",""$clusterReduction""" | Out-File -FilePath $outfileName -Append
                 if($secondFormat){
                     """$($cluster.name)"",""$monthString"",""$fqObjectName"",""$($job.description)"",""$(toUnits $objWrittenWithResiliency)""" | Out-File -FilePath $outfile2 -Append
@@ -716,11 +726,22 @@ function reportStorage(){
                 }
             }
         }
+        $sumObjectsUsed += $viewStats.totalLogicalUsageBytes
+        $sumObjectsWritten += $jobWritten
+        $sumObjectsWrittenWithResiliency += $consumption
         """$($cluster.name)"",""$origin"",""$statsAge"",""$($jobName)"",""$($view.tenantId -replace ".$")"",""$($view.storageDomainId)"",""$($view.storageDomainName)"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$objFESize"",""$(toUnits $dataIn)"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$numSnaps"",""$numLogs"",""$oldestBackup"",""$newestBackup"",""$lastDataLock"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($view.description)"",""$clusterUsed"",""$clusterReduction""" | Out-File -FilePath $outfileName -Append
         if($secondFormat){
             """$($cluster.name)"",""$monthString"",""$viewName"",""$($view.description)"",""$(toUnits $consumption)""" | Out-File -FilePath $outfile2 -Append
         }
     }
+    $bookKeeperStart = (dateToUsecs ((Get-Date -Hour 0 -Minute 0 -Second 0).AddDays(-29))) / 1000
+    $bookKeeperEnd = (dateToUsecs ((Get-Date -Hour 0 -Minute 0 -Second 0).AddDays(1))) / 1000
+    $bookKeeperStats = api get "statistics/timeSeriesStats?startTimeMsecs=$bookKeeperStart&schemaName=MRCounters&metricName=bytes_value&rollupIntervalSecs=180&rollupFunction=average&entityId=BookkeeperChunkBytesPhysical&endTimeMsecs=$bookKeeperEnd"
+    $bookKeeperBytes = $bookKeeperStats.dataPointVec[-1].data.int64Value
+    $clusterUsedBytes = $cluster.stats.usagePerfStats.totalPhysicalUsageBytes
+    $unaccounted = $clusterUsedBytes - $bookKeeperBytes
+    $unaccountedPercent = [math]::Round(100 * ($unaccounted / $clusterUsedBytes), 1)
+    """$($cluster.name)"",""$clusterUsed"",""$(toUnits $bookKeeperBytes)"",""$(toUnits $unaccounted)"",""$unaccountedPercent"",""$clusterReduction"",""$(toUnits $sumObjectsUsed)"",""$(toUnits $sumObjectsWritten)"",""$(toUnits $sumObjectsWrittenWithResiliency)""" | Out-File -FilePath $clusterStatsFileName -Append
 }
 
 # authentication =============================================
@@ -748,9 +769,10 @@ foreach($v in $vip){
     }
 }
 
-output "`nCompleted"
-output "Output saved to $outfileName"
+output "`nCompleted`n"
+output "       Output saved to: $outfileName"
+output "Cluster stats saved to: $clusterStatsFileName"
 if($secondFormat){
-    output "Alternate format saved to $outfile2`n"
+    output "Second format saved to: $outfile2`n"
 }
-output "Log file saved to $logFileName"
+output "     Log file saved to: $logFileName`n"
