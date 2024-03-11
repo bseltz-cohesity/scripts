@@ -20,6 +20,7 @@ param (
     [Parameter()][switch]$secondFormat,
     [Parameter()][switch]$consolidateDBs,
     [Parameter()][switch]$dbg,
+    [Parameter()][switch]$includeArchives,
     [Parameter()][string]$outfileName
 )
 
@@ -86,17 +87,19 @@ function reportStorage(){
     }catch{
         $clusterReduction = 1
     }
-    $vaults = api get vaults?includeFortKnoxVault=true
-    if($vaults){
-        $nowMsecs = [Int64]((dateToUsecs) / 1000)
-        $weekAgoMsecs = $nowMsecs - ($growthDays * 86400000)
-        $cloudStart = $cluster.createdTimeMsecs
-        $cloudStatURL = "reports/dataTransferToVaults?endTimeMsecs=$nowMsecs&startTimeMsecs=$cloudStart"
-        foreach($vault in $vaults){
-            $cloudStatURL += "&vaultIds=$($vault.id)"
+    if($includeArchives){
+        $vaults = api get vaults?includeFortKnoxVault=true
+        if($vaults){
+            $nowMsecs = [Int64]((dateToUsecs) / 1000)
+            $weekAgoMsecs = $nowMsecs - ($growthDays * 86400000)
+            $cloudStart = $cluster.createdTimeMsecs
+            $cloudStatURL = "reports/dataTransferToVaults?endTimeMsecs=$nowMsecs&startTimeMsecs=$cloudStart"
+            foreach($vault in $vaults){
+                $cloudStatURL += "&vaultIds=$($vault.id)"
+            }
+            output "  getting external target stats..."
+            $cloudStats = api get $cloudStatURL
         }
-        output "  getting external target stats..."
-        $cloudStats = api get $cloudStatURL
     }
     
     if($skipDeleted){
@@ -153,6 +156,9 @@ function reportStorage(){
         $origin = 'local'
         if($job.isActive -ne $True){
             $origin = 'replica'
+        }
+        if($job.environment -eq 'kVMware'){
+            $vmsearch = api get "/searchvms?allUnderHierarchy=true&entityTypes=kVMware&jobIds=$(($job.id -split ':')[2])&vmName=$($job.name)"
         }
         if($job.environment -notin @('kView', 'kRemoteAdapter')){
             output "  $($job.name)"
@@ -277,6 +283,7 @@ function reportStorage(){
                                 $objects[$objId]['parentObject'] = $false
                                 $objects[$objId]['alloc'] = 0
                                 $objects[$objId]['logical'] = 0
+                                $objects[$objId]['fetb'] = 0
                                 $objects[$objId]['archiveLogical'] = 0
                                 $objects[$objId]['bytesRead'] = 0
                                 $objects[$objId]['archiveBytesRead'] = 0
@@ -312,13 +319,17 @@ function reportStorage(){
                                 }
                             }
 
-                            if($job.environment -eq 'kVMware'){
-                                $vmsearch = api get "/searchvms?allUnderHierarchy=true&entityTypes=kVMware&jobIds=$(($job.id -split ':')[2])&vmName=$($object.object.name)"
+                            if($job.environment -eq 'kVMware' -and $objects[$objId]['fetb'] -eq 0){
+                                if($dbg){
+                                    Write-Host "    getting fetb"
+                                }
+                                # $vmsearch = api get "/searchvms?allUnderHierarchy=true&entityTypes=kVMware&jobIds=$(($job.id -split ':')[2])&vmName=$($object.object.name)"
                                 $vms = $vmsearch.vms | Where-Object {$_.vmDocument.objectName -eq $object.object.name}
                                 if($vms){
                                     $vmbytes = $vms[0].vmDocument.objectId.entity.vmwareEntity.frontEndSizeInfo.sizeBytes
                                     if($vmbytes -gt 0){
                                         $objects[$objId]['logical'] = $vmbytes
+                                        $objects[$objId]['fetb'] = $vmbytes
                                     }
                                 }
                             }

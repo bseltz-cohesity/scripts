@@ -65,6 +65,7 @@ To connect through Helios:
 * -unit: (optional) MiB, GiB, TiB, MB, GB or TB (default is GiB)
 * -outfileName: (optional) specify name for output csv file
 * -consolidateDBs: (optional) hide Oracle and SQL databases and only show the parent host
+* -includeArchives: (optional) get per object stats for external targets
 
 ## Column Descriptions
 
