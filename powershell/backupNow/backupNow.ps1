@@ -633,8 +633,8 @@ while($result -ne ""){
                 output "job is already running"
                 exit 0
             }
-            output $runError
-            # output "Waiting for existing job run to finish..."
+            # output $runError
+            output "Waiting for existing job run to finish..."
             $reportWaiting = $false
         }
     }
