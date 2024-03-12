@@ -1,5 +1,13 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-03-11
+
+* [archiveMediaInfo.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/archiveMediaInfo) [`New`] Report QStar tape media used for archives
+
+## 2024-03-11
+
+* [storagePerObjectReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport) [`Update`] Added Cluster Stats summary ouput
+
 ## 2024-03-09
 
 * [storagePerObjectReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport) [`Update`] Added clusterStats output file
