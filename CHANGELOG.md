@@ -1,6 +1,6 @@
 # Change Log for bseltz-cohesity/scripts
 
-## 2024-03-11
+## 2024-03-12
 
 * [archiveMediaInfo.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/archiveMediaInfo) [`New`] Report QStar tape media used for archives
 
