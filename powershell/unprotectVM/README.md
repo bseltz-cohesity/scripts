@@ -48,3 +48,5 @@ Place all files in a folder together (see download instructions below), and run 
 
 * -vmName: (optional) comma separated list of VM names to remove from jobs
 * -vmList: (optional) text file containing VM names to remove from jobs (one per line)
+* -jobName: (optional) comma separated list of job names to remove VMs from
+* -jobList: (optional) text file containing job names to remove VMs from (one per line)
