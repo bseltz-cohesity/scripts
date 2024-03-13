@@ -61,6 +61,10 @@ jobs = []
 jobnames = []
 objectId = None
 
+if sources is None or 'rootNodes' not in sources or sources['rootNodes'] is None:
+    print("None")
+    exit(1)
+
 for rootNode in sources['rootNodes']:
     parentId = rootNode['rootNode']['id']
     parentName = rootNode['rootNode']['name']
