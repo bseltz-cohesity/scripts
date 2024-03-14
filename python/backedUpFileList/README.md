@@ -82,6 +82,6 @@ To choose the backup at or after the specified file date:
 * -f, --filedate: (optional) date to inspect (next backup after date will be inspected)
 * -p, --startpath: (optional) start listing files at path (default is /)
 * -n, --noindex: (optional) do not use the index (otherwise index usage will be automatic)
-* -f, --forceindex: (optional) force use the index (otherwise index usage will be automatic)
+* -x, --forceindex: (optional) force use the index (otherwise index usage will be automatic)
 * -ss, --showstats: (optional) include file date and size in the output
 * -nt, --newerthan: (optional) show files added/modified in the last X days
