@@ -62,7 +62,7 @@ Use the viewDRclone.ps1 script to bring the views online at ClusterB and protect
                   -inPath '.'
 ```
 
-## Delete the old views from ClusterA
+## Delete the Old Views from ClusterA
 
 Use the viewDRdelete.ps1 script to delete the old views from ClusterA
 
