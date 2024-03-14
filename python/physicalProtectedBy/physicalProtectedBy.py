@@ -126,7 +126,7 @@ else:
     for jobReport in jobReports:
         foundObject = True
         print('%s' % jobReport['jobName'])
-        exit(0)
+
     if foundObject is False:
         print("None")
         exit(1)
