@@ -6,14 +6,14 @@ This script reports what protection group is protecting a server, if any.
 
 ## Components
 
-* [physicalProtectedBy.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/legalHold/physicalProtectedBy.py): the main python script
+* [physicalProtectedBy.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/physicalProtectedBy/physicalProtectedBy.py): the main python script
 * [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/legalHold/physicalProtectedBy.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/physicalProtectedBy/physicalProtectedBy.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
 chmod +x physicalProtectedBy.py
 # end download commands
