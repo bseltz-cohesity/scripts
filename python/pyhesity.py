@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2024.02.28"""
+"""Cohesity Python REST API Wrapper Module - 2024.03.15"""
 
 ##########################################################################################
 # Change Log
@@ -31,6 +31,7 @@
 # 2023.12.29 - added testProp function
 # 2024.01.14 - reenabled legacy access modes
 # 2024.02.28 - added support for helios.gov
+# 2024.03.15 - unhid value error
 #
 ##########################################################################################
 # Install Notes
@@ -513,6 +514,7 @@ def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1, reporting
                 responsejson = response.json()
             except ValueError as ve:
                 COHESITY_API['LAST_ERROR'] = response.reason
+                print(response.reason)
                 return None
             if isinstance(responsejson, bool):
                 return ''
