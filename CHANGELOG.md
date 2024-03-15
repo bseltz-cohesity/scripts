@@ -2,16 +2,16 @@
 
 ## 2024-03-15
 
-*[pyhesity.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity) [`Fix`] fixed error reporting
+* [pyhesity.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity) [`Fix`] fixed error reporting
 
 ## 2024-03-14
 
-*[pingCluster.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/pingCluster) [`New`] enumerate node IPs and ipmi IPs and ping them.
-*[clusterIps.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/clusterIPs) [`New`] enumerate all cluster IPs
+* [pingCluster.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/pingCluster) [`New`] enumerate node IPs and ipmi IPs and ping them.
+* [clusterIps.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/clusterIPs) [`New`] enumerate all cluster IPs
 
 ## 2024-03-13
 
-*[unprotectVM.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/unprotectVM) [`Update`] added job filter parameters
+* [unprotectVM.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/unprotectVM) [`Update`] added job filter parameters
 
 ## 2024-03-12
 
