@@ -2,6 +2,7 @@
 
 ## 2024-03-15
 
+* [unprotectedVMs.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/unprotectedVMs) [`New`] list unprotected VMs
 * [pyhesity.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity) [`Fix`] fixed error reporting
 
 ## 2024-03-14
