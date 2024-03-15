@@ -1,5 +1,18 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-03-15
+
+*[pyhesity.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity) [`Fix`] fixed error reporting
+
+## 2024-03-14
+
+*[pingCluster.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/pingCluster) [`New`] enumerate node IPs and ipmi IPs and ping them.
+*[clusterIps.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/clusterIPs) [`New`] enumerate all cluster IPs
+
+## 2024-03-13
+
+*[unprotectVM.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/unprotectVM) [`Update`] added job filter parameters
+
 ## 2024-03-12
 
 * [physicalProtectedBy.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/physicalProtectedBy) [`New`] What protection group is protecting this server?
