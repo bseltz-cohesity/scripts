@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-03-16
+
+* [migrateView.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/migrateView) [`New`] Migrate views to another storage domain
+
 ## 2024-03-15
 
 * [unprotectedVMs.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/unprotectedVMs) [`New`] list unprotected VMs
