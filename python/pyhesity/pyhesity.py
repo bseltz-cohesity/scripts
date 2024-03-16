@@ -504,8 +504,8 @@ def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1, reporting
         if response != '':
             if response.status_code == 204:
                 COHESITY_API['LAST_ERROR'] = response.reason
-                if quiet is None:
-                    print('*** %s ***' % response.reason)
+                # if quiet is None:
+                #     print('*** %s ***' % response.reason)
                 return None
             if response.status_code == 404:
                 COHESITY_API['LAST_ERROR'] = response.reason
