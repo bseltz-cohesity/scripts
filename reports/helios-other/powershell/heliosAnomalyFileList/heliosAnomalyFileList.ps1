@@ -27,10 +27,10 @@ $end = (usecsToDate $uEnd).ToString('yyyy-MM-dd')
 
 # outfile
 $dateString = ($today).ToString('yyyy-MM-dd')
-$outfileName = "anomalyReport-$dateString.tsv"
+$outfileName = "anomalyReport-$dateString.csv"
 
 # headings
-"Cluster Name`tJob Name`tJob Type`tRun Date`tObject Name`tAnomaly Strength`tFiles Affected`tFile Name`tOperation" | Out-File -FilePath $outfileName
+"""Cluster Name"",""Job Name"",""Job Type"",""Run Date"",""Object Name"",""Anomaly Strength"",""Files Affected"",""File Name"",""Operation""" | Out-File -FilePath $outfileName -Encoding utf8
 
 $alerts = api get -mcm "alerts?alertCategoryList=kSecurity&alertStateList=kOpen&endDateUsecs=$uEnd&maxAlerts=1000&startDateUsecs=$uStart&_includeTenantInfo=true"
 $foundObject = $false
@@ -119,7 +119,7 @@ foreach($alert in $alerts | Where-Object {$_.alertDocument.alertName -eq 'DataIn
                             $operation = $fileOp.operation.subString(1)
                             $filePath = $fileOp.filePath
                             $filesCounted += 1
-                            "{0}`t{1}`t{2}`t{3}`t{4}`t{5}`t{6}`t{7}`t{8}" -f $clusterName, $jobName, $objectType, $(usecsToDate $jobStartTimeUsecs), $object, $strength, $totalFiles, $filePath, $operation | Out-File -FilePath $outfileName -Append
+                            """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}""" -f $clusterName, $jobName, $objectType, $(usecsToDate $jobStartTimeUsecs), $object, $strength, $totalFiles, $filePath, $operation | Out-File -FilePath $outfileName -Append
                         }
                         Write-Host "`r  $filesCounted of $totalFiles" -NoNewLine
                         $diffParams.pageNumber += 1
@@ -133,7 +133,7 @@ foreach($alert in $alerts | Where-Object {$_.alertDocument.alertName -eq 'DataIn
                 }
                 Write-Host ""
                 if($filesCounted -eq 0){
-                    "{0}`t{1}`t{2}`t{3}`t{4}`t{5}`t{6}`t{7}" -f $clusterName, $jobName, $objectType, $(usecsToDate $jobStartTimeUsecs), $object, $strength, $totalFiles, 'file changes not computed' | Out-File -FilePath $outfileName -Append
+                    "{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}" -f $clusterName, $jobName, $objectType, $(usecsToDate $jobStartTimeUsecs), $object, $strength, $totalFiles, 'file changes not computed' | Out-File -FilePath $outfileName -Append
                 }
             }
         }    
