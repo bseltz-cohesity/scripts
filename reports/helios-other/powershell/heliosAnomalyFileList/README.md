@@ -34,17 +34,20 @@ To get the anomalies for a specific object:
 ./heliosAnomalyFileList.ps1 -username myuser@mydomain.net -objectName myobject
 ```
 
-## Parameters
+## Main Parameters
 
 * -vip: (optional) defaults to helios.cohesity.com
 * -username: (optional) defaults to helios
 * -days: (optional) defaults to 7
 * -objectName: (optional) linit to just one object name
 * -anomalyStrength: (optional) defaults to 10
+* -latestPerObject: (optional) inspect only the latest anomaly for each object
+
+## Tuning Parameters
+
 * -sleepTime: (optional) wait X seconds between API queries (default is 1)
 * -retryCount: (optional) retry API query X times (default is 10)
 * -timeout: (optional) wait X seconds for API queries before retrying (default is 20)
-* -latestPerObject: (optional) inspect only the latest anomaly for each object
 
 ## Authenticating to Helios
 
