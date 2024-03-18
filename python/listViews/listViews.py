@@ -115,8 +115,10 @@ if views['count'] > 0:
                 print('                 Protected: %s' % protected)
                 print('             Logical Usage: %s %s' % (round(view['logicalUsageBytes'] / multiplier, 2), units))
                 if 'logicalQuota' in view:
-                    print('             Logical Quota: %s %s' % (int(round(view['logicalQuota']['hardLimitBytes'] / multiplier, 0)), units))
-                    print('               Quota Alert: %s %s' % (int(round(view['logicalQuota']['alertLimitBytes'] / multiplier, 0)), units))
+                    if 'hardLimitBytes' in view['logicalQuota']:
+                        print('             Logical Quota: %s %s' % (int(round(view['logicalQuota']['hardLimitBytes'] / multiplier, 0)), units))
+                    if 'alertLimitBytes' in view['logicalQuota']:
+                        print('               Quota Alert: %s %s' % (int(round(view['logicalQuota']['alertLimitBytes'] / multiplier, 0)), units))
                 print('                QOS Policy: %s' % view['qos']['principalName'])
                 if 'subnetWhitelist' in view:
                     print('                 Whitelist:')
