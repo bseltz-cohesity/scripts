@@ -248,6 +248,14 @@ foreach($cluster in ($selectedClusters)){
     }
 }
 
+foreach($column in $attributes.attributeName){
+    $data | ForEach-Object{
+        if($_.$column -is [System.Array]){
+            $_.$column = [string](@($_.$column | Sort-Object -Unique) -join '; ')
+        }
+    }
+}
+
 $data | Export-CSV -Append -Path $csvFileName
 
 $csv = Import-CSV -Path $csvFileName
@@ -260,7 +268,7 @@ if($excludeEnvironment){
 # convert timestamps to dates
 foreach($epochColum in ($epochColums | Sort-Object -Unique)){
     $csv | Where-Object{ $_.$epochColum -ne $null -and $_.$epochColum -ne 0} | ForEach-Object{
-        $_.$epochColum = usecsToDate $_.$epochColum
+        $_.$epochColum = usecsToDate $_.$epochColum # -format 'yyyy-MM-dd hh:mm:ss tt'
     }
 }
 
