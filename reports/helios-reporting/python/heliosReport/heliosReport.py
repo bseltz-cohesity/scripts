@@ -149,8 +149,13 @@ if report is None or len(report) == 0:
 reportNumber = report[0]['componentIds'][0]
 title = report[0]['title']
 
+# TSV output
+
+tsvFileName = os.path.join(outputpath, "%s_%s_%s.tsv" % (title.replace('/', '-').replace('\\', '-'), start, end))
+tsv = codecs.open(tsvFileName, 'w', 'utf-8')
+
 # CSV output
-csvFileName = os.path.join(outputpath, "%s_%s_%s.tsv" % (title.replace('/', '-').replace('\\', '-'), start, end))
+csvFileName = os.path.join(outputpath, "%s_%s_%s.csv" % (title.replace('/', '-').replace('\\', '-'), start, end))
 csv = codecs.open(csvFileName, 'w', 'utf-8')
 
 # HTML output
@@ -305,6 +310,7 @@ for cluster in sorted(selectedClusters, key=lambda c: c['name'].lower()):
     print(cluster['name'])
     for range in ranges:
         csvLines = []
+        tsvLines = []
         reportParams = {
             "filters": [
                 {
@@ -350,7 +356,9 @@ for cluster in sorted(selectedClusters, key=lambda c: c['name'].lower()):
                     else:
                         headings.append(attribute['attributeName'])
             gotHeadings = True
-            csvHeadings = '\t'.join(headings)
+            tsvHeadings = '\t'.join(headings)
+            tsv.write('%s\n' % tsvHeadings)
+            csvHeadings = ','.join(headings)
             csv.write('%s\n' % csvHeadings)
             htmlHeadings = '\n'.join(['<th>%s</th>' % h for h in headings])
             html += htmlHeadings
@@ -407,6 +415,7 @@ for cluster in sorted(selectedClusters, key=lambda c: c['name'].lower()):
                 display(rec)
                 exit()
             csvColumns = []
+
             html += '<tr>'
             for attribute in attributes:
                 data = rec[attribute['attributeName']]
@@ -441,9 +450,13 @@ for cluster in sorted(selectedClusters, key=lambda c: c['name'].lower()):
                 csvColumns.append(data)
                 html += '<td>%s</td>' % data
             html += '</tr>'
-            csvLine = '\t'.join([str(i) for i in csvColumns])
+            csvLine = ','.join([str(i) for i in csvColumns])
             csvLines.append('%s\n' % csvLine)
+            tsvLine = '\t'.join([str(i) for i in csvColumns])
+            tsvLines.append('%s\n' % tsvLine)
+
         csv.write(''.join(sorted(csvLines)))
+        tsv.write(''.join(sorted(tsvLines)))
 
 html += '''</table>
 </div>
@@ -453,5 +466,6 @@ html += '''</table>
 htmlFile.write(html)
 htmlFile.close()
 csv.close()
+tsv.close()
 
-print('\nOutput saved to %s\nAlso saved to %s\n' % (htmlFileName, csvFileName))
+print('\nOutput saved to %s\nAlso saved to %s\nand %s\n' % (htmlFileName, csvFileName, tsvFileName))
