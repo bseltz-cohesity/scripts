@@ -47,4 +47,7 @@ By default, the script will only show what it would do. To actually execute the 
 * -e, --excludelogs: (optional) do not replicate database log backups
 * -c, --commit: (optional) perform replications (show only if omitted)
 * -resync, --resync: (optional) re-replicate to same cluster (skip previously replicated if omitted)
-* -n, --numruns: (optional) number of runs per API query (default is 1000)
+* -x, --numruns: (optional) number of runs per API query (default is 1000)
+* -ri, --runid: (optional) specify run ID to replicate
+* -n, --newerthan: (optional) replicate runs newer than X days ago
+* -o, --olderthan: (optional) replicate runs older than X days ago

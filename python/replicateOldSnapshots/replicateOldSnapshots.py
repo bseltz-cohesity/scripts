@@ -22,7 +22,10 @@ parser.add_argument('-r', '--remotecluster', type=str, required=True)  # cluster
 parser.add_argument('-j', '--jobname', action='append', type=str)  # one or more job names
 parser.add_argument('-l', '--joblist', type=str, required=False)   # text file of job names
 parser.add_argument('-e', '--excludelogs', action='store_true')   # exclude log backups
-parser.add_argument('-n', '--numruns', type=int, default=1000)
+parser.add_argument('-x', '--numruns', type=int, default=1000)
+parser.add_argument('-ri', '--runid', type=int, default=None)
+parser.add_argument('-n', '--newerthan', type=int, default=0)     # number of days back to search for snapshots to archive
+parser.add_argument('-o', '--olderthan', type=int, default=0)     # number of days back to search for snapshots to archive
 
 args = parser.parse_args()
 
@@ -39,6 +42,9 @@ excludelogs = args.excludelogs
 commit = args.commit
 resync = args.resync
 numruns = args.numruns
+runid = args.runid
+newerthan = args.newerthan
+olderthan = args.olderthan
 
 
 # gather server list
@@ -64,6 +70,9 @@ apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=
 
 # get cluster Id
 clusterId = api('get', 'cluster')['id']
+
+newerthanUsecs = timeAgo(newerthan, 'days')
+olderthanUsecs = timeAgo(olderthan, 'days')
 
 # get replication target info
 remote = [r for r in api('get', 'remoteClusters') if r['name'].lower() == remotecluster.lower()]
@@ -97,6 +106,8 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
         }
         runstoreplicate = {}
         endUsecs = nowUsecs
+        if olderthan > 0:
+            endUsecs = olderthanUsecs
         while 1:
             runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&endTimeUsecs=%s&includeTenants=true' % (job['id'], numruns, endUsecs), v=2)
             if len(runs['runs']) > 0:
@@ -110,11 +121,13 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                 runs = [r for r in runs if ('localBackupInfo' in r and r['localBackupInfo']['runType'] != 'kLog') or ('originalBackupInfo') in r and r['originalBackupInfo']['runType'] != 'kLog']
             if runs is not None and len(runs) > 0:
                 for run in sorted(runs, key=lambda run: run['id']):
+                    if runid is not None and run['protectionGroupInstanceId'] != runid:
+                        continue
                     daysToKeep = keepfor
-
                     startdateusecs = int(run['id'].split(':')[1])
                     startdate = usecsToDate(startdateusecs)
-
+                    if newerthan > 0 and startdateusecs < newerthanUsecs:
+                        continue
                     # check for replication
                     replicated = False
                     if 'replicationInfo' in run:
@@ -161,7 +174,8 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                             print('  Replicating  %s  for %s days' % (startdate, daysToKeep))
                             runstoreplicate[startdateusecs] = replicationTask
                         else:
-                            print('  Would replicate  %s  for %s days' % (startdate, daysToKeep))
+                            print('  Would replicate  %s (%s)  for %s days' % (startdate, run['protectionGroupInstanceId'], daysToKeep))
+                        # display(run)
                     else:
                         print('  Already replicated  %s' % startdate)
         if len(runstoreplicate.keys()) > 0:
