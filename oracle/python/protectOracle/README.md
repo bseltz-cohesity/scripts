@@ -27,8 +27,8 @@ Place both files in a folder together and run the main script like so:
                    -u myusername \
                    -d mydomain.net \
                    -j 'My Job' \
-                   -s myserver.mydomain.net \
-                   -db mydb
+                   -sn myserver.mydomain.net \
+                   -dn mydb
 ```
 
 ```bash
@@ -37,7 +37,7 @@ Place both files in a folder together and run the main script like so:
                    -u myusername \
                    -d mydomain.net \
                    -j 'My Job' \
-                   -s myserver.mydomain.net
+                   -sn myserver.mydomain.net
 ```
 
 ```bash
@@ -48,8 +48,8 @@ Place both files in a folder together and run the main script like so:
                    -p 'My Policy' \
                    -j 'My Job' \
                    -z 'America/New_York' \
-                   -s myserver.mydomain.net \
-                   -db mydb
+                   -sn myserver.mydomain.net \
+                   -dn mydb
 ```
 
 ```bash
@@ -60,7 +60,7 @@ Place both files in a folder together and run the main script like so:
                    -p 'My Policy' \
                    -j 'My Job' \
                    -z 'America/New_York' \
-                   -s myserver.mydomain.net
+                   -sn myserver.mydomain.net
 ```
 
 ## Authentication Parameters
@@ -74,21 +74,27 @@ Place both files in a folder together and run the main script like so:
 * -mcm, --mcm: (optional) connect through MCM
 * -c, --clustername: (optional) helios/mcm cluster to connect to
 * -m, --mfacode: (optional) MFA code for authentication
+* -e, --emailmfacode: (optional) send MFA code via email
 
-## Other Parameters
+## Selection Parameters
 
-* -s, --servername: (optional) name of source oracle server to protect (repeat for multiple)
-* -f, --serverlist: (optional) text file of server names to protect (one per line)
-* -db, --dbname: (optional) name of database to protect (repeat for multiple, all DBs if omitted)
-* -j, --jobname: name of protection job
+* -sn, --servername: (optional) name of oracle server to protect (repeat for multiple)
+* -sl, --serverlist: (optional) text file of oracle servers to protect (one per line)
+* -dn, --dbname: (optional) name of database to protect (repeat for multiple, all DBs if omitted)
+* -dl, --dblist: (optional) text file of databases to protect (one per line)
+* -jn, --jobname: name of protection job
+* -pm, --persistmounts: (optional) persist mount points
+* -l, --deletelogdays: (optional) delete logs after X days (default is none)
+* -ch, --channels: (optional)  number of channels (default is auto)
+* -cn, --channelnode: (optional) node to protect (default is auto)
+* -cp, --channelport: (optional) channel port (default is 1521)
+
+## New Job Parameters
+
 * -p, --policyname: (optional) name of protection policy (required if job doesn't already exist)
-* -t, --starttime: (optional) e.g. '21:00' (default is 20:00)
-* -z, --timezone:(optional) e.g. 'America/Los_Angeles' (default is America/New_York)
+* -st, --starttime: (optional) e.g. '21:00' (default is 20:00)
+* -tz, --timezone:(optional) e.g. 'America/Los_Angeles' (default is America/New_York)
 * -is, --incrementalsla: (optional) default is 60
 * -fs, --fullsla: (optional) default is 120
 * -sd, --storagedomain: (optional) default is DefaultStorageDomain
-* -l, --deletelogdays: (optional) delete logs after X days (default is none)
-* -pause, --pause: (optional) pause future runs
-* -np, --nopersistmounts: (optional) do not persist mount points (default is to persist)
-* -pm, --persistmounts: (optional) re-enable persist mount points (if it was previously disabled)
-* -na, --noalert: (optional) do not send alerts
+* -z, --paused: (optional) pause future runs
