@@ -36,7 +36,7 @@ Place both files in a folder together and run the main script like so:
 ./protectOracle.py -v mycluster \
                    -u myusername \
                    -d mydomain.net \
-                   -j 'My Job' \
+                   -jn 'My Job' \
                    -sn myserver.mydomain.net
 ```
 
@@ -46,8 +46,8 @@ Place both files in a folder together and run the main script like so:
                    -u myusername \
                    -d mydomain.net \
                    -p 'My Policy' \
-                   -j 'My Job' \
-                   -z 'America/New_York' \
+                   -jn 'My Job' \
+                   -tz 'America/New_York' \
                    -sn myserver.mydomain.net \
                    -dn mydb
 ```
@@ -58,9 +58,22 @@ Place both files in a folder together and run the main script like so:
                    -u myusername \
                    -d mydomain.net \
                    -p 'My Policy' \
-                   -j 'My Job' \
-                   -z 'America/New_York' \
+                   -jn 'My Job' \
+                   -tz 'America/New_York' \
                    -sn myserver.mydomain.net
+```
+
+```bash
+# specify backup node, number of channels, days to delete logs
+./protectOracle.py -v mycluster \
+                   -u myusername \
+                   -d mydomain.net \
+                   -j 'My Job' \
+                   -sn myserver.mydomain.net \
+                   -dn mydb \
+                   -cn myserver.mydomain.net \
+                   -ch 2 \
+                   -l 1
 ```
 
 ## Authentication Parameters
