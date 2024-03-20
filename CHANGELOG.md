@@ -1,5 +1,24 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-03-20
+
+* [replicateOldSnapshots.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/replicateOldSnapshots) [`Update`] added runid, newerthan, olderthan parameters
+* [protectOracle.py](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/protectOracle) [`Update`] added channel configuration
+
+## 2024-03-19
+
+* [heliosReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/helios-reporting/python/heliosReport) [`Update`] added CSV output
+* [heliosCSVReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/helios-reporting/powershell/heliosCSVReport) [`Fix`] fixed System.Object[] in column output
+* [licenseUsageReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/licenseUsageReport) [`New`] license usage per tenent (experimental!)
+
+## 2024-03-18
+
+* [listViews.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/listViews) [`Update`] modernized authentication
+
+## 2024-03-17
+
+* [heliosAnomalyFileList.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/helios-other/powershell/heliosAnomalyFileList) [`New`] download list of ransomware affected files
+
 ## 2024-03-16
 
 * [migrateView.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/migrateView) [`New`] Migrate views to another storage domain
