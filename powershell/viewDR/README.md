@@ -57,14 +57,14 @@ The protection jobs should be configured to create a Remote View (with the same 
              -username admin `
              -domain local `
              -viewList .\myviews.txt `
-             -plannedFailoverStart
+             -prepareForFailover
 
 # planned failover (finalize) from clusterA to clusterB
 .\viewDR.ps1 -vip clusterB `
              -username admin `
              -domain local `
              -viewList .\myviews.txt `
-             -plannedFailoverFinalize
+             -plannedFailover
 
 # monitor failovers from clusterA to clusterB
 .\failoverMonitor.ps1 -vip clusterB `
