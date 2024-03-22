@@ -100,6 +100,7 @@ Protect a SQL Database:
 
 ## Optional Parameters
 
+* -s, --showunprotecteddbs: (optional) show unprotected DBs on the specified servers and exit
 * -n, --numstreams: (optional) number of backup streams (default is 3)
 * -l, --logstreams: (optional) number of log backup streams (default is 3)
 * -wc, --withclause: (optional) with clause (e.g. 'WITH Compression')

@@ -23,7 +23,7 @@ parser.add_argument('-sl', '--serverlist', type=str)
 parser.add_argument('-dn', '--dbname', action='append', type=str)
 parser.add_argument('-dl', '--dblist', type=str)
 parser.add_argument('-in', '--instancename', action='append', type=str)
-parser.add_argument('-jn', '--jobname', type=str, required=True)
+parser.add_argument('-jn', '--jobname', type=str, default=None)
 parser.add_argument('-b', '--backuptype', type=str, choices=['File', 'Volume', 'VDI'], default='File')
 parser.add_argument('-sd', '--storagedomain', type=str, default='DefaultStorageDomain')
 parser.add_argument('-p', '--policyname', type=str, default=None)
@@ -40,6 +40,7 @@ parser.add_argument('-ssd', '--sourcesidededuplication', action='store_true')
 parser.add_argument('-o', '--instancesonly', action='store_true')
 parser.add_argument('-so', '--systemdbsonly', action='store_true')
 parser.add_argument('-a', '--alldbs', action='store_true')
+parser.add_argument('-s', '--showunprotecteddbs', action='store_true')
 parser.add_argument('-ud', '--unprotecteddbs', action='store_true')
 parser.add_argument('-r', '--replace', action='store_true')
 
@@ -80,6 +81,7 @@ systemdbsonly = args.systemdbsonly
 unprotecteddbs = args.unprotecteddbs
 replace = args.replace
 alldbs = args.alldbs
+showunprotecteddbs = args.showunprotecteddbs
 
 
 # gather server list
@@ -100,6 +102,10 @@ def gatherList(param=None, filename=None, name='items', required=True):
 
 servernames = gatherList(servernames, serverlist, name='servers', required=False)
 dbnames = gatherList(dbnames, dblist, name='databases', required=False)
+
+if jobname is None and showunprotecteddbs is not True:
+    print('-j, --jobname is required')
+    exit()
 
 if instancenames is None:
     instancenames = []
@@ -126,184 +132,185 @@ if mcm or vip.lower() == 'helios.cohesity.com':
 # end authentication =====================================================
 
 # get job info
-newJob = False
-protectionGroups = api('get', 'data-protect/protection-groups?isDeleted=false&isActive=true', v=2)
-jobs = protectionGroups['protectionGroups']
-job = [job for job in jobs if job['name'].lower() == jobname.lower()]
+if showunprotecteddbs is not True:
+    newJob = False
+    protectionGroups = api('get', 'data-protect/protection-groups?isDeleted=false&isActive=true', v=2)
+    jobs = protectionGroups['protectionGroups']
+    job = [job for job in jobs if job['name'].lower() == jobname.lower()]
 
-if not job or len(job) < 1:
-    newJob = True
+    if not job or len(job) < 1:
+        newJob = True
 
-    # find protectionPolicy
-    if policyname is None:
-        print('Policy name required for new job')
-        exit(1)
-    policy = [p for p in api('get', 'protectionPolicies') if p['name'].lower() == policyname.lower()]
-    if len(policy) < 1:
-        print("Policy '%s' not found!" % policyname)
-        exit(1)
-    policyid = policy[0]['id']
+        # find protectionPolicy
+        if policyname is None:
+            print('Policy name required for new job')
+            exit(1)
+        policy = [p for p in api('get', 'protectionPolicies') if p['name'].lower() == policyname.lower()]
+        if len(policy) < 1:
+            print("Policy '%s' not found!" % policyname)
+            exit(1)
+        policyid = policy[0]['id']
 
-    # find storage domain
-    sd = [sd for sd in api('get', 'viewBoxes') if sd['name'].lower() == storagedomain.lower()]
-    if len(sd) < 1:
-        print("Storage domain %s not found!" % storagedomain)
-        exit(1)
-    sdid = sd[0]['id']
+        # find storage domain
+        sd = [sd for sd in api('get', 'viewBoxes') if sd['name'].lower() == storagedomain.lower()]
+        if len(sd) < 1:
+            print("Storage domain %s not found!" % storagedomain)
+            exit(1)
+        sdid = sd[0]['id']
 
-    # parse starttime
-    try:
-        (hour, minute) = starttime.split(':')
-        hour = int(hour)
-        minute = int(minute)
-        if hour < 0 or hour > 23 or minute < 0 or minute > 59:
+        # parse starttime
+        try:
+            (hour, minute) = starttime.split(':')
+            hour = int(hour)
+            minute = int(minute)
+            if hour < 0 or hour > 23 or minute < 0 or minute > 59:
+                print('starttime is invalid!')
+                exit(1)
+        except Exception:
             print('starttime is invalid!')
             exit(1)
-    except Exception:
-        print('starttime is invalid!')
-        exit(1)
 
-    backupTypeEnum = {
-        'File': 'kFile',
-        'Volume': 'kVolume',
-        'VDI': 'kNative'
-    }
+        backupTypeEnum = {
+            'File': 'kFile',
+            'Volume': 'kVolume',
+            'VDI': 'kNative'
+        }
 
-    job = {
-        "name": jobname,
-        "environment": "kSQL",
-        "isPaused": False,
-        "policyId": policyid,
-        "priority": "kMedium",
-        "storageDomainId": sdid,
-        "description": "",
-        "startTime": {
-            "hour": hour,
-            "minute": minute,
-            "timeZone": timezone
-        },
-        "abortInBlackouts": False,
-        "alertPolicy": {
-            "backupRunStatus": [
-                "kFailure"
-            ],
-            "alertTargets": []
-        },
-        "sla": [
-            {
-                "backupRunType": "kFull",
-                "slaMinutes": fullsla
+        job = {
+            "name": jobname,
+            "environment": "kSQL",
+            "isPaused": False,
+            "policyId": policyid,
+            "priority": "kMedium",
+            "storageDomainId": sdid,
+            "description": "",
+            "startTime": {
+                "hour": hour,
+                "minute": minute,
+                "timeZone": timezone
             },
-            {
-                "backupRunType": "kIncremental",
-                "slaMinutes": incrementalsla
-            }
-        ],
-        "qosPolicy": "kBackupHDD",
-        "mssqlParams": {
-            "protectionType": backupTypeEnum[backuptype]
-        }
-    }
-
-    if paused is True:
-        job['isPaused'] = True
-
-    if backuptype == 'File':
-        job['mssqlParams']['fileProtectionTypeParams'] = {
-            "objects": [],
-            "performSourceSideDeduplication": False,
-            "additionalHostParams": [],
-            "userDbBackupPreferenceType": "kBackupAllDatabases",
-            "backupSystemDbs": True,
-            "useAagPreferencesFromServer": True,
-            "fullBackupsCopyOnly": False,
-            "excludeFilters": None,
-            "logBackupNumStreams": logstreams,
-            "logBackupWithClause": logclause
-        }
-
-        if sourcesidededuplication is True:
-            job['mssqlParams']['fileProtectionTypeParams']['performSourceSideDeduplication'] = True
-        params = job['mssqlParams']['fileProtectionTypeParams']
-
-    if backuptype == 'VDI':
-        job['mssqlParams']['nativeProtectionTypeParams'] = {
-            "objects": [],
-            "numStreams": numstreams,
-            "withClause": withclause,
-            "logBackupNumStreams": logstreams,
-            "logBackupWithClause": logclause,
-            "userDbBackupPreferenceType": "kBackupAllDatabases",
-            "backupSystemDbs": True,
-            "useAagPreferencesFromServer": True,
-            "fullBackupsCopyOnly": False,
-            "excludeFilters": None
-        }
-        params = job['mssqlParams']['nativeProtectionTypeParams']
-
-    if backuptype == 'Volume':
-        job['mssqlParams']['volumeProtectionTypeParams'] = {
-            "objects": [],
-            "logBackupNumStreams": logstreams,
-            "logBackupWithClause": logclause,
-            "incrementalBackupAfterRestart": True,
-            "indexingPolicy": {
-                "enableIndexing": True,
-                "includePaths": [
-                    "/"
+            "abortInBlackouts": False,
+            "alertPolicy": {
+                "backupRunStatus": [
+                    "kFailure"
                 ],
-                "excludePaths": [
-                    '/$Recycle.Bin',
-                    "/Windows",
-                    "/Program Files",
-                    "/Program Files (x86)",
-                    "/ProgramData",
-                    "/System Volume Information",
-                    "/Users/*/AppData",
-                    "/Recovery",
-                    "/var",
-                    "/usr",
-                    "/sys",
-                    "/proc",
-                    "/lib",
-                    "/grub",
-                    "/grub2",
-                    "/opt/splunk",
-                    "/splunk"
-                ]
+                "alertTargets": []
             },
-            "backupDbVolumesOnly": False,
-            "additionalHostParams": [],
-            "userDbBackupPreferenceType": "kBackupAllDatabases",
-            "backupSystemDbs": True,
-            "useAagPreferencesFromServer": True,
-            "fullBackupsCopyOnly": False,
-            "excludeFilters": None
+            "sla": [
+                {
+                    "backupRunType": "kFull",
+                    "slaMinutes": fullsla
+                },
+                {
+                    "backupRunType": "kIncremental",
+                    "slaMinutes": incrementalsla
+                }
+            ],
+            "qosPolicy": "kBackupHDD",
+            "mssqlParams": {
+                "protectionType": backupTypeEnum[backuptype]
+            }
         }
-        params = job['mssqlParams']['volumeProtectionTypeParams']
 
-else:
-    job = job[0]
-    if job['mssqlParams']['protectionType'] == 'kFile':
-        params = job['mssqlParams']['fileProtectionTypeParams']
-        params['logBackupNumStreams'] = logstreams
-        if logclause != '':
-            params['logBackupWithClause'] = logclause
+        if paused is True:
+            job['isPaused'] = True
 
-    if job['mssqlParams']['protectionType'] == 'kNative':
-        params = job['mssqlParams']['nativeProtectionTypeParams']
-        params['numStreams'] = numstreams
-        if withclause != '':
-            params['withClause'] = withclause
-        params['logBackupNumStreams'] = logstreams
-        if logclause != '':
-            params['logBackupWithClause'] = logclause
+        if backuptype == 'File':
+            job['mssqlParams']['fileProtectionTypeParams'] = {
+                "objects": [],
+                "performSourceSideDeduplication": False,
+                "additionalHostParams": [],
+                "userDbBackupPreferenceType": "kBackupAllDatabases",
+                "backupSystemDbs": True,
+                "useAagPreferencesFromServer": True,
+                "fullBackupsCopyOnly": False,
+                "excludeFilters": None,
+                "logBackupNumStreams": logstreams,
+                "logBackupWithClause": logclause
+            }
 
-    if job['mssqlParams']['protectionType'] == 'kVolume':
-        params = job['mssqlParams']['volumeProtectionTypeParams']
-        params['logBackupNumStreams'] = logstreams
-        if logclause != '':
-            params['logBackupWithClause'] = logclause
+            if sourcesidededuplication is True:
+                job['mssqlParams']['fileProtectionTypeParams']['performSourceSideDeduplication'] = True
+            params = job['mssqlParams']['fileProtectionTypeParams']
+
+        if backuptype == 'VDI':
+            job['mssqlParams']['nativeProtectionTypeParams'] = {
+                "objects": [],
+                "numStreams": numstreams,
+                "withClause": withclause,
+                "logBackupNumStreams": logstreams,
+                "logBackupWithClause": logclause,
+                "userDbBackupPreferenceType": "kBackupAllDatabases",
+                "backupSystemDbs": True,
+                "useAagPreferencesFromServer": True,
+                "fullBackupsCopyOnly": False,
+                "excludeFilters": None
+            }
+            params = job['mssqlParams']['nativeProtectionTypeParams']
+
+        if backuptype == 'Volume':
+            job['mssqlParams']['volumeProtectionTypeParams'] = {
+                "objects": [],
+                "logBackupNumStreams": logstreams,
+                "logBackupWithClause": logclause,
+                "incrementalBackupAfterRestart": True,
+                "indexingPolicy": {
+                    "enableIndexing": True,
+                    "includePaths": [
+                        "/"
+                    ],
+                    "excludePaths": [
+                        '/$Recycle.Bin',
+                        "/Windows",
+                        "/Program Files",
+                        "/Program Files (x86)",
+                        "/ProgramData",
+                        "/System Volume Information",
+                        "/Users/*/AppData",
+                        "/Recovery",
+                        "/var",
+                        "/usr",
+                        "/sys",
+                        "/proc",
+                        "/lib",
+                        "/grub",
+                        "/grub2",
+                        "/opt/splunk",
+                        "/splunk"
+                    ]
+                },
+                "backupDbVolumesOnly": False,
+                "additionalHostParams": [],
+                "userDbBackupPreferenceType": "kBackupAllDatabases",
+                "backupSystemDbs": True,
+                "useAagPreferencesFromServer": True,
+                "fullBackupsCopyOnly": False,
+                "excludeFilters": None
+            }
+            params = job['mssqlParams']['volumeProtectionTypeParams']
+
+    else:
+        job = job[0]
+        if job['mssqlParams']['protectionType'] == 'kFile':
+            params = job['mssqlParams']['fileProtectionTypeParams']
+            params['logBackupNumStreams'] = logstreams
+            if logclause != '':
+                params['logBackupWithClause'] = logclause
+
+        if job['mssqlParams']['protectionType'] == 'kNative':
+            params = job['mssqlParams']['nativeProtectionTypeParams']
+            params['numStreams'] = numstreams
+            if withclause != '':
+                params['withClause'] = withclause
+            params['logBackupNumStreams'] = logstreams
+            if logclause != '':
+                params['logBackupWithClause'] = logclause
+
+        if job['mssqlParams']['protectionType'] == 'kVolume':
+            params = job['mssqlParams']['volumeProtectionTypeParams']
+            params['logBackupNumStreams'] = logstreams
+            if logclause != '':
+                params['logBackupWithClause'] = logclause
 
 
 def clearSelection(thisSource):
@@ -340,6 +347,19 @@ def isSelected(thisSource):
     return False
 
 
+def showUnprotected(serverSource):
+    print('\n%s\n' % serverSource['protectionSource']['name'])
+    allProtected = True
+    for instanceSource in sorted(serverSource['applicationNodes'], key=lambda instanceSource: instanceSource['protectionSource']['name']):
+        if len(instancenames) == 0 or instanceSource['protectionSource']['name'].lower() in [n.lower() for n in instancenames]:
+            for dbSource in sorted(instanceSource['nodes'], key=lambda dbSource: dbSource['protectionSource']['name']):
+                if 'leavesCount' in dbSource['unprotectedSourcesSummary'][0] and dbSource['unprotectedSourcesSummary'][0]['leavesCount'] > 0:
+                    print('    %s (unprotected)' % dbSource['protectionSource']['name'])
+                    allProtected = False
+    if allProtected is True:
+        print('    ALL PROTECTED')
+
+
 # get registered sql servers
 sources = api('get', 'protectionSources?environments=kSQL')
 systemDBs = ['master', 'model', 'msdb']
@@ -353,6 +373,9 @@ for server in servernames:
         exit(1)
     else:
         serverSource = serverSource[0]
+    if showunprotecteddbs is True:
+        showUnprotected(serverSource)
+        continue
     if replace is True:
         clearSelection(serverSource)
     if len(instancenames) == 0 and instancesonly is True:
@@ -422,6 +445,9 @@ for server in servernames:
         else:
             addSelection(serverSource)
             print("Protecting %s" % server)
+
+if showunprotecteddbs is True:
+    exit()
 
 if len(params['objects']) == 0:
     print("Nothing protected")
