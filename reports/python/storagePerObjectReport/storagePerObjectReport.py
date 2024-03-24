@@ -23,6 +23,7 @@ parser.add_argument('-n', '--numruns', type=int, default=1000)
 parser.add_argument('-y', '--growthdays', type=int, default=7)
 parser.add_argument('-x', '--units', type=str, choices=['MiB', 'GiB', 'mib', 'gib'], default='GiB')
 parser.add_argument('-s', '--skipdeleted', action='store_true')
+parser.add_argument('-a', '--includearchives', action='store_true')
 parser.add_argument('-debug', '--debug', action='store_true')
 args = parser.parse_args()
 
@@ -41,6 +42,7 @@ growthdays = args.growthdays
 units = args.units
 skipdeleted = args.skipdeleted
 debug = args.debug
+includearchives = args.includearchives
 
 if vips is None or len(vips) == 0:
     vips = ['helios.cohesity.com']
@@ -55,20 +57,27 @@ if units == 'gib':
     units = 'GiB'
 
 now = datetime.now()
+midnight = datetime.combine(now, datetime.min.time())
+midnightusecs = dateToUsecs(midnight)
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 growthdaysusecs = timeAgo(growthdays, 'days')
 msecsBeforeCurrentTimeToCompare = growthdays * 24 * 60 * 60 * 1000
 datestring = now.strftime("%Y-%m-%d-%H-%M")
 csvfileName = '%s/storagePerObjectReport-%s.csv' % (folder, datestring)
+clusterStatsFileName = '%s/storagePerObjectReport-%s-clusterstats.csv' % (folder, datestring)
 csv = codecs.open(csvfileName, 'w', 'utf-8')
-csv.write('"Cluster Name","Origin","Stats Age (Days)","Protection Group","Tenant","Storage Domain ID","Storage Domain Name","Environment","Source Name","Object Name","Front End Allocated %s","Front End Used %s","%s Read","%s Written","%s Written plus Resiliency","Protection Group Reduction Ratio","%s Growth Last %s Days","Snapshots","Log Backups","Oldest Backup","Newest Backup","Archive Count","Oldest Archive","%s Archived","%s per Archive Target","Cluster Used %s","Cluster Reduction Ratio"\n' % (units, units, units, units, units, units, growthdays, units, units, units))
+clusterStats = codecs.open(clusterStatsFileName, 'w', 'utf-8')
+csv.write('"Cluster Name","Origin","Stats Age (Days)","Protection Group","Tenant","Storage Domain ID","Storage Domain Name","Environment","Source Name","Object Name","Front End Allocated %s","Front End Used %s","%s Read","%s Written","%s Written plus Resiliency","Protection Group Reduction Ratio","%s Growth Last %s Days","Snapshots","Log Backups","Oldest Backup","Newest Backup","Archive Count","Oldest Archive","%s Archived","%s per Archive Target","Description","VM Tags"\n' % (units, units, units, units, units, units, growthdays, units, units))
+clusterStats.write('"Cluster Name","Total Used %s","BookKeeper Used %s","Unaccounted Usage %s","Unaccounted Percent","Data Reduction","Sum Objects Used %s","Sum Objects Written %s","Sum Objects Written with Resiliency %s"\n' % (units, units, units, units, units, units))
 
 
 def reportStorage():
+    sumObjectsUsed = 0
+    sumObjectsWritten = 0
+    sumObjectsWrittenWithResiliency = 0
     viewHistory = {}
     cluster = api('get', 'cluster?fetchStats=true')
     print('\n%s' % cluster['name'])
-    # print('  Collecting report data...')
     try:
         clusterReduction = round(cluster['stats']['usagePerfStats']['dataInBytes'] / cluster['stats']['usagePerfStats']['dataInBytesAfterReduction'], 1)
         clusterUsed = round(cluster['stats']['usagePerfStats']['totalPhysicalUsageBytes'] / multiplier, 1)
@@ -77,9 +86,8 @@ def reportStorage():
         clusterUsed = 0
     vaults = api('get', 'vaults?includeFortKnoxVault=true')
     cloudStats = None
-    if vaults is not None and len(vaults) > 0:
+    if vaults is not None and len(vaults) > 0 and includearchives is True:
         nowMsecs = int((dateToUsecs()) / 1000)
-        # weekAgoMsecs = nowMsecs - 86400000
         cloudStart = cluster['createdTimeMsecs']
         cloudStatURL = 'reports/dataTransferToVaults?endTimeMsecs=%s&startTimeMsecs=%s' % (nowMsecs, cloudStart)
         for vault in vaults:
@@ -119,6 +127,9 @@ def reportStorage():
             break
     for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower()):
         statsAge = '-'
+        jobDescription = ''
+        if 'description' in job:
+            jobDescription = job['description']
         origin = 'local'
         if job['isActive'] is not True:
             origin = 'replica'
@@ -180,6 +191,8 @@ def reportStorage():
             if jobReduction == 0:
                 jobReduction = 1
 
+            if job['environment'] == 'kVMware':
+                vmsearch = api('get', '/searchvms?allUnderHierarchy=true&entityTypes=kVMware&jobIds=%s' % job['id'].split(':')[2])
             # get protection runs in retention
             archiveCount = 0
             oldestArchive = '-'
@@ -223,6 +236,7 @@ def reportStorage():
                                         objects[objId]['growth'] = 0
                                         objects[objId]['numSnaps'] = 0
                                         objects[objId]['numLogs'] = 0
+                                        objects[objId]['vmTags'] = ''
                                         if 'sourceId' in object['object']:
                                             objects[objId]['sourceId'] = object['object']['sourceId']
                                         if snap is not None:
@@ -252,12 +266,15 @@ def reportStorage():
                                         if snap is None and 'logicalSizeBytes' in archivalInfo['stats'] and archivalInfo['stats']['logicalSizeBytes'] > objects[objId]['archiveLogical']:
                                             objects[objId]['archiveLogical'] = archivalInfo['stats']['logicalSizeBytes']
                                         if job['environment'] == 'kVMware':
-                                            vmsearch = api('get', '/searchvms?allUnderHierarchy=true&entityTypes=kVMware&jobIds=%s&vmName=%s' % (job['id'].split(':')[2], object['object']['name']))
+                                            # vmsearch = api('get', '/searchvms?allUnderHierarchy=true&entityTypes=kVMware&jobIds=%s&vmName=%s' % (job['id'].split(':')[2], object['object']['name']))
                                             if vmsearch is not None and 'vms' in vmsearch and vmsearch['vms'] is not None and len(vmsearch['vms']) > 0:
                                                 vms = [vm for vm in vmsearch['vms'] if vm['vmDocument']['objectName'].lower() == object['object']['name'].lower()]
                                                 if len(vms) > 0:
                                                     vmbytes = vms[0]['vmDocument']['objectId']['entity']['vmwareEntity']['frontEndSizeInfo']['sizeBytes']
                                                     objects[objId]['logical'] = vmbytes
+                                                    tagAttrs = [a for a in vms[0]['vmDocument']['attributeMap'] if 'VMware_tag' in a['xKey']]
+                                                    if tagAttrs is not None and len(tagAttrs) > 0:
+                                                        objects[objId]['vmTags'] = ';'.join([a['xValue'] for a in tagAttrs])
                                         if snap is not None and 'logicalSizeBytes' in snap['snapshotInfo']['stats'] and snap['snapshotInfo']['stats']['logicalSizeBytes'] > objects[objId]['logical']:
                                             if job['environment'] != 'kVMware' or objects[objId]['logical'] == 0:
                                                 objects[objId]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
@@ -366,7 +383,10 @@ def reportStorage():
                     alloc = objFESize
                     if job['environment'] == 'kVMware':
                         alloc = round(thisObject['alloc'] / multiplier, 1)
-                    csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, job['name'], tenant, sdid, sdname, job['environment'][1:], sourceName, thisObject['name'], alloc, objFESize, objDataIn, objWritten, objWrittenWithResiliency, jobReduction, objGrowth, thisObject['numSnaps'], thisObject['numLogs'], usecsToDate(thisObject['oldestBackup']), usecsToDate(thisObject['newestBackup']), archiveCount, oldestArchive, totalArchived, vaultStats, clusterUsed, clusterReduction))
+                    sumObjectsUsed += round(thisObject['logical'] / multiplier, 1)
+                    sumObjectsWritten += objWritten
+                    sumObjectsWrittenWithResiliency += objWrittenWithResiliency
+                    csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, job['name'], tenant, sdid, sdname, job['environment'][1:], sourceName, thisObject['name'], alloc, objFESize, objDataIn, objWritten, objWrittenWithResiliency, jobReduction, objGrowth, thisObject['numSnaps'], thisObject['numLogs'], usecsToDate(thisObject['oldestBackup']), usecsToDate(thisObject['newestBackup']), archiveCount, oldestArchive, totalArchived, vaultStats, jobDescription, thisObject['vmTags']))
         else:
             if job['isActive'] is True:
                 stats = localStats
@@ -470,15 +490,18 @@ def reportStorage():
             statsAge = '-'
             try:
                 objFESize = round(view['stats']['dataUsageStats']['totalLogicalUsageBytes'] / multiplier, 1)
+                sumObjectsUsed += objFESize
                 dataIn = view['stats']['dataUsageStats'].get('dataInBytes', 0)
                 dataInAfterDedup = view['stats']['dataUsageStats'].get('dataInBytesAfterDedup', 0)
                 jobWritten = view['stats']['dataUsageStats'].get('dataWrittenBytes', 0)
+                sumObjectsWritten += round(jobWritten / multiplier, 1)
                 statsTimeUsecs = view['stats']['dataUsageStats'].get('dataWrittenBytesTimestampUsec', 0)
                 if statsTimeUsecs > 0:
                     statsAge = round((nowUsecs - statsTimeUsecs) / 86400000000, 0)
                 else:
                     statsTime = '-'
                 consumption = view['stats']['dataUsageStats'].get('localTotalPhysicalUsageBytes', 0)
+                sumObjectsWrittenWithResiliency += round(consumption / multiplier, 1)
                 if jobName != '-':
                     objWeight = view['stats']['dataUsageStats']['totalLogicalUsageBytes'] / viewJobStats[jobName]
             except Exception:
@@ -509,7 +532,18 @@ def reportStorage():
                                     totalArchived += (objWeight * cloudJob['storageConsumed'])
                                     vaultStats += '[%s]%s ' % (vaultSummary['vaultName'], round((objWeight * cloudJob['storageConsumed']) / multiplier, 1))
             totalArchived = round(totalArchived / multiplier, 1)
-            csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, jobName, tenant, view['storageDomainId'], view['storageDomainName'], 'View', sourceName, viewName, objFESize, objFESize, round(dataIn / multiplier, 1), round(jobWritten / multiplier, 1), round(consumption / multiplier, 1), jobReduction, objGrowth, numSnaps, numLogs, oldestBackup, newestBackup, archiveCount, oldestArchive, totalArchived, vaultStats, clusterUsed, clusterReduction))
+            viewDescription = ''
+            if 'description' in view:
+                viewDescription = view['description']
+            csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, jobName, tenant, view['storageDomainId'], view['storageDomainName'], 'View', sourceName, viewName, objFESize, objFESize, round(dataIn / multiplier, 1), round(jobWritten / multiplier, 1), round(consumption / multiplier, 1), jobReduction, objGrowth, numSnaps, numLogs, oldestBackup, newestBackup, archiveCount, oldestArchive, totalArchived, vaultStats, viewDescription, ''))
+    bookKeeperStart = int(midnightusecs / 1000 - (29 * 86400000))
+    bookKeeperEnd = int(midnightusecs / 1000 + 86400000)
+    bookKeeperStats = api('get', 'statistics/timeSeriesStats?startTimeMsecs=%s&schemaName=MRCounters&metricName=bytes_value&rollupIntervalSecs=180&rollupFunction=average&entityId=BookkeeperChunkBytesPhysical&endTimeMsecs=%s' % (bookKeeperStart, bookKeeperEnd))
+    bookKeeperBytes = bookKeeperStats['dataPointVec'][-1]['data']['int64Value']
+    clusterUsedBytes = cluster['stats']['usagePerfStats']['totalPhysicalUsageBytes']
+    unaccounted = clusterUsedBytes - bookKeeperBytes
+    unaccountedPercent = round(100 * (unaccounted / clusterUsedBytes), 1)
+    clusterStats.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], clusterUsed, round(bookKeeperBytes / multiplier, 1), round(unaccounted / multiplier, 1), unaccountedPercent, clusterReduction, sumObjectsUsed, sumObjectsWritten, sumObjectsWrittenWithResiliency))
 
 
 for vip in vips:
@@ -536,4 +570,5 @@ for vip in vips:
 
 
 csv.close()
+clusterStats.close()
 print('\nOutput saved to %s\n' % csvfileName)
