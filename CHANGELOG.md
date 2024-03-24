@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-03-24
+
+* [storagePerObjectReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport) [`Update`] Added VM Tags column
+* [storagePerObjectReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storagePerObjectReport) [`Update`] Added VM Tags column
+
 ## 2024-03-22
 
 * [protectSQL.py](https://github.com/bseltz-cohesity/scripts/tree/master/sql/python/protectSQL) [`Update`] added -s, --showunprotecteddbs option
