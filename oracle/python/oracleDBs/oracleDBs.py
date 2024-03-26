@@ -75,21 +75,50 @@ outfile = 'oracleDBs-%s.csv' % cluster['name']
 f = codecs.open(outfile, 'w')
 
 # headings
-f.write('"Cluster Name","Server Name","Database Name","Size (%s)","UUID","Version","Protected"\n' % unit)
+f.write('"Cluster Name","Server Name","Database Name","Size (%s)","UUID","Version","Protected","DB Type","BCT Enabled","TDE Enabled","Archive Log Enabled","FRA Size %s","SGA %s","Shared Pool","Oracle Home"\n' % (unit, unit, unit))
 
 for server in sources[0]['nodes']:
     servername = server['protectionSource']['name']
     print('\n%s' % servername)
     for db in server['applicationNodes']:
+        # display(db)
         dbname = db['protectionSource']['name']
         dbsize = round(db['logicalSize'] / multiplier, 1)
         dbprotected = False
         if db['protectedSourcesSummary'][0]['leavesCount'] > 0:
             dbprotected = True
-        dbuuid = db['protectionSource']['oracleProtectionSource']['uuid']
-        dbversion = db['protectionSource']['oracleProtectionSource']['version']
+        dbuuid = db['protectionSource']['oracleProtectionSource'].get('uuid', '')
+        dbversion = db['protectionSource']['oracleProtectionSource'].get('version', '')
+        dbtype = db['protectionSource']['oracleProtectionSource'].get('dbType', '')
+        bct = db['protectionSource']['oracleProtectionSource'].get('bctEnabled', '')
+        tdeCount = db['protectionSource']['oracleProtectionSource'].get('tdeEncryptedTsCount', 0)
+        tdeEnabled = False
+        if tdeCount > 0:
+            tdeEnabled = True
+        arch = db['protectionSource']['oracleProtectionSource'].get('archiveLogEnabled', '')
+        fra = round(int(db['protectionSource']['oracleProtectionSource'].get('fraSize', 0)) / multiplier, 1)
+        sga = round(int(db['protectionSource']['oracleProtectionSource'].get('sgaTargetSize', 0)) / multiplier, 1)
+        shared = db['protectionSource']['oracleProtectionSource'].get('sharedPoolSize', 0)
+        home = ''
+        try:
+            home = db['protectionSource']['oracleProtectionSource']['hosts'][0]['sessions'][0]['location']
+        except Exception:
+            pass
         print('    %s (%s) %s %s' % (dbname, dbuuid, dbsize, unit))
-        f.write('"%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], servername, dbname, dbsize, dbuuid, dbversion, dbprotected))
-
+        f.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'],
+                                                                                                  servername,
+                                                                                                  dbname,
+                                                                                                  dbsize,
+                                                                                                  dbuuid,
+                                                                                                  dbversion,
+                                                                                                  dbprotected,
+                                                                                                  dbtype,
+                                                                                                  bct,
+                                                                                                  tdeEnabled,
+                                                                                                  arch,
+                                                                                                  fra,
+                                                                                                  sga,
+                                                                                                  shared,
+                                                                                                  home))
 f.close()
 print('\nOutput saved to %s\n' % outfile)
