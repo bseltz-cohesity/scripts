@@ -238,7 +238,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         }
     }
     $thisSourceInstance, $shortDbName = $sourceDbName -split '/'    
-    $search = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverApps&searchString=$shortDbName &environments=kSQL"
+    $search = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverApps&searchString=$shortDbName&environments=kSQL"
     $search.objects = $search.objects | Where-Object {$_.name -eq $sourceDbName -or $_.name -eq $shortDbName}
     $search.objects = $search.objects | Where-Object {$_.mssqlParams.hostInfo.name -eq $sourceServer -or $_.mssqlParams.aagInfo.name -eq $sourceServer}
     if($newerThan){
