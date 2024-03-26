@@ -50,6 +50,21 @@ To restore all databases (except system databases) to an alternate server:
                      -commit
 ```
 
+Restore a database that was backed up from an always on availability group
+
+```powershell
+./restoreSQL-CCS.ps1 -username myusername@mydomain.net `
+                     -region us-west-2 `
+                     -sourceServer my-aag `
+                     -sourceDB mydb1 `
+                     -targetServer my-aag1.mydomain.net `
+                     -targetDB RestoreDB1 `
+                     -mdfFolder c:\SQLData `
+                     -overwrite ` 
+                     -commit `
+                     -wait
+```
+
 ## Authentication Parameters
 
 * -username: (optional) name of user to connect to CCS (defaults to helios)
