@@ -28,6 +28,30 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 Place both files in a folder together and run the main script like so:
 
+To restore a single database to the original location:
+
+```powershell
+./restoreSQL-CCS.ps1 -username myusername@mydomain.net `
+                     -region us-west-2 `
+                     -sourceServer sqlserver1.mydomain.net `
+                     -sourceDB mydb1 `
+                     -overWrite `
+                     -commit
+```
+
+To restore a single database to an alternate location:
+
+```powershell
+./restoreSQL-CCS.ps1 -username myusername@mydomain.net `
+                     -region us-west-2 `
+                     -sourceServer sqlserver1.mydomain.net `
+                     -sourceDB mydb1 `
+                     -targetServer sqlserver2.mydomain.net `
+                     -targetDB restoreDB1 `
+                     -overWrite `
+                     -commit
+```
+
 To restore all databases (except system databases) to the original location:
 
 ```powershell
