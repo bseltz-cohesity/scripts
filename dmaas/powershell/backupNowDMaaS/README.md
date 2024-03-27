@@ -26,8 +26,22 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 Place both files in a folder together and run the main script like so:
 
+Start the backup of a VM:
+
 ```powershell
 ./backupNowDMaaS.ps1 -region us-east-2 -objectName myvm1
+```
+
+Start the backup of a SQL Server (all databases):
+
+```powershell
+./backupNowDMaaS.ps1 -region us-east-2 -sourceName sqlserver1.mydomain.net
+```
+
+Start the backup of a SQL Database:
+
+```powershell
+./backupNowDMaaS.ps1 -region us-east-2 -sourceName sqlserver1.mydomain.net -objectName MSSQLSERVER\mydb
 ```
 
 ## Parameters
