@@ -3,9 +3,11 @@
 param (
     [Parameter()][string]$username = 'DMaaS',
     [Parameter(Mandatory = $True)][string]$region,  # DMaaS region
-    [Parameter(Mandatory = $True)][string]$objectName,
+    [Parameter()][string]$objectName,
+    [Parameter()][string]$sourceName,
     [Parameter()][switch]$debugmode,
-    [Parameter()][switch]$wait
+    [Parameter()][switch]$wait,
+    [Parameter()][int]$sleepTime = 60
 )
 
 # source the cohesity-api helper code
@@ -16,52 +18,58 @@ apiauth -username $username -regionid $region
 
 $nowUsecs = dateToUsecs
 $tomorrowUsecs = $nowUsecs + 86400000000
-$weekAgoUsecs = timeAgo 1 week
-
-$objects = api get -v2 "data-protect/search/objects?searchString=$objectName&includeTenants=true"
-$objects = $objects.objects | Where-Object name -eq $objectName
-if($objects.Count -eq 0){
-    Write-Host "$objectName not found" -ForegroundColor Yellow
-    exit
-}
-
-$protectedObjects = api get -v2 data-protect/search/protected-objects?objectIds=$($objects[0].objectProtectionInfos[0].objectId)
-$protectedObjects = $protectedObjects.objects
-if($protectedObjects.Count -eq 0){
-    Write-Host "$objectName is not protected"
-    exit
-}
-
-$object = api get -v2 data-protect/objects?ids=$($objects[0].objectProtectionInfos[0].objectId)
+$weekAgoUsecs = timeAgo 1 day
 
 $runParams = @{
     "action" = "ProtectNow";
     "runNowParams" = @{
-        "objects" = @(
-            @{
-                "id" = $protectedObjects[0].id;
-                "takeLocalSnapshotOnly" = $false
-            }
-        )
+        "objects" = @()
     }
 }
 
-$activityParams = @{
-    "statsParams" = @{
-        "attributes" = @(
-            "Status";
-            "ActivityType"
-        )
-    };
-    "fromTimeUsecs" = $weekAgoUsecs;
-    "toTimeUsecs" = $tomorrowUsecs;
-    "objectIdentifiers" = @(
-        @{
-            "objectId" = $protectedObjects[0].id;
-            "clusterId" = $null;
-            "regionId" = $region
-        }
-    )
+if($objectName){    
+    $objects = api get -v2 "data-protect/search/objects?searchString=$objectName&includeTenants=true"
+    $objects = $objects.objects | Where-Object {$_.name -eq $objectName}
+    if($sourceName){
+        $objects = $objects | Where-Object {$_.sourceInfo.name -eq $sourceName}
+    }
+    
+    if($objects.Count -eq 0){
+        Write-Host "$objectName not found" -ForegroundColor Yellow
+        exit
+    }
+    foreach($obj in $objects){
+        $protectedObjectId = $obj.objectProtectionInfos[0].objectId
+        $runParams['runNowParams']['objects'] = @($runParams['runNowParams']['objects'] + @{
+            "id" = $protectedObjectId;
+            "takeLocalSnapshotOnly" = $false
+        })
+        $object = api get -v2 data-protect/objects?ids=$protectedObjectId
+    }    
+    $object = api get -v2 data-protect/objects?ids=$($objects[0].objectProtectionInfos[0].objectId)
+
+}elseif($sourceName){
+    $sources = api get -mcmv2 "data-protect/sources"
+    $source = $sources.sources | Where-Object name -eq $sourceName
+    if(!$source){
+        Write-Host "$sourceName not found" -ForegroundColor Yellow
+        exit
+    }
+    $protectedObjects = api get -v2 "data-protect/objects?parentId=$($source.sourceInfoList[0].sourceId)&onlyProtectedObjects=true&onlyAutoProtectedObjects=false"
+    $protectedObjects = $protectedObjects.objects
+    if($protectedObjects.Count -eq 0){
+        Write-Host "$sourceName is not protected"
+        exit
+    }
+    foreach($obj in $protectedObjects){
+        $runParams['runNowParams']['objects'] = @($runParams['runNowParams']['objects'] + @{
+            "id" = $obj.id;
+            "takeLocalSnapshotOnly" = $false
+        })
+        $object = api get -v2 data-protect/objects?ids=$($obj.id)
+    }
+}else{
+    Write-Host "-objectName or -sourceName required" -ForegroundColor Yellow
 }
 
 # handle multiple protections
@@ -81,27 +89,51 @@ if($policies.Count -gt 1){
     }
 }
 
+$activityParams = @{
+    "statsParams" = @{
+        "attributes" = @(
+            "Status";
+            "ActivityType"
+        )
+    };
+    "activityTypes" = @(
+        "ArchivalRun";
+        "BackupRun"
+    )
+    "fromTimeUsecs" = $weekAgoUsecs;
+    "toTimeUsecs" = $tomorrowUsecs
+}
+
 # wait for existing run to finish
-$finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning')
-$status = 'unknown'
+$finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning', 'SucceededWithWarning')
+$allFinished = $false
 $reportWaiting = $True
-while($status -notin $finishedStates){
+while($allFinished -eq $false){
+    $allFinished = $True
     $result = api post -mcmv2 "data-protect/objects/activity" $activityParams
     if($result.PSObject.Properties['activity'] -and $result.activity -ne $null -and $result.activity.Count -gt 0){
-        if($result.activity[0].PSObject.Properties['archivalRunParams'] -and $result.activity[0].archivalRunParams.PSObject.Properties['status']){
-            $status = $result.activity[0].archivalRunParams.status
-            if($status -in $finishedStates){
-                break
-            }else{
-                if($reportWaiting){
-                    Write-Host "Waiting for existing run to finish"
-                    $reportWaiting = $false
+        foreach($protectedObject in $runParams['runNowParams']['objects']){
+            $protectedObjectId = $protectedObject.id
+            $activities = $result.activity | Where-Object {$_.object.id -eq $protectedObjectId -or $_.sourceInfo.id -eq $protectedObjectId}
+            foreach($act in $activities){
+                if($act.PSObject.Properties['archivalRunParams'] -and $act.archivalRunParams.PSObject.Properties['status']){
+                    $status = $act.archivalRunParams.status
+                    if($status -notin $finishedStates){
+                        $allFinished = $false
+                        if($reportWaiting){
+                            Write-Host "Waiting for existing run to finish"
+                            $reportWaiting = $false
+                        }
+                    }
                 }
-                Start-Sleep 10
             }
         }
+        if($allFinished -eq $True){
+            break
+        }
+        Start-Sleep $sleepTime
     }else{
-        break
+        $allFinished = $false
     }
 }
 
@@ -118,25 +150,51 @@ if($result -and $result.PSObject.Properties['objects'] -and $result.objects.Coun
             Write-Host $error.message -ForegroundColor Yellow
         }
     }else{
-        "Running backup of $objectName"
+        if($objectName){
+            "Running backup of $objectName"
+        }else{
+            "Running backup of $sourceName"
+        }
         if($wait){
-            Start-Sleep 10
+            Start-Sleep $sleepTime
             $activityParams.fromTimeUsecs = $nowUsecs
             $status = 'unknown'
-            while($status -notin $finishedStates){
+            $allFinished = $false
+            $worstStatus = 'Succeeded'
+            while($allFinished -eq $false){
+                $allFinished = $True
                 $result = api post -mcmv2 "data-protect/objects/activity" $activityParams
                 if($result.PSObject.Properties['activity'] -and $result.activity -ne $null -and $result.activity.Count -gt 0){
-                    if($result.activity[0].PSObject.Properties['archivalRunParams'] -and $result.activity[0].archivalRunParams.PSObject.Properties['status']){
-                        $status = $result.activity[0].archivalRunParams.status
-                        if($status -in $finishedStates){
-                            break
-                        }else{
-                            Start-Sleep 10
+                    foreach($protectedObject in $runParams['runNowParams']['objects']){
+                        $protectedObjectId = $protectedObject.id
+                        $activities = $result.activity | Where-Object {$_.object.id -eq $protectedObjectId -or $_.sourceInfo.id -eq $protectedObjectId}
+                        foreach($act in $activities){
+                            if($act.PSObject.Properties['archivalRunParams'] -and $act.archivalRunParams.PSObject.Properties['status']){
+                                $status = $act.archivalRunParams.status
+                                if($status -eq 'Failed'){
+                                    $worstStatus = 'Failed'
+                                }
+                                if($worstStatus -ne 'Failed' -and $status -eq 'Canceled'){
+                                    $worstStatus = 'Cenceled'
+                                }
+                                if($worstStatus -ne 'Failed' -and $worstStatus -ne 'Canceled' -and $status -eq 'SucceededWithWarning'){
+                                    $worstStatus = 'SucceededWithWarning'
+                                }
+                                if($status -notin $finishedStates){
+                                    $allFinished = $false
+                                }
+                            }
                         }
                     }
+                    if($allFinished -eq $True){
+                        break
+                    }
+                    Start-Sleep $sleepTime
+                }else{
+                    $allFinished = $false
                 }
             }
-            Write-Host "Backup finished with status: $status"
+            Write-Host "Backup finished with status: $worstStatus"
         }
     }
 }else{
