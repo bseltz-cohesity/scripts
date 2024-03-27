@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-03-27
+
+* [backupNowDMaaS.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/backupNowDMaaS) [`Update`] Added support for SQL
+
 ## 2024-03-26
 
 * [oracleDBs.py](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/oracleDBs) [`Update`] added more columns to output
