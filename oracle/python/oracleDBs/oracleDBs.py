@@ -75,7 +75,7 @@ outfile = 'oracleDBs-%s.csv' % cluster['name']
 f = codecs.open(outfile, 'w')
 
 # headings
-f.write('"Cluster Name","Server Name","Database Name","Size (%s)","UUID","Version","Protected","DB Type","BCT Enabled","TDE Enabled","Archive Log Enabled","FRA Size %s","SGA %s","Shared Pool","Oracle Home"\n' % (unit, unit, unit))
+f.write('"Cluster Name","Server Name","Database Name","Size (%s)","UUID","Version","Protected","DB Type","BCT Enabled","TDE Enabled","Archive Log Enabled","FRA Size (%s)","SGA Target","Shared Pool","Oracle Home"\n' % (unit, unit))
 
 for server in sources[0]['nodes']:
     servername = server['protectionSource']['name']
@@ -85,7 +85,7 @@ for server in sources[0]['nodes']:
         dbname = db['protectionSource']['name']
         dbsize = round(db['logicalSize'] / multiplier, 1)
         dbprotected = False
-        if db['protectedSourcesSummary'][0]['leavesCount'] > 0:
+        if db['protectedSourcesSummary'][0].get('leavesCount', 0) > 0:
             dbprotected = True
         dbuuid = db['protectionSource']['oracleProtectionSource'].get('uuid', '')
         dbversion = db['protectionSource']['oracleProtectionSource'].get('version', '')
@@ -97,7 +97,7 @@ for server in sources[0]['nodes']:
             tdeEnabled = True
         arch = db['protectionSource']['oracleProtectionSource'].get('archiveLogEnabled', '')
         fra = round(int(db['protectionSource']['oracleProtectionSource'].get('fraSize', 0)) / multiplier, 1)
-        sga = round(int(db['protectionSource']['oracleProtectionSource'].get('sgaTargetSize', 0)) / multiplier, 1)
+        sga = db['protectionSource']['oracleProtectionSource'].get('sgaTargetSize', 0)
         shared = db['protectionSource']['oracleProtectionSource'].get('sharedPoolSize', 0)
         home = ''
         try:
