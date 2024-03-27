@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-03-26
+
+* [oracleDBs.py](https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/oracleDBs) [`Update`] added more columns to output
+
 ## 2024-03-24
 
 * [storagePerObjectReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport) [`Update`] Added VM Tags column
