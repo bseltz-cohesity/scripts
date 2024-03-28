@@ -44,7 +44,7 @@ If you're happy with the output you can commit the change by adding -x (--commit
 ## Other Parameters
 
 * -k, --keepfor: number of days (from original backup date) to retain the snapshots
-* -t, --backupType: (optional) kLog, kRegular, kFull, kSystem or kAll (default is kAll)
+* -t, --backupType: (optional) kLog, kRegular, kFull, kSystem (default is AllExceptLogs)
 * -log, --includelogs: (optional) update retention for log backups (will skip logs by default)
 * -a, --allowreduction: (optional) allow retention to be reduced
 * -x, --commit: (optional) perform updates (otherwise just show what would happen)

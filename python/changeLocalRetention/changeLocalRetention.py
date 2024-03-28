@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""base V1 example"""
+"""change local retention"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -20,7 +20,7 @@ parser.add_argument('-j', '--jobname', action='append', type=str)
 parser.add_argument('-l', '--joblist', type=str)
 parser.add_argument('-r', '--numruns', type=int, default=1000)
 parser.add_argument('-k', '--keepfor', type=int, required=True)
-parser.add_argument('-t', '--backupType', type=str, choices=['kLog', 'kRegular', 'kFull', 'kSystem', 'kAll'], default='kAll')
+parser.add_argument('-t', '--backupType', type=str, choices=['kLog', 'kRegular', 'kFull', 'kSystem', 'AllExceptLogs'], default='AllExceptLogs')
 parser.add_argument('-log', '--includelogs', action='store_true')
 parser.add_argument('-o', '--olderthan', type=int, default=0)
 parser.add_argument('-n', '--newerthan', type=int, default=0)
@@ -109,13 +109,17 @@ if len(notfoundjobs) > 0:
     print('Jobs not found: %s' % ', '.join(notfoundjobs))
     exit(1)
 
+myBackupType = 'kRegular&runTypes=kFull&runTypes=kSystem'
+if backupType != 'AllExceptLogs':
+    myBackupType = backupType
+
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
     if len(jobnames) == 0 or job['name'].lower() in [j.lower() for j in jobnames]:
         print('\n%s' % job['name'])
         endUsecs = nowUsecs
         runFound = False
         while 1:
-            runs = api('get', 'protectionRuns?jobId=%s&numRuns=%s&endTimeUsecs=%s&excludeTasks=true&excludeNonRestoreableRuns=true&runTypes=%s' % (job['id'], numruns, endUsecs, backupType))
+            runs = api('get', 'protectionRuns?jobId=%s&numRuns=%s&endTimeUsecs=%s&excludeTasks=true&excludeNonRestoreableRuns=true&runTypes=%s' % (job['id'], numruns, endUsecs, myBackupType))
             if len(runs) > 0:
                 endUsecs = runs[-1]['backupRun']['stats']['startTimeUsecs'] - 1
             else:
