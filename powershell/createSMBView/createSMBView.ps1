@@ -12,8 +12,10 @@ param (
     [Parameter()][array]$readWrite,                   # list of users to grant read/write
     [Parameter()][array]$readOnly,                    # list of users to grant read-only
     [Parameter()][array]$modify,                      # list of users to grant modify
+    [Parameter()][switch]$setSharePermissions,        # apply ACLs to share permissions also
     [Parameter()][int64]$quotaLimitGB = 0,            # quota Limit in GiB
     [Parameter()][int64]$quotaAlertGB = 0,            # quota alert threshold in GiB
+    [Parameter()][ValidateSet('BackupTarget', 'FileServices')][string]$category = 'FileServices',
     [Parameter()][ValidateSet('Backup Target Low','Backup Target High','TestAndDev High','TestAndDev Low')][string]$qosPolicy = 'Backup Target Low'
 )
 
@@ -37,48 +39,48 @@ $newView = @{
     "enableSmbAccessBasedEnumeration" = $true;
     "enableSmbViewDiscovery" = $true;
     "fileDataLock" = @{
-      "lockingProtocol" = "kSetReadOnly"
+        "lockingProtocol" = "kSetReadOnly"
     };
     "fileExtensionFilter" = @{
-      "isEnabled" = $false;
-      "mode" = "kBlacklist";
-      "fileExtensionsList" = @()
+        "isEnabled" = $false;
+        "mode" = "kBlacklist";
+        "fileExtensionsList" = @()
     };
     "securityMode" = "kNativeMode";
     "sharePermissions" = @(
-      @{
-        "sid" = "S-1-1-0";
-        "access" = "kFullControl";
-        "mode" = "kFolderSubFoldersAndFiles";
-        "type" = "kAllow"
-      }
+        @{
+            "sid" = "S-1-1-0";
+            "access" = "kFullControl";
+            "mode" = "kFolderSubFoldersAndFiles";
+            "type" = "kAllow"
+        }
     );
     "smbPermissionsInfo" = @{
-      "ownerSid" = "S-1-5-32-544";
-      "permissions" = @()
+        "ownerSid" = "S-1-5-32-544";
+        "permissions" = @()
     };
     "protocolAccess" = "kSMBOnly";
     "subnetWhitelist" = @();
     "qos" = @{
-      "principalName" = $qosPolicy
+        "principalName" = $qosPolicy
     };
     "viewBoxId" = $sdId;
     "caseInsensitiveNamesEnabled" = $true;
     "storagePolicyOverride" = @{
-      "disableInlineDedupAndCompression" = $false
+        "disableInlineDedupAndCompression" = $false
     };
     "name" = $viewName
 }
 
 # quota
-if($quotaLimitGB -ne 0 -or $quotaAlertGB -ne 0){
-  $newView['logicalQuota'] = @{}
-  if($quotaLimitGB -ne 0){
-    $newView.logicalQuota['hardLimitBytes'] = $quotaLimitGB * 1024 * 1024 * 1024
-  }
-  if($quotaAlertGB -ne 0){
-    $newView.logicalQuota['alertLimitBytes'] = $quotaAlertGB * 1024 * 1024 * 1024
-  }
+if ($quotaLimitGB -ne 0 -or $quotaAlertGB -ne 0) {
+    $newView['logicalQuota'] = @{ }
+    if ($quotaLimitGB -ne 0) {
+        $newView.logicalQuota['hardLimitBytes'] = $quotaLimitGB * 1024 * 1024 * 1024
+    }
+    if ($quotaAlertGB -ne 0) {
+        $newView.logicalQuota['alertLimitBytes'] = $quotaAlertGB * 1024 * 1024 * 1024
+    }
 }
 
 ### add permissions
@@ -93,10 +95,22 @@ function addPermission($user, $perms){
             "access" = $perms
         }
         $newView.smbPermissionsInfo.permissions += $permission
+        if($setSharePermissions){
+            $sharePermission = @{
+                "sid" = $principal.sid;
+                "type" = "kAllow";
+                "access" = $perms
+            }
+            $newView.sharePermissions = @($newView.sharePermissions + $sharePermission)
+        }
     }else{
         Write-Warning "User $user not found"
         exit 1
     }    
+}
+
+if($setSharePermissions){
+    $newView.sharePermissions = @()
 }
 
 foreach($user in $readWrite){
@@ -117,4 +131,10 @@ foreach($user in $modify){
 
 ### create the view
 "Creating view $viewName..."
-$null = api post views $newView
+$thisView = api post views $newView
+# $thisView
+$v2View = api get -v2 file-services/views?viewIds=$($thisView.viewId)
+# $v2View.views
+$v2View.views[0].category = $category
+$null = api put -v2 file-services/views/$($thisView.viewId) $v2View.views[0]
+

@@ -51,3 +51,5 @@ Place both files in a folder together and run the main script like so:
 * -storageDomain: (optional) name of storage domain to place view data. Defaults to DefaultStorageDomain
 * -quotaLimitGB: (optional) logical quota in GiB
 * -quotaAlertGB: (optional) alert threshold in GiB
+* -setSharePermissions: (optional) apply access rules to share level permissions (by default, access rules are only applied to the file system permissions and the share access is granted to Everyone)
+* -category: BackupTarget or 'FileServices (default is FileServices)
