@@ -1,12 +1,3 @@
-### Usage:
-# ./changeLocalRetention.ps1 -vip mycluster `
-#                            -username myuser `
-#                            -domain mydomain.net `
-#                            -jobname 'My Job' `
-#                            -snapshotDate '2020-05-01 23:30' `
-#                            -daysToKeep 10 `
-#                            -force
-
 ### process commandline arguments
 [CmdletBinding()]
 param (
@@ -27,7 +18,7 @@ param (
     [Parameter()][DateTime]$after,
     [Parameter()][DateTime]$before,
     [Parameter(Mandatory = $True)][string]$daysToKeep,
-    [Parameter()][ValidateSet("kRegular","kFull","kLog","kSystem","kAll")][string]$backupType = 'kAll',
+    [Parameter()][ValidateSet("kRegular","kFull","kLog","kSystem","AllExceptLogs")][string]$backupType = 'AllExceptLogs',
     [Parameter()][int]$maxRuns = 100000,
     [Parameter()][switch]$commit,
     [Parameter()][switch]$allowReduction
@@ -168,8 +159,14 @@ if($before){
     $beforeUsecs = dateToUsecs
 }
 
+if($backupType -eq 'AllExceptLogs'){
+    $myBackupType = "kIncremental&runTypes=kFull&runTypes=kSystem"
+}else{
+    $myBackupType = $backupType
+}
+
 foreach($job in $myjoblist){
-    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$maxRuns&runTypes=$backupType&excludeTasks=true&excludeNonRestoreableRuns=true" | Where-Object {$_.backupRun.snapshotsDeleted -ne $True -and
+    $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$maxRuns&runTypes=$myBackupType&excludeTasks=true&excludeNonRestoreableRuns=true" | Where-Object {$_.backupRun.snapshotsDeleted -ne $True -and
                                                                                                                                                              $_.backupRun.stats.startTimeUsecs -gt $afterUsecs -and                                                                                                                                                     
                                                                                                                                                              $_.backupRun.stats.endTimeUsecs -le $beforeUsecs}
     foreach($run in $runs){
