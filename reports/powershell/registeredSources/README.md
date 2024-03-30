@@ -51,7 +51,7 @@ For selected helios clusters:
 Search by source name (applies to all above scenarios):
 
 ```powershell
-./registeredSources.ps1 -vip mycluster -username myusername -domain mydomain -searchName 'mysource'
+./registeredSources.ps1 -vip mycluster -username myusername -domain mydomain -searchString 'mysource1', 'mysource2'
 ```
 
 Search by source type (applies to all above scenarios):
