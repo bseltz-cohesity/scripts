@@ -55,6 +55,10 @@ $outFile = Join-Path -Path $PSScriptRoot -ChildPath "registeredSources-$dateStri
 
 Write-Host ""
 
+
+
+
+
 foreach($v in $vip){
     ### authenticate
     apiauth -vip $v -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -tenant $tenant -noPromptForPassword $noPrompt -quiet
@@ -74,17 +78,8 @@ foreach($v in $vip){
                 $null = heliosCluster $cluster
             }
             $seenSources = @()
-            $sources = (api get protectionSources/registrationInfo?includeApplicationsTreeInfo=false).rootNodes
-            if($searchType){
-                $sources = $sources | Where-Object {$_.rootNode.environment -match $searchType -or $_.registrationInfo.registeredAppsInfo.environment -match $searchType}
-            }
-            foreach($searchString in $searchStrings){
-                if($searchString){
-                    $thesesources = $sources | Where-Object {$_.rootNode.name -match $searchString}
-                }
-                if($dbg){
-                    $thesesources | toJson | Out-File -FilePath $(Join-Path -Path $PSScriptRoot -ChildPath debug-RegisteredSources-$($cluster).json)
-                }
+
+            function getSources($thesesources){
                 foreach($source in $thesesources | Sort-Object -Property {$_.rootNode.name}){
                     if($source.rootNode.id -in $seenSources){
                         continue
@@ -166,6 +161,20 @@ foreach($v in $vip){
                     }
                     "{0}:  {1}  ({2})  {3}" -f $cluster, $sourceName, $sourceType, $status
                     $seenSources = @($seenSources + $source.rootNode.id)
+                }
+            }
+
+
+            $sources = (api get protectionSources/registrationInfo?includeApplicationsTreeInfo=false).rootNodes
+            if($searchType){
+                $sources = $sources | Where-Object {$_.rootNode.environment -match $searchType -or $_.registrationInfo.registeredAppsInfo.environment -match $searchType}
+            }
+            if($searchStrings.Count -eq 0){
+                getSources $sources
+            }else{
+                foreach($searchString in $searchStrings){
+                    $thesesources = $sources | Where-Object {$_.rootNode.name -match $searchString}
+                    getSources $thesesources
                 }
             }
         }
