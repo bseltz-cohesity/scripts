@@ -12,10 +12,36 @@ param (
    [Parameter()][switch]$mcm,                           # connect to MCM endpoint
    [Parameter()][string]$mfaCode = $null,               # MFA code
    [Parameter()][switch]$emailMfaCode,                  # email MFA code
-   [Parameter()][string]$searchString,
+   [Parameter()][array]$searchString,
+   [Parameter()][string]$searchList,
    [Parameter()][string]$searchType,
    [Parameter()][switch]$dbg
 )
+
+
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
+        }
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
+        exit
+    }
+    return ($items | Sort-Object -Unique)
+}
+
+
+$searchStrings = @(gatherList -Param $searchString -FilePath $searchList -Name 'searches' -Required $false)
 
 $now = Get-Date
 $dateString = $now.ToString('yyyy-MM-dd')
@@ -47,94 +73,100 @@ foreach($v in $vip){
             if($USING_HELIOS){
                 $null = heliosCluster $cluster
             }
-
+            $seenSources = @()
             $sources = (api get protectionSources/registrationInfo?includeApplicationsTreeInfo=false).rootNodes
-            if($searchString){
-                $sources = $sources | Where-Object {$_.rootNode.name -match $searchString}
-            }
             if($searchType){
-                $sources = $sources | Where-Object {$_.rootNode.environment -match $searchType}
+                $sources = $sources | Where-Object {$_.rootNode.environment -match $searchType -or $_.registrationInfo.registeredAppsInfo.environment -match $searchType}
             }
-            if($dbg){
-                $sources | toJson | Out-File -FilePath $(Join-Path -Path $PSScriptRoot -ChildPath debug-RegisteredSources-$($cluster).json)
-            }
-            foreach($source in $sources | Sort-Object -Property {$_.rootNode.name}){
-                $status = 'Healthy'
-                $authStatus = $authError = $lastRefreshError = ''
-                $sourceName = $source.rootNode.name
-                $sourceType = $source.rootNode.environment.subString(1)
-                $lastRefreshUsecs = $source.registrationInfo.refreshTimeUsecs
-                # check for refresh error
-                if($source.registrationInfo.PSObject.Properties['refreshErrorMessage']){
-                    $lastRefreshError = $source.registrationInfo.refreshErrorMessage.split("`n")[0]
-                    if($lastRefreshError.length -gt 50){
-                        $lastRefreshError = $lastRefreshError.subString(0,50)
+            foreach($searchString in $searchStrings){
+                if($searchString){
+                    $thesesources = $sources | Where-Object {$_.rootNode.name -match $searchString}
+                }
+                if($dbg){
+                    $thesesources | toJson | Out-File -FilePath $(Join-Path -Path $PSScriptRoot -ChildPath debug-RegisteredSources-$($cluster).json)
+                }
+                foreach($source in $thesesources | Sort-Object -Property {$_.rootNode.name}){
+                    if($source.rootNode.id -in $seenSources){
+                        continue
                     }
-                    $status = 'Unhealthy'
-                }
-                $protected = $source.stats.protectedCount
-                $unprotected = $source.stats.unprotectedCount
-                # check for authentication completion
-                if($source.registrationInfo.PSObject.Properties['authenticationStatus']){
-                    $authStatus = $source.registrationInfo.authenticationStatus.subString(1)
-                }
-                if($authStatus -ne 'Finished' -and $sourceType -ne 'GenericNas'){
-                    $status = 'Unhealthy'
-                }
-                # check for authentication error
-                if($source.registrationInfo.PSObject.Properties['authenticationErrorMessage']){
-                    $authError = $source.registrationInfo.authenticationErrorMessage.split("`n")[0]
-                    if($authError.length -gt 50){
-                        $authError = $authError.subString(0,50)
+                    $status = 'Healthy'
+                    $authStatus = $authError = $lastRefreshError = ''
+                    $sourceName = $source.rootNode.name
+                    $sourceType = $source.rootNode.environment.subString(1)
+                    $lastRefreshUsecs = $source.registrationInfo.refreshTimeUsecs
+                    # check for refresh error
+                    if($source.registrationInfo.PSObject.Properties['refreshErrorMessage']){
+                        $lastRefreshError = $source.registrationInfo.refreshErrorMessage.split("`n")[0]
+                        if($lastRefreshError.length -gt 50){
+                            $lastRefreshError = $lastRefreshError.subString(0,50)
+                        }
+                        $status = 'Unhealthy'
                     }
-                    $status = 'Unhealthy'
-                }
-                if($source.registrationInfo.PSObject.Properties['registeredAppsInfo']){
-                    foreach($app in $source.registrationInfo.registeredAppsInfo){
-                        $status = 'Healthy'
-                        $authStatus = $authError = $lastRefreshError = ''
-                        $sourceType = $app.environment.subString(1)
-                        # check for authentication completion
-                        if($app.PSObject.Properties['authenticationStatus']){
-                            $authStatus = $app.authenticationStatus.subString(1)
+                    $protected = $source.stats.protectedCount
+                    $unprotected = $source.stats.unprotectedCount
+                    # check for authentication completion
+                    if($source.registrationInfo.PSObject.Properties['authenticationStatus']){
+                        $authStatus = $source.registrationInfo.authenticationStatus.subString(1)
+                    }
+                    if($authStatus -ne 'Finished' -and $sourceType -ne 'GenericNas'){
+                        $status = 'Unhealthy'
+                    }
+                    # check for authentication error
+                    if($source.registrationInfo.PSObject.Properties['authenticationErrorMessage']){
+                        $authError = $source.registrationInfo.authenticationErrorMessage.split("`n")[0]
+                        if($authError.length -gt 50){
+                            $authError = $authError.subString(0,50)
                         }
-                        if($authStatus -ne 'Finished'){
-                            $status = 'Unhealthy'
-                        }
-                        # check for authentication error
-                        if($app.PSObject.Properties['authenticationErrorMessage']){
-                            $authError = $app.authenticationErrorMessage.split("`n")[0]
-                            if($authError.length -gt 50){
-                                $authError = $authError.subString(0,50)
+                        $status = 'Unhealthy'
+                    }
+                    if($source.registrationInfo.PSObject.Properties['registeredAppsInfo']){
+                        foreach($app in $source.registrationInfo.registeredAppsInfo){
+                            $status = 'Healthy'
+                            $authStatus = $authError = $lastRefreshError = ''
+                            $sourceType = $app.environment.subString(1)
+                            # check for authentication completion
+                            if($app.PSObject.Properties['authenticationStatus']){
+                                $authStatus = $app.authenticationStatus.subString(1)
                             }
-                            $status = 'Unhealthy'
-                        }
-                        # check for refresh error
-                        if($app.PSObject.Properties['refreshErrorMessage']){
-                            $lastRefreshError = $app.refreshErrorMessage.split("`n")[0]
-                            if($lastRefreshError.length -gt 50){
-                                $lastRefreshError = $lastRefreshError.subString(0,50)
-                            }
-                            $status = 'Unhealthy'
-                        }
-                        # check for app health check results
-                        if($app.PSObject.Properties['hostSettingsCheckResults']){
-                            $failedChecks = $app.hostSettingsCheckResults | Where-Object resultType -ne 'kPass'
-                            if($failedChecks){
-                                $healthChecks = "{0}: {1}" -f $failedChecks[0].checkType.subString(1), $failedChecks[0].userMessage.split("`n")[0]
+                            if($authStatus -ne 'Finished'){
                                 $status = 'Unhealthy'
-                            }else{
-                                $healthChecks = 'Passed'
                             }
-                        }else{
-                            $healthChecks = 'n/a'
+                            # check for authentication error
+                            if($app.PSObject.Properties['authenticationErrorMessage']){
+                                $authError = $app.authenticationErrorMessage.split("`n")[0]
+                                if($authError.length -gt 50){
+                                    $authError = $authError.subString(0,50)
+                                }
+                                $status = 'Unhealthy'
+                            }
+                            # check for refresh error
+                            if($app.PSObject.Properties['refreshErrorMessage']){
+                                $lastRefreshError = $app.refreshErrorMessage.split("`n")[0]
+                                if($lastRefreshError.length -gt 50){
+                                    $lastRefreshError = $lastRefreshError.subString(0,50)
+                                }
+                                $status = 'Unhealthy'
+                            }
+                            # check for app health check results
+                            if($app.PSObject.Properties['hostSettingsCheckResults']){
+                                $failedChecks = $app.hostSettingsCheckResults | Where-Object resultType -ne 'kPass'
+                                if($failedChecks){
+                                    $healthChecks = "{0}: {1}" -f $failedChecks[0].checkType.subString(1), $failedChecks[0].userMessage.split("`n")[0]
+                                    $status = 'Unhealthy'
+                                }else{
+                                    $healthChecks = 'Passed'
+                                }
+                            }else{
+                                $healthChecks = 'n/a'
+                            }
+                            """$cluster"",""$status"",""$sourceName"",""$sourceType"",""$protected"",""$unprotected"",""$authStatus"",""$authError"",""$(usecsToDate $lastRefreshUsecs)"",""$lastRefreshError"",""$healthChecks""" | Out-File -FilePath $outFile -Append
                         }
-                        """$cluster"",""$status"",""$sourceName"",""$sourceType"",""$protected"",""$unprotected"",""$authStatus"",""$authError"",""$(usecsToDate $lastRefreshUsecs)"",""$lastRefreshError"",""$healthChecks""" | Out-File -FilePath $outFile -Append
+                    }else{
+                        """$cluster"",""$status"",""$sourceName"",""$sourceType"",""$protected"",""$unprotected"",""$authStatus"",""$authError"",""$(usecsToDate $lastRefreshUsecs)"",""$lastRefreshError"",""n/a""" | Out-File -FilePath $outFile -Append
                     }
-                }else{
-                    """$cluster"",""$status"",""$sourceName"",""$sourceType"",""$protected"",""$unprotected"",""$authStatus"",""$authError"",""$(usecsToDate $lastRefreshUsecs)"",""$lastRefreshError"",""n/a""" | Out-File -FilePath $outFile -Append
+                    "{0}:  {1}  ({2})  {3}" -f $cluster, $sourceName, $sourceType, $status
+                    $seenSources = @($seenSources + $source.rootNode.id)
                 }
-                "{0}:  {1}  ({2})  {3}" -f $cluster, $sourceName, $sourceType, $status
             }
         }
     }

@@ -76,5 +76,6 @@ Search by source type (applies to all above scenarios):
 
 ## Other Parameters
 
-* -searchString: (optional) limit results to sources where the name matches the search string
+* -searchString: (optional) one or more source names or search strings (comma separated) to search for
+* -searchList: (optional) text file of source names or search strings to search for (one per line)
 * -searchType: (optional) limit results to sources where the environment type matches the search type
