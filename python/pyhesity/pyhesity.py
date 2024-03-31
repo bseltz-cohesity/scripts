@@ -32,6 +32,7 @@
 # 2024.01.14 - reenabled legacy access modes
 # 2024.02.28 - added support for helios.gov
 # 2024.03.15 - unhid value error
+# 2024.03.31 - fixed empty return
 #
 ##########################################################################################
 # Install Notes
@@ -504,9 +505,7 @@ def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1, reporting
         if response != '':
             if response.status_code == 204:
                 COHESITY_API['LAST_ERROR'] = response.reason
-                # if quiet is None:
-                #     print('*** %s ***' % response.reason)
-                return None
+                return ''
             if response.status_code == 404:
                 COHESITY_API['LAST_ERROR'] = response.reason
                 if quiet is None:
