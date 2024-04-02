@@ -422,8 +422,18 @@ def reportStorage():
                     if 'archivalInfo' in run and run['archivalInfo'] is not None and 'archivalTargetResults' in run['archivalInfo'] and run['archivalInfo']['archivalTargetResults'] is not None and len(run['archivalInfo']['archivalTargetResults']) > 0:
                         for archiveResult in run['archivalInfo']['archivalTargetResults']:
                             if 'status' in archiveResult and archiveResult['status'] == 'Succeeded':
-                                viewHistory[object['object']['name']]['archiveCount'] += 1
-                                viewHistory[object['object']['name']]['oldestArchive'] = usecsToDate(run['id'].split(':')[-1])
+                                for object in [o for o in run['objects']]:
+                                    if object['object']['name'] not in viewHistory:
+                                        viewHistory[object['object']['name']] = {}
+                                        viewHistory[object['object']['name']]['archiveCount'] = 0
+                                        viewHistory[object['object']['name']]['oldestArchive'] = '-'
+                                        viewHistory[object['object']['name']]['stats'] = thisStat
+                                        viewHistory[object['object']['name']]['numSnaps'] = 0
+                                        viewHistory[object['object']['name']]['numLogs'] = 0
+                                        viewHistory[object['object']['name']]['newestBackup'] = None
+                                        viewHistory[object['object']['name']]['oldestBackup'] = None
+                                    viewHistory[object['object']['name']]['archiveCount'] += 1
+                                    viewHistory[object['object']['name']]['oldestArchive'] = usecsToDate(run['id'].split(':')[-1])
                 if len(runs['runs']) < numruns:
                     break
                 else:
