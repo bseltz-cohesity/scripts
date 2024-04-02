@@ -386,7 +386,19 @@ def reportStorage():
                     sumObjectsUsed += round(thisObject['logical'] / multiplier, 1)
                     sumObjectsWritten += objWritten
                     sumObjectsWrittenWithResiliency += objWrittenWithResiliency
-                    csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, job['name'], tenant, sdid, sdname, job['environment'][1:], sourceName, thisObject['name'], alloc, objFESize, objDataIn, objWritten, objWrittenWithResiliency, jobReduction, objGrowth, thisObject['numSnaps'], thisObject['numLogs'], usecsToDate(thisObject['oldestBackup']), usecsToDate(thisObject['newestBackup']), archiveCount, oldestArchive, totalArchived, vaultStats, jobDescription, thisObject['vmTags']))
+                    newestBackup = '-'
+                    try:
+                        if 'newestBackup' in thisObject:
+                            newestBackup = usecsToDate(thisObject['newestBackup'])
+                    except Exception:
+                        pass
+                    oldestBackup = '-'
+                    try:
+                        if 'oldestBackup' in thisObject:
+                            oldestBackup = usecsToDate(thisObject['oldestBackup'])
+                    except Exception:
+                        pass
+                    csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, job['name'], tenant, sdid, sdname, job['environment'][1:], sourceName, thisObject['name'], alloc, objFESize, objDataIn, objWritten, objWrittenWithResiliency, jobReduction, objGrowth, thisObject['numSnaps'], thisObject['numLogs'], oldestBackup, newestBackup, archiveCount, oldestArchive, totalArchived, vaultStats, jobDescription, thisObject['vmTags']))
         else:
             if job['isActive'] is True:
                 stats = localStats
