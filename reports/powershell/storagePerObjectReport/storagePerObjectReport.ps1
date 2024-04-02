@@ -613,6 +613,19 @@ function reportStorage(){
                     if($run.PSObject.Properties['archivalInfo'] -and $run.archivalInfo.PSObject.Properties['archivalTargetResults']){
                         foreach($archiveResult in $run.archivalInfo.archivalTargetResults){
                             if($archiveResult.status -eq 'Succeeded'){
+                                foreach($object in $run.objects){
+                                    if($object.object.name -notin $viewHistory.Keys){
+                                        $viewHistory[$object.object.name] = @{}
+                                        $viewHistory[$object.object.name]['stats'] = $thisStat
+                                        $viewHistory[$object.object.name]['numSnaps'] = 0
+                                        $viewHistory[$object.object.name]['numLogs'] = 0
+                                        $viewHistory[$object.object.name]['newestBackup'] = $null
+                                        $viewHistory[$object.object.name]['oldestBackup'] = $null
+                                        $viewHistory[$object.object.name]['archiveCount'] = 0
+                                        $viewHistory[$object.object.name]['oldestArchive'] = '-'
+                                        $viewHistory[$object.object.name]['lastDataLock'] = $null
+                                    }
+                                }
                                 $viewHistory[$object.object.name]['archiveCount'] += 1
                                 $viewHistory[$object.object.name]['oldestArchive'] = usecsToDate (($run.id -split ':')[-1])
                             }
