@@ -1,5 +1,25 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-04-04
+
+* [instantVolumeMount.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/instantVolumeMount) [`Fix`] fix run ID selection
+
+## 2024-04-03
+
+* [storagePerObjectReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport) [`Update`] Get stats by job ID
+* [storagePerObjectReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storagePerObjectReport) [`Update`] Get stats by job ID
+
+## 2024-03-31
+
+* [pyhesity.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/pyhesity) [`Fix`] fixed error reporting
+
+## 2024-03-28
+
+* [registeredSources.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/registeredSources) [`Update`] expanded search options
+* [createSMBView.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/createSMBView) [`Update`] added option to set share permissions
+* [changeLocalRetention.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/changeLocalRetention) [`Update`] Improved backup type selection options
+* [changeLocalRetention.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/changeLocalRetention) [`Update`] Improved backup type selection options
+
 ## 2024-03-27
 
 * [backupNowDMaaS.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/dmaas/powershell/backupNowDMaaS) [`Update`] Added support for SQL
