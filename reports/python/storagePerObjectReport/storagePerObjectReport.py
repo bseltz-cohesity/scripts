@@ -126,6 +126,7 @@ def reportStorage():
         if cookie == '':
             break
     for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower()):
+        v1JobId = job['id'].split(':')[2]
         statsAge = '-'
         jobDescription = ''
         if 'description' in job:
@@ -155,7 +156,7 @@ def reportStorage():
                             resiliencyFactor = 2
             objects = {}
             print('  %s' % job['name'])
-            v1JobId = job['id'].split(':')[2]
+            
             jobObjGrowth = 0
             jobGrowth = 0
             # get jobReduction factor
@@ -164,7 +165,7 @@ def reportStorage():
             else:
                 stats = replicaStats
             if 'statsList' in stats and stats['statsList'] is not None:
-                thisStat = [s for s in stats['statsList'] if s['name'] == job['name']]
+                thisStat = [s for s in stats['statsList'] if s['id'] == int(v1JobId)]
             if 'statsList' in stats and stats['statsList'] is not None and thisStat is not None and len(thisStat) > 0:
                 statsTimeUsecs = thisStat[0]['stats'].get('dataWrittenBytesTimestampUsec', 0)
                 if statsTimeUsecs > 0:
@@ -405,7 +406,7 @@ def reportStorage():
             else:
                 stats = replicaStats
             if 'statsList' in stats and stats['statsList'] is not None:
-                thisStat = [s for s in stats['statsList'] if s['name'] == job['name']]
+                thisStat = [s for s in stats['statsList'] if s['id'] == int(v1JobId)]
             endUsecs = nowUsecs
             while 1:
                 if debug is True:

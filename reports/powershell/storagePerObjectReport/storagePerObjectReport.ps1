@@ -160,6 +160,7 @@ function reportStorage(){
         if($job.environment -eq 'kVMware'){
             $vmsearch = api get "/searchvms?allUnderHierarchy=true&entityTypes=kVMware&jobIds=$(($job.id -split ':')[2])&vmName=$($job.name)"
         }
+        $v1JobId = ($job.id -split ':')[2]
         if($job.environment -notin @('kView', 'kRemoteAdapter')){
             output "  $($job.name)"
             $tenant = $job.permissions.name
@@ -184,7 +185,7 @@ function reportStorage(){
                 }
             }
             $objects = @{}
-            $v1JobId = ($job.id -split ':')[2]
+            
             $jobObjGrowth = 0
             $jobGrowth = 0
     
@@ -195,7 +196,8 @@ function reportStorage(){
                 $stats = $replicaStats
             }
             if($stats){
-                $thisStat = $stats.statsList | Where-Object {$_.name -eq $job.name}
+                # $thisStat = $stats.statsList | Where-Object {$_.name -eq $job.name}
+                $thisStat = $stats.statsList | Where-Object {$_.id -eq $v1JobId}
             }
             if($stats -and $thisStat){
                 try{
@@ -363,10 +365,10 @@ function reportStorage(){
                                         $objects[$objId]['growth'] += $snap.snapshotInfo.stats.bytesRead
                                         $jobObjGrowth += $snap.snapshotInfo.stats.bytesRead
                                     }
-                                    if($snap.snapshotInfo.startTimeUsecs -gt $growthDaysUsecs){
-                                        $objects[$objId]['growth'] += $snap.snapshotInfo.stats.bytesRead
-                                        $jobObjGrowth += $snap.snapshotInfo.stats.bytesRead
-                                    }
+                                    # if($snap.snapshotInfo.startTimeUsecs -gt $growthDaysUsecs){
+                                    #     $objects[$objId]['growth'] += $snap.snapshotInfo.stats.bytesRead
+                                    #     $jobObjGrowth += $snap.snapshotInfo.stats.bytesRead
+                                    # }
                                 }else{
                                     $objects[$objId]['oldestBackup'] = $archivalInfo.startTimeUsecs
                                     $objects[$objId]['archiveBytesRead'] += $archivalInfo.stats.bytesRead
@@ -565,7 +567,8 @@ function reportStorage(){
                 $stats = $replicaStats
             }
             if($stats){
-                $thisStat = $stats.statsList | Where-Object {$_.name -eq $job.name}
+                
+                $thisStat = $stats.statsList | Where-Object {$_.id -eq $v1JobId}
             }
             $endUsecs = $nowUsecs
             $lastDataLock = '-'
