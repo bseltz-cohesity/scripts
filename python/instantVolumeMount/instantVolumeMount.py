@@ -22,7 +22,7 @@ parser.add_argument('-t', '--targetserver', type=str, default=None)
 parser.add_argument('-vis', '--hypervisor', type=str, default=None)
 parser.add_argument('-e', '--environment', type=str, choices=['kVMware', 'kPhysical', 'kHyperV'], default=None)
 parser.add_argument('-id', '--id', type=int, default=None)
-parser.add_argument('-r', '--runid', type=int, default=None)
+parser.add_argument('-r', '--runid', type=str, default=None)
 parser.add_argument('-date', '--date', type=str, default=None)
 parser.add_argument('-w', '--wait', action='store_true')
 parser.add_argument('-sh', '--showversions', action='store_true')
@@ -140,7 +140,7 @@ else:
 # get list of available snapshots
 snapshots = api('get', 'data-protect/objects/%s/snapshots?protectionGroupIds=%s' % (objectId, ','.join([s['protectionGroupId'] for s in search['objects'][0]['latestSnapshotsInfo']])), v=2)
 if runid is not None:
-    snapshots['snapshots'] = [s for s in snapshots['snapshots'] if s['runId'] == runid]
+    snapshots['snapshots'] = [s for s in snapshots['snapshots'] if str(s['runInstanceId']) == runid or s['protectionGroupRunId'] == runid]
 
 if date is not None:
     dateUsecs = (dateToUsecs(date)) + 60000000
@@ -148,7 +148,7 @@ if date is not None:
 
 if len(snapshots['snapshots']) == 0:
     print('no snapshots available')
-    exit
+    exit()
 
 if showversions:
     for snapshot in sorted(snapshots['snapshots'], key=lambda s: s['runStartTimeUsecs'], reverse=True):
