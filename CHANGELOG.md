@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-04-05
+
+* [cloneBackupToView.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cloneBackupToView) [`Update`] modernized authentication parameters
+
 ## 2024-04-04
 
 * [instantVolumeMount.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/instantVolumeMount) [`Fix`] fix run ID selection
