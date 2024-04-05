@@ -24,7 +24,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 Place both files in a folder together, then we can run the script.
 
-First, run the script WITHOUT the -replicate switch to see what would be replicated.
+First, run the script WITHOUT the -commit switch to see what would be replicated.
 
 ```powershell
 ./replicateOldSnapshots.ps1 -vip mycluster `
@@ -34,7 +34,7 @@ First, run the script WITHOUT the -replicate switch to see what would be replica
                             -olderThan 1
 ```
 
-Then, if you're happy with the list of snapshots that will be replicated, run the script again and include the -replicate switch. This will execute the replication tasks
+Then, if you're happy with the list of snapshots that will be replicated, run the script again and include the -commit switch. This will execute the replication tasks
 
 ```powershell
 ./replicateOldSnapshots.ps1 -vip mycluster `
