@@ -99,13 +99,21 @@ To refresh a view (on a schedule):
                         -logsOnly
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: Cohesity cluster to connect to
-* -username: Cohesity username (e.g. admin)
-* -domain: (optional) Active Directory domain (defaults to 'local')
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
 * -useApiKey: (optional) use API key for authentication
-* -password: (optional) password or API key (will use stored password by default)
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Basic Parameters
+
 * -jobname: (optional) name of SQL protection job
 * -objectName: (optional) name of sqlServer whose backup to clone
 * -viewName: (optional) name of new or existing view to clone backup files to
