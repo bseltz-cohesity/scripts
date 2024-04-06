@@ -31,6 +31,7 @@ parser.add_argument('-vol', '--volumes', action='append', type=str)
 parser.add_argument('-a', '--useexistingagent', action='store_true')
 parser.add_argument('-vu', '--vmusername', type=str, default=None)
 parser.add_argument('-vp', '--vmpassword', type=str, default=None)
+parser.add_argument('-debug', '--debug', action='store_true')
 args = parser.parse_args()
 
 vip = args.vip
@@ -57,6 +58,7 @@ volumes = args.volumes
 useexistingagent = args.useexistingagent
 vmusername = args.vmusername
 vmpassword = args.vmpassword
+debug = args.debug
 
 
 # get object ID
@@ -378,6 +380,8 @@ if volumes is not None and len(volumes) > 0:
 # display(recoveryParams)
 # exit()
 print('Performing instant volume mount...')
+if debug is True:
+    display(recoveryParams)
 recovery = api('post', 'data-protect/recoveries', recoveryParams, v=2)
 
 # wait

@@ -79,6 +79,7 @@ To tear down the mount when finished:
 * -date, --date: (optional) use latest snapshot on or before date (e.g. '2023-10-21 23:00:00')
 * -vol, --volumes: (optional) one or more volumes to mount (repreat for multiple))
 * -w, --wait: (optional) wait and report completion status
+* -debug, --debug: (optional) display JSON payload
 
 ## VM Parameters
 
