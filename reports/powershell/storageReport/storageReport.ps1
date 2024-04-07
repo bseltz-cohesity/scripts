@@ -11,6 +11,7 @@ param (
     [Parameter()][string]$mfaCode = $null,              # mfa code
     [Parameter()][switch]$emailMfaCode,                 # send mfa code via email
     [Parameter()][string]$clusterName = $null,          # cluster to connect to via helios/mcm
+    [Parameter()][switch]$includeArchives,              # include archive stats
     [Parameter()][ValidateSet('KiB','MiB','GiB','TiB','MB','GB','TB')][string]$unit = 'MiB',
     [Parameter()][string]$smtpServer, # outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, # outbound smtp port
@@ -190,16 +191,19 @@ $vaults = api get vaults | Where-Object {$_.usageType -eq 'kArchival'}
 
 $nowMsecs = [int64]((dateToUsecs) / 1000)
 $monthAgoMsecs = [int64]((timeAgo 1 month) / 1000)
-$vaultStats = @()
-foreach($vault in $vaults){
-    $externalTargetStats = api get "reports/dataTransferToVaults?endTimeMsecs=$nowMsecs&startTimeMsecs=$monthAgoMsecs&vaultIds=$($vault.id)"
-    if($externalTargetStats -and $externalTargetStats.PSObject.Properties['dataTransferSummary'] -and $externalTargetStats.dataTransferSummary.Count -gt 0){
-        $vaultStats = @($vaultStats + @{
-            'vaultName' = $vault.name
-            'stats' = $externalTargetStats
-        })
+if($includeArchives){
+    $vaultStats = @()
+    foreach($vault in $vaults){
+        $externalTargetStats = api get "reports/dataTransferToVaults?endTimeMsecs=$nowMsecs&startTimeMsecs=$monthAgoMsecs&vaultIds=$($vault.id)"
+        if($externalTargetStats -and $externalTargetStats.PSObject.Properties['dataTransferSummary'] -and $externalTargetStats.dataTransferSummary.Count -gt 0){
+            $vaultStats = @($vaultStats + @{
+                'vaultName' = $vault.name
+                'stats' = $externalTargetStats
+            })
+        }
     }
 }
+
 
 function processStats($stats, $name, $environment, $location, $tenant, $sd){
         $rs = ''
@@ -356,35 +360,16 @@ foreach($job in $jobs | Sort-Object -Property name){
             $html += processStats $stats $job.name $job.environment.subString(1) 'Local' $tenant $sd
         }
     }
-    foreach($vaultStat in $vaultStats){
-        foreach($vault in $vaultStat.stats.dataTransferSummary){
-            $vaultName = $vault.vaultName
-            $thisJobStats = $vault.dataTransferPerProtectionJob | Where-Object {$_.protectionJobName -eq $job.name}
-            if($thisJobStats){
-                $storageConsumed = $thisJobStats[0].storageConsumed
-                $html += processExternalStats $vaultName $storageConsumed $job.name $job.environment.subString(1) 'Local' $tenant
+    if($includeArchives){
+        foreach($vaultStat in $vaultStats){
+            foreach($vault in $vaultStat.stats.dataTransferSummary){
+                $vaultName = $vault.vaultName
+                $thisJobStats = $vault.dataTransferPerProtectionJob | Where-Object {$_.protectionJobName -eq $job.name}
+                if($thisJobStats){
+                    $storageConsumed = $thisJobStats[0].storageConsumed
+                    $html += processExternalStats $vaultName $storageConsumed $job.name $job.environment.subString(1) 'Local' $tenant
+                }
             }
-        }
-    }
-}
-
-Write-Host "  Views..."
-$views = api get views?allUnderHierarchy=true
-foreach($view in $views.views | Sort-Object -Property name){
-    $sd = $null
-    if($view.viewBoxid){
-        $sd = $storageDomains | Where-Object {$_.id -eq $view.viewBoxId}
-    }
-    $stats = $null
-    if($view.PSObject.Properties['tenantId']){
-        $tenant = $view.tenantId.Substring(0, $view.tenantId.length - 1)
-    }else{
-        $tenant = ''
-    }
-    if($cluster.clusterSoftwareVersion -le '6.5.1b' -or $null -eq $view.viewProtection){
-        $stats = api get "stats/consumers?consumerType=kViews&consumerIdList=$($view.viewId)"
-        if($stats.statsList){
-            $html += processStats $stats $view.name 'View' 'Local' $tenant $sd
         }
     }
 }
@@ -409,6 +394,29 @@ foreach($job in $jobs | Sort-Object -Property name){
         }
         if($stats.statsList){
             $html += processStats $stats $job.name $job.environment.subString(1) 'Replicated' $tenant $sd
+        }
+    }
+}
+
+Write-Host "  Views..."
+# $views = api get views?allUnderHierarchy=true
+$views = api get -v2 "file-services/views?includeTenants=true&includeStats=false&includeProtectionGroups=true"
+
+foreach($view in $views.views | Sort-Object -Property name){
+    $sd = $null
+    if($view.storageDomainId){
+        $sd = $storageDomains | Where-Object {$_.id -eq $view.storageDomainId}
+    }
+    $stats = $null
+    if($view.PSObject.Properties['tenantId']){
+        $tenant = $view.tenantId.Substring(0, $view.tenantId.length - 1)
+    }else{
+        $tenant = ''
+    }
+    if($cluster.clusterSoftwareVersion -le '6.5.1b' -or $null -eq $view.viewProtection){
+        $stats = api get "stats/consumers?consumerType=kViews&consumerIdList=$($view.viewId)"
+        if($stats.statsList){
+            $html += processStats $stats $view.name 'View' 'Local' $tenant $sd
         }
     }
 }
