@@ -1,4 +1,4 @@
-# version: 2024-02-28
+# version: 2024-04-08
 
 # process commandline arguments
 [CmdletBinding()]
@@ -617,6 +617,7 @@ function reportStorage(){
                         foreach($archiveResult in $run.archivalInfo.archivalTargetResults){
                             if($archiveResult.status -eq 'Succeeded'){
                                 foreach($object in $run.objects){
+                                    Write-Host "--- $($object.object.name) ---"
                                     if($object.object.name -notin $viewHistory.Keys){
                                         $viewHistory[$object.object.name] = @{}
                                         $viewHistory[$object.object.name]['stats'] = $thisStat

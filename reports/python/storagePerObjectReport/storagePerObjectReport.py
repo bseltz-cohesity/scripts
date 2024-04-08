@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Storage Per Object Report for Python"""
+"""Storage Per Object Report version 2024.04.08 for Python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -156,7 +156,7 @@ def reportStorage():
                             resiliencyFactor = 2
             objects = {}
             print('  %s' % job['name'])
-            
+
             jobObjGrowth = 0
             jobGrowth = 0
             # get jobReduction factor
