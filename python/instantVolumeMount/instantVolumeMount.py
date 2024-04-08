@@ -32,6 +32,7 @@ parser.add_argument('-a', '--useexistingagent', action='store_true')
 parser.add_argument('-vu', '--vmusername', type=str, default=None)
 parser.add_argument('-vp', '--vmpassword', type=str, default=None)
 parser.add_argument('-debug', '--debug', action='store_true')
+parser.add_argument('-x', '--usearchive', action='store_true')
 args = parser.parse_args()
 
 vip = args.vip
@@ -59,6 +60,7 @@ useexistingagent = args.useexistingagent
 vmusername = args.vmusername
 vmpassword = args.vmpassword
 debug = args.debug
+usearchive = args.usearchive
 
 
 # get object ID
@@ -141,6 +143,11 @@ else:
 
 # get list of available snapshots
 snapshots = api('get', 'data-protect/objects/%s/snapshots?protectionGroupIds=%s' % (objectId, ','.join([s['protectionGroupId'] for s in search['objects'][0]['latestSnapshotsInfo']])), v=2)
+if usearchive is True:
+    snapshots['snapshots'] = [s for s in snapshots['snapshots'] if s['snapshotTargetType'] != 'Local']
+else:
+    snapshots['snapshots'] = [s for s in snapshots['snapshots'] if s['snapshotTargetType'] == 'Local']
+
 if runid is not None:
     snapshots['snapshots'] = [s for s in snapshots['snapshots'] if str(s['runInstanceId']) == runid or s['protectionGroupRunId'] == runid]
 
@@ -154,7 +161,7 @@ if len(snapshots['snapshots']) == 0:
 
 if showversions:
     for snapshot in sorted(snapshots['snapshots'], key=lambda s: s['runStartTimeUsecs'], reverse=True):
-        print('%s  %s' % (snapshot['runInstanceId'], usecsToDate(snapshot['runStartTimeUsecs'])))
+        print('%s  %s  (%s)' % (snapshot['runInstanceId'], usecsToDate(snapshot['runStartTimeUsecs']), snapshot['snapshotTargetType']))
     exit()
 
 snapshot = sorted(snapshots['snapshots'], key=lambda s: s['runStartTimeUsecs'], reverse=True)[0]
