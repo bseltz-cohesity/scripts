@@ -80,6 +80,7 @@ To tear down the mount when finished:
 * -vol, --volumes: (optional) one or more volumes to mount (repreat for multiple))
 * -w, --wait: (optional) wait and report completion status
 * -debug, --debug: (optional) display JSON payload
+* -x, --usearchive: (optional) pull volumes from cloud archive (will pull only from local snapshots if omitted)
 
 ## VM Parameters
 
