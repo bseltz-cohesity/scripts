@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Storage Per Object Report version 2024.04.08 for Python"""
+"""Storage Per Object Report version 2024.04.11 for Python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -165,7 +165,7 @@ def reportStorage():
             else:
                 stats = replicaStats
             if 'statsList' in stats and stats['statsList'] is not None:
-                thisStat = [s for s in stats['statsList'] if s['id'] == int(v1JobId)]
+                thisStat = [s for s in stats['statsList'] if s['id'] == int(v1JobId) or s['name'].lower() == job['name'].lower()]
             if 'statsList' in stats and stats['statsList'] is not None and thisStat is not None and len(thisStat) > 0:
                 statsTimeUsecs = thisStat[0]['stats'].get('dataWrittenBytesTimestampUsec', 0)
                 if statsTimeUsecs > 0:
@@ -359,7 +359,7 @@ def reportStorage():
                         else:
                             if debug is True:
                                 print('   looking up source ID (2)')
-                            source = api('get', 'protectionSources?id=%s&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true' % thisObject['sourceId'])
+                            source = api('get', 'protectionSources?id=%s&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true' % thisObject['sourceId'], quiet=True)
                             if source is not None and 'protectionSource' not in source and 'error' not in source and len(source) > 0:
                                 source = source[0]
                             if source is not None and 'protectionSource' in source:

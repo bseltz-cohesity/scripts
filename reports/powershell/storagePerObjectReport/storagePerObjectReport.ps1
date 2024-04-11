@@ -1,4 +1,4 @@
-# version: 2024-04-08
+# version: 2024-04-11
 
 # process commandline arguments
 [CmdletBinding()]
@@ -196,8 +196,7 @@ function reportStorage(){
                 $stats = $replicaStats
             }
             if($stats){
-                # $thisStat = $stats.statsList | Where-Object {$_.name -eq $job.name}
-                $thisStat = $stats.statsList | Where-Object {$_.id -eq $v1JobId}
+                $thisStat = $stats.statsList | Where-Object {$_.id -eq $v1JobId -or $_.name -eq $job.name}
             }
             if($stats -and $thisStat){
                 try{
@@ -410,7 +409,7 @@ function reportStorage(){
                                 if($dbg){
                                     output "    getting source (2)"
                                 }
-                                $source = api get "protectionSources?id=$($thisObject['sourceId'])&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true"
+                                $source = api get "protectionSources?id=$($thisObject['sourceId'])&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true" -quiet
                                 if($source -and $source.PSObject.Properties['protectionSource']){
                                     $sourceName = $source.protectionSource.name
                                     $sourceNames["$($thisObject['sourceId'])"] = $sourceName
@@ -515,9 +514,9 @@ function reportStorage(){
                         $sourceName = $sourceNames["$($thisObject['sourceId'])"]
                     }else{
                         if($dbg){
-                            output "    getting source (2)"
+                            output "    getting source (3)"
                         }
-                        $source = api get "protectionSources?id=$($thisObject['sourceId'])&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true"
+                        $source = api get "protectionSources?id=$($thisObject['sourceId'])&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true" -quiet
                         if($source -and $source.PSObject.Properties['protectionSource']){
                             $sourceName = $source.protectionSource.name
                             $sourceNames["$($thisObject['sourceId'])"] = $sourceName
@@ -617,7 +616,6 @@ function reportStorage(){
                         foreach($archiveResult in $run.archivalInfo.archivalTargetResults){
                             if($archiveResult.status -eq 'Succeeded'){
                                 foreach($object in $run.objects){
-                                    Write-Host "--- $($object.object.name) ---"
                                     if($object.object.name -notin $viewHistory.Keys){
                                         $viewHistory[$object.object.name] = @{}
                                         $viewHistory[$object.object.name]['stats'] = $thisStat
