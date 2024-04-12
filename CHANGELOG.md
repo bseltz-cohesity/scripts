@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-04-12
+
+* [refreshSource.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/refreshSource) [`Update`] added option to read text file of sources to refresh, modernized authentication
+
 ## 2024-04-11
 
 * [storagePerObjectReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport) [`Fix`] Get stats by job ID or name (7.0.1 fix)
