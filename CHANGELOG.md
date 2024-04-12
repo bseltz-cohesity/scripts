@@ -1,5 +1,15 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-04-11
+
+* [storagePerObjectReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storagePerObjectReport) [`Fix`] Get stats by job ID or name (7.0.1 fix)
+* [storagePerObjectReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storagePerObjectReport) [`Fix`] Get stats by job ID or name (7.0.1 fix)
+
+## 2024-04-07
+
+* [storageReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storageReport) [`Fix`] fixed duplicate entries
+* [storageReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storageReport) [`Fix`] fixed duplicate entries
+
 ## 2024-04-05
 
 * [cloneBackupToView.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cloneBackupToView) [`Update`] modernized authentication parameters
