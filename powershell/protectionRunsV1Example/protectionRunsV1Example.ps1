@@ -100,20 +100,14 @@ foreach($job in $jobs | Sort-Object -Property name | Where-Object {$_.isDeleted 
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         "{0}" -f $job.name
         while($True){
-            $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&endTimeUsecs=$endUsecs&excludeTasks=true"
+            $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&startTimeUsecs=$daysBackUsecs&endTimeUsecs=$endUsecs&excludeTasks=true"
             foreach($run in $runs){
-                if($run.backupRun.stats.startTimeUsecs -lt $daysBackUsecs){
-                    break
-                }
                 $runStartTime = usecsToDate $run.backupRun.stats.startTimeUsecs
                 "    {0}" -f $runStartTime
                 """{0}"",""{1}""" -f $job.name, $runStartTime | Out-File -FilePath $outfileName -Append 
             }
             if($runs.Count -eq $numRuns){
                 $endUsecs = $runs[-1].backupRun.stats.endTimeUsecs - 1
-                if($endUsecs -lt $daysBackUsecs){
-                    break
-                }
             }else{
                 break
             }
