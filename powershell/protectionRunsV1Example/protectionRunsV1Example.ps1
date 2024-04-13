@@ -95,7 +95,7 @@ if($daysBack){
     $daysBackUsecs = timeAgo $daysBack 'days'
 }
 
-foreach($job in $jobs | Sort-Object -Property name| Where-Object {$_.isDeleted -ne $true}){
+foreach($job in $jobs | Sort-Object -Property name | Where-Object {$_.isDeleted -ne $true}){
     $endUsecs = dateToUsecs (Get-Date)
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         "{0}" -f $job.name
