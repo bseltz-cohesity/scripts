@@ -2,9 +2,8 @@
 
 ## 2024-04-13
 
-* [protectionRunsV1Example.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectionRunsV1Example) [`New`] Example of how to use the v1 protectionRuns API in a scalable way
-* [protectionRunsV1Example.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/protectionRunsV1Example) [`New`] Example of how to use the v1 protectionRuns API in a scalable way
-
+* [protectionRunsV1Example.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectionRunsV1Example) [`New`] Example of how to use the v1 protectionRuns API
+* [protectionRunsV1Example.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/protectionRunsV1Example) [`New`] Example of how to use the v1 protectionRuns API
 
 ## 2024-04-12
 
