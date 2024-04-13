@@ -30,6 +30,13 @@ Place all files in a folder together, and run the script like so:
                               -domain mydomain.net
 ```
 
+To connect through Helios:
+
+```powershell
+./protectionRunsV1Example.ps1 -clusterName mycluster `
+                              -username myuser@mydomain.net
+```
+
 ## Authentication Parameters
 
 * -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
