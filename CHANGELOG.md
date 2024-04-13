@@ -1,5 +1,11 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-04-13
+
+* [protectionRunsV1Example.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectionRunsV1Example) [`New`] Example of how to use the v1 protectionRuns API in a scalable way
+* [protectionRunsV1Example.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/protectionRunsV1Example) [`New`] Example of how to use the v1 protectionRuns API in a scalable way
+
+
 ## 2024-04-12
 
 * [refreshSource.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/refreshSource) [`Update`] added option to read text file of sources to refresh, modernized authentication
@@ -65,7 +71,6 @@
 
 * [heliosReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/helios-reporting/python/heliosReport) [`Update`] added CSV output
 * [heliosCSVReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/helios-reporting/powershell/heliosCSVReport) [`Fix`] fixed System.Object[] in column output
-* [licenseUsageReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/licenseUsageReport) [`New`] license usage per tenent (experimental!)
 
 ## 2024-03-18
 
