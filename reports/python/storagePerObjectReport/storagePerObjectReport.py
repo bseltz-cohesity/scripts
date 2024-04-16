@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Storage Per Object Report version 2024.04.11 for Python"""
+"""Storage Per Object Report version 2024.04.16 for Python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -68,7 +68,7 @@ clusterStatsFileName = '%s/storagePerObjectReport-%s-clusterstats.csv' % (folder
 csv = codecs.open(csvfileName, 'w', 'utf-8')
 clusterStats = codecs.open(clusterStatsFileName, 'w', 'utf-8')
 csv.write('"Cluster Name","Origin","Stats Age (Days)","Protection Group","Tenant","Storage Domain ID","Storage Domain Name","Environment","Source Name","Object Name","Front End Allocated %s","Front End Used %s","%s Read","%s Written","%s Written plus Resiliency","Protection Group Reduction Ratio","%s Growth Last %s Days","Snapshots","Log Backups","Oldest Backup","Newest Backup","Archive Count","Oldest Archive","%s Archived","%s per Archive Target","Description","VM Tags"\n' % (units, units, units, units, units, units, growthdays, units, units))
-clusterStats.write('"Cluster Name","Total Used %s","BookKeeper Used %s","Unaccounted Usage %s","Unaccounted Percent","Data Reduction","Sum Objects Used %s","Sum Objects Written %s","Sum Objects Written with Resiliency %s"\n' % (units, units, units, units, units, units))
+clusterStats.write('"Cluster Name","Total Used %s","BookKeeper Used %s","Unaccounted Usage %s","Unaccounted Percent","Data Reduction","Sum Objects Used %s","Sum Objects Written %s","Sum Objects Written with Resiliency %s","Storage Variance Factor"\n' % (units, units, units, units, units, units))
 
 
 def reportStorage():
@@ -566,7 +566,8 @@ def reportStorage():
     clusterUsedBytes = cluster['stats']['usagePerfStats']['totalPhysicalUsageBytes']
     unaccounted = clusterUsedBytes - bookKeeperBytes
     unaccountedPercent = round(100 * (unaccounted / clusterUsedBytes), 1)
-    clusterStats.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], clusterUsed, round(bookKeeperBytes / multiplier, 1), round(unaccounted / multiplier, 1), unaccountedPercent, clusterReduction, sumObjectsUsed, sumObjectsWritten, sumObjectsWrittenWithResiliency))
+    storageVarianceFactor = round(clusterUsed / sumObjectsWrittenWithResiliency, 4)
+    clusterStats.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s",\n' % (cluster['name'], clusterUsed, round(bookKeeperBytes / multiplier, 1), round(unaccounted / multiplier, 1), unaccountedPercent, clusterReduction, sumObjectsUsed, sumObjectsWritten, sumObjectsWrittenWithResiliency, storageVarianceFactor))
 
 
 for vip in vips:
