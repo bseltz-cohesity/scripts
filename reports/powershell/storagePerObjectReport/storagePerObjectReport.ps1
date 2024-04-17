@@ -1,4 +1,4 @@
-# version: 2024-04-16
+# version: 2024-04-17
 
 # process commandline arguments
 [CmdletBinding()]
@@ -65,7 +65,7 @@ foreach ($Parameter in $ParameterList) {
 
 # headings
 """Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Storage Domain ID"",""Storage Domain Name"",""Environment"",""Source Name"",""Object Name"",""Front End Allocated $unit"",""Front End Used $unit"",""$unit Read"",""$unit Written"",""$unit Written plus Resiliency"",""Reduction Ratio"",""$unit Written Last $growthDays Days"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Newest DataLock Expiry"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description"",""VM Tags""" | Out-File -FilePath $outfileName # -Encoding utf8
-"""Cluster Name"",""Total Used $unit"",""BookKeeper Used $unit"",""Unaccounted Usage $unit"",""Unaccounted Percent"",""Data Reduction"",""Sum Objects Used $unit"",""Sum Objects Written $unit"",""Sum Objects Written with Resiliency $unit"",""Storage Variance Factor""" | Out-File -FilePath $clusterStatsFileName
+"""Cluster Name"",""Total Used $unit"",""BookKeeper Used $unit"",""Unaccounted Usage $unit"",""Unaccounted Percent"",""Data Reduction"",""Sum Objects Size $unit"",""Sum Objects Written $unit"",""Sum Objects Written with Resiliency $unit"",""Storage Variance Factor""" | Out-File -FilePath $clusterStatsFileName
 
 if($secondFormat){
     $outfile2 = "customFormat2-storagePerObjectReport-$dateString.csv"
