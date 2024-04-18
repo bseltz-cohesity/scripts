@@ -8,6 +8,7 @@
 # import pyhesity wrapper module
 from pyhesity import *
 from datetime import datetime
+from sys import exit
 from smtptool import *
 import fnmatch
 
@@ -92,15 +93,13 @@ log.write('\n')
 
 
 def extendRun(job, run, retentiondays):
-
     global message
     global lastjobname
     runStartTimeUsecs = run['copyRun'][0]['runStartTimeUsecs']
     currentExpireTimeUsecs = run['copyRun'][0]['expiryTimeUsecs']
     newExpireTimeUsecs = runStartTimeUsecs + (retentiondays * 86400000000)
     extendByDays = dayDiff(newExpireTimeUsecs, currentExpireTimeUsecs)
-
-    if extendByDays > 1:
+    if extendByDays > 0:
 
         # get run date for printing
         runStartTime = datetime.strptime(usecsToDate(runStartTimeUsecs), '%Y-%m-%d %H:%M:%S')
@@ -149,17 +148,16 @@ def extendRun(job, run, retentiondays):
         api('put', 'protectionRuns', runParameters)
 
 
-finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
+finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning']
 
 for job in selectedjobs:
 
-    for run in api('get', 'protectionRuns?jobId=%s&excludeNonRestoreableRuns=true&excludeTasks=true&runTypes=kRegular&runTypes=kFull&numRuns=100' % job['id']):
+    for run in api('get', 'protectionRuns?jobId=%s&excludeNonRestoreableRuns=true&excludeTasks=true&runTypes=kRegular&runTypes=kFull&numRuns=1000' % job['id']):
 
         if run['backupRun']['snapshotsDeleted'] is False and run['copyRun'][0]['status'] in finishedStates:
 
             runStartTimeUsecs = run['copyRun'][0]['runStartTimeUsecs'] + ((offset + 8) * 3600000000)
             runStartTime = datetime.strptime(usecsToDate(runStartTimeUsecs), '%Y-%m-%d %H:%M:%S')
-
             if yearlyretention is not None:
                 if runStartTime.timetuple().tm_yday == dayofyear:
                     extendRun(job, run, yearlyretention)
