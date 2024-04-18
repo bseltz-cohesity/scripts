@@ -67,3 +67,5 @@ To get the backup paths for selected helios clusters:
 * -m, --mfacode: (optional) MFA code for authentication
 * -y, --days: (optional) number of days to report
 * -n, --numruns: (optional) max number of runs to report (default is 1000)
+* -s, --servername: (optional) name of server to include in the report (repeat for multiple)
+* -l, --serverlist: (optional) text file of server names to include in the report (one per line)

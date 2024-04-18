@@ -20,6 +20,8 @@ parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-n', '--numruns', type=int, default=1000)
 parser.add_argument('-y', '--days', type=int, default=7)
+parser.add_argument('-s', '--servername', action='append', type=str)
+parser.add_argument('-l', '--serverlist', type=str)
 
 args = parser.parse_args()
 
@@ -35,6 +37,27 @@ noprompt = args.noprompt
 mfacode = args.mfacode
 numruns = args.numruns
 days = args.days
+servernames = args.servername         # name of server to protect
+serverlist = args.serverlist          # file with server names
+
+
+# gather server list
+def gatherList(param=None, filename=None, name='items', required=True):
+    items = []
+    if param is not None:
+        for item in param:
+            items.append(item)
+    if filename is not None:
+        f = open(filename, 'r')
+        items += [s.strip() for s in f.readlines() if s.strip() != '']
+        f.close()
+    if required is True and len(items) == 0:
+        print('no %s specified' % name)
+        exit()
+    return items
+
+
+servernames = gatherList(servernames, serverlist, name='servers', required=False)
 
 if vips is None or len(vips) == 0:
     vips = ['helios.cohesity.com']
@@ -43,7 +66,7 @@ daysBackUsecs = timeAgo(days, "days")
 
 outfile = 'physicalBackupPathsHistoryReport.csv'
 f = codecs.open(outfile, 'w')
-f.write('"Cluster","Protection Group","Start Time","Status","Server","Directive File","Selected Path"\n')
+f.write('"Cluster","Protection Group","Start Time","End Time","Status","Server","Directive File","Selected Path"\n')
 
 
 def getCluster():
@@ -66,19 +89,23 @@ def getCluster():
                     for run in runs['runs']:
                         if 'isLocalSnapshotsDeleted' not in run or run['isLocalSnapshotsDeleted'] is not True:
                             runStartTime = usecsToDate(run['localBackupInfo']['startTimeUsecs'])
+                            runEndTime = '-'
+                            if 'endTimeUsecs' in run['localBackupInfo']:
+                                runEndTime = usecsToDate(run['localBackupInfo']['endTimeUsecs'])
                             if 'objects' in job['physicalParams']['fileProtectionTypeParams'] and job['physicalParams']['fileProtectionTypeParams']['objects'] is not None and len(job['physicalParams']['fileProtectionTypeParams']['objects']) > 0:
                                 for obj in sorted(job['physicalParams']['fileProtectionTypeParams']['objects'], key=lambda obj: obj['name'].lower()):
-                                    status = run['localBackupInfo']['status']
-                                    runobject = [o for o in run['objects'] if o['object']['name'] == obj['name']]
-                                    if runobject is not None and len(runobject) > 0:
-                                        status = runobject[0]['localSnapshotInfo']['snapshotInfo']['status'][1:]
-                                    usesDirective = False
-                                    if 'metadataFilePath' in obj and obj['metadataFilePath'] is not None:
-                                        usesDirective = True
-                                        f.write('"%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], runStartTime, status, obj['name'], usesDirective, obj['metadataFilePath']))
-                                    if 'filePaths' in obj and obj['filePaths'] is not None and len(obj['filePaths']) > 0:
-                                        for filepath in sorted(obj['filePaths'], key=lambda filepath: filepath['includedPath'].lower()):
-                                            f.write('"%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], runStartTime, status, obj['name'], usesDirective, filepath['includedPath']))
+                                    if len(servernames) == 0 or obj['name'].lower() in [s.lower() for s in servernames]:
+                                        status = run['localBackupInfo']['status']
+                                        runobject = [o for o in run['objects'] if o['object']['name'] == obj['name']]
+                                        if runobject is not None and len(runobject) > 0:
+                                            status = runobject[0]['localSnapshotInfo']['snapshotInfo']['status'][1:]
+                                        usesDirective = False
+                                        if 'metadataFilePath' in obj and obj['metadataFilePath'] is not None:
+                                            usesDirective = True
+                                            f.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], runStartTime, runEndTime, status, obj['name'], usesDirective, obj['metadataFilePath']))
+                                        if 'filePaths' in obj and obj['filePaths'] is not None and len(obj['filePaths']) > 0:
+                                            for filepath in sorted(obj['filePaths'], key=lambda filepath: filepath['includedPath'].lower()):
+                                                f.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], runStartTime, runEndTime, status, obj['name'], usesDirective, filepath['includedPath']))
 
 
 for vip in vips:
