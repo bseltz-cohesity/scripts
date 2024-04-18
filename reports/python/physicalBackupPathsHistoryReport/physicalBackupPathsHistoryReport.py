@@ -81,7 +81,7 @@ def getCluster():
                 v1JobId = job['id'].split(':')[2]
                 thisJob = api('get', 'protectionJobs/%s' % v1JobId)
                 startTimeUsecs = daysBackUsecs
-                if thisJob['modificationTimeUsecs'] > startTimeUsecs:
+                if thisJob is not None and 'modificationTimeUsecs' in thisJob and thisJob['modificationTimeUsecs'] is not None and thisJob['modificationTimeUsecs'] > startTimeUsecs:
                     startTimeUsecs = thisJob['modificationTimeUsecs']
                 runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&includeTenants=true&startTimeUsecs=%s&includeObjectDetails=true' % (job['id'], numruns, startTimeUsecs), v=2)
                 if len(runs['runs']) > 0:
