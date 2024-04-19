@@ -27,12 +27,9 @@ Place both files in a folder together and run the main script like so:
                      -u myusername \
                      -d mydomain.net \
                      -n newview1 \
-                     -q 'TestAndDev High' \
                      -s mystoragedomain \
                      -w '192.168.1.0, 255.255.255.0, Test Lab' \
-                     -w 192.168.2.11 \
-                     -l 300 \
-                     -a 250
+                     -w 192.168.2.11
 #end example
 ```
 
