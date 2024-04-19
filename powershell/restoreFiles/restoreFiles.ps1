@@ -1,4 +1,4 @@
-# version 2024.02.29
+# version 2024.04.19
 
 ### process commandline arguments
 [CmdletBinding(PositionalBinding=$False)]
@@ -33,7 +33,8 @@ param (
     [Parameter()][switch]$showVersions,
     [Parameter()][switch]$noIndex,
     [Parameter()][string]$isilonZoneId,
-    [Parameter()][switch]$restoreFromArchive
+    [Parameter()][switch]$restoreFromArchive,
+    [Parameter()][string]$taskName
 )
 
 if($overWrite){
@@ -198,6 +199,9 @@ function restore($thesefiles, $doc, $version, $targetEntity, $singleFile){
         $fileParts = ($thesefiles -split '/' | Where-Object {$_ -ne '' -and $_ -ne $null})
         $shortfile = $fileParts[-1]
         $restoreTaskName = "Recover-Files_$(get-date -UFormat '%b_%d_%Y_%H-%M%p')_$shortfile"
+    }
+    if($taskName){
+        $restoreTaskName = $taskName
     }
     $restoreParams = @{
         "filenames"        = [string[]]$thesefiles;

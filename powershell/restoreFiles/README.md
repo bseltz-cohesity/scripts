@@ -75,6 +75,7 @@ Restore finished with status Success
 * -showVersions: (optional) show available versions
 * -restoreFromArchive: (optional) force restore from archive
 * -isilonZoneId: (optional) Isilon zone name of target object
+* -taskName: (optional) restore task name
 
 ## Backup Versions
 
