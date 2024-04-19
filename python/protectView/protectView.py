@@ -7,10 +7,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
 parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-t', '--tenant', type=str, default=None)
 parser.add_argument('-c', '--clustername', type=str, default=None)
 parser.add_argument('-mcm', '--mcm', action='store_true')
 parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-n', '--viewname', action='append', type=str)
@@ -23,17 +25,20 @@ parser.add_argument('-z', '--pause', action='store_true')
 parser.add_argument('-di', '--disableindexing', action='store_true')
 parser.add_argument('-suffix', '--drsuffix', type=str, default='')
 parser.add_argument('-prefix', '--drprefix', type=str, default='')
-
+parser.add_argument('-ct', '--clienttype', type=str, choices=['Generic', 'SBT'], default='Generic')
+parser.add_argument('-cv', '--catalogview', type=str, default='')
 
 args = parser.parse_args()
 
 vip = args.vip
 username = args.username
 domain = args.domain
+tenant = args.tenant
 clustername = args.clustername
 mcm = args.mcm
 useApiKey = args.useApiKey
 password = args.password
+noprompt = args.noprompt
 mfacode = args.mfacode
 emailmfacode = args.emailmfacode
 viewnames = args.viewname
@@ -46,27 +51,29 @@ pause = args.pause
 disableindexing = args.disableindexing
 drsuffix = args.drsuffix
 drprefix = args.drprefix
+clienttype = args.clienttype
+catalogview = args.catalogview
+
+# authentication =========================================================
+# demand clustername if connecting to helios or mcm
+if (mcm or vip.lower() == 'helios.cohesity.com') and clustername is None:
+    print('-c, --clustername is required when connecting to Helios or MCM')
+    exit(1)
 
 # authenticate
-if mcm:
-    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=True)
-else:
-    if emailmfacode:
-        apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, emailMfaCode=True)
-    else:
-        apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, mfaCode=mfacode)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, emailMfaCode=emailmfacode, tenantId=tenant)
 
-# if connected to helios or mcm, select to access cluster
-if mcm or vip.lower() == 'helios.cohesity.com':
-    if clustername is not None:
-        heliosCluster(clustername)
-    else:
-        print('-clustername is required when connecting to Helios or MCM')
-        exit()
-
+# exit if not authenticated
 if apiconnected() is False:
     print('authentication failed')
     exit(1)
+
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    heliosCluster(clustername)
+    if LAST_API_ERROR() != 'OK':
+        exit(1)
+# end authentication =====================================================
 
 
 # gather list function
@@ -94,6 +101,14 @@ if cluster['clusterSoftwareVersion'] < '6.6' and len(viewstoadd) > 1:
     exit(1)
 
 views = api('get', 'file-services/views', v=2)
+if catalogview != '':
+    thisView = [v for v in views['views'] if v['name'].lower() == catalogview.lower()]
+    if thisView is None or len(thisView) == 0:
+        print('Catalog view %s not found' % catalogview)
+        exit(1)
+    else:
+        catalogview = thisView[0]['name']
+
 
 # get the protection job
 jobs = api('get', 'data-protect/protection-groups?environments=kView', v=2)
@@ -234,6 +249,13 @@ for thisViewName in viewstoadd:
                     "useSameViewName": useSameViewName,
                     "viewName": drViewName
                 })
+        if 'isExternallyTriggeredBackupTarget' in thisView and thisView['isExternallyTriggeredBackupTarget'] is True:
+            job['viewParams']['externallyTriggeredJobParams'] = {
+                "clientType": clienttype,
+                "sbtParams": {
+                    "catalogView": catalogview
+                }
+            }
 
 # save job
 if newJob is True:
