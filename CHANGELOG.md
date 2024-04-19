@@ -4,6 +4,8 @@
 
 * [restoreFiles.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/restoreFiles) [`
 Update`] added -taskName parameter
+* [createZDLRAView.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/createZDLRAView) [`New`] create ZDLRA backup target view
+* [protectView.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/protectView) [`Update`] added --clienttype and --catalogview parameters for ZDLRA views
 
 ## 2024-04-18
 
