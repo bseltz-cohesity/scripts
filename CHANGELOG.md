@@ -1,5 +1,15 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-04-19
+
+* [restoreFiles.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/restoreFiles) [`
+Update`] added -taskName parameter
+
+## 2024-04-18
+
+* [physicalBackupPathsHistoryReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/physicalBackupPathsHistoryReport) [`Fix`] added server name filters and added end time to the output
+* [extendRetention.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/extendRetention) [`Update`] increased number of runs to inspect
+
 ## 2024-04-13
 
 * [protectionRunsV1Example.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectionRunsV1Example) [`New`] Example of how to use the v1 protectionRuns API
