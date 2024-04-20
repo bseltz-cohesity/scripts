@@ -10,7 +10,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-$scriptName = 'recoverVMsV2-throttled'
+$scriptName = 'recoverVMs-throttled'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
@@ -19,13 +19,13 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* [recoverVMsV2-throttled.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/recoverVMsV2-throttled/recoverVMsV2-throttled.ps1): the main powershell script
+* [recoverVMs-throttled.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/recoverVMs-throttled/recoverVMs-throttled.ps1): the main powershell script
 * [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place the files in a folder together and run the main script like so:
 
 ```powershell
-./recoverVMsV2-throttled.ps1 -vip mycluster `
+./recoverVMs-throttled.ps1 -vip mycluster `
                              -username myusername `
                              -domain mydomain.net `
                              -vmList ./vmlist.txt `
