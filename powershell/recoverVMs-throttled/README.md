@@ -26,10 +26,10 @@ Place the files in a folder together and run the main script like so:
 
 ```powershell
 ./recoverVMs-throttled.ps1 -vip mycluster `
-                             -username myusername `
-                             -domain mydomain.net `
-                             -vmList ./vmlist.txt `
-                             -prefix restore-
+                           -username myusername `
+                           -domain mydomain.net `
+                           -vmList ./vmlist.txt `
+                           -prefix restore-
 ```
 
 ## Authentication Parameters

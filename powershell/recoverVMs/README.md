@@ -26,19 +26,19 @@ Place the files in a folder together and run the main script like so:
 
 ```powershell
 ./recoverVMs.ps1 -vip mycluster `
-                   -username myusername `
-                   -domain mydomain.net `
-                   -vmList ./vmlist.txt `
-                   -vCenterName myvcenter.mydomain.net `
-                   -datacenterName mydatacenter `
-                   -hostName esx1 `
-                   -folderName myFolder `
-                   -networkName 'VM Network' `
-                   -datastoreName datastore1 `
-                   -poweron `
-                   -detachNetwork `
-                   -prefix restore- `
-                   -recoveryType InstantRecovery
+                 -username myusername `
+                 -domain mydomain.net `
+                 -vmList ./vmlist.txt `
+                 -vCenterName myvcenter.mydomain.net `
+                 -datacenterName mydatacenter `
+                 -hostName esx1 `
+                 -folderName myFolder `
+                 -networkName 'VM Network' `
+                 -datastoreName datastore1 `
+                 -poweron `
+                 -detachNetwork `
+                 -prefix restore- `
+                 -recoveryType InstantRecovery
 ```
 
 ## Authentication Parameters
