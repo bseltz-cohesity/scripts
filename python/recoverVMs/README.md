@@ -10,60 +10,60 @@ Run these commands from a terminal to download the script(s) into your current d
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/recoverVMsV2/recoverVMsV2.py
+curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/recoverVMs/recoverVMs.py
 curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-chmod +x recoverVMsV2.py
+chmod +x recoverVMs.py
 # End download commands
 ```
 
 ## Components
 
-* [recoverVMsV2.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/recoverVMsV2/recoverVMsV2.py): the main python script
+* [recoverVMs.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/recoverVMs/recoverVMs.py): the main python script
 * [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place the files in a folder together, then we can run the script. To restore a VM back to its original location with its original name and power it on:
 
 ```bash
-./recoverVMsV2.py -v mycluster \
-                  -u myusername \
-                  -d mydomain.net \
-                  -vm myvm1 \
-                  -p
+./recoverVMs.py -v mycluster \
+                -u myusername \
+                -d mydomain.net \
+                -vm myvm1 \
+                -p
 ```
 
 To list available recovery points:
 
 ```bash
-./recoverVMsV2.py -v mycluster \
-                  -u myusername \
-                  -d mydomain.net \
-                  -vm myvm1 \
-                  -l
+./recoverVMs.py -v mycluster \
+                -u myusername \
+                -d mydomain.net \
+                -vm myvm1 \
+                -l
 ```
 
 To specify a recovery point:
 
 ```bash
-./recoverVMsV2.py -v mycluster \
-                  -u myusername \
-                  -d mydomain.net \
-                  -vm myvm1 \
-                  -r '2021-04-12 23:45:01'
+./recoverVMs.py -v mycluster \
+                -u myusername \
+                -d mydomain.net \
+                -vm myvm1 \
+                -r '2021-04-12 23:45:01'
 ```
 
 To restore a VM to a new location:
 
 ```bash
-./recoverVMsV2.py -v mycluster \
-                  -u myusername \
-                  -d mydomain.net \
-                  -vm myvm1 \
-                  -vc myVcenter.mydomain.net \
-                  -dc mydatacenter \
-                  -vh myHAcluster \
-                  -f someFolder \
-                  -n 'vm network' \
-                  -p
+./recoverVMs.py -v mycluster \
+                -u myusername \
+                -d mydomain.net \
+                -vm myvm1 \
+                -vc myVcenter.mydomain.net \
+                -dc mydatacenter \
+                -vh myHAcluster \
+                -f someFolder \
+                -n 'vm network' \
+                -p
 ```
 
 ## Authentication Parameters
