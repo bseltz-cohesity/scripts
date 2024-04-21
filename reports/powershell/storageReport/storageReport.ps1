@@ -190,11 +190,11 @@ $jobs = api get protectionJobs?allUnderHierarchy=true
 $vaults = api get vaults | Where-Object {$_.usageType -eq 'kArchival'}
 
 $nowMsecs = [int64]((dateToUsecs) / 1000)
-$monthAgoMsecs = [int64]((timeAgo 3 months) / 1000)
+$monthsAgoMsecs = [int64]((timeAgo 3 months) / 1000)
 if($includeArchives){
     $vaultStats = @()
     foreach($vault in $vaults){
-        $externalTargetStats = api get "reports/dataTransferToVaults?endTimeMsecs=$nowMsecs&startTimeMsecs=$monthAgoMsecs&vaultIds=$($vault.id)"
+        $externalTargetStats = api get "reports/dataTransferToVaults?endTimeMsecs=$nowMsecs&startTimeMsecs=$monthsAgoMsecs&vaultIds=$($vault.id)"
         if($externalTargetStats -and $externalTargetStats.PSObject.Properties['dataTransferSummary'] -and $externalTargetStats.dataTransferSummary.Count -gt 0){
             $vaultStats = @($vaultStats + @{
                 'vaultName' = $vault.name
@@ -405,8 +405,10 @@ foreach($job in $jobs | Sort-Object -Property name){
                 $vaultName = $vault.vaultName
                 $thisJobStats = $vault.dataTransferPerProtectionJob | Where-Object {$_.protectionJobName -eq $job.name}
                 if($thisJobStats){
-                    $storageConsumed = $thisJobStats[0].storageConsumed
-                    $html += processExternalStats $vaultName $storageConsumed $job.name $job.environment.subString(1) 'Local' $tenant
+                    foreach($thisJobStat in $thisJobStats){
+                        $storageConsumed = $thisJobStat.storageConsumed
+                        $html += processExternalStats $vaultName $storageConsumed $job.name $job.environment.subString(1) 'Local' $tenant
+                    }
                 }
             }
         }
