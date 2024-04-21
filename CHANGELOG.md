@@ -1,5 +1,10 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-04-21
+
+* [storageReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storageReport) [`Fix`] fixed missing replica stats in 7.x
+* [storageReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storageReport) [`Fix`] fixed missing replica stats in 7.x
+
 ## 2024-04-19
 
 * [restoreFiles.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/restoreFiles) [`
