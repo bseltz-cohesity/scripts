@@ -223,7 +223,7 @@ html += '''</span>
 
 def processStats(stats, name, environment, location):
     if location == 'Replicated':
-        jobId = stats['statsList'][0]['id']
+        jobId = stats['id']
         job = [j for j in jobs if j['id'] == jobId]
         if job is not None and len(job) > 0:
             jobClusterId = job[0]['policyId'].split(':')[0]
@@ -238,11 +238,11 @@ def processStats(stats, name, environment, location):
             sourcecluster = 'UNKNOWN'
     else:
         sourcecluster = cluster['name']
-    logicalBytes = stats['statsList'][0]['stats'].get('totalLogicalUsageBytes', 0)
-    dataIn = stats['statsList'][0]['stats'].get('dataInBytes', 0)
-    dataInAfterDedup = stats['statsList'][0]['stats'].get('dataInBytesAfterDedup', 0)
-    dataWritten = stats['statsList'][0]['stats'].get('dataWrittenBytes', 0)
-    consumedBytes = stats['statsList'][0]['stats'].get('storageConsumedBytes', 0)
+    logicalBytes = stats['stats'].get('totalLogicalUsageBytes', 0)
+    dataIn = stats['stats'].get('dataInBytes', 0)
+    dataInAfterDedup = stats['stats'].get('dataInBytesAfterDedup', 0)
+    dataWritten = stats['stats'].get('dataWrittenBytes', 0)
+    consumedBytes = stats['stats'].get('storageConsumedBytes', 0)
     if dataInAfterDedup > 0 and dataWritten > 0:
         dedup = round(float(dataIn) / dataInAfterDedup, 1)
         compression = round(float(dataInAfterDedup) / dataWritten, 1)
@@ -250,7 +250,7 @@ def processStats(stats, name, environment, location):
         dedup = 0
         compression = 0
     if consumedBytes > 0:
-        reduction = round(float(logicalBytes) / consumedBytes, 1)
+        reduction = round(float(dataIn) / dataWritten, 1)
     else:
         reduction = 0
     consumption = round(float(consumedBytes) / (1024 * 1024 * 1024), 1)
@@ -274,25 +274,64 @@ def processStats(stats, name, environment, location):
 
 jobs = api('get', 'protectionJobs?allUnderHierarchy=true')
 
+msecsBeforeCurrentTimeToCompare = 7 * 24 * 60 * 60 * 1000
+
+cookie = ''
+viewJobStats = {'statsList': []}
+while True:
+    theseStats = api('get', 'stats/consumers?consumerType=kViewProtectionRuns&msecsBeforeCurrentTimeToCompare=%s&cookie=%s' % (msecsBeforeCurrentTimeToCompare, cookie))
+    if 'statsList' in theseStats:
+        viewJobStats['statsList'] = viewJobStats['statsList'] + theseStats['statsList']
+    if 'cookie' in theseStats:
+        cookie = theseStats['cookie']
+    else:
+        cookie = ''
+    if cookie == '':
+        break
+
 print("\n  Local ProtectionJobs...")
+
+cookie = ''
+localStats = {'statsList': []}
+while True:
+    theseStats = api('get', 'stats/consumers?consumerType=kProtectionRuns&msecsBeforeCurrentTimeToCompare=%s&cookie=%s' % (msecsBeforeCurrentTimeToCompare, cookie))
+    if 'statsList' in theseStats:
+        localStats['statsList'] = localStats['statsList'] + theseStats['statsList']
+    if 'cookie' in theseStats:
+        cookie = theseStats['cookie']
+    else:
+        cookie = ''
+    if cookie == '':
+        break
+localStats['statsList'] = localStats['statsList'] + viewJobStats['statsList']
+
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
     if job['policyId'].split(':')[0] == str(cluster['id']):
-        if cluster['clusterSoftwareVersion'] > '6.5.1b' and job['environment'] == 'kView':
-            stats = api('get', 'stats/consumers?consumerType=kViewProtectionRuns&consumerIdList=%s' % job['id'])
-        else:
-            stats = api('get', 'stats/consumers?consumerType=kProtectionRuns&consumerIdList=%s' % job['id'])
-        if 'statsList' in stats and stats['statsList'] is not None:
-            html += processStats(stats, job['name'], job['environment'][1:], 'Local')
+        stats = [s for s in localStats['statsList'] if s['id'] == job['id'] or s['name'].lower() == job['name'].lower()]
+        for stat in stats:
+            html += processStats(stat, job['name'], job['environment'][1:], 'Local')
 
 print("\n  Replicated ProtectionJobs...")
+
+cookie = ''
+replicaStats = {'statsList': []}
+while True:
+    replicaStats = api('get', 'stats/consumers?consumerType=kReplicationRuns&msecsBeforeCurrentTimeToCompare=%s&cookie=%s' % (msecsBeforeCurrentTimeToCompare, cookie))
+    if 'statsList' in theseStats:
+        replicaStats['statsList'] = replicaStats['statsList'] + theseStats['statsList']
+    if 'cookie' in theseStats:
+        cookie = theseStats['cookie']
+    else:
+        cookie = ''
+    if cookie == '':
+        break
+replicaStats['statsList'] = replicaStats['statsList'] + viewJobStats['statsList']
+
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
     if job['policyId'].split(':')[0] != str(cluster['id']):
-        if cluster['clusterSoftwareVersion'] > '6.5.1b' and job['environment'] == 'kView':
-            stats = api('get', 'stats/consumers?consumerType=kViewProtectionRuns&consumerIdList=%s' % job['id'])
-        else:
-            stats = api('get', 'stats/consumers?consumerType=kReplicationRuns&consumerIdList=%s' % job['id'])
-        if 'statsList' in stats and stats['statsList'] is not None:
-            html += processStats(stats, job['name'], job['environment'][1:], 'Replicated')
+        stats = [s for s in replicaStats['statsList'] if s['id'] == job['id'] or s['name'].lower() == job['name'].lower()]
+        for stat in stats:
+            html += processStats(stat, job['name'], job['environment'][1:], 'Replicated')
 
 print("\n  Unprotected Views...")
 views = api('get', 'file-services/views?includeTenants=true&includeStats=false&includeProtectionGroups=true', v=2)
@@ -300,7 +339,8 @@ if 'views' in views and len(views['views']) > 0:
     for view in sorted([v for v in views['views'] if 'viewProtection' not in v], key=lambda view: view['name'].lower()):
         stats = api('get', 'stats/consumers?consumerType=kViews&consumerIdList=%s' % view['viewId'])
         if 'statsList' in stats and stats['statsList'] is not None:
-            html += processStats(stats, view['name'], 'View', 'Local')
+            for stat in stats['statsList']:
+                html += processStats(stat, view['name'], 'View', 'Local')
 
 html += '''</table>
 </div>

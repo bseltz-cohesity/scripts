@@ -190,7 +190,7 @@ $jobs = api get protectionJobs?allUnderHierarchy=true
 $vaults = api get vaults | Where-Object {$_.usageType -eq 'kArchival'}
 
 $nowMsecs = [int64]((dateToUsecs) / 1000)
-$monthAgoMsecs = [int64]((timeAgo 1 month) / 1000)
+$monthAgoMsecs = [int64]((timeAgo 3 months) / 1000)
 if($includeArchives){
     $vaultStats = @()
     foreach($vault in $vaults){
@@ -219,12 +219,12 @@ function processStats($stats, $name, $environment, $location, $tenant, $sd){
                 $rs = "EC $($sd.storagePolicy.erasureCodingInfo.numDataStripes):$($sd.storagePolicy.erasureCodingInfo.numCodedStripes)"
             }
         }
-        $logicalBytes = $stats.statsList[0].stats.totalLogicalUsageBytes
-        $dataIn = $stats.statsList[0].stats.dataInBytes
-        $dataInAfterDedup = $stats.statsList[0].stats.dataInBytesAfterDedup
-        $dataWritten = $stats.statsList[0].stats.dataWrittenBytes
-        $consumedBytes = $stats.statsList[0].stats.storageConsumedBytes
-        $uniquBytes = $stats.statsList[0].stats.uniquePhysicalDataBytes
+        $logicalBytes = $stats[0].stats.totalLogicalUsageBytes
+        $dataIn = $stats[0].stats.dataInBytes
+        $dataInAfterDedup = $stats[0].stats.dataInBytesAfterDedup
+        $dataWritten = $stats[0].stats.dataWrittenBytes
+        $consumedBytes = $stats[0].stats.storageConsumedBytes
+        $uniquBytes = $stats[0].stats.uniquePhysicalDataBytes
         if($dataInAfterDedup -gt 0 -and $dataWritten -gt 0){
             $dedup = [math]::Round($dataIn/$dataInAfterDedup,1)
             $compression = [math]::Round($dataInAfterDedup/$dataWritten,1)
@@ -233,7 +233,7 @@ function processStats($stats, $name, $environment, $location, $tenant, $sd){
             $compression = 0
         }
         if($consumedBytes -gt 0){
-            $reduction = [math]::Round($logicalBytes / $consumedBytes, 1)
+            $reduction = [math]::Round($dataIn / $dataWritten, 1)
         }else{
             $reduction = 0
         }
@@ -337,7 +337,48 @@ function processExternalStats($vaultName, $storageConsumed, $name, $environment,
               '-')
 }
 
+# view ProtectoinJobs
+
+$msecsBeforeCurrentTimeToCompare = 7 * 24 * 60 * 60 * 1000
+$cookie = ''
+$viewJobStats = @{'statsList'= @()}
+while($True){
+    $theseStats = api get "stats/consumers?consumerType=kViewProtectionRuns&msecsBeforeCurrentTimeToCompare=$($msecsBeforeCurrentTimeToCompare)&cookie=$cookie"
+    if($theseStats -and $theseStats.PSObject.Properties['statsList']){
+        $viewJobStats['statsList'] = @($viewJobStats['statsList'] + $theseStats.statsList)
+    }
+    if($theseStats -and $theseStats.PSObject.Properties['cookie']){
+        $cookie = $theseStats.cookie
+    }else{
+        $cookie = ''
+    }
+    if($cookie -eq ''){
+        break
+    }
+}
+
 Write-Host "  Local ProtectionJobs..."
+
+# local backup stats
+$msecsBeforeCurrentTimeToCompare = 7 * 24 * 60 * 60 * 1000
+$cookie = ''
+$localStats = @{'statsList'= @()}
+while($True){
+    $theseStats = api get "stats/consumers?consumerType=kProtectionRuns&msecsBeforeCurrentTimeToCompare=$($msecsBeforeCurrentTimeToCompare)&cookie=$cookie"
+    if($theseStats -and $theseStats.PSObject.Properties['statsList']){
+        $localStats['statsList'] = @($localStats['statsList'] + $theseStats.statsList)
+    }
+    if($theseStats -and $theseStats.PSObject.Properties['cookie']){
+        $cookie = $theseStats.cookie
+    }else{
+        $cookie = ''
+    }
+    if($cookie -eq ''){
+        break
+    }
+}
+$localStats['statsList'] = @($localStats['statsList'] + $viewJobStats.statsList)
+
 foreach($job in $jobs | Sort-Object -Property name){
     $sd = $null
     if($job.viewBoxid){
@@ -351,13 +392,11 @@ foreach($job in $jobs | Sort-Object -Property name){
         $tenant = ''
     }
     if($job.policyId.split(':')[0] -eq $cluster.id){
-        if($cluster.clusterSoftwareVersion -gt '6.5.1b' -and $job.environment -eq 'kView'){
-            $stats = api get "stats/consumers?consumerType=kViewProtectionRuns&consumerIdList=$($job.id)"
-        }else{
-            $stats = api get "stats/consumers?consumerType=kProtectionRuns&consumerIdList=$($job.id)"
-        }
-        if($stats.statsList){
-            $html += processStats $stats $job.name $job.environment.subString(1) 'Local' $tenant $sd
+        $stats = $localStats.statsList | Where-Object {$_.id -eq $job.id -or $_.name -eq $job.name}
+        if($stats){
+            foreach($stat in $stats){
+                $html += processStats $stat $job.name $job.environment.subString(1) 'Local' $tenant $sd
+            }
         }
     }
     if($includeArchives){
@@ -375,6 +414,26 @@ foreach($job in $jobs | Sort-Object -Property name){
 }
 
 Write-Host "  Replicated Jobs..."
+
+# replica backup stats
+$cookie = ''
+$replicaStats = @{'statsList'= @()}
+while($True){
+    $theseStats = api get "stats/consumers?consumerType=kReplicationRuns&msecsBeforeCurrentTimeToCompare=$($msecsBeforeCurrentTimeToCompare)&cookie=$cookie"
+    if($theseStats -and $theseStats.PSObject.Properties['statsList']){
+        $replicaStats['statsList'] = @($replicaStats['statsList'] + $theseStats.statsList)
+    }
+    if($theseStats -and $theseStats.PSObject.Properties['cookie']){
+        $cookie = $theseStats.cookie
+    }else{
+        $cookie = ''
+    }
+    if($cookie -eq ''){
+        break
+    }
+}
+$replicaStats['statsList'] = @($replicaStats['statsList'] + $viewJobStats.statsList)
+
 foreach($job in $jobs | Sort-Object -Property name){
     $sd = $null
     if($job.viewBoxid){
@@ -387,19 +446,16 @@ foreach($job in $jobs | Sort-Object -Property name){
         $tenant = ''
     }
     if($job.policyId.split(':')[0] -ne $cluster.id){
-        if($cluster.clusterSoftwareVersion -gt '6.5.1b' -and $job.environment -eq 'kView'){
-            $stats = api get "stats/consumers?consumerType=kViewProtectionRuns&consumerIdList=$($job.id)"
-        }else{
-            $stats = api get "stats/consumers?consumerType=kReplicationRuns&consumerIdList=$($job.id)"
-        }
-        if($stats.statsList){
-            $html += processStats $stats $job.name $job.environment.subString(1) 'Replicated' $tenant $sd
+        $stats = $replicaStats.statsList | Where-Object {$_.id -eq $job.id -or $_.name -eq $job.name}
+        if($stats){
+            foreach($stat in $stats){
+                $html += processStats $stat $job.name $job.environment.subString(1) 'Replicated' $tenant $sd
+            }
         }
     }
 }
 
-Write-Host "  Views..."
-# $views = api get views?allUnderHierarchy=true
+Write-Host "  Unprotected Views..."
 $views = api get -v2 "file-services/views?includeTenants=true&includeStats=false&includeProtectionGroups=true"
 
 foreach($view in $views.views | Sort-Object -Property name){
