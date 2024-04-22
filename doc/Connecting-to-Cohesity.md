@@ -5,7 +5,7 @@
 The scripts in this repository connect to Cohesity clusters using the Cohesity REST API. The scripts can connect:
 
 * Directly to the cluster (VIP or node IP), port 443/tcp
-* Directly to the cluster, over support channel, localhost:<gui port>
+* Directly to the cluster, over support channel, localhost:*gui-port*
 * Indirectly through <https://helios.cohesity.com>, port 443/tcp
 * Indirectly through MCM, port 443/tcp
 
