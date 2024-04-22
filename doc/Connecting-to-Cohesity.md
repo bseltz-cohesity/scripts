@@ -9,7 +9,7 @@ Any blank line or missing line continuation character will cause the command opt
 PowerShell Example:
 
 ```powershell
-# example using an Active Directory user account
+# WRONG! missing line continuation character
 .\storagePerObjectReport.ps1 -vip mycluster.mydomain.net `
                              -username myuser  # <-- WRONG! missing line continuation character!!!
                              -domain mydomain.net `
@@ -19,7 +19,7 @@ PowerShell Example:
 Python Example:
 
 ```bash
-# example using an Active Directory user account
+# WRONG! blank line
 ./storagePerObjectReport.py -v mycluster.mydomain.net \
                                               # <-- WRONG! blank line!!!
                             -u myuser \
