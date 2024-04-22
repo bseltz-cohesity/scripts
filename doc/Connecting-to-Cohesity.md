@@ -20,6 +20,8 @@ Two types of authentication are available depending on the endpoint:
 * Username/Password authentication - only supported for direct cluster connection (and support channel)
 * API Key authentication - supported for all endpoints
 
+In all cases, a user must be registered (granted a role) on the cluster or in Helios/MCM. The user can be a local or Active Directory user. `SSO users are currently not supported for use with scripts`.
+
 ## Direct Cluster Connection
 
 When connecting directly to a cluster, you must have a user that is registered under Access Management (granted a role) in the cluster. This can be a local user or an Active Directory user. `SSO users are not currently supported`.
