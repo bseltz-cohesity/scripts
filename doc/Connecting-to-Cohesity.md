@@ -1,5 +1,34 @@
 # Connecting Scripts to Cohesity
 
+## Quick Note About Examples Below
+
+The examples given below are shown in multi-line format, using `line continuation characters` at the end of each line except the last line. The line continnuation character for PowerShell is the backtick ` character. The line continuation character for bash is the backslach \ character.
+
+Any blank line or missing line continuation character will cause the command options to end prematurely, leading to incorrect behavior. For example:
+
+PowerShell Example:
+
+```powershell
+# example using an Active Directory user account
+.\storagePerObjectReport.ps1 -vip mycluster.mydomain.net `
+                             -username myuser  # <-- WRONG! missing line continuation character!!!
+                             -domain mydomain.net `
+                             -mfaCode 417255
+```
+
+Python Example:
+
+```bash
+# example using an Active Directory user account
+./storagePerObjectReport.py -v mycluster.mydomain.net \
+                                              # <-- WRONG! blank line!!!
+                            -u myuser \
+
+                            -domain mydomain.net \
+
+                            -mfaCode 417255
+```
+
 ## API Endpoints
 
 The scripts in this repository connect to Cohesity clusters using the Cohesity REST API. The scripts can connect:
