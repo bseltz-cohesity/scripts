@@ -39,7 +39,7 @@ PowerShell Examples:
 ```powershell
 # example using a local user account
 .\storagePerObjectReport.ps1 -vip mycluster.mydomain.net `
-                             -username admin
+                             -username myuser
 
 # example using an Active Directory user account
 .\storagePerObjectReport.ps1 -vip mycluster.mydomain.net `
@@ -52,7 +52,7 @@ You can also provide the password on the command line (not recommended):
 ```powershell
 # example using a local user account
 .\storagePerObjectReport.ps1 -vip mycluster.mydomain.net `
-                             -username admin `
+                             -username myuser `
                              -password Sw0rdFish
 
 # example using an Active Directory user account
@@ -67,7 +67,7 @@ Python Examples:
 ```bash
 # example using a local user account
 ./storagePerObjectReport.py -v mycluster.mydomain.net \
-                            -u admin
+                            -u myuser
 
 # example using an Active Directory user account
 ./storagePerObjectReport.py -v mycluster.mydomain.net \
@@ -80,7 +80,7 @@ You can also provide the password on the command line (not recommended):
 ```bash
 # example using a local user account
 ./storagePerObjectReport.py -v mycluster.mydomain.net `
-                            -u admin `
+                            -u myuser `
                             -pwd Sw0rdFish
 
 # example using an Active Directory user account
