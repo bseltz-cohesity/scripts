@@ -36,7 +36,7 @@ Python Example:
                             -mfaCode 417255
 ```
 
-In the example above, the command ends after the first line, because of the vlank line.
+In the example above, the command ends after the first line, because of the blank line.
 
 ## API Endpoints
 
