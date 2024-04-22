@@ -222,7 +222,7 @@ or specify the API key on the command line:
 
 `Note`: SSO users are not currently supported
 
-When connecting to MCM, we need to specify both the endpoint (vip) and the cluster to select after connecting to MCM.
+When connecting to MCM, we need to specify both the endpoint (vip) and the cluster to select after connecting to MCM. Also, 
 
 `Note`: specify the cluster name as short name as listed in MCM (not FQDN)
 
@@ -233,7 +233,8 @@ PowerShell Example:
 .\backupNow.ps1 -vip mcm.mydomain.net `
                 -clusterName mycluster `
                 -username myuser `
-                -jobName myjob
+                -jobName myjob `
+                -mcm
 # end example
 ```
 
@@ -245,7 +246,8 @@ or specify the API key on the commandline
                 -clusterName mycluster `
                 -username myuser `
                 -jobName myjob `
-                -password xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                -password xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx `
+                -mcm
 # end example
 ```
 
@@ -256,7 +258,8 @@ Python Examples:
 ./backupNow.py -v mcm.mydomain.net \
                -c mycluster \
                -u myuser \
-               -j myjob
+               -j myjob \
+               -mcm
 # end example
 ```
 
@@ -268,7 +271,8 @@ or specify the API key on the command line:
                -c mycluster \
                -u myuser \
                -j myjob \
-               -p xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+               -p xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
+               -mcm
 # end example
 ```
 
