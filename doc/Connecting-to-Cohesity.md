@@ -2,7 +2,10 @@
 
 ## Quick Note About Examples Below
 
-The examples given below are shown in multi-line format, using `line continuation characters` at the end of each line except the last line. The line continnuation character for PowerShell is the back tick ` character. The line continuation character for bash is the back slash \ character.
+The examples given below are shown in multi-line format, for readability, using `line continuation characters` at the end of each line except the last line.
+
+* The line continuation character for PowerShell is the back tick ` character
+* The line continuation character for bash is the back slash \ character.
 
 Any blank line or missing line continuation character will cause the command options to end prematurely, leading to incorrect behavior. For example:
 
