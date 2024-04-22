@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-04-22
+
+* [restoreVMFiles.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/restoreVMFiles) [`Fix`] fixed crash on file not found
+
 ## 2024-04-21
 
 * [storageReport.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storageReport) [`Fix`] fixed missing replica stats in 7.x
