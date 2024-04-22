@@ -243,7 +243,8 @@ for file in files:
             "objectType": "Files"
         }
         search = api('post', "data-protect/search/indexed-objects", searchParams, v=2)
-        if search['files']:
+
+        if search is not None and 'files' in search:
             thisFile = [t for t in search['files'] if "%s/%s" % (t['path'].lower(), t['name'].lower()) == file.lower() or "%s/%s/" % (t['path'].lower(), t['name'].lower()) == file.lower()]
 
             if len(thisFile) == 0:
