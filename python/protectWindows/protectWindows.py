@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Add Physical Windows Servers to File-based Protection Job Using Python"""
+"""Add Physical Windows Servers to File-based Protection Job Using Python - 2024-04-22"""
 
 ### import pyhesity wrapper module
 from pyhesity import *
@@ -139,6 +139,7 @@ if mcm or vip.lower() == 'helios.cohesity.com':
 
 # get job info
 newJob = False
+job = None
 protectionGroups = api('get', 'data-protect/protection-groups?isDeleted=false&isActive=true', v=2)
 if protectionGroups is not None and len(protectionGroups) > 0 and 'protectionGroups' in protectionGroups and protectionGroups['protectionGroups'] is not None:
     jobs = protectionGroups['protectionGroups']
