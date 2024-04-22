@@ -2,10 +2,12 @@
 
 ## Quick Note About Examples Below
 
-The examples given below are shown in multi-line format, for readability, using `line continuation characters` at the end of each line except the last line.
+The examples given below are shown in multi-line format, for readability, using `line continuation characters` at the end of each line (except the last line).
 
-* The line continuation character for PowerShell is the back tick ` character
+* The line continuation character for PowerShell is the back tick ` character.
 * The line continuation character for bash is the back slash \ character.
+
+`Note`: the line continuation character must be proceeded by a single space! Also, the line continuation character must be the last character on that line!
 
 Any blank line or missing line continuation character will cause the command options to end prematurely, leading to incorrect behavior. For example:
 
@@ -19,6 +21,8 @@ PowerShell Example:
                              -mfaCode 417255
 ```
 
+In the example above, the last two lines are `not` part of the command, because of the missing back tick.
+
 Python Example:
 
 ```bash
@@ -31,6 +35,8 @@ Python Example:
 
                             -mfaCode 417255
 ```
+
+In the example above, the command ends after the first line, because of the vlank line.
 
 ## API Endpoints
 
