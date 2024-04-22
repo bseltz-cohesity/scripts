@@ -222,7 +222,7 @@ or specify the API key on the command line:
 
 `Note`: SSO users are not currently supported
 
-When connecting to MCM, we need to specify both the endpoint (vip) and the cluster to select after connecting to MCM. Also, 
+When connecting to MCM, we need to specify both the endpoint (vip) and the cluster to select after connecting to MCM. Also, we specify `-mcm` which tells the script that the endpoint is MCM rather than a cluster.
 
 `Note`: specify the cluster name as short name as listed in MCM (not FQDN)
 
