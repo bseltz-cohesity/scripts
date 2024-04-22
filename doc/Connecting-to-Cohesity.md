@@ -38,40 +38,56 @@ PowerShell Examples:
 
 ```powershell
 # example using a local user account
-.\storagePerObjectReport.ps1 -vip mycluster.mydomain.net -username admin
+.\storagePerObjectReport.ps1 -vip mycluster.mydomain.net `
+                             -username admin
 
 # example using an Active Directory user account
-.\storagePerObjectReport.ps1 -vip mycluster.mydomain.net -username myuser -domain mydomain.net
+.\storagePerObjectReport.ps1 -vip mycluster.mydomain.net `
+                             -username myuser `
+                             -domain mydomain.net
 ```
 
 You can also provide the password on the command line (not recommended):
 
 ```powershell
 # example using a local user account
-.\storagePerObjectReport.ps1 -vip mycluster.mydomain.net -username admin -password Sw0rdFish
+.\storagePerObjectReport.ps1 -vip mycluster.mydomain.net `
+                             -username admin `
+                             -password Sw0rdFish
 
 # example using an Active Directory user account
-.\storagePerObjectReport.ps1 -vip mycluster.mydomain.net -username myuser -domain mydomain.net -password Sw0rdFish
+.\storagePerObjectReport.ps1 -vip mycluster.mydomain.net `
+                             -username myuser `
+                             -domain mydomain.net `
+                             -password Sw0rdFish
 ```
 
 Python Examples:
 
 ```bash
 # example using a local user account
-./storagePerObjectReport.py -v mycluster.mydomain.net -u admin
+./storagePerObjectReport.py -v mycluster.mydomain.net \
+                            -u admin
 
 # example using an Active Directory user account
-./storagePerObjectReport.py -v mycluster.mydomain.net -u myuser -d mydomain.net
+./storagePerObjectReport.py -v mycluster.mydomain.net \
+                            -u myuser \
+                            -d mydomain.net
 ```
 
 You can also provide the password on the command line (not recommended):
 
 ```bash
 # example using a local user account
-./storagePerObjectReport.py -v mycluster.mydomain.net -u admin -pwd Sw0rdFish
+./storagePerObjectReport.py -v mycluster.mydomain.net `
+                            -u admin `
+                            -pwd Sw0rdFish
 
 # example using an Active Directory user account
-./storagePerObjectReport.py -v mycluster.mydomain.net -u myuser -domain mydomain.net -pwd Sw0rdFish
+./storagePerObjectReport.py -v mycluster.mydomain.net \
+                            -u myuser \
+                            -domain mydomain.net \
+                            -pwd Sw0rdFish
 ```
 
 Note that the password will be stored in protected storage for future use so that scripts can be run unattended.
@@ -86,14 +102,20 @@ PowerShell Example:
 
 ```powershell
 # example using an Active Directory user account
-.\storagePerObjectReport.ps1 -vip mycluster.mydomain.net -username myuser -domain mydomain.net -mfaCode 417255
+.\storagePerObjectReport.ps1 -vip mycluster.mydomain.net `
+                             -username myuser `
+                             -domain mydomain.net `
+                             -mfaCode 417255
 ```
 
 Python Example:
 
 ```bash
 # example using an Active Directory user account
-./storagePerObjectReport.py -v mycluster.mydomain.net -u myuser -domain mydomain.net -mfaCode 417255
+./storagePerObjectReport.py -v mycluster.mydomain.net \
+                            -u myuser \
+                            -domain mydomain.net \
+                            -mfaCode 417255
 ```
 
 ### API Key Authentication
