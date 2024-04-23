@@ -218,7 +218,7 @@ foreach($job in $jobs | Sort-Object -Property name){
         $policy = $policies | Where-Object {$_.id -eq $policyId}
         $policyName = $policy.name
         $datalock = $null
-        if($policy.PSObject.properties['wormRetentionType'] -and $policy.wormRetentionType -eq 'kCompliance'){
+        if($policy.PSObject.properties['datalockConfig'] -and $policy.datalockConfig.PSObject.properties['wormRetentionType'] -and $policy.datalockConfig.wormRetentionType -eq 'kCompliance'){
             $datalock = 'Enabled'
         }
         $storageDomain = $storageDomains | Where-Object id -eq $job.viewBoxId
