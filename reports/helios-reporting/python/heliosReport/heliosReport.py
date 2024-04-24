@@ -409,7 +409,21 @@ for cluster in sorted(selectedClusters, key=lambda c: c['name'].lower()):
                 print('\nInvalid filter attribute: %s\nUse --showrecord to see attribute names\n' % filterproperty)
                 exit()
             else:
-                previewData = [p for p in previewData if filterproperty in p and p[filterproperty] is not None and str(p[filterproperty]).lower() in [f.lower() for f in filterTextList]]
+                filteredPreviewData = []
+                for p in previewData:
+                    if filterproperty in p and p[filterproperty] is not None:
+                        if type(p[filterproperty]) is list:
+                            includeItem = False
+                            for i in p[filterproperty]:
+                                if i.lower() in [f.lower() for f in filterTextList]:
+                                    includeItem = True
+                            if includeItem is True:
+                                filteredPreviewData.append(p)
+                        else:
+                            if p[filterproperty].lower() in [f.lower() for f in filterTextList]:
+                                filteredPreviewData.append(p)
+                previewData = filteredPreviewData
+                # previewData = [p for p in previewData if filterproperty in p and p[filterproperty] is not None and str(p[filterproperty]).lower() in [f.lower() for f in filterTextList]]
         for rec in previewData:
             if showrecord:
                 display(rec)
