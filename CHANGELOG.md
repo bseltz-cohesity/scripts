@@ -2,6 +2,7 @@
 
 ## 2024-04-24
 
+* [datalockJobList.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/datalockJobList) [`Fix`] updated to support recent versions of Cohesity
 * [heliosReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/helios-reporting/python/heliosReport) [`Fix`] fixed filter bug where filter is a list
 * [physicalBackupPathsHistoryReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/physicalBackupPathsHistoryReport) [`Update`] added outputpath and outputfile parameters
 
