@@ -33,18 +33,22 @@ If you're happy with the output you can commit the change by adding -x (--commit
 
 ## Authentication Parameters
 
-* -v, --vip: DNS or IP of the Cohesity cluster to connect to
-* -u, --username: username to authenticate to Cohesity cluster
+* -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
 * -d, --domain: (optional) domain of username (defaults to local)
+* -t, --tenant: (optional) multi-tenancy tenant name
 * -i, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password or API key
 * -np, --noprompt: (optional) do not prompt for password
+* -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) helios/mcm cluster to connect to
 * -m, --mfacode: (optional) MFA code for authentication
+* -e --emailmfacode: (optional) send MFA code via email
 
 ## Other Parameters
 
 * -k, --keepfor: number of days (from original backup date) to retain the archives
-* -t, --backupType: (optional) kLog, kRegular, kFull, kSystem or kAll (default is kAll)
+* -b, --backupType: (optional) kLog, kRegular, kFull, kSystem or kAll (default is kAll)
 * -log, --includelogs: (optional) update retention for log backups (will skip logs by default)
 * -a, --allowreduction: (optional) allow retention to be reduced
 * -x, --commit: (optional) perform updates (otherwise just show what would happen)
