@@ -69,3 +69,5 @@ To get the backup paths for selected helios clusters:
 * -n, --numruns: (optional) max number of runs to report (default is 1000)
 * -s, --servername: (optional) name of server to include in the report (repeat for multiple)
 * -l, --serverlist: (optional) text file of server names to include in the report (one per line)
+* -o, --outputpath: (optional) directory to store output file (default is '.')
+* -f, --outputfile: (optional) file name of output file (default is 'physicalBackupPathsHistoryReport.csv')

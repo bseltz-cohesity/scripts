@@ -3,6 +3,7 @@
 
 # import pyhesity wrapper module
 from pyhesity import *
+import os
 import codecs
 import argparse
 
@@ -22,6 +23,8 @@ parser.add_argument('-n', '--numruns', type=int, default=1000)
 parser.add_argument('-y', '--days', type=int, default=7)
 parser.add_argument('-s', '--servername', action='append', type=str)
 parser.add_argument('-l', '--serverlist', type=str)
+parser.add_argument('-o', '--outputpath', type=str, default='.')
+parser.add_argument('-f', '--outputfile', type=str, default='physicalBackupPathsHistoryReport.csv')
 
 args = parser.parse_args()
 
@@ -39,6 +42,8 @@ numruns = args.numruns
 days = args.days
 servernames = args.servername         # name of server to protect
 serverlist = args.serverlist          # file with server names
+outputpath = args.outputpath
+outputfile = args.outputfile
 
 
 # gather server list
@@ -64,7 +69,8 @@ if vips is None or len(vips) == 0:
 
 daysBackUsecs = timeAgo(days, "days")
 
-outfile = 'physicalBackupPathsHistoryReport.csv'
+outfile = os.path.join(outputpath, outputfile)
+# outfile = 'physicalBackupPathsHistoryReport.csv'
 f = codecs.open(outfile, 'w')
 f.write('"Cluster","Protection Group","Start Time","End Time","Status","Server","Directive File","Selected Path"\n')
 
