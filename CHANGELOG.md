@@ -1,5 +1,13 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-04-24
+
+* [physicalBackupPathsHistoryReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/physicalBackupPathsHistoryReport) [`Update`] added outputpath and outputfile parameters
+
+## 2024-04-23
+
+* [changeArchiveRetention.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/changeArchiveRetention) [`Update`] updated authentication parameters
+
 ## 2024-04-22
 
 * [restoreVMFiles.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/restoreVMFiles) [`Fix`] fixed crash on file not found
@@ -18,7 +26,7 @@ Update`] added -taskName parameter
 
 ## 2024-04-18
 
-* [physicalBackupPathsHistoryReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/physicalBackupPathsHistoryReport) [`Fix`] added server name filters and added end time to the output
+* [physicalBackupPathsHistoryReport.py](https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/physicalBackupPathsHistoryReport) [`Update`] added server name filters and added end time to the output
 * [extendRetention.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/extendRetention) [`Update`] increased number of runs to inspect
 
 ## 2024-04-13
