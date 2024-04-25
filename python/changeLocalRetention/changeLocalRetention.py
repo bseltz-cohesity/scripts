@@ -150,7 +150,8 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                             runStartTimeUsecs = run['backupRun']['stats']['startTimeUsecs']
                             if runStartTimeUsecs > newerthanusecs and runStartTimeUsecs < olderthanusecs:
                                 runStartTime = usecsToDate(runStartTimeUsecs, fmt='%Y-%m-%d %H:%M')
-                                currentExpireTimeUsecs = run['copyRun'][0]['expiryTimeUsecs']
+                                localRun = [c for c in run['copyRun'] if c['target']['type'] == 'kLocal']
+                                currentExpireTimeUsecs = localRun[0]['expiryTimeUsecs']
                                 retentionUsecs = currentExpireTimeUsecs - runStartTimeUsecs
                                 if greaterthan == 0 or retentionUsecs > (greaterthanusecs + 3600000000):
                                     newExpireTimeUsecs = runStartTimeUsecs + (keepfor * 86400000000)
