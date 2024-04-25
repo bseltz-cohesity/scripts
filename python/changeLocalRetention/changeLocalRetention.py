@@ -200,7 +200,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                                         print("    %s - %s (%-17s%s -> %s    (%s by %s days)" % (run['backupRun']['jobRunId'], runStartTime, runType + '):', usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
                                 f.write('%s,%s,%s,%s,%s,%s,%s,%s\n' % (job['name'], run['backupRun']['jobRunId'], runStartTime, runType, usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
                 except Exception:
-                    pass
+                    print('an error occurred')
             if run['backupRun']['stats']['startTimeUsecs'] < newerthanusecs:
                 break
 
