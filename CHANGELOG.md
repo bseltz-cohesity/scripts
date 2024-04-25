@@ -2,7 +2,7 @@
 
 ## 2024-04-25
 
-* [changeLocalRetention.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/changeLocalRetention) [`Update`] made API query more efficient
+* [changeLocalRetention.py](https://github.com/bseltz-cohesity/scripts/tree/master/python/changeLocalRetention) [`Fix`] fixed error when runs have active copy tasks
 * [protectVMsByCluster.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectVMsByCluster) [`New`] auto-protect vSphere clusters/hosts
 
 ## 2024-04-24
