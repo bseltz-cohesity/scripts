@@ -1,5 +1,9 @@
 # Change Log for bseltz-cohesity/scripts
 
+## 2024-04-25
+
+* [protectVMsByCluster.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectVMsByCluster) [`New`] auto-protect vSphere clusters/hosts
+
 ## 2024-04-24
 
 * [datalockJobList.ps1](https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/datalockJobList) [`Fix`] updated to support recent versions of Cohesity
