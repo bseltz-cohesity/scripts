@@ -79,6 +79,7 @@ if newerthan > 0:
 olderthanusecs = nowUsecs
 if olderthan > 0:
     olderthanusecs = timeAgo(olderthan, 'days')
+    nowUsecs = olderthanusecs
 if greaterthan > 0:
     greaterthanusecs = greaterthan * 86400000000
 
@@ -200,7 +201,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                                 f.write('%s,%s,%s,%s,%s,%s,%s,%s\n' % (job['name'], run['backupRun']['jobRunId'], runStartTime, runType, usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
                 except Exception:
                     pass
-            if run['backupRun']['stats']['startTimeUsecs'] < newerthanusecs or run['backupRun']['stats']['startTimeUsecs'] > olderthanusecs:
+            if run['backupRun']['stats']['startTimeUsecs'] < newerthanusecs:
                 break
 
 f.close()
