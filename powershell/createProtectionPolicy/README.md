@@ -27,8 +27,8 @@ Place the files in a folder together, then we can run the script.
 ```powershell
 ./createProtectionPolicy.ps1 -vip mycluster -username admin -policyName mypolicy -daysToKeep 30 -replicateTo myremotecluster
 ```
+
 ```text
 Connected!
 creating policy mypolicy...
 ```
-

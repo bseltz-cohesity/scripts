@@ -43,4 +43,3 @@ Place both files in a folder together and run the main script like so:
 * -backup: (optional) backup existing host mappings to file hosts-backup-date.csv
 * -overwrite: (optional) if IP already exists, replace the host names (default is to append new host names)
 * -delete: (optional) delete host mappings for the specified IP(s)
-
