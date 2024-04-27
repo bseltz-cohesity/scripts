@@ -10,16 +10,16 @@ Run these commands from a terminal to download the script(s) into your current d
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deleteJobs/deleteJobs.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/deleteJobs/deleteJobs.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x deleteJobs.py
 # End download commands
 ```
 
 ## Components
 
-* [deleteJobs.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deleteJobs/deleteJobs.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [deleteJobs.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/deleteJobs/deleteJobs.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 To delete some protection jobs, place all files in a folder together, then run the main script like so:
 

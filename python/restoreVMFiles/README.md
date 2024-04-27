@@ -6,15 +6,15 @@ This python script restores files from a VMware VM backup.
 
 ## Components
 
-* [restoreVMFiles.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/restoreVMFiles/restoreVMFiles.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [restoreVMFiles.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/restoreVMFiles/restoreVMFiles.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/restoreVMFiles/restoreVMFiles.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/restoreVMFiles/restoreVMFiles.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x restoreVMFiles.py
 # end download commands
 ```

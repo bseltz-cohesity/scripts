@@ -6,8 +6,8 @@ This PowerShell script creates a protection job for every Isilon share read from
 
 ## Components
 
-* [protectIsilonShares.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/protectIsilonShares/protectIsilonShares.ps1): the main PowerShell script
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [protectIsilonShares.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/protectIsilonShares/protectIsilonShares.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 * shares.txt: a text file containing a list of share names from the Isilon
 
 Place all files in a folder together. Create a text file called shares.txt and populate with the shares that you want to protect, like so:
@@ -45,7 +45,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 ```powershell
 # Download Commands
 $scriptName = 'protectIsilonShares'
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands

@@ -6,15 +6,15 @@ This script generates a report of oracle backups and outputs to a CSV
 
 ## Components
 
-* [oracleBackupReport.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/oracleBackupReport/oracleBackupReport.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [oracleBackupReport.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/python/oracleBackupReport/oracleBackupReport.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/oracleBackupReport/oracleBackupReport.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/python/oracleBackupReport/oracleBackupReport.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x oracleBackupReport.py
 # end download commands
 ```

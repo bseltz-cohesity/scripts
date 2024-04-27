@@ -10,10 +10,10 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/qumuloSnapper/prescript-example.sh
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/qumuloSnapper/qumuloSnap.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNow/backupNow.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/qumuloSnapper/prescript-example.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/qumuloSnapper/qumuloSnap.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/backupNow/backupNow.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x prescript-example.sh
 chmod +x qumuloSnap.py
 chmod +x backupNow.py

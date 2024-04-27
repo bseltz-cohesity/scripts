@@ -6,15 +6,15 @@ This python script gets, sets, exports and imports feature flags.
 
 ## Components
 
-* [featureFlags.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/featureFlags/featureFlags.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity python helper module
+* [featureFlags.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/featureFlags/featureFlags.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity python helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/featureFlags/featureFlags.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/featureFlags/featureFlags.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x featureFlags.py
 # end download commands
 ```

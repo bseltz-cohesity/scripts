@@ -6,7 +6,7 @@ This is a compiled version of backupNow for Windows. It performs a runNow on a p
 
 ## Download the Binary
 
-<https://github.com/bseltz-cohesity/scripts/raw/master/windows/backupNow/backupNow.exe>
+<https://github.com/cohesity/community-automation-samples/raw/main/windows/backupNow/backupNow.exe>
 
 ## Example
 

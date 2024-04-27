@@ -12,7 +12,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 # Download Commands
 $dirName = 'clusterCreateAndConfigVE'
 $scriptName = 'clusterCreateAndConfigVE'
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$dirName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 $scriptName = 'clusterCreateVE'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$dirName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
@@ -30,13 +30,13 @@ $scriptName = 'example-configVE'
 
 ## Components
 
-* [clusterCreateAndConfigVE.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/clusterCreateAndConfigVE/clusterCreateAndConfigVE.ps1): the main PowerShell script
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
-* [example-clusterCreateAndConfigVE.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/clusterCreateAndConfigVE/example-clusterCreateAndConfigVE.ps1): example syntax
-* [clusterCreateVE.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/clusterCreateAndConfigVE/clusterCreateVE.ps1): Only performs the cluster create part
-* [example-clusterCreateVE.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/clusterCreateAndConfigVE/example-clusterCreateVE.ps1): example syntax
-* [configVE.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/clusterCreateAndConfigVE/configVE.ps1): Only performs the cluster config part
-* [example-configVE.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/clusterCreateAndConfigVE/example-configVE.ps1): example syntax
+* [clusterCreateAndConfigVE.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/clusterCreateAndConfigVE/clusterCreateAndConfigVE.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [example-clusterCreateAndConfigVE.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/clusterCreateAndConfigVE/example-clusterCreateAndConfigVE.ps1): example syntax
+* [clusterCreateVE.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/clusterCreateAndConfigVE/clusterCreateVE.ps1): Only performs the cluster create part
+* [example-clusterCreateVE.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/clusterCreateAndConfigVE/example-clusterCreateVE.ps1): example syntax
+* [configVE.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/clusterCreateAndConfigVE/configVE.ps1): Only performs the cluster config part
+* [example-configVE.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/clusterCreateAndConfigVE/example-configVE.ps1): example syntax
 
 Place the files in a folder together, and modify the example script to fit your environment.
 

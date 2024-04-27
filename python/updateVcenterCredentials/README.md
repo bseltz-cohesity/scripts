@@ -6,15 +6,15 @@ This script updates the username and password in a vcenter source registration.
 
 ## Components
 
-* [updateVcenterCredentials.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/updateVcenterCredentials/updateVcenterCredentials.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [updateVcenterCredentials.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/updateVcenterCredentials/updateVcenterCredentials.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/updateVcenterCredentials/updateVcenterCredentials.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/updateVcenterCredentials/updateVcenterCredentials.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x updateVcenterCredentials.py
 # end download commands
 ```

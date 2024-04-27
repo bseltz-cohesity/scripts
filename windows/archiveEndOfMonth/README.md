@@ -6,7 +6,7 @@ This is a compiled binary that archives an existing local snapshot taken on the 
 
 ## Download The Binary
 
-<https://github.com/bseltz-cohesity/scripts/raw/master/windows/archiveEndOfMonth/archiveEndOfMonth.exe>
+<https://github.com/cohesity/community-automation-samples/raw/main/windows/archiveEndOfMonth/archiveEndOfMonth.exe>
 
 Run the tool like so:
 

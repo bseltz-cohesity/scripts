@@ -10,16 +10,16 @@ Run these commands from a terminal to download the script(s) into your current d
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendForActiveCopyTasks/extendForActiveCopyTasks.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/extendForActiveCopyTasks/extendForActiveCopyTasks.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x extendForActiveCopyTasks.py
 # End download commands
 ```
 
 ## Components
 
-* [extendForActiveCopyTasks.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendForActiveCopyTasks/extendForActiveCopyTasks.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [extendForActiveCopyTasks.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/extendForActiveCopyTasks/extendForActiveCopyTasks.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place the files in a folder together, then we can run the script. If you omit the -commit switch, it will run in test mode:
 

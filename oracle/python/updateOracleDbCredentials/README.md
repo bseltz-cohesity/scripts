@@ -6,15 +6,15 @@ This Python script sets the database username and password for an Oracle protect
 
 ## Components
 
-* [updateOracleDbCredentials.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/updateOracleDbCredentials/updateOracleDbCredentials.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [updateOracleDbCredentials.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/python/updateOracleDbCredentials/updateOracleDbCredentials.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/updateOracleDbCredentials/updateOracleDbCredentials.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/python/updateOracleDbCredentials/updateOracleDbCredentials.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x updateOracleDbCredentials.py
 # end download commands
 ```

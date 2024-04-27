@@ -10,7 +10,7 @@ This Grafana dashboard displays backup success rates for a Cohesity cluster.
 
 Go here to get the raw JSON file and save it to your local machine.
 
-<https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/grafana/Prometheus/ClusterStats/Cluster-Stats-Prometheus.json>
+<https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/grafana/Prometheus/ClusterStats/Cluster-Stats-Prometheus.json>
 
 ## Create a Prometheus Data Source in Grafana
 
@@ -20,8 +20,8 @@ Configure the data source to point to your Prometheus instance, e.g. <http://loc
 
 Here is an example Prometheus exporter that gets some time series stats from Cohesity
 
-* [prometheusClusterStatsExporter.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/grafana/Prometheus/ClusterStats/prometheusClusterStatsExporter.py)
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py)
+* [prometheusClusterStatsExporter.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/grafana/Prometheus/ClusterStats/prometheusClusterStatsExporter.py)
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py)
 
 You will also need to install the python module prometheus_client
 

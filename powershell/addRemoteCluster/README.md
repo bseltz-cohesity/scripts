@@ -10,15 +10,15 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/addRemoteCluster/addRemoteCluster.ps1).content | Out-File addRemoteCluster.ps1; (Get-Content addRemoteCluster.ps1) | Set-Content addRemoteCluster.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/addRemoteCluster/addRemoteCluster.ps1).content | Out-File addRemoteCluster.ps1; (Get-Content addRemoteCluster.ps1) | Set-Content addRemoteCluster.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
 
 ## Components
 
-* [addRemoteCluster.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/addRemoteCluster/addRemoteCluster.ps1): the main powershell script
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [addRemoteCluster.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/addRemoteCluster/addRemoteCluster.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place the files in a folder together, then we can run the script.
 

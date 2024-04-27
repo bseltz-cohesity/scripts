@@ -1354,7 +1354,7 @@ function toJson(){
 # self updater
 function cohesityAPIversion([switch]$update){
     if($update){
-        $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+        $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell'
         if($PSVersionTable.PSEdition -eq 'Core'){
             (Invoke-WebRequest -UseBasicParsing -Uri "$repoURL/cohesity-api/cohesity-api.ps1" -SkipCertificateCheck).content | Out-File -Force cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
         }else{

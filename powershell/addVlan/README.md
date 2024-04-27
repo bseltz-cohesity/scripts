@@ -11,7 +11,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 ```powershell
 # Download Commands
 $scriptName = 'addVlan'
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/vlanConfigExample.ps1").content | Out-File "vlanConfigExample.ps1"; (Get-Content "vlanConfigExample.ps1") | Set-Content "vlanConfigExample.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
@@ -20,9 +20,9 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* [addVlan.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/addVlan/addVlan.ps1): the main powershell script
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
-* [vlanConfigExample.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/addVlan/vlanConfigExample.ps1): example configuration file
+* [addVlan.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/addVlan/addVlan.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [vlanConfigExample.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/addVlan/vlanConfigExample.ps1): example configuration file
 
 Place the files in a folder together and run the main script like so:
 

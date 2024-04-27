@@ -10,9 +10,9 @@ Run these commands to download the script(s) into your current directory
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/clusterCreate/clusterCreate.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/clusterCreate/clusterCreate-test.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/clusterCreate/clusterCreate.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/clusterCreate/clusterCreate-test.sh
 chmod +x clusterCreate.py
 chmod +x clusterCreate-test.sh
 # End download commands
@@ -20,9 +20,9 @@ chmod +x clusterCreate-test.sh
 
 ## Components
 
-* [clusterCreate.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/clusterCreate/clusterCreate.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
-* [clusterCreate-test.sh](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/clusterCreate/clusterCreate-test.sh): example command line
+* [clusterCreate.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/clusterCreate/clusterCreate.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [clusterCreate-test.sh](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/clusterCreate/clusterCreate-test.sh): example command line
 
 ### Note: by running the script, you are accepting the Cohesity End User License Agreement
 

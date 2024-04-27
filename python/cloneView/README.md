@@ -9,15 +9,15 @@ This python script clones a view.
 Go to the folder where you want to download the files, then run the following commands:
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/cloneView/cloneView.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/cloneView/cloneView.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x cloneView.py
 ```
 
 ## Components
 
-* [cloneView.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/cloneView/cloneView.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [cloneView.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/cloneView/cloneView.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

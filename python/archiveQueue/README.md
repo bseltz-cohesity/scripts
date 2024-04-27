@@ -6,15 +6,15 @@ This python script lists the currently running archive tasks, from oldest to new
 
 ## Components
 
-* [archiveQueue.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/archiveQueue/archiveQueue.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [archiveQueue.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/archiveQueue/archiveQueue.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/archiveQueue/archiveQueue.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/archiveQueue/archiveQueue.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x archiveQueue.py
 # end download commands
 ```

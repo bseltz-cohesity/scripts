@@ -6,7 +6,7 @@ This is a compiled binary that updates the Cohesity agent configuration on a Lin
 
 ## Download The Binary
 
-<https://github.com/bseltz-cohesity/scripts/raw/master/windows/detachLinuxAgent/detachLinuxAgent.exe>
+<https://github.com/cohesity/community-automation-samples/raw/main/windows/detachLinuxAgent/detachLinuxAgent.exe>
 
 Run the tool like so:
 

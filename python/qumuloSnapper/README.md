@@ -10,10 +10,10 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/qumuloSnapper/prescript-example.sh
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/qumuloSnapper/qumuloSnap.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNow/backupNow.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/qumuloSnapper/prescript-example.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/qumuloSnapper/qumuloSnap.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/backupNow/backupNow.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x prescript-example.sh
 chmod +x qumuloSnap.py
 chmod +x backupNow.py
@@ -23,9 +23,9 @@ chmod +x backupNow.py
 ## Components
 
 * prescript-example.sh wrapper script
-* [qumuloSnap.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/qumuloSnapper/qumuloSnap.py): python script to manage Qumulo snapshots
+* [qumuloSnap.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/qumuloSnapper/qumuloSnap.py): python script to manage Qumulo snapshots
 * backupNow.py: ptthon script to start Cohesity backups
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 ## Basic Workflow
 

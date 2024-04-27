@@ -12,8 +12,8 @@ Deletions will be logged to scriptPath/expungeLog.txt
 
 ## Components
 
-* [expungeDataSpillage.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/expungeDataSpillage/expungeDataSpillage.ps1): the main powershell script
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): Cohesity REST API helper module
+* [expungeDataSpillage.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/expungeDataSpillage/expungeDataSpillage.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): Cohesity REST API helper module
 
 Place both files in a folder together, then we can run the script.
 
@@ -92,7 +92,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # download commands
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/expungeDataSpillage/expungeDataSpillage.ps1).content | Out-File expungeDataSpillage.ps1; (Get-Content expungeDataSpillage.ps1) | Set-Content expungeDataSpillage.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/expungeDataSpillage/expungeDataSpillage.ps1).content | Out-File expungeDataSpillage.ps1; (Get-Content expungeDataSpillage.ps1) | Set-Content expungeDataSpillage.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # end download commands
 ```

@@ -8,10 +8,10 @@ This bash script can be used as a pre-script in a remote adapter job to freeze a
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/vm_freeze_thaw/vm_freeze_thaw.sh.sh
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/jobRunning/jobRunning.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNow/backupNow.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/bash/vm_freeze_thaw/vm_freeze_thaw.sh.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/jobRunning/jobRunning.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/backupNow/backupNow.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x vm_freeze_thaw.sh.sh
 chmod +x jobRunning.py
 chmod +x backupNow.py

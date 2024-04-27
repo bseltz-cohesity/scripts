@@ -10,15 +10,15 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Begin download commands
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/downloadFile/downloadFile.ps1).content | Out-File downloadFile.ps1; (Get-Content downloadFile.ps1) | Set-Content downloadFile.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/downloadFile/downloadFile.ps1).content | Out-File downloadFile.ps1; (Get-Content downloadFile.ps1) | Set-Content downloadFile.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End download commands
 ```
 
 ## Components
 
-* [downloadFile.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/downloadFile/downloadFile.ps1): the main powershell script
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [downloadFile.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/downloadFile/downloadFile.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

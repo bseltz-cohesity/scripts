@@ -10,7 +10,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/powershell/backupNow/backupNow.ps1").content | Out-File "backupNow.ps1"; (Get-Content "backupNow.ps1") | Set-Content "backupNow.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoURL/sql/powershell/cloneSQL/cloneSQL.ps1").content | Out-File "cloneSQL.ps1"; (Get-Content "cloneSQL.ps1") | Set-Content "cloneSQL.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoURL/sql/powershell/destroyClone/destroyClone.ps1").content | Out-File "destroyClone.ps1"; (Get-Content "destroyClone.ps1") | Set-Content "destroyClone.ps1"
@@ -23,13 +23,13 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 ## Components
 
-* [backupNow.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/sqlAgentJob-maskDB/backupNow.ps1): run a backup
-* [cloneSQL.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/sqlAgentJob-maskDB/cloneSQL.ps1): clone a SQL database
-* [destroyClone.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/sqlAgentJob-maskDB/destroyClone.ps1): tear down an existing clone
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/sqlAgentJob-maskDB/cohesity-api.ps1): the Cohesity REST API helper module
-* [createMaskerSQLAgentJob.sql](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/sqlAgentJob-maskDB/createMaskerSQLAgentJob.sql): T-SQL to create the SQL Agent Job
-* [refreshSource.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/sqlAgentJob-maskDB/refreshSource.ps1): refresh a protection source
-* [restoreSQL.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/sqlAgentJob-maskDB/restoreSQL.ps1): restore a SQL database
+* [backupNow.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-maskDB/backupNow.ps1): run a backup
+* [cloneSQL.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-maskDB/cloneSQL.ps1): clone a SQL database
+* [destroyClone.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-maskDB/destroyClone.ps1): tear down an existing clone
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-maskDB/cohesity-api.ps1): the Cohesity REST API helper module
+* [createMaskerSQLAgentJob.sql](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-maskDB/createMaskerSQLAgentJob.sql): T-SQL to create the SQL Agent Job
+* [refreshSource.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-maskDB/refreshSource.ps1): refresh a protection source
+* [restoreSQL.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-maskDB/restoreSQL.ps1): restore a SQL database
 
 ## Creating the SQL Agent Job
 
@@ -59,7 +59,7 @@ To get the password stored, remote desktop into the SQL server as the SQL Agent 
 Both of the PowerShell scripts included in this package have various command line parameters. You can find them here:
 
 * backupNow.ps1 <https://github.com/bseltz-cohesity/scripts/tree/master/sql/backupNow>
-* [cloneSQL.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/sqlAgentJob-maskDB/cloneSQL.ps1): <https://github.com/bseltz-cohesity/scripts/tree/master/sql/cloneSQL>
-* [destroyClone.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/sqlAgentJob-maskDB/destroyClone.ps1): <https://github.com/bseltz-cohesity/scripts/tree/master/sql/destroyClone>
-* [refreshSource.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/sqlAgentJob-maskDB/refreshSource.ps1): <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/refreshSource>
+* [cloneSQL.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-maskDB/cloneSQL.ps1): <https://github.com/bseltz-cohesity/scripts/tree/master/sql/cloneSQL>
+* [destroyClone.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-maskDB/destroyClone.ps1): <https://github.com/bseltz-cohesity/scripts/tree/master/sql/destroyClone>
+* [refreshSource.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-maskDB/refreshSource.ps1): <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/refreshSource>
 * restoreSQL.ps1 <https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQL>

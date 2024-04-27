@@ -6,19 +6,19 @@ This python script applies exclusions to an autoprotect VM protection job.
 
 ## Components
 
-* [excludeVMs.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/excludeVMs.py): the main python script (one job only)
-* [excludeVMsAllJobs.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/excludeVMsAllJobs.py): alternate script (all jobs)
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [excludeVMs.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/excludeVMs/excludeVMs.py): the main python script (one job only)
+* [excludeVMsAllJobs.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/excludeVMs/excludeVMsAllJobs.py): alternate script (all jobs)
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 * pyVmomi: Python SDK for the VMware vSphere API (see attribution below)
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/excludeVMs.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/excludeVMsAllJobs.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/pyVmomi.tar.gz
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/excludeVMs/excludeVMs.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/excludeVMs/excludeVMsAllJobs.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/excludeVMs/pyVmomi.tar.gz
 tar -xvf pyVmomi.tar.gz
 chmod +x excludeVMs.py
 chmod +x excludeVMsAllJobs.py

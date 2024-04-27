@@ -16,10 +16,10 @@ Run these commands to download the script(s) into your current directory
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deployCVE/deployCVEcluster.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deployCVE/test-deployCVE.sh
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/pyVmomi.tar.gz
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/deployCVE/deployCVEcluster.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/deployCVE/test-deployCVE.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/excludeVMs/pyVmomi.tar.gz
 tar -xvf pyVmomi.tar.gz
 chmod +x deployCVEcluster.py
 chmod +x test-deployCVE.sh
@@ -28,9 +28,9 @@ chmod +x test-deployCVE.sh
 
 ## Components
 
-* [deployCVEcluster.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deployCVE/deployCVEcluster.py): the main python script
+* [deployCVEcluster.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/deployCVE/deployCVEcluster.py): the main python script
 * cohesity-api.ps1: the Cohesity REST API helper module
-* [test-deployCVE.sh](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deployCVE/test-deployCVE.sh): example command line
+* [test-deployCVE.sh](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/deployCVE/test-deployCVE.sh): example command line
 * pyVmomi: Python SDK for the VMware vSphere API (see attributions below)
 
 Place all files in a folder together. then, run the main script like so:

@@ -10,18 +10,18 @@ Run these commands from a terminal to download the script(s) into your current d
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/massVMrestore/massVMrestore.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/massVMrestore/massVMrestore.json
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/massVMrestore/massVMrestore.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/massVMrestore/massVMrestore.json
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x massVMrestore.py
 # End download commands
 ```
 
 ## Components
 
-* [massVMrestore.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/massVMrestore/massVMrestore.py): the main python script
-* [massVMrestore.json](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/massVMrestore/massVMrestore.json): example targets file
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [massVMrestore.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/massVMrestore/massVMrestore.py): the main python script
+* [massVMrestore.json](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/massVMrestore/massVMrestore.json): example targets file
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place the files in a folder together, then we can edit the target configuration JSON file. In the JSON file, configure host-datastore target pairs like this:
 

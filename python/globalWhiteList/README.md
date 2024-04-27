@@ -9,15 +9,15 @@ This python script adds, removes and lists global white list entries
 Run these commands to download the scripts into your current directory
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/globalWhiteList/globalWhiteList.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/globalWhiteList/globalWhiteList.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x globalWhiteList.py
 ```
 
 ## Components
 
-* [globalWhiteList.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/globalWhiteList/globalWhiteList.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [globalWhiteList.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/globalWhiteList/globalWhiteList.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

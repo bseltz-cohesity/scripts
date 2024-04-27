@@ -17,11 +17,11 @@ The following scripts can run a PostgreSQL query and export the results to a spr
 
 Both take a .sql file as input. You can use one of the following example queries:
 
-<https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/groot/queries/objectProtectionHistory.sql>
+<https://raw.githubusercontent.com/cohesity/community-automation-samples/main/groot/queries/objectProtectionHistory.sql>
 
 Or a more detailed:
 
-<https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/groot/queries/objectProtectionDetails.sql>
+<https://raw.githubusercontent.com/cohesity/community-automation-samples/main/groot/queries/objectProtectionDetails.sql>
 
 ### Using Helios
 

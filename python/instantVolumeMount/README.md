@@ -10,9 +10,9 @@ Run the following commands to download the scripts:
 
 ```bash
 # begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/instantVolumeMount/instantVolumeMount.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/instantVolumeMount/instantVolumeMountDestroy.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/instantVolumeMount/instantVolumeMount.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/instantVolumeMount/instantVolumeMountDestroy.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x instantVolumeMount.py
 chmod +X instantVolumeMountDestroy.py
 # end download commands
@@ -20,9 +20,9 @@ chmod +X instantVolumeMountDestroy.py
 
 ## Components
 
-* [instantVolumeMount.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/instantVolumeMount/instantVolumeMount.py): the main python script
-* [instantVolumeMountDestroy.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/instantVolumeMount/instantVolumeMountDestroy.py): script to tear down the mounted volume
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [instantVolumeMount.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/instantVolumeMount/instantVolumeMount.py): the main python script
+* [instantVolumeMountDestroy.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/instantVolumeMount/instantVolumeMountDestroy.py): script to tear down the mounted volume
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place the files in a folder together and run the main script like so:
 

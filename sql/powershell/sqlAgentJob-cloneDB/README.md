@@ -11,7 +11,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 ```powershell
 # Download Commands
 $scriptName = 'cloneSQL'
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoURL/sql/powershell/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 $scriptName = 'destroyClone'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoURL/sql/powershell/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
@@ -22,10 +22,10 @@ $scriptName = 'destroyClone'
 
 ## Components
 
-* [cloneSQL.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/sqlAgentJob-cloneDB/cloneSQL.ps1): clone a SQL database
-* [destroyClone.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/sqlAgentJob-cloneDB/destroyClone.ps1): tear down an existing clone
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/sqlAgentJob-cloneDB/cohesity-api.ps1): the Cohesity REST API helper module
-* [createCloneSQLAgentJob.sql](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/sqlAgentJob-cloneDB/createCloneSQLAgentJob.sql): T-SQL to create the SQL Agent Job
+* [cloneSQL.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-cloneDB/cloneSQL.ps1): clone a SQL database
+* [destroyClone.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-cloneDB/destroyClone.ps1): tear down an existing clone
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-cloneDB/cohesity-api.ps1): the Cohesity REST API helper module
+* [createCloneSQLAgentJob.sql](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-cloneDB/createCloneSQLAgentJob.sql): T-SQL to create the SQL Agent Job
 
 ## Creating the SQL Agent Job
 
@@ -45,5 +45,5 @@ To get the password stored, remote desktop into the SQL server as the SQL Agent 
 
 Both of the PowerShell scripts included in this package have various command line parameters. You can find them here:
 
-* [cloneSQL.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/sqlAgentJob-cloneDB/cloneSQL.ps1): <https://github.com/bseltz-cohesity/scripts/tree/master/sql/cloneSQL>
-* [destroyClone.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/sql/sqlAgentJob-cloneDB/destroyClone.ps1): <https://github.com/bseltz-cohesity/scripts/tree/master/sql/destroyClone>
+* [cloneSQL.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-cloneDB/cloneSQL.ps1): <https://github.com/bseltz-cohesity/scripts/tree/master/sql/cloneSQL>
+* [destroyClone.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-cloneDB/destroyClone.ps1): <https://github.com/bseltz-cohesity/scripts/tree/master/sql/destroyClone>

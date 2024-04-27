@@ -6,15 +6,15 @@ This script demonstrates how to perform an Oracle Clone Attach using Python. The
 
 ## Components
 
-* [cloneOracle.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/cloneOracle/cloneOracle.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [cloneOracle.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/python/cloneOracle/cloneOracle.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/cloneOracle/cloneOracle.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/python/cloneOracle/cloneOracle.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x cloneOracle.py
 # end download commands
 ```

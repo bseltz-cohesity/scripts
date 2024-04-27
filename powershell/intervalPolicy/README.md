@@ -11,7 +11,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 ```powershell
 # Download Commands
 $scriptName = 'intervalPolicy'
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/intervalPolicy.ps1").content | Out-File "intervalPolicy.ps1"; (Get-Content "intervalPolicy.ps1") | Set-Content "intervalPolicy.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* [intervalPolicy.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/intervalPolicy/intervalPolicy.ps1): the main powershell script
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [intervalPolicy.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/intervalPolicy/intervalPolicy.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 ## Example
 

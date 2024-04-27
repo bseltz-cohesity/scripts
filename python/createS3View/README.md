@@ -9,15 +9,15 @@ This python script creates a new S3 View on Cohesity
 Run these commands to download the scripts into your current directory
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/createS3View/createS3View.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/createS3View/createS3View.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x createS3View.py
 ```
 
 ## Components
 
-* [createS3View.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/createS3View/createS3View.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [createS3View.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/createS3View/createS3View.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

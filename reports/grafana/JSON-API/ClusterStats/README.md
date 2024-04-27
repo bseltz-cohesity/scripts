@@ -10,7 +10,7 @@ This Grafana dashboard displays backup success rates for a Cohesity cluster.
 
 Go here to get the raw JSON file and save it to your local machine.
 
-<https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/grafana/JSON-API/ClusterStats/Cluster-Stats-JSON-API.json>
+<https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/grafana/JSON-API/ClusterStats/Cluster-Stats-JSON-API.json>
 
 ## Create a JSON API Data Source in Grafana
 
@@ -24,8 +24,8 @@ Configure the data source to point to your InfluxDB instance, for example:
 
 Here is an example JSON exporter that gets some time series stats from Cohesity
 
-* [jsonExporter.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/grafana/JSON-API/ClusterStats/jsonExporter.py)
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py)
+* [jsonExporter.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/grafana/JSON-API/ClusterStats/jsonExporter.py)
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py)
 
 Note: the last line of jsonExporter.py contains the port and SSL sertificate files. You will need to create your own certificates, or remove the ssl_context parameter to make the script work.
 

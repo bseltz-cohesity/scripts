@@ -9,21 +9,21 @@ This python script gracefully powers on/off a Cohesity Cloud Edition cluster in 
 Go to the folder where you want to download the files, then run the following commands:
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAWS/powerCycleAWS.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAWS/storePassword.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAWS/waitForJob.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAWS/awsce_control.sh
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/powerCycleAWS/powerCycleAWS.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/powerCycleAWS/storePassword.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/powerCycleAWS/waitForJob.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/powerCycleAWS/awsce_control.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x awsce_control.sh
 ```
 
 ## Components
 
-* [awsce_control.sh](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAWS/awsce_control.sh): the main bash script
-* [powerCycleAWS.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAWS/powerCycleAWS.py): the power on/off process script
-* [waitForJob.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAWS/waitForJob.py): waits for inbound replication to complete before poweroff
-* [storePassword.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAWS/storePassword.py): script to store passwords
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [awsce_control.sh](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/powerCycleAWS/awsce_control.sh): the main bash script
+* [powerCycleAWS.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/powerCycleAWS/powerCycleAWS.py): the power on/off process script
+* [waitForJob.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/powerCycleAWS/waitForJob.py): waits for inbound replication to complete before poweroff
+* [storePassword.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/powerCycleAWS/storePassword.py): script to store passwords
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 ### Installing the Prerequisites
 

@@ -10,10 +10,10 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/viewDR/collectDRviews.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/viewDR/cloneDRviews.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/viewDR/deleteDRviews.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/viewDR/collectDRviews.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/viewDR/cloneDRviews.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/viewDR/deleteDRviews.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x collectDRviews.py
 chmod +x cloneDRviews.py
 chmod +x deleteDRviews.py
@@ -22,10 +22,10 @@ chmod +x deleteDRviews.py
 
 ## Components
 
-* [collectDRviews.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/viewDR/collectDRviews.py): collect view metadata from the source cluster
-* [cloneDRviews.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/viewDR/cloneDRviews.py): clone views at target cluster
-* [deleteDRviews.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/viewDR/deleteDRviews.py): delete views from source cluster (or target cluster)
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [collectDRviews.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/viewDR/collectDRviews.py): collect view metadata from the source cluster
+* [cloneDRviews.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/viewDR/cloneDRviews.py): clone views at target cluster
+* [deleteDRviews.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/viewDR/deleteDRviews.py): delete views from source cluster (or target cluster)
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place the files in a folder together.
 

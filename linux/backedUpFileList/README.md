@@ -10,7 +10,7 @@ Run these commands from a terminal to download the script(s) into your current d
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/linux/backedUpFileList/backedUpFileList
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/linux/backedUpFileList/backedUpFileList
 chmod +x backedUpFileList
 # End download commands
 ```

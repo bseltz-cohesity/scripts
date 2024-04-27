@@ -9,15 +9,15 @@ This python script pings the node IP and ipmi IP of each node in the cluster.
 Run these commands to download the scripts into your current directory
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pingCluster/pingCluster.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pingCluster/pingCluster.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x pingCluster.py
 ```
 
 ## Components
 
-* [pingCluster.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pingCluster/pingCluster.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [pingCluster.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pingCluster/pingCluster.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

@@ -11,11 +11,11 @@ There are four Oracle related scripts that are often useful to Oracle DBAs. They
 
 ```bash
 # Begin Download Commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/backupNow/backupNow.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/cloneOracle/cloneOracle.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/destroyClone/destroyClone.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/restoreOracle/restoreOracle.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/python/backupNow/backupNow.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/python/cloneOracle/cloneOracle.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/python/destroyClone/destroyClone.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/python/restoreOracle/restoreOracle.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x backupNow.py
 chmod +x cloneOracle.py
 chmod +x destroyClone.py

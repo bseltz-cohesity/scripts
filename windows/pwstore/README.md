@@ -6,7 +6,7 @@ This is a compiled binary that stores and retrieves a password from an encrypted
 
 ## Download The Binary
 
-<https://github.com/bseltz-cohesity/scripts/raw/master/windows/pwstore/pwstore.exe>
+<https://github.com/cohesity/community-automation-samples/raw/main/windows/pwstore/pwstore.exe>
 
 Run the tool like so:
 

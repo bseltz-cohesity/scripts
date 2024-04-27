@@ -11,6 +11,6 @@ At line:1 char:2
     + FullyQualifiedErrorId : WebCmdletWebResponseException,Microsoft.PowerShell.Commands.InvokeWebRequestCommand
 ```
 
-If you see this, go to <https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/sslFix/sslFix.ps1> and paste the commands provided into your PowerShell session, then retry the download commands.
+If you see this, go to <https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/sslFix/sslFix.ps1> and paste the commands provided into your PowerShell session, then retry the download commands.
 
 If you see any scripts where download commands have not been included, please open an issue.

@@ -6,7 +6,7 @@ This is a compiled binary that sets Cohesity agent gflags on linux hosts, via SS
 
 ## Download The Binary
 
-<https://github.com/bseltz-cohesity/scripts/raw/master/windows/agentGflags/agentGflags.exe>
+<https://github.com/cohesity/community-automation-samples/raw/main/windows/agentGflags/agentGflags.exe>
 
 Run the tool like so:
 

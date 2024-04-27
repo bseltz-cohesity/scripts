@@ -11,13 +11,13 @@ This python script updates the Cohesity agent configuration on a Linux host, to 
 Run this commands to download the scripts into your current directory
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/detachLinuxAgent/detachLinuxAgent.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/detachLinuxAgent/detachLinuxAgent.py
 chmod +x detachLinuxAgent.py
 ```
 
 ## Components
 
-* [detachLinuxAgent.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/detachLinuxAgent/detachLinuxAgent.py): the main python script
+* [detachLinuxAgent.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/detachLinuxAgent/detachLinuxAgent.py): the main python script
 
 Run the main script like so:
 

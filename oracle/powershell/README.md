@@ -11,11 +11,11 @@ You can download these scripts onto your PC by opening a PowerShell session and 
 
 ```powershell
 # Begin Download Commands
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/powershell/restoreOracle/restoreOracle.ps1).content | Out-File restoreOracle.ps1; (Get-Content restoreOracle.ps1) | Set-Content restoreOracle.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/powershell/cloneOracle/cloneOracle.ps1).content | Out-File cloneOracle.ps1; (Get-Content cloneOracle.ps1) | Set-Content cloneOracle.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/powershell/destroyClone/destroyClone.ps1).content | Out-File destroyClone.ps1; (Get-Content destroyClone.ps1) | Set-Content destroyClone.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/powershell/backupNow/backupNow.ps1).content | Out-File backupNow.ps1; (Get-Content backupNow.ps1) | Set-Content backupNow.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/powershell/restoreOracle/restoreOracle.ps1).content | Out-File restoreOracle.ps1; (Get-Content restoreOracle.ps1) | Set-Content restoreOracle.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/powershell/cloneOracle/cloneOracle.ps1).content | Out-File cloneOracle.ps1; (Get-Content cloneOracle.ps1) | Set-Content cloneOracle.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/powershell/destroyClone/destroyClone.ps1).content | Out-File destroyClone.ps1; (Get-Content destroyClone.ps1) | Set-Content destroyClone.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/powershell/backupNow/backupNow.ps1).content | Out-File backupNow.ps1; (Get-Content backupNow.ps1) | Set-Content backupNow.ps1
 # End Download Commands
 ```
 

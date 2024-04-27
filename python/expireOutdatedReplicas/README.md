@@ -10,15 +10,15 @@ This script will search all existing replicas and expire any that are past the a
 
 ## Components
 
-* [expireOutdatedReplicas.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/expireOutdatedReplicas/expireOutdatedReplicas.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [expireOutdatedReplicas.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/expireOutdatedReplicas/expireOutdatedReplicas.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/expireOutdatedReplicas/expireOutdatedReplicas.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/expireOutdatedReplicas/expireOutdatedReplicas.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x expireOutdatedReplicas.py
 # end download commands
 ```

@@ -10,7 +10,7 @@ This Grafana dashboard displays backup success rates for a Cohesity cluster.
 
 Go here to get the raw JSON file and save it to your local machine.
 
-<https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/grafana/InfluxDB/ClusterStats/Cluster-Stats-InfluxDB.json>
+<https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/grafana/InfluxDB/ClusterStats/Cluster-Stats-InfluxDB.json>
 
 ## Create a InfluxDB Data Source in Grafana
 
@@ -25,8 +25,8 @@ Configure the data source to point to your InfluxDB instance, for example:
 
 Here is an example InfluxDB exporter that gets some time series stats from Cohesity
 
-* [influxdbClusterStatsExporter.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/grafana/InfluxDB/ClusterStats/influxdbClusterStatsExporter.py)
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py)
+* [influxdbClusterStatsExporter.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/grafana/InfluxDB/ClusterStats/influxdbClusterStatsExporter.py)
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py)
 
 Note: the influxdbClusterStatsExporter.py contains some settings that you will need to update:
 

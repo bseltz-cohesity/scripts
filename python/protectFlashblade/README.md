@@ -10,10 +10,10 @@ You can download the scripts using the following commands (using curl on Linux):
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectFlashblade/protectFlashblade.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectFlashblade/protectFlashblade-multi.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectFlashblade/flashBladeProtectionStatus.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/protectFlashblade/protectFlashblade.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/protectFlashblade/protectFlashblade-multi.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/protectFlashblade/flashBladeProtectionStatus.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x protectFlashblade.py
 chmod +x protectFlashblade-multi.py
 chmod +x flashBladeProtectionStatus.py
@@ -27,7 +27,7 @@ Run these commands from a terminal to download the script(s) into your current d
 ```powershell
 # Download Commands
 $scriptName = 'protectFlashblade'
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python'
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.py").content | Out-File "$scriptName.py"; (Get-Content "$scriptName.py") | Set-Content "$scriptName.py"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName-multi.py").content | Out-File "$scriptName-multi.py"; (Get-Content "$scriptName-multi.py") | Set-Content "$scriptName-multi.py"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/flashBladeProtectionStatus.py").content | Out-File "flashBladeProtectionStatus.py"; (Get-Content "flashBladeProtectionStatus.py") | Set-Content "flashBladeProtectionStatus.py"
@@ -37,10 +37,10 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pyt
 
 ## Components
 
-* [protectFlashblade.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectFlashblade/protectFlashblade.py): the main python script (creates one job for all selected volumes)
-* [protectFlashblade-multi.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectFlashblade/protectFlashblade-multi.py): alternative that creates one job per volume
-* [flashBladeProtectionStatus.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectFlashblade/flashBladeProtectionStatus.py): list protection status for all volumes of a flashblade
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [protectFlashblade.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/protectFlashblade/protectFlashblade.py): the main python script (creates one job for all selected volumes)
+* [protectFlashblade-multi.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/protectFlashblade/protectFlashblade-multi.py): alternative that creates one job per volume
+* [flashBladeProtectionStatus.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/protectFlashblade/flashBladeProtectionStatus.py): list protection status for all volumes of a flashblade
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place the files in a folder together and run the script like so:
 

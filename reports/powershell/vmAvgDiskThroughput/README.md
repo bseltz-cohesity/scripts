@@ -11,14 +11,14 @@ Run these commands from PowerShell to download the script(s) into your current d
 ```powershell
 # Download Commands
 $scriptName = 'vmAvgDiskThroughput'
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/reports/powershell/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 # End Download Commands
 ```
 
 ## Components
 
-* [vmAvgDiskThroughput.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/powershell/vmAvgDiskThroughput/vmAvgDiskThroughput.ps1): the main powershell script
+* [vmAvgDiskThroughput.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/powershell/vmAvgDiskThroughput/vmAvgDiskThroughput.ps1): the main powershell script
 
 Place both files in a folder together and run the main script like so:
 

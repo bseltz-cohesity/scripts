@@ -10,16 +10,16 @@ Run these commands from a terminal to download the script(s) into your current d
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/fileSearch/fileSearch.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/fileSearch/fileSearch.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x backupNow.py
 # End download commands
 ```
 
 ## Components
 
-* [fileSearch.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/fileSearch/fileSearch.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [fileSearch.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/fileSearch/fileSearch.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place all files in a folder together. then, run the main script like so:
 

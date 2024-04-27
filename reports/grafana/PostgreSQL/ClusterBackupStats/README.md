@@ -10,7 +10,7 @@ This Grafana dashboard displays backup stats for a Cohesity cluster.
 
 Go here to get the raw JSON file and save it to your local machine.
 
-<https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/grafana/PostgreSQL/ClusterBackupStats/Cluster%20Backup%20Stats.json>
+<https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/grafana/PostgreSQL/ClusterBackupStats/Cluster%20Backup%20Stats.json>
 
 ## Create a Grafana Datasource for your Cohesity Cluster
 

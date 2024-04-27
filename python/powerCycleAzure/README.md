@@ -9,21 +9,21 @@ This python script gracefully powers on/off a Cohesity Cloud Edition cluster in 
 Go to the folder where you want to download the files, then run the following commands:
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/powerCycleAzure.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/storePassword.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/waitForJob.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/azurece_control.sh
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/powerCycleAzure/powerCycleAzure.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/powerCycleAzure/storePassword.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/powerCycleAzure/waitForJob.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/powerCycleAzure/azurece_control.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x azurece_control.sh
 ```
 
 ## Components
 
-* [azurece_control.sh](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/azurece_control.sh): the main bash script
-* [powerCycleAzure.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/powerCycleAzure.py): the power on/off process script
-* [waitForJob.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/waitForJob.py): waits for inbound replication to complete before poweroff
-* [storePassword.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/powerCycleAzure/storePassword.py): script to store passwords
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [azurece_control.sh](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/powerCycleAzure/azurece_control.sh): the main bash script
+* [powerCycleAzure.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/powerCycleAzure/powerCycleAzure.py): the power on/off process script
+* [waitForJob.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/powerCycleAzure/waitForJob.py): waits for inbound replication to complete before poweroff
+* [storePassword.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/powerCycleAzure/storePassword.py): script to store passwords
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 ### Installing the Prerequisites
 

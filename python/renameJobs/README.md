@@ -10,16 +10,16 @@ Run these commands from a terminal to download the script(s) into your current d
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/renameJobs/renameJobs.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/renameJobs/renameJobs.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x renameJobs.py
 # End download commands
 ```
 
 ## Components
 
-* [renameJobs.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/renameJobs/renameJobs.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [renameJobs.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/renameJobs/renameJobs.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 To rename a protection job, place all files in a folder together, then run the main script like so:
 

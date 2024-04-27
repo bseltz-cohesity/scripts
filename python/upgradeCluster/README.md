@@ -6,12 +6,12 @@ This python script initiates an upgrade of a Cohesity cluster to a newer version
 
 ## Components
 
-* [upgradeCluster.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/upgradeCluster/upgradeCluster.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): Cohesity REST API helper module
+* [upgradeCluster.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/upgradeCluster/upgradeCluster.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): Cohesity REST API helper module
 
 ## Optional Components
 
-* [upgradeServer.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/upgradeCluster/upgradeServer.py): lightweight web server for hosting upgrade files
+* [upgradeServer.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/upgradeCluster/upgradeServer.py): lightweight web server for hosting upgrade files
 * cohesity-upgradeserver.service systemd-unit file to run upgradeServer as a daemon
 
 ## Download the Files
@@ -19,11 +19,11 @@ This python script initiates an upgrade of a Cohesity cluster to a newer version
 Run the following commands to download the scripts:
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/upgradeCluster/upgradeCluster.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/upgradeCluster/upgradeServer.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/upgradeCluster/cohesity-upgradeserver.service
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/upgradeCluster/testupgrade.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/upgradeCluster/upgradeCluster.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/upgradeCluster/upgradeServer.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/upgradeCluster/cohesity-upgradeserver.service
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/upgradeCluster/testupgrade.sh
 chmod +x upgradeCluster.py
 chmod +x upgradeServer.py
 chmod +x testupgrade.sh

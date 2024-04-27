@@ -10,16 +10,16 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNow/backupNow.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/backupNow/backupNow.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x backupNow.py
 # End download commands
 ```
 
 ## Components
 
-* [backupNow.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNow/backupNow.py): the main PowerShell script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [backupNow.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/backupNow/backupNow.py): the main PowerShell script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place all files in a folder together. then, run the main script like so:
 

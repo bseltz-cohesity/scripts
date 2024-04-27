@@ -9,7 +9,7 @@ This is a function library for APIs that use basic authentication. This is not f
 Use the following command to download the module:
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/basic_api/basic_api.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/basic_api/basic_api.py
 ```
 
 ## Installing the Prerequisites

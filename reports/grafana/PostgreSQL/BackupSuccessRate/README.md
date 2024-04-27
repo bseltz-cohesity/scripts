@@ -10,7 +10,7 @@ This Grafana dashboard displays backup success rates for a Cohesity cluster.
 
 Go here to get the raw JSON file and save it to your local machine.
 
-<https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/grafana/PostgreSQL/BackupSuccessRate/BackupSuccessRate.json>
+<https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/grafana/PostgreSQL/BackupSuccessRate/BackupSuccessRate.json>
 
 ## Create a Grafana Datasource for your Cohesity Cluster
 

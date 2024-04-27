@@ -10,16 +10,16 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/detectedAnomalies/detectedAnomalies.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/detectedAnomalies/detectedAnomalies.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x detectedAnomalies.py
 # end download commands
 ```
 
 ## Components
 
-* [detectedAnomalies.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/detectedAnomalies/detectedAnomalies.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [detectedAnomalies.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/detectedAnomalies/detectedAnomalies.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

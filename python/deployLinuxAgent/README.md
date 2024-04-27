@@ -11,13 +11,13 @@ This python script deploys the Cohesity Linux agent on remote hosts via SSH.
 Run this commands to download the scripts into your current directory
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deployLinuxAgent/deployLinuxAgent.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/deployLinuxAgent/deployLinuxAgent.py
 chmod +x deployLinuxAgent.py
 ```
 
 ## Components
 
-* [deployLinuxAgent.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deployLinuxAgent/deployLinuxAgent.py): the main python script
+* [deployLinuxAgent.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/deployLinuxAgent/deployLinuxAgent.py): the main python script
 
 Run the main script like so:
 

@@ -11,7 +11,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 ```powershell
 # Download Commands
 $scriptName = 'upgradeAgents'
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* [upgradeAgents.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/upgradeAgents/upgradeAgents.ps1): the main PowerShell script - md5 checksum: e005ea935929a5283c90db7a73d3942a
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module - md5 checksum: 6713f57c974e5acc8ee0075c3f1fb6bf
+* [upgradeAgents.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/upgradeAgents/upgradeAgents.ps1): the main PowerShell script - md5 checksum: e005ea935929a5283c90db7a73d3942a
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module - md5 checksum: 6713f57c974e5acc8ee0075c3f1fb6bf
 
 Place all files in a folder together, then run the main script like so:
 

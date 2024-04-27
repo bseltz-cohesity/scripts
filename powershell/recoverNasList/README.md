@@ -10,15 +10,15 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/recoverNasList/recoverNasList.ps1).content | Out-File recoverNasList.ps1; (Get-Content recoverNasList.ps1) | Set-Content recoverNasList.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/recoverNasList/recoverNasList.ps1).content | Out-File recoverNasList.ps1; (Get-Content recoverNasList.ps1) | Set-Content recoverNasList.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
 
 ## Components
 
-* [recoverNasList.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/recoverNasList/recoverNasList.ps1): the main powershell script
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [recoverNasList.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/recoverNasList/recoverNasList.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together. Create a text file for input, with the list of NAS UNC paths to recover, like so:
 

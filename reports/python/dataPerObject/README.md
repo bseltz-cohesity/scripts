@@ -9,8 +9,8 @@ This script collects the logical size, data read and written over time of protec
 Run these commands to download the scripts into your current directory
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/python/dataPerObject/dataPerObject.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/python/dataPerObject/dataPerObject.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x dataPerObject.py
 ```
 

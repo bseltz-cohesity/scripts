@@ -6,26 +6,26 @@ This example shows how to use a remote Python host to enable API driven triggeri
 
 ## Components for AIX Host
 
-* [freeze.sh](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/freezeThawRemote/freeze.sh): contains host freeze commands, placed on the AIX host
-* [thaw.sh](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/freezeThawRemote/thaw.sh): contains host thaw commands, placed on the AIX host
-* [waitforsnaps.sh](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/freezeThawRemote/waitforsnaps.sh): calls remote python script
+* [freeze.sh](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/freezeThawRemote/freeze.sh): contains host freeze commands, placed on the AIX host
+* [thaw.sh](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/freezeThawRemote/thaw.sh): contains host thaw commands, placed on the AIX host
+* [waitforsnaps.sh](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/freezeThawRemote/waitforsnaps.sh): calls remote python script
 
 ## Components for Remote Python Host
 
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module, placed on a remote python host
-* [monitorTasks.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/freezeThawRemote/monitorTasks.py): monitors for task status during the host/volume backup, placed on a remote python host
-* [storePassword.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/freezeThawRemote/storePassword.py): helps you set stored passwords for unattended API access
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module, placed on a remote python host
+* [monitorTasks.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/freezeThawRemote/monitorTasks.py): monitors for task status during the host/volume backup, placed on a remote python host
+* [storePassword.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/freezeThawRemote/storePassword.py): helps you set stored passwords for unattended API access
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/freezeThawRemote/freeze.sh
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/freezeThawRemote/thaw.sh
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/freezeThawRemote/waitforsnaps.sh
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/freezeThawRemote/monitorTasks.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/freezeThawRemote/storePassword.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/freezeThawRemote/freeze.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/freezeThawRemote/thaw.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/freezeThawRemote/waitforsnaps.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/freezeThawRemote/monitorTasks.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/freezeThawRemote/storePassword.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 # end download commands
 ```
 

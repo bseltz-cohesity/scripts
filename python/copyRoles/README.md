@@ -9,15 +9,15 @@ This python script creates a new S3 View on Cohesity
 Run these commands to download the scripts into your current directory
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/copyRoles/copyRoles.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/copyRoles/copyRoles.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x copyRoles.py
 ```
 
 ## Components
 
-* [copyRoles.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/copyRoles/copyRoles.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [copyRoles.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/copyRoles/copyRoles.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

@@ -12,8 +12,8 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/s3test/s3DeleteOldFiles/s3DeleteOldFiles.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/s3test/s3DeleteOldFiles/s3DeleteOldFiles.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x s3DeleteOldFiles.py
 # end download commands
 ```

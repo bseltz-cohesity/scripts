@@ -11,7 +11,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 ```powershell
 # Download Commands
 $scriptName = 'heliosProtectionDetailsPerObject'
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/reports/helios-other/powershell/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 ## Components
 
-* heliosProtectionDetailsPerObject.ps1: the main python script ([raw code](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/helios/powershell/heliosProtectionDetailsPerObject/heliosProtectionDetailsPerObject.ps1))
-* cohesity-api.ps1: the Cohesity REST API helper module ([raw code](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1))
+* heliosProtectionDetailsPerObject.ps1: the main python script ([raw code](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/helios/powershell/heliosProtectionDetailsPerObject/heliosProtectionDetailsPerObject.ps1))
+* cohesity-api.ps1: the Cohesity REST API helper module ([raw code](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1))
 
 Place both files in a folder together and run the main script like so:
 

@@ -6,15 +6,15 @@ This python script archives old existing snapshots.
 
 ## Components
 
-* [archiveOldSnapshots.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/archiveOldSnapshots/archiveOldSnapshots.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [archiveOldSnapshots.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/archiveOldSnapshots/archiveOldSnapshots.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/archiveOldSnapshots/archiveOldSnapshots.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/archiveOldSnapshots/archiveOldSnapshots.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x archiveOldSnapshots.py
 
 ```

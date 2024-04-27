@@ -6,7 +6,7 @@ This is a binary version of restoreFiles for Windows. It restores files from a C
 
 ## Download the binary
 
-<https://github.com/bseltz-cohesity/scripts/raw/master/windows/restoreFiles/restoreFiles.exe>
+<https://github.com/cohesity/community-automation-samples/raw/main/windows/restoreFiles/restoreFiles.exe>
 
 ## Example
 

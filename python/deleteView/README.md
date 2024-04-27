@@ -11,15 +11,15 @@ This python script deletes a view.
 Go to the folder where you want to download the files, then run the following commands:
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deleteView/deleteView.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/deleteView/deleteView.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x deleteView.py
 ```
 
 ## Components
 
-* [deleteView.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/deleteView/deleteView.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [deleteView.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/deleteView/deleteView.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

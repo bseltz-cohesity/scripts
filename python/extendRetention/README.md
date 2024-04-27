@@ -6,17 +6,17 @@ This python script extends the retention of existing snapshots. It can set new e
 
 ## Components
 
-* [extendRetention.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendRetention/extendRetention.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
-* [smtptool.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendRetention/smtptool.py): smtp functions to send email alerts
+* [extendRetention.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/extendRetention/extendRetention.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [smtptool.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/extendRetention/smtptool.py): smtp functions to send email alerts
 
 ## Download The Scripts
 
 ```bash
 # begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendRetention/extendRetention.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/extendRetention/smtptool.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/extendRetention/extendRetention.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/extendRetention/smtptool.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x extendRetention.py
 # end download commands
 ```

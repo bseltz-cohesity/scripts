@@ -10,21 +10,21 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR-MT/viewDRclone.ps1).content | Out-File viewDRclone.ps1; (Get-Content viewDRclone.ps1) | Set-Content viewDRclone.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR-MT/viewDRcollect.ps1).content | Out-File viewDRcollect.ps1; (Get-Content viewDRcollect.ps1) | Set-Content viewDRcollect.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR-MT/viewDRdelete.ps1).content | Out-File viewDRdelete.ps1; (Get-Content viewDRdelete.ps1) | Set-Content viewDRdelete.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR-MT/cleanupJobs.ps1).content | Out-File cleanupJobs.ps1; (Get-Content cleanupJobs.ps1) | Set-Content cleanupJobs.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR-MT/viewDRclone.ps1).content | Out-File viewDRclone.ps1; (Get-Content viewDRclone.ps1) | Set-Content viewDRclone.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR-MT/viewDRcollect.ps1).content | Out-File viewDRcollect.ps1; (Get-Content viewDRcollect.ps1) | Set-Content viewDRcollect.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR-MT/viewDRdelete.ps1).content | Out-File viewDRdelete.ps1; (Get-Content viewDRdelete.ps1) | Set-Content viewDRdelete.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR-MT/cleanupJobs.ps1).content | Out-File cleanupJobs.ps1; (Get-Content cleanupJobs.ps1) | Set-Content cleanupJobs.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
 
 ## Core Components
 
-* [viewDRcollect.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR-MT/viewDRcollect.ps1): performs failover/failback operations
-* [viewDRclone.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR-MT/viewDRclone.ps1): performs failover/failback operations
-* [viewDRdelete.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR-MT/viewDRdelete.ps1): performs failover/failback operations
-* [cleanupJobs.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR-MT/cleanupJobs.ps1): assigns replication policy and cleans up old objects
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [viewDRcollect.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR-MT/viewDRcollect.ps1): performs failover/failback operations
+* [viewDRclone.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR-MT/viewDRclone.ps1): performs failover/failback operations
+* [viewDRdelete.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR-MT/viewDRdelete.ps1): performs failover/failback operations
+* [cleanupJobs.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR-MT/cleanupJobs.ps1): assigns replication policy and cleans up old objects
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 ## Cohesity Setup (Initial State)
 

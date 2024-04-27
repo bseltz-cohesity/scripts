@@ -8,7 +8,7 @@ This bash script can be used as a pre-script in a remote adapter job to backup G
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/remoteAdapter/backupGitHub/backupGitHub.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/remoteAdapter/backupGitHub/backupGitHub.sh
 chmod +x backupGitHub.sh
 # End download commands
 ```

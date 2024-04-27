@@ -13,7 +13,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 ```powershell
 # Download Commands
 $scriptName = 'importExport'
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/exportConfiguration.ps1").content | Out-File "exportConfiguration.ps1"; (Get-Content "exportConfiguration.ps1") | Set-Content "exportConfiguration.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/exportConfigurationV2.ps1").content | Out-File "exportConfigurationV2.ps1"; (Get-Content "exportConfigurationV2.ps1") | Set-Content "exportConfigurationV2.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/importStorageDomains.ps1").content | Out-File "importStorageDomains.ps1"; (Get-Content "importStorageDomains.ps1") | Set-Content "importStorageDomains.ps1"
@@ -31,7 +31,7 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 * importPolicies.ps1
 * importNasSources.ps1
 * importNasJobs.ps1
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 ## Exporting Objects
 

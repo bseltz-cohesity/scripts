@@ -10,7 +10,7 @@ You can download the tool using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/linux/unregisterSource/unregisterSource
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/linux/unregisterSource/unregisterSource
 # end download commands
 ```
 

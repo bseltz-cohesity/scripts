@@ -6,15 +6,15 @@ This script unprotects Oracle servers or databases. Note: it will delete the pro
 
 ## Components
 
-* [unprotectOracle.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/unprotectOracle/unprotectOracle.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [unprotectOracle.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/python/unprotectOracle/unprotectOracle.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/unprotectOracle/unprotectOracle.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/python/unprotectOracle/unprotectOracle.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x unprotectOracle.py
 # end download commands
 ```

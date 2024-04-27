@@ -13,7 +13,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 ```powershell
 # Download Commands
 $scriptName = 'archiveAndExtend'
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/run-$scriptName.ps1").content | Out-File "run-$scriptName.ps1"; (Get-Content "run-$scriptName.ps1") | Set-Content "run-$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
@@ -22,9 +22,9 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* [archiveAndExtend.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/archiveAndExtend/archiveAndExtend.ps1): the main powershell script
-* [run-archiveAndExtend.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/archiveAndExtend/run-archiveAndExtend.ps1): launch wrapper
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [archiveAndExtend.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/archiveAndExtend/archiveAndExtend.ps1): the main powershell script
+* [run-archiveAndExtend.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/archiveAndExtend/run-archiveAndExtend.ps1): launch wrapper
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together, then we can run the script.
 

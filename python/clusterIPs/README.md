@@ -6,15 +6,15 @@ This script reports what IP addresses are used by a cluster. Output is written t
 
 ## Components
 
-* [clusterIPs.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/clusterIPs/clusterIPs.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [clusterIPs.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/clusterIPs/clusterIPs.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/clusterIPs/clusterIPs.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/clusterIPs/clusterIPs.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x clusterIPs.py
 # end download commands
 ```

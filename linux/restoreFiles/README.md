@@ -10,7 +10,7 @@ Run these commands from a terminal to download the script(s) into your current d
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/linux/restoreFiles/restoreFiles
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/linux/restoreFiles/restoreFiles
 chmod +x restoreFiles
 # End download commands
 ```

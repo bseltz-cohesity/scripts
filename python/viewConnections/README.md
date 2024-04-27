@@ -10,16 +10,16 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/viewConnections/viewConnections.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/viewConnections/viewConnections.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x viewConnections.py
 # end download commands
 ```
 
 ## Components
 
-* [viewConnections.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/viewConnections/viewConnections.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [viewConnections.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/viewConnections/viewConnections.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

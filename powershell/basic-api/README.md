@@ -10,7 +10,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/basic-api/basic-api.ps1").content | Out-File -Force basic-api.ps1; (Get-Content basic-api.ps1) | Set-Content basic-api.ps1
 # End Download Commands
 ```

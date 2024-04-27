@@ -10,18 +10,18 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectGPFS/protectGPFS.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/basic_api/basic_api.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/protectGPFS/protectGPFS.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/basic_api/basic_api.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x protectGPFS.py
 # end download commands
 ```
 
 ## Components
 
-* [protectGPFS.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/protectGPFS/protectGPFS.py): the main python script
+* [protectGPFS.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/protectGPFS/protectGPFS.py): the main python script
 * basic_api.py: GPFS REST API helper module
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): Cohesity REST API helper module
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

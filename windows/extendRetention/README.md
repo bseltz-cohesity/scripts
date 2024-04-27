@@ -6,7 +6,7 @@ This is a compiled binary that extends the retention of existing snapshots. It c
 
 ## Download The Binary
 
-<https://github.com/bseltz-cohesity/scripts/raw/master/windows/extendRetention/extendRetention.exe>
+<https://github.com/cohesity/community-automation-samples/raw/main/windows/extendRetention/extendRetention.exe>
 
 Run the tool like so:
 

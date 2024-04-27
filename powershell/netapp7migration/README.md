@@ -11,7 +11,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 ```powershell
 # Download Commands
 $scriptName = 'netapp7migration'
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/netapp7ImportSMB.ps1").content | Out-File "netapp7ImportSMB.ps1"; (Get-Content "netapp7ImportSMB.ps1") | Set-Content "netapp7ImportSMB.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/netapp7ImportNFS.ps1").content | Out-File "netapp7ImportNFS.ps1"; (Get-Content "netapp7ImportNFS.ps1") | Set-Content "netapp7ImportNFS.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/netapp7Export.ps1").content | Out-File "netapp7Export.ps1"; (Get-Content "netapp7Export.ps1") | Set-Content "netapp7Export.ps1"
@@ -21,10 +21,10 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* [netapp7Export.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/netapp7migration/netapp7Export.ps1): export netapp 7-mode configuration details
-* [netapp7ImportSMB.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/netapp7migration/netapp7ImportSMB.ps1): import netapp 7-mode SMB shares
-* [netapp7ImportNFS.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/netapp7migration/netapp7ImportNFS.ps1): import netapp 7-mode NFS exports
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [netapp7Export.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/netapp7migration/netapp7Export.ps1): export netapp 7-mode configuration details
+* [netapp7ImportSMB.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/netapp7migration/netapp7ImportSMB.ps1): import netapp 7-mode SMB shares
+* [netapp7ImportNFS.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/netapp7migration/netapp7ImportNFS.ps1): import netapp 7-mode NFS exports
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place the files in a folder together.
 

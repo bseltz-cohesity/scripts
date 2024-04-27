@@ -6,15 +6,15 @@ This script updates the username and password in a NAS source registration.
 
 ## Components
 
-* [updateNasCredentials.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/updateNasCredentials/updateNasCredentials.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [updateNasCredentials.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/updateNasCredentials/updateNasCredentials.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/updateNasCredentials/updateNasCredentials.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/updateNasCredentials/updateNasCredentials.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x updateNasCredentials.py
 # end download commands
 ```

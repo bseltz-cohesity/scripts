@@ -6,8 +6,8 @@ This PowerShell script searches for an object and displays the versions availabl
 
 ## Components
 
-* [objectRecoveryPoints.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/objectRecoveryPoints/objectRecoveryPoints.ps1): the main PowerShell script
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [objectRecoveryPoints.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/objectRecoveryPoints/objectRecoveryPoints.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place all files in a folder together. then, run the main script like so:
 
@@ -44,7 +44,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 ```powershell
 # Download Commands
 $scriptName = 'objectRecoveryPoints'
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands

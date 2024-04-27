@@ -11,14 +11,14 @@ Run these commands from PowerShell to download the script(s) into your current d
 ```powershell
 # Download Commands
 $scriptName = 'threadWrapper'
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 # End Download Commands
 ```
 
 ## Components
 
-* [threadWrapper.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/threadWrapper/threadWrapper.ps1): the wrapper script
+* [threadWrapper.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/threadWrapper/threadWrapper.ps1): the wrapper script
 
 Edit the wrapper script accordingly. The example provided runs two instances of backupNow.ps1
 

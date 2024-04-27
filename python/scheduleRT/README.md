@@ -6,9 +6,9 @@ This python script schedules the opening of Cohesity support channel for some ti
 
 ## Components
 
-* [scheduleRT.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/scheduleRT/scheduleRT.py): the main python script to set the schedule
-* [enableRT.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/scheduleRT/enableRT.py): the script that runs as scheduled
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [scheduleRT.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/scheduleRT/scheduleRT.py): the main python script to set the schedule
+* [enableRT.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/scheduleRT/enableRT.py): the script that runs as scheduled
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 ## Deployment
 
@@ -49,9 +49,9 @@ Before selecting a date and time to open support channel, please note that the C
 Use the following commands to download the script:
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/scheduleRT/enableRT.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/scheduleRT/scheduleRT.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/scheduleRT/enableRT.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/scheduleRT/scheduleRT.py
 chmod +x scheduleRT.py
 chmod +x enableRT.py
 ```

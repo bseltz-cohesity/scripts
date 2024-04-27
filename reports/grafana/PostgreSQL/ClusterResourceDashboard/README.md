@@ -10,7 +10,7 @@ This Grafana dashboard displays storage and cpu/memory usage for a Cohesity clus
 
 Go here to get the raw JSON file and save it to your local machine.
 
-<https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/reports/grafana/PostgreSQL/ClusterResourceDashboard/ClusterResourceDashboard.json>
+<https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/grafana/PostgreSQL/ClusterResourceDashboard/ClusterResourceDashboard.json>
 
 ## Create a Grafana Datasource for your Cohesity Cluster
 

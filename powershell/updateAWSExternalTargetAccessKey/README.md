@@ -9,7 +9,7 @@ This powershell updates the access key and secret key used to authenticate to an
 ```powershell
 # Download Commands
 $scriptName = 'updateAWSExternalTargetAccessKey'
-$repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
@@ -17,8 +17,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/pow
 
 ## Components
 
-* [updateAWSExternalTargetAccessKey.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/updateAWSExternalTargetAccessKey/updateAWSExternalTargetAccessKey.ps1): the main powershell script
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [updateAWSExternalTargetAccessKey.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/updateAWSExternalTargetAccessKey/updateAWSExternalTargetAccessKey.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

@@ -10,7 +10,7 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/linux/unprotectSQLServer/unprotectSQLServer
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/linux/unprotectSQLServer/unprotectSQLServer
 # end download commands
 ```
 

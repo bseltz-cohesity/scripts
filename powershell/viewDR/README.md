@@ -14,27 +14,27 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/viewDR.ps1).content | Out-File viewDR.ps1; (Get-Content viewDR.ps1) | Set-Content viewDR.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/cnameFailover.ps1).content | Out-File cnameFailover.ps1; (Get-Content cnameFailover.ps1) | Set-Content cnameFailover.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/dfsFailover.ps1).content | Out-File dfsFailover.ps1; (Get-Content dfsFailover.ps1) | Set-Content dfsFailover.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/cleanupUnmergedViews.ps1).content | Out-File cleanupUnmergedViews.ps1; (Get-Content cleanupUnmergedViews.ps1) | Set-Content cleanupUnmergedViews.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/cleanupJobs.ps1).content | Out-File cleanupJobs.ps1; (Get-Content cleanupJobs.ps1) | Set-Content cleanupJobs.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/failoverMonitor.ps1).content | Out-File failoverMonitor.ps1; (Get-Content failoverMonitor.ps1) | Set-Content failoverMonitor.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/replicateViews.ps1).content | Out-File replicateViews.ps1; (Get-Content replicateViews.ps1) | Set-Content replicateViews.ps1
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR/viewDR.ps1).content | Out-File viewDR.ps1; (Get-Content viewDR.ps1) | Set-Content viewDR.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR/cnameFailover.ps1).content | Out-File cnameFailover.ps1; (Get-Content cnameFailover.ps1) | Set-Content cnameFailover.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR/dfsFailover.ps1).content | Out-File dfsFailover.ps1; (Get-Content dfsFailover.ps1) | Set-Content dfsFailover.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR/cleanupUnmergedViews.ps1).content | Out-File cleanupUnmergedViews.ps1; (Get-Content cleanupUnmergedViews.ps1) | Set-Content cleanupUnmergedViews.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR/cleanupJobs.ps1).content | Out-File cleanupJobs.ps1; (Get-Content cleanupJobs.ps1) | Set-Content cleanupJobs.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR/failoverMonitor.ps1).content | Out-File failoverMonitor.ps1; (Get-Content failoverMonitor.ps1) | Set-Content failoverMonitor.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR/replicateViews.ps1).content | Out-File replicateViews.ps1; (Get-Content replicateViews.ps1) | Set-Content replicateViews.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
 
 ## Core Components
 
-* [viewDR.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/viewDR.ps1): performs failover/failback operations
-* [failoverMonitor.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/failoverMonitor.ps1): displays the status of failover tasks
-* [replicateViews.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/replicateViews.ps1): initiates backup/replication of views
-* [cleanupJobs.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/cleanupJobs.ps1): assigns replication policy and cleans up old objects
-* [cleanupUnmergedViews.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/cleanupUnmergedViews.ps1): delete unmerged views
-* [cnameFailover.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/cnameFailover.ps1): failover cname and SPN records
-* [dfsFailover.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/viewDR/dfsFailover.ps1): failover DFS folder targets
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [viewDR.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR/viewDR.ps1): performs failover/failback operations
+* [failoverMonitor.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR/failoverMonitor.ps1): displays the status of failover tasks
+* [replicateViews.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR/replicateViews.ps1): initiates backup/replication of views
+* [cleanupJobs.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR/cleanupJobs.ps1): assigns replication policy and cleans up old objects
+* [cleanupUnmergedViews.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR/cleanupUnmergedViews.ps1): delete unmerged views
+* [cnameFailover.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR/cnameFailover.ps1): failover cname and SPN records
+* [dfsFailover.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/viewDR/dfsFailover.ps1): failover DFS folder targets
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 ## Cohesity Setup (Initial State)
 

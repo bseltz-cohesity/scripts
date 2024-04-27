@@ -63,8 +63,8 @@ systemctl status nfs-server
 ## Download the AVID Proxy Python Script
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/avidProxy/avidProxy.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/avidProxy/avidProxy.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x avidProxy.py
 ```
 

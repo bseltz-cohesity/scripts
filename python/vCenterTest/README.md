@@ -10,8 +10,8 @@ Run these commands to download the script(s) into your current directory
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/vCenterTest/vCenterTest.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/excludeVMs/pyVmomi.tar.gz
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/vCenterTest/vCenterTest.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/excludeVMs/pyVmomi.tar.gz
 tar -xvf pyVmomi.tar.gz
 chmod +x vCenterTest.py
 # End download commands

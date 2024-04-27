@@ -6,15 +6,15 @@ This script reports the number of days to retain Oracle archived logs for each p
 
 ## Components
 
-* [oracleLogDeletionDaysReport.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/oracleLogDeletionDaysReport/oracleLogDeletionDaysReport.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [oracleLogDeletionDaysReport.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/python/oracleLogDeletionDaysReport/oracleLogDeletionDaysReport.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/oracle/python/oracleLogDeletionDaysReport/oracleLogDeletionDaysReport.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/python/oracleLogDeletionDaysReport/oracleLogDeletionDaysReport.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x oracleLogDeletionDaysReport.py
 # end download commands
 ```

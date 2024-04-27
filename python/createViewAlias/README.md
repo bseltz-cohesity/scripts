@@ -9,15 +9,15 @@ This python script creates a view alias (additional share) in a Cohesity View.
 Run these commands to download the scripts into your current directory
 
 ```bash
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/createViewAlias/createViewAlias.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/createViewAlias/createViewAlias.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x createViewAlias.py
 ```
 
 ## Components
 
-* [createViewAlias.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/createViewAlias/createViewAlias.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [createViewAlias.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/createViewAlias/createViewAlias.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

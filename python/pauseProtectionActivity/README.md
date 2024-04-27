@@ -10,16 +10,16 @@ Run these commands from a terminal to download the script(s) into your current d
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pauseProtectionActivity/pauseProtectionActivity.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pauseProtectionActivity/pauseProtectionActivity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x pauseProtectionActivity.py
 # End download commands
 ```
 
 ## Components
 
-* [pauseProtectionActivity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pauseProtectionActivity/pauseProtectionActivity.py): the main python script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [pauseProtectionActivity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pauseProtectionActivity/pauseProtectionActivity.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 To pause protection activity:
 
