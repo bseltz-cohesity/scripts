@@ -10,7 +10,7 @@ This script was written to run on AIX where a scripting language such as Python 
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/old/backupNowDisabledJob/backupNowDisabledJob.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/bash/old/backupNowDisabledJob/backupNowDisabledJob.sh
 chmod +x backupNowDisabledJob.sh
 # End download commands
 ```

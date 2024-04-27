@@ -8,7 +8,7 @@ This bash script can be used as a Pre Script in a Cohesity Pure FlashArray volum
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/epic_pure_freeze_thaw/epic_pure_freeze_thaw.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/bash/epic_pure_freeze_thaw/epic_pure_freeze_thaw.sh
 chmod +x epic_pure_freeze_thaw.sh
 # End download commands
 ```

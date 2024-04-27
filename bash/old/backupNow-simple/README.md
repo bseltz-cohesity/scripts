@@ -12,7 +12,7 @@ This bash script performs a run now on a protection job, selecting one object. T
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/old/backupNow-simple/backupNowOneObject.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/bash/old/backupNow-simple/backupNowOneObject.sh
 chmod +x backupNowOneObject.sh
 # End download commands
 ```

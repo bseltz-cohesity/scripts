@@ -8,7 +8,7 @@ This bash script performs a restore of a folder from one physical server to anot
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/restoreFolder/restoreFolder.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/bash/restoreFolder/restoreFolder.sh
 chmod +x restoreFolder.sh
 # End download commands
 ```

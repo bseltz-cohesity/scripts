@@ -23,8 +23,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 ## Components
 
-* [restoreSQL-CCS.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/dmaas/powershell/restoreSQL-CCS/restoreSQL-CCS.ps1): the main powershell script
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [restoreSQL-CCS.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/dmaas/powershell/restoreSQL-CCS/restoreSQL-CCS.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

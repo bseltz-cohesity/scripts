@@ -8,8 +8,8 @@ These bash scripts can be used as a Pre and Post Scripts in a Cohesity Physical 
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/gpfs_snapper/prescript.sh
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/gpfs_snapper/postscript.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/bash/gpfs_snapper/prescript.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/bash/gpfs_snapper/postscript.sh
 chmod +x prescript.sh
 chmod +x postscript.sh
 # End download commands

@@ -8,7 +8,7 @@ This bash script is just an example of how to iterate over protection groups and
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/runsExample/runsExample.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/bash/runsExample/runsExample.sh
 chmod +x runsExample.sh
 # End download commands
 ```

@@ -12,7 +12,7 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/old/backupLogs/backupLogs.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/bash/old/backupLogs/backupLogs.sh
 chmod +x backupLogs.sh
 # end download commands
 ```

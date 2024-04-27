@@ -19,8 +19,8 @@ $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 
 ## Components
 
-* [protectDmaasEC2VMs.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/dmaas/powershell/protectDmaasEC2VMs/protectDmaasEC2VMs.ps1): the main powershell script
-* [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+* [protectDmaasEC2VMs.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/dmaas/powershell/protectDmaasEC2VMs/protectDmaasEC2VMs.ps1): the main powershell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

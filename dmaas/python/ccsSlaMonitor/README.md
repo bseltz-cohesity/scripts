@@ -10,16 +10,16 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/dmaas/python/ccsSlaMonitor/ccsSlaMonitor.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/dmaas/python/ccsSlaMonitor/ccsSlaMonitor.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x ccsSlaMonitor.py
 # end download commands
 ```
 
 ## Components
 
-* [ccsSlaMonitor.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/dmaas/python/ccsSlaMonitor/ccsSlaMonitor.py): the main powershell script
-* [pyhesity.py](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
+* [ccsSlaMonitor.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/dmaas/python/ccsSlaMonitor/ccsSlaMonitor.py): the main powershell script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

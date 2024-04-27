@@ -8,7 +8,7 @@ This bash script freezes an EPIC database, snapshots the related Pure volumes, a
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/bash/epic_pure_snapper/epic_pure_snapper.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/bash/epic_pure_snapper/epic_pure_snapper.sh
 chmod +x epic_pure_snapper.sh
 # End download commands
 ```
