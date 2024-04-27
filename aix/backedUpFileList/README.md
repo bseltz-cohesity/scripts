@@ -10,7 +10,7 @@ Run these commands from a terminal to download the tool into your current direct
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/aix/backedUpFileList/backedUpFileList
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/aix/backedUpFileList/backedUpFileList
 chmod +x backedUpFileList
 # End download commands
 ```

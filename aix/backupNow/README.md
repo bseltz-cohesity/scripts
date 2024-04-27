@@ -12,7 +12,7 @@ Run these commands to download the tool into your current directory
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/aix/backupNow/backupNow
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/aix/backupNow/backupNow
 chmod +x backupNow
 # End download commands
 ```
