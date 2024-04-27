@@ -1,5 +1,5 @@
 # Helios V2 Reports
 
-For PowerShell: <https://github.com/bseltz-cohesity/scripts/tree/master/reports/helios-reporting/powershell#readme>
+For PowerShell: <https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/powershell#readme>
 
-For Python: <https://github.com/bseltz-cohesity/scripts/tree/master/reports/helios-reporting/python#readme>
+For Python: <https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/python#readme>

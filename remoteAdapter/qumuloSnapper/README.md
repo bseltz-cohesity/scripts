@@ -146,4 +146,4 @@ One Remote Adapter protection group can manage multiple NAS protection groups. W
 
 ## Parameters for backupNow.py
 
-Please see here for backupNow.py parameters: <https://github.com/bseltz-cohesity/scripts/tree/master/python/backupNow#parameters>
+Please see here for backupNow.py parameters: <https://github.com/cohesity/community-automation-samples/tree/main/python/backupNow#parameters>

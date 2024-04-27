@@ -105,7 +105,7 @@ After pasting these commands, try pasting the download commands again.
 
 ## If the Download Commands Just Don't Work
 
-If the scripts still fail to download, keep in mind that the machine may simply not have access to GitHub (due to lack of firewall access). Alternatively you can copy and paste the script code manually. To do this, click on the script file and click the `Raw` button to display ths script code in clear text. You can then select all, copy, and paste the code into a new file on the machine. You will also need a copy the the `cohesity-api.ps1` file located here: <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api>
+If the scripts still fail to download, keep in mind that the machine may simply not have access to GitHub (due to lack of firewall access). Alternatively you can copy and paste the script code manually. To do this, click on the script file and click the `Raw` button to display ths script code in clear text. You can then select all, copy, and paste the code into a new file on the machine. You will also need a copy the the `cohesity-api.ps1` file located here: <https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api>
 
 ## Connecting to Cohesity Clusters over Support Channel (RT)
 

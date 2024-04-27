@@ -25,7 +25,7 @@ chmod +x restoreOracle.py
 
 Please review the README for each:
 
-* restoreOracle: <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/restoreOracle>
-* cloneOracle: <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/cloneOracle>
-* destroyClone: <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/destroyClone>
-* backupNow: <https://github.com/bseltz-cohesity/scripts/tree/master/oracle/python/backupNow>
+* restoreOracle: <https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/restoreOracle>
+* cloneOracle: <https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle>
+* destroyClone: <https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/destroyClone>
+* backupNow: <https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/backupNow>

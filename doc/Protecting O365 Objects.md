@@ -6,11 +6,11 @@ If you have more than 5000 of a specific object type (mailboxes for example), yo
 
 This can be done using the protectO365 scripts for:
 
-* Mailboxes: <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectO365Mailboxes>
-* Onedrive: <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectO365OneDrive>
-* Public Folders: <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectO365PublicFolders>
-* Sharepoint Sites: <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectO365Sites>
-* Teams: <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/protectO365Teams>
+* Mailboxes: <https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectO365Mailboxes>
+* Onedrive: <https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectO365OneDrive>
+* Public Folders: <https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectO365PublicFolders>
+* Sharepoint Sites: <https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectO365Sites>
+* Teams: <https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectO365Teams>
 
 For example, if you have 12000 mailboxes to protect, you can create two groups with 5000 each, plus a third group that uses autoprotect and excludes the 10000 mailboxes protected by the other groups, thus protecting the last 2000. This autoprotect group will automatically protect any new mailboxes that are created in the future.
 

@@ -1,3 +1,3 @@
 # BackupNow Using Python
 
-Please see <https://github.com/bseltz-cohesity/scripts/tree/master/python/backupNow>
+Please see <https://github.com/cohesity/community-automation-samples/tree/main/python/backupNow>

@@ -4,7 +4,7 @@ Various PowerShell scripts to generate reports
 
 ## archivedObjects
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/archivedObjects>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/archivedObjects>
 
 Format: CSV
 
@@ -17,7 +17,7 @@ Format: CSV
 
 ## backedUpFSReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/backedUpFSReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/backedUpFSReport>
 
 Formats: CSV, HTML
 
@@ -29,7 +29,7 @@ Formats: CSV, HTML
 
 ## backupSummaryReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/backupSummaryReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/backupSummaryReport>
 
 Format: CSV
 
@@ -49,7 +49,7 @@ Format: CSV
 
 ## chargebackReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/chargebackReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/chargebackReport>
 
 Formats: CSV, HTML
 
@@ -59,7 +59,7 @@ Formats: CSV, HTML
 
 ## cloneList
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/cloneList>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/cloneList>
 
 Format: CSV
 
@@ -71,7 +71,7 @@ Format: CSV
 
 ## cloudArchiveDirectStats
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/cloudArchiveDirectStats>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/cloudArchiveDirectStats>
 
 Format: CSV
 
@@ -85,7 +85,7 @@ Format: CSV
 
 ## dailyObjectStatus
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/dailyObjectStatus>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/dailyObjectStatus>
 
 Format: CSV
 
@@ -99,7 +99,7 @@ Format: CSV
 
 ## datalockJobList
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/datalockJobList>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/datalockJobList>
 
 Formats: CSV, HTML
 
@@ -112,7 +112,7 @@ Formats: CSV, HTML
 
 ## dataPerObject
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/dataPerObject>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/dataPerObject>
 
 Format: CSV
 
@@ -128,7 +128,7 @@ Format: CSV
 
 ## externalTargetStorageStats
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/externalTargetStorageStats>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/externalTargetStorageStats>
 
 Format: CSV
 
@@ -139,7 +139,7 @@ Format: CSV
 
 ## frontEndCapacityReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/frontEndCapacityReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/frontEndCapacityReport>
 
 Format: CSV
 
@@ -153,7 +153,7 @@ Format: CSV
 
 ## heatMapReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/heatMapReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/heatMapReport>
 
 Format: HTML
 
@@ -164,13 +164,13 @@ Format: HTML
 
 ## jobFailures
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/jobFailures>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/jobFailures>
 
 Format: HTML
 
 ## jobList
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/jobList>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/jobList>
 
 Formats: CSV, HTML
 
@@ -184,7 +184,7 @@ Formats: CSV, HTML
 
 ## jobObjects
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/jobObjects>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/jobObjects>
 
 Format: CSV
 
@@ -195,7 +195,7 @@ Format: CSV
 
 ## jobRecoveryPoints
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/jobRecoveryPoints>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/jobRecoveryPoints>
 
 Format: CSV
 
@@ -208,7 +208,7 @@ Format: CSV
 
 ## jobRunDuration
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/jobRunDuration>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/jobRunDuration>
 
 Format: CSV
 
@@ -219,7 +219,7 @@ Format: CSV
 
 ## jobRunStats
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/jobRunStats>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/jobRunStats>
 
 Format: CSV
 
@@ -236,7 +236,7 @@ Format: CSV
 
 ## lastRunObjectStats
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/lastRunObjectStats>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/lastRunObjectStats>
 
 Format: CSV
 
@@ -254,7 +254,7 @@ Format: CSV
 
 ## legalHoldRunList
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/legalHoldRunList>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/legalHoldRunList>
 
 Format: CSV
 
@@ -263,7 +263,7 @@ Format: CSV
 
 ## licenseReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/licenseReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/licenseReport>
 
 Format: CSV
 
@@ -273,7 +273,7 @@ Format: CSV
 
 ## nasObjectStats
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/nasObjectStats>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/nasObjectStats>
 
 Format: CSV
 
@@ -288,7 +288,7 @@ Format: CSV
 
 ## objectHistoryReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/objectHistoryReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/objectHistoryReport>
 
 Format: HTML
 
@@ -312,7 +312,7 @@ Format: HTML
 
 ## objectRunStats
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/objectRunStats>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/objectRunStats>
 
 Format: CSV
 
@@ -326,7 +326,7 @@ Format: CSV
 
 ## objectStatusReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/objectStatusReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/objectStatusReport>
 
 Format: CSV
 
@@ -350,7 +350,7 @@ Format: CSV
 
 ## objectSummaryReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/objectSummaryReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/objectSummaryReport>
 
 Format: HTML
 
@@ -374,7 +374,7 @@ Format: HTML
 
 ## protectedFilePathReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/protectedFilePathReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/protectedFilePathReport>
 
 Formats: CSV, HTML
 
@@ -385,7 +385,7 @@ Formats: CSV, HTML
 
 ## protectedObjectReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/protectedObjectReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/protectedObjectReport>
 
 Format: CSV
 
@@ -403,13 +403,13 @@ Format: CSV
 
 ## protectionReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/protectionReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/protectionReport>
 
 Format: HTML
 
 ## recoveryPoints
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/recoveryPoints>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/recoveryPoints>
 
 Format: CSV
 
@@ -424,7 +424,7 @@ Format: CSV
 
 ## redundantProtectionReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/redundantProtectionReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/redundantProtectionReport>
 
 Format: CSV
 
@@ -434,7 +434,7 @@ Format: CSV
 
 ## registeredSources
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/registeredSources>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/registeredSources>
 
 Format: CSV
 
@@ -448,7 +448,7 @@ Format: CSV
 
 ## restoreFilesReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/restoreFilesReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/restoreFilesReport>
 
 Formats: CSV, HTML
 
@@ -465,7 +465,7 @@ Formats: CSV, HTML
 
 ## restoreReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/restoreReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/restoreReport>
 
 Formats: CSV, HTML
 
@@ -480,7 +480,7 @@ Formats: CSV, HTML
 
 ## runningJobs
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/runningJobs>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/runningJobs>
 
 Format: CSV
 
@@ -491,7 +491,7 @@ Format: CSV
 
 ## sizingReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/sizingReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/sizingReport>
 
 Format: CSV
 
@@ -511,7 +511,7 @@ Format: CSV
 
 ## slaStatus
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/slaStatus>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/slaStatus>
 
 Format: CSV
 
@@ -526,7 +526,7 @@ Format: CSV
 
 ## sqlProtectedObjectReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/sqlProtectedObjectReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/sqlProtectedObjectReport>
 
 Format: CSV
 
@@ -548,7 +548,7 @@ Format: CSV
 
 ## storageGrowth
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storageGrowth>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storageGrowth>
 
 Format: CSV
 
@@ -560,7 +560,7 @@ Format: CSV
 
 ## storageReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/storageReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storageReport>
 
 Format: CSV, HTML
 
@@ -579,7 +579,7 @@ Format: CSV, HTML
 
 ## strikeReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/strikeReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/strikeReport>
 
 Format: HTML
 
@@ -593,7 +593,7 @@ Format: HTML
 
 ## summaryReportXLSX
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/summaryReportXLSX>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/summaryReportXLSX>
 
 Format: XLSX
 
@@ -617,7 +617,7 @@ Format: XLSX
 
 ## viewFileCounts
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/viewFileCounts>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/viewFileCounts>
 
 Format: CSV
 
@@ -627,7 +627,7 @@ Format: CSV
 
 ## vmProtectionReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/vmProtectionReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/vmProtectionReport>
 
 Format: CSV
 

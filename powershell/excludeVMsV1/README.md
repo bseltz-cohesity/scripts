@@ -4,7 +4,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script excludes one or more VMs from an existing protection job where parent containers are autoprotected.
 
-Note: This script is to be used with Cohesity versions prior to 6.5.1. For 6.5.1 or later, please use this version: <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/excludeVMs>
+Note: This script is to be used with Cohesity versions prior to 6.5.1. For 6.5.1 or later, please use this version: <https://github.com/cohesity/community-automation-samples/tree/main/powershell/excludeVMs>
 
 ## Download the script
 

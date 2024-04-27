@@ -31,7 +31,7 @@ Place both files in a folder together and run the main script like so:
 
 ## Queries
 
-See <https://github.com/bseltz-cohesity/scripts/tree/master/reports/groot/queries> for example queries
+See <https://github.com/cohesity/community-automation-samples/tree/main/reports/groot/queries> for example queries
 
 ## Authentication Parameters
 

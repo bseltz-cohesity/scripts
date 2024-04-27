@@ -1,3 +1,3 @@
 # Backup Now Using PowerShell
 
-Please see <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/backupNow>
+Please see <https://github.com/cohesity/community-automation-samples/tree/main/powershell/backupNow>

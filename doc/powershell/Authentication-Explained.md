@@ -126,7 +126,7 @@ Normally, when you want scripts to run unattended, you need to store the passwor
 
 However, you may be running scripts via the Windows Task Scheduler or as part of a SQL Agent job, using a functional service account that does not have the right to logon interactively. In this case, you need to help the user get the password stored. This can be done by having an interactive user store the password using `storePasswordForUser`, and then the non interactive user can run `importStoredPassword` to retrieve and store the password. Like so:
 
-Note: the below examples use the internal function names in cohesity-api.ps1, which assumes that you sourced cohesity-api.ps1 as mentioned above. There is a script for storing and importing passwords here: <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/storeAndImportPassword>
+Note: the below examples use the internal function names in cohesity-api.ps1, which assumes that you sourced cohesity-api.ps1 as mentioned above. There is a script for storing and importing passwords here: <https://github.com/cohesity/community-automation-samples/tree/main/powershell/storeAndImportPassword>
 
 Please use the script rather than these functions. The below is just for completeness of the discussion.
 
@@ -151,7 +151,7 @@ Password imported successfully
 
 In some cases it can be challenging to store the API password for a service account to use, in which case it might be easier (albeit less secure) to store the API password in a file. You can store the password in a file, in the same folder as the script(s) that you want to run.
 
-Note: the below examples use the internal function names in cohesity-api.ps1, which assumes that you sourced cohesity-api.ps1 as mentioned above. There is a script for storing passwords in a file here: <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/storePasswordInFile>.
+Note: the below examples use the internal function names in cohesity-api.ps1, which assumes that you sourced cohesity-api.ps1 as mentioned above. There is a script for storing passwords in a file here: <https://github.com/cohesity/community-automation-samples/tree/main/powershell/storePasswordInFile>.
 
 Please use the script rather than these functions. The below is just for completeness of the discussion.
 

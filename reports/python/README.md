@@ -4,7 +4,7 @@ Various Python scripts to generate reports
 
 ## dataPerObject
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/dataPerObject>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/python/dataPerObject>
 
 Format: CSV
 
@@ -19,13 +19,13 @@ Format: CSV
 
 ## jobFailures
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/jobFailures>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/python/jobFailures>
 
 Format: HTML
 
 ## jobRunReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/jobRunReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/python/jobRunReport>
 
 Format: Console
 
@@ -35,7 +35,7 @@ Format: Console
 
 ## licenseReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/licenseReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/python/licenseReport>
 
 Format: CSV
 
@@ -45,7 +45,7 @@ Format: CSV
 
 ## protectedObjectReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/protectedObjectReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/python/protectedObjectReport>
 
 Format: CSV
 
@@ -75,7 +75,7 @@ Format: CSV
 
 ## recoveryPoints
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/recoveryPoints>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/python/recoveryPoints>
 
 Format: CSV
 
@@ -89,7 +89,7 @@ Format: CSV
 
 ## registeredSources
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/registeredSources>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/python/registeredSources>
 
 Format: CSV
 
@@ -103,7 +103,7 @@ Format: CSV
 
 ## storageGrowth
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storageGrowth>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storageGrowth>
 
 Format: CSV
 
@@ -114,7 +114,7 @@ Format: CSV
 
 ## storageReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/storageReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storageReport>
 
 Formats: CSV, HTML
 
@@ -133,7 +133,7 @@ Formats: CSV, HTML
 
 ## strikeReport
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/strikeReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/python/strikeReport>
 
 Format: HTML
 
@@ -146,7 +146,7 @@ Format: HTML
 
 ## viewFileCounts
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/python/viewFileCounts>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/python/viewFileCounts>
 
 Format: CSV
 

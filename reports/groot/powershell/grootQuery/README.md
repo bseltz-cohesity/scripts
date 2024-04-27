@@ -44,4 +44,4 @@ The output will be written to a CSV file.
 
 ## Queries
 
-See <https://github.com/bseltz-cohesity/scripts/tree/master/reports/groot/queries> for example queries
+See <https://github.com/cohesity/community-automation-samples/tree/main/reports/groot/queries> for example queries

@@ -2,7 +2,7 @@
 
 ## HeatMap Report
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/heatMapReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/heatMapReport>
 
 This script generates an HTML formatted heat map report.
 
@@ -10,7 +10,7 @@ This script generates an HTML formatted heat map report.
 
 ## Daily Object Status
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/powershell/dailyObjectStatus>
+<https://github.com/cohesity/community-automation-samples/tree/main/powershell/dailyObjectStatus>
 
 This script generates CSV output showing latest status for all protected objects backed up in the past day.
 
@@ -18,7 +18,7 @@ This script generates CSV output showing latest status for all protected objects
 
 ## Job Objects
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/powershell/jobObjects>
+<https://github.com/cohesity/community-automation-samples/tree/main/powershell/jobObjects>
 
 This script generates CSV output showing objects protected by jobs.
 
@@ -26,7 +26,7 @@ This script generates CSV output showing objects protected by jobs.
 
 ## Job Failures
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/powershell/jobFailures>
+<https://github.com/cohesity/community-automation-samples/tree/main/powershell/jobFailures>
 
 This script generates HTML output showing any jobs that failed their latest run.
 
@@ -34,7 +34,7 @@ This script generates HTML output showing any jobs that failed their latest run.
 
 ## Protection Report
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/heliosV1/powershell/heliosProtectionReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/heliosV1/powershell/heliosProtectionReport>
 
 This script generates HTML containing protection stats details per job/object, including successes and failures, which may be useful for compliance requirements.
 
@@ -42,7 +42,7 @@ This script generates HTML containing protection stats details per job/object, i
 
 ## Strike Report
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/strikeReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/strikeReport>
 
 This script generates HTML showing failures of protected objects.
 
@@ -50,7 +50,7 @@ This script generates HTML showing failures of protected objects.
 
 ## VM Protection Report
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/vmProtectionReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/vmProtectionReport>
 
 This script generates CSV output showing protection status per VM.
 
@@ -58,7 +58,7 @@ This script generates CSV output showing protection status per VM.
 
 ## Object Report
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/objectReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/objectReport>
 
 This script generates HTML showing the latest protection status per object.
 
@@ -66,7 +66,7 @@ This script generates HTML showing the latest protection status per object.
 
 ## Recovery Points
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/powershell/recoveryPoints>
+<https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoveryPoints>
 
 This script generates CSV output showing the available recovery points per object.
 
@@ -74,7 +74,7 @@ This script generates CSV output showing the available recovery points per objec
 
 ## Restore Report
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/powershell/restoreReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/restoreReport>
 
 This script generates HTML showing recent restore tasks.
 
@@ -82,7 +82,7 @@ This script generates HTML showing recent restore tasks.
 
 ## Helios Protection Report
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/heliosV1/powershell/heliosProtectionReport>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/heliosV1/powershell/heliosProtectionReport>
 
 This script generates HTML containing protection stats details per job/object, including successes and failures, for all Helios-connected clusters, which may be useful for compliance requirements.
 
@@ -90,7 +90,7 @@ This script generates HTML containing protection stats details per job/object, i
 
 ## Helios Job Failures
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/reports/heliosV1/powershell/heliosJobFailures>
+<https://github.com/cohesity/community-automation-samples/tree/main/reports/heliosV1/powershell/heliosJobFailures>
 
 This script generates HTML output with the latest job failures/warnings for clusters connected to Helios.
 
@@ -98,7 +98,7 @@ This script generates HTML output with the latest job failures/warnings for clus
 
 ## Archived Objects
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/powershell/archivedObjects>
+<https://github.com/cohesity/community-automation-samples/tree/main/powershell/archivedObjects>
 
 This script generates CSV output showing latest backup date per object and whether the backup is archived to an external target.
 
@@ -106,7 +106,7 @@ This script generates CSV output showing latest backup date per object and wheth
 
 ## Cloud Archive Direct Stats
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cloudArchiveDirectStats>
+<https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloudArchiveDirectStats>
 
 This script generates CSV output showing data transfer statistics for cloud archive direct jobs.
 

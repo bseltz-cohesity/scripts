@@ -45,5 +45,5 @@ To get the password stored, remote desktop into the SQL server as the SQL Agent 
 
 Both of the PowerShell scripts included in this package have various command line parameters. You can find them here:
 
-* [cloneSQL.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-cloneDB/cloneSQL.ps1): <https://github.com/bseltz-cohesity/scripts/tree/master/sql/cloneSQL>
-* [destroyClone.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-cloneDB/destroyClone.ps1): <https://github.com/bseltz-cohesity/scripts/tree/master/sql/destroyClone>
+* [cloneSQL.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-cloneDB/cloneSQL.ps1): <https://github.com/cohesity/community-automation-samples/tree/main/sql/cloneSQL>
+* [destroyClone.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-cloneDB/destroyClone.ps1): <https://github.com/cohesity/community-automation-samples/tree/main/sql/destroyClone>

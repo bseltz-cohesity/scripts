@@ -17,7 +17,7 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 if($cohesity_api.api_version -lt '2023.09.22'){
     Write-Host "This script requires cohesity-api.ps1 version 2023.09.22 or later" -foregroundColor Yellow
-    Write-Host "Please download it from https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api" -ForegroundColor Yellow
+    Write-Host "Please download it from https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api" -ForegroundColor Yellow
     exit
 }
 

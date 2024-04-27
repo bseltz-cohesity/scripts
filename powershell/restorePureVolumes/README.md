@@ -20,7 +20,7 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 ## Components
 
 * [restorePureVolumes.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/restorePureVolumes/restorePureVolumes.ps1): the main powershell script
-* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module ([README](https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api))
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module ([README](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api))
 
 Place both files in a folder together and run the main script like so:
 

@@ -105,4 +105,4 @@ All logs reside on the AIX host:
 
 The helper module provides functions to simplify operations such as authentication, api calls, storing encrypted passwords, and converting date formats. The module requires the requests python module. You can get a copy and read about it here:
 
-<https://github.com/bseltz-cohesity/scripts/tree/master/python>
+<https://github.com/cohesity/community-automation-samples/tree/main/python>

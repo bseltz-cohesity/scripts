@@ -57,4 +57,4 @@ By default, the script will restore from the latest backup version. Using `--bef
 
 ## The Python Helper Module - pyhesity.py
 
-Please find more info on the pyhesity module here: <https://github.com/bseltz-cohesity/scripts/tree/master/python>
+Please find more info on the pyhesity module here: <https://github.com/cohesity/community-automation-samples/tree/main/python>

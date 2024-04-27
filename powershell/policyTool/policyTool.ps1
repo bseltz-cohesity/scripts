@@ -37,7 +37,7 @@ $frequentSchedules = @('Minutes', 'Hours', 'Days')
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 if($cohesity_api.api_version -lt '2023.05.18'){
-    Write-Host "This script requires cohesity-api.ps1 version 2023.05.18 or higher, please visit https://github.com/bseltz-cohesity/scripts/tree/master/powershell/cohesity-api to get the latest version" -ForegroundColor Yellow
+    Write-Host "This script requires cohesity-api.ps1 version 2023.05.18 or higher, please visit https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api to get the latest version" -ForegroundColor Yellow
     exit
 }
 

@@ -58,8 +58,8 @@ To get the password stored, remote desktop into the SQL server as the SQL Agent 
 
 Both of the PowerShell scripts included in this package have various command line parameters. You can find them here:
 
-* backupNow.ps1 <https://github.com/bseltz-cohesity/scripts/tree/master/sql/backupNow>
-* [cloneSQL.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-maskDB/cloneSQL.ps1): <https://github.com/bseltz-cohesity/scripts/tree/master/sql/cloneSQL>
-* [destroyClone.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-maskDB/destroyClone.ps1): <https://github.com/bseltz-cohesity/scripts/tree/master/sql/destroyClone>
-* [refreshSource.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-maskDB/refreshSource.ps1): <https://github.com/bseltz-cohesity/scripts/tree/master/powershell/refreshSource>
-* restoreSQL.ps1 <https://github.com/bseltz-cohesity/scripts/tree/master/sql/restoreSQL>
+* backupNow.ps1 <https://github.com/cohesity/community-automation-samples/tree/main/sql/backupNow>
+* [cloneSQL.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-maskDB/cloneSQL.ps1): <https://github.com/cohesity/community-automation-samples/tree/main/sql/cloneSQL>
+* [destroyClone.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-maskDB/destroyClone.ps1): <https://github.com/cohesity/community-automation-samples/tree/main/sql/destroyClone>
+* [refreshSource.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/sql/sqlAgentJob-maskDB/refreshSource.ps1): <https://github.com/cohesity/community-automation-samples/tree/main/powershell/refreshSource>
+* restoreSQL.ps1 <https://github.com/cohesity/community-automation-samples/tree/main/sql/restoreSQL>
