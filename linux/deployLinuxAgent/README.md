@@ -6,7 +6,7 @@ This is a compiled binary that deploys the Cohesity Linux agent on remote hosts 
 
 ## Download The Binary
 
-<https://github.com/bseltz-cohesity/scripts/raw/master/linux/deployLinuxAgent/deployLinuxAgent>
+<https://github.com/cohesity/community-automation-samples/raw/main/linux/deployLinuxAgent/deployLinuxAgent>
 
 Run the tool like so:
 
