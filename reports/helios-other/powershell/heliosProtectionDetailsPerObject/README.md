@@ -46,7 +46,7 @@ Place both files in a folder together and run the main script like so:
 
 ## Scheduling the Script to run in Windows Task Scheduler
 
-Please see info here <https://github.com/bseltz-cohesity/scripts/blob/master/powershell/Running%20Cohesity%20PowerShell%20Scripts.pdf>
+Please see info here <https://github.com//cohesity/community-automation-samples/blob/main/powershell/Running%20Cohesity%20PowerShell%20Scripts.pdf>
 
 ## Authenticating to Helios
 
