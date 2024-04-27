@@ -109,4 +109,4 @@ To create an autoprotect job that excludes folders that are already protected:
 
 ## Notes
 
-If you have more than 5000 public folders to protect, please read: [Protecting O365 Objects](https://github.com/bseltz-cohesity/scripts/wiki/Protecting-O365-Objects) for guidance on how to protect O365 objects at scale.
+If you have more than 5000 public folders to protect, please read: [Protecting O365 Objects](https://github.com/bseltz-cohesity/scripts/blob/master/doc/Protecting%20O365%20Objects.md) for guidance on how to protect O365 objects at scale.
