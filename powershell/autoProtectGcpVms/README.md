@@ -53,4 +53,4 @@ The script will identify any new, unprotected GCP VMs since the last time the sc
 
 ## Scheduling the Script to Run Using Windows Task Scheduler
 
-Please review this PDF for tips on how to schedule PowerShell scripts using Windows task scheduler: <https://github.com/bseltz-cohesity/scripts/blob/master/powershell/Running%20Cohesity%20PowerShell%20Scripts.pdf>
+Please review this PDF for tips on how to schedule PowerShell scripts using Windows task scheduler: <https://github.com/cohesity/community-automation-samples/blob/master/powershell/Running%20Cohesity%20PowerShell%20Scripts.pdf>

@@ -53,7 +53,7 @@ Place all files in a folder together. You can run the exportConfiguration.ps1 sc
 ## Running the export script as a Scheduled Task
 
 Please see the following PDF for tips on running this script using Windows Task Scheduler:
-<https://github.com/bseltz-cohesity/scripts/blob/master/powershell/Running%20Cohesity%20PowerShell%20Scripts.pdf>
+<https://github.com/cohesity/community-automation-samples/blob/master/powershell/Running%20Cohesity%20PowerShell%20Scripts.pdf>
 
 ## Importing Storage Domains
 

@@ -80,4 +80,4 @@ To monitor the archive tasks, see the script 'monitorArchiveTasks'
 
 ## Running and Scheduling PowerShell Scripts
 
-For additional help running and scheduling Cohesity PowerShell scripts, please see <https://github.com/bseltz-cohesity/scripts/blob/master/powershell/Running%20Cohesity%20PowerShell%20Scripts.pdf>
+For additional help running and scheduling Cohesity PowerShell scripts, please see <https://github.com/cohesity/community-automation-samples/blob/master/powershell/Running%20Cohesity%20PowerShell%20Scripts.pdf>
