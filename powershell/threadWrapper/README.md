@@ -52,4 +52,4 @@ Once modified for your purpose, simply run the wrapper script.
 # end example
 ```
 
-`Note`: on PowerShell 5.1, if you are using this wrapper to run PowerShell scripts from [https://github.com/bseltz-cohesity/scripts], you may need to get the latest cohesity-api.ps1 file located here: [https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api]
+`Note`: on PowerShell 5.1, if you are using this wrapper to run PowerShell scripts from [https://github.com/cohesity/community-automation-samples], you may need to get the latest cohesity-api.ps1 file located here: [https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api]

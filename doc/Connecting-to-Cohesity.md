@@ -160,7 +160,7 @@ Python Example:
 
 You can create an API key for a user and use it for authentication. The API key is a static credential that will not change when the user's password changes. API key authentication also bypasses MFA, so is the best choice if you want to run scripts unattended.
 
-To create an API key for a user, please see instructions here: <https://github.com/bseltz-cohesity/scripts/blob/master/doc/API-Key-Authentication.md>
+To create an API key for a user, please see instructions here: <https://github.com/cohesity/community-automation-samples/blob/main/doc/API-Key-Authentication.md>
 
 Once you have created an API key for the user, you can tell the script to use API key authentication, then use the API key as the password:
 
@@ -343,5 +343,5 @@ or specify the API key on the command line:
 * If the script seems to hang for a long time and never connects, it's likely that a firewall is blocking the connection. Try using ping, nping (port 443/tcp), etc. to validate the connection.
 * If authentication fails, make sure that you have a valid user registered in Helios, MCM, or cluster (remember, SSO users are not supported).
 * Make sure the user is not locked out (including in Active Directory), disabled, password expired, etc.
-* If you receive timeout errors, read here: <https://github.com/bseltz-cohesity/scripts/blob/master/doc/681-Upgrade-Impacts.md#api-timeouts>
-* If you receive 'Too Many Requests' errors, read here: <https://github.com/bseltz-cohesity/scripts/blob/master/doc/681-Upgrade-Impacts.md#api-rate-limiting>
+* If you receive timeout errors, read here: <https://github.com/cohesity/community-automation-samples/blob/main/doc/681-Upgrade-Impacts.md#api-timeouts>
+* If you receive 'Too Many Requests' errors, read here: <https://github.com/cohesity/community-automation-samples/blob/main/doc/681-Upgrade-Impacts.md#api-rate-limiting>

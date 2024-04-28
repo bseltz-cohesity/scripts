@@ -8,7 +8,7 @@ You can download the script using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/easyScript/excludeVMs/excludeVMsES.zip
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/easyScript/excludeVMs/excludeVMsES.zip
 # end download commands
 ```
 

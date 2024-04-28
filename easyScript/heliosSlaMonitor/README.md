@@ -10,7 +10,7 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/easyScript/heliosSlaMonitor/heliosSlaMonitorES.zip
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/easyScript/heliosSlaMonitor/heliosSlaMonitorES.zip
 # end download commands
 ```
 

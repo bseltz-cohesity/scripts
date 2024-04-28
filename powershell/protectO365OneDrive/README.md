@@ -137,4 +137,4 @@ After that, you should update your autoprotect job to exclude those users that a
 
 ## Notes
 
-If you have more than 5000 Onedrives to protect, please read: [Protecting O365 Objects](https://github.com/bseltz-cohesity/scripts/blob/master/doc/Protecting%20O365%20Objects.md) for guidance on how to protect O365 objects at scale.
+If you have more than 5000 Onedrives to protect, please read: [Protecting O365 Objects](https://github.com/cohesity/community-automation-samples/blob/main/doc/Protecting%20O365%20Objects.md) for guidance on how to protect O365 objects at scale.

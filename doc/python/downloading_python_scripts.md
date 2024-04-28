@@ -4,8 +4,8 @@ The README.md for each script provides download commands that you can run from a
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNow/backupNow.py
-curl -O https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/backupNow/backupNow.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x backupNow.py
 # End download commands
 ```
@@ -18,7 +18,7 @@ If the curl commands don't work, it's likely because the linux terminal does not
 
 To get pyhesity.py:
 
-1. On your laptop (where Internet access is possible), open your web browser and go to <https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/pyhesity.py>
+1. On your laptop (where Internet access is possible), open your web browser and go to <https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py>
 2. Select all and copy the contents to your clipboard
 3. On the linux host, type `vi pyhesity.py`
 4. Type `i` (for insert)
@@ -27,7 +27,7 @@ To get pyhesity.py:
 
 To get backupNow.py:
 
-1. On your laptop (where Internet access is possible), open your web browser and go to <https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/python/backupNow/backupNow.py>
+1. On your laptop (where Internet access is possible), open your web browser and go to <https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/backupNow/backupNow.py>
 2. Select all and copy the contents to your clipboard
 3. On the linux host, type `vi backupNow.py`
 4. Type `i` (for insert)

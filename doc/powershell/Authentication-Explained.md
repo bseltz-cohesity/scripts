@@ -251,7 +251,7 @@ heliosCluster myClusterName
 
 then you can perform API calls to that cluster as usual.
 
-***Note***: Not all scripts have been updated to connect through Helios, but it's easy to do. Please see the script <https://github.com/bseltz-cohesity/scripts/blob/master/reports/powershell/backupSummaryReport/backupSummaryReport.ps1> to see an example that uses a wide range of authentication options.
+***Note***: Not all scripts have been updated to connect through Helios, but it's easy to do. Please see the script <https://github.com/cohesity/community-automation-samples/blob/main/reports/powershell/backupSummaryReport/backupSummaryReport.ps1> to see an example that uses a wide range of authentication options.
 
 ## Using API Keys for Clusters and Helios On Prem
 

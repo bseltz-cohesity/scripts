@@ -221,7 +221,7 @@ When prompted for a password (or specifying the password on the command line), e
 
 ## Reporting Problems
 
-If you have a complaint about a script, please try getting the latest version of the script, here: <https://github.com/bseltz-cohesity/scripts?search=1>
+If you have a complaint about a script, please try getting the latest version of the script, here: <https://github.com/cohesity/community-automation-samples/main?search=1>
 
 Before reporting the issue, please collect:
 
