@@ -43,7 +43,8 @@ param (
     [Parameter()][switch]$wait,                          # wait for restore to finish
     [Parameter()][switch]$progress,                      # display progress
     [Parameter()][switch]$dbg,
-    [Parameter()][switch]$instant
+    [Parameter()][switch]$instant,
+    [Parameter()][switch]$windows
 )
 
 # validate arguments
@@ -402,11 +403,13 @@ if($sameDB){
         }
     }
     # get pfile parameters
-    $metaInfo = api post -v2 data-protect/snapshots/$($latestSnapshot.id)/metaInfo $metaParams
-    $sourceConfig.recoverDatabaseParams.pfileParameterMap = @(
-        $metaInfo.oracleParams.restrictedPfileParamMap + 
-        $metaInfo.oracleParams.inheritedPfileParamMap + 
-        $metaInfo.oracleParams.cohesityPfileParamMap)
+    if(! $windows){
+        $metaInfo = api post -v2 data-protect/snapshots/$($latestSnapshot.id)/metaInfo $metaParams
+        $sourceConfig.recoverDatabaseParams.pfileParameterMap = @(
+            $metaInfo.oracleParams.restrictedPfileParamMap + 
+            $metaInfo.oracleParams.inheritedPfileParamMap + 
+            $metaInfo.oracleParams.cohesityPfileParamMap)
+    }
 }
 
 # set pit
@@ -428,7 +431,7 @@ if($pfileParameterName.Count -ne $pfileParameterValue.Count){
     Write-Host "Number of pfile parameter names and values do not match" -ForegroundColor Yellow
     exit 1
 }else{
-    if($pfileParameterName.Count -gt 0){
+    if(! $windows -and $pfileParameterName.Count -gt 0){
         0..($pfileParameterName.Count - 1) | ForEach-Object {
             $pfKey = [string]$pfileParameterName[$_]
             $pfValue = [string]$pfileParameterValue[$_]
