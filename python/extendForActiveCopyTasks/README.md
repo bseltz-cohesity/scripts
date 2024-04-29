@@ -44,6 +44,22 @@ To commit the changes, include the -commit switch:
                               -commit
 ```
 
+To send an email report of snapshots that were extended:
+
+```bash
+# if snapshot is expiring in less than 3 days, extend it to 7 days from today (commit)
+./extendForActiveCopyTasks.py -v mycluster \
+                              -u myusername \
+                              -d mydomain.net \
+                              -a 3 \
+                              -x 7 \
+                              -commit \
+                              -ms mail.mydomain.net \
+                              -fr mycluster@mydomain.net \
+                              -to me@mydomain.net \
+                              -to them@mydomain.net
+```
+
 ## Authentication Parameters
 
 * -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
