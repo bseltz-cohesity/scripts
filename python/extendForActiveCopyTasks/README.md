@@ -54,7 +54,7 @@ To send an email report of snapshots that were extended:
                               -a 3 \
                               -x 7 \
                               -commit \
-                              -ms mail.mydomain.net \
+                              -ms smtp.mydomain.net \
                               -fr mycluster@mydomain.net \
                               -to me@mydomain.net \
                               -to them@mydomain.net
