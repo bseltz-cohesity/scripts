@@ -24,6 +24,7 @@ chmod +x extendForActiveCopyTasks.py
 Place the files in a folder together, then we can run the script. If you omit the -commit switch, it will run in test mode:
 
 ```bash
+# if snapshot is expiring in less than 3 days, extend it to 7 days from today (test mode)
 ./extendForActiveCopyTasks.py -v mycluster \
                               -u myusername \
                               -d mydomain.net \
@@ -34,6 +35,7 @@ Place the files in a folder together, then we can run the script. If you omit th
 To commit the changes, include the -commit switch:
 
 ```bash
+# if snapshot is expiring in less than 3 days, extend it to 7 days from today (commit)
 ./extendForActiveCopyTasks.py -v mycluster \
                               -u myusername \
                               -d mydomain.net \
