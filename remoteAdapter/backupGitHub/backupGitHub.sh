@@ -14,7 +14,7 @@ cd /mnt/GitHub-Scripts/
 
 # Inital Setup (comment out after first run)
 # ============================================
-# git clone https://github.com/bseltz-cohesity/scripts.git
+# git clone https://github.com/cohesity/community-automation-samples.git
 # git clone https://github.com/otherguy/anotherrepo.git
 
 # Always Run
