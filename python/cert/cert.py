@@ -14,10 +14,6 @@ from pyhesity import *
 ### ignore unsigned certificates
 import requests.packages.urllib3
 
-requests.packages.urllib3.disable_warnings()
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
 import logging
 
 ### command line arguments
@@ -33,6 +29,10 @@ args = parser.parse_args()
 clusterfile = args.cluster
 
 disaster_recovery = args.dr
+
+requests.packages.urllib3.disable_warnings()
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Configure the logging settings
 log_file_path = "cert.log"  # Set the path to the log file
@@ -60,7 +60,6 @@ logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
 
-
 def get_cluster_version(ip):
     """Function to get cluster software version
 
@@ -80,7 +79,7 @@ def get_cluster_version(ip):
 
         software_version = response['clusterSoftwareVersion'].split("-")[0]
         if software_version not in supported_version:
-            logger.error(f"Cluster "+ip+" is not in Supported version")
+            logger.error(f"Cluster " + ip + " is not in Supported version")
             return None
         logger.info(f"Cluster "+ip+" is in supported version")
         return response
