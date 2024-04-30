@@ -49,7 +49,7 @@ apiauth supports the following parameters:
 * -password: (optional) hard code the password (not recommended) the password will not be stored
 * -updatepassword: (optional) prompt for password and overwrite the stored password (switch)
 * -helios: (optional) will use Helios api key for authentication (switch)
-* -regionid: (optional) DMaaS region
+* -regionid: (optional) Ccs region
 * -mfaCode: (optional) Totp MFA code
 * -quiet: (optional) hide output from authentication (switch)
 * -noprompt: (optional) do not prompt for password (switch)

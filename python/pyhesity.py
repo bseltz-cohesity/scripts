@@ -180,7 +180,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                 URL = COHESITY_API['APIROOTMCMv2'] + 'dms/regions'
                 REGIONS = (COHESITY_API['SESSION'].get(URL, headers=COHESITY_API['HEADER'], verify=False, timeout=timeout)).json()
                 if REGIONS is not None and 'message' in REGIONS:
-                    reportAuthError('DMaaS authentication failed', quiet=quiet)
+                    reportAuthError('Ccs authentication failed', quiet=quiet)
                     return None
                 if REGIONS is not None and 'errorCode' not in REGIONS:
                     COHESITY_API['AUTHENTICATED'] = True
@@ -893,7 +893,7 @@ if os.path.isdir(CONFIGDIR) is False:
 # 2021.04.04 - added usecsToDateTime and fixed dateToUsecs to support datetime object as input
 # 2021.04.08 - added support for readonly home dir
 # 2021.04.20 - added error return from api function
-# 2021.09.25 - added support for DMaaS
+# 2021.09.25 - added support for Ccs
 # 2021.10.13 - modified setpwd function
 # 2021.11.10 - added setContext and getContext functions
 # 2021.11.15 - added dateToString function, usecsToDate formatting, Helios Reporting v2, Helio On Prem

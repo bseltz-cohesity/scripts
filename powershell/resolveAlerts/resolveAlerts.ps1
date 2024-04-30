@@ -11,7 +11,7 @@ param (
     [Parameter()][string]$mfaCode = $null,  # MFA code
     [Parameter()][switch]$emailMfaCode,  # email MFA code
     [Parameter()][string]$clusterName = $null,  # cluster name to connect to when connected to Helios/MCM
-    [Parameter()][string]$region = $null,  # filter on dmaas region
+    [Parameter()][string]$region = $null,  # filter on Ccs region
     [Parameter()][string]$resolution,
     [Parameter()][string]$alertType,
     [Parameter()][string]$severity,

@@ -43,7 +43,7 @@ function apiauth($vip='helios.cohesity.com',
 
 ## Comprehensive Authentication
 
-The following code covers all authentication scenarios including HElios/MCM, DMaaS, Multi-Tenancy API Keys, MFA, etc.
+The following code covers all authentication scenarios including HElios/MCM, Ccs, Multi-Tenancy API Keys, MFA, etc.
 
 ```powershell
 # process commandline arguments
@@ -293,9 +293,9 @@ or you can log on as a tenant user:
 apiauth -vip mycluster -username thisuser@ORG1 -domain local
 ```
 
-## Connecting to DMaaS
+## Connecting to Ccs
 
-DMaaS is accessed via helios.cohesity.com but it's helpful to set the region ID, so there's a regionId parameter:
+Ccs is accessed via helios.cohesity.com but it's helpful to set the region ID, so there's a regionId parameter:
 
 ```powershell
 apiauth -username myusername@mydomain.net -regionId us-east-2

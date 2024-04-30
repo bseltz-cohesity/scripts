@@ -55,7 +55,7 @@
 
 ## 2023-12-14
 
-* [unprotectDMaaSObjects.py](https://github.com/cohesity/community-automation-samples/tree/main/dmaas/python/unprotectDMaaSObjects) [`New`] python script to perform final backup and unprotect protected objects in CCS
+* [unprotectCcsObjects.py](https://github.com/cohesity/community-automation-samples/tree/main/Ccs/python/unprotectCcsObjects) [`New`] python script to perform final backup and unprotect protected objects in CCS
 * [createS3View.py](https://github.com/cohesity/community-automation-samples/tree/main/python/createS3View) [`New`] create an S3 view using python
 
 ## 2023-12-13
@@ -89,8 +89,8 @@
 
 ## 2023-12-04
 
-* [downloadCCSAgent.ps1](https://github.com/cohesity/community-automation-samples/tree/main/dmaas/powershell/downloadCCSAgent) [`New`] PowerShell script to download CCS agents
-* [downloadCCSAgent.py](https://github.com/cohesity/community-automation-samples/tree/main/dmaas/python/downloadCCSAgent) [`New`] Python script to download CCS agents
+* [downloadCCSAgent.ps1](https://github.com/cohesity/community-automation-samples/tree/main/Ccs/powershell/downloadCCSAgent) [`New`] PowerShell script to download CCS agents
+* [downloadCCSAgent.py](https://github.com/cohesity/community-automation-samples/tree/main/Ccs/python/downloadCCSAgent) [`New`] Python script to download CCS agents
 * [protectLinux.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectLinux) [`Fix`] Error when creating new job
 
 ## 2023-12-03
@@ -100,7 +100,7 @@
 ## 2023-12-01
 
 * [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added -noDomain switch to apiauth function to support SaaS connector
-* [enableSaaSconnectorRT.ps1](https://github.com/cohesity/community-automation-samples/tree/main/dmaas/powershell/enableSaaSconnectorRT) [`Fix`] updated to support recent cohedity-api.ps1 versions
+* [enableSaaSconnectorRT.ps1](https://github.com/cohesity/community-automation-samples/tree/main/Ccs/powershell/enableSaaSconnectorRT) [`Fix`] updated to support recent cohedity-api.ps1 versions
 
 ## 2023-11-30
 
@@ -114,7 +114,7 @@
 
 ## 2023-11-28
 
-* [resqtoreSQL-CCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/dmaas/powershell/restoreSQL-CCS) [`New`] Restore SQL DBs from CCS
+* [resqtoreSQL-CCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/Ccs/powershell/restoreSQL-CCS) [`New`] Restore SQL DBs from CCS
 * [cloneOracleBackupsToView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/oracle/powershell/cloneOracleBackupsToView) [`New`] Clone Oracle Backups to an SMB view
 
 ## 2023-11-27
@@ -467,7 +467,7 @@
 
 ## 2023-08-30
 
-* [unprotectDmaasM365Mailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/dmaas/powershell/unprotectDmaasM365Mailboxes) [`Update`] added support for mailbox selection by UUID
+* [unprotectCcsM365Mailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/Ccs/powershell/unprotectCcsM365Mailboxes) [`Update`] added support for mailbox selection by UUID
 * [storagePerVMReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerVMReport) [`New`] new script to report storage consumed per VMware VM
 * [instantVolumeMount.py](https://github.com/cohesity/community-automation-samples/tree/main/python/instantVolumeMount) [`Update`] added support for v2 runid format
 * [updateJobSettings.py](https://github.com/cohesity/community-automation-samples/tree/main/python/updateJobSettings) [`New`] New script to update common protection group settings
@@ -526,7 +526,7 @@
 * [backedUpFileList](https://github.com/cohesity/community-automation-samples/tree/main/linux/backedUpFileList) [`New`] compiled binary version of backedUpFileList for Linux
 * [restoreFiles](https://github.com/cohesity/community-automation-samples/tree/main/linux/restoreFiles) [`New`] compiled binary version of restoreFiles for Linux
 * [gflagList.py](https://github.com/cohesity/community-automation-samples/tree/main/python/gflagList) [`New`] get complete list of gflags for a service
-* [unprotectDmaasM365Mailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/dmaas/powershell/unprotectDmaasM365Mailboxes) [`New`] unprotect M365 mailboxes in CCS
+* [unprotectCcsM365Mailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/Ccs/powershell/unprotectCcsM365Mailboxes) [`New`] unprotect M365 mailboxes in CCS
 
 ## 2023-08-10
 
@@ -564,10 +564,10 @@
 ## 2023-07-27
 
 * [addGlobalExcludePaths.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/addGlobalExcludePaths) [`Fix`] remove null entry from exclude paths
-* [cancelDmaasProtectionRuns.ps1](https://github.com/cohesity/community-automation-samples/tree/main/dmaas/powershell/cancelDmaasProtectionRuns) [`Update`] added -subType filter (e.g. kO365Sharepoint)
-* [protectDmaasM365Groups.ps1](https://github.com/cohesity/community-automation-samples/tree/main/dmaas/powershell/protectDmaasM365Groups) [`Update`] updated to support autoselect of groups with non-unique names
-* [protectDmaasM365Teams.ps1](https://github.com/cohesity/community-automation-samples/tree/main/dmaas/powershell/protectDmaasM365Teams) [`Update`] updated to support autoselect of teams with non-unique names
-* [protectDmaasM365Sites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/dmaas/powershell/protectDmaasM365Sites) [`Update`] updated to support autoselect of sites with non-unique names
+* [cancelCcsProtectionRuns.ps1](https://github.com/cohesity/community-automation-samples/tree/main/Ccs/powershell/cancelCcsProtectionRuns) [`Update`] added -subType filter (e.g. kO365Sharepoint)
+* [protectCcsM365Groups.ps1](https://github.com/cohesity/community-automation-samples/tree/main/Ccs/powershell/protectCcsM365Groups) [`Update`] updated to support autoselect of groups with non-unique names
+* [protectCcsM365Teams.ps1](https://github.com/cohesity/community-automation-samples/tree/main/Ccs/powershell/protectCcsM365Teams) [`Update`] updated to support autoselect of teams with non-unique names
+* [protectCcsM365Sites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/Ccs/powershell/protectCcsM365Sites) [`Update`] updated to support autoselect of sites with non-unique names
 * [protectLinux.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectLinux) [`Fix`] remove null entry from exclude paths
 * [cloneVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneVM) [`Fix`] cluster/host not found error due to unexpected sorting in object hierarchy
 * [viewDR.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/viewDR) [`Update`] replicateViews.ps1 and added replication completion check to cleanupJobs.ps1

@@ -71,7 +71,7 @@ add -resolution to any of the above to mark them resolved:
 * -mfaCode: (optional) TOTP MFA code
 * -emailMfaCode: (optional) send MFA code via email
 * -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
-* -region: (optional) filter on DMaaS region
+* -region: (optional) filter on Ccs region
 
 ## Other Parameters
 

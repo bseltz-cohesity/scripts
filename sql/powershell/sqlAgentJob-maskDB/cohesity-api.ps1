@@ -6,7 +6,7 @@
 # 2021.02.10 - fixed empty body issue
 # 2021.03.26 - added apiKey unique password storage
 # 2021.08.16 - revamped passwd storage, auto prompt for invalid password
-# 2021.09.23 - added support for DMaaS, Helios Reporting V2
+# 2021.09.23 - added support for Ccs, Helios Reporting V2
 # 2021.10.14 - added storePasswordForUser and importStoredPassword
 # 2021.10.22 - fixed json2code and py functions and added toJson function
 # 2021.11.03 - fixed 'Cannot send a content-body with this verb-type' message in debug log

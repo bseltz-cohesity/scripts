@@ -7,7 +7,7 @@ from pyhesity import *
 ### command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-u', '--username', type=str, default='dmaas')
+parser.add_argument('-u', '--username', type=str, default='Ccs')
 parser.add_argument('-r', '--region', type=str, default=None)
 parser.add_argument('-s', '--sourcename', type=str, required=True)
 parser.add_argument('-m', '--mailboxname', action='append', type=str)

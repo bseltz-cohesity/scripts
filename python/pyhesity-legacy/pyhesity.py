@@ -153,7 +153,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                 if REGIONS is not None and 'message' in REGIONS:
                     print(REGIONS['message'])
                     COHESITY_API['AUTHENTICATED'] = False
-                    COHESITY_API['LAST_ERROR'] = 'DMaaS authentication failed'
+                    COHESITY_API['LAST_ERROR'] = 'Ccs authentication failed'
                     return None
                 if REGIONS is not None and 'errorCode' not in REGIONS:
                     COHESITY_API['AUTHENTICATED'] = True
@@ -712,7 +712,7 @@ if os.path.isdir(CONFIGDIR) is False:
 # 2021.04.04 - added usecsToDateTime and fixed dateToUsecs to support datetime object as input
 # 2021.04.08 - added support for readonly home dir
 # 2021.04.20 - added error return from api function
-# 2021.09.25 - added support for DMaaS
+# 2021.09.25 - added support for Ccs
 # 2021.10.13 - modified setpwd function
 # 2021.11.10 - added setContext and getContext functions
 # 2021.11.15 - added dateToString function, usecsToDate formatting, Helios Reporting v2, Helio On Prem
