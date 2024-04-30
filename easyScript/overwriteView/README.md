@@ -8,7 +8,7 @@ Warning: this script will overwrite data on the target view. Make sure you kknow
 
 ## Download the Script
 
-You can download the zip file here: <https://github.com/cohesity/community-automation-samples/main/raw/master/easyScript/overwriteView/overwriteView.zip>
+You can download the zip file here: <https://github.com/cohesity/community-automation-samples/raw/main/easyScript/overwriteView/overwriteView.zip>
 
 ## Uploading the script to EasyScript
 

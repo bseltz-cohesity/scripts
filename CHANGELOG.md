@@ -1,4 +1,4 @@
-# Change Log for bseltz-cohesity/scripts
+# Change Log for cohesity/community-automation-samples
 
 ## 2024-04-25
 

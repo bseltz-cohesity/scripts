@@ -61,4 +61,4 @@ SQL Backup (04/17/2020 23:00:01) --> S3 (07/16/2020 23:00:01)
 
 ## Running and Scheduling PowerShell Scripts
 
-For additional help running and scheduling Cohesity PowerShell scripts, please see [Running Cohesity PowerShell Scripts](https://github.com/cohesity/community-automation-samples/blob/master/powershell/Running%20Cohesity%20PowerShell%20Scripts.pdf)
+For additional help running and scheduling Cohesity PowerShell scripts, please see [Running Cohesity PowerShell Scripts](https://github.com/cohesity/community-automation-samples/blob/main/powershell/Running%20Cohesity%20PowerShell%20Scripts.pdf)

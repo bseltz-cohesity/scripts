@@ -44,4 +44,4 @@ Place both files in a folder together and run the main script like so:
 
 ## Notes
 
-This script can be scheduled to run periodically using Windows task scheduler. For help, please review this guide: <https://github.com/cohesity/community-automation-samples/blob/master/powershell/Running%20Cohesity%20PowerShell%20Scripts.pdf>
+This script can be scheduled to run periodically using Windows task scheduler. For help, please review this guide: <https://github.com/cohesity/community-automation-samples/blob/main/powershell/Running%20Cohesity%20PowerShell%20Scripts.pdf>

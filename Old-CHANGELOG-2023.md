@@ -1,4 +1,4 @@
-# 2023 Change Log for bseltz-cohesity/scripts
+# 2023 Change Log for cohesity/community-automation-samples
 
 ## 2023-12-30
 
