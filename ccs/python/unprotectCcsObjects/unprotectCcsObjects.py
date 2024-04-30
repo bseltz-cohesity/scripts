@@ -13,6 +13,7 @@ parser.add_argument('-p', '--policyname', type=str, default=None)
 parser.add_argument('-f', '--finalbackup', action='store_true')
 parser.add_argument('-x', '--unprotect', action='store_true')
 parser.add_argument('-z', '--nobackuprequired', action='store_true')
+parser.add_argument('-r', '--region', type=str, default=None)
 
 args = parser.parse_args()
 
@@ -25,6 +26,7 @@ policyname = args.policyname
 finalbackup = args.finalbackup
 unprotect = args.unprotect
 nobackuprequired = args.nobackuprequired
+region = args.region
 
 if not finalbackup and not unprotect:
     print('no actions specified')
@@ -67,6 +69,14 @@ tenantId = sessionUser['profiles'][0]['tenantId']
 regions = api('get', 'dms/tenants/regions?tenantId=%s' % tenantId, mcmv2=True)
 regionList = ','.join([r['regionId'] for r in regions['tenantRegionInfoList']])
 
+if region is not None:
+    thisRegion = [r['regionId'] for r in regions['tenantRegionInfoList'] if r['regionId'].lower() == region.lower()]
+    if thisRegion is None or len(thisRegion) == 0:
+        print('region %s not found' % region)
+        exit(1)
+    else:
+        regionList = thisRegion[0]
+
 if finalbackup and policyname is not None:
     policies = api('get', 'data-protect/policies?types=DMaaSPolicy', mcmv2=True)
     policy = [p for p in policies['policies'] if p['name'].lower() == policyname.lower()]
@@ -81,8 +91,8 @@ for objectname in objectnames:
         if matchingObjects is not None and len(matchingObjects) > 0:
             for matchingObject in matchingObjects:
                 if 'objectProtectionInfos' in matchingObject and matchingObject['objectProtectionInfos'] is not None and len(matchingObject['objectProtectionInfos']) > 0:
-                    for protection in matchingObject['objectProtectionInfos']:
-                        protectedObjects = api('get', 'data-protect/objects?ids=%s&regionIds=%s' % (protection['objectId'], protection['regionId']), v=2)
+                    for protection in [i for i in matchingObject['objectProtectionInfos'] if i['regionId'] in regionList]:
+                        protectedObjects = api('get', 'data-protect/objects?ids=%s&regionIds=%s' % (protection['objectId'], protection['regionId']), v=2, quiet=True)
                         if protectedObjects is not None and 'objects' in protectedObjects and protectedObjects['objects'] is not None and len(protectedObjects['objects']) > 0:
                             for protectedObject in protectedObjects['objects']:
                                 if 'objectBackupConfiguration' in protectedObject and protectedObject['objectBackupConfiguration'] is not None:
@@ -138,7 +148,7 @@ for objectname in objectnames:
                                         backupCompleted = False
                                         finishedStates = ['Succeeded', 'Warning']
                                         badStates = ['Canceled', 'Failed']
-                                        result = api('post', 'data-protect/objects/activity', activityParams, mcmv2=2)
+                                        result = api('post', 'data-protect/objects/activity', activityParams, mcmv2=True)
                                         if result is not None and 'activity' in result and result['activity'] is not None and len(result['activity']) > 0:
                                             if 'archivalRunParams' in result['activity'][0] and result['activity'][0]['archivalRunParams'] is not None and 'status' in result['activity'][0]['archivalRunParams']:
                                                 if result['activity'][0]['archivalRunParams'] in badStates:

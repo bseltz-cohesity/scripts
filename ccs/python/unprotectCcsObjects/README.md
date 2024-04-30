@@ -65,6 +65,7 @@ To unprotect the objects after the final backup:
 * -f, --finalbackup: (optional)
 * -x, --unprotect: (optional)
 * -z, --nobackuprequired: (optional)
+* -r, --region: (optional) specify region of object(s) to unprotect
 
 ## Authenticating to Ccs
 

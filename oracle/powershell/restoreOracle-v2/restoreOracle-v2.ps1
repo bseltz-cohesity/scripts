@@ -31,7 +31,7 @@ param (
     [Parameter()][switch]$noFilenameCheck,               # skip filename check
     [Parameter()][switch]$noArchiveLogMode,              # enable archive log mode on target DB
     [Parameter()][int]$numTempFiles = 0,                 # number of temp files
-    [Parameter()][string]$newNameClause = '',            # new name clause
+    [Parameter()][string]$newNameClause = $null,         # new name clause
     [Parameter()][int]$numRedoLogs = $null,              # number of redo log groups
     [Parameter()][int]$redoLogSizeMB = 20,               # size of redo log groups
     [Parameter()][string]$redoLogPrefix = $null,         # redo log prefix
@@ -337,7 +337,6 @@ if($sameDB){
                 "numGroups" = $numRedoLogs;
                 "sizeMBytes" = $redoLogSizeMB
             };
-            "newNameClause" = $newNameClause
             "newPdbName" = $null;
             "nofilenameCheck" = $bool_noFilenameCheck;
             "oracleSid" = $null;
@@ -351,6 +350,9 @@ if($sameDB){
             "isMultiStageRestore" = $false;
             "rollForwardLogPathVec" = $null
         }
+    }
+    if($newNameClause){
+        $sourceConfig['recoverDatabaseParams']['newNameClause'] = $newNameClause
     }
     if($redoLogPrefix){
         $sourceConfig['recoverDatabaseParams']['redoLogConfig']['memberPrefix'] = $redoLogPrefix
