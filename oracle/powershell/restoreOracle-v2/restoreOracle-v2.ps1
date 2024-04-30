@@ -323,7 +323,7 @@ if($sameDB){
         };
         "recoveryTarget" = "RecoverDatabase";
         "recoverDatabaseParams" = @{
-            "bctFilePath" = $bctFilePath;
+            "bctFilePath" = $null;
             "databaseName" = $targetDB;
             "dbFilesDestination" = $oracleData;
             "enableArchiveLogMode" = $bool_archiveLogMode;
@@ -333,10 +333,11 @@ if($sameDB){
             "pfileParameterMap" = @();
             "redoLogConfig" = @{
                 "groupMembers" = @();
-                "memberPrefix" = $redoLogPrefix;
+                "memberPrefix" = $null;
                 "numGroups" = $numRedoLogs;
                 "sizeMBytes" = $redoLogSizeMB
             };
+            "newNameClause" = $newNameClause
             "newPdbName" = $null;
             "nofilenameCheck" = $bool_noFilenameCheck;
             "oracleSid" = $null;
@@ -351,9 +352,15 @@ if($sameDB){
             "rollForwardLogPathVec" = $null
         }
     }
-    if($newNameClause -ne ''){
-        $sourceConfig['recoverDatabaseParams']['newNameClause'] = $newNameClause
+    if($redoLogPrefix){
+        $sourceConfig['recoverDatabaseParams']['redoLogConfig']['memberPrefix'] = $redoLogPrefix
     }
+    if($bctFilePath){
+        $sourceConfig['recoverDatabaseParams']['bctFilePath"'] = $bctFilePath
+    }
+    # if($newNameClause -ne ''){
+    #     $sourceConfig['recoverDatabaseParams']['newNameClause'] = $newNameClause
+    # }
     if($noRecovery){
         $sourceConfig['recoverDatabaseParams']['recoveryMode'] = $True
     }
