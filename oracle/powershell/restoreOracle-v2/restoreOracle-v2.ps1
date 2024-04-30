@@ -1,4 +1,4 @@
-# version 2024-02-28
+# version 2024-04-30
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -302,7 +302,7 @@ if($sameDB){
         "rollForwardLogPathVec" = $null;
         "rollForwardTimeMsecs" = $null;
         "attemptCompleteRecovery" = $false
-    }  # "granularRestoreInfo" = $null;
+    }
     if($granularRestore -eq $True){
         # restore to same cdb
         $sourceConfig['granularRestoreInfo'] = @{
@@ -358,9 +358,6 @@ if($sameDB){
     if($bctFilePath){
         $sourceConfig['recoverDatabaseParams']['bctFilePath"'] = $bctFilePath
     }
-    # if($newNameClause -ne ''){
-    #     $sourceConfig['recoverDatabaseParams']['newNameClause'] = $newNameClause
-    # }
     if($noRecovery){
         $sourceConfig['recoverDatabaseParams']['recoveryMode'] = $True
     }
