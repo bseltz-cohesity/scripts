@@ -18,7 +18,7 @@ chmod +x protectCCSEC2VMs.py
 
 ## Components
 
-* [protectCCSEC2VMs.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/Ccs/python/protectCCSEC2VMs/protectCCSEC2VMs.py): the main powershell script
+* [protectCCSEC2VMs.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/ccs/python/protectCCSEC2VMs/protectCCSEC2VMs.py): the main powershell script
 * [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:

@@ -18,7 +18,7 @@ chmod +x protectCcsM365Mailboxes.py
 
 ## Components
 
-* [protectCcsM365Mailboxes.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/Ccs/python/protectCcsM365Mailboxes/protectCcsM365Mailboxes.py): the main powershell script
+* [protectCcsM365Mailboxes.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/ccs/python/protectCcsM365Mailboxes/protectCcsM365Mailboxes.py): the main powershell script
 * [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:

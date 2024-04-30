@@ -10,7 +10,7 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/Ccs/python/unprotectCcsObjects/unprotectCcsObjects.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/ccs/python/unprotectCcsObjects/unprotectCcsObjects.py
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x unprotectCcsObjects.py
 # end download commands
@@ -18,7 +18,7 @@ chmod +x unprotectCcsObjects.py
 
 ## Components
 
-* [unprotectCcsObjects.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/Ccs/python/unprotectCcsObjects/unprotectCcsObjects.py): the main powershell script
+* [unprotectCcsObjects.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/ccs/python/unprotectCcsObjects/unprotectCcsObjects.py): the main powershell script
 * [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:

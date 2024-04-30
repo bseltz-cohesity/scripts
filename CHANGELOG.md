@@ -93,7 +93,7 @@ Update`] added -taskName parameter
 
 ## 2024-03-27
 
-* [backupNowCcs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/Ccs/powershell/backupNowCcs) [`Update`] Added support for SQL
+* [backupNowCcs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/backupNowCcs) [`Update`] Added support for SQL
 
 ## 2024-03-26
 
@@ -217,11 +217,11 @@ Update`] added -taskName parameter
 
 ## 2024-02-22
 
-* [ccsSlaMonitor.py](https://github.com/cohesity/community-automation-samples/tree/main/Ccs/python/ccsSlaMonitor) [`New`] Monitor for SLA violations in CCS
+* [ccsSlaMonitor.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/ccsSlaMonitor) [`New`] Monitor for SLA violations in CCS
 
 ## 2024-02-21
 
-* [protectCCSEC2VMs.py](https://github.com/cohesity/community-automation-samples/tree/main/Ccs/python/protectCCSEC2VMs) [`New`] Protect EC2 VMs in CCS
+* [protectCCSEC2VMs.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/protectCCSEC2VMs) [`New`] Protect EC2 VMs in CCS
 * [nodeStatus.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/nodeStatus) [`New`] report node status
 
 ## 2024-02-19
@@ -267,7 +267,7 @@ Update`] added -taskName parameter
 
 ## 2024-02-02
 
-* [restoreSQL-CCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/Ccs/powershell/restoreSQL-CCS) [`Update`] added support for SQL Always On Availability Group datbases
+* [restoreSQL-CCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreSQL-CCS) [`Update`] added support for SQL Always On Availability Group datbases
 
 ## 2024-02-01
 
@@ -309,7 +309,7 @@ Update`] added -taskName parameter
 * [agentStatus.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/agentStatus) [`Removed`] this script has been superceded by [registeredSources.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/registeredSources)
 * [protectSQLServer.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/protectSQLServer) [`Update`] added -unprotectedDBs parameter
 * [changeLocalRetention.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/changeLocalRetention) [`Update`] added -jobList parameter
-* [protectCcsM365Mailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/Ccs/powershell/protectCcsM365Mailboxes) [`Update`] added support for security groups
+* [protectCcsM365Mailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365Mailboxes) [`Update`] added support for security groups
 * [smbFileOpens](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/smbFileOpens) [`Update`] added path filter
 
 ## 2024-01-18
