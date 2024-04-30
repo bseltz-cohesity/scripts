@@ -350,12 +350,12 @@ if($sameDB){
             "isMultiStageRestore" = $false;
             "rollForwardLogPathVec" = $null
         }
-        if($newNameClause -ne ''){
-            $sourceConfig['recoverDatabaseParams']['newNameClause'] = $newNameClause
-        }
-        if($noRecovery){
-            $sourceConfig['recoverDatabaseParams']['recoveryMode'] = $True
-        }
+    }
+    if($newNameClause -ne ''){
+        $sourceConfig['recoverDatabaseParams']['newNameClause'] = $newNameClause
+    }
+    if($noRecovery){
+        $sourceConfig['recoverDatabaseParams']['recoveryMode'] = $True
     }
     if($instant){
         $sourceConfig.recoverDatabaseParams.isMultiStageRestore = $True
