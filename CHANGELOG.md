@@ -1,5 +1,17 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-04-30
+
+* [restoreOracle-v2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/oracle/powershell/restoreOracle-v2) [`Fix`] fixed recovery error
+
+## 2024-04-29
+
+* [registerExchange.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/registerExchange) [`New`] register Exchange application on physical server
+
+## 2024-04-27
+
+* [extendForActiveCopyTasks.py](https://github.com/cohesity/community-automation-samples/tree/main/python/extendForActiveCopyTasks) [`New`] extend local retention for snapshots with active replication/archive tasks
+
 ## 2024-04-25
 
 * [changeLocalRetention.py](https://github.com/cohesity/community-automation-samples/tree/main/python/changeLocalRetention) [`Fix`] fixed error when runs have active copy tasks
