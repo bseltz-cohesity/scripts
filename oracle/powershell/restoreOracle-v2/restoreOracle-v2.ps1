@@ -313,6 +313,9 @@ if($sameDB){
             }
         }
     }
+    if($noRecovery){
+        $sourceConfig['recoveryMode'] = $True
+    }
 }else{
     $sourceConfig = @{
         "host" = @{
@@ -336,18 +339,23 @@ if($sameDB){
             };
             "newPdbName" = $null;
             "nofilenameCheck" = $bool_noFilenameCheck;
-            "newNameClause" = $newNameClause;
             "oracleSid" = $null;
             "systemIdentifier" = $null;
             "dbChannels" = $null;
-            "recoveryMode" = $bool_noRecovery;
+            "recoveryMode" = $null;
             "shellEvironmentVars" = $null;
             "restoreSpfileOrPfileInfo" = $null;
             "useScnForRestore" = $null;
             "oracleUpdateRestoreOptions" = $null;
             "isMultiStageRestore" = $false;
             "rollForwardLogPathVec" = $null
-        } # "granularRestoreInfo" = $null;
+        }
+        if($newNameClause -ne ''){
+            $sourceConfig['recoverDatabaseParams']['newNameClause'] = $newNameClause
+        }
+        if($noRecovery){
+            $sourceConfig['recoverDatabaseParams']['recoveryMode'] = $True
+        }
     }
     if($instant){
         $sourceConfig.recoverDatabaseParams.isMultiStageRestore = $True
