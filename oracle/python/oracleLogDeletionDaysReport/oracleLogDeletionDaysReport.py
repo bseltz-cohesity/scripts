@@ -95,13 +95,19 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
             continue
         for dbParam in o['dbParams']:
             logDeletionDays = 'n/a'
+            dbUniqueName = 'Missing DB'
+            if len(dbParam['dbChannels']) > 0:
+                if 'databaseUniqueName' in dbParam['dbChannels'][0]:
+                    dbUniqueName = dbParam['dbChannels'][0]['databaseUniqueName']
             if len(dbParam['dbChannels']) > 0 and 'archiveLogRetentionDays' in dbParam['dbChannels'][0]:
                 logDeletionDays = dbParam['dbChannels'][0]['archiveLogRetentionDays']
             if ("%s" % dbParam['databaseId']) in objectName.keys():
                 thisObject = objectName["%s" % dbParam['databaseId']]
                 (thisServer, thisDB) = thisObject.split('/')
-            if ("%s" % dbParam['databaseId']) in objectName.keys():
                 print("  %s: %s" % (objectName["%s" % dbParam['databaseId']], logDeletionDays))
                 csv.write('"%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], thisServer, thisDB, logDeletionDays))
+            else:
+                print("  %s database with ID: %s not found" % (o['sourceName'], dbParam['databaseId']))
+                csv.write('"%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], o['sourceName'], dbUniqueName, "database not found"))
 csv.close()
 print('\nOutput saved to %s\n' % csvfileName)
