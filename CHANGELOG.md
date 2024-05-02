@@ -1,5 +1,10 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-05-02
+
+* [downloadLatestWarnings.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/downloadLatestWarnings) [`Update`] modernized authentication options
+* [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added -quiet switch to fileDownload function
+
 ## 2024-05-01
 
 * [oracleLogDeletionDaysReport.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/oracleLogDeletionDaysReport) [`Update`] updated to gracefully handle edge cases

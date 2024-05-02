@@ -1,9 +1,9 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2024.02.28 - Brian Seltzer
+#  Version 2024.05.02 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
-# 2023.02.10 - added -region to api function (for Ccs)
+# 2023.02.10 - added -region to api function (for DMaaS)
 # 2023.03.22 - added accessCluster function
 # 2023.04.04 - exit 1 on old PowerShell version
 # 2023.04.30 - disable email MFA and add timeout parameter
@@ -33,10 +33,12 @@
 # 2024.01.30 - fix - clear header before auth
 # 2024-02-18 - fix - toJson function - handle null input
 # 2024-02-28 - added support for helios.gov
+# 2024-02-29 - added dateToString function
+# 2024-05-02 - added quiet switch to fileDownload function
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2024.02.28'
+$versionCohesityAPI = '2024.05.02'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -780,7 +782,7 @@ function api($method,
 
 # file download function ========================================================================
 
-function fileDownload($uri, $fileName, [switch]$v2){
+function fileDownload($uri, $fileName, [switch]$v2, [switch]$quiet){
     if(-not $cohesity_api.authorized){ Write-Host 'Please use apiauth to connect to a cohesity cluster' -foregroundcolor yellow; return $null }
     try {
         if($uri -match "://"){
@@ -871,6 +873,10 @@ function dateToUsecs($datestring=(Get-Date)){
     if($datestring -isnot [datetime]){ $datestring = [datetime] $datestring }
     $usecs = [int64](($datestring.ToUniversalTime())-([datetime]"1970-01-01 00:00:00")).TotalSeconds*1000000
     $usecs
+}
+
+function dateToString($dt, $format='yyyy-MM-dd hh:mm'){
+    return ($dt.ToString($format) -replace [char]8239, ' ')
 }
 
 # password functions ==============================================================================
@@ -1408,7 +1414,7 @@ function getViews([switch]$includeInactive){
 # 2021.02.10 - fixed empty body issue
 # 2021.03.26 - added apiKey unique password storage
 # 2021.08.16 - revamped passwd storage, auto prompt for invalid password
-# 2021.09.23 - added support for Ccs, Helios Reporting V2
+# 2021.09.23 - added support for DMaaS, Helios Reporting V2
 # 2021.10.14 - added storePasswordForUser and importStoredPassword
 # 2021.10.22 - fixed json2code and py functions and added toJson function
 # 2021.11.03 - fixed 'Cannot send a content-body with this verb-type' message in debug log
