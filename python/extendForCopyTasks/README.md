@@ -1,4 +1,4 @@
-# Extend Retention for Local Snapshots with Active Copy Tasks using Python
+# Extend Retention for Local Snapshots with Unfinished Copy Tasks using Python
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
@@ -10,54 +10,54 @@ Run these commands from a terminal to download the script(s) into your current d
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/extendForActiveCopyTasks/extendForActiveCopyTasks.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/extendForCopyTasks/extendForCopyTasks.py
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
-chmod +x extendForActiveCopyTasks.py
+chmod +x extendForCopyTasks.py
 # End download commands
 ```
 
 ## Components
 
-* [extendForActiveCopyTasks.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/extendForActiveCopyTasks/extendForActiveCopyTasks.py): the main python script
+* [extendForCopyTasks.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/extendForCopyTasks/extendForCopyTasks.py): the main python script
 * [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place the files in a folder together, then we can run the script. If you omit the -commit switch, it will run in test mode:
 
 ```bash
 # if snapshot is expiring in less than 3 days, extend it to 7 days from today (test mode)
-./extendForActiveCopyTasks.py -v mycluster \
-                              -u myusername \
-                              -d mydomain.net \
-                              -a 3 \
-                              -x 7
+./extendForCopyTasks.py -v mycluster \
+                        -u myusername \
+                        -d mydomain.net \
+                        -a 3 \
+                        -x 7
 ```
 
 To commit the changes, include the -commit switch:
 
 ```bash
 # if snapshot is expiring in less than 3 days, extend it to 7 days from today (commit)
-./extendForActiveCopyTasks.py -v mycluster \
-                              -u myusername \
-                              -d mydomain.net \
-                              -a 3 \
-                              -x 7 \
-                              -commit
+./extendForCopyTasks.py -v mycluster \
+                        -u myusername \
+                        -d mydomain.net \
+                        -a 3 \
+                        -x 7 \
+                        -commit
 ```
 
 To send an email report of snapshots that were extended:
 
 ```bash
 # if snapshot is expiring in less than 3 days, extend it to 7 days from today (commit)
-./extendForActiveCopyTasks.py -v mycluster \
-                              -u myusername \
-                              -d mydomain.net \
-                              -a 3 \
-                              -x 7 \
-                              -commit \
-                              -ms smtp.mydomain.net \
-                              -fr mycluster@mydomain.net \
-                              -to me@mydomain.net \
-                              -to them@mydomain.net
+./extendForCopyTasks.py -v mycluster \
+                        -u myusername \
+                        -d mydomain.net \
+                        -a 3 \
+                        -x 7 \
+                        -commit \
+                        -ms smtp.mydomain.net \
+                        -fr mycluster@mydomain.net \
+                        -to me@mydomain.net \
+                        -to them@mydomain.net
 ```
 
 ## Authentication Parameters
