@@ -85,12 +85,17 @@ def getCluster():
             if job['physicalParams']['protectionType'] == 'kFile':
                 v1JobId = job['id'].split(':')[2]
                 thisJob = api('get', 'protectionJobs/%s' % v1JobId)
+                recentModificatiion = False
                 startTimeUsecs = daysBackUsecs
                 if thisJob is not None and 'modificationTimeUsecs' in thisJob and thisJob['modificationTimeUsecs'] is not None and thisJob['modificationTimeUsecs'] > startTimeUsecs:
                     startTimeUsecs = thisJob['modificationTimeUsecs']
+                    recentModificatiion = True
+                if recentModificatiion is True:
+                    print('  %s:  *** modified on %s ***' % (job['name'], usecsToDate(thisJob['modificationTimeUsecs'])))
+                else:
+                    print('  %s' % job['name'])
                 runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&includeTenants=true&startTimeUsecs=%s&includeObjectDetails=true' % (job['id'], numruns, startTimeUsecs), v=2)
                 if len(runs['runs']) > 0:
-                    print('  %s' % job['name'])
                     for run in runs['runs']:
                         if 'isLocalSnapshotsDeleted' not in run or run['isLocalSnapshotsDeleted'] is not True:
                             runStartTime = usecsToDate(run['localBackupInfo']['startTimeUsecs'])
