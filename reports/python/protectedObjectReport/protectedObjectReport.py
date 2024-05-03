@@ -87,12 +87,16 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
         else:
             jobPriority = ''
 
-        if 'sla' in job and job['sla'] is not None and len(job['sla']) > 1:
+        fullSla = ''
+        incrementalSla = ''
+        try:
             fullSla = job['sla'][1]['slaMinutes']
+        except Exception:
+            pass
+        try:
             incrementalSla = job['sla'][0]['slaMinutes']
-        else:
-            fullSla = ''
-            incrementalSla = ''
+        except Exception:
+            pass
 
         # cloud archive direct
         cloudArchiveDirect = False
