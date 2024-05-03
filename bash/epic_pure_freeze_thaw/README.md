@@ -105,3 +105,11 @@ tail -f /tmp/cohesity_snap.log
 ```
 
 The first instance of the script (the leader) will perform the EPIC freeze / Pure snapshots / EPIC thaw while the others will wait for the leader to finish. Once the snapshots are created and the database and file systems are thawed, the Pure volume backups will begin.
+
+## Recommended Tuning Parameters
+
+You can set the following magneto gflag to optimize the performance of the Pure volume backups:
+
+```yaml
+    magneto_pure_disk_area_block_size: 1048576
+```
