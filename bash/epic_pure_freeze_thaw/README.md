@@ -111,5 +111,5 @@ The first instance of the script (the leader) will perform the EPIC freeze / Pur
 You can set the following magneto gflag to optimize the performance of the Pure volume backups:
 
 ```yaml
-    magneto_pure_disk_area_block_size: 1048576
+magneto_pure_disk_area_block_size: 1048576
 ```
