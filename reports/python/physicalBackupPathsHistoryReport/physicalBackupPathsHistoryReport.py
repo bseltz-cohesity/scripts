@@ -71,7 +71,7 @@ daysBackUsecs = timeAgo(days, "days")
 
 outfile = os.path.join(outputpath, outputfile)
 f = codecs.open(outfile, 'w')
-f.write('"Cluster","Protection Group","Start Time","End Time","Status","Server","Directive File","Selected Path"\n')
+f.write('"Cluster","Protection Group","Start Time","End Time","Status","Server","Directive File","Selected Path","Confirmed"\n')
 
 
 def getCluster():
@@ -85,12 +85,10 @@ def getCluster():
             if job['physicalParams']['protectionType'] == 'kFile':
                 v1JobId = job['id'].split(':')[2]
                 thisJob = api('get', 'protectionJobs/%s' % v1JobId)
-                recentModificatiion = False
                 startTimeUsecs = daysBackUsecs
+                confirmStartTimeUsecs = startTimeUsecs
                 if thisJob is not None and 'modificationTimeUsecs' in thisJob and thisJob['modificationTimeUsecs'] is not None and thisJob['modificationTimeUsecs'] > startTimeUsecs:
-                    startTimeUsecs = thisJob['modificationTimeUsecs']
-                    recentModificatiion = True
-                if recentModificatiion is True:
+                    confirmStartTimeUsecs = thisJob['modificationTimeUsecs']
                     print('  %s:  *** modified on %s ***' % (job['name'], usecsToDate(thisJob['modificationTimeUsecs'])))
                 else:
                     print('  %s' % job['name'])
@@ -98,6 +96,10 @@ def getCluster():
                 countedRuns = 0
                 if len(runs['runs']) > 0:
                     for run in runs['runs']:
+                        countedRuns += 1
+                        confirmed = True
+                        if run['localBackupInfo']['startTimeUsecs'] < confirmStartTimeUsecs:
+                            confirmed = False
                         if 'isLocalSnapshotsDeleted' not in run or run['isLocalSnapshotsDeleted'] is not True:
                             runStartTime = usecsToDate(run['localBackupInfo']['startTimeUsecs'])
                             runEndTime = '-'
@@ -110,19 +112,20 @@ def getCluster():
                                         runobject = [o for o in run['objects'] if o['object']['id'] == obj['id']]
                                         if runobject is not None and len(runobject) > 0:
                                             status = runobject[0]['localSnapshotInfo']['snapshotInfo']['status'][1:]
-                                        usesDirective = False
-                                        countedRuns += 1
-                                        if 'metadataFilePath' in obj and obj['metadataFilePath'] is not None:
-                                            usesDirective = True
-                                            f.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], runStartTime, runEndTime, status, obj['name'], usesDirective, obj['metadataFilePath']))
-                                        elif 'filePaths' in obj and obj['filePaths'] is not None and len(obj['filePaths']) > 0:
-                                            for filepath in sorted(obj['filePaths'], key=lambda filepath: filepath['includedPath'].lower()):
-                                                f.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], runStartTime, runEndTime, status, obj['name'], usesDirective, filepath['includedPath']))
+                                            usesDirective = False
+                                            if 'metadataFilePath' in obj and obj['metadataFilePath'] is not None:
+                                                usesDirective = True
+                                                f.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], runStartTime, runEndTime, status, obj['name'], usesDirective, obj['metadataFilePath'], confirmed))
+                                            elif 'filePaths' in obj and obj['filePaths'] is not None and len(obj['filePaths']) > 0:
+                                                for filepath in sorted(obj['filePaths'], key=lambda filepath: filepath['includedPath'].lower()):
+                                                    f.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], runStartTime, runEndTime, status, obj['name'], usesDirective, filepath['includedPath'], confirmed))
+                                            else:
+                                                f.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], runStartTime, runEndTime, status, obj['name'], usesDirective, 'unknown', confirmed))
+                                                print('******* debug output ********')
+                                                display(obj)
+                                                print('*****************************')
                                         else:
-                                            f.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], runStartTime, runEndTime, status, obj['name'], usesDirective, 'unknown'))
-                                            print('******* debug output ********')
-                                            display(obj)
-                                            print('*****************************')
+                                            f.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], runStartTime, runEndTime, status, obj['name'], 'unknown', 'unknown', confirmed))
                 if countedRuns == 0:
                     print('      ***** no runs reported since modification date *****')
 
