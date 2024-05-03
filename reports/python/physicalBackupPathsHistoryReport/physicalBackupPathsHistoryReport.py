@@ -95,6 +95,7 @@ def getCluster():
                 else:
                     print('  %s' % job['name'])
                 runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&includeTenants=true&startTimeUsecs=%s&includeObjectDetails=true' % (job['id'], numruns, startTimeUsecs), v=2)
+                countedRuns = 0
                 if len(runs['runs']) > 0:
                     for run in runs['runs']:
                         if 'isLocalSnapshotsDeleted' not in run or run['isLocalSnapshotsDeleted'] is not True:
@@ -110,6 +111,7 @@ def getCluster():
                                         if runobject is not None and len(runobject) > 0:
                                             status = runobject[0]['localSnapshotInfo']['snapshotInfo']['status'][1:]
                                         usesDirective = False
+                                        countedRuns += 1
                                         if 'metadataFilePath' in obj and obj['metadataFilePath'] is not None:
                                             usesDirective = True
                                             f.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], runStartTime, runEndTime, status, obj['name'], usesDirective, obj['metadataFilePath']))
@@ -121,6 +123,8 @@ def getCluster():
                                             print('******* debug output ********')
                                             display(obj)
                                             print('*****************************')
+                if countedRuns == 0:
+                    print('      ***** no runs reported since modification date *****')
 
 
 for vip in vips:
