@@ -70,7 +70,6 @@ if vips is None or len(vips) == 0:
 daysBackUsecs = timeAgo(days, "days")
 
 outfile = os.path.join(outputpath, outputfile)
-# outfile = 'physicalBackupPathsHistoryReport.csv'
 f = codecs.open(outfile, 'w')
 f.write('"Cluster","Protection Group","Start Time","End Time","Status","Server","Directive File","Selected Path"\n')
 
@@ -102,16 +101,21 @@ def getCluster():
                                 for obj in sorted(job['physicalParams']['fileProtectionTypeParams']['objects'], key=lambda obj: obj['name'].lower()):
                                     if len(servernames) == 0 or obj['name'].lower() in [s.lower() for s in servernames]:
                                         status = run['localBackupInfo']['status']
-                                        runobject = [o for o in run['objects'] if o['object']['name'] == obj['name']]
+                                        runobject = [o for o in run['objects'] if o['object']['id'] == obj['id']]
                                         if runobject is not None and len(runobject) > 0:
                                             status = runobject[0]['localSnapshotInfo']['snapshotInfo']['status'][1:]
                                         usesDirective = False
                                         if 'metadataFilePath' in obj and obj['metadataFilePath'] is not None:
                                             usesDirective = True
                                             f.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], runStartTime, runEndTime, status, obj['name'], usesDirective, obj['metadataFilePath']))
-                                        if 'filePaths' in obj and obj['filePaths'] is not None and len(obj['filePaths']) > 0:
+                                        elif 'filePaths' in obj and obj['filePaths'] is not None and len(obj['filePaths']) > 0:
                                             for filepath in sorted(obj['filePaths'], key=lambda filepath: filepath['includedPath'].lower()):
                                                 f.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], runStartTime, runEndTime, status, obj['name'], usesDirective, filepath['includedPath']))
+                                        else:
+                                            f.write('"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], runStartTime, runEndTime, status, obj['name'], usesDirective, 'unknown'))
+                                            print('******* debug output ********')
+                                            display(obj)
+                                            print('*****************************')
 
 
 for vip in vips:
