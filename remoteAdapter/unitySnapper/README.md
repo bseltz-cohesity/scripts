@@ -97,6 +97,7 @@ Configuring Protection Group
 
   ![enable-pre-post](./images/enable-pre-post.png)
 
+
   | Field Name               | Value                                              | Notes                                                                                                                      |
 |--------------------------|----------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
 | Hostname or IP Address   | Linux/UNIX Hostname or IP Address                  | Linux/Unix Hostname where Pre & Post Script is hosted                                                                      |
