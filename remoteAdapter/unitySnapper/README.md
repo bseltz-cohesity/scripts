@@ -41,7 +41,7 @@ Configure RSA authentication on the UNIX/Linux Host to authenticate Cohesity
 
 * Click **Copy Key to Clipboard** to copy the “Cluster SSH Public Key.”
 
-    ![copy-key](./images/copy-key.png)
+ ![copy-key](./images/copy-key.png)
 
 * Login to UNIX/Linux host
 
@@ -51,13 +51,13 @@ Configure RSA authentication on the UNIX/Linux Host to authenticate Cohesity
 
 * If the Cohesity hostname is not reachable from Unix/Linux host, then replace the hostname with an IP address.
 
-    ![authorized-keys](./images/ssh-authorized-key.png)
+ ![authorized-keys](./images/ssh-authorized-key.png)
 
 Registering a Source, register the Unity’s filesystem share path to backup. To register a source,
 
 * Navigate to Data Protection > Sources
 
-* Click “Register Source” (+)  and choose NAS
+* Click “Register Source” (+) and choose NAS
 
 * Select NAS Source as “Mount Point.”
 
@@ -66,28 +66,28 @@ Registering a Source, register the Unity’s filesystem share path to backup. To
 * In the Mount Path: Specify the NFS/SMB volume snapshot share path that needs to be backed up.
 
 ```text
-  Share Path format: <Unity Management IP>:/Cohesity_Unity_Snap_<NFS/CIFS>Share
+ Share Path format: <Unity Management IP>:/Cohesity_Unity_Snap_<NFS/CIFS>Share
 
-  For Example - 
+ For Example - 
 
-  For NFS Mode:
-  Share Path: 10.2.166.185:/Cohesity_Unity_Snap_NFSShare
+ For NFS Mode:
+ Share Path: 10.2.166.185:/Cohesity_Unity_Snap_NFSShare
 
-  where, 
-    10.2.166.185 - Unity Data IP
-    /Cohesity_Unity_Snap_NFSShare - Path of the NFS snapshot share, which will be created by the script
+ where, 
+ 10.2.166.185 - Unity Data IP
+ /Cohesity_Unity_Snap_NFSShare - Path of the NFS snapshot share, which will be created by the script
 
-  For CIFS Mode:
-  Share Path: 10.2.166.185\Cohesity_Unity_Snap_CIFSShare 
-  
-  where, 
-    10.2.166.185 - Unity Data IP
-    /Cohesity_Unity_Snap_CIFSShare - Path of the CIFS snapshot share, which will be created by the script
+ For CIFS Mode:
+ Share Path: 10.2.166.185\Cohesity_Unity_Snap_CIFSShare 
+ 
+ where, 
+ 10.2.166.185 - Unity Data IP
+ /Cohesity_Unity_Snap_CIFSShare - Path of the CIFS snapshot share, which will be created by the script
 ```
 
 * Toggle on “Skip Mount Point validation during registration.”
 
-    ![skip-mount-point.png](./images/skip-mount-point.png)
+ ![skip-mount-point.png](./images/skip-mount-point.png)
 
 Configuring Protection Group
 
@@ -95,17 +95,16 @@ Configuring Protection Group
 
 * Under the Advanced Section Toggle on to **Enable Pre & Post Script**. Below, Screenshot captures the necessary details to configure Pre & Post Script.
 
-  ![enable-pre-post](./images/enable-pre-post.png)
+ ![enable-pre-post](./images/enable-pre-post.png)
 
-
-  | Field Name               | Value                                              | Notes                                                                                                                      |
-|--------------------------|----------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
-| Hostname or IP Address   | Linux/UNIX Hostname or IP Address                  | Linux/Unix Hostname where Pre & Post Script is hosted                                                                      |
-| Username                 | Linux/UNIX username                                | Linux/Unix username which would run the script on the UNIX host                                                            |
-| Pre Script > Script Name | The absolute path of the Pre Script                | The absolute path of the Pre Script hosted on Linux/Unix server                                                            |
-| Script Params            | pre <Unity_Filesystem_CLI_ID> Cohesity_Unity_Snap  | 1. Take Filesystem CLI ID from Unisphere <br> 2. Cohesity_Unity_Snap is the snapshot name that will be created by the prescript   |
-| Post Script> Script Name | The absolute path of the Post Script               | The absolute path of the Post Script hosted on Linux/Unix server                                                           |
-| Script Params            | post <Unity_Filesystem_CLI_ID> Cohesity_Unity_Snap | 1. Take Filesystem CLI ID from Unisphere <br> 2. Cohesity_Unity_Snap is the snapshot name that will be deleted by the Post Script |
+Field Name | Value | Notes
+--- | --- | ---
+Hostname or IP Address | Linux/UNIX Hostname or IP Address | Linux/Unix Hostname where Pre & Post Script is hosted
+Username | Linux/UNIX username | Linux/Unix username which would run the script on the UNIX host
+Pre Script > Script Name | The absolute path of the Pre Script | The absolute path of the Pre Script hosted on Linux/Unix server
+Script Params | pre <Unity_Filesystem_CLI_ID> Cohesity_Unity_Snap | 1. Take Filesystem CLI ID from Unisphere <br> 2. Cohesity_Unity_Snap is the snapshot name that will be created by the prescript
+Post Script> Script Name | The absolute path of the Post Script | The absolute path of the Post Script hosted on Linux/Unix server
+Script Params | post <Unity_Filesystem_CLI_ID> Cohesity_Unity_Snap | 1. Take Filesystem CLI ID from Unisphere <br> 2. Cohesity_Unity_Snap is the snapshot name that will be deleted by the Post Script
 
 ### Run script
 
