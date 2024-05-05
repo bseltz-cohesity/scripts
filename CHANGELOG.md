@@ -2,6 +2,8 @@
 
 ## 2024-05-05
 
+* [restoreOracle-v2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/oracle/powershell/restoreOracle-v2) [`Fix`] fixed BCT path issue
+* [restoreOracle-v2.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/restoreOracle-v2) [`Fix`] fixed BCT path issue
 * [cancelRunningObject.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cancelRunningObject) [`New`] cancel backup for one object
 * [cancelRunningObject.py](https://github.com/cohesity/community-automation-samples/tree/main/python/cancelRunningObject) [`New`] cancel backup for one object
 
