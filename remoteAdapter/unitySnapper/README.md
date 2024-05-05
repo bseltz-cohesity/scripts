@@ -1,12 +1,12 @@
 # Protect Dell EMC Unity with Cohesity Generic NAS Pre & Post Script
 
-## Overview
+Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
 Cohesity custom pre & post script for DELL EMC Unity will allow you to configure snapshot based
 backup. This Script gives the capability to run the custom scripts on the Protected NAS
 before and/or after the Protection Group runs.
 
-### Prerequisites
+## Prerequisites
 
 Below is the list of prerequisites which should meet before configuring the Protection Group:
 
@@ -105,7 +105,3 @@ Pre Script > Script Name | The absolute path of the Pre Script | The absolute pa
 Script Params | pre <Unity_Filesystem_CLI_ID> Cohesity_Unity_Snap | 1. Take Filesystem CLI ID from Unisphere <br> 2. Cohesity_Unity_Snap is the snapshot name that will be created by the prescript
 Post Script> Script Name | The absolute path of the Post Script | The absolute path of the Post Script hosted on Linux/Unix server
 Script Params | post <Unity_Filesystem_CLI_ID> Cohesity_Unity_Snap | 1. Take Filesystem CLI ID from Unisphere <br> 2. Cohesity_Unity_Snap is the snapshot name that will be deleted by the Post Script
-
-### Run script
-
-The script will now run whenever the protection group is run
