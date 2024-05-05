@@ -78,7 +78,7 @@ if mcm or vip.lower() == 'helios.cohesity.com':
         exit(1)
 # end authentication =====================================================
 
-finishedStates = ['kCanceled', 'kSuccess', 'kWarning']
+finishedStates = ['kSuccess', 'kWarning']
 
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
