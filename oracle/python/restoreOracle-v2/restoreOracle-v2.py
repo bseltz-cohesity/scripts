@@ -351,7 +351,6 @@ else:
         },
         "recoveryTarget": "RecoverDatabase",
         "recoverDatabaseParams": {
-            "bctFilePath": bctfilepath,
             "databaseName": targetdb,
             "dbFilesDestination": oracledata,
             "enableArchiveLogMode": bool_archiveLogMode,
@@ -409,6 +408,8 @@ else:
                 ]
         if isCDB is True:
             sourceConfig['recoverDatabaseParams']['granularRestoreInfo']['pdbRestoreParams']['restoreToExistingCdb'] = False
+    if bctfilepath is not None:
+        sourceConfig['recoverDatabaseParams']['bctFilePath'] = bctfilepath
 
 if sameDB is True:
     restoreParams['oracleParams']['recoverAppParams']['oracleTargetParams']['originalSourceConfig'] = sourceConfig

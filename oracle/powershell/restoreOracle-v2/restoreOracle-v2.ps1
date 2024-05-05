@@ -323,7 +323,6 @@ if($sameDB){
         };
         "recoveryTarget" = "RecoverDatabase";
         "recoverDatabaseParams" = @{
-            "bctFilePath" = $null;
             "databaseName" = $targetDB;
             "dbFilesDestination" = $oracleData;
             "enableArchiveLogMode" = $bool_archiveLogMode;
@@ -358,7 +357,7 @@ if($sameDB){
         $sourceConfig['recoverDatabaseParams']['redoLogConfig']['memberPrefix'] = $redoLogPrefix
     }
     if($bctFilePath){
-        $sourceConfig['recoverDatabaseParams']['bctFilePath"'] = $bctFilePath
+        $sourceConfig['recoverDatabaseParams']['bctFilePath'] = $bctFilePath
     }
     if($noRecovery){
         $sourceConfig['recoverDatabaseParams']['recoveryMode'] = $True
