@@ -1,5 +1,10 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-05-05
+
+* [cancelRunningObject.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cancelRunningObject) [`New`] cancel backup for one object
+* [cancelRunningObject.py](https://github.com/cohesity/community-automation-samples/tree/main/python/cancelRunningObject) [`New`] cancel backup for one object
+
 ## 2024-05-02
 
 * [downloadLatestWarnings.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/downloadLatestWarnings) [`Update`] modernized authentication options
