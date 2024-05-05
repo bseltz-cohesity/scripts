@@ -10,21 +10,19 @@ before and/or after the Protection Group runs.
 
 Below is the list of prerequisites which should meet before configuring the Protection Group:
 
-1. Unity Unisphere CLI Installation on UNIX/Linux Host
+* Unisphere CLI installation is required on Unix/Linux Host which would be hosting the Pre/Post Script to run the uemcli commands to the Unity target
 
-  * Unisphere CLI installation is required on Unix/Linux Host which would be hosting the Pre/Post Script to run the uemcli commands to the Unity target
+* Download the rpm from [here](https://download.emc.com/downloads/DL69827_Dell-EMC-Unity-Unisphere-UEM-CLI-(SuSE-Linux-64-bit).rpm) and WinSCP it to UNIX/Linux Host
 
-  * Download the rpm from (here)[https://download.emc.com/downloads/DL69827_Dell-EMC-Unity-Unisphere-UEM-CLI-(SuSE-Linux-64-bit).rpm] and WinSCP it to UNIX/Linux Host
+* Run `yum localinstall <file_name>.rpm`
 
-  * Run `yum localinstall <file_name>.rpm`
+* Test `which uemcli`
 
-  * Test `which uemcli`
+`Note`: Script is Tested with UnisphereCLI-SUSE-Linux-64-x86-en_US-5.0.3.984728-1.x86_64.rpm
 
-  > Note: Script is Tested with UnisphereCLI-SUSE-Linux-64-x86-en_US-5.0.3.984728-1.x86_64.rpm
+Run below commands on the Unix/Linux Host: This will save Unity's Management IP address, username, and password on the localhost and would not expose these via script.
 
-2. Run below commands on the Unix/Linux Host:
-
-```
+```bash
 uemcli -d <Unity Management IP Address> -u <username> -default
 uemcli -d <Unity Management IP Address> -u <username> -p <Password> -saveUser
 
@@ -32,46 +30,42 @@ uemcli -d <Unity Management IP Address> -u <username> -p <Password> -saveUser
 uemcli -d 10.2.166.184 -u admin -default
 uemcli -d 10.2.166.184 -u admin -p Password123 -saveUser
 ```
-  * This will save Unity's Management IP address, username, and password on the localhost and would not expose these via script.
 
+Configure RSA authentication on the UNIX/Linux Host to authenticate Cohesity
 
-3. Configure RSA authentication on the UNIX/Linux Host to authenticate Cohesity
+* Login to Cohesity DataPlatform UI
 
-  * Login to Cohesity DataPlatform UI
+* Navigate to Protection Group’s (the one created for Unity’s data protection) Advanced Settings
 
-  * Navigate to Protection Group’s (the one created for Unity’s data protection) Advanced Settings
+* Edit the Pre & Post Scripts
 
-  * Edit the Pre & Post Scripts
-
-  * Click **Copy Key to Clipboard** to copy the “Cluster SSH Public Key.” 
+* Click **Copy Key to Clipboard** to copy the “Cluster SSH Public Key.”
 
     ![copy-key](./images/copy-key.png)
 
-  * Login to UNIX/Linux host 
-   
-  * Open the authorized_keys file (typically located in the ~/.ssh directory) and paste the entire string to the end of the file
+* Login to UNIX/Linux host
 
-  * Ensure authorized_keys permissions are set to 755
+* Open the authorized_keys file (typically located in the ~/.ssh directory) and paste the entire string to the end of the file
 
-  * If the Cohesity hostname is not reachable from Unix/Linux host, then replace the hostname with an IP address.
+* Ensure authorized_keys permissions are set to 755
+
+* If the Cohesity hostname is not reachable from Unix/Linux host, then replace the hostname with an IP address.
 
     ![authorized-keys](./images/ssh-authorized-key.png)
 
-4. Registering a Source, register the Unity’s filesystem share path to backup.
+Registering a Source, register the Unity’s filesystem share path to backup. To register a source,
 
-  To register a source,
+* Navigate to Data Protection > Sources
 
-  * Navigate to Data Protection > Sources
+* Click “Register Source” (+)  and choose NAS
 
-  * Click “Register Source” (+)  and choose NAS
+* Select NAS Source as “Mount Point.”
 
-  * Select NAS Source as “Mount Point.”
+* Select Mode as NFS or SMB
 
-  * Select Mode as NFS or SMB
+* In the Mount Path: Specify the NFS/SMB volume snapshot share path that needs to be backed up.
 
-  * In the Mount Path: Specify the NFS/SMB volume snapshot share path that needs to be backed up. 
-
-  ```
+```text
   Share Path format: <Unity Management IP>:/Cohesity_Unity_Snap_<NFS/CIFS>Share
 
   For Example - 
@@ -80,7 +74,7 @@ uemcli -d 10.2.166.184 -u admin -p Password123 -saveUser
   Share Path: 10.2.166.185:/Cohesity_Unity_Snap_NFSShare
 
   where, 
-  	10.2.166.185 - Unity Data IP
+    10.2.166.185 - Unity Data IP
     /Cohesity_Unity_Snap_NFSShare - Path of the NFS snapshot share, which will be created by the script
 
   For CIFS Mode:
@@ -89,21 +83,19 @@ uemcli -d 10.2.166.184 -u admin -p Password123 -saveUser
   where, 
     10.2.166.185 - Unity Data IP
     /Cohesity_Unity_Snap_CIFSShare - Path of the CIFS snapshot share, which will be created by the script
-  ```
+```
 
-
-  * Toggle on “Skip Mount Point validation during registration.”
+* Toggle on “Skip Mount Point validation during registration.”
 
     ![skip-mount-point.png](./images/skip-mount-point.png)
 
-5. Configuring Protection Group
+Configuring Protection Group
 
-  * Enter the mandatory values to configure a Protection Group ( Protection Group name, Source, Storage Domain, Policy, etc.).
+* Enter the mandatory values to configure a Protection Group ( Protection Group name, Source, Storage Domain, Policy, etc.).
 
-  * Under the Advanced Section Toggle on to **Enable Pre & Post Script**. Below, Screenshot captures the necessary details to configure Pre & Post Script.
+* Under the Advanced Section Toggle on to **Enable Pre & Post Script**. Below, Screenshot captures the necessary details to configure Pre & Post Script.
 
   ![enable-pre-post](./images/enable-pre-post.png)
-
 
   | Field Name               | Value                                              | Notes                                                                                                                      |
 |--------------------------|----------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
@@ -116,8 +108,4 @@ uemcli -d 10.2.166.184 -u admin -p Password123 -saveUser
 
 ### Run script
 
-* The script will now run whenever the protection group is run
-
-### Have any question
-
-Send me an email at ruby.garg@cohesity.com
+The script will now run whenever the protection group is run
