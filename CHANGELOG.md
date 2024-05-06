@@ -2,6 +2,7 @@
 
 ## 2024-05-06
 
+* [dailyObjectStatus.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/dailyObjectStatus) [`Update`] modernized authentication
 * [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Fix`] fixed VM used size edge case
 * [storagePerObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerObjectReport) [`Fix`] fixed VM used size edge case
 
