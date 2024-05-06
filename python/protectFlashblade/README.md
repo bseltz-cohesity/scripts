@@ -113,3 +113,5 @@ Unprotected volume names will be output to a text file that can be used as the v
 * -l, --volumelist: (optional) text file of volume names to protect (one per line)
 * -c, --cloudarchivedirect: (optional) create cloud archive direct job
 * -sd, --storagedomain: (optional) default is 'DefaultStorageDomain'
+* -a, --allvolumes: (optional) protect all protectable volumes
+* -z, --paused: (optional) pause new protection job

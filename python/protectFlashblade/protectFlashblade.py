@@ -1,20 +1,6 @@
 #!/usr/bin/env python
 """Protect FlashBlade Volumes"""
 
-# usage:
-# ./protectFlashblade.py -v mycluster \
-#                        -u myuser \
-#                        -d mydomain.net \
-#                        -p 'My Policy' \
-#                        -j 'My New Job' \
-#                        -f flashblad01 \
-#                        -vol volume1 \
-#                        -t 'America/New_York' \
-#                        -ei \
-#                        -s '00:00' \
-#                        -is 180 \
-#                        -c
-
 # import pyhesity wrapper module
 from pyhesity import *
 
@@ -40,6 +26,8 @@ parser.add_argument('-vol', '--volumename', action='append', type=str)
 parser.add_argument('-l', '--volumelist', type=str)
 parser.add_argument('-c', '--cloudarchivedirect', action='store_true')  # cloud archive direct
 parser.add_argument('-sd', '--storagedomain', type=str, default='DefaultStorageDomain')  # storage domain
+parser.add_argument('-a', '--allvolumes', action='store_true')
+parser.add_argument('-z', '--paused', action='store_true')
 
 args = parser.parse_args()
 
@@ -62,6 +50,8 @@ volumelist = args.volumelist
 cloudarchivedirect = args.cloudarchivedirect
 storagedomain = args.storagedomain
 flashbladesource = args.flashbladesource
+allvolumes = args.allvolumes
+paused = args.paused
 
 # cloud archive direct storage domain
 if cloudarchivedirect:
@@ -104,7 +94,7 @@ if volumelist is not None:
     f = open(volumelist, 'r')
     volumes += [e.strip() for e in f.readlines() if e.strip() != '']
     f.close()
-if len(volumes) == 0:
+if len(volumes) == 0 and allvolumes is not True:
     print('No volumes specified!')
     exit(1)
 
@@ -135,11 +125,19 @@ parentId = flashblade['protectionSource']['id']
 # gather source ids for volumes
 sourceids = []
 
-if len(volumes) > 0:
+if len(volumes) > 0 or allvolumes is True:
     if cloudarchivedirect and len(volumes) > 1:
         print("Cloud Archive Direct jobs are limited to a single volume")
         exit(1)
-    sourceVolumes = [n for n in flashblade['nodes'] if n['protectionSource']['name'].lower() in [v.lower() for v in volumes]]
+    if allvolumes is True:
+        if len(flashblade['nodes']) > 1 and cloudarchivedirect:
+            print("Cloud Archive Direct jobs are limited to a single volume")
+            exit(1)
+        sourceVolumes = [n for n in flashblade['nodes']]
+    else:
+        sourceVolumes = [n for n in flashblade['nodes'] if n['protectionSource']['name'].lower() in [v.lower() for v in volumes]]
+    # display(sourceVolumes)
+    sourceVolumes = [s for s in sourceVolumes if s['protectionSource']['flashBladeProtectionSource']['fileSystem']['backupEnabled'] is True and 'kNfs' in s['protectionSource']['flashBladeProtectionSource']['fileSystem']['protocols']]
     sourceVolumeNames = [n['protectionSource']['name'] for n in sourceVolumes]
     sourceIds = [n['protectionSource']['id'] for n in sourceVolumes]
     missingVolumes = [v for v in volumes if v not in sourceVolumeNames]
@@ -150,7 +148,7 @@ elif cloudarchivedirect:
     print("Cloud Archive Direct jobs are limited to a single volume")
     exit(1)
 else:
-    sourceIds.append(parentId)
+    sourceids.append(parentId)
 
 # new or existing job
 job = [j for j in api('get', 'protectionJobs?environments=kFlashBlade&isActive=true&isDeleted=false') if j['name'].lower() == jobname.lower()]
@@ -204,6 +202,8 @@ if len(job) < 1:
         },
         'isDirectArchiveEnabled': cloudarchivedirect,
     }
+    if paused is True:
+        jobparams['isPaused'] = True
     print('Creating protection job %s...' % jobname)
     result = api('post', 'protectionJobs', jobparams)
 else:
