@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Storage Per Object Report version 2024.04.17 for Python"""
+"""Storage Per Object Report version 2024.05.06 for Python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -279,7 +279,7 @@ def reportStorage():
                                         if snap is not None and 'logicalSizeBytes' in snap['snapshotInfo']['stats'] and snap['snapshotInfo']['stats']['logicalSizeBytes'] > objects[objId]['logical']:
                                             if job['environment'] != 'kVMware' or objects[objId]['logical'] == 0:
                                                 objects[objId]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
-                                        if snap is not None and job['environment'] == 'kVMware' and snap['snapshotInfo']['stats']['logicalSizeBytes'] < objects[objId]['logical']:
+                                        if snap is not None and job['environment'] == 'kVMware' and snap['snapshotInfo']['stats']['logicalSizeBytes'] < objects[objId]['logical'] and snap['snapshotInfo']['stats']['logicalSizeBytes'] > 0:
                                             objects[objId]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
                                         if snap is not None:
                                             objects[objId]['bytesRead'] += snap['snapshotInfo']['stats']['bytesRead']

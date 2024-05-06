@@ -1,4 +1,4 @@
-# version: 2024-04-17
+# version: 2024-05-06
 
 # process commandline arguments
 [CmdletBinding()]
@@ -330,6 +330,7 @@ function reportStorage(){
                                 if($vms){
                                     $vmbytes = $vms[0].vmDocument.objectId.entity.vmwareEntity.frontEndSizeInfo.sizeBytes
                                     if($vmbytes -gt 0){
+                                        # Write-Host "$($object.object.name) $objId $vmbytes"
                                         $objects[$objId]['logical'] = $vmbytes
                                         $objects[$objId]['fetb'] = $vmbytes
                                     }
@@ -344,10 +345,11 @@ function reportStorage(){
                                     $objects[$objId]['logical'] = $snap.snapshotInfo.stats.logicalSizeBytes
                                 }
                             }
-                            if($job.environment -eq 'kVMware' -and $snap.snapshotInfo.stats.logicalSizeBytes -lt $objects[$objId]['logical']){
+                            if($job.environment -eq 'kVMware' -and $snap.snapshotInfo.stats.logicalSizeBytes -lt $objects[$objId]['logical'] -and $snap.snapshotInfo.stats.logicalSizeBytes -gt 0){
+                                # Write-Host "$($object.object.name)  $($snap.snapshotInfo.stats.logicalSizeBytes) -----------------------"  # =========================================
                                 $objects[$objId]['logical'] = $snap.snapshotInfo.stats.logicalSizeBytes
                             }
-                            if(!$snap -and $objId -in $objects.Keys -and $archivalInfo.stats.PSObject.Properties['logicalSizeBytes'] -and $archivalInfo.stats.logicalSizeBytes -gt $objects[$objId]['archiveLogical']){
+                            if(!$snap -and $objId -in $objects.Keys -and $archivalInfo.stats.PSObject.Properties['logicalSizeBytes'] -and $archivalInfo.stats.logicalSizeBytes -gt $objects[$objId]['archiveLogical'] -and $objects[$objId]['archiveLogical'] -gt 0){
                                 $objects[$objId]['archiveLogical'] = $archivalInfo.stats.logicalSizeBytes
                             }
                             if($objId -in $objects.Keys){
@@ -482,6 +484,7 @@ function reportStorage(){
                     continue
                 }
                 $objFESize = toUnits $thisObject['logical']
+
                 if($thisObject['archiveLogical'] -gt 0){
                     $objFESize = toUnits $thisObject['archiveLogical']
                 }
@@ -549,6 +552,7 @@ function reportStorage(){
                 }
                 $alloc = toUnits $thisObject['logical']
                 if($job.environment -eq 'kVMware'){
+                    # Write-Host "$($thisObject['name']) $objFESize" # ============================================
                     $alloc = toUnits $thisObject['alloc']
                 }
                 $sumObjectsUsed += $thisObject['logical']
