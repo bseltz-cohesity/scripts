@@ -93,9 +93,10 @@ R | Snapshots | number of local backups resident on Cohesity
 S | Log Backups | number of log backups (if applicable) resident on Cohesity
 T | Oldest Backup | oldest backup resident on Cohesity
 U | Newest Backup | newest backup resident on Cohesity
-V | Archive Count | number of archives stored in external targets
-W | Oldest Archive | oldest archive available for restore
-X | GiB Archived | amount of deduped/compressed data, for this object, resident on cloud archive targets
-Y | GiB per Archive Target | amount of deduped/compressed data, for this object, resident on each archive target
-Z | Description | description of protection group or view
-AA | VMWare Tags | VMWare Tags assigned to VM
+V | Newest Datalock Expiry | datalock expiration date of most recent backup
+W | Archive Count | number of archives stored in external targets
+X | Oldest Archive | oldest archive available for restore
+Y | GiB Archived | amount of deduped/compressed data, for this object, resident on cloud archive targets
+Z | GiB per Archive Target | amount of deduped/compressed data, for this object, resident on each archive target
+AA | Description | description of protection group or view
+AB | VMWare Tags | VMWare Tags assigned to VM

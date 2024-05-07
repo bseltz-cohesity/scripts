@@ -67,7 +67,7 @@ csvfileName = '%s/storagePerObjectReport-%s.csv' % (folder, datestring)
 clusterStatsFileName = '%s/storagePerObjectReport-%s-clusterstats.csv' % (folder, datestring)
 csv = codecs.open(csvfileName, 'w', 'utf-8')
 clusterStats = codecs.open(clusterStatsFileName, 'w', 'utf-8')
-csv.write('"Cluster Name","Origin","Stats Age (Days)","Protection Group","Tenant","Storage Domain ID","Storage Domain Name","Environment","Source Name","Object Name","Front End Allocated %s","Front End Used %s","%s Before Reduction","%s After Reduction","%s After Reduction plus Resiliency (Raw)","Reduction Ratio","%s Raw Change Last %s Days","Snapshots","Log Backups","Oldest Backup","Newest Backup","Archive Count","Oldest Archive","%s Archived","%s per Archive Target","Description","VM Tags"\n' % (units, units, units, units, units, units, growthdays, units, units))
+csv.write('"Cluster Name","Origin","Stats Age (Days)","Protection Group","Tenant","Storage Domain ID","Storage Domain Name","Environment","Source Name","Object Name","Front End Allocated %s","Front End Used %s","%s Before Reduction","%s After Reduction","%s After Reduction plus Resiliency (Raw)","Reduction Ratio","%s Raw Change Last %s Days","Snapshots","Log Backups","Oldest Backup","Newest Backup","Newest DataLock Expiry","Archive Count","Oldest Archive","%s Archived","%s per Archive Target","Description","VM Tags"\n' % (units, units, units, units, units, units, growthdays, units, units))
 clusterStats.write('"Cluster Name","Total Used %s","BookKeeper Used %s","Unaccounted Usage %s","Unaccounted Percent","Data Reduction","Sum Objects Size %s","Sum Objects Written %s","Sum Objects Written with Resiliency %s","Storage Variance Factor"\n' % (units, units, units, units, units, units))
 
 
@@ -197,6 +197,7 @@ def reportStorage():
             # get protection runs in retention
             archiveCount = 0
             oldestArchive = '-'
+            lastDataLock = '-'
             endUsecs = nowUsecs
             while 1:
                 if debug is True:
@@ -211,20 +212,27 @@ def reportStorage():
                             for object in [o for o in run['objects']]:
                                 objId = object['object']['id']
                                 archivalInfo = None
+                                runInfo = None
                                 if 'localSnapshotInfo' in object:
                                     snap = object['localSnapshotInfo']
                                     runType = run['localBackupInfo']['runType']
+                                    runInfo = run['localBackupInfo']
                                 elif 'originalBackupInfo' in object:
                                     snap = object['originalBackupInfo']
                                     runType = run['originalBackupInfo']['runType']
+                                    runInfo = run['originalBackupInfo']
                                 else:
                                     # CAD
                                     snap = None
                                     if 'archivalInfo' in object:
                                         try:
                                             archivalInfo = object['archivalInfo']['archivalTargetResults'][0]
+                                            runInfo = run['archivalInfo']['archivalTargetResults'][0]
                                         except Exception:
                                             archivalInfo = None
+                                if runInfo is not None and lastDataLock == '-' and 'dataLockConstraints' in runInfo and 'expiryTimeUsecs' in runInfo['dataLockConstraints'] and runInfo['dataLockConstraints']['expiryTimeUsecs'] > 0:
+                                    if runInfo['dataLockConstraints']['expiryTimeUsecs'] > nowUsecs:
+                                        lastDataLock = usecsToDate(runInfo['dataLockConstraints']['expiryTimeUsecs'])
                                 try:
                                     if objId not in objects and not (job['environment'] == 'kAD' and object['object']['environment'] == 'kAD') and not (job['environment'] in ['kSQL', 'kOracle', 'kExchange'] and object['object']['objectType'] == 'kHost'):
                                         objects[objId] = {}
@@ -238,6 +246,7 @@ def reportStorage():
                                         objects[objId]['numSnaps'] = 0
                                         objects[objId]['numLogs'] = 0
                                         objects[objId]['vmTags'] = ''
+                                        objects[objId]['lastDataLock'] = lastDataLock
                                         if 'sourceId' in object['object']:
                                             objects[objId]['sourceId'] = object['object']['sourceId']
                                         if snap is not None:
@@ -283,6 +292,7 @@ def reportStorage():
                                             objects[objId]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
                                         if snap is not None:
                                             objects[objId]['bytesRead'] += snap['snapshotInfo']['stats']['bytesRead']
+                                            objects[objId]['lastDataLock'] = lastDataLock
                                         if snap is not None and snap['snapshotInfo']['startTimeUsecs'] > growthdaysusecs:
                                             objects[objId]['growth'] += snap['snapshotInfo']['stats']['bytesRead']
                                             jobObjGrowth += snap['snapshotInfo']['stats']['bytesRead']
@@ -400,7 +410,7 @@ def reportStorage():
                             oldestBackup = usecsToDate(thisObject['oldestBackup'])
                     except Exception:
                         pass
-                    csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, job['name'], tenant, sdid, sdname, job['environment'][1:], sourceName, thisObject['name'], alloc, objFESize, objDataIn, objWritten, objWrittenWithResiliency, jobReduction, objGrowth, thisObject['numSnaps'], thisObject['numLogs'], oldestBackup, newestBackup, archiveCount, oldestArchive, totalArchived, vaultStats, jobDescription, thisObject['vmTags']))
+                    csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, job['name'], tenant, sdid, sdname, job['environment'][1:], sourceName, thisObject['name'], alloc, objFESize, objDataIn, objWritten, objWrittenWithResiliency, jobReduction, objGrowth, thisObject['numSnaps'], thisObject['numLogs'], oldestBackup, newestBackup, thisObject['lastDataLock'], archiveCount, oldestArchive, totalArchived, vaultStats, jobDescription, thisObject['vmTags']))
         else:
             if job['isActive'] is True:
                 stats = localStats
@@ -409,6 +419,7 @@ def reportStorage():
             if 'statsList' in stats and stats['statsList'] is not None:
                 thisStat = [s for s in stats['statsList'] if s['id'] == int(v1JobId)]
             endUsecs = nowUsecs
+            lastDataLock = '-'
             while 1:
                 if debug is True:
                     print('    getting protection runs')
@@ -418,10 +429,16 @@ def reportStorage():
                         # per object stats
                         if 'objects' in run and run['objects'] is not None and len(run['objects']) > 0:
                             for object in [o for o in run['objects']]:
+                                runInfo = None
                                 if 'localSnapshotInfo' in object:
                                     snap = object['localSnapshotInfo']
+                                    runInfo = run['localBackupInfo']
                                 else:
                                     snap = object['originalBackupInfo']
+                                    runInfo = run['originalBackupInfo']
+                                if runInfo is not None and lastDataLock == '-' and 'dataLockConstraints' in runInfo and 'expiryTimeUsecs' in runInfo['dataLockConstraints'] and runInfo['dataLockConstraints']['expiryTimeUsecs'] > 0:
+                                    if runInfo['dataLockConstraints']['expiryTimeUsecs'] > nowUsecs:
+                                        lastDataLock = usecsToDate(runInfo['dataLockConstraints']['expiryTimeUsecs'])
                                 if object['object']['name'] not in viewHistory:
                                     viewHistory[object['object']['name']] = {}
                                     viewHistory[object['object']['name']]['stats'] = thisStat
@@ -433,6 +450,7 @@ def reportStorage():
                                     viewHistory[object['object']['name']]['oldestBackup'] = usecsToDate(snap['snapshotInfo']['startTimeUsecs'])
                                 viewHistory[object['object']['name']]['oldestBackup'] = usecsToDate(snap['snapshotInfo']['startTimeUsecs'])
                                 viewHistory[object['object']['name']]['numSnaps'] += 1
+                                viewHistory[object['object']['name']]['lastDataLock'] = lastDataLock
                     if 'archivalInfo' in run and run['archivalInfo'] is not None and 'archivalTargetResults' in run['archivalInfo'] and run['archivalInfo']['archivalTargetResults'] is not None and len(run['archivalInfo']['archivalTargetResults']) > 0:
                         for archiveResult in run['archivalInfo']['archivalTargetResults']:
                             if 'status' in archiveResult and archiveResult['status'] == 'Succeeded':
@@ -559,7 +577,11 @@ def reportStorage():
             viewDescription = ''
             if 'description' in view:
                 viewDescription = view['description']
-            csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, jobName, tenant, view['storageDomainId'], view['storageDomainName'], 'View', sourceName, viewName, objFESize, objFESize, round(dataIn / multiplier, 1), round(jobWritten / multiplier, 1), round(consumption / multiplier, 1), jobReduction, objGrowth, numSnaps, numLogs, oldestBackup, newestBackup, archiveCount, oldestArchive, totalArchived, vaultStats, viewDescription, ''))
+            try:
+                lastDataLock = viewHistory[view['name']]['lastDataLock']
+            except Exception:
+                lastDataLock = '-'
+            csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, jobName, tenant, view['storageDomainId'], view['storageDomainName'], 'View', sourceName, viewName, objFESize, objFESize, round(dataIn / multiplier, 1), round(jobWritten / multiplier, 1), round(consumption / multiplier, 1), jobReduction, objGrowth, numSnaps, numLogs, oldestBackup, newestBackup, lastDataLock, archiveCount, oldestArchive, totalArchived, vaultStats, viewDescription, ''))
     bookKeeperStart = int(midnightusecs / 1000 - (29 * 86400000))
     bookKeeperEnd = int(midnightusecs / 1000 + 86400000)
     bookKeeperStats = api('get', 'statistics/timeSeriesStats?startTimeMsecs=%s&schemaName=MRCounters&metricName=bytes_value&rollupIntervalSecs=180&rollupFunction=average&entityId=BookkeeperChunkBytesPhysical&endTimeMsecs=%s' % (bookKeeperStart, bookKeeperEnd))
