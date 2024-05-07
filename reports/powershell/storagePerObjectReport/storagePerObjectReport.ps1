@@ -1,4 +1,4 @@
-# version: 2024-05-06
+# version: 2024-05-07
 
 # process commandline arguments
 [CmdletBinding()]
@@ -64,7 +64,7 @@ foreach ($Parameter in $ParameterList) {
 }
 
 # headings
-"""Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Storage Domain ID"",""Storage Domain Name"",""Environment"",""Source Name"",""Object Name"",""Front End Allocated $unit"",""Front End Used $unit"",""$unit Read"",""$unit Written"",""$unit Written plus Resiliency"",""Reduction Ratio"",""$unit Written Last $growthDays Days"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Newest DataLock Expiry"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description"",""VM Tags""" | Out-File -FilePath $outfileName # -Encoding utf8
+"""Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Storage Domain ID"",""Storage Domain Name"",""Environment"",""Source Name"",""Object Name"",""Front End Allocated $unit"",""Front End Used $unit"",""$unit Before Reduction"",""$unit After Reduction"",""$unit After Reduction plus Resiliency (Raw)"",""Reduction Ratio"",""$unit Raw Change Last $growthDays Days"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Newest DataLock Expiry"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description"",""VM Tags""" | Out-File -FilePath $outfileName # -Encoding utf8
 """Cluster Name"",""Total Used $unit"",""BookKeeper Used $unit"",""Unaccounted Usage $unit"",""Unaccounted Percent"",""Data Reduction"",""Sum Objects Size $unit"",""Sum Objects Written $unit"",""Sum Objects Written with Resiliency $unit"",""Storage Variance Factor""" | Out-File -FilePath $clusterStatsFileName
 
 if($secondFormat){
@@ -492,6 +492,7 @@ function reportStorage(){
                 if($jobObjGrowth -ne 0){
                     $objGrowth = toUnits ($jobGrowth * $thisObject['growth'] / $jobObjGrowth)
                 }
+                $objGrowth = $objGrowth * $resiliencyFactor
                 if($jobFESize -gt 0){
                     $objWeight = ($thisObject['logical'] + $thisObject['bytesRead']) / $jobFESize
                     if($thisObject['archiveLogical'] -gt 0){

@@ -70,26 +70,32 @@ To connect through Helios:
 
 ## Column Descriptions
 
-* Cluster Name: name of cluster queried
-* Origin: local or replica
-* Stats Age: age (days) of stats (should be 2 or less)
-* Protection Group: name of protection group
-* Tenant: name of organization
-* Environment: protection group type
-* Source Name: name of registered source (e.g. vCenter, server, etc.)
-* Object Name: name of object (e.g. VM, NAS share, database, etc.)
-* Logical GiB: front-end size of object as reported by the source
-* GiB Read: amount of data read from the source for this object, resident on Cohesity, before dedup/compression
-* GiB Written: amount of stored for this object, resident on Cohesity, after deduped/compression (before adding resiliency striping overhead)
-* GiB Written plus Resiliency: amount of deduped/compressed data for this object, resident on Cohesity (after adding resiliency striping overhead)
-* Reduction Ratio: dedup/compression ratio of protection group
-* GiB Written Last 7 Days: amount of deduped/compressed data added, for this object, in past X days
-* Snapshots: number of local backups resident on Cohesity
-* Log Backups: number of log backups (if applicable) resident on Cohesity
-* Oldest Backup: oldest backup resident on Cohesity
-* Newest Backup: newest backup resident on Cohesity
-* Archive Count: number of archives stored in external targets
-* Oldest Archive: oldest archive available for restore
-* GiB Archived: amount of deduped/compressed data, for this object, resident on cloud archive targets
-* GiB per Archive Target: amount of deduped/compressed data, for this object, resident on each archive target
-* Description: description of protection group or view
+- | Name | Description
+--- | --- | ---
+A | Cluster Name | name of cluster queried
+B | Origin | local or replica
+C | Stats Age | age (days) of stats (should be 2 or less)
+D | Protection Group | name of protection group
+E | Tenant | name of organization
+F | Storage Domain ID | ID of storage domain
+G | Storage Domain Name | name of storage domain
+H | Environment | protection group type
+I | Source Name | name of registered source (e.g. vCenter, server, etc.)
+J | Object Name | name of object (e.g. VM, NAS share, database, etc.)
+K | Front End Allocated | front-end allocated size of object as reported by the source
+L | Front End Used | front-end used size of object as reported by the source
+M | Before Reduction | amount of data ingested and retained for this object, before dedup/compression
+N | After Reduction | amount of data ingested and retained for this object, after deduped/compression (before adding resiliency striping overhead)
+O | After Reduction plus Resiliency (Raw) | amount of data ingested and retained for this object, after deduped/compression (after adding resiliency striping overhead)
+P | Reduction Ratio | dedup/compression ratio of protection group
+Q | Raw Change Last 7 Days | change of Raw consumption for this object, in past X days
+R | Snapshots | number of local backups resident on Cohesity
+S | Log Backups | number of log backups (if applicable) resident on Cohesity
+T | Oldest Backup | oldest backup resident on Cohesity
+U | Newest Backup | newest backup resident on Cohesity
+V | Archive Count | number of archives stored in external targets
+W | Oldest Archive | oldest archive available for restore
+X | GiB Archived | amount of deduped/compressed data, for this object, resident on cloud archive targets
+Y | GiB per Archive Target | amount of deduped/compressed data, for this object, resident on each archive target
+Z | Description | description of protection group or view
+AA | VMWare Tags | VMWare Tags assigned to VM
