@@ -69,7 +69,7 @@ To connect through Helios:
 
 ## Column Descriptions
 
-- | Name | Description
+Index | Name | Description
 --- | --- | ---
 A | Cluster Name | name of cluster queried
 B | Origin | local or replica
