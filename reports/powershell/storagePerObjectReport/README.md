@@ -87,7 +87,7 @@ M | Before Reduction | amount of data ingested and retained for this object, bef
 N | After Reduction | amount of data ingested and retained for this object, after deduped/compression (before adding resiliency striping overhead)
 O | After Reduction plus Resiliency (Raw) | amount of data ingested and retained for this object, after deduped/compression (after adding resiliency striping overhead)
 P | Reduction Ratio | dedup/compression ratio of protection group
-Q | Raw Change Last 7 Days | change of Raw consumption for this object, in past X days
+Q | Raw Change Last X Days | change of Raw consumption for this object, in past X days
 R | Snapshots | number of local backups resident on Cohesity
 S | Log Backups | number of log backups (if applicable) resident on Cohesity
 T | Oldest Backup | oldest backup resident on Cohesity
