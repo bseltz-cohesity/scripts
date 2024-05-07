@@ -83,7 +83,7 @@ else:
     remote = remote[0]
 
 jobs = api('get', 'data-protect/protection-groups', v=2)
-jobs = [j for j in jobs['protectionGroups'] if 'isDeleted' not in j or j['isDeleted'] is not True]
+jobs = [j for j in jobs['protectionGroups']]  # if 'isDeleted' not in j or j['isDeleted'] is not True]
 
 # catch invalid job names
 notfoundjobs = [n for n in jobnames if n.lower() not in [j['name'].lower() for j in jobs]]
