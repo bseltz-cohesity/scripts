@@ -84,9 +84,9 @@ I | Source Name | name of registered source (e.g. vCenter, server, etc.)
 J | Object Name | name of object (e.g. VM, NAS share, database, etc.)
 K | Front End Allocated | front-end allocated size of object as reported by the source
 L | Front End Used | front-end used size of object as reported by the source
-M | Before Reduction | amount of data ingested and retained for this object, before dedup/compression
-N | After Reduction | amount of data ingested and retained for this object, after deduped/compression (before adding resiliency striping overhead)
-O | After Reduction plus Resiliency (Raw) | amount of data ingested and retained for this object, after deduped/compression (after adding resiliency striping overhead)
+M | Stored (Before Reduction) | amount of data stored for this object, before dedup/compression
+N | Stored (After Reduction) | amount of data stored for this object, after dedup/compression
+O | Stored (After Reduction and Resiliency) | amount of data stored for this object, after dedup/compression and resiliency
 P | Reduction Ratio | dedup/compression ratio of protection group
 Q | Raw Change Last X Days | change of Raw consumption for this object, in past X days
 R | Snapshots | number of local backups resident on Cohesity

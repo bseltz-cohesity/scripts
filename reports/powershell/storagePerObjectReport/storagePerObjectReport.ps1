@@ -64,8 +64,8 @@ foreach ($Parameter in $ParameterList) {
 }
 
 # headings
-"""Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Storage Domain ID"",""Storage Domain Name"",""Environment"",""Source Name"",""Object Name"",""Front End Allocated $unit"",""Front End Used $unit"",""$unit Before Reduction"",""$unit After Reduction"",""$unit After Reduction plus Resiliency (Raw)"",""Reduction Ratio"",""$unit Raw Change Last $growthDays Days"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Newest DataLock Expiry"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description"",""VM Tags""" | Out-File -FilePath $outfileName # -Encoding utf8
-"""Cluster Name"",""Total Used $unit"",""BookKeeper Used $unit"",""Unaccounted Usage $unit"",""Unaccounted Percent"",""Data Reduction"",""Sum Objects Size $unit"",""Sum Objects Written $unit"",""Sum Objects Written with Resiliency $unit"",""Storage Variance Factor""" | Out-File -FilePath $clusterStatsFileName
+"""Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Storage Domain ID"",""Storage Domain Name"",""Environment"",""Source Name"",""Object Name"",""Front End Allocated $unit"",""Front End Used $unit"",""$unit Stored (Before Reduction)"",""$unit Stored (After Reduction)"",""$unit Stored (After Reduction and Resiliency)"",""Reduction Ratio"",""$unit Change Last $growthDays Days (After Reduction and Resiliency)"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Newest DataLock Expiry"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description"",""VM Tags""" | Out-File -FilePath $outfileName # -Encoding utf8
+"""Cluster Name"",""Total Used $unit"",""BookKeeper Used $unit"",""Unaccounted Usage $unit"",""Unaccounted Percent"",""Reduction Ratio"",""All Objects Front End Size $unit"",""All Objects Stored (After Reduction) $unit"",""All Objects Stored (After Reduction and Resiliency) $unit"",""Storage Variance Factor""" | Out-File -FilePath $clusterStatsFileName
 
 if($secondFormat){
     $outfile2 = "customFormat2-storagePerObjectReport-$dateString.csv"
