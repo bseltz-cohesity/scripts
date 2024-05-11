@@ -15,20 +15,6 @@ param (
     [Parameter()][string]$pstPassword = $null
 )
 
-if(! $pstPassword){
-    while($True){
-        $secureNewPassword = Read-Host -Prompt "  Enter PST password" -AsSecureString
-        $secureConfirmPassword = Read-Host -Prompt "Confirm PST password" -AsSecureString
-        $pstPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureNewPassword ))
-        $confirmPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureConfirmPassword ))
-        if($pstPassword -cne $confirmPassword){
-            Write-Host "Passwords do not match" -ForegroundColor Yellow
-        }else{
-            break
-        }
-    }
-}
-
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
@@ -56,6 +42,21 @@ if($USING_HELIOS){
     }
 }
 # end authentication =========================================
+
+
+if(! $pstPassword){
+    while($True){
+        $secureNewPassword = Read-Host -Prompt "  Enter PST password" -AsSecureString
+        $secureConfirmPassword = Read-Host -Prompt "Confirm PST password" -AsSecureString
+        $pstPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureNewPassword ))
+        $confirmPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureConfirmPassword ))
+        if($pstPassword -cne $confirmPassword){
+            Write-Host "Passwords do not match" -ForegroundColor Yellow
+        }else{
+            break
+        }
+    }
+}
 
 
 # gather list from command line params and file
