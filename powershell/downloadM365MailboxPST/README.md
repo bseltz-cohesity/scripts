@@ -30,7 +30,8 @@ Place both files in a folder together and run the main script like so:
 ./downloadM365MailboxPST.ps1 -vip mycluster `
                              -username myusername `
                              -domain mydomain.net `
-                             -sourceUser someuser@mydomain.onmicrosoft.com
+                             -sourceUserName someuser1@mydomain.onmicrosoft.com, someuser2@mydomain.onmicrosoft.com `
+                             -fileName .\mypst.zip
 ```
 
 ## Authentication Parameters
