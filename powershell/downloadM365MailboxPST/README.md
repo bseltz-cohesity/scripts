@@ -31,7 +31,8 @@ Place both files in a folder together and run the main script like so:
                              -username myusername `
                              -domain mydomain.net `
                              -sourceUserName someuser1@mydomain.onmicrosoft.com, someuser2@mydomain.onmicrosoft.com `
-                             -fileName .\mypst.zip
+                             -fileName .\mypst.zip `
+                             -pstPassword bosco
 ```
 
 ## Authentication Parameters
