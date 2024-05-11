@@ -48,4 +48,5 @@ Place both files in a folder together and run the main script like so:
 
 ## Other Parameters
 
-* -sourceUser: OneDrive user to restore from/to
+* -sourceUserName: (optional) one or more user names to download (comma separated)
+* -sourceUserList: (optional) text file of user names to download (one per line)
