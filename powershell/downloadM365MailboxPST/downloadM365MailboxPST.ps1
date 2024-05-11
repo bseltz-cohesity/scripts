@@ -13,7 +13,8 @@ param (
     [Parameter()][string]$clusterName = $null,
     [Parameter()][array]$sourceUserName,
     [Parameter()][string]$sourceUserList,
-    [Parameter()][string]$pstPassword = $null
+    [Parameter()][string]$pstPassword = $null,
+    [Parameter()][string]$fileName = '.\pst.zip'
 )
 
 # source the cohesity-api helper code
@@ -130,7 +131,7 @@ $recovery = api post -v2 data-protect/recoveries $recoveryParams
 
 # wait for restores to complete
 
-"Waiting for restore to complete..."
+"Waiting for PST conversion to complete..."
 $finishedStates = @('Canceled', 'Succeeded', 'Failed')
 $pass = 0
 do{
@@ -139,9 +140,9 @@ do{
     $status = $recoveryTask.status
 
 } until ($status -in $finishedStates)
-write-host "Restore task finished with status: $status"
+write-host "PST conversion finished with status: $status"
 $downloadURL = "https://$vip/v2/data-protect/recoveries/$($recovery.id)/downloadFiles?clusterId=$($cluster.id)&includeTenants=true"
 if($status -eq 'Succeeded'){
-    Write-Host 'downloading zip file...'
-    fileDownload -uri $downloadURL -filename 'pst.zip'
+    Write-Host "downloading zip file to $fileName"
+    fileDownload -uri $downloadURL -filename $fileName
 }
