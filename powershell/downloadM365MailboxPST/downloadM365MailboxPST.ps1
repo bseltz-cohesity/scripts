@@ -11,7 +11,8 @@ param (
     [Parameter()][switch]$mcm,
     [Parameter()][string]$mfaCode = $null,
     [Parameter()][string]$clusterName = $null,
-    [Parameter(Mandatory=$True)][string]$sourceUser,
+    [Parameter()][array]$sourceUserName,
+    [Parameter()][string]$sourceUserList,
     [Parameter()][string]$pstPassword = $null
 )
 
@@ -80,15 +81,9 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
     return ($items | Sort-Object -Unique)
 }
 
-$userSearch = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverMailbox&searchString=$sourceUser&environments=kO365"
-$userObj = $userSearch.objects | Where-Object name -eq $sourceUser
-if(!$userObj){
-    Write-Host "One Drive User $sourceUser not found" -ForegroundColor Yellow
-    exit
-}
+$sourceUserNames = @(gatherList -Param $sourceUserName -FilePath $sourceUserList -Name 'sourceUserName' -Required $True)
 
-$protectionGroupId = $userObj.latestSnapshotsInfo[0].protectionGroupId
-$snapshotId = $userObj.latestSnapshotsInfo[0].localSnapshotInfo.snapshotId
+$cluster = api get cluster
 
 $taskName = "Recover_Mailboxes_$(get-date -UFormat '%b_%d_%Y_%H-%M%p')"
 
@@ -102,22 +97,33 @@ $recoveryParams = @{
             "skipRecoverArchiveMailbox" = $true;
             "skipRecoverRecoverableItems" = $true;
             "skipRecoverArchiveRecoverableItems" = $true;
-            "objects" = @(
-                @{
-                    "mailboxParams" = @{
-                        "recoverFolders" = $null;
-                        "recoverEntireMailbox" = $true
-                    };
-                    "ownerInfo" = @{
-                        "snapshotId" = $snapshotId
-                    }
-                }
-            );
+            "objects" = @();
             "pstParams" = @{
                 "password" = $pstPassword
             }
         }
     }
+}
+
+foreach($sourceUser in $sourceUserNames){
+    $userSearch = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverMailbox&searchString=$sourceUser&environments=kO365"
+    $userObj = $userSearch.objects | Where-Object name -eq $sourceUser
+    if(!$userObj){
+        Write-Host "One Drive User $sourceUser not found" -ForegroundColor Yellow
+        exit
+    }
+    
+    $protectionGroupId = $userObj.latestSnapshotsInfo[0].protectionGroupId
+    $snapshotId = $userObj.latestSnapshotsInfo[0].localSnapshotInfo.snapshotId
+    $recoveryParams.office365Params.recoverMailboxParams.objects = @($recoveryParams.office365Params.recoverMailboxParams.objects + @{
+        "mailboxParams" = @{
+            "recoverFolders" = $null;
+            "recoverEntireMailbox" = $true
+        };
+        "ownerInfo" = @{
+            "snapshotId" = $snapshotId
+        }
+    })
 }
 
 $recovery = api post -v2 data-protect/recoveries $recoveryParams
@@ -134,3 +140,8 @@ do{
 
 } until ($status -in $finishedStates)
 write-host "Restore task finished with status: $status"
+$downloadURL = "https://$vip/v2/data-protect/recoveries/$($recovery.id)/downloadFiles?clusterId=$($cluster.id)&includeTenants=true"
+if($status -eq 'Succeeded'){
+    Write-Host 'downloading zip file...'
+    fileDownload -uri $downloadURL -filename 'pst.zip'
+}
