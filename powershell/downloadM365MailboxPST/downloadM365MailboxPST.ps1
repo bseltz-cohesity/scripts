@@ -14,7 +14,8 @@ param (
     [Parameter()][array]$sourceUserName,
     [Parameter()][string]$sourceUserList,
     [Parameter()][string]$pstPassword = $null,
-    [Parameter()][string]$fileName = '.\pst.zip'
+    [Parameter()][string]$fileName = '.\pst.zip',
+    [Parameter()][datetime]$recoverDate
 )
 
 # source the cohesity-api helper code
@@ -110,12 +111,27 @@ foreach($sourceUser in $sourceUserNames){
     $userSearch = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverMailbox&searchString=$sourceUser&environments=kO365"
     $userObj = $userSearch.objects | Where-Object name -eq $sourceUser
     if(!$userObj){
-        Write-Host "One Drive User $sourceUser not found" -ForegroundColor Yellow
+        Write-Host "Mailbox User $sourceUser not found" -ForegroundColor Yellow
         exit
     }
-    
+
     $protectionGroupId = $userObj.latestSnapshotsInfo[0].protectionGroupId
     $snapshotId = $userObj.latestSnapshotsInfo[0].localSnapshotInfo.snapshotId
+
+    if($recoverDate){
+        $recoverDateUsecs = dateToUsecs ($recoverDate.AddMinutes(1))
+    
+        $snapshots = api get -v2 "data-protect/objects/$($userObj.id)/snapshots?protectionGroupIds=$($protectionGroupId)"
+        $snapshots = $snapshots.snapshots | Sort-Object -Property runStartTimeUsecs -Descending | Where-Object runStartTimeUsecs -lt $recoverDateUsecs
+        if($snapshots -and $snapshots.Count -gt 0){
+            $snapshot = $snapshots[0]
+            $snapshotId = $snapshot.id
+        }else{
+            Write-Host "No snapshots available for $sourceUser from specified date"
+            exit
+        }
+    }
+
     $recoveryParams.office365Params.recoverMailboxParams.objects = @($recoveryParams.office365Params.recoverMailboxParams.objects + @{
         "mailboxParams" = @{
             "recoverFolders" = $null;

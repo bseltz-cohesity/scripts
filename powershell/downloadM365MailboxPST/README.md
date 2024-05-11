@@ -54,3 +54,4 @@ Place both files in a folder together and run the main script like so:
 * -sourceUserList: (optional) text file of user names to download (one per line)
 * -fileName: (optional) path/name of zip file to download (default is '.\pst.zip')
 * -pstPassword: (optional) password for PSTs (will be prompted if omitted)
+* -recoverDate: (optional) datetime of snapshot to download e.g '2024-05-10 23:30:00' (will use latest snapshot if omitted)
