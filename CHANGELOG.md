@@ -1,5 +1,10 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-05-12
+
+* [downloadM365MailboxPST.py](https://github.com/cohesity/community-automation-samples/tree/main/python/downloadM365MailboxPST) [`New`] Download M365 Mailbox as PST
+* [downloadM365MailboxPST.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/downloadM365MailboxPST) [`New`] Download M365 Mailbox as PST
+
 ## 2024-05-06
 
 * [dailyObjectStatus.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/dailyObjectStatus) [`Update`] modernized authentication
