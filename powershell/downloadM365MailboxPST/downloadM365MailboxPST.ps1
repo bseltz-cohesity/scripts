@@ -132,6 +132,7 @@ foreach($sourceUser in $sourceUserNames){
         }
     }
 
+    Write-Host "Processing $sourceUser"
     $recoveryParams.office365Params.recoverMailboxParams.objects = @($recoveryParams.office365Params.recoverMailboxParams.objects + @{
         "mailboxParams" = @{
             "recoverFolders" = $null;
