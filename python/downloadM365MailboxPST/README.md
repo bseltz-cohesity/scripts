@@ -51,7 +51,7 @@ To create a new protection group:
 
 ## Other Parameters
 
-* -s, --sourceusername: (optional) name of mailbox user to download (repeat for multiple)
+* -s, --sourceusername: (optional) name or SMTP of mailbox user to download (repeat for multiple)
 * -l, --sourceuserlist: (optional) text file of mailbox users to download (one per line)
 * -f, --filename: (optional) zip file name to download (default is pst.zip)
 * -r, --recoverdate: (optional) restore from on or before this date (e.g. '2024-05-11 23:45:00')

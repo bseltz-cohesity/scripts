@@ -111,7 +111,7 @@ $recoveryParams = @{
 
 foreach($sourceUser in $sourceUserNames){
     $userSearch = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverMailbox&searchString=$sourceUser&environments=kO365"
-    $userObjs = $userSearch.objects | Where-Object {$_.name -eq $sourceUser -or $_.uuid -eq $sourceUser}
+    $userObjs = $userSearch.objects | Where-Object {$_.name -eq $sourceUser}
     if(!$userObjs){
         foreach($userObj in $userSearch.objects){
             $userSource = api get protectionSources/objects/$($userObj.id)

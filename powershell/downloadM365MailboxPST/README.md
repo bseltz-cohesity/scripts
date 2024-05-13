@@ -50,7 +50,7 @@ Place both files in a folder together and run the main script like so:
 
 ## Other Parameters
 
-* -sourceUserName: (optional) one or more user names to download (comma separated)
+* -sourceUserName: (optional) one or more user names or SMTP to download (comma separated)
 * -sourceUserList: (optional) text file of user names to download (one per line)
 * -fileName: (optional) path/name of zip file to download (default is '.\pst.zip')
 * -pstPassword: (optional) password for PSTs (will be prompted if omitted)

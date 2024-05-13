@@ -119,7 +119,7 @@ recoveryParams = {
 
 for sourceUser in sourceusernames:
     userSearch = api('get', 'data-protect/search/protected-objects?snapshotActions=RecoverMailbox&searchString=%s&environments=kO365' % sourceUser, v=2)
-    userObjs = [o for o in userSearch['objects'] if o['name'].lower() == sourceUser.lower() or o['uuid'].lower() == sourceUser.lower()]
+    userObjs = [o for o in userSearch['objects'] if o['name'].lower() == sourceUser.lower()]
     if userSearch is not None and 'objects' in userSearch and userSearch['objects'] is not None and len(userSearch['objects']) > 0 and userObjs is None or len(userObjs) == 0:
         for userObj in userSearch['objects']:
             userSource = api('get', 'protectionSources/objects/%s' % userObj['id'])
