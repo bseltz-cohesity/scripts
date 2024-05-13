@@ -42,6 +42,7 @@ parser.add_argument('-l', '--latest', action='store_true')            # only use
 parser.add_argument('-w', '--wait', action='store_true')              # wait for completion and report result
 parser.add_argument('-k', '--taskname', type=str, default=None)       # recoverytask name
 parser.add_argument('-x', '--noindex', action='store_true')           # force no index usage
+parser.add_argument('-z', '--sleeptimeseconds', type=str, default=30)
 args = parser.parse_args()
 
 vip = args.vip
@@ -53,6 +54,7 @@ clustername = args.clustername
 mcm = args.mcm
 noprompt = args.noprompt
 mfacode = args.mfacode
+sleeptimeseconds = args.sleeptimeseconds
 sourceservers = args.sourceserver
 
 if sourceservers is None or len(sourceservers) == 0:
@@ -290,10 +292,14 @@ def restore(thesefiles, doc, version, targetEntity, singleFile):
         taskId = restoreTask['restoreTask']['performRestoreTaskState']['base']['taskId']
         if wait:
             finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning']
-            restoreTask = api('get', '/restoretasks/%s' % taskId)
-            while restoreTask[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus'] not in finishedStates:
-                sleep(3)
-                restoreTask = api('get', '/restoretasks/%s' % taskId)
+            while True:
+                try:
+                    restoreTask = api('get', '/restoretasks/%s' % taskId)
+                    if restoreTask[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus'] in finishedStates:
+                        break
+                except Exception:
+                    pass
+                sleep(sleeptimeseconds)
             if restoreTask[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus'] == 'kSuccess':
                 print("Restore finished with status %s" % restoreTask[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus'])
                 if newonly:

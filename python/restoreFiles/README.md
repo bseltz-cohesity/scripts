@@ -70,6 +70,7 @@ Restore finished with status kSuccess
 * -o, --newonly: (optional) only restore if there is a new point in time to restore
 * -w, --wait: (optional) wait for completion and report status
 * -k, --taskname: (optional) set name of recovery task
+* -z, --sleeptimeseconds: (optional) sleep X seconds between status queries (default is 30)
 
 ## Backup Versions
 
