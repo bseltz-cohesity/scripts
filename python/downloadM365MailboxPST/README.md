@@ -56,3 +56,4 @@ To create a new protection group:
 * -f, --filename: (optional) zip file name to download (default is pst.zip)
 * -r, --recoverdate: (optional) restore from on or before this date (e.g. '2024-05-11 23:45:00')
 * -w, --pstpassword: (optional) password to set on PSTs (will be prompted if omitted)
+* -x, --continueonerror: (optional) continue processing if a mailbox is not found (exit by default)

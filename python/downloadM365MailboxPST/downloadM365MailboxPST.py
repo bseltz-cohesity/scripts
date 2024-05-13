@@ -23,6 +23,8 @@ parser.add_argument('-l', '--sourceuserlist', type=str)
 parser.add_argument('-w', '--pstpassword', type=str)
 parser.add_argument('-r', '--recoverdate', type=str, default=None)
 parser.add_argument('-f', '--filename', type=str, default='pst.zip')
+parser.add_argument('-x', '--continueonerror', action='store_true')
+
 args = parser.parse_args()
 
 vip = args.vip
@@ -41,6 +43,7 @@ sourceuserlist = args.sourceuserlist
 pstpassword = args.pstpassword
 recoverdate = args.recoverdate
 filename = args.filename
+continueonerror = args.continueonerror
 
 # authentication =========================================================
 # demand clustername if connecting to helios or mcm
@@ -117,8 +120,11 @@ for sourceUser in sourceusernames:
     userSearch = api('get', 'data-protect/search/protected-objects?snapshotActions=RecoverMailbox&searchString=%s&environments=kO365' % sourceUser, v=2)
     userObj = [o for o in userSearch['objects'] if o['name'].lower() == sourceUser.lower()]
     if userObj is None or len(userObj) == 0:
-        print('Mailbox User %s not found' % sourceUser)
-        exit(1)
+        print('*** Mailbox User %s not found' % sourceUser)
+        if continueonerror is True:
+            continue
+        else:
+            exit(1)
 
     protectionGroupId = userObj[0]['latestSnapshotsInfo'][0]['protectionGroupId']
     snapshotId = userObj[0]['latestSnapshotsInfo'][0]['localSnapshotInfo']['snapshotId']
@@ -131,8 +137,11 @@ for sourceUser in sourceusernames:
             snapshot = snapshots[0]
             snapshotId = snapshot['id']
         else:
-            print('No snapshots available for %s from specified date' % sourceUser)
-            exit(1)
+            print('*** No snapshots available for %s from specified date' % sourceUser)
+            if continueonerror is True:
+                continue
+            else:
+                exit(1)
 
     print('Processing %s' % sourceUser)
     recoveryParams['office365Params']['recoverMailboxParams']['objects'].append({
@@ -144,6 +153,10 @@ for sourceUser in sourceusernames:
             "snapshotId": snapshotId
         }
     })
+
+if len(recoveryParams['office365Params']['recoverMailboxParams']['objects']) == 0:
+    print('*** No objects found, exiting')
+    exit(1)
 
 recovery = api('post', 'data-protect/recoveries', recoveryParams, v=2)
 
