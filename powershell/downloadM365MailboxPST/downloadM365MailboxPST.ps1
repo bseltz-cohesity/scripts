@@ -16,7 +16,8 @@ param (
     [Parameter()][string]$pstPassword = $null,
     [Parameter()][string]$fileName = '.\pst.zip',
     [Parameter()][datetime]$recoverDate,
-    [Parameter()][switch]$continueOnError
+    [Parameter()][switch]$continueOnError,
+    [Parameter()][int]$sleepTimeSeconds = 30
 )
 
 # source the cohesity-api helper code
@@ -73,13 +74,13 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
         if(Test-Path -Path $FilePath -PathType Leaf){
             Get-Content $FilePath | ForEach-Object {$items += [string]$_}
         }else{
-            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
-            exit
+            Write-Host "*** Text file $FilePath not found! ***" -ForegroundColor Yellow
+            exit 1
         }
     }
     if($Required -eq $True -and $items.Count -eq 0){
-        Write-Host "No $Name specified" -ForegroundColor Yellow
-        exit
+        Write-Host "*** No $Name specified ***" -ForegroundColor Yellow
+        exit 1
     }
     return ($items | Sort-Object -Unique)
 }
@@ -112,7 +113,7 @@ foreach($sourceUser in $sourceUserNames){
     $userSearch = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverMailbox&searchString=$sourceUser&environments=kO365"
     $userObj = $userSearch.objects | Where-Object name -eq $sourceUser
     if(!$userObj){
-        Write-Host "Mailbox User $sourceUser not found" -ForegroundColor Yellow
+        Write-Host "*** Mailbox User $sourceUser not found ***" -ForegroundColor Yellow
         if($continueOnError){
             continue
         }else{
@@ -132,7 +133,7 @@ foreach($sourceUser in $sourceUserNames){
             $snapshot = $snapshots[0]
             $snapshotId = $snapshot.id
         }else{
-            Write-Host "No snapshots available for $sourceUser from specified date"
+            Write-Host "*** No snapshots available for $sourceUser from specified date ***"
             if($continueOnError){
                 continue
             }else{
@@ -141,7 +142,7 @@ foreach($sourceUser in $sourceUserNames){
         }
     }
 
-    Write-Host "Processing $sourceUser"
+    Write-Host "==> Processing $sourceUser"
     $recoveryParams.office365Params.recoverMailboxParams.objects = @($recoveryParams.office365Params.recoverMailboxParams.objects + @{
         "mailboxParams" = @{
             "recoverFolders" = $null;
@@ -154,24 +155,27 @@ foreach($sourceUser in $sourceUserNames){
 }
 
 if($recoveryParams.office365Params.recoverMailboxParams.objects.Count -eq 0){
-    Write-Host "No objects found" -ForegroundColor Yellow
+    Write-Host "*** No objects found ***" -ForegroundColor Yellow
     exit 1
 }
 
 $recovery = api post -v2 data-protect/recoveries $recoveryParams
 
-"Waiting for PST conversion to complete..."
+"==> Waiting for PST conversion to complete..."
 $finishedStates = @('Canceled', 'Succeeded', 'Failed')
 $pass = 0
 do{
-    Start-Sleep 10
+    Start-Sleep $sleepTimeSeconds
     $recoveryTask = api get -v2 data-protect/recoveries/$($recovery.id)?includeTenants=true
     $status = $recoveryTask.status
 
 } until ($status -in $finishedStates)
-write-host "PST conversion finished with status: $status"
+
 $downloadURL = "https://$vip/v2/data-protect/recoveries/$($recovery.id)/downloadFiles?clusterId=$($cluster.id)&includeTenants=true"
 if($status -eq 'Succeeded'){
-    Write-Host "downloading zip file to $fileName"
+    Write-Host "==> PST conversion finished with status: $status"
+    Write-Host "==> Downloading zip file to $fileName"
     fileDownload -uri $downloadURL -filename $fileName
+}else{
+    Write-Host "*** PST conversion finished with status: $status ***"
 }

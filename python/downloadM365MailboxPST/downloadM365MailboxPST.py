@@ -24,7 +24,7 @@ parser.add_argument('-w', '--pstpassword', type=str)
 parser.add_argument('-r', '--recoverdate', type=str, default=None)
 parser.add_argument('-f', '--filename', type=str, default='pst.zip')
 parser.add_argument('-x', '--continueonerror', action='store_true')
-
+parser.add_argument('-z', '--sleeptimeseconds', type=int, default=30)
 args = parser.parse_args()
 
 vip = args.vip
@@ -44,6 +44,7 @@ pstpassword = args.pstpassword
 recoverdate = args.recoverdate
 filename = args.filename
 continueonerror = args.continueonerror
+sleeptimeseconds = args.sleeptimeseconds
 
 # authentication =========================================================
 # demand clustername if connecting to helios or mcm
@@ -78,8 +79,8 @@ def gatherList(param=None, filename=None, name='items', required=True):
         items += [s.strip() for s in f.readlines() if s.strip() != '']
         f.close()
     if required is True and len(items) == 0:
-        print('no %s specified' % name)
-        exit()
+        print('*** No %s specified ***' % name)
+        exit(1)
     return items
 
 
@@ -120,7 +121,7 @@ for sourceUser in sourceusernames:
     userSearch = api('get', 'data-protect/search/protected-objects?snapshotActions=RecoverMailbox&searchString=%s&environments=kO365' % sourceUser, v=2)
     userObj = [o for o in userSearch['objects'] if o['name'].lower() == sourceUser.lower()]
     if userObj is None or len(userObj) == 0:
-        print('*** Mailbox User %s not found' % sourceUser)
+        print('*** Mailbox User %s not found ***' % sourceUser)
         if continueonerror is True:
             continue
         else:
@@ -137,13 +138,13 @@ for sourceUser in sourceusernames:
             snapshot = snapshots[0]
             snapshotId = snapshot['id']
         else:
-            print('*** No snapshots available for %s from specified date' % sourceUser)
+            print('*** No snapshots available for %s from specified date ***' % sourceUser)
             if continueonerror is True:
                 continue
             else:
                 exit(1)
 
-    print('Processing %s' % sourceUser)
+    print('==> Processing %s' % sourceUser)
     recoveryParams['office365Params']['recoverMailboxParams']['objects'].append({
         "mailboxParams": {
             "recoverFolders": None,
@@ -155,22 +156,24 @@ for sourceUser in sourceusernames:
     })
 
 if len(recoveryParams['office365Params']['recoverMailboxParams']['objects']) == 0:
-    print('*** No objects found, exiting')
+    print('*** No objects found, exiting ***')
     exit(1)
 
 recovery = api('post', 'data-protect/recoveries', recoveryParams, v=2)
 
 # wait for restores to complete
-print('Waiting for PST conversion to complete...')
+print('==> Waiting for PST conversion to complete...')
 finishedStates = ['Canceled', 'Succeeded', 'Failed']
 status = 'unknown'
 while status not in finishedStates:
-    sleep(10)
+    sleep(sleeptimeseconds)
     recoveryTask = api('get', 'data-protect/recoveries/%s?includeTenants=true' % recovery['id'], v=2)
     status = recoveryTask['status']
 
-print('PST conversion finished with status: %s' % status)
 downloadURL = "https://%s/v2/data-protect/recoveries/%s/downloadFiles?clusterId=%s&includeTenants=true" % (vip, recovery['id'], cluster['id'])
 if status == 'Succeeded':
-    print('downloading zip file to %s' % filename)
+    print('==> PST conversion finished with status: %s' % status)
+    print('==> Downloading zip file to %s' % filename)
     fileDownload(uri=downloadURL, fileName=filename)
+else:
+    print('*** PST conversion finished with status: %s ***' % status)
