@@ -15,7 +15,8 @@ param (
     [Parameter()][string]$sourceUserList,
     [Parameter()][string]$pstPassword = $null,
     [Parameter()][string]$fileName = '.\pst.zip',
-    [Parameter()][datetime]$recoverDate
+    [Parameter()][datetime]$recoverDate,
+    [Parameter()][switch]$continueOnError
 )
 
 # source the cohesity-api helper code
@@ -112,7 +113,11 @@ foreach($sourceUser in $sourceUserNames){
     $userObj = $userSearch.objects | Where-Object name -eq $sourceUser
     if(!$userObj){
         Write-Host "Mailbox User $sourceUser not found" -ForegroundColor Yellow
-        exit
+        if($continueOnError){
+            continue
+        }else{
+            exit 1
+        }
     }
 
     $protectionGroupId = $userObj.latestSnapshotsInfo[0].protectionGroupId
@@ -128,7 +133,11 @@ foreach($sourceUser in $sourceUserNames){
             $snapshotId = $snapshot.id
         }else{
             Write-Host "No snapshots available for $sourceUser from specified date"
-            exit
+            if($continueOnError){
+                continue
+            }else{
+                exit 1
+            }
         }
     }
 
@@ -144,9 +153,12 @@ foreach($sourceUser in $sourceUserNames){
     })
 }
 
-$recovery = api post -v2 data-protect/recoveries $recoveryParams
+if($recoveryParams.office365Params.recoverMailboxParams.objects.Count -eq 0){
+    Write-Host "No objects found" -ForegroundColor Yellow
+    exit 1
+}
 
-# wait for restores to complete
+$recovery = api post -v2 data-protect/recoveries $recoveryParams
 
 "Waiting for PST conversion to complete..."
 $finishedStates = @('Canceled', 'Succeeded', 'Failed')
