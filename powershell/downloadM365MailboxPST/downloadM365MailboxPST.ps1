@@ -111,8 +111,8 @@ $recoveryParams = @{
 
 foreach($sourceUser in $sourceUserNames){
     $userSearch = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverMailbox&searchString=$sourceUser&environments=kO365"
-    $userObj = $userSearch.objects | Where-Object name -eq $sourceUser
-    if(!$userObj){
+    $userObjs = $userSearch.objects | Where-Object name -eq $sourceUser
+    if(!$userObjs){
         Write-Host "*** Mailbox User $sourceUser not found ***" -ForegroundColor Yellow
         if($continueOnError){
             continue
@@ -121,37 +121,39 @@ foreach($sourceUser in $sourceUserNames){
         }
     }
 
-    $protectionGroupId = $userObj.latestSnapshotsInfo[0].protectionGroupId
-    $snapshotId = $userObj.latestSnapshotsInfo[0].localSnapshotInfo.snapshotId
-
-    if($recoverDate){
-        $recoverDateUsecs = dateToUsecs ($recoverDate.AddMinutes(1))
+    foreach($userObj in $userObjs){
+        $protectionGroupId = $userObj.latestSnapshotsInfo[0].protectionGroupId
+        $snapshotId = $userObj.latestSnapshotsInfo[0].localSnapshotInfo.snapshotId
     
-        $snapshots = api get -v2 "data-protect/objects/$($userObj.id)/snapshots?protectionGroupIds=$($protectionGroupId)"
-        $snapshots = $snapshots.snapshots | Sort-Object -Property runStartTimeUsecs -Descending | Where-Object runStartTimeUsecs -lt $recoverDateUsecs
-        if($snapshots -and $snapshots.Count -gt 0){
-            $snapshot = $snapshots[0]
-            $snapshotId = $snapshot.id
-        }else{
-            Write-Host "*** No snapshots available for $sourceUser from specified date ***"
-            if($continueOnError){
-                continue
+        if($recoverDate){
+            $recoverDateUsecs = dateToUsecs ($recoverDate.AddMinutes(1))
+        
+            $snapshots = api get -v2 "data-protect/objects/$($userObj.id)/snapshots?protectionGroupIds=$($protectionGroupId)"
+            $snapshots = $snapshots.snapshots | Sort-Object -Property runStartTimeUsecs -Descending | Where-Object runStartTimeUsecs -lt $recoverDateUsecs
+            if($snapshots -and $snapshots.Count -gt 0){
+                $snapshot = $snapshots[0]
+                $snapshotId = $snapshot.id
             }else{
-                exit 1
+                Write-Host "*** No snapshots available for $sourceUser from specified date ***"
+                if($continueOnError){
+                    continue
+                }else{
+                    exit 1
+                }
             }
         }
+    
+        Write-Host "==> Processing $sourceUser"
+        $recoveryParams.office365Params.recoverMailboxParams.objects = @($recoveryParams.office365Params.recoverMailboxParams.objects + @{
+            "mailboxParams" = @{
+                "recoverFolders" = $null;
+                "recoverEntireMailbox" = $true
+            };
+            "ownerInfo" = @{
+                "snapshotId" = $snapshotId
+            }
+        })
     }
-
-    Write-Host "==> Processing $sourceUser"
-    $recoveryParams.office365Params.recoverMailboxParams.objects = @($recoveryParams.office365Params.recoverMailboxParams.objects + @{
-        "mailboxParams" = @{
-            "recoverFolders" = $null;
-            "recoverEntireMailbox" = $true
-        };
-        "ownerInfo" = @{
-            "snapshotId" = $snapshotId
-        }
-    })
 }
 
 if($recoveryParams.office365Params.recoverMailboxParams.objects.Count -eq 0){

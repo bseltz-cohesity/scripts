@@ -119,41 +119,42 @@ recoveryParams = {
 
 for sourceUser in sourceusernames:
     userSearch = api('get', 'data-protect/search/protected-objects?snapshotActions=RecoverMailbox&searchString=%s&environments=kO365' % sourceUser, v=2)
-    userObj = [o for o in userSearch['objects'] if o['name'].lower() == sourceUser.lower()]
-    if userObj is None or len(userObj) == 0:
+    userObjs = [o for o in userSearch['objects'] if o['name'].lower() == sourceUser.lower()]
+    if userObjs is None or len(userObjs) == 0:
         print('*** Mailbox User %s not found ***' % sourceUser)
         if continueonerror is True:
             continue
         else:
             exit(1)
 
-    protectionGroupId = userObj[0]['latestSnapshotsInfo'][0]['protectionGroupId']
-    snapshotId = userObj[0]['latestSnapshotsInfo'][0]['localSnapshotInfo']['snapshotId']
+    for userObj in userObjs:
+        protectionGroupId = userObj['latestSnapshotsInfo'][0]['protectionGroupId']
+        snapshotId = userObj['latestSnapshotsInfo'][0]['localSnapshotInfo']['snapshotId']
 
-    if recoverdate is not None:
-        recoverDateUsecs = dateToUsecs(recoverdate) + 60000000
-        snapshots = api('get', 'data-protect/objects/%s/snapshots?protectionGroupIds=%s' % (userObj[0]['id'], protectionGroupId), v=2)
-        snapshots = [s for s in sorted(snapshots['snapshots'], key=lambda snap: snap['runStartTimeUsecs'], reverse=True) if s['runStartTimeUsecs'] < recoverDateUsecs]
-        if snapshots is not None and len(snapshots) > 0:
-            snapshot = snapshots[0]
-            snapshotId = snapshot['id']
-        else:
-            print('*** No snapshots available for %s from specified date ***' % sourceUser)
-            if continueonerror is True:
-                continue
+        if recoverdate is not None:
+            recoverDateUsecs = dateToUsecs(recoverdate) + 60000000
+            snapshots = api('get', 'data-protect/objects/%s/snapshots?protectionGroupIds=%s' % (userObj['id'], protectionGroupId), v=2)
+            snapshots = [s for s in sorted(snapshots['snapshots'], key=lambda snap: snap['runStartTimeUsecs'], reverse=True) if s['runStartTimeUsecs'] < recoverDateUsecs]
+            if snapshots is not None and len(snapshots) > 0:
+                snapshot = snapshots[0]
+                snapshotId = snapshot['id']
             else:
-                exit(1)
+                print('*** No snapshots available for %s from specified date ***' % sourceUser)
+                if continueonerror is True:
+                    continue
+                else:
+                    exit(1)
 
-    print('==> Processing %s' % sourceUser)
-    recoveryParams['office365Params']['recoverMailboxParams']['objects'].append({
-        "mailboxParams": {
-            "recoverFolders": None,
-            "recoverEntireMailbox": True
-        },
-        "ownerInfo": {
-            "snapshotId": snapshotId
-        }
-    })
+        print('==> Processing %s' % sourceUser)
+        recoveryParams['office365Params']['recoverMailboxParams']['objects'].append({
+            "mailboxParams": {
+                "recoverFolders": None,
+                "recoverEntireMailbox": True
+            },
+            "ownerInfo": {
+                "snapshotId": snapshotId
+            }
+        })
 
 if len(recoveryParams['office365Params']['recoverMailboxParams']['objects']) == 0:
     print('*** No objects found, exiting ***')
