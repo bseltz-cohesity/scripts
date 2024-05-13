@@ -34,8 +34,8 @@ Place both files in a folder together and run the main script like so:
 
 ## Parameters
 
-* -v, --vip: name of Cohesity cluster to connect to (default is helios.cohesity.com)
-* -u, --username: short username to authenticate to the cluster (default is helios)
+* -v, --vip: (optional) name of Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: (optional) short username to authenticate to the cluster (default is helios)
 * -d, --domain: (optional) active directory domain of user (default is local)
 * -i, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password of API key
