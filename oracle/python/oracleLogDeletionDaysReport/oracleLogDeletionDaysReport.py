@@ -64,7 +64,7 @@ now = datetime.now()
 datestring = now.strftime("%Y-%m-%d")
 csvfileName = '%s/oracleLogDeletionDaysReport-%s-%s.csv' % (folder, cluster['name'], datestring)
 csv = codecs.open(csvfileName, 'w', 'utf-8')
-csv.write('"Cluster Name","Job Name","Source Name","Databased Name","Log Deletion Days"\n')
+csv.write('"Cluster Name","Job Name","Source Name","Databased Name","Log Deletion Days","Channels"\n')
 
 jobs = api('get', 'data-protect/protection-groups?environments=kOracle&isActive=true&isDeleted=false', v=2)
 
@@ -96,6 +96,11 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
         for dbParam in o['dbParams']:
             logDeletionDays = 'n/a'
             dbUniqueName = 'Missing DB'
+            numChannels = 'auto'
+            try:
+                numChannels = dbParam['dbChannels'][0]['databaseNodeList'][0]['channelCount']
+            except Exception:
+                pass
             if len(dbParam['dbChannels']) > 0:
                 if 'databaseUniqueName' in dbParam['dbChannels'][0]:
                     dbUniqueName = dbParam['dbChannels'][0]['databaseUniqueName']
@@ -105,9 +110,9 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                 thisObject = objectName["%s" % dbParam['databaseId']]
                 (thisServer, thisDB) = thisObject.split('/')
                 print("  %s: %s" % (objectName["%s" % dbParam['databaseId']], logDeletionDays))
-                csv.write('"%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], thisServer, thisDB, logDeletionDays))
+                csv.write('"%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], thisServer, thisDB, logDeletionDays, numChannels))
             else:
                 print("  %s database with ID: %s not found" % (o['sourceName'], dbParam['databaseId']))
-                csv.write('"%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], o['sourceName'], dbUniqueName, "database not found"))
+                csv.write('"%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], job['name'], o['sourceName'], dbUniqueName, "database not found", "n/a"))
 csv.close()
 print('\nOutput saved to %s\n' % csvfileName)
