@@ -1,5 +1,12 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-05-16
+
+* [deployCCSWindowsAgent.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/deployCCSWindowsAgent) [`New`] Remotely install and register Windows agents for CCS
+* [oracleLogDeletionDaysReport.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/oracleLogDeletionDaysReport) [`Update`] added number of channels to output
+* [createNFSView.py](https://github.com/cohesity/community-automation-samples/tree/main/python/createNFSView) [`Update`] added support for NFSv4.1
+* [clusterIPs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/clusterIPs) [`Update`] added support for secondary interface IPs
+
 ## 2024-05-12
 
 * [downloadM365MailboxPST.py](https://github.com/cohesity/community-automation-samples/tree/main/python/downloadM365MailboxPST) [`New`] Download M365 Mailbox as PST
