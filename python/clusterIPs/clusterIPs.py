@@ -69,11 +69,13 @@ nodeIds = [n['id'] for n in nodes]
 
 addresses = []
 
+interfaces = api('get', 'interface')
+
 for nodeId in nodeIds:
     node = [n for n in nodes if n['id'] == nodeId][0]
     nodeIp = node['ip'].split(':')[-1]
     # print('Node: %s' % nodeIp)
-    addresses.append('"%s","%s"\n' % ('NODE', nodeIp))
+    # addresses.append('"%s","%s"\n' % ('NODE', nodeIp))
     ipmiIp = None
     if ipmi is not None and 'nodesIpmiInfo' in ipmi:
         nodeipmi = [i for i in ipmi['nodesIpmiInfo'] if i['nodeIp'] == node['ip'].split(':')[-1]]
@@ -84,11 +86,19 @@ for nodeId in nodeIds:
     if ipmiIp is not None:
         # print('IPMI: %s' % ipmiIp)
         addresses.append('"%s","%s"\n' % ('IPMI', ipmiIp))
+    intf = [i for i in interfaces if i['nodeId'] == node['id']]
+    bonds = [i for i in intf[0]['interfaces'] if 'bondingMode' in i and i['bondingMode'] > 0]
+    for bond in bonds:
+        if 'staticIp' in bond:  # and bond['staticIp'] != nodeIp:
+            if bond['staticIp'] == nodeIp:
+                addresses.append('"%s","%s"\n' % ('%s (NODE IP)' % bond['name'], bond['staticIp']))
+            else:
+                addresses.append('"%s","%s"\n' % ('%s' % bond['name'], bond['staticIp']))
 vlans = api('get', 'vlans?_includeTenantInfo=true&allUnderHierarchy=true')
 for vlan in vlans:
-    for ip in vlan['ips']:
-        # print(' VIP: %s' % ip)
-        addresses.append('"%s","%s"\n' % ('VIP', ip))
+    if 'ips' in vlan:
+        for ip in vlan['ips']:
+            addresses.append('"%s","%s"\n' % ('VIP', ip))
 for address in sorted(addresses):
     print(address.split(',')[1].replace('"', '').replace('\n', ''))
     f.write(address)
