@@ -291,4 +291,4 @@ if existingview is None:
     result = api('post', 'file-services/views', newView, v=2)
 else:
     print("Updating view %s..." % viewName)
-    result = api('put', 'file-services/views', newView, v=2)
+    result = api('put', 'file-services/views/%s' % newView['viewId'], newView, v=2)
