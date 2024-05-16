@@ -79,7 +79,7 @@ if sources is None or len(sources) == 0 or 'nodes' not in sources[0] or len(sour
 
 objectName = {}
 for thisSource in sources[0]['nodes']:
-    if 'refreshErrorMessage' in thisSource['registrationInfo']:
+    if 'refreshErrorMessage' in thisSource['registrationInfo'] or 'applicationNodes' not in thisSource:
         continue
     for instance in thisSource['applicationNodes']:
         objectName["%s" % instance['protectionSource']['id']] = "%s/%s" % (thisSource['protectionSource']['name'], instance['protectionSource']['name'])
