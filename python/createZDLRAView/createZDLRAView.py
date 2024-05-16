@@ -127,7 +127,7 @@ if existingview is None:
     qp = [qp for qp in api('get', 'qosPolicies') if qp['name'].lower() == qosPolicy.lower()]
 
     if len(qp) != 1:
-        print("QOS policy %s not found!" % storageDomain)
+        print("QOS policy %s not found!" % qosPolicy)
         exit()
 
     # find storage domain
