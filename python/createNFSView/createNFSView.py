@@ -209,17 +209,18 @@ else:
     if show:
         display(newView)
         exit(0)
-    if qosPolicy is not None:
-        qp = [qp for qp in api('get', 'qosPolicies') if qp['name'].lower() == qosPolicy.lower()]
 
-        if len(qp) != 1:
-            print("QOS policy %s not found!" % storageDomain)
-            exit()
+if qosPolicy is not None:
+    qp = [qp for qp in api('get', 'qosPolicies') if qp['name'].lower() == qosPolicy.lower()]
 
-        newView['qos'] = {
-            "principalId": qp[0]['id'],
-            "principalName": qp[0]['name']
-        }
+    if len(qp) != 1:
+        print("QOS policy %s not found!" % storageDomain)
+        exit()
+
+    newView['qos'] = {
+        "principalId": qp[0]['id'],
+        "principalName": qp[0]['name']
+    }
 
 if nfsversion == '3':
     protocol = [p for p in newView['protocolAccess'] if p['type'] == 'NFS4']
@@ -316,4 +317,4 @@ if existingview is None:
     result = api('post', 'file-services/views', newView, v=2)
 else:
     print("Updating view %s..." % viewName)
-    result = api('put', 'file-services/views', newView, v=2)
+    result = api('put', 'file-services/views/%s' % newView['viewId'], newView, v=2)
