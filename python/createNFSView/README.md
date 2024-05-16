@@ -27,12 +27,9 @@ Place both files in a folder together and run the main script like so:
                    -u myusername \
                    -d mydomain.net \
                    -n newview1 \
-                   -q 'TestAndDev High' \
                    -s mystoragedomain \
                    -w '192.168.1.0, 255.255.255.0, Test Lab' \
-                   -w 192.168.2.11 \
-                   -l 300 \
-                   -a 250
+                   -w 192.168.2.11
 #end example
 ```
 
@@ -41,7 +38,8 @@ Place both files in a folder together and run the main script like so:
 * -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
 * -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
 * -d, --domain: (optional) domain of username (defaults to local)
-* -i, --useApiKey: (optional) use API key for authentication
+* -t, --tenant: (optional) multitenancy org name
+* -k, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password or API key
 * -np, --noprompt: (optional) do not prompt for password
 * -mcm, --mcm: (optional) connect through MCM
@@ -52,8 +50,11 @@ Place both files in a folder together and run the main script like so:
 ## Other Parameters
 
 * -n, --viewname: name of new view to create or modify
-* -q, --qospolicy: (optional) 'Backup Target Low', 'Backup Target High' or 'TestAndDev Low' (default is 'TestAndDev High')
+* -q, --qospolicy: (optional) Name of QOS policy (e.g. 'TestAndDev High')
+* -vt, --viewtemplate: (optional) name of view template (e.g. 'Applications Dump')
+* -nv, --nfsversion: (optional) NFS version 3 or 4.1 (default is 4.1)
 * -s, --storageDomain: (optional) name of storage domain to place view data (default is DefaultStorageDomain)
+* -i, --caseinsensitive: (optional) make file and folder names case insensitive
 * -w, --whitelist: (optional) ip (and optional netmask, description) to whitelist (can be used multiple times) e.g. '192.168.1.0, 255.255.255.0, Test Lab'
 * -l, --quotalimit: (optional) quota limit in GiB
 * -a, --quotaalert: (optional) quota alert threshold in GiB (defaults to 90% of quotalimit)

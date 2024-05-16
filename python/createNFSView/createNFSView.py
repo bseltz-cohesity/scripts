@@ -10,16 +10,19 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
 parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-t', '--tenant', type=str, default=None)
 parser.add_argument('-c', '--clustername', type=str, default=None)
 parser.add_argument('-mcm', '--mcm', action='store_true')
-parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-k', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-n', '--viewname', type=str, required=True)  # name view to create
 parser.add_argument('-s', '--storagedomain', type=str, default='DefaultStorageDomain')  # name of storage domain to use
-parser.add_argument('-q', '--qospolicy', type=str, choices=['Backup Target Low', 'Backup Target High', 'TestAndDev High', 'TestAndDev Low', None], default=None)  # qos policy
+parser.add_argument('-q', '--qospolicy', type=str, default=None)  # qos policy
+parser.add_argument('-vt', '--viewtemplate', type=str, default='General')  # view template policy
+parser.add_argument('-nv', '--nfsversion', type=str, choices=['3', '4.1'], default='4.1')  # NFS version
 parser.add_argument('-w', '--whitelist', action='append', default=[])  # ip to whitelist
 parser.add_argument('-l', '--quotalimit', type=int, default=None)  # quota limit
 parser.add_argument('-a', '--quotaalert', type=int, default=None)  # quota alert threshold
@@ -34,12 +37,14 @@ parser.add_argument('-xl', '--maximumlockperiod', type=int, default=1)  # maximu
 parser.add_argument('-lt', '--manuallockmode', type=str, choices=['ReadOnly', 'FutureATime', 'readonly', 'futureatim'], default='ReadOnly')  # manual locking type
 parser.add_argument('-lu', '--lockunit', type=str, choices=['minute', 'hour', 'day', 'minutes', 'hours', 'days'], default='minute')  # lock period units
 parser.add_argument('-show', '--show', action='store_true')
+parser.add_argument('-i', '--caseinsensitive', action='store_true')
 
 args = parser.parse_args()
 
 vip = args.vip
 username = args.username
 domain = args.domain
+tenant = args.tenant
 clustername = args.clustername
 mcm = args.mcm
 useApiKey = args.useApiKey
@@ -64,6 +69,9 @@ maximumlockperiod = args.maximumlockperiod
 manuallockmode = args.manuallockmode
 lockunit = args.lockunit
 show = args.show
+caseinsensitive = args.caseinsensitive
+nfsversion = args.nfsversion
+viewtemplate = args.viewtemplate
 
 lockunitmap = {'minute': 60000, 'minutes': 60000, 'hour': 3600000, 'hours': 3600000, 'day': 86400000, 'days': 86400000}
 lockunitmultiplier = lockunitmap[lockunit]
@@ -79,24 +87,29 @@ def netmask2cidr(netmask):
     return cidr
 
 
-# authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), emailMfaCode=emailmfacode, mfaCode=mfacode)
+# authentication =========================================================
+# demand clustername if connecting to helios or mcm
+if (mcm or vip.lower() == 'helios.cohesity.com') and clustername is None:
+    print('-c, --clustername is required when connecting to Helios or MCM')
+    exit(1)
 
-# if connected to helios or mcm, select access cluster
-if mcm or vip.lower() == 'helios.cohesity.com':
-    if clustername is not None:
-        heliosCluster(clustername)
-    else:
-        print('-clustername is required when connecting to Helios or MCM')
-        exit()
+# authenticate
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, emailMfaCode=emailmfacode, tenantId=tenant)
 
 # exit if not authenticated
 if apiconnected() is False:
     print('authentication failed')
     exit(1)
 
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    heliosCluster(clustername)
+    if LAST_API_ERROR() != 'OK':
+        exit(1)
+# end authentication =====================================================
+
 existingview = None
-views = api('get', 'views')
+views = api('get', 'file-services/views', v=2)
 if views['count'] > 0:
     existingviews = [v for v in views['views'] if v['name'].lower() == viewName.lower()]
     if len(existingviews) > 0:
@@ -111,9 +124,27 @@ if existingview is None:
         print('view %s not found' % viewName)
         exit(0)
 
-    # default qos policy
+    # find template
+    vts = api('get', 'file-services/view-template', v=2)
+    vt = [t for t in vts['Templates'] if t['name'].lower() == viewtemplate.lower()]
+    if len(vt) != 1:
+        print("View template %s not found!" % viewtemplate)
+        print("Available view templates are:")
+        [print('  %s' % t['name']) for t in sorted(vts['Templates'], key=lambda t: t['name'])]
+        exit()
+    vt = vt[0]
+
+    # find qos policy
     if qosPolicy is None:
-        qosPolicy = 'TestAndDev High'
+        qosPolicy = vt['viewParams']['qos']['principalName']
+    qosPolicies = api('get', 'qosPolicies')
+    qp = [qp for qp in qosPolicies if qp['name'].lower() == qosPolicy.lower()]
+
+    if len(qp) != 1:
+        print("QOS policy %s not found!" % qosPolicy)
+        print('Available QOS policies are:')
+        [print('  %s' % t['name']) for t in sorted(qosPolicies, key=lambda t: t['name'])]
+        exit()
 
     # find storage domain
     sd = [sd for sd in api('get', 'viewBoxes') if sd['name'].lower() == storageDomain.lower()]
@@ -124,37 +155,87 @@ if existingview is None:
 
     sdid = sd[0]['id']
 
-    # new view parameters
     newView = {
-        "caseInsensitiveNamesEnabled": True,
-        "enableNfsViewDiscovery": True,
-        "enableSmbAccessBasedEnumeration": False,
-        "enableSmbViewDiscovery": True,
+        "caseInsensitiveNamesEnabled": False,
+        "category": vt['viewParams']['category'],
+        "enableNfsViewDiscovery": False,
         "fileExtensionFilter": {
             "isEnabled": False,
-            "mode": "kBlacklist",
+            "mode": "Blacklist",
             "fileExtensionsList": []
         },
-        "protocolAccess": "kNFSOnly",
-        "securityMode": "kNativeMode",
-        "subnetWhitelist": [],
-        "qos": {
-            "principalName": qosPolicy
-        },
+        "isExternallyTriggeredBackupTarget": vt['viewParams']['isExternallyTriggeredBackupTarget'],
         "name": viewName,
-        "viewBoxId": sdid
+        "overrideGlobalNetgroupWhitelist": True,
+        "overrideGlobalSubnetWhitelist": True,
+        "protocolAccess": [
+            {
+                "type": "NFS4",
+                "mode": "ReadWrite",
+                "hidden": False
+            }
+        ],
+        "qos": {
+            "principalId": qp[0]['id'],
+            "principalName": qp[0]['name']
+        },
+        "s3FolderSupportEnabled": False,
+        "securityMode": "NativeMode",
+        "selfServiceSnapshotConfig": {
+            "enabled": False,
+            "nfsAccessEnabled": True,
+            "snapshotDirectoryName": ".snapshot",
+            "smbAccessEnabled": True,
+            "alternateSnapshotDirectoryName": "~snapshot",
+            "previousVersionsEnabled": True,
+            "allowAccessSids": [
+                "S-1-1-0"
+            ],
+            "denyAccessSids": []
+        },
+        "storageDomainId": sd[0]['id'],
+        "storageDomainName": sd[0]['name'],
+        "intent": {
+            "templateId": vt['id'],
+            "templateName": vt['name']
+        }
     }
+
+    if caseinsensitive is True:
+        newView['caseInsensitiveNamesEnabled'] = True
 
 else:
     newView = existingview
     if show:
         display(newView)
         exit(0)
+    if qosPolicy is not None:
+        qp = [qp for qp in api('get', 'qosPolicies') if qp['name'].lower() == qosPolicy.lower()]
+
+        if len(qp) != 1:
+            print("QOS policy %s not found!" % storageDomain)
+            exit()
+
+        newView['qos'] = {
+            "principalId": qp[0]['id'],
+            "principalName": qp[0]['name']
+        }
+
+if nfsversion == '3':
+    protocol = [p for p in newView['protocolAccess'] if p['type'] == 'NFS4']
+    for p in protocol:
+        p['type'] = 'NFS'
+else:
+    protocol = [p for p in newView['protocolAccess'] if p['type'] == 'NFS4']
+    for p in protocol:
+        p['type'] = 'NFS4'
 
 if clearwhitelist is True:
     newView['subnetWhitelist'] = []
 
 if len(whitelist) > 0:
+    if 'subnetWhitelist' not in newView:
+        newView['subnetWhitelist'] = []
 
     for ip in whitelist:
         description = ''
@@ -229,14 +310,10 @@ if lockmode.lower() != 'none':
         newView['fileLockConfig']['lockingProtocol'] = 'kSetAtime'
     newView['fileLockConfig']['expiryTimestampMsecs'] = 0
 
-# update qos policy
-if qosPolicy is not None:
-    newView['qos']['principalName'] = qosPolicy
-
 # create the view
 if existingview is None:
     print("Creating view %s..." % viewName)
-    result = api('post', 'views', newView)
+    result = api('post', 'file-services/views', newView, v=2)
 else:
     print("Updating view %s..." % viewName)
-    result = api('put', 'views', newView)
+    result = api('put', 'file-services/views', newView, v=2)
