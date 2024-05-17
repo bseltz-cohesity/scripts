@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2024.05.02 - Brian Seltzer
+#  Version 2024.05.17 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2023.02.10 - added -region to api function (for DMaaS)
@@ -35,10 +35,11 @@
 # 2024-02-28 - added support for helios.gov
 # 2024-02-29 - added dateToString function
 # 2024-05-02 - added quiet switch to fileDownload function
+# 2024-05-17 - added support for EntraID (Open ID) authentication
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2024.05.02'
+$versionCohesityAPI = '2024.05.17'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -180,9 +181,16 @@ function apiauth($vip='helios.cohesity.com',
                  [boolean] $heliosAuthentication = $false,
                  [boolean] $sendMfaCode = $false,
                  [boolean] $noPromptForPassword = $false,
-                 [Int]$timeout = 300){
-
-    apidrop -quiet     
+                 [Int]$timeout = 300,
+                 [switch] $EntraId,
+                 [string] $clientId = $null,
+                 [string] $directoryId = $null,
+                 [string] $scope = 'openid profile',
+                 [boolean] $entraIdAuthentication = $false){
+    apidrop -quiet
+    if($entraIdAuthentication -eq $True){
+        $EntraId = $True
+    }
     if($apiKeyAuthentication -eq $True){
         $useApiKey = $True
     }
@@ -215,7 +223,7 @@ function apiauth($vip='helios.cohesity.com',
         $passwd = Get-CohesityAPIPassword -vip $vip -username $username -domain $domain -useApiKey $useApiKey -helios $helios
         if(!$passwd -and !$noprompt -and $noPromptForPassword -ne $True){
             # prompt for password and store
-            $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -quiet -useApiKey $useApiKey -helios $helios
+            $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -quiet -useApiKey $useApiKey -helios $helios -EntraId $EntraId
         }
         if(!$passwd){
             # report no password
@@ -236,7 +244,61 @@ function apiauth($vip='helios.cohesity.com',
     if($regionid){
         $cohesity_api.header['regionid'] = $regionid
     }
-
+    # Entra ID (OIDC) authentication
+    if($EntraId -and ($vip -in $heliosEndpoints)){
+        $header = $cohesity_api.header.Clone()
+        if(!$directoryId){
+            $directoryId = Get-CohesityAPIPassword -vip $vip -username $username -domain $domain -directoryId $True
+            if(!$directoryId){
+                $directoryId = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -directoryId $True -quiet
+            }
+        }
+        if(!$clientId){
+            $clientId = Get-CohesityAPIPassword -vip $vip -username $username -domain $domain -clientId $True
+            if(!$clientId){
+                $clientId = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -clientId $True -quiet
+            }
+        }
+        # Write-Host "clientId: $clientId"
+        # Write-Host "directoryId: $directoryId"
+        # Write-Host "scope: $scope"
+        # Write-Host "passwd: $passwd"
+        # Write-Host "username: $username"
+        if($clientId -and $directoryId -and $scope){
+            $token = ProcessOidcToken -username $username -password $passwd -client_id $clientId -tenant_id $directoryId -scope $scope
+            # Write-Host $token
+            if($token){
+                $header['X-OPEN-ID-AUTHZ-TOKEN'] = $token
+                $cohesity_api.authorized = $true
+                try{
+                    $URL = "https://$vip/mcm/clusters/connectionStatus"
+                    if($PSVersionTable.PSEdition -eq 'Core'){
+                        $heliosAllClusters = Invoke-RestMethod -Method Get -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -SkipCertificateCheck -SessionVariable session
+                    }else{
+                        $heliosAllClusters = Invoke-RestMethod -Method Get -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SessionVariable session
+                    }
+                    $cohesity_api.session = $session
+                    $Global:USING_HELIOS = $true
+                    $cohesity_api.heliosConnectedClusters = $heliosAllClusters | Where-Object {$_.connectedToCluster -eq $true}
+                    if($setpasswd){
+                        $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
+                    }
+                    if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
+                }catch{
+                    if($quiet){
+                        reportError $_ -quiet
+                    }else{
+                        reportError $_ 
+                    }
+                    apidrop -quiet
+                }
+            }
+        }else{
+            Write-Host "Missing OIDC parameters" -ForegroundColor Yellow
+        }
+        return $null
+    }
+    
     # API Key authentication
     if($useApiKey -or $helios -or ($vip -in $heliosEndpoints)){  # -eq 'helios.cohesity.com'
         $header = $cohesity_api.header.Clone()
@@ -881,8 +943,12 @@ function dateToString($dt, $format='yyyy-MM-dd hh:mm'){
 
 # password functions ==============================================================================
 
-function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', $useApiKey=$false, $helios=$false){
-    if($helios -eq $True -or $vip -in $heliosEndpoints){
+function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', $useApiKey=$false, $helios=$false, $directoryId=$false, $clientId=$false){
+    if($directoryId){
+        $useApiKey = 'directoryId'
+    }elseif($clientId){
+        $useApiKey = 'clientId'
+    }elseif($helios -eq $True -or $vip -in $heliosEndpoints){
         $useApiKey = $false
     }
     # parse domain\username or username@domain
@@ -948,8 +1014,12 @@ function Get-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
     return $null
 }
 
-function Clear-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', [switch]$quiet, $useApiKey=$false, $helios=$false){
-    if($helios -eq $True -or $vip -in $heliosEndpoints){
+function Clear-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', [switch]$quiet, $useApiKey=$false, $helios=$false, $directoryId=$false, $clientId=$false){
+    if($directoryId){
+        $useApiKey = 'directoryId'
+    }elseif($clientId){
+        $useApiKey = 'clientId'
+    }elseif($helios -eq $True -or $vip -in $heliosEndpoints){
         $useApiKey = $false
     }
     # parse domain\username or username@domain
@@ -1005,8 +1075,15 @@ function Clear-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios
     }
 }
 
-function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', $passwd=$null, [switch]$quiet, $useApiKey=$false, $helios=$false){
-    if($helios -eq $True -or $vip -in $heliosEndpoints){
+function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios', $domain='local', $passwd=$null, [switch]$quiet, $useApiKey=$false, $helios=$false, $directoryId=$false, $clientId=$false, $EntraId=$false){
+
+    if($directoryId){
+        $useApiKey = 'directoryId'
+    }elseif($clientId){
+        $useApiKey = 'clientId'
+    }elseif($EntraId){
+        $useApiKey = $false
+    }elseif($helios -eq $True -or $vip -in $heliosEndpoints){
         $useApiKey = $false
     }
     # parse domain\username or username@domain
@@ -1022,7 +1099,13 @@ function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
     }
     if(!$passwd){
         __writeLog "Prompting for Password"
-        if($useApiKey -or $helios -or $vip -in $heliosEndpoints){
+        if($EntraId){
+            $secureString = Read-Host -Prompt "Enter password for $originalUsername at $originalVip" -AsSecureString
+        }elseif($directoryId){
+            $secureString = Read-Host -Prompt "Enter Directory ID for $originalUsername" -AsSecureString
+        }elseif($clientId){
+            $secureString = Read-Host -Prompt "Enter Client ID for $originalUsername" -AsSecureString
+        }elseif($useApiKey -or $helios -or $vip -in $heliosEndpoints){
             $secureString = Read-Host -Prompt "Enter API key for $originalUsername at $originalVip" -AsSecureString
         }else{
             $secureString = Read-Host -Prompt "Enter password for $originalUsername at $originalVip" -AsSecureString
@@ -1135,6 +1218,51 @@ function importStoredPassword($vip='helios.cohesity.com', $username='helios', $d
     }else{
         Write-Host "Password not accessible!" -ForegroundColor Yellow
     }
+}
+
+function ProcessOidcToken ([string]$username, [string]$password, [string]$client_id, [string]$tenant_id, [string]$scope = 'openid profile'){
+    $tokenreturn=$null
+    $tokenreturn=Invoke-RestConOIDCAzure -username ($username) -pwdx ($password) -cidx ($client_id) -tidx ($tenant_id) -scope ($scope)    
+    If($tokenreturn.Exception) {
+        return Write-Host "Error Connection: $tokenreturn" -ForegroundColor red
+    }else{
+        return $tokenreturn
+    }
+}
+
+function Invoke-RestConOIDCAzure  {
+    param ( [Parameter (Mandatory = $true)] [ValidateNotNullOrEmpty()] [String]$username,
+            [Parameter (Mandatory = $true)] [ValidateNotNullOrEmpty()] $pwdx,
+            [Parameter (Mandatory = $true)] [ValidateNotNullOrEmpty()] [String]$cidx,
+            [Parameter (Mandatory = $true)] [ValidateNotNullOrEmpty()] [String]$tidx,
+            [Parameter (Mandatory = $true)] [ValidateNotNullOrEmpty()] [String]$scope)    
+    $callazure=$null
+    if(($pwdx.GetType().name) -eq 'SecureString'){ 
+        [string]$psswdx=(New-Object PSCredential 0, $pwdx).GetNetworkCredential().Password
+    }else{
+        $psswdx=$pwdx
+    }    
+    $Azbody = @{
+        'grant_type'    = 'password';
+        'client_id'     = $cidx;
+        'scope'         = $scope;
+        'username'      = $username;
+        'password'      = $psswdx;
+    }
+    $AzureURL="https://login.microsoftonline.com/$tidx/oauth2/v2.0/token"
+    $azuhdr = @{
+        'content-type' = "application/x-www-form-urlencoded;charset=utf-8";
+        'Accept'= "application/json"
+    }
+    try{
+        $callazure = Invoke-RestMethod -Method POST -Uri $AzureURL -Body $Azbody -Headers $azuhdr -TimeoutSec 100
+    }catch{
+        $myerrorz="ERROR $(get-date)";
+        $excepx=($myerrorz, $_)
+        return $excepx
+    }
+    $OidcToken=$callazure.id_token
+    return $OidcToken
 }
 
 # developer tools =================================================================================

@@ -44,6 +44,7 @@ Place all files in a folder together. then, run the main script like so:
 * -emailMfaCode: (optional) send MFA code via email
 * -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
 * -tenant: (optional) org tenant to impersonate
+* -EntraId: (optional) use EntraId (Open ID) authentication
 
 ## Job Run Parameters
 

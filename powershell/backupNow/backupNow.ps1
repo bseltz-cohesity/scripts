@@ -1,4 +1,4 @@
-# version 2024.03.08
+# version 2024.05.17
 
 # version history
 # ===============
@@ -21,6 +21,7 @@
 # 2023.12.13 - re-ordered auth parameters (to force first unnamed parameter to be interpreted as password)
 # 2024.02.19 - expanded existing run string matches
 # 2024.03.08 - refactored status monitor loop, added -quick mode
+# 2024.05.17 - added support for EntraID (Open ID) authentication
 #
 # extended error codes
 # ====================
@@ -49,6 +50,7 @@ param (
     [Parameter()][switch]$emailMfaCode,      # email MFA code
     [Parameter()][string]$clusterName = $null,  # cluster name to connect to when connected to Helios/MCM
     [Parameter()][string]$tenant,            # tenant org name
+    [Parameter()][switch]$EntraId,           # use API key authentication
     [Parameter()][string]$vip2,              # alternate cluster to connect to (deprecated)
     [Parameter(Mandatory = $True)][string]$jobName,  # job to run
     [Parameter()][switch]$usePolicy,         # deprecated (does nothing)
@@ -162,7 +164,7 @@ if($cohesity_api.api_version -lt '2022.08.02'){
     }
 }
 
-apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -entraIdAuthentication $EntraId -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
 
 ### select helios/mcm managed cluster
 if($USING_HELIOS){
