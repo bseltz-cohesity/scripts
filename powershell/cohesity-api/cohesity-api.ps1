@@ -265,7 +265,7 @@ function apiauth($vip='helios.cohesity.com',
         # Write-Host "passwd: $passwd"
         # Write-Host "username: $username"
         if($clientId -and $directoryId -and $scope){
-            $token = ProcessOidcToken -username $username -password $passwd -client_id $clientId -tenant_id $directoryId -scope $scope
+            $token = entraAuth -username $username -password $passwd -client_id $clientId -tenant_id $directoryId -scope $scope
             # Write-Host $token
             if($token){
                 $header['X-OPEN-ID-AUTHZ-TOKEN'] = $token
@@ -1220,7 +1220,36 @@ function importStoredPassword($vip='helios.cohesity.com', $username='helios', $d
     }
 }
 
-function ProcessOidcToken ([string]$username, [string]$password, [string]$client_id, [string]$tenant_id, [string]$scope = 'openid profile'){
+function entraAuth ([string]$username, [string]$password, [string]$client_id, [string]$tenant_id, [string]$scope = 'openid profile'){
+    $callazure=$null
+    $Azbody = @{
+        'grant_type'    = 'password';
+        'client_id'     = $client_id;
+        'scope'         = $scope;
+        'username'      = $username;
+        'password'      = $password;
+    }
+    $AzureURL="https://login.microsoftonline.com/$($tenant_id)/oauth2/v2.0/token"
+    $azuhdr = @{
+        'content-type' = "application/x-www-form-urlencoded;charset=utf-8";
+        'Accept'= "application/json"
+    }
+    try{
+        $callazure = Invoke-RestMethod -Method POST -Uri $AzureURL -Body $Azbody -Headers $azuhdr -TimeoutSec 300 -ErrorAction SilentlyContinue
+        $OidcToken=$callazure.id_token
+        return $OidcToken
+    }catch{
+        $error = $_ | ConvertFrom-Json
+        if($error.PSObject.Properties['error_description']){
+            Write-Host "$($error.error_description)" -foregroundcolor red
+        }else{
+            Write-Host "Error occurred autheitcating to Entra ID" -foregroundcolor red
+        }
+        apidrop
+    }
+}
+
+function deprecated-entraAuth ([string]$username, [string]$password, [string]$client_id, [string]$tenant_id, [string]$scope = 'openid profile'){
     $tokenreturn=$null
     $tokenreturn=Invoke-RestConOIDCAzure -username ($username) -pwdx ($password) -cidx ($client_id) -tidx ($tenant_id) -scope ($scope)    
     If($tokenreturn.Exception) {
@@ -1230,7 +1259,7 @@ function ProcessOidcToken ([string]$username, [string]$password, [string]$client
     }
 }
 
-function Invoke-RestConOIDCAzure  {
+function deprecated-Invoke-RestConOIDCAzure  {
     param ( [Parameter (Mandatory = $true)] [ValidateNotNullOrEmpty()] [String]$username,
             [Parameter (Mandatory = $true)] [ValidateNotNullOrEmpty()] $pwdx,
             [Parameter (Mandatory = $true)] [ValidateNotNullOrEmpty()] [String]$cidx,
