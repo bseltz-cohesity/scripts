@@ -31,7 +31,9 @@ param (
     [Parameter()][switch]$noPrompt,
     [Parameter()][ValidateSet('InstantRecovery','CopyRecovery')][string]$recoveryType = 'InstantRecovery',
     [Parameter()][string]$taskName,
-    [Parameter()][switch]$dbg
+    [Parameter()][switch]$dbg,
+    [Parameter()][string]$vmTag,
+    [Parameter()][string]$protectionGroup
 )
 
 # gather list from command line params and file
@@ -83,6 +85,13 @@ if($vmTag){
     $taggedVMlist = api get "/searchvms?entityTypes=kVMware&vmName=$vmTag"
     $taggedVMs = $taggedVMlist.vms | Where-Object  {$vmTag -in $_.vmDocument.objectId.entity.vmwareEntity.tagAttributesVec.name} 
     $vmNames = $vmNames + @($taggedVMs.vmDocument.objectName) | Sort-Object -Unique
+}
+
+# search for protection groups
+if($protectionGroup){
+    $jobVMlist = api get "/searchvms?entityTypes=kVMware&vmName=$protectionGroup"
+    $jobVMs = $jobVMlist.vms | Where-Object  {$_.vmDocument.jobName -eq $protectionGroup} 
+    $vmNames = $vmNames + @($jobVMs.vmDocument.objectName) | Sort-Object -Unique  
 }
 
 if($vmNames.Count -eq 0){

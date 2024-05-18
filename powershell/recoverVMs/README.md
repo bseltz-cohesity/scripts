@@ -58,7 +58,8 @@ Place the files in a folder together and run the main script like so:
 
 * -vmName: (optional) names of one or more VMs to recover (comma separated)
 * -vmList: (optional) text file of VMs to recover (one VM per line)
-* -vmTag: (optional) VMware Tag of VMs to recover
+* -vmTag: (optional) recover all VMs that have this VMware Tag
+* -protectionGroup: (optional) recover all VMs from this protection group
 * -recoverDate: (optional) e.g. '2021-08-18 23:30:00' (will use most recent at or before this date)
 * -prefix: (optional) add a prefix to the VM name during restore
 * -vCenterName: (optional)vCenter protection source to recover to
