@@ -25,7 +25,11 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./registerVcenter.ps1 -vip mycluster -username myuser -domain mydomain.net -vcenter vcenter.mydomain.net -vcuser administrator@vsphere.local
+./registerVcenter.ps1 -vip mycluster `
+                      -username myuser `
+                      -domain mydomain.net `
+                      -vcenter vcenter.mydomain.net `
+                      -vcuser administrator@vsphere.local
 ```
 
 ## Authentication Parameters
