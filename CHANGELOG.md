@@ -1,5 +1,14 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-05-18
+
+* [listViews.py](https://github.com/cohesity/community-automation-samples/tree/main/python/listViews) [`Update`] updated to use v2 API
+
+## 2024-05-17
+
+* [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added support for Entra ID authentication to Helios
+* [backupNow.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/backupNow) [`Update`] added support for Entra ID authentication to Helios
+
 ## 2024-05-16
 
 * [deployCCSWindowsAgent.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/deployCCSWindowsAgent) [`New`] Remotely install and register Windows agents for CCS
