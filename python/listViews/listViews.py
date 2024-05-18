@@ -19,10 +19,9 @@ parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-e', '--emailmfacode', action='store_true')
-parser.add_argument('-n', '--name', type=str, default=None)  # Cohesity User Domain
-parser.add_argument('-s', '--showsettings', action='store_true')  # view name
+parser.add_argument('-n', '--name', type=str, default=None)
+parser.add_argument('-s', '--showsettings', action='store_true')
 parser.add_argument('-x', '--units', type=str, choices=['MiB', 'GiB', 'mib', 'gib', 'tib', 'TiB'], default='GiB')  # units
-
 args = parser.parse_args()
 
 vip = args.vip
@@ -86,73 +85,98 @@ if mcm or vip.lower() == 'helios.cohesity.com':
         exit(1)
 # end authentication =====================================================
 
-views = api('get', 'views')
+pager = ''
+namer = ''
+if name is not None:
+    namer = '&viewNames=%s' % name
 
-if views['count'] > 0:
-    if name is not None:
-        views = [v for v in views['views'] if v['name'].lower() == name.lower()]
-        if len(views) == 0:
-            print('view %s not found' % name)
-            exit(1)
+firstLoop = True
+while True:
+    sawView = False
+    views = api('get', 'file-services/views?useCachedData=false&maxCount=2000&includeTenants=true&includeStats=false&includeProtectionGroups=true&includeInactive=false&includeStats=true%s%s' % (pager, namer), v=2)
+
+    if views['count'] > 0:
+        sawView = True
+        if name is not None:
+            theseviews = [v for v in views['views'] if v['name'].lower() == name.lower()]
+            if len(theseviews) == 0:
+                print('view %s not found' % name)
+                exit(1)
+        else:
+            theseviews = views['views']
+        if showsettings or name is not None:
+            for view in sorted(theseviews, key=lambda v: v['name'].lower()):
+                if name is None or name.lower() == view['name'].lower():
+                    protected = False
+                    if 'viewProtection' in view:
+                        protected = True
+                    print('\n                      Name: %s' % view['name'])
+                    print('               Create Date: %s' % usecsToDate(view['createTimeMsecs'] * 1000))
+                    print('            Storage Domain: %s' % view['storageDomainName'])
+                    protocols = ', '.join(['%s (%s)' % (p['type'], p['mode']) for p in view['protocolAccess']])
+                    print('                 Protocols: %s' % protocols)
+                    if 'nfsMountPaths' in view and view['nfsMountPaths'] is not None and len(view['nfsMountPaths']) > 0:
+                        [print('            NFS Mount Path: %s' % p) for p in view['nfsMountPaths']]
+                    if 'smbMountPaths' in view and view['smbMountPaths'] is not None and len(view['smbMountPaths']) > 0:
+                        [print('            SMB Mount Path: %s' % p) for p in view['smbMountPaths']]
+                    if 's3AccessPath' in view:
+                        print('             S3 Mount Path: %s' % view['s3AccessPath'])
+                    print('                 Protected: %s' % protected)
+                    try:
+                        print('             Logical Usage: %s %s' % (round(view['stats']['dataUsageStats']['totalLogicalUsageBytes'] / multiplier, 2), units))
+                    except Exception:
+                        print('             Logical Usage: %s %s' % (0, units))
+                    if 'logicalQuota' in view:
+                        if 'hardLimitBytes' in view['logicalQuota']:
+                            print('             Logical Quota: %s %s' % (int(round(view['logicalQuota']['hardLimitBytes'] / multiplier, 0)), units))
+                        if 'alertLimitBytes' in view['logicalQuota']:
+                            print('               Quota Alert: %s %s' % (int(round(view['logicalQuota']['alertLimitBytes'] / multiplier, 0)), units))
+                    print('                QOS Policy: %s' % view['qos']['principalName'])
+                    if 'subnetWhitelist' in view and view['subnetWhitelist'] is not None and len(view['subnetWhitelist']) > 0:
+                        print('                 Whitelist:')
+                        entrynum = 0
+                        for entry in view['subnetWhitelist']:
+                            if 'nfsRootSquash' not in entry:
+                                entry['nfsRootSquash'] = 'n/a'
+                            if entrynum > 0:
+                                print('')
+                            print('                            %s/%s' % (entry['ip'], entry['netmaskBits']))
+                            print('                            nfsRootSquash: %s' % entry['nfsRootSquash'])
+                            print('                            nfsAccess: %s' % entry['nfsAccess'][1:])
+                            print('                            smbAccess: %s' % entry['smbAccess'][1:])
+                            entrynum = 1
+                    if 'fileLockConfig' in view:
+                        print('             Datalock Mode: %s' % view['fileLockConfig'].get('mode', 'kNone')[1:])
+                        if 'autoLockAfterDurationIdle' in view['fileLockConfig']:
+                            autolockMins = view['fileLockConfig']['autoLockAfterDurationIdle'] / 60000
+                            print('    Auto Lock Idle Minutes: %s' % autolockMins)
+                        if 'defaultFileRetentionDurationMsecs' in view['fileLockConfig']:
+                            defaultRetention = timeString(view['fileLockConfig']['defaultFileRetentionDurationMsecs'])
+                            print('       Default Lock Period: %s' % defaultRetention)
+                        print('  Manual Datalock Protocol: %s' % view['fileLockConfig'].get('lockingProtocol', 'kNone')[1:])
+                        if 'minRetentionDurationMsecs' in view['fileLockConfig']:
+                            minRetention = timeString(view['fileLockConfig']['minRetentionDurationMsecs'])
+                            print('       Minimum Lock Period: %s' % minRetention)
+                        if 'maxRetentionDurationMsecs' in view['fileLockConfig']:
+                            maxRetention = timeString(view['fileLockConfig']['maxRetentionDurationMsecs'])
+                            print('       Maximun Lock Period: %s' % maxRetention)
+        else:
+            if firstLoop is True:
+                print('\nProto   Name')
+                print('-----   ----')
+                firstLoop = False
+            for view in sorted(theseviews, key=lambda v: v['name'].lower()):
+                if name is None or name.lower() == view['name'].lower():
+                    protocols = ', '.join([p['type'] for p in view['protocolAccess']])
+                    print('%s\t%s' % (protocols, view['name']))
+        if views['lastResult'] is True:
+            break
+        else:
+            pager = '&maxViewId=%s' % views['views'][-1]['viewId']
     else:
-        views = views['views']
-    if showsettings or name is not None:
-        for view in sorted(views, key=lambda v: v['name'].lower()):
-            if name is None or name.lower() == view['name'].lower():
-                protected = False
-                if 'viewProtection' in view:
-                    protected = True
-                print('\n                      Name: %s' % view['name'])
-                print('               Create Date: %s' % usecsToDate(view['createTimeMsecs'] * 1000))
-                print('            Storage Domain: %s' % view['viewBoxName'])
-                print('                  Protocol: %s' % view['protocolAccess'][1:].replace('Only', ''))
-                if 'nfsMountPath' in view:
-                    print('            NFS Mount Path: %s' % view['nfsMountPath'])
-                if 'smbMountPath' in view:
-                    print('            SMB Mount Path: %s' % view['smbMountPath'])
-                if 's3AccessPath' in view:
-                    print('             S3 Mount Path: %s' % view['s3AccessPath'])
-                print('                 Protected: %s' % protected)
-                print('             Logical Usage: %s %s' % (round(view['logicalUsageBytes'] / multiplier, 2), units))
-                if 'logicalQuota' in view:
-                    if 'hardLimitBytes' in view['logicalQuota']:
-                        print('             Logical Quota: %s %s' % (int(round(view['logicalQuota']['hardLimitBytes'] / multiplier, 0)), units))
-                    if 'alertLimitBytes' in view['logicalQuota']:
-                        print('               Quota Alert: %s %s' % (int(round(view['logicalQuota']['alertLimitBytes'] / multiplier, 0)), units))
-                print('                QOS Policy: %s' % view['qos']['principalName'])
-                if 'subnetWhitelist' in view:
-                    print('                 Whitelist:')
-                    entrynum = 0
-                    for entry in view['subnetWhitelist']:
-                        if 'nfsRootSquash' not in entry:
-                            entry['nfsRootSquash'] = 'n/a'
-                        if entrynum > 0:
-                            print('')
-                        print('                            %s/%s' % (entry['ip'], entry['netmaskBits']))
-                        print('                            nfsRootSquash: %s' % entry['nfsRootSquash'])
-                        print('                            nfsAccess: %s' % entry['nfsAccess'][1:])
-                        print('                            smbAccess: %s' % entry['smbAccess'][1:])
-                        entrynum = 1
-                if 'fileLockConfig' in view:
-                    print('             Datalock Mode: %s' % view['fileLockConfig'].get('mode', 'kNone')[1:])
-                    if 'autoLockAfterDurationIdle' in view['fileLockConfig']:
-                        autolockMins = view['fileLockConfig']['autoLockAfterDurationIdle'] / 60000
-                        print('    Auto Lock Idle Minutes: %s' % autolockMins)
-                    if 'defaultFileRetentionDurationMsecs' in view['fileLockConfig']:
-                        defaultRetention = timeString(view['fileLockConfig']['defaultFileRetentionDurationMsecs'])
-                        print('       Default Lock Period: %s' % defaultRetention)
-                    print('  Manual Datalock Protocol: %s' % view['fileLockConfig'].get('lockingProtocol', 'kNone')[1:])
-                    if 'minRetentionDurationMsecs' in view['fileLockConfig']:
-                        minRetention = timeString(view['fileLockConfig']['minRetentionDurationMsecs'])
-                        print('       Minimum Lock Period: %s' % minRetention)
-                    if 'maxRetentionDurationMsecs' in view['fileLockConfig']:
-                        maxRetention = timeString(view['fileLockConfig']['maxRetentionDurationMsecs'])
-                        print('       Maximun Lock Period: %s' % maxRetention)
-        print('')
-    else:
-        print('\nProto  Name')
-        print('-----  ----')
-        for view in sorted(views, key=lambda v: v['name'].lower()):
-            if name is None or name.lower() == view['name'].lower():
-                print(' %-4s  %s' % (view['protocolAccess'][1:].replace('Only', ''), view['name']))
-        print('')
+        if firstLoop is True:
+            print('No views found')
+            break
+    if sawView is False:
+        break
+print('')
