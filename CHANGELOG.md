@@ -2,6 +2,8 @@
 
 ## 2024-05-21
 
+* [restoreSQL-CCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreSQL-CCS) [`Update`] added -logRangeDays parameter to limit scope of log lookups
+* [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/restoreSQLv2) [`Update`] added -logRangeDays parameter to limit scope of log lookups
 * [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`New`] obfuscate paths in log files before uploading to Cohesity Support
 * [heliosLicenseReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/python/heliosLicenseReport) [`Update`] added CSV output format
 
