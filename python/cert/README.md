@@ -6,8 +6,8 @@ Contributor: Priyadharsini
 
 ## Components
 
-* cert.py: the main python script
-* pyhesity.py: the Cohesity python helper module
+* [cert.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/cert/cert.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py): the Cohesity REST API helper module: the Cohesity python helper module
 * python requests module (see "Installing the Prerequisites" section below)
 
 You can download the scripts using the following commands:

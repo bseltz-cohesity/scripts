@@ -20,8 +20,8 @@ chmod +x s3DeleteOldFiles.py
 
 ## Components
 
-* s3DeleteOldFiles.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [s3DeleteOldFiles.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/s3test/s3DeleteOldFiles/s3DeleteOldFiles.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

@@ -18,8 +18,8 @@ chmod +x downloadM365MailboxPST.py
 
 ## Components
 
-* downloadM365MailboxPST.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [downloadM365MailboxPST.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/downloadM365MailboxPST/downloadM365MailboxPST.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 

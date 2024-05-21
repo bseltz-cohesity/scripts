@@ -18,8 +18,8 @@ chmod +x obfuscateLogs.py
 
 ## Components
 
-* obfuscateLogs.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [obfuscateLogs.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/obfuscateLogs/obfuscateLogs.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py): the Cohesity REST API helper module
 
 Place your log files in a folder (the script will process all files in that folder), then run the main script like so:
 

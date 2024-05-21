@@ -18,8 +18,8 @@ chmod +x protectionRunsV1Example.py
 
 ## Components
 
-* protectionRunsV1Example.py: the main python script
-* pyhesity.py: the Cohesity REST API helper module
+* [protectionRunsV1Example.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/protectionRunsV1Example/protectionRunsV1Example.py): the main python script
+* [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 
