@@ -101,8 +101,9 @@ To restore all databases (except system databases) to an alternate server:
 
 ## Point in Time Parameters
 
-* -logTime: Point in time to replay the logs to during the restore (e.g. '2019-04-10 22:31:05')
-* -noStop: Replay the logs to the last transaction available
+* -logTime: (optional) Point in time to replay the logs to during the restore (e.g. '2019-04-10 22:31:05')
+* -logRangeDays: (optional) number of days to look back from specified log time (default is 14 days)
+* -noStop: (optional) Replay the logs to the last transaction available
 
 ## Recovery Option Parameters
 

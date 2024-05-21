@@ -30,6 +30,7 @@ param (
     [Parameter()][switch]$noRecovery,
     [Parameter()][switch]$noStop,
     [Parameter()][datetime]$logTime,
+    [Parameter()][int64]$logRangeDays = 14,
     [Parameter()][int64]$newerThan,
     [Parameter()][switch]$overwrite,
     [Parameter()][switch]$keepCdc,
@@ -303,7 +304,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
                     );
                     "environment" = "kSQL";
                     "protectionSourceId" = $o.id;
-                    "startTimeUsecs" = 0;
+                    "startTimeUsecs" = $logTimeUsecs - ($logRangeDays * 86400000000);
                     "endTimeUsecs" = $logTimeUsecs
                 }
                 $logs = api post restore/pointsForTimeRange $pitQuery
