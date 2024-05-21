@@ -13,7 +13,8 @@ param (
     [Parameter()][string]$clusterName = $null,
     [Parameter()][array]$sourceUserName,
     [Parameter()][string]$sourceUserList,
-    [Parameter()][string]$pstPassword = $null,
+    [Parameter()][string]$pstPassword = '',
+    [Parameter()][switch]$promptForPSTPassword,
     [Parameter()][string]$fileName = '.\pst.zip',
     [Parameter()][datetime]$recoverDate,
     [Parameter()][switch]$continueOnError,
@@ -49,7 +50,7 @@ if($USING_HELIOS){
 # end authentication =========================================
 
 
-if(! $pstPassword){
+if($promptForPSTPassword){
     while($True){
         $secureNewPassword = Read-Host -Prompt "  Enter PST password" -AsSecureString
         $secureConfirmPassword = Read-Host -Prompt "Confirm PST password" -AsSecureString

@@ -53,7 +53,8 @@ Place both files in a folder together and run the main script like so:
 * -sourceUserName: (optional) one or more user names or SMTP to download (comma separated)
 * -sourceUserList: (optional) text file of user names to download (one per line)
 * -fileName: (optional) path/name of zip file to download (default is '.\pst.zip')
-* -pstPassword: (optional) password for PSTs (will be prompted if omitted)
+* -pstPassword: (optional) password for PSTs (will be no password if omitted)
+* -promptForPSTPassword: (optional) prompt for PST password
 * -recoverDate: (optional) datetime of snapshot to download e.g '2024-05-10 23:30:00' (will use latest snapshot if omitted)
 * -continueOnError: (optional) continue processing if mailbox not found (exit is default)
 * -sleepTimeSeconds: (optional) sleep X seconds between status queries (default is 30)
