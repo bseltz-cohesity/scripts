@@ -27,6 +27,9 @@ now = datetime.now()
 date = now.strftime("%m/%d/%Y %H:%M:%S")
 filedate = now.strftime("%Y-%m-%d")
 
+csvfilename = '%s/licenseReport-%s.csv' % (folder, filedate)
+csv = codecs.open(csvfilename, 'w', 'utf-8')
+
 html = '''<html>
 <head>
     <style>
@@ -177,36 +180,51 @@ for skuName in totalUsage:
         print('%s: %s of %s' % (skuName, totalUsage[skuName], licensedUsage.get(skuName, 0)))
 
 html += '<table><tr><th>Cluster Name</th>'
+csvHeadings = ['Cluster Name']
 
 for skuName in sorted(totalUsage):
     html += '<th>%s</th>' % skuName
+    csvHeadings.append(skuName)
 html += '</tr>'
+csv.write('%s\n' % ','.join(csvHeadings))
 
 # report per cluster usage
 for cluster in sorted(license['usage'], key=lambda cluster: clusterName.get('str-%s' % cluster, cluster)):
+    csvLine = []
     print('')
     thisCluster = clusterName.get('str-%s' % cluster, cluster)
     print(thisCluster)
     html += '<tr><td>%s</td>' % thisCluster
+    csvLine.append(str(thisCluster))
     for skuName in sorted(totalUsage):
         html += '<td>%s</td>' % clusterUsage[cluster].get(skuName, 0)
+        csvLine.append(str(clusterUsage[cluster].get(skuName, 0)))
         print('    %s: %s' % (skuName, clusterUsage[cluster].get(skuName, 0)))
     html += '</tr>'
-
+    csv.write('%s\n' % str(','.join(csvLine)))
+csvLine = ['Total Used']
 html += '<tr><td><strong>Total Used</strong></td>'
 for skuName in sorted(totalUsage):
     html += '<td><strong>%s</strong></td>' % totalUsage[skuName]
+    csvLine.append(str(totalUsage[skuName]))
 html += '</tr>'
+csv.write('%s\n' % ','.join(csvLine))
 
+csvLine = ['Entitlement']
 html += '<tr><td><strong>Entitlement</strong></td>'
 for skuName in sorted(totalUsage):
     html += '<td><strong>%s</strong></td>' % licensedUsage.get(skuName, 0)
+    csvLine.append(str(licensedUsage.get(skuName, 0)))
 html += '</tr>'
+csv.write('%s\n' % ','.join(csvLine))
 
+csvLine = ['Remaining']
 html += '<tr><td><strong>Remaining</strong></td>'
 for skuName in sorted(totalUsage):
     html += '<td><strong>%s</strong></td>' % (licensedUsage.get(skuName, 0) - totalUsage[skuName])
+    csvLine.append(str(licensedUsage.get(skuName, 0) - totalUsage[skuName]))
 html += '</tr>'
+csv.write('%s\n' % ','.join(csvLine))
 
 html += '''</table>
 </div>
@@ -217,3 +235,7 @@ outfilename = '%s/licenseReport-%s.html' % (folder, filedate)
 f = codecs.open(outfilename, 'w', 'utf-8')
 f.write(html)
 f.close()
+csv.close()
+
+print('\nHTML output saved to %s' % outfilename)
+print(' CSV output saved to %s\n' % csvfilename)
