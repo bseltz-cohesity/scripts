@@ -1,7 +1,14 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-05-21
+
+* [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`New`] obfuscate paths in log files before uploading to Cohesity Support
+* [heliosLicenseReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/python/heliosLicenseReport) [`Update`] added CSV output format
+
 ## 2024-05-18
 
+* [recoverVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverVMs) [`Update`] added -protectionGroup parameter
+* [registerVcenter.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/registerVcenter) [`Update`] added -useVmBiosUuid parameter
 * [listViews.py](https://github.com/cohesity/community-automation-samples/tree/main/python/listViews) [`Update`] updated to use v2 API
 
 ## 2024-05-17
