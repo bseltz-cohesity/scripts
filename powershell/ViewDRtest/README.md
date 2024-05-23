@@ -107,8 +107,6 @@ Below are examples, same as above except we can connect via Helios:
 
 ## Authenticating to Helios
 
-The Test/Wrapper scripts can be configured to log onto clusters directly, or log onto Helios.
-
 Helios uses an API key for authentication. To acquire an API key:
 
 * log onto Helios
