@@ -26,9 +26,9 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 Two clusters (ClusterA and ClusterB) should be configured for replication. ClusterA hosts Cohesity Views that are protected using a protection policy that replicates the view backups to ClusterB.
 
-## Clone Views to ClusterB
+## Clone Views to ClusterB (for DR testing)
 
-Use the viewDRtest-clone.ps1 script to bring the views online at ClusterB for testing.
+Use the viewDRtest-clone.ps1 script to bring the views online at ClusterB for testing (views and child shares will be created with the specified suffix):
 
 ```powershell
 .\viewDRtest-clone.ps1 -vip clusterB `
@@ -39,9 +39,9 @@ Use the viewDRtest-clone.ps1 script to bring the views online at ClusterB for te
                        -sourceCluster clusterA
 ```
 
-Views and child shares will be created with the specified suffix.
+Note: an output file migratedShares.txt is created, that can be used as input for any DFS folder target updates.
 
-## Delete the Cloned Views (after DR testing is complete)
+## Delete the Cloned Views and Shares (after DR testing is complete)
 
 Use the viewDRtest-delete.ps1 script to delete the old views from ClusterA
 
@@ -52,6 +52,8 @@ Use the viewDRtest-delete.ps1 script to delete the old views from ClusterA
                         -viewList .\myviews.txt `
                         -suffix test
 ```
+
+## Examples using Helios
 
 Below are examples, same as above except we can connect via Helios:
 
