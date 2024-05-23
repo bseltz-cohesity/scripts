@@ -1,5 +1,14 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-05-23
+
+* [viewDRtest](https://github.com/cohesity/community-automation-samples/tree/main/powershell/ViewDRtest) [`New`] clone views for DR testing
+
+## 2024-05-22
+
+* [jobRunning.py](https://github.com/cohesity/community-automation-samples/tree/main/python/jobRunning) [`Update`] modernized authentication options
+* [unprotectPhysicalServer.py](https://github.com/cohesity/community-automation-samples/tree/main/python/unprotectPhysicalServer) [`Update`] modernized authentication options
+
 ## 2024-05-21
 
 * [restoreSQL-CCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreSQL-CCS) [`Update`] added -logRangeDays parameter to limit scope of log lookups
