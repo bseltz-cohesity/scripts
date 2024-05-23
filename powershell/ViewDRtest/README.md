@@ -28,6 +28,8 @@ Two clusters (ClusterA and ClusterB) should be configured for replication. Clust
 
 ## Clone Views to ClusterB (for DR testing)
 
+Create a text file (e.g. myviews.txt) containing view names to clone (one view name per line).
+
 Use the viewDRtest-clone.ps1 script to bring the views online at ClusterB for testing (views and child shares will be created with the specified suffix):
 
 ```powershell
