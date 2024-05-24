@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""obfuscate logs - version 2024-05-21a"""
+"""obfuscate logs - version 2024-05-24a"""
 
 import os
 import gzip
@@ -51,12 +51,17 @@ def obfuscatefile(root, filepath):
     with codecs.open(filepath, 'r', 'latin-1') as f_in:
         with codecs.open(outfile, 'w', 'latin-1') as f_out:
             for line in f_in:
-                if '/' in line:
+                if '/' in line or '\\' in line:
                     tags = ''.join(re.findall(r'(<.*?[\w:|\.|-|"|=]+>)', line))
                     lineparts = re.split('=|\"', line)
                     for linepart in lineparts:
-                        paths = re.findall(r'(\/.*?[\w:|\.|-]+)', linepart)
-                        paths = [p for p in paths if p not in tags and p not in [i for i in ignore_paths]]
+                        windowspaths = re.findall(r'(\\.+[\w:|\.|-]+)', linepart)
+                        paths = [p for p in windowspaths if p not in tags and p not in [i for i in ignore_paths]]
+                        for path in paths:
+                            line = line.replace(path, '\\xxx')
+                        linuxpaths = re.findall(r'(\/.+[\w:|\.|-]+)', linepart)
+                        # paths = re.findall(r'(\/.*?[\w:|\.|-]+)', linepart)
+                        paths = [p for p in linuxpaths if p not in tags and p not in [i for i in ignore_paths]]
                         for path in paths:
                             line = line.replace(path, '/xxx')
                 f_out.write('%s' % line)
