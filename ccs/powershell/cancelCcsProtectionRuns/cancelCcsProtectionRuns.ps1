@@ -1,10 +1,12 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][string]$username = 'Ccs',
-    [Parameter(Mandatory = $True)][string]$region,  # Ccs region
+    [Parameter()][string]$username = 'DMaaS',
+    [Parameter(Mandatory = $True)][string]$region,  # DMaaS region
     [Parameter()][string]$environment,
-    [Parameter()][string]$subType
+    [Parameter()][string]$subType,
+    [Parameter()][string]$objectName,
+    [Parameter()][string]$sourceName
 )
 
 # source the cohesity-api helper code
@@ -40,6 +42,26 @@ if($subType){
 
 $activities = api post -mcmv2 data-protect/objects/activity $activityQuery
 $activities = $activities.activity | Where-Object {$_.archivalRunParams.status -eq 'Running' -or $_.archivalRunParams.status -eq 'Accepted'}
+if(!$activities){
+    Write-host "No active backups"
+    exit
+}
+
+if($sourceName){
+    $activities = $activities | Where-Object {$_.object.sourceName -eq $sourceName}
+    if(!$activities){
+        Write-host "No active backups for $sourceName"
+        exit
+    }
+}
+
+if($objectName){
+    $activities = $activities | Where-Object {$_.object.name -eq $objectName}
+    if(!$activities){
+        Write-host "No active backups for $objectName"
+        exit
+    }
+}
 
 foreach($activity in $activities | Where-Object {! $_.PSObject.Properties['endTimeUsecs']}){
     if(! $activity.archivalRunParams.PSObject.Properties['endTimeUsecs']){

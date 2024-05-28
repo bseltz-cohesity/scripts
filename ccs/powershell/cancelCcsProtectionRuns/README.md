@@ -34,6 +34,8 @@ Place both files in a folder together and run the main script like so:
 * -region: Ccs region to use (e.g. us-east-2)
 * -environment: (optional) e.g. kO365
 * -subType: (optional) e.g. kO365Sharepoint
+* -sourceName: (optional) e.g. name of registered source
+* -objectName: (optional) e.g. name of virtual machine
 
 ## Authenticating to Ccs
 
