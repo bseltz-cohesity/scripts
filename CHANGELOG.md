@@ -1,5 +1,10 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-05-28
+
+* [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`Update`] expanded ignore paths
+* [cancelCcsProtectionRuns.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/cancelCcsProtectionRuns) [`Update`] added -sourceName and -objectName parameters
+
 ## 2024-05-23
 
 * [viewDRtest](https://github.com/cohesity/community-automation-samples/tree/main/powershell/ViewDRtest) [`New`] clone views for DR testing
