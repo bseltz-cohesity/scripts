@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""obfuscate logs - version 2024-05-24a"""
+"""obfuscate logs - version 2024-05-28a"""
 
 import os
 import gzip
@@ -38,9 +38,67 @@ ignore_paths = [
     '/font',
     '/css',
     '/javascript',
-    '/html'
+    '/html',
+    '/#',
+    '/.',
+    '/(',
+    '/<',
+    '/^',
+    '/=',
+    '/%%s',
+    '/tmp',
+    '/root',
+    '/amd64'
 ]
 
+match_paths = [
+    '/system.slice/',
+    '/user.slice/',
+    '/home/cohesity',
+    '/home_cohesity_data',
+    '/cohesity_users_home*',
+    '_Domain/',
+    '/home/support/',
+    '/COHESITY_YODA',
+    '/cohesity_logs',
+    '/healthz',
+    '/sys/fs/cgroup',
+    '/var/log/cohesity',
+    '/var/run/ovn/',
+    '/usr/bin/',
+    '/bin/systemctl',
+    '/status OVN',
+    '/C) ,latency (us)',
+    '/usr/bin',
+    '/etc/ora',
+    '/usr/sbin/lvs',
+    '/run for volume',
+    'for volume tmpfs',
+    '/bin/bash',
+    '/bin/lsblk',
+    '/usr/sbin/',
+    '/ ; USER',
+    '/healthsize',
+    '//www.rsyslog.com',
+    '.go:',
+    '/var/run/openvswitch',
+    '/var/log/audit',
+    '/selinux/targeted/active/modules',
+    'commit_changessize: ',
+    '/root ; USER',
+    '/var/log/openvswitch',
+    '//support.cohesity.com/',
+    '/siren/v1/',
+    '/pprof/heapstats from ',
+    '/metrics from ',
+    '/cohesity_users_home/support',
+    '/threadz from ',
+    '/varz from ',
+    '/flagz from ',
+    '/portz from ',
+    '/statsz from ',
+    '/tracez?component'
+]
 
 def obfuscatefile(root, filepath):
     filename = os.path.basename(filepath)
@@ -51,16 +109,20 @@ def obfuscatefile(root, filepath):
     with codecs.open(filepath, 'r', 'latin-1') as f_in:
         with codecs.open(outfile, 'w', 'latin-1') as f_out:
             for line in f_in:
-                if '/' in line or '\\' in line:
+                skipline = False
+                for match_path in match_paths:
+                    if match_path in line:
+                        skipline = True
+                        break
+                if skipline is False and ('/' in line or '\\' in line):
                     tags = ''.join(re.findall(r'(<.*?[\w:|\.|-|"|=]+>)', line))
-                    lineparts = re.split('=|\"', line)
+                    lineparts = re.split('=|\"|\[|\>|\<', line)
                     for linepart in lineparts:
                         windowspaths = re.findall(r'(\\.+[\w:|\.|-]+)', linepart)
                         paths = [p for p in windowspaths if p not in tags and p not in [i for i in ignore_paths]]
                         for path in paths:
                             line = line.replace(path, '\\xxx')
                         linuxpaths = re.findall(r'(\/.+[\w:|\.|-]+)', linepart)
-                        # paths = re.findall(r'(\/.*?[\w:|\.|-]+)', linepart)
                         paths = [p for p in linuxpaths if p not in tags and p not in [i for i in ignore_paths]]
                         for path in paths:
                             line = line.replace(path, '/xxx')
