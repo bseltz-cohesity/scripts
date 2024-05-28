@@ -25,7 +25,11 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 Place both files in a folder together and run the main script like so:
 
 ```powershell
+# cancel all protection runs in a region
 ./cancelCcsProtectionRuns.ps1 -region us-east-2
+
+# cancel a protection run for a specific VM
+./cancelCcsProtectionRuns.ps1 -region us-west-2 -sourceName myvcenter.mydomain.com -objectName myVM1
 ```
 
 ## Parameters
