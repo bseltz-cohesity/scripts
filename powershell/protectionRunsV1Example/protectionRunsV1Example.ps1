@@ -97,19 +97,24 @@ if($daysBack){
 
 foreach($job in $jobs | Sort-Object -Property name | Where-Object {$_.isDeleted -ne $true}){
     $endUsecs = dateToUsecs (Get-Date)
+    $lastRunId = 0
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         "{0}" -f $job.name
         while($True){
             $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&startTimeUsecs=$daysBackUsecs&endTimeUsecs=$endUsecs&excludeTasks=true"
+            if($lastRunId -ne 0){
+                $runs = $runs | Where-Object {$_.backupRun.jobRunId -lt $lastRunId}
+            }
             foreach($run in $runs){
                 $runStartTime = usecsToDate $run.backupRun.stats.startTimeUsecs
                 "    {0}" -f $runStartTime
                 """{0}"",""{1}""" -f $job.name, $runStartTime | Out-File -FilePath $outfileName -Append 
             }
-            if($runs.Count -eq $numRuns){
-                $endUsecs = $runs[-1].backupRun.stats.endTimeUsecs - 1
-            }else{
+            if(!$runs -or $runs.Count -eq 0 -or $runs[-1].backupRun.jobRunId -eq $lastRunId){
                 break
+            }else{
+                $lastRunId = $runs[-1].backupRun.jobRunId
+                $endUsecs = $runs[-1].backupRun.stats.endTimeUsecs
             }
         }
     }
