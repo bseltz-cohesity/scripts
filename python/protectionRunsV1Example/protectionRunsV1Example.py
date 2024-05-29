@@ -108,10 +108,14 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
     if len(jobnames) == 0 or job['name'].lower() in [j.lower() for j in jobnames]:
         print('%s' % job['name'])
         endUsecs = nowUsecs
+        lastRunId = 0
         while 1:
             runs = api('get', 'protectionRuns?jobId=%s&numRuns=%s&startTimeUsecs=%s&endTimeUsecs=%s&excludeTasks=true' % (job['id'], numruns, daysbackUsecs, endUsecs))
+            if lastRunId != 0 and len(runs) > 0:
+                runs = [r for r in runs if r['backupRun']['jobRunId'] < lastRunId]
             if len(runs) > 0:
-                endUsecs = runs[-1]['backupRun']['stats']['startTimeUsecs'] - 1
+                endUsecs = runs[-1]['backupRun']['stats']['startTimeUsecs']
+                lastRunId = runs[-1]['backupRun']['jobRunId']
             else:
                 break
             for run in runs:
