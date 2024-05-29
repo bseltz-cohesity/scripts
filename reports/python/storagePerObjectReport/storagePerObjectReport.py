@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Storage Per Object Report version 2024.05.07 for Python"""
+"""Storage Per Object Report version 2024.05.29 for Python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -199,10 +199,13 @@ def reportStorage():
             oldestArchive = '-'
             lastDataLock = '-'
             endUsecs = nowUsecs
+            lastRunId = '0'
             while 1:
                 if debug is True:
                     print('    getting protection runs')
                 runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&endTimeUsecs=%s&includeTenants=true&includeObjectDetails=true&excludeNonRestorableRuns=true&useCachedData=true' % (job['id'], numruns, endUsecs), v=2)
+                if lastRunId != '0':
+                    runs['runs'] = [r for r in runs['runs'] if r['id'] < lastRunId]
                 for run in runs['runs']:
                     if 'isLocalSnapshotsDeleted' not in run:
                         # per object stats
@@ -313,13 +316,16 @@ def reportStorage():
                             if 'status' in archiveResult and archiveResult['status'] == 'Succeeded':
                                 archiveCount += 1
                                 oldestArchive = usecsToDate(run['id'].split(':')[-1])
-                if len(runs['runs']) < numruns:
+                if len(runs['runs']) == 0 or runs['runs'][-1]['id'] == lastRunId:
                     break
                 else:
+                    lastRunId = runs['runs'][-1]['id']
                     if 'localBackupInfo' in runs['runs'][-1]:
-                        endUsecs = runs['runs'][-1]['localBackupInfo']['startTimeUsecs'] - 1
+                        endUsecs = runs['runs'][-1]['localBackupInfo']['endTimeUsecs']
+                    elif 'originalBackupInfo' in runs['runs'][-1]:
+                        endUsecs = runs['runs'][-1]['originalBackupInfo']['endTimeUsecs']
                     else:
-                        endUsecs = runs['runs'][-1]['originalBackupInfo']['startTimeUsecs'] - 1
+                        endUsecs = runs['runs'][-1]['archivalInfo']['archivalTargetResults'][0]['endTimeUsecs']
 
             # process output
             jobFESize = 0
@@ -420,10 +426,13 @@ def reportStorage():
                 thisStat = [s for s in stats['statsList'] if s['id'] == int(v1JobId)]
             endUsecs = nowUsecs
             lastDataLock = '-'
+            lastRunId = '0'
             while 1:
                 if debug is True:
                     print('    getting protection runs')
                 runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&endTimeUsecs=%s&includeTenants=true&includeObjectDetails=true&excludeNonRestorableRuns=true&useCachedData=true' % (job['id'], numruns, endUsecs), v=2)
+                if lastRunId != '0':
+                    runs['runs'] = [r for r in runs['runs'] if r['id'] < lastRunId]
                 for run in runs['runs']:
                     if 'isLocalSnapshotsDeleted' not in run:
                         # per object stats
@@ -466,13 +475,16 @@ def reportStorage():
                                         viewHistory[object['object']['name']]['oldestBackup'] = None
                                     viewHistory[object['object']['name']]['archiveCount'] += 1
                                     viewHistory[object['object']['name']]['oldestArchive'] = usecsToDate(run['id'].split(':')[-1])
-                if len(runs['runs']) < numruns:
+                if len(runs['runs']) == 0 or runs['runs'][-1]['id'] == lastRunId:
                     break
                 else:
+                    lastRunId = runs['runs'][-1]['id']
                     if 'localBackupInfo' in runs['runs'][-1]:
-                        endUsecs = runs['runs'][-1]['localBackupInfo']['startTimeUsecs'] - 1
+                        endUsecs = runs['runs'][-1]['localBackupInfo']['endTimeUsecs']
+                    elif 'originalBackupInfo' in runs['runs'][-1]:
+                        endUsecs = runs['runs'][-1]['originalBackupInfo']['endTimeUsecs']
                     else:
-                        endUsecs = runs['runs'][-1]['originalBackupInfo']['startTimeUsecs'] - 1
+                        endUsecs = runs['runs'][-1]['archivalInfo']['archivalTargetResults'][0]['endTimeUsecs']
 
     # views
     views = api('get', 'file-services/views?maxCount=2000&includeTenants=true&includeStats=true&includeProtectionGroups=true&includeInactive=true', v=2)
