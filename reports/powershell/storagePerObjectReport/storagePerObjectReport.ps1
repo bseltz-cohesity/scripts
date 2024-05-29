@@ -1,4 +1,4 @@
-# version: 2024-05-07
+# version: 2024-05-29
 
 # process commandline arguments
 [CmdletBinding()]
@@ -240,11 +240,15 @@ function reportStorage(){
             $oldestArchive = '-'
             $endUsecs = $nowUsecs
             $lastDataLock = '-'
+            $lastRunId = 0
             while($True){
                 if($dbg){
                     output "    getting runs"
                 }
                 $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&excludeNonRestorableRuns=true&useCachedData=true"
+                if($lastRunId -ne 0){
+                    $runs.runs = $runs.runs | Where-Object {$_.id -lt $lastRunId}
+                }
                 foreach($run in $runs.runs){
                     if($run.isLocalSnapshotsDeleted -ne $True){
                         $snap = $null
@@ -325,12 +329,10 @@ function reportStorage(){
                                 if($dbg){
                                     Write-Host "    getting fetb"
                                 }
-                                # $vmsearch = api get "/searchvms?allUnderHierarchy=true&entityTypes=kVMware&jobIds=$(($job.id -split ':')[2])&vmName=$($object.object.name)"
                                 $vms = $vmsearch.vms | Where-Object {$_.vmDocument.objectName -eq $object.object.name}
                                 if($vms){
                                     $vmbytes = $vms[0].vmDocument.objectId.entity.vmwareEntity.frontEndSizeInfo.sizeBytes
                                     if($vmbytes -gt 0){
-                                        # Write-Host "$($object.object.name) $objId $vmbytes"
                                         $objects[$objId]['logical'] = $vmbytes
                                         $objects[$objId]['fetb'] = $vmbytes
                                     }
@@ -346,10 +348,9 @@ function reportStorage(){
                                 }
                             }
                             if($job.environment -eq 'kVMware' -and $snap.snapshotInfo.stats.logicalSizeBytes -lt $objects[$objId]['logical'] -and $snap.snapshotInfo.stats.logicalSizeBytes -gt 0){
-                                # Write-Host "$($object.object.name)  $($snap.snapshotInfo.stats.logicalSizeBytes) -----------------------"  # =========================================
                                 $objects[$objId]['logical'] = $snap.snapshotInfo.stats.logicalSizeBytes
                             }
-                            if(!$snap -and $objId -in $objects.Keys -and $archivalInfo.stats.PSObject.Properties['logicalSizeBytes'] -and $archivalInfo.stats.logicalSizeBytes -gt $objects[$objId]['archiveLogical'] -and $objects[$objId]['archiveLogical'] -gt 0){
+                            if(!$snap -and $objId -in $objects.Keys -and $archivalInfo.stats.PSObject.Properties['logicalSizeBytes'] -and $archivalInfo.stats.logicalSizeBytes -gt $objects[$objId]['archiveLogical']){ #  -and $objects[$objId]['archiveLogical'] -gt 0){
                                 $objects[$objId]['archiveLogical'] = $archivalInfo.stats.logicalSizeBytes
                             }
                             if($objId -in $objects.Keys){
@@ -366,10 +367,6 @@ function reportStorage(){
                                         $objects[$objId]['growth'] += $snap.snapshotInfo.stats.bytesRead
                                         $jobObjGrowth += $snap.snapshotInfo.stats.bytesRead
                                     }
-                                    # if($snap.snapshotInfo.startTimeUsecs -gt $growthDaysUsecs){
-                                    #     $objects[$objId]['growth'] += $snap.snapshotInfo.stats.bytesRead
-                                    #     $jobObjGrowth += $snap.snapshotInfo.stats.bytesRead
-                                    # }
                                 }else{
                                     $objects[$objId]['oldestBackup'] = $archivalInfo.startTimeUsecs
                                     $objects[$objId]['archiveBytesRead'] += $archivalInfo.stats.bytesRead
@@ -386,14 +383,17 @@ function reportStorage(){
                         }
                     }
                 }
-                if($runs.runs.Count -eq $numRuns){
-                    if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
-                        $endUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs - 1
-                    }else{
-                        $endUsecs = $runs.runs[-1].originalBackupInfo.endTimeUsecs - 1
-                    }
-                }else{
+                if(!$runs.runs -or $runs.runs.Count -eq 0 -or $runs.runs[-1].id -eq $lastRunId){
                     break
+                }else{
+                    $lastRunId = $runs.runs[-1].id
+                    if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
+                        $endUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs
+                    }elseif($runs.runs[-1].PSObject.Properties['originalBackupInfo']){
+                        $endUsecs = $runs.runs[-1].originalBackupInfo.endTimeUsecs
+                    }else{
+                        $endUsecs = $runs.runs[-1].archivalInfo.archivalTargetResults[0].endTimeUsecs
+                    }
                 }
             }
 
@@ -432,7 +432,6 @@ function reportStorage(){
                                 $parentObjects[$thisObject['sourceId']]['numLogs'] = $thisObject['numLogs']
                                 $parentObjects[$thisObject['sourceId']]['newestBackup'] = $thisObject['newestBackup']
                                 $parentObjects[$thisObject['sourceId']]['oldestBackup'] = $thisObject['oldestBackup']
-                                # Write-Host "$sourceName - $($thisObject['name']) - $($thisObject['sourceId']) - new - $($parentObjects[$thisObject['sourceId']]['bytesRead'])"
                             }else{
                                 
                                 $parentObjects[$thisObject['sourceId']]['alloc'] += $thisObject['alloc']
@@ -553,12 +552,14 @@ function reportStorage(){
                 }
                 $alloc = toUnits $thisObject['logical']
                 if($job.environment -eq 'kVMware'){
-                    # Write-Host "$($thisObject['name']) $objFESize" # ============================================
                     $alloc = toUnits $thisObject['alloc']
                 }
                 $sumObjectsUsed += $thisObject['logical']
                 $sumObjectsWritten += $objWritten
                 $sumObjectsWrittenWithResiliency += $objWrittenWithResiliency
+                if($alloc -eq 0){
+                    $alloc = $objFESize
+                }
                 """$($cluster.name)"",""$origin"",""$statsAge"",""$($job.name)"",""$tenant"",""$($job.storageDomainId)"",""$sdName"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$alloc"",""$objFESize"",""$(toUnits $objDataIn)"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$($thisObject['numSnaps'])"",""$($thisObject['numLogs'])"",""$(usecsToDate $thisObject['oldestBackup'])"",""$(usecsToDate $thisObject['newestBackup'])"",""$($thisObject['lastDataLock'])"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)"",""$($thisObject['vmTags'])""" | Out-File -FilePath $outfileName -Append
                 if($secondFormat){
                     """$($cluster.name)"",""$monthString"",""$fqObjectName"",""$($job.description)"",""$(toUnits $objWrittenWithResiliency)""" | Out-File -FilePath $outfile2 -Append
@@ -576,11 +577,15 @@ function reportStorage(){
             }
             $endUsecs = $nowUsecs
             $lastDataLock = '-'
+            $lastRunId = 0
             while($True){
                 if($dbg){
                     output "    getting runs"
                 }
                 $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&excludeNonRestorableRuns=true&useCachedData=true"
+                if($lastRunId -ne 0){
+                    $runs.runs = $runs.runs | Where-Object {$_.id -lt $lastRunId}
+                }
                 foreach($run in $runs.runs){
                     if($run.isLocalSnapshotsDeleted -ne $True){
                         if($run.PSObject.Properties['localBackupInfo']){
@@ -639,14 +644,17 @@ function reportStorage(){
                         }
                     }
                 }
-                if($runs.runs.Count -eq $numRuns){
-                    if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
-                        $endUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs - 1
-                    }else{
-                        $endUsecs = $runs.runs[-1].originalBackupInfo.endTimeUsecs - 1
-                    }
-                }else{
+                if(!$runs.runs -or $runs.runs.Count -eq 0 -or $runs.runs[-1].id -eq $lastRunId){
                     break
+                }else{
+                    $lastRunId = $runs.runs[-1].id
+                    if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
+                        $endUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs
+                    }elseif($runs.runs[-1].PSObject.Properties['originalBackupInfo']){
+                        $endUsecs = $runs.runs[-1].originalBackupInfo.endTimeUsecs
+                    }else{
+                        $endUsecs = $runs.runs[-1].archivalInfo.archivalTargetResults[0].endTimeUsecs
+                    }
                 }
             }
         }
