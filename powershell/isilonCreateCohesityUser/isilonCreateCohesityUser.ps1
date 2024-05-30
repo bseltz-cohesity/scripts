@@ -7,73 +7,18 @@ param (
     [Parameter()][string]$cohesityUsername = 'cohesity',
     [Parameter()][string]$cohesityPassword = $null,
     [Parameter()][switch]$createSMBUser,
-    [Parameter()][switch]$delete
+    [Parameter()][switch]$delete,
+    [Parameter()][int64]$port = 8080
 )
 
-function isilonAPI($method, $uri, $data=$null){
-    $uri = $baseurl + $uri
-    $result = $null
-    try{
-        if($data){
-            $BODY = ConvertTo-Json $data -Depth 99
-            if($PSVersionTable.PSEdition -eq 'Core'){
-                $result = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers -Body $BODY -SkipCertificateCheck
-            }else{
-                $result = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers -Body $BODY
-            }
-        }else{
-            if($PSVersionTable.PSEdition -eq 'Core'){
-                $result = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers -SkipCertificateCheck
-            }else{
-                $result = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers
-            }
-        }
-    }catch{
-        if($_.ToString().contains('"errors" :')){
-            Write-Host (ConvertFrom-Json $_.ToString()).errors[0].message -foregroundcolor Yellow
-        }else{
-            Write-Host $_.ToString() -foregroundcolor yellow
-        }
-    }
-    return $result
-}
+. $(Join-Path -Path $PSScriptRoot -ChildPath isilon-api.ps1)
 
-# demand modern powershell version (must support TLSv1.2)
-if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
-    Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
-    Pause
-    exit
+if($isilon -notmatch ':'){
+    $isilon = "{0}:{1}" -f $isilon, $port
 }
-
-if($PSVersionTable.PSEdition -eq 'Desktop'){
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
-    $ignoreCerts = @"
-public class SSLHandler
-{
-    public static System.Net.Security.RemoteCertificateValidationCallback GetSSLHandler()
-    {
-        return new System.Net.Security.RemoteCertificateValidationCallback((sender, certificate, chain, policyErrors) => { return true; });
-    }
-}
-"@
-
-    if(!("SSLHandler" -as [type])){
-        Add-Type -TypeDefinition $ignoreCerts
-    }
-    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = [SSLHandler]::GetSSLHandler()
-}
-
-$baseurl = 'https://' + $isilon +":8080"
 
 # authentication
-if(!$password){
-    $secureString = Read-Host -Prompt "Enter your Isilon password" -AsSecureString
-    $password = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
-}
-$EncodedAuthorization = [System.Text.Encoding]::UTF8.GetBytes($username + ':' + $password)
-$EncodedPassword = [System.Convert]::ToBase64String($EncodedAuthorization)
-$headers = @{"Authorization"="Basic $($EncodedPassword)"}
+isilonAuth -endpoint $isilon -username $username -port $port -password $password
 
 $latest = (isilonAPI get /platform/latest).latest
 

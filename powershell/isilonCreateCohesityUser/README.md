@@ -4,6 +4,8 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script creates an Isilon user and role with the required permissions to register an Isilon protection source in Cohesity.
 
+This version of the script supports Isilon 9.5 stricter security requirements.
+
 ## Download the script
 
 Run these commands from PowerShell to download the script(s) into your current directory
@@ -13,8 +15,15 @@ Run these commands from PowerShell to download the script(s) into your current d
 $scriptName = 'isilonCreateCohesityUser'
 $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell'
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/isilon-api/isilon-api.ps1").content | Out-File "isilon-api.ps1"; (Get-Content "isilon-api.ps1") | Set-Content "isilon-api.ps1"
 # End Download Commands
 ```
+
+## Components
+
+* [isilonCreateCohesityUser.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/isilonCreateCohesityUser/isilonCreateCohesityUser.ps1): the main powershell script
+* [isilon-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/isilon-api/isilon-api.ps1): the Isilon REST API helper module
 
 You can run the main script like so:
 
