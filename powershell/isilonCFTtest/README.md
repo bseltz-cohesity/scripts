@@ -118,3 +118,4 @@ And then delete a specific snapshot, specifying the snapshot name or ID:
 * -secondSnapshot: name or ID of existing snapshot to use (or name of new snapshot to create)
 * -deleteSnapshots: delete specified first and second snapshots and exit
 * -deleteThisSnapshot: delete one snapshot and exit
+* -port: (optional) default is 8080

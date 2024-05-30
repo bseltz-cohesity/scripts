@@ -44,3 +44,4 @@ You will first be prompted for your isilon password (to connect to Isilon), and 
 * -cohesityPassword: (optional) will prompt if omitted
 * -createSMBUser: (optional) create SMB user and BackupAdmin role for all zones
 * -delete: (optional) delete API and SMB user and roles from all zones and exit
+* -port: (optional) default is 8080
