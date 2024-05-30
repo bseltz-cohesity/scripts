@@ -4,6 +4,8 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script creates an Isilon user and role with the required permissions to register an Isilon protection source in Cohesity.
 
+This version of the script supports Isilon 9.5 stricter security requirements.
+
 ## Download the script
 
 Run these commands from PowerShell to download the script(s) into your current directory
