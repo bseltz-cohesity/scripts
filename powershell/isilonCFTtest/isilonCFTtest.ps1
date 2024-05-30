@@ -9,89 +9,17 @@ param (
     [Parameter()][string]$firstSnapshot = 'cohesityCftTestSnap1',   # specify name or id of first snapshot
     [Parameter()][string]$secondSnapshot = 'cohesityCftTestSnap2',  # specify name or id of second snapshot
     [Parameter()][switch]$deleteSnapshots,    # delete the specified snapshots and exit
-    [Parameter()][string]$deleteThisSnapshot = $null # delete one snapshot and exit
+    [Parameter()][string]$deleteThisSnapshot = $null,  # delete one snapshot and exit
+    [Parameter()][int64]$port = 8080
 )
 
-function dateToUsecs($datestring=(Get-Date)){
-    if($datestring -isnot [datetime]){ $datestring = [datetime] $datestring }
-    $usecs = [int64](($datestring.ToUniversalTime())-([datetime]"1970-01-01 00:00:00")).TotalSeconds*1000000
-    return $usecs
+. $(Join-Path -Path $PSScriptRoot -ChildPath isilon-api.ps1)
+
+if($isilon -notmatch ':'){
+    $isilon = "{0}:{1}" -f $isilon, $port
 }
 
-function usecsToDate($usecs, $format=$null){
-    $unixTime=$usecs/1000000
-    $origin = ([datetime]'1970-01-01 00:00:00')
-    if($format){
-        return $origin.AddSeconds($unixTime).ToLocalTime().ToString($format)
-    }else{
-        return $origin.AddSeconds($unixTime).ToLocalTime()
-    }
-}
-
-function isilonAPI($method, $uri, $data=$null){
-    $uri = $baseurl + $uri
-    $result = $null
-    try{
-        if($data){
-            $BODY = ConvertTo-Json $data -Depth 99
-            if($PSVersionTable.PSEdition -eq 'Core'){
-                $result = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers -Body $BODY -SkipCertificateCheck
-            }else{
-                $result = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers -Body $BODY
-            }
-        }else{
-            if($PSVersionTable.PSEdition -eq 'Core'){
-                $result = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers -SkipCertificateCheck
-            }else{
-                $result = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers
-            }
-        }
-    }catch{
-        if($_.ToString().contains('"errors" :')){
-            Write-Host (ConvertFrom-Json $_.ToString()).errors[0].message -foregroundcolor Yellow
-        }else{
-            Write-Host $_.ToString() -foregroundcolor yellow
-        }
-    }
-    return $result
-}
-
-# demand modern powershell version (must support TLSv1.2)
-if($Host.Version.Major -le 5 -and $Host.Version.Minor -lt 1){
-    Write-Warning "PowerShell version must be upgraded to 5.1 or higher to connect to Cohesity!"
-    Pause
-    exit
-}
-
-if($PSVersionTable.PSEdition -eq 'Desktop'){
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
-    $ignoreCerts = @"
-public class SSLHandler
-{
-    public static System.Net.Security.RemoteCertificateValidationCallback GetSSLHandler()
-    {
-        return new System.Net.Security.RemoteCertificateValidationCallback((sender, certificate, chain, policyErrors) => { return true; });
-    }
-}
-"@
-
-    if(!("SSLHandler" -as [type])){
-        Add-Type -TypeDefinition $ignoreCerts
-    }
-    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = [SSLHandler]::GetSSLHandler()
-}
-
-$baseurl = 'https://' + $isilon +":8080"
-
-# authentication
-if(!$password){
-    $secureString = Read-Host -Prompt "Enter your password" -AsSecureString
-    $password = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
-}
-$EncodedAuthorization = [System.Text.Encoding]::UTF8.GetBytes($username + ':' + $password)
-$EncodedPassword = [System.Convert]::ToBase64String($EncodedAuthorization)
-$headers = @{"Authorization"="Basic $($EncodedPassword)"}
+isilonAuth -endpoint $isilon -username $username -port $port -password $password
 
 # check licenses
 $licenses = isilonAPI get /platform/1/license/licenses
