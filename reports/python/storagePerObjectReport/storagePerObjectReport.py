@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Storage Per Object Report version 2024.05.29 for Python"""
+"""Storage Per Object Report version 2024.05.31 for Python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -501,7 +501,7 @@ def reportStorage():
                 viewJobStats[jobName] = 0
             if 'stats' in view:
                 viewJobStats[jobName] += view['stats']['dataUsageStats']['totalLogicalUsageBytes']
-            elif view['name'] in viewHistory:
+            elif view['name'] in viewHistory and 'stats' in viewHistory[view['name']] and viewHistory[view['name']]['stats'] is not None and len(viewHistory[view['name']]['stats']) > 0 and 'stats' in viewHistory[view['name']]['stats'][0]:
                 view['stats'] = {'dataUsageStats': viewHistory[view['name']]['stats'][0]['stats']}
             else:
                 continue
