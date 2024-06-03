@@ -1,5 +1,10 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-06-03
+
+* [backupNow.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/backupNow) [`Fix`] fixed unintended replication/archival
+* [backupNow.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backupNow) [`Fix`] fixed unintended replication/archival
+
 ## 2024-05-28
 
 * [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`Update`] expanded ignore paths
