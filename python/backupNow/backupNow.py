@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2024.03.08
+# version 2024.06.03
 
 # version history
 # ===============
@@ -25,6 +25,7 @@
 # 2024.03.06 - moved cache wait until after authentication
 # 2024.03.07 - minor updates to progress loop
 # 2024.03.08 - refactored status monitor loop, added -q --quickdemo mode
+# 2024.06.03 - fix unintended replication/archival
 #
 # extended error codes
 # ====================
@@ -531,6 +532,9 @@ if len(runNowParameters) > 0:
 # use base retention and copy targets from policy
 policy = api('get', 'protectionPolicies/%s' % job['policyId'], timeout=timeoutsec)
 
+if localonly is True or noarchive is True or noreplica is True:
+    jobData['usePolicyDefaults'] = False
+
 # replication
 if localonly is not True and noreplica is not True:
     if 'snapshotReplicationCopyPolicies' in policy and replicateTo is None:
@@ -649,9 +653,10 @@ startUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 waitUntil = nowUsecs + (waitminutesifrunning * 60000000)
 reportWaiting = True
 if debugger:
+    display(jobData)
     print(':DEBUG: waiting for new run to be accepted')
 runNow = api('post', "protectionJobs/run/%s" % v1JobId, jobData, quiet=True, timeout=timeoutsec)
-while runNow != "":
+while runNow != "" and runNow is not None:
     runError = LAST_API_ERROR()
     if 'Protection Group already has a run' not in runError and 'Protection group can only have one active backup run at a time' not in runError and 'Backup job has an existing active backup run' not in runError:
         out(runError)
