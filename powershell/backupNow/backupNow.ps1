@@ -22,6 +22,7 @@
 # 2024.02.19 - expanded existing run string matches
 # 2024.03.08 - refactored status monitor loop, added -quick mode
 # 2024.05.17 - added support for EntraID (Open ID) authentication
+# 2024.06.03 - fix unintended replication/archival
 #
 # extended error codes
 # ====================
@@ -552,6 +553,10 @@ $jobdata = @{
    "runType" = $backupType
    "copyRunTargets" = $copyRunTargets
    "usePolicyDefaults" = $True
+}
+
+if($localOnly -or $noArchive -or $noReplica){
+    $jobdata['usePolicyDefaults'] = $false
 }
 
 # add sourceIds if specified
