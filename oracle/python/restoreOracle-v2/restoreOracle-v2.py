@@ -456,7 +456,7 @@ else:
                 })
 
     if len(shellvars) > 0:
-        sourceConfig.recoverDatabaseParams.shellEvironmentVars = []
+        sourceConfig['recoverDatabaseParams']['shellEvironmentVars'] = []
         for shellvar in shellvars:
             varparts = shellvar.split('=')
             if len(varparts) < 2:
