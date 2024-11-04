@@ -2,14 +2,19 @@
 
 ##########################################
 #
-# OneHelios Restore - version  2024.11.03a
+# OneHelios Restore - version  2024.11.04c
 # Last Updated By: Brian Seltzer
 #
 ##########################################
 
-## constants
 LOG_FILE='restore-log.txt'
 RESTORE_SET_FILE='restore-set-name.txt'
+CATALOG=0
+RESTORE_POSTGRES=0
+RESTORE_MONGODB=0
+RESTORE_ELASTIC=0
+DO_ALL=0
+ELASTIC_BACKUP_REPOSITORY='elastic-restores-repo'
 
 function usage {
     programname=$0
@@ -26,14 +31,6 @@ function usage {
 HELP_USAGE
     exit 1
 }
-
-## parameters
-CATALOG=0
-RESTORE_POSTGRES=0
-RESTORE_MONGODB=0
-RESTORE_ELASTIC=0
-DO_ALL=0
-ELASTIC_BACKUP_REPOSITORY='elastic-backups-repo'
 
 while getopts "clpmeas:k:" flag
     do
@@ -70,14 +67,15 @@ if [[ "$REPO_RESULT" != *$ELASTIC_BACKUP_REPOSITORY* ]]; then
         -d '{
         "type": "s3",
         "settings": {
-            "bucket": "'${S3_BUCKET}'",
-            "access_key": "'${S3_ACCESS_KEY}'",
-            "secret_key": "'${S3_SECRET_KEY}'",
-            "endpoint": "'${S3_HOST}'",
+            "bucket": "'${RESTORE_S3_BUCKET}'",
+            "access_key": "'${RESTORE_S3_ACCESS_KEY}'",
+            "secret_key": "'${RESTORE_S3_SECRET_KEY}'",
+            "endpoint": "'${RESTORE_S3_HOST}'",
+            "readonly": "true",
             "path_style_access": "true",
             "protocol": "https"
         }
-    }'
+    }' 2>/dev/null
 fi
 
 if [[ $CATALOG -eq 1 ]]; then
@@ -210,8 +208,8 @@ if [[ $RESTORE_ELASTIC -eq 1 ]]; then
         # perform restore
         echo "    Restoring indices" | tee -a $LOG_FILE
         ELASTIC_RESULT=$(curl -X 'POST' "http://$ELASTICSEARCH_ES_HTTP_SERVICE_HOST:$ELASTICSEARCH_ES_HTTP_SERVICE_PORT/_snapshot/$ELASTIC_BACKUP_REPOSITORY/$SET_NAME/_restore?wait_for_completion=true" 2>/dev/null)
-        echo -e "$ELASTIC_RESULT" | tee -a $LOG_FILE
         ELASTIC_STATUS=$?
+        echo -e "$ELASTIC_RESULT" | tee -a $LOG_FILE
         if [[ $ELASTIC_STATUS -ne 0 ]]; then
             echo -e " ** Elastic restore failed! **" | tee -a $LOG_FILE
             RESTORE_STATUS='Failed'
