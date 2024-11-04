@@ -1,0 +1,10 @@
+FROM alpine:3.19
+
+LABEL org.cohesity.base-image="1"
+
+RUN apk -U upgrade \
+    && apk add --no-progress --no-cache \
+    bash make libc6-compat tzdata curl>8.9.0-r0 jq openssl>3.1.4-r0 \
+    && rm -rf /var/cache/apk/*
+
+RUN /bin/bash -c "[ -f /etc/nsswitch.conf ] || echo 'hosts: files dns' > /etc/nsswitch.conf"

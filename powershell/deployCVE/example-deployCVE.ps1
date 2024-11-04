@@ -1,0 +1,21 @@
+.\deployCVE.ps1 -ip 10.2.143.48, 10.2.143.49, 10.2.143.50 `
+                -vmName BSeltz-CVE1, BSeltz-CVE2, BSeltz-CVE3 `
+                -viHost esx1, esx2, esx3 `
+                -viDataStore datastore1, datastore2, datastore3 `
+                -vip 10.2.143.51, 10.2.143.52, 10.2.143.53 `
+                -netmask 255.255.248.0 `
+                -gateway 10.2.136.1 `
+                -network1 'VM Network' `
+                -network2 'VM Network 2' `
+                -metadataSize 51 `
+                -dataSize 201 `
+                -dnsServers 10.2.143.28, 10.2.143.29 `
+                -ntpServers 'pool.ntp.org' `
+                -clusterName BSeltz-CVE `
+                -clusterDomain sa.corp.cohesity.com `
+                -encrypt `
+                -fips `
+                -viServer 10.2.143.29 `
+                -ovfPath '.\cohesity-6.1.1d_release-20190507_1eef123c-8tb.ova' `
+                -licenseKey 'ABCD-EFGH-IJKL-MNOP' `
+                -accept_eula

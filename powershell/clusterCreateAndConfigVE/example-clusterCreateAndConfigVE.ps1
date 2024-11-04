@@ -1,0 +1,18 @@
+./clusterCreateAndConfigVE.ps1 -ip 10.19.0.201 `
+                               -netmask 255.255.240.0 `
+                               -gateway 10.19.0.1 `
+                               -dnsServers 10.19.0.45 `
+                               -ntpServers pool.ntp.org `
+                               -clusterName SELAB6 `
+                               -clusterDomain sa.corp.cohesity.com `
+                               -pwd 'thatsSomePassword!' `
+                               -adminEmail 'admin@mydomain.net' `
+                               -adDomain 'sa.corp.cohesity.com' `
+                               -adAdmin mrMicrosoft `
+                               -adPwd swordfish `
+                               -preferredDC 'sac-infr-dc-01.sa.corp.cohesity.com' `
+                               -adAdminGroup 'Domain Admins' `
+                               -timeZone 'America/New_York' `
+                               -smtpServer 'mail.sa.corp.cohesity.com' `
+                               -supportPwd 'thisIsTheSupportPassword!' `
+                               -alertEmail 'alerts@mydomain.net'
