@@ -17,6 +17,7 @@ param (
     [Parameter(Mandatory = $True)][string]$vCenterName,
     [Parameter(Mandatory = $True)][string]$dataCenterName,
     [Parameter(Mandatory = $True)][string]$computeResource,
+    [Parameter()][string]$resourcePoolName='Resources',
     [Parameter(Mandatory = $True)][string]$folderName,
     [Parameter()][string]$networkName,
     [Parameter()][string]$viewName = 'cloneVMs',
@@ -116,31 +117,49 @@ if(! $vCenter){
     exit
 }
 
-# select data center
-$dataCenterSource = $vCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $datacenterName}
-if(!$dataCenterSource){
+$resourcePools = api get /resourcePools?vCenterId=$vCenterId
+$resourcePool = $resourcePools | Where-Object {$_.dataCenter.displayName -eq $dataCenterName}
+if(!$resourcePool){
     Write-Host "Datacenter $datacenterName not found" -ForegroundColor Yellow
-    exit
+    exit 1
+}
+$resourcePool = $resourcePool | Where-Object {$_.cluster.displayName -eq $computeResource}
+if(!$resourcePool){
+    # # select data center
+    $dataCenterSource = $vCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $datacenterName}
+    if(!$dataCenterSource){
+        Write-Host "Datacenter $datacenterName not found" -ForegroundColor Yellow
+        exit
+    }
+
+    # # get host folder
+    $hostFolder = $dataCenterSource.nodes | Where-Object {$_.protectionSource.vmWareProtectionSource.folderType -eq 'kHostFolder'}
+
+    # # select host
+    $hostSource = $hostFolder.nodes | Where-Object {$_.protectionSource.name -eq $computeResource}
+    if(!$hostSource){
+        Write-Host "ESXi Cluster/Host $computeResource not found (use HA cluster name if ESXi hosts are clustered)" -ForegroundColor Yellow
+        exit 1
+    }
+
+    # # select resource pool
+    $resourcePoolSource = $hostSource.nodes | Where-Object {$_.protectionSource.vmWareProtectionSource.type -eq 'kResourcePool'}
+    $resourcePoolId = $resourcePoolSource.protectionSource.id
+    $resourcePool = api get /resourcePools?vCenterId=$vCenterId | Where-Object {$_.resourcePool.id -eq $resourcePoolId}
+    # Write-Host "ESXi Cluster/Host $computeResource not found (use HA cluster name if ESXi hosts are clustered)" -ForegroundColor Yellow
+    # exit 1
+}else{
+    $resourcePool = $resourcePool | Where-Object {$_.resourcePool.displayName -eq $resourcePoolName}
+    if(!$resourcePool){
+        Write-Host "Resource pool $resourcePoolName not found" -ForegroundColor Yellow
+        exit 1
+    }
 }
 
-# get host folder
-$hostFolder = $dataCenterSource.nodes | Where-Object {$_.protectionSource.vmWareProtectionSource.folderType -eq 'kHostFolder'}
-
-# select host
-$hostSource = $hostFolder.nodes | Where-Object {$_.protectionSource.name -eq $computeResource}
-if(!$hostSource){
-    Write-Host "ESXi Cluster/Host $computeResource not found (use HA cluster name if ESXi hosts are clustered)" -ForegroundColor Yellow
-    exit
-}
-
-# select resource pool
-$resourcePoolSource = $hostSource.nodes | Where-Object {$_.protectionSource.vmWareProtectionSource.type -eq 'kResourcePool'}
-$resourcePoolId = $resourcePoolSource.protectionSource.id
-$resourcePool = api get /resourcePools?vCenterId=$vCenterId | Where-Object {$_.resourcePool.id -eq $resourcePoolId}
+$resourcePoolId = $resourcePool[0].resourcePool.id
 
 # select VM folder
 $vmfolderId = @{}
-
 
 walkVMFolders $vCenterSource
 
