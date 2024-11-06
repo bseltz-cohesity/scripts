@@ -112,7 +112,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         while($True){
             $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&startTimeUsecs=$startTime&endTimeUsecs=$endUsecs"
             foreach($run in $runs.runs){
-                if(! $run.PSObject.Properties['isLocalSnapshotsDeleted']){
+                if(! $run.PSObject.Properties['isLocalSnapshotsDeleted'] -or $run.isLocalSnapshotsDeleted -ne $True){
                     if($run.PSObject.Properties['localBackupInfo']){
                         $backupInfo = $run.localBackupInfo
                     }else{
