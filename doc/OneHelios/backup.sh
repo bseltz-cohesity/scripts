@@ -2,7 +2,7 @@
 
 ##########################################
 #
-# OneHelios Backup - version  2024.11.02b
+# OneHelios Backup - version  2024.11.06a
 # Last Updated By: Brian Seltzer
 #
 ##########################################
@@ -92,6 +92,7 @@ finish () {
                 SUBJECT="OneHelios Successful Backup Report ($APPLIANCE_NAME)"
             fi
             echo -e " -- Sending mail to $SEND_TO\n"
+            echo -e "\n" >> $LOG_FILE
             cat $LOG_FILE | mutt -s "$SUBJECT" -a $LOG_FILE -- $SEND_TO | tee -a $LOG_FILE
         fi
     fi
@@ -108,10 +109,12 @@ then
     finish 1
 fi
 
+echo '' > $LOG_FILE
+
 # create elastic backup repo
 REPO_RESULT=$(curl -X 'GET' "http://$ELASTICSEARCH_ES_HTTP_SERVICE_HOST:$ELASTICSEARCH_ES_HTTP_SERVICE_PORT/_snapshot" 2>dev/null)
 if [[ "$REPO_RESULT" != *$ELASTIC_BACKUP_REPOSITORY* ]]; then
-    echo -e "\n -- Creating Elastic Snapshot Repository\n" | tee $LOG_FILE
+    echo -e "\n -- Creating Elastic Snapshot Repository\n" | tee -a $LOG_FILE
     curl -X PUT -k \
         --url "http://$ELASTICSEARCH_ES_HTTP_SERVICE_HOST:$ELASTICSEARCH_ES_HTTP_SERVICE_PORT/_snapshot/$ELASTIC_BACKUP_REPOSITORY" \
         -H 'Content-type: application/json' \
@@ -125,7 +128,7 @@ if [[ "$REPO_RESULT" != *$ELASTIC_BACKUP_REPOSITORY* ]]; then
             "path_style_access": "true",
             "protocol": "https"
         }
-    }'
+    }' 2>/dev/null | tee -a $LOG_FILE
 fi
 
 echo ""
@@ -140,7 +143,7 @@ then
     SET_NAME=$EPOC_DATE.$HUMAN_DATE
 fi
 
-echo -e " -- Backup set name: $SET_NAME\n" | tee $LOG_FILE
+echo -e " -- Backup set name: $SET_NAME\n" | tee -a $LOG_FILE
 
 BACKUP_STATUS='Success'
 BACKUP_EXIT_CODE=0
@@ -245,6 +248,11 @@ else
     echo "$KEY_VALUE" | s3cmd --host=$S3_HOST --access_key=$S3_ACCESS_KEY --secret_key=$S3_SECRET_KEY --region=$S3_LOCATION --no-check-certificate put - s3://$S3_BUCKET/DUMPS/$SET_NAME/$KEY_NAME 2>/dev/null
 fi
 
+# save backup set
+if [[ $BACKUP_POSTGRES -eq 1 ]] || [[ $BACKUP_MONGODB -eq 1 ]] || [[ $BACKUP_ELASTIC -eq 1 ]] || [[ $DO_ALL -eq 1 ]]; then
+    cat $LOG_FILE | s3cmd --host=$S3_HOST --access_key=$S3_ACCESS_KEY --secret_key=$S3_SECRET_KEY --region=$S3_LOCATION --no-check-certificate put - s3://$S3_BUCKET/BACKUP_SETS/$SET_NAME  >/dev/null 2>&1
+fi
+
 ## Exit if backup failed
 if [[ $BACKUP_EXIT_CODE -gt 0 ]]; then
     echo -e " ** Exiting with BACKUP_EXIT_CODE: $BACKUP_EXIT_CODE ($BACKUP_STATUS) **" | tee -a $LOG_FILE
@@ -281,10 +289,5 @@ if [[ $EXPIRE_BACKUPS -eq 1 ]]; then
 fi
 
 echo -e "\n -- Exiting with BACKUP_EXIT_CODE: $BACKUP_EXIT_CODE ($BACKUP_STATUS)\n" | tee -a $LOG_FILE
-
-# save backup set
-if [[ $BACKUP_POSTGRES -eq 1 ]] || [[ $BACKUP_MONGODB -eq 1 ]] || [[ $BACKUP_ELASTIC -eq 1 ]] || [[ $DO_ALL -eq 1 ]]; then
-    cat $LOG_FILE | s3cmd --host=$S3_HOST --access_key=$S3_ACCESS_KEY --secret_key=$S3_SECRET_KEY --region=$S3_LOCATION --no-check-certificate put - s3://$S3_BUCKET/BACKUP_SETS/$SET_NAME  >/dev/null 2>&1
-fi
 
 finish $BACKUP_EXIT_CODE

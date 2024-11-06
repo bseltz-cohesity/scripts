@@ -2,7 +2,7 @@
 
 ##########################################
 #
-# OneHelios Restore - version  2024.11.04c
+# OneHelios Restore - version  2024.11.06a
 # Last Updated By: Brian Seltzer
 #
 ##########################################
@@ -57,10 +57,12 @@ then
     exit 1
 fi
 
+echo '' > $LOG_FILE
+
 # create elastic backup repo
 REPO_RESULT=$(curl -X 'GET' "http://$ELASTICSEARCH_ES_HTTP_SERVICE_HOST:$ELASTICSEARCH_ES_HTTP_SERVICE_PORT/_snapshot" 2>dev/null)
 if [[ "$REPO_RESULT" != *$ELASTIC_BACKUP_REPOSITORY* ]]; then
-    echo -e "\n -- Creating Elastic Snapshot Repository\n" | tee $LOG_FILE
+    echo -e "\n -- Creating Elastic Snapshot Repository\n" | tee -a $LOG_FILE
     curl -X PUT -k \
         --url "http://$ELASTICSEARCH_ES_HTTP_SERVICE_HOST:$ELASTICSEARCH_ES_HTTP_SERVICE_PORT/_snapshot/$ELASTIC_BACKUP_REPOSITORY" \
         -H 'Content-type: application/json' \
@@ -75,13 +77,13 @@ if [[ "$REPO_RESULT" != *$ELASTIC_BACKUP_REPOSITORY* ]]; then
             "path_style_access": "true",
             "protocol": "https"
         }
-    }' 2>/dev/null
+    }' 2>/dev/null | tee -a $LOG_FILE
 fi
 
 if [[ $CATALOG -eq 1 ]]; then
 
-    echo -e "\nBACKUP DATE       SET NAME                        CONTENTS"
-    echo -e "----------------  ------------------------------  ---------"
+    echo -e "\nBACKUP DATE       SET NAME                        CONTENTS" | tee -a $LOG_FILE
+    echo -e "----------------  ------------------------------  ---------" | tee -a $LOG_FILE
 
     s3cmd --host=$RESTORE_S3_HOST --access_key=$RESTORE_S3_ACCESS_KEY --secret_key=$RESTORE_S3_SECRET_KEY --region=$RESTORE_S3_LOCATION --no-check-certificate ls s3://$RESTORE_S3_BUCKET/BACKUP_SETS/ | while read -r line; do
         lineparts=($line)
@@ -103,7 +105,10 @@ if [[ $CATALOG -eq 1 ]]; then
             ELASTIC_PRESENT=' ELASTIC'
         fi
         CONTENTS="${MONGO_PRESENT}${POSTGRES_PRESENT}${ELASTIC_PRESENT}"
-        echo "$BACKUP_DATE  $SET_NAME $CONTENTS"
+        if [[ $CONTENTS == '' ]]; then
+            CONTENTS=' ** FAILED **'
+        fi
+        echo "$BACKUP_DATE  $SET_NAME $CONTENTS" | tee -a $LOG_FILE
     done
     echo ""
     exit 0
@@ -120,7 +125,7 @@ fi
 
 if [ -z "${SET_NAME}" ]
 then
-    echo -e " ** SET_NAME required **" | tee $LOG_FILE
+    echo -e " ** SET_NAME required **" | tee -a $LOG_FILE
     exit 1
 fi
 
@@ -134,7 +139,7 @@ fi
 
 if [[ -z $KEY_NAME ]]
 then
-    echo -e "\n -- Restoring from backup set: $SET_NAME\n" | tee $LOG_FILE
+    echo -e "\n -- Restoring from backup set: $SET_NAME\n" | tee -a $LOG_FILE
 fi
 
 RESTORE_STATUS='Success'
