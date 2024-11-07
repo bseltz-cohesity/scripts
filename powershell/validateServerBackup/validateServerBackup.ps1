@@ -198,7 +198,7 @@ $script:html += '</span>
     <th>Validated</th>
 </tr>'
 
-$volumeTypes = @(1, 6, 29)
+$volumeTypes = @(1, 6, 8, 28, 29, 36)
 $finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')
 if($includeVMs){
     $entityTypes="entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAWSSnapshotManager&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kFlashBlade&entityTypes=kGCP&entityTypes=kGenericNas&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kIsilon&entityTypes=kKVM&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware"
@@ -210,11 +210,12 @@ function validateServer($object, $vm){
     $doc = $vm.vmDocument
     $version = $doc.versions[0]
     $jobId = $doc.objectId.jobId
+    $jobStartedTimeUsecs = $version.instanceId.jobStartTimeUsecs
     $jobName = $doc.jobName
     $backupType = $doc.backupType
     # get latest completed run status and date
     $lastRecoveryPoint = $version.instanceId.jobStartTimeUsecs
-    $run = (api get "protectionRuns?jobId=$jobId&numRuns=2" | Where-Object {$_.backupRun.status -in $finishedStates})[0]
+    $run = api get "protectionRuns?jobId=$jobId&startedTimeUsecs=$jobStartedTimeUsecs"
     $lastRunUsecs = $run.backupRun.stats.startTimeUsecs
     $lastStatus = $run.backupRun.status
     # get latest recovery point dirlist
