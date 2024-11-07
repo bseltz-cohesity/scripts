@@ -1,5 +1,13 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-11-07
+
+* [expireOldSnapshots.py](https://github.com/cohesity/community-automation-samples/tree/main/python/expireOldSnapshots) [`Update`] added date filters
+
+## 2024-11-06
+
+* [replicateOldSnapshots.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/replicateOldSnapshots) [`Fix`] Fixed issue with Cohesity 7.x not finding any runs
+
 ## 2024-10-23
 
 * [reverseSizingReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/reverseSizingReport) [`Fix`] fix for Cohesity version 7
