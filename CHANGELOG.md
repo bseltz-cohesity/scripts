@@ -2,6 +2,7 @@
 
 ## 2024-11-07
 
+* [validateServerBackup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/validateServerBackup) [`Fix`] updated to work with Azure VMs
 * [expireOldSnapshots.py](https://github.com/cohesity/community-automation-samples/tree/main/python/expireOldSnapshots) [`Update`] added date filters
 
 ## 2024-11-06
