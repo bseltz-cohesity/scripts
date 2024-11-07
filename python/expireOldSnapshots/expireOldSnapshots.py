@@ -10,13 +10,20 @@ from datetime import datetime
 # command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)         # cluster to connect to
-parser.add_argument('-u', '--username', type=str, required=True)    # username
-parser.add_argument('-d', '--domain', type=str, default='local')    # (optional) domain - defaults to local
-parser.add_argument('-i', '--useApiKey', action='store_true')       # use API key authentication
-parser.add_argument('-pwd', '--password', type=str, default=None)   # (optional) password
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
+parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-t', '--tenant', type=str, default=None)
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-j', '--jobname', action='append', type=str)   # (optional) job names to inspect
 parser.add_argument('-l', '--joblist', type=str)                    # (optional) text file of job names to inspect
+parser.add_argument('-dt', '--date', action='append', type=str)   # (optional) dates to expire
+parser.add_argument('-dl', '--datelist', type=str)                    # (optional) text file of dates to expire
 parser.add_argument('-k', '--daystokeep', type=int, required=True)  # number of days of snapshots to retain
 parser.add_argument('-e', '--expire', action='store_true')          # (optional) expire snapshots older than k days
 parser.add_argument('-r', '--confirmreplication', action='store_true')     # (optional) confirm replication before expiring
@@ -32,10 +39,17 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
-password = args.password
+tenant = args.tenant
+clustername = args.clustername
+mcm = args.mcm
 useApiKey = args.useApiKey
+password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
 jobnames = args.jobname
 joblist = args.joblist
+dates = args.date
+datelist = args.datelist
 daystokeep = args.daystokeep
 expire = args.expire
 confirmreplication = args.confirmreplication
@@ -50,8 +64,26 @@ activeonly = args.activeonly
 if activeconfirmation is True:
     confirmreplication = True
 
+# authentication =========================================================
+# demand clustername if connecting to helios or mcm
+if (mcm or vip.lower() == 'helios.cohesity.com') and clustername is None:
+    print('-c, --clustername is required when connecting to Helios or MCM')
+    exit(1)
+
 # authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, noretry=True)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, tenantId=tenant)
+
+# exit if not authenticated
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
+
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    heliosCluster(clustername)
+    if LAST_API_ERROR() != 'OK':
+        exit(1)
+# end authentication =====================================================
 
 # get cluster Id
 clusterId = api('get', 'cluster')['id']
@@ -74,6 +106,7 @@ def gatherList(param=None, filename=None, name='items', required=True):
 
 
 jobnames = gatherList(jobnames, joblist, name='jobs', required=False)
+dates = gatherList(dates, datelist, name='dates', required=False)
 
 jobs = api('get', 'protectionJobs')
 
@@ -162,6 +195,10 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
 
                 if startdateusecs < timeAgo(daystokeep, 'days') and run['backupRun']['snapshotsDeleted'] is False:
                     skip = False
+                    if len(dates) > 0:
+                        matchingdates = [d for d in dates if d in startdate]
+                        if len(matchingdates) == 0:
+                            skip = True
                     if replicated is False and confirmreplication is True:
                         skip = True
                         if replicationtarget is not None:

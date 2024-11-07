@@ -64,6 +64,8 @@ or if you want to ensure that the snapshots have been successfully replicated be
 * -s, --skipmonthlies: (optional) don't expire snapshots from the first day of the month
 * -ac, --activeconfirmation: (optional) active replication confirmation
 * -ao, --activeonly: (optional) skip confirmations for inactive jobs
+* -dt, --date: (optional) date of snapshot to expire, e.g. '2024-11-07 13:00' (repeat for multiple dates)
+* -dl, --datelist: (optional) text file of dates to expire (one per line)
 
 ## The Python Helper Module - pyhesity.py
 
