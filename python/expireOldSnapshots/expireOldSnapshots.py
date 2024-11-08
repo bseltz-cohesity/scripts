@@ -119,6 +119,17 @@ if len(notfoundjobs) > 0:
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 
+remoteCluster = None
+if confirmreplication is True:
+    remoteClusters = api('get','remoteClusters')
+if replicationtarget is not None:
+    remoteCluster = [r for r in remoteClusters if r['name'].lower() == replicationtarget.lower()]
+    if len(remoteCluster) == 0:
+        print('remote cluster %s not found' % replicationtarget)
+        exit(1)
+    else:
+        remoteCluster = remoteCluster[0]
+
 print("Searching for old snapshots...")
 finishedStates = ['kSuccess', 'kFailure', 'kWarning']
 
@@ -157,7 +168,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                     for copyRun in run['copyRun']:
                         if copyRun['target']['type'] == 'kRemote':
                             if copyRun['status'] == 'kSuccess':
-                                if replicationtarget is None or ('clusterName' in copyRun['target']['replicationTarget'] and copyRun['target']['replicationTarget']['clusterName'].lower() == replicationtarget.lower()):
+                                if replicationtarget is None or copyRun['target']['replicationTarget']['clusterId'] == remoteCluster['clusterId']: # ('clusterName' in copyRun['target']['replicationTarget'] and copyRun['target']['replicationTarget']['clusterName'].lower() == replicationtarget.lower()):
                                     if activeconfirmation:
                                         repltarget = copyRun['target']['replicationTarget']['clusterName']
                                         context = getContext()
@@ -242,4 +253,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                             print("    Expiring %s" % startdate)
                             api('put', 'protectionRuns', expireRun)
                         else:
-                            print("    %s" % startdate)
+                            if confirmarchive is True or confirmreplication is True:
+                                print("    would expire %s (remote copy confirmed)" % startdate)
+                            else:
+                                print("    would expire %s" % startdate)
