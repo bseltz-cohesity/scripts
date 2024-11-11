@@ -170,7 +170,11 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                             if copyRun['status'] == 'kSuccess':
                                 if replicationtarget is None or copyRun['target']['replicationTarget']['clusterId'] == remoteCluster['clusterId']: # ('clusterName' in copyRun['target']['replicationTarget'] and copyRun['target']['replicationTarget']['clusterName'].lower() == replicationtarget.lower()):
                                     if activeconfirmation:
-                                        repltarget = copyRun['target']['replicationTarget']['clusterName']
+                                        repltargetObj = [r for r in remoteClusters if r['clusterId'] == copyRun['target']['replicationTarget']['clusterId']]
+                                        if len(repltargetObj) == 0:
+                                            print('remote cluster with ID %s not found' % copyRun['target']['replicationTarget']['clusterId'])
+                                            exit(1)
+                                        repltarget = repltargetObj[0]['name'] # copyRun['target']['replicationTarget']['clusterName']
                                         context = getContext()
                                         if repltarget not in contexts.keys():
                                             apiauth(vip=repltarget, username=username, domain=domain, password=password, useApiKey=useApiKey, noretry=True, quiet=True)

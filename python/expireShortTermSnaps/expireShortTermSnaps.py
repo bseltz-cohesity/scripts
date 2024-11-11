@@ -9,14 +9,22 @@ import codecs
 # command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)           # cluster to connect to
-parser.add_argument('-u', '--username', type=str, required=True)      # username
-parser.add_argument('-d', '--domain', type=str, default='local')      # (optional) domain - defaults to local
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
+parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-t', '--tenant', type=str, default=None)
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-mm', '--mfacode', type=str, default=None)
+parser.add_argument('-em', '--emailmfacode', action='store_true')
 parser.add_argument('-m', '--minutestokeep', type=int, default=120)   # (optional) number of minutes to retain snapshots, defaults to 120
 parser.add_argument('-n', '--numsnapstokeep', type=int, default=2)    # (optional) number of snaps to retain, defaults to 2
 parser.add_argument('-j', '--jobname', type=str, action='append')     # (optional) job names to include
 parser.add_argument('-l', '--joblist', type=str)                      # (optional) text file of job names
-parser.add_argument('-e', '--expire', action='store_true')            # (optional) expire snapshots older than k days
+parser.add_argument('-e', '--expire', action='store_true')            # (optional) expire
 parser.add_argument('-f', '--maxlogfilesize', type=int, default=100000)  # max size to truncate log
 
 args = parser.parse_args()
@@ -24,6 +32,14 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
+tenant = args.tenant
+clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
+emailmfacode = args.emailmfacode
 minutestokeep = args.minutestokeep
 numsnapstokeep = args.numsnapstokeep
 jobnames = args.jobname
@@ -74,8 +90,26 @@ if len(jobnames) == 0:
     bailout()
 jobnames = [j.lower() for j in jobnames]
 
+# authentication =========================================================
+# demand clustername if connecting to helios or mcm
+if (mcm or vip.lower() == 'helios.cohesity.com') and clustername is None:
+    print('-c, --clustername is required when connecting to Helios or MCM')
+    exit(1)
+
 # authenticate
-apiauth(vip, username, domain, quiet=True)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, emailMfaCode=emailmfacode, tenantId=tenant)
+
+# exit if not authenticated
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
+
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    heliosCluster(clustername)
+    if LAST_API_ERROR() != 'OK':
+        exit(1)
+# end authentication =====================================================
 
 nowUsecs = dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
@@ -91,7 +125,7 @@ if len(jobs) > 0:
         expirecount = 0
         out('%s' % job['name'])
         runs = api('get', 'protectionRuns?jobId=%s&numRuns=1440&excludeTasks=true&excludeNonRestoreableRuns=true' % job['id'])
-        unexpiredruns = [r for r in runs if r['backupRun']['snapshotsDeleted'] is False and r['backupRun']['status'] in ['kSuccess', 'kWarning']]
+        unexpiredruns = [r for r in runs if r['backupRun']['snapshotsDeleted'] is not True and r['backupRun']['status'] in ['kSuccess', 'kWarning']]
         # find runs with short retention (1 day)
         shorttermruns = []
         for run in unexpiredruns:
