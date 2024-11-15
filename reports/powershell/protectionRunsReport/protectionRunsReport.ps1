@@ -30,10 +30,10 @@ $dateString = $now.ToString('yyyy-MM-dd')
 $outfileName = "protectionRunsReport-$dateString.tsv"
 
 # headings
-$headings = "Cluster Name`tTenant`tJob Name`tEnvironment`tPolicy Name`tRun Type`tRun Start Time`tRun End Time`tDuration (Min)`tRun Status`tLogical ($unit)`tRead ($unit)`tWritten ($unit)"
+$headings = "Cluster Name`tTenant`tJob Name`tEnvironment`tPolicy Name`tRun Type`tRun Start Time`tRun End Time`tDuration (Min)`tRun Status`tLogical ($unit)`tRead ($unit)`tWritten ($unit)`tMessage"
 
 if($includeObjectDetails){
-   $headings = "Cluster Name`tTenant`tJob Name`tEnvironment`tPolicy Name`tRun Type`tRun Start Time`tRegistered Source`tObject Name`tStart Time`tEnd Time`tDuration (Min)`tStatus`tLogical ($unit)`tRead ($unit)`tWritten ($unit)"
+   $headings = "Cluster Name`tTenant`tJob Name`tEnvironment`tPolicy Name`tRun Type`tRun Start Time`tRegistered Source`tObject Name`tStart Time`tEnd Time`tDuration (Min)`tStatus`tLogical ($unit)`tRead ($unit)`tWritten ($unit)`tMessage"
 }
 $headings | Out-File -FilePath $outfileName
 
@@ -70,7 +70,7 @@ foreach($v in $vip){
         while($True){
             $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=$incObjects"
             foreach($run in $runs.runs){
-                if(! $includeObjectDetails -or ! $run.PSObject.Properties['isLocalSnapshotsDeleted']){
+                if(! $includeObjectDetails -or ! $run.PSObject.Properties['isLocalSnapshotsDeleted'] -or $run.isLocalSnapshotsDeleted -ne $True){
                     # run level stats
                     if($run.PSObject.Properties['localBackupInfo']){
                         $runType = $run.localBackupInfo.runType.subString(1)
@@ -85,7 +85,11 @@ foreach($v in $vip){
                         if($days -and $daysBack -gt $runStartTime){
                             break
                         }
+                        $message = ''
                         $status = $run.localBackupInfo.status
+                        if($status -in @('SucceededWithWarning', 'Failed')){
+                            $message = $run.localBackupInfo.messages[0]
+                        }
                         $runEndTime = $null
                         $durationMinutes = "{0:n0}" -f ($now - $runStartTime).totalMinutes
                         if($run.localBackupInfo.PSObject.Properties['endTimeUsecs']){
@@ -98,13 +102,13 @@ foreach($v in $vip){
                         "    {0} ({1})" -f $runStartTime, $runType
                         if(! $includeObjectDetails){
                             # write to output file
-                            $cluster.name, $tenant, $job.name, $environment, $policyName, $runType, $runStartTime, $runEndTime, $durationMinutes, $status, $logicalSizeBytes, $bytesRead, $bytesWritten -join "`t" | Out-File -FilePath $outfileName -Append
+                            $cluster.name, $tenant, $job.name, $environment, $policyName, $runType, $runStartTime, $runEndTime, $durationMinutes, $status, $logicalSizeBytes, $bytesRead, $bytesWritten, $message -join "`t" | Out-File -FilePath $outfileName -Append
                         } 
                         if($days -and $daysBack -gt $runStartTime){
                             break
                         }
                         # object level stats
-                        if($includeObjectDetails -and ! $run.PSObject.Properties['isLocalSnapshotsDeleted']){
+                        if($includeObjectDetails -and (! $run.PSObject.Properties['isLocalSnapshotsDeleted'] -or $run.isLocalSnapshotsDeleted -ne $True)){
                             foreach($object in $run.objects){
                                 $objectName = $object.object.name
                                 if($environment -notin @('Oracle', 'SQL') -or ($environment -in @('Oracle', 'SQL') -and $object.object.objectType -ne 'kHost')){
@@ -115,6 +119,10 @@ foreach($v in $vip){
                                         $registeredSourceName = $objectName
                                     }
                                     $objectStatus = $object.localSnapshotInfo.snapshotInfo.status.subString(1)
+                                    $message = ''
+                                    if($objectStatus -notin @('Successful', 'Canceled')){
+                                        $message = $object.localSnapshotInfo.failedAttempts[-1].message
+                                    }
                                     $objectStartTime = usecsToDate $object.localSnapshotInfo.snapshotInfo.startTimeUsecs
                                     $objectEndTime = $null
                                     $objectDurationMinutes = "{0:n0}" -f ($now - $objectStartTime).totalMinutes
@@ -127,7 +135,7 @@ foreach($v in $vip){
                                     $objectBytesRead = toUnits $object.localSnapshotInfo.snapshotInfo.stats.bytesRead
                                     "        {0}" -f $objectName
                                     # write to output file
-                                    $cluster.name, $tenant, $job.name, $environment, $policyName, $runType, $runStartTime, $registeredSourceName, $objectName, $objectStartTime, $objectEndTime, $objectDurationMinutes, $objectStatus, $objectLogicalSizeBytes, $objectBytesRead, $objectBytesWritten -join "`t" | Out-File -FilePath $outfileName -Append
+                                    $cluster.name, $tenant, $job.name, $environment, $policyName, $runType, $runStartTime, $registeredSourceName, $objectName, $objectStartTime, $objectEndTime, $objectDurationMinutes, $objectStatus, $objectLogicalSizeBytes, $objectBytesRead, $objectBytesWritten, $message -join "`t" | Out-File -FilePath $outfileName -Append
                                 }
                             }
                         }
