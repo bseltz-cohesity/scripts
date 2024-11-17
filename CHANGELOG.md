@@ -1,5 +1,14 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-11-15
+
+* [protectionRunsReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/protectionRunsReport) [`Update`] added last error message to output
+
+
+## 2024-11-11
+
+* [expireShortTermSnaps.py](https://github.com/cohesity/community-automation-samples/tree/main/python/expireShortTermSnaps) [`Fix`] added support for Cohesity 7.x
+
 ## 2024-11-07
 
 * [validateServerBackup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/validateServerBackup) [`Fix`] updated to work with Azure VMs

@@ -114,7 +114,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                 endUsecs = int(runs['runs'][-1]['id'].split(':')[1]) - 1
             else:
                 break
-            runs = [r for r in runs['runs'] if 'isLocalSnapshotsDeleted' not in r]
+            runs = [r for r in runs['runs'] if 'isLocalSnapshotsDeleted' not in r or r['isLocalSnapshotsDeleted'] is not True]
             if runs is not None and len(runs) > 0:
                 runs = [r for r in runs if ('localBackupInfo' in r and 'endTimeUsecs' in r['localBackupInfo']) or ('originalBackupInfo' in r and 'endTimeUsecs' in r['originalBackupInfo'])]
             if runs is not None and len(runs) > 0 and excludelogs is True:
