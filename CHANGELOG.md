@@ -3,11 +3,11 @@
 ## 2024-11-15
 
 * [protectionRunsReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/protectionRunsReport) [`Update`] added last error message to output
-
+* [replicateOldSnapshots.py](https://github.com/cohesity/community-automation-samples/tree/main/python/replicateOldSnapshots) [`Update`] added support for Cohesity 7.x
 
 ## 2024-11-11
 
-* [expireShortTermSnaps.py](https://github.com/cohesity/community-automation-samples/tree/main/python/expireShortTermSnaps) [`Fix`] added support for Cohesity 7.x
+* [expireShortTermSnaps.py](https://github.com/cohesity/community-automation-samples/tree/main/python/expireShortTermSnaps) [`Update`] added support for Cohesity 7.x
 
 ## 2024-11-07
 
