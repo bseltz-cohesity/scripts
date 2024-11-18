@@ -48,7 +48,7 @@ Note: an output file migratedShares.txt is created, that can be used as input fo
 Use the viewDRtest-delete.ps1 script to delete the old views from ClusterA
 
 ```powershell
-.\viewDRtest-delete.ps1 -vip clusterA `
+.\viewDRtest-delete.ps1 -vip clusterB `
                         -username admin `
                         -domain local `
                         -viewList .\myviews.txt `
@@ -66,7 +66,7 @@ Below are examples, same as above except we can connect via Helios:
                        -suffix test
                        -sourceCluster clusterA
 
-.\viewDRtest-delete.ps1 -clusterName clusterA `
+.\viewDRtest-delete.ps1 -clusterName clusterB `
                         -username admin `
                         -domain local `
                         -viewList .\myviews.txt `
