@@ -45,7 +45,7 @@ Note: an output file migratedShares.txt is created, that can be used as input fo
 
 ## Delete the Cloned Views and Shares (after DR testing is complete)
 
-Use the viewDRtest-delete.ps1 script to delete the old views from ClusterA
+Use the viewDRtest-delete.ps1 script to delete the cloned views from ClusterB when testing is done.
 
 ```powershell
 .\viewDRtest-delete.ps1 -vip clusterB `
