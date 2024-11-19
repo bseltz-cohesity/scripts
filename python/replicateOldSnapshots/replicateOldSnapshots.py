@@ -93,10 +93,39 @@ if len(notfoundjobs) > 0:
 
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
+policies = api('get', 'data-protect/policies', v=2)
 
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
     if len(jobnames) == 0 or job['name'].lower() in [j.lower() for j in jobnames]:
         print('%s' % job['name'])
+        if 'isActive' in job and job['isActive'] == True and keepfor == 0:
+            policy = [p for p in policies['policies'] if p['id'] == job['policyId']]
+            if len(policy) > 0:
+                policy = policy[0]
+                if 'remoteTargetPolicy' in policy and policy['remoteTargetPolicy'] is not None and 'replicationTargets' in policy['remoteTargetPolicy'] and policy['remoteTargetPolicy']['replicationTargets'] is not None:
+                    replicationTarget = [t for t in policy['remoteTargetPolicy']['replicationTargets'] if t['targetType'] == 'RemoteCluster' and t['remoteTargetConfig']['clusterName'].lower() == remotecluster.lower()]
+                    if len(replicationTarget) > 0:
+                        frequent = [t for t in replicationTarget if t['schedule']['unit'] == 'Runs']
+                        if len(frequent) == 0:
+                           frequent = [t for t in replicationTarget if t['schedule']['unit'] == 'Days']
+                        if len(frequent) == 0:
+                           frequent = [t for t in replicationTarget if t['schedule']['unit'] == 'Weeks']
+                        if len(frequent) == 0:
+                           frequent = [t for t in replicationTarget if t['schedule']['unit'] == 'Months']
+                        if len(frequent) == 0:
+                           frequent = [t for t in replicationTarget if t['schedule']['unit'] == 'Years']
+                        if len(frequent) > 0:
+                            retention = frequent[0]['retention']
+                            retentionduration = retention['duration']
+                            retentionunit = retention['unit']
+                            if retentionunit == 'Weeks':
+                                retentionduration = retentionduration * 7
+                            if retentionunit == 'Months':
+                                retentionduration = retentionduration * 30
+                            if retentionunit == 'Years':
+                                retentionduration = retentionduration * 365
+                            print('  ** using policy retention of %s days **' % retentionduration)
+                            keepfor = retentionduration
 
         jobident = job['id'].split(':')
         jobuid = {
