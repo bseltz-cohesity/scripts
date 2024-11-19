@@ -248,7 +248,11 @@ foreach($job in $jobs){
                 foreach($task in $run.backupRun.latestFinishedTasks){
                     if($task){
                         $displayName = $task.base.sources[0].source.displayName
-                        $size = $task.base.totalLogicalBackupSizeBytes
+                        if($task.base.sources[0].source.type -eq 1){
+                            $size = $task.base.sources[0].source.vmwareEntity.frontEndSizeInfo.sizeBytes
+                        }else{
+                            $size = $task.base.totalLogicalBackupSizeBytes
+                        }
                         # gather database sizes
                         if($task.PSObject.Properties['appEntityStateVec']){
                             foreach($app in $task.appEntityStateVec){
