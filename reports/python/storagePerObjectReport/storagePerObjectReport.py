@@ -218,7 +218,7 @@ def reportStorage():
                 if lastRunId != '0':
                     runs['runs'] = [r for r in runs['runs'] if r['id'] < lastRunId]
                 for run in runs['runs']:
-                    if 'isLocalSnapshotsDeleted' not in run:
+                    if 'isLocalSnapshotsDeleted' not in run or run['isLocalSnapshotsDeleted'] is not True:
                         # per object stats
                         if 'objects' in run and run['objects'] is not None and len(run['objects']) > 0:
                             for object in [o for o in run['objects'] if o['object']['environment'] != job['environment']]:
@@ -324,14 +324,16 @@ def reportStorage():
                                         if archivalInfo is not None:
                                             objects[objId]['oldestBackup'] = archivalInfo['startTimeUsecs']
                                             objects[objId]['archiveBytesRead'] += archivalInfo['stats']['bytesRead']
-
+                                
                                 except Exception as e:
                                     pass
+                                
                     if 'archivalInfo' in run and run['archivalInfo'] is not None and 'archivalTargetResults' in run['archivalInfo'] and run['archivalInfo']['archivalTargetResults'] is not None and len(run['archivalInfo']['archivalTargetResults']) > 0:
                         for archiveResult in run['archivalInfo']['archivalTargetResults']:
                             if 'status' in archiveResult and archiveResult['status'] == 'Succeeded':
                                 archiveCount += 1
                                 oldestArchive = usecsToDate(run['id'].split(':')[-1])
+                
                 if len(runs['runs']) == 0 or runs['runs'][-1]['id'] == lastRunId:
                     break
                 else:
@@ -342,7 +344,6 @@ def reportStorage():
                         endUsecs = runs['runs'][-1]['originalBackupInfo']['endTimeUsecs']
                     else:
                         endUsecs = runs['runs'][-1]['archivalInfo']['archivalTargetResults'][0]['endTimeUsecs']
-
             # process output
             jobFESize = 0
             for object in sorted(objects.keys()):
@@ -358,7 +359,9 @@ def reportStorage():
                     isCad = True
             for object in sorted(objects.keys()):
                 thisObject = objects[object]
+                
                 if ('logical' in thisObject and 'bytesRead' in thisObject) or ('archiveLogical' in thisObject and 'archiveBytesRead' in thisObject):
+                    
                     objFESize = round(thisObject['logical'] / multiplier, 1)
                     if thisObject['archiveLogical'] > 0:
                         objFESize = round(thisObject['archiveLogical'] / multiplier, 1)
@@ -448,7 +451,7 @@ def reportStorage():
                 if lastRunId != '0':
                     runs['runs'] = [r for r in runs['runs'] if r['id'] < lastRunId]
                 for run in runs['runs']:
-                    if 'isLocalSnapshotsDeleted' not in run:
+                    if 'isLocalSnapshotsDeleted' not in run or run['isLocalSnapshotsDeleted'] is not True:
                         # per object stats
                         if 'objects' in run and run['objects'] is not None and len(run['objects']) > 0:
                             for object in [o for o in run['objects']]:
