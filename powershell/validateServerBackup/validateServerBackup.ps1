@@ -226,7 +226,7 @@ function validateServer($object, $vm){
         $attemptNum = $version.instanceId.attemptNum
     }
     $instance = ("attemptNum={0}&clusterId={1}&clusterIncarnationId={2}&entityId={3}&jobId={4}&jobInstanceId={5}&jobStartTimeUsecs={6}&jobUidObjectId={7}" -f `
-            $version.instanceId.attemptNum,
+            $attemptNum,
             $doc.objectId.jobUid.clusterId,
             $doc.objectId.jobUid.clusterIncarnationId,
             $doc.objectId.entity.id,

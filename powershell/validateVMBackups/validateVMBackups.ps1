@@ -25,7 +25,8 @@ param (
     [Parameter()][string]$smtpPort = 25, # outbound smtp port
     [Parameter()][array]$sendTo, # send to address
     [Parameter()][string]$sendFrom, # send from address
-    [Parameter()][int64]$pageSize = 100
+    [Parameter()][int64]$pageSize = 100,
+    [Parameter()][int64]$daysBack = 7
 )
 
 $versions = 1
@@ -199,101 +200,156 @@ $html += '</span>
 </tr>'
 
 $finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')
-$from = 0
-$ro = api get "/searchvms?entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kGCP&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kKVM&entityTypes=kVMware&size=$pageSize&from=$from"
 
-while($True){
-    $ro.vms | Sort-Object -Property {$_.vmDocument.jobName}, {$_.vmDocument.objectName }, @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False} | ForEach-Object {
-        $vm = $_
-        $object = $vm.vmDocument.objectName                
-        $doc = $vm.vmDocument
-        $versionNum = $versions - 1
-        $previousVolumeDisplayList = $null
-        $warning = ''
-        $warningString = ''
-        while($versionNum -ge 0){
-            $version = $doc.versions[$versionNum]
-            $jobId = $doc.objectId.jobId
-            $jobName = $doc.jobName
-            $lastrun = (api get "protectionRuns?jobId=$jobId&numRuns=2" | Where-Object {$_.backupRun.status -in $finishedStates})[0]
-            $lastStatus = $lastRun.backupRun.status
-            $lastRunUsecs = $lastRun.backupRun.stats.startTimeUsecs
-            if($lastStatus -eq 'kFailure'){
-                $source = $lastRun.backupRun.sourceBackupStatus | Where-Object {$_.source.id -eq $doc.objectId.entity.id}
-                if($source){
-                    $lastStatus = $source.status
-                }
-            }
-            if($lastStatus -ne 'kFailure'){
-                # get latest completed run status and date
-                $lastRecoveryPoint = $version.instanceId.jobStartTimeUsecs
-                $run = api get "protectionRuns?jobId=$jobId&startedTimeUsecs=$lastRecoveryPoint"
-                $lastRunUsecs = $run.backupRun.stats.startTimeUsecs
-                $lastStatus = $run.backupRun.status
-                # get latest recovery point dirlist
-                $readableBackup = $False
-                $instance = ("attemptNum={0}&clusterId={1}&clusterIncarnationId={2}&entityId={3}&jobId={4}&jobInstanceId={5}&jobStartTimeUsecs={6}&jobUidObjectId={7}" -f `
-                        $version.instanceId.attemptNum,
-                        $doc.objectId.jobUid.clusterId,
-                        $doc.objectId.jobUid.clusterIncarnationId,
-                        $doc.objectId.entity.id,
-                        $doc.objectId.jobId,
-                        $version.instanceId.jobInstanceId,
-                        $version.instanceId.jobStartTimeUsecs,
-                        $doc.objectId.jobUid.objectId)
-                $volumeDisplayList = @()
-                $volumeList = api get "/vm/volumeInfo?$instance&statFileEntries=false"
-                if($volumeList.volumeInfos){
-                    $volumeDisplayList = $volumeList.volumeInfos.displayName
-                    $readableBackup = $True
-                }
-            }else{
-                $versionNum = 0
-            }
-            if($versionNum -gt 0){
-                $previousVolumeDisplayList = $volumeDisplayList
-            }else{
-                if($previousVolumeDisplayList -ne $null){
-                    $compare = Compare-Object -ReferenceObject $volumeDisplayList -DifferenceObject $previousVolumeDisplayList
-                    if($compare -ne $null){
-                        $warning = "Previous volumes: $($previousVolumeDisplayList | Sort-Object)"
-                        $warningString = "*** Volume Change Detected! ***"
-                    }
-                }
-                $lastBackupReadable = (($lastRecoveryPoint -eq $lastRunUsecs) -and $readableBackup)
-                if($lastStatus -eq 'kFailure' -or $False -eq $lastBackupReadable){
-                    $html += "<tr style='color:BA3415;'>"
-                }else{
-                    $html += "<tr>"
-                }
-                $volumeDisplay = $(($volumeDisplayList | sort) -join '<br/>')
-                $html += ("<td>{0}</td>
-                <td>{1}</td>
-                <td>{2}</td>
-                <td>{3}</td>
-                <td>{4}</td>
-                <td>{5}</td>
-                <td>{6}</td>
-                <td>{7}</td>
-                </tr>" -f $object, $entityType[$doc.backupType], $jobName, (usecsToDate $lastRunUsecs), $lastStatus.subString(1), $lastBackupReadable, $volumeDisplay, $warning)
-    
-                Write-Host ("{0} ({1})  {2}  {3}  {4}  {5}  {6}" -f `
-                            $object,
-                            $entityType[$doc.backupType],
-                            $jobName,
-                            (usecsToDate $lastRunUsecs),
-                            $lastStatus.subString(1),
-                            $lastBackupReadable,
-                            $warningString)
-            }
-            $versionNum = $versionNum - 1
+$jobs = api get "protectionJobs?environments=kAcropolis,kAWS,kAWSNative,kAzure,kAzureNative,kGCP,kHyperV,kHyperVVSS,kKVM,kVMware"
+
+$startTimeUsecs = timeAgo $daysBack days
+$endTimeUsecs = dateToUsecs
+
+foreach($job in $jobs | Sort-Object -Property name){
+    $from = 0
+    $searchvms = @()
+    $foundvms = @()
+    $ro = api get "/searchvms?jobId=$($job.id)&size=$pageSize&from=$from"
+    while($True){
+        $searchvms = @($searchvms + $ro.vms)
+        if($ro.count -gt ($pageSize + $from)){
+            $from += $pageSize
+            $ro = api get "/searchvms?jobId=$($job.id)&size=$pageSize&from=$from"
+        }else{
+            break
         }
     }
-    if($ro.count -gt ($pageSize + $from)){
-        $from += $pageSize
-        $ro = api get "/searchvms?entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kGCP&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kKVM&entityTypes=kVMware&size=$pageSize&from=$from"
-    }else{
-        break
+    $runs = api get "protectionRuns?numRuns=50&jobId=$($job.id)&startTimeUsecs=$startTimeUsecs&endTimeUsecs=$endTimeUsecs" | Where-Object {$_.backupRun.status -in $finishedStates}
+    foreach($run in $runs){
+        foreach($source in $run.backupRun.sourceBackupStatus | Sort-Object -Property {$_.source.name}){
+            if($source.source.name -notin $foundvms){
+                $lastRun = $run
+                $object = $source.source.name
+                $foundvms = @($foundvms + $source.source.name)
+                $lastStatus = $run.backupRun.status
+                $lastRunUsecs = $run.backupRun.stats.startTimeUsecs
+                if($lastStatus -ne 'kFailure'){
+                    $vm = $searchvms | Where-Object {$_.vmDocument.objectId.entity.id -eq $source.source.id}
+                    if(! $vm){
+                        $lastStatus = 'kFailure'
+                        $html += "<tr style='color:BA3415;'>"
+                        $html += ("<td>{0}</td>
+                                    <td>{1}</td>
+                                    <td>{2}</td>
+                                    <td>{3}</td>
+                                    <td>{4}</td>
+                                    <td>{5}</td>
+                                    <td>{6}</td>
+                                    <td>{7}</td>
+                                    </tr>" -f $object, $job.environment, $job.name, (usecsToDate $lastRunUsecs), $lastStatus.subString(1), $False, '', '')
+                        
+                        Write-Host ("{0} ({1})  {2}  {3}  {4}  {5}  {6}" -f `
+                                    $object,
+                                    $job.environment,
+                                    $job.name,
+                                    (usecsToDate $lastRunUsecs),
+                                    $lastStatus.subString(1),
+                                    $False,
+                                    '')
+                    }else{
+                        $vm = $vm[0]
+                        $doc = $vm.vmDocument
+                        $versionNum = $versions - 1
+                        $previousVolumeDisplayList = $null
+                        $warning = ''
+                        $warningString = ''
+                        while($versionNum -ge 0){
+                            $version = $doc.versions[$versionNum]
+                            $jobId = $doc.objectId.jobId
+                            $jobName = $doc.jobName
+                            if($lastStatus -ne 'kFailure'){
+                                $readableBackup = $False
+                                if(! $version.instanceId.PSObject.Properties['attemptNum']){
+                                    $attemptNum = 0
+                                }else{
+                                    $attemptNum = $version.instanceId.attemptNum
+                                }
+                                $instance = ("attemptNum={0}&clusterId={1}&clusterIncarnationId={2}&entityId={3}&jobId={4}&jobInstanceId={5}&jobStartTimeUsecs={6}&jobUidObjectId={7}" -f `
+                                        $attemptNum,
+                                        $doc.objectId.jobUid.clusterId,
+                                        $doc.objectId.jobUid.clusterIncarnationId,
+                                        $doc.objectId.entity.id,
+                                        $doc.objectId.jobId,
+                                        $version.instanceId.jobInstanceId,
+                                        $version.instanceId.jobStartTimeUsecs,
+                                        $doc.objectId.jobUid.objectId)
+                                $volumeDisplayList = @()
+                                $volumeList = api get "/vm/volumeInfo?$instance&statFileEntries=false"
+                                if($volumeList.volumeInfos){
+                                    $volumeDisplayList = $volumeList.volumeInfos.displayName
+                                    $readableBackup = $True
+                                }
+                            }else{
+                                $versionNum = 0
+                            }
+                            if($versionNum -gt 0){
+                                $previousVolumeDisplayList = $volumeDisplayList
+                            }else{
+                                if($previousVolumeDisplayList -ne $null){
+                                    $compare = Compare-Object -ReferenceObject $volumeDisplayList -DifferenceObject $previousVolumeDisplayList
+                                    if($compare -ne $null){
+                                        $warning = "Previous volumes: $($previousVolumeDisplayList | Sort-Object)"
+                                        $warningString = "*** Volume Change Detected! ***"
+                                    }
+                                }
+                                $lastBackupReadable = $readableBackup
+                                if($lastStatus -eq 'kFailure' -or $False -eq $lastBackupReadable){
+                                    $html += "<tr style='color:BA3415;'>"
+                                }else{
+                                    $html += "<tr>"
+                                }
+                                $volumeDisplay = $(($volumeDisplayList | sort) -join '<br/>')
+                                $html += ("<td>{0}</td>
+                                <td>{1}</td>
+                                <td>{2}</td>
+                                <td>{3}</td>
+                                <td>{4}</td>
+                                <td>{5}</td>
+                                <td>{6}</td>
+                                <td>{7}</td>
+                                </tr>" -f $object, $entityType[$doc.backupType], $jobName, (usecsToDate $lastRunUsecs), $lastStatus.subString(1), $lastBackupReadable, $volumeDisplay, $warning)
+                    
+                                Write-Host ("{0} ({1})  {2}  {3}  {4}  {5}  {6}" -f `
+                                            $object,
+                                            $entityType[$doc.backupType],
+                                            $jobName,
+                                            (usecsToDate $lastRunUsecs),
+                                            $lastStatus.subString(1),
+                                            $lastBackupReadable,
+                                            $warningString)
+                            }
+                            $versionNum = $versionNum - 1
+                        }
+                    }
+                }else{
+                    $html += "<tr style='color:BA3415;'>"
+                    $html += ("<td>{0}</td>
+                                <td>{1}</td>
+                                <td>{2}</td>
+                                <td>{3}</td>
+                                <td>{4}</td>
+                                <td>{5}</td>
+                                <td>{6}</td>
+                                <td>{7}</td>
+                                </tr>" -f $object, $job.environment, $job.name, (usecsToDate $lastRunUsecs), $lastStatus.subString(1), $False, '', '')
+                    
+                    Write-Host ("{0} ({1})  {2}  {3}  {4}  {5}  {6}" -f `
+                                $object,
+                                $job.environment,
+                                $job.name,
+                                (usecsToDate $lastRunUsecs),
+                                $lastStatus.subString(1),
+                                $False,
+                                '')
+                }
+            }
+        }
     }
 }
 
