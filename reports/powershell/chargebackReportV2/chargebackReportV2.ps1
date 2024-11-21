@@ -43,6 +43,7 @@ function toUnits($val){
 function reportCluster(){
 
     $cluster = api get cluster
+    $storageDomains = api get viewBoxes
     $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&includeTenants=true"
     $sources = api get "protectionSources/registrationInfo?includeApplicationsTreeInfo=false"
     $policies = api get -v2 data-protect/policies
@@ -89,7 +90,7 @@ function reportCluster(){
                             }else{
                                 $slaStatus = 'Met'
                             }
-                            "    {0} ({1})" -f $runStartTime, $runType
+                            # "    {0} ({1})" -f $runStartTime, $runType
                             foreach($object in $run.objects){
                                 if($environment -in @('kOracle', 'kSQL') -and $object.object.objectType -eq 'kHost'){
                                     $localSources["$($object.object.id)"] = $object.object.name
@@ -101,6 +102,11 @@ function reportCluster(){
                                     if($object.object.PSObject.Properties['sourceId']){
                                         if($environment -in @('kOracle', 'kSQL')){
                                             $registeredSourceName = $localSources["$($object.object.sourceId)"]
+                                        }elseif($environment -eq 'kView'){
+                                            $storageDomain = $storageDomains | Where-Object {$_.id -eq $job.storageDomainId}
+                                            if($storageDomain){
+                                                $registeredSourceName = $storageDomain.name
+                                            }
                                         }else{
                                             $registeredSource = $sources.rootNodes | Where-Object {$_.rootNode.id -eq $object.object.sourceId}
                                             $registeredSourceName = $registeredSource.rootNode.name
@@ -136,6 +142,10 @@ function reportCluster(){
                                         $cost = "{0:C}" -f ($costPerGiB * $objectLogicalSizeBytes)
                                         $objectName, $registeredSourceName, $job.name, $policyName, $environment, $cluster.name, $objectLogicalSizeBytes, $cost, $tenant, $job.description -join "`t" | Out-File -FilePath $outfileName -Append
                                         $seen[$keyName] = 1
+                                        if($environment -eq 'kView'){
+                                            $viewKey = $objectName
+                                            $seen[$viewKey] = 1
+                                        }
                                     }
                                 }
                             }
@@ -154,6 +164,23 @@ function reportCluster(){
                 }else{
                     break
                 }
+            }
+        }
+    }
+    # include unprotected views
+    $views = (api get "views?allUnderHierarchy=true").views | Where-Object {$_.viewProtection -eq $null}
+    if($views.count -gt 0){
+        foreach($view in $views){
+            $keyName = $view.name
+            if(! $seen[$keyName]){
+                "$($view.name) (kView)"
+                $objectLogicalSizeBytes = toUnits $view.logicalUsageBytes
+                $cost = "{0:C}" -f ($costPerGiB * $objectLogicalSizeBytes)
+                $tenant = ''
+                if($view.PSObject.Properties['tenantId']){
+                    $tenant = $view.tenantId
+                }
+                $view.name, $view.viewBoxName, '-', '-', 'kView', $cluster.name, $objectLogicalSizeBytes, $cost, $tenant, $view.description -join "`t" | Out-File -FilePath $outfileName -Append
             }
         }
     }
