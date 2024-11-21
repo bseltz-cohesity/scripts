@@ -102,7 +102,7 @@ function reportCluster(){
                                     if($object.object.PSObject.Properties['sourceId']){
                                         if($environment -in @('kOracle', 'kSQL')){
                                             $registeredSourceName = $localSources["$($object.object.sourceId)"]
-                                        }elseif($environment -eq 'kView'){
+                                        }elseif($environment -in @('kView', 'kRemoteAdapter')){
                                             $storageDomain = $storageDomains | Where-Object {$_.id -eq $job.storageDomainId}
                                             if($storageDomain){
                                                 $registeredSourceName = $storageDomain.name
@@ -140,7 +140,7 @@ function reportCluster(){
                                     $keyName = "{0}{1}" -f $objectName, $registeredSourceName
                                     if(! $seen[$keyName]){
                                         $cost = "{0:C}" -f ($costPerGiB * $objectLogicalSizeBytes)
-                                        $objectName, $registeredSourceName, $job.name, $policyName, $environment, $cluster.name, $objectLogicalSizeBytes, $cost, $tenant, $job.description -join "`t" | Out-File -FilePath $outfileName -Append
+                                        $objectName, $registeredSourceName, $job.name, $policyName, $environment.subString(1), $cluster.name, $objectLogicalSizeBytes, $cost, $tenant, $job.description -join "`t" | Out-File -FilePath $outfileName -Append
                                         $seen[$keyName] = 1
                                         if($environment -eq 'kView'){
                                             $viewKey = $objectName
@@ -180,7 +180,7 @@ function reportCluster(){
                 if($view.PSObject.Properties['tenantId']){
                     $tenant = $view.tenantId
                 }
-                $view.name, $view.viewBoxName, '-', '-', 'kView', $cluster.name, $objectLogicalSizeBytes, $cost, $tenant, $view.description -join "`t" | Out-File -FilePath $outfileName -Append
+                $view.name, $view.viewBoxName, '-', '-', 'View', $cluster.name, $objectLogicalSizeBytes, $cost, $tenant, $view.description -join "`t" | Out-File -FilePath $outfileName -Append
             }
         }
     }
