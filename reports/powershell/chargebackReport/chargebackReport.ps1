@@ -27,7 +27,7 @@ param (
     [Parameter()][switch]$lastCalendarMonth,
     [Parameter()][int]$lastXDays = 0,
     [Parameter()][int]$numRuns = 1000,
-    [Parameter(Mandatory = $True)][string]$costPerGB,
+    [Parameter()][string]$costPerGB = 1,
     [Parameter()][array]$prefix = 'ALL', #report jobs with 'prefix' only
     [Parameter()][string]$smtpServer, #outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, #outbound smtp port
@@ -98,7 +98,7 @@ $htmlFileName = "$($thisClusterName)_$([string]::Join("_", $prefix.ToUpper()))_C
 
 $date = (get-date).ToString()
 
-"Object,Size (GB),Cost" | Out-File $csvFileName -Encoding ascii
+"Object,Environment,Size (GB),Cost" | Out-File $csvFileName -Encoding ascii
 
 $html = '<html>
 <head>
@@ -127,7 +127,7 @@ $html = '<html>
 
         td,
         th {
-            width: 33%;
+            width: 20%;
             text-align: left;
             padding: 6px;
         }
@@ -212,6 +212,8 @@ $html += '</span>
 <table>
 <tr>
         <th>Object Name</th>
+        <th>Environment</th>
+        <th>Job Name</th>
         <th>Size (GB)</th>
         <th>Cost</th>
       </tr>'
@@ -220,7 +222,8 @@ $html += '</span>
 $jobs = api get protectionJobs | Sort-Object -Property name
 
 $entitySizes = @{}
-
+$entityEnvironments = @{}
+$jobNames = @{}
 "Gathering job run details..."
 
 foreach($job in $jobs){
@@ -250,20 +253,30 @@ foreach($job in $jobs){
                         $displayName = $task.base.sources[0].source.displayName
                         if($task.base.sources[0].source.type -eq 1){
                             $size = $task.base.sources[0].source.vmwareEntity.frontEndSizeInfo.sizeBytes
+                        }elseif($task.base.sources[0].source.type -eq 6){
+                            $size = $task.base.sources[0].source.sizeInfo.value.sourceDataSizeBytes
                         }else{
                             $size = $task.base.totalLogicalBackupSizeBytes
                         }
                         # gather database sizes
                         if($task.PSObject.Properties['appEntityStateVec']){
                             foreach($app in $task.appEntityStateVec){
+                                $appsize = $app.totalLogicalBytes
+                                if($app.appEntity.type -eq 29){
+                                    $appsize = $size
+                                }
                                 if($entitySizes.ContainsKey("$displayName/$($app.appentity.displayName)")){
-                                    if($app.totalLogicalBytes -gt $entitySizes["$displayName/$($app.appentity.displayName)"]){
-                                        $entitySizes["$displayName/$($app.appentity.displayName)"] = $app.totalLogicalBytes
+                                    if($appsize -gt $entitySizes["$displayName/$($app.appentity.displayName)"]){
+                                        $entitySizes["$displayName/$($app.appentity.displayName)"] = $appsize
                                     }
                                 }else{
-                                    $entitySizes["$displayName/$($app.appentity.displayName)"] = $app.totalLogicalBytes
-                                }
+                                    $entitySizes["$displayName/$($app.appentity.displayName)"] = $appsize
+                                    $entityEnvironments["$displayName/$($app.appentity.displayName)"] = $job.environment
+                                    $jobNames["$displayName/$($app.appentity.displayName)"] = $job.name
+                                }                                
                             }
+                            # "$displayName  $($task.base.sources[0].source.type)"
+
                         }else{
                             if($entitySizes.ContainsKey($displayName)){
                                 if($size -gt $entitySizes[$displayName]){
@@ -271,6 +284,9 @@ foreach($job in $jobs){
                                 }
                             }else{
                                 $entitySizes[$displayName] = $size
+                                $entityEnvironments[$displayName] = $job.environment
+                                $jobNames[$displayName] = $job.name
+                                # "$displayName  $($task.base.sources[0].source.type)"
                             }
                         }
                     }
@@ -302,6 +318,8 @@ if($views.count -gt 0){
         if($includeRecord -eq $True){
             "  $($view.name)"
             $entitySizes[$view.name] = $view.logicalUsageBytes
+            $entityEnvironments[$view.name] = 'kView'
+            $jobNames[$view.name] = '-'
         }
     }
 }
@@ -311,7 +329,7 @@ $totalSize = 0
 $totalCost = 0
 
 # populate html/csv rows
-foreach ($entity in $entitySizes.Keys | sort){
+foreach ($entity in $jobNames.Keys | Sort-Object -Property {$jobNames[$_]}, {$_}){
     $size = $entitySizes[$entity]/(1024*1024*1024)
     $chargeback = [math]::Round($size * $costPerGB, 2)
     $totalSize += $size
@@ -320,6 +338,8 @@ foreach ($entity in $entitySizes.Keys | sort){
     "$entity,$size,$chargeback" | Out-File $csvFileName -Append ascii
     $html += "<tr>
         <td>$entity</td>
+        <td>$($entityEnvironments[$entity].subString(1))</td>
+        <td>$($jobNames[$entity])</td>
         <td>$size</td>
         <td>$chargeback</td>
     </tr>"
@@ -331,6 +351,8 @@ $totalSize = [math]::Round($totalSize, 2)
 
 $html += "<tr>
     <td>Total</td>
+    <td></td>
+    <td></td>
     <td>$totalSize</td>
     <td>$totalCost</td>
 </tr>
