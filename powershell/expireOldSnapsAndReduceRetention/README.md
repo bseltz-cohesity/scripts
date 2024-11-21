@@ -48,11 +48,21 @@ You can run the script again you should see no results, unless the Cohesity clus
 
 Also note that if you're waiting for capacity to be freed up, it may take hours to days for the garbage collector to actually free up the space.
 
-## Parameters
+## Authentication Parameters
 
-* -vip: Cohesity cluster to connect to
-* -username: Cohesity username (e.g. admin)
-* -domain: (optional) Active Directory domain (defaults to 'local')
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -jobname: (optional) narrow scope to just the specified job(s) (comma separated)
 * -daysToKeep: show/expire snapshots older than this many days
 * -backupType: (optional) choose one of kRegular, kFull, kLog or kSystem backup types. Default is all
@@ -60,3 +70,4 @@ Also note that if you're waiting for capacity to be freed up, it may take hours 
 * -numRuns: (optional) page through X runs at a time (default is 1000)
 * -daysBack: (optional) dig back through X days of job run history (default is 180)
 * -skipMonthlies: (optional) don't change snapshots that are on the 1st day of the month
+* -skipYearlies: (optional) don't change snapshots that are on the 1st day of the year

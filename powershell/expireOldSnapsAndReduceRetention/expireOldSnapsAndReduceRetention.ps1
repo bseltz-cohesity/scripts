@@ -11,23 +11,54 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,
-    [Parameter(Mandatory = $True)][string]$username,
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
     [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter()][array]$jobname = $null,
     [Parameter(Mandatory = $True)][string]$daysToKeep,
     [Parameter()][ValidateSet("kRegular","kFull","kLog","kSystem","kAll")][string]$backupType = 'kAll',
     [Parameter()][switch]$expire,
     [Parameter()][Int64]$numRuns = 1000,
     [Parameter()][Int64]$daysBack = 0,
-    [Parameter()][switch]$skipMonthlies
+    [Parameter()][switch]$skipMonthlies,
+    [Parameter()][switch]$skipYearlies
 )
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
+# authentication =============================================
+# demand clusterName for Helios/MCM
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios/MCM" -ForegroundColor Yellow
+    exit 1
+}
+
 # authenticate
-apiauth -vip $vip -username $username -domain $domain
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
+        exit 1
+    }
+}
+# end authentication =========================================
 
 # filter on jobname
 $jobs = api get protectionJobs
@@ -69,13 +100,13 @@ foreach ($job in $jobs | Sort-Object -Property name) {
             break
         }
         # runs with undeleted snapshots
-        foreach ($run in $runs | Where-Object{$_.backupRun.snapshotsDeleted -eq $false -and ($_.backupRun.runType -eq $backupType -or $backupType -eq 'kAll')}){
+        foreach ($run in $runs | Where-Object{$_.backupRun.snapshotsDeleted -ne $True -and ($_.backupRun.runType -eq $backupType -or $backupType -eq 'kAll')}){
             if($run.backupRun.stats.startTimeUsecs -le $daysBackUsecs){
                 break
             }
             $startdate = usecstodate $run.copyRun[0].runStartTimeUsecs
             $startdateusecs = $run.copyRun[0].runStartTimeUsecs
-            if(! $skipMonthlies -or $startdate.Day -ne 1){
+            if((! $skipMonthlies -or $startdate.Day -ne 1) -and (! $skipYearlies -or $startdate.DayOfYear -ne 1)){
                 if ($startdateusecs -lt $daysToKeepUsecs) {
                     ### if -expire switch is set, expire the local snapshot
                     if ($expire) {
@@ -102,7 +133,7 @@ foreach ($job in $jobs | Sort-Object -Property name) {
                         $null = api put protectionRuns $expireRun
                     }else{
                         ### just print old snapshots if we're not expiring
-                        "    Would expire $($job.name) ($($run.backupRun.runType.subString(1))) $($startdate)"
+                        "    Would expire $($job.name) $($startdate)"
                     }
                 }else{
                     $newExpiryUsecs = [int64](dateToUsecs $startdate.addDays($daysToKeep))
@@ -138,7 +169,11 @@ foreach ($job in $jobs | Sort-Object -Property name) {
                     }
                 }
             }else{
-                "    Skipping monthly $($job.name) $($startdate)"
+                if($skipYearlies -and $startdate.DayOfYear -eq 1){
+                    "    Skipping yearly $($job.name) $($startdate)"
+                }else{
+                    "    Skipping monthly $($job.name) $($startdate)"
+                }
             }
         }
     }
