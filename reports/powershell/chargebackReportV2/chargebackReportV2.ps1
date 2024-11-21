@@ -13,6 +13,7 @@ param (
     [Parameter()][array]$clusterName = $null,
     [Parameter()][double]$costPerGiB = 1.0,
     [Parameter()][int]$numRuns = 500,
+    [Parameter()][string]$objectType = $null,
     [Parameter()][string]$smtpServer, #outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, #outbound smtp port
     [Parameter()][array]$sendTo, #send to address
@@ -50,17 +51,26 @@ function reportCluster(){
         $endUsecs = dateToUsecs $now
         $environment = $job.environment
         $tenant = $job.permissions.name
+        $v1JobId = ($job.id -split ':')[2]
         if(!$objectType -or $objectType -eq $environment){
             "{0} ({1})" -f $job.name, $environment
             $policyName = ($policies.policies | Where-Object id -eq $job.policyId).name
             if(!$policyName){
                 $policyName = '-'
             }
+            if($job.environment -in @('kVMware', 'kAD') -or ($job.environment -eq 'kPhysical' -and $job.physicalParams.protectionType -eq 'kVolume')){
+                if($job.environment -eq 'kAD'){
+                    $entityType = 'kPhysical'
+                }else{
+                    $entityType = $job.environment
+                }
+                $vmsearch = api get "/searchvms?allUnderHierarchy=true&entityTypes=$($entityType)&jobIds=$($v1JobId)&vmName=$($job.name)"
+            }
             while($True){
                 $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true"
                 foreach($run in $runs.runs){
                     $localSources = @{}
-                    if(! $run.PSObject.Properties['isLocalSnapshotsDeleted']){
+                    if(! $run.PSObject.Properties['isLocalSnapshotsDeleted'] -or $run.isLocalSnapshotsDeleted -ne $True){
                         if($run.PSObject.Properties['localBackupInfo']){
                             $backupInfo = $run.localBackupInfo
                             $snapshotInfo = 'localSnapshotInfo'
@@ -105,8 +115,22 @@ function reportCluster(){
                                     if($objectStatus -eq 'kSuccessful'){
                                         $objectStatus = 'kSuccess'
                                     }
-                                    $objectLogicalSizeBytes = toUnits $object.$snapshotInfo.snapshotInfo.stats.logicalSizeBytes
-                                    "        {0}" -f $objectName
+                                    $objectLogicalSizeBytes = $object.$snapshotInfo.snapshotInfo.stats.logicalSizeBytes
+                                    if($job.environment -in @('kVMware', 'kAD') -or ($job.environment -eq 'kPhysical' -and $job.physicalParams.protectionType -eq 'kVolume')){
+                                        $vms = $vmsearch.vms | Where-Object {$_.vmDocument.objectName -eq $object.object.name}
+                                        if($vms){
+                                            if($job.environment -eq 'kVMware'){
+                                                $vmbytes = $vms[0].vmDocument.objectId.entity.vmwareEntity.frontEndSizeInfo.sizeBytes
+                                            }else{
+                                                $vmbytes = $vms[0].vmDocument.objectId.entity.sizeInfo.value.sourceDataSizeBytes
+                                            }
+                                            if($vmbytes -gt 0 -and $vmbytes -lt $objectLogicalSizeBytes){
+                                                $objectLogicalSizeBytes = $vmbytes
+                                            }
+                                        }
+                                    }
+                                    $objectLogicalSizeBytes = toUnits $objectLogicalSizeBytes
+                                    # "        {0}" -f $objectName
                                     $keyName = "{0}{1}" -f $objectName, $registeredSourceName
                                     if(! $seen[$keyName]){
                                         $cost = "{0:C}" -f ($costPerGiB * $objectLogicalSizeBytes)
