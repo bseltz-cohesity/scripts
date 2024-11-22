@@ -12,7 +12,7 @@ Run these commands from PowerShell to download the scripts into the current fold
 
 ```powershell
 # download commands
-(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/capacityTools/expireOldSnapsExceptFirstPerDay/expireOldSnapsExceptFirstPerDay.ps1).content | Out-File expireOldSnapsExceptFirstPerDay.ps1; (Get-Content expireOldSnapsExceptFirstPerDay.ps1) | Set-Content expireOldSnapsExceptFirstPerDay.ps1
+(Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/expireOldSnapsExceptFirstPerDay/expireOldSnapsExceptFirstPerDay.ps1).content | Out-File expireOldSnapsExceptFirstPerDay.ps1; (Get-Content expireOldSnapsExceptFirstPerDay.ps1) | Set-Content expireOldSnapsExceptFirstPerDay.ps1
 (Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # end of download commands
 ```
