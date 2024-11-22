@@ -81,8 +81,7 @@ foreach ($job in $jobs) {
                                 if( ! $target -or $copyRun.target.archivalTarget.vaultName -eq $target){
                                     Write-Host "$runDate  $jobName" -ForegroundColor Green
                                     $expireRun = @{'jobRuns' = @(
-                                            @{'expiryTimeUsecs'     = 0;
-                                                'jobUid'            = $run.jobUid;
+                                            @{  'jobUid'            = $run.jobUid;
                                                 'runStartTimeUsecs' = $run.backupRun.stats.startTimeUsecs;
                                                 'copyRunTargets'    = @(
                                                     @{'daysToKeep'       = 0;
