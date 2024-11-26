@@ -107,7 +107,7 @@ foreach ($job in $jobs) {
             }
         }
         if($runCount -eq $numRuns){
-            $endUsecs = $runs[-1].backupRun.stats.endTimeUsecs - 1
+            $endUsecs = $runs[0].backupRun.stats.endTimeUsecs - 1
         }else{
             break
         }
