@@ -40,7 +40,7 @@ Place all files in a folder together. then, run the main script like so:
 * -d, --domain: (optional) active directory domain of user (default is local)
 * -tenant, --tenant: (optional) name of tenant/org to impersonate
 * -i, --useApiKey: (optional) use API key for authentication
-* -pwd, --password: (optional) password or API key
+* -p, --password: (optional) password or API key
 * -np, --noprompt: (optional) do not prompt for password
 * -mcm, --mcm: (optional) connect through MCM
 * -c, --clustername: (optional) helios/mcm cluster to connect to
