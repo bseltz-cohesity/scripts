@@ -1,5 +1,17 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-11-27
+
+* [backupNow.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backupNow) [`Update`] added -tenant (--tenant) option
+
+## 2024-11-26
+
+* [expireOldArchives.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/expireOldArchives) [`Fix`] solved paging issue
+
+## 2024-11-21
+
+* [expireOldSnapsAndReduceRetention.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/expireOldSnapsAndReduceRetention) [`Update`] added -skipYearly option
+
 ## 2024-11-15
 
 * [protectionRunsReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/protectionRunsReport) [`Update`] added last error message to output
