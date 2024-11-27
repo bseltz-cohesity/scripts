@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2024.10.28
+# version 2024.11.27
 
 # version history
 # ===============
@@ -30,6 +30,7 @@
 # 2024.07.08 - reintroduced -k, --keepLocalFor functionality
 # 2024.09.06 - added support for Ft Knox
 # 2024-10-28 - fixed oracle log purge
+# 2024-11-27 - added tenant support -tenant --tenant
 #
 # extended error codes
 # ====================
@@ -59,6 +60,7 @@ parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
 parser.add_argument('-v2', '--vip2', type=str, default=None)
 parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-tenant', '--tenant', type=str, default=None)
 parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-p', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
@@ -111,6 +113,7 @@ vip2 = args.vip2
 username = args.username
 domain = args.domain
 useApiKey = args.useApiKey
+tenant = args.tenant
 password = args.password
 noprompt = args.noprompt
 clustername = args.clustername
@@ -222,7 +225,7 @@ if 'api_version' not in globals() or api_version < '2022.09.13':
         bail(1)
 
 # authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, entraId=entraId)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, entraId=entraId, tenantId=tenant)
 
 # if connected to helios or mcm, select to access cluster
 if mcm or vip.lower() == 'helios.cohesity.com':
