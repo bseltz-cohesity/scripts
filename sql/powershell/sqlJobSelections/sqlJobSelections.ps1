@@ -82,7 +82,7 @@ function getJobName($id){
 $cluster = api get basicClusterInfo
 $outfile = "sqlJobSelections-$($cluster.name).csv"
 
-"Entity Type,Server Name,Instance Name,Database Name,Protection Group Name,Selection Type" | Out-File -FilePath $outfile
+"Entity Type,Server Name,Instance Name,Database Name,Protection Group Name,Protection Type,Selection Type" | Out-File -FilePath $outfile
 
 "`nReviewing SQL selections...`n"
 
@@ -193,7 +193,7 @@ foreach($server in $sources.nodes | Sort-Object -Property {$_.protectionSource.n
     }
     foreach($s in $selections){
         if($s.entityType -notin @('Instance', 'Database') -or $showInstances -or $showDatabases){
-            "{0},{1},{2},{3},{4},{5}" -f $s.entityType, $s.serverName, $s.instanceName, $s.dbName, $s.jobName, $s.selection | Out-File -FilePath $outfile -Append
+            "{0},{1},{2},{3},{4},{5},{6}" -f $s.entityType, $s.serverName, $s.instanceName, $s.dbName, $s.jobName, $job.mssqlParams.protectionType, $s.selection | Out-File -FilePath $outfile -Append
         }       
     }
 }
