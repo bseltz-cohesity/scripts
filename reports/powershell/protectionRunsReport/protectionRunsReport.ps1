@@ -121,11 +121,15 @@ foreach($v in $vip){
                                     $objectStatus = $object.localSnapshotInfo.snapshotInfo.status.subString(1)
                                     $message = ''
                                     if($objectStatus -notin @('Successful', 'Canceled')){
-                                        $message = $object.localSnapshotInfo.failedAttempts[-1].message
+                                        if($object.localSnapshotInfo.PSObject.Properties['failedAttempts'] -and $object.localSnapshotInfo.failedAttempts -ne $null){
+                                            $message = $object.localSnapshotInfo.failedAttempts[-1].message
+                                        }else{
+                                            $object.localSnapshotInfo | toJson | Out-file 'debug.json'
+                                        }
                                     }
                                     $objectStartTime = usecsToDate $object.localSnapshotInfo.snapshotInfo.startTimeUsecs
                                     $objectEndTime = $null
-                                    $objectDurationMinutes = "{0:n0}" -f ($now - $objectStartTime).totalMinutes
+                                    $objectDurationMinutes = 0
                                     if($object.localSnapshotInfo.snapshotInfo.PSObject.Properties['endTimeUsecs']){
                                         $objectEndTime = usecsToDate $object.localSnapshotInfo.snapshotInfo.endTimeUsecs
                                         $objectDurationMinutes = "{0:n0}" -f ($objectEndTime - $objectStartTime).totalMinutes
