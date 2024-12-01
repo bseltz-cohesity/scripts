@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script performs an restore of Oracle archive logs.
+This script performs a restore of Oracle archive logs.
 
 ## Components
 
@@ -36,7 +36,7 @@ Place both files in a folder together and run the main script like so:
 * -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
 * -d, --domain: (optional) domain of username (defaults to local)
 * -t, --tenant: (optional) multi-tenancy tenant name
-* -i, --useApiKey: (optional) use API key for authentication
+* -k, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password or API key
 * -np, --noprompt: (optional) do not prompt for password
 * -mcm, --mcm: (optional) connect through MCM
