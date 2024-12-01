@@ -145,14 +145,41 @@ $midnightUsecs = dateToUsecs $midnight
 $ranges = api get -v2 "data-protect/objects/$($latestSnapshotObject.id)/pit-ranges?toTimeUsecs=$midnightUsecs&protectionGroupIds=$($latestSnapshot.protectionGroupId)&fromTimeUsecs=0"
 $ranges = $ranges.oracleRestoreRangeInfo.$rangetypeinfo
 
-if($incarnationId){
-    $ranges = $ranges | Where-Object incarnationId -eq $incarnationId
+if($startTime){
+    $startTimeUsecs = dateToUsecs $startTime
 }
-if($threadId){
-    $ranges = $ranges | Where-Object threadId -eq $threadId
+if($endTime){
+    $endTimeUsecs = dateToUsecs $endTime
 }
-if($resetLogId){
-    $ranges = $ranges | Where-Object resetLogId -eq $resetLogId
+
+if($rangeType -eq 'time'){
+    if($startTime){
+        $ranges = $ranges | Where-Object {$_.startOfRange -le $startTimeUsecs -and $_.endOfRange -gt $startTimeUsecs}
+    }
+    if($endTime){
+        $ranges = $ranges | Where-Object {$_.endOfRange -ge $endTimeUsecs}
+    }
+}else{
+    if($incarnationId){
+        $ranges = $ranges | Where-Object incarnationId -eq $incarnationId
+    }
+    if($threadId){
+        $ranges = $ranges | Where-Object threadId -eq $threadId
+    }
+    if($resetLogId){
+        $ranges = $ranges | Where-Object resetLogId -eq $resetLogId
+    }
+    if($startOfRange){
+        $ranges = $ranges | Where-Object {$_.startOfRange -le $startOfRange -and $_.endOfRange -gt $startOfRange}
+    }
+    if($endOfRange){
+        $ranges = $ranges | Where-Object {$_.endOfRange -ge $endOfRange}
+    }
+}
+
+if(!$ranges){
+    Write-Host "no ranges meet the specified parameters" -ForegroundColor Yellow
+    exit 1
 }
 
 # display ranges
@@ -164,55 +191,25 @@ if($showRanges){
     }else{
         $ranges | Format-Table -Property @{label='startOfRange'; expression={usecsToDate $_.startOfRange -format 'yyyy-MM-dd hh:mm:ss'}}, @{label='endOfRange'; expression={usecsToDate $_.endOfRange -format 'yyyy-MM-dd hh:mm:ss'}}
     }
-    # $ranges | Format-Table
     exit
-}
-
-if($startTime){
-    $startTimeUsecs = dateToUsecs $startTime
-}
-if($endTime){
-    $endTimeUsecs = dateToUsecs $endTime
 }
 
 # select range
 if($rangeType -eq 'time'){
+    $range = $ranges[-1]
     if($startTime){
-        $ranges = $ranges | Where-Object {$_.startOfRange -le $startTimeUsecs -and $_.endOfRange -gt $startTimeUsecs}
+        $range.startOfRange = $startTimeUsecs
     }
     if($endTime){
-        $ranges = $ranges | Where-Object {$_.endOfRange -ge $endTimeUsecs}
-    }
-    if(!$ranges){
-        Write-Host "no ranges meet the specified parameters" -ForegroundColor Yellow
-        exit 1
-    }else{
-        $range = $ranges[-1]
-        if($startTime){
-            $range.startOfRange = $startTimeUsecs
-        }
-        if($endTime){
-            $range.endOfRange = $endTimeUsecs
-        }
+        $range.endOfRange = $endTimeUsecs
     }
 }else{
+    $range = $ranges[-1]
     if($startOfRange){
-        $ranges = $ranges | Where-Object {$_.startOfRange -le $startOfRange -and $_.endOfRange -gt $startOfRange}
+        $range.startOfRange = $startOfRange
     }
     if($endOfRange){
-        $ranges = $ranges | Where-Object {$_.endOfRange -ge $endOfRange}
-    }
-    if(!$ranges){
-        Write-Host "no ranges meet the specified parameters" -ForegroundColor Yellow
-        exit 1
-    }else{
-        $range = $ranges[-1]
-        if($startOfRange){
-            $range.startOfRange = $startOfRange
-        }
-        if($endOfRange){
-            $range.endOfRange = $endOfRange
-        }
+        $range.endOfRange = $endOfRange
     }
 }
 
