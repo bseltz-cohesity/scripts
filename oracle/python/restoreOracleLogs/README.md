@@ -63,6 +63,9 @@ Place both files in a folder together and run the main script like so:
 * -et, --endtime: (optional) use when using time range type (e.g. '2024-12-01 23:00:00')
 * -sr, --startofrange: (optional) use when using lsn or scn range types (e.g. 1257)
 * -er, --endofrange: (optional) use when using lsn or scn range types (e.g. 1259)
+* -ii, --incarnationid: (optional) specify incarnation ID
+* -ri, --resetlogid: (optional) specify reset log ID
+* -ti, --threadid: (optional) specify thread ID
 
 ## Alternate Destination Parameters
 

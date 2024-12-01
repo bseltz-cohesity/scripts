@@ -17,7 +17,7 @@ parser.add_argument('-d', '--domain', type=str, default='local')
 parser.add_argument('-t', '--tenant', type=str, default=None)
 parser.add_argument('-c', '--clustername', type=str, default=None)
 parser.add_argument('-mcm', '--mcm', action='store_true')
-parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-k', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
@@ -35,6 +35,9 @@ parser.add_argument('-st', '--starttime', type=str, default=None)
 parser.add_argument('-et', '--endtime', type=str, default=None)
 parser.add_argument('-sr', '--startofrange', type=int, default=None)
 parser.add_argument('-er', '--endofrange', type=int, default=None)
+parser.add_argument('-ii', '--incarnationid', type=int, default=None)
+parser.add_argument('-ri', '--resetlogid', type=int, default=None)
+parser.add_argument('-ti', '--threadid', type=int, default=None)
 parser.add_argument('-p', '--path', type=str, required=True)
 parser.add_argument('-s', '--showranges', action='store_true')
 parser.add_argument('-dbg', '--dbg', action='store_true')
@@ -67,6 +70,9 @@ starttime = args.starttime
 endtime = args.endtime
 startofrange = args.startofrange
 endofrange = args.endofrange
+incarnationid = args.incarnationid
+resetlogid = args.resetlogid
+threadid = args.threadid
 progress = args.progress
 wait = args.wait
 dbg = args.dbg
@@ -172,9 +178,28 @@ ranges = api('get','data-protect/objects/%s/pit-ranges?toTimeUsecs=%s&protection
 
 ranges = ranges['oracleRestoreRangeInfo'][rangetypeinfo]
 
+# filter ranges by id
+if incarnationid is not None:
+    ranges = [r for r in ranges if r['incarnationId'] == incarnationid]
+if resetlogid is not None:
+    ranges = [r for r in ranges if r['resetLogId'] == resetlogid]
+if threadid is not None:
+    ranges = [r for r in ranges if r['threadId'] == threadid]
+
 # display ranges
 if showranges is True:
-    display(ranges)
+    for range in ranges:
+        if rangetype == 'time':
+             print("\nstartOfRange: %s" % usecsToDate(range['startOfRange']))
+             print("endOfRange: %s" % usecsToDate(range['endOfRange']))
+        else:
+             print("\nstartOfRange: %s" % range['startOfRange'])
+             print("endOfRange: %s" % range['endOfRange'])
+             print("resetLogId: %s" % range['resetLogId'])
+             print("incarnationId: %s" % range['incarnationId'])
+             if rangetype == 'lsn':
+                 print("threadId: %s" % range['threadId'])
+    print('')
     exit()
 
 if starttime is not None:
