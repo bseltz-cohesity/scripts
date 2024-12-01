@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Recovery an Oracle Logs Using python"""
+"""Recover Oracle Archive Logs Using python"""
 
 # version: 2024-12-01
 
