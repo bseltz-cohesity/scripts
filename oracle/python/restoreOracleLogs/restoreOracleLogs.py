@@ -178,13 +178,28 @@ ranges = api('get','data-protect/objects/%s/pit-ranges?toTimeUsecs=%s&protection
 
 ranges = ranges['oracleRestoreRangeInfo'][rangetypeinfo]
 
-# filter ranges by id
-if incarnationid is not None:
-    ranges = [r for r in ranges if r['incarnationId'] == incarnationid]
-if resetlogid is not None:
-    ranges = [r for r in ranges if r['resetLogId'] == resetlogid]
-if threadid is not None:
-    ranges = [r for r in ranges if r['threadId'] == threadid]
+if starttime is not None:
+    starttimeusecs = dateToUsecs(starttime)
+if endtime is not None:
+    endtimeusecs = dateToUsecs(endtime)
+
+# filter ranges
+if rangetype == 'time':
+    if starttime is not None:
+        ranges = [r for r in ranges if r['startOfRange'] <= starttimeusecs and r['endOfRange'] > starttimeusecs]
+    if endtime is not None:
+        ranges = [r for r in ranges if r['endOfRange'] >= endtimeusecs]
+else:
+    if incarnationid is not None:
+        ranges = [r for r in ranges if r['incarnationId'] == incarnationid]
+    if resetlogid is not None:
+        ranges = [r for r in ranges if r['resetLogId'] == resetlogid]
+    if threadid is not None:
+        ranges = [r for r in ranges if r['threadId'] == threadid]
+    if startofrange is not None:
+        ranges = [r for r in ranges if r['startOfRange'] <= startofrange and r['endOfRange'] > startofrange]
+    if endofrange is not None:
+        ranges = [r for r in ranges if r['endOfRange'] >= endofrange]
 
 # display ranges
 if showranges is True:
@@ -202,40 +217,19 @@ if showranges is True:
     print('')
     exit()
 
-if starttime is not None:
-    starttimeusecs = dateToUsecs(starttime)
-if endtime is not None:
-    endtimeusecs = dateToUsecs(endtime)
-
 # select range
 if rangetype == 'time':
+    range = ranges[-1]
     if starttime is not None:
-        ranges = [r for r in ranges if r['startOfRange'] <= starttimeusecs and r['endOfRange'] > starttimeusecs]
+        range['startOfRange'] = starttimeusecs
     if endtime is not None:
-        ranges = [r for r in ranges if r['endOfRange'] >= endtimeusecs]
-    if len(ranges) == 0:
-        print('no ranges meet the specified parameters')
-        exit(1)
-    else:
-        range = ranges[-1]
-        if starttime is not None:
-            range['startOfRange'] = starttimeusecs
-        if endtime is not None:
-            range['endOfRange'] = endofrange
+        range['endOfRange'] = endofrange
 else:
+    range = ranges[-1]
     if startofrange is not None:
-        ranges = [r for r in ranges if r['startOfRange'] <= startofrange and r['endOfRange'] > startofrange]
+        range['startOfRange'] = startofrange
     if endofrange is not None:
-        ranges = [r for r in ranges if r['endOfRange'] >= endofrange]
-    if len(ranges) == 0:
-        print('no ranges meet the specified parameters')
-        exit(1)
-    else:
-        range = ranges[-1]
-        if startofrange is not None:
-            range['startOfRange'] = startofrange
-        if endofrange is not None:
-            range['endOfRange'] = endofrange
+        range['endOfRange'] = endofrange
 
 # find target server
 targetEntity = [e for e in api('get', 'protectionSources/registrationInfo?environments=kOracle')['rootNodes'] if e['rootNode']['name'].lower() == targetserver.lower()]
