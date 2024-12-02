@@ -110,6 +110,7 @@ foreach($v in $vip){
                         # object level stats
                         if($includeObjectDetails -and (! $run.PSObject.Properties['isLocalSnapshotsDeleted'] -or $run.isLocalSnapshotsDeleted -ne $True)){
                             foreach($object in $run.objects){
+                                $object | toJson
                                 $objectName = $object.object.name
                                 if($environment -notin @('Oracle', 'SQL') -or ($environment -in @('Oracle', 'SQL') -and $object.object.objectType -ne 'kHost')){
                                     if($object.object.PSObject.Properties['sourceId']){
@@ -127,7 +128,12 @@ foreach($v in $vip){
                                             $object.localSnapshotInfo | toJson | Out-file 'debug.json'
                                         }
                                     }
-                                    $objectStartTime = usecsToDate $object.localSnapshotInfo.snapshotInfo.startTimeUsecs
+                                    $objectStartTimeUsecs = $object.localSnapshotInfo.snapshotInfo.startTimeUsecs
+                                    if($objectStartTimeUsecs -gt 0){
+                                        $objectStartTime = usecsToDate $object.localSnapshotInfo.snapshotInfo.startTimeUsecs
+                                    }else{
+                                        $objectStartTime = $runStartTime
+                                    }
                                     $objectEndTime = $null
                                     $objectDurationMinutes = 0
                                     if($object.localSnapshotInfo.snapshotInfo.PSObject.Properties['endTimeUsecs']){
