@@ -21,13 +21,50 @@ chmod +x restoreOracleLogs.py
 
 Place both files in a folder together and run the main script like so:
 
+You can specify the range type (default is lsn), and show the available ranges:
+
 ```bash
 ./restoreOracleLogs.py -v mycluster \
                        -u myuser \
                        -d mydomain.net \
                        -ss oracleprod.mydomain.net \
                        -sd proddb \
-                       -p /home/oracle/test
+                       -p /home/oracle/test \
+                       -rt lsn \
+                       -s
+```
+
+You can further filter on properties of the available ranges:
+
+```bash
+./restoreOracleLogs.py -v mycluster \
+                       -u myuser \
+                       -d mydomain.net \
+                       -ss oracleprod.mydomain.net \
+                       -sd proddb \
+                       -p /home/oracle/test \
+                       -rt lsn \
+                       -ii 1 \
+                       -ri 123456 \
+                       -sr 1234 \
+                       -er 1236 \
+                       -s
+```
+
+Then perform the restore (if multiple ranges satisfy the filters, the most recent range will be used):
+
+```bash
+./restoreOracleLogs.py -v mycluster \
+                       -u myuser \
+                       -d mydomain.net \
+                       -ss oracleprod.mydomain.net \
+                       -sd proddb \
+                       -p /home/oracle/test \
+                       -rt lsn \
+                       -ii 1 \
+                       -ri 123456 \
+                       -sr 1234 \
+                       -er 1236
 ```
 
 ## Authentication Parameters

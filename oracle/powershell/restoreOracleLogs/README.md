@@ -24,13 +24,50 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 
 Place both files in a folder together and run the main script like so:
 
+You can specify the range type (default is lsn), and show the available ranges:
+
 ```powershell
 ./restoreOracleLogs.ps1 -vip mycluster `
                         -username myuser `
                         -domain mydomain.net `
                         -sourceServer oracleprod.mydomain.net `
                         -sourceDatabase proddb `
-                        -path /home/oracle/test
+                        -path /home/oracle/test `
+                        -rangeType lsn `
+                        -showRanges
+```
+
+You can further filter on properties of the available ranges:
+
+```powershell
+./restoreOracleLogs.ps1 -vip mycluster `
+                        -username myuser `
+                        -domain mydomain.net `
+                        -sourceServer oracleprod.mydomain.net `
+                        -sourceDatabase proddb `
+                        -path /home/oracle/test `
+                        -rangeType lsn `
+                        -incarnationId 1 `
+                        -resetLogId 123456 `
+                        -startOfRange 1234 `
+                        -endOfEange 1236 `
+                        -showRanges
+```
+
+Then perform the restore (if multiple ranges satisfy the filters, the most recent range will be used):
+
+```powershell
+./restoreOracleLogs.ps1 -vip mycluster `
+                        -username myuser `
+                        -domain mydomain.net `
+                        -sourceServer oracleprod.mydomain.net `
+                        -sourceDatabase proddb `
+                        -path /home/oracle/test `
+                        -rangeType lsn `
+                        -incarnationId 1 `
+                        -resetLogId 123456 `
+                        -startOfRange 1234 `
+                        -endOfEange 1236
 ```
 
 ## Authentication Parameters
