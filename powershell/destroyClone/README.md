@@ -55,3 +55,5 @@ tearing down SQLDB: cohesitydb-test from sqldev01...
 * -dbServer: (optional) name of dbServer where clone is attached
 * -instance: (optional) name of SQL instance where clone is attached (default is MSSQLSERVER)
 * -wait: (optional) wait for completion before exit
+
+Note: when tearing down multiple DBs, all DBs must be attached to the same -dbServer and -instance
