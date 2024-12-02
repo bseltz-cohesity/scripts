@@ -36,6 +36,7 @@ tearing down SQLDB: cohesitydb-test from sqldev01...
 * -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
 * -username: (optional) name of user to connect to Cohesity (defaults to helios)
 * -domain: (optional) your AD domain (defaults to local)
+* -tenant: (optional) name of tenant to impersonate
 * -useApiKey: (optional) use API key for authentication
 * -password: (optional) will use cached password or will be prompted
 * -noPrompt: (optional) do not prompt for password
@@ -47,9 +48,10 @@ tearing down SQLDB: cohesitydb-test from sqldev01...
 ## Other Parameters
 
 * -cloneType: type of clone to destroy ('sql', 'view', 'vm', 'azure_vm', 'oracle', 'oracle_view')
-* -viewName: name of clone view to tear down
-* -vmName: name of clone VM to tear down
-* -dbName: name of clone DB to tear down
-* -dbServer: name of dbServer where clone is attached
-* -instance: name of SQL instance where clone is attached (default is MSSQLSERVER)
-* -wait: wait for completion before exit
+* -viewName: (optional) name of clone view to tear down
+* -vmName: (optional) name of clone VM to tear down
+* -dbName: (optional) one or more names of clone DBs to tear down (comma separated)
+* -dbList: (optional) text file of db names to tear down (one per line)
+* -dbServer: (optional) name of dbServer where clone is attached
+* -instance: (optional) name of SQL instance where clone is attached (default is MSSQLSERVER)
+* -wait: (optional) wait for completion before exit
