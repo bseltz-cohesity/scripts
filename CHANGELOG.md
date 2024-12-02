@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-12-02
+
+* [destroyClone.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/destroyClone) [`Updated`] added support for multiple DB names
+
 ## 2024-12-01
 
 * [restoreOracleLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/restoreOracleLogs) [`New`] restore oracle archive logs
