@@ -56,9 +56,10 @@ Clone task completed with status: kSuccess
 * -targetServer: (optional) SQL Server to attach clone to, defaults to same as sourceServer
 * -prefix: (optional) prefix to apply to target database names
 * -suffix: (optional) suffix to apply to target database names
-* -targetInstance (optional) name of SQL instance on targetServer (defaults to MSSQLSERVER)
-* -logTime (optional) point in time to replay the logs to (if omitted will default to time of latest DB backup)
-* -latest (optional) replay the logs to the latest point in time available
+* -targetInstance: (optional) name of SQL instance on targetServer (defaults to MSSQLSERVER)
+* -logTime: (optional) point in time to replay the logs to (if omitted will default to time of latest DB backup)
+* -noLogs: (optional) do not replay any logs
+* -latest: (optional) replay the logs to the latest point in time available
 
 To specify a source instance, include the instance name in the sourceDB name, like MYINSTANCE/MyDB
 

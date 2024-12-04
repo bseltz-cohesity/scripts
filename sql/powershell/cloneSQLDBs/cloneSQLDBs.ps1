@@ -24,6 +24,7 @@ param (
     [Parameter()][string]$suffix = '',
     [Parameter()][string]$targetInstance = 'MSSQLSERVER', # SQL instance name on the targetServer
     [Parameter()][string]$logTime, # point in time log replay like '2019-09-29 17:51:01'
+    [Parameter()][switch]$noLogs,
     [Parameter()][switch]$latest # very latest point in time log replay
 )
 
@@ -182,6 +183,10 @@ foreach($dbName in $dbNames){
         }
     }
 
+    if($validLogTime -eq $False){
+        $versionNum = 0
+    }
+
     $taskName = "CloneSQL-$($targetServer)-$($targetInstance)-{0}{1}{2}" -f $prefix, $dbName, $suffix
 
     ### create new clone task (RestoreAppArg Object)
@@ -192,11 +197,11 @@ foreach($dbName in $dbNames){
             "type" = 3;
             "ownerRestoreInfo" = @{
                 "ownerObject" = @{
-                    "attemptNum" = $latestdb.vmDocument.versions[0].instanceId.attemptNum;
+                    "attemptNum" = $latestdb.vmDocument.versions[$versionNum].instanceId.attemptNum;
                     "jobUid" = $latestdb.vmDocument.objectId.jobUid;
                     "jobId" = $latestdb.vmDocument.objectId.jobId;
-                    "jobInstanceId" = $latestdb.vmDocument.versions[0].instanceId.jobInstanceId;
-                    "startTimeUsecs" = $latestdb.vmDocument.versions[0].instanceId.jobStartTimeUsecs;
+                    "jobInstanceId" = $latestdb.vmDocument.versions[$versionNum].instanceId.jobInstanceId;
+                    "startTimeUsecs" = $latestdb.vmDocument.versions[$versionNum].instanceId.jobStartTimeUsecs;
                     "entity" = @{
                         "id" = $ownerId
                     }
@@ -228,7 +233,9 @@ foreach($dbName in $dbNames){
 
     ### apply log replay time
     if($validLogTime -eq $True){
-        $cloneTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['restoreTimeSecs'] = $([int64]($logUsecs/1000000))
+        if(! $noLogs){
+            $cloneTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['restoreTimeSecs'] = $([int64]($logUsecs/1000000))
+        }
     }else{
         if($logTime){
             Write-Host "LogTime of $logTime is out of range" -ForegroundColor Yellow

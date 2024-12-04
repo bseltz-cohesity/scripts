@@ -56,6 +56,7 @@ Clone task completed with status: kSuccess
 * -targetDB: (optional) target Database Name - defaults to same as source
 * -targetInstance: (optional) name of SQL instance on targetServer, defaults to MSSQLSERVER
 * -logTime: (optional) point in time to replay the logs to - if omitted will default to time of latest DB backup
+* -noLogs: (optional) do not replay any logs
 * -latest: (optional) replay the logs to the latest point in time available
 * -wait: (optional) wait for completion and report end status
 * -sleepTime: (optional) number of seconds to wait between status queries when using -wait (default is 15)
