@@ -10,7 +10,9 @@ param (
     [Parameter()][switch]$storePassword,
     [Parameter()][switch]$installAgent,
     [Parameter()][string]$serviceAccount = $null,
-    [Parameter(Mandatory=$True)][string]$filepath
+    [Parameter(Mandatory=$True)][string]$filepath,
+    [Parameter()][ValidateSet('onlyagent','volcbt','fscbt','allcbt')][string]$cbtType = 'allcbt',
+    [Parameter()][string]$tempPath = 'admin$\Temp'
 )
 
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -24,7 +26,9 @@ if($serverList){
     exit
 }
 
-$remoteFilePath = Join-Path -Path "C:\Windows\Temp" -ChildPath $filepath
+$agentFile = Split-Path -Path $filepath -Leaf
+
+# $remoteFilePath = Join-Path -Path "C:\Windows\Temp" -ChildPath $filepath
 
 Import-Module $(Join-Path -Path $PSScriptRoot -ChildPath userRights.psm1)
 
@@ -54,20 +58,21 @@ if($serviceAccount){
 foreach ($server in $servers){
     $server = $server.ToString()
     "managing Cohesity Agent on $server"
-
+    $remotePath = "\\$($server)\$($tempPath)"
+    $remoteFilePath = "$($remotePath)\$($agentFile)"
     ### install Cohesity Agent
     if ($installAgent) {
 
         ### copy agent installer to server
         "`tcopying agent installer..."
-        Copy-Item $filepath \\$server\c$\Windows\Temp
+        Copy-Item $filepath $remotePath
 
         ### install agent and open firewall port
         "`tinstalling Cohesity agent..."
         $null = Invoke-Command -Computername $server -ArgumentList $remoteFilePath -ScriptBlock {
             param($remoteFilePath)
             if (! $(Get-Service | Where-Object { $_.Name -eq 'CohesityAgent' })) {
-                ([WMICLASS]"\\localhost\ROOT\CIMV2:win32_process").Create("$remoteFilePath /type=allcbt /verysilent /suppressmsgboxes /norestart")
+                ([WMICLASS]"\\localhost\ROOT\CIMV2:win32_process").Create("$remoteFilePath /type=$cbtType /verysilent /suppressmsgboxes /norestart")
                 New-NetFirewallRule -DisplayName 'Cohesity Agent' -Profile 'Domain' -Direction Inbound -Action Allow -Protocol TCP -LocalPort 50051
             }
         }
@@ -76,6 +81,7 @@ foreach ($server in $servers){
     ### set service account
     if($serviceAccount){
         "`tSetting CohesityAgent Service Logon Account..."
+        Start-Sleep 10
         Grant-UserRight -Computer $server -User $serviceAccount -Right SeServiceLogonRight
         $null = Set-ServiceAcctCreds $server 'CohesityAgent' $serviceAccount $sqlPassword
     }

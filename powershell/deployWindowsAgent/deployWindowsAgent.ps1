@@ -127,6 +127,7 @@ foreach ($server in $servers){
     ### register server as physical source
     if($register){
         "`tRegistering as Cohesity protection source..."
+        Start-Sleep 5
         $sourceId = $null
         $phys = api get protectionSources?environments=kPhysical
         $sourceId = ($phys.nodes | Where-Object { $_.protectionSource.name -ieq $server }).protectionSource.id
@@ -162,6 +163,7 @@ foreach ($server in $servers){
     ### set service account
     if($serviceAccount){
         "`tSetting CohesityAgent Service Logon Account..."
+        Start-Sleep 10
         Grant-UserRight -Computer $server -User $serviceAccount -Right SeServiceLogonRight
         $null = Set-ServiceAcctCreds $server 'CohesityAgent' $serviceAccount $sqlPassword
     }

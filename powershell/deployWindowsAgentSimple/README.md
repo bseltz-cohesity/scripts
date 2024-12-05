@@ -62,6 +62,8 @@ managing Cohesity Agent on sqlserver2.mydomain.net
 * -storePassword: (optional) store service account password (encrypted) for later script runs
 * -installAgent: (optional) install the Cohesity agent
 * -serviceAccount: (optional) set Cohesity agent to run using a service account
+* -cbtType: (optional) onlyagent, volcbt, fscbt, or allcbt (default is allcbt)
+* -tempPath: (optional) SMB share path to copy the installer, in the format sharename\path (default is admin$\Temp)
 
 ## Attributions
 
