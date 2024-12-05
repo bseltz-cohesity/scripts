@@ -69,8 +69,8 @@ foreach ($server in $servers){
 
         ### install agent and open firewall port
         "`tinstalling Cohesity agent..."
-        $null = Invoke-Command -Computername $server -ArgumentList $remoteFilePath -ScriptBlock {
-            param($remoteFilePath)
+        $null = Invoke-Command -Computername $server -ArgumentList $remoteFilePath, $cbtType -ScriptBlock {
+            param($remoteFilePath, $cbtType)
             if (! $(Get-Service | Where-Object { $_.Name -eq 'CohesityAgent' })) {
                 ([WMICLASS]"\\localhost\ROOT\CIMV2:win32_process").Create("$remoteFilePath /type=$cbtType /verysilent /suppressmsgboxes /norestart")
                 New-NetFirewallRule -DisplayName 'Cohesity Agent' -Profile 'Domain' -Direction Inbound -Action Allow -Protocol TCP -LocalPort 50051
