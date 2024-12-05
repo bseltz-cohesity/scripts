@@ -1,8 +1,22 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-12-05
+
+* [registerVcenter.py](https://github.com/cohesity/community-automation-samples/tree/main/python/registerVcenter) [`Update`] added support for networks for data transfer
+
+## 2024-12-04
+
+* [cloneSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/cloneSQL) [`Update`] added -noLogs parameter
+* [cloneSQLDBs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/cloneSQLDBs) [`Update`] added -noLogs parameter
+
+## 2024-12-03
+
+* [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Fix`] fixed channel node selection
+
 ## 2024-12-02
 
 * [destroyClone.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/destroyClone) [`Updated`] added support for multiple DB names
+* [registerSQL.py](https://github.com/cohesity/community-automation-samples/tree/main/sql/python/registerSQL) [`Updated`] modernized authentication
 
 ## 2024-12-01
 
