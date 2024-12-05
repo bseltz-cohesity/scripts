@@ -79,7 +79,7 @@ managing Cohesity Agent on sqlserver2.mydomain.net
 ## Other Parameters
 
 * -serverList: (optional) path to file containing servernames to deploy to
-* -server: (optional) name of one server to deploy to
+* -serverName: (optional) name of one server to deploy to
 * -storePassword: (optional) store service account password (encrypted) for later script runs
 * -installAgent: (optional) install the Cohesity agent
 * -register: (optional) register server as a Cohesity physical protection source
@@ -88,6 +88,8 @@ managing Cohesity Agent on sqlserver2.mydomain.net
 * -sqlCluster: (optional) register server as a MSSQL Failover Cluster node (requires -register or previous registration)
 * -serviceAccount: (optional) set Cohesity agent to run using a service account
 * -filepath: (optional) path to pre-downloaded agent file
+* -cbtType: (optional) onlyagent, volcbt, fscbt, or allcbt (default is allcbt)
+* -tempPath: (optional) SMB share path to copy the installer, in the format sharename\path (default is admin$\Temp)
 
 ## Attributions
 

@@ -15,7 +15,7 @@ param (
     [Parameter()][string]$mfaCode,
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$serverList, #Servers to add as physical source
-    [Parameter()][string]$server,
+    [Parameter()][string]$serverName,
     [Parameter()][switch]$storePassword,
     [Parameter()][switch]$installAgent,
     [Parameter()][switch]$register,
@@ -23,13 +23,15 @@ param (
     [Parameter()][switch]$registerSQL,
     [Parameter()][switch]$sqlCluster,
     [Parameter()][string]$serviceAccount = $null,
-    [Parameter()][string]$filepath
+    [Parameter()][string]$filepath,
+    [Parameter()][ValidateSet('onlyagent','volcbt','fscbt','allcbt')][string]$cbtType = 'allcbt',
+    [Parameter()][string]$tempPath = 'admin$\Temp'
 )
 
 if($serverList){
     $servers = get-content $serverList
-    }elseif($server) {
-        $servers = @($server)
+    }elseif($serverName){
+        $servers = @($serverName)
     }else{
         Write-Warning "No Servers Specified"
         exit
@@ -89,7 +91,7 @@ if($sqlCluster){
 $sources = api get protectionSources/registrationInfo
 
 ### download agent installer to local host
-if ($installAgent) {
+if($installAgent){
     if($filepath){
         $agentFile = $filepath
     }else{
@@ -98,26 +100,25 @@ if ($installAgent) {
         $filepath = join-path -path $downloadsFolder -ChildPath $agentFile
         fileDownload 'physicalAgents/download?hostType=kWindows' $filepath
     }
-    $remoteFilePath = Join-Path -Path "C:\Windows\Temp" -ChildPath $agentFile
 }
 
 foreach ($server in $servers){
     $server = $server.ToString()
     "managing Cohesity Agent on $server"
-
+    $remotePath = "\\$($server)\$($tempPath)"
+    $remoteFilePath = Join-Path -Path "\\$($server)\$($tempPath)" -ChildPath  "Cohesity_Agent_$(((api get cluster).clusterSoftwareVersion).split('_')[0])_Win_x64_Installer.exe"
     ### install Cohesity Agent
-    if ($installAgent) {
-
+    if($installAgent){
         ### copy agent installer to server
-        "`tcopying agent installer..."
-        Copy-Item $filepath \\$server\c$\Windows\Temp
+        "`tcopying agent installer $agentFile to $remotePath..."
+        Copy-Item $filepath $remotePath
 
         ### install agent and open firewall port
         "`tinstalling Cohesity agent..."
         $null = Invoke-Command -Computername $server -ArgumentList $remoteFilePath -ScriptBlock {
             param($remoteFilePath)
-            if (! $(Get-Service | Where-Object { $_.Name -eq 'CohesityAgent' })) {
-                ([WMICLASS]"\\localhost\ROOT\CIMV2:win32_process").Create("$remoteFilePath /type=allcbt /verysilent /suppressmsgboxes /NORESTART")
+            if(! $(Get-Service | Where-Object { $_.Name -eq 'CohesityAgent' })){
+                ([WMICLASS]"\\localhost\ROOT\CIMV2:win32_process").Create("$remoteFilePath /type=$cbtType /verysilent /suppressmsgboxes /NORESTART")
                 New-NetFirewallRule -DisplayName 'Cohesity Agent' -Profile 'Domain' -Direction Inbound -Action Allow -Protocol TCP -LocalPort 50051
             }
         }
@@ -166,32 +167,43 @@ foreach ($server in $servers){
     }
 
     ### register server as AD domain controller
-    if ($registerAD){
+    if($registerAD){
         "`tRegistering as Active Directory Domain Controller..."
         $phys = api get protectionSources?environments=kPhysical
-        $sourceId = ($phys.nodes | Where-Object { $_.protectionSource.name -ieq $server }).protectionSource.id
-        $adParams = @{
-            "ownerEntity" = @{
-                "id" = $sourceId
-            };
-            "appEnvVec"   = @(
-                29
-            )
+        $source = $phys.nodes | Where-Object { $_.protectionSource.name -ieq $server }
+        $sourceId = $source.protectionSource.id
+        if($sourceId){
+            if($source.authenticationStatus -ne 'kFinished'){
+                Start-Sleep 10
+            }
+            $adParams = @{
+                "ownerEntity" = @{
+                    "id" = $sourceId
+                };
+                "appEnvVec"   = @(
+                    29
+                )
+            }
+            $null = api post /applicationSourceRegistration $adParams
+        }else{
+            Write-Warning "$server is not yet registered as a protection source"
         }
-        $null = api post /applicationSourceRegistration $adParams
     }
 
     ### register server as SQL
-    if ($registerSQL) {
-        if (! $($sources.rootNodes | Where-Object { $_.rootNode.name -eq $server -and $_.applications.environment -eq 'kSQL' })) {
+    if($registerSQL){
+        if(! $($sources.rootNodes | Where-Object { $_.rootNode.name -eq $server -and $_.applications.environment -eq 'kSQL' })){
             "`tRegistering as SQL protection source..."
             $phys = api get protectionSources?environments=kPhysical
-            $sourceId = ($phys.nodes | Where-Object { $_.protectionSource.name -ieq $server }).protectionSource.id
-            if ($sourceId) {
+            $source = $phys.nodes | Where-Object { $_.protectionSource.name -ieq $server }
+            $sourceId = $source.protectionSource.id
+            if($sourceId){
+                if($source.authenticationStatus -ne 'kFinished'){
+                    Start-Sleep 10
+                }
                 $regSQL = @{"ownerEntity" = @{"id" = $sourceId}; "appEnvVec" = @(3)}
                 $null = api post /applicationSourceRegistration $regSQL
-            }
-            else {
+            }else{
                 Write-Warning "$server is not yet registered as a protection source"
             }
         }
