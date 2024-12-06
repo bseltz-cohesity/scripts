@@ -32,6 +32,17 @@ Place both files in a folder together and run the main script like so:
                         -objectType OneDrive
 ```
 
+By default, all files will be downloaded from the latest backup, but you can specify individual paths if desired:
+
+```powershell
+./downloadM365Files.ps1 -vip mycluster `
+                        -username myusername `
+                        -domain mydomain.net `
+                        -objectName someuser1@mydomain.onmicrosoft.com `
+                        -objectType OneDrive `
+                        -filePath /Folder1, /Folder2/file1.txt
+```
+
 ## Authentication Parameters
 
 * -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
