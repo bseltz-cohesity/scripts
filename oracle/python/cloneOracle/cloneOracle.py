@@ -14,6 +14,8 @@
 
 ### import pyhesity wrapper module
 from pyhesity import *
+import json
+import codecs
 from time import sleep
 
 ### command line arguments
@@ -33,18 +35,21 @@ parser.add_argument('-td', '--targetdb', type=str, default=None)  # name of targ
 parser.add_argument('-oh', '--oraclehome', type=str, required=True)  # oracle home path on target
 parser.add_argument('-ob', '--oraclebase', type=str, required=True)  # oracle base path on target
 parser.add_argument('-lt', '--logtime', type=str, default=None)  # oracle base path on target
-parser.add_argument('-ch', '--channels', type=int, default=2)  # number of restore channels
+parser.add_argument('-ch', '--channels', type=int, default=1)  # number of restore channels
 parser.add_argument('-cn', '--channelnode', type=str, default=None)  # oracle data path on target
 parser.add_argument('-l', '--latest', action='store_true')
 parser.add_argument('-w', '--wait', action='store_true')  # wait for completion
 parser.add_argument('-sh', '--shellvariable', type=str, action='append')
 parser.add_argument('-pf', '--pfileparameter', type=str, action='append')
+parser.add_argument('-pl', '--pfilelist', type=str, default=None)
+parser.add_argument('-cpf', '--clearpfileparameters', action='store_true')
 parser.add_argument('-vlan', '--vlan', type=int, default=0)  # use alternate vlan
 parser.add_argument('-prescript', '--prescript', type=str, default=None)  # pre script
 parser.add_argument('-postscript', '--postscript', type=str, default=None)  # post script
 parser.add_argument('-prescriptargs', '--prescriptargs', type=str, default='')  # pre script arguments
 parser.add_argument('-postscriptargs', '--postscriptargs', type=str, default='')  # post script arguments
 parser.add_argument('-t', '--scripttimeout', type=int, default=900)  # pre post script timeout
+parser.add_argument('-dbg', '--dbg', action='store_true')
 
 args = parser.parse_args()
 
@@ -76,13 +81,33 @@ channelnode = args.channelnode
 latest = args.latest
 wait = args.wait
 shellvars = args.shellvariable
-pfileparams = args.pfileparameter
+pfileparameter = args.pfileparameter
+pfilelist = args.pfilelist
+clearpfileparameters = args.clearpfileparameters
 vlan = args.vlan
 prescript = args.prescript
 postscript = args.postscript
 prescriptargs = args.prescriptargs
 postscriptargs = args.postscriptargs
 scripttimeout = args.scripttimeout
+dbg = args.dbg
+
+# gather server list
+def gatherList(param=None, filename=None, name='items', required=True):
+    items = []
+    if param is not None:
+        for item in param:
+            items.append(item)
+    if filename is not None:
+        f = open(filename, 'r')
+        items += [s.strip() for s in f.readlines() if s.strip() != '' and s.strip()[0] != '#']
+        f.close()
+    if required is True and len(items) == 0:
+        print('no %s specified' % name)
+        exit()
+    return items
+
+pfileparams = gatherList(pfileparameter, pfilelist, name='pfile params', required=False)
 
 if shellvars is None:
     shellvars = []
@@ -256,6 +281,8 @@ cloneParams = {
 }
 
 if channels is not None:
+    if 'networkingInfo' not in targetEntity['appEntity']['entity']['physicalEntity']:
+        channelnode = None
     if channelnode is not None:
         uuid = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
         endpoints = [e for e in targetEntity['appEntity']['entity']['physicalEntity']['networkingInfo']['resourceVec'] if e['type'] == 0]
@@ -275,6 +302,7 @@ if channels is not None:
             print('channelnode %s not found' % channelnode)
             exit(1)
     else:
+        hostNum = targetEntity['appEntity']['entity']['physicalEntity']['agentStatusVec'][0]['id']
         channelNodeId = targetserver
         uuid = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
     cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['oracleTargetParams'] = {
@@ -285,7 +313,7 @@ if channels is not None:
                     {
                         "hostInfoVec": [
                             {
-                                "host": str(channelNodeId),
+                                "host": str(hostNum),
                                 "numChannels": channels
                             }
                         ],
@@ -318,10 +346,26 @@ else:
         print('Available range is %s to %s' % (usecsToDate(logStart), usecsToDate(logEnd)))
         exit(1)
 
-if len(pfileparams) > 0:
-    if 'oracleDbConfig' not in cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
-        cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig'] = {}
-        cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig']['pfileParameterMap'] = []
+# get existing pfileparams
+if 'oracleDbConfig' not in cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
+    cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig'] = {}
+    cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig']['pfileParameterMap'] = []
+
+if not clearpfileparameters:
+    snapshots = api('get', 'data-protect/objects/%s/snapshots?runInstanceIds=%s' % (latestdb['vmDocument']['objectId']['entity']['id'], version['instanceId']['jobInstanceId']), v=2)
+    metaParams = {
+        "environment": "kOracle",
+        "oracleParams": {
+            "baseDir": oraclebase,
+            "dbName": targetdb,
+            "homeDir": oraclehome,
+            "isClone": True
+        }
+    }
+    metaInfo = api('post', 'data-protect/snapshots/%s/metaInfo' % snapshots['snapshots'][0]['id'], metaParams, v=2)
+    cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig']['pfileParameterMap' ]= metaInfo['oracleParams']['restrictedPfileParamMap'] + metaInfo['oracleParams']['inheritedPfileParamMap'] + metaInfo['oracleParams']['cohesityPfileParamMap']
+
+if len(pfileparams) > 0:    
     for pfileparam in pfileparams:
         paramparts = pfileparam.split('=', 1)
         if len(paramparts) != 2:
@@ -365,6 +409,15 @@ if prescript is not None or postscript is not None:
                 "timeoutSecs": scripttimeout
             }
         }
+
+# debug output API payload
+if dbg:
+    display(cloneParams)
+    dbgoutput = codecs.open('./ora-clone.json', 'w')
+    json.dump(cloneParams, dbgoutput)
+    dbgoutput.close()
+    print('\nWould clone %s/%s to %s/%s' % (sourceserver, sourcedb, targetserver, targetdb))
+    exit(0)
 
 ### execute the clone task
 response = api('post', '/cloneApplication', cloneParams)
