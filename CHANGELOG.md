@@ -4,6 +4,7 @@
 
 * [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Update`] added -pl (--pfilelist) parameter
 * [restoreOracle-v2.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/restoreOracle-v2) [`Update`] added -pl (--pfilelist) parameter
+* [restoreOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/restoreOracle) [`Update`] added -pl (--pfilelist) parameter
 
 ## 2024-12-06
 
