@@ -1,5 +1,14 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-12-07
+
+* [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Update`] added -pl (--pfilelist) parameter
+* [restoreOracle-v2.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/restoreOracle-v2) [`Update`] added -pl (--pfilelist) parameter
+
+## 2024-12-06
+
+* [downloadM365Files.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/downloadM365Files) [`New`] download files from M365 OneDrive and Sharepoint
+
 ## 2024-12-05
 
 * [registerVcenter.py](https://github.com/cohesity/community-automation-samples/tree/main/python/registerVcenter) [`Update`] added support for networks for data transfer
