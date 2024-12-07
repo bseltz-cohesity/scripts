@@ -50,6 +50,8 @@ parser.add_argument('-l', '--latest', action='store_true')  # recover to latest 
 parser.add_argument('-o', '--overwrite', action='store_true')  # overwrite existing DB
 parser.add_argument('-n', '--norecovery', action='store_true')  # leave DB in recovering mode
 parser.add_argument('-w', '--wait', action='store_true')  # wait for completion
+parser.add_argument('-cpf', '--clearpfileparameters', action='store_true')
+parser.add_argument('-pl', '--pfilelist', type=str, default=None)  # pfile text file
 
 args = parser.parse_args()
 
@@ -86,12 +88,31 @@ frapath = args.frapath
 frasizeMB = args.frasizeMB
 bctfile = args.bctfile
 shellvars = args.shellvariable
-pfileparams = args.pfileparameter
+pfileparameter = args.pfileparameter
+pfilelist = args.pfilelist
+clearpfileparameters = args.clearpfileparameters
 overwrite = args.overwrite
 logtime = args.logtime
 latest = args.latest
 norecovery = args.norecovery
 wait = args.wait
+
+# gather server list
+def gatherList(param=None, filename=None, name='items', required=True):
+    items = []
+    if param is not None:
+        for item in param:
+            items.append(item)
+    if filename is not None:
+        f = open(filename, 'r')
+        items += [s.strip() for s in f.readlines() if s.strip() != '' and s.strip()[0] != '#']
+        f.close()
+    if required is True and len(items) == 0:
+        print('no %s specified' % name)
+        exit()
+    return items
+
+pfileparams = gatherList(pfileparameter, pfilelist, name='pfile params', required=False)
 
 if shellvars is None:
     shellvars = []
@@ -292,6 +313,8 @@ if localreplica is None or len(localreplica) == 0:
 
 # configure channels
 if channels is not None:
+    if 'networkingInfo' not in targetEntity['appEntity']['entity']['physicalEntity']:
+        channelnode = None
     if channelnode is not None:
         uuid = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
         endpoints = [e for e in targetEntity['appEntity']['entity']['physicalEntity']['networkingInfo']['resourceVec'] if e['type'] == 0]
@@ -311,6 +334,7 @@ if channels is not None:
             print('channelnode %s not found' % channelnode)
             exit(1)
     else:
+        hostNum = targetEntity['appEntity']['entity']['physicalEntity']['agentStatusVec'][0]['id']
         channelNodeId = targetserver
         uuid = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
     restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['oracleTargetParams'] = {
@@ -321,7 +345,7 @@ if channels is not None:
                     {
                         "hostInfoVec": [
                             {
-                                "host": str(channelNodeId),
+                                "host": str(hostNum),
                                 "numChannels": channels
                             }
                         ],
@@ -380,21 +404,37 @@ if targetserver != sourceserver or targetdb != sourcedb:
         if 'oracleDBConfig' not in restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
             restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig'] = {}
         restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['fraDest'] = frapath
+    if 'oracleDBConfig' not in restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
+        restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig'] = {}
+    restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['pfileParameterMap'] = []
+    if not clearpfileparameters:
+        snapshots = api('get', 'data-protect/objects/%s/snapshots?runInstanceIds=%s' % (latestdb['vmDocument']['objectId']['entity']['id'], version['instanceId']['jobInstanceId']), v=2)
+        metaParams = {
+            "environment": "kOracle",
+            "oracleParams": {
+                "baseDir": oraclebase,
+                "dbFileDestination": oracledata,
+                "dbName": targetdb,
+                "homeDir": oraclehome,
+                "isClone": False,
+                "isGranularRestore": False,
+                "isRecoveryValidation": False
+            }
+        }
+        metaInfo = api('post', 'data-protect/snapshots/%s/metaInfo' % snapshots['snapshots'][0]['id'], metaParams, v=2)
+        restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['pfileParameterMap'] = metaInfo['oracleParams']['restrictedPfileParamMap'] + metaInfo['oracleParams']['inheritedPfileParamMap'] + metaInfo['oracleParams']['cohesityPfileParamMap']
     if len(pfileparams) > 0:
-        if 'oracleDBConfig' not in restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
-            restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig'] = {}
-        restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['pfileParameterMap'] = []
-    for pfileparam in pfileparams:
-        paramparts = pfileparam.split('=', 1)
-        if len(paramparts) < 2:
-            print('pfile parameter is invalid')
-            exit(1)
-        else:
-            paramname = paramparts[0].strip()
-            paramval = paramparts[1].strip()
-        if len(paramparts) == 3:
-            paramval = paramval + "=" + paramparts[2].strip()
-        restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['pfileParameterMap'].append({"key": paramname, "value": paramval})
+        for pfileparam in pfileparams:
+            paramparts = pfileparam.split('=', 1)
+            if len(paramparts) < 2:
+                print('pfile parameter is invalid')
+                exit(1)
+            else:
+                paramname = paramparts[0].strip()
+                paramval = paramparts[1].strip()
+            if len(paramparts) == 3:
+                paramval = paramval + "=" + paramparts[2].strip()
+            restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['pfileParameterMap'].append({"key": paramname, "value": paramval})
 
 if len(shellvars) > 0:
     restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['shellEnvironmentVec'] = []
