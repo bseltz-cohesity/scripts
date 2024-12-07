@@ -164,6 +164,7 @@ Restoring an Oracle RAC DB:
 * -rp, --redologprefix: (optional) redo log prefix
 * -bc, --bctFilePath: (optional) alternate bct file path
 * -pf, --pfileparameter: (optional) one or more parameter names to include in pfile (repeat for multiple)
+* -pl, --pfilelist: (optional) text file of pfile parameters (one per line)
 * -cpf, --clearpfileparameters: (optional) delete existing pfile parameters
 * -sh, --shellparameter (optional) one or more shell variable names (repeat for multiple)
 * -dbg, --dbg: (optional) display api payload and exit (without restoring)
@@ -178,3 +179,11 @@ Or, if you want to replay logs to a specific point in time, use the **-lt** para
 ```bash
 -lt '2019-01-20 23:47:02'
 ```
+
+## PFile Parameters
+
+By default, Cohesity will generate a list of pfile parameters from the source database, with basic adjustments for the target database. You can override this behavior in a few ways.
+
+* You can add or override individual pfile parameters using -pf (--pfileparameter), e.g. `-pf DB_RECOVERY_FILE_DEST_SIZE="32G"`
+* You can provide a text file containing multiple pfile parameters using -pl (--pfilelist), e.g. `-pl ./myparams.txt`
+* You can clear all existing pfile parameters and provide a complete pfile using -cpf (--clearpfileparameters) and -pl (--pfilelist), e.g. `-cpf -pl ./RESDB_pfile.txt`

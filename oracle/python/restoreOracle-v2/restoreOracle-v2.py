@@ -37,6 +37,7 @@ parser.add_argument('-ch', '--channels', type=int, default=1)  # number of resto
 parser.add_argument('-cn', '--channelnode', type=str, default=None)  # oracle data path on target
 parser.add_argument('-sh', '--shellvariable', type=str, action='append')  # alternate ctl file path
 parser.add_argument('-pf', '--pfileparameter', type=str, action='append')  # alternate ctl file path
+parser.add_argument('-pl', '--pfilelist', type=str, default=None)  # pfile text file
 parser.add_argument('-lt', '--logtime', type=str, default=None)  # pit to recover to
 parser.add_argument('-l', '--latest', action='store_true')  # recover to latest available pit
 parser.add_argument('-o', '--overwrite', action='store_true')  # overwrite existing DB
@@ -92,7 +93,8 @@ oracledata = args.oracledata
 channels = args.channels
 channelnode = args.channelnode
 shellvars = args.shellvariable
-pfileparams = args.pfileparameter
+pfileparameter = args.pfileparameter
+pfilelist = args.pfilelist
 clearpfileparameters = args.clearpfileparameters
 overwrite = args.overwrite
 logtime = args.logtime
@@ -108,6 +110,23 @@ redologsizemb = args.redologsizemb
 redologprefix = args.redologprefix
 bctfilepath = args.bctfilepath
 dbg = args.dbg
+
+# gather server list
+def gatherList(param=None, filename=None, name='items', required=True):
+    items = []
+    if param is not None:
+        for item in param:
+            items.append(item)
+    if filename is not None:
+        f = open(filename, 'r')
+        items += [s.strip() for s in f.readlines() if s.strip() != '' and s.strip()[0] != '#']
+        f.close()
+    if required is True and len(items) == 0:
+        print('no %s specified' % name)
+        exit()
+    return items
+
+pfileparams = gatherList(pfileparameter, pfilelist, name='pfile params', required=False)
 
 if shellvars is None:
     shellvars = []
