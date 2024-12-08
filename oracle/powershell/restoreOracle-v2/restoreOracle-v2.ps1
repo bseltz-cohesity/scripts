@@ -38,6 +38,8 @@ param (
     [Parameter()][string]$bctFilePath = $null,           # alternate bct file path
     [Parameter()][array]$pfileParameterName,             # pfile parameter names
     [Parameter()][array]$pfileParameterValue,            # pfile parameter values
+    [Parameter()][string]$pfileList,
+    [Parameter()][switch]$clearPfileParameters,
     [Parameter()][array]$shellVarName,                   # shell variable names
     [Parameter()][array]$shellVarValue,                  # shell variable values
     [Parameter()][switch]$wait,                          # wait for restore to finish
@@ -416,7 +418,7 @@ if($sameDB){
         }
     }
     # get pfile parameters
-    if(! $windows){
+    if(! $windows -and ! $clearPfileParameters){
         $metaInfo = api post -v2 data-protect/snapshots/$($latestSnapshot.id)/metaInfo $metaParams
         $sourceConfig.recoverDatabaseParams.pfileParameterMap = @(
             $metaInfo.oracleParams.restrictedPfileParamMap + 
@@ -448,9 +450,29 @@ if($pfileParameterName.Count -ne $pfileParameterValue.Count){
         0..($pfileParameterName.Count - 1) | ForEach-Object {
             $pfKey = [string]$pfileParameterName[$_]
             $pfValue = [string]$pfileParameterValue[$_]
-            $sourceConfig.recoverDatabaseParams.pfileParameterMap = @(($sourceConfig.recoverDatabaseParams.pfileParameterMap | Where-Object key -ne $pfKey) + @{
+            $sourceConfig.recoverDatabaseParams.pfileParameterMap = @(@($sourceConfig.recoverDatabaseParams.pfileParameterMap | Where-Object key -ne $pfKey) + ,@{
                 "key" = $pfKey;
                 "value" = $pfValue
+            })
+        }
+    }
+}
+
+# import pfile
+if($pfileList){
+    $pfileListItems = @()
+    if(Test-Path -Path $pfileList -PathType Leaf){
+        Get-Content $pfileList | ForEach-Object {$pfileListItems += [string]$_}
+    }else{
+        Write-Host "pfile $pfileList not found!" -ForegroundColor Yellow
+        exit 1
+    }
+    foreach($item in $pfileListItems){
+        if($item -ne '' -and $item[0] -ne '#'){
+            $pfKey, $pfValue = $item -split '=',2
+            $sourceConfig.recoverDatabaseParams.pfileParameterMap = @(@($sourceConfig.recoverDatabaseParams.pfileParameterMap | Where-Object {$_.key -ne $pfKey}) + ,@{
+                "key" = [string]$pfKey;
+                "value" = [string]$pfValue
             })
         }
     }
