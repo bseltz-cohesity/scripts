@@ -38,13 +38,21 @@ Place both files in a folder together and run the main script like so:
 
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: Cohesity Cluster to connect to
-* -username: Cohesity username
-* -domain: Active Directory domain of user (defaults to local)
-* -useApiKey: (optional) Use API key for authentication
-* -password: (optional) password or API key (will use stored password by default)
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Basic Parameters
+
 * -sourceServer: Server name (or AAG name) where the database was backed up
 * -sourceDB: Original database name
 * -overwrite: Overwrites an existing database (default is no overwrite)
@@ -73,8 +81,8 @@ Place both files in a folder together and run the main script like so:
 * -bctfile: (optional) alternate bct file path
 * -pfileParameterName: (optional) one or more parameter names to include in pfile (comma seaparated)
 * -pfileParameterValue: (optional) one or more parameter values to include in pfile (comma separated)
-
-Note: the number and order of pfileParameterNames must match the number and order of pfileParameterValues.
+* -pfileList: (optional) text file of pfile parameters (one per line)
+* -clearPfileParameters: (optional) delete existing pfile parameters
 
 ## Miscellaneous Parameters
 
@@ -90,3 +98,13 @@ Or, if you want to replay logs to a specific point in time, use the **-logTime**
 ```powershell
 -logTime '2019-01-20 23:47:02'
 ```
+
+## PFile Parameters
+
+Note: the number and order of pfileParameterNames must match the number and order of pfileParameterValues.
+
+By default, Cohesity will generate a list of pfile parameters from the source database, with basic adjustments for the target database. You can override this behavior in a few ways.
+
+* You can add or override individual pfile parameters using -pfileParameterName and -pfileParameterValue, e.g. `-pfileParameterName DB_RECOVERY_FILE_DEST_SIZE -pfileParameterValue "32G"`
+* You can provide a text file containing multiple pfile parameters using -pfileList, e.g. `-pfileList ./my_pfile.txt`
+* You can clear all existing pfile parameters and provide a complete pfile using -clearPfileParameters and -pfileList, e.g. `-clearPfileParameters -pfileList ./my_pfile.txt`

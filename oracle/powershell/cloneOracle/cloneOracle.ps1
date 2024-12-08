@@ -261,9 +261,7 @@ if($channels){
             exit 1
         }
     }else{
-        $hostNum = $targetEntity.appEntity.entity.physicalEntity.agentStatusVec[0].id
-        # hostNum = targetEntity['appEntity']['entity']['physicalEntity']['agentStatusVec'][0]['id']
-        $channelNodeId = $targetServer
+        $channelNodeId = $targetEntity.appEntity.entity.physicalEntity.agentStatusVec[0].id
         $uuid = $latestdb.vmDocument.objectId.entity.oracleEntity.uuid
     }
     $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams['oracleTargetParams'] = @{
@@ -274,7 +272,7 @@ if($channels){
                     @{
                         "hostInfoVec" = @(
                             @{
-                                "host"        = [string]$hostNum;
+                                "host"        = [string]$channelNodeId;
                                 "numChannels" = $channels;
                             }
                         );
