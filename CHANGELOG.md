@@ -1,5 +1,11 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-12-08
+
+* [cloneOracle.ps1](https://github.com/cohesity/community-automation-samples/tree/main/oracle/powershell/cloneOracle) [`Update`] added -pfileList parameter
+* [restoreOracle-v2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/oracle/powershell/restoreOracle-v2) [`Update`] added -pfileList parameter
+* [restoreOracle.ps1](https://github.com/cohesity/community-automation-samples/tree/main/oracle/powershell/restoreOracle) [`Update`] added -pfileList parameter
+
 ## 2024-12-07
 
 * [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Update`] added -pl (--pfilelist) parameter
