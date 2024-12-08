@@ -7,9 +7,17 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
-    [Parameter()][string]$domain = 'local', # local or AD domain
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter(Mandatory = $True)][string]$sourceServer, # protection source where the DB was backed up
     [Parameter(Mandatory = $True)][string]$sourceDB,     # name of the source DB we want to clone
     [Parameter()][string]$targetServer = $sourceServer,  # where to attach the clone DB
@@ -21,9 +29,10 @@ param (
     [Parameter()][switch]$wait,    # wait for clone to finish
     [Parameter()][string]$logTime, # PIT to replay logs to e.g. '2019-01-20 02:01:47'
     [Parameter()][switch]$latest,  # replay to latest available log PIT
-    [Parameter()][string]$password = $null, # optional! clear text password
     [Parameter()][array]$pfileParameterName,
     [Parameter()][array]$pfileParameterValue,
+    [Parameter()][string]$pfileList,
+    [Parameter()][switch]$clearPfileParameters,
     [Parameter()][string]$preScript,
     [Parameter()][string]$preScriptArguments = '',
     [Parameter()][string]$postScript,
@@ -35,8 +44,30 @@ param (
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain -password $password
+# authentication =============================================
+# demand clusterName for Helios/MCM
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios/MCM" -ForegroundColor Yellow
+    exit 1
+}
+
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
+        exit 1
+    }
+}
+# end authentication =========================================
 
 ### search for database to clone
 $searchresults = api get "/searchvms?entityTypes=kOracle&vmName=$sourceDB"
@@ -230,6 +261,8 @@ if($channels){
             exit 1
         }
     }else{
+        $hostNum = $targetEntity.appEntity.entity.physicalEntity.agentStatusVec[0].id
+        # hostNum = targetEntity['appEntity']['entity']['physicalEntity']['agentStatusVec'][0]['id']
         $channelNodeId = $targetServer
         $uuid = $latestdb.vmDocument.objectId.entity.oracleEntity.uuid
     }
@@ -241,7 +274,7 @@ if($channels){
                     @{
                         "hostInfoVec" = @(
                             @{
-                                "host"        = [string]$channelNodeId;
+                                "host"        = [string]$hostNum;
                                 "numChannels" = $channels;
                             }
                         );
@@ -278,18 +311,57 @@ if($validLogTime -eq $True){
     }
 }
 
+### get existing pfile parameters
+$cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams['oracleDbConfig'] = @{ "pfileParameterMap" = @()}
+if(! $clearPfileParameters){
+    $snapshots = api get -v2 "data-protect/objects/$($latestdb.vmDocument.objectId.entity.id)/snapshots?runInstanceIds=$($version.instanceId.jobInstanceId)"
+    $metaParams = @{
+        "environment" = "kOracle";
+        "oracleParams" = @{
+            "baseDir" = $oracleBase;
+            "dbName" =  $targetDB;
+            "homeDir" = $oracleHome;
+            "isClone" = $True
+        }
+    }
+    $metaInfo = api post -v2 "data-protect/snapshots/$($snapshots.snapshots[0].id)/metaInfo" $metaParams
+    $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap = @($metaInfo.oracleParams.restrictedPfileParamMap + $metaInfo.oracleParams.inheritedPfileParamMap + $metaInfo.oracleParams.cohesityPfileParamMap)
+}
+
 ### handle pfile parameters
 if($pfileParameterName.Count -ne $pfileParameterValue.Count){
     Write-Host "Number of pfile parameter names and values do not match" -ForegroundColor Yellow
     exit 1
 }else{
     if($pfileParameterName.Count -gt 0){
-        $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams['oracleDbConfig'] = @{ "pfileParameterMap" = @()}
+        # $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams['oracleDbConfig'] = @{ "pfileParameterMap" = @()}
         0..($pfileParameterName.Count - 1) | ForEach-Object {
-            $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap += @{
-                "key" = [string]$pfileParameterName[$_];
-                "value" = [string]$pfileParameterValue[$_]
-            }
+            $pfKey = [string]$pfileParameterName[$_]
+            $pfValue = [string]$pfileParameterValue[$_]
+            $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap = @(@($cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap | Where-Object {$_.key -ne $pfKey}) + ,@{
+                "key" = $pfKey;
+                "value" = $pfValue
+            })
+        }
+    }
+}
+
+# import pfile
+if($pfileList){
+    $pfileListItems = @()
+    if(Test-Path -Path $pfileList -PathType Leaf){
+        Get-Content $pfileList | ForEach-Object {$pfileListItems += [string]$_}
+    }else{
+        Write-Host "pfile $pfileList not found!" -ForegroundColor Yellow
+        exit 1
+    }
+    foreach($item in $pfileListItems){
+        if($item -ne '' -and $item[0] -ne '#'){
+            $pfKey, $pfValue = $item -split '=',2
+            $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap = @(@($cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap | Where-Object {$_.key -ne $pfKey}) + ,@{
+                "key" = [string]$pfKey;
+                "value" = [string]$pfValue
+            })
         }
     }
 }

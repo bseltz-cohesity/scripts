@@ -34,9 +34,21 @@ Place both files in a folder together and run the main script like so:
 
 The script takes the following parameters:
 
-* -vip: (DNS or IP of the Cohesity Cluster)
-* -username: (Cohesity User Name)
-* -domain: (optional) defaults to 'local'
+## Authentication Parameters
+
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -sourceServer: source Oracle Server Name
 * -sourceDB: source Database Name
 * -oracleHome: oracle home path
@@ -50,10 +62,30 @@ The script takes the following parameters:
 * -wait: (optional) wait for completion and report end status
 * -pfileParameterName: (optional) one or more parameter names to include in pfile (comma seaparated)
 * -pfileParameterValue: (optional) one or more parameter values to include in pfile (comma separated)
+* -pfileList: (optional) text file of pfile parameters (one per line)
+* -clearPfileParameters: (optional) delete existing pfile parameters
 * -preScript: (optional) name of script to run before clone operation
 * -preScriptArguments: (optional) preScript parameters (use quotes, like: 'param1=test switch2')
 * -postScript: (optional) name of script to run after clone operation
 * -postScriptArguments: (optional) postScript parameters (use quotes, like: 'param1=test switch2')
 * -vlan: (optional) VLAN ID to connect to the target host through
 
+## Point in Time Recovery
+
+If you want to replay the logs to the very latest available point in time, use the **-latest** parameter.
+
+Or, if you want to replay logs to a specific point in time, use the **-logTime** parameter and specify a date and time in military format like so:
+
+```powershell
+-logTime '2019-01-20 23:47:02'
+```
+
+## PFile Parameters
+
 Note: the number and order of pfileParameterNames must match the number and order of pfileParameterValues.
+
+By default, Cohesity will generate a list of pfile parameters from the source database, with basic adjustments for the target database. You can override this behavior in a few ways.
+
+* You can add or override individual pfile parameters using -pfileParameterName and -pfileParameterValue, e.g. `-pfileParameterName DB_RECOVERY_FILE_DEST_SIZE -pfileParameterValue "32G"`
+* You can provide a text file containing multiple pfile parameters using -pfileList, e.g. `-pfileList ./my_pfile.txt`
+* You can clear all existing pfile parameters and provide a complete pfile using -clearPfileParameters and -pfileList, e.g. `-clearPfileParameters -pfileList ./my_pfile.txt`
