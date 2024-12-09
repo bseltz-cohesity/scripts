@@ -6,6 +6,10 @@ These examples show various ways to get numerical metrics from Cohesity into Gra
 
 Note: as of Cohesity version 7.x, access to the PostgreSQL database is deprecated. It's still possoble to enable access but requires intervention by Cohesity Support to do so. It is therefore not recommended to use PostgreSQL to access metrics.
 
+Examples: <https://github.com/cohesity/community-automation-samples/tree/main/reports/grafana/PostgreSQL>
+
+In these examples, SQL queries are made against the PostgreSQL database to return metrics to Grafana.
+
 ## Cohesity REST API
 
 Most metrics are available in the Cohesity UI under System -> Advanced Diagnostics. You can see the API calls used to graph these metrics by watching the developer console of your web browser while exercising the Advanced Diagnostics page.
