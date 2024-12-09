@@ -20,7 +20,7 @@ Once you understand the API calls, you can bring the metrics into Grafana using 
 
 Prometheus is a time series database that can be used as a data source for Grafana.
 
-Example: <https://github.com/cohesity/community-automation-samples/tree/main/reports/grafana/Prometheus>
+Example: <https://github.com/cohesity/community-automation-samples/tree/main/reports/grafana/Prometheus/ClusterStats>
 
 In this example, a Prometheus exporter is configured to retrieve several metrics from Cohesity via the REST API. Prometheus is configured to query the exporter periodically, thus storing a series over time that can be graphed in Grafana.
 
