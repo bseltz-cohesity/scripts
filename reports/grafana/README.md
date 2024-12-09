@@ -4,7 +4,7 @@ These examples show various ways to get numerical metrics from Cohesity into Gra
 
 ## PostgreSQL Custom Reporting Database
 
-`Note: as of Cohesity version 7.x, access to the PostgreSQL database is deprecated. It's still possoble to enable access but requires intervention by Cohesity Support to do so. It is therefore not recommended to use PostgreSQL to access metrics.`
+`Note`: as of Cohesity version 7.x, access to the PostgreSQL database is deprecated. It's still possoble to enable access but requires intervention by Cohesity Support to do so. It is therefore not recommended to use PostgreSQL to access metrics.
 
 Examples: <https://github.com/cohesity/community-automation-samples/tree/main/reports/grafana/PostgreSQL>
 
