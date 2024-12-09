@@ -1,9 +1,5 @@
 # Grafana Examples
 
-Some Grafana dashboard examples
-
-![dashboard](../../images/BackupSuccessRate.png)
-
 These examples show various ways to get numerical metrics from Cohesity into Grafana. The two main sources of such metrics are the Cohesity custom reporting database (PostgreSQL) and the Cohesity REST API.
 
 ## PostgreSQL Custom Reporting Database
