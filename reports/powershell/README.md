@@ -137,20 +137,6 @@ Format: CSV
 * Used GiB
 * Garbage Collected GiB
 
-## frontEndCapacityReport
-
-<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/frontEndCapacityReport>
-
-Format: CSV
-
-* Job Name
-* Location
-* Tenant
-* Object Name
-* Object Type
-* Logical Size
-* Unique Size
-
 ## heatMapReport
 
 <https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/heatMapReport>

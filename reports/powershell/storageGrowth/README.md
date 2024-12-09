@@ -30,8 +30,6 @@ Place all files in a folder together. then, run the main script like so:
 .\storageGrowth.ps1 -vip mycluster -username myuser -domain mydomain.net -days 100
 ```
 
-Your browser should open and display the chart of storage growth.
-
 ## Authentication Parameters
 
 * -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
