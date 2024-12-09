@@ -68,3 +68,5 @@ To specify networks for data transfer:
 * -nl, --networklist: (optional) text file of network cidrs for data transfer (one per line)
 * -nc, --clearnetworks: (optional) clear list of network cidrs for data transfer
 * -nr, --removenetworks: (optional) remove spedified cidrs (instead of adding)
+* -tu, --trackuuid: (optional) use VM BIOS UUID to track virtual machines
+* -ldp, --lowdiskpercent: (optional) auto cancel backups if datastore has less than X percent free (set to 0 to clear)

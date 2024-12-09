@@ -26,6 +26,9 @@ parser.add_argument('-nn', '--networkname', action='append', type=str)
 parser.add_argument('-nl', '--networklist', type=str, default=None)
 parser.add_argument('-nc', '--clearnetworks', action='store_true')
 parser.add_argument('-nr', '--removenetworks', action='store_true')
+parser.add_argument('-tu', '--trackuuid', action='store_true')
+parser.add_argument('-ldp', '--lowdiskpercent', type=int, default=-1)
+
 args = parser.parse_args()
 
 vip = args.vip
@@ -46,6 +49,8 @@ networkname = args.networkname
 networklist = args.networklist
 clearnetworks = args.clearnetworks
 removenetworks = args.removenetworks
+trackuuid = args.trackuuid
+lowdiskpercent = args.lowdiskpercent
 
 # gather list function
 def gatherList(param=None, filename=None, name='items', required=True):
@@ -136,17 +141,16 @@ else:
     vCenterParams['entityInfo']['credentials']['username'] = vcenterusername
     vCenterParams['entityInfo']['credentials']['password'] = vcenterpassword
 
+if 'vmwareParams' not in vCenterParams['registeredEntityParams']:
+    vCenterParams['registeredEntityParams']['vmwareParams'] = {}
+
 # preferred subnets
 if clearnetworks is True and 'preferredSubnetVec' in vCenterParams['registeredEntityParams']['vmwareParams']:
-    vCenterParams['registeredEntityParams']['vmwareParams'] = {
-        "preferredSubnetVec": []
-    }
+    vCenterParams['registeredEntityParams']['vmwareParams']['preferredSubnetVec'] = []
 
 if len(networks) > 0:
     if 'preferredSubnetVec' not in vCenterParams['registeredEntityParams']['vmwareParams']:
-        vCenterParams['registeredEntityParams']['vmwareParams'] = {
-            "preferredSubnetVec": []
-        }
+        vCenterParams['registeredEntityParams']['vmwareParams']['preferredSubnetVec'] = []
     for network in networks:
         if '/' not in network:
             print('Invalid CIDR %s should be in the form x.x.x.x/y')
@@ -159,6 +163,23 @@ if len(networks) > 0:
                     "ip": net,
                     "netmaskBits": int(mask)
                 })
+
+if trackuuid is True:
+    if existingVcenter is False:
+        vCenterParams['registeredEntityParams']['vmwareParams']['useVmBiosUuid'] = True
+    else:
+        print('track by uuid can not be changed after initial registration'
+)
+
+if lowdiskpercent == 0:
+        vCenterParams['registeredEntityParams']['isSpaceThresholdEnabled'] = False
+        del vCenterParams['registeredEntityParams']['spaceUsagePolicy']
+if lowdiskpercent > 0:
+    vCenterParams['registeredEntityParams']['isSpaceThresholdEnabled'] = True
+    vCenterParams['registeredEntityParams']['spaceUsagePolicy'] = {
+        "minFreeDatastoreSpaceForBackupGb": None,
+        "minFreeDatastoreSpaceForBackupPercentage": lowdiskpercent
+    }
 
 print("Registering %s" % vcentername)
 if existingVcenter is False:
