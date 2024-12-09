@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-12-09
+
+* [replicationReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/replicationReport) [`New`] generate a replication report using Python
+
 ## 2024-12-08
 
 * [cloneOracle.ps1](https://github.com/cohesity/community-automation-samples/tree/main/oracle/powershell/cloneOracle) [`Update`] added -pfileList parameter
