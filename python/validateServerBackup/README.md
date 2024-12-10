@@ -12,7 +12,7 @@ You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/python/validateServerBackup/validateServerBackup.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/validateServerBackup/validateServerBackup.py
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x validateServerBackup.py
 # end download commands
