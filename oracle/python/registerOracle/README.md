@@ -18,7 +18,7 @@ chmod +x registerOracle.py
 
 ## Components
 
-* [registerOracle.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/python/registerOracle/registerOracle.py): the main powershell script
+* [registerOracle.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/python/registerOracle/registerOracle.py): the main python script
 * [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
