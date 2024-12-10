@@ -6,7 +6,7 @@ This Python script temporarily adds VMware VMs to a new (temporary) or existing 
 
 ## Download the script
 
-Run these commands from PowerShell to download the script(s) into your current directory
+Run these commands to download the script(s) into your current directory
 
 ```bash
 # Begin download commands
@@ -18,7 +18,7 @@ chmod +x adHocProtectVM.py
 
 ## Components
 
-* [adHocProtectVM.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/adHocProtectVM/adHocProtectVM.py): the main PowerShell script
+* [adHocProtectVM.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/adHocProtectVM/adHocProtectVM.py): the main python script
 * [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place all files in a folder together. then, run the main script like so:

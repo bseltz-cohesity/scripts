@@ -6,7 +6,7 @@ This Python script performs a runNow on a protection job and optionally replicat
 
 ## Download the script
 
-Run these commands from PowerShell to download the script(s) into your current directory
+Run these commands to download the script(s) into your current directory
 
 ```bash
 # Begin download commands
@@ -18,7 +18,7 @@ chmod +x backupNow.py
 
 ## Components
 
-* [backupNow.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/backupNow/backupNow.py): the main PowerShell script
+* [backupNow.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/backupNow/backupNow.py): the main python script
 * [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 Place all files in a folder together. then, run the main script like so:
