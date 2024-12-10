@@ -374,6 +374,8 @@ if len(pfileparams) > 0:
         else:
             paramname = paramparts[0].strip()
             paramval = paramparts[1].strip()
+            existing = [paramname, '_%s' % paramname, '__%s' % paramname]
+            cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['pfileParameterMap'] = [p for p in cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['pfileParameterMap'] if p['key'] not in existing]
             cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDbConfig']['pfileParameterMap'].append({"key": paramname, "value": paramval})
 
 if len(shellvars) > 0:
