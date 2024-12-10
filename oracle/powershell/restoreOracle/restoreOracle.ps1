@@ -381,9 +381,13 @@ if($pfileParameterName.Count -ne $pfileParameterValue.Count){
     if($pfileParameterName.Count -gt 0){
         $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams['oracleDbConfig'] = @{ "pfileParameterMap" = @()}
         0..($pfileParameterName.Count - 1) | ForEach-Object {
+            $pfKey = [string]$pfileParameterName[$_]
+            $pfValue = [string]$pfileParameterValue[$_]
+            $existing = @("$pfKey", "_$($pfKey)", "__$($pfKey)")
+            $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap = @($restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap | Where-Object {$_'key' -notin $existing})
             $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap += @{
-                "key" = [string]$pfileParameterName[$_];
-                "value" = [string]$pfileParameterValue[$_]
+                "key" = [string]$pfKey;
+                "value" = [string]$pfValue
             }
         }
     }
@@ -401,6 +405,8 @@ if($pfileList){
     foreach($item in $pfileListItems){
         if($item -ne '' -and $item[0] -ne '#'){
             $pfKey, $pfValue = $item -split '=',2
+            $existing = @("$pfKey", "_$($pfKey)", "__$($pfKey)")
+            $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap = @($restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap | Where-Object {$_'key' -notin $existing})
             $restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap = @(@($restoreParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap | Where-Object {$_.key -ne $pfKey}) + ,@{
                 "key" = [string]$pfKey;
                 "value" = [string]$pfValue

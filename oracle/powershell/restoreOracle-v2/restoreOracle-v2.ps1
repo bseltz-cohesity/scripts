@@ -450,7 +450,8 @@ if($pfileParameterName.Count -ne $pfileParameterValue.Count){
         0..($pfileParameterName.Count - 1) | ForEach-Object {
             $pfKey = [string]$pfileParameterName[$_]
             $pfValue = [string]$pfileParameterValue[$_]
-            $sourceConfig.recoverDatabaseParams.pfileParameterMap = @(@($sourceConfig.recoverDatabaseParams.pfileParameterMap | Where-Object key -ne $pfKey) + ,@{
+            $existing = @($pfKey, "_$($pfKey)", "__$($pfKey)")
+            $sourceConfig.recoverDatabaseParams.pfileParameterMap = @(@($sourceConfig.recoverDatabaseParams.pfileParameterMap | Where-Object {$_.key -notin $existing}) + ,@{
                 "key" = $pfKey;
                 "value" = $pfValue
             })
@@ -470,7 +471,8 @@ if($pfileList){
     foreach($item in $pfileListItems){
         if($item -ne '' -and $item[0] -ne '#'){
             $pfKey, $pfValue = $item -split '=',2
-            $sourceConfig.recoverDatabaseParams.pfileParameterMap = @(@($sourceConfig.recoverDatabaseParams.pfileParameterMap | Where-Object {$_.key -ne $pfKey}) + ,@{
+            $existing = @($pfKey, "_$($pfKey)", "__$($pfKey)")
+            $sourceConfig.recoverDatabaseParams.pfileParameterMap = @(@($sourceConfig.recoverDatabaseParams.pfileParameterMap | Where-Object {$_.key -notin $existing}) + ,@{
                 "key" = [string]$pfKey;
                 "value" = [string]$pfValue
             })
