@@ -434,6 +434,8 @@ if targetserver != sourceserver or targetdb != sourcedb:
                 paramval = paramparts[1].strip()
             if len(paramparts) == 3:
                 paramval = paramval + "=" + paramparts[2].strip()
+            existing = [paramname, '_%s' % paramname, '__%s' % paramname]
+            restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['pfileParameterMap'] = [p for p in restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['pfileParameterMap'] if p['key'] not in existing]
             restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['pfileParameterMap'].append({"key": paramname, "value": paramval})
 
 if len(shellvars) > 0:
