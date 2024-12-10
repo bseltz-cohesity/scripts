@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-12-10
+
+* [validateServerBackup.py](https://github.com/cohesity/community-automation-samples/tree/main/python/validateServerBackup) [`New`] validate server backups
+
 ## 2024-12-09
 
 * [replicationReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/replicationReport) [`New`] generate a replication report using Python
