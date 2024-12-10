@@ -326,7 +326,7 @@ if channels is not None:
         if channelNodeObj is not None:
             channelNodeAgent = [a for a in targetEntity['appEntity']['entity']['physicalEntity']['agentStatusVec'] if a['displayName'].lower() == channelNodeObj['fqdn'].lower() or a['displayName'].lower() == channelNodeObj['ipv4Addr']]
             if channelNodeAgent is not None and len(channelNodeAgent) > 0:
-                channelNodeId = channelNodeAgent[0]['id']
+                hostNum = channelNodeAgent[0]['id']
             else:
                 print('channelnode %s not found' % channelnode)
                 exit(1)
@@ -335,7 +335,7 @@ if channels is not None:
             exit(1)
     else:
         hostNum = targetEntity['appEntity']['entity']['physicalEntity']['agentStatusVec'][0]['id']
-        channelNodeId = targetserver
+        # channelNodeId = targetserver
         uuid = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
     restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['oracleTargetParams'] = {
         "additionalOracleDbParamsVec": [
