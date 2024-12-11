@@ -38,7 +38,7 @@ if(!$cohesity_api.authorized){
 
 # handle source instance name e.g. instance/dbname
 if($dbName.Contains('/')){
-    $instanceName, $sourceDB = $sourceDB.Split('/')
+    $instanceName, $dbName = $dbName.Split('/')
 }else{
     $instanceName = 'MSSQLSERVER'
 }
@@ -63,4 +63,5 @@ if(! $database){
     exit
 }else{
     $database.protectionSource.sqlProtectionSource.dbFiles | Format-Table
+    $database.protectionSource.sqlProtectionSource | toJson
 }
