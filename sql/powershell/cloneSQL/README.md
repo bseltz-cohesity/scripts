@@ -60,6 +60,7 @@ Clone task completed with status: kSuccess
 * -latest: (optional) replay the logs to the latest point in time available
 * -wait: (optional) wait for completion and report end status
 * -sleepTime: (optional) number of seconds to wait between status queries when using -wait (default is 15)
+* -dbg: (optional) output API payload and exit
 
 To specify a source instance, include the instance name in the sourceDB name, like MYINSTANCE/MyDB
 

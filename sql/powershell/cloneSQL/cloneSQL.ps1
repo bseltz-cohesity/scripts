@@ -25,7 +25,8 @@ param (
     [Parameter()][switch]$noLogs,
     [Parameter()][switch]$wait, # wait for clone to finish
     [Parameter()][switch]$latest, # very latest point in time log replay
-    [Parameter()][int64]$sleepTime = 15
+    [Parameter()][int64]$sleepTime = 15,
+    [Parameter()][switch]$dbg
 )
 
 # source the cohesity-api helper code
@@ -218,6 +219,12 @@ if($validLogTime -eq $True){
         exit 1
     }
 }
+
+if($dbg){
+    $cloneTask | toJson | Tee-Object -FilePath clone-sql.json
+    exit
+}
+
 ### execute the clone task (post /cloneApplication api call)
 $response = api post /cloneApplication $cloneTask
 

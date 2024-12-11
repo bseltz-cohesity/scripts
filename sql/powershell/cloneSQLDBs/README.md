@@ -60,6 +60,7 @@ Clone task completed with status: kSuccess
 * -logTime: (optional) point in time to replay the logs to (if omitted will default to time of latest DB backup)
 * -noLogs: (optional) do not replay any logs
 * -latest: (optional) replay the logs to the latest point in time available
+* -dbg: (optional) output API payload and exit
 
 To specify a source instance, include the instance name in the sourceDB name, like MYINSTANCE/MyDB
 

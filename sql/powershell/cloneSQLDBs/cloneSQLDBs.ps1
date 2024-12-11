@@ -25,7 +25,8 @@ param (
     [Parameter()][string]$targetInstance = 'MSSQLSERVER', # SQL instance name on the targetServer
     [Parameter()][string]$logTime, # point in time log replay like '2019-09-29 17:51:01'
     [Parameter()][switch]$noLogs,
-    [Parameter()][switch]$latest # very latest point in time log replay
+    [Parameter()][switch]$latest, # very latest point in time log replay
+    [Parameter()][switch]$dbg
 )
 
 # source the cohesity-api helper code
@@ -242,6 +243,10 @@ foreach($dbName in $dbNames){
             Write-Host "Available range is $(usecsToDate $logStart) to $(usecsToDate $logEnd)" -ForegroundColor Yellow
             continue
         }
+    }
+    if($dbg){
+        $cloneTask | toJson | Tee-Object -FilePath clone-sql.json
+        exit
     }
     ### execute the clone task (post /cloneApplication api call)
     $response = api post /cloneApplication $cloneTask
