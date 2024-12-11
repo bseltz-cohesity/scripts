@@ -63,6 +63,7 @@ The script takes the following parameters:
 * -t, --scripttimeout: (optional) timeout pre/post script execution (default is 900 seconds)
 * -lt, --logtime: (optional) point in time to replay the logs to
 * -l, --latest: (optional) replay logs to latest available point in time
+* -nl, --nologs: (optional) do not replay logs
 * -w, --wait: (optional) wait for completion
 * -dbg, --dbg: (optional) display api payload and exit (without restoring)
 
@@ -75,6 +76,8 @@ Or, if you want to replay logs to a specific point in time, use the **-lt** para
 ```bash
 -lt '2019-01-20 23:47:02'
 ```
+
+If you use the **-nl** parameter with the **-lt** parameter, the most recent incremental/full backup before the specified log time will be selected as the point in time to restore to.
 
 ## PFile Parameters
 
