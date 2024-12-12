@@ -99,101 +99,107 @@ if objectnames is None:
     objectnames = []
 
 # get the protectionJob
+newJob = True
 job = [j for j in (api('get', 'data-protect/protection-groups', v=2))['protectionGroups'] if j['name'].lower() == jobname.lower()]
 if job is not None and len(job) > 0:
-    print('Protection group "%s" already exists' % jobname)
-    exit()
-
-if pause:
-    isPaused = True
+    jobParams = job[0]
+    newJob = False
 else:
-    isPaused = False
+    if pause:
+        isPaused = True
+    else:
+        isPaused = False
 
-# get policy
-if policyname is None:
-    print('Policy name required')
-    exit(1)
-else:
-    policy = [p for p in (api('get', 'data-protect/policies', v=2))['policies'] if p['name'].lower() == policyname.lower()]
-    if policy is None or len(policy) == 0:
-        print('Policy %s not found' % policyname)
+    # get policy
+    if policyname is None:
+        print('Policy name required')
         exit(1)
     else:
-        policy = policy[0]
+        policy = [p for p in (api('get', 'data-protect/policies', v=2))['policies'] if p['name'].lower() == policyname.lower()]
+        if policy is None or len(policy) == 0:
+            print('Policy %s not found' % policyname)
+            exit(1)
+        else:
+            policy = policy[0]
 
-# get storageDomain
-viewBox = [v for v in api('get', 'viewBoxes') if v['name'].lower() == storagedomain.lower()]
-if viewBox is None or len(viewBox) == 0:
-    print('Storage Domain %s not found' % storagedomain)
-    exit(1)
-else:
-    viewBox = viewBox[0]
+    # get storageDomain
+    viewBox = [v for v in api('get', 'viewBoxes') if v['name'].lower() == storagedomain.lower()]
+    if viewBox is None or len(viewBox) == 0:
+        print('Storage Domain %s not found' % storagedomain)
+        exit(1)
+    else:
+        viewBox = viewBox[0]
 
-# parse starttime
-try:
-    (hour, minute) = starttime.split(':')
-    hour = int(hour)
-    minute = int(minute)
-    if hour < 0 or hour > 23 or minute < 0 or minute > 59:
+    # parse starttime
+    try:
+        (hour, minute) = starttime.split(':')
+        hour = int(hour)
+        minute = int(minute)
+        if hour < 0 or hour > 23 or minute < 0 or minute > 59:
+            print('starttime is invalid!')
+            exit(1)
+    except Exception:
         print('starttime is invalid!')
         exit(1)
-except Exception:
-    print('starttime is invalid!')
-    exit(1)
 
-if len(objectnames) == 0:
-    objectnames.append(sourceName)
+    if len(objectnames) == 0:
+        objectnames.append(sourceName)
 
-jobParams = {
-    "policyId": policy['id'],
-    "startTime": {
-        "hour": int(hour),
-        "minute": int(minute),
-        "timeZone": timezone
-    },
-    "priority": "kMedium",
-    "sla": [
-        {
-            "backupRunType": "kFull",
-            "slaMinutes": fullsla
+    jobParams = {
+        "policyId": policy['id'],
+        "startTime": {
+            "hour": int(hour),
+            "minute": int(minute),
+            "timeZone": timezone
         },
-        {
-            "backupRunType": "kIncremental",
-            "slaMinutes": incrementalsla
+        "priority": "kMedium",
+        "sla": [
+            {
+                "backupRunType": "kFull",
+                "slaMinutes": fullsla
+            },
+            {
+                "backupRunType": "kIncremental",
+                "slaMinutes": incrementalsla
+            }
+        ],
+        "qosPolicy": qospolicy,
+        "storageDomainId": viewBox['id'],
+        "name": jobname,
+        "environment": "kUDA",
+        "isPaused": isPaused,
+        "description": "",
+        "udaParams": {
+            "sourceId": sourceId,
+            "objects": [],
+            "concurrency": concurrency,
+            "mounts": mounts,
+            "fullBackupArgs": fullbackupargs,
+            "incrBackupArgs": incrbackupargs,
+            "logBackupArgs": logbackupargs
         }
-    ],
-    "qosPolicy": qospolicy,
-    "storageDomainId": viewBox['id'],
-    "name": jobname,
-    "environment": "kUDA",
-    "isPaused": isPaused,
-    "description": "",
-    "udaParams": {
-        "sourceId": sourceId,
-        "objects": [],
-        "concurrency": concurrency,
-        "mounts": mounts,
-        "fullBackupArgs": fullbackupargs,
-        "incrBackupArgs": incrbackupargs,
-        "logBackupArgs": logbackupargs
     }
-}
 
-# add alert policy
-if len(alerton) > 0:
-    jobParams['alertPolicy'] = {
-        "backupRunStatus": alerton,
-        "alertTargets": []
-    }
-    for recipient in recipients:
-        jobParams['alertPolicy']['alertTargets'].append({
-            "emailAddress": recipient,
-            "locale": "en-us",
-            "recipientType": "kTo"
-        })
+    # add alert policy
+    if len(alerton) > 0:
+        jobParams['alertPolicy'] = {
+            "backupRunStatus": alerton,
+            "alertTargets": []
+        }
+        for recipient in recipients:
+            jobParams['alertPolicy']['alertTargets'].append({
+                "emailAddress": recipient,
+                "locale": "en-us",
+                "recipientType": "kTo"
+            })
 
 for object in objectnames:
+    jobParams['udaParams']['objects'] = [o for o in jobParams['udaParams']['objects'] if o['name'].lower() != object.lower()]
     jobParams['udaParams']['objects'].append({"name": object})
 
-print('Creating protection job "%s"...' % jobname)
-result = api('post', 'data-protect/protection-groups', jobParams, v=2)
+if newJob is True:
+    print('Creating protection job "%s"...' % jobname)
+    result = api('post', 'data-protect/protection-groups', jobParams, v=2)
+else:
+    print('Updating protection job "%s"...' % jobname)
+    result = api('put', 'data-protect/protection-groups/%s' % job[0]['id'], jobParams, v=2)
