@@ -2,6 +2,7 @@
 
 ## 2024-12-12
 
+* [replicateOldSnapshotsV2.py](https://github.com/cohesity/community-automation-samples/tree/main/python/replicateOldSnapshotsV2) [`New`] replicate old snapshots using the V2 API
 * [legalHoldObject.py](https://github.com/cohesity/community-automation-samples/tree/main/python/legalHoldObject) [`New`] set legal hold per object across a range of dates
 
 ## 2024-12-10
