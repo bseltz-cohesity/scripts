@@ -148,10 +148,13 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
             if 'isLocalSnapshotsDeleted' not in run or run['isLocalSnapshotsDeleted'] is not True:
                 if 'localBackupInfo' in run:
                     runInfo = run['localBackupInfo']
-                elif 'originalBackupInfo' in runs:
+                    snapInfo = 'localSnapshotInfo'
+                elif 'originalBackupInfo' in run:
                     runInfo = run['originalBackupInfo']
+                    snapInfo = 'originalBackupInfo'
                 else:
                     runInfo = run['archivalInfo']['archivalTargetResults'][0]
+                    snapInfo = 'cad'
                 runType = runInfo['runType']
                 runStartTimeUsecs = runInfo['startTimeUsecs']
                 status = runInfo['status']
@@ -162,6 +165,9 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                 print("    %s" % usecsToDate(runStartTimeUsecs))
                 if 'objects' in run and sorted(run['objects'], key=lambda object: object['object']['name'].lower()) is not None:
                     for object in run['objects']:
+                        if snapInfo == 'cad':
+                            object['cad'] = {'snapshotInfo': object['archivalInfo']['archivalTargetResults'][0]}
+                            object['onLegalHold'] = object['archivalInfo']['archivalTargetResults'][0]['onLegalHold']
                         if object['object']['name'].lower() in [o.lower() for o in objectnames]:
                             if object['object']['name'] not in foundobjects:
                                 foundobjects.append(object['object']['name'])
@@ -169,18 +175,18 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                             if 'onLegalHold' in object and object['onLegalHold'] is True:
                                 onLegalHold = True
                                 if removehold:
-                                    if 'localSnapshotInfo' in object and object['localSnapshotInfo'] is not None:
-                                        if 'snapshotInfo' in object['localSnapshotInfo'] and object['localSnapshotInfo']['snapshotInfo'] is not None:
-                                            snapshotId = object['localSnapshotInfo']['snapshotInfo']['snapshotId']
+                                    if snapInfo in object and object[snapInfo] is not None:
+                                        if 'snapshotInfo' in object[snapInfo] and object[snapInfo]['snapshotInfo'] is not None:
+                                            snapshotId = object[snapInfo]['snapshotInfo']['snapshotId']
                                             api('put','data-protect/objects/%s/snapshots/%s' % (object['object']['id'], snapshotId), {"setLegalHold": False}, v=2)
                                             print('        %s  ->  removing hold' % object['object']['name'])
                                 elif addhold or showtrue is True:
                                     print("        %s  ->  On Hold" % object['object']['name'])
                             else:
                                 if addhold:
-                                    if 'localSnapshotInfo' in object and object['localSnapshotInfo'] is not None:
-                                        if 'snapshotInfo' in object['localSnapshotInfo'] and object['localSnapshotInfo']['snapshotInfo'] is not None:
-                                            snapshotId = object['localSnapshotInfo']['snapshotInfo']['snapshotId']
+                                    if snapInfo in object and object[snapInfo] is not None:
+                                        if 'snapshotInfo' in object[snapInfo] and object[snapInfo]['snapshotInfo'] is not None:
+                                            snapshotId = object[snapInfo]['snapshotInfo']['snapshotId']
                                             api('put','data-protect/objects/%s/snapshots/%s' % (object['object']['id'], snapshotId), {"setLegalHold": True}, v=2)
                                             print('        %s  ->  adding hold' % object['object']['name'])
                                 elif removehold or showfalse is True:
