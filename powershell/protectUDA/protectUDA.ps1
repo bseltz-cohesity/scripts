@@ -21,7 +21,7 @@ param (
     [Parameter()][int]$incrementalSlaMinutes = 60,
     [Parameter()][int]$fullSlaMinutes = 120,
     [Parameter()][string]$storageDomainName = 'DefaultStorageDomain',
-    [Parameter(Mandatory = $True)][string]$policyName,
+    [Parameter()][string]$policyName,
     [Parameter()][switch]$paused,
     [Parameter()][ValidateSet('kBackupHDD', 'kBackupSSD')][string]$qosPolicy = 'kBackupHDD'
 )
@@ -62,11 +62,11 @@ $sourceName = $source.rootNode.name
 
 # get the protectionJob
 $job = (api get -v2 "data-protect/protection-groups").protectionGroups | Where-Object {$_.name -eq $jobName}
-
+$newJob = $True
 if($job){
 
-    Write-Host "Protection group '$jobName' already exists" -ForegroundColor Yellow
-    exit
+    $newJob = $false
+    $jobParams = $job[0]
 
 }else{
 
@@ -83,7 +83,10 @@ if($job){
         Write-Host "Please provide a valid start time" -ForegroundColor Yellow
         exit
     }
-    
+    if(! $policyName){
+        Write-Host "-policyName is required when creating a new protection group" -ForegroundColor Yellow
+        exit
+    }
     $policy = (api get -v2 "data-protect/policies").policies | Where-Object name -eq $policyName
     if(!$policy){
         Write-Host "Policy $policyName not found" -ForegroundColor Yellow
@@ -146,11 +149,16 @@ if($job){
     if($objectName.Count -eq 0){
         $objectName = @($sourceName)
     }
-    
-    foreach($o in $objectName){
-        $jobParams.udaParams.objects = @($jobParams.udaParams.objects + @{"name" = $o})
-    }
+}
 
+foreach($o in $objectName){
+    $jobParams.udaParams.objects = @($jobParams.udaParams.objects + @{"name" = $o})
+}
+
+if($newJob -eq $True){
     "Creating protection job '$jobName'..."
     $null = api post -v2 "data-protect/protection-groups" $jobParams
+}else{
+    "Updating protection job '$jobName'..."
+    $null = api put -v2 "data-protect/protection-groups/$($job[0].id)" $jobParams
 }
