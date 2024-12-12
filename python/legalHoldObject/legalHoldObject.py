@@ -70,7 +70,7 @@ def gatherList(param=None, filename=None, name='items', required=True):
         exit()
     return items
 
-jobnames = gatherList(jobnames, joblist, name='jobs', required=False)
+jobnames = gatherList(jobnames, joblist, name='jobs', required=True)
 objectnames = gatherList(objectnames, objectlist, name='objects', required=True)
 
 # authentication =========================================================
