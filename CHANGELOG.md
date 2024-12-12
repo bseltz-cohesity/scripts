@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-12-12
+
+* [legalHoldObject.py](https://github.com/cohesity/community-automation-samples/tree/main/python/legalHoldObject) [`New`] set legal hold per object across a range of dates
+
 ## 2024-12-10
 
 * [validateServerBackup.py](https://github.com/cohesity/community-automation-samples/tree/main/python/validateServerBackup) [`New`] validate server backups
