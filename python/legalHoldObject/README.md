@@ -4,6 +4,8 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This script add or removes legal hold to the specified objects.
 
+Note: the script can only operate on local (active) jobs/objects (not replicas).
+
 ## Components
 
 * [legalHoldObject.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/legalHoldObject/legalHoldObject.py): the main python script
@@ -19,7 +21,7 @@ chmod +x legalHoldObject.py
 # end download commands
 ```
 
-Show if legal hold is on:
+Show legal hold status:
 
 ```bash
 ./legalHoldObject.py -v mycluster \
@@ -27,23 +29,10 @@ Show if legal hold is on:
                      -d mydomain.net \
                      -jn 'my job' \
                      -on 'myobject1' \
-                     -on 'myobject2' \
-                     -st
+                     -on 'myobject2'
 ```
 
-Show if legal hold is off:
-
-```bash
-./legalHoldObject.py -v mycluster \
-                     -u myuser \
-                     -d mydomain.net \
-                     -jn 'my job' \
-                     -on 'myobject1' \
-                     -on 'myobject2' \
-                     -sf
-```
-
-Set legal hold
+Add legal hold
 
 ```bash
 ./legalHoldObject.py -v mycluster \
@@ -92,8 +81,6 @@ Remove legal hold
 
 * -a, --addhold: (optional) add legal holds
 * -r, --removehold: (optional) remove legal holds
-* -st, --showtrue: (optional) show if legal hold is set
-* -sf, --showfalse: (optional) show if legal hold is not set
 
 ## Filter Parameters
 

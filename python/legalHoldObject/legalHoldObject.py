@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""add remove legal hold"""
+"""add remove legal hold per object"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -30,8 +30,6 @@ parser.add_argument('-l', '--includelogs', action='store_true')
 parser.add_argument('-y', '--daysback', type=int, default=None)
 parser.add_argument('-s', '--startdate', type=str, default=None)
 parser.add_argument('-e', '--enddate', type=str, default=None)
-parser.add_argument('-st', '--showtrue', action='store_true')
-parser.add_argument('-sf', '--showfalse', action='store_true')
 
 args = parser.parse_args()
 
@@ -53,8 +51,6 @@ objectlist = args.objectlist
 numruns = args.numruns
 addhold = args.addhold
 removehold = args.removehold
-showtrue = args.showtrue
-showfalse = args.showfalse
 includelogs = args.includelogs
 daysback = args.daysback
 startdate = args.startdate
@@ -76,18 +72,6 @@ def gatherList(param=None, filename=None, name='items', required=True):
 
 jobnames = gatherList(jobnames, joblist, name='jobs', required=False)
 objectnames = gatherList(objectnames, objectlist, name='objects', required=True)
-
-if addhold:
-    holdValue = True
-    actionString = 'adding hold'
-elif removehold:
-    holdValue = False
-    actionString = 'removing hold'
-else:
-    actionString = 'checking'
-    if not showtrue and not showfalse:
-        showtrue = True
-        showfalse = True
 
 # authentication =========================================================
 # demand clustername if connecting to helios or mcm
@@ -125,7 +109,7 @@ if startdate is not None:
     if enddate is not None:
         enddateusecs = dateToUsecs(enddate)
 
-jobs = api('get', 'data-protect/protection-groups?pruneSourceIds=true&pruneExcludedSourceIds=true', v=2)
+jobs = api('get', 'data-protect/protection-groups?isActive=true&pruneSourceIds=true&pruneExcludedSourceIds=true', v=2)
 if jobs['protectionGroups'] is not None:
     jobs = [j for j in jobs['protectionGroups'] if j['name'].lower() in [n.lower() for n in jobnames]]
 else:
@@ -149,12 +133,14 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                 if 'localBackupInfo' in run:
                     runInfo = run['localBackupInfo']
                     snapInfo = 'localSnapshotInfo'
-                elif 'originalBackupInfo' in run:
-                    runInfo = run['originalBackupInfo']
-                    snapInfo = 'originalBackupInfo'
                 else:
-                    runInfo = run['archivalInfo']['archivalTargetResults'][0]
-                    snapInfo = 'cad'
+                    continue
+                # elif 'originalBackupInfo' in run:
+                #     runInfo = run['originalBackupInfo']
+                #     snapInfo = 'originalBackupInfo'
+                # else:
+                #     runInfo = run['archivalInfo']['archivalTargetResults'][0]
+                #     snapInfo = 'cad'
                 runType = runInfo['runType']
                 runStartTimeUsecs = runInfo['startTimeUsecs']
                 status = runInfo['status']
@@ -165,9 +151,9 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                 print("    %s" % usecsToDate(runStartTimeUsecs))
                 if 'objects' in run and sorted(run['objects'], key=lambda object: object['object']['name'].lower()) is not None:
                     for object in run['objects']:
-                        if snapInfo == 'cad':
-                            object['cad'] = {'snapshotInfo': object['archivalInfo']['archivalTargetResults'][0]}
-                            object['onLegalHold'] = object['archivalInfo']['archivalTargetResults'][0]['onLegalHold']
+                        # if snapInfo == 'cad':
+                        #     object['cad'] = {'snapshotInfo': object['archivalInfo']['archivalTargetResults'][0]}
+                        #     object['onLegalHold'] = object['archivalInfo']['archivalTargetResults'][0]['onLegalHold']
                         if object['object']['name'].lower() in [o.lower() for o in objectnames]:
                             if object['object']['name'] not in foundobjects:
                                 foundobjects.append(object['object']['name'])
@@ -180,7 +166,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                                             snapshotId = object[snapInfo]['snapshotInfo']['snapshotId']
                                             api('put','data-protect/objects/%s/snapshots/%s' % (object['object']['id'], snapshotId), {"setLegalHold": False}, v=2)
                                             print('        %s  ->  removing hold' % object['object']['name'])
-                                elif addhold or showtrue is True:
+                                else:
                                     print("        %s  ->  On Hold" % object['object']['name'])
                             else:
                                 if addhold:
@@ -189,7 +175,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                                             snapshotId = object[snapInfo]['snapshotInfo']['snapshotId']
                                             api('put','data-protect/objects/%s/snapshots/%s' % (object['object']['id'], snapshotId), {"setLegalHold": True}, v=2)
                                             print('        %s  ->  adding hold' % object['object']['name'])
-                                elif removehold or showfalse is True:
+                                else:
                                     print("        %s  ->  Not On Hold" % object['object']['name'])
         if len(runs['runs']) == 0 or runs['runs'][-1]['id'] == lastRunId:
             break
