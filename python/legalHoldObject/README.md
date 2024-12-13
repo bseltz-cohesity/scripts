@@ -88,3 +88,4 @@ Remove legal hold
 * -y, --daysback: (optional) include runs from only the last X days
 * -s, --startdate: (optional) include runs only after this date (e.g. '2024-11-01 00:00:00')
 * -e, --enddate: (optional) include runs only before this date (e.g. '2024-12-01 00:00:00')
+* -rd, --rundate: (optional) specific run date to include
