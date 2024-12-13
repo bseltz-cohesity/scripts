@@ -30,7 +30,7 @@ parser.add_argument('-l', '--includelogs', action='store_true')
 parser.add_argument('-y', '--daysback', type=int, default=None)
 parser.add_argument('-s', '--startdate', type=str, default=None)
 parser.add_argument('-e', '--enddate', type=str, default=None)
-
+parser.add_argument('-rd', '--rundate', type=str, default=None)
 args = parser.parse_args()
 
 vip = args.vip
@@ -55,6 +55,7 @@ includelogs = args.includelogs
 daysback = args.daysback
 startdate = args.startdate
 enddate = args.enddate
+rundate = args.rundate
 
 def gatherList(param=None, filename=None, name='items', required=True):
     items = []
@@ -148,7 +149,10 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                     break
                 if not includelogs and runType == 'kLog':
                     continue
-                print("    %s" % usecsToDate(runStartTimeUsecs))
+                thisRundate = usecsToDate(runStartTimeUsecs)
+                if rundate and thisRundate != rundate:
+                    continue
+                print("    %s" % thisRundate)
                 if 'objects' in run and sorted(run['objects'], key=lambda object: object['object']['name'].lower()) is not None:
                     for object in run['objects']:
                         # if snapInfo == 'cad':
