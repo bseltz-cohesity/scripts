@@ -107,8 +107,8 @@ startdateusecs = 0
 if startdate is not None:
     startdateusecs = dateToUsecs(startdate)
     tail = '&startTimeUsecs=%s' % startdateusecs
-    if enddate is not None:
-        enddateusecs = dateToUsecs(enddate)
+if enddate is not None:
+    enddateusecs = dateToUsecs(enddate)
 
 jobs = api('get', 'data-protect/protection-groups?isActive=true&pruneSourceIds=true&pruneExcludedSourceIds=true', v=2)
 if jobs['protectionGroups'] is not None:
