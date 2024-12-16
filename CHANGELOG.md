@@ -1,6 +1,12 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-12-16
+
+* [protectGenericNas.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectGenericNas) [`Update`] updated to use the V2 API
+
 ## 2024-12-12
+
+* [protectUDA.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectUDA) [`Update`] added support for existing jobs
 
 * [replicateOldSnapshotsV2.py](https://github.com/cohesity/community-automation-samples/tree/main/python/replicateOldSnapshotsV2) [`New`] replicate old snapshots using the V2 API
 * [legalHoldObject.py](https://github.com/cohesity/community-automation-samples/tree/main/python/legalHoldObject) [`New`] set legal hold per object across a range of dates
