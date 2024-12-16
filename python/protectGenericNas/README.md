@@ -29,29 +29,40 @@ Place both files in a folder together and run the main script like so:
                         -d mydomain.net \
                         -p 'My Policy' \
                         -j 'My New Job' \
-                        -t 'America/New_York' \
-                        -ei \
-                        -m '\\myserver\myshare' \
-                        -c
+                        -m '\\myserver\myshare'
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -v, --vip: DNS or IP of the Cohesity cluster to connect to
-* -u, --username: username to authenticate to Cohesity cluster
-* -d, --domain: (optional) domain of username, defaults to local
+* -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
+* -d, --domain: (optional) domain of username (defaults to local)
+* -t, --tenant: (optional) multi-tenancy tenant name
+* -k, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: (optional) password or API key
+* -np, --noprompt: (optional) do not prompt for password
+* -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) helios/mcm cluster to connect to
+* -mfa, --mfacode: (optional) MFA code for authentication
+* -em, --emailmfacode: (optional) send MFA code via email
+
+## Selection Parameters
+
 * -j, --jobname: name of the job to make changes to (repeat paramter for multiple jobs)
+* -i, --include: (optional) include path (default is /) repeat for multiple
+* -n, --includelist: (optional) text file with include paths (one per line)
+* -e, --exclude: (optional) exclude path (repeat for multiple)
+* -x, --excludelist: (optional) text file with exclude paths (one per line)
+* -m, --mountpath: (optional) generic NAS mount path to protect (repeat for multiple)
+* -f, --mountpathlist: (optional) text file with NAS mount paths to protect (one per line)
+
+## New Job Parameters
+
 * -p, --policyname: (optional) name of protection policy (only required for new job)
 * -s, --starttime: (optional) start time for new job (default is '20:00')
-* -i, --include: (optional) include path (default is /) repeat for multiple
-* -n, --includefile: (optional) text file with include paths (one per line)
-* -e, --exclude: (optional) exclude path (repeat for multiple)
-* -x, --excludefile: (optional) text file with exclude paths (one per line)
-* -t, --timezone: (optional) default is 'America/Los_Angeles'
+* -tz, --timezone: (optional) default is 'America/Los_Angeles'
 * -is, --incrementalsla: (optional) incremental SLA minutes (default is 60)
 * -fs, --fullsla: (optional) full SLA minutes (default is 120)
 * -ei, --enableindexing: (optional) enable indexing
-* -m, --mountpath: (optional) generic NAS mount path to protect (repeat for multiple)
-* -f, --mountpathfile: (optional) text file with NAS mount paths to protect (one per line)
-* -c, --cloudarchivedirect: (optional) create cloud archive direct job
 * -sd, --storagedomain: (optional) default is 'DefaultStorageDomain'
+* -z, --paused: (optional) pause future runs
