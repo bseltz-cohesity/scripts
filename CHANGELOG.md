@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-12-17
+
+* [gflagList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/gflagList) [`New`] list available gflags for the specified service
+
 ## 2024-12-16
 
 * [protectGenericNas.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectGenericNas) [`Update`] updated to use the V2 API
