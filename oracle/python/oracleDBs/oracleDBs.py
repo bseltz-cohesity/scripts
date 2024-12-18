@@ -66,8 +66,8 @@ if mcm or vip.lower() == 'helios.cohesity.com':
 # end authentication =====================================================
 
 sources = api('get', 'protectionSources?environments=kOracle')
-if sources is None or len(sources) == 0:
-    print('\nno Oracle sources found on this cluster\n')
+if sources is None or len(sources) == 0 or 'nodes' not in sources[0] or sources[0]['nodes'] is None or len(sources[0]['nodes']) == 0:
+    print('\nNo Oracle sources found on this cluster\n')
     exit()
 
 cluster = api('get', 'cluster')
@@ -79,11 +79,13 @@ f.write('"Cluster Name","Server Name","Database Name","Size (%s)","UUID","Versio
 
 for server in sources[0]['nodes']:
     servername = server['protectionSource']['name']
+    if 'applicationNodes' not in server or server['applicationNodes'] is None or len(server['applicationNodes']) == 0:
+        continue
     print('\n%s' % servername)
     for db in server['applicationNodes']:
         # display(db)
         dbname = db['protectionSource']['name']
-        dbsize = round(db['logicalSize'] / multiplier, 1)
+        dbsize = round(db.get('logicalSize', 0) / multiplier, 1)
         dbprotected = False
         if db['protectedSourcesSummary'][0].get('leavesCount', 0) > 0:
             dbprotected = True
