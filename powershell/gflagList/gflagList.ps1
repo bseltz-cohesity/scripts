@@ -91,6 +91,7 @@ foreach($node in $nodes){
             $content = $currentFlags.Content
             $flags = $content -split "\n" | Where-Object {$_.startsWith('--')}
             $flags | Sort-Object
+            break
         }else{
             Write-Host "service $serviceName not handled" -ForegroundColor Yellow
             exit
