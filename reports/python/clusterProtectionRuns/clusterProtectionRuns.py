@@ -94,18 +94,9 @@ if outputfile is None:
     outputfile = 'protectionRunsReport-%s.tsv' % dateString
 outfile = os.path.join(outputpath, outputfile)
 f = codecs.open(outfile, 'w')
-f.write('Start Time\tEnd Time\tDuration\tstatus\tslaStatus\tsnapshotStatus\tobjectName\tsourceName\tgroupName\tpolicyName\tObject Type\tbackupType\tSystem Name\tLogical Size %s\tData Read %s\tData Written %s\tOrganization Name\tTag\n' % (unit, unit, unit))
+f.write('Start Time\tEnd Time\tDuration\tstatus\tslaStatus\tsnapshotStatus\tobjectName\tsourceName\tgroupName\tpolicyName\tObject Type\tbackupType\tSystem Name\tLogical Size %s\tData Read %s\tData Written %s\tTotal File Count\tBacked Up File Count\tOrganization Name\tTag\n' % (unit, unit, unit))
 
 def getCluster():
-
-    #   for vip in vips:
-    # authenticate
-    # apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, prompt=(not noprompt), mfaCode=mfacode)
-
-    # # exit if not authenticated
-    # if apiconnected() is False:
-    #     print('authentication failed')
-    #     continue
 
     cluster = api('get', 'cluster')
     jobs = api('get', 'data-protect/protection-groups?isDeleted=false&includeTenants=true', v=2)
@@ -197,8 +188,10 @@ def getCluster():
                                             objectLogicalSizeBytes = round(object[snapshotInfo]['snapshotInfo']['stats'].get('logicalSizeBytes', 0) / multiplier, 1)
                                             objectBytesWritten = round(object[snapshotInfo]['snapshotInfo']['stats'].get('bytesWritten', 0) / multiplier, 1)
                                             objectBytesRead = round(object[snapshotInfo]['snapshotInfo']['stats'].get('bytesRead', 0) / multiplier, 1)
+                                            objectTotalCount = object[snapshotInfo]['snapshotInfo'].get('totalFileCount', 0)
+                                            objectBackedUpCount = object[snapshotInfo]['snapshotInfo'].get('backupFileCount', 0)
                                             print('        %s' % objectName)
-                                            f.write('%s\t%s\t%s\t%s\t%s\tActive\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (objectStartTime, objectEndTime, objectDurationSeconds, objectStatus, slaStatus, objectName, registeredSourceName, job['name'], policyName, environment, runType, cluster['name'], objectLogicalSizeBytes, objectBytesRead, objectBytesWritten, tenant, tag))
+                                            f.write('%s\t%s\t%s\t%s\t%s\tActive\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (objectStartTime, objectEndTime, objectDurationSeconds, objectStatus, slaStatus, objectName, registeredSourceName, job['name'], policyName, environment, runType, cluster['name'], objectLogicalSizeBytes, objectBytesRead, objectBytesWritten, objectTotalCount, objectBackedUpCount, tenant, tag))
                     except Exception:
                         pass
 
