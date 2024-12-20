@@ -177,8 +177,8 @@ def getCluster():
                                             replicaEndTime = nowUsecs
                                         replicaDelay = round((replicaStartTime - replicaQueuedTime) / 1000000)
                                         replicaDuration = round((replicaEndTime - replicaStartTime) / 1000000)
-                                        logicalReplicated = round(target['stats']['logicalBytesTransferred'] / multiplier, 1)
-                                        physicalReplicated = round(target['stats']['physicalBytesTransferred'] / multiplier, 1)
+                                        logicalReplicated = round(target['stats'].get('logicalBytesTransferred', 0) / multiplier, 1)
+                                        physicalReplicated = round(target['stats'].get('physicalBytesTransferred', 0) / multiplier, 1)
                                         repls[remoteCluster]['logicalReplicated'] += logicalReplicated
                                         repls[remoteCluster]['physicalReplicated'] += physicalReplicated
                                         if repls[remoteCluster]['startTimeUsecs'] is None or replicaStartTime < repls[remoteCluster]['startTimeUsecs']:
