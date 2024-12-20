@@ -234,9 +234,13 @@ if logtime is not None or latest is True:
             if logStart <= logusecs and logusecs <= logEnd:
                 validLogTime = True
                 break
-
+        if logtime is not None and version['instanceId']['jobStartTimeUsecs'] < logusecs:
+            break
         versionNum += 1
 
+if versionNum > (len(dbversions) - 1):
+    print('No backups found from specified date')
+    exit(1)
 version = dbversions[versionNum]
 doc = version['doc']
 
