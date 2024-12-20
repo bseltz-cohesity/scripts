@@ -1,8 +1,10 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][string]$username = 'Ccs',
-    [Parameter(Mandatory = $True)][string]$region,  # Ccs region
+    [Parameter()][string]$username = 'DMaaS',
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter(Mandatory = $True)][string]$region,  # DMaaS region
     [Parameter()][string]$objectName,
     [Parameter()][string]$sourceName,
     [Parameter()][switch]$debugmode,
@@ -14,7 +16,7 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -username $username -regionid $region
+apiauth -username $username -regionid $region -passwd $password -noPromptForPassword $noPrompt
 
 $nowUsecs = dateToUsecs
 $tomorrowUsecs = $nowUsecs + 86400000000

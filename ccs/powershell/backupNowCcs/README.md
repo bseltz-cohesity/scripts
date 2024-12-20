@@ -47,6 +47,8 @@ Start the backup of a SQL Database:
 ## Parameters
 
 * -username: (optional) used for password storage only (default is 'Ccs')
+* -password: (optional) enter API key (will be prompted if omitted and not already stored)
+* -noPrompt: (optional) do not prompt for password
 * -region: Ccs region to use
 * -objectName: (optional) name of protected object to backup (e.g. name of VM, name of database)
 * -sourceName: (optional) name of registered source (e.g. name of SQL Server)
