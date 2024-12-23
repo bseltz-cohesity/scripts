@@ -1,5 +1,13 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-12-23
+
+* [manageSaaSConnectorGroup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/manageSaaSConnectorGroup) [`New`] manage SaaS Connector groups using PowerShell
+
+## 2024-12-22
+
+* [deploySaaSConnector.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/deploySaaSConnector) [`New`] deploy and register SaaS Connector OVA using PowerShell
+
 ## 2024-12-17
 
 * [gflagList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/gflagList) [`New`] list available gflags for the specified service
