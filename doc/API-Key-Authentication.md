@@ -73,3 +73,15 @@ When prompted for a password, enter the API key (instead of a password). Or, you
                 -pwd xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 # end example
 ```
+
+Here's a Python example:
+
+```bash
+# example using API key authentication
+./backupNow.py -v mycluster \
+               -u myuser \
+               -j myjob \
+               -i \
+               -p xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+# end example
+```
