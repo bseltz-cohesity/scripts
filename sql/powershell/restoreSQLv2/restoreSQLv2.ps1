@@ -39,11 +39,12 @@ param (
     [Parameter()][switch]$progress,
     [Parameter()][int64]$pageSize = 100,
     [Parameter()][int64]$dbsPerRecovery = 100,
-    [Parameter()][int64]$sleepTime = 120,
+    [Parameter()][int64]$sleepTime = 60,
     [Parameter()][switch]$exportPaths,
     [Parameter()][switch]$importPaths,
     [Parameter()][switch]$showPaths,
     [Parameter()][switch]$commit,
+    [Parameter()][switch]$noLogs,
     [Parameter()][switch]$dbg
 )
 
@@ -353,7 +354,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
             continue
         }
     }
-    if($logsAvailable){
+    if($logsAvailable -and ! $noLogs){
         $logTimeValid = $False
         if($logTime -or $latest){
             foreach($timeRange in $timeRanges | Sort-Object -Property endTimeUsecs -Descending){
@@ -429,7 +430,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
             }
         }
     }
-    if($logsAvailable){
+    if($logsAvailable -and ! $noLogs){
         if($noStop){
             $thisParam['pointInTimeUsecs'] = $selectedPIT  # (3600 + (datetousecs (Get-Date)) / 1000000)
             $thisParam.sqlTargetParams.originalSourceConfig['restoreTimeUsecs'] = $selectedPIT  # ((datetousecs (Get-Date)) / 1000000)  # (3600 + (datetousecs (Get-Date)) / 1000000)
@@ -487,7 +488,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
 
         $targetConfig = $thisParam.sqlTargetParams.newSourceConfig
 
-        if($logsAvailable){
+        if($logsAvailable -and ! $noLogs){
             if($noStop){
                 $targetConfig['restoreTimeUsecs'] = $selectedPIT  # (3600 + (datetousecs (Get-Date)) / 1000000)
             }else{
