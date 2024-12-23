@@ -8,6 +8,10 @@
 
 * [deploySaaSConnector.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/deploySaaSConnector) [`New`] deploy and register SaaS Connector OVA using PowerShell
 
+## 2024-12-20
+
+* [backupNowCcs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/backupNowCcs) [`Update`] Added password parameter
+
 ## 2024-12-17
 
 * [gflagList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/gflagList) [`New`] list available gflags for the specified service
