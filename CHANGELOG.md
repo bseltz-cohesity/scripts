@@ -2,6 +2,7 @@
 
 ## 2024-12-23
 
+* [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] added -noLogs parameter
 * [manageSaaSConnectorGroup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/manageSaaSConnectorGroup) [`New`] manage SaaS Connector groups using PowerShell
 
 ## 2024-12-22
