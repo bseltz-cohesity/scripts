@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-12-24
+
+* [manageSaaSTrafficRoutes](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/manageSaaSTrafficRoutes) [`New`] manage SaaS Connector VMware traffic routing using PowerShell
+
 ## 2024-12-23
 
 * [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] added -noLogs parameter
