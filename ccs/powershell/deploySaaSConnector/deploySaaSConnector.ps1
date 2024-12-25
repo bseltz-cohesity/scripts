@@ -36,6 +36,8 @@ param (
 
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
+$vmIp = $null
+
 if(! $ovfPath){
     $ovfPath = 'saasConnector.ova'
     if($downloadPath -ne '.'){
@@ -247,7 +249,6 @@ if($deployOVA){
     
     if($null -ne $clusterId){
         Write-Host "SaaS Connector $vmName ($vmIp) is Online"
-        return $vmIp
     }
 }
 
@@ -372,3 +373,7 @@ if($registerSaaSConnector){
 }
 
 Write-Host "SaaS Connector Deployment Complete"
+
+if($returnIp -and $null -ne $vmIp){
+    return $vmIp
+}
