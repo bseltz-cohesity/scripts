@@ -1,5 +1,10 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-12-25 🎄
+
+* [registerVCenterCCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/registerVCenterCCS) [`New`] register a vCenter in CCS
+* [registerESXiHostCCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/registerESXiHostCCS) [`New`] register an ESXi host in CCS
+
 ## 2024-12-24
 
 * [manageSaaSTrafficRoutes](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/manageSaaSTrafficRoutes) [`New`] manage SaaS Connector VMware traffic routing using PowerShell
