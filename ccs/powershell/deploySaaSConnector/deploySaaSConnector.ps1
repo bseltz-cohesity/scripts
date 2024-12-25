@@ -31,7 +31,8 @@ param (
     [Parameter()][string]$connectionName,
     [Parameter()][switch]$returnIp,
     [Parameter()][string]$folderName,
-    [Parameter()][string]$parentFolderName
+    [Parameter()][string]$parentFolderName,
+    [Parameter()][switch]$wait
 )
 
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -46,10 +47,15 @@ if(! $ovfPath){
 # validate parameters
 if($registerSaaSConnector){
     if($domainNames.Count -eq 0){
-        Write-Host "-domainNames ia required" -ForegroundColor Yellow
+        Write-Host "-domainNames is required" -ForegroundColor Yellow
+        exit
+    }
+    if(! $connectionName){
+        Write-Host "-connectionName is required" -ForegroundColor Yellow
         exit
     }
 }
+
 if($deployOVA -or ($registerSaaSConnector -and ! $ip) -or ($unregisterSaaSConnector -and ! $ip)){
     if(! $vCenter){
         Write-Host "-viServer is required" -ForegroundColor Yellow
@@ -175,7 +181,7 @@ if($deployOVA){
     if($ip){
         $ipAllocationPolicy = 'fixedPolicy'
         if(! $netmask -or ! $gateway){
-            Write-Host "-netmask and -gateway required for static IP addressing"
+            Write-Host "-netmask and -gateway required for static IP addressing" -ForegroundColor Yellow
             exit
         }
         $ovfConfig.Common.dataIp.Value = $ip
@@ -183,7 +189,7 @@ if($deployOVA){
         $ovfConfig.Common.dataGateway.Value = $gateway
         if($vmNetwork2){
             if(! $ip2 -or ! $netmask2 -or ! $gateway2){
-                Write-Host "-ip2 and -netmask2 and -gateway2 required for static IP addressing"
+                Write-Host "-ip2 and -netmask2 and -gateway2 required for static IP addressing" -ForegroundColor Yellow
                 exit
             }
             $ovfConfig.Common.secondaryIp.Value = $ip2
@@ -226,7 +232,6 @@ if($deployOVA){
 
     # get VM IP Address
     $vmIp = getVMIp $vmName
-    # Write-Host "VM IP Address is $vmIp"
 
     # authenticate to SaaS Connector and update the password
     $saasConnectorPassword = Set-CohesityAPIPassword -vip $vmIp -username admin -passwd $saasConnectorPassword -quiet
@@ -269,12 +274,12 @@ if($unregisterSaaSConnector){
     }else{
         $connector = $existingRigelGroup.connectorGroups.connectors | Where-Object {$_.rigelIp -eq $vmIp}
         $rigelGuid = $connector.rigelGuid
-        Write-Host "Unregistereing SaaS Connector $vmIp"
+        Write-Host "Unregistereing SaaS Connector $vmIp..."
         $response = api delete -mcmv2 "rigelmgmt/rigels?tenantId=$tenantId&rigelGuid=$($rigelGuid)"
     }
 }
 
-# register SaaS Connector in helios
+# register SaaS Connector in CCS
 if($registerSaaSConnector){
 
     # get SaaS Connector IP Address
@@ -295,21 +300,20 @@ if($registerSaaSConnector){
         Write-Host "$vmIp is already registered to SaaS Connection $($existingRigelGroup.groupName)" -ForegroundColor Yellow
         exit
     }else{
-        Write-Host "Requesting Claim Code"        
-        if($connectionName){
+        Write-Host "Requesting Claim Code..."
+        $rigelGroup = $rigelGroups.rigelGroups | Where-Object {$_.groupName -eq $connectionName}
+        if($rigelGroup){
             # get existing rigel group
-            $rigelGroup = $rigelGroups.rigelGroups | Where-Object {$_.groupName -eq $connectionName}
-            if(! $rigelGroup){
-                Write-Host "SaaS Connection $connectionName not found" -ForegroundColor Yellow
-                exit
-            }
             $groupId = $rigelGroup.groupId
             $rigelGroup = api get -mcmv2 "rigelmgmt/rigel-groups?tenantId=$tenantId&groupId=$groupId&fetchToken=true"
             $claimToken = $rigelGroup.rigelGroups[0].claimToken
         }else{
             # create new rigel group
-            $rigelParams = @{"regionId" = $region.ToLower();
-                            "tenantId" = $tenantId}
+            $rigelParams = @{
+                "regionId" = $region.ToLower();
+                "name" = $connectionName;
+                "tenantId" = $tenantId
+            }
             $rigelResponse = api post -mcmv2 rigelmgmt/rigel-groups $rigelParams
             $claimToken = $rigelResponse.claimToken
         }
@@ -317,7 +321,7 @@ if($registerSaaSConnector){
         Write-Host "Claim Code is $claimToken"
 
         # connect to SaaS Connector
-        Write-Host "Connecting to SaaS Connector"
+        Write-Host "Connecting to SaaS Connector..."
         apidrop -quiet
         apiauth $vmIp admin
         $cluster = api get -v2 clusters
@@ -346,9 +350,25 @@ if($registerSaaSConnector){
                 }
             )
         }
-        Write-Host "Registering SaaS Connector"
+        Write-Host "Registering SaaS Connector..."
         $response = api put -v2 clusters $cluster
         $registration = api post -v2 helios-registration @{"registrationToken" = $claimToken}
+        # wait for SaaS connector to connect
+        Write-Host "Waiting for SaaS Connector to Connect..."
+        apidrop -quiet
+        setContext $ccsContext
+        $connectorStatus = 'disconnected'
+        while($connectorStatus -eq 'disconnected'){
+            $rigelGroups = api get -mcmv2 "rigelmgmt/rigel-groups?tenantId=$tenantId&fetchConnectorGroups=true"
+            $rigelGroup = $rigelGroups.rigelGroups | Where-Object {$vmIp -in $_.connectorGroups.connectors.rigelIp}
+            $connector = $rigelGroup.connectorGroups.connectors | Where-Object {$_.rigelIp -eq $vmIp}
+            if($connector.isConnectedToControlPlane -eq $True -and $connector.isConnectedToDataPlane -eq $True){
+                $connectorStatus = 'connected'
+                break
+            }else{
+                Start-Sleep 10
+            }
+        }
     }
 }
 

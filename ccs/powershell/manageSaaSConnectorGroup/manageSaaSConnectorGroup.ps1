@@ -247,6 +247,7 @@ if(($ip -and $groupName) -or ($deleteGroup -and $groupName) -or ($ip -and $ungro
         exit
     }
 
+    # ungroup a connector
     if($ip -and $ungroup){
         # find connector
         $connector = $rigelGroup.connectorGroups.connectors | Where-Object {$_.rigelIp -eq $ip}
