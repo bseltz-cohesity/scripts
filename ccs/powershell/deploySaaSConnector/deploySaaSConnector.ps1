@@ -31,8 +31,7 @@ param (
     [Parameter()][string]$connectionName,
     [Parameter()][switch]$returnIp,
     [Parameter()][string]$folderName,
-    [Parameter()][string]$parentFolderName,
-    [Parameter()][switch]$wait
+    [Parameter()][string]$parentFolderName
 )
 
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
