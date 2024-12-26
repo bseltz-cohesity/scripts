@@ -1,6 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
-## 2024-12-16
+## 2024-12-26
 
 * [protectCcsVms.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsVMs) [`New`] protect VMware VMs in Ccs
 
