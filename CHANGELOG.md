@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-12-16
+
+* [protectCcsVms.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsVMs) [`New`] protect VMware VMs in Ccs
+
 ## 2024-12-25 🎄
 
 * [registerVCenterCCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/registerVCenterCCS) [`New`] register a vCenter in CCS
