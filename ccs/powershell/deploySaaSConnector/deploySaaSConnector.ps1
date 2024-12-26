@@ -66,12 +66,6 @@ if($deployOVA -or ($registerSaaSConnector -and ! $ip) -or ($unregisterSaaSConnec
         Write-Host "-vmName is required" -ForegroundColor Yellow
         exit
     }
-    if($deployOVA){
-        if(! $vmDatastore -or ! $vmHost -or ! $vmNetwork){
-            Write-Host "-vmHost, -viDatastore and -vmNetwork are required" -ForegroundColor Yellow
-            exit
-        }
-    }
 }
 
 function getVMIp($vmName){
@@ -124,26 +118,6 @@ if($deployOVA -or ($registerSaaSConnector -and ! $ip) -or ($unregisterSaaSConnec
 
 # deploy OVA
 if($deployOVA){
-    $vm = Get-VM -Name $vmName -ErrorAction SilentlyContinue
-    if($vm){
-        Write-Host "VM $vmName already exists" -ForegroundColor Yellow
-        exit
-    }
-    if($folderName){
-        $folder = Get-Folder -Name $folderName -ErrorAction SilentlyContinue
-        if($parentFolderName){
-            $folder = $folder | Where-Object {$_.Parent.Name -eq $parentFolderName}
-        }
-        if(! $folder){
-            Write-Host "VM Folder $folderName not found" -ForegroundColor Yellow
-            exit
-        }
-        $folder = $folder[0]
-    }
-    if(! (Test-Path -Path $ovfPath)){
-        Write-Host "OVF file $ovfPath not found" -ForegroundColor Yellow
-        exit
-    }
     # prompt for new SaaS Connector Password
     if(! $saasConnectorPassword){
         $saasConnectorPassword = '1'
@@ -158,69 +132,92 @@ if($deployOVA){
             }
         }
     }
-    # set OVA configuration
-    Write-Host "Setting OVA configuration..."
-
-    $ovfConfig = Get-OvfConfiguration -Ovf $ovfPath
-
-    # select deployment option
-    $ovfConfig.DeploymentOption.Value = 'saas-connector'
-
-    # select region
-    $ovfConfig.Common.region.Value = $region
-
-    # select VM networks
-    $ovfConfig.NetworkMapping.DataNetwork.Value = $vmNetwork
-    $ovfConfig.NetworkMapping.SecondaryNetwork.Value = $vmNetwork
-    if($vmNetwork2){
-        $ovfConfig.NetworkMapping.SecondaryNetwork.Value = $vmNetwork2
-    }
-
-    # specify IP settings
-    $ipAllocationPolicy = 'dhcpPolicy'
-
-    if($ip){
-        $ipAllocationPolicy = 'fixedPolicy'
-        if(! $netmask -or ! $gateway){
-            Write-Host "-netmask and -gateway required for static IP addressing" -ForegroundColor Yellow
+    $vm = Get-VM -Name $vmName -ErrorAction SilentlyContinue
+    if($vm){
+        Write-Host "VM $vmName already exists" -ForegroundColor Yellow
+    }else{
+        if(! $vmDatastore -or ! $vmHost -or ! $vmNetwork){
+            Write-Host "-vmHost, -viDatastore and -vmNetwork are required" -ForegroundColor Yellow
             exit
         }
-        $ovfConfig.Common.dataIp.Value = $ip
-        $ovfConfig.Common.dataNetmask.Value = $netmask
-        $ovfConfig.Common.dataGateway.Value = $gateway
-        if($vmNetwork2){
-            if(! $ip2 -or ! $netmask2 -or ! $gateway2){
-                Write-Host "-ip2 and -netmask2 and -gateway2 required for static IP addressing" -ForegroundColor Yellow
+        if($folderName){
+            $folder = Get-Folder -Name $folderName -ErrorAction SilentlyContinue
+            if($parentFolderName){
+                $folder = $folder | Where-Object {$_.Parent.Name -eq $parentFolderName}
+            }
+            if(! $folder){
+                Write-Host "VM Folder $folderName not found" -ForegroundColor Yellow
                 exit
             }
-            $ovfConfig.Common.secondaryIp.Value = $ip2
-            $ovfConfig.Common.secondaryNetmask.Value = $netmask2
-            $ovfConfig.Common.secondaryGateway.Value = $gateway2
+            $folder = $folder[0]
         }
-    }
-    $ovfConfig.IpAssignment.IpAllocationPolicy.Value = $ipAllocationPolicy
-    $ovfConfig.IpAssignment.IpProtocol.Value = 'IPv4'
-
-    # deploy OVA
-    Write-Host "Deploying OVA..."
-
-    $vHost = Get-VMHost -Name $vmHost
-    if(! $vHost){
-        Write-Host "VM Host $vmHost not found" -ForegroundColor Yellow
-        exit
-    }
-    $datastore = Get-Datastore -Name $vmDatastore
-    if(! $datastore){
-        Write-Host "Datastore $vmDatastore not found" -ForegroundColor Yellow
-        exit
-    }
-    if($folderName){
-        $null = Import-VApp -Source $ovfPath -OvfConfiguration $ovfConfig -Name $vmName -VMHost $vHost -Datastore $datastore -DiskStorageFormat $diskFormat -InventoryLocation $folder -Confirm:$false -Force
-    }else{
-        $null = Import-VApp -Source $ovfPath -OvfConfiguration $ovfConfig -Name $vmName -VMHost $vHost -Datastore $datastore -DiskStorageFormat $diskFormat -Confirm:$false -Force
+        if(! (Test-Path -Path $ovfPath)){
+            Write-Host "OVF file $ovfPath not found" -ForegroundColor Yellow
+            exit
+        }
+        # set OVA configuration
+        Write-Host "Setting OVA configuration..."
+    
+        $ovfConfig = Get-OvfConfiguration -Ovf $ovfPath
+    
+        # select deployment option
+        $ovfConfig.DeploymentOption.Value = 'saas-connector'
+    
+        # select region
+        $ovfConfig.Common.region.Value = $region
+    
+        # select VM networks
+        $ovfConfig.NetworkMapping.DataNetwork.Value = $vmNetwork
+        $ovfConfig.NetworkMapping.SecondaryNetwork.Value = $vmNetwork
+        if($vmNetwork2){
+            $ovfConfig.NetworkMapping.SecondaryNetwork.Value = $vmNetwork2
+        }
+    
+        # specify IP settings
+        $ipAllocationPolicy = 'dhcpPolicy'
+    
+        if($ip){
+            $ipAllocationPolicy = 'fixedPolicy'
+            if(! $netmask -or ! $gateway){
+                Write-Host "-netmask and -gateway required for static IP addressing" -ForegroundColor Yellow
+                exit
+            }
+            $ovfConfig.Common.dataIp.Value = $ip
+            $ovfConfig.Common.dataNetmask.Value = $netmask
+            $ovfConfig.Common.dataGateway.Value = $gateway
+            if($vmNetwork2){
+                if(! $ip2 -or ! $netmask2 -or ! $gateway2){
+                    Write-Host "-ip2 and -netmask2 and -gateway2 required for static IP addressing" -ForegroundColor Yellow
+                    exit
+                }
+                $ovfConfig.Common.secondaryIp.Value = $ip2
+                $ovfConfig.Common.secondaryNetmask.Value = $netmask2
+                $ovfConfig.Common.secondaryGateway.Value = $gateway2
+            }
+        }
+        $ovfConfig.IpAssignment.IpAllocationPolicy.Value = $ipAllocationPolicy
+        $ovfConfig.IpAssignment.IpProtocol.Value = 'IPv4'
+    
+        # deploy OVA
+        Write-Host "Deploying OVA..."
+    
+        $vHost = Get-VMHost -Name $vmHost
+        if(! $vHost){
+            Write-Host "VM Host $vmHost not found" -ForegroundColor Yellow
+            exit
+        }
+        $datastore = Get-Datastore -Name $vmDatastore
+        if(! $datastore){
+            Write-Host "Datastore $vmDatastore not found" -ForegroundColor Yellow
+            exit
+        }
+        if($folderName){
+            $null = Import-VApp -Source $ovfPath -OvfConfiguration $ovfConfig -Name $vmName -VMHost $vHost -Datastore $datastore -DiskStorageFormat $diskFormat -InventoryLocation $folder -Confirm:$false -Force
+        }else{
+            $null = Import-VApp -Source $ovfPath -OvfConfiguration $ovfConfig -Name $vmName -VMHost $vHost -Datastore $datastore -DiskStorageFormat $diskFormat -Confirm:$false -Force
+        }    
     }
     
-
     $vm = Get-VM -Name $vmName
     if(! $vm){
         Write-Host "VM not found" -ForegroundColor Yellow
@@ -228,8 +225,12 @@ if($deployOVA){
     }
 
     # power on VM
-    Write-Host "Powering on VM..."
-    $null = Start-VM $vm
+    if($vm.PowerState -ne 'PoweredOn'){
+        Write-Host "Powering on VM..."
+        $null = Start-VM $vm
+    }else{
+        Write-Host "VM is Powered On"
+    }
 
     # get VM IP Address
     $vmIp = getVMIp $vmName
@@ -241,7 +242,7 @@ if($deployOVA){
     apidrop -quiet
     while($null -eq $clusterId){
         Start-Sleep -Seconds 10
-        apiauth $vmIp admin -passwd admin -newPassword $saasConnectorPassword -quiet -noPrompt
+        apiauth $vmIp admin -passwd admin -newPassword $saasConnectorPassword -quiet
         $clusterId = (api get cluster -quiet).id
     }
     apidrop -quiet
