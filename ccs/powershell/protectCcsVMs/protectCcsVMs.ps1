@@ -3,17 +3,17 @@
 param (
     [Parameter()][string]$username = 'Ccs',
     [Parameter()][string]$password,
-    [Parameter(Mandatory = $True)][string]$region,  # CCS region
-    [Parameter(Mandatory = $True)][string]$policyName,  # protection policy name
-    [Parameter(Mandatory = $True)][string]$sourceName,  # name of registered AWS source
-    [Parameter()][array]$vmNames,  # optional names of VMs protect
-    [Parameter()][string]$vmList = '',  # optional textfile of VMs to protect
-    [Parameter()][array]$excludeVmNames,  # optional names of VMs protect
-    [Parameter()][string]$excludeVmList = '',  # optional textfile of VMs to protect
-    [Parameter()][string]$startTime = '20:00',  # e.g. 23:30 for 11:30 PM
-    [Parameter()][string]$timeZone = 'America/New_York', # e.g. 'America/New_York'
-    [Parameter()][int]$incrementalSlaMinutes = 60,  # incremental SLA minutes
-    [Parameter()][int]$fullSlaMinutes = 120,  # full SLA minutes,
+    [Parameter(Mandatory = $True)][string]$region,
+    [Parameter(Mandatory = $True)][string]$policyName,
+    [Parameter(Mandatory = $True)][string]$sourceName,
+    [Parameter()][array]$vmNames,
+    [Parameter()][string]$vmList = '',
+    [Parameter()][array]$excludeVmNames,
+    [Parameter()][string]$excludeVmList = '',
+    [Parameter()][string]$startTime = '20:00',
+    [Parameter()][string]$timeZone = 'America/New_York',
+    [Parameter()][int]$incrementalSlaMinutes = 60,
+    [Parameter()][int]$fullSlaMinutes = 120,
     [Parameter()][switch]$autoProtectSource,
     [Parameter()][switch]$pause
 )
@@ -60,43 +60,59 @@ if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]:
     exit
 }
 
-function getObject($objectName, $source){
-    $script:_object = $null
+# index the vCenter hierarchy
+$script:vmHierarchy = @{}
 
-    function get_nodes($obj){
-        if($obj.protectionSource.name -eq $objectName){
-            $script:_object = $obj
-            break
-        }
-        if($obj.PSObject.Properties['nodes']){
-            foreach($node in $obj.nodes){
-                if($null -eq $script:_object){
-                    get_nodes $node
-                }
-            }
+function indexSource($sourceName, $source, $parents = @(), $parent = ''){
+    if($sourceName -notin $script:vmHierarchy.keys){
+        $script:vmHierarchy[$sourceName] = @()
+    }
+    if($source.protectionSource.vmWareProtectionSource.PSObject.Properties['tagAttributes']){
+        $parents = @($parents + $source.protectionSource.vmWareProtectionSource.tagAttributes.id)
+    }
+    $thisNode = @{'id' = $source.protectionSource.id; 
+                    'name' = $source.protectionSource.name; 
+                    'type' = $source.protectionSource.vmWareProtectionSource.type;
+                    'isSaasConnector' = $false
+                    'parents' = $parents;
+                    'canonical' = ("$parent/$($source.protectionSource.name)" -replace '/Datacenters/','/' -replace '/root/ha-datacenter/','/' -replace '/vm/','/' -replace '/host/','/' -replace "$sourceName/",'/' -replace '/Resources/','/' -replace '//', '/' -replace '^//','' -replace '^/','' -replace '^VMs/','')}
+    if($source.protectionSource.vmWareProtectionSource.PSObject.Properties['isSaasConnector'] -and $source.protectionSource.vmWareProtectionSource.isSaasConnector -eq $True){
+        $thisNode.isSaasConnector = $True
+    }
+    $script:vmHierarchy[$sourceName] = @($script:vmHierarchy[$sourceName] + $thisNode) 
+    $thisNode.parents = @($thisNode.parents + $parents | Sort-Object -Unique)
+    if($source.PSObject.Properties['nodes']){
+        $parents = @($thisNode.parents + $source.protectionSource.id | Sort-Object -Unique)
+        foreach($node in $source.nodes){
+            indexSource $sourceName $node $parents "$parent/$($source.protectionSource.name)"
         }
     }
-    get_nodes $source
-    return $script:_object
 }
 
-function getSaaSConnctors($source){
-    $script:_saasConnectors = @()
-    function get_snodes($obj){
-        if($obj.protectionSource.vmWareProtectionSource.PSObject.Properties['isSaasConnector'] -and $obj.protectionSource.vmWareProtectionSource.isSaasConnector -eq $True){
-            if($obj.protectionSource.id -notin $script:_saasConnectors){
-                $script:_saasConnectors = @($script:_saasConnectors + $obj.protectionSource.id)
-                Write-Host "Skipping $($obj.protectionSource.name) (SaaS Connector)" -ForegroundColor Yellow
-            }
-        }
-        if($obj.PSObject.Properties['nodes']){
-            foreach($node in $obj.nodes){
-                get_snodes $node
-            }
-        }
+function getObject($objectName){
+    $thisObject = $script:vmHierarchy[$sourceName] | Where-Object {$_.name -eq $objectName -or $_.canonical -eq $objectName}
+    if(! $thisObject){
+        Write-Host "$objectName not found" -ForegroundColor Yellow
+        return $null
     }
-    get_snodes $source
-    return $script:_saasConnectors
+    $thisObject = $thisObject | ConvertTo-Json -Depth 99 | ConvertFrom-Json
+    if('kComputeResource' -in $thisObject.type){
+        $thisObject = $thisObject | Where-Object {$_.type -eq 'kComputeResource'}
+    }
+    $thisObjectIds = $thisObject.id | Sort-Object -Unique
+    if($thisObjectIds.Count -gt 1){
+        Write-Host "Multiple matches for $objectName (use canonical name to specify)" -ForegroundColor Yellow
+        foreach($obj in $thisObject){
+            Write-Host "  $($obj.canonical) ($($obj.type))"
+        }
+        exit
+    }else{
+        if($thisObject.Count -gt 1){
+            return $thisObject[0]
+        }else{
+            return $thisObject
+        }        
+    }
 }
 
 # source the cohesity-api helper code
@@ -141,38 +157,8 @@ if(!$source){
     exit
 }
 
-$vmsToAdd = @()
-$vmsToExclude = @()
-if($autoProtectSource){
-    $vmsToAdd = @($vmsToAdd + $sourceId)
-    $vmsToExclude = @($vmsToExclude + (getSaaSConnctors $source))
-}else{
-    if($vmNamesToAdd.Count -gt 0){
-        foreach($vmName in $vmNamesToAdd){
-            $vm = getObject $vmName $source
-            if($vm){
-                $vmsToAdd = @($vmsToAdd + $vm)
-            }else{
-                Write-Host "VM $vmName not found" -ForegroundColor Yellow
-            }
-        }
-    }
-}
-
-if($autoProtectSource -and $vmNamesToExclude.Count -gt 0){
-    foreach($vmName in $vmNamesToExclude){
-        $vm = getObject $vmName $source
-        if($vm){
-            $vmsToExclude = @($vmsToExclude + $vm.protectionSource.id)
-        }
-    }
-}
-
-
-if($vmsToAdd.Count -eq 0){
-    Write-Host "No VMs found" -ForegroundColor Yellow
-    exit
-}
+indexSource $sourceName $source
+$index = $script:vmHierarchy[$sourceName]
 
 # configure protection parameters
 $protectionParams = @{
@@ -213,6 +199,43 @@ $protectionParams = @{
     "pausedNote" = ""
 }
 
+# process VM selections
+$vmsToAdd = @()
+$vmsToExclude = @()
+if($autoProtectSource){
+    $vmsToAdd = @($vmsToAdd + $sourceId)
+    $saasConnectors = $index | Where-Object {$_.isSaasConnector -eq $True}
+    if($saasConnectors){
+        $saasConnectorIds = $saasConnectors.id | Sort-Object -Unique
+        $vmsToExclude = @($vmsToExclude + $saasConnectorIds)
+    } 
+}else{
+    if($vmNamesToAdd.Count -gt 0){
+        foreach($vmName in $vmNamesToAdd){
+            $vm = getObject $vmName
+            if($vm){
+                $vmsToAdd = @($vmsToAdd + $vm)
+            }else{
+                Write-Host "VM $vmName not found" -ForegroundColor Yellow
+            }
+        }
+    }
+}
+
+if($autoProtectSource -and $vmNamesToExclude.Count -gt 0){
+    foreach($vmName in $vmNamesToExclude){
+        $vm = getObject $vmName
+        if($vm){
+            $vmsToExclude = @($vmsToExclude + $vm.id)
+        }
+    }
+}
+
+if($vmsToAdd.Count -eq 0){
+    Write-Host "No VMs found" -ForegroundColor Yellow
+    exit
+}
+
 if($autoProtectSource){
     Write-Host "Auto-protecting $sourceName"
     $protectionParams.objects[0].vmwareParams.objects = @(
@@ -226,15 +249,16 @@ if($autoProtectSource){
     }
 }else{
     foreach($vm in $vmsToAdd){
-        if($vm.protectionSource.vmWareProtectionSource.PSObject.Properties['isSaasConnector'] -and $vm.protectionSource.vmWareProtectionSource.isSaasConnector -eq $True){
-            Write-Host "Skipping $($vm.protectionSource.name) (SaaS Connector)" -ForegroundColor Yellow
+        if($vm.isSaasConnector -eq $True){
+            Write-Host "Skipping $($vm.name) (SaaS Connector)" -ForegroundColor Yellow
         }else{
-            Write-Host "Protecting $($vm.protectionSource.name)"
+            Write-Host "Protecting $($vm.name)"
+            $protectionParams.objects[0].vmwareParams.objects = @($protectionParams.objects[0].vmwareParams.objects + @{
+                "id" = $vm.id;
+                "isAutoprotected" = $false
+            })
         }
-        $protectionParams.objects[0].vmwareParams.objects = @($protectionParams.objects[0].vmwareParams.objects + @{
-            "id" = $vm.protectionSource.id;
-            "isAutoprotected" = $false
-        })
+        
     }
 }
 
