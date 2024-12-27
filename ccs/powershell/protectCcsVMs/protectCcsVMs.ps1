@@ -15,7 +15,9 @@ param (
     [Parameter()][int]$incrementalSlaMinutes = 60,
     [Parameter()][int]$fullSlaMinutes = 120,
     [Parameter()][switch]$autoProtectSource,
-    [Parameter()][switch]$pause
+    [Parameter()][switch]$listEntities,
+    [Parameter()][switch]$pause,
+    [Parameter()][switch]$dbg
 )
 
 $isPaused = $false
@@ -74,10 +76,14 @@ function indexSource($sourceName, $source, $parents = @(), $parent = ''){
                     'name' = $source.protectionSource.name; 
                     'type' = $source.protectionSource.vmWareProtectionSource.type;
                     'isSaasConnector' = $false
+                    'tags' = @()
                     'parents' = $parents;
                     'canonical' = ("$parent/$($source.protectionSource.name)" -replace '/Datacenters/','/' -replace '/root/ha-datacenter/','/' -replace '/vm/','/' -replace '/host/','/' -replace "$sourceName/",'/' -replace '/Resources/','/' -replace '//', '/' -replace '^//','' -replace '^/','' -replace '^VMs/','')}
     if($source.protectionSource.vmWareProtectionSource.PSObject.Properties['isSaasConnector'] -and $source.protectionSource.vmWareProtectionSource.isSaasConnector -eq $True){
         $thisNode.isSaasConnector = $True
+    }
+    if($source.protectionSource.vmWareProtectionSource.PSObject.Properties['tagAttributes']){
+        $thisNode.tags = @($source.protectionSource.vmWareProtectionSource.tagAttributes.id)
     }
     $script:vmHierarchy[$sourceName] = @($script:vmHierarchy[$sourceName] + $thisNode) 
     $thisNode.parents = @($thisNode.parents + $parents | Sort-Object -Unique)
@@ -150,7 +156,7 @@ if($autoProtectSource -and $source.type -ne 'kStandaloneHost'){
 }
 $sourceInfo = $source.sourceInfoList | Where-Object {$_.regionId -eq $region}
 $sourceId = $sourceInfo.sourceId
-$source = api get "protectionSources?id=$sourceId&environments=kVMware"
+$source = api get "protectionSources?id=$sourceId&environments=kVMware&includeVMFolders=true&pruneNonCriticalInfo=true&pruneAggregationInfo=true"
 
 if(!$source){
     Write-Host "VMware source $sourceName not found" -ForegroundColor Yellow
@@ -159,6 +165,14 @@ if(!$source){
 
 indexSource $sourceName $source
 $index = $script:vmHierarchy[$sourceName]
+
+# list entities
+if($listEntities){
+    foreach ($entity in $index | Sort-Object -Property canonical){
+        Write-Host "$($entity.canonical) ($($entity.type))"
+    }
+    exit
+}
 
 # configure protection parameters
 $protectionParams = @{
@@ -253,13 +267,32 @@ if($autoProtectSource){
             Write-Host "Skipping $($vm.name) (SaaS Connector)" -ForegroundColor Yellow
         }else{
             Write-Host "Protecting $($vm.name)"
-            $protectionParams.objects[0].vmwareParams.objects = @($protectionParams.objects[0].vmwareParams.objects + @{
+            $newObject = @{
                 "id" = $vm.id;
                 "isAutoprotected" = $false
-            })
+            }
+            if($vm.type -ne 'kVirtualMachine'){
+                if($vm.type -eq 'kTag'){
+                    $children = $index | Where-Object {$vm.id -in $_.tags}
+                }else{
+                    $children = $index | Where-Object {$vm.id -in $_.parents}
+                }
+                foreach($child in $children){
+                    if($child.isSaasConnector -eq $True -or $child.name -in $vmNamesToExclude){
+                        if(! $excludesStarted){
+                            $newObject['excludeObjectIds'] = @()
+                            $excludesStarted = $True
+                        }
+                        $newObject['excludeObjectIds'] = @($newObject['excludeObjectIds'] + $child.id | Sort-Object -Unique)
+                    }
+                }
+            }
+            $protectionParams.objects[0].vmwareParams.objects = @($protectionParams.objects[0].vmwareParams.objects + $newObject)            
         }
-        
     }
 }
-
+if($dbg){
+    $protectionParams | toJson
+    exit
+}
 $response = api post -v2 data-protect/protected-objects $protectionParams
