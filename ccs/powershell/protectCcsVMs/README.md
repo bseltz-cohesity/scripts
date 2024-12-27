@@ -58,6 +58,9 @@ To autop-protect a source (only for sources of type standalone host):
 * -incrementalSlaMinutes: (optional) default 60
 * -fullSlaMinutes: (optional) default is 120
 * -pause: (optional) pause future runs
+* -listEntities: (optional) list indexed entities
+* -entityType: (optional) list indexed entities of this type only (e.g. kFolder)
+* -dbg: (optional) disply JSON payload and exit
 
 ## Authenticating to Ccs
 

@@ -16,6 +16,7 @@ param (
     [Parameter()][int]$fullSlaMinutes = 120,
     [Parameter()][switch]$autoProtectSource,
     [Parameter()][switch]$listEntities,
+    [Parameter()][string]$entityType,
     [Parameter()][switch]$pause,
     [Parameter()][switch]$dbg
 )
@@ -134,14 +135,6 @@ if(!$cohesity_api.authorized){
 }
 # ===============================================================
 
-Write-Host "Finding protection policy"
-
-$policy = (api get -mcmv2 data-protect/policies?types=DMaaSPolicy).policies | Where-Object name -eq $policyName
-if(!$policy){
-    write-host "Policy $policyName not found" -ForegroundColor Yellow
-    exit
-}
-
 # find VMware source
 Write-host "Finding registered VMware source"
 $sources = api get -mcmv2 "data-protect/sources?environments=kVMware"
@@ -169,8 +162,18 @@ $index = $script:vmHierarchy[$sourceName]
 # list entities
 if($listEntities){
     foreach ($entity in $index | Sort-Object -Property canonical){
-        Write-Host "$($entity.canonical) ($($entity.type))"
+        if(! $entityType -or $entityType -eq $entity.type){
+            Write-Host "$($entity.canonical) ($($entity.type))"
+        }
     }
+    exit
+}
+
+Write-Host "Finding protection policy"
+
+$policy = (api get -mcmv2 data-protect/policies?types=DMaaSPolicy).policies | Where-Object name -eq $policyName
+if(!$policy){
+    write-host "Policy $policyName not found" -ForegroundColor Yellow
     exit
 }
 
