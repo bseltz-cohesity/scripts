@@ -1,4 +1,4 @@
-# Manage a SaaS Connector Group using PowerShell
+# Manage a SaaS Connector Groups using PowerShell
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
@@ -10,7 +10,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-$scriptName = 'manageSaaSConnectorGroup'
+$scriptName = 'manageSaaSConnectorGroups'
 $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/ccs/powershell/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
@@ -19,7 +19,7 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 
 ## Components
 
-* [manageSaaSConnectorGroup.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/ccs/powershell/manageSaaSConnectorGroup/manageSaaSConnectorGroup.ps1): the main powershell script
+* [manageSaaSConnectorGroups.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/ccs/powershell/manageSaaSConnectorGroups/manageSaaSConnectorGroups.ps1): the main powershell script
 * [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
@@ -27,14 +27,14 @@ Place both files in a folder together and run the main script like so:
 Display Groups:
 
 ```powershell
-./manageSaaSConnectorGroup.ps1 -region us-east-2 `
+./manageSaaSConnectorGroups.ps1 -region us-east-2 `
                                -connectionName 'My SaaS Connection'
 ```
 
 Add a SaaS Connector to a Group:
 
 ```powershell
-./manageSaaSConnectorGroup.ps1 -region us-east-2 `
+./manageSaaSConnectorGroups.ps1 -region us-east-2 `
                                -connectionName 'My SaaS Connection' `
                                -ip 10.1.1.100 `
                                -groupName 'Site A'
@@ -43,7 +43,7 @@ Add a SaaS Connector to a Group:
 Ungroup a SaaS Connector:
 
 ```powershell
-./manageSaaSConnectorGroup.ps1 -region us-east-2 `
+./manageSaaSConnectorGroups.ps1 -region us-east-2 `
                                -connectionName 'My SaaS Connection' `
                                -ip 10.1.1.100 `
                                -ungroup
@@ -52,7 +52,7 @@ Ungroup a SaaS Connector:
 Delete a Group:
 
 ```powershell
-./manageSaaSConnectorGroup.ps1 -region us-east-2 `
+./manageSaaSConnectorGroups.ps1 -region us-east-2 `
                                -connectionName 'My SaaS Connection' `
                                -groupName 'Site A' `
                                -deleteGroup
