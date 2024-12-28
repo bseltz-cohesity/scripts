@@ -26,7 +26,7 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 
 Place both files in a folder together and run the main script like so:
 
-Download the OVA from Helios:
+Download the OVA from CCS:
 
 ```powershell
 ./deploySaaSConnector.ps1 -downloadOVA `
@@ -105,14 +105,14 @@ Unregister SaaS Connector:
 * -downloadOVA: (optional) download the OVA file
 * -downloadPath: (optional) path to download OVA file (defaul is '.')
 
-## Helios Registration Parameters
+## Registration Parameters
 
-* -registerSaaSConnector: (optional) register SaaS connector to Helios
+* -registerSaaSConnector: (optional) register SaaS connector to CCS
 * -connectionName: (optional) register to existing SaaS Connection name
 * -dnsServers: (optional) one or more DNS server addresses (comma separated)
 * -ntpServers: (optional) one or more NTP servers (comma separated)
 * -domainNames: (optional) one or more domain names (comm separated)
-* -unregisterSaaSConnector: (optional) unregister SaaS connector from Helios
+* -unregisterSaaSConnector: (optional) unregister SaaS connector from CCS
 
 ## Authenticating to Ccs
 
