@@ -46,7 +46,7 @@ To autop-protect a source (only for sources of type standalone host):
 * -username: (optional) used for password storage only (default is 'Ccs')
 * -password: (optional) will be prompted if omitted and not already stored
 * -region: specify region (e.g. us-east-2)
-* -sourceName: name of registered M365 protection source
+* -sourceName: name of registered vCenter/ESXi host source
 * -policyName: name of protection policy to use
 * -vmNames: (optional) one or more VM names to protect (comma separated)
 * -vmList: (optional) text file of VM names to protect (one per line)
