@@ -2,7 +2,7 @@
 
 ## 2024-12-26
 
-* [protectCcsVms.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsVMs) [`New`] protect VMware VMs in Ccs
+* [protectCcsVms.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsVMs) [`New`] protect VMware VMs in CCS
 
 ## 2024-12-25 🎄
 
