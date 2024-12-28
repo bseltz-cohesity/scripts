@@ -26,8 +26,8 @@ Place both files in a folder together and run the main script like so:
 
 ```powershell
 ./registerESXiHostCCS.ps1 -connectionName 'My SaaS Connection' `
-                          -esxiHostname myvcenter.mydomain.net `
-                          -esxiUser administrator@vsphere.local
+                          -esxiHostname myesxihost.mydomain.net `
+                          -esxiUser root
 ```
 
 ## Parameters
