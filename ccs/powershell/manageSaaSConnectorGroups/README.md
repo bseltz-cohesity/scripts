@@ -28,34 +28,34 @@ Display Groups:
 
 ```powershell
 ./manageSaaSConnectorGroups.ps1 -region us-east-2 `
-                               -connectionName 'My SaaS Connection'
+                                -connectionName 'My SaaS Connection'
 ```
 
 Add a SaaS Connector to a Group:
 
 ```powershell
 ./manageSaaSConnectorGroups.ps1 -region us-east-2 `
-                               -connectionName 'My SaaS Connection' `
-                               -ip 10.1.1.100 `
-                               -groupName 'Site A'
+                                -connectionName 'My SaaS Connection' `
+                                -ip 10.1.1.100 `
+                                -groupName 'Site A'
 ```
 
 Ungroup a SaaS Connector:
 
 ```powershell
 ./manageSaaSConnectorGroups.ps1 -region us-east-2 `
-                               -connectionName 'My SaaS Connection' `
-                               -ip 10.1.1.100 `
-                               -ungroup
+                                -connectionName 'My SaaS Connection' `
+                                -ip 10.1.1.100 `
+                                -ungroup
 ```
 
 Delete a Group:
 
 ```powershell
 ./manageSaaSConnectorGroups.ps1 -region us-east-2 `
-                               -connectionName 'My SaaS Connection' `
-                               -groupName 'Site A' `
-                               -deleteGroup
+                                -connectionName 'My SaaS Connection' `
+                                -groupName 'Site A' `
+                                -deleteGroup
 ```
 
 ## Parameters
