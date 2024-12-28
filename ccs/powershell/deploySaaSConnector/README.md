@@ -83,22 +83,18 @@ Unregister SaaS Connector:
 
 * -deployOVA: (optional) perform OVA deployment
 * -ovfPath: (optional) path to downloaded OVA file
-
 * -saasConnectorPassword: (optional) new admin password for SaaS connector (will be prompted if omitted)
 * -returnIp: (opptional) return IP address (helpful if DHCP was used)
-
 * -vCenter: (optional) vCenter to connect to
 * -vmHost: (optional) vSphere host to deploy OVA to
 * -vmDatastore: (optional) vSphere datastore to deploy OVA to
 * -folderName: (optional) name of VM folder to place new VM
 * -parentFolderName: (optional) name of parent folder (if -folderName is not unique)
 * -diskFormat: (optional) Thin or Thick (default is Thick)
-
 * -vmNetwork: name of VM network for primary interface
 * -ip: (optional) IP address of primary network interface (DHCP will be used if omitted)
 * -netmask: (optional) subnet mask for primary network interface
 * -gateway: (optional) default gateway for primary network interface
-
 * -vmNetwork2: (optional) name of VM network for second interface
 * -ip2: (optional) IP address of second network interface
 * -netmask2: (optional) subnet mask for second network interface
