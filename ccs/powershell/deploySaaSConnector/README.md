@@ -84,7 +84,7 @@ Unregister SaaS Connector:
 * -deployOVA: (optional) perform OVA deployment
 * -ovfPath: (optional) path to downloaded OVA file
 * -saasConnectorPassword: (optional) new admin password for SaaS connector (will be prompted if omitted)
-* -returnIp: (opptional) return IP address (helpful if DHCP was used)
+* -returnIp: (optional) return IP address (helpful if DHCP was used)
 * -vCenter: (optional) vCenter to connect to
 * -vmHost: (optional) vSphere host to deploy OVA to
 * -vmDatastore: (optional) vSphere datastore to deploy OVA to
