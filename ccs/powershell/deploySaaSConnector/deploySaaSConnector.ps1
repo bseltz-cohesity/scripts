@@ -72,7 +72,7 @@ function getVMIp($vmName){
     $vmIp = $null
     while($null -eq $vmIp){
         $vm = Get-VM -Name $vmName
-        $vmIp = $vm.Guest.IPAddress[0]
+        $vmIp = @($vm.Guest.IPAddress | Where-Object {$_ -notmatch ':'})[0]
         if($null -eq $vmIp){
             Start-Sleep -Seconds 10
         }
@@ -232,8 +232,11 @@ if($deployOVA){
         Write-Host "VM is Powered On"
     }
 
+    Write-Host "Determining VM IP..."
     # get VM IP Address
     $vmIp = getVMIp $vmName
+    Write-Host "VM IP is $vmIp"
+    Write-Host "Waiting for VM to Come Online..."
 
     # authenticate to SaaS Connector and update the password
     $saasConnectorPassword = Set-CohesityAPIPassword -vip $vmIp -username admin -passwd $saasConnectorPassword -quiet
