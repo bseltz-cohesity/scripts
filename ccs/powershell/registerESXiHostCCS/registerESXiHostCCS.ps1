@@ -82,3 +82,5 @@ if($maxStreams -gt 0){
 
 Write-Host "Registering ESXi Host"
 $response = api post -mcmv2 data-protect/sources/registrations $esxiParams -region $rigelGroup.regionId
+$sourceName = $response.name
+return $sourceName
