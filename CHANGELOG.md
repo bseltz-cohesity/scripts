@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-12-29
+
+* [deploySaasSites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/deploySaasSites) [`New`] Wrapper script to deploy a SaaS Site in CCS (deploy a SaaS Connector, register and protect an ESXi Host)
+
 ## 2024-12-26
 
 * [protectCcsVms.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsVMs) [`New`] protect VMware VMs in CCS
