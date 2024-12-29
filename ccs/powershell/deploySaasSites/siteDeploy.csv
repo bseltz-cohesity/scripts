@@ -1,0 +1,2 @@
+siteName,region,vCenter,vmHost,vmName,vmDatastore,vmNetwork,ip,netmask,gateway,domainNames,dnsServers,ntpServers,esxiHostname,esxiUser,policyName
+My Site 1,us-east-2,myvcenter.mydomain.net,10.1.1.100,saasconnector1,Datastore1,VM-Network,10.1.1.200,255.255.255.0,10.1.1.1,mydomain.net,10.1.1.50 10.1.1.51,time.google.com pool.ntp.org,10.1.1.100,root,daily
