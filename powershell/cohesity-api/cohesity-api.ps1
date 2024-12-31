@@ -14,10 +14,11 @@
 # 2024-06-24 - fixed authentication error for SaaS connectors
 # 2024-09-20 - allow posts to read-only helios cluster (for advanced queries)
 # 2024-10-14 - fixed date formatting
+# 2024-12-31 - added heliosCluster - to remove access cluster ID
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2024.10.14'
+$versionCohesityAPI = '2024.12.31'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -613,6 +614,13 @@ function apiauth($vip='helios.cohesity.com',
 
 # select helios access cluster
 function heliosCluster($clusterName){
+    if($clusterName -eq '-'){
+        $null = $cohesity_api.header.remove('accessClusterId')
+        $null = $cohesity_api.header.remove('clusterId')
+        $null = $cohesity_api.session.Headers.remove('accessClusterId')
+        $null = $cohesity_api.session.Headers.remove('clusterId')
+        return $null
+    }
     if($clusterName -and $cohesity_api.heliosConnectedClusters){
         # connect to cluster
         if(! ($clusterName -is [string])){
@@ -628,6 +636,8 @@ function heliosCluster($clusterName){
             Write-Host "Cluster $clusterName not connected to Helios" -ForegroundColor Yellow
             $cohesity_api.header.remove('accessClusterId')
             $cohesity_api.header.remove('clusterId')
+            $cohesity_api.session.Headers.remove('accessClusterId')
+            $cohesity_api.session.Headers.remove('clusterId')
             return $null
         }
     }else{
@@ -699,7 +709,8 @@ function setContext($context){
 function accessCluster($remoteClusterName=$null){
     if($cohesity_api.heliosConnectedClusters -eq $null){
         if($remoteClusterName -eq $null -or $remoteClusterName -eq '-'){
-            $cohesity_api.header.Remove('clusterId')        
+            $cohesity_api.header.Remove('clusterId')
+            $cohesity_api.session.Headers.remove('clusterId')       
         }else{
             $remoteClusters = api get remoteClusters | Where-Object purposeRemoteAccess -eq $True
             if($remoteClusterName -in $remoteClusters.name){
