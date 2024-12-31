@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2024-12-31
+
+* [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added `heliosCluster -` to switch back to global context
+
 ## 2024-12-29
 
 * [deploySaasSites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/deploySaasSites) [`New`] Wrapper script to deploy a SaaS Site in CCS (deploy a SaaS Connector, register and protect an ESXi Host)

@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2024.10.14 - Brian Seltzer
+#  Version 2024.12.31 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024.01.14 - reenabled legacy access modes
