@@ -52,6 +52,7 @@ Start the backup of a SQL Database:
 * -region: Ccs region to use
 * -objectName: (optional) name of protected object to backup (e.g. name of VM, name of database)
 * -sourceName: (optional) name of registered source (e.g. name of SQL Server)
+* -backupType: (optional) kRegular, kFull or kLog (default is kRegular)
 * -wait: (optional) wait for completion and report status
 * -debugmode: (optional) display JSON output for troubleshooting
 

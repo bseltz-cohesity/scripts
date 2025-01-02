@@ -9,7 +9,8 @@ param (
     [Parameter()][string]$sourceName,
     [Parameter()][switch]$debugmode,
     [Parameter()][switch]$wait,
-    [Parameter()][int]$sleepTime = 60
+    [Parameter()][int]$sleepTime = 60,
+    [Parameter()][ValidateSet('kRegular','kFull','kLog')][string]$backupType = 'kRegular'
 )
 
 # source the cohesity-api helper code
@@ -44,7 +45,8 @@ if($objectName){
         $protectedObjectId = $obj.objectProtectionInfos[0].objectId
         $runParams['runNowParams']['objects'] = @($runParams['runNowParams']['objects'] + @{
             "id" = $protectedObjectId;
-            "takeLocalSnapshotOnly" = $false
+            "takeLocalSnapshotOnly" = $false;
+            "backupType" = $backupType
         })
         $object = api get -v2 data-protect/objects?ids=$protectedObjectId
     }    
@@ -66,7 +68,8 @@ if($objectName){
     foreach($obj in $protectedObjects){
         $runParams['runNowParams']['objects'] = @($runParams['runNowParams']['objects'] + @{
             "id" = $obj.id;
-            "takeLocalSnapshotOnly" = $false
+            "takeLocalSnapshotOnly" = $false;
+            "backupType" = $backupType
         })
         $object = api get -v2 data-protect/objects?ids=$($obj.id)
     }
