@@ -96,7 +96,7 @@ function getResults($thisQuery, $thisString=$null){
                             }
                         }
                         $matches = $false
-                        if($null -eq $thisString -or $fileName -match $thisString){
+                        if($null -eq $thisString -or $fileName -match "/$thisString"+'$'){
                             write-host ("{0},{1},{2},{3}" -f $parentName, $objectName, $fileName, $mtime)
                             "{0}`t{1}`t{2}`t{3}`t{4}" -f $jobName, $parentName, $objectName, $fileName, $mtime | Out-File -FilePath foundFiles.tsv -Append
                             $script:fileCount += 1
