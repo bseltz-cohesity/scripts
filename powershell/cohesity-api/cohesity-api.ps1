@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2024.12.31 - Brian Seltzer
+#  Version 2025.01.06 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024.01.14 - reenabled legacy access modes
@@ -15,10 +15,11 @@
 # 2024-09-20 - allow posts to read-only helios cluster (for advanced queries)
 # 2024-10-14 - fixed date formatting
 # 2024-12-31 - added heliosCluster - to remove access cluster ID
+# 2025-01-06 - added Get-Runs function
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2024.12.31'
+$versionCohesityAPI = '2025.01.06'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -821,6 +822,76 @@ function api($method,
             }else{
                 reportError $_ 
             }
+        }
+    }
+}
+
+# Get-Runs function =============================================================================
+
+function Get-Runs($jobId, $endTimeUsecs=$null, $startTimeUsecs=$null, [switch]$includeObjectDetails, $numRuns=1000, [switch]$includeDeleted, [switch]$includeRunning){
+    $lastRunId = 0
+    if(! $endTimeUsecs){
+        $endTimeUsecs = dateToUsecs (Get-Date)
+    }
+    $tail = ''
+    if($startTimeUsecs){
+        $tail = "$($tail)&startTimeUsecs=$($startTimeUsecs)"
+    }
+    if($jobId -match ':'){
+        if(! $includeDeleted){
+            $tail = "$($tail)&excludeNonRestorableRuns=true"
+        }
+        if($includeObjectDetails){
+            $tail = "$($tail)&includeObjectDetails=true"
+        }
+        $thisTail = $tail
+        if(! $includeRunning){
+            $thisTail = "$tail&endTimeUsecs=$endTimeUsecs"
+        }
+        while($True){
+            $runs = api get -v2 "data-protect/protection-groups/$jobId/runs?numRuns=$numRuns&includeTenants=true$thisTail"
+            if($lastRunId -ne 0){
+                $runs.runs = $runs.runs | Where-Object {$_.id -lt $lastRunId}
+            }
+            if(!$runs.runs -or $runs.runs.Count -eq 0 -or $runs.runs[-1].id -eq $lastRunId){
+                break
+            }else{
+                $lastRunId = $runs.runs[-1].id
+                if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
+                    $endTimeUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs
+                }elseif($runs.runs[-1].PSObject.Properties['originalBackupInfo']){
+                    $endTimeUsecs = $runs.runs[-1].originalBackupInfo.endTimeUsecs
+                }else{
+                    $endTimeUsecs = $runs.runs[-1].archivalInfo.archivalTargetResults[0].endTimeUsecs
+                }
+                $thisTail = "$tail&endTimeUsecs=$endTimeUsecs"
+            }
+            $runs.runs
+        }
+    }else{
+        if(! $includeDeleted){
+            $tail = "$($tail)&excludeNonRestoreableRuns=true"
+        }
+        if(! $includeObjectDetails){
+            $tail = "$($tail)&excludeTasks=true"
+        }
+        $thisTail = $tail
+        if(! $includeRunning){
+            $thisTail = "$tail&endTimeUsecs=$endTimeUsecs"
+        }
+        while($True){
+            $runs = api get "protectionRuns?jobId=$jobId&numRuns=$numRuns$thisTail"
+            if($lastRunId -ne 0){
+                $runs = $runs | Where-Object {$_.backupRun.jobRunId -lt $lastRunId}
+            }
+            if(!$runs -or $runs.Count -eq 0 -or $runs[-1].backupRun.jobRunId -eq $lastRunId){
+                break
+            }else{
+                $lastRunId = $runs[-1].backupRun.jobRunId
+                $endTimeUsecs = $runs[-1].backupRun.stats.endTimeUsecs
+                $thisTail = "$tail&endTimeUsecs=$endTimeUsecs"
+            }
+            $runs
         }
     }
 }
