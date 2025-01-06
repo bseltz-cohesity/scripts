@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2025-01-06
+
+* [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added `Get-Runs` function
+
 ## 2025-01-02
 
 * [backupNowCcs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/backupNowCcs) [`Update`] added `-backupType` parameter
