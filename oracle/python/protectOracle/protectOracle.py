@@ -36,6 +36,7 @@ parser.add_argument('-cp', '--channelport', type=int, default=1521)
 parser.add_argument('-l', '--deletelogdays', type=int)
 parser.add_argument('-lh', '--deleteloghours', type=int)
 parser.add_argument('-pm', '--persistmounts', action='store_true')
+parser.add_argument('-na', '--noalert', action='store_true')
 
 args = parser.parse_args()
 
@@ -68,6 +69,7 @@ channelport = args.channelport
 persistmounts = args.persistmounts
 deletelogdays = args.deletelogdays
 deleteloghours = args.deleteloghours
+noalert = args.noalert
 
 if channels is not None and channelnodes is None:
     print('channel node required if setting channels')
@@ -192,7 +194,8 @@ if not job or len(job) < 1:
             "objects": []
         }
     }
-
+    if noalert:
+        job.pop('alertPolicy', None)
     if persistmounts:
         job['oracleParams']['persistMountpoints'] = True
     if paused is True:
