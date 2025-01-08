@@ -838,6 +838,7 @@ function Get-Runs($jobId, $endTimeUsecs=$null, $startTimeUsecs=$null, [switch]$i
         $tail = "$($tail)&startTimeUsecs=$($startTimeUsecs)"
     }
     if($jobId -match ':'){
+        # v2 runs
         if(! $includeDeleted){
             $tail = "$($tail)&excludeNonRestorableRuns=true"
         }
@@ -850,25 +851,22 @@ function Get-Runs($jobId, $endTimeUsecs=$null, $startTimeUsecs=$null, [switch]$i
         }
         while($True){
             $runs = api get -v2 "data-protect/protection-groups/$jobId/runs?numRuns=$numRuns&includeTenants=true$thisTail"
-            if($lastRunId -ne 0){
-                $runs.runs = $runs.runs | Where-Object {$_.id -lt $lastRunId}
-            }
             if(!$runs.runs -or $runs.runs.Count -eq 0 -or $runs.runs[-1].id -eq $lastRunId){
                 break
-            }else{
-                $lastRunId = $runs.runs[-1].id
-                if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
-                    $endTimeUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs
-                }elseif($runs.runs[-1].PSObject.Properties['originalBackupInfo']){
-                    $endTimeUsecs = $runs.runs[-1].originalBackupInfo.endTimeUsecs
-                }else{
-                    $endTimeUsecs = $runs.runs[-1].archivalInfo.archivalTargetResults[0].endTimeUsecs
-                }
-                $thisTail = "$tail&endTimeUsecs=$endTimeUsecs"
             }
-            $runs.runs
+            $runs.runs | Where-Object {$_.id -ne $lastRunId}
+            $lastRunId = $runs.runs[-1].id
+            if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
+                $endTimeUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs
+            }elseif($runs.runs[-1].PSObject.Properties['originalBackupInfo']){
+                $endTimeUsecs = $runs.runs[-1].originalBackupInfo.endTimeUsecs
+            }else{
+                $endTimeUsecs = $runs.runs[-1].archivalInfo.archivalTargetResults[0].endTimeUsecs
+            }
+            $thisTail = "$tail&endTimeUsecs=$endTimeUsecs"
         }
     }else{
+        # v1 runs
         if(! $includeDeleted){
             $tail = "$($tail)&excludeNonRestoreableRuns=true"
         }
@@ -881,17 +879,13 @@ function Get-Runs($jobId, $endTimeUsecs=$null, $startTimeUsecs=$null, [switch]$i
         }
         while($True){
             $runs = api get "protectionRuns?jobId=$jobId&numRuns=$numRuns$thisTail"
-            if($lastRunId -ne 0){
-                $runs = $runs | Where-Object {$_.backupRun.jobRunId -lt $lastRunId}
-            }
             if(!$runs -or $runs.Count -eq 0 -or $runs[-1].backupRun.jobRunId -eq $lastRunId){
                 break
-            }else{
-                $lastRunId = $runs[-1].backupRun.jobRunId
-                $endTimeUsecs = $runs[-1].backupRun.stats.endTimeUsecs
-                $thisTail = "$tail&endTimeUsecs=$endTimeUsecs"
             }
-            $runs
+            $runs | Where-Object {$_.backupRun.jobRunId -ne $lastRunId}
+            $lastRunId = $runs[-1].backupRun.jobRunId
+            $endTimeUsecs = $runs[-1].backupRun.stats.endTimeUsecs
+            $thisTail = "$tail&endTimeUsecs=$endTimeUsecs"
         }
     }
 }
