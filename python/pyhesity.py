@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2024.08.10"""
+"""Cohesity Python REST API Wrapper Module - 2025.01.08"""
 
 ##########################################################################################
 # Change Log
@@ -35,6 +35,7 @@
 # 2024.03.31 - fixed empty return
 # 2024.06.07 - added support for Entra ID (Open ID) authentication
 # 2024.08.10 - added text output mode
+# 2025.01.08 - added getRuns function
 #
 ##########################################################################################
 # Install Notes
@@ -91,9 +92,10 @@ __all__ = ['api_version',
            'setContext',
            'getDate',
            'impersonate',
-           'switchback']
+           'switchback',
+           'getRuns']
 
-api_version = '2024.08.10'
+api_version = '2025.01.08'
 
 COHESITY_API = {
     'APIROOT': '',
@@ -609,6 +611,55 @@ def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1, reporting
         if quiet is None:
             print("invalid api method")
 
+### get protection runs
+def getRuns(jobId, startTimeUsecs=None, endTimeUsecs=None, numRuns=1000, includeObjectDetails=False, includeDeleted=False, includeRunning=False):
+    lastRunId = '0'
+    allruns = []
+    if endTimeUsecs is None:
+        endTimeUsecs = dateToUsecs()
+    tail = ''
+    if startTimeUsecs is not None:
+        tail = '&startTimeUsecs=%s' % startTimeUsecs
+    if ':' in str(jobId):
+        # v2 runs
+        if includeDeleted is False:
+            tail = tail + '&excludeNonRestorableRuns=true'
+        if includeObjectDetails is True:
+            tail = tail + '&includeObjectDetails=true'
+        thisTail = tail
+        if includeRunning is False:
+            thisTail = tail + '&endTimeUsecs=%s' % endTimeUsecs
+        while 1:
+            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&includeTenants=true%s' % (jobId, numRuns, thisTail), v=2)
+            if len(runs['runs']) == 0 or runs['runs'][-1]['id'] == lastRunId:
+                break
+            allruns = allruns + [r for r in runs['runs'] if r['id'] != lastRunId]
+            lastRunId = runs['runs'][-1]['id']
+            if 'localBackupInfo' in runs['runs'][-1]:
+                endTimeUsecs = runs['runs'][-1]['localBackupInfo']['endTimeUsecs']
+            elif 'originalBackupInfo' in runs['runs'][-1]:
+                endTimeUsecs = runs['runs'][-1]['originalBackupInfo']['endTimeUsecs']
+            else:
+                endTimeUsecs = runs['runs'][-1]['archivalInfo']['archivalTargetResults'][0]['endTimeUsecs']
+            thisTail = tail + '&endTimeUsecs=%s' % endTimeUsecs
+    else:
+        # v1 runs
+        if includeDeleted is False:
+            tail = tail + '&excludeNonRestoreableRuns=true'
+        if includeObjectDetails is False:
+            tail = tail + '&excludeTasks=true'
+        thisTail = tail
+        if includeRunning is False:
+            thisTail = tail + '&endTimeUsecs=%s' % endTimeUsecs
+        while 1:
+            runs = api('get', 'protectionRuns?jobId=%s&numRuns=%s%s' % (jobId, numRuns, thisTail))
+            if runs is None or len(runs) == 0 or runs[-1]['backupRun']['jobRunId'] == lastRunId:
+                break
+            allruns = allruns + [r for r in runs if r['backupRun']['jobRunId'] != lastRunId]
+            lastRunId = runs[-1]['backupRun']['jobRunId']
+            endTimeUsecs = runs[-1]['backupRun']['stats']['endTimeUsecs']
+            thisTail = tail + '&endTimeUsecs=%s' % endTimeUsecs
+    return allruns
 
 ### convert usecs to date string
 def usecsToDate(uedate, fmt='%Y-%m-%d %H:%M:%S'):
