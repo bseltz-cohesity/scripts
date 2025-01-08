@@ -58,9 +58,16 @@ if($jobName){
 foreach ($job in $jobs) {
     $endUsecs = $olderThanUsecs
     Write-Host $job.name
+    $lastRunId = 0
     while($True){
-        $runs = api get "protectionRuns?jobId=$($job.id)&excludeTasks=true&excludeNonRestoreableRuns=true&numRuns=$numRuns&endTimeUsecs=$endUsecs"
-        $runCount = $runs.Count
+        $runs = api get "protectionRuns?jobId=$($job.id)&excludeTasks=true&numRuns=$numRuns&endTimeUsecs=$endUsecs" # &excludeNonRestoreableRuns=true
+        
+        if(!$runs -or $runs.Count -eq 0 -or $runs[-1].backupRun.jobRunId -eq $lastRunId){
+            break
+        }else{
+            $lastRunId = $runs[-1].backupRun.jobRunId
+            $endUsecs = $runs[-1].backupRun.stats.endTimeUsecs
+        }
         $runs = $runs | Where-Object { $_.copyRun[0].runStartTimeUsecs -le $olderThanUsecs } | `
                         Where-Object { 'kArchival' -in $_.copyRun.target.type } | `
                         Sort-Object -Property @{Expression = { $_.copyRun[0].runStartTimeUsecs }; Ascending = $True }
@@ -68,7 +75,6 @@ foreach ($job in $jobs) {
         if($newerThan -gt 0){
             $runs = $runs | Where-Object { $_.copyRun[0].runStartTimeUsecs -ge $newerThanUsecs }
         }
-
         foreach ($run in $runs) {
 
             $runDate = usecsToDate $run.copyRun[0].runStartTimeUsecs
@@ -105,11 +111,6 @@ foreach ($job in $jobs) {
                     }
                 }
             }
-        }
-        if($runCount -eq $numRuns){
-            $endUsecs = $runs[0].backupRun.stats.endTimeUsecs - 1
-        }else{
-            break
         }
     }
 }
