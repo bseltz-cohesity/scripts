@@ -1,5 +1,15 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2025-01-08
+
+* [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] added getRuns function
+
+## 2025-01-07
+
+* [expireOldArchives.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/expireOldArchives) [`Fix`] solved paging issue
+* [fixRedundantProtection.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/fixRedndantProtection) [`Update`] added filtering for M365
+* [protectOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/protectOracle) [`Update`] added --noalert option
+
 ## 2025-01-06
 
 * [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added `Get-Runs` function
