@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2025.01.06 - Brian Seltzer
+#  Version 2025.01.08 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024.01.14 - reenabled legacy access modes
@@ -15,11 +15,11 @@
 # 2024-09-20 - allow posts to read-only helios cluster (for advanced queries)
 # 2024-10-14 - fixed date formatting
 # 2024-12-31 - added heliosCluster - to remove access cluster ID
-# 2025-01-06 - added Get-Runs function
+# 2025-01-08 - added Get-Runs function
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2025.01.06'
+$versionCohesityAPI = '2025.01.08'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
