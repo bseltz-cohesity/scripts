@@ -500,15 +500,18 @@ def heliosCluster(clusterName=None, verbose=False):
     if clusterName is not None:
         if isinstance(clusterName, dict) is True:
             clusterName = clusterName['name']
-        accessCluster = [cluster for cluster in CONNECTEDHELIOSCLUSTERS if cluster['name'].lower() == clusterName.lower()]
-        if not accessCluster:
-            print('Cluster %s not connected to Helios' % clusterName)
-            COHESITY_API['LAST_ERROR'] = 'Cluster %s not connected to Helios' % clusterName
+        if clusterName == '-':
+            COHESITY_API['HEADER'].pop('accessClusterId', None)
         else:
-            COHESITY_API['HEADER']['accessClusterId'] = str(accessCluster[0]['clusterId'])
-            COHESITY_API['LAST_ERROR'] = 'OK'
-            if verbose is True:
-                print('Using %s' % clusterName)
+            accessCluster = [cluster for cluster in CONNECTEDHELIOSCLUSTERS if cluster['name'].lower() == clusterName.lower()]
+            if not accessCluster:
+                print('Cluster %s not connected to Helios' % clusterName)
+                COHESITY_API['LAST_ERROR'] = 'Cluster %s not connected to Helios' % clusterName
+            else:
+                COHESITY_API['HEADER']['accessClusterId'] = str(accessCluster[0]['clusterId'])
+                COHESITY_API['LAST_ERROR'] = 'OK'
+                if verbose is True:
+                    print('Using %s' % clusterName)
     else:
         print("\n{0:<20}{1:<36}{2}".format('ClusterID', 'SoftwareVersion', "ClusterName"))
         print("{0:<20}{1:<36}{2}".format('---------', '---------------', "-----------"))
