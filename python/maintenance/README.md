@@ -23,7 +23,7 @@ chmod +x maintenance.py
 
 Place both files in a folder together and run the main script like so:
 
-To start maintenance mode on a source:
+To start maintenance mode now on a source:
 
 ```bash
 ./maintenance.py -v mycluster \
@@ -46,7 +46,7 @@ To schedule maintenance for a future date:
                  -endtime '2025-01-11 05:00:00`
 ```
 
-To end maintenance mode on a source:
+To end maintenance mode now on a source:
 
 ```bash
 ./maintenance.py -v mycluster \
