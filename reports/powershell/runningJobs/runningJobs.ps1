@@ -1,40 +1,75 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-   [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
-   [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
-   [Parameter()][string]$domain = 'local' #local or AD domain
+    [Parameter()][string]$vip = 'helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant = $null,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password = $null,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode = $null,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName = $null,
+    [Parameter()][int]$numRuns = 1000
 )
 
-### source the cohesity-api helper code
-. ./cohesity-api
+# source the cohesity-api helper code
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain
+# authentication =============================================
+# demand clusterName for Helios/MCM
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios/MCM" -ForegroundColor Yellow
+    exit 1
+}
+
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
+        exit 1
+    }
+}
+# end authentication =========================================
 
 $finishedStates = @('kCanceled', 'kSuccess', 'kFailure')
 
-### protection runs
-$runs = api get protectionRuns?numRuns=999999`&excludeTasks=true | sort-object -property {$_.jobName}, {$_.backupRun.stats.startTimeUsecs} #| ?{ $_.copyRun.length -gt 1 }
-$overallstatus = 'No Jobs Running'
-"`nRunning Jobs:"
-"=============`n"
-"JobName,StartTime,TargetType,Status" | Out-File -FilePath ./runningJobs.csv
-foreach ($run in $runs){
-   $jobName = $run.jobName
-   $runStartTime = $run.backupRun.stats.startTimeUsecs
-   $startTime = usecsToDate $runStartTime
+# $jobs = api get "protectionJobs"
+$jobs = api get -v2 "data-protect/protection-groups?useCachedData=false&lastRunAnyStatus=Running&isDeleted=false&includeTenants=true&includeLastRunInfo=true"
+$jobs = $jobs.protectionGroups
 
-    foreach ($copyRun in $run.copyRun){
-        if ($copyRun.status -notin $finishedStates){
-            $overallstatus = $null
-            $targetType = $copyRun.target.type.substring(1)
-            $status = $copyRun.status.substring(1)
-            "{0,-20} {1,-22} {2,-10} {3}" -f ($jobName, $startTime, $targetType, $status)
-            "$jobName, $startTime, $targetType, $status" | Out-File -FilePath ./runningJobs.csv -Append
+"jobName,startTime,targetType,status" | Out-File -FilePath ./runningJobs.csv
+
+foreach($job in $jobs | Sort-Object -Property name){
+    $v1JobId = ($job.id -split ':')[2]
+    $runs = Get-Runs -jobId $v1JobId -includeRunning
+    foreach ($run in $runs){
+        $jobName = $run.jobName
+        $runStartTime = $run.backupRun.stats.startTimeUsecs
+        $startTime = usecsToDate $runStartTime
+        foreach ($copyRun in $run.copyRun){
+            if ($copyRun.status -notin $finishedStates){
+                $overallstatus = $null
+                $targetType = $copyRun.target.type.substring(1)
+                $status = $copyRun.status.substring(1)
+                "{0,-20} {1,-22} {2,-10} {3}" -f ($jobName, $startTime, $targetType, $status)
+                "$jobName,$startTime,$targetType,$status" | Out-File -FilePath ./runningJobs.csv -Append
+            }
         }
     }
 }
+
 $overallstatus
 $overallstatus | Out-File -FilePath ./runningJobs.csv -Append
 "`nOutput written to runningJobs.csv`n"
