@@ -166,7 +166,8 @@ function apiauth($vip='helios.cohesity.com',
                  [string] $clientId = $null,
                  [string] $directoryId = $null,
                  [string] $scope = 'openid profile',
-                 [boolean] $entraIdAuthentication = $false){
+                 [boolean] $entraIdAuthentication = $false,
+                 [switch] $dbg){
     apidrop -quiet
     if($entraIdAuthentication -eq $True){
         $EntraId = $True
@@ -359,7 +360,7 @@ function apiauth($vip='helios.cohesity.com',
         try {
             $url = 'https://' + $vip + '/login'
             if($PSVersionTable.PSEdition -eq 'Core'){
-                $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SslProtocol Tls12 -SessionVariable session
+                $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session -ContentType "application/json; charset=utf-8" -SslProtocol Tls12
             }else{
                 $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session -ContentType "application/json; charset=utf-8"
             }
@@ -839,7 +840,7 @@ function Get-Runs($jobId, $endTimeUsecs=$null, $startTimeUsecs=$null, [switch]$i
     }
     if($jobId -match ':'){
         # v2 runs
-        if(! $includeDeleted){
+        if(! $includeRunning -and ! $includeDeleted){
             $tail = "$($tail)&excludeNonRestorableRuns=true"
         }
         if($includeObjectDetails){
@@ -863,11 +864,14 @@ function Get-Runs($jobId, $endTimeUsecs=$null, $startTimeUsecs=$null, [switch]$i
             }else{
                 $endTimeUsecs = $runs.runs[-1].archivalInfo.archivalTargetResults[0].endTimeUsecs
             }
+            if($includeRunning -and ! $includeDeleted){
+                $tail = "$($tail)&excludeNonRestorableRuns=true"
+            }
             $thisTail = "$tail&endTimeUsecs=$endTimeUsecs"
         }
     }else{
         # v1 runs
-        if(! $includeDeleted){
+        if(! $includeRunning -and ! $includeDeleted){
             $tail = "$($tail)&excludeNonRestoreableRuns=true"
         }
         if(! $includeObjectDetails){
@@ -884,6 +888,9 @@ function Get-Runs($jobId, $endTimeUsecs=$null, $startTimeUsecs=$null, [switch]$i
             }
             $runs | Where-Object {$_.backupRun.jobRunId -ne $lastRunId}
             $lastRunId = $runs[-1].backupRun.jobRunId
+            if($includeRunning -and ! $includeDeleted){
+                $tail = "$($tail)&excludeNonRestoreableRuns=true"
+            }
             $endTimeUsecs = $runs[-1].backupRun.stats.endTimeUsecs
             $thisTail = "$tail&endTimeUsecs=$endTimeUsecs"
         }

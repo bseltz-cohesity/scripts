@@ -12,7 +12,7 @@ param (
     [Parameter()][string]$mfaCode = $null,
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName = $null,
-    [Parameter()][int]$numRuns = 1000
+    [Parameter()][int]$numRuns = 100
 )
 
 # source the cohesity-api helper code
@@ -53,7 +53,7 @@ $jobs = $jobs.protectionGroups
 
 foreach($job in $jobs | Sort-Object -Property name){
     $v1JobId = ($job.id -split ':')[2]
-    $runs = Get-Runs -jobId $v1JobId -includeRunning
+    $runs = Get-Runs -jobId $v1JobId -includeRunning -includeDeleted
     foreach ($run in $runs){
         $jobName = $run.jobName
         $runStartTime = $run.backupRun.stats.startTimeUsecs
