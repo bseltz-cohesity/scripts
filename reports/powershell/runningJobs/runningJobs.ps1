@@ -17,6 +17,11 @@ param (
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+if($cohesity_api.api_version -lt '2025.01.10'){
+    Write-Host "This script requires cohesity-api.ps1 version 2025.01.10 or later" -foregroundColor Yellow
+    Write-Host "Please download it from https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api" -ForegroundColor Yellow
+    exit
+}
 
 # authentication =============================================
 # demand clusterName for Helios/MCM
