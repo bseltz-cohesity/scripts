@@ -9,6 +9,7 @@
 * [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added `Get-Runs` function
 * [archiveQueue.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/archiveQueue) [`Update`] updated to use the Get-Runs function
 * [runningJobs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/runningJobs) [`Update`] updated to use the Get-Runs function
+* [maintenance.py](https://github.com/cohesity/community-automation-samples/tree/main/python/maintenance) [`New`] set maintenance mode on protection sources
 
 ## 2025-01-08
 
