@@ -19,7 +19,11 @@ param (
     [Parameter()][array]$excludeEnvironment,
     [Parameter()][switch]$replicationOnly,
     [Parameter()][int]$timeoutSeconds = 600,
-    [Parameter()][switch]$dbg
+    [Parameter()][switch]$dbg,
+    [Parameter()][array]$filters,
+    [Parameter()][string]$filterList,
+    [Parameter()][string]$filterProperty,
+    [Parameter()][switch]$showRecord
 )
 
 # gather list from command line params and file
@@ -42,6 +46,8 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
     }
     return ($items | Sort-Object -Unique)
 }
+
+$filterTextList = @(gatherList -FilePath $filterList -Name 'filter text list' -Required $false)
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -275,6 +281,60 @@ foreach($cluster in $selectedClusters | Sort-Object -Property clusterName){
             if($_.$column -is [System.Array]){
                 $_.$column = [string](@($_.$column | Sort-Object -Unique) -join '; ')
             }
+        }
+    }
+
+    if($showRecord){
+        $csv[0] | ConvertTo-Json -Depth 99
+        exit
+    }
+    # apply filters
+    if($filters){
+        foreach($filter in $filters){
+            if($filter -match '<='){
+                $fattrib, $fvalue = $filter -split "<="
+            }elseif($filter -match '>='){
+                $fattrib, $fvalue = $filter -split ">="
+            }elseif($filter -match '!='){
+                $fattrib, $fvalue = $filter -split "!="
+            }elseif($filter -match '=='){
+                $fattrib, $fvalue = $filter -split "=="
+            }elseif($filter -match '>'){
+                $fattrib, $fvalue = $filter -split ">"
+            }elseif($filter -match '<'){
+                $fattrib, $fvalue = $filter -split "<"
+            }else{
+                Write-Host "`nInvalid filter format, should be one of ==, !=, <=, >=, <, >`n" -ForegroundColor Yellow
+                exit
+            }
+            $fattrib = $fattrib.Trim()
+            $fvalue = $fvalue.Trim()
+            if($csv -and ! $csv[0].PSObject.Properties[$fattrib]){
+                Write-Host "`nInvalid filter attribute: $fattrib`nUse -showRecord to see attribute names`n" -ForegroundColor Yellow
+                exit
+            }else{
+                if($filter -match '<='){
+                    $csv = $csv | Where-Object {[double]$_.$fattrib -le [double]$fvalue}
+                }elseif($filter -match '>='){
+                    $csv = $csv | Where-Object {[double]$_.$fattrib -ge [double]$fvalue}
+                }elseif($filter -match '!='){
+                    $csv = $csv | Where-Object {$_.$fattrib -ne $fvalue}
+                }elseif($filter -match '=='){
+                    $csv = $csv | Where-Object {$_.$fattrib -eq $fvalue}
+                }elseif($filter -match '>'){
+                    $csv = $csv | Where-Object {[double]$_.$fattrib -gt [double]$fvalue}
+                }elseif($filter -match '<'){
+                    $csv = $csv | Where-Object {[double]$_.$fattrib -lt [double]$fvalue}
+                }
+            }
+        }
+    }
+    if($filterList -and $filterProperty){
+        if($csv -and ! $csv[0].PSObject.Properties[$filterProperty]){
+            Write-Host "`nInvalid filter attribute: $filterProperty`nUse -showRecord to see attribute names`n" -ForegroundColor Yellow
+            exit
+        }else{
+            $csv = $csv | Where-Object {$_.$filterProperty -in $filterTextList}
         }
     }
     
