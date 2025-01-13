@@ -1,5 +1,15 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2025-01-13
+
+* [heliosCSVReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/heliosV2/powershell/heliosCSVReport) [`Update`] added filters functionality
+
+## 2025-01-10
+
+* [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added `Get-Runs` function
+* [archiveQueue.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/archiveQueue) [`Update`] updated to use the Get-Runs function
+* [runningJobs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/runningJobs) [`Update`] updated to use the Get-Runs function
+
 ## 2025-01-08
 
 * [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] added getRuns function
@@ -9,10 +19,6 @@
 * [expireOldArchives.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/expireOldArchives) [`Fix`] solved paging issue
 * [fixRedundantProtection.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/fixRedndantProtection) [`Update`] added filtering for M365
 * [protectOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/protectOracle) [`Update`] added --noalert option
-
-## 2025-01-06
-
-* [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added `Get-Runs` function
 
 ## 2025-01-02
 
