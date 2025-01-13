@@ -625,11 +625,12 @@ def getRuns(jobId, startTimeUsecs=None, endTimeUsecs=None, numRuns=1000, include
         tail = '&startTimeUsecs=%s' % startTimeUsecs
     if ':' in str(jobId):
         # v2 runs
-        if includeDeleted is False:
+        if includeRunning is False and includeDeleted is False:
             tail = tail + '&excludeNonRestorableRuns=true'
         if includeObjectDetails is True:
             tail = tail + '&includeObjectDetails=true'
         thisTail = tail
+        origtail = tail
         if includeRunning is False:
             thisTail = tail + '&endTimeUsecs=%s' % endTimeUsecs
         while 1:
@@ -644,14 +645,17 @@ def getRuns(jobId, startTimeUsecs=None, endTimeUsecs=None, numRuns=1000, include
                 endTimeUsecs = runs['runs'][-1]['originalBackupInfo']['endTimeUsecs']
             else:
                 endTimeUsecs = runs['runs'][-1]['archivalInfo']['archivalTargetResults'][0]['endTimeUsecs']
+            if includeRunning is True and includeDeleted is False:
+                tail = origtail + '&excludeNonRestorableRuns=true'
             thisTail = tail + '&endTimeUsecs=%s' % endTimeUsecs
     else:
         # v1 runs
-        if includeDeleted is False:
+        if includeRunning is False and includeDeleted is False:
             tail = tail + '&excludeNonRestoreableRuns=true'
         if includeObjectDetails is False:
             tail = tail + '&excludeTasks=true'
         thisTail = tail
+        origtail = tail
         if includeRunning is False:
             thisTail = tail + '&endTimeUsecs=%s' % endTimeUsecs
         while 1:
@@ -661,6 +665,8 @@ def getRuns(jobId, startTimeUsecs=None, endTimeUsecs=None, numRuns=1000, include
             allruns = allruns + [r for r in runs if r['backupRun']['jobRunId'] != lastRunId]
             lastRunId = runs[-1]['backupRun']['jobRunId']
             endTimeUsecs = runs[-1]['backupRun']['stats']['endTimeUsecs']
+            if includeRunning is True and includeDeleted is False:
+                tail = origtail + '&excludeNonRestoreableRuns=true'
             thisTail = tail + '&endTimeUsecs=%s' % endTimeUsecs
     return allruns
 
