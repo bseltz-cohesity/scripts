@@ -58,7 +58,7 @@ $jobs = $jobs.protectionGroups
 
 foreach($job in $jobs | Sort-Object -Property name){
     $v1JobId = ($job.id -split ':')[2]
-    $runs = Get-Runs -jobId $v1JobId -includeRunning -includeDeleted
+    $runs = Get-Runs -jobId $v1JobId -includeRunning
     foreach ($run in $runs){
         $jobName = $run.jobName
         $runStartTime = $run.backupRun.stats.startTimeUsecs
