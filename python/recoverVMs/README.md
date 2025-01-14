@@ -80,8 +80,9 @@ To restore a VM to a new location:
 
 ## Other Parameters
 
-* -vm, --vmname: Name of VM to recover (repeat for multiple)
-* -vl, --vmlist: text file of VM names to recover (one per line)
+* -vm, --vmname: (optional) Name of VM to recover (repeat for multiple)
+* -vl, --vmlist: (optional) text file of VM names to recover (one per line)
+* -j, --jobname: (optional) recover all VMs from a protection group
 * -vc, --vcentername: (optional) name of vcenter to restore to
 * -tn, --taskname: (optional) name of recovery task
 * -dc, --datacentername: (optional) name of vsphere data center to restore to

@@ -33,6 +33,7 @@ parser.add_argument('-t', '--recoverytype', type=str, choices=['InstantRecovery'
 parser.add_argument('-l', '--listrecoverypoints', action='store_true')
 parser.add_argument('-r', '--recoverypoint', type=str, default=None)
 parser.add_argument('-tn', '--taskname', type=str, default=None)
+parser.add_argument('-j', '--jobname', type=str, default=None)
 
 args = parser.parse_args()
 
@@ -61,6 +62,7 @@ recoverytype = args.recoverytype
 listrecoverypoints = args.listrecoverypoints
 recoverypoint = args.recoverypoint
 taskname = args.taskname
+jobname = args.jobname
 
 if vcentername is not None:
     if datacentername is None:
@@ -92,9 +94,6 @@ def gatherList(param=None, filename=None, name='items', required=True):
         exit()
     return items
 
-
-vmnames = gatherList(vmnames, vmlist, name='VMs', required=True)
-
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 if recoverypoint is not None:
@@ -117,6 +116,21 @@ if mcm or vip.lower() == 'helios.cohesity.com':
 if apiconnected() is False:
     print('authentication failed')
     exit(1)
+
+if jobname is not None:
+    jobs = api('get', 'protectionJobs?environments=kVMware')
+    if jobs is not None:
+        job = [j for j in jobs if j['name'].lower() == jobname.lower()]
+        if len(job) == 0:
+            print('protection group %s not found' % jobname)
+            exit(1)
+        search = api('get', '/searchvms?jobIds=%s' % job[0]['id'])
+        vmnames = [o['vmDocument']['objectName'] for o in search['vms']]
+    else:
+        print('protection group %s not found' % jobname)
+        exit(1)
+
+vmnames = gatherList(vmnames, vmlist, name='VMs', required=True)
 
 if taskname is None:
     taskname = "Recover-VM_%s" % now.strftime("%Y-%m-%d_%H-%M-%S")
