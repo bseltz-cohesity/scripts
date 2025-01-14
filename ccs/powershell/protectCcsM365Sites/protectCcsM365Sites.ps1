@@ -58,11 +58,6 @@ if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]:
 # authenticate
 apiauth -username $username -regionid $region
 
-# $sessionUser = api get sessionUser
-# $tenantId = $sessionUser.profiles[0].tenantId
-# $regions = api get -mcmv2 dms/tenants/regions?tenantId=$tenantId
-# $regionList = $regions.tenantRegionInfoList.regionId -join ','
-
 $policy = (api get -mcmv2 data-protect/policies?types=DMaaSPolicy).policies | Where-Object name -eq $policyName
 if(!$policy){
     write-host "Policy $policyName not found" -ForegroundColor Yellow
@@ -77,7 +72,6 @@ if(!$rootSource){
     exit
 }
 
-# $regionId = $rootSource[0].sourceInfoList[0].regionId
 $rootSourceId = $rootSource[0].sourceInfoList[0].sourceId
 
 $source = api get "protectionSources?id=$($rootSourceId)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false" # -region $regionId
@@ -88,19 +82,28 @@ if(!$objectsNode){
     exit
 }
 
-$nameIndex = @{}
-$webUrlIndex = @{}
-$idIndex = @{}
-$unprotectedIndex = @()
+$script:nameIndex = @{}
+$script:webUrlIndex = @{}
+$script:idIndex = @{}
+$script:unprotectedIndex = @()
+function getNodes($node){
+    if($node.PSObject.Properties['nodes']){
+        foreach($node in $node.nodes){
+            getNodes($node)
+        }
+    }else{
+        $script:nameIndex[$node.protectionSource.name] = $node.protectionSource.id
+        $script:idIndex["$($node.protectionSource.id)"] = $node.protectionSource.name
+        $script:webUrlIndex[$node.protectionSource.office365ProtectionSource.webUrl] = $node.protectionSource.id
+        if(($node.unprotectedSourcesSummary | Where-Object environment -eq 'kO365Sharepoint').leavesCount -eq 1){
+            $script:unprotectedIndex = @($script:unprotectedIndex + $node.protectionSource.id)
+        }
+    }
+}
 $objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false" # -region $regionId
 while(1){
     foreach($node in $objects.nodes){
-        $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
-        $idIndex["$($node.protectionSource.id)"] = $node.protectionSource.name
-        $webUrlIndex[$node.protectionSource.office365ProtectionSource.webUrl] = $node.protectionSource.id
-        if(($node.unprotectedSourcesSummary | Where-Object environment -eq 'kO365Sharepoint').leavesCount -eq 1){
-            $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
-        }
+        getNodes($node)
     }
     $cursor = $objects.nodes[-1].protectionSource.id
     $objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false&afterCursorEntityId=$cursor" # -region $regionId
@@ -112,19 +115,19 @@ while(1){
 if($objectsToAdd.Count -eq 0){
     $useIds = $True
     if($objectMatch){
-        $webUrlIndex.Keys | Where-Object {$_ -match $objectMatch -and $webUrlIndex[$_] -in $unprotectedIndex} | ForEach-Object{
-            $objectsToAdd = @($objectsToAdd + $webUrlIndex[$_])
+        $script:webUrlIndex.Keys | Where-Object {$_ -match $objectMatch -and $script:webUrlIndex[$_] -in $script:unprotectedIndex} | ForEach-Object{
+            $objectsToAdd = @($objectsToAdd + $script:webUrlIndex[$_])
         }
-        $nameIndex.Keys | Where-Object {$_ -match $objectMatch -and $webUrlIndex[$_] -in $unprotectedIndex} | ForEach-Object{
-            $objectsToAdd = @($objectsToAdd + $nameIndex[$_])
+        $script:nameIndex.Keys | Where-Object {$_ -match $objectMatch -and $script:webUrlIndex[$_] -in $script:unprotectedIndex} | ForEach-Object{
+            $objectsToAdd = @($objectsToAdd + $script:nameIndex[$_])
         }
         $objectsToAdd = @($objectsToAdd | Sort-Object -Unique)
     }else{
-        if($autoselect -gt $unprotectedIndex.Count){
-            $autoselect = $unprotectedIndex.Count
+        if($autoselect -gt $script:unprotectedIndex.Count){
+            $autoselect = $script:unprotectedIndex.Count
         }
         0..($autoselect - 1) | ForEach-Object {
-            $objectsToAdd = @($objectsToAdd + $unprotectedIndex[$_])
+            $objectsToAdd = @($objectsToAdd + $script:unprotectedIndex[$_])
         }
     }
 }
@@ -133,15 +136,17 @@ foreach($objName in $objectsToAdd){
     $objId = $null
     if($useIds -eq $True){
         $objId = $objName
-        $objName = $idIndex["$objId"]
+        $objName = $script:idIndex["$objId"]
     }else{
-        if($webUrlIndex.ContainsKey($objName)){
-            $objId = $webUrlIndex[$objName]
-        }elseif($nameIndex.ContainsKey($objName)){
-            $objId = $nameIndex[$objName]
+        if($script:webUrlIndex.ContainsKey($objName)){
+            $objId = $script:webUrlIndex[$objName]
+        }elseif($script:nameIndex.ContainsKey($objName)){
+            $objId = $script:nameIndex[$objName]
         }
     }
-    if($objId -and $objId -in $unprotectedIndex){
+    Write-Host $objId
+    Write-Host ($objId -in $script:unprotectedIndex)
+    if($objId -and $objId -in $script:unprotectedIndex){
         $protectionParams = @{
             "policyId"         = $policy.id;
             "startTime"        = @{
@@ -187,8 +192,8 @@ foreach($objName in $objectsToAdd){
             )
         }
         Write-Host "Protecting $objName"
-        $null = api post -v2 data-protect/protected-objects $protectionParams # -region $regionId
-    }elseif($objId -and $objId -notin $unprotectedIndex){
+        $null = api post -v2 data-protect/protected-objects $protectionParams
+    }elseif($objId -and $objId -notin $script:unprotectedIndex){
         Write-Host "Site $objName already protected" -ForegroundColor Magenta
     }else{
         Write-Host "Site $objName not found" -ForegroundColor Yellow
