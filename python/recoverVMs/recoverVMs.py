@@ -172,13 +172,15 @@ else:
     if overwrite is True:
         restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['overwriteExistingVm'] = True
 
-for vmname in vmnames:
+recoverMessages = []
+
+for vmname in sorted(vmnames):
     ### find the VM to recover
     vms = api('get', 'data-protect/search/protected-objects?snapshotActions=RecoverVMs,RecoverVApps,RecoverVAppTemplates&searchString=%s&environments=kVMware' % vmname, v=2)
     vms = [vm for vm in vms['objects'] if vm['name'].lower() == vmname.lower()]
     if len(vms) == 0:
         print('vm %s not found' % vmname)
-        exit()
+        exit(1)
 
     ### select a snapshot
     selectedsnapshot = None
@@ -195,17 +197,19 @@ for vmname in vmnames:
                         break
                 else:
                     selectedsnapshot = snapshot
-                    restoreParams['vmwareParams']['objects'].append({
-                        "snapshotId": selectedsnapshot['id']
-                    })
                     break
 
     if listrecoverypoints:
-        exit()
+        exit(0)
 
     if selectedsnapshot is None:
         print('No recovery point found for %s at %s' % (vmname, usecsToDate(recoverypointUsecs)))
-        exit()
+        exit(1)
+    else:
+        recoverMessages.append('Recovering %s' % vmname)
+        restoreParams['vmwareParams']['objects'].append({
+            "snapshotId": selectedsnapshot['id']
+        })
 
 if vcentername:
     # select vCenter
@@ -214,20 +218,20 @@ if vcentername:
     vCenter = [v for v in vCenterList if v['displayName'].lower() == vcentername.lower()]
     if len(vCenterSource) == 0 or len(vCenter) == 0:
         print('vcenter %s not found' % vcentername)
-        exit()
+        exit(1)
     vCenterId = vCenter[0]['id']
 
     # select data center
     dataCenterSource = [d for d in vCenterSource[0]['nodes'][0]['nodes'] if d['protectionSource']['name'].lower() == datacentername.lower()]
     if len(dataCenterSource) == 0:
         print('Datacenter %s not found' % datacentername)
-        exit()
+        exit(1)
 
     # select host
     hostSource = [h for h in dataCenterSource[0]['nodes'][0]['nodes'] if h['protectionSource']['name'].lower() == vhost.lower()]
     if len(hostSource) == 0:
         print('Host %s not found' % vhost)
-        exit()
+        exit(1)
 
     # select resource pool
     resourcePoolSource = [r for r in hostSource[0]['nodes'] if r['protectionSource']['vmWareProtectionSource']['type'] == 'kResourcePool']
@@ -239,7 +243,7 @@ if vcentername:
     datastores = [d for d in api('get', '/datastores?resourcePoolId=%s&vCenterId=%s' % (resourcePoolId, vCenterId)) if d['vmwareEntity']['name'].lower() == datastorename.lower()]
     if len(datastores) == 0:
         print('Datastore %s not found' % datastorename)
-        exit()
+        exit(1)
 
     vmFolderId = {}
 
@@ -259,7 +263,7 @@ if vcentername:
     folderId = vmFolderId.get(foldername.lower(), None)
     if folderId is None:
         print('folder %s not found' % foldername)
-        exit()
+        exit(1)
 
     # select network
     network = None
@@ -267,7 +271,7 @@ if vcentername:
         network = [n for n in api('get', '/networkEntities?resourcePoolId=%s&vCenterId=%s' % (resourcePoolId, vCenterId)) if n['displayName'].lower() == networkname.lower()]
         if len(network) == 0:
             print('network %s not found' % networkname)
-            exit()
+            exit(1)
 
     restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['recoveryTargetConfig']['recoverToNewSource'] = True
     restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['recoveryTargetConfig']['newSourceConfig'] = {
@@ -327,6 +331,7 @@ if prefix != '':
         'prefix': prefix,
     }
 
-print('Recovering VMs')
+for recoverMessage in recoverMessages:
+    print(recoverMessage)
 
 result = api('post', 'data-protect/recoveries', restoreParams, v=2)
