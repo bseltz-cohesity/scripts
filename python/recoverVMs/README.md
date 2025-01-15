@@ -97,6 +97,9 @@ To restore a VM to a new location:
 * -p, --poweron: (optional) power on the VM
 * -l, --listrecoverypoints: (optional) show available recovery points (for first VM only)
 * -r, --recoverypoint: (optional) restore from a specific date, e.g. '2021-04-12 23:45:00' (default is latest backup)
+* -o, --overwrite: (optional) overwrite existing VM
+* -diff, --differentialrecovery: (optional) overwrite existing VM with differential recovery (works with CopyRecovery only)
+* -k, --keepexistingvm: (optional) rename and keep existing VM
 
 ## Specifying a Folder
 

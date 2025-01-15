@@ -34,6 +34,9 @@ parser.add_argument('-l', '--listrecoverypoints', action='store_true')
 parser.add_argument('-r', '--recoverypoint', type=str, default=None)
 parser.add_argument('-tn', '--taskname', type=str, default=None)
 parser.add_argument('-j', '--jobname', type=str, default=None)
+parser.add_argument('-o', '--overwrite', action='store_true')
+parser.add_argument('-diff', '--differentialrecovery', action='store_true')
+parser.add_argument('-k', '--keepexistingvm', action='store_true')
 
 args = parser.parse_args()
 
@@ -63,6 +66,9 @@ listrecoverypoints = args.listrecoverypoints
 recoverypoint = args.recoverypoint
 taskname = args.taskname
 jobname = args.jobname
+overwrite = args.overwrite
+diff = args.differentialrecovery
+keep = args.keepexistingvm
 
 if vcentername is not None:
     if datacentername is None:
@@ -155,6 +161,16 @@ restoreParams = {
         }
     }
 }
+
+# overwrite options
+if keep is True:
+    restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['powerOffAndRenameExistingVm'] = True
+else:
+    if recoverytype == 'CopyRecovery' and diff is True:
+        overwrite = True
+        restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['attemptDifferentialRestore'] = True
+    if overwrite is True:
+        restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['overwriteExistingVm'] = True
 
 for vmname in vmnames:
     ### find the VM to recover
