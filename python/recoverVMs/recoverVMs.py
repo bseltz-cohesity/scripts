@@ -22,7 +22,7 @@ parser.add_argument('-vl', '--vmlist', type=str, default=None)
 parser.add_argument('-vc', '--vcentername', type=str, default=None)
 parser.add_argument('-dc', '--datacentername', type=str, default=None)
 parser.add_argument('-vh', '--vhost', type=str, default=None)
-parser.add_argument('-f', '--foldername', type=str, default='vm')
+parser.add_argument('-f', '--foldername', type=str, default=None)
 parser.add_argument('-n', '--networkname', type=str, default=None)
 parser.add_argument('-s', '--datastorename', type=str, default=None)
 parser.add_argument('-pre', '--prefix', type=str, default='')
@@ -249,17 +249,19 @@ if vcentername:
 
     def walkVMFolders(node, parent=None, fullPath=''):
         fullPath = "%s/%s" % (fullPath, node['protectionSource']['name'].lower())
+        vmFolderId[fullPath] = node['protectionSource']['id']
+        vmFolderId["%s" % fullPath[1:]] = node['protectionSource']['id']
         if len(fullPath.split('vm/')) > 1:
             relativePath = fullPath.split('vm/', 2)[1]
-            vmFolderId[fullPath] = node['protectionSource']['id']
             vmFolderId[relativePath] = node['protectionSource']['id']
             vmFolderId["/%s" % relativePath] = node['protectionSource']['id']
-            vmFolderId["%s" % fullPath[1:]] = node['protectionSource']['id']
         if 'nodes' in node:
             for subnode in node['nodes']:
                 walkVMFolders(subnode, node, fullPath)
 
     walkVMFolders(vCenterSource[0])
+    if foldername is None:
+        foldername = '/%s/datacenters/%s/vm' % (vcentername.lower(), datacentername.lower())
     folderId = vmFolderId.get(foldername.lower(), None)
     if folderId is None:
         print('folder %s not found' % foldername)
