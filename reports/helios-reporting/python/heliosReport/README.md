@@ -42,6 +42,9 @@ Place both files in a folder together and run the main script like so:
 * -c, --clustername: (optional) limit to one or more cluster names (repeat for multiple)
 * -z, --timezone: (optional) default is 'America/New_York'
 * -sr, --showrecord: (optional) show format of one record and exit
+* -env, --environment: (optional) filter on environment (e.g. kVMware) repeat for multiple
+* -on, --objectname: (optional) filter on object name (repeat for multiple)
+* -ol, --objectlist: (optional) text file of object names to filter on (one per line)
 * -f, --filter: (optional) one or more filters, e.g. -f 'numSnapshots==0' -f 'protectionStatus==protected'
 * -fl, --filterlist: (optional) text file of items to search for (e.g. server names)
 * -fp, --filterproperty: (optional) property to search for items (e.g. objectName)
@@ -54,17 +57,17 @@ You can filter on any valid attribute name and value. Comparisons can be one of 
 
 To see what the attribute names are, use the -sr, --showrecord option. This will display one record and exit, so that you can see what the attribute names and value types are
 
-You can include multiple filters like: `-f 'groupName==My Protection Group' -f 'logicalSize>=10000000000' -f 'objectName==server1.mydomain.net'`
+You can include multiple filters like: `-f 'groupName==My Protection Group' -f 'logicalSize>=10000000000'`
 
 ## Using filter list
 
-You can provide a text file (of server names for example) to search for by using --filterlist and --filterproperty. Create a text file of objects you want to search for (for example, myservers.txt) and then you can do, for example:
+You can provide a text file (of server names for example) to search for by using --filterlist and --filterproperty. Create a text file of objects you want to search for (for example, myProtectionGroups.txt) and then you can do, for example:
 
 ```bash
 ./heliosReport.py -u myusername@mydomain.net `
                   -r 'Protected Objects' `
-                  -fp objectName `
-                  -fl ./myservers.txt
+                  -fp groupName `
+                  -fl ./myProtectionGroups.txt
 ```
 
 ## The Python Helper Module - pyhesity.py

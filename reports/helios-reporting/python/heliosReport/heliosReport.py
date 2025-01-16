@@ -31,6 +31,9 @@ parser.add_argument('-fl', '--filterlist', type=str, default=None)
 parser.add_argument('-fp', '--filterproperty', type=str, default=None)
 parser.add_argument('-o', '--outputpath', type=str, default='.')
 parser.add_argument('-of', '--outputfile', type=str, default=None)
+parser.add_argument('-env', '--environment', action='append', type=str)
+parser.add_argument('-on', '--objectname', action='append', type=str)
+parser.add_argument('-ol', '--objectlist', type=str, default=None)
 
 args = parser.parse_args()
 
@@ -54,7 +57,9 @@ filterproperty = args.filterproperty
 outputpath = args.outputpath
 outputfile = args.outputfile
 maxrecords = args.maxrecords
-
+environments = args.environment
+objectnames = args.objectname
+objectlist = args.objectlist
 
 # gather server list
 def gatherList(param=None, filename=None, name='items', required=True):
@@ -73,6 +78,7 @@ def gatherList(param=None, filename=None, name='items', required=True):
 
 
 filterTextList = gatherList(filename=filterlist, name='filter text list', required=False)
+objectnames = gatherList(filename=objectlist, param=objectnames, name='object list', required=False)
 
 multiplier = 1024 * 1024 * 1024  # GiB
 if units.lower() == 'mib':
@@ -152,6 +158,22 @@ if report is None or len(report) == 0:
     exit()
 reportNumber = report[0]['componentIds'][0]
 title = report[0]['title']
+
+# object filter
+foundobjects = []
+globalIds = []
+if objectnames is not None and len(objectnames) > 0:
+    for objectname in objectnames:
+        foundObject = False
+        search = api('get','data-protect/search/objects?searchString=%s' % objectname, v=2)
+        if search is not None and 'objects' in search and search['objects'] is not None:
+            objects = [o for o in search['objects'] if o['name'].lower() == objectname.lower()]
+            if len(objects) > 0:
+                foundobjects.append(objects[0]['name'])
+                globalIds.append(objects[0]['globalId'])
+                foundObject = True
+        if foundObject is False:
+            print('*** object %s not found ***' % objectname)
 
 # TSV output
 
@@ -342,6 +364,30 @@ for cluster in sorted(selectedClusters, key=lambda c: c['name'].lower()):
                 "size": maxrecords,
             }
         }
+
+        # environment filter
+        if environments is not None and len(environments) > 0:
+            reportParams['filters'].append({
+                "attribute": "environment",
+                "filterType": "In",
+                "inFilterParams": {
+                    "attributeDataType": "String",
+                    "stringFilterValues": environments,
+                    "attributeLabels": environments
+                }
+            })
+        
+        # objectname filter
+        if len(foundobjects) > 0:
+            reportParams['filters'].append({
+                "attribute": "objectUuid",
+                "filterType": "In",
+                "inFilterParams": {
+                    "attributeDataType": "String",
+                    "stringFilterValues": globalIds,
+                    "attributeLabels": foundobjects
+                }
+            })
         preview = api('post', 'components/%s/preview' % reportNumber, reportParams, reportingv2=True)
         if len(preview['component']['data']) == maxrecords:
             print('Hit limit of records. Try reducing --dayrange (e.g. --dayrange 1)')
