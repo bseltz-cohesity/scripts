@@ -1,5 +1,18 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2025-01-16
+
+* [heliosReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/python/heliosReport) [`Update`] added -env, --environment, -on, --objectname, -ol, --objectlist pre-filtering parameters
+
+## 2025-01-15
+
+* [recoverVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/recoverVMs) [`Update`] added overwrite handaling
+
+## 2025-01-14
+
+* [vmRecoveryReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/vmRecoveryReport) [`New`] report on VM recoveries
+* [protectCcsM365Sites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365Sites) [`Fix`] fixed issue with nested sites
+
 ## 2025-01-13
 
 * [heliosCSVReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/heliosV2/powershell/heliosCSVReport) [`Update`] added filters functionality
