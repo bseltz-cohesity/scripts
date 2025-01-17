@@ -92,7 +92,7 @@ To restore a VM to a new location:
 * -dc, --datacentername: (optional) name of vsphere data center to restore to
 * -vh, --vhost: (optional) name of vSphere cluster or host to restore to
 * -s, --datastorename: (optional) name of datastore to restore to
-* -f, --foldername: (optional) name of vSphere folder to restore to
+* -f, --foldername: (optional) name of vSphere folder to restore to e.g. MyFolder/MySubFolder
 * -n, --networkname: (optional) name of VM network to attach to
 * -m, --preservemacaddress: (optional) keep same mac address
 
@@ -115,10 +115,10 @@ To restore a VM to a new location:
 
 You can specify a folder to restore to using any of the following formats:
 
-* /vCenter.mydomain.net/Datacenters/DataCenter1/vm/MyFolder/MySubFolder
-* vCenter.mydomain.net/Datacenters/DataCenter1/vm/MyFolder/MySubFolder
-* /MyFolder/MySubFolder
 * MyFolder/MySubFolder
+* /MyFolder/MySubFolder
+* MyDatacenter/vm/MyFolder/MySubFolder
+* /MyDatacenter/vm/MyFolder/MySubFolder
 
 ## The Python Helper Module - pyhesity.py
 

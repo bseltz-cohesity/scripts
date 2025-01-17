@@ -255,19 +255,20 @@ if vcentername:
 
     def walkVMFolders(node, parent=None, fullPath=''):
         fullPath = "%s/%s" % (fullPath, node['protectionSource']['name'].lower())
-        vmFolderId[fullPath] = node['protectionSource']['id']
-        vmFolderId["%s" % fullPath[1:]] = node['protectionSource']['id']
-        if len(fullPath.split('vm/')) > 1:
-            relativePath = fullPath.split('vm/', 2)[1]
-            vmFolderId[relativePath] = node['protectionSource']['id']
-            vmFolderId["/%s" % relativePath] = node['protectionSource']['id']
+        if '/vm' in fullPath and node['protectionSource']['vmWareProtectionSource']['type'] == 'kFolder':
+            vmFolderId[fullPath] = node['protectionSource']['id']
+            vmFolderId["%s" % fullPath[1:]] = node['protectionSource']['id']
+            if len(fullPath.split('vm/')) > 1:
+                relativePath = fullPath.split('vm/', 2)[1]
+                vmFolderId[relativePath] = node['protectionSource']['id']
+                vmFolderId["/%s" % relativePath] = node['protectionSource']['id']
         if 'nodes' in node:
             for subnode in node['nodes']:
                 walkVMFolders(subnode, node, fullPath)
 
-    walkVMFolders(vCenterSource[0])
+    walkVMFolders(dataCenterSource[0])
     if foldername is None:
-        foldername = '/%s/datacenters/%s/vm' % (vcentername.lower(), datacentername.lower())
+        foldername = '/%s/vm' % datacentername.lower()
     folderId = vmFolderId.get(foldername.lower(), None)
     if folderId is None:
         print('folder %s not found' % foldername)
