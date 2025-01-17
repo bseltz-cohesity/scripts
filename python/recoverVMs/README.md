@@ -78,28 +78,37 @@ To restore a VM to a new location:
 * -c, --clustername: (optional) helios/mcm cluster to connect to (repeat for multiple)
 * -mfa, --mfacode: (optional) MFA code for authentication
 
-## Other Parameters
+## Selection Parameters
 
 * -vm, --vmname: (optional) Name of VM to recover (repeat for multiple)
 * -vl, --vmlist: (optional) text file of VM names to recover (one per line)
 * -j, --jobname: (optional) recover all VMs from a protection group
+* -l, --listrecoverypoints: (optional) show available recovery points (for first VM only)
+* -r, --recoverypoint: (optional) restore from a specific date, e.g. '2021-04-12 23:45:00' (default is latest backup)
+
+## Alternate Location Parameters
+
 * -vc, --vcentername: (optional) name of vcenter to restore to
-* -tn, --taskname: (optional) name of recovery task
 * -dc, --datacentername: (optional) name of vsphere data center to restore to
 * -vh, --vhost: (optional) name of vSphere cluster or host to restore to
 * -s, --datastorename: (optional) name of datastore to restore to
 * -f, --foldername: (optional) name of vSphere folder to restore to
 * -n, --networkname: (optional) name of VM network to attach to
-* -x, --detachnetwork: (optional) leave network disconnected
 * -m, --preservemacaddress: (optional) keep same mac address
-* -t, --recoverytype: (optional) InstantRecovery or CopyRecovery (default is InstantRecovery)
-* -pre, --prefix: (optional) prefix to apply to VM name
-* -p, --poweron: (optional) power on the VM
-* -l, --listrecoverypoints: (optional) show available recovery points (for first VM only)
-* -r, --recoverypoint: (optional) restore from a specific date, e.g. '2021-04-12 23:45:00' (default is latest backup)
+
+## Existing VM Handling Parameters
+
 * -o, --overwrite: (optional) overwrite existing VM
 * -k, --keepexistingvm: (optional) rename and keep existing VM
 * -diff, --differentialrecovery: (optional) overwrite existing VM with differential recovery (works with CopyRecovery only)
+
+## Other Parameters
+
+* -pre, --prefix: (optional) prefix to apply to VM name
+* -p, --poweron: (optional) power on the VM
+* -x, --detachnetwork: (optional) leave network disconnected
+* -t, --recoverytype: (optional) InstantRecovery or CopyRecovery (default is InstantRecovery)
+* -tn, --taskname: (optional) name of recovery task
 * -coe, --continueonerror: (optional) continue if errors are encountered
 
 ## Specifying a Folder
