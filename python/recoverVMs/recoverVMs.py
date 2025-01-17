@@ -37,6 +37,7 @@ parser.add_argument('-j', '--jobname', type=str, default=None)
 parser.add_argument('-o', '--overwrite', action='store_true')
 parser.add_argument('-diff', '--differentialrecovery', action='store_true')
 parser.add_argument('-k', '--keepexistingvm', action='store_true')
+parser.add_argument('-coe', '--continueoneerror', action='store_true')
 
 args = parser.parse_args()
 
@@ -69,6 +70,7 @@ jobname = args.jobname
 overwrite = args.overwrite
 diff = args.differentialrecovery
 keep = args.keepexistingvm
+continueoneerror = args.continueoneerror
 
 if vcentername is not None:
     if datacentername is None:
@@ -99,6 +101,7 @@ def gatherList(param=None, filename=None, name='items', required=True):
         print('no %s specified' % name)
         exit()
     return items
+
 
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
@@ -162,6 +165,9 @@ restoreParams = {
     }
 }
 
+if continueoneerror is True:
+    restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['continueOnError'] = True
+
 # overwrite options
 if keep is True:
     restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['powerOffAndRenameExistingVm'] = True
@@ -175,14 +181,14 @@ else:
 recoverMessages = []
 
 for vmname in sorted(vmnames):
-    ### find the VM to recover
+    # find the VM to recover
     vms = api('get', 'data-protect/search/protected-objects?snapshotActions=RecoverVMs,RecoverVApps,RecoverVAppTemplates&searchString=%s&environments=kVMware' % vmname, v=2)
     vms = [vm for vm in vms['objects'] if vm['name'].lower() == vmname.lower()]
     if len(vms) == 0:
         print('vm %s not found' % vmname)
         exit(1)
 
-    ### select a snapshot
+    # select a snapshot
     selectedsnapshot = None
     for vm in vms:
         snapshots = api('get', 'data-protect/objects/%s/snapshots' % vm['id'], v=2)

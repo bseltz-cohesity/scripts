@@ -100,6 +100,7 @@ To restore a VM to a new location:
 * -o, --overwrite: (optional) overwrite existing VM
 * -k, --keepexistingvm: (optional) rename and keep existing VM
 * -diff, --differentialrecovery: (optional) overwrite existing VM with differential recovery (works with CopyRecovery only)
+* -coe, --continueonerror: (optional) continue if errors are encountered
 
 ## Specifying a Folder
 
