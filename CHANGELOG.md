@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2025-01-17
+
+* [recoverVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/recoverVMs) [`Update`] added -coe, --continueonerror option, updated folder enumeration
+
 ## 2025-01-16
 
 * [heliosReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/python/heliosReport) [`Update`] added -env, --environment, -on, --objectname, -ol, --objectlist pre-filtering parameters
