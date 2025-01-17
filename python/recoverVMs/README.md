@@ -110,6 +110,7 @@ To restore a VM to a new location:
 * -t, --recoverytype: (optional) InstantRecovery or CopyRecovery (default is InstantRecovery)
 * -tn, --taskname: (optional) name of recovery task
 * -coe, --continueonerror: (optional) continue if errors are encountered
+* -w, --wait: (optional) wait for recoveries to end and report status
 
 ## Specifying a Folder
 

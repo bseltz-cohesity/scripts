@@ -4,6 +4,7 @@
 ### import pyhesity wrapper module
 from pyhesity import *
 from datetime import datetime
+from time import sleep
 
 ### command line arguments
 import argparse
@@ -38,6 +39,7 @@ parser.add_argument('-o', '--overwrite', action='store_true')
 parser.add_argument('-diff', '--differentialrecovery', action='store_true')
 parser.add_argument('-k', '--keepexistingvm', action='store_true')
 parser.add_argument('-coe', '--continueoneerror', action='store_true')
+parser.add_argument('-w', '--wait', action='store_true')
 
 args = parser.parse_args()
 
@@ -71,6 +73,7 @@ overwrite = args.overwrite
 diff = args.differentialrecovery
 keep = args.keepexistingvm
 continueoneerror = args.continueoneerror
+wait = args.wait
 
 if vcentername is not None:
     if datacentername is None:
@@ -343,4 +346,30 @@ if prefix != '':
 for recoverMessage in recoverMessages:
     print(recoverMessage)
 
-result = api('post', 'data-protect/recoveries', restoreParams, v=2)
+recovery = api('post', 'data-protect/recoveries', restoreParams, v=2)
+
+# wait for restores to complete
+finishedStates = ['Canceled', 'Succeeded', 'Failed']
+if 'id' not in recovery:
+    print('recovery error occured')
+    if 'messages' in recovery and len(recovery['messages']) > 0:
+        print(recovery['messages'][0])
+    exit(1)
+
+if wait is True:
+    print("Waiting for recoveries to complete...")
+    while 1:
+        sleep(30)
+        recoveryTask = api('get', 'data-protect/recoveries/%s?includeTenants=true' % recovery['id'], v=2)
+        status = recoveryTask['status']
+        if status is not None and status in finishedStates:
+            break
+    print("Recoveries ended with status: %s" % status)
+    if status == 'Failed':
+        if 'messages' in recoveryTask and len(recoveryTask['messages']) > 0:
+            print(recoveryTask['messages'][0])
+    if status == 'Succeeded':
+        exit(0)
+    else:
+        exit(1)
+exit(0)
