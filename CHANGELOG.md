@@ -2,7 +2,7 @@
 
 ## 2025-01-17
 
-* [recoverVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/recoverVMs) [`Update`] added -coe, --continueonerror option, updated folder enumeration
+* [recoverVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/recoverVMs) [`Update`] added -coe, --continueonerror option, -w, --wait option, updated folder enumeration
 
 ## 2025-01-16
 
