@@ -96,7 +96,7 @@ To restore a VM to a new location:
 * -n, --networkname: (optional) name of VM network to attach to
 * -m, --preservemacaddress: (optional) keep same mac address
 
-## Existing VM Handling Parameters
+## Overwrite Parameters
 
 * -o, --overwrite: (optional) overwrite existing VM
 * -k, --keepexistingvm: (optional) rename and keep existing VM
