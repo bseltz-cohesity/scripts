@@ -63,7 +63,7 @@ parseStats $logicalSizeStats.dataPointVec 'logicalSize'
 
 $lastStatReported = $false
 foreach($date in $stats.Keys | Sort-Object -Descending){
-    $date
+    # $date
     $capacity = $stats[$date].capacity
     $consumed = $stats[$date].consumed
     $dataIn = $stats[$date].dataIn
