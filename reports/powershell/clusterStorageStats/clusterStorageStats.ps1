@@ -63,6 +63,7 @@ parseStats $logicalSizeStats.dataPointVec 'logicalSize'
 
 $lastStatReported = $false
 foreach($date in $stats.Keys | Sort-Object -Descending){
+    $date
     $capacity = $stats[$date].capacity
     $consumed = $stats[$date].consumed
     $dataIn = $stats[$date].dataIn
@@ -70,8 +71,15 @@ foreach($date in $stats.Keys | Sort-Object -Descending){
     $logicalSize = $stats[$date].logicalSize
     $free = $capacity - $consumed
     $pctUsed = [math]::Round(100 * $consumed / $capacity, 0)
-    $storageReduction = [math]::Round($logicalSize / $consumed, 1)
-    $dataReduction = [math]::Round($dataIn / $dataWritten, 1)
+    $storageReduction = 1
+    if($consumed -gt 0){
+        $storageReduction = [math]::Round($logicalSize / $consumed, 1)
+    }
+    $dataReduction = 1
+    if($dataWritten -gt 0){
+        $dataReduction = [math]::Round($dataIn / $dataWritten, 1)
+    }
+    
     if(!$lastStatReported){
         $lastStatReported = $True
         "`nStats for $($cluster.name):`n"
