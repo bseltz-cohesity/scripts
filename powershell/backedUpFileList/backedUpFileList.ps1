@@ -1,4 +1,4 @@
-# version 2024.06.05
+# version 2025.01.22
 # usage: ./backedUpFileList.ps1 -vip mycluster \
 #                               -username myuser \
 #                               -domain mydomain.net \
@@ -109,10 +109,12 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
                     if($mtime -ge $daysAgo -or $newerThan -eq 0){
                         $Script:fileCount += 1
                         "{0} ({1}) [{2} bytes]" -f $entry.fullPath, $mtime, $filesize | Tee-Object -FilePath $outputfile -Append
+                        """{0}"",""{1}"",""{2}""" -f $entry.fullPath, $mtime, $filesize | Out-File -FilePath $csvfile -Append
                     }
                 }else{
                     $Script:fileCount += 1
-                    "{0}" -f $entry.fullPath | Tee-Object -FilePath $outputfile -Append  
+                    "{0}" -f $entry.fullPath | Tee-Object -FilePath $outputfile -Append
+                    """{0}"","""",""""" -f $entry.fullPath | Out-File -FilePath $csvfile -Append
                 }
             }
         }
@@ -147,6 +149,9 @@ function showFiles($doc, $version){
     $sourceServerString = $sourceServer.Replace('\','-').Replace('/','-')
     $outputfile = $(Join-Path -Path $PSScriptRoot -ChildPath "backedUpFiles-$($version.instanceId.jobInstanceId)-$($sourceServerString)-$versionDate.txt")
     $null = Remove-Item -Path $outputfile -Force -ErrorAction SilentlyContinue
+    $csvfile = $(Join-Path -Path $PSScriptRoot -ChildPath "backedUpFiles-$($version.instanceId.jobInstanceId)-$($sourceServerString)-$versionDate.csv")
+    """Path"",""Last Modified"",""Bytes""" | Out-File -FilePath $csvfile
+    $null = Remove-Item -Path $csvfile -Force -ErrorAction SilentlyContinue
     if(! $version.instanceId.PSObject.PRoperties['attemptNum']){
         $attemptNum = 0
     }else{

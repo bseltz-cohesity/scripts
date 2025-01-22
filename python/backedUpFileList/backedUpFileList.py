@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2023.09.07
+# version 2025.01.22
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -66,7 +66,7 @@ newerthan = args.newerthan
 forceIndex = args.forceindex
 
 
-def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None, cookie=None):
+def listdir(dirPath, instance, f, csv, volumeInfoCookie=None, volumeName=None, cookie=None):
     global fileCount
     thisDirPath = quote_plus(dirPath).replace('%2F%2F', '%2F')
     if cookie is not None:
@@ -83,7 +83,7 @@ def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None, cookie
         for entry in sorted(dirList['entries'], key=lambda e: e['name']):
             try:
                 if entry['type'] == 'kDirectory':
-                    listdir('%s/%s' % (dirPath, entry['name']), instance, f, volumeInfoCookie, volumeName)
+                    listdir('%s/%s' % (dirPath, entry['name']), instance, f, csv, volumeInfoCookie, volumeName)
                 else:
                     # entry['fullPath'] = entry['fullPath'].encode('ascii', 'replace').decode('ascii')
                     if statfile is True:
@@ -94,14 +94,16 @@ def listdir(dirPath, instance, f, volumeInfoCookie=None, volumeName=None, cookie
                             fileCount += 1
                             print('%s (%s) [%s bytes]' % (entry['fullPath'], mtime, filesize))
                             f.write('%s (%s) [%s bytes]\n' % (entry['fullPath'], mtime, filesize))
+                            csv.write('"%s","%s","%s"\n' % (entry['fullPath'], mtime, filesize))
                     else:
                         fileCount += 1
                         print('%s' % entry['fullPath'])
                         f.write('%s\n' % entry['fullPath'])
+                        csv.write('"%s","",""\n' % entry['fullPath'])
             except Exception:
                 pass
     if dirList and 'cookie' in dirList:
-        listdir('%s' % dirPath, instance, f, volumeInfoCookie, volumeName, dirList['cookie'])
+        listdir('%s' % dirPath, instance, f, csv, volumeInfoCookie, volumeName, dirList['cookie'])
 
 
 def showFiles(doc, version):
@@ -138,7 +140,8 @@ def showFiles(doc, version):
 
     fsourceserver = sourceserver.replace('/', '-').replace('\\', '-')
     f = codecs.open('backedUpFiles-%s-%s-%s.txt' % (fsourceserver, version['instanceId']['jobInstanceId'], fileDateString), 'w', 'utf-8')
-
+    csv = codecs.open('backedUpFiles-%s-%s-%s.csv' % (fsourceserver, version['instanceId']['jobInstanceId'], fileDateString), 'w', 'utf-8')
+    csv.write('"Path","Last Modified","Bytes"\n')
     volumeTypes = [1, 6]
     backupType = doc['backupType']
     if backupType in volumeTypes:
@@ -147,11 +150,12 @@ def showFiles(doc, version):
             volumeInfoCookie = volumeList['volumeInfoCookie']
             for volume in sorted(volumeList['volumeInfos'], key=lambda v: v['name']):
                 volumeName = quote_plus(volume['name'])
-                listdir(startpath, instance, f, volumeInfoCookie, volumeName)
+                listdir(startpath, instance, f, csv, volumeInfoCookie, volumeName)
     else:
-        listdir(startpath, instance, f)
+        listdir(startpath, instance, f, csv)
     print('\n%s files found' % fileCount)
     f.close()
+    csv.close()
 
 
 if sourceservers is None or len(sourceservers) == 0:
