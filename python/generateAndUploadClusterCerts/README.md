@@ -4,6 +4,8 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This script generates a new certificate from each primary cluster specificied (using the primary cluster's CA) and uploads the generated certificates to the target vault cluster, so that agents can registered with the target cluster.
 
+Contributor: Guna Chidambaram
+
 ## Download the script
 
 You can download the scripts using the following commands:
