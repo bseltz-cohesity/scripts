@@ -73,10 +73,10 @@ $o365Users | ForEach-Object {
 
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     "{0}" -f $job.name
-    $lastRun = (api get -v2 "data-protect/protection-groups/$($job.id)/runs/?numRuns=2&includeObjectDetails=true&endTimeUsecs=$endTimeUsecs").runs | Where-Object {$_.localBackupInfo.status -ne 'Running'}
+    $lastRun = (api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=2&includeObjectDetails=true&endTimeUsecs=$endTimeUsecs").runs | Where-Object {$_.localBackupInfo.status -ne 'Running'}
     if($lastRun.Count -gt 0){
         $lastRun = $lastRun[0]
-        $lastRun.localBackupInfo.status
+        # $lastRun.localBackupInfo.status
         foreach($entity in $lastRun.objects | Sort-Object -Property {$_.object.name}){
             $objectName = $entity.object.name
             if($entity.object.environment -eq 'kO365' -and $entity.object.objectType -eq 'kUser'){
