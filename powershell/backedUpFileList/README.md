@@ -92,5 +92,5 @@ Or simply use the latest version:
 * -startPath: (optional) start listing files at path (default is /)
 * -noIndex: (optional) force do not use index
 * -forceIndex: (optional) force use index
-* -showStats: (optional) include file date and size in the output
+* -showStats: (optional) include last modified date and size (in bytes) in the output
 * -newerThan: (optional) only list files that were added/modified in the last X days
