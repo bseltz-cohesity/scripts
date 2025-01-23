@@ -1,4 +1,4 @@
-# version 2025.01.22
+# version 2025.01.23
 # usage: ./backedUpFileList.ps1 -vip mycluster \
 #                               -username myuser \
 #                               -domain mydomain.net \
@@ -108,6 +108,7 @@ function listdir($dirPath, $instance, $volumeInfoCookie=$null, $volumeName=$null
                     $mtime = usecsToDate $entry.fstatInfo.mtimeUsecs
                     if($mtime -ge $daysAgo -or $newerThan -eq 0){
                         $Script:fileCount += 1
+                        $Script:totalSize += $filesize
                         "{0} ({1}) [{2} bytes]" -f $entry.fullPath, $mtime, $filesize | Tee-Object -FilePath $outputfile -Append
                         """{0}"",""{1}"",""{2}""" -f $entry.fullPath, $mtime, $filesize | Out-File -FilePath $csvfile -Append
                     }
@@ -145,6 +146,7 @@ function showFiles($doc, $version){
     }
     $Script:filesFound = $False
     $Script:fileCount = 0
+    $Script:totalSize = 0
     $versionDate = (usecsToDate $version.instanceId.jobStartTimeUsecs).ToString('yyyy-MM-dd_hh-mm-ss')
     $sourceServerString = $sourceServer.Replace('\','-').Replace('/','-')
     $outputfile = $(Join-Path -Path $PSScriptRoot -ChildPath "backedUpFiles-$($version.instanceId.jobInstanceId)-$($sourceServerString)-$versionDate.txt")
@@ -183,7 +185,26 @@ function showFiles($doc, $version){
     if($Script:filesFound -eq $False){
         "No Files Found" | Tee-Object -FilePath $outputfile -Append
     }else{
-        "`n$($Script:fileCount) files found" | Tee-Object -FilePath $outputfile -Append
+        if($statfile -eq $True){
+            $unitsize = [math]::Round($Script:totalSize / 1024, 2)
+            $unit = 'KiB'
+            if($unitsize -gt 1024){
+                $unitsize = [math]::Round($unitsize / 1024, 2)
+                $unit = 'MiB'
+            }
+            if($unitsize -gt 1024){
+                $unitsize = [math]::Round($unitsize / 1024, 2)
+                $unit = 'GiB'
+            }
+            if($unitsize -gt 1024){
+                $unitsize = [math]::Round($unitsize / 1024, 2)
+                $unit = 'TiB'
+            }
+            "`n$($Script:fileCount) files found ($($Script:totalSize) bytes) [$unitsize $unit]" | Tee-Object -FilePath $outputfile -Append
+        }else{
+            "`n$($Script:fileCount) files found" | Tee-Object -FilePath $outputfile -Append
+        }
+        
     }
 }
 
