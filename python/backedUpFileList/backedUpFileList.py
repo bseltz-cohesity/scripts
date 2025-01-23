@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """backed up files list for python"""
 
-# version 2025.01.22
+# version 2025.01.23
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -68,6 +68,7 @@ forceIndex = args.forceindex
 
 def listdir(dirPath, instance, f, csv, volumeInfoCookie=None, volumeName=None, cookie=None):
     global fileCount
+    global totalSize
     thisDirPath = quote_plus(dirPath).replace('%2F%2F', '%2F')
     if cookie is not None:
         if volumeName is not None:
@@ -92,6 +93,7 @@ def listdir(dirPath, instance, f, csv, volumeInfoCookie=None, volumeName=None, c
                         mtimeusecs = entry['fstatInfo']['mtimeUsecs']
                         if newerthan == 0 or mtimeusecs > timeAgo(newerthan, 'days'):
                             fileCount += 1
+                            totalSize += filesize
                             print('%s (%s) [%s bytes]' % (entry['fullPath'], mtime, filesize))
                             f.write('%s (%s) [%s bytes]\n' % (entry['fullPath'], mtime, filesize))
                             csv.write('"%s","%s","%s"\n' % (entry['fullPath'], mtime, filesize))
@@ -109,7 +111,9 @@ def listdir(dirPath, instance, f, csv, volumeInfoCookie=None, volumeName=None, c
 def showFiles(doc, version):
     global useLibrarian
     global fileCount
+    global totalSize
     filecount = 0
+    totalSize = 0
 
     if 'numEntriesIndexed' not in version or version['numEntriesIndexed'] == 0:
         useLibrarian = ''  # False
@@ -153,7 +157,21 @@ def showFiles(doc, version):
                 listdir(startpath, instance, f, csv, volumeInfoCookie, volumeName)
     else:
         listdir(startpath, instance, f, csv)
-    print('\n%s files found' % fileCount)
+    if statfile is True:
+        unitsize = round(totalSize / 1024, 2)
+        unit = 'KiB'
+        if unitsize > 1024:
+            unitsize = round(unitsize / 1024, 2)
+            unit = 'MiB'
+        if unitsize > 1024:
+            unitsize = round(unitsize / 1024, 2)
+            unit = 'GiB'
+        if unitsize > 1024:
+            unitsize = round(unitsize / 1024, 2)
+            unit = 'TiB'
+        print('\n%s files found (%s bytes) [%s %s]' % (fileCount, totalSize, unitsize, unit))
+    else:
+        print('\n%s files found' % fileCount)
     f.close()
     csv.close()
 
@@ -169,6 +187,7 @@ else:
 
 useLibrarian = '&useLibrarian=true'  # True
 fileCount = 0
+totalSize = 0
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode)
