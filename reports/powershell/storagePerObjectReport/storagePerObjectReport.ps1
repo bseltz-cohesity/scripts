@@ -160,7 +160,7 @@ function reportStorage(){
         if($job.isActive -ne $True){
             $origin = 'replica'
         }
-        if($job.environment -in @('kVMware', 'kAD') -or ($job.environment -eq 'kPhysical' -and $job.physicalParams.protectionType -eq 'kVolume')){
+        if($job.environment -in @('kVMware', 'kAD', 'kHyperV') -or ($job.environment -eq 'kPhysical' -and $job.physicalParams.protectionType -eq 'kVolume')){
             if($job.environment -eq 'kAD'){
                 $entityType = 'kPhysical'
             }else{
@@ -334,7 +334,7 @@ function reportStorage(){
                                     $objects[$objId]['alloc'] = $snap.snapshotInfo.stats.logicalSizeBytes
                                 }
                             }
-                            if($objId -in $objects.Keys -and $objects[$objId]['fetb'] -eq 0 -and ($job.environment -in @('kVMware', 'kAD') -or ($job.environment -eq 'kPhysical' -and $job.physicalParams.protectionType -eq 'kVolume'))){
+                            if($objId -in $objects.Keys -and $objects[$objId]['fetb'] -eq 0 -and ($job.environment -in @('kVMware', 'kAD', 'kHyperV') -or ($job.environment -eq 'kPhysical' -and $job.physicalParams.protectionType -eq 'kVolume'))){
                                 if($dbg){
                                     Write-Host "    getting fetb"
                                 }
@@ -343,6 +343,8 @@ function reportStorage(){
                                 if($vms){
                                     if($job.environment -eq 'kVMware'){
                                         $vmbytes = $vms[0].vmDocument.objectId.entity.vmwareEntity.frontEndSizeInfo.sizeBytes
+                                    }elseif($job.environment -eq 'kHyperV'){
+                                        $vmbytes = $vms[0].vmDocument.objectId.entity.hypervEntity.vmInfo.physicalSizeInBytes
                                     }else{
                                         $vmbytes = $vms[0].vmDocument.objectId.entity.sizeInfo.value.sourceDataSizeBytes
                                     }
@@ -359,7 +361,7 @@ function reportStorage(){
                                 }
                             }
                             if($snap -and $objId -in $objects.Keys -and $snap.snapshotInfo.stats.PSObject.Properties['logicalSizeBytes'] -and $snap.snapshotInfo.stats.logicalSizeBytes -gt $objects[$objId]['logical']){
-                                if($objects[$objId]['logical'] -eq 0 -or ($job.environment -notin @('kVMware', 'kAD') -and ($job.environment -ne 'kPhysical' -and $job.physicalParams.protectionType -ne 'kVolume'))){
+                                if($objects[$objId]['logical'] -eq 0 -or ($job.environment -notin @('kVMware', 'kAD', 'kHyperV') -and ($job.environment -ne 'kPhysical' -and $job.physicalParams.protectionType -ne 'kVolume'))){
                                     $objects[$objId]['logical'] = $snap.snapshotInfo.stats.logicalSizeBytes
                                 }
                             }
@@ -574,7 +576,7 @@ function reportStorage(){
                     $fqObjectName = "$($sourceName)/$($thisObject['name'])" -replace '//', '/'
                 }
                 $alloc = toUnits $thisObject['logical']
-                if($job.environment -in @('kVMware', 'kAD') -or ($job.environment -eq 'kPhysical' -and $job.physicalParams.protectionType -eq 'kVolume')){
+                if($job.environment -in @('kVMware', 'kAD', 'kHyperV') -or ($job.environment -eq 'kPhysical' -and $job.physicalParams.protectionType -eq 'kVolume')){
                     $alloc = toUnits $thisObject['alloc']
                 }
                 $sumObjectsUsed += $thisObject['logical']
