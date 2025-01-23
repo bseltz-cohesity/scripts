@@ -1,5 +1,10 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2025-01-23
+
+* [backedUpFileList.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backedUpFileList) [`Update`] Added CSV output and total folder size
+* [backedUpFileList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/backedUpFileList) [`Update`] Added CSV output and total folder size
+
 ## 2025-01-17
 
 * [recoverVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/recoverVMs) [`Update`] added -coe, --continueonerror option, -w, --wait option, updated folder enumeration
