@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Storage Per Object Report version 2024.10.23 for Python"""
+"""Storage Per Object Report version 2025.01.23 for Python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -44,7 +44,7 @@ skipdeleted = args.skipdeleted
 debug = args.debug
 includearchives = args.includearchives
 
-scriptVersion = '2024-10-23 (Python)'
+scriptVersion = '2025-01-23 (Python)'
 
 if vips is None or len(vips) == 0:
     vips = ['helios.cohesity.com']
@@ -200,7 +200,7 @@ def reportStorage():
             if jobReduction == 0:
                 jobReduction = 1
 
-            if job['environment'] in ['kVMware', 'kAD'] or (job['environment'] == 'kPhysical' and job['physicalParams']['protectionType'] == 'kVolume'):
+            if job['environment'] in ['kVMware', 'kAD', 'kHyperV'] or (job['environment'] == 'kPhysical' and job['physicalParams']['protectionType'] == 'kVolume'):
                 if job['environment'] == 'kAD':
                     entityType = 'kPhysical'
                 else:
@@ -290,7 +290,7 @@ def reportStorage():
                                     if objId in objects:
                                         if snap is None and 'logicalSizeBytes' in archivalInfo['stats'] and archivalInfo['stats']['logicalSizeBytes'] > objects[objId]['archiveLogical']:
                                             objects[objId]['archiveLogical'] = archivalInfo['stats']['logicalSizeBytes']
-                                        if objects[objId]['fetb'] == 0 and (job['environment'] in ['kVMware', 'kAD'] or (job['environment'] == 'kPhysical' and job['physicalParams']['protectionType'] == 'kVolume')):
+                                        if objects[objId]['fetb'] == 0 and (job['environment'] in ['kVMware', 'kAD', 'kHyperV'] or (job['environment'] == 'kPhysical' and job['physicalParams']['protectionType'] == 'kVolume')):
                                             if vmsearch is not None and 'vms' in vmsearch and vmsearch['vms'] is not None and len(vmsearch['vms']) > 0:
                                                 vms = [vm for vm in vmsearch['vms'] if vm['vmDocument']['objectName'].lower() == object['object']['name'].lower()]
                                                 if len(vms) > 0:
@@ -299,13 +299,15 @@ def reportStorage():
                                                         tagAttrs = [a for a in vms[0]['vmDocument']['attributeMap'] if 'VMware_tag' in a['xKey']]
                                                         if tagAttrs is not None and len(tagAttrs) > 0:
                                                             objects[objId]['vmTags'] = ';'.join([a['xValue'] for a in tagAttrs])
+                                                    elif job['environment'] == 'kHyperV':
+                                                        vmbytes = vms[0]['vmDocument']['objectId']['entity']['hypervEntity']['vmInfo']['physicalSizeInBytes']
                                                     else:
                                                         vmbytes = vms[0]['vmDocument']['objectId']['entity']['sizeInfo'][0]['value']['sourceDataSizeBytes']
                                                     objects[objId]['logical'] = vmbytes
                                                     objects[objId]['fetb'] = vmbytes
 
                                         if snap is not None and 'logicalSizeBytes' in snap['snapshotInfo']['stats'] and snap['snapshotInfo']['stats']['logicalSizeBytes'] > objects[objId]['logical']:
-                                            if objects[objId]['logical'] == 0 or (job['environment'] not in ['kVMware', 'kAD'] and job['environment'] != 'kPhysical' and job['physicalParams']['protectionType'] != 'kVolume'):
+                                            if objects[objId]['logical'] == 0 or (job['environment'] not in ['kVMware', 'kAD', 'kHyperV'] and job['environment'] != 'kPhysical' and job['physicalParams']['protectionType'] != 'kVolume'):
                                                 objects[objId]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
                                         if snap is not None and job['environment'] == 'kVMware' and snap['snapshotInfo']['stats']['logicalSizeBytes'] < objects[objId]['logical'] and snap['snapshotInfo']['stats']['logicalSizeBytes'] > 0:
                                             objects[objId]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
@@ -418,7 +420,7 @@ def reportStorage():
                                                 jobReduction = round(jobFESize / cloudJob['storageConsumed'], 1)
                     totalArchived = round(totalArchived / multiplier, 1)
                     alloc = objFESize
-                    if job['environment'] in ['kVMware', 'kAD'] or (job['environment'] == 'kPhysical' and job['physicalParams']['protectionType'] == 'kVolume'):
+                    if job['environment'] in ['kVMware', 'kAD', 'kHyperV'] or (job['environment'] == 'kPhysical' and job['physicalParams']['protectionType'] == 'kVolume'):
                         alloc = round(thisObject['alloc'] / multiplier, 1)
                     sumObjectsUsed += round(thisObject['logical'] / multiplier, 1)
                     # print(sumObjectsUsed)
