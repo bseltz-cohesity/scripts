@@ -69,7 +69,7 @@ csvfileName = '%s/storagePerObjectReport-%s.csv' % (folder, datestring)
 clusterStatsFileName = '%s/storagePerObjectReport-%s-clusterstats.csv' % (folder, datestring)
 csv = codecs.open(csvfileName, 'w', 'utf-8')
 clusterStats = codecs.open(clusterStatsFileName, 'w', 'utf-8')
-csv.write('"Cluster Name","Origin","Stats Age (Days)","Protection Group","Tenant","Storage Domain ID","Storage Domain Name","Environment","Source Name","Object Name","Front End Allocated %s","Front End Used %s","%s Stored (Before Reduction)","%s Stored (After Reduction)","%s Stored (After Reduction and Resiliency)","Reduction Ratio","%s Change Last %s Days (After Reduction and Resiliency)","Snapshots","Log Backups","Oldest Backup","Newest Backup","Newest DataLock Expiry","Archive Count","Oldest Archive","%s Archived","%s per Archive Target","Description","VM Tags"\n' % (units, units, units, units, units, units, growthdays, units, units))
+csv.write('"Cluster Name","Origin","Stats Age (Days)","Protection Group","Tenant","Storage Domain ID","Storage Domain Name","Environment","Source Name","Object Name","Front End Allocated %s","Front End Used %s","%s Stored (Before Reduction)","%s Stored (After Reduction)","%s Stored (After Reduction and Resiliency)","Reduction Ratio","%s Change Last %s Days (After Reduction and Resiliency)","Snapshots","Log Backups","Oldest Backup","Newest Backup","Newest DataLock Expiry","Archive Count","Oldest Archive","%s Archived","%s per Archive Target","Description","VM Tags","Object ID"\n' % (units, units, units, units, units, units, growthdays, units, units))
 clusterStats.write('"Cluster Name","Total Used %s","BookKeeper Used %s","Total Unaccounted Usage %s","Total Unaccounted Percent","Garbage %s","Garbage Percent","Other Unaccounted Usage %s","Other Unaccounted Percent","Reduction Ratio","All Objects Front End Size %s","All Objects Stored (After Reduction) %s","All Objects Stored (After Reduction and Resiliency) %s","Storage Variance Factor","Script Version","Cluster Software Version"\n' % (units, units, units, units, units, units, units, units))
 
 
@@ -438,7 +438,7 @@ def reportStorage():
                             oldestBackup = usecsToDate(thisObject['oldestBackup'])
                     except Exception:
                         pass
-                    csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, job['name'], tenant, sdid, sdname, job['environment'][1:], sourceName, thisObject['name'], alloc, objFESize, objDataIn, objWritten, objWrittenWithResiliency, jobReduction, objGrowth, thisObject['numSnaps'], thisObject['numLogs'], oldestBackup, newestBackup, thisObject['lastDataLock'], archiveCount, oldestArchive, totalArchived, vaultStats, jobDescription, thisObject['vmTags']))
+                    csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s:%s:%s"\n' % (cluster['name'], origin, statsAge, job['name'], tenant, sdid, sdname, job['environment'][1:], sourceName, thisObject['name'], alloc, objFESize, objDataIn, objWritten, objWrittenWithResiliency, jobReduction, objGrowth, thisObject['numSnaps'], thisObject['numLogs'], oldestBackup, newestBackup, thisObject['lastDataLock'], archiveCount, oldestArchive, totalArchived, vaultStats, jobDescription, thisObject['vmTags'], cluster['id'], cluster['incarnationId'], object))
         else:
             stats = viewRunStats
             if 'statsList' in stats and stats['statsList'] is not None:
@@ -649,7 +649,7 @@ def reportStorage():
                 lastDataLock = viewHistory[view['name']]['lastDataLock']
             except Exception:
                 lastDataLock = '-'
-            csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], origin, statsAge, jobName, tenant, view['storageDomainId'], view['storageDomainName'], 'View', sourceName, viewName, objFESize, objFESize, round(dataIn / multiplier, 1), round(jobWritten / multiplier, 1), round(consumption / multiplier, 1), jobReduction, objGrowth, numSnaps, numLogs, oldestBackup, newestBackup, lastDataLock, archiveCount, oldestArchive, totalArchived, vaultStats, viewDescription, ''))
+            csv.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s:%s:%s"\n' % (cluster['name'], origin, statsAge, jobName, tenant, view['storageDomainId'], view['storageDomainName'], 'View', sourceName, viewName, objFESize, objFESize, round(dataIn / multiplier, 1), round(jobWritten / multiplier, 1), round(consumption / multiplier, 1), jobReduction, objGrowth, numSnaps, numLogs, oldestBackup, newestBackup, lastDataLock, archiveCount, oldestArchive, totalArchived, vaultStats, viewDescription, '', cluster['id'], cluster['incarnationId'], view['viewId']))
     
     garbageStart = int(midnightusecs / 1000)
     bookKeeperStart = int(midnightusecs / 1000 - (29 * 86400000))
