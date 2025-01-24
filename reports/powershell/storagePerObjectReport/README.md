@@ -99,3 +99,4 @@ Y | GiB Archived | amount of deduped/compressed data, for this object, resident 
 Z | GiB per Archive Target | amount of deduped/compressed data, for this object, resident on each archive target
 AA | Description | description of protection group or view
 AB | VMWare Tags | VMWare Tags assigned to VM
+AC | Object ID | protection source ID of object
