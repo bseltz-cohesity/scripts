@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2025.01.08"""
+"""Cohesity Python REST API Wrapper Module - 2025.01.27"""
 
 ##########################################################################################
 # Change Log
@@ -36,6 +36,7 @@
 # 2024.06.07 - added support for Entra ID (Open ID) authentication
 # 2024.08.10 - added text output mode
 # 2025.01.08 - added getRuns function
+# 2025.01.27 - added region parameter to api function
 #
 ##########################################################################################
 # Install Notes
@@ -524,7 +525,7 @@ def heliosClusters():
 
 
 ### api call function
-def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1, reportingv2=None, context=None, timeout=300):
+def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1, reportingv2=None, context=None, timeout=300, region=None):
     """api call function"""
     if context is not None:
         THISCONTEXT = context
@@ -534,6 +535,8 @@ def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1, reporting
         print('Not Connected')
         return None
     response = ''
+    if region is not None:
+        THISCONTEXT['HEADER']['regionid'] = region
     if mcm is not None:
         url = THISCONTEXT['APIROOTMCM'] + uri
     elif mcmv2 is not None:
