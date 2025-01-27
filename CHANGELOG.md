@@ -1,5 +1,10 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2025-01-27
+
+* [updateCcsRdsCredentials.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/updateCcsRdsCredentials) [`New`] update database credentials for RDS databases protected by CCS
+* [updateCcsRdsCredentials.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/updateCcsRdsCredentials) [`New`] update database credentials for RDS databases protected by CCS
+
 ## 2025-01-23
 
 * [backedUpFileList.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backedUpFileList) [`Update`] Added CSV output and total folder size
