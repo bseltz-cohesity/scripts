@@ -96,7 +96,7 @@ __all__ = ['api_version',
            'switchback',
            'getRuns']
 
-api_version = '2025.01.08'
+api_version = '2025.01.27'
 
 COHESITY_API = {
     'APIROOT': '',
