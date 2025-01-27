@@ -58,9 +58,6 @@ if($update){
     }
 }
 
-$outfileName = "rds-instances.csv"
-"""Name"",""Type"",""DB Engine""" | Out-File -FilePath $outfileName 
-
 # gather list from command line params and file
 function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
     $items = @()
@@ -175,9 +172,12 @@ if($update){
         $result = api put -v2 data-protect/objects/metadata $metaParams
     }
 }else{
+    $outfileName = "rds-instances.csv"
+    """Name"",""Type"",""DB Engine""" | Out-File -FilePath $outfileName 
     # report found instances
     $rdsNodes | Sort-Object -Property {$_.protectionSource.name} | Format-Table -Property @{label="Name"; expression={$_.protectionSource.name}}, @{label="Type"; expression={$_.protectionSource.awsProtectionSource.type}}, @{label="DB Engine"; expression={$_.protectionSource.awsProtectionSource.dbEngineId}}
     $rdsNodes | Sort-Object -Property {$_.protectionSource.name} | ForEach-Object{
         """{0}"",""{1}"",""{2}""" -f $_.protectionSource.name, $_.protectionSource.awsProtectionSource.type, $_.protectionSource.awsProtectionSource.dbEngineId | Out-File -FilePath $outfileName -Append
     }
+    "RDS List saved to $outfileName`n"
 }
