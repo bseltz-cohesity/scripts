@@ -86,43 +86,41 @@ f = codecs.open(outfile, 'w')
 # headings
 f.write('Job Name,Host Name,Database Name,UUID,Run Type,Start Time,End Time,Duration (Sec),DB Size (%s),Data Read (%s),Status,DB Type,DG Role,PulseUpdate,Attempts\n' % (units, units))
 
-def PrintDBRunSummary(localSnapshotInfo, jobname, hostname, dbname, uuid, runtype, dbType, dgRole, latestPulseUpdate) :
-  if localSnapshotInfo is None:
-    f.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (jobname, hostname, dbname, uuid, runtype, 'NA', 'NA', 'NA', 'NA', 'NA','NA', dbType, dgRole, latestPulseUpdate))
-    return
-  snapinfo = localSnapshotInfo['snapshotInfo']
-  status = snapinfo['status'][1:]
-  starttime = -1
-  if 'startTimeUsecs' in snapinfo:
-    starttime = usecsToDate(snapinfo['startTimeUsecs'])
+def printDBRunSummary(localSnapshotInfo, jobname, hostname, dbname, uuid, runtype, dbType, dgRole, latestPulseUpdate) :
+    if localSnapshotInfo is None:
+        f.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (jobname, hostname, dbname, uuid, runtype, 'NA', 'NA', 'NA', 'NA', 'NA','NA', dbType, dgRole, latestPulseUpdate))
+        return
+    snapinfo = localSnapshotInfo['snapshotInfo']
+    status = snapinfo['status'][1:]
+    starttime = -1
+    if 'startTimeUsecs' in snapinfo:
+        starttime = usecsToDate(snapinfo['startTimeUsecs'])
+    summary = '%s,%s,%s,%s,%s,%s' % (jobname, hostname, dbname, uuid, runtype, starttime)
 
-  summary = '%s,%s,%s,%s,%s,%s' % (jobname, hostname, dbname, uuid, runtype, starttime)
-
-  endtime=-1
-  duration=-1
-  dbsize=-1
-  dataread=-1
-  if status == "Successful":
-    endtime = usecsToDate(snapinfo['endTimeUsecs'])
-    duration = round((snapinfo['endTimeUsecs'] - snapinfo['startTimeUsecs']) / 1000000)
-    dbsize = round(snapinfo['stats']['logicalSizeBytes'] / multiplier, 2)
-    dataread = round(snapinfo['stats']['bytesRead'] / multiplier, 2)
-  summary += ',%s,%s,%s,%s,%s,%s,%s,%s' % (endtime, duration, dbsize, dataread,status, dbType, dgRole, latestPulseUpdate)
-  attemptsummary=''
-  if localSnapshotInfo['failedAttempts'] != None:
-    for idx, failedAttempt in enumerate(localSnapshotInfo['failedAttempts']) :
-      # print(idx)
-      if 'endTimeUsecs' in failedAttempt:
-        attemptsummary += '#AttemptNum:%s#Endtime:%s' % (idx, usecsToDate(failedAttempt['endTimeUsecs']))
-      if 'status' in failedAttempt:
-        attemptsummary += '#status%s' % failedAttempt['status']
-      if 'message' in failedAttempt:
-        attemptsummary += '#message%s' % failedAttempt['message']
-  if attemptsummary != '':
-    summary += ',' + attemptsummary
-  summary += '\n'
-  f.write(summary)
-
+    endtime=-1
+    duration=-1
+    dbsize=-1
+    dataread=-1
+    if status == "Successful":
+        endtime = usecsToDate(snapinfo['endTimeUsecs'])
+        duration = round((snapinfo['endTimeUsecs'] - snapinfo['startTimeUsecs']) / 1000000)
+        dbsize = round(snapinfo['stats']['logicalSizeBytes'] / multiplier, 2)
+        dataread = round(snapinfo['stats']['bytesRead'] / multiplier, 2)
+    summary += ',%s,%s,%s,%s,%s,%s,%s,%s' % (endtime, duration, dbsize, dataread,status, dbType, dgRole, latestPulseUpdate)
+    attemptsummary=''
+    if localSnapshotInfo['failedAttempts'] != None:
+        for idx, failedAttempt in enumerate(localSnapshotInfo['failedAttempts']) :
+            # print(idx)
+            if 'endTimeUsecs' in failedAttempt:
+                attemptsummary += '#AttemptNum:%s#Endtime:%s' % (idx, usecsToDate(failedAttempt['endTimeUsecs']))
+            if 'status' in failedAttempt:
+                attemptsummary += '#status%s' % failedAttempt['status']
+            if 'message' in failedAttempt:
+                attemptsummary += '#message%s' % failedAttempt['message']
+    if attemptsummary != '':
+        summary += ',' + attemptsummary
+    summary += '\n'
+    f.write(summary)
 
 
 jobs = api('get', 'data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true&environments=kOracle', v=2)
@@ -130,16 +128,16 @@ jobs = api('get', 'data-protect/protection-groups?isDeleted=false&isActive=true&
 daysAgo = timeAgo(days, 'days')
 
 for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower()):
-    if jobname != None and jobname != job['name']:
+    if jobname != None and jobname.lower() != job['name'].lower():
         #print("Skipping job %s" % jobname)
         continue
     print(job['name'])
     endUsecs = -1
     while 1:
         if endUsecs == -1 :
-          runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&startTimeUsecs=%s&includeTenants=true&includeObjectDetails=true' % (job['id'], numruns, daysAgo), v=2)
+            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&startTimeUsecs=%s&includeTenants=true&includeObjectDetails=true' % (job['id'], numruns, daysAgo), v=2)
         else :
-          runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&startTimeUsecs=%s&endTimeUsecs=%s&includeTenants=true&includeObjectDetails=true' % (job['id'], numruns, daysAgo, endUsecs), v=2)
+            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&startTimeUsecs=%s&endTimeUsecs=%s&includeTenants=true&includeObjectDetails=true' % (job['id'], numruns, daysAgo, endUsecs), v=2)
         if len(runs['runs']) > 0:
             endUsecs = runs['runs'][-1]['localBackupInfo']['startTimeUsecs'] - 1
         else:
@@ -159,24 +157,26 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                             dbname = object['object']['name']
                             uuid = object['object']['uuid']
                             if argdbname != None and dbname != argdbname:
-                              continue
+                                continue
                             if argdbuuid != None and uuid != argdbuuid:
-                              continue
+                                continue
                             if isinstance(dbSource, list) == False:
-                              print("Skipping entity %s:%s:%s" % (objectid, dbname, uuid))
-                              PrintDBRunSummary(None, job['name'], 'NA', dbname, uuid, runtype, 'NA', dgRole, 'NA')
-                              continue
+                                print("Skipping entity %s:%s:%s" % (objectid, dbname, uuid))
+                                printDBRunSummary(None, job['name'], 'NA', dbname, uuid, runtype, 'NA', dgRole, 'NA')
+                                continue
                             latestPulseUpdate='NA'
                             if 'progressTaskId' in run['localBackupInfo'] and 'progressTaskId' in object['localSnapshotInfo']['snapshotInfo']:
-                              progress = api('get', 'data-protect/runs/%s/progress?runTaskPath=%s&objects=%s&objectTaskPaths=%s&includeEventLogs=true' % (job['id'], run['localBackupInfo']['progressTaskId'], objectid, object['localSnapshotInfo']['snapshotInfo']['progressTaskId']), v=2)
-                            #print(progress)
-                              latestPulseUpdate='PulseStatus:%s#%s' % (progress['localRun']['objects'][0]['status'], progress['localRun']['objects'][0]['events'][-1]['message'])
+                                progress = api('get', 'data-protect/runs/%s/progress?runTaskPath=%s&objects=%s&objectTaskPaths=%s&includeEventLogs=true' % (job['id'], run['localBackupInfo']['progressTaskId'], objectid, object['localSnapshotInfo']['snapshotInfo']['progressTaskId']), v=2)
+                                #print(progress)
+                                latestPulseUpdate=''
+                                if 'localRun' in progress:
+                                    latestPulseUpdate='PulseStatus:%s#%s' % (progress['localRun']['objects'][0]['status'], progress['localRun']['objects'][0]['events'][-1]['message'])
                             dbType = dbSource[0]['protectionSource']['oracleProtectionSource']['dbType']
                             if 'dataGuardInfo' in dbSource[0]['protectionSource']['oracleProtectionSource']:
                                 dgRole = dbSource[0]['protectionSource']['oracleProtectionSource']['dataGuardInfo']['role']
                             hostobject = [o for o in run['objects'] if o['object']['id'] == object['object']['sourceId']]
                             hostname = hostobject[0]['object']['name']
-                            PrintDBRunSummary(object['localSnapshotInfo'],job['name'], hostname, dbname, uuid, runtype, dbType, dgRole, latestPulseUpdate)
+                            printDBRunSummary(object['localSnapshotInfo'],job['name'], hostname, dbname, uuid, runtype, dbType, dgRole, latestPulseUpdate)
                             snapinfo = object['localSnapshotInfo']['snapshotInfo']
                             status = snapinfo['status'][1:]
                             print("    %s  %s/%s  (%s)  %s" % (runStartTime, hostname, dbname, runtype, status))
