@@ -39,8 +39,10 @@ realmname = args.realmname
 realmdnsaddress = args.realmdnsaddress
 authtype = args.authtype
 
-# identify python version
-
+# check pyhesity version
+if api_version < '2025.01.27':
+    print('\nThis script requires pyhesity.py version 2025.01.27 or later. Get the latest version at:\n\nhttps://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity\n')
+    exit(1)
 
 def prompt(thisprompt):
     if sys.version_info[0] < 3:
