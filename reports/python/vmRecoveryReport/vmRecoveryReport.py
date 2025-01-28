@@ -89,7 +89,7 @@ beforeusecs = midnightusecs - (daysback * 86400000000) + 86400000000
 cluster = api('get', 'cluster')
 dateString = now.strftime("%Y-%m-%d")
 f = codecs.open(outfilename, 'w')
-f.write('"Cluster","Recovery Task Name","Recovery Task ID","Recovery Task Start Time","Recovery Type","VM Name","VM Size (GiB)","VM Status","VM Start Time","VM End Time","VM Recovery Duration (Sec)","VM Percent","Instant Recovery Start Time","Instant Recovery End Time","Instant Recovery Duration (Sec)","Instant Recovery Percent","Datastore Migration Start Time","Datastore Migration End Time","Datastore Migration Duration (Sec)","Datastore Migration Percent"\n')
+f.write('"Cluster","Recovery Task Name","Recovery Task ID","Recovery Task Start Time","Recovery Type","Source VM Name","Target VM Name","VM Logical Size (GiB)","VM Used Size (GiB)","VM Status","VM Start Time","VM End Time","VM Recovery Duration (Sec)","VM Percent","Instant Recovery Start Time","Instant Recovery End Time","Instant Recovery Duration (Sec)","Instant Recovery Percent","Datastore Migration Start Time","Datastore Migration End Time","Datastore Migration Duration (Sec)","Datastore Migration Percent"\n')
 recoveries = api('get', 'data-protect/recoveries?startTimeUsecs=%s&recoveryActions=RecoverVMs&includeTenants=true&endTimeUsecs=%s' % (beforeusecs, tonightusecs), v=2)
 if len(tasks) > 0:
     recoveries['recoveries'] = [r for r in recoveries['recoveries'] if r['name'].lower() in [n.lower() for n in tasks] or r['id'].lower() in [i.lower() for i in tasks]]
@@ -98,13 +98,16 @@ if len(tasks) > 0:
         for task in notFoundTasks:
             print('Recovery task %s not found' % task)
         exit(1)
-if len(recoveries['recoveries']) == 0:
+if recoveries is None or 'recoveries' not in recoveries or recoveries['recoveries'] is None or len(recoveries['recoveries']) == 0:
     print('No recoveries found')
     exit(1)
 
 for recovery in recoveries['recoveries']:
     thisRecovery = api('get', 'data-protect/recoveries/%s?includeTenants=true' % recovery['id'], v=2)
     print(thisRecovery['name'])
+    renameParams = {}
+    if 'renameRecoveredVmsParams' in thisRecovery['vmwareParams']['recoverVmParams']['vmwareTargetParams']:
+        renameParams = thisRecovery['vmwareParams']['recoverVmParams']['vmwareTargetParams']['renameRecoveredVmsParams']
     recoveryStart = usecsToDate(thisRecovery['startTimeUsecs'])
     recoveryStatus = thisRecovery['status']
     recoveryType = thisRecovery['vmwareParams']['recoverVmParams']['vmwareTargetParams']['recoveryProcessType']
@@ -127,9 +130,17 @@ for recovery in recoveries['recoveries']:
                 objectPct = 0
         objectStart = usecsToDate(objectStart)
         objectName = object['objectInfo']['name']
+        targetName = objectName
+        if 'prefix' in renameParams:
+            targetName = '%s%s' % (renameParams['prefix'], targetName)
+        if 'suffix' in renameParams:
+            targetName = '%s%s' % (targetName, renameParams['suffix'])
         try:
             search = api('get','/searchvms?entityIds=%s' % object['objectInfo']['id'])
+            logicalSize = round(search['vms'][0]['vmDocument']['versions'][0]['logicalSizeBytes']/(1024*1024*1024), 1)
             size = round(search['vms'][0]['vmDocument']['objectId']['entity']['vmwareEntity']['frontEndSizeInfo']['sizeBytes']/(1024*1024*1024), 1)
+            if size > logicalSize:
+                size = logicalSize
         except Exception:
             size = ''
         instantDuration = ''
@@ -180,4 +191,4 @@ for recovery in recoveries['recoveries']:
             except Exception:
                 pass
         print('    %s %s %s%%' % (objectName, objectStatus, objectPct))
-        f.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], thisRecovery['name'], thisRecovery['id'], recoveryStart, recoveryType, objectName, size, objectStatus, objectStart, objectEnd, objectDuration, objectPct, instantStart, instantEnd, instantDuration, instantPct, migrateStart, migrateEnd, migrateDuration, migratePct))# ,"Instant Recovery Start Time","Instant Recovery End Time","Instant Recovery Duration","Instant Recovery Percent","Datastore Migration Start Time","Datastore Migration End Time","Datastore Migration Duration","Datastore Migration Percent"\n')
+        f.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], thisRecovery['name'], thisRecovery['id'], recoveryStart, recoveryType, objectName, targetName, logicalSize, size, objectStatus, objectStart, objectEnd, objectDuration, objectPct, instantStart, instantEnd, instantDuration, instantPct, migrateStart, migrateEnd, migrateDuration, migratePct))# ,"Instant Recovery Start Time","Instant Recovery End Time","Instant Recovery Duration","Instant Recovery Percent","Datastore Migration Start Time","Datastore Migration End Time","Datastore Migration Duration","Datastore Migration Percent"\n')
