@@ -4,6 +4,7 @@
 
 * [updateCcsRdsCredentials.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/updateCcsRdsCredentials) [`New`] update database credentials for RDS databases protected by CCS
 * [updateCcsRdsCredentials.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/updateCcsRdsCredentials) [`New`] update database credentials for RDS databases protected by CCS
+* [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] added region parameter to api function
 
 ## 2025-01-23
 
