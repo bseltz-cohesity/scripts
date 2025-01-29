@@ -235,6 +235,8 @@ if logtime is not None or latest is True:
                 validLogTime = True
                 break
         if logtime is not None and version['instanceId']['jobStartTimeUsecs'] < logusecs:
+            if nologs is True:
+                validLogTime = True
             break
         versionNum += 1
 
