@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2025.01.10 - Brian Seltzer
+#  Version 2025.01.30 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024.01.14 - reenabled legacy access modes
@@ -16,10 +16,10 @@
 # 2024-10-14 - fixed date formatting
 # 2024-12-31 - added heliosCluster - to remove access cluster ID
 # 2025-01-10 - added Get-Runs function
-#
+# 2025-01-30 - added apiauth skipForcePasswordChange option 
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2025.01.10'
+$versionCohesityAPI = '2025.01.30'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -167,7 +167,8 @@ function apiauth($vip='helios.cohesity.com',
                  [string] $directoryId = $null,
                  [string] $scope = 'openid profile',
                  [boolean] $entraIdAuthentication = $false,
-                 [switch] $dbg){
+                 [switch] $dbg,
+                 [switch] $skipForcePasswordChange){
     apidrop -quiet
     if($entraIdAuthentication -eq $True){
         $EntraId = $True
@@ -288,11 +289,17 @@ function apiauth($vip='helios.cohesity.com',
         # validate cluster API key authorization
         if($useApiKey -and (($vip -notin $heliosEndpoints) -and $helios -ne $True)){
             try{
+                if($dbg){
+                    Write-Host "trying api key connection"
+                }
                 $URL = "https://$vip/irisservices/api/v1/public/sessionUser/preferences"
                 if($PSVersionTable.PSEdition -eq 'Core'){
                     $cluster = Invoke-RestMethod -Method Get -Uri $URL -Header $header -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -TimeoutSec $timeout -SkipCertificateCheck -SessionVariable session
                 }else{
                     $cluster = Invoke-RestMethod -Method Get -Uri $URL -Header $header -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session
+                }
+                if($dbg){
+                    Write-Host "finished trying api key connection"
                 }
                 $cohesity_api.session = $session
                 if($setpasswd){
@@ -350,6 +357,15 @@ function apiauth($vip='helios.cohesity.com',
             'password' = "$passwd";
         }
 
+        if($skipForcePasswordChange){
+            $body = ConvertTo-Json @{
+                'domain' = $domain;
+                'username' = $username;
+                'password' = "$passwd";
+                'skipForcePasswordChange' = $True;
+            }
+        }
+
         if($noDomain){
             $body = ConvertTo-Json @{
                 'username' = $username;
@@ -358,11 +374,20 @@ function apiauth($vip='helios.cohesity.com',
         }
 
         try {
+            if($skipForcePasswordChange){
+                throw "skipping"
+            }
             $url = 'https://' + $vip + '/login'
+            if($dbg){
+                Write-Host "Starting session login"
+            }
             if($PSVersionTable.PSEdition -eq 'Core'){
                 $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session -ContentType "application/json; charset=utf-8" -SslProtocol Tls12
             }else{
                 $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session -ContentType "application/json; charset=utf-8"
+            }
+            if($dbg){
+                Write-Host "Ending session login"
             }
             $cohesity_api.session = $session
             # check force password change
@@ -482,7 +507,7 @@ function apiauth($vip='helios.cohesity.com',
             if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
         }catch{
             $thisError = $_
-            if($thisError -match 'User does not have the privilege to access UI' -or $thisError -match "KInvalidError"){
+            if($skipForcePasswordChange -or $thisError -match 'User does not have the privilege to access UI' -or $thisError -match "KInvalidError"){
                 $url = $cohesity_api.apiRoot + '/public/accessTokens'
                 try {
                     if($emailMfaCode){
@@ -492,10 +517,11 @@ function apiauth($vip='helios.cohesity.com',
                     }
                     # authenticate
                     if($PSVersionTable.PSEdition -eq 'Core'){
-                        $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout -SslProtocol Tls12 -WebSession $cohesity_api.session
+                        $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout -SslProtocol Tls12 -WebSession $cohesity_api.session -SessionVariable session
                     }else{
-                        $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec $timeout -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8"
+                        $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec $timeout -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8" -SessionVariable session
                     }
+                    $cohesity_api.header['authorization'] = $auth.tokenType + ' ' + $auth.accessToken
                     $cohesity_api.session = $session
                     $cohesity_api.authorized = $true
                     $cohesity_api.clusterReadOnly = $false
@@ -516,6 +542,15 @@ function apiauth($vip='helios.cohesity.com',
                                     'password' = $passwd;
                                     'otpType' = $mfaType.ToLower();
                                     'otpCode' = $mfaCode
+                                }
+                                if($skipForcePasswordChange){
+                                    $body = ConvertTo-Json @{
+                                        'domain' = $domain;
+                                        'username' = $username;
+                                        'password' = $passwd;
+                                        'otpType' = $mfaType.ToLower();
+                                        'otpCode' = $mfaCode;
+                                    }
                                 }
                                 # authenticate
                                 if($PSVersionTable.PSEdition -eq 'Core'){
