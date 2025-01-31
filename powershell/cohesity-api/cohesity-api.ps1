@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2025.01.30 - Brian Seltzer
+#  Version 2025.01.31 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024.01.14 - reenabled legacy access modes
@@ -16,10 +16,12 @@
 # 2024-10-14 - fixed date formatting
 # 2024-12-31 - added heliosCluster - to remove access cluster ID
 # 2025-01-10 - added Get-Runs function
-# 2025-01-30 - added apiauth skipForcePasswordChange option 
+# 2025-01-30 - added apiauth skipForcePasswordChange option
+# 2025-01-31 - fixed legacy session-id auth
+#
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2025.01.30'
+$versionCohesityAPI = '2025.01.31'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -517,9 +519,9 @@ function apiauth($vip='helios.cohesity.com',
                     }
                     # authenticate
                     if($PSVersionTable.PSEdition -eq 'Core'){
-                        $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout -SslProtocol Tls12 -WebSession $cohesity_api.session -SessionVariable session
+                        $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout -SslProtocol Tls12 -SessionVariable session # -WebSession $cohesity_api.session
                     }else{
-                        $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec $timeout -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8" -SessionVariable session
+                        $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec $timeout -ContentType "application/json; charset=utf-8" -SessionVariable session # -WebSession $cohesity_api.session
                     }
                     $cohesity_api.header['authorization'] = $auth.tokenType + ' ' + $auth.accessToken
                     $cohesity_api.session = $session
@@ -554,10 +556,11 @@ function apiauth($vip='helios.cohesity.com',
                                 }
                                 # authenticate
                                 if($PSVersionTable.PSEdition -eq 'Core'){
-                                    $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout -SslProtocol Tls12 -WebSession $cohesity_api.session
+                                    $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout -SslProtocol Tls12 -SessionVariable session # -WebSession $cohesity_api.session
                                 }else{
-                                    $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec $timeout -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8"
+                                    $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec $timeout -ContentType "application/json; charset=utf-8" -SessionVariable session # -WebSession $cohesity_api.session
                                 }
+                                $cohesity_api.header['session-id'] = $auth.sessionId
                                 $cohesity_api.session = $session
                                 $cohesity_api.authorized = $true
                                 $cohesity_api.clusterReadOnly = $false
@@ -704,6 +707,9 @@ function apidrop([switch] $quiet){
     $cohesity_api.authorized = $false
     $cohesity_api.apiRoot = ''
     $cohesity_api.apiRootv2 = ''
+    $cohesity_api.apiRootmcm = ''
+    $cohesity_api.apiRootmcmV2 = ''
+    $cohesity_api.apiRootReportingV2 = ''
     $cohesity_api.clusterReadOnly = $false
     $cohesity_api.heliosConnectedClusters = $null
     $cohesity_api.session = $null
