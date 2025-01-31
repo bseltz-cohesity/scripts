@@ -1,5 +1,13 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2025-01-31
+
+* [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Fix`] fixed /v2/users/session authentication
+
+## 2025-01-30
+
+* [vmRecoveryReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/vmRecoveryReport) [`New`] report on VM recoveries
+
 ## 2025-01-27
 
 * [updateCcsRdsCredentials.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/updateCcsRdsCredentials) [`New`] update database credentials for RDS databases protected by CCS
