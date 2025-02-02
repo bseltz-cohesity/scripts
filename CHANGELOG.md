@@ -1,5 +1,11 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2025-02-02
+
+* [archiveQueue.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/archiveQueue) [`Update`] modernized authentication
+* [backedUpFSReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/backedUpFSReport) [`Update`] modernized authentication
+* [findFiles.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/fileFiles) [`Update`] modernized authentication
+
 ## 2025-01-31
 
 * [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Fix`] fixed /v2/users/session authentication
