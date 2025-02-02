@@ -28,11 +28,21 @@ Place both files in a folder together and run the main script like so:
 ./archiveQueue.ps1 -vip mycluster -username myusername -domain mydomain.net
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: the Cohesity cluster to connect to
-* -username: the cohesity user to login with
-* -domain: (optional) domain of the Cohesity user (defaults to local)
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -jobName: (optional) one or more job names to include (comma separated)
 * -jobList: (optional) text file of job names to include (one per line)
 * -showFinished: (optional) show finished archive tasks
