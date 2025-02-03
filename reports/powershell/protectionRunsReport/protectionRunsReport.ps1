@@ -30,10 +30,10 @@ $dateString = $now.ToString('yyyy-MM-dd')
 $outfileName = "protectionRunsReport-$dateString.tsv"
 
 # headings
-$headings = "Cluster Name`tTenant`tJob Name`tEnvironment`tPolicy Name`tRun Type`tRun Start Time`tRun End Time`tDuration (Min)`tRun Status`tLogical ($unit)`tRead ($unit)`tWritten ($unit)`tMessage"
+$headings = "Cluster Name`tTenant`tJob Name`tJob ID`tEnvironment`tPolicy Name`tRun Type`tRun Start Time`tRun End Time`tDuration (Min)`tRun Status`tLogical ($unit)`tRead ($unit)`tWritten ($unit)`tMessage"
 
 if($includeObjectDetails){
-   $headings = "Cluster Name`tTenant`tJob Name`tEnvironment`tPolicy Name`tRun Type`tRun Start Time`tRegistered Source`tObject Name`tStart Time`tEnd Time`tDuration (Min)`tStatus`tLogical ($unit)`tRead ($unit)`tWritten ($unit)`tMessage"
+   $headings = "Cluster Name`tTenant`tJob Name`tJob ID`tEnvironment`tPolicy Name`tRun Type`tRun Start Time`tRegistered Source`tObject Name`tStart Time`tEnd Time`tDuration (Min)`tStatus`tLogical ($unit)`tRead ($unit)`tWritten ($unit)`tMessage"
 }
 $headings | Out-File -FilePath $outfileName
 
@@ -102,7 +102,7 @@ foreach($v in $vip){
                         "    {0} ({1})" -f $runStartTime, $runType
                         if(! $includeObjectDetails){
                             # write to output file
-                            $cluster.name, $tenant, $job.name, $environment, $policyName, $runType, $runStartTime, $runEndTime, $durationMinutes, $status, $logicalSizeBytes, $bytesRead, $bytesWritten, $message -join "`t" | Out-File -FilePath $outfileName -Append
+                            $cluster.name, $tenant, $job.name, $job.id, $environment, $policyName, $runType, $runStartTime, $runEndTime, $durationMinutes, $status, $logicalSizeBytes, $bytesRead, $bytesWritten, $message -join "`t" | Out-File -FilePath $outfileName -Append
                         } 
                         if($days -and $daysBack -gt $runStartTime){
                             break
@@ -110,7 +110,7 @@ foreach($v in $vip){
                         # object level stats
                         if($includeObjectDetails -and (! $run.PSObject.Properties['isLocalSnapshotsDeleted'] -or $run.isLocalSnapshotsDeleted -ne $True)){
                             foreach($object in $run.objects){
-                                $object | toJson
+                                # $object | toJson
                                 $objectName = $object.object.name
                                 if($environment -notin @('Oracle', 'SQL') -or ($environment -in @('Oracle', 'SQL') -and $object.object.objectType -ne 'kHost')){
                                     if($object.object.PSObject.Properties['sourceId']){
@@ -145,7 +145,7 @@ foreach($v in $vip){
                                     $objectBytesRead = toUnits $object.localSnapshotInfo.snapshotInfo.stats.bytesRead
                                     "        {0}" -f $objectName
                                     # write to output file
-                                    $cluster.name, $tenant, $job.name, $environment, $policyName, $runType, $runStartTime, $registeredSourceName, $objectName, $objectStartTime, $objectEndTime, $objectDurationMinutes, $objectStatus, $objectLogicalSizeBytes, $objectBytesRead, $objectBytesWritten, $message -join "`t" | Out-File -FilePath $outfileName -Append
+                                    $cluster.name, $tenant, $job.name, $job.id, $environment, $policyName, $runType, $runStartTime, $registeredSourceName, $objectName, $objectStartTime, $objectEndTime, $objectDurationMinutes, $objectStatus, $objectLogicalSizeBytes, $objectBytesRead, $objectBytesWritten, $message -join "`t" | Out-File -FilePath $outfileName -Append
                                 }
                             }
                         }
