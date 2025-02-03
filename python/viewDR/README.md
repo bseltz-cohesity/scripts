@@ -18,7 +18,7 @@ chmod +x viewDR.py
 
 ## Components
 
-* [viewDR.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/viewDR66/viewDR.py): execute view failover/failback tasks
+* [viewDR.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/viewDR/viewDR.py): execute view failover/failback tasks
 * [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 ## Authentication Parameters
