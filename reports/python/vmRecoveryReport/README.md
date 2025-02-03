@@ -61,4 +61,6 @@ To specify a recovery task by name:
 * -y, --daysback: (optional) default is 7
 * -n, --task: (optional) recovery task name (or ID) to include (repeat for multiple)
 * -l, --tasklist: (optional) text file of recovery task names (or IDs) to include (one per line)
+* -vm, --vmname: (optional) name of VM to include (repeat for multiple)
+* -vl, --vmlist: (optional) text file of VM names to include (one per line)
 * -f, --outfilename: (optional) default is vmRecoveryReport.csv

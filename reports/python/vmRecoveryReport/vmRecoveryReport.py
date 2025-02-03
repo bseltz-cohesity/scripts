@@ -20,6 +20,8 @@ parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-y', '--daysback', type=int, default=7)
 parser.add_argument('-n', '--task', action='append', type=str)
 parser.add_argument('-l', '--tasklist', type=str)
+parser.add_argument('-vm', '--vmname', action='append', type=str)
+parser.add_argument('-vl', '--vmlist', type=str)
 parser.add_argument('-f', '--outfilename', type=str, default='vmRecoveryReport.csv')
 
 args = parser.parse_args()
@@ -38,6 +40,8 @@ emailmfacode = args.emailmfacode
 daysback = args.daysback
 task = args.task
 tasklist = args.tasklist
+vmnames = args.vmname
+vmlist = args.vmlist
 outfilename = args.outfilename
 
 # gather server list
@@ -56,6 +60,7 @@ def gatherList(param=None, filename=None, name='items', required=True):
     return items
 
 tasks = gatherList(task, tasklist, name='tasks', required=False)
+vmnames = gatherList(vmnames, vmlist, name='VMs', required=False)
 
 # authentication =========================================================
 # demand clustername if connecting to helios or mcm
@@ -102,6 +107,8 @@ if recoveries is None or 'recoveries' not in recoveries or recoveries['recoverie
     print('No recoveries found')
     exit(1)
 
+foundVMs = []
+
 for recovery in recoveries['recoveries']:
     thisRecovery = api('get', 'data-protect/recoveries/%s?includeTenants=true' % recovery['id'], v=2)
     print(thisRecovery['name'])
@@ -130,6 +137,11 @@ for recovery in recoveries['recoveries']:
                 objectPct = 0
         objectStart = usecsToDate(objectStart)
         objectName = object['objectInfo']['name']
+        if len(vmnames) > 0:
+            if objectName.lower() not in [n.lower() for n in vmnames]:
+                continue
+            else:
+                foundVMs.append(objectName.lower())
         targetName = objectName
         if 'prefix' in renameParams:
             targetName = '%s%s' % (renameParams['prefix'], targetName)
@@ -192,3 +204,8 @@ for recovery in recoveries['recoveries']:
                 pass
         print('    %s %s %s%%' % (objectName, objectStatus, objectPct))
         f.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], thisRecovery['name'], thisRecovery['id'], recoveryStart, recoveryType, objectName, targetName, logicalSize, size, objectStatus, objectStart, objectEnd, objectDuration, objectPct, instantStart, instantEnd, instantDuration, instantPct, migrateStart, migrateEnd, migrateDuration, migratePct))# ,"Instant Recovery Start Time","Instant Recovery End Time","Instant Recovery Duration","Instant Recovery Percent","Datastore Migration Start Time","Datastore Migration End Time","Datastore Migration Duration","Datastore Migration Percent"\n')
+
+if len(vmnames) > 0:
+    for vmname in vmnames:
+        if vmname.lower() not in foundVMs:
+            print('No recoveries found for VM %s' % vmname)
