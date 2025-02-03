@@ -51,7 +51,7 @@ You will need to have views on ClusterA, protected using a policy that replicate
 
 ## Performing an Unplanned Failover
 
-To perform an immediate failover of some views to ClusterB, without any final replication, create a text file views.txt that contains the list of views that you want to failover, one view name per line, and then run the viewDR.py script like so:
+To perform an immediate failover of some views to ClusterB, without any final replication, you can specify one or more views on the commandline and run the viewDR.py script like so:
 
 ```bash
 ./viewDR.py -v ClusterB \
@@ -62,7 +62,7 @@ To perform an immediate failover of some views to ClusterB, without any final re
             -w
 ```
 
-or using a text file of view names:
+or create a text file (e.g. views.txt) that contains the list of views that you want to failover, one view name per line, and run the script like so:
 
 ```bash
 ./viewDR.py -v ClusterB \
