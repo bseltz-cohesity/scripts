@@ -70,7 +70,8 @@ if($myjobs.Length -gt 0){
     $jobs = $jobs | Where-Object name -in $myjobs
 }
 
-$sources = api get protectionSources
+# $sources = api get protectionSources
+$sources = api get 'protectionSources?environments=kSQL,kPhysical'
 
 $objects = @{}
 
