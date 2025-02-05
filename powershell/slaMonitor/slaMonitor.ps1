@@ -31,7 +31,7 @@ $title = "Missed SLAs"
 $script:missesRecorded = $false
 $script:message = ""
 
-$finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning', 'SucceededWithWarning')
+$finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning', 'SucceededWithWarning', 'kSuccessful', 'kCanceled', 'kFailed', 'kFailure', 'kWarning')
 $tail = ''
 if($logsOnly){
     $tail = '&runTypes=kLog'
@@ -42,6 +42,7 @@ if($environment){
 }
 
 function reportSlaViolations(){
+    $sourceNames = @{}
     $cluster = api get cluster
     Write-Host $cluster.name
     $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true$jobTail"
@@ -54,12 +55,14 @@ function reportSlaViolations(){
         $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=10&includeTenants=true&startTimeUsecs=$daysBackUsecs$tail"
         foreach($run in $runs.runs){
             if($run.PSObject.Properties['localBackupInfo']){
+                $runInfo = $run.localBackupInfo
                 $startTimeUsecs = $run.localBackupInfo.startTimeUsecs
                 $status = $run.localBackupInfo.status
                 if($run.localBackupInfo.PSObject.Properties['endTimeUsecs']){
                     $endTimeUsecs = $run.localBackupInfo.endTimeUsecs
                 }
             }else{
+                $runInfo = $run.archivalInfo.archivalTargetResults[0]
                 $startTimeUsecs = $run.archivalInfo.archivalTargetResults[0].startTimeUsecs
                 $status = $run.archivalInfo.archivalTargetResults[0].status
                 if($run.archivalInfo.archivalTargetResults[0].PSObject.Properties['endTimeUsecs']){
@@ -85,9 +88,9 @@ function reportSlaViolations(){
                     }
                 }
             }
-    
             $runTimeMinutes = [math]::Round(($runTimeUsecs / 60000000),0)
             if($slaPass -eq "Miss"){
+                $run = api get -v2 "data-protect/protection-groups/$($job.id)/runs/$($run.id)?includeObjectDetails=true"
                 $script:missesRecorded = $True
                 if($status -in $finishedStates){
                     $verb = "ran"
@@ -95,9 +98,44 @@ function reportSlaViolations(){
                     $verb = "has been running"
                 }
                 $startTime = usecsToDate $startTimeUsecs
-                $messageLine = "- [{0}] {1} ({2}) {3} for {4} minutes ({5})" -f $cluster.name, $jobName, $startTime, $verb, $runTimeMinutes, $reason
+                $messageLine = "- [{0}] {1} ({2}) [{3}] {4} for {5} minutes ({6})" -f $cluster.name, $jobName, $job.environment, $startTime, $verb, $runTimeMinutes, $reason
                 Write-Host $messageLine
                 $script:message += "$messageLine`n"
+                foreach($object in $run.objects | Where-Object {$_.object.environment -ne $job.environment}){
+                    $sourceNames["$($object.object.id)"] = $object.object.name
+                }
+                foreach($object in $run.objects){ # | Where-Object {$_.object.environment -eq $job.environment}){
+                    $objectName = $object.object.name
+                    if($object.PSObject.Properties['localSnapshotInfo']){
+                        $objectStatus = $object.localSnapshotInfo.snapshotInfo.status
+                    }else{
+                        $objectStatus = $object.archivalInfo.archivalTargetResults[0].status
+                    }
+                    $fqObjectName = $objectName
+                    if($objectStatus -notin $finishedStates){
+                        $sourceId = $object.object.id
+                        if($object.object.PSObject.Properties['sourceId']){
+                            $sourceId = $object.object.sourceId
+                        }
+                        $sourceName = ''
+                        if("$($object.object.sourceId)" -in $sourceNames.Keys){
+                            $sourceName = $sourceNames["$($object.object.sourceId)"]
+                        }else{
+                            $source = api get "protectionSources?id=$sourceId&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true" # -quiet
+                            if($source -and $source.PSObject.Properties['protectionSource']){
+                                $sourceName = $source.protectionSource.name
+                                $sourceNames["$($object.object.sourceId)"] = $sourceName
+                            }
+                        }
+                        
+                        if($objectName -ne $sourceName){
+                            $fqObjectName = "$($sourceName)/$($objectName)" -replace '//', '/'
+                        }
+                        $messageLine = "    - $fqObjectName ($objectStatus)"
+                        Write-Host $messageLine
+                        $script:message += "$messageLine`n"
+                    }
+                }
                 break
             }
         }
