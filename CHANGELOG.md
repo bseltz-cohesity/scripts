@@ -1,5 +1,19 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2025-02-05
+
+* [restoreFiles.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/restoreFiles) [`
+Fix`] added pagination to file search
+* [restoreFiles.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restoreFiles) [`Fix`] added pagination to file search
+
+## 2025-02-04
+
+* [sqlProtectedObjectReport](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/sqlProtectedObjectReport) [`Update`] improved protectionSources query performance
+
+## 2025-02-03
+
+* [protectionRunsReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/protectionRunsReport) [`Update`] added job ID to output
+
 ## 2025-02-02
 
 * [archiveQueue.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/archiveQueue) [`Update`] modernized authentication
