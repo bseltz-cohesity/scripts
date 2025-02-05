@@ -1,4 +1,4 @@
-# version 2024.04.19
+# version 2025.02.05
 
 ### process commandline arguments
 [CmdletBinding(PositionalBinding=$False)]
@@ -34,7 +34,8 @@ param (
     [Parameter()][switch]$noIndex,
     [Parameter()][string]$isilonZoneId,
     [Parameter()][switch]$restoreFromArchive,
-    [Parameter()][string]$taskName
+    [Parameter()][string]$taskName,
+    [Parameter()][int]$sleepTimeSeconds = 15
 )
 
 if($overWrite){
@@ -259,7 +260,7 @@ function restore($thesefiles, $doc, $version, $targetEntity, $singleFile){
             $finishedStates = @('kCanceled', 'kSuccess', 'kFailure')
             $restoreTaskStatus = $restoreTask.restoreTask.performRestoreTaskState.base.publicStatus
             do {
-                Start-Sleep 3
+                Start-Sleep $sleepTimeSeconds
                 $restoreTask = api get /restoretasks/$taskId
                 $restoreTaskStatus = $restoreTask.restoreTask.performRestoreTaskState.base.publicStatus
             } until ($restoreTaskStatus -in $finishedStates)
@@ -423,6 +424,20 @@ if($False -eq $independentRestores){
                     Write-Host "file $file not found on server $sourceServer or no versions available..." -ForegroundColor Yellow
                 }else{
                     $fileSearch.files = $fileSearch.files | Where-Object {$_.fileDocument.objectId.entity.displayName -eq $sourceServer -and $_.fileDocument.fileName -eq $file}
+                    if($fileSearch.files.Count -eq 0){
+                        $fileSearch = api get "/searchfiles?paginate=true&pageSize=500&entityIds=$($sourceEntity.id)&filename=$encodedFile"
+                        while($True){
+                            $fileSearch.files = $fileSearch.files | Where-Object {$_.fileDocument.objectId.entity.displayName -eq $sourceServer -and $_.fileDocument.fileName -eq $file}
+                            if($fileSearch.files.Count -gt 0){
+                                break
+                            }
+                            if($fileSearch.PSObject.Properties['paginationCookie']){
+                                $fileSearch = api get "/searchfiles?paginate=true&pageSize=500&entityIds=$($sourceEntity.id)&filename=$encodedFile&paginationCookie=$($fileSearch.paginationCookie)"
+                            }else{
+                                break
+                            }
+                        }
+                    }                 
                     # narrow by jobName
                     if($jobName){
                         $fileSearch.files = $fileSearch.files | Where-Object {$doc.objectId.jobId -eq $_.fileDocument.objectId.jobId}

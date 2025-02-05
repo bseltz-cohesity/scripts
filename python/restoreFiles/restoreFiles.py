@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """restore files using python"""
 
-# version 2024.02.14
+# version 2025.02.05
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -42,7 +42,7 @@ parser.add_argument('-l', '--latest', action='store_true')            # only use
 parser.add_argument('-w', '--wait', action='store_true')              # wait for completion and report result
 parser.add_argument('-k', '--taskname', type=str, default=None)       # recoverytask name
 parser.add_argument('-x', '--noindex', action='store_true')           # force no index usage
-parser.add_argument('-z', '--sleeptimeseconds', type=str, default=30)
+parser.add_argument('-z', '--sleeptimeseconds', type=int, default=30)
 args = parser.parse_args()
 
 vip = args.vip
@@ -418,6 +418,17 @@ else:
                 print("file %s not found" % file)
             else:
                 fileSearch['files'] = [n for n in fileSearch['files'] if n['fileDocument']['objectId']['entity']['displayName'].lower() in [s.lower() for s in sourceservers] and n['fileDocument']['filename'].lower() == file.lower()]
+                if len(fileSearch['files']) == 0:
+                    fileSearch = api('get', '/searchfiles?paginate=true&pageSize=500&filename=%s' % encodedFile)
+                    while True:
+                        fileSearch['files'] = [n for n in fileSearch['files'] if n['fileDocument']['objectId']['entity']['displayName'].lower() in [s.lower() for s in sourceservers] and n['fileDocument']['filename'].lower() == file.lower()]
+                        if len(fileSearch['files']) > 0:
+                            break
+                        if 'paginationCookie' in fileSearch:
+                            pagination_cookie = fileSearch['paginationCookie']
+                            fileSearch = api('get', '/searchfiles?paginate=true&pageSize=500&filename=%s&paginationCookie=%s' % (encodedFile, pagination_cookie))
+                        else:
+                            break
                 if len(fileSearch['files']) == 0:
                     print("file %s not found on sourceservers" % file)
                 else:
