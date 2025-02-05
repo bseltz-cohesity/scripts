@@ -24,28 +24,57 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 
 Place both files in a folder together and run the main script like so:
 
+To monitor all clusters through Helios:
+
 ```powershell
-./slaMonitor.ps1 -vip mycluster -username myusername -domain mydomain.net
+./slaMonitor.ps1 -username myuser `
+                 -maxLogBackupMinutes 15 `
+                 -smtpServer smtp.mydomain.net `
+                 -sendTo myuser@mydomain.net `
+                 -sendFrom someuser@mydomain.net
+```
+
+Or to monitor specific Helios clusters:
+
+```powershell
+./slaMonitor.ps1 -username myuser `
+                 -clusterName mycluster1, mycluster2 `
+                 -maxLogBackupMinutes 15 `
+                 -smtpServer smtp.mydomain.net `
+                 -sendTo myuser@mydomain.net `
+                 -sendFrom someuser@mydomain.net
+```
+
+To connect directly to one or more clusters:
+
+```powershell
+./slaMonitor.ps1 -vip mycluster1, mycluster2 `
+                 -username myusername `
+                 -domain mydomain.net `
+                 -maxLogBackupMinutes 15 `
+                 -smtpServer smtp.mydomain.net `
+                 -sendTo myuser@mydomain.net `
+                 -sendFrom someuser@mydomain.net
 ```
 
 ## Authentication Parameters
 
-* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -vip: (optional) one or more names or IPs of Cohesity clusters, comma separated (defaults to helios.cohesity.com)
 * -username: (optional) name of user to connect to Cohesity (defaults to helios)
 * -domain: (optional) your AD domain (defaults to local)
 * -useApiKey: (optional) use API key for authentication
 * -password: (optional) will use cached password or will be prompted
 * -noPrompt: (optional) do not prompt for password
-* -tenant: (optional) organization to impersonate
-* -mcm: (optional) connect through MCM
 * -mfaCode: (optional) TOTP MFA code
-* -emailMfaCode: (optional) send MFA code via email
-* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+* -clusterName: (optional) one or more clusters to connect to when connecting through Helios or MCM (comma separated)
 
 ## Other Parameters
 
 * -daysBack: (optional) skip finished runs older than X days (default is 7)
 * -maxLogBackupMinutes: (optional) alert log backups ran/running longer than X minutes
+* -runningOnly: (optional) only report on runs that are still running
+* -logsOnly: (optional)  only report on log backups
+* -environment: (optional) only report on specific environment (e.g. -environment kSQL)
 * -sendTo: (optional) email addresses to send report to (comma separated)
 * -smtpServer: (optional) SMTP gateway to forward email through
 * -smtpPort: (optional) SMTP port to use (default is 25)
