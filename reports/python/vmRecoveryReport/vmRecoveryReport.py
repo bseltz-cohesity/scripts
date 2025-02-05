@@ -94,7 +94,7 @@ beforeusecs = midnightusecs - (daysback * 86400000000) + 86400000000
 cluster = api('get', 'cluster')
 dateString = now.strftime("%Y-%m-%d")
 f = codecs.open(outfilename, 'w')
-f.write('"Cluster","Recovery Task Name","Recovery Task ID","Recovery Task Start Time","Recovery Type","Source VM Name","Target VM Name","VM Logical Size (GiB)","VM Used Size (GiB)","VM Status","VM Start Time","VM End Time","VM Recovery Duration (Sec)","VM Percent","Instant Recovery Start Time","Instant Recovery End Time","Instant Recovery Duration (Sec)","Instant Recovery Percent","Datastore Migration Start Time","Datastore Migration End Time","Datastore Migration Duration (Sec)","Datastore Migration Percent"\n')
+f.write('"Cluster","Recovery Task Name","Recovery Task ID","Recovery Task Start Time","Recovery Type","Recovery Point","Source VM Name","Target VM Name","VM Logical Size (GiB)","VM Used Size (GiB)","VM Status","VM Start Time","VM End Time","VM Recovery Duration (Sec)","VM Percent","Instant Recovery Start Time","Instant Recovery End Time","Instant Recovery Duration (Sec)","Instant Recovery Percent","Datastore Migration Start Time","Datastore Migration End Time","Datastore Migration Duration (Sec)","Datastore Migration Percent"\n')
 recoveries = api('get', 'data-protect/recoveries?startTimeUsecs=%s&recoveryActions=RecoverVMs&includeTenants=true&endTimeUsecs=%s' % (beforeusecs, tonightusecs), v=2)
 if len(tasks) > 0:
     recoveries['recoveries'] = [r for r in recoveries['recoveries'] if r['name'].lower() in [n.lower() for n in tasks] or r['id'].lower() in [i.lower() for i in tasks]]
@@ -119,6 +119,7 @@ for recovery in recoveries['recoveries']:
     recoveryStatus = thisRecovery['status']
     recoveryType = thisRecovery['vmwareParams']['recoverVmParams']['vmwareTargetParams']['recoveryProcessType']
     for object in thisRecovery['vmwareParams']['objects']:
+        objectRecoveryPoint = usecsToDate(object['snapshotCreationTimeUsecs'])
         objectStatus = object['status']
         objectStart = object['startTimeUsecs']
         objectEnd = ''
@@ -203,7 +204,7 @@ for recovery in recoveries['recoveries']:
             except Exception:
                 pass
         print('    %s %s %s%%' % (objectName, objectStatus, objectPct))
-        f.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], thisRecovery['name'], thisRecovery['id'], recoveryStart, recoveryType, objectName, targetName, logicalSize, size, objectStatus, objectStart, objectEnd, objectDuration, objectPct, instantStart, instantEnd, instantDuration, instantPct, migrateStart, migrateEnd, migrateDuration, migratePct))# ,"Instant Recovery Start Time","Instant Recovery End Time","Instant Recovery Duration","Instant Recovery Percent","Datastore Migration Start Time","Datastore Migration End Time","Datastore Migration Duration","Datastore Migration Percent"\n')
+        f.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], thisRecovery['name'], thisRecovery['id'], recoveryStart, recoveryType, objectRecoveryPoint, objectName, targetName, logicalSize, size, objectStatus, objectStart, objectEnd, objectDuration, objectPct, instantStart, instantEnd, instantDuration, instantPct, migrateStart, migrateEnd, migrateDuration, migratePct))# ,"Instant Recovery Start Time","Instant Recovery End Time","Instant Recovery Duration","Instant Recovery Percent","Datastore Migration Start Time","Datastore Migration End Time","Datastore Migration Duration","Datastore Migration Percent"\n')
 
 if len(vmnames) > 0:
     for vmname in vmnames:
