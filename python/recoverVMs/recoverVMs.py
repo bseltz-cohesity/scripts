@@ -25,7 +25,7 @@ parser.add_argument('-dc', '--datacentername', type=str, default=None)
 parser.add_argument('-vh', '--vhost', type=str, default=None)
 parser.add_argument('-f', '--foldername', type=str, default=None)
 parser.add_argument('-n', '--networkname', type=str, default=None)
-parser.add_argument('-s', '--datastorename', type=str, default=None)
+parser.add_argument('-s', '--datastorename', action='append', type=str, default=None)
 parser.add_argument('-pre', '--prefix', type=str, default='')
 parser.add_argument('-p', '--poweron', action='store_true')
 parser.add_argument('-x', '--detachnetwork', action='store_true')
@@ -59,7 +59,7 @@ datacentername = args.datacentername
 vhost = args.vhost
 foldername = args.foldername
 networkname = args.networkname
-datastorename = args.datastorename
+datastorenames = args.datastorename
 prefix = args.prefix
 poweron = args.poweron
 detachnetwork = args.detachnetwork
@@ -82,7 +82,7 @@ if vcentername is not None:
     if vhost is None:
         print('vhost is required')
         exit()
-    if datastorename is None:
+    if datastorenames is None or len(datastorenames) == 0:
         print('datastorename is required')
         exit()
     if networkname is None and detachnetwork is not True:
@@ -249,9 +249,12 @@ if vcentername:
     resourcePool = resourcePool[0]
 
     # select datastore
-    datastores = [d for d in api('get', '/datastores?resourcePoolId=%s&vCenterId=%s' % (resourcePoolId, vCenterId)) if d['vmwareEntity']['name'].lower() == datastorename.lower()]
-    if len(datastores) == 0:
-        print('Datastore %s not found' % datastorename)
+    datastores = [d for d in api('get', '/datastores?resourcePoolId=%s&vCenterId=%s' % (resourcePoolId, vCenterId)) if d['vmwareEntity']['name'].lower() in [d.lower() for d in datastorenames]]
+    if len(datastores) < len(datastorenames):
+        for datastorename in datastorenames:
+            founddatastore = [d for d in datastores if d['displayName'].lower() == datastorename.lower()]
+            if founddatastore is None or len(founddatastore) == 0:
+                print('Datastore %s not found' % datastorename)
         exit(1)
 
     vmFolderId = {}
@@ -299,9 +302,7 @@ if vcentername:
                     "preserveMacAddress": False
                 }
             },
-            "datastores": [
-                datastores[0]
-            ],
+            "datastores": datastores,
             "resourcePool": {
                 "id": resourcePoolId
             },
