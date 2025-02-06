@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Recover VMs for python version 2025-01-17a"""
+"""Recover VMs for python version 2025-02-06a"""
 
 ### import pyhesity wrapper module
 from pyhesity import *
