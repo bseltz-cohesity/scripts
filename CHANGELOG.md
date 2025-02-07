@@ -1,5 +1,14 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2025-02-07
+
+* [registerDB2.py](https://github.com/cohesity/community-automation-samples/tree/main/python/registerDB2) [`New`] register DB2 UDA protection source
+
+## 2025-02-06
+
+* [recoverVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverVMs) [`Update`] added support for multiple datastores
+* [recoverVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/recoverVMs) [`Update`] added support for multiple datastores
+
 ## 2025-02-05
 
 * [restoreFiles.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/restoreFiles) [`
