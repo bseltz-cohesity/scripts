@@ -11,12 +11,17 @@ from pyhesity import COHESITY_API
 
 # command line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')  # cluster to connect to
-parser.add_argument('-u', '--username', type=str, default='helios')   # username
-parser.add_argument('-d', '--domain', type=str, default='local')      # domain - defaults to local
-parser.add_argument('-i', '--useApiKey', action='store_true')         # use API key authentication
-parser.add_argument('-pwd', '--password', type=str, default=None)       # optional password
-parser.add_argument('-c', '--clustername', type=str, default=None)   # name of helios cluster to connect to
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
+parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-t', '--tenant', type=str, default=None)
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-m', '--mfacode', type=str, default=None)
+parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-y', '--days', type=int, default=31)
 
 args = parser.parse_args()
@@ -24,27 +29,38 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
-password = args.password
-useApiKey = args.useApiKey
+tenant = args.tenant
 clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
+emailmfacode = args.emailmfacode
 days = args.days
 
 ustart = timeAgo(days, 'days')
 
+# authentication =========================================================
+# demand clustername if connecting to helios or mcm
+if (mcm or vip.lower() == 'helios.cohesity.com') and clustername is None:
+    print('-c, --clustername is required when connecting to Helios or MCM')
+    exit(1)
+
 # authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, noretry=True)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, emailMfaCode=emailmfacode, tenantId=tenant)
+
+# exit if not authenticated
 if apiconnected() is False:
     print('authentication failed')
     exit(1)
 
-if vip.lower() == 'helios.cohesity.com':
-    if clustername is not None:
-        heliosCluster(clustername)
-        if 'accessClusterId' not in COHESITY_API['HEADER']:
-            exit()
-    else:
-        print('--clustername is required when connecting to Helios')
-        exit()
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    heliosCluster(clustername)
+    if LAST_API_ERROR() != 'OK':
+        exit(1)
+# end authentication =====================================================
 
 filePrefix = "restoreFilesReport"
 title = "Restore Files Report"
