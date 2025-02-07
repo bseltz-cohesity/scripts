@@ -23,6 +23,7 @@ parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-y', '--days', type=int, default=31)
+parser.add_argument('-n', '--taskname', type=str, default=None)
 
 args = parser.parse_args()
 
@@ -38,6 +39,7 @@ noprompt = args.noprompt
 mfacode = args.mfacode
 emailmfacode = args.emailmfacode
 days = args.days
+taskname = args.taskname
 
 ustart = timeAgo(days, 'days')
 
@@ -238,9 +240,14 @@ entityType = ['Unknown', 'VMware', 'HyperV', 'SQL', 'View', 'Puppeteer',
 
 restores = api('get', 'data-protect/recoveries?startTimeUsecs=%s&recoveryActions=RecoverFiles&includeTenants=true' % ustart, v=2)
 
+foundTask = False
+
 for restore in restores['recoveries']:
     taskId = restore['id']
     taskName = restore['name']
+    if taskname is not None and taskName.lower() != taskname.lower():
+        continue
+    foundTask = True
     status = restore['status']
     startTime = usecsToDate(restore['startTimeUsecs'], "%Y-%m-%d %H:%M")
     duration = '-'
@@ -314,4 +321,8 @@ htmlFile.write(html)
 htmlFile.close()
 csv.close()
 
-print('\nOutput saved to %s\nAlso saved to %s\n' % (htmlFileName, csvFileName))
+if foundTask is False:
+    print('No recoveries found')
+    exit()
+else:
+    print('\nOutput saved to %s\nAlso saved to %s\n' % (htmlFileName, csvFileName))

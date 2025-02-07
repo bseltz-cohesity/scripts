@@ -46,3 +46,4 @@ Place both files in a folder together and run the main script like so:
 ## Other Parameters
 
 * -d, --days: (optional) number of days to inspect (defaults to 31)
+* -n, --taskname: (optional) only include restore task(s) with this task name
