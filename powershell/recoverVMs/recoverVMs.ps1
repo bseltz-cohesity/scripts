@@ -22,7 +22,7 @@ param (
     [Parameter()][string]$hostName,  # esx cluster or stand alone host
     [Parameter()][string]$folderName,
     [Parameter()][string]$networkName,
-    [Parameter()][string]$datastoreName,
+    [Parameter()][array]$datastoreName,
     [Parameter()][string]$prefix = '',
     [Parameter()][int]$vlan,
     [Parameter()][switch]$preserveMacAddress,
@@ -196,9 +196,12 @@ if($vCenterName){
     # $resourcePool = api get /resourcePools?vCenterId=$vCenterId | Where-Object {$_.resourcePool.id -eq $resourcePoolId}
 
     # select datastore
-    $datastores = api get "/datastores?resourcePoolId=$resourcePoolId&vCenterId=$vCenterId" | Where-Object { $_.vmWareEntity.name -eq $datastoreName }
-    if(!$datastores){
-        Write-Host "Datastore $datastoreName not found" -ForegroundColor Yellow
+    $datastores = api get "/datastores?resourcePoolId=$resourcePoolId&vCenterId=$vCenterId" | Where-Object { $_.vmWareEntity.name -in $datastoreName }
+    if(!$datastores -or $datastores.Count -lt $datastoreName.Count){
+        $notFoundDatastores = $datastoreName | Where-Object {$_ -notin @($datastores.displayName)}
+        foreach($notFoundDatastore in $notFoundDatastores){
+            Write-Host "Datastore $notFoundDatastore not found" -ForegroundColor Yellow
+        }
         exit
     }
 
@@ -240,7 +243,7 @@ if($vCenterName){
                 "detachNetwork" = $True;
             };
             "datastores"    = @(
-                $datastores[0]
+                $datastores
             );
             "resourcePool"  = @{
                 "id" = $resourcePoolId

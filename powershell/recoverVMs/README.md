@@ -68,7 +68,7 @@ Place the files in a folder together and run the main script like so:
 * -hostName: (optional) name of vSphere host to recover to
 * -folderName: (optional) name of vSphere folder to recover to
 * -networkName: (optional) VM Network to attach the VM to
-* -datastoreName: (optional) Datastore to recover the VM to
+* -datastoreName: (optional) One or more datastore names to recover the VMs to (comma separated)
 * -poweron: (optional) power on the VMs during restore (default is false)
 * -detachNetwork: (optional) leave VM network disconnected (default is false)
 * -preserveMacAddress: (optional) maintain original Mac address (default is false)
