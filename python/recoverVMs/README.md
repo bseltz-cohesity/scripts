@@ -85,6 +85,7 @@ To restore a VM to a new location:
 * -j, --jobname: (optional) recover all VMs from a protection group
 * -l, --listrecoverypoints: (optional) show available recovery points (for first VM only)
 * -r, --recoverypoint: (optional) restore from a specific date, e.g. '2021-04-12 23:45:00' (default is latest backup)
+* -nt, --newerthanhours: (optional) only restore from backups taken in the last X hours
 
 ## Alternate Location Parameters
 

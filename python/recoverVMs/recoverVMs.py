@@ -33,6 +33,7 @@ parser.add_argument('-m', '--preservemacaddress', action='store_true')
 parser.add_argument('-t', '--recoverytype', type=str, choices=['InstantRecovery', 'CopyRecovery'], default='InstantRecovery')
 parser.add_argument('-l', '--listrecoverypoints', action='store_true')
 parser.add_argument('-r', '--recoverypoint', type=str, default=None)
+parser.add_argument('-nt', '--newerthanhours', type=int, default=None)
 parser.add_argument('-tn', '--taskname', type=str, default=None)
 parser.add_argument('-j', '--jobname', type=str, default=None)
 parser.add_argument('-o', '--overwrite', action='store_true')
@@ -67,6 +68,7 @@ preservemacaddress = args.preservemacaddress
 recoverytype = args.recoverytype
 listrecoverypoints = args.listrecoverypoints
 recoverypoint = args.recoverypoint
+newerthanhours = args.newerthanhours
 taskname = args.taskname
 jobname = args.jobname
 overwrite = args.overwrite
@@ -112,6 +114,8 @@ if recoverypoint is not None:
     recoverypointUsecs = dateToUsecs(recoverypoint)
 else:
     recoverypointUsecs = nowUsecs
+if newerthanhours is not None:
+    newerthanUsecs = nowUsecs - (newerthanhours * 3600000000)
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode)
@@ -195,6 +199,11 @@ for vmname in sorted(vmnames):
     selectedsnapshot = None
     for vm in vms:
         snapshots = api('get', 'data-protect/objects/%s/snapshots' % vm['id'], v=2)
+        if newerthanhours is not None:
+            snapshots['snapshots'] = [s for s in snapshots['snapshots'] if s['runStartTimeUsecs'] >= newerthanUsecs]
+            # if len(snapshots['snapshots']) == 0:
+            #     print('warning: no backups for VM %s in the last %s hours' % (vmname, newerthanhours))
+            #     continue
         for snapshot in sorted(snapshots['snapshots'], key=lambda s: s['runStartTimeUsecs'], reverse=True):
             runDate = usecsToDate(snapshot['runStartTimeUsecs'])
             if listrecoverypoints:
@@ -212,21 +221,32 @@ for vmname in sorted(vmnames):
         exit(0)
 
     if selectedsnapshot is None:
-        print('No recovery point found for %s at %s' % (vmname, usecsToDate(recoverypointUsecs)))
-        exit(1)
+        if newerthanhours is not None:
+            print('warning: no backups for VM %s in the last %s hours' % (vmname, newerthanhours))
+        else:
+            print('warning: no recovery point found for %s at %s' % (vmname, usecsToDate(recoverypointUsecs)))
+        continue
     else:
         recoverMessages.append('Recovering %s' % vmname)
         restoreParams['vmwareParams']['objects'].append({
             "snapshotId": selectedsnapshot['id']
         })
 
+if len(restoreParams['vmwareParams']['objects']) == 0:
+    print('No VMs ready for restore')
+    exit(1)
+
 if vcentername:
     # select vCenter
-    vCenterSource = [v for v in api('get', 'protectionSources?environments=kVMware&includeVMFolders=true') if v['protectionSource']['name'].lower() == vcentername.lower()]
+    vCenterSources = api('get', 'protectionSources?environments=kVMware&includeVMFolders=true')
+    if vCenterSources is None:
+        print('No vCenter sources found')
+        exit(1)
+    vCenterSource = [v for v in vCenterSources if v['protectionSource']['name'].lower() == vcentername.lower()]
     vCenterList = api('get', '/entitiesOfType?environmentTypes=kVMware&vmwareEntityTypes=kVCenter&vmwareEntityTypes=kStandaloneHost')
     vCenter = [v for v in vCenterList if v['displayName'].lower() == vcentername.lower()]
     if len(vCenterSource) == 0 or len(vCenter) == 0:
-        print('vcenter %s not found' % vcentername)
+        print('vCenter %s not found' % vcentername)
         exit(1)
     vCenterId = vCenter[0]['id']
 
