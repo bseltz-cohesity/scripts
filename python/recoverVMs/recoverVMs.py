@@ -141,6 +141,9 @@ if jobname is not None:
             print('protection group %s not found' % jobname)
             exit(1)
         search = api('get', '/searchvms?jobIds=%s' % job[0]['id'])
+        if 'vms' not in search or search['vms'] is None or len(search['vms']) == 0:
+            print('no VMs found in protection group %s' % jobname)
+            exit(1)
         vmnames = [o['vmDocument']['objectName'] for o in search['vms']]
     else:
         print('protection group %s not found' % jobname)
