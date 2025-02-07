@@ -201,9 +201,6 @@ for vmname in sorted(vmnames):
         snapshots = api('get', 'data-protect/objects/%s/snapshots' % vm['id'], v=2)
         if newerthanhours is not None:
             snapshots['snapshots'] = [s for s in snapshots['snapshots'] if s['runStartTimeUsecs'] >= newerthanUsecs]
-            # if len(snapshots['snapshots']) == 0:
-            #     print('warning: no backups for VM %s in the last %s hours' % (vmname, newerthanhours))
-            #     continue
         for snapshot in sorted(snapshots['snapshots'], key=lambda s: s['runStartTimeUsecs'], reverse=True):
             runDate = usecsToDate(snapshot['runStartTimeUsecs'])
             if listrecoverypoints:
