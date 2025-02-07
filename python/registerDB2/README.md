@@ -27,11 +27,9 @@ Place both files in a folder together and run the main script like so:
 ./registerDB2.py -v mycluster \
                  -u myuser \
                  -d mydomain.net \
-                 -n myuda1.mydomain.net \
-                 -t Other \
-                 -p /opt/cohesity/postgres/scripts \
-                 -a '--source-name=pguda2.seltzer.net --port=5432 --pg-bin=/usr/pgsql-10/bin' \
-                 -au postgres
+                 -n mydb2.mydomain.net \
+                 -dn mydb \
+                 -pp /db2/mydb
 ```
 
 ## Authentication Parameters
