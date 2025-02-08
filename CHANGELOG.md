@@ -1,5 +1,10 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2025-02-08
+
+* [registerGenericNas.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/registerGenericNas) [`Update`] modernized authentication
+* [protectGenericNas.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectGenericNas) [`Update`] modernized authentication
+
 ## 2025-02-07
 
 * [registerDB2.py](https://github.com/cohesity/community-automation-samples/tree/main/python/registerDB2) [`New`] register DB2 UDA protection source
