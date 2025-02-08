@@ -73,11 +73,6 @@ if($excludePaths.Length -eq 0){
     $excludePaths += '/.snapshot'
 }
 
-if($cloudArchiveDirect -and $mountPaths.Length -gt 1){
-    Write-Host "Cloud Archive Direct jobs are limited to a single mountPoint" -ForegroundColor Yellow
-    exit 1
-}
-
 if($cloudArchiveDirect){
     $isCAD = $True
     $storageDomainName = 'Direct_Archive_Viewbox'
@@ -86,9 +81,9 @@ if($cloudArchiveDirect){
 }
 
 # indexing
-$disableIndexing = $True
+$indexingEnabled = $False
 if($enableIndexing){
-    $disableIndexing = $false
+    $indexingEnabled = $True
 }
 
 # parse startTime
@@ -128,19 +123,24 @@ if($USING_HELIOS){
 # end authentication =========================================
 
 # get storageDomain
-$viewBoxes = api get viewBoxes
-if($viewBoxes -is [array]){
-        $viewBox = $viewBoxes | Where-Object { $_.name -ieq $storageDomainName }
-        if (!$viewBox) { 
-            write-host "Storage domain $storageDomainName not Found" -ForegroundColor Yellow
-            exit 1
-        }
+if($isCAD -eq $False){
+    $viewBoxes = api get viewBoxes
+    if($viewBoxes -is [array]){
+            $viewBox = $viewBoxes | Where-Object { $_.name -ieq $storageDomainName }
+            if (!$viewBox) { 
+                write-host "Storage domain $storageDomainName not Found" -ForegroundColor Yellow
+                exit 1
+            }
+    }else{
+        $viewBox = $viewBoxes[0]
+    }
+    $viewBoxId = $viewBox.id
 }else{
-    $viewBox = $viewBoxes[0]
+    $viewBoxId = $null
 }
 
 # get policy ID
-$policy = api get protectionPolicies | Where-Object { $_.name -ieq $policyName }
+$policy = (api get -v2 "data-protect/policies").policies | Where-Object name -eq $policyName
 if(!$policy){
     Write-Warning "Policy $policyName not found!"
     exit 1
@@ -150,6 +150,7 @@ if(!$policy){
 $sources = api get protectionSources?environments=kGenericNas
 $parentSourceId = $sources[0].protectionSource.id
 
+$objects = @()
 $sourceIds = @()
 foreach($mountPath in $mountPaths){
     $source = $sources.nodes | Where-Object {$_.protectionSource.name -eq $mountPath}
@@ -157,60 +158,71 @@ foreach($mountPath in $mountPaths){
         Write-Host "Mount Path $mountPath is not registered in Cohesity" -ForegroundColor Yellow
         exit 1
     }
+    $objects = @($objects + @{'id' = $source.protectionSource.id})
     $sourceIds += $source.protectionSource.id
 }
 
 # new or existing job
-$job = api get protectionJobs | Where-Object {$_.name -eq $jobName -and $_.environment -eq 'kGenericNas'}
+$job = (api get -v2 "data-protect/protection-groups?environments=kGenericNas").protectionGroups | Where-Object {$_.name -eq $jobName}
 if(! $job){
     $jobParams = @{
-        "name"                             = $jobName;
-        "description"                      = "";
-        "environment"                      = "kGenericNas";
-        "policyId"                         = $policy.id;
-        "viewBoxId"                        = $viewBox.id;
-        "parentSourceId"                   = $parentSourceId;
-        "sourceIds"                        = $sourceIds;
-        "startTime"                        = @{
-            "hour"   = [int]$hour;
-            "minute" = [int]$minute
+        "policyId" = $policy.id;
+        "startTime" = @{
+            "hour" = [int]$hour;
+            "minute" = [int]$minute;
+            "timeZone" = $timeZone
         };
-        "timezone"                         = $timeZone;
-        "incrementalProtectionSlaTimeMins" = $incrementalProtectionSlaTimeMins;
-        "fullProtectionSlaTimeMins"        = $fullProtectionSlaTimeMins;
-        "priority"                         = "kMedium";
-        "alertingPolicy"                   = @(
-            "kFailure"
-        );
-        "indexingPolicy"                   = @{
-            "disableIndexing" = $disableIndexing;
-            "allowPrefixes"   = @(
-                "/"
-            )
-        };
-        "abortInBlackoutPeriod"            = $false;
-        "qosType"                          = "kBackupHDD";
-        "environmentParameters"            = @{
-            "nasParameters" = @{
-                "continueOnError" = $true;
-                "filePathFilters" = @{
-                    "protectFilters" = $includePaths;
-                    "excludeFilters" = $excludePaths
-                }
+        "priority" = "kMedium";
+        "sla" = @(
+            @{
+                "backupRunType" = "kFull";
+                "slaMinutes" = $fullProtectionSlaTimeMins
+            };
+            @{
+                "backupRunType" = "kIncremental";
+                "slaMinutes" = $incrementalProtectionSlaTimeMins
             }
+        );
+        "qosPolicy" = "kBackupHDD";
+        "abortInBlackouts" = $false;
+        "pauseInBlackouts" = $false;
+        "storageDomainId" = $viewBoxId;
+        "name" = $jobName;
+        "environment" = "kGenericNas";
+        "isPaused" = $false;
+        "description" = "";
+        "alertPolicy" = @{
+            "backupRunStatus" = @(
+                "kFailure"
+            );
+            "alertTargets" = @()
         };
-        "isDirectArchiveEnabled"           = $isCAD;
-    }
-    
+        "genericNasParams" = @{
+            "objects" = @($objects);
+            "indexingPolicy" = @{
+                "enableIndexing" = $indexingEnabled;
+                "includePaths" = @(
+                    "/"
+                );
+                "excludePaths" = @()
+            };
+            "protocol" = "kNfs3";
+            "continueOnError" = $true;
+            "fileFilters" = @{
+                "includeList" = @($includePaths);
+                "excludeList" = @($excludePaths)
+            };
+            "encryptionEnabled" = $false;
+            "backupExistingSnapshot" = $true;
+            "excludeObjectIds" = @()
+        }
+    }    
     "Creating protection job $jobName..."
-    $null = api post protectionJobs $jobParams
+    $null = api post -v2 "data-protect/protection-groups" $jobParams
 }else{
-    if($cloudArchiveDirect){
-        Write-Host "Cloud Archive Direct jobs are limited to a single mountPoint" -ForegroundColor Yellow
-        exit 1
-    }
     "Updating protection job $jobName..."
-    $job.sourceIds += $sourceIds | Sort-Object -Unique
-    $null = api put protectionJobs/$($job.id) $job
+    $job.genericNasParams.objects = @($job.genericNasParams.objects | Where-Object {$_.id -notin $sourceIds})
+    $job.genericNasParams.objects = @($job.genericNasParams.objects + $objects)
+    $null = api put -v2 "data-protect/protection-groups/$($job.id)" $job
 }
 exit 0

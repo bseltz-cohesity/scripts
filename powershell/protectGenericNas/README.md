@@ -51,13 +51,16 @@ Place all files in a folder together. And run the script like so:
 * -mfaCode: (optional) TOTP MFA code
 * -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
 
-## Other Parameters
+## Basic Parameters
 
-* -policyName: name of the protection policy to use
 * -jobName: name of protection job
-* -startTime: (optional) e.g. '18:30' (defaults to 8PM)
 * -mountPath: (optional) one or more volumes to protect (comma separated, default is all volumes)
 * -mountList: (optional) text file list of volumes to protect
+
+## New Job Parameters
+
+* -policyName: name of the protection policy to use
+* -startTime: (optional) e.g. '18:30' (defaults to 8PM)
 * -inclusions: (optional) one or more inclusion paths (comma separated)
 * -inclusionList: (optional) text file list of paths to include
 * -exclusions: (optional) one or more exclusion paths (comma separated)
