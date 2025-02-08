@@ -12,10 +12,17 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, # the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, # username (local or AD)
-    [Parameter()][string]$domain = 'local', # local or AD domain
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
     [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter(Mandatory = $True)][string]$policyName, # policy to use for the new job
     [Parameter(Mandatory = $True)][string]$jobName, # name for the new job
     [Parameter()][string]$startTime = '20:00', # e.g. 23:30 for 11:30 PM
@@ -33,6 +40,44 @@ param (
     [Parameter()][string]$storageDomainName = 'DefaultStorageDomain' #storage domain you want the new job to write to
 )
 
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
+        }
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
+        exit
+    }
+    return ($items | Sort-Object -Unique)
+}
+
+$mountPaths = @(gatherList -Param $mountPath -FilePath $mountList -Name 'mount paths' -Required $True)
+$includePaths = @(gatherList -Param $inclusions -FilePath $inclusionList -Name 'mount paths' -Required $False)
+$excludePaths = @(gatherList -Param $exclusions -FilePath $exclusionList -Name 'mount paths' -Required $False)
+
+if($includePaths.Length -eq 0){
+    $includePaths += '/'
+}
+
+if($excludePaths.Length -eq 0){
+    $excludePaths += '/.snapshot'
+}
+
+if($cloudArchiveDirect -and $mountPaths.Length -gt 1){
+    Write-Host "Cloud Archive Direct jobs are limited to a single mountPoint" -ForegroundColor Yellow
+    exit 1
+}
+
 if($cloudArchiveDirect){
     $isCAD = $True
     $storageDomainName = 'Direct_Archive_Viewbox'
@@ -40,11 +85,11 @@ if($cloudArchiveDirect){
     $isCAD = $false
 }
 
-# source the cohesity-api helper code
-. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
-
-# authenticate
-apiauth -vip $vip -username $username -domain $domain -tenant $tenant
+# indexing
+$disableIndexing = $True
+if($enableIndexing){
+    $disableIndexing = $false
+}
 
 # parse startTime
 $hour, $minute = $startTime.split(':')
@@ -54,73 +99,33 @@ if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]:
     exit 1
 }
 
-# indexing
-$disableIndexing = $True
-if($enableIndexing){
-    $disableIndexing = $false
-}
+# source the cohesity-api helper code
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-# gather volume list from command-line and/or text file
-$mountPaths = @()
-foreach($v in $mountPath){
-    $mountPaths += $v
-}
-if ($mountList){
-    if(Test-Path -Path $mountList -PathType Leaf){
-        $vlist = Get-Content $mountList
-        foreach($v in $vlist){
-            $mountPaths += $v
-        }
-    }else{
-        Write-Warning "Volume list $mountList not found!"
-        exit 1
-    }
-}
-
-if($cloudArchiveDirect -and $mountPaths.Length -gt 1){
-    Write-Host "Cloud Archive Direct jobs are limited to a single mountPoint" -ForegroundColor Yellow
+# authentication =============================================
+# demand clusterName for Helios/MCM
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios/MCM" -ForegroundColor Yellow
     exit 1
 }
 
-# gather inclusion list
-$includePaths = @()
-foreach($inclusion in $inclusions){
-    $includePaths += $inclusion
-}
-if('' -ne $inclusionList){
-    if(Test-Path -Path $inclusionList -PathType Leaf){
-        $inclusions = Get-Content $inclusionList
-        foreach($inclusion in $inclusions){
-            $includePaths += $inclusion
-        }
-    }else{
-        Write-Warning "Inclusions file $inclusionList not found!"
-        exit 1
-    }
-}
-if($includePaths.Length -eq 0){
-    $includePaths += '/'
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
 }
 
-# gather exclusion list
-$excludePaths = @()
-foreach($exclusion in $exclusions){
-    $excludePaths += $exclusion
-}
-if('' -ne $exclusionList){
-    if(Test-Path -Path $exclusionList -PathType Leaf){
-        $exclusions = Get-Content $exclusionList
-        foreach($exclusion in $exclusions){
-            $excludePaths += [string]$exclusion
-        }
-    }else{
-        Write-Warning "Exclusions file $exclusionList not found!"
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
         exit 1
     }
 }
-if($excludePaths.Length -eq 0){
-    $excludePaths += '/.snapshot'
-}
+# end authentication =========================================
 
 # get storageDomain
 $viewBoxes = api get viewBoxes

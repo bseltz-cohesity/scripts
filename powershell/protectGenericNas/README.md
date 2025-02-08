@@ -38,16 +38,23 @@ Place all files in a folder together. And run the script like so:
 # end example
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: name or IP of Cohesity cluster
-* -username: name of user to connect to Cohesity
-* -domain: your AD domain (defaults to local)
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -policyName: name of the protection policy to use
 * -jobName: name of protection job
-
-## Optional Prameters
-
 * -startTime: (optional) e.g. '18:30' (defaults to 8PM)
 * -mountPath: (optional) one or more volumes to protect (comma separated, default is all volumes)
 * -mountList: (optional) text file list of volumes to protect
