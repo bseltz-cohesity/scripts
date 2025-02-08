@@ -2,6 +2,7 @@
 
 ## 2025-02-08
 
+* [registerGenericNas.py](https://github.com/cohesity/community-automation-samples/tree/main/python/registerGenericNas) [`Update`] modernized authentication
 * [registerGenericNas.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/registerGenericNas) [`Update`] modernized authentication
 * [protectGenericNas.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectGenericNas) [`Update`] modernized authentication
 
