@@ -71,10 +71,10 @@ To restore to an alternate location:
 * -asView: (optional) recover NAS volume as Cohesity View
 * -viewName: (optional) name of view to create (source volume name is used by default)
 * -smbView: (optional) set protocol access to SMB (NFSv3 by default)
-* -fullControl: (optional) list of users to grant full control for share permissions (comma separated)
-* -readWrite: (optional) list of users to grant read/write for share permissions (comma separated)
-* -readOnly: (optional) list of users to grant read-only for share permissions (comma separated)
-* -modify: (optional) list of users to grant modify for share permissions (comma separated)
+* -fullControl: (optional) list of users to grant full control share permissions (comma separated)
+* -readWrite: (optional) list of users to grant read/write share permissions (comma separated)
+* -readOnly: (optional) list of users to grant read-only share permissions (comma separated)
+* -modify: (optional) list of users to grant modify share permissions (comma separated)
 * -ips: (optional) cidrs to add, examples: 192.168.1.3/32, 192.168.2.0/24 (comma separated)
 * -ipList: (optional) text file of cidrs to add (one per line)
 * -ipsReadOnly: (optional) readWrite if omitted
