@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2025-02-09
+
+* [recoverNASVolume.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverNASVolume) [`Update`] added recover as View and SMB share permissions and subnet allow list controls
+
 ## 2025-02-08
 
 * [registerGenericNas.py](https://github.com/cohesity/community-automation-samples/tree/main/python/registerGenericNas) [`Update`] modernized authentication
