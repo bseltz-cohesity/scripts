@@ -58,6 +58,7 @@ Place both files in a folder together and run the main script like so:
 * -r, --runid: (optional) select specific run ID
 * -o, --overwrite: (optional) overwrite existing volumes
 * -w, --wait: (optional) wait for completion and report status
+* -st, --sleeptime: (optional) seconds to sleep between status queries (default is 30)
 
 ## Recover as View Parameters
 
