@@ -1,205 +1,411 @@
 #!/usr/bin/env python
-"""Recover NAS Volume"""
+"""base V2 example"""
 
 # import pyhesity wrapper module
 from pyhesity import *
-from datetime import datetime
 from time import sleep
+from datetime import datetime
 
 # command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)
-parser.add_argument('-u', '--username', type=str, required=True)
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-t', '--tenant', type=str, default=None)
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-m', '--mfacode', type=str, default=None)
+parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-s', '--sourcevolume', type=str, required=True)
-parser.add_argument('-n', '--sourcename', type=str, default=None)
-parser.add_argument('-t', '--targetvolume', type=str, default=None)
-parser.add_argument('-m', '--targetname', type=str, default=None)
-parser.add_argument('-b', '--before', type=str, default=None)
-parser.add_argument('-r', '--runid', type=int, default=None)
+parser.add_argument('-sn', '--sourcename', type=str, default=None)
+parser.add_argument('-tv', '--targetvolume', type=str, default=None)
+parser.add_argument('-tn', '--targetname', type=str, default=None)
 parser.add_argument('-w', '--wait', action='store_true')
 parser.add_argument('-o', '--overwrite', action='store_true')
 parser.add_argument('-l', '--showversions', action='store_true')
-parser.add_argument('-a', '--asview', action='store_true')
-
+parser.add_argument('-av', '--asview', action='store_true')
+parser.add_argument('-vn', '--viewname', type=str, default=None)
+parser.add_argument('-smb', '--smbview', action='store_true')
+parser.add_argument('-fc', '--fullcontrol', action='append', type=str)
+parser.add_argument('-rw', '--readwrite', action='append', type=str)
+parser.add_argument('-ro', '--readonly', action='append', type=str)
+parser.add_argument('-mod', '--modify', action='append', type=str)
+parser.add_argument('-ip', '--ips', action='append', type=str)
+parser.add_argument('-il', '--iplist', type=str)
+parser.add_argument('-rs', '--rootsquash', action='store_true')
+parser.add_argument('-as', '--allsquash', action='store_true')
+parser.add_argument('-ir', '--ipsreadonly', action='store_true')
+parser.add_argument('-ri', '--runid', type=int, default=None)
+parser.add_argument('-st', '--sleeptime', type=int, default=30)
 args = parser.parse_args()
 
 vip = args.vip
 username = args.username
 domain = args.domain
+tenant = args.tenant
+clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
+emailmfacode = args.emailmfacode
 sourcevolume = args.sourcevolume
 sourcename = args.sourcename
 targetvolume = args.targetvolume
 targetname = args.targetname
-wait = args.wait
 overwrite = args.overwrite
 showversions = args.showversions
-before = args.before
 asview = args.asview
 runid = args.runid
+viewname = args.viewname
+smbview = args.smbview
+fullcontrol = args.fullcontrol
+readwrite = args.readwrite
+readonly = args.readonly
+modify = args.modify
+ips = args.ips
+iplist = args.iplist
+rootsquash = args.rootsquash
+allsquash = args.allsquash
+ipsreadonly = args.ipsreadonly
+sleeptime = args.sleeptime
+wait = args.wait
+
+# authentication =========================================================
+# demand clustername if connecting to helios or mcm
+if (mcm or vip.lower() == 'helios.cohesity.com') and clustername is None:
+    print('-c, --clustername is required when connecting to Helios or MCM')
+    exit(1)
 
 # authenticate
-apiauth(vip, username, domain)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, emailMfaCode=emailmfacode, tenantId=tenant)
+
+# exit if not authenticated
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
+
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    heliosCluster(clustername)
+    if LAST_API_ERROR() != 'OK':
+        exit(1)
+# end authentication =====================================================
+
+now = datetime.now()
+nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
+
+# gather server list
+def gatherList(param=None, filename=None, name='items', required=True):
+    items = []
+    if param is not None:
+        for item in param:
+            items.append(item)
+    if filename is not None:
+        f = open(filename, 'r')
+        items += [s.strip() for s in f.readlines() if s.strip() != '']
+        f.close()
+    if required is True and len(items) == 0:
+        print('no %s specified' % name)
+        exit()
+    return items
+
+
+ips = gatherList(ips, iplist, name='cidrs', required=False)
+
+
+def addPermission(user, perms):
+    sid = None
+    if user.lower() == 'everyone':
+        sid = 'S-1-1-0'
+    elif '\\' in user:
+        (workgroup, user) = user.split('\\')
+        # find domain
+        adDomain = [a for a in ads if a['workgroup'].lower() == workgroup.lower() or a['domainName'].lower() == workgroup.lower()]
+        if adDomain is None or len(adDomain) == 0:
+            print('domain %s not found' % workgroup)
+            exit(1)
+        else:
+            # find domain princlipal/sid
+            domainName = adDomain[0]['domainName']
+            principal = api('get', 'activeDirectory/principals?domain=%s&includeComputers=true&search=%s' % (domainName, user))
+            if principal is None or len(principal) == 0:
+                print('Principal "%s" not found' % (workgroup, user))
+            else:
+                sid = principal[0]['sid']
+    else:
+        # find local or wellknown sid
+        principal = api('get', 'activeDirectory/principals?includeComputers=true&search=%s' % user)
+        if principal is None or len(principal) == 0:
+            print('Principal "%s" not found' % user)
+        else:
+            sid = principal[0]['sid']
+    if sid is not None:
+        permission = {       
+            "sid": sid,
+            "type": "Allow",
+            "mode": "FolderOnly",
+            "access": perms
+        }
+        return permission
+    else:
+        exit(1)
+
+
+def newWhiteListEntry(cidr, perm):
+    (ip, netbits) = cidr.split('/')
+    if netbits is None:
+        netbits = '32'
+
+    whitelistEntry = {
+        "nfsAccess": perm,
+        "smbAccess": perm,
+        "s3Access": perm,
+        "ip": ip,
+        "netmaskBits": int(netbits),
+        "description": ''
+    }
+    if allsquash:
+        whitelistEntry['nfsAllSquash'] = True
+    if rootsquash:
+        whitelistEntry['nfsRootSquash'] = True
+    return whitelistEntry
+
+
+def applyViewSettings():
+    global sharePermissions
+    updateView = False
+    if len(ips) > 0 or smbview:
+        newView = [v for v in (api('get', 'file-services/views?viewNames=%s' % viewname, v=2))['views'] if v['name'] == viewname][0]
+        newView['category'] = 'FileServices'
+        if smbview:
+            del newView['nfsMountPaths']
+            newView['enableSmbViewDiscovery'] = True
+            if 'versioning' in newView:
+                del newView['versioning']
+            newView['protocolAccess'] = [
+                {
+                    "type": "SMB",
+                    "mode": "ReadWrite"
+                }
+            ]
+            newView['sharePermissions'] = {'permissions': sharePermissions}
+        if len(ips) > 0:
+            newView['subnetWhitelist'] = []
+            perm = 'kReadWrite'
+            if readonly:
+                perm = 'kReadOnly'
+            for cidr in ips:
+                (ip, netbits) = cidr.split('/')
+                newView['subnetWhitelist'] = [w for w in newView['subnetWhitelist'] if w['ip'] != ip]
+                newView['subnetWhitelist'].append(newWhiteListEntry(cidr, perm))
+            newView['subnetWhitelist'] = [w for w in newView['subnetWhitelist'] if w is not None]
+        result = api('put', 'file-services/views/%s' % newView['viewId'], newView, v=2)
+performOverwrite = False
+if overwrite:
+    performOverwrite = True
 
 # find source volume
-results = api('get', '/searchvms?entityTypes=kNetapp&entityTypes=kGenericNas&entityTypes=kIsilon&entityTypes=kFlashBlade&entityTypes=kPure&vmName=%s' % sourcevolume)
-
-volume = []
-if results:
-    volume = [v for v in results['vms'] if v['vmDocument']['objectName'].lower() == sourcevolume.lower()]
-    if sourcename is not None:
-        volume = [v for v in volume if v['vmDocument']['registeredSource']['displayName'].lower() == sourcename.lower()]
-
-if len(volume) == 0:
-    if sourcename is not None:
-        print('source volume %s not found on %s' % (sourcevolume, sourcename))
-    else:
-        print('source volume %s not found' % sourcevolume)
-    exit(1)
-
-if len(volume) > 1:
-    print('there is more than one volume named %s' % sourcevolume)
-    exit(1)
-
-doc = volume[0]['vmDocument']
-
-# select latest version before date
-if before is not None:
-    endusecs = dateToUsecs(before)
-    doc['versions'] = [v for v in doc['versions'] if endusecs >= v['snapshotTimestampUsecs']]
-    if len(doc['versions']) == 0:
-        print('no backups before %s' % before)
+search = api('get', 'data-protect/search/protected-objects?snapshotActions=RecoverNasVolume,RecoverSanVolumes&searchString=%s&environments=kNetapp,kIsilon,kGenericNas,kFlashBlade,kGPFS,kElastifile,kPure' % sourcevolume, v=2)
+if 'objects' in search and search['objects'] is not None:
+    objects = [o for o in search['objects'] if o['name'].lower() == sourcevolume.lower()]
+    if objects is None or len(objects) == 0:
+        print('NAS volume %s not found' % sourcevolume)
+        exit(1)
+    if sourcename:
+        objects = [o for o in objects if 'sourceInfo' in o and o['sourceInfo'] is not None and 'name' in o['sourceInfo'] and o['sourceInfo']['name'].lower() == sourcename.lower()]
+    if objects is None or len(objects) == 0:
+        print('NAS volume %s not found on %s' % (sourcevolume, sourcename))
         exit(1)
 
-# show available versions
+# find snapshots
+allSnapshots = []
+for object in objects:
+    snapshots = api('get', 'data-protect/objects/%s/snapshots?protectionGroupIds=%s' % (object['id'], object['latestSnapshotsInfo'][0]['protectionGroupId']), v=2)
+    if snapshots is not None and 'snapshots' in snapshots and snapshots['snapshots'] is not None:
+        allSnapshots = allSnapshots + snapshots['snapshots']
+
+if len(allSnapshots) == 0:
+    print('No snapshots found for %s' % sourcevolume)
+
 if showversions:
-    print('%10s  %s' % ('runId', 'runDate'))
-    print('%10s  %s' % ('-----', '-------'))
-    for version in doc['versions']:
-        print('%10d  %s' % (version['instanceId']['jobInstanceId'], usecsToDate(version['instanceId']['jobStartTimeUsecs'])))
-    exit(0)
+    for snapshot in allSnapshots:
+        print('%s: %s (%s)' % (usecsToDate(snapshot['runStartTimeUsecs'], snapshot['runInstanceId'], snapshot['snapshotTargetType'])))
+    exit()
 
-# select specified run ID
-if runid is not None:
-    versions = [v for v in doc['versions'] if runid == v['instanceId']['jobInstanceId']]
-    if len(versions) == 0:
-        print('Run ID %s not found' % runid)
+if runid:
+    thisSnapshot = [s for s in allSnapshots if s['runInstanceId'] == runid]
+    if thisSnapshot is None or len(thisSnapshot) == 0:
+        print('No snapshot found for %s with runId %s' % (sourcevolume, runid))
         exit(1)
+else:
+    thisSnapshot = allSnapshots[1]
+restoreTaskName = "Recover_Storage_Volumes_%s" % datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-# select latest version
-version = doc['versions'][0]
-
-dateString = datetime.now().strftime("%Y-%m-%d_%H-%M")
-print('restoring files...')
+# recover as view
+sharePermissionsApplied = False
+sharePermissions = []
+ads = api('get', 'activeDirectory')
 
 if asview:
-    # recover as view
-    if targetvolume is None:
-        targetvolume = sourcevolume
-    restoreParams = {
-        "name": "Recover-NAS_%s" % dateString,
-        "objects": [
-            {
-                "jobId": doc['objectId']['jobId'],
-                "jobUid": {
-                    "clusterId": doc['objectId']['jobUid']['clusterId'],
-                    "clusterIncarnationId": doc['objectId']['jobUid']['clusterIncarnationId'],
-                    "id": doc['objectId']['jobUid']['objectId']
-                },
-                "jobRunId": version['instanceId']['jobInstanceId'],
-                "startedTimeUsecs": version['instanceId']['jobStartTimeUsecs'],
-                "protectionSourceId": doc['objectId']['entity']['id']
-            }
-        ],
-        "type": "kMountFileVolume",
-        "viewName": targetvolume,
-        "restoreViewParameters": {
-            "qos": {
-                "principalName": "TestAndDev High"
+    wait = True
+    sleeptime = 5
+    if readwrite is None:
+        readwrite = []
+    if fullcontrol is None: 
+        fullcontrol = []
+    if readonly is None:
+        readonly = []
+    if modify is None:
+        modify = []
+    if smbview:
+        for user in readwrite:
+            sharePermissionsApplied = True
+            sharePermissions.append(addPermission(user, 'ReadWrite'))
+        for user in fullcontrol:
+            sharePermissionsApplied = True
+            sharePermissions.append(addPermission(user, 'FullControl'))
+        for user in readonly:
+            sharePermissionsApplied = True
+            sharePermissions.append(addPermission(user, 'ReadOnly'))
+        for user in modify:
+            sharePermissionsApplied = True
+            sharePermissions.append(addPermission(user, 'Modify'))
+        if sharePermissionsApplied is False:
+            sharePermissions.append(addPermission('Everyone', 'FullControl'))
+    if viewname is None:
+        viewname = (sourcevolume.split('\\')[-1]).split('/')[-1]
+
+    recoveryParams = {
+        "name": restoreTaskName,
+        "snapshotEnvironment": thisSnapshot['environment'],
+        "genericNasParams": {
+            "objects": [
+                {
+                    "snapshotId": thisSnapshot['id']
+                }
+            ],
+            "recoveryAction": "RecoverNasVolume",
+            "recoverNasVolumeParams": {
+                "targetEnvironment": "kView",
+                "viewTargetParams": {
+                    "viewName": viewname,
+                    "qosPolicy": {
+                        "id": 6,
+                        "name": "TestAndDev High",
+                        "priority": "kHigh",
+                        "weight": 320,
+                        "workLoadType": "TestAndDev",
+                        "minRequests": 10,
+                        "seqWriteSsdPct": 100,
+                        "seqWriteHydraPct": 100
+                    }
+                }
             }
         }
     }
-    result = api('post', 'restore/recover', restoreParams)
 else:
-    # restore to NAS volume
-    sources = []
-    targetId = None
-    targetParentSourceId = None
-    if targetvolume:
-        # find target volume
-        sources = api('get', '/backupsources?allUnderHierarchy=true&envTypes=9&envTypes=11&envTypes=14&envTypes=21&excludeTypes=5')
-        if len(sources) > 0:
-            if targetname is not None:
-                sources = [s for s in sources['entityHierarchy']['children'] if s['entity']['displayName'].lower() == targetname.lower()]
-            else:
-                sources = [s for s in sources['entityHierarchy']['children'] if s['entity']['displayName'] == 'NAS Mount Points']
-            if len(sources) == 0:
-                if targetname is not None:
-                    print('target %s not found' % targetname)
-                else:
-                    print('target volume %s not found' % targetvolume)
-                exit(1)
-            if targetname is not None:
-                targetParentSourceId = sources[0]['entity']['id']
-            for v in sources[0]['children']:
-                if v['entity']['displayName'].lower() == targetvolume.lower():
-                    targetId = v['entity']['id']
-            if targetId is None:
-                if targetname is not None:
-                    print('target volume %s not found on %s' % (targetvolume, targetname))
-                else:
-                    print('target volume %s not found' % targetvolume)
-                exit(1)
-    else:
-        targetId = doc['objectId']['entity']['id']
-
-    restoreParams = {
-        "name": "Recover-NAS_%s" % dateString,
-        "sourceObjectInfo": {
-            "jobId": doc['objectId']['jobId'],
-            "jobUid": {
-                "clusterId": doc['objectId']['jobUid']['clusterId'],
-                "clusterIncarnationId": doc['objectId']['jobUid']['clusterIncarnationId'],
-                "id": doc['objectId']['jobUid']['objectId']
-            },
-            "jobRunId": version['instanceId']['jobInstanceId'],
-            "startedTimeUsecs": version['instanceId']['jobStartTimeUsecs'],
-            "protectionSourceId": doc['objectId']['entity']['id']
-        },
-        "targetSourceId": targetId,
-        "isFileBasedVolumeRestore": True,
-        "filenames": [
-            "/"
-        ],
-        "overwrite": False,
-        "preserveAttributes": True,
-        "continueOnError": True
+    # recovery params
+    paramsName = [k for k in thisSnapshot.keys() if 'Params' in k][0]
+    targetParamsName = '%s%sTargetParams' % (thisSnapshot['environment'][1:2].lower(), thisSnapshot['environment'][2:])
+    recoveryParams = {
+        "name": restoreTaskName,
+        "snapshotEnvironment": thisSnapshot['environment'],
+        paramsName: {
+            "objects": [
+                {
+                    "snapshotId": thisSnapshot['id']
+                }
+            ],
+            "recoveryAction": "RecoverNasVolume",
+            "recoverNasVolumeParams": {
+                "targetEnvironment": thisSnapshot['environment'],
+                targetParamsName: {
+                    "recoverToNewSource": False,
+                    "originalSourceConfig": {
+                        "overwriteExistingFile": performOverwrite,
+                        "preserveFileAttributes": True,
+                        "continueOnError": True,
+                        "encryptionEnabled": False
+                    }
+                }
+            }
+        }
     }
 
-    if targetParentSourceId is not None:
-        restoreParams['targetParentSourceId'] = targetParentSourceId
+    # find target volume
+    if targetvolume:
+        targets = api('get', 'protectionSources/rootNodes?environments=kNetapp,kIsilon,kGenericNas,kFlashBlade,kGPFS,kElastifile,kPure')
+        if targets is not None and len(targets) > 0 and targetname:
+            targets = [t for t in targets if t['protectionSource']['name'].lower() == targetname.lower()]
+        if targets is None or len(targets) == 0:
+            print('target %s not found' % targetname)
+            exit(1)
 
-    if overwrite:
-        restoreParams['overwrite'] = True
-    result = api('post', 'restore/files', restoreParams)
+        foundVolumes = []
+        for target in targets:
+            sources = api('get', 'protectionSources?useCachedData=false&id=%s&allUnderHierarchy=false' % target['protectionSource']['id'])
+            for source in sources:
+                for node in source['nodes']:
+                    if 'nodes' in node:
+                        for subnode in node['nodes']:
+                            if subnode['protectionSource']['name'].lower() == targetvolume.lower():
+                                foundVolumes.append(subnode)
+                    elif node['protectionSource']['name'].lower() == targetvolume.lower():
+                        foundVolumes.append(node)
 
-if result:
-    taskId = result['id']
-    if wait:
-        # wait for completion
-        finishedStates = ['kCanceled', 'kSuccess', 'kFailure']
-        status = 'submitted'
-        while status not in finishedStates:
-            sleep(5)
-            restoreTask = api('get', '/restoretasks/%s' % taskId)
-            status = restoreTask[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus']
-        if status == 'kSuccess':
-            print("Restore finished with status Success")
-        else:
-            if 'error' in restoreTask[0]['restoreTask']['performRestoreTaskState']['base']:
-                errorMsg = restoreTask[0]['restoreTask']['performRestoreTaskState']['base']['error']['errorMsg']
-            else:
-                errorMsg = ''
-            print("Restore finished with status %s" % restoreTask[0]['restoreTask']['performRestoreTaskState']['base']['publicStatus'][1:])
-            print(errorMsg)
+        if len(foundVolumes) == 0:
+            print('Target volume %s not found' % targetvolume)
+            exit(1)
+        elif len(foundVolumes) > 1:
+            print('More than one target volume found. Please specify -tn, --targetname')
+            exit(1)
+
+        # alternate target recovery params
+        recoveryParams[paramsName]['recoverNasVolumeParams'] = {
+            "targetEnvironment": foundVolumes[0]['protectionSource']['environment'],
+            targetParamsName: {
+                "recoverToNewSource": True,
+                "newSourceConfig": {
+                    "volume": {
+                        "id": foundVolumes[0]['protectionSource']['id']
+                    },
+                    "overwriteExistingFile": performOverwrite,
+                    "preserveFileAttributes": True,
+                    "continueOnError": True,
+                    "encryptionEnabled": False
+                }
+            }
+        }
+print('Recovering %s' % sourcevolume)
+recovery = api('post', 'data-protect/recoveries', recoveryParams, v=2)
+
+# wait for restores to complete
+finishedStates = ['Canceled', 'Succeeded', 'Failed', 'SucceededWithWarning']
+if 'id' not in recovery:
+    print('an error occurred')
+    exit(1)
+
+if wait:
+    print('Waiting for recovery to complete')
+    status = 'unknown'
+    while status not in finishedStates:
+        sleep(sleeptime)
+        recoveryTask = api('get', 'data-protect/recoveries/%s?includeTenants=true' % recovery['id'], v=2)
+        status = recoveryTask['status']
+    print('Recovery task finished with status: %s' % status)
+    if status in ['Failed', 'SucceededWithWarning']:
+        if 'messages' in recoveryTask and recoveryTask['messages'] is not None and len(recoveryTask['messages']) > 0:
+            print('%s', recoveryTask['messages'][0])
+    if status == 'Succeeded':
+        if asview:
+            applyViewSettings()
+        exit(0)
+    else:
+        exit(1)
+exit(0)
