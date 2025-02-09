@@ -16,6 +16,18 @@ param (
     [Parameter()][string]$sourceName,
     [Parameter()][string]$targetName,
     [Parameter()][string]$targetVolume,
+    [Parameter()][switch]$asView,
+    [Parameter()][string]$viewName,
+    [Parameter()][switch]$smbView,
+    [Parameter()][array]$fullControl,
+    [Parameter()][array]$readWrite,
+    [Parameter()][array]$readOnly,
+    [Parameter()][array]$modify,
+    [Parameter()][array]$ips,
+    [Parameter()][string]$ipList,
+    [Parameter()][switch]$rootSquash,
+    [Parameter()][switch]$allSquash,
+    [Parameter()][switch]$ipsReadOnly,
     [Parameter()][switch]$showVersions,
     [Parameter()][int64]$runId,
     [Parameter()][switch]$overwrite,
@@ -51,14 +63,128 @@ if($USING_HELIOS){
 }
 # end authentication =========================================
 
-function getMatchingNodes($thisObject, $matchName){
-    $matchNodes = @()
-    foreach($node in $nodes){
-        if($node.protectionSource.name -eq $matchName){
-            $matchNodes = @($matchNodes + $node)
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
         }
     }
-    return $matchNodes
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
+        exit
+    }
+    return ($items | Sort-Object -Unique)
+}
+
+$ipsToAdd = @(gatherList -Param $ips -FilePath $ipList -Name 'IPs' -Required $False)
+
+function addPermission($user, $perms){
+    if($user -eq 'Everyone'){
+        $sid = 'S-1-1-0'
+    }elseif($user.contains('\')){
+        $workgroup, $user = $user.split('\')
+        # find domain
+        $adDomain = $ads | Where-Object { $_.workgroup -eq $workgroup -or $_.domainName -eq $workgroup}
+        if(!$adDomain){
+            write-host "domain $workgroup not found!" -ForegroundColor Yellow
+            exit 1
+        }else{
+            # find domain princlipal/sid
+            $domainName = $adDomain.domainName
+            $principal = api get "activeDirectory/principals?domain=$($domainName)&includeComputers=true&search=$($user)"
+            if(!$principal){
+                write-host "Principal ""$($workgroup)\$($user)"" not found!" -ForegroundColor Yellow
+            }else{
+                $sid = $principal[0].sid
+                $sids[$user] = $sid
+            }
+        }
+    }else{
+        # find local or wellknown sid
+        $principal = api get "activeDirectory/principals?includeComputers=true&search=$($user)"
+        if(!$principal){
+            write-host "Principal ""$($user)"" not found!" -ForegroundColor Yellow
+        }else{
+            $sid = $principal[0].sid
+            $sids[$user] = $sid
+        }
+    }
+    if($sid){
+        $permission = @{       
+            "sid" = $sid;
+            "type" = "Allow";
+            "mode" = "FolderOnly"
+            "access" = $perms
+        }
+        return $permission
+    }else{
+        # Write-Warning "User $user not found"
+        exit 1
+    }
+}
+
+function newWhiteListEntry($cidr, $perm){
+    $ip, $netbits = $cidr -split '/'
+    if(! $netbits){
+        $netbits = '32'
+    }
+
+    $whitelistEntry = @{
+        "nfsAccess" = $perm;
+        "smbAccess" = $perm;
+        "s3Access" = $perm;
+        "ip"            = $ip;
+        "netmaskBits"    = [int]$netbits;
+        "description" = ''
+    }
+    if($allSquash){
+        $whitelistEntry['nfsAllSquash'] = $True
+    }
+    if($rootSquash){
+        $whitelistEntry['nfsRootSquash'] = $True
+    }
+    return $whitelistEntry
+}
+
+function applyViewSettings(){
+    $updateView = $False
+    if($ipsToAdd.Count -gt 0 -or $smbView){
+        $newView = (api get -v2 "file-services/views?viewNames=$viewName").views | Where-Object { $_.name -eq $viewName }
+        $newView | setApiProperty -name category -value 'FileServices'
+        if($smbView){
+            delApiProperty -object $newView -name nfsMountPaths
+            $newView | setApiProperty -name enableSmbViewDiscovery -value $True
+            delApiProperty -object $newView -name versioning
+            $newView.protocolAccess = @(
+                @{
+                    "type" = "SMB";
+                    "mode" = "ReadWrite"
+                }
+            )
+            $newView.sharePermissions | setApiProperty -name permissions -value $sharePermissions
+        }
+        if($ipsToAdd.Count -gt 0){
+            setApiProperty -object $newView -name 'subnetWhitelist' -value @()
+            $perm = 'kReadWrite'
+            if($readOnly){
+                $perm = 'kReadOnly'
+            }
+            foreach($cidr in $ipsToAdd){
+                $ip, $netbits = $cidr -split '/'
+                $newView.subnetWhitelist = @($newView.subnetWhiteList | Where-Object ip -ne $ip)
+                $newView.subnetWhitelist = @($newView.subnetWhiteList +(newWhiteListEntry $cidr $perm))
+            }
+            $newView.subnetWhiteList = @($newView.subnetWhiteList | Where-Object {$_ -ne $null})
+        }
+        $null = api put -v2 file-services/views/$($newView.viewId) $newView
+    }
 }
 
 $performOverwrite = $false
@@ -111,86 +237,131 @@ if($runId){
     $thisSnapshotGroup = $allSnapshotGroups[-1]
 }
 $thisSnapshot = $thisSnapshotGroup.Group[0]
-
-# recovery params
-$paramsName = $thisSnapshot.PSObject.Properties.Name -match 'params'
-$targetParamsName = "$($thisSnapshot.environment.subString(1,1).toLower())$($thisSnapshot.environment.subString(2))TargetParams"
 $restoreTaskName = "Recover_Storage_Volumes_$(get-date -UFormat '%b_%d_%Y_%H-%M%p')"
 
-$recoveryParams = @{
-    "name" = $restoreTaskName;
-    "snapshotEnvironment" = $thisSnapshot.environment;
-    "$paramsName" = @{
-        "objects" = @(
-            @{
-                "snapshotId" = $thisSnapshot.id
-            }
-        );
-        "recoveryAction" = "RecoverNasVolume";
-        "recoverNasVolumeParams" = @{
-            "targetEnvironment" = $thisSnapshot.environment;
-            "$targetParamsName" = @{
-                "recoverToNewSource" = $false;
-                "originalSourceConfig" = @{
-                    "overwriteExistingFile" = $performOverwrite;
-                    "preserveFileAttributes" = $true;
-                    "continueOnError" = $true;
-                    "encryptionEnabled" = $false
-                }
-            }
+# recover as view
+$sharePermissionsApplied = $False
+$sharePermissions = @()
+if($asView){
+    if($smbView){
+        $wait = $True
+        $sleepTime = 5
+        $ads = api get activeDirectory
+        $sids = @{}
+        foreach($user in $readWrite){
+            $sharePermissionsApplied = $True
+            $sharePermissions += addPermission $user 'ReadWrite'
+        }
+        foreach($user in $fullControl){
+            $sharePermissionsApplied = $True
+            $sharePermissions += addPermission $user 'FullControl'
+        }
+        foreach($user in $readOnly){
+            $sharePermissionsApplied = $True
+            $sharePermissions += addPermission $user 'ReadOnly'
+        }
+        foreach($user in $modify){
+            $sharePermissionsApplied = $True
+            $sharePermissions += addPermission $user 'Modify'
+        }
+        if($sharePermissionsApplied -eq $False){
+            $sharePermissions += addPermission "Everyone" 'FullControl'
         }
     }
-}
-
-# find target volume
-if($targetVolume){
-    $targets = api get "protectionSources/rootNodes?environments=kNetapp,kIsilon,kGenericNas,kFlashBlade,kGPFS,kElastifile,kPure" # ,kIbmFlashSystem"
-    if($targetName){
-        $targets = $targets | Where-Object {$_.protectionSource.name -eq $targetName}
+    if(!$viewName){
+        $viewName = (($sourceVolume -split '\\')[-1] -split '/')[-1]
     }
-    $foundVolumes = @()
-    foreach($target in $targets){
-        $sources = api get "protectionSources?useCachedData=false&id=$($target.protectionSource.id)&allUnderHierarchy=false"
-        foreach($source in $sources){
-            foreach($node in $source.nodes){
-                if($node.PSObject.Properties['nodes']){
-                    foreach($sourceNode in $node.nodes){
-                        if($sourceNode.protectionSource.name -eq $targetVolume){
-                            $foundVolumes = @($foundVolumes + $sourceNode)
-                        }
+    $recoveryParams = @{
+        "name" = $restoreTaskName;
+        "snapshotEnvironment" = $thisSnapshot.environment;
+        "genericNasParams" = @{
+            "objects" = @(
+                @{
+                    "snapshotId" = $thisSnapshot.id
+                }
+            );
+            "recoveryAction" = "RecoverNasVolume";
+            "recoverNasVolumeParams" = @{
+                "targetEnvironment" = "kView";
+                "viewTargetParams" = @{
+                    "viewName" = $viewName;
+                    "qosPolicy" = @{
+                        "id" = 6;
+                        "name" = "TestAndDev High";
+                        "priority" = "kHigh";
+                        "weight" = 320;
+                        "workLoadType" = "TestAndDev";
+                        "minRequests" = 10;
+                        "seqWriteSsdPct" = 100;
+                        "seqWriteHydraPct" = 100
                     }
-                }elseif($node.protectionSource.name -eq $targetVolume){
-                    $foundVolumes = @($foundVolumes + $node)
                 }
             }
         }
     }
-    if($foundVolumes.Count -eq 0){
-        Write-Host "Target volume $targetVolume not found" -ForegroundColor Yellow
-        exit
-    }elseif($foundVolumes.Count -gt 1){
-        Write-Host "More than one target volume found. Please specify -targetName" -ForegroundColor Yellow
-        exit
-    }
-    $targetParamsName = "$($foundVolumes[0].protectionSource.environment.subString(1,1).toLower())$($foundVolumes[0].protectionSource.environment.subString(2))TargetParams"
-
-    # alternate target recovery params
-    $recoveryParams."$paramsName".recoverNasVolumeParams.targetEnvironment = $foundVolumes[0].protectionSource.environment
-
-    if($foundVolumes[0].protectionSource.environment -eq 'kGenericNas'){
-        $recoveryParams."$paramsName".recoverNasVolumeParams = @{
-            "targetEnvironment" = $foundVolumes[0].protectionSource.environment;
-            "$targetParamsName" = @{
-                "volume" = @{
-                    "id" = $foundVolumes[0].protectionSource.id
-                };
-                "overwriteExistingFile" = $performOverwrite;
-                "preserveFileAttributes" = $true;
-                "continueOnError" = $true;
-                "encryptionEnabled" = $false
+}else{
+    # recovery params
+    $paramsName = $thisSnapshot.PSObject.Properties.Name -match 'params'
+    $targetParamsName = "$($thisSnapshot.environment.subString(1,1).toLower())$($thisSnapshot.environment.subString(2))TargetParams"
+    $recoveryParams = @{
+        "name" = $restoreTaskName;
+        "snapshotEnvironment" = $thisSnapshot.environment;
+        "$paramsName" = @{
+            "objects" = @(
+                @{
+                    "snapshotId" = $thisSnapshot.id
+                }
+            );
+            "recoveryAction" = "RecoverNasVolume";
+            "recoverNasVolumeParams" = @{
+                "targetEnvironment" = $thisSnapshot.environment;
+                "$targetParamsName" = @{
+                    "recoverToNewSource" = $false;
+                    "originalSourceConfig" = @{
+                        "overwriteExistingFile" = $performOverwrite;
+                        "preserveFileAttributes" = $true;
+                        "continueOnError" = $true;
+                        "encryptionEnabled" = $false
+                    }
+                }
             }
         }
-    }else{
+    }
+
+    # find target volume
+    if($targetVolume){
+        $targets = api get "protectionSources/rootNodes?environments=kNetapp,kIsilon,kGenericNas,kFlashBlade,kGPFS,kElastifile,kPure" # ,kIbmFlashSystem"
+        if($targetName){
+            $targets = $targets | Where-Object {$_.protectionSource.name -eq $targetName}
+        }
+        $foundVolumes = @()
+        foreach($target in $targets){
+            $sources = api get "protectionSources?useCachedData=false&id=$($target.protectionSource.id)&allUnderHierarchy=false"
+            foreach($source in $sources){
+                foreach($node in $source.nodes){
+                    if($node.PSObject.Properties['nodes']){
+                        foreach($sourceNode in $node.nodes){
+                            if($sourceNode.protectionSource.name -eq $targetVolume){
+                                $foundVolumes = @($foundVolumes + $sourceNode)
+                            }
+                        }
+                    }elseif($node.protectionSource.name -eq $targetVolume){
+                        $foundVolumes = @($foundVolumes + $node)
+                    }
+                }
+            }
+        }
+        if($foundVolumes.Count -eq 0){
+            Write-Host "Target volume $targetVolume not found" -ForegroundColor Yellow
+            exit
+        }elseif($foundVolumes.Count -gt 1){
+            Write-Host "More than one target volume found. Please specify -targetName" -ForegroundColor Yellow
+            exit
+        }
+        $targetParamsName = "$($foundVolumes[0].protectionSource.environment.subString(1,1).toLower())$($foundVolumes[0].protectionSource.environment.subString(2))TargetParams"
+
+        # alternate target recovery params
+        $recoveryParams."$paramsName".recoverNasVolumeParams.targetEnvironment = $foundVolumes[0].protectionSource.environment
         $recoveryParams."$paramsName".recoverNasVolumeParams = @{
             "targetEnvironment" = $foundVolumes[0].protectionSource.environment;
             "$targetParamsName" = @{
@@ -233,6 +404,9 @@ if($wait){
         }
     }
     if($status -eq 'Succeeded'){
+        if($asView){
+            applyViewSettings
+        }
         exit 0
     }else{
         exit 1
