@@ -401,7 +401,7 @@ if($wait){
     $finishedStates = @('Canceled', 'Succeeded', 'Failed')
     $pass = 0
     do{
-        Start-Sleep 10
+        Start-Sleep 30
         $recoveryTask = api get -v2 data-protect/recoveries/$($recovery.id)?includeTenants=true
         $status = $recoveryTask.status
 
