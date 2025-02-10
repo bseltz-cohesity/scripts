@@ -238,7 +238,7 @@ if len(restoreParams['vmwareParams']['objects']) == 0:
 
 if vcentername:
     # select vCenter
-    vCenterSources = api('get', 'protectionSources?environments=kVMware&includeVMFolders=true')
+    vCenterSources = api('get', 'protectionSources?environments=kVMware&includeVMFolders=true&excludeTypes=kVirtualMachine')
     if vCenterSources is None:
         print('No vCenter sources found')
         exit(1)
