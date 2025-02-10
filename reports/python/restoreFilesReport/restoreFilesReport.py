@@ -24,6 +24,7 @@ parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-y', '--days', type=int, default=31)
 parser.add_argument('-n', '--taskname', type=str, default=None)
+parser.add_argument('-f', '--outfilename', type=str, default='restoreFilesReport')
 
 args = parser.parse_args()
 
@@ -40,6 +41,7 @@ mfacode = args.mfacode
 emailmfacode = args.emailmfacode
 days = args.days
 taskname = args.taskname
+outfilename = args.outfilename
 
 ustart = timeAgo(days, 'days')
 
@@ -64,7 +66,6 @@ if mcm or vip.lower() == 'helios.cohesity.com':
         exit(1)
 # end authentication =====================================================
 
-filePrefix = "restoreFilesReport"
 title = "Restore Files Report"
 
 headings = ('''Date
@@ -87,12 +88,12 @@ htmlHeadings = ''.join(['<th>%s</th>' % h for h in headings])
 cluster = api('get', 'cluster')
 
 # CSV output
-csvFileName = "%s_%s_%s.csv" % (filePrefix, cluster['name'], dateString)
+csvFileName = "%s.csv" % outfilename
 csv = codecs.open(csvFileName, 'w', 'utf-8')
 csv.write('%s\n' % csvHeadings)
 
 # HTML output
-htmlFileName = "%s_%s_%s.html" % (filePrefix, cluster['name'], dateString)
+htmlFileName = "%s.html" % outfilename
 htmlFile = codecs.open(htmlFileName, 'w', 'utf-8')
 
 html = '''<html>

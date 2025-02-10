@@ -47,3 +47,4 @@ Place both files in a folder together and run the main script like so:
 
 * -d, --days: (optional) number of days to inspect (defaults to 31)
 * -n, --taskname: (optional) only include restore task(s) with this task name
+* -f, --outfilename: (optional) default is 'restoreFilesReport' (csv and html)
