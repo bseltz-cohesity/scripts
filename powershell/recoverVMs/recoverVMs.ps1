@@ -35,7 +35,8 @@ param (
     [Parameter()][switch]$dbg,
     [Parameter()][string]$vmTag,
     [Parameter()][string]$protectionGroup,
-    [Parameter()][string]$jobName
+    [Parameter()][string]$jobName,
+    [Parameter()][int]$newerThanHours
 )
 
 # gather list from command line params and file
@@ -97,9 +98,9 @@ if($vmTag){
 }
 
 # search for protection groups
-if($protectionGroup){
+if($protectionGroup -or $jobName){
     $jobVMlist = api get "/searchvms?entityTypes=kVMware&vmName=$protectionGroup"
-    $jobVMs = $jobVMlist.vms | Where-Object  {$_.vmDocument.jobName -eq $protectionGroup} 
+    $jobVMs = $jobVMlist.vms | Where-Object  {$_.vmDocument.jobName -eq $protectionGroup -or $_.vmDocument.jobName -eq $jobName}
     $vmNames = $vmNames + @($jobVMs.vmDocument.objectName) | Sort-Object -Unique  
 }
 
@@ -110,6 +111,11 @@ if($vmNames.Count -eq 0){
 
 $restores = @()
 $restoreParams = @{}
+
+$nowUsecs = dateToUsecs
+if($newerThanHours){
+   $newerthanUsecs = $nowUsecs - ($newerThanHours * 3600000000)
+}
 
 $recoverDateString = (get-date).ToString('yyyy-MM-dd_hh-mm-ss')
 
@@ -325,15 +331,6 @@ if($overwrite){
     $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.overwriteExistingVm = $True
 }
 
-# prompt for confirmation
-if(!$noPrompt){
-    Write-Host "Ready to restore:`n    $prefix$($vmNames -join "`n    $prefix")" 
-    $confirm = Read-Host -Prompt "Are you sure? Yes(No)"
-    if($confirm.ToLower() -ne 'yes' -and $confirm.ToLower() -ne 'y'){
-        exit
-    }
-}
-
 # get list of VM backups
 foreach($vm in $vmNames){
     $vmName = [string]$vm
@@ -343,7 +340,6 @@ foreach($vm in $vmNames){
         $exactVMs.latestSnapshotsInfo = @($exactVMs.latestSnapshotsInfo | Where-Object {$_.protectionGroupName -eq $jobName})
     }
     $latestsnapshot = ($exactVMs | Sort-Object -Property @{Expression={$_.latestSnapshotsInfo[0].protectionRunStartTimeUsecs}; Ascending = $False})[0]
-
     if($recoverDate){
         $recoverDateUsecs = dateToUsecs ($recoverDate.AddMinutes(1))
     
@@ -356,9 +352,14 @@ foreach($vm in $vmNames){
             Write-Host "No snapshots available for $vmName"
         }
     }else{
-
         $snapshot = $latestsnapshot.latestSnapshotsInfo[0].localSnapshotInfo
         $snapshotId = $snapshot.snapshotId
+        if($newerThanHours -and $latestsnapshot.latestSnapshotsInfo[0].protectionRunStartTimeUsecs -lt $newerthanUsecs){
+            Write-Host "Skipping $vmName (last backup was more than $($newerThanHours) hours ago)"
+            $snapshotId = $null
+            $vmNames = @($vmNames | Where-Object {$_ -ne $vmName})
+            continue
+        }
     }
 
     if($snapshotId){
@@ -371,6 +372,15 @@ foreach($vm in $vmNames){
         }
     }else{
         write-host "skipping $vmName no snapshot available"
+    }
+}
+
+# prompt for confirmation
+if(!$noPrompt){
+    Write-Host "Ready to restore:`n    $prefix$($vmNames -join "`n    $prefix")" 
+    $confirm = Read-Host -Prompt "Are you sure? Yes(No)"
+    if($confirm.ToLower() -ne 'yes' -and $confirm.ToLower() -ne 'y'){
+        exit
     }
 }
 
