@@ -77,7 +77,7 @@ $beforeUsecs = $midnightUsecs - ($daysBack * 86400000000) + 86400000000
 
 $cluster = api get cluster
 
-"""Cluster"",""Recovery Task Name"",""Recovery Task ID"",""Recovery Task Start Time"",""Recovery Type"",""Source VM Name"",""Target VM Name"",""VM Logical Size (GiB)"",""VM Used Size (GiB)"",""VM Status"",""VM Start Time"",""VM End Time"",""VM Recovery Duration (Sec)"",""VM Percent"",""Instant Recovery Start Time"",""Instant Recovery End Time"",""Instant Recovery Duration (Sec)"",""Instant Recovery Percent"",""Datastore Migration Start Time"",""Datastore Migration End Time"",""Datastore Migration Duration (Sec)"",""Datastore Migration Percent""" | Out-File -FilePath $outfileName
+"""Cluster"",""Recovery Task Name"",""Recovery Task ID"",""Recovery Task Start Time"",""Recovery Type"",""Source VM Name"",""Target VM Name"",""VM Logical Size (GiB)"",""VM Used Size (GiB)"",""VM Status"",""Recovery Point"",""VM Start Time"",""VM End Time"",""VM Recovery Duration (Sec)"",""VM Percent"",""Instant Recovery Start Time"",""Instant Recovery End Time"",""Instant Recovery Duration (Sec)"",""Instant Recovery Percent"",""Datastore Migration Start Time"",""Datastore Migration End Time"",""Datastore Migration Duration (Sec)"",""Datastore Migration Percent""" | Out-File -FilePath $outfileName
 
 $recoveries = api get -v2 "data-protect/recoveries?startTimeUsecs=$($beforeUsecs)&recoveryActions=RecoverVMs&includeTenants=true&endTimeUsecs=$($tonightUsecs)"
 
@@ -107,6 +107,7 @@ foreach($recovery in $recoveries.recoveries){
     foreach($object in $thisRecovery.vmwareParams.objects){
         $objectStatus = $object.status
         $objectStart = $object.startTimeUsecs
+        $objectRecoveryPoint = usecsToDate $object.snapshotCreationTimeUsecs
         $objectEnd = ''
         if($object.PSObject.Properties['endTimeUsecs'] -and $object.endTimeUsecs -ne $null -and $object.endTimeUsecs -gt 0){
             $objectEnd = $object.endTimeUsecs
@@ -193,7 +194,7 @@ foreach($recovery in $recoveries.recoveries){
             $migrateStart = usecsToDate $migrateStart
         }
         Write-Host "    $objectName $objectStatus $($objectPct)%"
-        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}"",""{13}"",""{14}"",""{15}"",""{16}"",""{17}"",""{18}"",""{19}"",""{20}"",""{21}""" -f $cluster.name, $thisRecovery.name, $thisRecovery.id, $recoveryStart, $recoveryType, $objectName, $targetName, $logicalSize, $size, $objectStatus, $objectStart, $objectEnd, $objectDuration, $objectPct, $instantStart, $instantEnd, $instantDuration, $instantPct, $migrateStart, $migrateEnd, $migrateDuration, $migratePct | Out-File -FilePath $outfileName -Append
+        """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}"",""{12}"",""{13}"",""{14}"",""{15}"",""{16}"",""{17}"",""{18}"",""{19}"",""{20}"",""{21}"",""{22}""" -f $cluster.name, $thisRecovery.name, $thisRecovery.id, $recoveryStart, $recoveryType, $objectName, $targetName, $logicalSize, $size, $objectStatus, $objectRecoveryPoint, $objectStart, $objectEnd, $objectDuration, $objectPct, $instantStart, $instantEnd, $instantDuration, $instantPct, $migrateStart, $migrateEnd, $migrateDuration, $migratePct | Out-File -FilePath $outfileName -Append
     }
 }
 
