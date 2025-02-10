@@ -1,4 +1,5 @@
 ### usage: ./restoreVMs.ps1 -vip mycluster -username myusername -domain mydomain.net -vmlist ./vmlist.txt
+# version 2025-02-10a
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -172,15 +173,14 @@ if($vCenterName){
     }
 
     # select vCenter
-    $vCenterSource = api get "protectionSources?environments=kVMware&includeVMFolders=true" | Where-Object {$_.protectionSource.name -eq $vCenterName}
     $vCenterList = api get /entitiesOfType?environmentTypes=kVMware`&vmwareEntityTypes=kVCenter`&vmwareEntityTypes=kStandaloneHost
     $vCenter = $vCenterList | Where-Object { $_.displayName -ieq $vCenterName }
     $vCenterId = $vCenter.id
-
     if(! $vCenter){
         write-host "vCenter Not Found" -ForegroundColor Yellow
         exit
     }
+    $vCenterSource = api get "protectionSources?id=$($vCenterId)&environments=kVMware&includeVMFolders=true&excludeTypes=kDatastore,kVirtualMachine,kVirtualApp,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true" | Where-Object {$_.protectionSource.name -eq $vCenterName}
 
     # select data center
     $dataCenterSource = $vCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $datacenterName}
