@@ -41,6 +41,7 @@ parser.add_argument('-diff', '--differentialrecovery', action='store_true')
 parser.add_argument('-k', '--keepexistingvm', action='store_true')
 parser.add_argument('-coe', '--continueoneerror', action='store_true')
 parser.add_argument('-w', '--wait', action='store_true')
+parser.add_argument('-dbg', '--debug', action='store_true')
 
 args = parser.parse_args()
 
@@ -76,6 +77,7 @@ diff = args.differentialrecovery
 keep = args.keepexistingvm
 continueoneerror = args.continueoneerror
 wait = args.wait
+debug = args.debug
 
 if vcentername is not None:
     if datacentername is None:
@@ -134,12 +136,16 @@ if apiconnected() is False:
     exit(1)
 
 if jobname is not None:
+    if debug:
+        print('* getting protection groups')
     jobs = api('get', 'protectionJobs?environments=kVMware')
     if jobs is not None:
         job = [j for j in jobs if j['name'].lower() == jobname.lower()]
         if len(job) == 0:
             print('protection group %s not found' % jobname)
             exit(1)
+        if debug:
+            print('* getting job VMs')
         search = api('get', '/searchvms?jobIds=%s' % job[0]['id'])
         if 'vms' not in search or search['vms'] is None or len(search['vms']) == 0:
             print('no VMs found in protection group %s' % jobname)
@@ -192,6 +198,8 @@ recoverMessages = []
 
 for vmname in sorted(vmnames):
     # find the VM to recover
+    if debug:
+        print('* finding VM %s' % vmname)
     vms = api('get', 'data-protect/search/protected-objects?snapshotActions=RecoverVMs,RecoverVApps,RecoverVAppTemplates&searchString=%s&environments=kVMware' % vmname, v=2)
     vms = [vm for vm in vms['objects'] if vm['name'].lower() == vmname.lower()]
     if len(vms) == 0:
@@ -201,6 +209,8 @@ for vmname in sorted(vmnames):
     # select a snapshot
     selectedsnapshot = None
     for vm in vms:
+        if debug:
+            print('* finding snapshots for VM %s' % vmname)
         snapshots = api('get', 'data-protect/objects/%s/snapshots' % vm['id'], v=2)
         if newerthanhours is not None:
             snapshots['snapshots'] = [s for s in snapshots['snapshots'] if s['runStartTimeUsecs'] >= newerthanUsecs]
@@ -238,13 +248,24 @@ if len(restoreParams['vmwareParams']['objects']) == 0:
 
 if vcentername:
     # select vCenter
-    vCenterSources = api('get', 'protectionSources?environments=kVMware&includeVMFolders=true&excludeTypes=kVirtualMachine')
-    if vCenterSources is None:
-        print('No vCenter sources found')
+    if debug:
+        print('* finding vCenter list')
+    vCenterList = api('get', '/entitiesOfType?environmentTypes=kVMware&vmwareEntityTypes=kVCenter&vmwareEntityTypes=kStandaloneHost')
+    if vCenterList is None or len(vCenterList) == 0:
+        print('vCenter %s not found' % vcentername)
+        exit(1) 
+    vCenter = [v for v in vCenterList if v['displayName'].lower() == vcentername.lower()]
+    if len(vCenter) == 0:
+        print('vCenter %s not found' % vcentername)
+        exit(1)
+    vCenterId = vCenter[0]['id']
+    if debug:
+        print('* finding vCenter %s' % vcentername)
+    vCenterSources = api('get', 'protectionSources?id=%s&environments=kVMware&includeVMFolders=true&excludeTypes=kDatastore,kVirtualMachine,kVirtualApp,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true' % vCenterId)
+    if vCenterSources is None or len(vCenterSources) == 0:
+        print('vCenter %s not found' % vcentername)
         exit(1)
     vCenterSource = [v for v in vCenterSources if v['protectionSource']['name'].lower() == vcentername.lower()]
-    vCenterList = api('get', '/entitiesOfType?environmentTypes=kVMware&vmwareEntityTypes=kVCenter&vmwareEntityTypes=kStandaloneHost')
-    vCenter = [v for v in vCenterList if v['displayName'].lower() == vcentername.lower()]
     if len(vCenterSource) == 0 or len(vCenter) == 0:
         print('vCenter %s not found' % vcentername)
         exit(1)
@@ -265,10 +286,14 @@ if vcentername:
     # select resource pool
     resourcePoolSource = [r for r in hostSource[0]['nodes'] if r['protectionSource']['vmWareProtectionSource']['type'] == 'kResourcePool']
     resourcePoolId = resourcePoolSource[0]['protectionSource']['id']
+    if debug:
+        print('* finding resource pool')
     resourcePool = [r for r in api('get', '/resourcePools?vCenterId=%s' % vCenterId) if r['resourcePool']['id'] == resourcePoolId]
     resourcePool = resourcePool[0]
 
     # select datastore
+    if debug:
+        print('* finding datastores')
     datastores = [d for d in api('get', '/datastores?resourcePoolId=%s&vCenterId=%s' % (resourcePoolId, vCenterId)) if d['vmwareEntity']['name'].lower() in [d.lower() for d in datastorenames]]
     if len(datastores) < len(datastorenames):
         for datastorename in datastorenames:
@@ -303,6 +328,8 @@ if vcentername:
     # select network
     network = None
     if networkname is not None:
+        if debug:
+            print('* finding network')
         network = [n for n in api('get', '/networkEntities?resourcePoolId=%s&vCenterId=%s' % (resourcePoolId, vCenterId)) if n['displayName'].lower() == networkname.lower()]
         if len(network) == 0:
             print('network %s not found' % networkname)
@@ -367,6 +394,8 @@ if prefix != '':
 for recoverMessage in recoverMessages:
     print(recoverMessage)
 
+if debug:
+    print('* submitting recovery task')
 recovery = api('post', 'data-protect/recoveries', restoreParams, v=2)
 
 # wait for restores to complete
