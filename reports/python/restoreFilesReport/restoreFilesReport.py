@@ -72,8 +72,8 @@ headings = ('''Cluster
 Recovery Task Name
 Recovery Task Start Time
 Recovery Task End Time
-Source Name
-Target Name
+Source VM Name
+Target VM Name
 Target Path
 File/Folder
 Source Path
