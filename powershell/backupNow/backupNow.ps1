@@ -1,4 +1,4 @@
-# version 2024.07.08
+# version 2025.02-11
 
 # version history
 # ===============
@@ -24,6 +24,8 @@
 # 2024.05.17 - added support for EntraID (Open ID) authentication
 # 2024.06.03 - fix unintended replication/archival
 # 2024.07.08 - reintroduced --keepLocalFor functionality
+# 2024.09.06 - added support for Ft Knox
+# 2025-02-11 - improved VMware API query
 #
 # extended error codes
 # ====================
@@ -304,7 +306,7 @@ if($job){
             $backupJob = api get "/backupjobs/$($v1JobId)?useCachedData=$cacheSetting" -timeout $timeoutSec
             $backupSources = api get "/backupsources?allUnderHierarchy=false&entityId=$($backupJob.backupJob.parentSource.id)&excludeTypes=5&useCachedData=$cacheSetting" -timeout $timeoutSec
         }elseif($environment -eq 'kVMware'){
-            $sources = api get "protectionSources/virtualMachines?protected=true&useCachedData=$cacheSetting&vCenterId=$($v1Job.parentSourceId)" -timeout $timeoutSec
+            $sources = api get "protectionSources/virtualMachines?protected=true&useCachedData=$cacheSetting&vCenterId=$($v1Job.parentSourceId)&excludeTypes=kVCenter,kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag" -timeout $timeoutSec
         }elseif($environment -match 'kAWS'){
             $sources = api get "protectionSources?environments=kAWS&useCachedData=$cacheSetting&id=$($v1Job.parentSourceId)" -timeout $timeoutSec
         }else{

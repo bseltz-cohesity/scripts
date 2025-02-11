@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2024.11.27
+# version 2025.02.11
 
 # version history
 # ===============
@@ -31,6 +31,7 @@
 # 2024.09.06 - added support for Ft Knox
 # 2024-10-28 - fixed oracle log purge
 # 2024-11-27 - added tenant support -tenant --tenant
+# 2025-02-11 - improved VMware API query
 #
 # extended error codes
 # ====================
@@ -365,7 +366,7 @@ else:
             backupJob = api('get', '/backupjobs/%s?useCachedData=%s' % (v1JobId, cacheSetting), timeout=timeoutsec)
             backupSources = api('get', '/backupsources?allUnderHierarchy=false&entityId=%s&excludeTypes=5&useCachedData=%s' % (backupJob[0]['backupJob']['parentSource']['id'], cacheSetting), timeout=timeoutsec)
         elif environment == 'kVMware':
-            sources = api('get', 'protectionSources/virtualMachines?vCenterId=%s&protected=true&useCachedData=%s' % (v1Job['parentSourceId'], cacheSetting), timeout=timeoutsec)
+            sources = api('get', 'protectionSources/virtualMachines?vCenterId=%s&protected=true&useCachedData=%s&excludeTypes=kVCenter,kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag' % (v1Job['parentSourceId'], cacheSetting), timeout=timeoutsec)
         elif 'kAWS' in environment:
             sources = api('get', 'protectionSources?environments=kAWS&useCachedData=%s&id=%s' % (cacheSetting, v1Job['parentSourceId']), timeout=timeoutsec)
         else:
