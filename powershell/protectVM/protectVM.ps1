@@ -93,7 +93,7 @@ foreach($disk in $includeDisk){
 $controllerType = @{'SCSI' = 'kScsi'; 'IDE' = 'kIde'; 'SATA' = 'kSata'}
 
 # get the protectionJob
-$job = (api get -v2 "data-protect/protection-groups").protectionGroups | Where-Object {$_.name -eq $jobName}
+$job = (api get -v2 "data-protect/protection-groups?environments=kVMware").protectionGroups | Where-Object {$_.name -eq $jobName}
 
 if($job){
 
@@ -123,7 +123,7 @@ if($job){
         Write-Host "-vCenterName required" -ForegroundColor Yellow
         exit
     }else{
-        $vCenter = api get protectionSources?environments=kVMware | Where-Object {$_.protectionSource.name -eq $vCenterName}
+        $vCenter = api get "protectionSources/rootNodes?environments=kVMware" | Where-Object {$_.protectionSource.name -eq $vCenterName}
         if(!$vCenter){
             Write-Host "vCenter $vCenterName not found!" -ForegroundColor Yellow
             exit
