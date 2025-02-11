@@ -1,9 +1,17 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, #the cluster to connect to (DNS name or IP)
-    [Parameter(Mandatory = $True)][string]$username, #username (local or AD)
-    [Parameter()][string]$domain = 'local', #local or AD domain
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter()][string]$startDate = '',
     [Parameter()][string]$endDate = '',
     [Parameter()][switch]$lastCalendarMonth,
@@ -17,8 +25,32 @@ param (
 ### source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain
+# authentication =============================================
+# demand clusterName for Helios/MCM
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios/MCM" -ForegroundColor Yellow
+    exit 1
+}
+
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
+        exit 1
+    }
+}
+# end authentication =========================================
+
+$cluster = api get cluster
 
 ### determine start and end dates
 $today = Get-Date
@@ -46,7 +78,7 @@ $date = (get-date).ToString()
 $now = (Get-Date).ToString("yyyy-MM-dd")
 $csvFile = "restoreFilesReport-$now.csv"
 
-"Date,Task,Source,Target,Target Path,File/Folder,Source Path,Status,Duration (Min),User" | Out-File $csvFile
+"Cluster,Recovery Task,Start Time,End Time,Source Name,Target Name,Target Path,File/Folder,Source Path,Status,Duration (Sec),User" | Out-File $csvFile
 
 $html = '<html>
 <head>
@@ -159,15 +191,17 @@ $html += '</span>
 </p>
 <table>
 <tr>
-        <th>Date</th>
-        <th>Task</th>
-        <th>Source</th>
-        <th>Target</th>
+        <th>Cluster</th>
+        <th>Task Name</th>
+        <th>Start Time</th>
+        <th>End Time</th>
+        <th>Source Name</th>
+        <th>Target Name</th>
         <th>Target Path</th>
         <th>File/Folder</th>
         <th>Path</th>
         <th>Status</th>
-        <th>Duration (Min)</th>
+        <th>Duration (Sec)</th>
         <th>User</th>
       </tr>'
 
@@ -188,9 +222,10 @@ foreach ($restore in $restores.recoveries){
     $status = $restore.status
     $startTime = usecsToDate $restore.startTimeUsecs
     $duration = '-'
+    $endTime = ''
     if($restore.PSObject.properties['endTimeUsecs']){
         $endTime = usecsToDate $restore.endTimeUsecs
-        $duration = [math]::Round(($endTime - $startTime).TotalMinutes)
+        $duration = [math]::Round(($endTime - $startTime).TotalSeconds)
     }
     $link = "https://$vip/recovery/detail/$taskId"
     if($restore.snapshotEnvironment -eq 'kPhysical'){
@@ -227,8 +262,10 @@ foreach ($restore in $restores.recoveries){
             }else{
                 $html += "<tr>"
             }
-            $html += "<td>$startTime</td>
+            $html += "<td>$($cluster.name)</td>
             <td><a href=$link>$taskName</a></td>
+            <td>$startTime</td>
+            <td>$endTime</td>
             <td>$objectName</td>
             <td>$targetObject</td>
             <td>$targetPath</td>
@@ -238,7 +275,7 @@ foreach ($restore in $restores.recoveries){
             <td>$duration</td>
             <td>$($restore.creationInfo.userName)</td>
             </tr>"
-            "$startTime,$taskName,$objectName,$targetObject,$targetPath,,,$status,$duration,$($restore.creationInfo.userName)" | out-file $csvFile -Append
+            "$($cluster.name),$taskName,$startTime,$endTime,$objectName,$targetObject,$targetPath,,,$status,$duration,$($restore.creationInfo.userName)" | out-file $csvFile -Append
         }
         foreach($file in $restore.$paramKey.recoverFileAndFolderParams.filesAndFolders){
             if($file.isDirectory){
@@ -251,15 +288,15 @@ foreach ($restore in $restores.recoveries){
             <td></td>
             <td></td>
             <td></td>
+            <td></td>
+            <td></td>
             <td>$fileType</td>
             <td>$($file.absolutePath)</td>
             <td>$($file.status)</td>
             <td></td>
             <td></td>
             </tr>"
-            ",,,,,$($fileType),$($file.absolutePath),$($file.status),," | out-file $csvFile -Append
-
-
+            ",,,,,,,$($fileType),$($file.absolutePath),$($file.status),," | out-file $csvFile -Append
         }
     }
 }
