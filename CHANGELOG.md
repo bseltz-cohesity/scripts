@@ -1,5 +1,16 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2025-02-11
+
+* [recoverVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/recoverVMs) [`Update`] improved API queries
+* [restoreFilesReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/restoreFilesReport) [`Update`] updated column headings
+* [restoreFilesReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/restoreFilesReport) [`Update`] modernized authentication and updated column headings
+
+## 2025-02-10
+
+* [recoverVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverVMs) [`Update`] improved API queries
+* [vmRecoveryReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/vmRecoveryReport) [`Update`] added VM recovery point
+
 ## 2025-02-09
 
 * [recoverNASVolume.py](https://github.com/cohesity/community-automation-samples/tree/main/python/recoverNASVolume) [`Update`] updated to v2 API and added SMB share permissions and subnet allow list controls
