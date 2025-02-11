@@ -75,11 +75,12 @@ if($appConsistent){
     $appConsistency = $false
 }
 
-$vCenter = api get protectionSources?environments=kVMware | Where-Object {$_.protectionSource.name -eq $vCenterName}
+$vCenter = api get protectionSources/rootNodes?environments=kVMware | Where-Object {$_.protectionSource.name -eq $vCenterName}
 if(!$vCenter){
     Write-Host "vCenter $vCenterName not found!" -ForegroundColor Yellow
     exit 1
 }
+$vCenter = api get "protectionSources?id=$($vCenter.protectionSource.id)&environments=kVMware&&environments=kVMware&includeVMFolders=true&excludeTypes=kDatastore,kVirtualMachine,kVirtualApp,kStoragePod,kNetwork,kDistributedVirtualPortgroup&useCachedData=true"
 
 $includeTagIds = @()
 foreach($tag in $includeTag){
