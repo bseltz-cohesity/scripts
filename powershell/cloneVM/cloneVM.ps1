@@ -107,10 +107,7 @@ if(! $vCenter){
 }
 
 # select vCenter
-$vCenterSource = api get "protectionSources?environments=kVMware&includeVMFolders=true&excludeTypes=kVirtualMachine" | Where-Object {$_.protectionSource.name -eq $vCenterName}
-$vCenterList = api get "/entitiesOfType?environmentTypes=kVMware&vmwareEntityTypes=kVCenter&vmwareEntityTypes=kStandaloneHost"
-$vCenter = $vCenterList | Where-Object { $_.displayName -ieq $vCenterName }
-$vCenterId = $vCenter.id
+$vCenterSource = api get "protectionSources?id=$($vCenterId)&environments=kVMware&includeVMFolders=true&excludeTypes=kDatastore,kVirtualMachine,kVirtualApp,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true" | Where-Object {$_.protectionSource.name -eq $vCenterName}
 
 if(! $vCenter){
     Write-Host "vCenter Not Found" -ForegroundColor Yellow
