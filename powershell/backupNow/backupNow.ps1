@@ -306,7 +306,7 @@ if($job){
             $backupJob = api get "/backupjobs/$($v1JobId)?useCachedData=$cacheSetting" -timeout $timeoutSec
             $backupSources = api get "/backupsources?allUnderHierarchy=false&entityId=$($backupJob.backupJob.parentSource.id)&excludeTypes=5&useCachedData=$cacheSetting" -timeout $timeoutSec
         }elseif($environment -eq 'kVMware'){
-            $sources = api get "protectionSources/virtualMachines?protected=true&useCachedData=$cacheSetting&vCenterId=$($v1Job.parentSourceId)&excludeTypes=kVCenter,kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag" -timeout $timeoutSec
+            $sources = api get "protectionSources/virtualMachines?protected=true&useCachedData=$cacheSetting&vCenterId=$($v1Job.parentSourceId)" -timeout $timeoutSec
         }elseif($environment -match 'kAWS'){
             $sources = api get "protectionSources?environments=kAWS&useCachedData=$cacheSetting&id=$($v1Job.parentSourceId)" -timeout $timeoutSec
         }else{
