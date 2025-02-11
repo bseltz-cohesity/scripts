@@ -59,13 +59,14 @@ else:
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
 
 # get vCenter protection source
-vcenters = [s for s in api('get', 'protectionSources?environments=kVMware') if s['protectionSource']['name'].lower() == vcentername.lower()]
+vcenters = [s for s in api('get', 'protectionSources/rootNodes?environments=kVMware') if s['protectionSource']['name'].lower() == vcentername.lower()]
 if not vcenters or len(vcenters) == 0:
     print('vCenter %s not registered' % vcentername)
     exit(1)
 else:
     vcenter = vcenters[0]
-
+vcenter = api('get', 'protectionSources?id=%s&environments=kVMware&excludeTypes=kDatastore,kVirtualMachine,kVirtualApp,kStoragePod,kNetwork,kDistributedVirtualPortgroup&useCachedData=true' % vcenter['protectionSource']['id'])
+vcenter = vcenter[0]
 
 # get object ID function
 def getObjectId(objectName, source):
