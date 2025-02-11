@@ -126,11 +126,13 @@ if($job){
         }
 
         # check for vCenter
-        $newVCenter = api get "protectionSources?environments=kVMware&includeVMFolders=true" | Where-Object {$_.protectionSource.name -eq $job.vmwareParams.sourceName}
+
+        $newVCenter = api get "protectionSources/rootNodes?environments=kVMware" | Where-Object {$_.protectionSource.name -eq $job.vmwareParams.sourceName}
         if(!$newVCenter){
             write-host "vCenter $($job.vmwareParams.sourceName) is not registered" -ForegroundColor Yellow
             exit
         }
+        $newVCenter = api get "protectionSources?id=$($newVCenter.protectionSource.id)&environments=kVMware&includeVMFolders=true" | Where-Object {$_.protectionSource.name -eq $job.vmwareParams.sourceName}
 
         # refresh new vcenter
         write-host "refreshing $($newVCenter.protectionSource.name)..."
