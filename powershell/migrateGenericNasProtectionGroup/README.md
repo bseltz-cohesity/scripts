@@ -4,6 +4,16 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This PowerShell script migrates a generic NAS protection group from one Cohesity cluster to another.
 
+## Registering NAS Sources
+
+This script does not register the NAS sources. You can do the following to register the NAS sources.
+
+1. Use this script to export a list of generic NAS sources from the source cluster: <https://github.com/cohesity/community-automation-samples/tree/main/powershell/genericNasSources>
+
+2. Use this script to register the NAS sources using the list as input: <https://github.com/cohesity/community-automation-samples/tree/main/powershell/registerGenericNas>
+
+Note that for SMB sources, you must provide an SMB username and password.
+
 ## Notes and Warnings
 
 If you omit the `-cleanupSourceObjects` and `-cleanupSourceObjectsAndExit` switches, the job and (broken) source registrations will be paused but left behind on the source cluster, and this is recommended in case the script fails to migrate the job to the target cluster for some reason. If a failure occurs, the script can be run again after the issue has been figured out.
