@@ -100,11 +100,12 @@ if($job){
         Write-Host "-vCenterName required" -ForegroundColor Yellow
         exit
     }else{
-        $vCenter = api get "protectionSources?environments=kVMware&includeVMFolders=true&excludeTypes=kResourcePool,kVirtualMachine,kVirtualApp,kTagCategory,kTag" | Where-Object {$_.protectionSource.name -eq $vCenterName}
+        $vCenter = api get "protectionSources/rootNodes?environments=kVMware" | Where-Object {$_.protectionSource.name -eq $vCenterName}
         if(!$vCenter){
             Write-Host "vCenter $vCenterName not found!" -ForegroundColor Yellow
             exit
         }
+        $vCenter = api get "protectionSources?environments=kVMware&includeVMFolders=true&excludeTypes=kResourcePool,kVirtualMachine,kVirtualApp,kTagCategory,kTag" | Where-Object {$_.protectionSource.name -eq $vCenterName}
     }
 
     # get policy
