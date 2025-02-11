@@ -1,10 +1,13 @@
 #!/usr/bin/env python
-"""Recover VMs for python version 2025-02-10a"""
+"""Recover VMs for python version 2025-02-11a"""
 
 ### import pyhesity wrapper module
 from pyhesity import *
 from datetime import datetime
 from time import sleep
+import os
+import json
+import codecs
 
 ### command line arguments
 import argparse
@@ -42,6 +45,9 @@ parser.add_argument('-k', '--keepexistingvm', action='store_true')
 parser.add_argument('-coe', '--continueoneerror', action='store_true')
 parser.add_argument('-w', '--wait', action='store_true')
 parser.add_argument('-dbg', '--debug', action='store_true')
+parser.add_argument('-cf', '--cachefolder', type=str, default='.')
+parser.add_argument('-nc', '--nocache', action='store_true')
+parser.add_argument('-mc', '--maxcacheminutes', type=int, default=60)
 
 args = parser.parse_args()
 
@@ -78,6 +84,13 @@ keep = args.keepexistingvm
 continueoneerror = args.continueoneerror
 wait = args.wait
 debug = args.debug
+cachefolder = args.cachefolder
+nocache = args.nocache
+maxcacheminutes = args.maxcacheminutes
+
+useCache = True
+if nocache:
+    useCache = False
 
 if vcentername is not None:
     if datacentername is None:
@@ -259,9 +272,25 @@ if vcentername:
         print('vCenter %s not found' % vcentername)
         exit(1)
     vCenterId = vCenter[0]['id']
-    if debug:
-        print('* finding vCenter %s' % vcentername)
-    vCenterSources = api('get', 'protectionSources?id=%s&environments=kVMware&includeVMFolders=true&excludeTypes=kDatastore,kVirtualMachine,kVirtualApp,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true' % vCenterId)
+    cluster = api('get', 'cluster')
+    vCenterCacheFile = '%s/%s-%s.json' % (cachefolder, cluster['name'], vCenterId)
+    getVcenter = True
+    if useCache is True:
+        try:
+            if os.path.exists(vCenterCacheFile):
+                vCenterSources = json.loads(open(vCenterCacheFile, 'r').read())
+                if 'timestamp' in vCenterSources[0]:
+                    cacheAge = nowUsecs - vCenterSources[0]['timestamp']
+                    if cacheAge <= (maxcacheminutes * 60000000):
+                        getVcenter = False
+                        if debug:
+                            print('* using cached vCenter info')
+        except Exception:
+            pass
+    if getVcenter is True:
+        if debug:
+            print('* finding vCenter %s' % vcentername)
+        vCenterSources = api('get', 'protectionSources?id=%s&environments=kVMware&includeVMFolders=true&excludeTypes=kDatastore,kVirtualMachine,kVirtualApp,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true' % vCenterId)
     if vCenterSources is None or len(vCenterSources) == 0:
         print('vCenter %s not found' % vcentername)
         exit(1)
@@ -270,6 +299,14 @@ if vcentername:
         print('vCenter %s not found' % vcentername)
         exit(1)
     vCenterId = vCenter[0]['id']
+
+    if getVcenter is True and useCache is True:
+        if debug:
+            print('* caching vCenter info')
+        vCenterSources[0]['timestamp'] = nowUsecs
+        cachefile = codecs.open(vCenterCacheFile, 'w')
+        json.dump(vCenterSources, cachefile)
+        cachefile.close()
 
     # select data center
     dataCenterSource = [d for d in vCenterSource[0]['nodes'][0]['nodes'] if d['protectionSource']['name'].lower() == datacentername.lower()]

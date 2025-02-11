@@ -113,6 +113,9 @@ To restore a VM to a new location:
 * -coe, --continueonerror: (optional) continue if errors are encountered
 * -w, --wait: (optional) wait for recoveries to end and report status
 * -dbg, --debug: (optional) print additional step-wise information
+* -cf, --cachefolder: (optional) folder to store cache files (default is '.')
+* -nc, --nocache': (optional) do not cache vCenter info
+* -mc, --maxcacheminutes: (optional) refresh cached vCenter info after X minutes (default is 60)
 
 ## Specifying a Folder
 
