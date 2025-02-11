@@ -37,8 +37,16 @@ param (
     [Parameter()][string]$vmTag,
     [Parameter()][string]$protectionGroup,
     [Parameter()][string]$jobName,
-    [Parameter()][int]$newerThanHours
+    [Parameter()][int]$newerThanHours,
+    [Parameter()][string]$cacheFolder = '.',
+    [Parameter()][int]$maxCacheMinutes = 60,
+    [Parameter()][switch]$noCache
 )
+
+$useCache = $True
+if($noCache){
+    $useCache = False
+}
 
 # gather list from command line params and file
 function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
@@ -180,8 +188,28 @@ if($vCenterName){
         write-host "vCenter Not Found" -ForegroundColor Yellow
         exit
     }
-    $vCenterSource = api get "protectionSources?id=$($vCenterId)&environments=kVMware&includeVMFolders=true&excludeTypes=kDatastore,kVirtualMachine,kVirtualApp,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true" | Where-Object {$_.protectionSource.name -eq $vCenterName}
-
+    $getVcenter = $True
+    if($useCache -eq $True){
+        $cluster = api get cluster
+        $cacheFile = $(Join-Path -Path $cacheFolder -ChildPath "$($cluster.name)-$($vCenterId).json")
+        if(Test-Path -Path $cacheFile -PathType Leaf){
+            $vCenterSource = Get-Content $cacheFile | ConvertFrom-Json
+            if($vCenterSource.PSObject.Properties['timestamp']){
+                $cacheAge = $nowUsecs - $vCenterSource[0].timestamp
+                if($cacheAge -le ($maxCacheMinutes * 60000000)){
+                    $getVcenter = $False
+                }
+            }
+        }
+    }
+    if($getVcenter -eq $True){
+        $vCenterSource = api get "protectionSources?id=$($vCenterId)&environments=kVMware&includeVMFolders=true&excludeTypes=kDatastore,kVirtualMachine,kVirtualApp,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true" | Where-Object {$_.protectionSource.name -eq $vCenterName}
+        if($useCache -eq $True){
+            $vCenterSource | Add-Member -MemberType NoteProperty -Name 'timestamp' -Value $nowUsecs
+            $vCenterSource | ConvertTo-Json -Depth 99 | Out-File -FilePath $cacheFile
+        }
+    }
+    
     # select data center
     $dataCenterSource = $vCenterSource.nodes[0].nodes | Where-Object {$_.protectionSource.name -eq $datacenterName}
     if(!$dataCenterSource){

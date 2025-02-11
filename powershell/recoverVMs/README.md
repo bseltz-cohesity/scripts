@@ -78,6 +78,9 @@ Place the files in a folder together and run the main script like so:
 * -taskName: (optional) name for recovery task
 * -dbg: (optional) debug mode, export JSON payload to file for analysis
 * -overwrite: (optional) overwrite existing VM
+* -cacheFolder: (optional) folder to store cache files (default is '.')
+* -maxCacheMinutes: (optional) refresh cached vCenter info after X minutes (default is 60)
+* -noCache: (optional) do not cache vCenter info
 
 Note: when restoring to a standalone ESXi host, review the object hierarchy of the registered ESXi host under protection sources to determine the following information, but typically:
 
