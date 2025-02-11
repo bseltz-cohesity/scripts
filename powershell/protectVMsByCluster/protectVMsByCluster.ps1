@@ -115,7 +115,7 @@ if(!$vCenter){
     exit 1
 }
 
-$vCenter = api get "protectionSources?environments=kVMware&id=$($vCenter.protectionSource.id)&excludeTypes=kVirtualMachine,kTagCategory,kTag" | Where-Object {$_.protectionSource.name -eq $vCenterName}
+$vCenter = api get "protectionSources?environments=kVMware&id=$($vCenter.protectionSource.id)&excludeTypes=kDatastore,kVirtualMachine,kVirtualApp,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true" | Where-Object {$_.protectionSource.name -eq $vCenterName}
 $job = (api get -v2 "data-protect/protection-groups").protectionGroups | Where-Object {$_.name -eq $jobName}
 
 if($job){
