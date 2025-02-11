@@ -68,15 +68,17 @@ if mcm or vip.lower() == 'helios.cohesity.com':
 
 title = "Restore Files Report"
 
-headings = ('''Date
-Task
-Source
-Target
+headings = ('''Cluster
+Recovery Task Name
+Recovery Task Start Time
+Recovery Task End Time
+Source Name
+Target Name
 Target Path
 File/Folder
 Source Path
 Status
-Duration (Min)
+Recovery Duration (Sec)
 User''').split('\n')
 
 now = datetime.now()
@@ -120,14 +122,11 @@ html = '''<html>
         }
         td,
         th {
-            width: 12%;
             text-align: left;
             padding: 6px;
-            max-width: 200px;
+            word-wrap:break-word;
         }
         td.nowrap {
-            width: 12%;
-            max-width: 200px;
             text-align: left;
             padding: 6px;
             word-wrap:break-word;
@@ -254,7 +253,7 @@ for restore in restores['recoveries']:
     duration = '-'
     if 'endTimeUsecs' in restore:
         endTime = usecsToDate(restore['endTimeUsecs'])
-        duration = round((restore['endTimeUsecs'] - restore['startTimeUsecs']) / 60000000)
+        duration = round((restore['endTimeUsecs'] - restore['startTimeUsecs']) / 1000000)
     link = "https://%s/recovery/detail/%s" % (vip, taskId)
     if restore['snapshotEnvironment'] == 'kPhysical':
         paramKey = 'physicalParams'
@@ -283,8 +282,10 @@ for restore in restores['recoveries']:
                 html += "<tr style='color:BA3415;'>"
             else:
                 html += "<tr>"
-            html += '''<td class="nowrap">%s</td>
-            <td class="nowrap"><a href=%s>%s</a></td>
+            html += '''<td>%s</td>
+            <td><a href=%s>%s</a></td>
+            <td class="nowrap">%s</td>
+            <td class="nowrap">%s</td>
             <td>%s</td>
             <td>%s</td>
             <td>%s</td>
@@ -293,8 +294,8 @@ for restore in restores['recoveries']:
             <td>%s</td>
             <td>%s</td>
             <td>%s</td>
-            </tr>''' % (startTime, link, taskName, objectName, targetObject, targetPath, status, duration, restore['creationInfo']['userName'])
-            csv.write('"%s","%s","%s","%s","%s","","","%s","%s","%s"\n' % (startTime, taskName, objectName, targetObject, targetPath, status, duration, restore['creationInfo']['userName']))
+            </tr>''' % (cluster['name'], link, taskName, startTime, endTime, objectName, targetObject, targetPath, status, duration, restore['creationInfo']['userName'])
+            csv.write('"%s","%s","%s","%s","%s","%s","%s","","","%s","%s","%s"\n' % (cluster['name'], taskName, startTime, endTime, objectName, targetObject, targetPath, status, duration, restore['creationInfo']['userName']))
         for file in restore[paramKey]['recoverFileAndFolderParams']['filesAndFolders']:
             if 'isDirectory' in file:
                 fileType = 'Folder'
@@ -305,13 +306,15 @@ for restore in restores['recoveries']:
             <td></td>
             <td></td>
             <td></td>
+            <td></td>
+            <td></td>
             <td>%s</td>
             <td>%s</td>
             <td>%s</td>
             <td></td>
             <td></td>
             </tr>''' % (fileType, file['absolutePath'], file['status'])
-            csv.write('"","","","","","%s","%s","%s","",""\n' % (fileType, file['absolutePath'], file['status']))
+            csv.write('"","","","","","","","%s","%s","%s","",""\n' % (fileType, file['absolutePath'], file['status']))
 
 html += '''</table>
 </div>
