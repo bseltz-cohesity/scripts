@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2025.01.27"""
+"""Cohesity Python REST API Wrapper Module - 2025.02.11"""
 
 ##########################################################################################
 # Change Log
@@ -37,6 +37,7 @@
 # 2024.08.10 - added text output mode
 # 2025.01.08 - added getRuns function
 # 2025.01.27 - added region parameter to api function
+# 2025-02-11 - added readCache and writeCache functions
 #
 ##########################################################################################
 # Install Notes
@@ -58,6 +59,7 @@ import base64
 import os
 import urllib3
 import traceback
+import codecs
 from os.path import expanduser
 
 ### ignore unsigned certificates
@@ -94,9 +96,11 @@ __all__ = ['api_version',
            'getDate',
            'impersonate',
            'switchback',
-           'getRuns']
+           'getRuns',
+           'readCache',
+           'writeCache']
 
-api_version = '2025.01.27'
+api_version = '2025.02.11'
 
 COHESITY_API = {
     'APIROOT': '',
@@ -726,6 +730,33 @@ def dayDiff(newdate, olddate):
     """Return number of days between usec dates"""
     return int(round((newdate - olddate) / float(86400000000)))
 
+def readCache(cachefile, maxageminutes=60):
+    nowUsecs = dateToUsecs()
+    try:
+        if os.path.exists(cachefile):
+            response = json.loads(open(cachefile, 'r').read())
+            if 'timestamp' in response:
+                cacheAge = nowUsecs - response['timestamp']
+                if cacheAge <= (maxageminutes * 60000000):
+                    if 'content' in response:
+                        return response['content']
+    except Exception:
+        pass
+    return None
+
+def writeCache(content, cachefile):
+    nowUsecs = dateToUsecs()
+    try:
+        cache = {
+            'content': content,
+            'timestamp': nowUsecs
+        }
+        cachefile = codecs.open(cachefile, 'w')
+        json.dump(cache, cachefile)
+        cachefile.close()
+    except Exception:
+        pass
+    return None
 
 ### get/store password for future runs
 def __getpassword(vip, username, password, domain, useApiKey=False, helios=False, updatepw=False, prompt=True, directoryId=False, clientId=False):

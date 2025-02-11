@@ -1,11 +1,8 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2025.01.31 - Brian Seltzer
+#  Version 2025.02.11 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
-# 2024.01.14 - reenabled legacy access modes
-# 2024.01.25 - added support for unicode characters for REST payloads in Windows PowerShell 5.1
-# 2024.01.30 - fix - clear header before auth
 # 2024-02-18 - fix - toJson function - handle null input
 # 2024-02-28 - added support for helios.gov
 # 2024-02-29 - added dateToString function
@@ -14,14 +11,16 @@
 # 2024-06-24 - fixed authentication error for SaaS connectors
 # 2024-09-20 - allow posts to read-only helios cluster (for advanced queries)
 # 2024-10-14 - fixed date formatting
-# 2024-12-31 - added heliosCluster - to remove access cluster ID
+# 2024-12-31 - added 'heliosCluster -' to remove access cluster ID
 # 2025-01-10 - added Get-Runs function
 # 2025-01-30 - added apiauth skipForcePasswordChange option
 # 2025-01-31 - fixed legacy session-id auth
+# 2025-02-02 - refactor
+# 2025-02-11 - added readCache and writeCache functions
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2025.01.31'
+$versionCohesityAPI = '2025.02.11'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -142,15 +141,15 @@ function reportError($errorObject, [switch]$quiet){
 }
 
 # authentication functions ========================================================================
-function apiauth($vip='helios.cohesity.com',
-                 $username = 'helios',
-                 $passwd = $null,
-                 $password = $null,
-                 $newPassword = $null,
-                 $domain = 'local',
-                 $tenant = $null,
-                 $regionid = $null,
-                 $mfaType = 'Totp',
+function apiauth([string] $vip='helios.cohesity.com',
+                 [string] $username = 'helios',
+                 [string] $passwd = $null,
+                 [string] $password = $null,
+                 [string] $newPassword = $null,
+                 [string] $domain = 'local',
+                 [string] $tenant = $null,
+                 [string] $regionid = $null,
+                 [string] $mfaType = 'Totp',
                  [string] $mfaCode = $null,
                  [switch] $emailMfaCode,
                  [switch] $helios,
@@ -163,7 +162,7 @@ function apiauth($vip='helios.cohesity.com',
                  [boolean] $heliosAuthentication = $false,
                  [boolean] $sendMfaCode = $false,
                  [boolean] $noPromptForPassword = $false,
-                 [Int]$timeout = 300,
+                 [Int] $timeout = 300,
                  [switch] $EntraId,
                  [string] $clientId = $null,
                  [string] $directoryId = $null,
@@ -256,25 +255,15 @@ function apiauth($vip='helios.cohesity.com',
                 $cohesity_api.authorized = $true
                 try{
                     $URL = "https://$vip/mcm/clusters/connectionStatus"
-                    if($PSVersionTable.PSEdition -eq 'Core'){
-                        $heliosAllClusters = Invoke-RestMethod -Method Get -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -SkipCertificateCheck -SessionVariable session
-                    }else{
-                        $heliosAllClusters = Invoke-RestMethod -Method Get -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SessionVariable session
-                    }
-                    $cohesity_api.session = $session
+                    $heliosAllClusters = __auth -method Get -url $URL -header $header -timeout $timeout
                     $Global:USING_HELIOS = $true
                     $cohesity_api.heliosConnectedClusters = $heliosAllClusters | Where-Object {$_.connectedToCluster -eq $true}
                     if($setpasswd){
                         $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
                     }
-                    if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
+                    __connected -quiet:$quiet
                 }catch{
-                    if($quiet){
-                        reportError $_ -quiet
-                    }else{
-                        reportError $_ 
-                    }
-                    apidrop -quiet
+                    reportError $_ -quiet:$quiet
                 }
             }
         }else{
@@ -291,29 +280,14 @@ function apiauth($vip='helios.cohesity.com',
         # validate cluster API key authorization
         if($useApiKey -and (($vip -notin $heliosEndpoints) -and $helios -ne $True)){
             try{
-                if($dbg){
-                    Write-Host "trying api key connection"
-                }
                 $URL = "https://$vip/irisservices/api/v1/public/sessionUser/preferences"
-                if($PSVersionTable.PSEdition -eq 'Core'){
-                    $cluster = Invoke-RestMethod -Method Get -Uri $URL -Header $header -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -TimeoutSec $timeout -SkipCertificateCheck -SessionVariable session
-                }else{
-                    $cluster = Invoke-RestMethod -Method Get -Uri $URL -Header $header -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session
-                }
-                if($dbg){
-                    Write-Host "finished trying api key connection"
-                }
-                $cohesity_api.session = $session
+                $null = __auth -method Get -url $URL -header $header -timeout $timeout
                 if($setpasswd){
                     $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
                 }
-                if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
+                __connected -quiet:$quiet
             }catch{
-                if($quiet){
-                    reportError $_ -quiet
-                }else{
-                    reportError $_ 
-                }
+                reportError $_ -quiet:$quiet
                 apidrop -quiet
                 if(!$noprompt -and $cohesity_api.last_api_error -eq "Authentication failed: Invalid API Key"){
                     apiauth -vip $vip -username $username -domain $domain -useApiKey -updatePassword
@@ -324,24 +298,15 @@ function apiauth($vip='helios.cohesity.com',
         if($vip -in $heliosEndpoints -or $helios){
             try{
                 $URL = "https://$vip/mcm/clusters/connectionStatus"
-                if($PSVersionTable.PSEdition -eq 'Core'){
-                    $heliosAllClusters = Invoke-RestMethod -Method Get -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -SkipCertificateCheck -SessionVariable session
-                }else{
-                    $heliosAllClusters = Invoke-RestMethod -Method Get -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SessionVariable session
-                }
-                $cohesity_api.session = $session
+                $heliosAllClusters = __auth -method Get -url $URL -header $header -timeout $timeout
                 $Global:USING_HELIOS = $true
                 $cohesity_api.heliosConnectedClusters = $heliosAllClusters | Where-Object {$_.connectedToCluster -eq $true}
                 if($setpasswd){
                     $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
                 }
-                if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
+                __connected -quiet:$quiet
             }catch{
-                if($quiet){
-                    reportError $_ -quiet
-                }else{
-                    reportError $_ 
-                }
+                reportError $_ -quiet:$quiet
                 apidrop -quiet
                 if(!$noprompt -and $cohesity_api.last_api_error -eq "Authentication failed: Unauthorized access."){
                     apiauth -vip $vip -username $username -domain $domain -updatePassword
@@ -380,18 +345,7 @@ function apiauth($vip='helios.cohesity.com',
                 throw "skipping"
             }
             $url = 'https://' + $vip + '/login'
-            if($dbg){
-                Write-Host "Starting session login"
-            }
-            if($PSVersionTable.PSEdition -eq 'Core'){
-                $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session -ContentType "application/json; charset=utf-8" -SslProtocol Tls12
-            }else{
-                $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session -ContentType "application/json; charset=utf-8"
-            }
-            if($dbg){
-                Write-Host "Ending session login"
-            }
-            $cohesity_api.session = $session
+            $user = __auth -method Post -url $url -body $body -timeout $timeout
             # check force password change
             if(! $noDomain){
                 try{
@@ -427,12 +381,7 @@ function apiauth($vip='helios.cohesity.com',
                         $user.user | Add-Member -MemberType NoteProperty -Name 'password' -Value $newPassword
     
                         $URL = "https://$vip/irisservices/api/v1/public/users"
-                        if($PSVersionTable.PSEdition -eq 'Core'){
-                            $userupdate = Invoke-RestMethod -Method Put -Uri $URL -Header $cohesity_api.header -Body ($user.user | ConvertTo-Json) -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SslProtocol Tls12 -WebSession $session
-                        }else{
-                            $userupdate = Invoke-RestMethod -Method Put -Uri $URL -Header $cohesity_api.header -Body ($user.user | ConvertTo-Json) -WebSession $session -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -ContentType "application/json; charset=utf-8"
-                        }
-    
+                        $null = __apicall -method Put -url $URL -body ($user.user | ConvertTo-Json) -timeout $timeout    
                         $body = ConvertTo-Json @{
                             'domain' = $domain;
                             'username' = $username;
@@ -440,20 +389,11 @@ function apiauth($vip='helios.cohesity.com',
                         }
     
                         $url = 'https://' + $vip + '/login'
-                        if($PSVersionTable.PSEdition -eq 'Core'){
-                            $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SslProtocol Tls12 -SessionVariable session
-                        }else{
-                            $user = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session -ContentType "application/json; charset=utf-8"
-                        }
-                        $cohesity_api.session = $session
+                        $user = __auth -method Post -url $url -body $body -timeout $timeout
                         $passwd = Set-CohesityAPIPassword -vip $vip -username $username -passwd $newPassword -quiet
                     }
                 }catch{
-                    if($quiet){
-                        reportError $_ -quiet
-                    }else{
-                        reportError $_ 
-                    }
+                    reportError $_ -quiet:$quiet
                     apidrop -quiet
                     return $null
                 }
@@ -462,11 +402,7 @@ function apiauth($vip='helios.cohesity.com',
                     $otpType = "Totp"
                     if($emailMfaCode){
                         $url = "https://$vip/v2/send-email-otp"
-                        if($PSVersionTable.PSEdition -eq 'Core'){
-                            $sent = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -WebSession $cohesity_api.session -SkipCertificateCheck
-                        }else{
-                            $sent = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -WebSession $cohesity_api.session
-                        }
+                        $null = __apicall -method Post -url $url -timeout $timeout
                         $mfaCode = Read-Host -Prompt 'Enter MFA Code'
                         $otpType = "Email"
                     }
@@ -476,37 +412,23 @@ function apiauth($vip='helios.cohesity.com',
                             "otpType" = "$otpType"
                         }
                         $url = "https://$vip/irisservices/api/v1/public/verify-otp"
-                        if($PSVersionTable.PSEdition -eq 'Core'){
-                            $verify = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body ($mfaCheck | ConvertTo-Json) -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -WebSession $cohesity_api.session -SkipCertificateCheck
-                        }else{
-                            $verify = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body ($mfaCheck | ConvertTo-Json) -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -WebSession $cohesity_api.session
-                        }
+                        $null = __apicall -method Post -url $url -body ($mfaCheck | ConvertTo-Json) -timeout $timeout
                     }catch{
-                        if($quiet){
-                            reportError $_ -quiet
-                        }else{
-                            reportError $_ 
-                        }
+                        reportError $_ -quiet:$quiet
                         apidrop -quiet
                         return $null
                     }
                 }
                 # validate authorization
                 $URL = "https://$vip/irisservices/api/v1/public/sessionUser/preferences"
-                if($PSVersionTable.PSEdition -eq 'Core'){
-                    $cluster = Invoke-RestMethod -Method Get -Uri $URL -Header $cohesity_api.header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -SkipCertificateCheck -WebSession $cohesity_api.session
-                }else{
-                    $cluster = Invoke-RestMethod -Method Get -Uri $URL -Header $cohesity_api.header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -WebSession $cohesity_api.session
-                }
+                $null = __apicall -method Get -url $URL -timeout $timeout
             }
 
             # set state connected
-            $cohesity_api.authorized = $true
-            $cohesity_api.clusterReadOnly = $false
             if($setpasswd){
                 $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
             }
-            if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
+            __connected -quiet:$quiet
         }catch{
             $thisError = $_
             if($skipForcePasswordChange -or $thisError -match 'User does not have the privilege to access UI' -or $thisError -match "KInvalidError"){
@@ -518,16 +440,9 @@ function apiauth($vip='helios.cohesity.com',
                         break
                     }
                     # authenticate
-                    if($PSVersionTable.PSEdition -eq 'Core'){
-                        $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout -SslProtocol Tls12 -SessionVariable session # -WebSession $cohesity_api.session
-                    }else{
-                        $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec $timeout -ContentType "application/json; charset=utf-8" -SessionVariable session # -WebSession $cohesity_api.session
-                    }
+                    $auth = __auth -method Post -url $url -body $body -timeout $timeout
                     $cohesity_api.header['authorization'] = $auth.tokenType + ' ' + $auth.accessToken
-                    $cohesity_api.session = $session
-                    $cohesity_api.authorized = $true
-                    $cohesity_api.clusterReadOnly = $false
-                    if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
+                    __connected -quiet:$quiet
                 }catch{
                     $cohesity_api.last_api_error = $_.ToString()
                     $thisError = $_
@@ -555,18 +470,9 @@ function apiauth($vip='helios.cohesity.com',
                                     }
                                 }
                                 # authenticate
-                                if($PSVersionTable.PSEdition -eq 'Core'){
-                                    $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -SkipCertificateCheck -UserAgent $userAgent -TimeoutSec $timeout -SslProtocol Tls12 -SessionVariable session # -WebSession $cohesity_api.session
-                                }else{
-                                    $auth = Invoke-RestMethod -Method Post -Uri $url -header $cohesity_api.header -Body $body -UserAgent $userAgent -TimeoutSec $timeout -ContentType "application/json; charset=utf-8" -SessionVariable session # -WebSession $cohesity_api.session
-                                }
+                                $auth = __auth -method Post -url $url -body $body -timeout $timeout
                                 $cohesity_api.header['session-id'] = $auth.sessionId
-                                $cohesity_api.session = $session
-                                $cohesity_api.authorized = $true
-                                $cohesity_api.clusterReadOnly = $false
-                                if(!$quiet){
-                                    Write-Host "Connected!" -foregroundcolor green
-                                }
+                                __connected -quiet:$quiet
                             }catch{
                                 $cohesity_api.last_api_error = "user session authentication failed"
                                 apidrop -quiet
@@ -629,11 +535,7 @@ function apiauth($vip='helios.cohesity.com',
                 # ============================================================================================
                 return $null
             }
-            if($quiet){
-                reportError $_ -quiet
-            }else{
-                reportError $_ 
-            }
+            reportError $_ -quiet:$quiet
             apidrop -quiet
             if($thisError.ToString().contains('"message":')){
                 $message = (ConvertFrom-Json $_.ToString()).message
@@ -650,6 +552,49 @@ function apiauth($vip='helios.cohesity.com',
     }
     $Global:AUTHORIZED = $cohesity_api.authorized
     $Global:AUTHORIZED | Out-Null
+}
+
+function __connected($quiet=$false){
+    $cohesity_api.authorized = $true
+    $cohesity_api.clusterReadOnly = $false
+    if(!$quiet){ Write-Host "Connected!" -foregroundcolor green }
+}
+
+# internal authentication call
+function __auth($method, $url, $body=$null, $header=$cohesity_api.header, $timeout=300){
+    if($null -ne $body){
+        if($PSVersionTable.PSEdition -eq 'Core'){
+            $auth = Invoke-RestMethod -Method $method -Uri $url -header $header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session -ContentType "application/json; charset=utf-8" -SslProtocol Tls12
+        }else{
+            $auth = Invoke-RestMethod -Method $method -Uri $url -header $header -Body $body -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session -ContentType "application/json; charset=utf-8"
+        }
+    }else{
+        if($PSVersionTable.PSEdition -eq 'Core'){
+            $auth = Invoke-RestMethod -Method $method -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -SkipCertificateCheck -SessionVariable session -ContentType "application/json; charset=utf-8"
+        }else{
+            $auth = Invoke-RestMethod -Method $method -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SessionVariable session -ContentType "application/json; charset=utf-8"
+        }
+    }
+    $cohesity_api.session = $session
+    return $auth
+}
+
+# internal api call
+function __apicall($method, $url, $body=$null, $header=$cohesity_api.header, $timeout=300){
+    if($null -ne $body){
+        if($PSVersionTable.PSEdition -eq 'Core'){
+            $response = Invoke-RestMethod -Method $method -Uri $url -header $header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout  -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8" -SslProtocol Tls12
+        }else{
+            $response = Invoke-RestMethod -Method $method -Uri $url -header $header -Body $body -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout  -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8"
+        }
+    }else{
+        if($PSVersionTable.PSEdition -eq 'Core'){
+            $response = Invoke-RestMethod -Method $method -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -SkipCertificateCheck  -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8"
+        }else{
+            $response = Invoke-RestMethod -Method $method -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent  -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8"
+        }
+    }
+    return $response
 }
 
 # select helios access cluster
@@ -750,8 +695,8 @@ function setContext($context){
 }
 
 function accessCluster($remoteClusterName=$null){
-    if($cohesity_api.heliosConnectedClusters -eq $null){
-        if($remoteClusterName -eq $null -or $remoteClusterName -eq '-'){
+    if($null -eq $cohesity_api.heliosConnectedClusters){
+        if($null -eq $remoteClusterName -or $remoteClusterName -eq '-'){
             $cohesity_api.header.Remove('clusterId')
             $cohesity_api.session.Headers.remove('clusterId')       
         }else{
@@ -843,27 +788,11 @@ function api($method,
             if($data){
                 $body = ConvertTo-Json -Compress -Depth 99 $data
             }
-            if($PSVersionTable.PSEdition -eq 'Core'){
-                if($body){
-                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $header -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SslProtocol Tls12 -WebSession $cohesity_api.session
-                }else{
-                    $result = Invoke-RestMethod -Method $method -Uri $url -header $header -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SslProtocol Tls12 -WebSession $cohesity_api.session
-                }
-            }else{
-                if($body){
-                    $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -header $header -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8"
-                }else{
-                    $result = Invoke-RestMethod -Method $method -Uri $url -header $header -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8"
-                }
-            }
+            $result = __apicall -method $method -url $url -body $body -timeout $timeout 
             $cohesity_api.last_api_error = 'OK'
             return $result
         }catch{
-            if($quiet){
-                reportError $_ -quiet
-            }else{
-                reportError $_ 
-            }
+            reportError $_ -quiet:$quiet
         }
     }
 }
@@ -961,11 +890,7 @@ function fileDownload($uri, $fileName, [switch]$v2, [switch]$quiet){
         }
         $cohesity_api.last_api_error = 'OK'
     }catch{
-        if($quiet){
-            reportError $_ -quiet
-        }else{
-            reportError $_ 
-        }          
+        reportError $_ -quiet:$quiet        
     }
 }
 
@@ -1035,6 +960,42 @@ function dateToUsecs($datestring=(Get-Date)){
 
 function dateToString($dt, $format='yyyy-MM-dd hh:mm'){
     return ($dt.ToString($format) -replace [char]8239, ' ')
+}
+
+# cache functions ========================================================
+
+function readCache{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $True)][string]$cacheFile,
+        [Parameter()][int]$maxAgeMinutes = 60
+    )
+    $nowUsecs = dateToUsecs
+    if(Test-Path -Path $cacheFile -PathType Leaf){
+        $response = Get-Content $cacheFile | ConvertFrom-Json
+        if($response.PSObject.Properties['timestamp']){
+            $cacheAge = $nowUsecs - $response.timestamp
+            if($cacheAge -le ($maxAgeMinutes *  60000000)){
+                if($response.PSObject.Properties['content']){
+                    return $response.content
+                }
+            }
+        }
+    }
+    return $null
+}
+
+function writeCache{
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipeline=$True)]$content,
+        [Parameter(Mandatory = $True)][string]$cacheFile
+    )
+    $nowUsecs = dateToUsecs
+    $cache = @{'content' = $content;
+               'timestamp' = $nowUsecs}
+    $cache | ConvertTo-Json -Depth 99 | Out-File -FilePath $cacheFile
+    return $null
 }
 
 # password functions ==============================================================================
@@ -1149,7 +1110,7 @@ function Clear-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios
     try{
         $pwlist = Get-Content -Path $pwfile -ErrorAction SilentlyContinue
         $updatedContent = ''
-        $foundPwd = $false
+        # $foundPwd = $false
         foreach($pwitem in ($pwlist | Sort-Object)){
             $v, $d, $u, $i, $cpwd = $pwitem.split(";", 5)
             if($null -eq $cpwd){
@@ -1691,5 +1652,8 @@ function getViews([switch]$includeInactive){
 # 2023.12.01 - added -noDomain (for SaaS connector)
 # 2023.12.03 - added support for raw URL
 # 2023.12.13 - re-ordered apiauth parameters (to force first unnamed parameter to be interpreted as password)
+# 2024.01.14 - reenabled legacy access modes
+# 2024.01.25 - added support for unicode characters for REST payloads in Windows PowerShell 5.1
+# 2024.01.30 - fix - clear header before auth
 #
 # . . . . . . . . . . . . . . . . . . .
