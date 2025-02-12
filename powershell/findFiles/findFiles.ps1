@@ -51,39 +51,9 @@ if($USING_HELIOS){
 }
 # end authentication =========================================
 
-$rootNodes = api get protectionSources?rootNodes
-$sources = api get protectionSources
-$jobs = api get protectionJobs
+$rootNodes = api get protectionSources/rootNodes
+$jobs = api get protectionJobs?onlyReturnBasicSummary=true
 $cluster = api get cluster
-
-function getObjectId($objectName){
-    $global:_object_id = $null
-
-    function get_nodes($obj){
-        if($obj.protectionSource.name -eq $objectName){
-            $global:_object_id = $obj.protectionSource.id
-            break
-        }
-        if($obj.name -eq $objectName){
-            $global:_object_id = $obj.id
-            break
-        }        
-        if($obj.PSObject.Properties['nodes']){
-            foreach($node in $obj.nodes){
-                if($null -eq $global:_object_id){
-                    get_nodes $node
-                }
-            }
-        }
-    }
-    
-    foreach($source in $sources){
-        if($null -eq $global:_object_id){
-            get_nodes $source
-        }
-    }
-    return $global:_object_id
-}
 
 function getResults($thisQuery, $thisString=$null){
     $results = api get "restore/files?paginate=true&pageSize=$($pageSize)$($thisQuery)"
@@ -97,7 +67,10 @@ function getResults($thisQuery, $thisString=$null){
             }
             foreach($result in $output){
                 if($result.type -ne 'kDirectory' -and $result.type -ne 'kSymLink'){
-                    $objectName = $result.protectionSource.name
+                    if($objectName -and $result.protectionSource.name -ne $objectName){
+                        continue
+                    }
+                    $thisObjectName = $result.protectionSource.name
                     $fileName = $result.filename
                     $parentName = ''
                     $parentId = $result.protectionSource.parentId
@@ -127,8 +100,8 @@ function getResults($thisQuery, $thisString=$null){
                         }
                         $matches = $false
                         if($null -eq $thisString -or $fileName -match "/$thisString"+'$'){
-                            write-host ("{0},{1},{2},{3}" -f $parentName, $objectName, $fileName, $mtime)
-                            "{0}`t{1}`t{2}`t{3}`t{4}" -f $jobName, $parentName, $objectName, $fileName, $mtime | Out-File -FilePath foundFiles.tsv -Append
+                            write-host ("{0},{1},{2},{3}" -f $parentName, $thisObjectName, $fileName, $mtime)
+                            "{0}`t{1}`t{2}`t{3}`t{4}" -f $jobName, $parentName, $thisObjectName, $fileName, $mtime | Out-File -FilePath foundFiles.tsv -Append
                             $script:fileCount += 1
                         }
                     }
@@ -168,14 +141,6 @@ if($jobName){
         exit 1
     }
     $query = $query + "&jobIds=$($job[0].id)"
-}
-if($objectName){
-    $sourceId = getObjectId $objectName
-    if(!$sourceId){
-        Write-Host "Object $objectName not found" -ForegroundColor Yellow
-        exit 1
-    }
-    $query = $query + "&sourceIds=$($sourceId)"
 }
 
 $fileCount = 0
