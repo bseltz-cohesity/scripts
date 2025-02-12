@@ -60,7 +60,7 @@ outfile = 'protectedObjectReport-%s-%s.csv' % (cluster['name'], dateString)
 f = codecs.open(outfile, 'w')
 
 # gather info
-sources = api('get', 'protectionSources?includeVMFolders=true')
+sources = api('get', 'protectionSources/rootNodes')
 policies = api('get', 'data-protect/policies', v=2)['policies']
 jobs = api('get', 'data-protect/protection-groups?includeTenants=true', v=2)
 
