@@ -22,6 +22,9 @@ param (
     [Parameter()][string]$sendFrom #send from address
 )
 
+# source the cohesity-api helper code
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+
 $nowUsecs = dateToUsecs (get-date)
 $daysBackUsecs = timeAgo $daysBack days
 $script:maxLogBackupUsecs = $maxLogBackupMinutes * 60000000
