@@ -1,18 +1,20 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][string]$vip = 'helios.cohesity.com',  # endpoint to connect to
-    [Parameter()][string]$username = 'helios',  # username for authentication / password storage
-    [Parameter()][string]$domain = 'local',  # local or AD domain
-    [Parameter()][switch]$useApiKey,  # use API key authentication
-    [Parameter()][string]$password = $null,  # send password / API key via command line (not recommended)
-    [Parameter()][switch]$noPrompt,  # do not prompt for password
-    [Parameter()][switch]$mcm,  # connect to MCM endpoint
-    [Parameter()][string]$mfaCode = $null,  # MFA code
-    [Parameter()][switch]$emailMfaCode,  # email MFA code
-    [Parameter()][string]$clusterName = $null,  # cluster name to connect to when connected to Helios/MCM
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter()][array]$principalName,
     [Parameter()][string]$principalList,
+    [Parameter()][string]$sourceName,
     [Parameter()][array]$objectName,
     [Parameter()][string]$objectList,
     [Parameter()][array]$viewName,
@@ -46,40 +48,67 @@ $principals = @(gatherList -Param $principalName -FilePath $principalList -Name 
 $objects = @(gatherList -Param $objectName -FilePath $objectList -Name 'objects' -Required $False)
 $viewNames = @(gatherList -Param $viewName -FilePath $viewList -Name 'views' -Required $False)
 
+if($objects.Count -gt 0){
+    if(!$sourceName){
+        Write-Host "-sourceName is required" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
 if($objects.Count -eq 0 -and $viewNames.Count -eq 0){
-    Write-Host "At least one object or view must be specified" -ForegroundColor Yellow
-    exit
+    if($sourceName){
+        $objects += $sourceName
+    }else{
+        Write-Host "At least one object or view must be specified" -ForegroundColor Yellow
+        exit
+    }
 }
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
+# authentication =============================================
+# demand clusterName for Helios/MCM
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios/MCM" -ForegroundColor Yellow
+    exit 1
+}
+
 # authenticate
-apiauth -vip $vip -username $username -domain $domain -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
 
 # select helios/mcm managed cluster
 if($USING_HELIOS){
-    if($clusterName){
-        $thisCluster = heliosCluster $clusterName
-    }else{
-        Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
-        exit
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
+        exit 1
     }
 }
-
-if(!$cohesity_api.authorized){
-    Write-Host "Not authenticated" -ForegroundColor Yellow
-    exit
-}
+# end authentication =========================================
 
 $users = api get users?_includeTenantInfo=true
 $groups = api get groups?_includeTenantInfo=true
-if($environment){
-    $sources = api get "protectionSources?allUnderHierarchy=true&environments=$environment&includeEntityPermissionInfo=false&includeVMFolders=true&pruneNonCriticalInfo=true&includeObjectProtectionInfo=false"
-}else{
-    $sources = api get "protectionSources?allUnderHierarchy=true&environments=kVMware&environments=kHyperV&environments=kPhysical&environments=kPure&environments=kAzure&environments=kNetapp&environments=kGenericNas&environments=kAcropolis&environments=kPhysicalFiles&environments=kIsilon&environments=kKVM&environments=kAWS&environments=kExchange&environments=kHyperVVSS&environments=kGCP&environments=kFlashBlade&environments=kAWSNative&environments=kO365&environments=kO365Outlook&environments=kGCPNative&environments=kAzureNative&environments=kAD&environments=kAWSSnapshotManager&environments=kGPFS&environments=kRDSSnapshotManager&environments=kKubernetes&environments=kNimble&environments=kAzureSnapshotManager&environments=kElastifile&environments=kCassandra&environments=kMongoDB&environments=kHBase&environments=kHive&environments=kHdfs&environments=kCouchbase&environments=kUDA&environments=kSQL&environments=kExchange&environments=kOracle&environments=kAD&includeEntityPermissionInfo=true&includeVMFolders=true&pruneNonCriticalInfo=true&includeObjectProtectionInfo=false"
+
+$registeredSources = api get "protectionSources/registrationInfo"
+$registeredSources.rootNodes | ft
+if($sourceName){
+    $registeredSource = $registeredSources.rootNodes | Where-Object {$_.rootNode.name -eq $sourceName}
+    if(! $registeredSource){
+        Write-Host "Source $sourceName not found" -ForegroundColor Yellow
+        exit 1
+    }
+    $sources = api get "protectionSources?id=$($registeredSource.rootNode.id)&includeVMFolders=true"
 }
-$views = api get views
+
+if($viewNames.Count -gt 0){
+    $views = api get views
+}
 
 function getObjectId($objectName){
     $global:_object_id = $null
@@ -100,6 +129,13 @@ function getObjectId($objectName){
                 }
             }
         }
+        if($obj.PSObject.Properties['applicationNodes']){
+            foreach($node in $obj.applicationNodes){
+                if($null -eq $global:_object_id){
+                    get_nodes $node
+                }
+            }
+        }
     }
     
     foreach($source in $sources){
@@ -109,7 +145,6 @@ function getObjectId($objectName){
     }
     return $global:_object_id
 }
-
 
 foreach($p in $principals){
     if($p.Contains('/')){
@@ -178,5 +213,6 @@ foreach($p in $principals){
     }else{
         $null = api put groups $thisPrincipal
     }
+    $newAccess | toJson
     $null = api put principals/protectionSources $newAccess
 }
