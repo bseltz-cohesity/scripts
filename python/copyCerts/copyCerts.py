@@ -111,10 +111,15 @@ if restore is not True:
         # get certs
         print('Getting certs')
         certs = api('get', 'cert-manager/ca-keys', v=2)
-        f = codecs.open(cacheFile, 'w')
-        json.dump(certs, f)
-        f.close()
-        setGflag(vip=sourcecluster)
+        if certs is not None and 'privateKey' in certs and certs['privateKey'] is not None and 'caChain' in certs and certs['caChain'] is not None:
+            f = codecs.open(cacheFile, 'w')
+            json.dump(certs, f)
+            f.close()
+            setGflag(vip=sourcecluster)
+        else:
+            print(certs)
+            print('An error occurred, exiting')
+            exit(1)
 
 print('\nConnecting to target cluster %s...' % targetcluster)
 mfacode = None
@@ -134,19 +139,31 @@ if restore:
     if os.path.exists(cacheFile):
         print('Restoring original certs')
         certs = json.loads(open(cacheFile, 'r').read())
-        copyCerts(certs)
-        print('Restore completed\n')
-        exit()
+        if certs is not None and 'privateKey' in certs and certs['privateKey'] is not None and 'caChain' in certs and certs['caChain'] is not None:
+            copyCerts(certs)
+            print('Restore completed\n')
+            exit()
+        else:
+            print(certs)
+            print('An error occurred, exiting')
+            exit(1)
     else:
         print('No backup found for %s\n' % sourcecluster)
         exit()
 
 # backup original certs
+print('Backing up original certs')
 origcerts = api('get', 'cert-manager/ca-keys', v=2)
+if origcerts is not None and 'privateKey' in origcerts and origcerts['privateKey'] is not None and 'caChain' in origcerts and origcerts['caChain'] is not None:
+    pass
+else:
+    print(origcerts)
+    print('An error occurred, exiting')
+    exit(1)
 
 if not os.path.exists(cacheFile):
     f = codecs.open(cacheFile, 'w')
-    json.dump(certs, f)
+    json.dump(origcerts, f)
     f.close()
 
 # copy new certs
