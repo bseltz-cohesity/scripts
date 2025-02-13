@@ -79,7 +79,7 @@ def copyCerts(certs):
     while certs['caChain'] != newCaChain:
         sleep(10)
         newcerts = api('get', 'cert-manager/ca-status', v=2)
-        newCaChain = newcerts.get('caCertChain', '')
+        newCaChain = newcerts['caCertChain']
 
 
 # main --------------------------------------------------------
