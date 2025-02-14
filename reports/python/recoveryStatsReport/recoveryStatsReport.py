@@ -57,8 +57,7 @@ tonightMsecs = int(round(midnightusecs + 86400000000) / 1000)
 beforeusecs = midnightusecs - (daysback * 86400000000) + 86400000000
 
 # outfile
-dateString = now.strftime("%Y-%m-%d")
-outfilename = '%s/%s-%s.csv' % (folder, outfilename, dateString)
+outfilename = '%s/%s' % (folder, outfilename)
 f = codecs.open(outfilename, 'w')
 f.write('"Cluster","Recovery Task Name","Recovery Task ID","Recovery Task Start Time","Recovery Task End Time","Duration (Sec)","Recovery Type","Object Name","Logical Size (%s)","Front End Size (%s)","Data Transferred (%s)","Status","Username"\n' % (units, units, units))
 
@@ -119,6 +118,8 @@ def reportCluster():
                                 frontEndSize = entity['frontEndSizeInfo']['sizeBytes']
                 logicalSizes[objectId] = logicalSize
                 if frontEndSize == 0 and logicalSize > 0:
+                    frontEndSize = logicalSize
+                if frontEndSize > logicalSize:
                     frontEndSize = logicalSize
                 frontEndSizes[objectId] = frontEndSize
             else:
