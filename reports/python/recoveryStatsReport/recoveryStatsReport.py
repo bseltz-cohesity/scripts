@@ -59,7 +59,7 @@ beforeusecs = midnightusecs - (daysback * 86400000000) + 86400000000
 # outfile
 outfilename = '%s/%s' % (folder, outfilename)
 f = codecs.open(outfilename, 'w')
-f.write('"Cluster","Recovery Task Name","Recovery Task ID","Recovery Task Start Time","Recovery Task End Time","Duration (Sec)","Recovery Type","Object Name","Logical Size (%s)","Front End Size (%s)","Data Transferred (%s)","Status","Username"\n' % (units, units, units))
+f.write('"Cluster","Recovery Task Name","Recovery Task ID","Recovery Task Start Time","Recovery Task End Time","Duration (Sec)","Recovery Type","Object Name","Logical Size (%s)","Used Size (%s)","Data Transferred (%s)","Status","Username"\n' % (units, units, units))
 
 def reportCluster():
     cluster = api('get', 'cluster')
