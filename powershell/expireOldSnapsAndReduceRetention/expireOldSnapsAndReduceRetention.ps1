@@ -28,6 +28,7 @@ param (
     [Parameter()][switch]$expire,
     [Parameter()][Int64]$numRuns = 1000,
     [Parameter()][Int64]$daysBack = 0,
+    [Parameter()][switch]$skipWeeklies,
     [Parameter()][switch]$skipMonthlies,
     [Parameter()][switch]$skipYearlies
 )
@@ -106,7 +107,7 @@ foreach ($job in $jobs | Sort-Object -Property name) {
             }
             $startdate = usecstodate $run.copyRun[0].runStartTimeUsecs
             $startdateusecs = $run.copyRun[0].runStartTimeUsecs
-            if((! $skipMonthlies -or $startdate.Day -ne 1) -and (! $skipYearlies -or $startdate.DayOfYear -ne 1)){
+            if((! $skipMonthlies -or $startdate.Day -ne 1) -and (! $skipYearlies -or $startdate.DayOfYear -ne 1) -and (! $skipWeeklies -or $startdate.DayOfWeek -ne 'Sunday')){
                 if ($startdateusecs -lt $daysToKeepUsecs) {
                     ### if -expire switch is set, expire the local snapshot
                     if ($expire) {
@@ -171,8 +172,10 @@ foreach ($job in $jobs | Sort-Object -Property name) {
             }else{
                 if($skipYearlies -and $startdate.DayOfYear -eq 1){
                     "    Skipping yearly $($job.name) $($startdate)"
-                }else{
+                }elseif($skipMonthlies -and $startdate.Day -eq 1){
                     "    Skipping monthly $($job.name) $($startdate)"
+                }else{
+                    "    Skipping weekly $($job.name) $($startdate)"
                 }
             }
         }
