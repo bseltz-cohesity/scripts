@@ -77,12 +77,11 @@ def reportCluster():
         thisRecovery = api('get', 'data-protect/recoveries/%s?includeTenants=true' % recovery['id'], v=2)
         if 'endTimeUsecs' not in thisRecovery:
             continue
-        print('%s (%s)' %(thisRecovery['name'], thisRecovery['recoveryAction']))
+        print('%s: %s (%s)' %(cluster['name'], thisRecovery['name'], thisRecovery['recoveryAction']))
         recoveryUser = thisRecovery['creationInfo']['userName']
         recoveryStart = usecsToDate(thisRecovery['startTimeUsecs'])
         recoveryEnd = usecsToDate(thisRecovery['endTimeUsecs'])
         duration = (int(round(((thisRecovery['endTimeUsecs'] - thisRecovery['startTimeUsecs']) / 1000000))))
-        recoveryStatus = thisRecovery['status']
         recoveryId = thisRecovery['id']
         v1TaskId = int(recoveryId.split(':')[-1])
         statsEntity = [e for e in statsEntities if e['entityId']['entityId']['data']['int64Value'] == v1TaskId]
@@ -95,7 +94,7 @@ def reportCluster():
         if paramskeys is not None and len(paramskeys) > 0:
             paramskey = paramskeys[0]
         else:
-            print('paramskey not found')
+            continue
         params = thisRecovery[paramskey]
         for object in params['objects']:
             objectName = object['objectInfo']['name']
@@ -103,9 +102,7 @@ def reportCluster():
                 objectStatus = object['status']
             else:
                 objectStatus = thisRecovery['status']
-            print('    %s' % objectName)
             objectId = object['objectInfo']['id']
-            environment = object['objectInfo']['environment']
             logicalSize = 0
             frontEndSize = 0
             # get logical size
@@ -127,7 +124,6 @@ def reportCluster():
             else:
                 logicalSize = logicalSizes[objectId]
                 frontEndSize = frontEndSizes[objectId]
-            # print('      %s' % frontEndSize)
             totalTransferred = 0
             if statsEntity is not None:
                 startDate = usecsToDateTime(thisRecovery['startTimeUsecs'])
@@ -170,5 +166,5 @@ for vip in vips:
         reportCluster()
 
 f.close()
-print('Output saved to %s' % outfilename)
+print('\nOutput saved to %s\n' % outfilename)
 
