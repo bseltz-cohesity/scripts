@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Recover VMs for python version 2025-02-11a"""
+"""Recover VMs for python version 2025-02-15a"""
 
 ### import pyhesity wrapper module
 from pyhesity import *
@@ -151,7 +151,7 @@ if apiconnected() is False:
 if jobname is not None:
     if debug:
         print('* getting protection groups')
-    jobs = api('get', 'protectionJobs?environments=kVMware')
+    jobs = api('get', 'protectionJobs?environments=kVMware&onlyReturnBasicSummary=true&useCachedData=true')
     if jobs is not None:
         job = [j for j in jobs if j['name'].lower() == jobname.lower()]
         if len(job) == 0:
@@ -159,7 +159,10 @@ if jobname is not None:
             exit(1)
         if debug:
             print('* getting job VMs')
-        search = api('get', '/searchvms?jobIds=%s' % job[0]['id'])
+        if newerthanhours is not None:
+            search = api('get', '/searchvms?jobIds=%s&onlyLatestVersion=true&fromTimeUsecs=%s' % (job[0]['id'], newerthanUsecs))
+        else:
+            search = api('get', '/searchvms?jobIds=%s&onlyLatestVersion=true' % job[0]['id'])
         if 'vms' not in search or search['vms'] is None or len(search['vms']) == 0:
             print('no VMs found in protection group %s' % jobname)
             exit(1)
@@ -323,10 +326,6 @@ if vcentername:
     # select resource pool
     resourcePoolSource = [r for r in hostSource[0]['nodes'] if r['protectionSource']['vmWareProtectionSource']['type'] == 'kResourcePool']
     resourcePoolId = resourcePoolSource[0]['protectionSource']['id']
-    if debug:
-        print('* finding resource pool')
-    resourcePool = [r for r in api('get', '/resourcePools?vCenterId=%s' % vCenterId) if r['resourcePool']['id'] == resourcePoolId]
-    resourcePool = resourcePool[0]
 
     # select datastore
     if debug:
