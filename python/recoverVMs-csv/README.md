@@ -25,9 +25,9 @@ Create a CSV file with VMs you want to recover and their destinations, like so:
 
 vm_name | vcenter | datacenter | host | folder | network | datastore
 --- | --- | --- | --- | --- | --- | ---
-myvm1 | myvcenter.mydomain.net | mydc | mycluster1 | /myfolder1 | my network1 | mydatastore1
-myvm2 | myvcenter.mydomain.net | mydc | mycluster1 | /myfolder1 | my network1 | mydatastore1
-myvm3 | myvcenter2.mydomain.net | mydc | mycluster2 | /myfolder2 | my network2 | mydatastore2
+vm1 | vcenter.mydomain.net | dc1 | mycluster1 | /folder1 | network1 | datastore1
+vm2 | vcenter.mydomain.net | dc1 | mycluster1 | /folder1 | network1 | datastore1
+vm3 | vcenter2.mydomain.net | dc2 | mycluster2 | /folder2 | network2 | datastore2
 
 Place the files in a folder together, then we can run the script:
 
