@@ -4,6 +4,7 @@
 ### import pyhesity wrapper module
 from pyhesity import *
 from datetime import datetime
+import codecs
 import csv
 
 ### command line arguments
@@ -74,9 +75,10 @@ if apiconnected() is False:
     print('authentication failed')
     exit(1)
 
+# read CSV file
 csvgroups = {}
 vmnames = []
-thiscsv = open(csvfile)
+thiscsv = codecs.open(csvfile, mode='r', encoding='utf-8-sig')
 reader = csv.DictReader(thiscsv)
 for row in reader:
     thisGroupName = '%s-%s-%s-%s-%s-%s' % (row['vcenter'], row['datacenter'], row['host'], row['folder'], row['network'], row['datastore'])
@@ -93,7 +95,6 @@ for row in reader:
     thisGroup = csvgroups[thisGroupName]
     thisGroup['vms'].append(row['vm_name'])
     vmnames.append(row['vm_name'])
-# display(csvgroups)
 
 if taskname is None:
     taskname = "Recover-VM_%s" % now.strftime("%Y-%m-%d_%H-%M-%S")
