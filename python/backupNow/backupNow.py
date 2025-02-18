@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2025.02.16
+# version 2025.02.18
 
 # version history
 # ===============
@@ -33,6 +33,7 @@
 # 2024-11-27 - added tenant support -tenant --tenant
 # 2025-02-11 - improved VMware API query
 # 2025-02-16 - improved VM API query
+# 2025-02-18 - fixed CAD errors, magneto error handling in 'wait for new run to appear' loop
 #
 # extended error codes
 # ====================
@@ -638,7 +639,10 @@ if archiveTo is not None:
 runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=1&includeObjectDetails=false&useCachedData=%s' % (v2JobId, cacheSetting), v=2, timeout=timeoutsec)
 if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
     newRunId = lastRunId = runs['runs'][0]['protectionGroupInstanceId']
-    lastRunUsecs = runs['runs'][0]['localBackupInfo']['startTimeUsecs']
+    if 'localBackupInfo' in runs['runs'][0]:
+        lastRunUsecs = runs['runs'][0]['localBackupInfo']['startTimeUsecs']
+    else:
+        lastRunUsecs = runs['runs'][0]['archivalInfo']['archivalTargetResults'][0]['startTimeUsecs']
 else:
     newRunId = lastRunId = 1
     lastRunUsecs = 1662164882000000
@@ -723,31 +727,34 @@ if wait is True:
     timeOutUsecs = dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     while newRunId <= lastRunId:
         sleep(startwaittime)
-        if len(selectedSources) > 0:
-            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=10&includeObjectDetails=true&useCachedData=%s' % (v2JobId, cacheSetting), v=2, timeout=timeoutsec)
-            if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
-                runs = [r for r in runs['runs'] if selectedSources[0] in [o['object']['id'] for o in r['objects']] or len(r['objects']) == 0]
-        else:
-            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=1&includeObjectDetails=false&useCachedData=%s' % (v2JobId, cacheSetting), v=2, timeout=timeoutsec)
-            if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
-                runs = runs['runs']
-        if runs is not None and 'runs' not in runs and len(runs) > 0:
-            runs = [r for r in runs if r['protectionGroupInstanceId'] > lastRunId]
-        if runs is not None and 'runs' not in runs and len(runs) > 0 and usemetadatafile is True:
-            for run in runs:
-                runDetail = api('get', '/backupjobruns?exactMatchStartTimeUsecs=%s&id=%s&useCachedData=%s' % (run['localBackupInfo']['startTimeUsecs'], v1JobId, cacheSetting), timeout=timeoutsec)
-                try:
-                    metadataFilePath = runDetail[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['additionalParamVec'][0]['physicalParams']['metadataFilePath']
-                    if metadataFilePath == metadatafile:
-                        newRunId = run['protectionGroupInstanceId']
-                        v2RunId = run['id']
-                        break
-                except Exception:
-                    print('error getting metadata')
-                    pass
-        elif runs is not None and 'runs' not in runs and len(runs) > 0:
-            newRunId = runs[0]['protectionGroupInstanceId']
-            v2RunId = runs[0]['id']
+        try:
+            if len(selectedSources) > 0:
+                runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=10&includeObjectDetails=true&useCachedData=%s' % (v2JobId, cacheSetting), v=2, timeout=timeoutsec)
+                if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
+                    runs = [r for r in runs['runs'] if selectedSources[0] in [o['object']['id'] for o in r['objects']] or len(r['objects']) == 0]
+            else:
+                runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=1&includeObjectDetails=false&useCachedData=%s' % (v2JobId, cacheSetting), v=2, timeout=timeoutsec)
+                if runs is not None and 'runs' in runs and len(runs['runs']) > 0:
+                    runs = runs['runs']
+            if runs is not None and 'runs' not in runs and len(runs) > 0:
+                runs = [r for r in runs if r['protectionGroupInstanceId'] > lastRunId]
+            if runs is not None and 'runs' not in runs and len(runs) > 0 and usemetadatafile is True:
+                for run in runs:
+                    runDetail = api('get', '/backupjobruns?exactMatchStartTimeUsecs=%s&id=%s&useCachedData=%s' % (run['localBackupInfo']['startTimeUsecs'], v1JobId, cacheSetting), timeout=timeoutsec)
+                    try:
+                        metadataFilePath = runDetail[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['additionalParamVec'][0]['physicalParams']['metadataFilePath']
+                        if metadataFilePath == metadatafile:
+                            newRunId = run['protectionGroupInstanceId']
+                            v2RunId = run['id']
+                            break
+                    except Exception:
+                        print('error getting metadata')
+                        pass
+            elif runs is not None and 'runs' not in runs and len(runs) > 0:
+                newRunId = runs[0]['protectionGroupInstanceId']
+                v2RunId = runs[0]['id']
+        except Exception:
+            pass
         if debugger:
             print(':DEBUG: Previous Run ID: %s' % lastRunId)
             print(':DEBUG:   Latest Run ID: %s\n' % newRunId)
@@ -762,7 +769,6 @@ if wait is True:
         if newRunId > lastRunId:
             run = runs[0]
             break
-        # sleep(retrywaittime)
     out("New Job Run ID: %s" % v2RunId)
 
 # wait for job run to finish and report completion
@@ -775,7 +781,13 @@ if wait is True:
         x = 0
         s = 0
         try:
-            status = run['localBackupInfo']['status']
+            backupInfo = None
+            if 'localBackupInfo' in run:
+                backupInfo = run['localBackupInfo']
+                status = run['localBackupInfo']['status']
+            else:
+                backupInfo = run['archivalInfo']['archivalTargetResults'][0]
+                status = run['archivalInfo']['archivalTargetResults'][0]['status']
             if debugger:
                 print(':DEBUG: status = %s (%s)' % (status, statusRetryCount))
             if exitstring:
@@ -787,7 +799,7 @@ if wait is True:
                         break
                     x = 0
                     try:
-                        progressPath = run['localBackupInfo']['progressTaskId']
+                        progressPath = backupInfo['progressTaskId']
                         taskMon = api('get', '/progressMonitors?taskPathVec=%s&useCachedData=%s' % (progressPath, cacheSetting), timeout=timeoutsec)
                         sources = taskMon['resultGroupVec'][0]['taskVec'][0]['subTaskVec']
                         for source in sources:
@@ -815,7 +827,7 @@ if wait is True:
                 break
             if progress:
                 try:
-                    progressPath = run['localBackupInfo']['progressTaskId']
+                    progressPath = backupInfo['progressTaskId']
                     progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&excludeSubTasks=false&includeFinishedTasks=false&useCachedData=%s' % (progressPath, cacheSetting), timeout=timeoutsec)
                     progressTotal = progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']
                     percentComplete = int(round(progressTotal))
@@ -838,25 +850,35 @@ if wait is True:
                 else:
                     bail(1)
 
-    out("Job finished with status: %s" % run['localBackupInfo']['status'])
-    if run['localBackupInfo']['status'] == 'Failed':
-        out('Error: %s' % run['localBackupInfo']['messages'][0])
-    if run['localBackupInfo']['status'] == 'SucceededWithWarning':
-        out('Warning: %s' % run['localBackupInfo']['messages'][0])
+    backupInfo = None
+    if 'localBackupInfo' in run:
+        backupInfo = run['localBackupInfo']
+    else:
+        backupInfo = run['archivalInfo']['archivalTargetResults'][0]
+    out("Job finished with status: %s" % backupInfo['status'])
+    if backupInfo['status'] == 'Failed':
+        out('Error: %s' % backupInfo['messages'][0])
+    if backupInfo['status'] == 'SucceededWithWarning':
+        out('Warning: %s' % backupInfo['messages'][0])
 
 if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
     updatejob = api('put', 'data-protect/protection-groups/%s' % v2JobId, v2OrigJob, v=2, timeout=timeoutsec)
 
 # return exit code
 if wait is True:
+    backupInfo = None
+    if 'localBackupInfo' in run:
+        backupInfo = run['localBackupInfo']
+    else:
+        backupInfo = run['archivalInfo']['archivalTargetResults'][0]
     if logfile is not None:
         try:
-            log.write('Backup ended %s\n' % usecsToDate(run['localBackupInfo']['endTimeUsecs']))
+            log.write('Backup ended %s\n' % usecsToDate(backupInfo['endTimeUsecs']))
         except Exception:
             log.write('Backup ended')
-    if run['localBackupInfo']['status'] == 'Succeeded':
+    if backupInfo['status'] == 'Succeeded':
         bail(0)
-    elif run['localBackupInfo']['status'] == 'SucceededWithWarning':
+    elif backupInfo['status'] == 'SucceededWithWarning':
         if extendederrorcodes is True:
             bail(9)
         else:
