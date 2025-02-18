@@ -1,4 +1,4 @@
-# version 2025.02-11
+# version 2025.02-18
 
 # version history
 # ===============
@@ -26,6 +26,8 @@
 # 2024.07.08 - reintroduced --keepLocalFor functionality
 # 2024.09.06 - added support for Ft Knox
 # 2025-02-11 - improved VMware API query
+# 2025-02-16 - improved VM API query
+# 2025-02-18 - fixed CAD errors
 #
 # extended error codes
 # ====================
@@ -306,7 +308,7 @@ if($job){
             $backupJob = api get "/backupjobs/$($v1JobId)?useCachedData=$cacheSetting" -timeout $timeoutSec
             $backupSources = api get "/backupsources?allUnderHierarchy=false&entityId=$($backupJob.backupJob.parentSource.id)&excludeTypes=5&useCachedData=$cacheSetting" -timeout $timeoutSec
         }elseif($environment -eq 'kVMware'){
-            $sources = api get "protectionSources/virtualMachines?protected=true&useCachedData=$cacheSetting&vCenterId=$($v1Job.parentSourceId)" -timeout $timeoutSec
+            $sources = api get "protectionSources/virtualMachines?protected=true&pruneNonCriticalInfo=true&useCachedData=$cacheSetting&vCenterId=$($v1Job.parentSourceId)" -timeout $timeoutSec
         }elseif($environment -match 'kAWS'){
             $sources = api get "protectionSources?environments=kAWS&useCachedData=$cacheSetting&id=$($v1Job.parentSourceId)" -timeout $timeoutSec
         }else{
@@ -607,7 +609,11 @@ $newRunId = 1
 $lastRunUsecs = 1662164882000000
 if($null -ne $runs -and $runs.Count -ne "0"){
     $newRunId = $lastRunId = $runs[0].protectionGroupInstanceId
-    $lastRunUsecs = $runs[0].localBackupInfo.startTimeUsecs
+    if($runs[0].PSObject.Properties['localBackupInfo']){
+        $lastRunUsecs = $runs[0].localBackupInfo.startTimeUsecs
+    }else{
+        $lastRunUsecs = $runs[0].archivalInfo.archivalTargetResults[0].startTimeUsecs
+    }
 }
 
 # run job
@@ -731,9 +737,17 @@ if($wait -or $progress){
         $bumpStatusCount = $false
         try {
             if($run){
+                $backupInfo = $null
                 if($run.PSObject.Properties['localBackupInfo']){
+                    $backupInfo = $run.localBackupInfo
                     if($run.localBackupInfo.PSObject.Properties['status']){
                         $lastStatus = $run.localBackupInfo.status
+                        $statusRetryCount = 0
+                    }
+                }elseif($run.PSObject.Properties['archivalInfo']){
+                    $backupInfo = $run.archivalInfo.archivalTargetResults[0]
+                    if($run.archivalInfo.archivalTargetResults[0].PSObject.Properties['status']){
+                        $lastStatus = $run.archivalInfo.archivalTargetResults[0].status
                         $statusRetryCount = 0
                     }
                 }else{
@@ -745,8 +759,8 @@ if($wait -or $progress){
                 # display progress
                 if($progress){
                     try{
-                        if($run.localBackupInfo.PSObject.Properties['progressTaskId']){
-                            $progressPath = $run.localBackupInfo.progressTaskId
+                        if($backupInfo.PSObject.Properties['progressTaskId']){
+                            $progressPath = $backupInfo.progressTaskId
                             $progressMonitor = api get "/progressMonitors?taskPathVec=$progressPath&excludeSubTasks=true&includeFinishedTasks=false&useCachedData=$cacheSetting" -timeout $timeoutSec
                             $percentComplete = $progressMonitor.resultGroupVec[0].taskVec[0].progress.percentFinished
                             $percentComplete = [math]::Round($percentComplete, 0)
@@ -783,18 +797,18 @@ if($wait -or $progress){
 $statusMap = @('0', '1', '2', 'Canceled', 'Succeeded', 'Failed', 'SucceededWithWarning')
 
 if($wait -or $progress){
-    if($run.localBackupInfo.status -in @('3', '4', '5', '6')){
-        $run.localBackupInfo.status = $statusMap[$run.localBackupInfo.status]
+    if($backupInfo.status -in @('3', '4', '5', '6')){
+        $backupInfo.status = $statusMap[$backupInfo.status]
     }
-    output "Job finished with status: $($run.localBackupInfo.status)"
+    output "Job finished with status: $($backupInfo.status)"
     if($outputlog){
-        "Backup ended $(usecsToDate $run.localBackupInfo.endTimeUsecs)" | Out-File -FilePath $scriptlog -Append
+        "Backup ended $(usecsToDate $backupInfo.endTimeUsecs)" | Out-File -FilePath $scriptlog -Append
     }
-    if($run.localBackupInfo.status -eq 'Succeeded'){
+    if($backupInfo.status -eq 'Succeeded'){
         exit 0
-    }elseif($run.localBackupInfo.status -eq 'SucceededWithWarning'){
-        if($run.PSObject.Properties['localBackupInfo'] -and $run.localBackupInfo.PSObject.Properties['messages'] -and $run.localBackupInfo.messages.Count -gt 0){
-            output "Warning: $($run.localBackupInfo.messages[0])"
+    }elseif($backupInfo.status -eq 'SucceededWithWarning'){
+        if($run.PSObject.Properties['localBackupInfo'] -and $backupInfo.PSObject.Properties['messages'] -and $backupInfo.messages.Count -gt 0){
+            output "Warning: $($backupInfo.messages[0])"
         }
         if($extendedErrorCodes){
             exit 9
@@ -802,8 +816,8 @@ if($wait -or $progress){
             exit 0
         }
     }else{
-        if($run.localBackupInfo.status -eq 'Failed'){
-            output "Error: $($run.localBackupInfo.messages[0])"
+        if($backupInfo.status -eq 'Failed'){
+            output "Error: $($backupInfo.messages[0])"
         }
         exit 1
     }
