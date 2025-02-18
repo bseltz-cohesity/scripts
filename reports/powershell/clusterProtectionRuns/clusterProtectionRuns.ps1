@@ -84,7 +84,7 @@ function reportRuns(){
                 }
                 foreach($run in $runs.runs){
                     $localSources = @{}
-                    if(! $run.PSObject.Properties['isLocalSnapshotsDeleted']){
+                    if(! $run.PSObject.Properties['isLocalSnapshotsDeleted'] -or $run.isLocalSnapshotsDeleted -ne $True){
                         if($run.PSObject.Properties['localBackupInfo']){
                             $backupInfo = $run.localBackupInfo
                         }elseif($run.PSObject.Properties['originalBackupInfo']){
