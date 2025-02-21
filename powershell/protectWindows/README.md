@@ -77,6 +77,7 @@ Then, run the main script like so:
 * -followNasLinks: (optional) if omitted, NAS symlinks will not be followed
 * -replaceRules: (optional) if ommited, inclusions/exclusions are appended to existing server rules (if any)
 * -allServers: (optional) inclusions/exclusions are applied to all servers in the job
+* -allowParallelRuns: (optional) enable parallel runs
 
 ## New Job Parameters
 

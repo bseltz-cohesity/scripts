@@ -27,7 +27,8 @@ param (
     [Parameter()][string]$policyName,
     [Parameter()][ValidateSet('kBackupHDD', 'kBackupSSD')][string]$qosPolicy = 'kBackupHDD',
     [Parameter()][switch]$quiesce,
-    [Parameter()][switch]$forceQuiesce
+    [Parameter()][switch]$forceQuiesce,
+    [Parameter()][switch]$allowParallelRuns
 )
 
 $ccb = $false
@@ -202,6 +203,7 @@ if(!$job){
         "physicalParams" = @{
             "protectionType" = "kFile";
             "fileProtectionTypeParams" = @{
+                "allowParallelRuns" = $false
                 "objects" = @();
                 "indexingPolicy" = @{
                     "enableIndexing" = $true;
@@ -238,6 +240,10 @@ if(!$job){
     }
 }else{
     "Updating protection group..."
+}
+
+if($allowParallelRuns){
+    $job.physicalParams.fileProtectionTypeParams.allowParallelRuns = $True
 }
 
 if($job.environment -ne 'kPhysical' -or $job.physicalParams.protectionType -ne 'kFile'){
