@@ -28,6 +28,7 @@ parser.add_argument('-k', '--daystokeep', type=int, required=True)  # number of 
 parser.add_argument('-e', '--expire', action='store_true')          # (optional) expire snapshots older than k days
 parser.add_argument('-r', '--confirmreplication', action='store_true')     # (optional) confirm replication before expiring
 parser.add_argument('-ac', '--activeconfirmation', action='store_true')    # (optional) active replication confirmation
+parser.add_argument('-fc', '--forceconfirmation', action='store_true')
 parser.add_argument('-ao', '--activeonly', action='store_true')  # (optional) skip confirmations for inactive jobs 
 parser.add_argument('-rt', '--replicationtarget', type=str, default=None)  # (optional) replication target to confirm
 parser.add_argument('-a', '--confirmarchive', action='store_true')     # (optional) confirm archival before expiring
@@ -59,9 +60,14 @@ archivetarget = args.archivetarget
 numruns = args.numruns
 skipmonthlies = args.skipmonthlies
 activeconfirmation = args.activeconfirmation
+forceconfirmation = args.forceconfirmation
 activeonly = args.activeonly
 
 if activeconfirmation is True:
+    confirmreplication = True
+
+if forceconfirmation is True:
+    activeconfirmation = True
     confirmreplication = True
 
 # authentication =========================================================
@@ -167,7 +173,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                 if activeonly is not True or 'isActive' not in job or job['isActive'] is True:
                     for copyRun in run['copyRun']:
                         if copyRun['target']['type'] == 'kRemote':
-                            if copyRun['status'] == 'kSuccess':
+                            if copyRun['status'] == 'kSuccess' or forceconfirmation is True:
                                 if replicationtarget is None or copyRun['target']['replicationTarget']['clusterId'] == remoteCluster['clusterId']: # ('clusterName' in copyRun['target']['replicationTarget'] and copyRun['target']['replicationTarget']['clusterName'].lower() == replicationtarget.lower()):
                                     if activeconfirmation:
                                         repltargetObj = [r for r in remoteClusters if r['clusterId'] == copyRun['target']['replicationTarget']['clusterId']]
