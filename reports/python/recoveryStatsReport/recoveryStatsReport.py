@@ -136,7 +136,7 @@ def reportCluster():
                         totalTransferred += dataPoint['data']['int64Value']
             else:
                 if totalTransferred == 0:
-                    totalTransferred = frontEndSize
+                    totalTransferred = logicalSize
             if objectStatus == 'Failed':
                 totalTransferred = 0
             totalTransferred = round(totalTransferred / multiplier, 1)

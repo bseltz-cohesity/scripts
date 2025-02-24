@@ -111,6 +111,8 @@ while True:
                     if 'viewProtection' in view:
                         protected = True
                     print('\n                      Name: %s' % view['name'])
+                    if 'description' in view:
+                        print('               Description: %s' % view['description'])
                     print('               Create Date: %s' % usecsToDate(view['createTimeMsecs'] * 1000))
                     print('            Storage Domain: %s' % view['storageDomainName'])
                     protocols = ', '.join(['%s (%s)' % (p['type'], p['mode']) for p in view['protocolAccess']])
@@ -162,13 +164,16 @@ while True:
                             print('       Maximun Lock Period: %s' % maxRetention)
         else:
             if firstLoop is True:
-                print('\nProto   Name')
-                print('-----   ----')
+                print('\nProto   Name  (Description)')
+                print('-----   -------------------')
                 firstLoop = False
             for view in sorted(theseviews, key=lambda v: v['name'].lower()):
                 if name is None or name.lower() == view['name'].lower():
                     protocols = ', '.join([p['type'] for p in view['protocolAccess']])
-                    print('%s\t%s' % (protocols, view['name']))
+                    description = ''
+                    if 'description' in view:
+                        description = '  (%s)' % view['description']
+                    print('%s\t%s%s' % (protocols, view['name'], description))
         if views['lastResult'] is True:
             break
         else:
