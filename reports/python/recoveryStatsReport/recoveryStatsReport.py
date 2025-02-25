@@ -18,7 +18,7 @@ parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-y', '--daysback', type=int, default=7)
 parser.add_argument('-of', '--outfolder', type=str, default='.')
 parser.add_argument('-f', '--outfilename', type=str, default='recoveryStatsReport.csv')
-parser.add_argument('-x', '--units', type=str, choices=['MiB', 'GiB', 'mib', 'gib'], default='GiB')
+parser.add_argument('-x', '--units', type=str, choices=['KiB', 'MiB', 'GiB', 'kib', 'mib', 'gib'], default='GiB')
 
 args = parser.parse_args()
 
@@ -42,7 +42,11 @@ if vips is None or len(vips) == 0:
 multiplier = 1024 * 1024 * 1024
 if units.lower() == 'mib':
     multiplier = 1024 * 1024
+if units.lower() == 'kib':
+    multiplier = 1024
 
+if units == 'kib':
+    units = 'KiB'
 if units == 'mib':
     units = 'MiB'
 if units == 'gib':
@@ -68,10 +72,9 @@ def reportCluster():
         return None
 
     statsEntities = api('get', 'statistics/entities?maxEntities=1000&schemaName=kMagnetoRestoreTaskStats&metricName=kNumBytesWritten')
-
     logicalSizes = {}
     frontEndSizes = {}
-
+    owner = {}
     for recovery in recoveries['recoveries']:
         thisRecovery = api('get', 'data-protect/recoveries/%s?includeTenants=true' % recovery['id'], v=2)
         if 'endTimeUsecs' not in thisRecovery:
@@ -88,27 +91,42 @@ def reportCluster():
             statsEntity = statsEntity[0]
         else:
             statsEntity = None
-        # find environment params
+        if statsEntity is None:
+            for s in statsEntities:
+                if 'attributeVec' in s and s['attributeVec'] is not None and len(s['attributeVec']) > 0:
+                    for attrib in s['attributeVec']:
+                        if attrib['key'] == 'Name' and attrib['value']['data']['stringValue'] == thisRecovery['name']:
+                            statsEntity = s
         paramskeys = [k for k in thisRecovery.keys() if k.endswith('Params')]
         if paramskeys is not None and len(paramskeys) > 0:
             paramskey = paramskeys[0]
         else:
             continue
         params = thisRecovery[paramskey]
-        for object in params['objects']:
+        if 'objects' in params:
+            objects = params['objects']
+        else:
+            objects = params['recoverAppParams']
+        for object in objects:
             objectName = object['objectInfo']['name']
             if 'status' in object:
                 objectStatus = object['status']
             else:
                 objectStatus = thisRecovery['status']
-            objectId = object['objectInfo']['id']
+            objectId = str(object['objectInfo']['id'])
             logicalSize = 0
             frontEndSize = 0
-            # get logical size
             if objectId not in logicalSizes.keys():
+                ownername = ''
                 search = api('get','/searchvms?entityIds=%s' % objectId)
                 if search is not None and 'vms' in search and len(search['vms']) > 0:
+                    if 'attributeMap' in search['vms'][0]['vmDocument']:
+                        ownername = [m['xValue'] for m in search['vms'][0]['vmDocument']['attributeMap'] if m['xKey'] == 'owner_name']
+                        if ownername is not None and len(ownername) > 0:
+                            ownername = ownername[0] + '/'
                     logicalSize = search['vms'][0]['vmDocument']['versions'][0]['logicalSizeBytes']
+                    if logicalSize == 0:
+                        logicalSize = search['vms'][0]['vmDocument']['versions'][0]['primaryPhysicalSizeBytes']
                     entityProps = [p for p in search['vms'][0]['vmDocument']['objectId']['entity'].keys() if p.endswith('Entity')]
                     if entityProps is not None and len(entityProps) > 0:
                         entityProp = entityProps[0]
@@ -116,21 +134,28 @@ def reportCluster():
                         if 'frontEndSizeInfo' in entity and entity['frontEndSizeInfo'] is not None and 'sizeBytes' in entity['frontEndSizeInfo'] and entity['frontEndSizeInfo']['sizeBytes'] is not None:
                             if entity['frontEndSizeInfo']['sizeBytes'] > 0:
                                 frontEndSize = entity['frontEndSizeInfo']['sizeBytes']
+                else:
+                    print('*** size not found')
+                if ownername == []:
+                    ownername = ''
                 logicalSizes[objectId] = logicalSize
+                owner[objectId] = ownername
                 if frontEndSize == 0 and logicalSize > 0:
                     frontEndSize = logicalSize
                 if frontEndSize > logicalSize:
                     frontEndSize = logicalSize
                 frontEndSizes[objectId] = frontEndSize
             else:
-                logicalSize = logicalSizes[objectId]
+                logicalSize = logicalSizes.get(objectId, 0)
+                ownername = owner.get(objectId, '')
                 frontEndSize = frontEndSizes[objectId]
             totalTransferred = 0
             if statsEntity is not None:
+                entityId = statsEntity['entityId']['entityId']['data']['int64Value']
                 startDate = usecsToDateTime(thisRecovery['startTimeUsecs'])
                 morning = datetime.combine(startDate, datetime.min.time())
                 morningMsecs = int(round(dateToUsecs(morning) / 1000))
-                stats = api('get','statistics/timeSeriesStats?endTimeMsecs=%s&entityId=%s&metricName=kNumBytesWritten&metricUnitType=0&range=month&rollupFunction=average&rollupIntervalSecs=180&schemaName=kMagnetoRestoreTaskStats&startTimeMsecs=%s' % (tonightMsecs, v1TaskId, morningMsecs))
+                stats = api('get','statistics/timeSeriesStats?endTimeMsecs=%s&entityId=%s&metricName=kNumBytesWritten&metricUnitType=0&range=month&rollupFunction=average&rollupIntervalSecs=180&schemaName=kMagnetoRestoreTaskStats&startTimeMsecs=%s' % (tonightMsecs, entityId, morningMsecs), quiet=True)
                 if stats is not None and 'dataPointVec' in stats:
                     for dataPoint in stats['dataPointVec']:
                         totalTransferred += dataPoint['data']['int64Value']
@@ -140,9 +165,9 @@ def reportCluster():
             if objectStatus == 'Failed':
                 totalTransferred = 0
             totalTransferred = round(totalTransferred / multiplier, 1)
-            frontEndSize = round(frontEndSize / multiplier, 1)
             logicalSize = round(logicalSize / multiplier, 1)
-            f.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], thisRecovery['name'], thisRecovery['id'], recoveryStart, recoveryEnd, duration, thisRecovery['recoveryAction'], objectName, logicalSize, frontEndSize, totalTransferred, objectStatus, recoveryUser))
+            frontEndSize = round(frontEndSize / multiplier, 1)
+            f.write('"%s","%s","%s","%s","%s","%s","%s","%s%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], thisRecovery['name'], thisRecovery['id'], recoveryStart, recoveryEnd, duration, thisRecovery['recoveryAction'], ownername, objectName, logicalSize, frontEndSize, totalTransferred, objectStatus, recoveryUser))
 
 for vip in vips:
 

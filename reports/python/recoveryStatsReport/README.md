@@ -64,4 +64,4 @@ To connect through Helios:
 * -y, --daysback: (optional) include recoveries from the last X days (default is 7)
 * -of, --outfolder: (optional) where to write report html (default is current directory)
 * -f, --outfilename: (optional) default is recoveryStatsReport.csv
-* -x, --unit: (optional) KiB, MiB, GiB, or TiB] (default is GiB)
+* -x, --unit: (optional) KiB, MiB or GiB (default is GiB)
