@@ -85,3 +85,4 @@ To choose the backup at or after the specified file date:
 * -x, --forceindex: (optional) force use the index (otherwise index usage will be automatic)
 * -ss, --showstats: (optional) include last modified date and size (in bytes) in the output
 * -nt, --newerthan: (optional) show files added/modified in the last X days
+* -ext, --extension: (optional) only show files that end with the specified extension

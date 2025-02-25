@@ -39,7 +39,7 @@ parser.add_argument('-n', '--noindex', action='store_true')           # do not u
 parser.add_argument('-x', '--forceindex', action='store_true')           # do not use librarian
 parser.add_argument('-ss', '--showstats', action='store_true')        # show file last modified date and size
 parser.add_argument('-nt', '--newerthan', type=int, default=0)        # show files newer than X days
-
+parser.add_argument('-ext', '--extension', type=str, default=None) 
 args = parser.parse_args()
 
 vip = args.vip
@@ -64,7 +64,7 @@ noindex = args.noindex
 showstats = args.showstats
 newerthan = args.newerthan
 forceIndex = args.forceindex
-
+extension = args.extension
 
 def listdir(dirPath, instance, f, csv, volumeInfoCookie=None, volumeName=None, cookie=None):
     global fileCount
@@ -87,26 +87,26 @@ def listdir(dirPath, instance, f, csv, volumeInfoCookie=None, volumeName=None, c
                     listdir('%s/%s' % (dirPath, entry['name']), instance, f, csv, volumeInfoCookie, volumeName)
                 else:
                     # entry['fullPath'] = entry['fullPath'].encode('ascii', 'replace').decode('ascii')
-                    if statfile is True:
-                        filesize = entry['fstatInfo']['size']
-                        mtime = usecsToDate(entry['fstatInfo']['mtimeUsecs'])
-                        mtimeusecs = entry['fstatInfo']['mtimeUsecs']
-                        if newerthan == 0 or mtimeusecs > timeAgo(newerthan, 'days'):
+                    if extension is None or entry['fullPath'].lower().endswith(extension):
+                        if statfile is True:
+                            filesize = entry['fstatInfo']['size']
+                            mtime = usecsToDate(entry['fstatInfo']['mtimeUsecs'])
+                            mtimeusecs = entry['fstatInfo']['mtimeUsecs']
+                            if newerthan == 0 or mtimeusecs > timeAgo(newerthan, 'days'):                            
+                                fileCount += 1
+                                totalSize += filesize
+                                print('%s (%s) [%s bytes]' % (entry['fullPath'], mtime, filesize))
+                                f.write('%s (%s) [%s bytes]\n' % (entry['fullPath'], mtime, filesize))
+                                csv.write('"%s","%s","%s"\n' % (entry['fullPath'], mtime, filesize))
+                        else:
                             fileCount += 1
-                            totalSize += filesize
-                            print('%s (%s) [%s bytes]' % (entry['fullPath'], mtime, filesize))
-                            f.write('%s (%s) [%s bytes]\n' % (entry['fullPath'], mtime, filesize))
-                            csv.write('"%s","%s","%s"\n' % (entry['fullPath'], mtime, filesize))
-                    else:
-                        fileCount += 1
-                        print('%s' % entry['fullPath'])
-                        f.write('%s\n' % entry['fullPath'])
-                        csv.write('"%s","",""\n' % entry['fullPath'])
+                            print('%s' % entry['fullPath'])
+                            f.write('%s\n' % entry['fullPath'])
+                            csv.write('"%s","",""\n' % entry['fullPath'])
             except Exception:
                 pass
     if dirList and 'cookie' in dirList:
         listdir('%s' % dirPath, instance, f, csv, volumeInfoCookie, volumeName, dirList['cookie'])
-
 
 def showFiles(doc, version):
     global useLibrarian
