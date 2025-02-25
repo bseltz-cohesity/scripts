@@ -198,7 +198,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                                             if replicaRun is not None and len(replicaRun) > 0:
                                                 for replicaCopyRun in replicaRun[0]['copyRun']:
                                                     if replicaCopyRun['target']['type'] == 'kLocal':
-                                                        if replicaCopyRun['expiryTimeUsecs'] > nowUsecs and replicaCopyRun['status'] == 'kSuccess':
+                                                        if 'expiryTimeUsecs' in replicaCopyRun and replicaCopyRun['expiryTimeUsecs'] > nowUsecs and replicaCopyRun['status'] == 'kSuccess':
                                                             replicated = True
                                         setContext(context)
                                     else:    
