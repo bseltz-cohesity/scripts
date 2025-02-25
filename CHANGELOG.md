@@ -1,5 +1,13 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2025-02-25
+
+* [copySecurityConfig.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/copySecurityConfig) copy account security configuration from one cluster to another
+
+## 2025-02-14
+
+* [maintenance.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/maintenance) [`New`] set maintenance mode on protection sources
+
 ## 2025-02-11
 
 * [recoverVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/recoverVMs) [`Update`] improved API queries
