@@ -70,7 +70,6 @@ def reportCluster():
     recoveries = api('get', 'data-protect/recoveries?startTimeUsecs=%s&includeTenants=true&endTimeUsecs=%s' % (beforeusecs, tonightusecs), v=2)
     if recoveries is None or 'recoveries' not in recoveries or recoveries['recoveries'] is None or len(recoveries['recoveries']) == 0:
         return None
-
     statsEntities = api('get', 'statistics/entities?maxEntities=1000&schemaName=kMagnetoRestoreTaskStats&metricName=kNumBytesWritten')
     logicalSizes = {}
     frontEndSizes = {}
@@ -85,10 +84,15 @@ def reportCluster():
         recoveryEnd = usecsToDate(thisRecovery['endTimeUsecs'])
         duration = (int(round(((thisRecovery['endTimeUsecs'] - thisRecovery['startTimeUsecs']) / 1000000))))
         recoveryId = thisRecovery['id']
+
         v1TaskId = int(recoveryId.split(':')[-1])
+        # determine total data transferred during "push" recoveries
+        totalTransferred = 0
+        theseStatsEntities = []
         statsEntity = [e for e in statsEntities if e['entityId']['entityId']['data']['int64Value'] == v1TaskId]
         if statsEntity is not None and len(statsEntity) > 0:
-            statsEntity = statsEntity[0]
+            for s in statsEntity:
+                theseStatsEntities.append(s)
         else:
             statsEntity = None
         if statsEntity is None:
@@ -96,7 +100,19 @@ def reportCluster():
                 if 'attributeVec' in s and s['attributeVec'] is not None and len(s['attributeVec']) > 0:
                     for attrib in s['attributeVec']:
                         if attrib['key'] == 'Name' and attrib['value']['data']['stringValue'] == thisRecovery['name']:
-                            statsEntity = s
+                            theseStatsEntities.append(s)
+        if len(theseStatsEntities) > 0:
+            for statsEntity in theseStatsEntities:
+                entityId = statsEntity['entityId']['entityId']['data']['int64Value']
+                startDate = usecsToDateTime(thisRecovery['startTimeUsecs'])
+                morning = datetime.combine(startDate, datetime.min.time())
+                morningMsecs = int(round(dateToUsecs(morning) / 1000))
+                stats = api('get','statistics/timeSeriesStats?endTimeMsecs=%s&entityId=%s&metricName=kNumBytesWritten&metricUnitType=0&range=month&schemaName=kMagnetoRestoreTaskStats&startTimeMsecs=%s' % (tonightMsecs, entityId, morningMsecs), quiet=True)
+                if stats is not None and 'dataPointVec' in stats:
+                    for dataPoint in stats['dataPointVec']:
+                        datapointUsecs = dataPoint['timestampMsecs'] * 1000
+                        if datapointUsecs > thisRecovery['startTimeUsecs'] and datapointUsecs <= (thisRecovery['endTimeUsecs'] + 180000000):
+                            totalTransferred += dataPoint['data']['int64Value']
         paramskeys = [k for k in thisRecovery.keys() if k.endswith('Params')]
         if paramskeys is not None and len(paramskeys) > 0:
             paramskey = paramskeys[0]
@@ -107,12 +123,10 @@ def reportCluster():
             objects = params['objects']
         else:
             objects = params['recoverAppParams']
+        
+        totalFrontEndSizes = 0
+        # sum up total size across objects
         for object in objects:
-            objectName = object['objectInfo']['name']
-            if 'status' in object:
-                objectStatus = object['status']
-            else:
-                objectStatus = thisRecovery['status']
             objectId = str(object['objectInfo']['id'])
             logicalSize = 0
             frontEndSize = 0
@@ -149,25 +163,27 @@ def reportCluster():
                 logicalSize = logicalSizes.get(objectId, 0)
                 ownername = owner.get(objectId, '')
                 frontEndSize = frontEndSizes[objectId]
-            totalTransferred = 0
-            if statsEntity is not None:
-                entityId = statsEntity['entityId']['entityId']['data']['int64Value']
-                startDate = usecsToDateTime(thisRecovery['startTimeUsecs'])
-                morning = datetime.combine(startDate, datetime.min.time())
-                morningMsecs = int(round(dateToUsecs(morning) / 1000))
-                stats = api('get','statistics/timeSeriesStats?endTimeMsecs=%s&entityId=%s&metricName=kNumBytesWritten&metricUnitType=0&range=month&rollupFunction=average&rollupIntervalSecs=180&schemaName=kMagnetoRestoreTaskStats&startTimeMsecs=%s' % (tonightMsecs, entityId, morningMsecs), quiet=True)
-                if stats is not None and 'dataPointVec' in stats:
-                    for dataPoint in stats['dataPointVec']:
-                        totalTransferred += dataPoint['data']['int64Value']
+            totalFrontEndSizes += frontEndSize
+
+        for object in objects:
+            objectName = object['objectInfo']['name']
+            if 'status' in object:
+                objectStatus = object['status']
             else:
-                if totalTransferred == 0:
-                    totalTransferred = logicalSize
-            if objectStatus == 'Failed':
-                totalTransferred = 0
-            totalTransferred = round(totalTransferred / multiplier, 1)
+                objectStatus = thisRecovery['status']
+            objectId = str(object['objectInfo']['id'])
+            logicalSize = logicalSizes.get(objectId, 0)
+            ownername = owner.get(objectId, '')
+            frontEndSize = frontEndSizes.get(objectId, 0)
+            dataTransferred = 0
+            if statsEntity is None:
+                dataTransferred = logicalSize
+            elif totalFrontEndSizes > 0:
+                dataTransferred = totalTransferred * frontEndSize / totalFrontEndSizes
             logicalSize = round(logicalSize / multiplier, 1)
             frontEndSize = round(frontEndSize / multiplier, 1)
-            f.write('"%s","%s","%s","%s","%s","%s","%s","%s%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], thisRecovery['name'], thisRecovery['id'], recoveryStart, recoveryEnd, duration, thisRecovery['recoveryAction'], ownername, objectName, logicalSize, frontEndSize, totalTransferred, objectStatus, recoveryUser))
+            dataTransferred = round(dataTransferred / multiplier, 1)
+            f.write('"%s","%s","%s","%s","%s","%s","%s","%s%s","%s","%s","%s","%s","%s"\n' % (cluster['name'], thisRecovery['name'], thisRecovery['id'], recoveryStart, recoveryEnd, duration, thisRecovery['recoveryAction'], ownername, objectName, logicalSize, frontEndSize, dataTransferred, objectStatus, recoveryUser))
 
 for vip in vips:
 
@@ -193,4 +209,3 @@ for vip in vips:
 
 f.close()
 print('\nOutput saved to %s\n' % outfilename)
-
