@@ -90,10 +90,12 @@ for source in sourcenames:
     sourcefound[source] = False
 
 sources = api('get', 'protectionSources/registrationInfo?includeEntityPermissionInfo=true&includeApplicationsTreeInfo=false')
+exitcode = 0
 
 for source in sourcenames:
     thissource = [s for s in sources['rootNodes'] if s['rootNode']['name'].lower() == source.lower()]
     if thissource is not None and len(thissource) > 0:
+        thisError = 0
         thissource = thissource[0]
         thissourcename = thissource['rootNode']['name']
         thissourceid = thissource['rootNode']['id']
@@ -103,6 +105,10 @@ for source in sourcenames:
             while theseretries > 0:
                 print('Unregistering %s' % thissourcename)
                 result = api('delete', 'protectionSources/%s' % thissourceid)
+                if 'error' in result:
+                    thisError = 1
+                else:
+                    thisError = 0
                 if 'error' in result and 'is using it and is active' not in result['error']:
                     theseretries = theseretries - 1
                     if theseretries == 0:
@@ -111,7 +117,10 @@ for source in sourcenames:
                     sleep(sleepseconds)
                 else:
                     break
-
+            if thisError == 1:
+                exitcode = 1
 for source in sourcenames:
     if sourcefound[source] is False:
         print('%s not found' % source)
+        exitcode = 1
+exit(exitcode)
