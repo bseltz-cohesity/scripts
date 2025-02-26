@@ -20,6 +20,8 @@ parser.add_argument('-n', '--viewname', type=str, required=True)  # name view to
 parser.add_argument('-s', '--storagedomain', type=str, default='DefaultStorageDomain')  # name of storage domain to use
 parser.add_argument('-q', '--qospolicy', type=str, choices=['Backup Target Low', 'Backup Target High', 'TestAndDev High', 'TestAndDev Low'], default='TestAndDev High')  # qos policy
 parser.add_argument('-a', '--allowlist', action='append', default=[])  # ip to allowlist
+parser.add_argument('-su', '--s3user', action='append', default=[])
+parser.add_argument('-sp', '--permissions', action='append', choices=['Read', 'Write', 'FullControl', 'ReadACP', 'WriteACP'], default=[])
 
 args = parser.parse_args()
 
@@ -36,6 +38,8 @@ viewName = args.viewname
 storageDomain = args.storagedomain
 qosPolicy = args.qospolicy
 allowlist = args.allowlist
+userlist = args.s3user
+permissions = args.permissions
 
 # authentication =========================================================
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, prompt=(not noprompt), mfaCode=mfacode, emailMfaCode=emailmfacode, tenantId=tenant)
@@ -57,34 +61,120 @@ sdid = sd[0]['id']
 
 # new view parameters
 newView = {
-    "enableSmbAccessBasedEnumeration": True,
-    "enableSmbViewDiscovery": True,
-    "fileDataLock": {
-        "lockingProtocol": "kSetReadOnly"
+    "name": viewName,
+    "category": "ObjectServices",
+    "dataLockExpiryUsecs": None,
+    "storageDomainId": sdid,
+    "protocolAccess": [
+        {
+            "type": "S3",
+            "mode": "ReadWrite"
+        }
+    ],
+    "objectServicesMappingConfig": "ObjectId",
+    "mostSecureSettings": False,
+    "isExternallyTriggeredBackupTarget": False,
+    "intent": {
+        "templateId": 2077,
+        "templateName": "General Object Services"
     },
+    "aclConfig": {
+        "grants": [
+            {
+                "grantee": {
+                    "type": "RegisteredUser",
+                    "userId": "ADMIN@LOCAL@"
+                },
+                "permissions": [
+                    "FullControl"
+                ]
+            }
+        ]
+    },
+    "caseInsensitiveNamesEnabled": False,
+    "description": None,
+    "enableFilerAuditLogging": None,
     "fileExtensionFilter": {
+        "fileExtensionsList": [],
         "isEnabled": False,
-        "mode": "kBlacklist",
-        "fileExtensionsList": []
+        "mode": "Blacklist"
     },
-    "securityMode": "kNativeMode",
-    "smbPermissionsInfo": {
-        "ownerSid": "S-1-5-32-544",
-        "permissions": []
+    "fileLockConfig": None,
+    "filerLifecycleManagement": None,
+    "logicalQuota": {
+        "hardLimitBytes": None,
+        "alertLimitBytes": None
     },
-    "protocolAccess": "kS3Only",
-    "subnetWhitelist": [],
-    "qos": {
-        "principalName": qosPolicy
+    "ownerInfo": {
+        "userId": "ADMIN@LOCAL@"
     },
-    "viewBoxId": sdid,
-    "caseInsensitiveNamesEnabled": True,
+    "s3FolderSupportEnabled": False,
+    "selfServiceSnapshotConfig": None,
     "storagePolicyOverride": {
         "disableInlineDedupAndCompression": False
     },
-    "name": viewName
+    "enableAppAwarePrefetching": None,
+    "enableAppAwareUptiering": None,
+    "qos": {
+        "principalName": qosPolicy
+    },
+    "viewPinningConfig": {
+        "enabled": False,
+        "pinnedTimeSecs": -1,
+        "lastUpdatedTimestampSecs": None
+    },
+    "netgroupWhitelist": {
+        "nisNetgroups": None
+    },
+    "nfsAllSquash": None,
+    "nfsRootSquash": None,
+    "overrideGlobalNetgroupWhitelist": None,
+    "overrideGlobalSubnetWhitelist": True,
+    "securityMode": "NativeMode",
+    "subnetWhitelist": None,
+    "enableFastDurableHandle": None,
+    "enableOfflineCaching": None,
+    "enableSmbAccessBasedEnumeration": None,
+    "enableSmbEncryption": None,
+    "enableSmbLeases": None,
+    "enableSmbOplock": None,
+    "enableSmbViewDiscovery": None,
+    "enforceSmbEncryption": None,
+    "sharePermissions": None,
+    "smbPermissionsInfo": None,
+    "enableNfsKerberosAuthentication": None,
+    "enableNfsKerberosIntegrity": None,
+    "enableNfsKerberosPrivacy": None,
+    "enableNfsUnixAuthentication": None,
+    "enableNfsViewDiscovery": None,
+    "enableNfsWcc": None,
+    "nfsRootPermissions": None,
+    "enableAbac": None,
+    "lifecycleManagement": None,
+    "versioning": None
 }
 
+# acl
+if len(userlist) > 0:
+    users = api('get','users', v=2)
+    if len(permissions) == 0:
+        permissions = ['FullControl']
+    for user in userlist:
+        thisuser = [u for u in users['users'] if u['s3AccountParams']['s3AccountId'].lower() == user.lower()]
+        if thisuser is not None and len(thisuser) > 0:
+            thisuser = thisuser[0]
+            newView['aclConfig']['grants'].append({
+                "grantee": {
+                    "type": "RegisteredUser",
+                    "userId": thisuser['s3AccountParams']['s3AccountId']
+                },
+                "permissions": permissions
+            })
+        else:
+            print('S3 user %s not found' % user)
+            exit(1)
+
+# subnet allow list
 if len(allowlist) > 0:
     newView['subnetWhitelist'] = []
     for ip in allowlist:
@@ -94,17 +184,21 @@ if len(allowlist) > 0:
         else:
             thisip = ip
             description = ''
-        newView['subnetWhitelist'].append(
-            {
-                "description": description,
-                "nfsAccess": "kReadWrite",
-                "smbAccess": "kReadWrite",
-                "nfsRootSquash": False,
-                "ip": thisip,
-                "netmaskIp4": "255.255.255.255"
-            }
-        )
+        if '/' in thisip:
+            (thisip, netmaskBits) = thisip.split('/')
+            netmaskBits = int(netmaskBits)
+        else:
+            netmaskBits = 32
+        newView['subnetWhitelist'].append({
+            "description": description,
+            "ip": thisip,
+            "netmaskBits": netmaskBits,
+            "nfsAccess": "kReadWrite",
+            "nfsSquash": "kNone",
+            "smbAccess": "kReadWrite",
+            "s3Access": "kReadWrite"
+        })
 
 # create the view
 print("Creating view %s..." % viewName)
-result = api('post', 'views', newView)
+result = api('post', 'file-services/views', newView, v=2)
