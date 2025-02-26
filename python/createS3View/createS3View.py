@@ -15,13 +15,14 @@ parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
-parser.add_argument('-e', '--emailmfacode', action='store_true')
+parser.add_argument('-em', '--emailmfacode', action='store_true')
 parser.add_argument('-n', '--viewname', type=str, required=True)  # name view to create
 parser.add_argument('-s', '--storagedomain', type=str, default='DefaultStorageDomain')  # name of storage domain to use
 parser.add_argument('-q', '--qospolicy', type=str, choices=['Backup Target Low', 'Backup Target High', 'TestAndDev High', 'TestAndDev Low'], default='TestAndDev High')  # qos policy
 parser.add_argument('-a', '--allowlist', action='append', default=[])  # ip to allowlist
 parser.add_argument('-su', '--s3user', action='append', default=[])
 parser.add_argument('-sp', '--permissions', action='append', choices=['Read', 'Write', 'FullControl', 'ReadACP', 'WriteACP'], default=[])
+parser.add_argument('-ev', '--enableversioning', action='store_true')
 
 args = parser.parse_args()
 
@@ -40,6 +41,7 @@ qosPolicy = args.qospolicy
 allowlist = args.allowlist
 userlist = args.s3user
 permissions = args.permissions
+enableversioning = args.enableversioning
 
 # authentication =========================================================
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, prompt=(not noprompt), mfaCode=mfacode, emailMfaCode=emailmfacode, tenantId=tenant)
@@ -154,11 +156,15 @@ newView = {
     "versioning": None
 }
 
+# versioning
+if enableversioning is True:
+    newView['versioning'] = "Enabled"
+
 # acl
 if len(userlist) > 0:
     users = api('get','users', v=2)
     if len(permissions) == 0:
-        permissions = ['FullControl']
+        permissions = ['Read', 'Write']
     for user in userlist:
         thisuser = [u for u in users['users'] if u['s3AccountParams']['s3AccountId'].lower() == user.lower()]
         if thisuser is not None and len(thisuser) > 0:

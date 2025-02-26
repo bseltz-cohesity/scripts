@@ -55,3 +55,4 @@ Place both files in a folder together and run the main script like so:
 * -a, --allowlist: (optional) ip (and optional description) address to whitelist (can be used multiple times)
 * -su, --s3user: (optional) S3 account name of user to add, e.g. ADMIN@LOCAL@ (repeat for multiple)
 * -sp, --permissions: (optional) permission to grant to S3 user ('Read', 'Write', 'FullControl', 'ReadACP', 'WriteACP') will be Read, Write if omitted (repeat for multiple)
+* -ev, --enableversioning: (optional) enable versioning
