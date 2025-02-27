@@ -219,7 +219,7 @@ $html += '</span>
       </tr>'
 
 
-$jobs = api get protectionJobs | Sort-Object -Property name
+$jobs = api get "protectionJobs?allUnderHierarchy=true" | Sort-Object -Property name
 
 $entitySizes = @{}
 $entityEnvironments = @{}
@@ -241,7 +241,7 @@ foreach($job in $jobs){
         # walk through date range looking for eneties and their sizes
         $thisDate = $startingDate
         while($True){
-            $runs = api get "/backupjobruns?id=$($job.id)&numRuns=$numRuns&startTimeUsecs=$uStart&endTimeUsecs=$endUsecs&runTypes=kRegular,kFull"
+            $runs = api get "/backupjobruns?id=$($job.id)&numRuns=$numRuns&startTimeUsecs=$uStart&endTimeUsecs=$endUsecs&runTypes=kRegular,kFull&allUnderHierarchy=true"
             foreach($run in $runs.backupJobRuns.protectionRuns){
                 $runStart = $run.backupRun.base.startTimeUsecs
                 $runEnd = $run.backupRun.base.endTimeUsecs
@@ -305,7 +305,7 @@ foreach($job in $jobs){
 }
 
 # include unprotected views
-$views = (api get views).views | Where-Object {$_.viewProtection -eq $null}
+$views = (api get "views?allUnderHierarchy=true").views | Where-Object {$_.viewProtection -eq $null}
 if($views.count -gt 0){
     "Gathering unprotected view details..."
     foreach($view in $views){
