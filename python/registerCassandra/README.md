@@ -25,9 +25,14 @@ Place both files in a folder together and run the main script like so:
 
 ```bash
 ./registerCassandra.py -v mycluster \
-                     -u myusername \
-                     -d mydomain.net \
-                     -n cassandra1.mydomain.net,192.168.1.101
+                       -u myusername \
+                       -d mydomain.net \
+                       -n cassandra1.mydomain.net,192.168.1.101 \
+                       -cd /etc/dse/cassandra \
+                       -dd /etc/dse \
+                       -da \
+                       -su root \
+                       -ju cassandra
 ```
 
 ## Authentication Parameters
