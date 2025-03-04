@@ -71,6 +71,10 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
+$cluster = api get cluster
+$outfileName = "replicationQueue-$($cluster.name).csv"
+"""Start Time"",""Job Name"",""Status""" | Out-File -FilePath $outfileName
+
 if(!$commit -and ($cancelAll -or $cancelOutdated)){
     Write-Host "Running in test mode. Use the -commit switch to actually perform cancelations" -ForegroundColor Yellow
 }
@@ -146,6 +150,7 @@ if($runningTasks.Keys.Count -gt 0){
             $t = $runningTasks[$startTimeUsecs]
             if($t.status -notin $finishedStates){
                 "{0}   {1} ({2})" -f (usecsToDate $t.startTimeUsecs), $t.jobName, $t.jobId
+                """{0}"",""{1}"",""{2}""" -f (usecsToDate $t.startTimeUsecs), $t.jobName, $t.status | Out-File -FilePath $outfileName -Append
                 $run = api get "/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=$($t.startTimeUsecs)&id=$($t.jobId)"
                 $runStartTimeUsecs = $run.backupJobRuns.protectionRuns[0].backupRun.base.startTimeUsecs
                 foreach($task in $run.backupJobRuns.protectionRuns[0].copyRun.activeTasks){
@@ -188,9 +193,12 @@ if($runningTasks.Keys.Count -gt 0){
                 }
             }elseif($showFinished){
                 "{0}   {1} ({2}) {3}" -f (usecsToDate $t.startTimeUsecs), $t.jobName, $t.jobId, $t.status
+                """{0}"",""{1}"",""{2}""" -f (usecsToDate $t.startTimeUsecs), $t.jobName, $t.status | Out-File -FilePath $outfileName -Append
             }
         }
     }
 }else{
     "`nNo active replication tasks found"
 }
+
+Write-Host "`nOutput saved to $outfileName`n"
