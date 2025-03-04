@@ -2,10 +2,10 @@
 
 ## 2025-03-04
 
-* [recoverFileScheduled.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverFileScheduled/recoverFileScheduled.ps1)
-* [gflagList.py](https://github.com/cohesity/community-automation-samples/tree/main/python/gflagList/gflagList.py)
-* [recoverVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverVMs/recoverVMs.ps1)
-* [replicationQueue.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/replicationQueue/replicationQueue.ps1)
+* [recoverFileScheduled.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverFileScheduled)
+* [gflagList.py](https://github.com/cohesity/community-automation-samples/tree/main/python/gflagList)
+* [recoverVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverVMs)
+* [replicationQueue.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/replicationQueue)
 
 ## 2025-02-25
 
