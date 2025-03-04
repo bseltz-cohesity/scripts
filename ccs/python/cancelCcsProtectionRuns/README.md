@@ -49,8 +49,8 @@ Cancel the backup of a SQL Database:
 * -r, --region: (optional) Ccs region to use
 * -o, --objectName: (optional) name of protected object to backup (e.g. name of VM, name of database)
 * -s, --sourceName: (optional) name of registered source (e.g. name of SQL Server)
-* -e, --environment: (optional) filter by specific environment
-* -t, --subtype: (optional) filter by specific subtype
+* -e, --environment: (optional) filter by specific environment (e.g. kO365)
+* -t, --subtype: (optional) filter by specific subtype (e.g. kO365OneDrive)
 
 ## Authenticating to Ccs
 
