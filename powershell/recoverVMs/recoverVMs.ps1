@@ -110,6 +110,8 @@ if($vmTag){
 if($protectionGroup -or $jobName){
     $jobVMlist = api get "/searchvms?entityTypes=kVMware&vmName=$protectionGroup"
     $jobVMs = $jobVMlist.vms | Where-Object  {$_.vmDocument.jobName -eq $protectionGroup -or $_.vmDocument.jobName -eq $jobName}
+    $latestJobId = ($jobVMs.vmDocument.objectId.jobId | Sort-Object)[-1]
+    $jobVMs = $jobVMs | Where-Object {$_.vmDocument.objectId.jobId -eq $latestJobId}
     $vmNames = $vmNames + @($jobVMs.vmDocument.objectName) | Sort-Object -Unique  
 }
 
@@ -364,8 +366,8 @@ foreach($vm in $vmNames){
     $vmName = [string]$vm
     $vms = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverVMs,RecoverVApps,RecoverVAppTemplates&searchString=$vmName&environments=kVMware"
     $exactVMs = $vms.objects | Where-Object name -eq $vmName
-    if($jobName){
-        $exactVMs.latestSnapshotsInfo = @($exactVMs.latestSnapshotsInfo | Where-Object {$_.protectionGroupName -eq $jobName})
+    if($jobName -or $protectionGroup){
+        $exactVMs.latestSnapshotsInfo = @($exactVMs.latestSnapshotsInfo | Where-Object {$_.protectionGroupName -eq $jobName -or $_.protectionGroupName -eq $protectionGroup})
     }
     $latestsnapshot = ($exactVMs | Sort-Object -Property @{Expression={$_.latestSnapshotsInfo[0].protectionRunStartTimeUsecs}; Ascending = $False})[0]
     if($recoverDate){
