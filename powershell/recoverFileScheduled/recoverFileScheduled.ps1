@@ -27,10 +27,11 @@ $logFile = 'recoverFileScheduledLog.txt'
 
 ### search for my file
 $fileResults = api get "/searchfiles?filename=$($encodedFileName)"
-if (!$fileResults.count){
+
+if (! $fileResults.PSObject.Properties['files']){
     Write-Host "no files found" -ForegroundColor Yellow
     "no files found" | Out-File $logFile -Append
-    exit    
+    exit
 }
 
 ### narrow results to exact server and file name
@@ -44,22 +45,23 @@ if (!$files){
     exit    
 }
 
+$files = $files | Sort-Object -Property {$_.fileDocument.objectId.jobUid.objectId}
+
 ### get file properties
-$clusterId = $files[0].fileDocument.objectId.jobUid.clusterId
-$clusterIncarnationId = $files[0].fileDocument.objectId.jobUid.clusterIncarnationId
-$jobId = $files[0].fileDocument.objectId.jobUid.objectId
-$localJobId = $files[0].fileDocument.objectId.jobId
-$viewBoxId = $files[0].fileDocument.viewBoxId
-$filePath = $files[0].fileDocument.filename
+$clusterId = $files[-1].fileDocument.objectId.jobUid.clusterId
+$clusterIncarnationId = $files[-1].fileDocument.objectId.jobUid.clusterIncarnationId
+$jobId = $files[-1].fileDocument.objectId.jobUid.objectId
+$localJobId = $files[-1].fileDocument.objectId.jobId
+$viewBoxId = $files[-1].fileDocument.viewBoxId
+$filePath = $files[-1].fileDocument.filename
 $shortFile = Split-Path $filePath -Leaf
-$outFile = "$outPath-$((get-date).tostring('yyyy-MM-dd-hh-mm-ss'))"
+$outFile = "$outPath$($shortFile)-$((get-date).tostring('yyyy-MM-dd-hh-mm-ss'))"
 $shortOutFile = Split-Path $outPath -Leaf
 $filePath = [System.Web.HttpUtility]::UrlEncode($filePath)
 
 ### find most recent version
-$entity = $files[0].fileDocument.objectId.entity
+$entity = $files[-1].fileDocument.objectId.entity
 $versions = api get "/file/versions?clusterId=$($clusterId)&clusterIncarnationId=$($clusterIncarnationId)&entityId=$($entity.id)&filename=$($filePath)&fromObjectSnapshotsOnly=false&jobId=$($jobId)"
-
 $attemptNum = $versions.versions[0].instanceId.attemptNum
 $jobInstanceId = $versions.versions[0].instanceId.jobInstanceId
 $jobStartTimeUsecs = $versions.versions[0].instanceId.jobStartTimeUsecs
