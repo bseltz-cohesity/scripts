@@ -20,12 +20,15 @@ if api_version < '2023.09.23':
 ### command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
-parser.add_argument('-u', '--username', type=str, default='helios')
+parser.add_argument('-v', '--vip', type=str, required=True)
+parser.add_argument('-u', '--username', type=str, required=True)
 parser.add_argument('-d', '--domain', type=str, default='local')
-parser.add_argument('-a', '--accesscluster', type=str, default=None)
-parser.add_argument('-k', '--useApiKey', action='store_true')
-parser.add_argument('-p', '--password', type=str, default=None)
+parser.add_argument('-t', '--tenant', type=str, default=None)
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-m', '--mfacode', type=str, default=None)
+parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-s', '--servicename', type=str, required=True)
 
 args = parser.parse_args()
@@ -33,9 +36,12 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
-accesscluster = args.accesscluster
+tenant = args.tenant
 useApiKey = args.useApiKey
 password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
+emailmfacode = args.emailmfacode
 servicename = args.servicename
 
 requests.packages.urllib3.disable_warnings()
@@ -86,16 +92,14 @@ port = {
     "etl_server": "23462"
 }
 
-# authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+# authentication =========================================================
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, prompt=(not noprompt), mfaCode=mfacode, emailMfaCode=emailmfacode, tenantId=tenant)
 
-# if connected to helios, select to access cluster
-if vip.lower() == 'helios.cohesity.com':
-    if accesscluster is not None:
-        heliosCluster(accesscluster)
-    else:
-        print('-accessCluster is required')
-        exit()
+# exit if not authenticated
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
+# end authentication =====================================================
 
 cluster = api('get', 'cluster')
 
