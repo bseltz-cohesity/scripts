@@ -1,5 +1,12 @@
 # Change Log for cohesity/community-automation-samples
 
+## 2025-03-04
+
+* [recoverFileScheduled.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverFileScheduled/recoverFileScheduled.ps1)
+* [gflagList.py](https://github.com/cohesity/community-automation-samples/tree/main/python/gflagList/gflagList.py)
+* [recoverVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverVMs/recoverVMs.ps1)
+* [replicationQueue.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/replicationQueue/replicationQueue.ps1)
+
 ## 2025-02-25
 
 * [copySecurityConfig.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/copySecurityConfig) copy account security configuration from one cluster to another
