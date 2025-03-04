@@ -3,21 +3,27 @@
 param (
     [Parameter()][string]$username = 'DMaaS',
     [Parameter()][string]$password,
-    [Parameter()][switch]$noPrompt,
-    [Parameter(Mandatory = $True)][string]$region,  # DMaaS region
+    [Parameter()][switch]$noPrompt, # [Parameter(Mandatory = $True)][string]$region,  # DMaaS region
     [Parameter()][string]$objectName,
     [Parameter()][string]$sourceName,
+    [Parameter()][string]$region,
     [Parameter()][switch]$debugmode,
     [Parameter()][switch]$wait,
     [Parameter()][int]$sleepTime = 60,
-    [Parameter()][ValidateSet('kRegular','kFull','kLog')][string]$backupType = 'kRegular'
+    [Parameter()][ValidateSet('kRegular','kFull','kLog')][string]$backupType = 'kRegular',
+    [Parameter()][switch]$abortIfRunning
 )
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -username $username -regionid $region -passwd $password -noPromptForPassword $noPrompt
+apiauth -username $username -passwd $password -noPromptForPassword $noPrompt # -regionid $region 
+
+$sessionUser = api get sessionUser
+$tenantId = $sessionUser.profiles[0].tenantId
+$regions = api get -mcmv2 dms/tenants/regions?tenantId=$tenantId
+$regionList = $regions.tenantRegionInfoList.regionId -join ','
 
 $nowUsecs = dateToUsecs
 $tomorrowUsecs = $nowUsecs + 86400000000
@@ -30,37 +36,47 @@ $runParams = @{
     }
 }
 
-if($objectName){    
-    $objects = api get -v2 "data-protect/search/objects?searchString=$objectName&includeTenants=true"
+if($objectName){
+    if($region){
+        $objects = api get -v2 "data-protect/search/objects?searchString=$objectName&includeTenants=true&regionIds=$region"
+    }else{
+        $objects = api get -v2 "data-protect/search/objects?searchString=$objectName&includeTenants=true&regionIds=$regionList"
+    }
     $objects = $objects.objects | Where-Object {$_.name -eq $objectName}
     if($sourceName){
         $objects = $objects | Where-Object {$_.sourceInfo.name -eq $sourceName}
     }
-    
     if($objects.Count -eq 0){
         Write-Host "$objectName not found" -ForegroundColor Yellow
         exit
     }
     foreach($obj in $objects){
-        $protectedObjectId = $obj.objectProtectionInfos[0].objectId
-        $runParams['runNowParams']['objects'] = @($runParams['runNowParams']['objects'] + @{
-            "id" = $protectedObjectId;
-            "takeLocalSnapshotOnly" = $false;
-            "backupType" = $backupType
-        })
-        $object = api get -v2 data-protect/objects?ids=$protectedObjectId
-    }    
-    $object = api get -v2 data-protect/objects?ids=$($objects[0].objectProtectionInfos[0].objectId)
-
+        foreach($objectProtectionInfo in $obj.objectProtectionInfos | Where-Object {$_.objectBackupConfiguration -ne $null}){
+            $protectedObjectId = $objectProtectionInfo.objectId
+            $runParams['runNowParams']['objects'] = @($runParams['runNowParams']['objects'] + @{
+                "id" = $protectedObjectId;
+                "takeLocalSnapshotOnly" = $false;
+                "backupType" = $backupType
+            })
+            $regionId = $objectProtectionInfo.regionId
+            $object = api get -v2 "data-protect/objects?ids=$protectedObjectId&regionId=$regionId"
+            break
+        }
+    }
 }elseif($sourceName){
-    $sources = api get -mcmv2 "data-protect/sources"
+    if($region){
+        $sources = api get -mcmv2 "data-protect/sources?regionIds=$region"
+    }else{
+        $sources = api get -mcmv2 "data-protect/sources?regionIds=$regionList"
+    }
     $source = $sources.sources | Where-Object name -eq $sourceName
     if(!$source){
         Write-Host "$sourceName not found" -ForegroundColor Yellow
         exit
     }
-    $protectedObjects = api get -v2 "data-protect/objects?parentId=$($source.sourceInfoList[0].sourceId)&onlyProtectedObjects=true&onlyAutoProtectedObjects=false"
-    $protectedObjects = $protectedObjects.objects
+    $regionId = $source.sourceInfoList[0].regionId
+    $protectedObjects = api get -v2 "data-protect/objects?parentId=$($source.sourceInfoList[0].sourceId)&onlyProtectedObjects=true&onlyAutoProtectedObjects=false&regionId=$regionId"
+    $protectedObjects = $protectedObjects.objects | Where-Object {$_.name -eq $sourceName}
     if($protectedObjects.Count -eq 0){
         Write-Host "$sourceName is not protected"
         exit
@@ -71,7 +87,8 @@ if($objectName){
             "takeLocalSnapshotOnly" = $false;
             "backupType" = $backupType
         })
-        $object = api get -v2 data-protect/objects?ids=$($obj.id)
+        $object = api get -v2 "data-protect/objects?ids=$($obj.id)&regionId=$regionId"
+        break
     }
 }else{
     Write-Host "-objectName or -sourceName required" -ForegroundColor Yellow
@@ -115,7 +132,7 @@ $allFinished = $false
 $reportWaiting = $True
 while($allFinished -eq $false){
     $allFinished = $True
-    $result = api post -mcmv2 "data-protect/objects/activity" $activityParams
+    $result = api post -mcmv2 "data-protect/objects/activity?regionId=$regionId" $activityParams
     if($result.PSObject.Properties['activity'] -and $result.activity -ne $null -and $result.activity.Count -gt 0){
         foreach($protectedObject in $runParams['runNowParams']['objects']){
             $protectedObjectId = $protectedObject.id
@@ -124,6 +141,10 @@ while($allFinished -eq $false){
                 if($act.PSObject.Properties['archivalRunParams'] -and $act.archivalRunParams.PSObject.Properties['status']){
                     $status = $act.archivalRunParams.status
                     if($status -notin $finishedStates){
+                        if($abortIfRunning){
+                            Write-Host "Backup already in progress"
+                            exit
+                        }
                         $allFinished = $false
                         if($reportWaiting){
                             Write-Host "Waiting for existing run to finish"
@@ -142,7 +163,7 @@ while($allFinished -eq $false){
     }
 }
 
-$result = api post -v2 data-protect/protected-objects/actions $runParams
+$result = api post -v2 "data-protect/protected-objects/actions?regionId=$regionId" $runParams
 
 if($debugmode){
     $result | ConvertTo-Json -Depth 99
@@ -168,7 +189,7 @@ if($result -and $result.PSObject.Properties['objects'] -and $result.objects.Coun
             $worstStatus = 'Succeeded'
             while($allFinished -eq $false){
                 $allFinished = $True
-                $result = api post -mcmv2 "data-protect/objects/activity" $activityParams
+                $result = api post -mcmv2 "data-protect/objects/activity?regionId=$regionId" $activityParams
                 if($result.PSObject.Properties['activity'] -and $result.activity -ne $null -and $result.activity.Count -gt 0){
                     foreach($protectedObject in $runParams['runNowParams']['objects']){
                         $protectedObjectId = $protectedObject.id
