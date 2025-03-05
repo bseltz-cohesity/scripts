@@ -51,6 +51,8 @@ Cancel the backup of a SQL Database:
 * -s, --sourceName: (optional) name of registered source (e.g. name of SQL Server)
 * -e, --environment: (optional) filter by specific environment (e.g. kO365)
 * -t, --subtype: (optional) filter by specific subtype (e.g. kO365OneDrive)
+* -w, --wait: (optional) wait for cancelations to complete
+* -z, --sleeptime: (optional) sleep for X seconds while waiting (default is 30)
 
 ## Authenticating to Ccs
 
