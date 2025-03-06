@@ -114,7 +114,7 @@ foreach($objName in $objectNames){
                     }
                 }
                 if($useMBS){
-                    $snapshots = api get -v2 "data-protect/objects/$objectId/snapshots?toTimeUsecs=1741278803741000&snapshotActions=RecoverMailboxCSM&objectActionKeys=kO365ExchangeCSM&fromTimeUsecs=1741273200000000&regionId=$objectRegionId"
+                    $snapshots = api get -v2 "data-protect/objects/$objectId/snapshots?snapshotActions=RecoverMailboxCSM&objectActionKeys=kO365ExchangeCSM&regionId=$objectRegionId"
                 }else{
                     $snapshots = api get -v2 "data-protect/objects/$objectId/snapshots?objectActionKeys=kO365Exchange&regionId=$objectRegionId"
                 }
