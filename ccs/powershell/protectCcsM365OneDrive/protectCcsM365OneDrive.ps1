@@ -1,9 +1,9 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][string]$username = 'Ccs',
+    [Parameter()][string]$username = 'DMaaS',
     [Parameter(Mandatory = $True)][string]$region,
-    [Parameter(Mandatory = $True)][string]$policyName = '',  # protection policy name
+    [Parameter()][string]$policyName = '',  # protection policy name
     [Parameter(Mandatory = $True)][string]$sourceName,  # name of registered O365 source
     [Parameter()][array]$users,  # optional names of mailboxes protect
     [Parameter()][string]$userList = '',  # optional textfile of mailboxes to protect
@@ -12,7 +12,8 @@ param (
     [Parameter()][string]$timeZone = 'America/New_York', # e.g. 'America/New_York'
     [Parameter()][int]$incrementalSlaMinutes = 60,  # incremental SLA minutes
     [Parameter()][int]$fullSlaMinutes = 120,  # full SLA minutes
-    [Parameter()][int]$pageSize = 1000
+    [Parameter()][int]$pageSize = 1000,
+    [Parameter()][switch]$useMBS
 )
 
 # gather list of mailboxes to protect
@@ -58,10 +59,16 @@ apiauth -username $username -regionid $region
 # $regions = api get -mcmv2 dms/tenants/regions?tenantId=$tenantId
 # $regionList = $regions.tenantRegionInfoList.regionId -join ','
 
-$policy = (api get -mcmv2 data-protect/policies?types=DMaaSPolicy).policies | Where-Object name -eq $policyName
-if(!$policy){
-    write-host "Policy $policyName not found" -ForegroundColor Yellow
-    exit
+if(! $useMBS){
+    if($policyName -eq ''){
+        Write-Host "-policyName required" -ForegroundColor Yellow
+        exit
+    }
+    $policy = (api get -mcmv2 data-protect/policies?types=DMaaSPolicy).policies | Where-Object name -eq $policyName
+    if(!$policy){
+        write-host "Policy $policyName not found" -ForegroundColor Yellow
+        exit
+    }
 }
 
 # find O365 source
@@ -114,7 +121,7 @@ while(1){
 
 # configure protection parameters
 $protectionParams = @{
-    "policyId"         = $policy.id;
+    "policyId"         = "";
     "startTime"        = @{
         "hour"     = [int64]$hour;
         "minute"   = [int64]$minute;
@@ -134,6 +141,9 @@ $protectionParams = @{
     "qosPolicy"        = "kBackupSSD";
     "abortInBlackouts" = $false;
     "objects"          = @()
+}
+if(! $useMBS){
+    $protectionParams.policyId = $policy.id
 }
 
 $usersAdded = 0
@@ -176,6 +186,9 @@ foreach($driveUser in $usersToAdd){
                 }
             }
         })
+        if($useMBS){
+            $protectionParams.objects[0].environment = "kO365OneDriveCSM"
+        }
         Write-Host "Protecting OneDrive for $driveUser"
         $response = api post -v2 data-protect/protected-objects $protectionParams  # -region $regionId
     }elseif($userId -and $userId -notin $unprotectedIndex){
