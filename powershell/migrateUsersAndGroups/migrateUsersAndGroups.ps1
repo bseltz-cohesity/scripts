@@ -89,12 +89,12 @@ if(!$useCache -or $makeCache){
        (Test-Path -Path "cacheProtectionSources-$sourceCluster.json" -PathType Leaf) -and
        (Test-Path -Path "cacheGroupRestrictions-$sourceCluster.json" -PathType Leaf) -and
        (Test-Path -Path "cacheUserRestrictions-$sourceCluster.json" -PathType Leaf)){
-        $sourceRoles = Get-Content -Path "cacheRoles-$sourceCluster.json" | ConvertFrom-Json -Depth 99
-        $sourceUsers = Get-Content -Path "cacheUsers-$sourceCluster.json" | ConvertFrom-Json -Depth 99
-        $sourceGroups = Get-Content -Path "cacheGroups-$sourceCluster.json" | ConvertFrom-Json -Depth 99
-        $sourceProtectionSources = Get-Content -Path "cacheProtectionSources-$sourceCluster.json" | ConvertFrom-Json -Depth 99
-        $groupRestrictions = Get-Content -Path "cacheGroupRestrictions-$sourceCluster.json" | ConvertFrom-Json -Depth 99
-        $userRestrictions = Get-Content -Path "cacheUserRestrictions-$sourceCluster.json" | ConvertFrom-Json -Depth 99
+        $sourceRoles = Get-Content -Path "cacheRoles-$sourceCluster.json" | ConvertFrom-Json
+        $sourceUsers = Get-Content -Path "cacheUsers-$sourceCluster.json" | ConvertFrom-Json
+        $sourceGroups = Get-Content -Path "cacheGroups-$sourceCluster.json" | ConvertFrom-Json
+        $sourceProtectionSources = Get-Content -Path "cacheProtectionSources-$sourceCluster.json" | ConvertFrom-Json
+        $groupRestrictions = Get-Content -Path "cacheGroupRestrictions-$sourceCluster.json" | ConvertFrom-Json
+        $userRestrictions = Get-Content -Path "cacheUserRestrictions-$sourceCluster.json" | ConvertFrom-Json
     }else{
         Write-Host "Cache not found, please use -makeCache to create one" -ForegroundColor Yellow
         exit
