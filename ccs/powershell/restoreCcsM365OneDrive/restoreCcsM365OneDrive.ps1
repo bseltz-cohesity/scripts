@@ -1,14 +1,15 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][string]$username = 'Ccs',
+    [Parameter()][string]$username = 'DMaaS',
     [Parameter()][array]$oneDriveName,  # optional names of OneDrivees protect
     [Parameter()][string]$oneDriveList = '',  # optional textfile of OneDrivees to protect
     [Parameter()][datetime]$recoverDate,
     [Parameter()][string]$targetSource,
     [Parameter()][string]$targetOneDrive,
     [Parameter()][string]$folderPrefix = 'restore',
-    [Parameter()][int]$pageSize = 1000
+    [Parameter()][int]$pageSize = 1000,
+    [Parameter()][switch]$useMBS
 )
 
 
@@ -111,7 +112,12 @@ foreach($objName in $objectNames){
                         continue
                     }
                 }
-                $snapshots = api get -v2 "data-protect/objects/$objectId/snapshots?objectActionKeys=kO365OneDrive" -region $objectRegionId
+                if($useMBS){
+                    $snapshots = api get -v2 "data-protect/objects/$objectId/snapshots?snapshotActions=RecoverOneDriveCSM&objectActionKeys=kO365OneDriveCSM&regionId=$objectRegionId"
+                }else{
+                    $snapshots = api get -v2 "data-protect/objects/$objectId/snapshots?objectActionKeys=kO365OneDrive&regionId=$objectRegionId"
+                }
+                
                 $snapshots = $snapshots.snapshots | Sort-Object -Property runStartTimeUsecs -Descending
                 if($snapshots -and $snapshots.Count -gt 0){
                     if($recoverDate){
@@ -151,6 +157,9 @@ foreach($objName in $objectNames){
                             }
                         }
                     }
+                    if($useMBS){
+                        $restoreParams.office365Params.recoveryAction = "RecoverOneDriveCSM"
+                    }
                     if($targetSource){
                         Write-Host "Restoring $objName to $targetOneDriveName ($($folderPrefix)-$($objName))"
                         $restoreParams.office365Params.recoverOneDriveParams['targetDrive'] = @{
@@ -164,7 +173,7 @@ foreach($objName in $objectNames){
                     }
                     # $restoreParams | ConvertTo-Json -Depth 99
                     # exit
-                    $null = api post -v2 "data-protect/recoveries" $restoreParams -region $objectRegionId
+                    $null = api post -v2 "data-protect/recoveries?regionId=$objectRegionId" $restoreParams 
                 }else{
                     Write-Host "No snapshots available for $objName"
                 }
