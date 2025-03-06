@@ -1,15 +1,13 @@
 # Change Log for cohesity/community-automation-samples
 
-* [`2025-03-06`] [restoreCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restoreCassandra)
-* [`2025-03-05`] [cancelCcsProtectionRuns.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/cancelCcsProtectionRuns)
-* [`2025-03-04`] [cancelCcsProtectionRuns.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/cancelCcsProtectionRuns)
-* [`2025-03-04`] [backupNowCcs.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/backupNowCcs)
-* [`2025-03-04`] [backupNowCcs.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/backupNowCcs)
-* [`2025-03-04`] [backupNowCcs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/backupNowCcs)
-* [`2025-03-04`] [recoverFileScheduled.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverFileScheduled)
-* [`2025-03-04`] [gflagList.py](https://github.com/cohesity/community-automation-samples/tree/main/python/gflagList)
-* [`2025-03-04`] [recoverVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverVMs)
-* [`2025-03-04`] [replicationQueue.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/replicationQueue)
+* [`2025-03-06`] [restoreCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restoreCassandra) [`New`]
+* [`2025-03-05`] [cancelCcsProtectionRuns.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/cancelCcsProtectionRuns) [`New`]
+* [`2025-03-04`] [backupNowCcs.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/backupNowCcs) [`New`]
+* [`2025-03-04`] [backupNowCcs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/backupNowCcs) [`Update`]
+* [`2025-03-04`] [recoverFileScheduled.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverFileScheduled) [`Update`]
+* [`2025-03-04`] [gflagList.py](https://github.com/cohesity/community-automation-samples/tree/main/python/gflagList)  [`Update`]
+* [`2025-03-04`] [recoverVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverVMs)  [`Update`]
+* [`2025-03-04`] [replicationQueue.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/replicationQueue)  [`Update`]
 
 ## 2025-02-25
 
