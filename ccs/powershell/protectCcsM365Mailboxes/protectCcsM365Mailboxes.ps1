@@ -1,9 +1,9 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][string]$username = 'Ccs',
+    [Parameter()][string]$username = 'DMaaS',
     [Parameter(Mandatory = $True)][string]$region,
-    [Parameter(Mandatory = $True)][string]$policyName = '',  # protection policy name
+    [Parameter()][string]$policyName = '',  # protection policy name
     [Parameter(Mandatory = $True)][string]$sourceName,  # name of registered O365 source
     [Parameter()][array]$mailboxes,  # optional names of mailboxes protect
     [Parameter()][string]$mailboxList = '',  # optional textfile of mailboxes to protect
@@ -14,7 +14,8 @@ param (
     [Parameter()][int]$autoselect = 0,
     [Parameter()][int]$pageSize = 50000,
     [Parameter()][array]$excludeFolders,
-    [Parameter()][switch]$useSecurityGroups
+    [Parameter()][switch]$useSecurityGroups,
+    [Parameter()][switch]$useMBS
 )
 
 # gather list of mailboxes to protect
@@ -65,11 +66,18 @@ apiauth -username $username -regionid $region
 # $regions = api get -mcmv2 dms/tenants/regions?tenantId=$tenantId
 # $regionList = $regions.tenantRegionInfoList.regionId -join ','
 
-$policy = (api get -mcmv2 data-protect/policies?types=DMaaSPolicy).policies | Where-Object name -eq $policyName
-if(!$policy){
-    write-host "Policy $policyName not found" -ForegroundColor Yellow
-    exit
+if(! $useMBS){
+    if($policyName -eq ''){
+        Write-Host "-policyName required" -ForegroundColor Yellow
+        exit
+    }
+    $policy = (api get -mcmv2 data-protect/policies?types=DMaaSPolicy).policies | Where-Object name -eq $policyName
+    if(!$policy){
+        write-host "Policy $policyName not found" -ForegroundColor Yellow
+        exit
+    }
 }
+
 
 # find O365 source
 $rootSource = (api get -mcmv2 "data-protect/sources?environments=kO365").sources | Where-Object name -eq $sourceName
@@ -191,6 +199,10 @@ foreach($mailbox in $mailboxesToAdd){
                     }
                 }
             )
+        }
+        if($useMBS){
+            $protectionParams.objects[0].environment = "kO365ExchangeCSM"
+            $protectionParams.policyId = ""
         }
         Write-Host "Protecting $mailbox"
         $null = api post -v2 data-protect/protected-objects $protectionParams  # -region $regionId

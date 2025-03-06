@@ -34,6 +34,7 @@ Place both files in a folder together and run the main script like so:
 * -mailboxName: (optional) one or more mailbox names (comma separated)
 * -mailboxList: (optional) text file of mailbox names (one per line)
 * -pageSize: (optional) limit number of objects returned pr page (default is 1000)
+* -useMBS:  (optional) use Microsoft 365 Backup Storage
 
 ## Alternate Location Parameters
 

@@ -38,7 +38,7 @@ Place both files in a folder together and run the main script like so:
 * -username: (optional) used for password storage only (default is 'Ccs')
 * -region: specify region (e.g. us-east-2)
 * -sourceName: name of registered M365 protection source
-* -policyName: name of protection policy to use
+* -policyName: (optional) name of protection policy to use
 * -mailboxes: (optional) one or more mailbox names or SMTP addresses (comma separated)
 * -mailboxList: (optional) text file of mailbox names or SMTP addresses (one per line)
 * -autoselect: (optional) protect first X unprotected mailboxes (unspecified)
@@ -49,6 +49,7 @@ Place both files in a folder together and run the main script like so:
 * -excludeFolders: (optional) one or more folders to exclude (comma separated) - folders are case sensitive!
 * -pageSize: (optional) limit number of objects returned pr page (default is 50000)
 * -useSecurityGroups: (optional) select security groups instead of mailboxes
+* -useMBS: (optional) use Microsoft 365 Backup Storage
 
 ## Authenticating to Ccs
 
