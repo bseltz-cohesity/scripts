@@ -2,7 +2,7 @@
 
 * [`2025-03-06`] [restoreCcsM365Mailbox.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365Mailbox) [`Update`]
 * [`2025-03-06`] [protectCcsM365Mailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365Mailboxes) [`Update`]
-* [`2025-03-06`] [recoverVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverVMs)
+* [`2025-03-06`] [recoverVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverVMs) [`Update`]
 * [`2025-03-06`] [restoreCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restoreCassandra) [`New`]
 * [`2025-03-05`] [cancelCcsProtectionRuns.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/cancelCcsProtectionRuns) [`New`]
 * [`2025-03-04`] [backupNowCcs.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/backupNowCcs) [`New`]
