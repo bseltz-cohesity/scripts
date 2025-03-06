@@ -366,6 +366,7 @@ foreach($vm in $vmNames){
     $vmName = [string]$vm
     $vms = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverVMs,RecoverVApps,RecoverVAppTemplates&searchString=$vmName&environments=kVMware"
     $exactVMs = $vms.objects | Where-Object name -eq $vmName
+    $exactVMs = $exactVMs | Where-Object {$_.PSObject.Properties['latestSnapshotsInfo']}
     if($jobName -or $protectionGroup){
         $exactVMs.latestSnapshotsInfo = @($exactVMs.latestSnapshotsInfo | Where-Object {$_.protectionGroupName -eq $jobName -or $_.protectionGroupName -eq $protectionGroup})
     }
