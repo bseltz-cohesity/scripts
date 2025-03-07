@@ -1,13 +1,14 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][string]$username = 'Ccs',
+    [Parameter()][string]$username = 'DMaaS',
     [Parameter()][array]$siteName,  # optional names of mailboxes protect
     [Parameter()][string]$siteList = '',  # optional textfile of mailboxes to protect
     [Parameter()][datetime]$recoverDate,
     [Parameter()][string]$targetSource,
     [Parameter()][string]$source,
-    [Parameter()][int]$pageSize = 1000
+    [Parameter()][int]$pageSize = 1000,
+    [Parameter()][switch]$useMBS
 )
 
 
@@ -88,7 +89,12 @@ foreach($objName in $objectNames){
                         continue
                     }
                 }
-                $snapshots = api get -v2 "data-protect/objects/$objectId/snapshots" -region $objectRegionId
+                if($useMBS){
+                    $snapshots = api get -v2 "data-protect/objects/$objectId/snapshots?snapshotActions=RecoverSharePointCSM&objectActionKeys=kO365SharepointCSM&regionId=$objectRegionId"
+                }else{
+                    $snapshots = api get -v2 "data-protect/objects/$objectId/snapshots?objectActionKeys=kO365Sharepoint&regionId=$objectRegionId"
+                }
+                # $snapshots = api get -v2 "data-protect/objects/$objectId/snapshots" -region $objectRegionId
                 $snapshots = $snapshots.snapshots | Sort-Object -Property runStartTimeUsecs -Descending
                 if($snapshots -and $snapshots.Count -gt 0){
                     if($recoverDate){
@@ -124,6 +130,9 @@ foreach($objName in $objectNames){
                             }
                         }
                     }
+                    if($useMBS){
+                        $restoreParams.office365Params.recoveryAction = "RecoverSharePointCSM"
+                    }
                     if($targetSource){
                         Write-Host "Restoring $objName to $targetSource"
                         $restoreParams.office365Params.recoverSiteParams['targetDomainObjectId'] = @{
@@ -132,7 +141,7 @@ foreach($objName in $objectNames){
                     }else{
                         Write-Host "Restoring $objName"
                     }
-                    $null = api post -v2 "data-protect/recoveries" $restoreParams -region $objectRegionId
+                    $null = api post -v2 "data-protect/recoveries?regionId=$objectRegionId" $restoreParams # -region $objectRegionId
                 }else{
                     Write-Host "No snapshots available for $objName"
                 }
