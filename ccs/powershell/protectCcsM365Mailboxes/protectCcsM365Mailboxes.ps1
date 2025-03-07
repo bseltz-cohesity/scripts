@@ -157,7 +157,7 @@ foreach($mailbox in $mailboxesToAdd){
     }
     if($userId -and $userId -in $unprotectedIndex){
         $protectionParams = @{
-            "policyId"         = $policy.id;
+            "policyId"         = "";
             "startTime"        = @{
                 "hour"     = [int64]$hour;
                 "minute"   = [int64]$minute;
@@ -202,7 +202,8 @@ foreach($mailbox in $mailboxesToAdd){
         }
         if($useMBS){
             $protectionParams.objects[0].environment = "kO365ExchangeCSM"
-            $protectionParams.policyId = ""
+        }else{
+            $protectionParams.policyId = $policy.id
         }
         Write-Host "Protecting $mailbox"
         $null = api post -v2 data-protect/protected-objects $protectionParams  # -region $regionId
