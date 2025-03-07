@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
+from cryptography.x509 import DNSName, UniformResourceIdentifier
+from cryptography.x509.oid import NameOID, ExtensionOID
+from datetime import datetime
 import requests
 import sys
 import os
@@ -85,22 +90,50 @@ def get_cluster_version(ip):
     except requests.exceptions.RequestException as e:
         logger.error(f"An error occurred: {e}")
 
+def get_attribute(cert, oid):
+    """ Helper function to extract certificate attributes safely
+    """
+    try:
+        return cert.subject.get_attributes_for_oid(oid)[0].value
+    except IndexError:
+        return None
 
-def generate_cert(cert_config):
+def generate_cert(existing_cert):
     """ Function to generate a certificate from cluster using it's CA
 
     Returns:
         String: PrivateKey, Certificate, CaCertificate
     """
+    try:
+        san_extension = existing_cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
+        san_values = san_extension.value
+
+        dns_names = [name.value for name in san_values if isinstance(name, DNSName)]
+        uris = [name.value for name in san_values if isinstance(name, UniformResourceIdentifier)]
+        san_list = dns_names + uris
+    except x509.ExtensionNotFound:
+        san_list = []
+
+    expiry_date = existing_cert.not_valid_after
+    current_time = datetime.utcnow()
+    expiry_duration = expiry_date - current_time
+    total_hours = int(expiry_duration.total_seconds() // 3600)
+    go_duration_str = f"{total_hours}h"
 
     data = {
-        "organization": cert_config['organization'], 
-        "organizationUnit": cert_config['organizationUnit'], 
-        "countryCode": cert_config['countryCode'], 
-        "state": cert_config['state'],
-        "city": cert_config['city'],
-        "commonName": cert_config['commonName']
+        "organization": get_attribute(existing_cert, NameOID.ORGANIZATION_NAME),
+        "organizationUnit": get_attribute(existing_cert, NameOID.ORGANIZATIONAL_UNIT_NAME),
+        "countryCode": get_attribute(existing_cert, NameOID.COUNTRY_NAME),
+        "state": get_attribute(existing_cert, NameOID.STATE_OR_PROVINCE_NAME),
+        "city": get_attribute(existing_cert, NameOID.LOCALITY_NAME),
+        "commonName": get_attribute(existing_cert, NameOID.COMMON_NAME),
+        "sanList": san_list,
+        "duration": go_duration_str
     }
+
+    logger.info("Certificate create request data:")
+    logger.info(json.dumps(data, indent=4))
+
     try:
         # Send an HTTP POST request for cert
         response = api('post', 'cert-manager/cert', data=data, v=2)
@@ -116,8 +149,36 @@ def generate_cert(cert_config):
         logger.error(f"An error occurred: {e}")
         exit(1)
 
+def download_magneto_cert():
+    """ Function to download the Magneto cluster certificate from a Cohesity cluster
+
+    Returns:
+        magneto_certificate: Magneto Certificates from the Cluster
+    """
+
+    try:
+        # Send an HTTP Get request to download certs
+        response = api('get', 'cert-manager/download-cluster-cert', v=2)
+
+        if response is not None:
+            logger.info("Downloaded cluster certificates successfully")
+            certs = response["certificates"]
+            for cert_payload in certs:
+                if "kMagneto" in cert_payload["serviceTypes"]:
+                    logger.info("Found Magneto cluster certificate")
+                    return cert_payload
+        else:
+            logger.error(f"download certificate request failed!")
+            exit(1)
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"An error occurred: {e}")
+        exit(1)
+
+    return None
+
 def upload_certs(certificates):
-    """ Function to upload the certificates to the target cluster
+    """ Function to upload the certificates to a Cohesity cluster
 
     Args:
         certificates (List): List of Certificates to upload
@@ -153,12 +214,12 @@ def upload_certs(certificates):
         exit(1)
 
 
-def generate_certs(primary_cluster_list, cert_config):
+def generate_certs(primary_cluster_list, existing_magneto_cert):
     """Function to generate certificate from the primary clusters
 
     Args:
         primary_cluster_list (List): List of Primary Clusters
-        cert_config (cert_config): Cluster configuration for generating new certificates
+        existing_magneto_cert (x509): Existing Magneto certificate to copy fields from
 
     Returns:
         List: List of generated certificates
@@ -187,7 +248,7 @@ def generate_certs(primary_cluster_list, cert_config):
             continue
 
 
-        key, cert, ca_cert = generate_cert(cert_config=cert_config)
+        key, cert, ca_cert = generate_cert(existing_cert=existing_magneto_cert)
         generated_certs.append({
             "ip": primary['ip'],
             "privateKey": key,
@@ -212,6 +273,43 @@ def read_generated_certs_from_file():
     except (FileNotFoundError, json.JSONDecodeError) as e:
         print(f"Error reading or parsing JSON file: {e}")
         return []
+
+def download_magneto_cert_from_target(target_cluster_config):
+    ''' Function to download existing Magneto cluster cert from the target cluster
+
+    Returns:
+        Magneto Cluster certificate
+    '''
+    target_mfa = None
+    target_password = None
+
+    logger.info("Downloading Magneto certificate from Cluster "+ target_cluster_config['ip'])
+
+    target_password = target_cluster_config.get('password')
+    target_mfa = target_cluster_config.get('mfaCode')
+    apiauth(vip=target_cluster_config['ip'], username=target_cluster_config['username'], password=target_password, mfaCode=target_mfa)
+
+    if apiconnected() is False:
+        logger.error('authentication failed for Cluster %s'+ target_cluster_config['ip'])
+        return
+
+    cluster_version = get_cluster_version(target_cluster_config['ip'])
+
+    if cluster_version is None:
+        logger.error("Target Cluster %s is not in supported version"+ target_cluster_config['ip'])
+        logger.error("Skipping download Magneto certificate on Cluster IP "+ target_cluster_config['ip'])
+        return
+
+    magneto_cert_payload = download_magneto_cert()
+    if magneto_cert_payload:
+        cert_pem = magneto_cert_payload["certPem"][0]
+        cert_pem_bytes = cert_pem.encode()
+        cert = x509.load_pem_x509_certificate(cert_pem_bytes)
+        return cert
+
+    logger.error("No valid Magneto certificate found on target cluster %s" + target_cluster_config['ip'])
+    return None
+
 
 def upload_certs_to_target(target_cluster_config, generated_certs):
     ''' Function to upload certificates to the target cluster
@@ -280,12 +378,16 @@ def main():
     cluster_cert_details = get_config_file(cluster_certs_file)
 
     if isinstance(cluster_cert_details.get('target_vault_cluster'), dict) and \
-        isinstance(cluster_cert_details.get('certificate_params'), dict) and \
         (isinstance(cluster_cert_details.get('primary_clusters'), list) or cluster_cert_details.get('primary_clusters') == None):
+
+        existing_magneto_cert = download_magneto_cert_from_target(cluster_cert_details['target_vault_cluster'])
+        if not existing_magneto_cert:
+            logger.error("No existing Magneto certificate on target cluster found")
+            exit(1)
 
         if generate:
             # Generate cluster certificates
-            generated_certs = generate_certs(cluster_cert_details['primary_clusters'], cluster_cert_details['certificate_params'])
+            generated_certs = generate_certs(cluster_cert_details['primary_clusters'], existing_magneto_cert)
             write_generated_certs_to_file(generated_certs)
         elif upload:
             # Read generated certificates from file
@@ -297,7 +399,7 @@ def main():
             upload_certs_to_target(cluster_cert_details['target_vault_cluster'], generated_certs)
         else:
             # Generate cluster certificates
-            generated_certs = generate_certs(cluster_cert_details['primary_clusters'], cluster_cert_details['certificate_params'])
+            generated_certs = generate_certs(cluster_cert_details['primary_clusters'], existing_magneto_cert)
             # Upload certificates to target cluster
             upload_certs_to_target(cluster_cert_details['target_vault_cluster'], generated_certs)
     else:

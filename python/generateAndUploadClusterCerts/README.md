@@ -65,15 +65,6 @@ cluster-cert.json file sample - Multiple primary clusters and a single target va
             "mfaCode": "1234",
         }
     ],
-    "certificate_params":
-    {
-        "organization": "cohesity",
-        "organizationUnit": "dev",
-        "countryCode": "US",
-        "state": "CA",
-        "city": "San Jose",
-        "commonName": "co"
-    },
     "target_vault_cluster": 
     {
         "ip": "10.2.20.1", 
