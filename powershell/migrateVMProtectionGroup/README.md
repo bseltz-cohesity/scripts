@@ -73,6 +73,6 @@ To update all VMware protection jobs:
 
 * -renameOldJob: (optional) add a suffix to the old job name
 * -oldJobSuffix: (optional) specify old job suffix (defaults to current date: yyyy-MM-dd)
-* -cleanupSourceObjects: (optional) delete old job and unregister servers (*destructive!*)
-* -cleanupSourceObjectsAndExit: (optional) delete old job and unregister servers and exit (*destructive!*)
 * -deleteOldSnapshots: (optional) delete existing snapshots when cleaning up old objects (*destrictive!*)
+* -deleteOldJob: (optional) delete protection group on source cluster (during migration)
+* -deleteOldJobAndExit: (optional) delete protection group on source cluster (post migration)
