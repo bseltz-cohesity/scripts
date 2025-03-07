@@ -6,7 +6,7 @@
 * [`2025-03-06`] [restoreCcsM365OneDrive.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365OneDrive) [`Update`] added support for Microsoft 365 Backup Storage
 * [`2025-03-06`] [protectCcsM365OneDrive.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365OneDrive) [`Update`] added support for Microsoft 365 Backup Storage
 * [`2025-03-06`] [migrateUsersAndGroups.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/migrateUsersAndGroups) [`Update`]
-* [`2025-03-06`] [heliosUsers.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/heliosUsers) [`Update`]
+* [`2025-03-06`] [heliosUsers.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/heliosUsers) [`Update`] added domain column to output file
 * [`2025-03-06`] [restoreCcsM365Mailbox.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365Mailbox) [`Update`] added support for Microsoft 365 Backup Storage
 * [`2025-03-06`] [protectCcsM365Mailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365Mailboxes) [`Update`] added support for Microsoft 365 Backup Storage
 * [`2025-03-06`] [recoverVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverVMs) [`Update`]
