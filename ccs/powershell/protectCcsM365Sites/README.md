@@ -46,6 +46,7 @@ Place both files in a folder together and run the main script like so:
 * -incrementalSlaMinutes: (optional) default 60
 * -fullSlaMinutes: (optional) default is 120
 * -pageSize: (optional) limit number of objects returned pr page (default is 50000)
+* -useMBS: (optional) use Microsoft 365 Backup Storage
 
 ## Authenticating to Ccs
 

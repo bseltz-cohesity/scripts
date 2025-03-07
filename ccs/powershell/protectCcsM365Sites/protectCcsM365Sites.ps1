@@ -3,7 +3,7 @@
 param (
     [Parameter()][string]$username = 'DMaaS',
     [Parameter(Mandatory = $True)][string]$region,
-    [Parameter(Mandatory = $True)][string]$policyName = '',  # protection policy name
+    [Parameter()][string]$policyName = '',  # protection policy name
     [Parameter(Mandatory = $True)][string]$sourceName,  # name of registered O365 source
     [Parameter()][array]$objectNames,  # optional names of sites protect
     [Parameter()][string]$objectList = '',  # optional textfile of sites to protect
@@ -13,7 +13,8 @@ param (
     [Parameter()][string]$timeZone = 'America/New_York', # e.g. 'America/New_York'
     [Parameter()][int]$incrementalSlaMinutes = 1440,  # incremental SLA minutes
     [Parameter()][int]$fullSlaMinutes = 1440,  # full SLA minutes
-    [Parameter()][int]$pageSize = 50000
+    [Parameter()][int]$pageSize = 50000,
+    [Parameter()][switch]$useMBS
 )
 
 # gather list from command line params and file
@@ -58,10 +59,16 @@ if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]:
 # authenticate
 apiauth -username $username -regionid $region
 
-$policy = (api get -mcmv2 data-protect/policies?types=DMaaSPolicy).policies | Where-Object name -eq $policyName
-if(!$policy){
-    write-host "Policy $policyName not found" -ForegroundColor Yellow
-    exit
+if(! $useMBS){
+    if($policyName -eq ''){
+        Write-Host "-policyName required" -ForegroundColor Yellow
+        exit
+    }
+    $policy = (api get -mcmv2 data-protect/policies?types=DMaaSPolicy).policies | Where-Object name -eq $policyName
+    if(!$policy){
+        write-host "Policy $policyName not found" -ForegroundColor Yellow
+        exit
+    }
 }
 
 # find O365 source
@@ -144,11 +151,11 @@ foreach($objName in $objectsToAdd){
             $objId = $script:nameIndex[$objName]
         }
     }
-    Write-Host $objId
-    Write-Host ($objId -in $script:unprotectedIndex)
+    # Write-Host $objId
+    # Write-Host ($objId -in $script:unprotectedIndex)
     if($objId -and $objId -in $script:unprotectedIndex){
         $protectionParams = @{
-            "policyId"         = $policy.id;
+            "policyId"         = "";
             "startTime"        = @{
                 "hour"     = [int64]$hour;
                 "minute"   = [int64]$minute;
@@ -190,6 +197,11 @@ foreach($objName in $objectsToAdd){
                     }
                 }
             )
+        }
+        if($useMBS){
+            $protectionParams.objects[0].environment = "kO365SharepointCSM"
+        }else{
+            $protectionParams.policyId = $policy.id
         }
         Write-Host "Protecting $objName"
         $null = api post -v2 data-protect/protected-objects $protectionParams
