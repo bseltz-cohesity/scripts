@@ -1,18 +1,18 @@
 # Change Log for cohesity/community-automation-samples
 
-* [`2025-03-07`] [restoreCcsM365Site.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365Site) [`Update`]
-* [`2025-03-07`] [protectCcsM365Sites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365Sites) [`Update`]
+* [`2025-03-07`] [restoreCcsM365Site.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365Site) [`Update`] added support for Microsoft 365 Backup Storage
+* [`2025-03-07`] [protectCcsM365Sites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365Sites) [`Update`] added support for Microsoft 365 Backup Storage
 * [`2025-03-07`] [generateAndUploadClusterCerts.py](https://github.com/cohesity/community-automation-samples/tree/main/python/generateAndUploadClusterCerts) [`Update`]
-* [`2025-03-06`] [restoreCcsM365OneDrive.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365OneDrive) [`Update`]
-* [`2025-03-06`] [protectCcsM365OneDrive.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365OneDrive) [`Update`]
+* [`2025-03-06`] [restoreCcsM365OneDrive.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365OneDrive) [`Update`] added support for Microsoft 365 Backup Storage
+* [`2025-03-06`] [protectCcsM365OneDrive.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365OneDrive) [`Update`] added support for Microsoft 365 Backup Storage
 * [`2025-03-06`] [migrateUsersAndGroups.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/migrateUsersAndGroups) [`Update`]
 * [`2025-03-06`] [heliosUsers.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/heliosUsers) [`Update`]
-* [`2025-03-06`] [restoreCcsM365Mailbox.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365Mailbox) [`Update`]
-* [`2025-03-06`] [protectCcsM365Mailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365Mailboxes) [`Update`]
+* [`2025-03-06`] [restoreCcsM365Mailbox.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365Mailbox) [`Update`] added support for Microsoft 365 Backup Storage
+* [`2025-03-06`] [protectCcsM365Mailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365Mailboxes) [`Update`] added support for Microsoft 365 Backup Storage
 * [`2025-03-06`] [recoverVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverVMs) [`Update`]
-* [`2025-03-06`] [restoreCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restoreCassandra) [`New`]
-* [`2025-03-05`] [cancelCcsProtectionRuns.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/cancelCcsProtectionRuns) [`New`]
-* [`2025-03-04`] [backupNowCcs.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/backupNowCcs) [`New`]
+* [`2025-03-06`] [restoreCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restoreCassandra) [`New`] restore Cassandra keyspaces/tables
+* [`2025-03-05`] [cancelCcsProtectionRuns.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/cancelCcsProtectionRuns) [`New`] cancel protection runs in CCS
+* [`2025-03-04`] [backupNowCcs.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/backupNowCcs) [`New`] on demand backups of protected objects in CCS
 * [`2025-03-04`] [backupNowCcs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/backupNowCcs) [`Update`]
 * [`2025-03-04`] [recoverFileScheduled.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverFileScheduled) [`Update`]
 * [`2025-03-04`] [gflagList.py](https://github.com/cohesity/community-automation-samples/tree/main/python/gflagList)  [`Update`]
