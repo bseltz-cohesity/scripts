@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-03-07`] [restoreCcsM365Site.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365Site) [`Update`]
+* [`2025-03-07`] [protectCcsM365Sites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365Sites) [`Update`]
+* [`2025-03-07`] [generateAndUploadClusterCerts.py](https://github.com/cohesity/community-automation-samples/tree/main/python/generateAndUploadClusterCerts) [`Update`]
 * [`2025-03-06`] [restoreCcsM365OneDrive.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365OneDrive) [`Update`]
 * [`2025-03-06`] [protectCcsM365OneDrive.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365OneDrive) [`Update`]
 * [`2025-03-06`] [migrateUsersAndGroups.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/migrateUsersAndGroups) [`Update`]
