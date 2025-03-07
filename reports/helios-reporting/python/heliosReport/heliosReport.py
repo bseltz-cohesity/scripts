@@ -93,8 +93,9 @@ allClusters = heliosClusters()
 for selectedCluster in allClusters:
     selectedCluster['id'] = '%s:%s' % (selectedCluster['clusterId'], selectedCluster['clusterIncarnationId'])
 regions = api('get', 'dms/regions', mcmv2=True)
-for region in regions['regions']:
-    allClusters.append(region)
+if regions is not None and 'regions' in regions and regions['regions'] is not None and len(regions['regions']) > 0:
+    for region in regions['regions']:
+        allClusters.append(region)
 
 selectedClusters = allClusters
 
