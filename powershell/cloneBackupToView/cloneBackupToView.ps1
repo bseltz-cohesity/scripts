@@ -38,7 +38,7 @@ param (
     [Parameter()][switch]$lastRunOnly,
     [Parameter()][Int64]$daysToKeep = 0,
     [Parameter()][switch]$waitForRun, 
-    [Parameter()][Int64]$numRuns = 100,
+    [Parameter()][Int64]$numRuns = 10000,
     [Parameter()][array]$ips,                         # optional cidrs to add (comma separated)
     [Parameter()][string]$ipList = '',                # optional textfile of cidrs to add
     [Parameter()][switch]$rootSquash,                 # whether whitelist entries should use root squash
@@ -211,7 +211,7 @@ $finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning', '3', '4', '
 if($waitForRun){
     "Waiting for Run Completion"
     while($True){
-        $runs = (api get "protectionRuns?jobId=$($job.id)&$runTail")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false}
+        $runs = (api get "protectionRuns?jobId=$($job.id)&excludeNonRestoreableRuns=true&$runTail")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false}
         if($runs -and $runs.Count -gt 0){
             if($runs[0].backupRun.status -in $finishedStates){
                 break
@@ -220,7 +220,7 @@ if($waitForRun){
         Start-Sleep 15
     }
 }else{
-    $runs = (api get "protectionRuns?jobId=$($job.id)&$runTail")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
+    $runs = (api get "protectionRuns?jobId=$($job.id)&excludeNonRestoreableRuns=true&$runTail")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
 }
 
 if($lastRunOnly -and $runs.Count -gt 0){
