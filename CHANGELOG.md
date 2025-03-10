@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-03-10`] [cloneBackupToView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneBackupToView) [`Update`] improved runs query
 * [`2025-03-10`] [deployVE.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/deployVE) [`Update`] fixed password reset
 * [`2025-03-10`] [protectCcsM365Sites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365Sites) [`Update`] fix for sites with sub-sites
 * [`2025-03-08`] [selfServiceSnapshotConfig.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/selfServiceSnapshotConfig) [`New`] Configure Snapshot Self-Service on Cohesity Views
