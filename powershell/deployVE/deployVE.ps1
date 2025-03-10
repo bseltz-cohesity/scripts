@@ -65,7 +65,7 @@ Write-Host "Waiting for VM to boot..."
 
 apidrop -quiet
 while($AUTHORIZED -eq $false){
-    apiauth $ip admin -quiet
+    apiauth $ip admin -quiet -skipForcePasswordChange
     if($AUTHORIZED -eq $false){
         Start-Sleep -Seconds 10
     }
@@ -78,7 +78,7 @@ write-host "Performing cluster setup..."
 $cluster = $null
 $clusterId = $null
 while($cluster.length -eq 0){
-    apiauth $ip admin -quiet
+    apiauth $ip admin -quiet -skipForcePasswordChange
     if($AUTHORIZED -eq $true){
         $myObject = @{
             "clusterName" = $clusterName;
@@ -122,7 +122,7 @@ write-host "Waiting for cluster setup to complete..."
 $clusterId = $null
 while($null -eq $clusterId){
     Start-Sleep -Seconds 10
-    apiauth $ip admin -quiet
+    apiauth $ip admin -quiet -skipForcePasswordChange
     $clusterId = (api get cluster).id
 }
 apidrop -quiet
@@ -140,7 +140,7 @@ $myObject = @{
 }
 
 while($AUTHORIZED -eq $false){
-    apiauth $ip admin -quiet
+    apiauth $ip admin -quiet -skipForcePasswordChange
     $null = api post /licenseAgreement $myObject
     if($AUTHORIZED -eq $false){
         Start-Sleep -Seconds 10
