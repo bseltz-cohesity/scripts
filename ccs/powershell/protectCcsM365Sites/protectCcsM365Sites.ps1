@@ -93,18 +93,20 @@ $script:nameIndex = @{}
 $script:webUrlIndex = @{}
 $script:idIndex = @{}
 $script:unprotectedIndex = @()
+$script:protectedCount = 0
 function getNodes($node){
     if($node.PSObject.Properties['nodes']){
-        foreach($node in $node.nodes){
-            getNodes($node)
+        foreach($subnode in $node.nodes){
+            getNodes($subnode)
         }
+    }
+    $script:nameIndex[$node.protectionSource.name] = $node.protectionSource.id
+    $script:idIndex["$($node.protectionSource.id)"] = $node.protectionSource.name
+    $script:webUrlIndex[$node.protectionSource.office365ProtectionSource.webUrl] = $node.protectionSource.id
+    if(($node.unprotectedSourcesSummary | Where-Object environment -eq 'kO365Sharepoint').leavesCount -eq 1){
+        $script:unprotectedIndex = @($script:unprotectedIndex + $node.protectionSource.id)
     }else{
-        $script:nameIndex[$node.protectionSource.name] = $node.protectionSource.id
-        $script:idIndex["$($node.protectionSource.id)"] = $node.protectionSource.name
-        $script:webUrlIndex[$node.protectionSource.office365ProtectionSource.webUrl] = $node.protectionSource.id
-        if(($node.unprotectedSourcesSummary | Where-Object environment -eq 'kO365Sharepoint').leavesCount -eq 1){
-            $script:unprotectedIndex = @($script:unprotectedIndex + $node.protectionSource.id)
-        }
+        $script:protectedCount += 1
     }
 }
 $objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false" # -region $regionId
@@ -118,6 +120,7 @@ while(1){
         break
     }
 }
+Write-Host $script:unprotectedIndex.Count
 
 if($objectsToAdd.Count -eq 0){
     $useIds = $True
@@ -151,8 +154,6 @@ foreach($objName in $objectsToAdd){
             $objId = $script:nameIndex[$objName]
         }
     }
-    # Write-Host $objId
-    # Write-Host ($objId -in $script:unprotectedIndex)
     if($objId -and $objId -in $script:unprotectedIndex){
         $protectionParams = @{
             "policyId"         = "";
