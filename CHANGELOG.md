@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-03-10`] [protectCcsM365Sites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365Sites) [`Update`] fix for sites with sub-sites
 * [`2025-03-08`] [selfServiceSnapshotConfig.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/selfServiceSnapshotConfig) [`New`] Configure Snapshot Self-Service on Cohesity Views
 * [`2025-03-07`] [heliosReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/python/heliosReport) [`Update`]
 * [`2025-03-07`] [restoreCcsM365Site.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365Site) [`Update`] added support for Microsoft 365 Backup Storage
