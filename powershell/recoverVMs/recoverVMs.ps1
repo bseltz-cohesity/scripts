@@ -103,7 +103,7 @@ if($USING_HELIOS){
 if($vmTag){
     $taggedVMlist = api get "/searchvms?entityTypes=kVMware&vmName=$vmTag"
     $taggedVMs = $taggedVMlist.vms | Where-Object  {$vmTag -in $_.vmDocument.objectId.entity.vmwareEntity.tagAttributesVec.name} 
-    $vmNames = $vmNames + @($taggedVMs.vmDocument.objectName) | Sort-Object -Unique
+    $vmNames = @($taggedVMs.vmDocument.objectName | Sort-Object -Unique)
 }
 
 # search for protection groups
@@ -112,8 +112,10 @@ if($protectionGroup){
     $jobVMlist = api get "/searchvms?entityTypes=kVMware&vmName=$protectionGroup"
     $jobVMs = $jobVMlist.vms | Where-Object  {$_.vmDocument.jobName -eq $protectionGroup}
     $latestJobId = ($jobVMs.vmDocument.objectId.jobId | Sort-Object)[-1]
+    $highestvCenterID = ($jobVMs.vmDocument.objectId.entity.parentId | Sort-Object)[-1]
     $jobVMs = $jobVMs | Where-Object {$_.vmDocument.objectId.jobId -eq $latestJobId}
-    $vmNames = $vmNames + @($jobVMs.vmDocument.objectName) | Sort-Object -Unique
+    $jobVMs = $jobVMs | Where-Object {$_.vmDocument.objectId.entity.parentId -eq $highestvCenterID}
+    $vmNames = @($jobVMs.vmDocument.objectName | Sort-Object -Unique)
     $vmIds = @($jobVMs.vmDocument.objectId.entity.id | Sort-Object -Unique)
 }
 
