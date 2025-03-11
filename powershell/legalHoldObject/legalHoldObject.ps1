@@ -41,8 +41,6 @@ if(!$cohesity_api.authorized){
     exit
 }
 
-
-
 if($days -gt 0){
     $startTimeUsecs = timeAgo $days 'days'
 }elseif($startTime){
@@ -74,11 +72,17 @@ if($search.PSObject.Properties['objects'] -and $search.objects.Count -gt 0){
                     if($addHold){
                         $hold = $True
                         "Adding hold to $objectName ($($snap.protectionGroupName): $(usecsToDate $snap.runStartTimeUsecs))"
-                    }else{
+                        $result = api put -v2 "data-protect/objects/$($obj.id)/snapshots/$($snap.id)" @{'setLegalHold' = $hold}
+                    }elseif($removeHold){
                         $hold = $False
                         "Removing hold from $objectName ($($snap.protectionGroupName): $(usecsToDate $snap.runStartTimeUsecs))"
+                        $result = api put -v2 "data-protect/objects/$($obj.id)/snapshots/$($snap.id)" @{'setLegalHold' = $hold}
+                    }else{
+                        $run = api get -v2 "data-protect/protection-groups/$($snap.protectionGroupId)/runs/$($snap.protectionGroupRunId)?includeObjectDetails=true"
+                        $thisObject = $run.objects | Where-Object {$_.object.id -eq $snap.objectId}
+                        $thisObjectOnHold = $thisObject.onLegalHold
+                        "$objectName ($($snap.protectionGroupName): $(usecsToDate $snap.runStartTimeUsecs)) On Legal Hold = $thisObjectOnHold"
                     }
-                    $result = api put -v2 "data-protect/objects/$($obj.id)/snapshots/$($snap.id)" @{'setLegalHold' = $hold}
                 }
                 if($latest){
                     break
