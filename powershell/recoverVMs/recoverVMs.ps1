@@ -107,12 +107,14 @@ if($vmTag){
 }
 
 # search for protection groups
-if($protectionGroup -or $jobName){
+$vmIds = @()
+if($protectionGroup){
     $jobVMlist = api get "/searchvms?entityTypes=kVMware&vmName=$protectionGroup"
-    $jobVMs = $jobVMlist.vms | Where-Object  {$_.vmDocument.jobName -eq $protectionGroup -or $_.vmDocument.jobName -eq $jobName}
+    $jobVMs = $jobVMlist.vms | Where-Object  {$_.vmDocument.jobName -eq $protectionGroup}
     $latestJobId = ($jobVMs.vmDocument.objectId.jobId | Sort-Object)[-1]
     $jobVMs = $jobVMs | Where-Object {$_.vmDocument.objectId.jobId -eq $latestJobId}
-    $vmNames = $vmNames + @($jobVMs.vmDocument.objectName) | Sort-Object -Unique  
+    $vmNames = $vmNames + @($jobVMs.vmDocument.objectName) | Sort-Object -Unique
+    $vmIds = @($jobVMs.vmDocument.objectId.entity.id | Sort-Object -Unique)
 }
 
 if($vmNames.Count -eq 0){
@@ -367,13 +369,15 @@ foreach($vm in $vmNames){
     $vms = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverVMs,RecoverVApps,RecoverVAppTemplates&searchString=$vmName&environments=kVMware"
     $exactVMs = $vms.objects | Where-Object name -eq $vmName
     $exactVMs = $exactVMs | Where-Object {$_.PSObject.Properties['latestSnapshotsInfo']}
+    if($protectionGroup){
+        $exactVMs = $exactVMs | Where-Object {$_.id -in $vmIds}
+    }
     if($jobName -or $protectionGroup){
         $exactVMs.latestSnapshotsInfo = @($exactVMs.latestSnapshotsInfo | Where-Object {$_.protectionGroupName -eq $jobName -or $_.protectionGroupName -eq $protectionGroup})
     }
     $latestsnapshot = ($exactVMs | Sort-Object -Property @{Expression={$_.latestSnapshotsInfo[0].protectionRunStartTimeUsecs}; Ascending = $False})[0]
     if($recoverDate){
         $recoverDateUsecs = dateToUsecs ($recoverDate.AddMinutes(1))
-    
         $snapshots = api get -v2 "data-protect/objects/$($latestsnapshot.id)/snapshots?protectionGroupIds=$($latestsnapshot.latestSnapshotsInfo.protectionGroupId)"
         $snapshots = $snapshots.snapshots | Sort-Object -Property runStartTimeUsecs -Descending | Where-Object runStartTimeUsecs -lt $recoverDateUsecs
         if($snapshots -and $snapshots.Count -gt 0){
