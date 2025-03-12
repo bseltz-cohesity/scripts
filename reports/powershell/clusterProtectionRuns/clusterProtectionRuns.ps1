@@ -18,7 +18,7 @@ param (
     [Parameter()][string]$objectType,
     [Parameter()][ValidateSet('KiB','MiB','GiB','TiB')][string]$unit = 'GiB',
     [Parameter()][string]$outputPath = '.',
-    [Parameter()][int]$numRuns = 120
+    [Parameter()][int]$numRuns = 1000
 )
 
 # source the cohesity-api helper code
@@ -74,14 +74,20 @@ function reportRuns(){
             if(!$policyName){
                 $policyName = '-'
             }
+            $lastRunId = 0
             while($True){
                 if($fullOnly){
-                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&runTypes=kFull$tail"
+                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&excludeNonRestorableRuns=true&includeObjectDetails=true&runTypes=kFull$tail"
                 }elseif($includeLogs){
-                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true$tail"
+                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&excludeNonRestorableRuns=true&includeObjectDetails=true$tail"
                 }else{
-                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&runTypes=kIncremental,kFull$tail"
+                    $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&excludeNonRestorableRuns=true&includeObjectDetails=true&runTypes=kIncremental,kFull$tail"
                 }
+                if(!$runs.runs -or $runs.runs.Count -eq 0 -or $runs.runs[-1].id -eq $lastRunId){
+                    break
+                }
+                $runs.runs = $runs.runs | Where-Object {$_.id -ne $lastRunId}
+                $lastRunId = $runs.runs[-1].id
                 foreach($run in $runs.runs){
                     $localSources = @{}
                     if(! $run.PSObject.Properties['isLocalSnapshotsDeleted'] -or $run.isLocalSnapshotsDeleted -ne $True){
@@ -158,25 +164,32 @@ function reportRuns(){
                                     $objectLogicalSizeBytes = toUnits $snapshotInfo.stats.logicalSizeBytes
                                     $objectBytesWritten = toUnits $snapshotInfo.stats.bytesWritten
                                     $objectBytesRead = toUnits $snapshotInfo.stats.bytesRead
-                                    "        {0}" -f $objectName
+                                    # "        {0}" -f $objectName
                                     $(dateToString $objectStartTime), $(dateToString $objectEndTime), $objectDurationSeconds, $objectStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $cluster.name, $objectLogicalSizeBytes, $objectBytesRead, $objectBytesWritten, $tenant, $lockUntil, $onLegalHold -join "," | Out-File -FilePath $outfileName -Append
                                 }
                             }
                         }
                     }
                 }
-                if($runs.runs.Count -eq $numRuns){
-                    if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
-                        $endUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs - 1
-                    }else{
-                        $endUsecs = $runs.runs[-1].originalBackupInfo.endTimeUsecs - 1
-                    }
-                    if($endUsecs -lt 0 -or $endUsecs -lt $daysBackUsecs){
-                        break
-                    }
+                if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
+                    $endUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs
+                }elseif($runs.runs[-1].PSObject.Properties['originalBackupInfo']){
+                    $endUsecs = $runs.runs[-1].originalBackupInfo.endTimeUsecs
                 }else{
-                    break
+                    $endUsecs = $runs.runs[-1].archivalInfo.archivalTargetResults[0].endTimeUsecs
                 }
+                # if($runs.runs.Count -eq $numRuns){
+                #     if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
+                #         $endUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs - 1
+                #     }else{
+                #         $endUsecs = $runs.runs[-1].originalBackupInfo.endTimeUsecs - 1
+                #     }
+                #     if($endUsecs -lt 0 -or $endUsecs -lt $daysBackUsecs){
+                #         break
+                #     }
+                # }else{
+                #     break
+                # }
             }
         }
     }
