@@ -62,21 +62,25 @@ if($jobName){
     }
 }
 
-$search = api get -v2 "data-protect/search/protected-objects?searchString=$objectName"
+$search = api get -v2 "data-protect/search/objects?searchString=$objectName"
 if($search.PSObject.Properties['objects'] -and $search.objects.Count -gt 0){
-    foreach($obj in $search.objects){
-        $snaps = api get -v2 "data-protect/objects/$($obj.id)/snapshots"
-        foreach($snap in ($snaps.snapshots | Sort-Object -Property runStartTimeUsecs -Descending)){
+    $objects = $search.objects | Where-Object name -eq $objectName
+    foreach($obj in $objects){
+        if($obj.PSObject.Properties['objectProtectionInfos'] -and $obj.objectProtectionInfos.Count -gt 0){
+            $objectId = $obj.objectProtectionInfos[0].objectId
+        }
+        $snaps = api get -v2 "data-protect/objects/$($objectId)/snapshots"
+        foreach($snap in ($snaps.snapshots | Where-Object snapshotTargetType -eq 'Local' | Sort-Object -Property runStartTimeUsecs -Descending)){
             if(!$jobName -or $snap.protectionGroupId -eq $jobId){
                 if($snap.runStartTimeUsecs -gt $startTimeUsecs -and $snap.runStartTimeUsecs -le $endTimeUsecs){
                     if($addHold){
                         $hold = $True
                         "Adding hold to $objectName ($($snap.protectionGroupName): $(usecsToDate $snap.runStartTimeUsecs))"
-                        $result = api put -v2 "data-protect/objects/$($obj.id)/snapshots/$($snap.id)" @{'setLegalHold' = $hold}
+                        $result = api put -v2 "data-protect/objects/$($objectId)/snapshots/$($snap.id)" @{'setLegalHold' = $hold}
                     }elseif($removeHold){
                         $hold = $False
                         "Removing hold from $objectName ($($snap.protectionGroupName): $(usecsToDate $snap.runStartTimeUsecs))"
-                        $result = api put -v2 "data-protect/objects/$($obj.id)/snapshots/$($snap.id)" @{'setLegalHold' = $hold}
+                        $result = api put -v2 "data-protect/objects/$($objectId)/snapshots/$($snap.id)" @{'setLegalHold' = $hold}
                     }else{
                         $run = api get -v2 "data-protect/protection-groups/$($snap.protectionGroupId)/runs/$($snap.protectionGroupRunId)?includeObjectDetails=true"
                         $thisObject = $run.objects | Where-Object {$_.object.id -eq $snap.objectId}

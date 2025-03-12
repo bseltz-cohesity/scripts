@@ -38,7 +38,7 @@ $dateString = $now.ToString('yyyy-MM-dd')
 $outfileName = $(Join-Path -Path $outputPath -ChildPath "protectionRunsReport-$dateString.csv")
 
 # headings
-$headings = "Start Time,End Time,Duration,status,slaStatus,snapshotStatus,objectName,sourceName,groupName,policyName,Object Type,backupType,System Name,Logical Size $unit,Data Read $unit,Data Written $unit,Organization Name,DataLock Expiry"
+$headings = "Start Time,End Time,Duration,status,slaStatus,snapshotStatus,objectName,sourceName,groupName,policyName,Object Type,backupType,System Name,Logical Size $unit,Data Read $unit,Data Written $unit,Organization Name,DataLock Expiry,Legal Hold"
 
 $headings | Out-File -FilePath $outfileName
 
@@ -124,6 +124,7 @@ function reportRuns(){
                                     $snapshotInfo = $object.archivalInfo.archivalTargetResults[0]
                                 }
                                 $objectName = $object.object.name
+                                $onLegalHold = $object.onLegalHold
                                 if($environment -notin @('kOracle', 'kSQL') -or ($environment -in @('kOracle', 'kSQL') -and $object.object.objectType -ne 'kHost')){
                                     if($object.object.PSObject.Properties['sourceId']){
                                         if($environment -in @('kOracle', 'kSQL')){
@@ -158,7 +159,7 @@ function reportRuns(){
                                     $objectBytesWritten = toUnits $snapshotInfo.stats.bytesWritten
                                     $objectBytesRead = toUnits $snapshotInfo.stats.bytesRead
                                     "        {0}" -f $objectName
-                                    $(dateToString $objectStartTime), $(dateToString $objectEndTime), $objectDurationSeconds, $objectStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $cluster.name, $objectLogicalSizeBytes, $objectBytesRead, $objectBytesWritten, $tenant, $lockUntil -join "," | Out-File -FilePath $outfileName -Append
+                                    $(dateToString $objectStartTime), $(dateToString $objectEndTime), $objectDurationSeconds, $objectStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $cluster.name, $objectLogicalSizeBytes, $objectBytesRead, $objectBytesWritten, $tenant, $lockUntil, $onLegalHold -join "," | Out-File -FilePath $outfileName -Append
                                 }
                             }
                         }
