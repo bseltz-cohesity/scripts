@@ -51,7 +51,7 @@ Place both files in a folder together and run the main script like so:
 
 ## Other Parameters
 
-* -n, --servername: name of server:port to register (repeat for multiple)
+* -n, --servername: name of source and primary host to register (repeat for multiple) e.g. mysource,myhost.mydomain.net
 * -l, --serverlist: text file containing list of servers to register (one per line)
 * -cd, --configdir: cassandra configuration directory
 * -dc, --datacenter: (optional) datacenter name (repeat for multiple)
