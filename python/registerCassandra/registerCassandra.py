@@ -28,6 +28,8 @@ parser.add_argument('-dn', '--dsesolrnode', action='append', type=str)
 parser.add_argument('-dp', '--dsesolrport', type=int, default=None)
 parser.add_argument('-su', '--sshusername', type=str, required=True)
 parser.add_argument('-sp', '--sshpassword', type=str, default=None)
+parser.add_argument('-pp', '--promptforpassphrase', action='store_true')
+parser.add_argument('-sk', '--sshprivatekeyfile', type=str, default=None)
 parser.add_argument('-ju', '--jmxusername', type=str, default=None)
 parser.add_argument('-jp', '--jmxpassword', type=str, default=None)
 parser.add_argument('-cu', '--cassandrausername', type=str, default=None)
@@ -62,6 +64,8 @@ dsesolrport = args.dsesolrport
 
 sshusername = args.sshusername
 sshpassword = args.sshpassword
+sshprivatekeyfile = args.sshprivatekeyfile
+promptforpassphrase = args.promptforpassphrase
 jmxusername = args.jmxusername
 jmxpassword = args.jmxpassword
 cassandrausername = args.cassandrausername
@@ -108,7 +112,13 @@ if mcm or vip.lower() == 'helios.cohesity.com':
         exit(1)
 # end authentication =====================================================
 
-if sshpassword is None:
+if sshprivatekeyfile is not None:
+    keyfilehandle = open(sshprivatekeyfile, 'r')
+    sshprivatekey = keyfilehandle.read()
+    if promptforpassphrase is True:
+        sshpassword = getpass("\nEnter SSH passphrase: ")
+
+if sshpassword is None and sshprivatekeyfile is None:
     sshpassword = getpass("\nEnter SSH password: ")
 
 if jmxusername is not None and jmxpassword is None:
@@ -148,6 +158,13 @@ for server in servers:
                 "kerberosPrincipal": None
             }
         }
+        if sshprivatekeyfile is not None:
+            newSource['cassandraParams']['sshPasswordCredentials'] = None
+            newSource['cassandraParams']['sshPrivateKeyCredentials'] = {
+                "userId": sshusername,
+                "privateKey": sshprivatekey,
+                "passphrase": sshpassword
+            }
         if kerberosprincipal is not None:
             newSource['cassandraParams']['kerberosPrincipal'] = kerberosprincipal
         if commitlog is not None:

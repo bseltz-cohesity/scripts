@@ -63,6 +63,8 @@ Place both files in a folder together and run the main script like so:
 * -dp, --dsesolrport: (optional) DSE Solr port
 * -su, --sshusername: SSH username
 * -sp, --sshpassword: (optional) SSH password (will be prompted if omitted)
+* -pp, --promptforpassphrase: (optional) prompt for SSH private key passphrase (otherwise use sshpassword)
+* -sk, --sshprivatekeyfile: (optional) path to SSH private key file
 * -ju, --jmxusername: (optional) JMX username
 * -jp, --jmxpassword: (optional) JMX password (will be prompted if omitted)
 * -cu, --cassandrausername: (optional) cassandra username
