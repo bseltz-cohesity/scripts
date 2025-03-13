@@ -54,7 +54,11 @@ if($localOnly){
 }
 
 function dateToString($dt, $format='yyyy-MM-dd hh:mm:ss'){
-    return ($dt.ToString($format) -replace [char]8239, ' ')
+    if($dt -eq $null){
+        return ''
+    }else{
+        return ($dt.ToString($format) -replace [char]8239, ' ')
+    }
 }
 
 function reportRuns(){
