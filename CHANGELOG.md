@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-03-13`] [registerCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/registerCassandra) [`Update`] added support for SSH private key authentication
 * [`2025-03-12`] [clusterProtectionRuns.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterProtectionRuns) [`Update`] added legal hold status column
 * [`2025-03-12`] [legalHoldObject.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/legalHoldObject) [`Update`]
 * [`2025-03-11`] [recoverVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverVMs) [`Update`]
