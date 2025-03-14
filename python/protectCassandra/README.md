@@ -104,3 +104,6 @@ You can exclude keyspaces and tables:
 * -st, --starttime: (optional) start time for new job (default is 21:00)
 * -is, --incrementalsla: (optional) incremental SLA minutes (default is 60)
 * -fs, --fullsla: (optional) full SLA minutes (default is 120)
+* -ar, --alertrecipient: (optional) email address of alert recipient to add
+* -av, --alertslaviolation: (optional) alert on SLA Violation
+* -as, --alertsuccess: (optional) alert on Success

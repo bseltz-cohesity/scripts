@@ -35,6 +35,9 @@ parser.add_argument('-z', '--pause', action='store_true')
 parser.add_argument('-cc', '--concurrency', type=int, default=None)
 parser.add_argument('-bw', '--bandwidth', type=int, default=None)
 parser.add_argument('-dc', '--datacenter', action='append', type=str)
+parser.add_argument('-ar', '--alertrecipient', action='append', type=str)
+parser.add_argument('-av', '--alertslaviolation', action='store_true')
+parser.add_argument('-as', '--alertsuccess', action='store_true')
 
 args = parser.parse_args()
 
@@ -68,6 +71,9 @@ timezone = args.timezone
 incrementalsla = args.incrementalsla
 fullsla = args.fullsla
 pause = args.pause
+alertrecipients = args.alertrecipient
+alertslaviolation = args.alertslaviolation
+alertsuccess = args.alertsuccess
 
 def gatherList(param=None, filename=None, name='items', required=True):
     items = []
@@ -212,6 +218,21 @@ else:
     else:
         print('existing job protects regular keyspaces')
         systemkeyspaces = False
+
+if alertrecipients is not None and len(alertrecipients) > 0:    
+    for r in alertrecipients:
+        job['alertPolicy']['alertTargets'] = [t for t in job['alertPolicy']['alertTargets'] if t['emailAddress'].lower() != r.lower()]
+        job['alertPolicy']['alertTargets'].append({
+            "emailAddress": r,
+            "language": "en-us",
+            "recipientType": "kTo"
+        })
+if alertslaviolation is True:
+    job['alertPolicy']['backupRunStatus'].append('kSlaViolation')
+    job['alertPolicy']['backupRunStatus'] = list(set(job['alertPolicy']['backupRunStatus']))
+if alertsuccess is True:
+    job['alertPolicy']['backupRunStatus'].append('kSuccess')
+    job['alertPolicy']['backupRunStatus'] = list(set(job['alertPolicy']['backupRunStatus'])) 
 
 keyspaceType = 'kRegular'
 if systemkeyspaces is True:
