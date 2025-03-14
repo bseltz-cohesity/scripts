@@ -34,6 +34,7 @@ parser.add_argument('-fs', '--fullsla', type=int, default=120)
 parser.add_argument('-z', '--pause', action='store_true')
 parser.add_argument('-cc', '--concurrency', type=int, default=None)
 parser.add_argument('-bw', '--bandwidth', type=int, default=None)
+parser.add_argument('-dc', '--datacenter', action='append', type=str)
 
 args = parser.parse_args()
 
@@ -57,6 +58,7 @@ excludelist = args.excludelist
 systemkeyspaces = args.systemkeyspaces
 concurrency = args.concurrency
 bandwidth = args.bandwidth
+datacenters = args.datacenter
 
 jobname = args.jobname
 storagedomain = args.storagedomain
@@ -107,7 +109,7 @@ if mcm or vip.lower() == 'helios.cohesity.com':
 
 # get protection source
 sources = api('get', 'protectionSources/rootNodes?allUnderHierarchy=false&environments=kCassandra&includeExternalMetadata=true')
-source = [s for s in sources if s['protectionSource']['name'].lower() == sourcename.lower()]
+source = [s for s in sources if s['protectionSource']['name'].lower() == sourcename.lower() or s['protectionSource']['customName'].lower() == sourcename.lower()]
 if source is None or len(source) == 0:
     print('Cassandra protection source "%s" not found!' % sourcename)
     exit(1)
@@ -197,6 +199,8 @@ if job is None or len(job) == 0:
             "isSystemKeyspaceBackup": False
         }
     }
+    if datacenters is not None and len(datacenters) > 0:
+        job['cassandraParams']['dataCenters'] = datacenters
     if systemkeyspaces is True:
         job['cassandraParams']['isSystemKeyspaceBackup'] = True
 else:
@@ -222,8 +226,9 @@ for keyspace in keyspaces:
     objects[keyspace['protectionSource']['name']] = keyspace['protectionSource']['id']
     if keyspaceType == 'kSystem':
         systemKeyspaceIDs.append(keyspace['protectionSource']['id'])
-    for table in keyspace['nodes']:
-        objects['%s/%s' % (keyspace['protectionSource']['name'].lower(), table['protectionSource']['name'].lower())] = table['protectionSource']['id']
+    if 'nodes' in keyspace:
+        for table in keyspace['nodes']:
+            objects['%s/%s' % (keyspace['protectionSource']['name'].lower(), table['protectionSource']['name'].lower())] = table['protectionSource']['id']
 
 # configure job settings
 if pause is True:

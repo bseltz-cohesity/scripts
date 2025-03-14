@@ -91,6 +91,7 @@ You can exclude keyspaces and tables:
 * -e, --exclude: (optional) file path to exclude (use multiple times for multiple paths)
 * -x, --excludelist: (optional) a text file full of exclude file paths
 * -sk, --systemkeyspaces: (optional) protect system keyspaces
+* -dc, --datacenter: (optional) datacenter name (repeat for multiple)
 * -cc, --concurrency: (optional) specify concurrency (default is 16)
 * -bw, --bandwidth: (optional) specify bandwidth limit (MB/s)
 * -z, --pause: (optional) pause future runs
