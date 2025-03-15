@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-03-15`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] added retries for retryable errors
+* [`2025-03-15`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added retries for retryable errors
 * [`2025-03-14`] [protectCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectCassandra) [`Update`] added datacenter selection and other fixes
 * [`2025-03-13`] [vm_freeze_thaw.sh](https://github.com/cohesity/community-automation-samples/tree/main/remoteAdapter/vm_freeze_thaw) [`New`] Remote adapter script to quiesce an application in a VM
 * [`2025-03-13`] [jobRunning](https://github.com/cohesity/community-automation-samples/tree/main/linux/jobRunning) [`New`] check if job is running (compiled for Linux)
