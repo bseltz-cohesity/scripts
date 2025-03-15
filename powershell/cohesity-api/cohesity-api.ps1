@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2025.02.11 - Brian Seltzer
+#  Version 2025.03.14 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024-02-18 - fix - toJson function - handle null input
@@ -17,10 +17,12 @@
 # 2025-01-31 - fixed legacy session-id auth
 # 2025-02-02 - refactor
 # 2025-02-11 - added readCache and writeCache functions
+# 2025-03-09 - added retry logic for too many requests and magneto timeouts
+# 2025-03-14 - quiet mode and loop fixes
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2025.02.11'
+$versionCohesityAPI = '2025.03.14'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -279,19 +281,34 @@ function apiauth([string] $vip='helios.cohesity.com',
         $cohesity_api.authorized = $true
         # validate cluster API key authorization
         if($useApiKey -and (($vip -notin $heliosEndpoints) -and $helios -ne $True)){
-            try{
-                $URL = "https://$vip/irisservices/api/v1/public/sessionUser/preferences"
-                $null = __auth -method Get -url $URL -header $header -timeout $timeout
-                if($setpasswd){
-                    $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
+            $retryCounter = 0
+            while($retryCounter -le 10){
+                try{
+                    $URL = "https://$vip/irisservices/api/v1/public/sessionUser/preferences"
+                    $null = __auth -method Get -url $URL -header $header -timeout $timeout
+                    if($setpasswd){
+                        $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
+                    }
+                    __connected -quiet:$quiet
+                    $retryCounter = 11
+                }catch{
+                    $errorObject = $_
+                    $errorString = $errorObject.ToString()
+                    reportError $errorObject -quiet:$quiet
+                    if(!$noprompt -and $cohesity_api.last_api_error -eq "Authentication failed: Invalid API Key"){
+                        $retryCounter = 11
+                        apidrop -quiet
+                        apiauth -vip $vip -username $username -domain $domain -useApiKey -updatePassword
+                    }elseif($errorString -match 'Too Many Requests'){
+                        Write-Host "Sleeping 20 seconds..."
+                        Start-Sleep 20
+                        continue
+                    }else{
+                        $retryCounter = 11
+                        apidrop -quiet
+                    }
                 }
-                __connected -quiet:$quiet
-            }catch{
-                reportError $_ -quiet:$quiet
-                apidrop -quiet
-                if(!$noprompt -and $cohesity_api.last_api_error -eq "Authentication failed: Invalid API Key"){
-                    apiauth -vip $vip -username $username -domain $domain -useApiKey -updatePassword
-                }
+                $retryCounter += 1
             }
         }
         # validate helios/mcm authorization
@@ -345,7 +362,28 @@ function apiauth([string] $vip='helios.cohesity.com',
                 throw "skipping"
             }
             $url = 'https://' + $vip + '/login'
-            $user = __auth -method Post -url $url -body $body -timeout $timeout
+            $retryCounter = 0
+            $user = $null
+            while($retryCounter -le 10){
+                $retryCounter += 1
+                try{
+                    $user = __auth -method Post -url $url -body $body -timeout $timeout
+                    $retryCounter = 11
+                }catch{
+                    $thisError = $_
+                    if($thisError -match 'Too Many Requests'){
+                        reportError $_
+                        Write-Host "Sleeping for 20 seconds..."
+                        Start-Sleep 20
+                        continue
+                    }
+                    $retryCounter = 11
+                }
+            }
+            if($user -eq $null){
+                throw "User does not have the privilege to access UI"
+                # $user = __auth -method Post -url $url -body $body -timeout $timeout
+            }
             # check force password change
             if(! $noDomain){
                 try{
@@ -423,7 +461,6 @@ function apiauth([string] $vip='helios.cohesity.com',
                 $URL = "https://$vip/irisservices/api/v1/public/sessionUser/preferences"
                 $null = __apicall -method Get -url $URL -timeout $timeout
             }
-
             # set state connected
             if($setpasswd){
                 $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
@@ -433,100 +470,135 @@ function apiauth([string] $vip='helios.cohesity.com',
             $thisError = $_
             if($skipForcePasswordChange -or $thisError -match 'User does not have the privilege to access UI' -or $thisError -match "KInvalidError"){
                 $url = $cohesity_api.apiRoot + '/public/accessTokens'
-                try {
-                    if($emailMfaCode){
-                        Write-Host "scripted MFA via email is disabled, please use -mfaCode xxxxxx" -ForegroundColor Yellow
-                        apidrop -quiet
-                        break
-                    }
-                    # authenticate
-                    $auth = __auth -method Post -url $url -body $body -timeout $timeout
-                    $cohesity_api.header['authorization'] = $auth.tokenType + ' ' + $auth.accessToken
-                    __connected -quiet:$quiet
-                }catch{
-                    $cohesity_api.last_api_error = $_.ToString()
-                    $thisError = $_
-                    # try v2 session auth
-                    if($thisError.ToString().contains('"message":')){
-                        $message = (ConvertFrom-Json $thisError.ToString()).message
-                        $cohesity_api.last_api_error = $message
-                        if($message -eq 'Access denied'){
-                            try{
-                                $url = $cohesity_api.apiRootv2 + 'users/sessions'
-                                $body = ConvertTo-Json @{
-                                    'domain' = $domain;
-                                    'username' = $username;
-                                    'password' = $passwd;
-                                    'otpType' = $mfaType.ToLower();
-                                    'otpCode' = $mfaCode
-                                }
-                                if($skipForcePasswordChange){
+                $retryCounter = 0
+                while($retryCounter -le 10){
+                    $retryCounter += 1
+                    try {
+                        if($emailMfaCode){
+                            Write-Host "scripted MFA via email is disabled, please use -mfaCode xxxxxx" -ForegroundColor Yellow
+                            apidrop -quiet
+                            break
+                        }
+                        # authenticate
+                        $auth = __auth -method Post -url $url -body $body -timeout $timeout
+                        $cohesity_api.header['authorization'] = $auth.tokenType + ' ' + $auth.accessToken
+                        __connected -quiet:$quiet
+                        $retryCounter = 11
+                    }catch{
+                        $cohesity_api.last_api_error = $_.ToString()
+                        $thisError = $_
+                        if($thisError -match 'Too Many Requests'){
+                            reportError $thisError
+                            Write-Host "Sleeping for 20 seconds..."
+                            Start-Sleep 20
+                            continue
+                        }
+                        if($thisError -match 'Please specify the mandatory parameters'){
+                            $retryCounter = 11
+                            reportError $thisError
+                            apidrop -quiet
+                            return $null
+                        }
+                        # try v2 session auth
+                        if($thisError.ToString().contains('"message":')){
+                            $message = (ConvertFrom-Json $thisError.ToString()).message
+                            $cohesity_api.last_api_error = $message
+                            if($message -eq 'Access denied'){
+                                try{
+                                    $url = $cohesity_api.apiRootv2 + 'users/sessions'
                                     $body = ConvertTo-Json @{
                                         'domain' = $domain;
                                         'username' = $username;
                                         'password' = $passwd;
                                         'otpType' = $mfaType.ToLower();
-                                        'otpCode' = $mfaCode;
+                                        'otpCode' = $mfaCode
                                     }
+                                    if($skipForcePasswordChange){
+                                        $body = ConvertTo-Json @{
+                                            'domain' = $domain;
+                                            'username' = $username;
+                                            'password' = $passwd;
+                                            'otpType' = $mfaType.ToLower();
+                                            'otpCode' = $mfaCode;
+                                        }
+                                    }
+                                    # authenticate
+                                    $auth = __auth -method Post -url $url -body $body -timeout $timeout
+                                    $cohesity_api.header['session-id'] = $auth.sessionId
+                                    __connected -quiet:$quiet
+                                    $retryCounter = 11
+                                }catch{
+                                    if($thisError -match 'Too Many Requests'){
+                                        reportError $thisError
+                                        Write-Host "Sleeping for 20 seconds..."
+                                        Start-Sleep 20
+                                        continue
+                                    }else{
+                                        $retryCounter = 11
+                                    }
+                                    $cohesity_api.last_api_error = "user session authentication failed"
+                                    apidrop -quiet
+                                    __writeLog $thisError.ToString()
+                                    if($cohesity_api.reportApiErrors){
+                                        if($thisError.ToString().contains('"message":')){
+                                            $message = (ConvertFrom-Json $_.ToString()).message
+                                            Write-Host $message -foregroundcolor yellow
+                                            if($message -match 'Invalid Username or Password'){
+                                                if(!$noprompt){
+                                                    apiauth -vip $vip -username $username -domain $domain -mfaCode $mfaCode -tenant $tenant -updatePassword
+                                                }
+                                            }
+                                        }else{
+                                            Write-Host $thisError.ToString() -foregroundcolor yellow
+                                        }
+                                    }
+                                    return $null
                                 }
-                                # authenticate
-                                $auth = __auth -method Post -url $url -body $body -timeout $timeout
-                                $cohesity_api.header['session-id'] = $auth.sessionId
-                                __connected -quiet:$quiet
-                            }catch{
-                                $cohesity_api.last_api_error = "user session authentication failed"
+                            }else{
+                                # report authentication error
                                 apidrop -quiet
                                 __writeLog $thisError.ToString()
+                                $message = (ConvertFrom-Json $_.ToString()).message
                                 if($cohesity_api.reportApiErrors){
-                                    if($thisError.ToString().contains('"message":')){
-                                        $message = (ConvertFrom-Json $_.ToString()).message
+                                    if(!$quiet){
                                         Write-Host $message -foregroundcolor yellow
-                                        if($message -match 'Invalid Username or Password'){
-                                            if(!$noprompt){
-                                                apiauth -vip $vip -username $username -domain $domain -mfaCode $mfaCode -tenant $tenant -updatePassword
-                                            }
+                                    }
+                                    $cohesity_api.last_api_error = $message
+                                    if($message -match 'Invalid Username or Password'){
+                                        if(!$noprompt){
+                                            apiauth -vip $vip -username $username -domain $domain -mfaCode $mfaCode -tenant $tenant -updatePassword
                                         }
-                                    }else{
-                                        Write-Host $thisError.ToString() -foregroundcolor yellow
                                     }
                                 }
-                                return $null
                             }
                         }else{
                             # report authentication error
+                            $retryCounter = 11
                             apidrop -quiet
                             __writeLog $thisError.ToString()
-                            $message = (ConvertFrom-Json $_.ToString()).message
                             if($cohesity_api.reportApiErrors){
-                                Write-Host $message -foregroundcolor yellow
-                                $cohesity_api.last_api_error = $message
-                                if($message -match 'Invalid Username or Password'){
-                                    if(!$noprompt){
-                                        apiauth -vip $vip -username $username -domain $domain -mfaCode $mfaCode -tenant $tenant -updatePassword
+                                if($thisError.ToString().contains('"message":')){
+                                    $message = (ConvertFrom-Json $_.ToString()).message
+                                    if(!$quiet){
+                                        Write-Host $message -foregroundcolor yellow
                                     }
-                                }
-                            }
-                        }
-                    }else{
-                        # report authentication error
-                        apidrop -quiet
-                        __writeLog $thisError.ToString()
-                        if($cohesity_api.reportApiErrors){
-                            if($thisError.ToString().contains('"message":')){
-                                $message = (ConvertFrom-Json $_.ToString()).message
-                                Write-Host $message -foregroundcolor yellow
-                                if($message -match 'Invalid Username or Password'){
-                                    if(!$noprompt){
-                                        apiauth -vip $vip -username $username -domain $domain -mfaCode $mfaCode -tenant $tenant -updatePassword
+                                    if($message -match 'Invalid Username or Password'){
+                                        if(!$noprompt){
+                                            apiauth -vip $vip -username $username -domain $domain -mfaCode $mfaCode -tenant $tenant -updatePassword
+                                        }
                                     }
-                                }
-                            }else{
-                                if($thisError.ToString() -match '404 Not Found'){
-                                    Write-Host 'connection refused'
-                                    $cohesity_api.last_api_error = 'connection refused'
-                                    apidrop -quiet
                                 }else{
-                                    Write-Host $thisError.ToString() -foregroundcolor yellow
+                                    if($thisError.ToString() -match '404 Not Found'){
+                                        if(!$quiet){
+                                            Write-Host 'connection refused'
+                                        }
+                                        $cohesity_api.last_api_error = 'connection refused'
+                                        apidrop -quiet
+                                    }else{
+                                        if(!$quiet){
+                                            Write-Host $thisError.ToString() -foregroundcolor yellow
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -562,19 +634,21 @@ function __connected($quiet=$false){
 
 # internal authentication call
 function __auth($method, $url, $body=$null, $header=$cohesity_api.header, $timeout=300){
+    # Write-Host "*** starting auth attempt" -ForegroundColor DarkGray
     if($null -ne $body){
         if($PSVersionTable.PSEdition -eq 'Core'){
-            $auth = Invoke-RestMethod -Method $method -Uri $url -header $header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session -ContentType "application/json; charset=utf-8" -SslProtocol Tls12
+            $auth = Invoke-RestMethod -Method $method -Uri $url -header $header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session -ContentType "application/json; charset=utf-8" -SslProtocol Tls12 -UseBasicParsing
         }else{
-            $auth = Invoke-RestMethod -Method $method -Uri $url -header $header -Body $body -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session -ContentType "application/json; charset=utf-8"
+            $auth = Invoke-RestMethod -Method $method -Uri $url -header $header -Body $body -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session -ContentType "application/json; charset=utf-8" -UseBasicParsing
         }
     }else{
         if($PSVersionTable.PSEdition -eq 'Core'){
-            $auth = Invoke-RestMethod -Method $method -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -SkipCertificateCheck -SessionVariable session -ContentType "application/json; charset=utf-8"
+            $auth = Invoke-RestMethod -Method $method -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -SkipCertificateCheck -SessionVariable session -ContentType "application/json; charset=utf-8" -UseBasicParsing
         }else{
-            $auth = Invoke-RestMethod -Method $method -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SessionVariable session -ContentType "application/json; charset=utf-8"
+            $auth = Invoke-RestMethod -Method $method -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SessionVariable session -ContentType "application/json; charset=utf-8" -UseBasicParsing
         }
     }
+    # Write-Host "*** ending auth attempt" -ForegroundColor DarkGray
     $cohesity_api.session = $session
     return $auth
 }
@@ -583,15 +657,15 @@ function __auth($method, $url, $body=$null, $header=$cohesity_api.header, $timeo
 function __apicall($method, $url, $body=$null, $header=$cohesity_api.header, $timeout=300){
     if($null -ne $body){
         if($PSVersionTable.PSEdition -eq 'Core'){
-            $response = Invoke-RestMethod -Method $method -Uri $url -header $header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout  -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8" -SslProtocol Tls12
+            $response = Invoke-RestMethod -Method $method -Uri $url -header $header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout  -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8" -SslProtocol Tls12  -UseBasicParsing
         }else{
-            $response = Invoke-RestMethod -Method $method -Uri $url -header $header -Body $body -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout  -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8"
+            $response = Invoke-RestMethod -Method $method -Uri $url -header $header -Body $body -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout  -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8" -UseBasicParsing
         }
     }else{
         if($PSVersionTable.PSEdition -eq 'Core'){
-            $response = Invoke-RestMethod -Method $method -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -SkipCertificateCheck  -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8"
+            $response = Invoke-RestMethod -Method $method -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -SkipCertificateCheck  -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8" -UseBasicParsing
         }else{
-            $response = Invoke-RestMethod -Method $method -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent  -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8"
+            $response = Invoke-RestMethod -Method $method -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent  -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8" -UseBasicParsing
         }
     }
     return $response
@@ -783,16 +857,31 @@ function api($method,
         if($url -match ' ' -and $url -notmatch '%'){
             $url = [uri]::EscapeUriString($url)
         }
-
-        try {
-            if($data){
-                $body = ConvertTo-Json -Compress -Depth 99 $data
+        $retryCounter = 0
+        while($retryCounter -le 10){
+            try {
+                if($data){
+                    $body = ConvertTo-Json -Compress -Depth 99 $data
+                }
+                $result = __apicall -method $method -url $url -body $body -timeout $timeout 
+                $cohesity_api.last_api_error = 'OK'
+                $retryCounter = 11
+                return $result
+            }catch{
+                $errorObject = $_
+                reportError $errorObject -quiet:$quiet
+                $errorString = $errorObject.ToString()
+                if($errorString -match 'Too Many Requests'){
+                    Write-Host "Sleeping 20 seconds..."
+                    Start-Sleep 20
+                }elseif($errorString -match 'magneto' -or $errorString -match 'timeout'){
+                    Write-Host "Sleeping 30 seconds..."
+                    Start-Sleep 30
+                }else{
+                    $retryCounter = 11
+                }
             }
-            $result = __apicall -method $method -url $url -body $body -timeout $timeout 
-            $cohesity_api.last_api_error = 'OK'
-            return $result
-        }catch{
-            reportError $_ -quiet:$quiet
+            $retryCounter += 1
         }
     }
 }
@@ -1312,7 +1401,7 @@ function Invoke-RestConOIDCAzure  {
         'Accept'= "application/json"
     }
     try{
-        $callazure = Invoke-RestMethod -Method POST -Uri $AzureURL -Body $Azbody -Headers $azuhdr -TimeoutSec 100
+        $callazure = Invoke-RestMethod -Method POST -Uri $AzureURL -Body $Azbody -Headers $azuhdr -TimeoutSec 100  -UseBasicParsing
     }catch{
         $myerrorz="ERROR $(get-date)";
         $excepx=($myerrorz, $_)
