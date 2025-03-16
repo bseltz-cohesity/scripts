@@ -874,7 +874,7 @@ function api($method,
                 if($errorString -match 'Too Many Requests'){
                     Write-Host "Sleeping 20 seconds..."
                     Start-Sleep 20
-                }elseif($errorString -match 'magneto' -or $errorString -match 'timeout'){
+                }elseif(($errorString -match 'magneto' -and $errorString -notmatch 'not defined') -or $errorString -match 'timeout'){
                     Write-Host "Sleeping 30 seconds..."
                     Start-Sleep 30
                 }else{

@@ -656,7 +656,7 @@ def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1, reporting
                             __writelog(responsejson['errorCode'][1:] + ': ' + responsejson['message'])
                             if quiet is None:
                                 print(responsejson['errorCode'][1:] + ': ' + responsejson['message'])
-                                if 'magneto' in responsejson['message'].lower() or 'timeout' in responsejson['message'].lower():
+                                if ('magneto' in responsejson['message'].lower() and 'not defined' not in responsejson['message'].lower()) or 'timeout' in responsejson['message'].lower():
                                     retrycounter += 1
                                     if retrycounter >= 10:
                                         pass
