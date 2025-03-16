@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2025.03.14 - Brian Seltzer
+#  Version 2025.03.16 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024-02-18 - fix - toJson function - handle null input
@@ -19,10 +19,11 @@
 # 2025-02-11 - added readCache and writeCache functions
 # 2025-03-09 - added retry logic for too many requests and magneto timeouts
 # 2025-03-14 - quiet mode and loop fixes
+# 2025-03-16 - fixed retry logic for gflag setting
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2025.03.14'
+$versionCohesityAPI = '2025.03.16'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache

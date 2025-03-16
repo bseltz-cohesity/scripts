@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2025.02.23"""
+"""Cohesity Python REST API Wrapper Module - 2025.03.16"""
 
 ##########################################################################################
 # Change Log
@@ -22,6 +22,7 @@
 # 2025.01.27 - added region parameter to api function
 # 2025-02-11 - added readCache and writeCache functions
 # 2025-02-23 - added retry logic for too many requests and magneto timeouts
+# 2025-03-16 - fixed retry logic for gflag setting
 #
 ##########################################################################################
 # Install Notes
@@ -84,7 +85,7 @@ __all__ = ['api_version',
            'readCache',
            'writeCache']
 
-api_version = '2025.02.11'
+api_version = '2025.03.16'
 
 COHESITY_API = {
     'APIROOT': '',
