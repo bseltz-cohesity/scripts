@@ -215,6 +215,8 @@ def reportStorage():
                 if debug is True:
                     print('    getting protection runs')
                 runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&endTimeUsecs=%s&includeTenants=true&includeObjectDetails=true&excludeNonRestorableRuns=true&useCachedData=true' % (job['id'], numruns, endUsecs), v=2)
+                if runs is None or 'runs' not in runs or runs['runs'] is None:
+                    break
                 if lastRunId != '0':
                     runs['runs'] = [r for r in runs['runs'] if r['id'] < lastRunId]
                 for run in runs['runs']:
@@ -450,6 +452,8 @@ def reportStorage():
                 if debug is True:
                     print('    getting protection runs')
                 runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&endTimeUsecs=%s&includeTenants=true&includeObjectDetails=true&excludeNonRestorableRuns=true&useCachedData=true' % (job['id'], numruns, endUsecs), v=2)
+                if runs is None or 'runs' not in runs or runs['runs'] is None:
+                    break
                 if lastRunId != '0':
                     runs['runs'] = [r for r in runs['runs'] if r['id'] < lastRunId]
                 for run in runs['runs']:
