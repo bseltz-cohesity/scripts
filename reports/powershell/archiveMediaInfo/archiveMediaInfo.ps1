@@ -57,8 +57,14 @@ $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=tru
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     Write-Host $job.name
     $endUsecs = $nowUsecs
+    $lastRunId = 0
     while($True){
-        $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&archivalRunStatus=Succeeded&endTimeUsecs=$endUsecs&excludeNonRestoreableRuns=true"
+        $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&archivalRunStatus=Succeeded&endTimeUsecs=$endUsecs&excludeNonRestorableRuns=true"
+        if(!$runs.runs -or $runs.runs.Count -eq 0 -or $runs.runs[-1].id -eq $lastRunId){
+            break
+        }
+        $runs.runs = $runs.runs | Where-Object {$_.id -ne $lastRunId}
+        $lastRunId = $runs.runs[-1].id
         foreach($run in $runs.runs){
             if($daysBack -and $run.localBackupInfo.startTimeUsecs -lt $daysAgoUsecs){
                 $runs.runs = @()
@@ -76,10 +82,8 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                 }
             }
         }
-        if($runs.runs.Count -eq $numRuns){
-            $endUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs - 1
-        }else{
-            break
+        if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
+            $endUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs
         }
     }
 }
