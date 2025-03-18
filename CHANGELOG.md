@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-03-18`] [restoreCcsM365Calendar.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365Calendar) [`Update`]
+* [`2025-03-18`] [unprotectCcsM365Sites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/unprotectCcsM365Sites) [`Update`]
 * [`2025-03-18`] [clusterStorageStats.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterStorageStats) [`Update`] modernized authentication
 * [`2025-03-17`] [archiveMediaInfo.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/archiveMediaInfo) [`Update`] improved runs loop
 * [`2025-03-17`] [storagePerObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerObjectReport) [`Update`] catch null runs response
