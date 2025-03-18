@@ -63,17 +63,21 @@ if(!$objectsNode){
     exit
 }
 
-$nameIndex = @{}
-$webUrlIndex = @{}
-$idIndex = @{}
-$unprotectedIndex = @()
+$script:nameIndex = @{}
+$script:webUrlIndex = @{}
+$script:idIndex = @{}
+$script:unprotectedIndex = @()
+$script:protectedIndex = @()
 
 function enumNodes($node){
-    $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
-    $idIndex["$($node.protectionSource.id)"] = $node.protectionSource.name
-    $webUrlIndex[$node.protectionSource.office365ProtectionSource.webUrl] = $node.protectionSource.id
-    if($node.unprotectedSourcesSummary.leavesCount -eq 1){
-        $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
+    $script:nameIndex[$node.protectionSource.name] = $node.protectionSource.id
+    $script:idIndex["$($node.protectionSource.id)"] = $node.protectionSource.name
+    $script:webUrlIndex[$node.protectionSource.office365ProtectionSource.webUrl] = $node.protectionSource.id
+    if($node.protectedSourcesSummary[0].leavesCount -gt 0){
+        $script:protectedIndex = @($script:protectedIndex + $node.protectionSource.id)
+    }
+    if($node.unprotectedSourcesSummary[0].leavesCount -gt 0){
+        $script:unprotectedIndex = @($script:unprotectedIndex + $node.protectionSource.id)
     }
     if($node.PSObject.Properties['nodes']){
         foreach($subnode in $node.nodes){
@@ -99,18 +103,18 @@ while(1){
         break
     }
 }
- 
+
 if($objectsToUnprotect.Count -eq 0){
     $useIds = $True
     if($objectMatch){
-        $webUrlIndex.Keys | Where-Object {$_ -match $objectMatch -and $webUrlIndex[$_]} | ForEach-Object{
-            if($webUrlIndex[$_] -notin $unprotectedIndex){
-                $objectsToUnprotect = @($objectsToUnprotect + $webUrlIndex[$_])
+        $script:webUrlIndex.Keys | Where-Object {$_ -match $objectMatch -and $script:webUrlIndex[$_]} | ForEach-Object{
+            if($script:webUrlIndex[$_] -notin $script:unprotectedIndex){
+                $objectsToUnprotect = @($objectsToUnprotect + $script:webUrlIndex[$_])
             }
         }
-        $nameIndex.Keys | Where-Object {$_ -match $objectMatch -and $webUrlIndex[$_]} | ForEach-Object{
-            if($nameIndex[$_] -notin $unprotectedIndex){
-                $objectsToUnprotect = @($objectsToUnprotect + $nameIndex[$_])
+        $script:nameIndex.Keys | Where-Object {$_ -match $objectMatch -and $script:webUrlIndex[$_]} | ForEach-Object{
+            if($script:nameIndex[$_] -notin $script:unprotectedIndex){
+                $objectsToUnprotect = @($objectsToUnprotect + $script:nameIndex[$_])
             }
         }
         $objectsToUnprotect = @($objectsToUnprotect | Sort-Object -Unique)
@@ -132,16 +136,16 @@ foreach($objName in $objectsToUnprotect){
     $objId = $null
     if($useIds -eq $True){
         $objId = $objName
-        $objName = $idIndex["$objId"]
+        $objName = $script:idIndex["$objId"]
     }else{
-        if($webUrlIndex.ContainsKey($objName)){
-            $objId = $webUrlIndex[$objName]
-        }elseif($nameIndex.ContainsKey($objName)){
-            $objId = $nameIndex[$objName]
+        if($script:webUrlIndex.ContainsKey($objName)){
+            $objId = $script:webUrlIndex[$objName]
+        }elseif($script:nameIndex.ContainsKey($objName)){
+            $objId = $script:nameIndex[$objName]
         }
     }
     if($objId){
-        if($objId -notin $unprotectedIndex){
+        if($objId -in $script:protectedIndex){
             $unprotectParams = @{
                 "action" = "UnProtect";
                 "objectActionKey" = "kO365Sharepoint";
