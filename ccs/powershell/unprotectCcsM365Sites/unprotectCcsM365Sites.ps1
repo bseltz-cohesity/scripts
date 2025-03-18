@@ -67,15 +67,31 @@ $nameIndex = @{}
 $webUrlIndex = @{}
 $idIndex = @{}
 $unprotectedIndex = @()
+
+function enumNodes($node){
+    $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
+    $idIndex["$($node.protectionSource.id)"] = $node.protectionSource.name
+    $webUrlIndex[$node.protectionSource.office365ProtectionSource.webUrl] = $node.protectionSource.id
+    if($node.unprotectedSourcesSummary.leavesCount -eq 1){
+        $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
+    }
+    if($node.PSObject.Properties['nodes']){
+        foreach($subnode in $node.nodes){
+            enumNodes $subnode
+        }
+    }
+}
+
 $objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false" # -region $regionId
 while(1){
     foreach($node in $objects.nodes){
-        $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
-        $idIndex["$($node.protectionSource.id)"] = $node.protectionSource.name
-        $webUrlIndex[$node.protectionSource.office365ProtectionSource.webUrl] = $node.protectionSource.id
-        if($node.unprotectedSourcesSummary.leavesCount -eq 1){
-            $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
-        }
+        enumNodes $node
+        # $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
+        # $idIndex["$($node.protectionSource.id)"] = $node.protectionSource.name
+        # $webUrlIndex[$node.protectionSource.office365ProtectionSource.webUrl] = $node.protectionSource.id
+        # if($node.unprotectedSourcesSummary.leavesCount -eq 1){
+        #     $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
+        # }
     }
     $cursor = $objects.nodes[-1].protectionSource.id
     $objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false&afterCursorEntityId=$cursor" # -region $regionId
