@@ -34,13 +34,14 @@ Place both files in a folder together and run the main script like so:
 * -mailboxName: (optional) one or more mailbox names (comma separated)
 * -mailboxList: (optional) text file of mailbox names (one per line)
 * -pageSize: (optional) limit number of objects returned pr page (default is 1000)
-* -useMBS:  (optional) use Microsoft 365 Backup Storage
+* -useMBS: (optional) use Microsoft 365 Backup Storage
+* -listDates: (optional) list available recovery dates and exit
+* -recoverDate: (optional) restore latest snashot on or before this date (default is latest backup)
 
 ## Alternate Location Parameters
 
 * -targetSource: (optional) registered M365 protection source to restore to
-* -targetMailbox: (optional) mailbox name to restore to
-* -recoverDate: (optional) restore latest snashot on or before this date (default is latest backup)
+* -targetMailbox: (optional) mailbox name to restore t
 * -folderPrefix: (optional) folder prefix when restoring to alternate mailbox
 
 ## Authenticating to Ccs
