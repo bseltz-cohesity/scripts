@@ -66,7 +66,7 @@ Then, if you're happy with the list of snapshots that will be replicated, run th
 * -olderThan: (optional) only replicate if older than X days (default is 0)
 * -newerThan: (optional) only replicate if newer than X days (default is time of cluster creation)
 * -commit: (optional) actually replicate (otherwise only a test run)
-* -resync: (optional) re-replicate to same target (see below!)
+* -resync_WARNING_READ_THE_README_YOU_PROBABLY_DONT_WANT_TO_DO_THIS: (optional) re-replicate to same target (see below!)
 * -excludeLogs: (optional) do not replicate logs (logs will replicate by default)
 * -numRuns: (optional) number of runs to gather per API query (default is 1000)
 

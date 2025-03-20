@@ -19,7 +19,7 @@ param (
     [Parameter()][int]$olderThan,
     [Parameter()][int]$newerThan,
     [Parameter(Mandatory=$True)][string]$replicateTo,
-    [Parameter()][switch]$resync,
+    [Parameter()][switch]$resync_WARNING_READ_THE_README_YOU_PROBABLY_DONT_WANT_TO_DO_THIS,
     [Parameter()][int]$keepFor = 0,
     [Parameter()][switch]$commit
 )
