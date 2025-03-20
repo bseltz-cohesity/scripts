@@ -17,7 +17,7 @@ parser.add_argument('-i', '--useApiKey', action='store_true')     # use api key 
 parser.add_argument('-p', '--password', type=str, default=None)   # password or api key to use
 parser.add_argument('-k', '--keepfor', type=int, default=0)   # number of days to retain
 parser.add_argument('-c', '--commit', action='store_true')        # perform replication
-parser.add_argument('-resync', '--resync', action='store_true')        # perform replication
+parser.add_argument('-resync_WARNING_YOU_PROBABLY_DONT_WANT_TO_DO_THIS', '--resync_WARNING_YOU_PROBABLY_DONT_WANT_TO_DO_THIS', action='store_true')        # perform replication
 parser.add_argument('-r', '--remotecluster', type=str, required=True)  # cluster to replicate to
 parser.add_argument('-j', '--jobname', action='append', type=str)  # one or more job names
 parser.add_argument('-l', '--joblist', type=str, required=False)   # text file of job names
@@ -40,7 +40,7 @@ jobnames = args.jobname
 joblist = args.joblist
 excludelogs = args.excludelogs
 commit = args.commit
-resync = args.resync
+resync = args.resync_WARNING_YOU_PROBABLY_DONT_WANT_TO_DO_THIS
 numruns = args.numruns
 runid = args.runid
 newerthan = args.newerthan
