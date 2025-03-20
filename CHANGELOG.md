@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-03-20`] [replicateOldSnapshots.py](https://github.com/cohesity/community-automation-samples/tree/main/python/replicateOldSnapshots) [`Update`] renamed resync option
+* [`2025-03-20`] [replicateOldSnapshots.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/replicateOldSnapshots) [`Update`] renamed resync option
 * [`2025-03-18`] [restoreCcsM365Calendar.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365Calendar) [`Update`]
 * [`2025-03-18`] [unprotectCcsM365Sites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/unprotectCcsM365Sites) [`Update`]
 * [`2025-03-18`] [clusterStorageStats.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterStorageStats) [`Update`] modernized authentication
