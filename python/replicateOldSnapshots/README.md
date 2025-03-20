@@ -65,7 +65,7 @@ By default, the script will only show what it would do. To actually execute the 
 * -ri, --runid: (optional) specify run ID to replicate
 * -n, --newerthan: (optional) replicate runs newer than X days ago
 * -o, --olderthan: (optional) replicate runs older than X days ago
-* -resync_WARNING_YOU_PROBABLY_DONT_WANT_TO_DO_THIS, --resync_WARNING_YOU_PROBABLY_DONT_WANT_TO_DO_THIS: (optional) re-replicate to same cluster again (see below!)
+* -resync_WARNING_READ_THE_README_YOU_PROBABLY_DONT_WANT_TO_DO_THIS, --resync_WARNING_READ_THE_README_YOU_PROBABLY_DONT_WANT_TO_DO_THIS: (optional) re-replicate to same cluster again (see below!)
 
 ## About Resync
 
