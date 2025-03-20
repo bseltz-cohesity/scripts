@@ -72,7 +72,7 @@ Then, if you're happy with the list of snapshots that will be replicated, run th
 
 ## About Resync
 
-Be cautious using the -resync option. The valid reasons for using -resync are:
+Be cautious using the -resync option!!! The valid reasons for using -resync are:
 
 1) Previously replicated backups have been inadvertantly deleted from the replica cluster and you want them to replicate again
 2) You want to extend the retention of the replicated backups on the replica cluster

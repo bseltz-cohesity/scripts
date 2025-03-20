@@ -65,4 +65,17 @@ By default, the script will only show what it would do. To actually execute the 
 * -ri, --runid: (optional) specify run ID to replicate
 * -n, --newerthan: (optional) replicate runs newer than X days ago
 * -o, --olderthan: (optional) replicate runs older than X days ago
-* -resync_WARNING_YOU_PROBABLY_DONT_WANT_TO_DO_THIS, --resync_WARNING_YOU_PROBABLY_DONT_WANT_TO_DO_THIS: (optional) re-replicate to same cluster (skip previously replicated if omitted)
+* -resync_WARNING_YOU_PROBABLY_DONT_WANT_TO_DO_THIS, --resync_WARNING_YOU_PROBABLY_DONT_WANT_TO_DO_THIS: (optional) re-replicate to same cluster again (see below!)
+
+## About Resync
+
+Be cautious using the -resync option!!! The valid reasons for using -resync are:
+
+1) Previously replicated backups have been inadvertantly deleted from the replica cluster and you want them to replicate again
+2) You want to extend the retention of the replicated backups on the replica cluster
+
+In case #1 (where the replica does not exist), if -keepFor is used, the expiration of the replica will be `runStartTime + keepFor (days)`. If -keepFor is not used, the expiration of the replica will be the same as the local snapshot.
+
+In case #2 (where the replica exists), if -keepFor is used, the expiration of the replica will be `increased` by the number of days specified in -keepFor, or `increased` by the number of days remaining on the local snapshot retention.
+
+So using -resync when the replica exists can result in unintended retention of the replica. For example, for a backup that occured on April 1st and the current expiration date of the replica is May 1st, -keepFor 30 means that retention will be extended to Jun 1st (60 day retention). If you run the script again, it will be extended to Aug 1st and so on. So be careful with this! You must review the current expiration on the replica cluster and do the math to determine how many days you wish to add.
