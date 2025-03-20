@@ -46,7 +46,7 @@ if($USING_HELIOS){
 $cluster = api get cluster
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "mediaInfo-$($cluster.name)-$dateString.csv"
-"""Cluster Name"",""Protection Group"",""Start Time"",""Target"",""Barcode"",""Location"",""Online""" | Out-File -FilePath $outfileName -Encoding utf8
+"""Cluster Name"",""Protection Group"",""Start Time"",""Object Name"",""Target"",""Barcode"",""Location"",""Online""" | Out-File -FilePath $outfileName -Encoding utf8
 
 if($daysBack){
     $daysAgoUsecs = timeAgo $daysBack days
@@ -59,7 +59,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     $endUsecs = $nowUsecs
     $lastRunId = 0
     while($True){
-        $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&archivalRunStatus=Succeeded&endTimeUsecs=$endUsecs&excludeNonRestorableRuns=true"
+        $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&archivalRunStatus=Succeeded&endTimeUsecs=$endUsecs&excludeNonRestorableRuns=true&includeObjectDetails=true"
         if(!$runs.runs -or $runs.runs.Count -eq 0 -or $runs.runs[-1].id -eq $lastRunId){
             break
         }
@@ -77,7 +77,11 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                     $archiveMediaInfo = api get "vaults/archiveMediaInfo?clusterId=$($tid[0])&clusterIncarnationId=$($tid[1])&qstarArchiveJobId=$($tid[2])"
                     foreach($info in $archiveMediaInfo){
                         Write-Host "    $runStartTime    $($info.barcode) $($info.location) $($info.online)"
-                        """$($cluster.name)"",""$($job.name)"",""$runStartTime"",""$($archive.targetName)"",""$($info.barcode)"",""$($info.location)"",""$($info.online)""" | Out-File -FilePath $outfileName -Encoding utf8 -Append
+                        foreach($object in $run.objects){
+                            if($object.localSnapshotInfo.snapshotInfo.snapshotId){
+                                """$($cluster.name)"",""$($job.name)"",""$runStartTime"",""$($object.object.name)"",""$($archive.targetName)"",""$($info.barcode)"",""$($info.location)"",""$($info.online)""" | Out-File -FilePath $outfileName -Encoding utf8 -Append
+                            }
+                        }
                     }
                 }
             }
