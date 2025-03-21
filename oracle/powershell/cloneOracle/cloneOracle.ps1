@@ -337,7 +337,7 @@ if($pfileParameterName.Count -ne $pfileParameterValue.Count){
             $pfKey = [string]$pfileParameterName[$_]
             $pfValue = [string]$pfileParameterValue[$_]
             $existing = @("$pfKey", "_$($pfKey)", "__$($pfKey)")
-            $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap = @($cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap | Where-Object {$_'key' -notin $existing})
+            $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap = @($cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap | Where-Object {$_.key -notin $existing})
             $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap = @(@($cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap | Where-Object {$_.key -ne $pfKey}) + ,@{
                 "key" = $pfKey;
                 "value" = $pfValue
@@ -359,7 +359,7 @@ if($pfileList){
         if($item -ne '' -and $item[0] -ne '#'){
             $pfKey, $pfValue = $item -split '=',2
             $existing = @("$pfKey", "_$($pfKey)", "__$($pfKey)")
-            $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap = @($cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap | Where-Object {$_'key' -notin $existing})
+            $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap = @($cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap | Where-Object {$_.key -notin $existing})
             $cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap = @(@($cloneParams.restoreAppParams.restoreAppObjectVec[0].restoreParams.oracleRestoreParams.alternateLocationParams.oracleDbConfig.pfileParameterMap | Where-Object {$_.key -ne $pfKey}) + ,@{
                 "key" = [string]$pfKey;
                 "value" = [string]$pfValue
