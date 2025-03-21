@@ -31,7 +31,8 @@ param (
     [Parameter()][string]$connectionName,
     [Parameter()][switch]$returnIp,
     [Parameter()][string]$folderName,
-    [Parameter()][string]$parentFolderName
+    [Parameter()][string]$parentFolderName,
+    [Parameter()][string]$apiToken
 )
 
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -113,7 +114,14 @@ if($downloadOVA){
 # connect to vCenter
 if($deployOVA -or ($registerSaaSConnector -and ! $ip) -or ($unregisterSaaSConnector -and ! $ip)){
     Write-Host "Connecting to vCenter..."
-    $null = Connect-VIServer -Server $vCenter -Force -WarningAction SilentlyContinue
+    if($apiToken){
+        $oauthCtx = New-VcsOAuthSecurityContext -ApiToken $apiToken
+        $samlCtx = New-VISamlSecurityContext -VCenterServer "Server" -OAuthSecurityContext $oauthCtx
+        $null = Connect-VIServer -Server $vCenter -SamlSecurityContext $samlCtx -Force -WarningAction SilentlyContinue
+    }else{
+        $null = Connect-VIServer -Server $vCenter -Force -WarningAction SilentlyContinue
+    }
+    
 }
 
 # deploy OVA
