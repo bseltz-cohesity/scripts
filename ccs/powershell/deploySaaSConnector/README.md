@@ -86,6 +86,7 @@ Unregister SaaS Connector:
 * -saasConnectorPassword: (optional) new admin password for SaaS connector (will be prompted if omitted)
 * -returnIp: (optional) return IP address (helpful if DHCP was used)
 * -vCenter: (optional) vCenter to connect to
+* -apiToken: (optional) API token to connect to vCenter in VMC
 * -vmHost: (optional) vSphere host to deploy OVA to
 * -vmDatastore: (optional) vSphere datastore to deploy OVA to
 * -folderName: (optional) name of VM folder to place new VM
