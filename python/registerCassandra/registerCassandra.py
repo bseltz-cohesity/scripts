@@ -132,65 +132,69 @@ for server in servers:
     seeds = server.split(',')
     seedip = seeds[-1]
     sourcename = seeds[0]
-    registeredSource = [r for r in (api('get', 'protectionSources/registrationInfo?environments=kCassandra'))['rootNodes'] if r['rootNode']['name'].lower() == sourcename.lower()]
+    newSourceRegistration = True
+    registeredSource = [r for r in (api('get', 'protectionSources/registrationInfo?environments=kCassandra'))['rootNodes'] if r['rootNode']['name'].lower() in [sourcename.lower(), seedip] or r['rootNode']['customName'].lower() == sourcename.lower()]
     if registeredSource is not None and len(registeredSource) > 0:
-        print('%s is already registered' % server)
-    else:
-        newSource = {
-            "environment": "kCassandra",
-            "name": sourcename,
-            "cassandraParams": {
-                "seedNode": seedip,
-                "configDirectory": configdir,
-                "sshPasswordCredentials": {
-                    "username": sshusername,
-                    "password": sshpassword
-                },
-                "sshPrivateKeyCredentials": None,
-                "jmxCredentials": None,
-                "cassandraCredentials": None,
-                "dataCenterNames": [],
-                "commitLogBackupLocation": "",
-                "dseConfigurationDirectory": dseconfigdir,
-                "isDseAuthenticator": False,
-                "isDseTieredStorage": False,
-                "dseSolrInfo": None,
-                "kerberosPrincipal": None
-            }
+        sourceId = registeredSource[0]['rootNode']['id']
+        newSourceRegistration = False
+    newSource = {
+        "environment": "kCassandra",
+        "name": sourcename,
+        "cassandraParams": {
+            "seedNode": seedip,
+            "configDirectory": configdir,
+            "sshPasswordCredentials": {
+                "username": sshusername,
+                "password": sshpassword
+            },
+            "sshPrivateKeyCredentials": None,
+            "jmxCredentials": None,
+            "cassandraCredentials": None,
+            "dataCenterNames": [],
+            "commitLogBackupLocation": "",
+            "dseConfigurationDirectory": dseconfigdir,
+            "isDseAuthenticator": False,
+            "isDseTieredStorage": False,
+            "dseSolrInfo": None,
+            "kerberosPrincipal": None
         }
-        if sshprivatekeyfile is not None:
-            newSource['cassandraParams']['sshPasswordCredentials'] = None
-            newSource['cassandraParams']['sshPrivateKeyCredentials'] = {
-                "userId": sshusername,
-                "privateKey": sshprivatekey,
-                "passphrase": sshpassword
-            }
-        if kerberosprincipal is not None:
-            newSource['cassandraParams']['kerberosPrincipal'] = kerberosprincipal
-        if commitlog is not None:
-            newSource['cassandraParams']['commitLogBackupLocation'] = commitlog
-        if datacenters is not None and len(datacenters) > 0:
-            newSource['cassandraParams']['dataCenterNames'] = datacenters
-        if dseauthenticator is True:
-            newSource['cassandraParams']['isDseAuthenticator'] = True
-        if dsetieredstorage is True:
-            newSource['cassandraParams']['isDseTieredStorage'] = True
-        if dsesolrnodes is not None and len(dsesolrnodes) > 0:
-            newSource['cassandraParams']['dseSolrInfo'] = {
-                "solrNodes": dsesolrnodes,
-                "solrPort": dsesolrport
-            }
-        if jmxusername is not None:
-            newSource['cassandraParams']['jmxCredentials'] = {
-                "username": jmxusername,
-                "password": jmxpassword
-            }
-        if cassandrausername is not None:
-            newSource['cassandraParams']['cassandraCredentials'] = {
-                "username": cassandrausername,
-                "password": cassandrapassword
-            }
-
+    }
+    if sshprivatekeyfile is not None:
+        newSource['cassandraParams']['sshPasswordCredentials'] = None
+        newSource['cassandraParams']['sshPrivateKeyCredentials'] = {
+            "userId": sshusername,
+            "privateKey": sshprivatekey,
+            "passphrase": sshpassword
+        }
+    if kerberosprincipal is not None:
+        newSource['cassandraParams']['kerberosPrincipal'] = kerberosprincipal
+    if commitlog is not None:
+        newSource['cassandraParams']['commitLogBackupLocation'] = commitlog
+    if datacenters is not None and len(datacenters) > 0:
+        newSource['cassandraParams']['dataCenterNames'] = datacenters
+    if dseauthenticator is True:
+        newSource['cassandraParams']['isDseAuthenticator'] = True
+    if dsetieredstorage is True:
+        newSource['cassandraParams']['isDseTieredStorage'] = True
+    if dsesolrnodes is not None and len(dsesolrnodes) > 0:
+        newSource['cassandraParams']['dseSolrInfo'] = {
+            "solrNodes": dsesolrnodes,
+            "solrPort": dsesolrport
+        }
+    if jmxusername is not None:
+        newSource['cassandraParams']['jmxCredentials'] = {
+            "username": jmxusername,
+            "password": jmxpassword
+        }
+    if cassandrausername is not None:
+        newSource['cassandraParams']['cassandraCredentials'] = {
+            "username": cassandrausername,
+            "password": cassandrapassword
+        }
+    if newSourceRegistration is True:
         result = api('post', 'data-protect/sources/registrations', newSource, v=2)
         if 'id' in result:
             print('Registering %s' % sourcename)
+    else:
+        result = api('put', 'data-protect/sources/registrations/%s' % sourceId, newSource, v=2)
+        print('Updating %s' % sourcename)
