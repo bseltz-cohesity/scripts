@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-03-25`] [registerCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/registerCassandra) [`Update`] added ability to update existing source
+* [`2025-03-21`] [deploySaaSConnector.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/deploySaaSConnector) [`Update`] added support for VMC API Token
 * [`2025-03-21`] [cloneOracle.ps1](https://github.com/cohesity/community-automation-samples/tree/main/oracle/powershell/cloneOracle) [`Update`] bug fix
 * [`2025-03-20`] [archiveMediaInfo.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/archiveMediaInfo) [`Update`] added object level reporting
 * [`2025-03-20`] [replicateOldSnapshots.py](https://github.com/cohesity/community-automation-samples/tree/main/python/replicateOldSnapshots) [`Update`] renamed resync option
