@@ -48,6 +48,7 @@ Place both files in a folder together and run the main script like so:
 * -excludeEnvironment: (optional) one or more types (comma seaparated) to exclude from query  (e.g. kSQL, kVMware)
 * -ouputPath: (optional) path to write output file (default is '.')
 * -localOnly: (optional) include only local protection groups
+* -shortOnly: (optional) only show objects that have fewer snapshots than -days
 
 ## Email Parameters
 

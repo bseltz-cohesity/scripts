@@ -18,7 +18,8 @@ param (
     [Parameter()][string]$smtpServer, #outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, #outbound smtp port
     [Parameter()][array]$sendTo, #send to address
-    [Parameter()][string]$sendFrom #send from address
+    [Parameter()][string]$sendFrom, #send from address
+    [Parameter()][switch]$shortOnly
 )
 
 ### source the cohesity-api helper code
@@ -125,8 +126,10 @@ foreach($job in $jobs){
                             $newestSnapshotDate = ''
                             $oldestSnapshotDate = ''
                         }
-                        write-host ("{0} ({1}) {2}: {3}" -f $jobName, $objType, $objName, $versionCount)
-                        """$($cluster.name)"",""$jobName"",""$objType"",""$sourceName"",""$objName"",""$sqlAagName"",""$versionCount"",""$oldestSnapshotDate"",""$newestSnapshotDate""" | Out-File -FilePath $outfileName -Append
+                        if(!($days -and $shortOnly -and ($versionCount -ge $days))){
+                            write-host ("{0} ({1}) {2}: {3}" -f $jobName, $objType, $objName, $versionCount)
+                            """$($cluster.name)"",""$jobName"",""$objType"",""$sourceName"",""$objName"",""$sqlAagName"",""$versionCount"",""$oldestSnapshotDate"",""$newestSnapshotDate""" | Out-File -FilePath $outfileName -Append
+                        }
                     }
                 }
             }
