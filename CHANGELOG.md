@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-03-27`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] fixed null error return
 * [`2025-03-27`] [registerCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/registerCassandra) [`Update`] added ability to update existing source
 * [`2025-03-26`] [activeSnapshots.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/activeSnapshots) [`Update`] added -shortOnly option
 * [`2025-03-21`] [deploySaaSConnector.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/deploySaaSConnector) [`Update`] added support for VMC API Token
