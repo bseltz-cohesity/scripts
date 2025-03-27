@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2025.03.16"""
+"""Cohesity Python REST API Wrapper Module - 2025.03.27"""
 
 ##########################################################################################
 # Change Log
@@ -23,6 +23,7 @@
 # 2025-02-11 - added readCache and writeCache functions
 # 2025-02-23 - added retry logic for too many requests and magneto timeouts
 # 2025-03-16 - fixed retry logic for gflag setting
+# 2025-03-27 - fixed null return on error
 #
 ##########################################################################################
 # Install Notes
@@ -651,10 +652,12 @@ def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1, reporting
                 if isinstance(responsejson, bool):
                     return ''
                 if responsejson is not None:
+                    
                     if 'errorCode' in responsejson:
                         if 'message' in responsejson:
                             COHESITY_API['LAST_ERROR'] = responsejson['errorCode'][1:] + ': ' + responsejson['message']
                             __writelog(responsejson['errorCode'][1:] + ': ' + responsejson['message'])
+                            # print(COHESITY_API['LAST_ERROR'])
                             if quiet is None:
                                 print(responsejson['errorCode'][1:] + ': ' + responsejson['message'])
                                 if ('magneto' in responsejson['message'].lower() and 'not defined' not in responsejson['message'].lower()) or 'timeout' in responsejson['message'].lower():
@@ -667,7 +670,7 @@ def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1, reporting
                                         continue
                                 return {'error': responsejson['errorCode'][1:] + ': ' + responsejson['message']}
                             else:
-                                return None
+                                return 'error'
                         else:
                             COHESITY_API['LAST_ERROR'] = responsejson
                             __writelog(responsejson)
