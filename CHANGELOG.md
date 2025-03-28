@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-03-28`] [recoverWindowsShareAsView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverWindowsShareAsView) [`New`] recover a Windows share as a Cohesity View
 * [`2025-03-28`] [migrateWindowsShares.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/migrateWindowsShares) [`Update`] modernized authentication
 * [`2025-03-27`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] fixed null error return
 * [`2025-03-27`] [registerCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/registerCassandra) [`Update`] added ability to update existing source
