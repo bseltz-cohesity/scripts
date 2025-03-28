@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script enumerates smbShares on the local Windows server and for each share, identifies the matching view on Cohesity, and migrates share permissions and child shares. Note that share-level SMB permissions require Cohesity version 6.4 or later.
+This script enumerates smbShares on the local Windows server and for each share requested, identifies the matching view on Cohesity, and migrates share permissions and child shares.
 
 ## Download the script
 
@@ -26,12 +26,26 @@ Place both files in a folder together and run the main script like so:
 
 ```powershell
 ./migrateWindowsShares.ps1 -vip mycluster `
-                   -username myusername `
-                   -domain mydomain.net
+                           -username myusername `
+                           -domain mydomain.net `
+                           -shareName share1, share2
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: Cohesity Cluster to connect to
-* -username: Cohesity username
-* -domain: (optional) Active Directory domain of user (defaults to local)
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
+* -shareName: (optional) one or more share names to migrate (comma separated)
+* -shareList: (optional) text file of one or more share names to migrate (one per line)
