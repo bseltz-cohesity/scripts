@@ -4,6 +4,10 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This script enumerates smbShares on the local Windows server and for each share requested, identifies the matching view on Cohesity, and migrates share permissions and child shares.
 
+## Note
+
+This script must be run from the Windows server that hosts the shares to be migrated.
+
 ## Download the script
 
 Run these commands from PowerShell to download the script(s) into your current directory
