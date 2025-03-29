@@ -1,5 +1,3 @@
-### usage: ./createShares.ps1 -vip mycluster -username myusername -domain mydomain.net
-
 ### process commandline arguments
 [CmdletBinding()]
 param (
@@ -202,7 +200,6 @@ foreach($thisShareName in $shareNames){
             $null = api put views $viewParams
         }else{
             if($newAlias){
-                $viewParams | toJson
                 $null = api post viewAliases $viewParams
             }else{
                 $null = api put viewAliases $viewParams
