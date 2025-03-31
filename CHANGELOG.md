@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-03-31`] [validateServerBackup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/validateServerBackup) [`Update`] added volume types for Hyper-V
 * [`2025-03-28`] [recoverWindowsShareAsView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverWindowsShareAsView) [`New`] recover a Windows share as a Cohesity View
 * [`2025-03-28`] [migrateWindowsShares.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/migrateWindowsShares) [`Update`] modernized authentication
 * [`2025-03-27`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] fixed null error return
