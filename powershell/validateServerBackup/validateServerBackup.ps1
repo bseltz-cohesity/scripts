@@ -198,7 +198,7 @@ $script:html += '</span>
     <th>Validated</th>
 </tr>'
 
-$volumeTypes = @(1, 6, 8, 12, 28, 29, 36)
+$volumeTypes = @(1, 2, 6, 8, 12, 18, 28, 29, 36)
 $finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')
 if($includeVMs){
     $entityTypes="entityTypes=kAcropolis&entityTypes=kAWS&entityTypes=kAWSNative&entityTypes=kAWSSnapshotManager&entityTypes=kAzure&entityTypes=kAzureNative&entityTypes=kFlashBlade&entityTypes=kGCP&entityTypes=kGenericNas&entityTypes=kHyperV&entityTypes=kHyperVVSS&entityTypes=kIsilon&entityTypes=kKVM&entityTypes=kNetapp&entityTypes=kPhysical&entityTypes=kVMware"
