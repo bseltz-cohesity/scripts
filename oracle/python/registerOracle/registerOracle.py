@@ -2,6 +2,7 @@
 
 from pyhesity import *
 import argparse
+from time import sleep
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
@@ -49,12 +50,12 @@ if serverlist is not None:
     f.close()
 
 # get protection sources
-oracleSources = api('get', 'protectionSources?environments=kOracle')
-phys = api('get', 'protectionSources?environments=kPhysical')
+oracleSources = api('get', 'protectionSources/registrationInfo?useCachedData=false&pruneNonCriticalInfo=true&includeApplicationsTreeInfo=false&environments=kOracle')
+phys = api('get', 'protectionSources/registrationInfo?useCachedData=false&pruneNonCriticalInfo=true&includeApplicationsTreeInfo=false&environments=kPhysical')
 
 for server in servernames:
 
-    existingsource = [s for s in phys[0]['nodes'] if s['protectionSource']['name'].lower() == server.lower()]
+    existingsource = [s for s in phys['rootNodes'] if s['rootNode']['name'].lower() == server.lower()]
     if len(existingsource) == 0:
         newSource = {
             'entity': {
@@ -76,19 +77,24 @@ for server in servernames:
             },
             'forceRegister': True
         }
-
+        print('Registering %s as a physical protection source...' % server)
         result = api('post', '/backupsources', newSource)
-
+        
         sourceId = None
-        if result is not None:
-            sourceId = result['entity']['id']
+        while sourceId is None:
+            sleep(5)
+            phys = api('get', 'protectionSources/registrationInfo?useCachedData=false&pruneNonCriticalInfo=true&includeApplicationsTreeInfo=false&environments=kPhysical')
+            existingsource = [s for s in phys['rootNodes'] if s['rootNode']['name'].lower() == server.lower()]
+            if existingsource is not None and len(existingsource) > 0:
+                sourceId = existingsource[0]['rootNode']['id']
+            else:
+                print('waiting for physical source to appear')
     else:
-        sourceId = existingsource[0]['protectionSource']['id']
-
+        sourceId = existingsource[0]['rootNode']['id']
     if sourceId is not None:
         # see if server is already registered as Oracle
         if oracleSources is not None and len(oracleSources) > 0:
-            existingOracleSource = [o for o in oracleSources[0]['nodes'] if o['protectionSource']['id'] == sourceId]
+            existingOracleSource = [o for o in oracleSources['rootNodes'] if o['rootNode']['id'] == sourceId]
             if len(existingOracleSource) > 0:
                 print("%s is already registered as an Oracle protection source" % server)
                 exit()
