@@ -475,26 +475,6 @@ Format: CSV
 * TargetType
 * Status
 
-## sizingReport
-
-<https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/sizingReport>
-
-Format: CSV
-
-* Owner
-* Job Name
-* Job Type
-* Source Name
-* Logical
-* Peak Read
-* Last Day Read
-* Read Over Days
-* Last Day Written
-* Written Over Days
-* Days Collected
-* Daily Read Change Rate %
-* Daily Write Change Rate %
-
 ## slaStatus
 
 <https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/slaStatus>
