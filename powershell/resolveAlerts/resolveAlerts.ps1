@@ -11,9 +11,10 @@ param (
     [Parameter()][string]$mfaCode = $null,  # MFA code
     [Parameter()][switch]$emailMfaCode,  # email MFA code
     [Parameter()][string]$clusterName = $null,  # cluster name to connect to when connected to Helios/MCM
-    [Parameter()][string]$region = $null,  # filter on Ccs region
+    [Parameter()][string]$region = $null,  # filter on dmaas region
     [Parameter()][string]$resolution,
     [Parameter()][string]$alertType,
+    [Parameter()][string]$alertCode,
     [Parameter()][string]$severity,
     [Parameter()][string]$matchString,
     [Parameter()][string]$startDate,
@@ -88,19 +89,29 @@ function filterAlerts($alerts, $filterOnCluster=$False){
     if($matchString){
         $alerts = $alerts | Where-Object {$_.alertDocument.alertDescription -match $matchString}
     }
+    if($alertCode){
+        $alerts = $alerts | Where-Object {$_.alertCode -eq $alertCode}
+    }
     return $alerts
 }
 
-function resolveAlerts($ids){
+function resolveAlerts($ids, $resolutions){
     if($ids.Count -gt 0){
-        $alertResolution = @{
-            "alertIdList" = @($ids);
-            "resolutionDetails" = @{
-                "resolutionDetails" = $resolution;
-                "resolutionSummary" = $resolution
+        if($resolutions -ne $null){
+            $resolutionId = $resolutions[0].resolutionDetails.resolutionId
+            $null = api put "alertResolutions/$($resolutions[0].resolutionDetails.resolutionId)" @{
+                "alertIdList" = @($ids)
             }
+        }else{
+            $alertResolution = @{
+                "alertIdList" = @($ids);
+                "resolutionDetails" = @{
+                    "resolutionDetails" = $resolution;
+                    "resolutionSummary" = $resolution
+                }
+            }
+            $null = api post alertResolutions $alertResolution # -quiet
         }
-        $null = api post alertResolutions $alertResolution -quiet
     }
 }
 
@@ -139,10 +150,11 @@ if($usingHelios){
 
 if($resolution){
     "Resolving alerts..."
+    $resolutions = api get alertResolutions | Where-Object {$_.resolutionDetails.resolutionSummary -eq $resolution}
     if($usingHelios){
         foreach($region in $alertRegions){
             $cohesity_api.header['regionid'] = $region
-            resolveAlerts @($alerts.id)
+            resolveAlerts @($alerts.id) $resolutions
         }
         foreach($clusterName in $alertClusters){
             $theseAlerts = $alerts | Where-Object clusterName -eq $clusterName
@@ -150,12 +162,12 @@ if($resolution){
             if($cohesity_api.clusterReadOnly -ne $True){
                 $theseClusterAlerts = api get $alertQuery | Where-Object alertState -ne 'kResolved'
                 $theseClusterAlerts = filterAlerts $theseClusterAlerts $False
-                resolveAlerts @($theseClusterAlerts.id)
+                resolveAlerts @($theseClusterAlerts.id) $resolutions
             }else{
                 Write-Host "cluster $clusterName is read-only, can't resolve alerts via Helios" -foregroundcolor Yellow
             }
         }
     }else{
-        resolveAlerts @($alerts.id)
+        resolveAlerts @($alerts.id) $resolutions
     }
 }

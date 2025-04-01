@@ -77,6 +77,7 @@ add -resolution to any of the above to mark them resolved:
 
 * -severity: (optional) filter on severity (kInfo, kCritical, etc.)
 * -alertType: (optional) filter on alert type (1007, 1024, etc.)
+* -alertCode: (optional) filter on alert code (CE00610022, etc.)
 * -resolution: (optional) text to use for resolution (just report if omitted)
 * -matchString: (optional) filter on matching string
 * -startDate: (optional) include alerts after this date (e.g. '2022-08-01')
