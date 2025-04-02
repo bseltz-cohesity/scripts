@@ -56,5 +56,6 @@ Place both files in a folder together and run the main script like so:
 * -modify: (optional) comma separated list of principals to grant modify access
 * -readOnly: (optional) comma separated list of principals to grant read only access
 * -superUser: (optional) comma separated list of principals to grant super user access
+* -removeSuperUser: (optional) comma separated list of principals to remove super user access
 * -remove: (optional) comma separated list of principals to remove from access
 * -reset: (optional) remove all pre-existing permissions - if no principals are specified, Everyone (full control) will be set as the default

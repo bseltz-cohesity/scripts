@@ -13,6 +13,7 @@ param (
     [Parameter()][string]$clusterName = $null,  # cluster name to connect to when connected to Helios/MCM
     [Parameter(Mandatory = $True)][string]$shareName,
     [Parameter()][array]$superUser,  # list of users to grant super user
+    [Parameter()][array]$removeSuperUser,  # list of users to grant super user
     [Parameter()][array]$fullControl,  # list of users to grant full control
     [Parameter()][array]$readWrite,  # list of users to grant read/write
     [Parameter()][array]$readOnly,  # list of users to grant read-only
@@ -225,9 +226,39 @@ if($superUser.Count -gt 0){
     }
     if($superUserSids.Count -gt 0){
         if($isView -eq $True){
-            $share.sharePermissions | setApiProperty -name superUserSids -value @($superUserSids)
+            if($share.sharePermissions.PSObject.Properties['superUserSids'] -and $share.sharePermissions.superUserSids -ne $null){
+                $share.sharePermissions.superUserSids = @($share.sharePermissions.superUserSids + $superUserSids | Sort-Object -Unique)
+            }else{
+                $share.sharePermissions | setApiProperty -name superUserSids -value @($superUserSids)
+            }
         }else{
-            $share | setApiProperty -name superUserSids -value @($superUserSids)
+            if($share.PSObject.Properties['superUserSids'] -and $share.superUserSids -ne $null){
+                $share.superUserSids = @($share.superUserSids + $superUserSids | Sort-Object -Unique)
+            }else{
+                $share | setApiProperty -name superUserSids -value @($superUserSids)
+            }
+        }
+    }
+}
+
+if($removeSuperUser.Count -gt 0){
+    $superUserSids = @()
+    foreach($sUser in $removeSuperUser){
+        $sSid = getSid $sUser
+        if($sSid){
+            Write-Host "Removing ""$sUser"" Super User from $shareName"
+            $superUserSids = @($superUserSids + $sSid)
+        }
+    }
+    if($superUserSids.Count -gt 0){
+        if($isView -eq $True){
+            if($share.sharePermissions.PSObject.Properties['superUserSids'] -and $share.sharePermissions.superUserSids -ne $null){
+                $share.sharePermissions.superUserSids = @($share.sharePermissions.superUserSids | Where-Object {$_ -notin $superUserSids})
+            }
+        }else{
+            if($share.PSObject.Properties['superUserSids'] -and $share.superUserSids -ne $null){
+                $share.superUserSids = @($share.superUserSids | Where-Object {$_ -notin $superUserSids})
+            }
         }
     }
 }
