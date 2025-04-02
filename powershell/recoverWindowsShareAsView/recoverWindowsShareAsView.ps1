@@ -209,7 +209,9 @@ function applyViewSettings(){
             if($sSid){
                 $superUserSids = @($superUserSids + $sSid)
             }
-            $newView.sharePermissions | setApiProperty -name superUserSids -value @($superUserSids)
+            if($superUserSids.Count -gt 0){
+                $newView.sharePermissions | setApiProperty -name superUserSids -value @($superUserSids)
+            }
         }
     }
     Write-Host "Applying View Settings"
@@ -269,6 +271,9 @@ function applyViewSettings(){
                 if($null -ne $newPermission){
                     $aliasParams.sharePermissions += $newPermission
                 }
+            }
+            if($superUserSids.Count -gt 0){
+                $aliasParams['superUserSids'] = @($superUserSids)
             }
             $null = api post viewAliases $aliasParams
         }        
