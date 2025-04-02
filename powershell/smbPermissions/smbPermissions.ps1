@@ -12,6 +12,7 @@ param (
     [Parameter()][switch]$emailMfaCode,  # email MFA code
     [Parameter()][string]$clusterName = $null,  # cluster name to connect to when connected to Helios/MCM
     [Parameter(Mandatory = $True)][string]$shareName,
+    [Parameter()][array]$superUser,  # list of users to grant super user
     [Parameter()][array]$fullControl,  # list of users to grant full control
     [Parameter()][array]$readWrite,  # list of users to grant read/write
     [Parameter()][array]$readOnly,  # list of users to grant read-only
@@ -41,8 +42,48 @@ if(!$cohesity_api.authorized){
     exit
 }
 
-
+### get AD info
+$ads = api get activeDirectory
+$sids = @{}
 $cluster = api get cluster
+
+function getSid($user){
+    if($user -eq 'Everyone'){
+        $sid = 'S-1-1-0'
+    }elseif($user.contains('\')){
+        $workgroup, $user = $user.split('\')
+        # find domain
+        $adDomain = $ads | Where-Object { $_.workgroup -eq $workgroup -or $_.domainName -eq $workgroup}
+        if(!$adDomain){
+            write-host "domain $workgroup not found!" -ForegroundColor Yellow
+            exit 1
+        }else{
+            # find domain princlipal/sid
+            $domainName = $adDomain.domainName
+            $principal = api get "activeDirectory/principals?domain=$($domainName)&includeComputers=true&search=$($user)"
+            if(!$principal){
+                write-host "Principal ""$($workgroup)\$($user)"" not found!" -ForegroundColor Yellow
+            }else{
+                $sid = $principal[0].sid
+                $sids[$user] = $sid
+            }
+        }
+    }else{
+        # find local or wellknown sid
+        $principal = api get "activeDirectory/principals?includeComputers=true&search=$($user)"
+        if(!$principal){
+            write-host "Principal ""$($user)"" not found!" -ForegroundColor Yellow
+        }else{
+            $sid = $principal[0].sid
+            $sids[$user] = $sid
+        }
+    }
+    if($sid){
+        return $sid
+    }else{
+        return $null
+    }
+}
 
 function newPermission($user, $perms, $shareName, $isView){
     $domain, $domainuser = $user.split('\')
@@ -171,6 +212,24 @@ if($share.sharePermissions.PSObject.Properties['permissions']){
     $share.sharePermissions.permissions = $sharePermissions
 }else{
     $share.sharePermissions = $sharePermissions
+}
+
+if($superUser.Count -gt 0){
+    $superUserSids = @()
+    foreach($sUser in $superUser){
+        $sSid = getSid $sUser
+        if($sSid){
+            Write-Host "Granting ""$sUser"" Super User for $shareName"
+            $superUserSids = @($superUserSids + $sSid)
+        }
+    }
+    if($superUserSids.Count -gt 0){
+        if($isView -eq $True){
+            $share.sharePermissions | setApiProperty -name superUserSids -value @($superUserSids)
+        }else{
+            $share | setApiProperty -name superUserSids -value @($superUserSids)
+        }
+    }
 }
 
 if($isView -eq $True){
