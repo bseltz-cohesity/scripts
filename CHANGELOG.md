@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-04-02`] [smbPermissions.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/smbPermissions) [`Update`] added support to add and remove super users
+* [`2025-04-02`] [recoverWindowsShareAsView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverWindowsShareAsView) [`Update`] added support to add super users
+* [`2025-04-01`] [resolveAlerts.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/resolveAlerts) [`Update`] use existing resolution if it exists
 * [`2025-04-01`] [objectSummaryReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/objectSummaryReport) [`Update`] updated environment types
 * [`2025-03-31`] [registerOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/registerOracle) [`Update`] bug fix
 * [`2025-03-31`] [validateServerBackup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/validateServerBackup) [`Update`] added volume types for Hyper-V
