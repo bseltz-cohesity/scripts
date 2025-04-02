@@ -14,6 +14,7 @@ param (
     [Parameter()][string]$clusterName,
     [Parameter(Mandatory = $True)][string]$sourceName,
     [Parameter()][string]$viewName,
+    [Parameter()][array]$superUser,
     [Parameter()][array]$fullControl,
     [Parameter()][array]$readWrite,
     [Parameter()][array]$readOnly,
@@ -176,7 +177,6 @@ function newWhiteListEntry($cidr, $perm){
 }
 
 function applyViewSettings(){
-    $updateView = $False
     $newView = (api get -v2 "file-services/views?viewNames=$viewName").views | Where-Object { $_.name -eq $viewName }
     $newView | setApiProperty -name category -value 'FileServices'
     delApiProperty -object $newView -name nfsMountPaths
@@ -202,6 +202,17 @@ function applyViewSettings(){
         }
         $newView.subnetWhiteList = @($newView.subnetWhiteList | Where-Object {$_ -ne $null})
     }
+    if($superUser.Count -gt 0){
+        $superUserSids = @()
+        foreach($sUser in $superUser){
+            $sSid = getSid $sUser
+            if($sSid){
+                $superUserSids = @($superUserSids + $sSid)
+            }
+            $newView.sharePermissions | setApiProperty -name superUserSids -value @($superUserSids)
+        }
+    }
+    Write-Host "Applying View Settings"
     $null = api put -v2 file-services/views/$($newView.viewId) $newView
     # migrate SMB Permissions
     $smbShare = $null

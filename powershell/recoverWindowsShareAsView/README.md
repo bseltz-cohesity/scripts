@@ -73,9 +73,10 @@ To restore a share:
 * -rootSquash: (optional) enable root squash
 * -allSquash: (optional) enable all squash
 
-## Manual SMB Parameters
+## Share Permissions
 
 * -fullControl: (optional) list of users to grant full control share permissions (comma separated)
 * -readWrite: (optional) list of users to grant read/write share permissions (comma separated)
 * -readOnly: (optional) list of users to grant read-only share permissions (comma separated)
 * -modify: (optional) list of users to grant modify share permissions (comma separated)
+* -superUser: (optional) list of users to grant super user access permissions (comma separated)
