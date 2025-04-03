@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Storage Per Object Report version 2025.01.23 for Python"""
+"""Storage Per Object Report version 2025.04.03 for Python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -44,7 +44,7 @@ skipdeleted = args.skipdeleted
 debug = args.debug
 includearchives = args.includearchives
 
-scriptVersion = '2025-01-23 (Python)'
+scriptVersion = '2025-04-03 (Python)'
 
 if vips is None or len(vips) == 0:
     vips = ['helios.cohesity.com']
@@ -272,7 +272,7 @@ def reportStorage():
                                             if 'logicalSizeBytes' not in snap['snapshotInfo']['stats']:
                                                 if debug is True:
                                                     print('   looking up source ID')
-                                                csource = api('get', 'protectionSources?id=%s&useCachedData=true' % objId, quiet=True)
+                                                csource = api('get', 'protectionSources?id=%s&allUnderHierarchy=true&useCachedData=true' % objId, quiet=True)
                                                 try:
                                                     if type(csource) is list:
                                                         objects[objId]['logical'] = csource[0]['protectedSourcesSummary'][0]['totalLogicalSize']
@@ -399,12 +399,18 @@ def reportStorage():
                         else:
                             if debug is True:
                                 print('   looking up source ID (2)')
-                            source = api('get', 'protectionSources?id=%s&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true' % thisObject['sourceId'], quiet=True)
-                            if source is not None and 'protectionSource' not in source and 'error' not in source and len(source) > 0:
-                                source = source[0]
-                            if source is not None and 'protectionSource' in source:
-                                sourceName = source['protectionSource']['name']
+                            source = api('get', 'protectionSources/registrationInfo?ids=%s&allUnderHierarchy=true&useCachedData=true' % thisObject['sourceId'], quiet=False)
+                            if source is not None and 'rootNodes' in source and len(source['rootNodes']) > 0:
+                                source = source['rootNodes'][0]
+                                sourceName = source['rootNode']['name']
                                 sourceNames[thisObject['sourceId']] = sourceName
+                                # print('*** %s' % sourceName)
+                            # source = api('get', 'protectionSources?id=%s&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true' % thisObject['sourceId'], quiet=True)
+                            # if source is not None and 'protectionSource' not in source and 'error' not in source and len(source) > 0:
+                            #     source = source[0]
+                            # if source is not None and 'protectionSource' in source:
+                            #     sourceName = source['protectionSource']['name']
+                            #     sourceNames[thisObject['sourceId']] = sourceName
                     else:
                         sourceName = thisObject['name']
                     # archive Stats

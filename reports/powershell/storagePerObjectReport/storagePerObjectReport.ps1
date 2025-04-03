@@ -1,4 +1,4 @@
-# version: 2024-10-23
+# version: 2025-04-03
 
 # process commandline arguments
 [CmdletBinding()]
@@ -24,7 +24,7 @@ param (
     [Parameter()][string]$outfileName
 )
 
-$scriptversion = '2024-10-23 (PowerShell)'
+$scriptversion = '2025-04-03 (PowerShell)'
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -251,6 +251,7 @@ function reportStorage(){
             $endUsecs = $nowUsecs
             $lastDataLock = '-'
             $lastRunId = 0
+            $runCount = 0
             while($True){
                 if($dbg){
                     output "    getting runs"
@@ -261,6 +262,7 @@ function reportStorage(){
                 }
                 foreach($run in $runs.runs){
                     if($run.isLocalSnapshotsDeleted -ne $True){
+                        $runCount += 1
                         $snap = $null
                         if($run.PSObject.Properties['localBackupInfo']){
                             $runInfo = $run.localBackupInfo
@@ -321,7 +323,7 @@ function reportStorage(){
                                     if($dbg){
                                         output "    getting source"
                                     }
-                                    $csource = api get "protectionSources?id=$objId&useCachedData=true" -quiet
+                                    $csource = api get "protectionSources?id=$objId&useCachedData=true&allUnderHierarchy=true" -quiet
                                     if( $csource.protectedSourcesSummary.Count -gt 0){
                                         $objects[$objId]['logical'] = $csource.protectedSourcesSummary[0].totalLogicalSize
                                         $objects[$objId]['alloc'] = $csource.protectedSourcesSummary[0].totalLogicalSize
@@ -414,7 +416,8 @@ function reportStorage(){
                     }
                 }
             }
-
+            # Write-Host "Run count: $runCount"
+            
             # consolidate DBs
             $parentObjects = @{}
             if($consolidateDBs){
@@ -429,11 +432,17 @@ function reportStorage(){
                                 if($dbg){
                                     output "    getting source (2)"
                                 }
-                                $source = api get "protectionSources?id=$($thisObject['sourceId'])&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true" -quiet
-                                if($source -and $source.PSObject.Properties['protectionSource']){
-                                    $sourceName = $source.protectionSource.name
+                                $source = api get "protectionSources/registrationInfo?ids=$($thisObject['sourceId'])&allUnderHierarchy=true&useCachedData=true" # -quiet
+                                if($source -and $source.PSObject.Properties['rootNodes'] -and $source.rootNodes.Count -gt 0){
+                                    $source = $source.rootNodes[0]
+                                    $sourceName = $source.rootNode.name
                                     $sourceNames["$($thisObject['sourceId'])"] = $sourceName
                                 }
+                                # $source = api get "protectionSources?id=$($thisObject['sourceId'])&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true" -quiet
+                                # if($source -and $source.PSObject.Properties['protectionSource']){
+                                #     $sourceName = $source.protectionSource.name
+                                #     $sourceNames["$($thisObject['sourceId'])"] = $sourceName
+                                # }
                             }
                             if($thisObject['sourceId'] -notin $parentObjects.Keys){
                                 
