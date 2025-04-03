@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-04-03`] [storagePerObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerObjectReport) [`Update`] solved missing tenant source name issue
+* [`2025-04-03`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] solved missing tenant source name issue
 * [`2025-04-03`] [restoreCcsVMWareVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsVMWareVM) [`New`] Restore VMWare VMs from CCS
 * [`2025-04-03`] [cert.py](https://github.com/cohesity/community-automation-samples/tree/main/python/cert) [`Update`] bug fix
 * [`2025-04-02`] [smbPermissions.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/smbPermissions) [`Update`] added support to add and remove super users
