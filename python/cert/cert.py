@@ -10,6 +10,7 @@ import urllib3
 import shutil
 # import pyhesity wrapper module
 from pyhesity import *
+from time import sleep
 
 ### ignore unsigned certificates
 import requests.packages.urllib3
@@ -203,33 +204,31 @@ def set_gflag(ip):
         session_value (String): Session Value
     """
 
+    servicename = "kMagneto"
+    flagname = "magneto_skip_cert_upgrade_for_multi_cluster_registration"
+    flagvalue = "false"
     gflag = {
-        'serviceName': "kMagneto",
+        'serviceName': servicename,
         'gflags': [
             {
-                'name': "magneto_skip_cert_upgrade_for_multi_cluster_registration",
-                'value': "false",
+                'name': flagname,
+                'value': flagvalue,
                 'reason': "Enable agent certificate update"
             }
         ],
         "effectiveNow": True
     }
-    gflag_json = json.dumps(gflag)
-
-    url = 'https://'+ip+'/irisservices/api/v1/clusters/gflag'
 
     try:
+        logger.info('Setting %s: %s = %s on %s' % (servicename, flagname, flagvalue, ip))
         # Send an HTTP GET request with the cookies
-        context = getContext()
-        response = requests.put(url, verify=False, headers=context['HEADER'], data=gflag_json, cookies=context['COOKIES'])
-        if response.status_code == 200:
-            logger.info("Successfully updated gflag on Cluster "+ ip)
-        else:
-            logger.error(f"Updating gflag request failed with status code: {response.status_code} {response.json()} {ip}")
-
+        response = api('put', '/clusters/gflag', gflag)
+        sleep(1)
+        logger.info("Successfully set gflag on %s" % (ip))
+        return
     except requests.exceptions.RequestException as e:
-            logger.error(f"An error occurred: {e}")
-
+        logger.error(f"An error occurred: {e}")
+    
 
 def get_cluster_file(clusterfile):
     """ Function to get cluster details file
@@ -517,17 +516,8 @@ def verify_dr_bootstrap(cluster_details):
                 break
 
     if source_bootstrap_status and target_bootstrap_status:
-
         logger.info(f"Bootstrapping is successful on all clusters!")
-        # Check if the directory exists and remove it if it does
-        if os.path.exists(directory_path) and os.path.isdir(directory_path):
-            try:
-                shutil.rmtree(directory_path)
-                logger.info(f"Directory '{directory_name}' removed successfully.")
-            except OSError as e:
-                logger.error(f"Error removing directory: {e}")
-        else:
-            logger.error(f"Directory '{directory_name}' does not exist.")
+
 
 def main():
     """
@@ -574,7 +564,6 @@ def main():
 
         # Get Cohesity CA keys
         primary_key, cert = ca_keys()
-
 
         bootstrap_targets(cluster_details['targets'], cert, primary_key, setflag=True)
 
