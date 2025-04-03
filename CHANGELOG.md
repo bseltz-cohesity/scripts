@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-04-03`] [restoreCcsVMWareVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsVMWareVM) [`New`] Restore VMWare VMs from CCS
+* [`2025-04-03`] [cert.py](https://github.com/cohesity/community-automation-samples/tree/main/python/cert) [`Update`] bug fix
 * [`2025-04-02`] [smbPermissions.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/smbPermissions) [`Update`] added support to add and remove super users
 * [`2025-04-02`] [recoverWindowsShareAsView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverWindowsShareAsView) [`Update`] added support to add super users
 * [`2025-04-01`] [resolveAlerts.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/resolveAlerts) [`Update`] use existing resolution if it exists
