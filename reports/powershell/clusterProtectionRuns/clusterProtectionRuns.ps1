@@ -18,7 +18,8 @@ param (
     [Parameter()][string]$objectType,
     [Parameter()][ValidateSet('KiB','MiB','GiB','TiB')][string]$unit = 'GiB',
     [Parameter()][string]$outputPath = '.',
-    [Parameter()][int]$numRuns = 1000
+    [Parameter()][int]$numRuns = 1000,
+    [Parameter()][switch]$amPmFormat
 )
 
 # source the cohesity-api helper code
@@ -53,10 +54,13 @@ if($localOnly){
     $query = '&isActive=true'
 }
 
-function dateToString($dt, $format='yyyy-MM-dd hh:mm:ss'){
+function dateToString($dt, $format='yyyy-MM-dd HH:mm:ss'){
     if($dt -eq $null){
         return ''
     }else{
+        if($amPmFormat){
+            $format = 'yyyy-MM-dd hh:mm:ss tt'
+        }
         return ($dt.ToString($format) -replace [char]8239, ' ')
     }
 }
