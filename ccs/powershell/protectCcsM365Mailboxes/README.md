@@ -50,6 +50,7 @@ Place both files in a folder together and run the main script like so:
 * -pageSize: (optional) limit number of objects returned pr page (default is 50000)
 * -useSecurityGroups: (optional) select security groups instead of mailboxes
 * -useMBS: (optional) use Microsoft 365 Backup Storage
+* -maxToProtect: (optional) exit after protecting X mailboxes
 
 ## Authenticating to Ccs
 

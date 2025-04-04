@@ -15,7 +15,8 @@ param (
     [Parameter()][int]$pageSize = 50000,
     [Parameter()][array]$excludeFolders,
     [Parameter()][switch]$useSecurityGroups,
-    [Parameter()][switch]$useMBS
+    [Parameter()][switch]$useMBS,
+    [Parameter()][int]$maxToProtect = 0
 )
 
 # gather list of mailboxes to protect
@@ -148,6 +149,7 @@ if($mailboxesToAdd.Count -eq 0){
     }
 }
 
+$protectedCount = 0
 foreach($mailbox in $mailboxesToAdd){
     $userId = $null
     if($mailbox -ne $null -and $smtpIndex.ContainsKey($mailbox)){
@@ -207,6 +209,11 @@ foreach($mailbox in $mailboxesToAdd){
         }
         Write-Host "Protecting $mailbox"
         $null = api post -v2 data-protect/protected-objects $protectionParams  # -region $regionId
+        $protectedCount += 1
+        if($maxToProtect -gt 0 -and $protectedCount -ge $maxToProtect){
+            Write-Host "-maxToProtect reached. Exiting..."
+            exit
+        }
     }elseif($userId -and $userId -notin $unprotectedIndex){
         if($foldersToExclude.Count -gt 0){
             $protectionParams = @{
