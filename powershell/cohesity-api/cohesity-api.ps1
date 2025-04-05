@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2025.03.16 - Brian Seltzer
+#  Version 2025.04.05 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024-02-18 - fix - toJson function - handle null input
@@ -20,10 +20,11 @@
 # 2025-03-09 - added retry logic for too many requests and magneto timeouts
 # 2025-03-14 - quiet mode and loop fixes
 # 2025-03-16 - fixed retry logic for gflag setting
+# 2025-04-05 - minor authentication flow fixes
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2025.03.16'
+$versionCohesityAPI = '2025.04.05'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -292,6 +293,8 @@ function apiauth([string] $vip='helios.cohesity.com',
                     }
                     __connected -quiet:$quiet
                     $retryCounter = 11
+                    # 2023-04-05
+                    return $null
                 }catch{
                     $errorObject = $_
                     $errorString = $errorObject.ToString()
@@ -300,6 +303,8 @@ function apiauth([string] $vip='helios.cohesity.com',
                         $retryCounter = 11
                         apidrop -quiet
                         apiauth -vip $vip -username $username -domain $domain -useApiKey -updatePassword
+                        # 2023-04-05
+                        return $null
                     }elseif($errorString -match 'Too Many Requests'){
                         Write-Host "Sleeping 20 seconds..."
                         Start-Sleep 20
@@ -307,10 +312,14 @@ function apiauth([string] $vip='helios.cohesity.com',
                     }else{
                         $retryCounter = 11
                         apidrop -quiet
+                        # 2023-04-05
+                        return $null
                     }
                 }
                 $retryCounter += 1
             }
+            # 2023-04-05
+            return $null
         }
         # validate helios/mcm authorization
         if($vip -in $heliosEndpoints -or $helios){
@@ -326,10 +335,12 @@ function apiauth([string] $vip='helios.cohesity.com',
             }catch{
                 reportError $_ -quiet:$quiet
                 apidrop -quiet
-                if(!$noprompt -and $cohesity_api.last_api_error -eq "Authentication failed: Unauthorized access."){
+                if(!$noprompt -and $cohesity_api.last_api_error -match "Authentication failed"){
                     apiauth -vip $vip -username $username -domain $domain -updatePassword
                 }
             }
+            # 2023-04-05
+            return $null
         }
     }else{
         # username/password authentication
@@ -384,6 +395,14 @@ function apiauth([string] $vip='helios.cohesity.com',
             if($user -eq $null){
                 throw "User does not have the privilege to access UI"
                 # $user = __auth -method Post -url $url -body $body -timeout $timeout
+            }
+            # check mfaStatus
+            if($user.user.mfaInfo.isUserExemptFromMfa -eq $False -and $user.user.mfaInfo.isTotpSetupDone -eq $False){
+                $URL = "https://$vip/v2/totp-key"
+                $mfaInfo = __apicall -method Post -url $URL -body (@{} | ConvertTo-Json) -timeout $timeout
+                Write-Host "New MFA Secret Key: $($mfaInfo.totpSecretKey)`nPlease enter the key in your authenticator app and retry authentication using the correct Totp code`n"
+                apidrop -quiet
+                return $null
             }
             # check force password change
             if(! $noDomain){
@@ -467,6 +486,8 @@ function apiauth([string] $vip='helios.cohesity.com',
                 $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
             }
             __connected -quiet:$quiet
+            # 2023-04-05
+            return $null
         }catch{
             $thisError = $_
             if($skipForcePasswordChange -or $thisError -match 'User does not have the privilege to access UI' -or $thisError -match "KInvalidError"){
@@ -485,6 +506,8 @@ function apiauth([string] $vip='helios.cohesity.com',
                         $cohesity_api.header['authorization'] = $auth.tokenType + ' ' + $auth.accessToken
                         __connected -quiet:$quiet
                         $retryCounter = 11
+                        # 2023-04-05
+                        return $null
                     }catch{
                         $cohesity_api.last_api_error = $_.ToString()
                         $thisError = $_
@@ -528,6 +551,8 @@ function apiauth([string] $vip='helios.cohesity.com',
                                     $cohesity_api.header['session-id'] = $auth.sessionId
                                     __connected -quiet:$quiet
                                     $retryCounter = 11
+                                    # 2023-04-05
+                                    return $null
                                 }catch{
                                     if($thisError -match 'Too Many Requests'){
                                         reportError $thisError
@@ -556,6 +581,7 @@ function apiauth([string] $vip='helios.cohesity.com',
                                     return $null
                                 }
                             }else{
+                                $retryCounter = 11
                                 # report authentication error
                                 apidrop -quiet
                                 __writeLog $thisError.ToString()
@@ -571,6 +597,8 @@ function apiauth([string] $vip='helios.cohesity.com',
                                         }
                                     }
                                 }
+                                # 2023-04-05
+                                return $null
                             }
                         }else{
                             # report authentication error
@@ -588,6 +616,8 @@ function apiauth([string] $vip='helios.cohesity.com',
                                             apiauth -vip $vip -username $username -domain $domain -mfaCode $mfaCode -tenant $tenant -updatePassword
                                         }
                                     }
+                                    # 2023-04-05
+                                    return $null
                                 }else{
                                     if($thisError.ToString() -match '404 Not Found'){
                                         if(!$quiet){
@@ -600,6 +630,8 @@ function apiauth([string] $vip='helios.cohesity.com',
                                             Write-Host $thisError.ToString() -foregroundcolor yellow
                                         }
                                     }
+                                    # 2023-04-05
+                                    return $null
                                 }
                             }
                         }
