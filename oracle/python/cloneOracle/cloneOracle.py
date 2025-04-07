@@ -137,7 +137,7 @@ if len(searchResults) == 0:
     exit()
 
 ### narrow search results to the correct server
-searchResults = [searchResult for searchResult in searchResults['vms'] if sourceserver.lower() in [x.lower() for x in searchResult['vmDocument']['objectAliases']]]
+searchResults = [searchResult for searchResult in searchResults['vms'] if searchResult['vmDocument']['objectName'].lower() == sourcedb.lower() and sourceserver.lower() in [x.lower() for x in searchResult['vmDocument']['objectAliases']]]
 if len(searchResults) == 0:
     print("SourceDB %s on Server %s not found" % (sourcedb, sourceserver))
     exit()
