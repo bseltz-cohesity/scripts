@@ -111,13 +111,22 @@ To delete all replicas for a remote cluster:
                 -all
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -v, --vip: DNS or IP of the Cohesity cluster to connect to
-* -u, --username: username to authenticate to Cohesity cluster
-* -d, --domain: (optional) domain of username, defaults to local
-* -k, --useApiKey: (optional) use API key for authentication
+* -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
+* -d, --domain: (optional) domain of username (defaults to local)
+* -t, --tenant: (optional) multi-tenancy tenant name
+* -i, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password or API key
+* -np, --noprompt: (optional) do not prompt for password
+* -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) helios/mcm cluster to connect to
+* -m, --mfacode: (optional) MFA code for authentication
+* -e, --emailmfacode: (optional) send MFA code via email
+
+## Other Parameters
+
 * -p, --policyname: (optional) name of policy to focus on
 * -n, --targetname: (optional) name of remote cluster or archive target
 * -f, --frequency: (optional) number of frequency units for schedule (default is 1)
@@ -126,6 +135,7 @@ To delete all replicas for a remote cluster:
 * -t, --retries: (optional) number of times to retry failed backups (default is 3)
 * -m, --retryminutes: (optional) number of minutes to wait between retries (default is 5)
 * -ru, --retentionunit: (optional) default is days
+* -cu, --cdpunit: (optional) minutes, hours or days (default is hours)
 * -ld, --lockduration: (optional) number of lock units
 * -lu, --lockunit: (optional) default is days
 * -a, --action: (optional) see below (default is list)
@@ -147,6 +157,8 @@ To delete all replicas for a remote cluster:
 * create: create a new policy with a base schedule
 * edit: edit base schedule and retention
 * editretries: edit retry settings
+* addcdp: add or edit continuous data protection
+* deletecdp: delete continuous data protection
 * addextension: add or edit an extended retention
 * deleteextension: delete an extended retention
 * logbackup: add or edit log backup schedule

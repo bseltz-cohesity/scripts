@@ -9,11 +9,17 @@ from pyhesity import *
 ### command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)
-parser.add_argument('-u', '--username', type=str, required=True)
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-org', '--tenant', type=str, default=None)
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
 parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-mfa', '--mfacode', type=str, default=None)
+parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-p', '--policyname', type=str, default=None)
 parser.add_argument('-f', '--frequency', type=int, default=None)
 parser.add_argument('-fu', '--frequencyunit', type=str, choices=['runs', 'minutes', 'hours', 'days', 'weeks', 'months', 'years'], default='runs')
@@ -21,20 +27,27 @@ parser.add_argument('-r', '--retention', type=int, default=None)
 parser.add_argument('-ld', '--lockduration', type=int, default=None)
 parser.add_argument('-lu', '--lockunit', type=str, choices=['days', 'weeks', 'months', 'years'], default='days')
 parser.add_argument('-ru', '--retentionunit', type=str, choices=['days', 'weeks', 'months', 'years'], default='days')
-parser.add_argument('-a', '--action', type=str, choices=['list', 'create', 'edit', 'delete', 'addextension', 'deleteextension', 'logbackup', 'addreplica', 'deletereplica', 'addarchive', 'deletearchive', 'editretries'], default='list')
+parser.add_argument('-a', '--action', type=str, choices=['list', 'create', 'edit', 'delete', 'addextension', 'deleteextension', 'logbackup', 'addreplica', 'deletereplica', 'addarchive', 'deletearchive', 'editretries', 'addcdp', 'deletecdp'], default='list')
 parser.add_argument('-n', '--targetname', type=str, default=None)
 parser.add_argument('-all', '--all', action='store_true')
 parser.add_argument('-t', '--retries', type=int, default=3)
 parser.add_argument('-m', '--retryminutes', type=int, default=5)
+parser.add_argument('-cu', '--cdpunit', type=str, choices=['minutes', 'hours', 'days'], default='hours')
 parser.add_argument('-aq', '--addquiettime', action='append', type=str)
 parser.add_argument('-rq', '--removequiettime', action='append', type=str)
 args = parser.parse_args()
 
-vip = args.vip                        # cluster name/ip
-username = args.username              # username to connect to cluster
-domain = args.domain                  # domain of username (e.g. local, or AD domain)
-password = args.password              # password or API key
-useApiKey = args.useApiKey            # use API key for authentication
+vip = args.vip
+username = args.username
+domain = args.domain
+tenant = args.tenant
+clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
+emailmfacode = args.emailmfacode
 policyname = args.policyname          # name of policy to focus on
 frequency = args.frequency            # number of frequency units for schedule
 frequencyunit = args.frequencyunit    # frequency units for schedule
@@ -49,6 +62,7 @@ retries = args.retries                # number of retries
 retryminutes = args.retryminutes      # number of minutes to wait between retries
 addquiettime = args.addquiettime      # add quiet time
 removequiettime = args.removequiettime  # remove quiettime
+cdpunit = args.cdpunit
 
 if frequencyunit != 'runs' and frequency is None:
     frequency = 1
@@ -66,8 +80,26 @@ if addquiettime is None:
 if removequiettime is None:
     removequiettime = []
 
-# authenticate to Cohesity
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+# authentication =========================================================
+# demand clustername if connecting to helios or mcm
+if (mcm or vip.lower() == 'helios.cohesity.com') and clustername is None:
+    print('-c, --clustername is required when connecting to Helios or MCM')
+    exit(1)
+
+# authenticate
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, emailMfaCode=emailmfacode, tenantId=tenant)
+
+# exit if not authenticated
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
+
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    heliosCluster(clustername)
+    if LAST_API_ERROR() != 'OK':
+        exit(1)
+# end authentication =====================================================
 
 policies = sorted((api('get', 'data-protect/policies', v=2))['policies'], key=lambda policy: policy['name'].lower())
 cluster = api('get', 'cluster')
@@ -196,6 +228,32 @@ if action == 'edit':
                 "unit": lockunit.title(),
                 "duration": lockduration
             }
+    result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
+    if 'error' in result:
+        exit(1)
+
+# add CDP
+if action == 'addcdp':
+    if retention is None:
+        print('--retention is required')
+        exit()
+    if cdpunit == 'days':
+        cdpunit == 'hours'
+        retention = retention * 24
+    policy['backupPolicy']['cdp'] = {
+        "retention": {
+            "unit": cdpunit.title(),
+            "duration": retention
+        }
+    }
+    result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
+    if 'error' in result:
+        exit(1)
+
+# delete CDP
+if action == 'deletecdp':
+    if 'cdp' in policy['backupPolicy']:
+        del policy['backupPolicy']['cdp']
     result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
     if 'error' in result:
         exit(1)
@@ -646,6 +704,8 @@ for policy in policies:
                 print('  Incremental backup:  Weekly on %s  (keep for %s %s%s)' % ((', '.join(backupSchedule[unitPath]['dayOfWeek'])), baseRetention['duration'], baseRetention['unit'], dataLock))
             if unit == 'Months':
                 print('  Incremental backup:  Monthly on the %s %s  (keep for %s %s%s)' % (backupSchedule[unitPath]['weekOfMonth'], backupSchedule[unitPath]['dayOfWeek'][0], baseRetention['duration'], baseRetention['unit'], dataLock))
+    if 'cdp' in policy['backupPolicy']:
+        print('                 CDP:  (keep for %s %s)' % (policy['backupPolicy']['cdp']['retention']['duration'], policy['backupPolicy']['cdp']['retention']['unit']))
     # full backup
     if 'full' in policy['backupPolicy']['regular']:
         backupSchedule = policy['backupPolicy']['regular']['full']['schedule']
