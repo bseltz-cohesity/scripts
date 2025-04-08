@@ -13,9 +13,10 @@ param (
     [Parameter()][string]$clusterName = $null,
     [Parameter()][switch]$noAuth,
     [Parameter()][string]$policyName,
-    [Parameter()][ValidateSet('list', 'create', 'edit', 'delete', 'addextension', 'deleteextension', 'logbackup', 'addreplica', 'deletereplica', 'addarchive', 'deletearchive', 'editretries', 'addfull', 'deletefull')][string]$action = 'list',
+    [Parameter()][ValidateSet('list', 'create', 'edit', 'delete', 'addextension', 'deleteextension', 'logbackup', 'addreplica', 'deletereplica', 'addarchive', 'deletearchive', 'editretries', 'addfull', 'deletefull', 'addcdp', 'deletecdp')][string]$action = 'list',
     [Parameter()][int]$retention,
     [Parameter()][ValidateSet('days', 'weeks', 'months', 'years', $null)]$retentionUnit = $null,
+    [Parameter()][ValidateSet('minutes', 'hours', 'days')]$cdpUnit = 'hours',
     [Parameter()][int]$frequency = 1,
     [Parameter()][ValidateSet('runs', 'minutes', 'hours', 'days', 'weeks', 'months', 'years')][string]$frequencyUnit = 'runs',
     [Parameter()][ValidateSet('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday')][array]$dayOfWeek = 'Sunday',
@@ -349,6 +350,35 @@ if($action -eq 'deletefull'){
     delApiProperty -object $policy.backupPolicy.regular -name full
     $updatedPolicy = api put -v2 data-protect/policies/$($policy.id) $policy
     $policies = @($updatedPolicy)
+}
+
+# add CDP
+if($action -eq 'addcdp'){
+    if(!$retention){
+        Write-Host "-retention is required" -ForegroundColor Yellow
+        exit
+    }
+    if($cdpUnit -eq 'days'){
+        $cdpUnit = 'hours'
+        $retention = $retention * 24
+    }
+    setApiProperty -object $policy.backupPolicy -name 'cdp' -value @{
+        "retention" = @{
+            "unit" = $textInfo.ToTitleCase($cdpUnit.ToLower());
+            "duration" = $retention
+        }
+    }
+    $updatedPolicy = api put -v2 data-protect/policies/$($policy.id) $policy
+    $policies = @($updatedPolicy)
+}
+
+# delete CDP
+if($action -eq 'deletecdp'){
+    if($policy.backupPolicy.PSObject.Properties['cdp']){
+        delApiProperty -object $policy.backupPolicy -name 'cdp'
+        $updatedPolicy = api put -v2 data-protect/policies/$($policy.id) $policy
+        $policies = @($updatedPolicy)
+    }
 }
 
 # edit retry settings
@@ -904,7 +934,10 @@ foreach($policy in $policies){
             }
         }
     }
-    # full backup
+    # CDP
+    if($policy.backupPolicy.PSObject.Properties['cdp']){
+        "                 CDP:  (keep for $($policy.backupPolicy.cdp.retention.duration) $($policy.backupPolicy.cdp.retention.unit))" | Tee-Object -FilePath $outfileName -Append
+    }
     if($policy.backupPolicy.regular.PSObject.Properties['full']){
         $backupSchedule = $policy.backupPolicy.regular.full.schedule
         $unit = $backupSchedule.unit

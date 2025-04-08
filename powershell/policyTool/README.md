@@ -47,9 +47,10 @@ To list policies:
 ## Other Parameters
 
 * -policyName: (optional) name of policy to create or edit
-* -action: (optional): list, create, edit, delete, addfull, deletefull, addextension, deleteextension, logbackup, addreplica, deletereplica, addarchive, deletearchive, editretries (default is list
+* -action: (optional): list, create, edit, delete, addfull, deletefull, addextension, deleteextension, logbackup, addreplica, deletereplica, addarchive, deletearchive, editretries, addcdp, deletecdp (default is list
 * -retention: (optional) number of days/weeks/years to retain
 * -retentionUnit: (optional) days, weeks, months, years (default is days)
+* -cdpUnit: (optional) minutes, hours, days (default is hours)
 * -frequency: (optional) frequency of backup (default is 1)
 * -frequencyUnit: (optional) runs, minutes, hours, days, weeks, months, years (default is runs)
 * -dayOfWeek: (optional) one or more weekdays (comma separated) default is Sunday
