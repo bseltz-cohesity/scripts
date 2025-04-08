@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-04-08`] [policyTool.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/policyTool) [`Update`] added support for continuous data protection
 * [`2025-04-08`] [policyTool7.py](https://github.com/cohesity/community-automation-samples/tree/main/python/policyTool) [`Update`] added support for continuous data protection
 * [`2025-04-08`] [policyTool.py](https://github.com/cohesity/community-automation-samples/tree/main/python/policyTool) [`Update`] added support for continuous data protection
 * [`2025-04-07`] [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Update`] fixed search query
