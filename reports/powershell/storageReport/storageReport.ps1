@@ -21,24 +21,6 @@ param (
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-# # authenticate
-# apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
-
-# # select helios/mcm managed cluster
-# if($USING_HELIOS){
-#     if($clusterName){
-#         $thisCluster = heliosCluster $clusterName
-#     }else{
-#         Write-Host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
-#         exit 1
-#     }
-# }
-
-# if(!$cohesity_api.authorized){
-#     Write-Host "Not authenticated" -ForegroundColor Yellow
-#     exit 1
-# }
-
 $conversion = @{'Kib' = 1024; 'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024; 'MB' = 1000 * 1000; 'GB' = 1000 * 1000 * 1000; 'TB' = 1000 * 1000 * 1000}
 function toUnits($val){
     return "{0:n1}" -f ($val/($conversion[$unit]))
