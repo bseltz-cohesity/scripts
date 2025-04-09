@@ -33,15 +33,19 @@ Place the files in a folder together and run the script like so:
                     -sendFrom mycluster@mydomain.net
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: name or IP of Cohesity cluster
-* -username: name of user to connect to Cohesity
-* -domain: (optional) your AD domain (default is local)
-* -useApiKey: (optional) Use API key for authentication
-* -password: (optional) password or API key (will use stored password by default)
-* -mfaCode: (optional) multi-factor authentication code
-* -emailMfaCode: (optional) send mfaCode via email
+* -vip: (optional) one or more names or IPs of Cohesity clusters, comma separated (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -mfaCode: (optional) TOTP MFA code
+* -clusterName: (optional) one or more clusters to connect to when connecting through Helios or MCM (comma separated)
+
+## Other Parameters
+
 * -unit: (optional) TiB, GiB, MiB or KiB (default is MiB)
 * -smtpServer: (optional) SMTP gateway to forward email through
 * -smtpPort: (optional) SMTP port to use (default is 25)
