@@ -182,6 +182,21 @@ foreach($job in $jobs){
         $includedPaths = @()
         $excludedPaths = @()
         $excludedPaths = @($params.globalExcludePaths)
+        if($object.PSObject.Properties['metadataFilePath']){
+            $includedPath = "$($object.metadataFilePath)"
+            $jobName = $job.name
+            $jobprinted = $True
+            $objectName = $object.name
+            $objectprinted = $True
+            $Global:html += '<tr style="border: 1px solid {4} background-color: {4}">
+                    <td>{0}</td>
+                    <td>{1}</td>
+                    <td>{2}</td>
+                    <td>{3}</td>
+                    <td>{4}</td>
+                    </tr>' -f $jobName, $objectName, $includedPath, 'Directive File', '', $Global:trColor
+            "{0},{1},{2},{3},{4}" -f $jobName, $objectName, $includedPath, 'Directive File', '' | Out-File -FilePath $csvFileName -Append
+        }
         foreach($filePath in $object.filePaths){
             $includedPath = $filePath.includedPath
             $skipNestedVolumes = $filePath.skipNestedVolumes
