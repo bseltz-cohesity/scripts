@@ -201,14 +201,15 @@ if continueoneerror is True:
     restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['continueOnError'] = True
 
 # overwrite options
-if keep is True:
-    restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['powerOffAndRenameExistingVm'] = True
-else:
-    if recoverytype == 'CopyRecovery' and diff is True:
-        overwrite = True
-        restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['attemptDifferentialRestore'] = True
-    if overwrite is True:
-        restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['overwriteExistingVm'] = True
+if vcentername is None:
+    if keep is True:
+        restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['powerOffAndRenameExistingVm'] = True
+    else:
+        if recoverytype == 'CopyRecovery' and diff is True:
+            overwrite = True
+            restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['attemptDifferentialRestore'] = True
+        if overwrite is True:
+            restoreParams['vmwareParams']['recoverVmParams']['vmwareTargetParams']['overwriteExistingVm'] = True
 
 recoverMessages = []
 
