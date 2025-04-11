@@ -20,10 +20,10 @@ chmod +x refreshSource
 ## Example
 
 ```bash
-./refreshSource.ps1 -v mycluster \
-                    -u myuser \
-                    -d mydomain.net \
-                    -n myserver1.mydomain.net
+./refreshSource -v mycluster \
+                -u myuser \
+                -d mydomain.net \
+                -n myserver1.mydomain.net
 ```
 
 ## Authentication Parameters
