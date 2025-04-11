@@ -4,6 +4,7 @@
 ### import pyhesity wrapper module
 from pyhesity import *
 from time import sleep
+from sys import exit
 
 ### command line arguments
 import argparse
