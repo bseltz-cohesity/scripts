@@ -43,4 +43,3 @@ chmod +x refreshSource
 
 * -n, --sourcename: name of protection source to refresh (repeat for multiple sources)
 * -l, --sourcelist: text file of protection sources to refresh (one per line)
-
