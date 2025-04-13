@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-04-13`] [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] added support for multiple log file paths
 * [`2025-04-13`] [resolveAlerts.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/resolveAlerts) [`Update`] various improvements and fixes
 * [`2025-04-11`] [refreshSource](https://github.com/cohesity/community-automation-samples/tree/main/linux/refreshSource) [`New`] packaged version for Linux
 * [`2025-04-10`] [protectedFilePathReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/protectedFilePathReport) [`Update`] added directive file support
