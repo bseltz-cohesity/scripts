@@ -1,7 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
 * [`2025-04-13`] [resolveAlerts.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/resolveAlerts) [`Update`] various improvements and fixes
-* [`2025-04-11`] [refreshSource](https://github.com/cohesity/community-automation-samples/tree/main/linux/refreshSource) [`New`] packarged versions for Linux
+* [`2025-04-11`] [refreshSource](https://github.com/cohesity/community-automation-samples/tree/main/linux/refreshSource) [`New`] packaged versions for Linux
 * [`2025-04-10`] [protectedFilePathReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/protectedFilePathReport) [`Update`] added directive file support
 * [`2025-04-10`] [recoverVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/recoverVMs) [`Update`] fixed diff options
 * [`2025-04-09`] [storageReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storageReport) [`Update`] added multi-cluster support
@@ -40,8 +40,8 @@
 * [`2025-03-16`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added retries for retryable errors
 * [`2025-03-14`] [protectCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectCassandra) [`Update`] added datacenter selection and other fixes
 * [`2025-03-13`] [vm_freeze_thaw.sh](https://github.com/cohesity/community-automation-samples/tree/main/remoteAdapter/vm_freeze_thaw) [`New`] Remote adapter script to quiesce an application in a VM
-* [`2025-03-13`] [jobRunning](https://github.com/cohesity/community-automation-samples/tree/main/linux/jobRunning) [`New`] check if job is running (compiled for Linux)
-* [`2025-03-13`] [backupNow](https://github.com/cohesity/community-automation-samples/tree/main/linux/backupNow) [`Update`] (compiled for Linux) sync with python version
+* [`2025-03-13`] [jobRunning](https://github.com/cohesity/community-automation-samples/tree/main/linux/jobRunning) [`New`] check if job is running (packaged for Linux)
+* [`2025-03-13`] [backupNow](https://github.com/cohesity/community-automation-samples/tree/main/linux/backupNow) [`Update`] (packaged for Linux) sync with python version
 * [`2025-03-13`] [registerCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/registerCassandra) [`Update`] added support for SSH private key authentication
 * [`2025-03-12`] [clusterProtectionRuns.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterProtectionRuns) [`Update`] added legal hold status column
 * [`2025-03-12`] [legalHoldObject.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/legalHoldObject) [`Update`]
