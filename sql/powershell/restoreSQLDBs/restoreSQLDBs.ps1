@@ -444,6 +444,8 @@ function restoreDB($db){
                     if($ldfFolderFound -eq $False){
                         $ldfFolder = $path
                         $ldfFolderFound = $True
+                    }else{
+                        $secondaryFileLocation = @($secondaryFileLocation + @{'filePattern' = $datafile.fullPath; 'targetDirectory' = $path})
                     }
                 }
             }
