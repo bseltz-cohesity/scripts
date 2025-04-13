@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-04-13`] [restoreSQLDBs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLDBs) [`Update`] added support for multiple log file paths
+* [`2025-04-13`] [restoreSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQL) [`Update`] added support for multiple log file paths
 * [`2025-04-13`] [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] added support for multiple log file paths
 * [`2025-04-13`] [resolveAlerts.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/resolveAlerts) [`Update`] various improvements and fixes
 * [`2025-04-11`] [refreshSource](https://github.com/cohesity/community-automation-samples/tree/main/linux/refreshSource) [`New`] packaged version for Linux
