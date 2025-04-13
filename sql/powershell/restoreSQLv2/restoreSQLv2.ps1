@@ -555,6 +555,8 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
                     if($ldfFolderFound -eq $False){
                         $ldfFolder = $path
                         $ldfFolderFound = $True
+                    }else{
+                        $secondaryFileLocation = @($secondaryFileLocation + @{"filenamePattern" = $datafile.fullPath; "directory" = $path})
                     }
                 }
             }
