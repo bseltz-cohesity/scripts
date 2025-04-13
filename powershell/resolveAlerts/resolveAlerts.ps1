@@ -11,21 +11,17 @@ param (
     [Parameter()][string]$mfaCode = $null,  # MFA code
     [Parameter()][switch]$emailMfaCode,  # email MFA code
     [Parameter()][string]$clusterName = $null,  # cluster name to connect to when connected to Helios/MCM
-    [Parameter()][string]$region = $null,  # filter on dmaas region
     [Parameter()][string]$resolution,
     [Parameter()][string]$alertType,
     [Parameter()][string]$alertCode,
     [Parameter()][string]$severity,
+    [Parameter()][string]$systemName,
     [Parameter()][string]$matchString,
     [Parameter()][string]$startDate,
     [Parameter()][string]$endDate,
-    [Parameter()][int]$maxDays = 0
+    [Parameter()][int]$maxDays = 0,
+    [Parameter()][switch]$sortByDescription
 )
-
-$usingHelios = $False
-if(($mcm -or $vip -eq 'helios.cohesity.com') -and (!$clusterName)){
-    $usingHelios = $True
-}
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -43,6 +39,14 @@ if($USING_HELIOS){
 if(!$cohesity_api.authorized){
     Write-Host "Not authenticated" -ForegroundColor Yellow
     exit
+}
+
+$usingHelios = $False
+if(($mcm -or $vip -eq 'helios.cohesity.com') -and (!$clusterName)){
+    $usingHelios = $True
+    $sessionUser = api get sessionUser
+    $accountId = $sessionUser.salesforceAccount.accountId
+    # $tenantId = $sessionUser.profiles[0].tenantId
 }
 
 $alertQuery = "alerts?maxAlerts=1000&alertStateList=kOpen"
@@ -66,7 +70,13 @@ if($usingHelios){
     if($region){
         $cohesity_api.header['regionid'] = $region
     }
-    $alerts = api get -mcm $alertQuery | Where-Object alertState -ne 'kResolved'
+    $clusterList = @()
+    foreach($h in heliosClusters){
+        $clusterList = @($clusterList + "$($h.clusterId):$($h.clusterIncarnationId)")
+    }
+    $clusterIds = $clusterList -join ','
+    $alerts = api get -mcm "$alertQuery&clusterIdentifiers=$clusterIds" | Where-Object alertState -ne 'kResolved'
+    # $alerts = api get -mcm "$alertQuery" | Where-Object alertState -ne 'kResolved'
     $alertClusters = @($alerts.clusterName | Sort-Object -Unique)
     $alertRegions = @($alerts.regionId | Sort-Object -Unique)
     foreach($alert in $alerts){
@@ -80,10 +90,29 @@ if($usingHelios){
 
 # filter alerts
 function filterAlerts($alerts, $filterOnCluster=$False){
+    if($systemName){
+        $alerts = $alerts | Where-Object clusterName -eq $systemName
+    }
     if($severity){
         $alerts = $alerts | Where-Object severity -eq $severity
     }
-    if($usingHelios -and $clusterName -and $filterOnCluster){
+    if($usingHelios -and $clusterName -and $filterOnCluster -eq $True){
+        $alerts = $alerts | Where-Object clusterName -eq $clusterName
+    }
+    if($matchString){
+        $alerts = $alerts | Where-Object {$_.alertDocument.alertDescription -match $matchString}
+    }
+    if($alertCode){
+        $alerts = $alerts | Where-Object {$_.alertCode -eq $alertCode}
+    }
+    return $alerts
+}
+
+function filterAlerts2($alerts, $filterOnCluster=$False){
+    if($severity){
+        $alerts = $alerts | Where-Object severity -eq $severity
+    }
+    if($usingHelios -and $clusterName -and $filterOnCluster -eq $True){
         $alerts = $alerts | Where-Object clusterName -eq $clusterName
     }
     if($matchString){
@@ -96,12 +125,12 @@ function filterAlerts($alerts, $filterOnCluster=$False){
 }
 
 function resolveAlerts($ids, $resolutions){
-    if($ids.Count -gt 0){
+    $resolutions = $resolutions | Sort-Object -Property createdTimeUsecs
+    # Write-Host $ids
+    if($ids.Count -gt 0 -and $ids[0] -ne $null){
         if($resolutions -ne $null){
-            $resolutionId = $resolutions[0].resolutionDetails.resolutionId
-            $null = api put "alertResolutions/$($resolutions[0].resolutionDetails.resolutionId)" @{
-                "alertIdList" = @($ids)
-            }
+            $resolutionId = $resolutions[-1].resolutionDetails.resolutionId
+            $null = api put "alertResolutions/$resolutionId" @{"alertIdList" = @($ids)}
         }else{
             $alertResolution = @{
                 "alertIdList" = @($ids);
@@ -115,6 +144,43 @@ function resolveAlerts($ids, $resolutions){
     }
 }
 
+function resolveHeliosAlerts($alerts, $resolutions){
+    $resolutions = $resolutions | Sort-Object -Property createdTimeUsecs
+    if($alerts.Count -gt 0){
+        if($resolutions -ne $null){
+            $newResolution = @{
+                "accountId" = $accountId;
+                "tenantId" = $null;
+                "resolutionId" = "$($resolutions[-1].resolutionId)";
+                "description" = "$($resolutions[-1].description)";
+                "resolutionName" = "$($resolutions[-1].resolutionName)";
+                "resolvedAlerts" = @()
+            } # $resolutions[-1].resolvedAlerts
+        }else{
+            $newResolution = @{
+                "accountId" = $accountId;
+                "tenantId" = $null;
+                "description" = "$resolution";
+                "resolutionName" = "$resolution";
+                "resolvedAlerts" = @()
+            }
+        }
+        if($newResolution.tenantId -eq ""){
+            $newResolution.tenantId = $null
+        }
+        foreach($alert in $alerts){
+            $newResolution.resolvedAlerts = @($newResolution.resolvedAlerts + @{
+                "alertId" = "$(($alert.id -split ':')[0])";
+                "alertName" = "$($alert.alertDocument.alertName)";
+                "clusterId" = $alert.clusterId;
+                "firstTimestampUsecs" = $alert.firstTimestampUsecs
+            })
+        }
+        # Write-Host ($newResolution | toJson)
+        $null = api post -mcmv2 alert-service/alerts/resolutions $newResolution
+    }
+}
+
 $alerts = filterAlerts $alerts $True
 
 if($alerts.Count -eq 0){
@@ -125,7 +191,12 @@ if($alerts.Count -eq 0){
 $alertsList = @()
 
 if($usingHelios){
-    $alerts | Sort-Object -Property {$_.latestTimestampUsecs} | Format-Table -Property clusterName, @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}
+    if($sortByDescription){
+        $alerts | Sort-Object -Property {$_.alertDocument.alertDescription} | Format-Table -Property clusterName, @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}
+    }else{
+        $alerts | Sort-Object -Property {$_.latestTimestampUsecs} | Format-Table -Property clusterName, @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}
+    }
+    Write-Host "$($alerts.Count) alerts"
     $alerts | Sort-Object -Property latestTimestampUsecs -Descending | Foreach-Object {
         $alertsList += [ordered] @{
             'Cluster' = $_.clusterName;
@@ -136,7 +207,12 @@ if($usingHelios){
         }
     }
 }else{
-    $alerts | Sort-Object -Property latestTimestampUsecs | Format-Table -Property @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}
+    if($sortByDescription){
+        $alerts | Sort-Object -Property {$_.alertDocument.alertDescription} | Format-Table -Property @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}
+    }else{
+        $alerts | Sort-Object -Property latestTimestampUsecs | Format-Table -Property @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}
+    }
+    Write-Host "$($alerts.Count) alerts"
     $alerts | Sort-Object -Property latestTimestampUsecs -Descending | Foreach-Object {
         $alertsList += [ordered] @{
             'Latest Occurence' = usecsToDate ($_.latestTimestampUsecs);
@@ -150,18 +226,25 @@ if($usingHelios){
 
 if($resolution){
     "Resolving alerts..."
-    $resolutions = api get alertResolutions | Where-Object {$_.resolutionDetails.resolutionSummary -eq $resolution}
     if($usingHelios){
-        foreach($region in $alertRegions){
-            $cohesity_api.header['regionid'] = $region
-            resolveAlerts @($alerts.id) $resolutions
-        }
+        $resolutions = api get -mcmv2 alert-service/alerts/resolutions | Where-Object {$_.resolutionName -eq $resolution}
+    }else{
+        $resolutions = api get alertResolutions | Where-Object {$_.resolutionDetails.resolutionSummary -eq $resolution}
+    }
+    
+    if($usingHelios){
+        # foreach($region in $alertRegions){
+        #     $cohesity_api.header['regionid'] = $region
+            resolveHeliosAlerts @($alerts) $resolutions
+        # }
+        $alertClusters = @($alerts.clusterName | Sort-Object -Unique)
         foreach($clusterName in $alertClusters){
             $theseAlerts = $alerts | Where-Object clusterName -eq $clusterName
             $thisCluster = heliosCluster $clusterName
+            $resolutions = api get alertResolutions | Where-Object {$_.resolutionDetails.resolutionSummary -eq $resolution}
             if($cohesity_api.clusterReadOnly -ne $True){
                 $theseClusterAlerts = api get $alertQuery | Where-Object alertState -ne 'kResolved'
-                $theseClusterAlerts = filterAlerts $theseClusterAlerts $False
+                $theseClusterAlerts = filterAlerts $theseClusterAlerts
                 resolveAlerts @($theseClusterAlerts.id) $resolutions
             }else{
                 Write-Host "cluster $clusterName is read-only, can't resolve alerts via Helios" -foregroundcolor Yellow

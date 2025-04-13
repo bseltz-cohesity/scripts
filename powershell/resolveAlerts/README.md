@@ -71,10 +71,10 @@ add -resolution to any of the above to mark them resolved:
 * -mfaCode: (optional) TOTP MFA code
 * -emailMfaCode: (optional) send MFA code via email
 * -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
-* -region: (optional) filter on Ccs region
 
 ## Other Parameters
 
+* -systemName: (optional) filter by cluster name
 * -severity: (optional) filter on severity (kInfo, kCritical, etc.)
 * -alertType: (optional) filter on alert type (1007, 1024, etc.)
 * -alertCode: (optional) filter on alert code (CE00610022, etc.)
@@ -83,3 +83,4 @@ add -resolution to any of the above to mark them resolved:
 * -startDate: (optional) include alerts after this date (e.g. '2022-08-01')
 * -endDate: (optional) include alerts before this date (e.g. '2022-08-01')
 * -maxDays: (optional) include alerts from the past X days
+* -sortByDescription: (optional) sort screen output by alert description
