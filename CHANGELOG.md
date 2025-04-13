@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-04-13`] [resolveAlerts.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/resolveAlerts) [`Update`] various improvements and fixes
+* [`2025-04-11`] [refreshSource](https://github.com/cohesity/community-automation-samples/tree/main/linux/refreshSource) [`New`] packarged versions for Linux
 * [`2025-04-10`] [protectedFilePathReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/protectedFilePathReport) [`Update`] added directive file support
 * [`2025-04-10`] [recoverVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/recoverVMs) [`Update`] fixed diff options
 * [`2025-04-09`] [storageReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storageReport) [`Update`] added multi-cluster support
