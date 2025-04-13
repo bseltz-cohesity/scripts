@@ -72,7 +72,7 @@
 
 ## 2025-02-25
 
-* [copySecurityConfig.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/copySecurityConfig) copy account security configuration from one cluster to another
+* [copySecurityConfig.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/copySecurityConfig) [`New`] copy account security configuration from one cluster to another
 
 ## 2025-02-14
 
