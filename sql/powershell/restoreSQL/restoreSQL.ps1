@@ -404,6 +404,8 @@ if($targetDB -ne $sourceDB -or $targetServer -ne $sourceServer -or $differentIns
                 if($ldfFolderFound -eq $False){
                     $ldfFolder = $path
                     $ldfFolderFound = $True
+                }else{
+                    $secondaryFileLocation += @{'filePattern' = $datafile.fullPath; 'targetDirectory' = $path}
                 }
             }
         }
