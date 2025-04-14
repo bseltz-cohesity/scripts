@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-04-14`] [storageGrowth.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storageGrowth) [`Update`] added multi-cluster support
 * [`2025-04-13`] [restoreSQLDBs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLDBs) [`Update`] added support for multiple log file paths
 * [`2025-04-13`] [restoreSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQL) [`Update`] added support for multiple log file paths
 * [`2025-04-13`] [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] added support for multiple log file paths
