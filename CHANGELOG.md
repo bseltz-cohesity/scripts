@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-04-21`] [moveProtectionGroup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/moveProtectionGroup) [`Update`] disabled positional binding
 * [`2025-04-21`] [jobRunsReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/jobRunsReport) [`Update`] modernized authentication
 * [`2025-04-21`] [protectedObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/protectedObjectReport) [`Update`] modernized authentication
 * [`2025-04-14`] [storageGrowth.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storageGrowth) [`Update`] added multi-cluster support
