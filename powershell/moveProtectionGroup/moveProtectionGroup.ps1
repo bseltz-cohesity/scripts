@@ -1,5 +1,5 @@
 # process commandline arguments
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding=$false)]
 param (
     [Parameter()][string]$vip='helios.cohesity.com',
     [Parameter()][string]$username = 'helios',
