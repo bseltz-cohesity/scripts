@@ -14,7 +14,7 @@ while getopts "v:k:s:t:d:" flag
 
 if [ -z "${CLUSTER_ENDPOINT}" ] || [ -z "${SOURCEPATH}" ] || [ -z "${TARGETPATH}" ] || [ -z "${TARGETDIR}" ] || [ -z "${APIKEY}" ]
 then
-    echo "Usage: ./cloneDirectory.sh -v <cluster> -k <apikey> -s <sourcepath> -t <targetpath> -p <targetdir>"
+    echo "Usage: ./cloneDirectory.sh -v <cluster> -k <apikey> -s <sourcepath> -t <targetpath> -d <targetdir>"
     exit 1
 fi
 
