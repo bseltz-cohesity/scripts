@@ -23,7 +23,19 @@ chmod +x cloneDirectory.sh
 
 ## Example
 
-To clone the /bash folder from the myscripts view to to /curl/bash2 folder in the myscripts view:
+To clone myscripts/bash to myscripts/bash2:
+
+```bash
+# example
+./cloneDirectory.sh -v ve4 \
+                    -s 'myscripts/bash' \
+                    -t 'myscripts' \
+                    -d 'bash2' \
+                    -k 1e62583e-4216-45fc-6377-d56e2c5c3776
+# end example
+```
+
+To clone myscripts/bash to myscripts/curl/bash2:
 
 ```bash
 # example
