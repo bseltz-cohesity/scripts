@@ -140,8 +140,16 @@ Including the **-overwrite** parameter will overwrite an existing database. Use 
 
 ## Multiple Folders for Secondary NDF Files
 
+You can use the `-ndfFolders` parameter to specify a target folder for each secondary data file and log file like so:
+
 ```powershell
--ndfFolders @{'*1.ndf'='E:\sqlrestore\ndf1'; '*2.ndf'='E:\sqlrestore\ndf2'}
+-ndfFolders @{'c:\sqldata2\multiDB.ndf' = 'e:\sqldata2'; 'c:\sqldata3\multiDB_1.ndf' = 'e:\sqldata3'; 'C:\sqllog2\multiDB_1.ldf'; 'e:\sqllogs2'}
+```
+
+You can also use regex matching syntax (`.*` means any number of any characters), like so:
+
+```powershell
+-ndfFolders @{'.*multiDB.ndf' = 'e:\sqldata2'; '.*multiDB_1.ndf' = 'e:\sqldata3'; '.*multiDB_1.ldf'= 'e:\sqllogs2'
 ```
 
 ## Point in Time Recovery
