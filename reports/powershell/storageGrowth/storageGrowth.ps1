@@ -75,7 +75,7 @@ foreach($v in $vip){
     # authenticate
     apiauth -vip $v -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt -quiet
     if(!$cohesity_api.authorized){
-        output "`n$($v): authentication failed" -ForegroundColor Yellow
+        Write-Host "`n$($v): authentication failed" -ForegroundColor Yellow
         continue
     }
     if($USING_HELIOS){
