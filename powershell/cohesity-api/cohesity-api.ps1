@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2025.04.05 - Brian Seltzer
+#  Version 2025.04.24 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024-02-18 - fix - toJson function - handle null input
@@ -21,10 +21,11 @@
 # 2025-03-14 - quiet mode and loop fixes
 # 2025-03-16 - fixed retry logic for gflag setting
 # 2025-04-05 - minor authentication flow fixes
+# 2025-04-24 - more authentication flow fixes
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2025.04.05'
+$versionCohesityAPI = '2025.04.24'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -133,9 +134,10 @@ function reportError($errorObject, [switch]$quiet){
             if($errorCode -eq 'KStatusUnauthorized' -and $errorMessage -match 'API Key'){
                 $errorMessage = 'Authentication failed: Invalid API Key'
             }
-            if($errorMessage -match 'Multi-factor Authentication'){
-                $errorMessage = 'Authentication failed: MFA Code Required'
-            }
+            # if($errorMessage -match 'Multi-factor Authentication'){
+            #     Write-Host $errorMessage
+            #     $errorMessage = 'Authentication failed: MFA Code Required'
+            # }
             $cohesity_api.last_api_error = $errorMessage
             Write-Host $errorMessage -foregroundcolor yellow
         }else{
@@ -397,13 +399,18 @@ function apiauth([string] $vip='helios.cohesity.com',
                 # $user = __auth -method Post -url $url -body $body -timeout $timeout
             }
             # check mfaStatus
-            if($user.user.mfaInfo.isUserExemptFromMfa -eq $False -and $user.user.mfaInfo.isTotpSetupDone -eq $False){
-                $URL = "https://$vip/v2/totp-key"
-                $mfaInfo = __apicall -method Post -url $URL -body (@{} | ConvertTo-Json) -timeout $timeout
-                Write-Host "New MFA Secret Key: $($mfaInfo.totpSecretKey)`nPlease enter the key in your authenticator app and retry authentication using the correct Totp code`n"
-                apidrop -quiet
-                return $null
-            }
+            # if($user.user.mfaInfo.isUserExemptFromMfa -eq $False -and $user.user.mfaInfo.isTotpSetupDone -eq $False){
+            #     try{
+            #         $URL = "https://$vip/v2/totp-key"
+            #         $mfaInfo = __apicall -method Post -url $URL -body (@{} | ConvertTo-Json) -timeout $timeout
+            #         Write-Host "New MFA Secret Key: $($mfaInfo.totpSecretKey)`nPlease enter the key in your authenticator app and retry authentication using the correct Totp code`n"
+            #         apidrop -quiet
+            #         return $null
+            #     }catch{
+            #         # skip it
+            #     }
+            # }
+            
             # check force password change
             if(! $noDomain){
                 try{
@@ -472,9 +479,10 @@ function apiauth([string] $vip='helios.cohesity.com',
                         $url = "https://$vip/irisservices/api/v1/public/verify-otp"
                         $null = __apicall -method Post -url $url -body ($mfaCheck | ConvertTo-Json) -timeout $timeout
                     }catch{
-                        reportError $_ -quiet:$quiet
-                        apidrop -quiet
-                        return $null
+                        # do nothing
+                        # reportError $_ -quiet:$quiet
+                        # apidrop -quiet
+                        # return $null
                     }
                 }
                 # validate authorization
