@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-04-25`] [protectedVMsWithExcludedDisks.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectedVMsWithExcludedDisks) [`Update`] modernized authentication
 * [`2025-04-25`] [registeredSources.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/registeredSources) [`Update`] modernized authentication
 * [`2025-04-25`] [cassandraProtectionReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/cassandraProtectionReport) [`New`] generate cassandra protection report
 * [`2025-04-25`] [cassandraProtectionReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/cassandraProtectionReport) [`New`] generate cassandra protection report
