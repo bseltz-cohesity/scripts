@@ -1,6 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
 * [`2025-04-25`] [registeredSources.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/registeredSources) [`Update`] modernized authentication
+* [`2025-04-25`] [cassandraProtectionReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/cassandraProtectionReport) [`New`] generate cassandra protection report
 * [`2025-04-25`] [cassandraProtectionReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/cassandraProtectionReport) [`New`] generate cassandra protection report
 * [`2025-04-24`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] authentication flow fixes
 * [`2025-04-21`] [moveProtectionGroup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/moveProtectionGroup) [`Update`] disabled positional binding
