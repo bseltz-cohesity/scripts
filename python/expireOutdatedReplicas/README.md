@@ -2,11 +2,11 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-When backups run, on the local cluster, their retention date is set to X days from the backup start time. If the backup is replicated to a remote cluster, the retention on the remote cluster is set to X days from the replication completion time. So if backup/replication took significant time, the expiration time of the replica could be significantly later than the expiration of the local copy. This is rarely a concern, but in cases where regulatory/policy reqirements demand prompt expiration of the backups, we can expire these "outdated" replicas.
+When backups run on the local cluster, their retention date is set to X days from the backup start time. If the backup is replicated to a remote cluster, the retention on the remote cluster is set to X days from the replication completion time. So if backup/replication took significant time, the expiration time of the replica could be significantly later than the expiration of the local copy. This is rarely a concern, but in cases where regulatory/policy reqirements demand prompt expiration of the backups, we can expire these "outdated" replicas.
 
 This script will search all existing replicas and expire any that are past the adjusted retention period (local backup start time + X days).
 
-## Warning! This script will deleted data from the Cohesity cluster! Make sure you know what you are doing
+## Warning! This script will delete data from the Cohesity cluster! Make sure you know what you are doing
 
 ## Components
 
