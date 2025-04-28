@@ -14,6 +14,10 @@ param (
    [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB'
 )
 
+if($days -gt 30){
+    $days = 30
+}
+
 $conversion = @{'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
 function toUnits($val){
     return "{0:n1}" -f ($val/($conversion[$unit]))
@@ -48,7 +52,8 @@ $outfileName = "$($cluster.name)-$dateString-replicationWireStats.csv"
 # headings
 """Remote Cluster"",""Date"",""$unit""" | Out-File -FilePath $outfileName -Encoding utf8
 
-$daysAgoMsecs = [int64] [math]::Round((dateToUsecs ((Get-Date).AddDays(-$days))) / 1000)
+$midnightMsecs = [int64] [math]::Round((dateToUsecs (Get-Date -Hour 0 -Minute 0)) / 1000) + 86400000
+$daysAgoMsecs = $midnightMsecs - (86400000 * $days)
 
 $remoteClusters = api get remoteClusters | Where-Object {$_.purposeReplication -eq $True}
 $remoteClusterStatEntities = api get "statistics/entities?maxEntities=1000&schemaName=kBridgeMadroxRemoteClusterStats"
@@ -57,7 +62,8 @@ $remoteClusterStatEntityIds = @($remoteClusterStatEntities.entityId.entityId.dat
 foreach($remoteCluster in $remoteClusters){
     if($remoteCluster.clusterId -in $remoteClusterStatEntityIds){
         "Getting stats for $($remoteCluster.name)..."
-        $stats = api get "statistics/timeSeriesStats?&entityId=$($remoteCluster.clusterId)&metricName=kTxPhysicalBytesMorphed&metricUnitType=0&range=day&rollupFunction=sum&rollupIntervalSecs=86400&schemaName=kBridgeMadroxRemoteClusterStats&startTimeMsecs=$daysAgoMsecs"
+        $stats = api get "statistics/timeSeriesStats?entityId=$($remoteCluster.clusterId)&metricName=kTxPhysicalBytesMorphed&metricUnitType=0&range=month&rollupFunction=sum&rollupIntervalSecs=86400&schemaName=kBridgeMadroxRemoteClusterStats&startTimeMsecs=$daysAgoMsecs&endTimeMsecs=$midnightMsecs"
+        # write-host $stats.dataPointVec.Count
         foreach($stat in $stats.dataPointVec){
             $statDate = usecsToDate ($stat.timestampMsecs * 1000)
             $statValue = $stat.data.int64Value
