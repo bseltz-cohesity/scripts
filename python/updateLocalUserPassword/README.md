@@ -50,7 +50,7 @@ Or specify the new password on the commandline:
 * -t, --tenant: (optional) multi-tenancy tenant name
 * -i, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password or API key
-* -np, --noprompt: (optional) do not prompt for password
+* -noprompt, --noprompt: (optional) do not prompt for password
 * -mcm, --mcm: (optional) connect through MCM
 * -c, --clustername: (optional) helios/mcm cluster to connect to
 * -m, --mfacode: (optional) MFA code for authentication
@@ -59,4 +59,5 @@ Or specify the new password on the commandline:
 ## Other Parameters
 
 * -lu, --localusername: name of local user to update
-* -up, --userpassword: (optional) new password (will be prompted if omitted)
+* -np, --newpassword: (optional) new password (will be prompted if omitted)
+* -cp, --currentpassword: (optional) current password (only required if user is updating its own password)

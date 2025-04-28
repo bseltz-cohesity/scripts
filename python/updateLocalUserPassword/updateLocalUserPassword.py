@@ -13,11 +13,12 @@ parser.add_argument('-c', '--clustername', type=str, default=None)
 parser.add_argument('-mcm', '--mcm', action='store_true')
 parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
-parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-noprompt', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-lu', '--localusername', type=str, required=True)
-parser.add_argument('-up', '--userpassword', type=str, default=None)
+parser.add_argument('-np', '--newpassword', type=str, default=None)
+parser.add_argument('-cp', '--currentpassword', type=str, default=None)
 
 args = parser.parse_args()
 
@@ -33,7 +34,8 @@ noprompt = args.noprompt
 mfacode = args.mfacode
 emailmfacode = args.emailmfacode
 localusername = args.localusername
-userpassword = args.userpassword
+newpassword = args.newpassword
+currentpassword = args.currentpassword
 
 # authentication =========================================================
 # demand clustername if connecting to helios or mcm
@@ -67,16 +69,19 @@ else:
 
 print('\nUpdating password for user: %s' % localusername)
 
-if userpassword is None:
+if newpassword is None:
     while(True):
-        userpassword = getpass.getpass("\nEnter the new password: ")
+        newpassword = getpass.getpass("\nEnter the new password: ")
         confirmpassword = getpass.getpass("  Confirm new password: ")
-        if userpassword == confirmpassword:
+        if newpassword == confirmpassword:
             break
         else:
             print('\nPasswords do not match')
 
-user['password'] = userpassword
+user['password'] = newpassword
+if currentpassword is not None:
+    user['currentPassword'] = currentpassword
+
 result = api('put', 'users', user)
 if result is not None and 'username' in result:
     print('\nPassword updated successfully\n')
