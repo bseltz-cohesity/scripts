@@ -39,7 +39,18 @@ Or specify the new password on the commandline:
                              -u myuser \
                              -d mydomain.net \
                              -lu otheruser \
-                             -up Jeromino!
+                             -np Jeromino!
+```
+
+A user must supply the current password if updating its own password:
+
+```bash
+./updateLocalUserPassword.py -v mycluster \
+                             -u otheruser \
+                             -d mydomain.net \
+                             -lu otheruser \
+                             -cp Sw0rdF1sh!
+                             -np Jeromino!
 ```
 
 ## Authentication Parameters
