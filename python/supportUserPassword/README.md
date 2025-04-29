@@ -58,6 +58,6 @@ To protect specific tables:
 
 ## Other Parameters
 
--np, --newpassword: (optional) will be prompted if omitted
--cp, --currentpassword: (optional) required if updating password
--sudo, --enablesudo: (optional) enable sudo access
+* -np, --newpassword: (optional) will be prompted if omitted
+* -cp, --currentpassword: (optional) required if updating password
+* -sudo, --enablesudo: (optional) enable sudo access
