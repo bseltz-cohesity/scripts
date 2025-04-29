@@ -1,5 +1,10 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-04-29`] [supportUserPassword.py](https://github.com/cohesity/community-automation-samples/tree/main/python/supportUserPassword) [`New`] set/update support user password
+* [`2025-04-29`] [supportUserPassword.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/supportUserPassword) [`New`] set/update support user password
+* [`2025-04-28`] [updateLocalUserPassword.py](https://github.com/cohesity/community-automation-samples/tree/main/python/updateLocalUserPassword) [`Update`] added support for user to change their own password
+* [`2025-04-28`] [replicationWireStats.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/replicationWireStats) [`Update`] enforce 30 day maximum
+* [`2025-04-28`] [expireOldSnapshots.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/expireOldSnapshots) [`Update`] concolidated multiple scripts
 * [`2025-04-25`] [protectedVMsWithExcludedDisks.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectedVMsWithExcludedDisks) [`Update`] modernized authentication
 * [`2025-04-25`] [registeredSources.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/registeredSources) [`Update`] modernized authentication
 * [`2025-04-25`] [cassandraProtectionReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/cassandraProtectionReport) [`New`] generate cassandra protection report
