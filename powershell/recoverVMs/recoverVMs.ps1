@@ -242,6 +242,7 @@ if($vCenterName){
         foreach($notFoundDatastore in $notFoundDatastores){
             Write-Host "Datastore $notFoundDatastore not found" -ForegroundColor Yellow
         }
+        Write-Host "Exiting due to missing datastores" -ForegroundColor Yellow
         exit
     }
 
