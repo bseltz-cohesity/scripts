@@ -8,7 +8,7 @@ This bash script can be used as a pre-script in a remote adapter job to freeze a
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/bash/vm_freeze_thaw/vm_freeze_thaw.sh.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/remoteAdapter/vm_freeze_thaw/vm_freeze_thaw.sh
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/linux/jobRunning/jobRunning
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/linux/backupNow/backupNow
 chmod +x vm_freeze_thaw.sh.sh
