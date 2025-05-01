@@ -232,12 +232,14 @@ if($vCenterName){
 
     # select resource pool
     $resourcePoolSource = $hostSource.nodes | Where-Object {$_.protectionSource.vmWareProtectionSource.type -eq 'kResourcePool'}
+    # $resourcePoolSource | toJson
     $resourcePoolId = $resourcePoolSource.protectionSource.id
     # $resourcePool = api get /resourcePools?vCenterId=$vCenterId | Where-Object {$_.resourcePool.id -eq $resourcePoolId}
 
     # select datastore
+    # api get "/datastores?resourcePoolId=$resourcePoolId&vCenterId=$vCenterId" | toJson
     $datastores = api get "/datastores?resourcePoolId=$resourcePoolId&vCenterId=$vCenterId" | Where-Object { $_.vmWareEntity.name -in $datastoreName }
-    if(!$datastores -or $datastores.Count -lt $datastoreName.Count){
+    if(!$datastores -or @($datastores).Count -lt @($datastoreName).Count){
         $notFoundDatastores = $datastoreName | Where-Object {$_ -notin @($datastores.displayName)}
         foreach($notFoundDatastore in $notFoundDatastores){
             Write-Host "Datastore $notFoundDatastore not found" -ForegroundColor Yellow
