@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2025.04.24 - Brian Seltzer
+#  Version 2025.05.01 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024-02-18 - fix - toJson function - handle null input
@@ -22,10 +22,11 @@
 # 2025-03-16 - fixed retry logic for gflag setting
 # 2025-04-05 - minor authentication flow fixes
 # 2025-04-24 - more authentication flow fixes
+# 2025-05-01 - more authentication flow fixes
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2025.04.24'
+$versionCohesityAPI = '2025.05.01'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -480,9 +481,9 @@ function apiauth([string] $vip='helios.cohesity.com',
                         $null = __apicall -method Post -url $url -body ($mfaCheck | ConvertTo-Json) -timeout $timeout
                     }catch{
                         # do nothing
-                        # reportError $_ -quiet:$quiet
-                        # apidrop -quiet
-                        # return $null
+                        reportError $_ -quiet:$quiet
+                        apidrop -quiet
+                        return $null
                     }
                 }
                 # validate authorization
