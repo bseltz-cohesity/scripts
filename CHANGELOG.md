@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-05-01`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] auth flow fixes
+* [`2025-04-30`] [recoverVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverVMs) [`Update`] minor error reporting fixes
 * [`2025-04-29`] [supportUserPassword.py](https://github.com/cohesity/community-automation-samples/tree/main/python/supportUserPassword) [`New`] set/update support user password
 * [`2025-04-29`] [supportUserPassword.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/supportUserPassword) [`New`] set/update support user password
 * [`2025-04-28`] [updateLocalUserPassword.py](https://github.com/cohesity/community-automation-samples/tree/main/python/updateLocalUserPassword) [`Update`] added support for user to change their own password
