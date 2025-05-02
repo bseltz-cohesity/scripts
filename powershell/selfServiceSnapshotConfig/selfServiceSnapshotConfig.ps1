@@ -17,7 +17,9 @@ param (
     [Parameter()][switch]$nfsOnly,
     [Parameter()][switch]$smbOnly,
     [Parameter()][switch]$enable,
-    [Parameter()][switch]$disable
+    [Parameter()][switch]$disable,
+    [Parameter()][array]$allow,
+    [Parameter()][array]$deny
 )
 
 # source the cohesity-api helper code
@@ -92,6 +94,66 @@ if($views.count -eq 0){
     exit
 }
 
+### get AD info
+$ads = api get activeDirectory
+
+function getSid($user){
+    if($user -eq 'Everyone'){
+        $sid = 'S-1-1-0'
+    }elseif($user.contains('\')){
+        $workgroup, $user = $user.split('\')
+        # find domain
+        $adDomain = $ads | Where-Object { $_.workgroup -eq $workgroup -or $_.domainName -eq $workgroup}
+        if(!$adDomain){
+            write-host "domain $workgroup not found!" -ForegroundColor Yellow
+            exit 1
+        }else{
+            # find domain princlipal/sid
+            $domainName = $adDomain.domainName
+            $principal = api get "activeDirectory/principals?domain=$($domainName)&includeComputers=true&search=$($user)"
+            if(!$principal){
+                write-host "Principal ""$($workgroup)\$($user)"" not found!" -ForegroundColor Yellow
+            }else{
+                $sid = $principal[0].sid
+            }
+        }
+    }else{
+        # find local or wellknown sid
+        $principal = api get "activeDirectory/principals?includeComputers=true&search=$($user)"
+        if(!$principal){
+            write-host "Principal ""$($user)"" not found!" -ForegroundColor Yellow
+        }else{
+            $sid = $principal[0].sid
+        }
+    }
+    if($sid){
+        return $sid
+    }else{
+        return $null
+    }
+}
+
+$allowSids = @()
+$denySids = @()
+if($allow){
+    foreach($user in $allow){
+        $sid = getSid $user
+        if($sid){
+            $allowSids = @($allowSids + $sid)
+        }
+    }
+}else{
+    $allowSids = @("S-1-1-0")
+}
+if($deny){
+    foreach($user in $deny){
+        $sid = getSid $user
+        if($sid){
+            $denySids = @($denySids + $sid)
+        }
+    }
+}
+
 foreach($view in $views.views | Sort-Object -Property name){
     if($viewNames.Count -eq 0 -or $view.name -in $viewNames){
         Write-Host $view.name
@@ -105,8 +167,11 @@ foreach($view in $views.views | Sort-Object -Property name){
             if($view.selfServiceSnapshotConfig.alternateSnapshotDirectoryName -eq ''){
                 $view.selfServiceSnapshotConfig.alternateSnapshotDirectoryName = '~snapshot'
             }
-            if(! $view.selfServiceSnapshotConfig.PSObject.Properties['allowAccessSids']){
-                setApiProperty -object $view.selfServiceSnapshotConfig -name allowAccessSids -value @("S-1-1-0")
+            if($allow){
+                setApiProperty -object $view.selfServiceSnapshotConfig -name allowAccessSids -value @($allowSids)
+            }
+            if($deny){
+                setApiProperty -object $view.selfServiceSnapshotConfig -name denyAccessSids -value @($denySids)
             }
             Write-Host "    enabling self service..."
             $null = api put -v2 file-services/views/$($view.viewId) $view

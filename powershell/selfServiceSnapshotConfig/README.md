@@ -47,6 +47,11 @@ Place both files in a folder together and run the main script like so:
 * -enable: (optional) enable snapshot self-service
 * -disable: (optional) disable snapshot self-service
 
+## SMB Access Parameters
+
+* -allow: (optional) allow one or more self service principals (e.g. -allow 'MYDOMAIN.NET\Domain Admins', 'MYDOMAIN.NET\Domain Users')
+* -deny: (optional) deny one or more self service principals (e.g. -deny 'MYDOMAIN.NET\Print Operators', 'MYDOMAIN.NET\Backup Operators')
+
 ## View Selection Parameters
 
 * -viewNames: (optional) one or more view names (comma separated)
