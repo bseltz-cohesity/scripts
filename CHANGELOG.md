@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-05-03`] [epic_azure_freeze_thaw.sh](https://github.com/cohesity/community-automation-samples/tree/main/remoteAdapter/epic_azure_freeze_thaw) [`New`] freeze/thaw Iris DB in Azure VM
 * [`2025-05-02`] [selfServiceSnapshotConfig.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/selfServiceSnapshotConfig) [`Update`] added support for allow/deny lists for SMB views
 * [`2025-05-01`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] auth flow fixes
 * [`2025-04-30`] [recoverVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverVMs) [`Update`] minor error reporting fixes
