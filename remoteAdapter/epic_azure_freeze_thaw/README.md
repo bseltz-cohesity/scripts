@@ -65,9 +65,11 @@ The mount host VM is simply a VM on which we will install the Cohesity agent and
 
 ```bash
 #!/bin/bash
+# example mount commands
 sudo mount -o nouuid -t xfs /dev/$(ls -l /dev/disk/azure/scsi1 | grep 'lun4-part1 ' | cut -d' ' -f12 | cut -d'/' -f4) /data/snapdisk1
 sudo mount -o nouuid -t xfs /dev/$(ls -l /dev/disk/azure/scsi1 | grep 'lun5-part1 ' | cut -d' ' -f12 | cut -d'/' -f4) /data/snapdisk2
 sudo mount -o nouuid -t xfs /dev/$(ls -l /dev/disk/azure/scsi1 | grep 'lun6-part1 ' | cut -d' ' -f12 | cut -d'/' -f4) /data/snapdisk3
+# end example mount commands
 ```
 
 * Also create a post script to unmount at the end of the backup
@@ -76,9 +78,11 @@ sudo mount -o nouuid -t xfs /dev/$(ls -l /dev/disk/azure/scsi1 | grep 'lun6-part
 
 ```bash
 #!/bin/bash
+# example unmount commands
 sudo umount /data/snapdisk1
 sudo umount /data/snapdisk2
 sudo umount /data/snapdisk3
+# end example unmount commands
 ```
 
 ## On Cohesity - Create an API Key for Authentication
