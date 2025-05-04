@@ -21,6 +21,7 @@ RESOURCE_GROUP="Epic_group"
 SNAP_NAMES=("snap1" "snap2" "snap3")
 DISK_NAMES=("disk1" "disk2" "disk3")
 NEW_DISK_NAMES=("snapdisk1" "snapdisk2" "snapdisk3")
+NEW_DISK_LUNS=("4" "5" "6")
 DISK_SIZES=("1024" "512" "512")
 DISK_SKUS=("PremiumV2_LRS" "PremiumV2_LRS" "PremiumV2_LRS")
 
@@ -138,8 +139,8 @@ done
 
 # attach new disk =========================================
 echo "*** $(date '+%F %T') : ATTACHING DISKS TO MOUNT HOST VM" | tee -a $LOG_FILE
-for DISK_NAME in "${NEW_DISK_NAMES[@]}"; do
-    az vm disk attach -g $RESOURCE_GROUP --vm-name Epic --name /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Compute/disks/$DISK_NAME 2>&1 | tee -a $LOG_FILE
+for index in "${!NEW_DISK_NAMES[@]}"; do
+    az vm disk attach -g $RESOURCE_GROUP --vm-name Epic --lun ${NEW_DISK_LUNS[index]} --name /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Compute/disks/${NEW_DISK_NAMES[index]} 2>&1 | tee -a $LOG_FILE
     ATTACH_STATUS=$?
     if [ $ATTACH_STATUS -ne 0 ]
     then

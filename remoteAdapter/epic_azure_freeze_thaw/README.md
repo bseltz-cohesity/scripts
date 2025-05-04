@@ -54,9 +54,9 @@ The mount host VM is simply a VM on which we will install the Cohesity agent and
 * Create mount paths to mount the data disks, for example:
 
 ```bash
-/mnt/snapdisk1
-/mnt/snapdisk2
-/mnt/snapdisk3
+/data/snapdisk1
+/data/snapdisk2
+/data/snapdisk3
 ```
 
 * Create a pre script to run when the backup starts, that will mount the disks attached by wrapper script. For example:
@@ -65,9 +65,9 @@ The mount host VM is simply a VM on which we will install the Cohesity agent and
 
 ```bash
 #!/bin/bash
-sudo mount -o nouuid -t xfs /dev/sdc1 /mnt/snapdisk1
-sudo mount -o nouuid -t xfs /dev/sdd1 /mnt/snapdisk2
-sudo mount -o nouuid -t xfs /dev/sde1 /mnt/snapdisk3
+sudo mount -o nouuid -t xfs /dev/$(ls -l /dev/disk/azure/scsi1 | grep 'lun4-part1 ' | cut -d' ' -f12 | cut -d'/' -f4) /data/snapdisk1
+sudo mount -o nouuid -t xfs /dev/$(ls -l /dev/disk/azure/scsi1 | grep 'lun5-part1 ' | cut -d' ' -f12 | cut -d'/' -f4) /data/snapdisk2
+sudo mount -o nouuid -t xfs /dev/$(ls -l /dev/disk/azure/scsi1 | grep 'lun6-part1 ' | cut -d' ' -f12 | cut -d'/' -f4) /data/snapdisk3
 ```
 
 * Also create a post script to unmount at the end of the backup
@@ -76,9 +76,9 @@ sudo mount -o nouuid -t xfs /dev/sde1 /mnt/snapdisk3
 
 ```bash
 #!/bin/bash
-sudo umount /mnt/snapdisk1
-sudo umount /mnt/snapdisk2
-sudo umount /mnt/snapdisk3
+sudo umount /data/snapdisk1
+sudo umount /data/snapdisk2
+sudo umount /data/snapdisk3
 ```
 
 ## On Cohesity - Create an API Key for Authentication
