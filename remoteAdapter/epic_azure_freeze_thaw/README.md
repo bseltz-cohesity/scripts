@@ -78,11 +78,11 @@ sudo mount -o nouuid -t xfs /dev/$(ls -l /dev/disk/azure/scsi1 | grep 'lun6-part
 
 ```bash
 #!/bin/bash
-# example unmount commands
+# example umount commands
 sudo umount /data/snapdisk1
 sudo umount /data/snapdisk2
 sudo umount /data/snapdisk3
-# end example unmount commands
+# end example umount commands
 ```
 
 ## On Cohesity - Create an API Key for Authentication
