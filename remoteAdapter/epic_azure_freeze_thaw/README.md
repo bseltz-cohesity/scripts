@@ -163,6 +163,8 @@ Notes:
 ```bash
 #!/bin/bash
 
+SCRIPT_VERSION="2025-05-04"
+LOG_FILE="/home/epicadm/freeze-thaw.log"
 SCRIPT_ROOT="/home/epicadm"
 
 # cohesity cluster settings ===============================
@@ -190,8 +192,6 @@ IRIS_VM_NAME='EpicVM'
 MOUNT_HOST_VM_NAME='MountHostVM'
 FREEZE_CMD="/bin/sudo -u epicadm /epic/prd/bin/instfreeze"
 THAW_CMD="/bin/sudo -u epicadm /epic/prd/bin/instthaw"
-
-# =========================================================
 ```
 
 ## Test the Results
