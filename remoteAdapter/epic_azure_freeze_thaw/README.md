@@ -234,46 +234,27 @@ Run the script and confirm that everything works as expected. You should see the
 
 Once you are happy the script is working fine, you can run the script by running the remote adapter protection group, then let that group run at the desired time.
 
-## Azure CLI Examples
-
-### Authentication (using Client Secret)
+## Azure CLI Command Examples
 
 ```bash
+# Authentication (using Client Secret)
 az login --service-principal -t <tenant_id> -u <ap_id> -p <secret_value>
-```
 
-### Create a Snapshot of Disk1
-
-```bash
+# Create a Snapshot of Disk1
 az snapshot create --name snap1 --resource-group Epic_group --source /subscriptions/<subscription_id>/resourceGroups/Epic_group/providers/Microsoft.Compute/disks/disk1
-```
 
-### Create a Disk from the Snapshot
-
-```bash
+# Create a Disk from the Snapshot
 az disk create --resource-group Epic_group --name snapdisk1 --source /subscriptions/<subscription_id>/resourceGroups/Epic_group/providers/Microsoft.Compute/snapshots/snap1 --size-gb 64 --sku Standard_LRS
-```
 
-### Delete the Snapshot
-
-```bash
+# Delete the Snapshot
 az snapshot delete --name snap1 --resource-group Epic_group
-```
 
-### Attach Disk to Mount Host VM
-
-```bash
+# Attach Disk to Mount Host VM
 az vm disk attach --resource-group Epic_group --vm-name MountVM --name /subscriptions/<subscription_id>/resourceGroups/Epic_group/providers/Microsoft.Compute/disks/snapdisk1
-```
 
-### Detach Disk from Mount Host VM
-
-```bash
+# Detach Disk from Mount Host VM
 az vm disk detach -g Epic_group --vm-name Epic --name snapdisk1
-```
 
-### Delete Disk
-
-```bash
+# Delete Disk
 az disk delete -g Epic_group --name snapdisk1 -y
 ```
