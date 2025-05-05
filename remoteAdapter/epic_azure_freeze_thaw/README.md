@@ -236,6 +236,8 @@ Once you are happy the script is working fine, you can run the script by running
 
 ## Azure CLI Command Examples
 
+Thesee are examples of the various Azure CLI commands that the freeze/thaw script performs. Use these to troubleshoot problems that may occur (most likely due to authentication and incorrect role permissions).
+
 ```bash
 # Authentication (using Client Secret)
 az login --service-principal -t <tenant_id> -u <ap_id> -p <secret_value>
