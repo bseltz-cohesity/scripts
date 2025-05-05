@@ -52,7 +52,7 @@ Review the data disks attached to the Epic Iris VM. Record the following for eac
 * Disk Size (in GB)
 * Disk SKU (valid options are PremiumV2_LRS, Premium_LRS, Premium_ZRS, StandardSSD_LRS, StandardSSD_ZRS, Standard_LRS, UltraSSD_LRS)
 
-## Prepare the Mount Host
+## Prepare the Mount Host VM
 
 The mount host VM is simply a VM on which we will install the Cohesity agent and mount the snapshot disks, so that we can perform a file based backup of the data through the mount host.
 
