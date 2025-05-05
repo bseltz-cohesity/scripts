@@ -233,3 +233,47 @@ THAW_CMD="/bin/sudo -u epicadm /epic/prd/bin/instthaw"
 Run the script and confirm that everything works as expected. You should see the Iris freeze and thaw, and the Azure commands complete successfully. You should also see the disks mounted on the mount host VM and the Physical File-based Protection Group running to backup the mounted disks.
 
 Once you are happy the script is working fine, you can run the script by running the remote adapter protection group, then let that group run at the desired time.
+
+## Azure CLI Examples
+
+### Authentication (using Client Secret)
+
+```bash
+az login --service-principal -t <tenant_id> -u <ap_id> -p <secret_value>
+```
+
+### Create a Snapshot of Disk1
+
+```bash
+az snapshot create --name snap1 --resource-group Epic_group --source /subscriptions/<subscription_id>/resourceGroups/Epic_group/providers/Microsoft.Compute/disks/disk1
+```
+
+### Create a Disk from the Snapshot
+
+```bash
+az disk create --resource-group Epic_group --name snapdisk1 --source /subscriptions/<subscription_id>/resourceGroups/Epic_group/providers/Microsoft.Compute/snapshots/snap1 --size-gb 64 --sku Standard_LRS
+```
+
+### Delete the Snapshot
+
+```bash
+az snapshot delete --name snap1 --resource-group Epic_group
+```
+
+### Attach Disk to Mount Host VM
+
+```bash
+az vm disk attach --resource-group Epic_group --vm-name MountVM --name /subscriptions/<subscription_id>/resourceGroups/Epic_group/providers/Microsoft.Compute/disks/snapdisk1
+```
+
+### Detach Disk from Mount Host VM
+
+```bash
+az vm disk detach -g Epic_group --vm-name Epic --name snapdisk1
+```
+
+### Delete Disk
+
+```bash
+az disk delete -g Epic_group --name snapdisk1 -y
+```
