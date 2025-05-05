@@ -107,7 +107,7 @@ sudo mount -o nouuid -t xfs /dev/$(ls -l /dev/disk/azure/scsi1 | grep 'lun6-part
 # end example mount commands
 ```
 
-Note: you can see the lun number and partition number (e.g. 'lun4-part1') in the mount commands. We will define the lun numbers in the freeze/thaw script, but the partition numbers will come from the data disks on the Epic VM. Review the output of the `ls -l /dev/disk/azure/scsi1` command that we ran on the Epic Iris VM to identify the partition numbers.
+Note: you can see the lun number and partition number (e.g. 'lun4-part1') in the mount commands above. We will define the lun numbers in the freeze/thaw script (e.g. 4, 5, 6), but the partition numbers will come from the data disks on the Epic VM. Review the output of the `ls -l /dev/disk/azure/scsi1` command that we ran on the Epic Iris VM to identify the partition numbers.
 
 `/opt/cohesity/agent/software/crux/bin/user_scripts/postscript.sh`
 
