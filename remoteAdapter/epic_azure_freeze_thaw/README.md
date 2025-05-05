@@ -8,7 +8,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 2. [Prerequisites](#prerequisites)
 3. [Entra ID - Create App Registration and Client Secret](#entra-id---create-app-registration-and-client-secret)
 4. [Azure Portal - Review the Epic Iris VM](#azure-portal---review-the-epic-iris-vm)
-5. [SSH - Review the Partition Layout of the Epic Iris VM](#ssh---review-the-partition-layout-of-the-epic-iris-vm)
+5. [Review the Partition Layout of the Epic Iris VM](#review-the-partition-layout-of-the-epic-iris-vm)
 6. [Prepare the Mount Host VM](#prepare-the-mount-host-vm)
 7. [On Cohesity - Create an API Key for Authentication](#on-cohesity---create-an-api-key-for-authentication)
 8. [On Cohesity - Create a Physical File-based Protection Group](#on-cohesity---create-a-physical-file-based-protection-group)
@@ -67,7 +67,7 @@ Review the data disks attached to the Epic Iris VM. Record the following for eac
 * Disk Size (in GB)
 * Disk SKU (valid options are PremiumV2_LRS, Premium_LRS, Premium_ZRS, StandardSSD_LRS, StandardSSD_ZRS, Standard_LRS, UltraSSD_LRS)
 
-## SSH - Review the Partition Layout of the Epic Iris VM
+## Review the Partition Layout of the Epic Iris VM
 
 Run the following command to review the data disk partitions. We will need this information later.
 
