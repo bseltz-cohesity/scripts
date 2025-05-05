@@ -25,7 +25,7 @@ The script provided here is intended to be deployed onto the Epic Iris VM, where
 
 1. Create an App Registration and Client Secret for Azure CLI authentication
 2. Create a mount host VM
-3. Install Azure CLI on Epic Iris VM
+3. Install Azure CLI on the Epic Iris VM
 
 ## Entra ID - Create App Registration and Client Secret
 
