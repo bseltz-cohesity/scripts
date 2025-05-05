@@ -24,14 +24,14 @@ The script provided here is intended to be deployed onto the Epic Iris VM, where
 ## Prerequisites
 
 1. Install Azure CLI on Epic Iris VM (instructions below)
-2. Create a service identity for Azure CLI authentication (instructions below)
+2. Create an App Registration and Client Secret for Azure CLI authentication (instructions below)
 3. Create a mount host VM (instructions below)
 
-## Entra ID - Create Service Identity
+## Entra ID - Create App Registration and Client Secret
 
-As you can see above, we will use Azure CLI to perform snapshot and disk operations. We will need a service identity created (usually in Entra ID) to allow Azure CLI to authenticate to Azure. This identity will require the permissions to create/delete the snapshots of the Iris VM disks, and create/delete/attach/detach disks to/from the mount host.
+As you can see above, we will use Azure CLI to perform snapshot and disk operations. We will need an App registration and client secret to allow Azure CLI to authenticate to Azure. This app will require the permissions to create/delete the snapshots of the Iris VM disks, and create/delete/attach/detach disks to/from the mount host.
 
-Record the following for the service identity:
+Record the following for the app/client secret:
 
 * Tenant ID
 * App ID
@@ -188,7 +188,7 @@ Notes:
 * Use the API key copied above for the CLUSTER_API_KEY
 * Use the mount host protection group name for PROTECTION_GROUP_NAME
 * Use the Sub scription ID and Resource Group recorded from Azure
-* Use the Tenant ID, App ID, and Secret for the Service Principal
+* Use the Tenant ID, App ID, and Secret value for the App/Client Secret
 * Use the DISK_NAMES recorded from the Azure Epic Iris VM
 * Use the DISK_SIZES recorded from the Azure Epic Iris VM
 * Use the DISK_SKUS recorded from the Azure Epic Iris VM
