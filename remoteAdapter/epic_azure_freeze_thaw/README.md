@@ -52,6 +52,14 @@ Review the data disks attached to the Epic Iris VM. Record the following for eac
 * Disk Size (in GB)
 * Disk SKU (valid options are PremiumV2_LRS, Premium_LRS, Premium_ZRS, StandardSSD_LRS, StandardSSD_ZRS, Standard_LRS, UltraSSD_LRS)
 
+## SSH - Review the Partition Layout of the Epic Iris VM
+
+Run the following command to review the data disk partitions. We will need this information later.
+
+```bash
+ls -l /dev/disk/azure/scsi1
+```
+
 ## Prepare the Mount Host VM
 
 The mount host VM is simply a VM on which we will install the Cohesity agent and mount the snapshot disks, so that we can perform a file based backup of the data through the mount host.
@@ -98,6 +106,8 @@ sudo mount -o nouuid -t xfs /dev/$(ls -l /dev/disk/azure/scsi1 | grep 'lun5-part
 sudo mount -o nouuid -t xfs /dev/$(ls -l /dev/disk/azure/scsi1 | grep 'lun6-part1 ' | cut -d' ' -f12 | cut -d'/' -f4) /data/snapdisk3
 # end example mount commands
 ```
+
+Note: you can see the lun number and partition number (e.g. 'lun4-part1') in the mount commands. We will define the lun numbers in the freeze/thaw script, but the partition numbers will come from the data disks on the Epic VM. Review the output of the `ls -l /dev/disk/azure/scsi1` command that we ran on the Epic Iris VM to identify the partition numbers.
 
 `/opt/cohesity/agent/software/crux/bin/user_scripts/postscript.sh`
 
