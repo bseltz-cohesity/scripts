@@ -2,6 +2,21 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
+## Table of Contents
+
+1. [Introduction](#introduction)
+2. [Prerequisites](#prerequisites)
+3. [Entra ID - Create App Registration and Client Secret](#entra-id---create-app-registration-and-client-secret)
+4. [Azure Portal - Review the Epic Iris VM](#azure-portal---review-the-epic-iris-vm)
+5. [SSH - Review the Partition Layout of the Epic Iris VM](#ssh---review-the-partition-layout-of-the-epic-iris-vm)
+6. [Prepare the Mount Host VM](#prepare-the-mount-host-vm)
+7. [On Cohesity - Create an API Key for Authentication](#on-cohesity---create-an-api-key-for-authentication)
+8. [On Cohesity - Create a Physical File-based Protection Group](#on-cohesity---create-a-physical-file-based-protection-group)
+9. [On Cohesity - Create a Remote Adapter Protection Group (optional)](#on-cohesity---create-a-remote-adapter-protection-group-optional)
+10. [Prepare the Epic Iris VM](#prepare-the-epic-iris-vm)
+11. [Test the Results](#test-the-results)
+12. [Azure CLI Command Examples](#azure-cli-command-examples)
+
 ## Introduction
 
 This bash script can be used to freeze Epic Iris DB running in an Azure VM, snapshot the data disks, mount the snapshot disks to a mount host VM, then start a protection group to backup the mount host.
@@ -157,7 +172,7 @@ In the script information fields, enter the full path to the wrapper script on t
 
 Also copy the ssh key shown in the RA job configuration screen (we will need this later).
 
-## On the Epic Iris VM
+## Prepare the Epic Iris VM
 
 * Download the script files
 
