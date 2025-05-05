@@ -11,7 +11,7 @@ This bash script can be used as a pre-script in a remote adapter job to freeze a
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/remoteAdapter/vm_freeze_thaw/vm_freeze_thaw.sh
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/linux/jobRunning/jobRunning
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/linux/backupNow/backupNow
-chmod +x vm_freeze_thaw.sh.sh
+chmod +x vm_freeze_thaw.sh
 chmod +x jobRunning
 chmod +x backupNow
 # End download commands
