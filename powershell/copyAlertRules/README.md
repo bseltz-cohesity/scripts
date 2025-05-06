@@ -47,3 +47,7 @@ To copy certs from one cluster to another:
 * -useApiKeys: (optional) use API keys for authentication
 * -promptForMfaCode: (optional) prompt for MFA codes
 * -clearExistingRules: (optional) delete existing rules on target cluster before copying rules from source cluster
+
+## Note
+
+If -clearExistingRules is omitted, you could end up with duplicate rules
