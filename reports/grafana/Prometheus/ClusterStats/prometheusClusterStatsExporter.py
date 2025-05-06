@@ -115,8 +115,8 @@ class AdvancedDiagnosticsExporter():
                 yield metric
 
             # morphed garbage
-            metric_name = '%s_morphed_garbage' % vip
-            metric = Metric(metric_name, '%s Morphed Garbage' % vip, 'summary')
+            metric_name = 'morphed_garbage'
+            metric = Metric(metric_name, 'Morphed Garbage', 'summary')
             try:
                 stats = api('get', 'statistics/timeSeriesStats?metricName=kMorphedGarbageBytes&metricUnitType=0&range=week&rollupFunction=average&rollupIntervalSecs=720&schemaName=kBridgeClusterStats&startTimeMsecs=%s&entityId=%s&endTimeMsecs=%s' % (startmsecs, cluster['id'], endmsecs))
                 timestamp = stats['dataPointVec'][-1]['timestampMsecs']
