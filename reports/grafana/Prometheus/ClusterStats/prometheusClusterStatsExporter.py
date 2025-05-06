@@ -114,6 +114,16 @@ class AdvancedDiagnosticsExporter():
                 metric.add_sample('write_throughput', value=0, labels={})
                 yield metric
 
+            # morphed garbage
+            metric_name = '%s_morphed_garbage' % vip
+            metric = Metric(metric_name, '%s Morphed Garbage' % vip, 'summary')
+            try:
+                stats = api('get', 'statistics/timeSeriesStats?metricName=kMorphedGarbageBytes&metricUnitType=0&range=week&rollupFunction=average&rollupIntervalSecs=720&schemaName=kBridgeClusterStats&startTimeMsecs=%s&entityId=%s&endTimeMsecs=%s' % (startmsecs, cluster['id'], endmsecs))
+                timestamp = stats['dataPointVec'][-1]['timestampMsecs']
+                metric.add_sample(metric_name, value=stats['dataPointVec'][-1]['data']['int64Value'], labels={})
+                yield metric
+            except Exception as e:  # no recent stat, report 0
+                pass
 
 if __name__ == '__main__':
     start_http_server(port=port)
