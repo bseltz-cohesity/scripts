@@ -47,3 +47,5 @@ Place both files in a folder together and run the main script like so:
 
 * -n, --sourcename: name of protection source to refresh (repeat for multiple sources)
 * -l, --sourcelist: text file of protection sources to refresh (one per line)
+* -env, --environment: (optional) limit search for protection sources to specific type (e.g. kVMware)
+* -s, --sleepseconds: (optional) sleep X seconds between status queries (default is 30)

@@ -20,8 +20,11 @@ parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-e', '--emailmfacode', action='store_true')
+parser.add_argument('-env', '--environment', type=str, default=None)
 parser.add_argument('-n', '--sourcename', type=str, action='append')   # optional name of vcenter
 parser.add_argument('-l', '--sourcelist', type=str)
+parser.add_argument('-s', '--sleepseconds', type=int, default=30)
+
 args = parser.parse_args()
 
 vip = args.vip
@@ -37,7 +40,8 @@ mfacode = args.mfacode
 emailmfacode = args.emailmfacode
 sourcenames = args.sourcename
 sourcelist = args.sourcelist
-
+environment = args.environment
+sleepseconds = args.sleepseconds
 
 # gather server list
 def gatherList(param=None, filename=None, name='items', required=True):
@@ -82,11 +86,13 @@ if sourceNames is None:
     print('No sources specified')
     exit()
 
-sources = api('get', 'protectionSources/registrationInfo?allUnderHierarchy=false')
+if environment is not None:
+    sources = api('get', 'protectionSources/registrationInfo?environments=%s&allUnderHierarchy=false&useCachedData=false&pruneNonCriticalInfo=true&includeExternalMetadata=false&includeEntityPermissionInfo=false&includeApplicationsTreeInfo=false' % environment)
+else:
+    sources = api('get', 'protectionSources/registrationInfo?allUnderHierarchy=false&useCachedData=false&pruneNonCriticalInfo=true&includeExternalMetadata=false&includeEntityPermissionInfo=false&includeApplicationsTreeInfo=false')
 if 'rootNodes' not in sources:
     print('No sources found')
     exit()
-
 
 def getObjectId(sourcename):
     for source in sources['rootNodes']:
@@ -95,18 +101,20 @@ def getObjectId(sourcename):
     return None
 
 
-def waitForRefresh(sourcename):
+def waitForRefresh(objectId):
     authStatus = ''
     while authStatus != 'Finished':
         rootFinished = False
         appsFinished = False
-        sleep(5)
-        rootNodes = api('get', 'protectionSources/registrationInfo?includeApplicationsTreeInfo=false')
-        rootNode = [r for r in rootNodes['rootNodes'] if r['rootNode']['name'].lower() == sourcename.lower()]
-        if rootNode[0]['registrationInfo']['authenticationStatus'] == 'kFinished':
+        sleep(sleepseconds)
+        rootNodes = api('get', 'protectionSources/registrationInfo?allUnderHierarchy=false&useCachedData=false&pruneNonCriticalInfo=true&includeExternalMetadata=false&includeEntityPermissionInfo=false&includeApplicationsTreeInfo=false&ids=%s' % objectId)
+        rootNode = rootNodes['rootNodes'][0]
+        print(rootNode['registrationInfo']['authenticationStatus'])
+        if rootNode['registrationInfo']['authenticationStatus'] == 'kFinished':
             rootFinished = True
-        if 'registeredAppsInfo' in rootNode[0]['registrationInfo']:
-            for app in rootNode[0]['registrationInfo']['registeredAppsInfo']:
+        if 'registeredAppsInfo' in rootNode['registrationInfo']:
+            for app in rootNode['registrationInfo']['registeredAppsInfo']:
+                print(app['authenticationStatus'])
                 if app['authenticationStatus'] == 'kFinished':
                     appsFinished = True
                 else:
@@ -122,6 +130,6 @@ for sourcename in sourceNames:
     if objectId is not None:
         print('refreshing %s...' % sourcename)
         result = api('post', 'protectionSources/refresh/%s' % objectId)
-        result = waitForRefresh(sourcename)
+        result = waitForRefresh(objectId)
     else:
         print('%s not found' % sourcename)
