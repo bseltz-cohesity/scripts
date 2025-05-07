@@ -92,3 +92,4 @@ You can specify a folder to clone to using any of the following formats:
 * vCenter.mydomain.net/Datacenters/DataCenter1/vm/MyFolder/MySubFolder
 * /MyFolder/MySubFolder
 * MyFolder/MySubFolder
+* MyFolder
