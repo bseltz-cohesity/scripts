@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-05-07`] [cloneVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneVM) [`Update`] fixed folder lookup
+* [`2025-05-06`] [refreshSource.py](https://github.com/cohesity/community-automation-samples/tree/main/python/refreshSource) [`Update`] improved API query
+* [`2025-05-06`] [refreshSource](https://github.com/cohesity/community-automation-samples/tree/main/linux/refreshSource) [`Update`] improved API query
 * [`2025-05-06`] [copyAlertRules.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/copyAlertRules) [`New`] Copy the alert notification rules from one cluster to another
 * [`2025-05-06`] [prometheusClusterStatsExporter.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/grafana/Prometheus/ClusterStats) [`Update`] added suport for Helios authentication
 * [`2025-05-03`] [epic_azure_freeze_thaw.sh](https://github.com/cohesity/community-automation-samples/tree/main/remoteAdapter/epic_azure_freeze_thaw) [`New`] freeze/thaw Iris DB in Azure VM
