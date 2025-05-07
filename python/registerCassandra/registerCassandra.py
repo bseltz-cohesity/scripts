@@ -198,8 +198,10 @@ for server in servers:
         }
     if newSourceRegistration is True:
         result = api('post', 'data-protect/sources/registrations', newSource, v=2)
-        if 'id' in result:
+        if result is not None and 'id' in result:
             print('Registering %s' % sourcename)
+        else:
+            print('An error occurred')
     else:
         result = api('put', 'data-protect/sources/registrations/%s' % sourceId, newSource, v=2)
         print('Updating %s' % sourcename)
