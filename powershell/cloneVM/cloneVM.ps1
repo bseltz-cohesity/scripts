@@ -26,7 +26,8 @@ param (
     [Parameter()][switch]$showVersions,
     [Parameter()][int64]$runId,
     [Parameter()][switch]$detachNetwork,
-    [Parameter()][switch]$wait
+    [Parameter()][switch]$wait,
+    [Parameter()][switch]$listFolders
 )
 
 # source the cohesity-api helper code
@@ -82,7 +83,9 @@ $vmnames = @(gatherList -Param $vmName -FilePath $vmList -Name 'VMs' -Required $
 
 function walkVMFolders($node, $parent=$null, $fullPath=''){
     $fullPath = "{0}/{1}" -f $fullPath, $node.protectionSource.name
-    $relativePath = $fullPath.split('vm/', 2)[1]
+    $relativePath = ($fullPath -split 'vm/', 2)[1]
+    Write-Host "full: $fullPath"
+    Write-Host " rel: $relativePath"
     if($relativePath -and $node.protectionSource.vmWareProtectionSource.type -eq 'kFolder'){
         $vmFolderId[$fullPath] = $node.protectionSource.id
         $vmFolderId[$relativePath] = $node.protectionSource.id
@@ -159,6 +162,11 @@ $resourcePoolId = $resourcePool[0].resourcePool.id
 $vmfolderId = @{}
 
 walkVMFolders $vCenterSource
+
+if($listFolders){
+    $vmFolderId.Keys | sort
+    exit
+}
 
 $folderId = $vmfolderId[$folderName]
 if(! $folderId){

@@ -68,6 +68,7 @@ Place the files in a folder together and run the main script like so:
 * -showVersions: (optional) show available versions and exit
 * -runId: (optional) specify run ID (from show versions) to clone from
 * -wait: (optional) wait for completion and report result
+* -listFolders: (optional) list folders and exit
 
 ## Specifying a Compute Resource
 
