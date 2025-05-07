@@ -133,7 +133,10 @@ for server in servers:
     seedip = seeds[-1]
     sourcename = seeds[0]
     newSourceRegistration = True
-    registeredSource = [r for r in (api('get', 'protectionSources/registrationInfo?environments=kCassandra'))['rootNodes'] if r['rootNode']['cassandraProtectionSource']['uuid'].lower() == sourcename.lower() or r['rootNode']['customName'].lower() == sourcename.lower()]
+    registeredSource = None
+    registeredSources = api('get', 'protectionSources/registrationInfo?environments=kCassandra')
+    if registeredSources is not None and 'rootNodes' in registeredSources and registeredSources['rootNodes'] is not None and len(registeredSources['rootNodes']) > 0:
+        registeredSource = [r for r in registeredSources['rootNodes'] if r['rootNode']['cassandraProtectionSource']['uuid'].lower() == sourcename.lower() or r['rootNode']['customName'].lower() == sourcename.lower()]
     # display(registeredSource)
     # exit()
     if registeredSource is not None and len(registeredSource) > 0:
