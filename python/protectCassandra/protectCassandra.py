@@ -126,7 +126,9 @@ else:
 newJob = False
 protectionGroups = api('get', 'data-protect/protection-groups?isDeleted=false&isActive=true&environments=kCassandra', v=2)
 jobs = protectionGroups['protectionGroups']
-job = [j for j in jobs if j['name'].lower() == jobname.lower()]
+job = None
+if jobs is not None and len(jobs) > 0:
+    job = [j for j in jobs if j['name'].lower() == jobname.lower()]
 
 if job is None or len(job) == 0:
     newJob = True
