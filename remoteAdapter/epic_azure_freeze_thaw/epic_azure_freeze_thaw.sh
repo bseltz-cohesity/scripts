@@ -1,8 +1,11 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2025-05-04"
-LOG_FILE="/home/epicadm/freeze-thaw.log"
+SCRIPT_VERSION="2025-05-08"
+LOG_FILE="/home/epicadm/freezethaw.log"
 SCRIPT_ROOT="/home/epicadm"
+SLEEP_SECONDS=60
+DISK_PREFIX="cohdisk"
+SNAP_PREFIX="cohsnap"
 
 # cohesity cluster settings ===============================
 CLUSTER_API_KEY="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
@@ -15,24 +18,26 @@ SUBSCRIPTION_ID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 TENANT_ID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 APP_ID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 SECRET="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
 RESOURCE_GROUP="Epic_group"
+DISK_SKU="PremiumV2_LRS"
+IRIS_VM_NAME='IrisVM'
+MOUNT_HOST_VM_NAME='MountVM'
 
 # Disks
-SNAP_NAMES=("snap1" "snap2" "snap3")
-DISK_NAMES=("disk1" "disk2" "disk3")
-NEW_DISK_NAMES=("snapdisk1" "snapdisk2" "snapdisk3")
-NEW_DISK_LUNS=("4" "5" "6")
-DISK_SIZES=("1024" "512" "512")
-DISK_SKUS=("PremiumV2_LRS" "PremiumV2_LRS" "PremiumV2_LRS")
+DISK_NAMES=("data0" "data1")
 
 # Epic settings ===========================================
-IRIS_VM_NAME='EpicVM'
-MOUNT_HOST_VM_NAME='MountHostVM'
-FREEZE_CMD="/bin/sudo -u epicadm /epic/prd/bin/instfreeze"
-THAW_CMD="/bin/sudo -u epicadm /epic/prd/bin/instthaw"
+FREEZE_CMD="/epic/prd/bin/instfreeze"
+THAW_CMD="/epic/prd/bin/instthaw"
 
 # Main ====================================================
-echo "*** $(date '+%F %T') : Script version $SCRIPT_VERSION Started" | tee $LOG_FILE
+set -o pipefail
+
+echo "*** $(date '+%F %T') : SCRIPT VERSION $SCRIPT_VERSION STARTED" | tee $LOG_FILE
+
+DATE_STRING="$(date '+%F-%T')"
+DATE_STRING="${DATE_STRING//:/-}"
 
 # check for existing run ==================================
 echo "*** $(date '+%F %T') : CHECKING PROTECTION GROUP '$PROTECTION_GROUP_NAME' FOR EXISTING RUN" | tee -a $LOG_FILE 
@@ -54,18 +59,15 @@ then
     exit 1
 fi
 
-# delete old snapshots ====================================
-echo "*** $(date '+%F %T') : DELETING OLD SNAPSHOTS" | tee -a $LOG_FILE
-for SNAP_NAME in "${SNAP_NAMES[@]}"; do
-    az snapshot delete --name $SNAP_NAME --resource-group $RESOURCE_GROUP 2>&1 | tee -a $LOG_FILE
-done
-
-# detach and delete old disks =============================
-echo "*** $(date '+%F %T') : DETACHING OLD DISKS" | tee -a $LOG_FILE
-for DISK_NAME in "${NEW_DISK_NAMES[@]}"; do
-    az vm disk detach -g $RESOURCE_GROUP --vm-name $MOUNT_HOST_VM_NAME --name $DISK_NAME 2>&1 | tee -a $LOG_FILE
-    az disk delete -g $RESOURCE_GROUP --name $DISK_NAME -y 2>&1 | tee -a $LOG_FILE
-done
+# set default subscription
+echo "*** $(date '+%F %T') : AZURE CLI SETTING DEFAULT SUBSCRIPTION" | tee -a $LOG_FILE
+az account set -s $SUBSCRIPTION_ID 2>&1 | tee -a $LOG_FILE
+SUB_STATUS=$?
+if [ $SUB_STATUS -ne 0 ]
+then
+    echo "!!! $(date '+%F %T') : FAILED TO SET DEFAULT SUBSCRIPTION. ABORTING SCRIPT" | tee -a $LOG_FILE
+    exit 1
+fi
 
 # freeze Iris =============================================
 echo "*** $(date '+%F %T') : STARTING FREEZE" | tee -a $LOG_FILE
@@ -80,9 +82,10 @@ else
 fi
 
 # create new snapshots ====================================
-echo "*** $(date '+%F %T') : CREATING AZURE SNAPSHOT" | tee -a $LOG_FILE
-for index in "${!SNAP_NAMES[@]}"; do
-    az snapshot create --name ${SNAP_NAMES[index]} --resource-group $RESOURCE_GROUP --source /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Compute/disks/${DISK_NAMES[index]} 2>&1 | tee -a $LOG_FILE
+echo "*** $(date '+%F %T') : CREATING NEW SNAPSHOTS" | tee -a $LOG_FILE
+for DISK_NAME in "${DISK_NAMES[@]}"; do
+    SNAP_NAME="${SNAP_PREFIX}-${DISK_NAME}-${DATE_STRING}"
+    az snapshot create --name $SNAP_NAME --resource-group $RESOURCE_GROUP --source $DISK_NAME --incremental true 2>&1 | tee -a $LOG_FILE
     SNAP_STATUS=$?
     if [ $SNAP_STATUS -ne 0 ]
     then
@@ -114,15 +117,53 @@ else
     exit 1
 fi
 
+# detach old disks =============================
+echo "*** $(date '+%F %T') : DETACHING OLD DISKS FROM MOUNT HOST $MOUNT_HOST_VM_NAME" | tee -a $LOG_FILE
+for DISK_NAME in "${DISK_NAMES[@]}"; do
+    NEW_DISK_NAME="${DISK_PREFIX}-${DISK_NAME}"
+    az vm disk detach -g $RESOURCE_GROUP --vm-name $MOUNT_HOST_VM_NAME --name $NEW_DISK_NAME 2>&1 | tee -a $LOG_FILE
+done
+
+# delete old disks =============================
+echo "*** $(date '+%F %T') : DELETING OLD DISKS" | tee -a $LOG_FILE
+for DISK_NAME in "${DISK_NAMES[@]}"; do
+    NEW_DISK_NAME="${DISK_PREFIX}-${DISK_NAME}"
+    az disk delete -g $RESOURCE_GROUP --name $NEW_DISK_NAME -y 2>&1 | tee -a $LOG_FILE
+done
+
+# wait for snapshots to complete ===========================
+echo "*** $(date '+%F %T') : WAITING FOR SNAPSHOT COMPLETION" | tee -a $LOG_FILE
+echo ""
+COMPLETE=0
+while [ $COMPLETE -eq 0 ]; do
+    COMPLETE=1
+    echo "=========================================="
+    for DISK_NAME in "${DISK_NAMES[@]}"; do
+        SNAP_NAME="${SNAP_PREFIX}-${DISK_NAME}-${DATE_STRING}"
+        PERCENT_COMPLETE=$(az snapshot show -n $SNAP_NAME -g $RESOURCE_GROUP --query completionPercent)
+        echo "${SNAP_NAME} : ${PERCENT_COMPLETE}"
+        if [ $PERCENT_COMPLETE != "100.0" ]
+        then
+            COMPLETE=0
+            sleep $SLEEP_SECONDS
+            break
+        fi
+    done
+    echo "=========================================="
+    echo ""
+done
+
 # create new disks from snapshots ===========================
-echo "*** $(date '+%F %T') : CREATING DISK FROM SNAPSHOT" | tee -a $LOG_FILE
-for index in "${!SNAP_NAMES[@]}"; do
-    az disk create \
-        --resource-group $RESOURCE_GROUP \
-        --name ${NEW_DISK_NAMES[index]} \
-        --source /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Compute/snapshots/${SNAP_NAMES[index]} \
-        --size-gb ${DISK_SIZES[index]} \
-        --sku ${DISK_SKUS[index]} 2>&1 | tee -a $LOG_FILE
+echo "*** $(date '+%F %T') : CREATING DISKS FROM SNAPSHOTS" | tee -a $LOG_FILE
+
+ZONE=$(az vm show -g $RESOURCE_GROUP -n $MOUNT_HOST_VM_NAME --query zones[0])
+ZONE="${ZONE//\"/}"
+
+for DISK_NAME in "${DISK_NAMES[@]}"; do
+    SNAP_NAME="${SNAP_PREFIX}-${DISK_NAME}-${DATE_STRING}"
+    NEW_DISK_NAME="${DISK_PREFIX}-${DISK_NAME}"
+    NEW_DISK_SIZE=$(az disk show -g $RESOURCE_GROUP -n $DISK_NAME --query diskSizeGB)
+    az disk create -g $RESOURCE_GROUP -n $NEW_DISK_NAME --source /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Compute/snapshots/$SNAP_NAME --sku $DISK_SKU --zone $ZONE --size-gb $NEW_DISK_SIZE 2>&1 | tee -a $LOG_FILE
     DISK_STATUS=$?
     if [ $FREEZE_STATUS -ne 0 ]
     then
@@ -131,16 +172,12 @@ for index in "${!SNAP_NAMES[@]}"; do
     fi
 done
 
-# delete old snapshot (optional) ==========================
-echo "*** $(date '+%F %T') : DELETING OLD SNAPSHOTS" | tee -a $LOG_FILE
-for SNAP_NAME in "${SNAP_NAMES[@]}"; do
-    az snapshot delete --name $SNAP_NAME --resource-group $RESOURCE_GROUP 2>&1 | tee -a $LOG_FILE
-done
-
-# attach new disk =========================================
+# attach new disks =========================================
 echo "*** $(date '+%F %T') : ATTACHING DISKS TO MOUNT HOST VM" | tee -a $LOG_FILE
-for index in "${!NEW_DISK_NAMES[@]}"; do
-    az vm disk attach -g $RESOURCE_GROUP --vm-name Epic --lun ${NEW_DISK_LUNS[index]} --name /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Compute/disks/${NEW_DISK_NAMES[index]} 2>&1 | tee -a $LOG_FILE
+
+for DISK_NAME in "${DISK_NAMES[@]}"; do
+    NEW_DISK_NAME="${DISK_PREFIX}-${DISK_NAME}"
+    az vm disk attach -g $RESOURCE_GROUP --vm-name $MOUNT_HOST_VM_NAME -n $NEW_DISK_NAME 2>&1 | tee -a $LOG_FILE
     ATTACH_STATUS=$?
     if [ $ATTACH_STATUS -ne 0 ]
     then
@@ -161,11 +198,22 @@ else
     exit 1
 fi
 
-# optional (detach and delete old disks) ==================
-# echo "*** $(date '+%F %T') : DETACHING OLD DISKS" | tee -a $LOG_FILE
-# for DISK_NAME in "${NEW_DISK_NAMES[@]}"; do
-#     az vm disk detach -g $RESOURCE_GROUP --vm-name $MOUNT_HOST_VM_NAME --name $DISK_NAME 2>&1 | tee -a $LOG_FILE
-#     az disk delete -g $RESOURCE_GROUP --name $DISK_NAME -y 2>&1 | tee -a $LOG_FILE
-# done
+# delete old snapshots ==========================
+echo "*** $(date '+%F %T') : DELETING OLD SNAPSHOTS" | tee -a $LOG_FILE
+for DISK_NAME in "${DISK_NAMES[@]}"; do
+    SNAP_NAME="${SNAP_PREFIX}-${DISK_NAME}-${DATE_STRING}"
+    echo "*** $(date '+%F %T') : KEEPING NEW SNAPSHOT $SNAP_NAME" | tee -a $LOG_FILE
+    DISK_RESOURCE_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Compute/disks/$DISK_NAME"
+    SNAPSHOTS=$(az snapshot list -g $RESOURCE_GROUP --query "[?creationData.sourceResourceId == '$DISK_RESOURCE_ID']")
+    echo $SNAPSHOTS | jq -r '.[]|[.name] | @tsv' | while read snap; do
+        if [ "$SNAP_NAME" != "$snap" ]
+        then
+            echo "*** $(date '+%F %T') : DELETING OLD SNAPSHOT $snap" | tee -a $LOG_FILE
+            az snapshot delete --name $snap --resource-group $RESOURCE_GROUP 2>&1 | tee -a $LOG_FILE
+        fi
+    done
+done
 
+set +o pipefail
+echo "*** $(date '+%F %T') : SCRIPT COMPLETED SUCCESSFULLY" | tee -a $LOG_FILE
 exit 0

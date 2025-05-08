@@ -8,14 +8,13 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 2. [Prerequisites](#prerequisites)
 3. [Entra ID - Create App Registration and Client Secret](#entra-id---create-app-registration-and-client-secret)
 4. [Azure Portal - Review the Epic Iris VM](#azure-portal---review-the-epic-iris-vm)
-5. [Review the Partition Layout of the Epic Iris VM](#review-the-partition-layout-of-the-epic-iris-vm)
-6. [Prepare the Mount Host VM](#prepare-the-mount-host-vm)
-7. [On Cohesity - Create an API Key for Authentication](#on-cohesity---create-an-api-key-for-authentication)
-8. [On Cohesity - Create a Physical File-based Protection Group](#on-cohesity---create-a-physical-file-based-protection-group)
-9. [On Cohesity - Create a Remote Adapter Protection Group (optional)](#on-cohesity---create-a-remote-adapter-protection-group-optional)
-10. [Prepare the Epic Iris VM](#prepare-the-epic-iris-vm)
-11. [Test the Results](#test-the-results)
-12. [Azure CLI Command Examples](#azure-cli-command-examples)
+5. [Prepare the Mount Host VM](#prepare-the-mount-host-vm)
+6. [On Cohesity - Create an API Key for Authentication](#on-cohesity---create-an-api-key-for-authentication)
+7. [On Cohesity - Create a Physical File-based Protection Group](#on-cohesity---create-a-physical-file-based-protection-group)
+8. [On Cohesity - Create a Remote Adapter Protection Group (optional)](#on-cohesity---create-a-remote-adapter-protection-group-optional)
+9. [Prepare the Epic Iris VM](#prepare-the-epic-iris-vm)
+10. [Test the Results](#test-the-results)
+11. [Azure CLI Command Examples](#azure-cli-command-examples)
 
 ## Introduction
 
@@ -25,16 +24,14 @@ The script provided here is intended to be deployed onto the Epic Iris VM, where
 
 1. Connects to Cohesity to check if the mount host protection group is already running, and if so, aborts the script.
 2. Connects to Azure via Azure CLI
-3. Deletes any old snapshots
-4. Detaches any old data disks from the mount host
-5. Freezes Iris
-6. Creates new snapshots of the Iris data disks
-7. Thaws Iris
-8. Creates new data disks from the new snapshots
-9. Optionally deletes the new snapshots
-10. Attaches the new disks to the mount host
-11. Runs the mount host backup (optionally waiting for completion)
-12. Optionally detach and delete the disks from the mount host (if we waited for backup completion)
+3. Freezes Iris
+4. Creates new snapshots of the Iris data disks
+5. Thaws Iris
+6. Detaches and deletes old data disks from the mount host
+7. Creates new data disks from the new snapshots
+8. Attaches the new disks to the mount host
+9. Runs the mount host backup (optionally waiting for completion)
+10. Deletes any old snapshots
 
 ## Prerequisites
 
@@ -64,16 +61,6 @@ Record the following for the Epic VM:
 Review the data disks attached to the Epic Iris VM. Record the following for each disk that you want to include in the backup:
 
 * Disk Name
-* Disk Size (in GB)
-* Disk SKU (valid options are PremiumV2_LRS, Premium_LRS, Premium_ZRS, StandardSSD_LRS, StandardSSD_ZRS, Standard_LRS, UltraSSD_LRS)
-
-## Review the Partition Layout of the Epic Iris VM
-
-Run the following command to review the data disk partitions. We will need this information later.
-
-```bash
-ls -l /dev/disk/azure/scsi1
-```
 
 ## Prepare the Mount Host VM
 
@@ -97,41 +84,29 @@ chmod +x postscript.sh
 ```
 
 * Move the pre and post scripts to the Cohesity user_scripts directory, e.g. /opt/cohesity/agent/software/crux/bin/user_scripts/
-* Create mount paths to mount the data disks, for example:
-
-```bash
-mkdir -p /data/snapdisk1
-mkdir -p /data/snapdisk2
-mkdir -p /data/snapdisk3
-```
-
+* Create mount paths to mount the data
 * Modify the scripts to match your environment, for example:
 
 `/opt/cohesity/agent/software/crux/bin/user_scripts/prescript.sh`
 
 ```bash
 #!/bin/bash
-# example - unmount previously mounted disks
-sudo umount /data/snapdisk1
-sudo umount /data/snapdisk2
-sudo umount /data/snapdisk3
-# example - mount new disks
-sudo mount -o nouuid -t xfs /dev/$(ls -l /dev/disk/azure/scsi1 | grep 'lun4-part1 ' | cut -d' ' -f12 | cut -d'/' -f4) /data/snapdisk1
-sudo mount -o nouuid -t xfs /dev/$(ls -l /dev/disk/azure/scsi1 | grep 'lun5-part1 ' | cut -d' ' -f12 | cut -d'/' -f4) /data/snapdisk2
-sudo mount -o nouuid -t xfs /dev/$(ls -l /dev/disk/azure/scsi1 | grep 'lun6-part1 ' | cut -d' ' -f12 | cut -d'/' -f4) /data/snapdisk3
+# example - unmount previously mounted lv
+sudo umount /mydata
+sudo vgchange -an myvg
+# example - mount new lv
+sudo vgchange -ay myvg
+sudo mount /dev/mapper/myvg-mydata /mydata/
 # end example mount commands
 ```
-
-Note: you can see the lun number and partition number (e.g. 'lun4-part1') in the mount commands above. We will define the lun numbers in the freeze/thaw script (e.g. 4, 5, 6), but the partition numbers will come from the data disks on the Epic VM. Review the output of the `ls -l /dev/disk/azure/scsi1` command that we ran on the Epic Iris VM to identify the partition numbers.
 
 `/opt/cohesity/agent/software/crux/bin/user_scripts/postscript.sh`
 
 ```bash
 #!/bin/bash
-# example umount commands
-sudo umount /data/snapdisk1
-sudo umount /data/snapdisk2
-sudo umount /data/snapdisk3
+# example unmount lv
+sudo umount /mydata
+sudo vgchange -an myvg
 # end example umount commands
 ```
 
@@ -215,15 +190,16 @@ Notes:
 * Use the Sub scription ID and Resource Group recorded from Azure
 * Use the Tenant ID, App ID, and Secret value for the App/Client Secret
 * Use the DISK_NAMES recorded from the Azure Epic Iris VM
-* Use the DISK_SIZES recorded from the Azure Epic Iris VM
-* Use the DISK_SKUS recorded from the Azure Epic Iris VM
 
 ```bash
 #!/bin/bash
 
-SCRIPT_VERSION="2025-05-04"
-LOG_FILE="/home/epicadm/freeze-thaw.log"
+SCRIPT_VERSION="2025-05-08"
+LOG_FILE="/home/epicadm/freezethaw.log"
 SCRIPT_ROOT="/home/epicadm"
+SLEEP_SECONDS=60
+DISK_PREFIX="cohdisk"
+SNAP_PREFIX="cohsnap"
 
 # cohesity cluster settings ===============================
 CLUSTER_API_KEY="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
@@ -236,21 +212,18 @@ SUBSCRIPTION_ID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 TENANT_ID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 APP_ID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 SECRET="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
 RESOURCE_GROUP="Epic_group"
+DISK_SKU="PremiumV2_LRS"
+IRIS_VM_NAME='IrisVM'
+MOUNT_HOST_VM_NAME='MountVM'
 
 # Disks
-SNAP_NAMES=("snap1" "snap2" "snap3")
-DISK_NAMES=("disk1" "disk2" "disk3")
-NEW_DISK_NAMES=("snapdisk1" "snapdisk2" "snapdisk3")
-NEW_DISK_LUNS=("4" "5" "6")
-DISK_SIZES=("1024" "512" "512")
-DISK_SKUS=("PremiumV2_LRS" "PremiumV2_LRS" "PremiumV2_LRS")
+DISK_NAMES=("data0" "data1")
 
 # Epic settings ===========================================
-IRIS_VM_NAME='EpicVM'
-MOUNT_HOST_VM_NAME='MountHostVM'
-FREEZE_CMD="/bin/sudo -u epicadm /epic/prd/bin/instfreeze"
-THAW_CMD="/bin/sudo -u epicadm /epic/prd/bin/instthaw"
+FREEZE_CMD="/epic/prd/bin/instfreeze"
+THAW_CMD="/epic/prd/bin/instthaw"
 ```
 
 ## Test the Results
@@ -267,8 +240,14 @@ Thesee are examples of the various Azure CLI commands that the freeze/thaw scrip
 # Authentication (using Client Secret)
 az login --service-principal -t <tenant_id> -u <ap_id> -p <secret_value>
 
+# Set the default subscription
+az account set -s <subscription_id>
+
 # Create a Snapshot of Disk1
-az snapshot create --name snap1 --resource-group Epic_group --source /subscriptions/<subscription_id>/resourceGroups/Epic_group/providers/Microsoft.Compute/disks/disk1
+az snapshot create --name snap1 --resource-group Epic_group --source /subscriptions/<subscription_id>/resourceGroups/Epic_group/providers/Microsoft.Compute/disks/disk1 --incremental true
+
+# Check the completion status of a snapshot
+az snapshot show -n snap1 -g Epic_group -query completionPercent
 
 # Create a Disk from the Snapshot
 az disk create --resource-group Epic_group --name snapdisk1 --source /subscriptions/<subscription_id>/resourceGroups/Epic_group/providers/Microsoft.Compute/snapshots/snap1 --size-gb 64 --sku Standard_LRS
