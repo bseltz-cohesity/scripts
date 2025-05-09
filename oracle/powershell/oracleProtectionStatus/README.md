@@ -48,5 +48,5 @@ Place both files in a folder together and run the main script like so:
 * -serverName: (optional) one or more server names to include (comma separated) default is all Oracle servers
 * -serverList: (optional) text file of server names to include (one per line) default is all Oracle servers
 * -excludeServerName: (optional) one or more server names to exclude (comma separated)
-* -$excludeServerList: (optional) text file of server names to exclude (one per line)
+* -excludeServerList: (optional) text file of server names to exclude (one per line)
 * -showUnprotectedOnly: (optional) show only unprotected databases
