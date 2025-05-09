@@ -13,6 +13,8 @@ param (
     [Parameter()][string]$clusterName = $null,
     [Parameter()][array]$serverName,
     [Parameter()][string]$serverList,
+    [Parameter()][array]$excludeServerName,
+    [Parameter()][string]$excludeServerList,
     [Parameter()][switch]$showUnprotectedOnly
 )
 
@@ -68,7 +70,8 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 }
 
 
-$serverNames = @(gatherList -Param $serverName -FilePath $serverList -Name 'jobs' -Required $false)
+$serverNames = @(gatherList -Param $serverName -FilePath $serverList -Name 'servers' -Required $false)
+$excludeServerNames = @(gatherList -Param $excludeServerName -FilePath $excludeServerList -Name 'excluded servers' -Required $false)
 
 $sources = api get protectionSources?environments=kOracle
 
@@ -84,17 +87,19 @@ Write-Host ""
 
 foreach($server in $sources.nodes | Sort-Object -Property {$_.protectionSource.name}){
     if($serverNames.Count -eq 0 -or $server.protectionSource.name -in $serverNames){
-        foreach($instance in $server.applicationNodes | Sort-Object -Property {$_.protectionSource.name}){
-            $instanceName = $instance.protectionSource.name
-            $protected = $false
-            $protectedText = "*** not protected ***"
-            if($instance.protectedSourcesSummary[0].PSObject.Properties['leavesCount'] -and $instance.protectedSourcesSummary[0].leavesCount -gt 0){
-                $protected = $True
-                $protectedText = 'protected'
-            }
-            if(!$showUnprotectedOnly -or $protected -eq $false){
-                Write-Host "$($server.protectionSource.name)/$instanceName - $protectedText"
-                """$($server.protectionSource.name)"",""$instanceName"",""$protected""" | Out-File -FilePath $outfileName -Append
+        if($server.protectionSource.name -notin $excludeServerNames){
+            foreach($instance in $server.applicationNodes | Sort-Object -Property {$_.protectionSource.name}){
+                $instanceName = $instance.protectionSource.name
+                $protected = $false
+                $protectedText = "*** not protected ***"
+                if($instance.protectedSourcesSummary[0].PSObject.Properties['leavesCount'] -and $instance.protectedSourcesSummary[0].leavesCount -gt 0){
+                    $protected = $True
+                    $protectedText = 'protected'
+                }
+                if(!$showUnprotectedOnly -or $protected -eq $false){
+                    Write-Host "$($server.protectionSource.name)/$instanceName - $protectedText"
+                    """$($server.protectionSource.name)"",""$instanceName"",""$protected""" | Out-File -FilePath $outfileName -Append
+                }
             }
         }
     }
