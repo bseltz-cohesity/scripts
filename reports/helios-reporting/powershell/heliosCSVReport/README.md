@@ -43,6 +43,7 @@ Place all files in a folder together, then run the main script like so:
 * -timeZone: (optional) default is 'America/New_York',
 * -outputPath: (optional) path to write output files (default is '.')
 * -includeCCS: (optional) include CCS region data
+* -ccsOnly: (optional) include only CCS region data (no self-managed clusters)
 * -excludeLogs: (optional) skip backup type kLog
 * -environment: (optional) one or more (comma separated) environments to include (e.g. kSQL, kO365)
 * -excludeEnvironment: (optional) one or more (comma separated) environments to exclude (e.g. kSQL, kO365)

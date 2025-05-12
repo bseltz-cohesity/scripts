@@ -23,7 +23,8 @@ param (
     [Parameter()][array]$filters,
     [Parameter()][string]$filterList,
     [Parameter()][string]$filterProperty,
-    [Parameter()][switch]$showRecord
+    [Parameter()][switch]$showRecord,
+    [Parameter()][switch]$ccsOnly
 )
 
 # gather list from command line params and file
@@ -56,9 +57,11 @@ $filterTextList = @(gatherList -FilePath $filterList -Name 'filter text list' -R
 apiauth -vip $vip -username $username -domain 'local' -helios -entraIdAuthentication $EntraId
 
 # $allClusters = heliosClusters
-$allClusters = (api get -mcmv2 cluster-mgmt/info).cohesityClusters
+if(! $ccsOnly){
+    $allClusters = (api get -mcmv2 cluster-mgmt/info).cohesityClusters
+}
 $regions = api get -mcmv2 dms/regions
-if($includeCCS){
+if($includeCCS -or $ccsOnly){
     foreach($region in $regions.regions){
         setApiProperty -object $region -name 'clusterName' -Value $region.name
         $allClusters = @($allClusters + $region)
