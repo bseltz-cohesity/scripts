@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-05-12`] [protectCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectCassandra) [`Update`] added qospolicy parameter
+* [`2025-05-09`] [oracleProtectionStatus.ps1](https://github.com/cohesity/community-automation-samples/tree/main/oracle/powershell/oracleProtectionStatus) [`Update`] added exclude parameters
 * [`2025-05-07`] [cloneVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneVM) [`Update`] fixed folder lookup
 * [`2025-05-06`] [refreshSource.py](https://github.com/cohesity/community-automation-samples/tree/main/python/refreshSource) [`Update`] improved API query
 * [`2025-05-06`] [refreshSource](https://github.com/cohesity/community-automation-samples/tree/main/linux/refreshSource) [`Update`] improved API query
