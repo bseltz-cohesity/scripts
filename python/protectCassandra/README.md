@@ -95,6 +95,7 @@ You can exclude keyspaces and tables:
 * -cc, --concurrency: (optional) specify concurrency (default is 16)
 * -bw, --bandwidth: (optional) specify bandwidth limit (MB/s)
 * -z, --pause: (optional) pause future runs
+* -q, --qospolicy: (optional) 'kBackupHDD', 'kBackupSSD', or 'kBackupAll' (default is 'kBackupHDD')
 
 ## New Job Parameters
 

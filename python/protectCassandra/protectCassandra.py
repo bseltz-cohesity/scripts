@@ -38,6 +38,7 @@ parser.add_argument('-dc', '--datacenter', action='append', type=str)
 parser.add_argument('-ar', '--alertrecipient', action='append', type=str)
 parser.add_argument('-av', '--alertslaviolation', action='store_true')
 parser.add_argument('-as', '--alertsuccess', action='store_true')
+parser.add_argument('-q', '--qospolicy', type=str, choices=['kBackupHDD', 'kBackupSSD', 'kBackupAll', None], default=None)
 
 args = parser.parse_args()
 
@@ -74,6 +75,7 @@ pause = args.pause
 alertrecipients = args.alertrecipient
 alertslaviolation = args.alertslaviolation
 alertsuccess = args.alertsuccess
+qospolicy = args.qospolicy
 
 def gatherList(param=None, filename=None, name='items', required=True):
     items = []
@@ -183,7 +185,7 @@ if job is None or len(job) == 0:
                 "slaMinutes": incrementalsla
             }
         ],
-        "qosPolicy": "kBackupHDD",
+        "qosPolicy": qospolicy,
         "abortInBlackouts": False,
         "pauseInBlackouts": False,
         "storageDomainId": viewBox['id'],
@@ -220,6 +222,11 @@ else:
     else:
         print('existing job protects regular keyspaces')
         systemkeyspaces = False
+
+if qospolicy is None and job['qosPolicy'] is None:
+    job['qosPolicy'] = 'kBackupHDD'
+if qospolicy is not None:
+    job['qosPolicy'] = qospolicy
 
 if alertrecipients is not None and len(alertrecipients) > 0:    
     for r in alertrecipients:
