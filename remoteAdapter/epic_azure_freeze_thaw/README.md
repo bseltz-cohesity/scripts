@@ -49,6 +49,10 @@ Record the following for the app/client secret:
 * App ID
 * Secret Value
 
+## Azure Portal - Grant Role Permissions to Registered App
+
+You can create a custom role to grant the app the needed permissions to perform the actions of the freeze thaw script. Provided here is the JSON to create this role: <>
+
 ## Azure Portal - Review the Epic Iris VM
 
 Record the following for the Epic VM:
