@@ -42,6 +42,12 @@ For all helios clusters:
 ./registeredSources.ps1 -username myusername@mydomain.net
 ```
 
+Email Report of all unhealthy sources for all Helios clusters:
+
+```powershell
+./registeredSources.ps1 -username myusername@mydomain.net -unhealthy -smtpServer smtp.mydomain.net -sendFrom me@mydomain.net -sendTo them@mydomain.net 
+```
+
 For selected helios clusters:
 
 ```powershell
