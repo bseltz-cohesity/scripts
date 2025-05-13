@@ -190,9 +190,9 @@ foreach($object in $objects){
     foreach($jobInfo in $availableJobInfos){
         $snapshots = api get -v2 "data-protect/objects/$($object.id)/snapshots?protectionGroupIds=$($jobInfo.protectionGroupId)"
         $snapshots = $snapshots.snapshots | Where-Object {$_.snapshotTimestampUsecs -le $desiredPIT}
-        if($snapshots.Count -gt 0){
+        if(@($snapshots).Count -gt 0){
             $localSnapshots = $snapshots | Where-Object snapshotTargetType -eq 'Local'
-            if($localSnapshots.Count -gt 0){
+            if(@($localSnapshots).Count -gt 0){
                 $snapshots = $localSnapshots
             }
             if($snapshots[-1].snapshotTimestampUsecs -gt $latestSnapshotTimeStamp){
