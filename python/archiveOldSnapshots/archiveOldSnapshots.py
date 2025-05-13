@@ -15,16 +15,17 @@ parser.add_argument('-u', '--username', type=str, required=True)  # username
 parser.add_argument('-d', '--domain', type=str, default='local')  # (optional) domain - defaults to local
 parser.add_argument('-i', '--useApiKey', action='store_true')     # use api key for authentication
 parser.add_argument('-p', '--password', type=str, default=None)   # password or api key to use
-parser.add_argument('-k', '--keepfor', type=int, required=True)   # keep archives for X days
+parser.add_argument('-k', '--keepfor', type=int, default=0)   # keep archives for X days
 parser.add_argument('-t', '--target', type=str, required=True)    # name of external target to archive to
 parser.add_argument('-r', '--replicasonly', action='store_true')  # only archive replicated jobs
 parser.add_argument('-l', '--localonly', action='store_true')     # only archive local jobs
-parser.add_argument('-f', '--force', action='store_true')         # perform the archive operation (otherwise show only)
+parser.add_argument('-c', '--commit', action='store_true')         # perform the archive operation (otherwise show only)
 parser.add_argument('-e', '--excludelogs', action='store_true')   # exclude log backups
-parser.add_argument('-n', '--daysback', type=int, default=31)     # number of days back to search for snapshots to archive
+parser.add_argument('-n', '--newerthan', type=int, default=31)     # number of days back to search for snapshots to archive
+parser.add_argument('-o', '--olderthan', type=int, default=0)     # number of days back to search for snapshots to archive
 parser.add_argument('-j', '--joblist', type=str, default=None)    # text file of job names to include (default is all jobs)
 parser.add_argument('-x', '--excludelist', type=str, default=None)  # text file of job names (and strings) to exclude
-parser.add_argument('-o', '--outfolder', type=str, default='.')   # output folder for log file
+parser.add_argument('-f', '--outfolder', type=str, default='.')   # output folder for log file
 parser.add_argument('-s', '--retentionstring', action='append', type=str)  # strings for special retention
 parser.add_argument('-m', '--onlymatches', action='store_true')   # perform the archive operation (otherwise show only)
 
@@ -39,9 +40,10 @@ keepfor = args.keepfor
 target = args.target
 replicasonly = args.replicasonly
 localonly = args.localonly
-force = args.force
+commit = args.commit
 excludelogs = args.excludelogs
-daysback = args.daysback
+newerthan = args.newerthan
+olderthan = args.olderthan
 joblist = args.joblist
 excludelist = args.excludelist
 outfolder = args.outfolder
@@ -66,7 +68,7 @@ if apiconnected() is False:
     log.close()
     exit(1)
 
-if force is False:
+if commit is False:
     print('\nRunning in test mode - will not archive\n')
     log.write('Running in test mode - will not archive\n\n')
 
@@ -123,13 +125,14 @@ else:
     log.close()
     exit(1)
 
-startTimeUsecs = timeAgo(daysback, 'days')
+startTimeUsecs = timeAgo(newerthan, 'days')
+endTimeUsecs = timeAgo(olderthan, 'days')
 
 busystates = ['kAccepted', 'kRunning', 'kCanceling']
 completedstates = ['kSuccess']
 
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
-    runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&excludeTasks=true&numRuns=10000' % (job['id'], startTimeUsecs))
+    runs = api('get', 'protectionRuns?jobId=%s&startTimeUsecs=%s&endTimeUsecs=%s&excludeTasks=true&numRuns=10000' % (job['id'], startTimeUsecs, endTimeUsecs))
     runs = [r for r in runs if r['backupRun']['snapshotsDeleted'] is not True]
     runs = [r for r in runs if 'endTimeUsecs' in r['backupRun']['stats']]
 
@@ -209,12 +212,14 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                         retentionString = ''.join([i for i in retentionString if i.isdigit()])
                         if retentionString.isdigit():
                             thisDaysToKeep = int(retentionString)
-
-                thisDaysToKeep = thisDaysToKeep - dayDiff(dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S")), run['copyRun'][0]['runStartTimeUsecs'])
+                if keepfor > 0:
+                    thisDaysToKeep = thisDaysToKeep - dayDiff(dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S")), run['copyRun'][0]['runStartTimeUsecs'])
+                else:
+                    thisDaysToKeep = 1 + dayDiff(expiryTimeUsecs, dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
                 archiveTask['jobRuns'][0]['copyRunTargets'][0]['daysToKeep'] = int(thisDaysToKeep)
 
                 # perform archive
-                if force and int(thisDaysToKeep) > 0:
+                if commit and int(thisDaysToKeep) > 0:
                     print('archiving %s (%s) -> %s for %s days' % (job['name'], usecsToDate(run['copyRun'][0]['runStartTimeUsecs']), target['vaultName'], thisDaysToKeep))
                     log.write('archiving %s (%s) -> %s for %s days\n' % (job['name'], usecsToDate(run['copyRun'][0]['runStartTimeUsecs']), target['vaultName'], thisDaysToKeep))
                     result = api('put', 'protectionRuns', archiveTask)
