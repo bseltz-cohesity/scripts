@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-05-13`] [registeredSources.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/registeredSources) [`Update`] added unhealthy switch and email options
 * [`2025-05-12`] [heliosCSVReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/powershell/heliosCSVReport) [`Update`] added ccsonly parameter
 * [`2025-05-12`] [protectCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectCassandra) [`Update`] added qospolicy parameter
 * [`2025-05-09`] [oracleProtectionStatus.ps1](https://github.com/cohesity/community-automation-samples/tree/main/oracle/powershell/oracleProtectionStatus) [`Update`] added exclude parameters
