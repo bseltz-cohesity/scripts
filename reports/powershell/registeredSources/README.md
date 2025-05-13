@@ -79,3 +79,8 @@ Search by source type (applies to all above scenarios):
 * -searchString: (optional) one or more source names or search strings (comma separated) to search for
 * -searchList: (optional) text file of source names or search strings to search for (one per line)
 * -searchType: (optional) limit results to sources where the environment type matches the search type
+* -unhealthy: (optional) limit results to sources that have registration/health check errors
+* -smtpServer: (optional) SMTP gateway to forward email through
+* -smtpPort: (optional) SMTP port to use (default is 25)
+* -sendTo: (optional) email addresses to send report to (comma separated)
+* -sendFrom: (optional) email address to show in the from field

@@ -1,23 +1,27 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-   [Parameter()][array]$vip = 'helios.cohesity.com', #the cluster to connect to (DNS name or IP)
-   [Parameter()][string]$username = 'helios', #username (local or AD)
-   [Parameter()][array]$clusterName,
-   [Parameter()][string]$domain = 'local', #local or AD domain
-   [Parameter()][switch]$useApiKey,                     # use API key for authentication
-   [Parameter()][string]$password,                      # optional password
-   [Parameter()][switch]$noPrompt,                      # do not prompt for password
-   [Parameter()][string]$tenant,                        # org to impersonate
-   [Parameter()][switch]$mcm,                           # connect to MCM endpoint
-   [Parameter()][string]$mfaCode = $null,               # MFA code
-   [Parameter()][switch]$emailMfaCode,                  # email MFA code
-   [Parameter()][array]$searchString,
-   [Parameter()][string]$searchList,
-   [Parameter()][string]$searchType,
-   [Parameter()][switch]$dbg
+    [Parameter()][array]$vip = 'helios.cohesity.com', #the cluster to connect to (DNS name or IP)
+    [Parameter()][string]$username = 'helios', #username (local or AD)
+    [Parameter()][array]$clusterName,
+    [Parameter()][string]$domain = 'local', #local or AD domain
+    [Parameter()][switch]$useApiKey,                     # use API key for authentication
+    [Parameter()][string]$password,                      # optional password
+    [Parameter()][switch]$noPrompt,                      # do not prompt for password
+    [Parameter()][string]$tenant,                        # org to impersonate
+    [Parameter()][switch]$mcm,                           # connect to MCM endpoint
+    [Parameter()][string]$mfaCode = $null,               # MFA code
+    [Parameter()][switch]$emailMfaCode,                  # email MFA code
+    [Parameter()][array]$searchString,
+    [Parameter()][string]$searchList,
+    [Parameter()][string]$searchType,
+    [Parameter()][switch]$dbg,
+    [Parameter()][switch]$unhealthy,
+    [Parameter()][string]$smtpServer, # outbound smtp server '192.168.1.95'
+    [Parameter()][string]$smtpPort = 25, # outbound smtp port
+    [Parameter()][array]$sendTo, # send to address
+    [Parameter()][string]$sendFrom # send from address
 )
-
 
 # gather list from command line params and file
 function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
@@ -55,9 +59,7 @@ $outFile = Join-Path -Path $PSScriptRoot -ChildPath "registeredSources-$dateStri
 
 Write-Host ""
 
-
-
-
+$Script:recordCount = 0
 
 foreach($v in $vip){
     ### authenticate
@@ -92,8 +94,8 @@ foreach($v in $vip){
                     # check for refresh error
                     if($source.registrationInfo.PSObject.Properties['refreshErrorMessage']){
                         $lastRefreshError = $source.registrationInfo.refreshErrorMessage.split("`n")[0]
-                        if($lastRefreshError.length -gt 50){
-                            $lastRefreshError = $lastRefreshError.subString(0,50)
+                        if($lastRefreshError.length -gt 300){
+                            $lastRefreshError = $lastRefreshError.subString(0,300)
                         }
                         $status = 'Unhealthy'
                     }
@@ -109,8 +111,8 @@ foreach($v in $vip){
                     # check for authentication error
                     if($source.registrationInfo.PSObject.Properties['authenticationErrorMessage']){
                         $authError = $source.registrationInfo.authenticationErrorMessage.split("`n")[0]
-                        if($authError.length -gt 50){
-                            $authError = $authError.subString(0,50)
+                        if($authError.length -gt 300){
+                            $authError = $authError.subString(0,300)
                         }
                         $status = 'Unhealthy'
                     }
@@ -129,16 +131,16 @@ foreach($v in $vip){
                             # check for authentication error
                             if($app.PSObject.Properties['authenticationErrorMessage']){
                                 $authError = $app.authenticationErrorMessage.split("`n")[0]
-                                if($authError.length -gt 50){
-                                    $authError = $authError.subString(0,50)
+                                if($authError.length -gt 300){
+                                    $authError = $authError.subString(0,300)
                                 }
                                 $status = 'Unhealthy'
                             }
                             # check for refresh error
                             if($app.PSObject.Properties['refreshErrorMessage']){
                                 $lastRefreshError = $app.refreshErrorMessage.split("`n")[0]
-                                if($lastRefreshError.length -gt 50){
-                                    $lastRefreshError = $lastRefreshError.subString(0,50)
+                                if($lastRefreshError.length -gt 300){
+                                    $lastRefreshError = $lastRefreshError.subString(0,300)
                                 }
                                 $status = 'Unhealthy'
                             }
@@ -154,16 +156,22 @@ foreach($v in $vip){
                             }else{
                                 $healthChecks = 'n/a'
                             }
-                            """$cluster"",""$status"",""$sourceName"",""$sourceType"",""$protected"",""$unprotected"",""$authStatus"",""$authError"",""$(usecsToDate $lastRefreshUsecs)"",""$lastRefreshError"",""$healthChecks""" | Out-File -FilePath $outFile -Append
+                            if(!$unhealthy -or $status -eq 'Unhealthy'){
+                                """$cluster"",""$status"",""$sourceName"",""$sourceType"",""$protected"",""$unprotected"",""$authStatus"",""$authError"",""$(usecsToDate $lastRefreshUsecs)"",""$lastRefreshError"",""$healthChecks""" | Out-File -FilePath $outFile -Append
+                            }
                         }
                     }else{
-                        """$cluster"",""$status"",""$sourceName"",""$sourceType"",""$protected"",""$unprotected"",""$authStatus"",""$authError"",""$(usecsToDate $lastRefreshUsecs)"",""$lastRefreshError"",""n/a""" | Out-File -FilePath $outFile -Append
+                        if(!$unhealthy -or $status -eq 'Unhealthy'){
+                            """$cluster"",""$status"",""$sourceName"",""$sourceType"",""$protected"",""$unprotected"",""$authStatus"",""$authError"",""$(usecsToDate $lastRefreshUsecs)"",""$lastRefreshError"",""n/a""" | Out-File -FilePath $outFile -Append
+                        }
                     }
-                    "{0}:  {1}  ({2})  {3}" -f $cluster, $sourceName, $sourceType, $status
+                    if(!$unhealthy -or $status -eq 'Unhealthy'){
+                        $Script:recordCount += 1
+                        "{0}:  {1}  ({2})  {3}" -f $cluster, $sourceName, $sourceType, $status
+                    }
                     $seenSources = @($seenSources + $source.rootNode.id)
                 }
             }
-
 
             $sources = (api get protectionSources/registrationInfo?includeApplicationsTreeInfo=false).rootNodes
             if($searchType){
@@ -182,3 +190,18 @@ foreach($v in $vip){
 }
 
 "`nOutput saved to $outfile`n"
+
+if($smtpServer -and $sendTo -and $sendFrom -and $Script:recordCount -gt 0){
+    if($unhealthy){
+        $subject = "Cohesity Registered Sources (Unhealthy)"
+        $body = "`n$recordCount unhealthy sources reported (see attached)"
+    }else{
+        $subject = "Cohesity Registered Sources"
+        $body = "`n$recordCount sources reported (see attached)"
+    }
+    Write-Host "Sending report to $([string]::Join(", ", $sendTo))`n"
+    # send email report
+    foreach($toaddr in $sendTo){
+        Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject $subject -Body $body -Attachments $outfile -WarningAction SilentlyContinue
+    }
+}
