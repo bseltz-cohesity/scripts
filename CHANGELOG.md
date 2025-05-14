@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-05-14`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] fixed divide by zero
 * [`2025-05-13`] [epicAzureFreezeThawRole.json](https://github.com/cohesity/community-automation-samples/tree/main/remoteAdapter/epic_azure_freeze_thaw) [`New`] Added custom role creation JSON
 * [`2025-05-13`] [restoreOracle-v2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/oracle/powershell/restoreOracle-v2) [`Update`] fixed snapshot count bug
 * [`2025-05-13`] [archiveOldSnapshots.py](https://github.com/cohesity/community-automation-samples/tree/main/python/archiveOldSnapshots) [`Update`] added auto retention option
