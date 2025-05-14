@@ -770,7 +770,7 @@ function reportStorage(){
         $consumption = 0
         $objFESize = toUnits $viewStats.totalLogicalUsageBytes
         $objGrowth = 0
-        if($jobName -ne '-' -and $jobName -in $viewJobStats.Keys){
+        if($jobName -ne '-' -and $jobName -in $viewJobStats.Keys -and $jobName -in $viewJobAltStats.Keys -and $viewJobAltStats[$jobName]["totalConsumed"] -gt 0){
             $objWeight = $viewStats.storageConsumedBytes / $viewJobAltStats[$jobName]["totalConsumed"]
             $dataIn = $viewJobStats[$jobName].stats.dataInBytes * $objWeight
             $dataInAfterDedup = $viewJobStats[$jobName].stats.dataInBytesAfterDedup * $objWeight
