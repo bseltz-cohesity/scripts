@@ -1,6 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
-* [`2025-05-13`] [epicAzureFreezeThawRole.json](https://github.com/cohesity/community-automation-samples/tree/main/remoteAdapter/epic_azure_freeze_thaw) [`Update`] Added custom role creation JSON
+* [`2025-05-13`] [epicAzureFreezeThawRole.json](https://github.com/cohesity/community-automation-samples/tree/main/remoteAdapter/epic_azure_freeze_thaw) [`New`] Added custom role creation JSON
 * [`2025-05-13`] [restoreOracle-v2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/oracle/powershell/restoreOracle-v2) [`Update`] fixed snapshot count bug
 * [`2025-05-13`] [archiveOldSnapshots.py](https://github.com/cohesity/community-automation-samples/tree/main/python/archiveOldSnapshots) [`Update`] added auto retention option
 * [`2025-05-13`] [registeredSources.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/registeredSources) [`Update`] added unhealthy switch and email options
