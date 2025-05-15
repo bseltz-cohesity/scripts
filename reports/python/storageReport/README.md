@@ -29,11 +29,18 @@ Place both files in a folder together and run the main script like so:
                    -d mydomain.net
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -v, --vip: DNS or IP of the Cohesity cluster to connect to
-* -u, --username: username to authenticate to Cohesity cluster
-* -d, --domain: (optional) domain of username, defaults to local
+* -v, --vip: (optional) one or more names or IPa of Cohesity clustera to connect to (repeat for multiple) default is helios.cohesity.com
+* -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
+* -d, --domain: (optional) domain of username (defaults to local)
 * -i, --useApiKey: (optional) use API key for authentication
-* -pwd: --password: (optional) use password from command line instead of stored password
+* -pwd, --password: (optional) password or API key
+* -np, --noprompt: (optional) do not prompt for password
+* -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) one or more helios/mcm clusters to connect to (repeat for multiple)
+* -m, --mfacode: (optional) MFA code for authentication
+
+## Other Parameters
+
 * -of: --outfolder: (optional) where to write report html (default is current directory)

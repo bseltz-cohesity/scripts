@@ -9,40 +9,100 @@ import codecs
 # command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)
+parser.add_argument('-v', '--vip', action='append', type=str)
 parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-c', '--clustername', action='append', type=str)
+parser.add_argument('-mcm', '--mcm', action='store_true')
 parser.add_argument('-i', '--useApiKey', action='store_true')
-parser.add_argument('-pwd', '--password', type=str)
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-of', '--outfolder', type=str, default='.')
 
 args = parser.parse_args()
 
-vip = args.vip
+vips = args.vip
 username = args.username
 domain = args.domain
-password = args.password
-folder = args.outfolder
+clusternames = args.clustername
+mcm = args.mcm
 useApiKey = args.useApiKey
+password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
+folder = args.outfolder
 
-# authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+if vips is None or len(vips) == 0:
+    vips = ['helios.cohesity.com']
 
 print('Collecting report data...')
 
-cluster = api('get', 'cluster')
-remotes = api('get', 'remoteClusters')
-jobs = api('get', 'protectionJobs')
-title = 'Storage Report for %s' % cluster['name']
+def report():
 
-now = datetime.now()
-datestring = now.strftime("%Y-%m-%d")
-htmlfileName = '%s/storageReport-%s-%s.html' % (folder, cluster['name'], datestring)
-csvfileName = '%s/storageReport-%s-%s.csv' % (folder, cluster['name'], datestring)
-csv = codecs.open(csvfileName, 'w', 'utf-8')
-csv.write("Job/View Name,Environment,Local/Replicated,Source Cluster,GiB Logical,GiB Ingested,GiB Consumed,Dedup Ratio,Compression,Reduction\n")
+    def processStats(stats, name, environment, location):
+        if location == 'Replicated':
+            jobId = stats['id']
+            job = [j for j in jobs if j['id'] == jobId]
+            if job is not None and len(job) > 0:
+                jobClusterId = job[0]['policyId'].split(':')[0]
+                remote = [r for r in remotes if int(r['clusterId']) == int(jobClusterId)]
+                # display(remote)
 
-html = '''<html>
+                if remote is not None and len(remote) > 0:
+                    sourcecluster = remote[0]['name']
+                else:
+                    sourcecluster = 'UNKNOWN'
+            else:
+                sourcecluster = 'UNKNOWN'
+        else:
+            sourcecluster = cluster['name']
+        logicalBytes = stats['stats'].get('totalLogicalUsageBytes', 0)
+        dataIn = stats['stats'].get('dataInBytes', 0)
+        dataInAfterDedup = stats['stats'].get('dataInBytesAfterDedup', 0)
+        dataWritten = stats['stats'].get('dataWrittenBytes', 0)
+        consumedBytes = stats['stats'].get('storageConsumedBytes', 0)
+        if dataInAfterDedup > 0 and dataWritten > 0:
+            dedup = round(float(dataIn) / dataInAfterDedup, 1)
+            compression = round(float(dataInAfterDedup) / dataWritten, 1)
+        else:
+            dedup = 0
+            compression = 0
+        if consumedBytes > 0:
+            reduction = round(float(dataIn) / dataWritten, 1)
+        else:
+            reduction = 0
+        consumption = round(float(consumedBytes) / (1024 * 1024 * 1024), 1)
+        logical = round(float(logicalBytes) / (1024 * 1024 * 1024), 1)
+        dataInGiB = round(float(dataIn) / (1024 * 1024 * 1024), 1)
+        print('%30s: %11s %s' % (name, consumption, 'GiB'))
+        csv.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (name, environment, location, sourcecluster, logical, dataInGiB, consumption, dedup, compression, reduction))
+        return '''<tr>
+<td>%s</td>
+<td>%s</td>
+<td>%s</td>
+<td>%s</td>
+<td>%s</td>
+<td>%s</td>
+<td>%s</td>
+<td>%s</td>
+<td>%s</td>
+<td>%s</td>
+</tr>''' % (name, environment, location, sourcecluster, logical, dataInGiB, consumption, dedup, compression, reduction)
+
+    cluster = api('get', 'cluster')
+    remotes = api('get', 'remoteClusters')
+    jobs = api('get', 'protectionJobs')
+    title = 'Storage Report for %s' % cluster['name']
+
+    now = datetime.now()
+    datestring = now.strftime("%Y-%m-%d")
+    htmlfileName = '%s/storageReport-%s-%s.html' % (folder, cluster['name'], datestring)
+    csvfileName = '%s/storageReport-%s-%s.csv' % (folder, cluster['name'], datestring)
+    csv = codecs.open(csvfileName, 'w', 'utf-8')
+    csv.write("Job/View Name,Environment,Local/Replicated,Source Cluster,GiB Logical,GiB Ingested,GiB Consumed,Dedup Ratio,Compression,Reduction\n")
+
+    html = '''<html>
 <head>
     <style>
         p {
@@ -200,11 +260,11 @@ html = '''<html>
         <p style="margin-top: 15px; margin-bottom: 15px;">
             <span style="font-size:1.3em;">'''
 
-html += title
-html += '''</span>
+    html += title
+    html += '''</span>
 <span style="font-size:1em; text-align: right; padding-top: 8px; padding-right: 2px; float: right;">'''
-html += datestring
-html += '''</span>
+    html += datestring
+    html += '''</span>
 </p>
 <table>
 <tr>
@@ -220,137 +280,111 @@ html += '''</span>
     <th>Reduction</th>
 </tr>'''
 
+    jobs = api('get', 'protectionJobs?allUnderHierarchy=true')
 
-def processStats(stats, name, environment, location):
-    if location == 'Replicated':
-        jobId = stats['id']
-        job = [j for j in jobs if j['id'] == jobId]
-        if job is not None and len(job) > 0:
-            jobClusterId = job[0]['policyId'].split(':')[0]
-            remote = [r for r in remotes if int(r['clusterId']) == int(jobClusterId)]
-            # display(remote)
+    msecsBeforeCurrentTimeToCompare = 7 * 24 * 60 * 60 * 1000
 
-            if remote is not None and len(remote) > 0:
-                sourcecluster = remote[0]['name']
-            else:
-                sourcecluster = 'UNKNOWN'
+    cookie = ''
+    viewJobStats = {'statsList': []}
+    while True:
+        theseStats = api('get', 'stats/consumers?consumerType=kViewProtectionRuns&msecsBeforeCurrentTimeToCompare=%s&cookie=%s' % (msecsBeforeCurrentTimeToCompare, cookie))
+        if 'statsList' in theseStats:
+            viewJobStats['statsList'] = viewJobStats['statsList'] + theseStats['statsList']
+        if 'cookie' in theseStats:
+            cookie = theseStats['cookie']
         else:
-            sourcecluster = 'UNKNOWN'
-    else:
-        sourcecluster = cluster['name']
-    logicalBytes = stats['stats'].get('totalLogicalUsageBytes', 0)
-    dataIn = stats['stats'].get('dataInBytes', 0)
-    dataInAfterDedup = stats['stats'].get('dataInBytesAfterDedup', 0)
-    dataWritten = stats['stats'].get('dataWrittenBytes', 0)
-    consumedBytes = stats['stats'].get('storageConsumedBytes', 0)
-    if dataInAfterDedup > 0 and dataWritten > 0:
-        dedup = round(float(dataIn) / dataInAfterDedup, 1)
-        compression = round(float(dataInAfterDedup) / dataWritten, 1)
-    else:
-        dedup = 0
-        compression = 0
-    if consumedBytes > 0:
-        reduction = round(float(dataIn) / dataWritten, 1)
-    else:
-        reduction = 0
-    consumption = round(float(consumedBytes) / (1024 * 1024 * 1024), 1)
-    logical = round(float(logicalBytes) / (1024 * 1024 * 1024), 1)
-    dataInGiB = round(float(dataIn) / (1024 * 1024 * 1024), 1)
-    print('%30s: %11s %s' % (name, consumption, 'GiB'))
-    csv.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (name, environment, location, sourcecluster, logical, dataInGiB, consumption, dedup, compression, reduction))
-    return '''<tr>
-    <td>%s</td>
-    <td>%s</td>
-    <td>%s</td>
-    <td>%s</td>
-    <td>%s</td>
-    <td>%s</td>
-    <td>%s</td>
-    <td>%s</td>
-    <td>%s</td>
-    <td>%s</td>
-    </tr>''' % (name, environment, location, sourcecluster, logical, dataInGiB, consumption, dedup, compression, reduction)
+            cookie = ''
+        if cookie == '':
+            break
 
+    print("\n  Local ProtectionJobs...")
 
-jobs = api('get', 'protectionJobs?allUnderHierarchy=true')
+    cookie = ''
+    localStats = {'statsList': []}
+    while True:
+        theseStats = api('get', 'stats/consumers?consumerType=kProtectionRuns&msecsBeforeCurrentTimeToCompare=%s&cookie=%s' % (msecsBeforeCurrentTimeToCompare, cookie))
+        if 'statsList' in theseStats:
+            localStats['statsList'] = localStats['statsList'] + theseStats['statsList']
+        if 'cookie' in theseStats:
+            cookie = theseStats['cookie']
+        else:
+            cookie = ''
+        if cookie == '':
+            break
+    localStats['statsList'] = localStats['statsList'] + viewJobStats['statsList']
 
-msecsBeforeCurrentTimeToCompare = 7 * 24 * 60 * 60 * 1000
+    for job in sorted(jobs, key=lambda job: job['name'].lower()):
+        if job['policyId'].split(':')[0] == str(cluster['id']):
+            stats = [s for s in localStats['statsList'] if s['id'] == job['id'] or s['name'].lower() == job['name'].lower()]
+            for stat in stats:
+                html += processStats(stat, job['name'], job['environment'][1:], 'Local')
 
-cookie = ''
-viewJobStats = {'statsList': []}
-while True:
-    theseStats = api('get', 'stats/consumers?consumerType=kViewProtectionRuns&msecsBeforeCurrentTimeToCompare=%s&cookie=%s' % (msecsBeforeCurrentTimeToCompare, cookie))
-    if 'statsList' in theseStats:
-        viewJobStats['statsList'] = viewJobStats['statsList'] + theseStats['statsList']
-    if 'cookie' in theseStats:
-        cookie = theseStats['cookie']
-    else:
-        cookie = ''
-    if cookie == '':
-        break
+    print("\n  Replicated ProtectionJobs...")
 
-print("\n  Local ProtectionJobs...")
+    cookie = ''
+    replicaStats = {'statsList': []}
+    while True:
+        replicaStats = api('get', 'stats/consumers?consumerType=kReplicationRuns&msecsBeforeCurrentTimeToCompare=%s&cookie=%s' % (msecsBeforeCurrentTimeToCompare, cookie))
+        if 'statsList' in theseStats:
+            replicaStats['statsList'] = replicaStats['statsList'] + theseStats['statsList']
+        if 'cookie' in theseStats:
+            cookie = theseStats['cookie']
+        else:
+            cookie = ''
+        if cookie == '':
+            break
+    replicaStats['statsList'] = replicaStats['statsList'] + viewJobStats['statsList']
 
-cookie = ''
-localStats = {'statsList': []}
-while True:
-    theseStats = api('get', 'stats/consumers?consumerType=kProtectionRuns&msecsBeforeCurrentTimeToCompare=%s&cookie=%s' % (msecsBeforeCurrentTimeToCompare, cookie))
-    if 'statsList' in theseStats:
-        localStats['statsList'] = localStats['statsList'] + theseStats['statsList']
-    if 'cookie' in theseStats:
-        cookie = theseStats['cookie']
-    else:
-        cookie = ''
-    if cookie == '':
-        break
-localStats['statsList'] = localStats['statsList'] + viewJobStats['statsList']
+    for job in sorted(jobs, key=lambda job: job['name'].lower()):
+        if job['policyId'].split(':')[0] != str(cluster['id']):
+            stats = [s for s in replicaStats['statsList'] if s['id'] == job['id'] or s['name'].lower() == job['name'].lower()]
+            for stat in stats:
+                html += processStats(stat, job['name'], job['environment'][1:], 'Replicated')
 
-for job in sorted(jobs, key=lambda job: job['name'].lower()):
-    if job['policyId'].split(':')[0] == str(cluster['id']):
-        stats = [s for s in localStats['statsList'] if s['id'] == job['id'] or s['name'].lower() == job['name'].lower()]
-        for stat in stats:
-            html += processStats(stat, job['name'], job['environment'][1:], 'Local')
+    print("\n  Unprotected Views...")
+    views = api('get', 'file-services/views?includeTenants=true&includeStats=false&includeProtectionGroups=true', v=2)
+    if 'views' in views and len(views['views']) > 0:
+        for view in sorted([v for v in views['views'] if 'viewProtection' not in v], key=lambda view: view['name'].lower()):
+            stats = api('get', 'stats/consumers?consumerType=kViews&consumerIdList=%s' % view['viewId'])
+            if 'statsList' in stats and stats['statsList'] is not None:
+                for stat in stats['statsList']:
+                    html += processStats(stat, view['name'], 'View', 'Local')
 
-print("\n  Replicated ProtectionJobs...")
-
-cookie = ''
-replicaStats = {'statsList': []}
-while True:
-    replicaStats = api('get', 'stats/consumers?consumerType=kReplicationRuns&msecsBeforeCurrentTimeToCompare=%s&cookie=%s' % (msecsBeforeCurrentTimeToCompare, cookie))
-    if 'statsList' in theseStats:
-        replicaStats['statsList'] = replicaStats['statsList'] + theseStats['statsList']
-    if 'cookie' in theseStats:
-        cookie = theseStats['cookie']
-    else:
-        cookie = ''
-    if cookie == '':
-        break
-replicaStats['statsList'] = replicaStats['statsList'] + viewJobStats['statsList']
-
-for job in sorted(jobs, key=lambda job: job['name'].lower()):
-    if job['policyId'].split(':')[0] != str(cluster['id']):
-        stats = [s for s in replicaStats['statsList'] if s['id'] == job['id'] or s['name'].lower() == job['name'].lower()]
-        for stat in stats:
-            html += processStats(stat, job['name'], job['environment'][1:], 'Replicated')
-
-print("\n  Unprotected Views...")
-views = api('get', 'file-services/views?includeTenants=true&includeStats=false&includeProtectionGroups=true', v=2)
-if 'views' in views and len(views['views']) > 0:
-    for view in sorted([v for v in views['views'] if 'viewProtection' not in v], key=lambda view: view['name'].lower()):
-        stats = api('get', 'stats/consumers?consumerType=kViews&consumerIdList=%s' % view['viewId'])
-        if 'statsList' in stats and stats['statsList'] is not None:
-            for stat in stats['statsList']:
-                html += processStats(stat, view['name'], 'View', 'Local')
-
-html += '''</table>
+    html += '''</table>
 </div>
 </body>
-</html>
-'''
+</html>'''
 
-print('\nsaving report as %s' % htmlfileName)
-print('             and %s\n' % csvfileName)
+    print('\nsaving report as %s' % htmlfileName)
+    print('             and %s\n' % csvfileName)
+    f = codecs.open(htmlfileName, 'w', 'utf-8')
+    f.write(html)
+    f.close()
 
-f = codecs.open(htmlfileName, 'w', 'utf-8')
-f.write(html)
-f.close()
+
+
+
+for vip in vips:
+
+    # authentication =========================================================
+    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, quiet=True)
+
+    # exit if not authenticated
+    if apiconnected() is False:
+        print('authentication failed')
+        continue
+
+    # if connected to helios or mcm, select access cluster
+    if mcm or vip.lower() == 'helios.cohesity.com':
+        if clusternames is None or len(clusternames) == 0:
+            clusternames = [c['name'] for c in heliosClusters()]
+        for clustername in clusternames:
+            heliosCluster(clustername)
+            if LAST_API_ERROR() != 'OK':
+                continue
+            report()
+    else:
+        report()
+
+# csv.close()
+# print('\nOutput saved to %s\n' % csvfileName)
