@@ -29,6 +29,18 @@ Place both files in a folder together and run the main script like so:
                    -d mydomain.net
 ```
 
+To get all Helios clusters:
+
+```bash
+./storageReport.py -u myuser@mydomain.net
+```
+
+To get specific Helios clusters:
+
+```bash
+./storageReport.py -u myuser@mydomain.net -c mycluster -c othercluster
+```
+
 ## Authentication Parameters
 
 * -v, --vip: (optional) one or more names or IPa of Cohesity clustera to connect to (repeat for multiple) default is helios.cohesity.com
