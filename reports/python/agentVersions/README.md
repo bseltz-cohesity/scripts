@@ -44,6 +44,10 @@ To connect directly to one cluster:
 * -m, --mfacode: (optional) MFA code for authentication
 * -em, --emailmfacode: (optional) send MFA code via email
 
+## Other Parameters
+
+* -env, --environment: (optional) filter by app, e.g. kSQL
+
 ## The Python Helper Module - pyhesity.py
 
 The helper module provides functions to simplify operations such as authentication, api calls, storing encrypted passwords, and converting date formats. The module requires the requests python module.

@@ -20,6 +20,8 @@ parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-e', '--emailmfacode', action='store_true')
+parser.add_argument('-env', '--environment', type=str, default=None)
+
 args = parser.parse_args()
 
 vip = args.vip
@@ -33,6 +35,7 @@ password = args.password
 noprompt = args.noprompt
 mfacode = args.mfacode
 emailmfacode = args.emailmfacode
+environment = args.environment
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), emailMfaCode=emailmfacode, mfaCode=mfacode, tenantId=tenant)
@@ -60,19 +63,25 @@ outfile = 'agentVersions-%s-%s.tsv' % (cluster['name'], dateString)
 f = codecs.open(outfile, 'w')
 
 # headings
-f.write('Cluster Name\tSource Name\tAgent Version\tOS Type\tOS Name\n')
+f.write('Cluster Name\tSource Name\tAgent Version\tOS Type\tOS Name\tApps\n')
 
-nodes = api('get', 'protectionSources/registrationInfo?environments=kPhysical&allUnderHierarchy=true')
+nodes = api('get', 'protectionSources/registrationInfo?allUnderHierarchy=true')
 
 for node in nodes['rootNodes']:
+    psproperty = [p for p in node['rootNode'].keys() if 'ProtectionSource' in p]
     version = 'unknown'
-    name = node['rootNode']['physicalProtectionSource']['name']
-    if 'agents' in node['rootNode']['physicalProtectionSource'] and len(node['rootNode']['physicalProtectionSource']['agents']) > 0 and 'version' in node['rootNode']['physicalProtectionSource']['agents'][0]:
-        version = node['rootNode']['physicalProtectionSource']['agents'][0]['version']
-    hostType = node['rootNode']['physicalProtectionSource']['hostType'][1:]
-    osName = node['rootNode']['physicalProtectionSource']['osName']
-    print('%s\t%s\t(%s) %s' % (name, version, hostType, osName))
-    f.write('%s\t%s\t%s\t%s\t%s\n' % (cluster['name'], name, version, hostType, osName))
-
+    hostType = 'unknown'
+    osName = 'unknown'
+    apps = ''
+    name = node['rootNode']['name']
+    if 'agents' in node['rootNode'][psproperty[0]] and len(node['rootNode'][psproperty[0]]['agents']) > 0 and 'version' in node['rootNode'][psproperty[0]]['agents'][0]:
+        version = node['rootNode'][psproperty[0]]['agents'][0]['version']
+        hostType = node['rootNode'][psproperty[0]]['hostType'][1:]
+        osName = node['rootNode'][psproperty[0]]['osName']
+        if 'environments' in node['registrationInfo']:
+            apps = node['registrationInfo']['environments']
+        if environment is None or environment in apps:
+            print('%s\t%s\t(%s) %s %s' % (name, version, hostType, osName, ','.join(apps)))
+            f.write('%s\t%s\t%s\t%s\t%s\n' % (cluster['name'], name, version, hostType, osName))
 f.close()
 print('\nOutput saved to %s\n' % outfile)
