@@ -1,7 +1,7 @@
 ### usage: ./agentVersions.ps1 -vip 192.168.1.198 -username admin [ -domain local ]
 
 ### process commandline arguments
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding=$false)]
 param (
     [Parameter()][string]$vip = 'helios.cohesity.com',
     [Parameter()][string]$username = 'helios',
@@ -13,7 +13,8 @@ param (
     [Parameter()][switch]$mcm,
     [Parameter()][string]$mfaCode = $null,
     [Parameter()][switch]$emailMfaCode,
-    [Parameter()][string]$clusterName = $null
+    [Parameter()][string]$clusterName = $null,
+    [Parameter()][string]$environment = $null
 )
 
 # source the cohesity-api helper code
@@ -49,22 +50,34 @@ $headings = """Cluster Name"",""Source Name"",""Agent Version"",""OS Type"",""OS
 $headings | Out-File -FilePath $outfileName # -Encoding utf8
 
 ### list agent info
-$nodes = api get protectionSources/registrationInfo?environments=kPhysical
-$nodes.rootNodes | Sort-Object -Property {$_.rootNode.physicalProtectionSource.name} | `
-         Select-Object -Property @{label='Source Name'; expression={$_.rootNode.physicalProtectionSource.name}},
-                                 @{label='Agent Version'; expression={$_.rootNode.physicalProtectionSource.agents[0].version}},
-                                 @{label='OS Type'; expression={$_.rootNode.physicalProtectionSource.hostType.subString(1)}},
-                                 @{label='OS Name'; expression={$_.rootNode.physicalProtectionSource.osName}} 
+$nodes = api get protectionSources/registrationInfo?allUnderHierarchy=true
+$nodes.registrationInfo
+
+if($environment){
+    $nodes.rootNodes = $nodes.rootNodes | Where-Object {$environment -in $_.registrationInfo.environments}
+}
+
+$nodes.rootNodes | Sort-Object -Property {$_.rootNode.name} | `
+         Where-Object {$_.rootNode.$(($_.rootNode.PSObject.Properties | Where-Object {$_ -cmatch 'ProtectionSource'}).name).PSObject.Properties['agents']} | `
+         Select-Object -Property @{label='Source Name'; expression={$_.rootNode.name}},
+                                 @{label='Agent Version'; expression={$_.rootNode.$(($_.rootNode.PSObject.Properties | Where-Object {$_ -cmatch 'ProtectionSource'}).name).agents[0].version}},
+                                 @{label='OS Type'; expression={$_.rootNode.$(($_.rootNode.PSObject.Properties | Where-Object {$_ -cmatch 'ProtectionSource'}).name).hostType.subString(1)}},
+                                 @{label='OS Name'; expression={$_.rootNode.$(($_.rootNode.PSObject.Properties | Where-Object {$_ -cmatch 'ProtectionSource'}).name).osName}}
 
 foreach ($node in $nodes.rootNodes){
-    $name = $node.rootNode.physicalProtectionSource.name
+    $psproperty = ($node.rootNode.PSObject.Properties | Where-Object {$_ -cmatch 'ProtectionSource'}).name
+    $name = $node.rootNode.name
     $version = ''
-    if($node.rootNode.physicalProtectionSource.PSObject.Properties['agents'] -and $node.rootNode.physicalProtectionSource.agents.Count -gt 0){
-        $version = $node.rootNode.physicalProtectionSource.agents[0].version
+    $hostType = ''
+    $osName = ''
+    $apps = ''
+    if($node.rootNode.$psproperty.PSObject.Properties['agents'] -and $node.rootNode.$psproperty.agents.Count -gt 0){
+        $version = $node.rootNode.$psproperty.agents[0].version
+        $hostType = $node.rootNode.$psproperty.hostType.subString(1)
+        $osName = $node.rootNode.$psproperty.osName
+        $apps = $node.registrationInfo['environments']
+        """$clusterName"",""$name"",""$version"",""$hostType"",""$osName""" | Out-File -FilePath $outfileName -Append
     }
-    $hostType = $node.rootNode.physicalProtectionSource.hostType.subString(1)
-    $osName = $node.rootNode.physicalProtectionSource.osName
-    """$clusterName"",""$name"",""$version"",""$hostType"",""$osName""" | Out-File -FilePath $outfileName -Append
 }
 
 "`nOutput saved to $outfilename`n"

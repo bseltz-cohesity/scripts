@@ -28,7 +28,7 @@ Place both files in a folder together and run the main script like so:
 ./agentVersions.ps1 -vip mycluster -username admin -domain local
 ```
 
-## Parameters
+## Authentication Parameters
 
 * -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
 * -username: (optional) name of user to connect to Cohesity (defaults to helios)
@@ -39,3 +39,7 @@ Place both files in a folder together and run the main script like so:
 * -mfaCode: (optional) TOTP MFA code
 * -emailMfaCode: (optional) send MFA code via email
 * -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
+* -environments: (optional) filter on apps (e.g. kOracle)
