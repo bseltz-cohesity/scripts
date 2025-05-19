@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-05-19`] [agentVersions.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/agentVersions) [`Update`] added environment filter
+* [`2025-05-19`] [agentVersions.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/agentVersions) [`Update`] added environment filter
 * [`2025-05-15`] [storageReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storageReport) [`Update`] added support for Helios authentication
 * [`2025-05-14`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] fixed divide by zero
 * [`2025-05-13`] [epicAzureFreezeThawRole.json](https://github.com/cohesity/community-automation-samples/tree/main/remoteAdapter/epic_azure_freeze_thaw) [`New`] Added custom role creation JSON
