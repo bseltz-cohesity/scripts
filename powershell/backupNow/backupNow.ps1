@@ -1,4 +1,4 @@
-# version 2025.02-18
+# version 2025.05.20
 
 # version history
 # ===============
@@ -10,14 +10,14 @@
 # 2023.04.14 - fixed metadatafile watch bug
 # 2023.07.04 - added -dbg switch to output payload to payload.json file
 # 2023.07.05 - updated payload to solve p11 error "TARGET_NOT_IN_POLICY_NOT_ALLOWED%!(EXTRA int64=0)"
-# 2023-08-14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED" and added extended error code 8
-# 2023-09-03 - added support for read replica, various optimizations and fixes, increased sleepTimeSecs to 360, increased waitForNewRunMinutes to 50
-# 2023-09-06 - added -timeoutSec 300, -noCache, granular sleep times, interactive mode
-# 2023-09-13 - improved error handling on start request, exit on kInvalidRequest
-# 2023-11-20 - tighter API call to find protection job, monitor completion with progress API rather than runs API
-# 2023-11-29 - fixed hang on object not in job run
-# 2023-12-03 - version bump
-# 2023-12-11 - Added Succeeded with Warning extended exit code 9
+# 2023.08.14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED" and added extended error code 8
+# 2023.09.03 - added support for read replica, various optimizations and fixes, increased sleepTimeSecs to 360, increased waitForNewRunMinutes to 50
+# 2023.09.06 - added -timeoutSec 300, -noCache, granular sleep times, interactive mode
+# 2023.09.13 - improved error handling on start request, exit on kInvalidRequest
+# 2023.11.20 - tighter API call to find protection job, monitor completion with progress API rather than runs API
+# 2023.11.29 - fixed hang on object not in job run
+# 2023.12.03 - version bump
+# 2023.12.11 - Added Succeeded with Warning extended exit code 9
 # 2023.12.13 - re-ordered auth parameters (to force first unnamed parameter to be interpreted as password)
 # 2024.02.19 - expanded existing run string matches
 # 2024.03.08 - refactored status monitor loop, added -quick mode
@@ -25,10 +25,10 @@
 # 2024.06.03 - fix unintended replication/archival
 # 2024.07.08 - reintroduced --keepLocalFor functionality
 # 2024.09.06 - added support for Ft Knox
-# 2025-02-11 - improved VMware API query
-# 2025-02-16 - improved VM API query
-# 2025-02-18 - fixed CAD errors
-# 2025-05-20 - catch new existing run error "there is an outstanding run-now request"
+# 2025.02.11 - improved VMware API query
+# 2025.02.16 - improved VM API query
+# 2025.02.18 - fixed CAD errors
+# 2025.05.20 - catch new existing run error "there is an outstanding run-now request"
 #
 # extended error codes
 # ====================

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2025.02.18
+# version 2025.05.20
 
 # version history
 # ===============
@@ -13,14 +13,14 @@
 # 2023.04.14 - fixed metadatafile watch bug
 # 2023.06.25 - added -pl --purgeoraclelogs (first added 2023-06-08)
 # 2023.07.05 - updated payload to solve p11 error "TARGET_NOT_IN_POLICY_NOT_ALLOWED%!(EXTRA int64=0)"
-# 2023-08-14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED"
-# 2023-09-03 - added support for read replica, various optimizations and fixes, increased sleepTimeSecs to 360, increased newruntimeoutsecs to 3000
-# 2023-09-06 - added --timeoutsec 300, --nocache, granular sleep times, interactive mode, default sleepTimeSecs 3000
-# 2023-09-13 - improved error handling on start request, exit on kInvalidRequest
-# 2023-11-20 - tighter API call to find protection job, monitor completion with progress API rather than runs API
-# 2023-11-29 - fixed hang on object not in job run
-# 2023-12-03 - version bump
-# 2023-12-11 - Added Succeeded with Warning extended exit code 9
+# 2023.08.14 - updated script to exit with failure on "TARGET_NOT_IN_POLICY_NOT_ALLOWED"
+# 2023.09.03 - added support for read replica, various optimizations and fixes, increased sleepTimeSecs to 360, increased newruntimeoutsecs to 3000
+# 2023.09.06 - added --timeoutsec 300, --nocache, granular sleep times, interactive mode, default sleepTimeSecs 3000
+# 2023.09.13 - improved error handling on start request, exit on kInvalidRequest
+# 2023.11.20 - tighter API call to find protection job, monitor completion with progress API rather than runs API
+# 2023.11.29 - fixed hang on object not in job run
+# 2023.12.03 - version bump
+# 2023.12.11 - Added Succeeded with Warning extended exit code 9
 # 2024.02.19 - expanded existing run string matches
 # 2024.03.06 - moved cache wait until after authentication
 # 2024.03.07 - minor updates to progress loop
@@ -29,11 +29,12 @@
 # 2024.06.07 - added support for Entra ID (Open ID) authentication
 # 2024.07.08 - reintroduced -k, --keepLocalFor functionality
 # 2024.09.06 - added support for Ft Knox
-# 2024-10-28 - fixed oracle log purge
-# 2024-11-27 - added tenant support -tenant --tenant
-# 2025-02-11 - improved VMware API query
-# 2025-02-16 - improved VM API query
-# 2025-02-18 - fixed CAD errors, magneto error handling in 'wait for new run to appear' loop
+# 2024.10.28 - fixed oracle log purge
+# 2024.11.27 - added tenant support -tenant --tenant
+# 2025.02.11 - improved VMware API query
+# 2025.02.16 - improved VM API query
+# 2025.02.18 - fixed CAD errors, magneto error handling in 'wait for new run to appear' loop
+# 2025.05.20 - catch new existing run error "there is an outstanding run-now request"
 #
 # extended error codes
 # ====================
@@ -686,7 +687,7 @@ if debugger:
 runNow = api('post', "protectionJobs/run/%s" % v1JobId, jobData, quiet=True, timeout=timeoutsec)
 while runNow != "" and runNow is not None:
     runError = LAST_API_ERROR()
-    if 'Protection Group already has a run' not in runError and 'Protection group can only have one active backup run at a time' not in runError and 'Backup job has an existing active backup run' not in runError:
+    if 'there is an outstanding run-now request' not in runError and 'Protection Group already has a run' not in runError and 'Protection group can only have one active backup run at a time' not in runError and 'Backup job has an existing active backup run' not in runError:
         out(runError)
         if 'TARGET_NOT_IN_POLICY_NOT_ALLOWED' in runError:
             if extendederrorcodes is True:
