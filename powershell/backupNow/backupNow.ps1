@@ -28,6 +28,7 @@
 # 2025-02-11 - improved VMware API query
 # 2025-02-16 - improved VM API query
 # 2025-02-18 - fixed CAD errors
+# 2025-05-20 - catch new existing run error "there is an outstanding run-now request"
 #
 # extended error codes
 # ====================
@@ -631,7 +632,7 @@ $now = Get-Date
 $waitUntil = $now.AddMinutes($waitMinutesIfRunning)
 while($result -ne ""){
     $runError = $cohesity_api.last_api_error
-    if(!($runError -match "Protection Group already has a run") -and !($runError -match "Backup job has an existing active backup run") -and !( $runError -match "Protection group can only have one active backup run at a time")){
+    if(!($runError -match "there is an outstanding run-now request") -and !($runError -match "Protection Group already has a run") -and !($runError -match "Backup job has an existing active backup run") -and !( $runError -match "Protection group can only have one active backup run at a time")){
         output $runError -warn
         if($runError -match "TARGET_NOT_IN_POLICY_NOT_ALLOWED"){
             if($extendedErrorCodes){
