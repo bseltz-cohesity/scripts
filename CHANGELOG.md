@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-05-20`] [backupNow.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backupNow) [`Update`] handle new existing run error verbiage
+* [`2025-05-20`] [backupNow.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/backupNow) [`Update`] handle new existing run error verbiage
+* [`2025-05-19`] [unprotectPhysicalServer.py](https://github.com/cohesity/community-automation-samples/tree/main/python/unprotectPhysicalServer) [`Update`] added support for filtering by application
 * [`2025-05-19`] [agentVersions.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/agentVersions) [`Update`] added environment filter
 * [`2025-05-19`] [agentVersions.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/agentVersions) [`Update`] added environment filter
 * [`2025-05-15`] [storageReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storageReport) [`Update`] added support for Helios authentication
