@@ -91,3 +91,5 @@ Rotate the user's API Keys:
 * -x, --deactivate: (optional) deactivate the user's API Keys
 * -a, --activate: (optional) activate the user's API Keys
 * -r, --rotate: (optional) rotate API key and output new key
+* -c, --create: (optional) create new API key
+* -z, --delete: (optional) delete API key

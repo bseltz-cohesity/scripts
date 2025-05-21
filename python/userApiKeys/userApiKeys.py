@@ -19,6 +19,8 @@ parser.add_argument('-x', '--deactivate', action='store_true')
 parser.add_argument('-a', '--activate', action='store_true')
 parser.add_argument('-k', '--keyname', type=str, default=None)
 parser.add_argument('-r', '--rotate', action='store_true')
+parser.add_argument('-c', '--create', action='store_true')
+parser.add_argument('-z', '--delete', action='store_true')
 
 args = parser.parse_args()
 
@@ -37,6 +39,8 @@ deactivate = args.deactivate
 activate = args.activate
 keyname = args.keyname
 rotate = args.rotate
+create = args.create
+delete = args.delete
 
 # authentication =========================================================
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, prompt=(not noprompt), mfaCode=mfacode, emailMfaCode=emailmfacode, tenantId=tenant, quiet=True)
@@ -54,6 +58,19 @@ if thisuser is None or len(thisuser) == 0:
     exit(1)
 else:
     thisuser = thisuser[0]
+    if create:
+        if keyname is None:
+            print('-k, --keyname required')
+            exit()
+        params = {
+            'isActive': True,
+            'user': thisuser,
+            'name': keyname
+        }
+        result = api('post', 'users/%s/apiKeys' % thisuser['sid'], params)
+        if result is not None and 'key' in result:
+            print(result['key'])
+            exit()
     apiKeys = api('get', 'users/%s/apiKeys' % thisuser['sid'])
     if apiKeys is None or len(apiKeys) == 0:
         print('No API Keys found for user')
@@ -72,12 +89,14 @@ else:
                     print('  activating %s' % apiKey['name'])
                     apiKey['isActive'] = True
                     api('put', 'users/%s/apiKeys/%s' % (thisuser['sid'], apiKey['id']), apiKey)
+                elif rotate:
+                    result = api('post', 'users/%s/apiKeys/%s/rotate' % (thisuser['sid'], apiKey['id']))
+                    if result is not None and 'key' in result:
+                        print(result['key'])
+                elif delete:
+                    result = api('delete', 'users/%s/apiKeys/%s' % (thisuser['sid'], apiKey['id']))
+                    print('  %s (DELETED)' % apiKey['name'])
                 else:
-                    if rotate is True:
-                        result = api('post', 'users/%s/apiKeys/%s/rotate' % (thisuser['sid'], apiKey['id']))
-                        if result is not None and 'key' in result:
-                            print(result['key'])
-                    else:
-                        print('  %s (isActive = %s)' % (apiKey['name'], apiKey['isActive']))
+                    print('  %s (isActive = %s)' % (apiKey['name'], apiKey['isActive']))
     if foundkey is False:
         print('API key %s not found' % keyname)
