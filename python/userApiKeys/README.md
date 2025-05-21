@@ -74,5 +74,7 @@ Activate the user's API Keys:
 
 * -nu, --nameofuser: name of user to manage
 * -du, --domainofuser: (optional) domain of user to manage (default is 'local')
+* -k, --keyname: (optional) specify name of key to activate/deactivate/rotate
 * -x, --deactivate: (optional) deactivate the user's API Keys
 * -a, --activate: (optional) activate the user's API Keys
+* -r, --rotate: (optional) rotate API key and output new key

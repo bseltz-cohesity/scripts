@@ -17,6 +17,8 @@ parser.add_argument('-nu', '--nameofuser', type=str, required=True)
 parser.add_argument('-du', '--domainofuser', type=str, default='local')
 parser.add_argument('-x', '--deactivate', action='store_true')
 parser.add_argument('-a', '--activate', action='store_true')
+parser.add_argument('-k', '--keyname', type=str, default=None)
+parser.add_argument('-r', '--rotate', action='store_true')
 
 args = parser.parse_args()
 
@@ -33,9 +35,11 @@ nameofuser = args.nameofuser
 domainofuser = args.domainofuser
 deactivate = args.deactivate
 activate = args.activate
+keyname = args.keyname
+rotate = args.rotate
 
 # authentication =========================================================
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, prompt=(not noprompt), mfaCode=mfacode, emailMfaCode=emailmfacode, tenantId=tenant)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, prompt=(not noprompt), mfaCode=mfacode, emailMfaCode=emailmfacode, tenantId=tenant, quiet=True)
 
 # exit if not authenticated
 if apiconnected() is False:
@@ -54,14 +58,26 @@ else:
     if apiKeys is None or len(apiKeys) == 0:
         print('No API Keys found for user')
     else:
+        foundkey = True
+        if keyname is not None:
+            foundkey = False
         for apiKey in apiKeys:
-            if deactivate:
-                print('  deactivating %s' % apiKey['name'])
-                apiKey['isActive'] = False
-                api('put', 'users/%s/apiKeys/%s' % (thisuser['sid'], apiKey['id']), apiKey)
-            elif activate:
-                print('  activating %s' % apiKey['name'])
-                apiKey['isActive'] = True
-                api('put', 'users/%s/apiKeys/%s' % (thisuser['sid'], apiKey['id']), apiKey)
-            else:
-                print('  %s (isActive = %s)' % (apiKey['name'], apiKey['isActive']))
+            if keyname is None or keyname.lower() == apiKey['name'].lower():
+                foundkey = True
+                if deactivate:
+                    print('  deactivating %s' % apiKey['name'])
+                    apiKey['isActive'] = False
+                    api('put', 'users/%s/apiKeys/%s' % (thisuser['sid'], apiKey['id']), apiKey)
+                elif activate:
+                    print('  activating %s' % apiKey['name'])
+                    apiKey['isActive'] = True
+                    api('put', 'users/%s/apiKeys/%s' % (thisuser['sid'], apiKey['id']), apiKey)
+                else:
+                    if rotate is True:
+                        result = api('post', 'users/%s/apiKeys/%s/rotate' % (thisuser['sid'], apiKey['id']))
+                        if result is not None and 'key' in result:
+                            print(result['key'])
+                    else:
+                        print('  %s (isActive = %s)' % (apiKey['name'], apiKey['isActive']))
+    if foundkey is False:
+        print('API key %s not found' % keyname)
