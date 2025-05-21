@@ -59,6 +59,19 @@ Activate the user's API Keys:
 #end example
 ```
 
+Rotate the user's API Keys:
+
+```bash
+#example
+./userApiKeys.py -v mycluster \
+                 -u myusername \
+                 -d mydomain.net \
+                 -nu someuser \
+                 -nd mydomain.net \
+                 -r
+#end example
+```
+
 ## Authentication Parameters
 
 * -v, --vip: DNS or IP of the Cohesity cluster to connect to
