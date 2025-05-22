@@ -48,16 +48,24 @@ if($viewList){
     exit
 }
 
+$views = api get -v2 "file-services/views?viewProtectionTypes=ReplicationOut&useCachedData=false&maxCount=2000&includeTenants=false&includeStats=false&includeProtectionGroups=true&includeInactive=false"
+
+$views = $views.views | Where-Object {$_.name -in $myViews}
+$protectionGroups = @($views.viewProtection.protectionGroups.groupName | Sort-Object -Unique)
+
 $jobs = api get -v2 "data-protect/protection-groups?isActive=true&environments=kView"
-foreach($job in $jobs.protectionGroups){
+foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     $runJob = $False
+    if($job.name -in @($protectionGroups)){
+        $runJob = $True
+    }
     foreach($viewName in $myViews){
         $viewName = [string]$viewName
-        if($viewName -in $job.viewParams.objects.name){
+        if($viewName -in @($job.viewParams.objects.name)){
             $runJob = $True
         }
     }
-    if($runJob){
+    if($runJob -eq $True){
         $jobName = $job.name
         $clusterId, $clusterIncarnationId, $v1JobId = $job.id -split ':'
         $v1JobId = [int64] $v1JobId
