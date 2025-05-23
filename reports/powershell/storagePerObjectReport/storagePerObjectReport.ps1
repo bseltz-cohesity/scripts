@@ -1,4 +1,4 @@
-# version: 2025-04-03
+# version: 2025-05-23
 
 # process commandline arguments
 [CmdletBinding()]
@@ -24,7 +24,7 @@ param (
     [Parameter()][string]$outfileName
 )
 
-$scriptversion = '2025-04-03 (PowerShell)'
+$scriptversion = '2025-05-23 (PowerShell)'
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -126,6 +126,7 @@ function reportStorage(){
     }
     if($includeArchives){
         $cloudStats = getCloudStats
+        $cloudStats | toJson | Out-File cloudstats-$($cluster.name).json
     }
     
     if($skipDeleted){
@@ -195,7 +196,7 @@ function reportStorage(){
             
             $jobObjGrowth = 0
             $jobGrowth = 0
-    
+            $dataIn = 0
             # job stats
             if($job.isActive -eq $True){
                 $stats = $localStats
