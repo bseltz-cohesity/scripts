@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-05-23`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] updated to export external target stats for debugging
+* [`2025-05-22`] [replicateViews.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/viewDR) [`Update`] updated to double test for protection groups to run
 * [`2025-05-22`] [physicalBackupPathsHistoryReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/physicalBackupPathsHistoryReport) [`Update`] added helios connection resliency
 * [`2025-05-20`] [backupNow.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backupNow) [`Update`] handle new existing run error verbiage
 * [`2025-05-20`] [backupNow.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/backupNow) [`Update`] handle new existing run error verbiage
