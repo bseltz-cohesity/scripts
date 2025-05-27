@@ -70,7 +70,8 @@ The protection jobs should be configured to create a Remote View (with the same 
 .\failoverMonitor.ps1 -vip clusterB `
                       -username admin `
                       -domain local `
-                      -viewList .\myviews.txt
+                      -viewList .\myviews.txt `
+                      -wait
 
 # failover DNS cname from clusterA to clusterB
 .\cnameFailover.ps1 -cname mynas `
