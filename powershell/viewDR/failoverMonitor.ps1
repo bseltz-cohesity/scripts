@@ -12,7 +12,8 @@ param (
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName = $null,          # cluster to connect to via helios/mcm
     [Parameter()][array]$viewNames,
-    [Parameter()][string]$viewList
+    [Parameter()][string]$viewList,
+    [Parameter()][switch]$wait
 )
 
 # source the cohesity-api helper code
@@ -47,40 +48,47 @@ if($viewList){
     Write-Host "No Views Specified" -ForegroundColor Yellow
     exit
 }
-
-foreach($viewName in $myViews | Sort-Object){
-    $view = $views.views | Where-Object name -eq $viewName
-    if($view){
-        $result = api get -v2 "data-protect/failover/views/$($view.viewId)"
-        Write-Host "`n-------------------------------------`n       View Name: $viewName"
-        Write-Host "-------------------------------------"
-        if($result -and $result.PSObject.Properties['failovers']){
-            # $result.failovers | fl
-            $result = ($result.failovers | Sort-Object -Property startTimeUsecs)[-1]
-            Write-Host "   Failover Type: $($result.type)"
-            Write-Host "       StartTime: $(usecsToDate $result.startTimeUsecs)"
-            Write-Host "          Status: $($result.status)"
-            if($result.replications){
-                # $result.replications | fl
-                $lastReplication = ($result.replications | Sort-Object -Property startTimeUsecs)[-1]
-                if($lastReplication.status -ne 'Succeeded'){
-                    Write-Host "Last Replication: $(usecsToDate $lastReplication.startTimeUsecs) - $($lastReplication.status)"
+while($True){
+    clear
+    foreach($viewName in $myViews | Sort-Object){
+        $view = $views.views | Where-Object name -eq $viewName
+        if($view){
+            $result = api get -v2 "data-protect/failover/views/$($view.viewId)"
+            Write-Host "`n-------------------------------------`n       View Name: $viewName"
+            Write-Host "-------------------------------------"
+            if($result -and $result.PSObject.Properties['failovers']){
+                # $result.failovers | fl
+                $result = ($result.failovers | Sort-Object -Property startTimeUsecs)[-1]
+                Write-Host "   Failover Type: $($result.type)"
+                Write-Host "       StartTime: $(usecsToDate $result.startTimeUsecs)"
+                Write-Host "          Status: $($result.status)"
+                if($result.replications){
+                    # $result.replications | fl
+                    $lastReplication = ($result.replications | Sort-Object -Property startTimeUsecs)[-1]
+                    if($lastReplication.status -ne 'Succeeded'){
+                        Write-Host "Last Replication: $(usecsToDate $lastReplication.startTimeUsecs) - $($lastReplication.status)"
+                    }else{
+                        Write-Host "Last Replication: $(usecsToDate $lastReplication.startTimeUsecs)"
+                    }   
                 }else{
-                    Write-Host "Last Replication: $(usecsToDate $lastReplication.startTimeUsecs)"
-                }   
-            }else{
-                if($result.type -eq 'Planned'){
-                    Write-Host "Last Replication: *** None ***"
-                }else{
-                    Write-Host "Last Replication: N/A"
+                    if($result.type -eq 'Planned'){
+                        Write-Host "Last Replication: *** None ***"
+                    }else{
+                        Write-Host "Last Replication: N/A"
+                    }
+                }
+                if($result.PSObject.Properties['errorMessage']){
+                    Write-Host "           Error:`n$($result.errorMessage)"
                 }
             }
-            if($result.PSObject.Properties['errorMessage']){
-                Write-Host "           Error:`n$($result.errorMessage)"
-            }
+        }else{
+            Write-Host "View $viewName not found" -ForegroundColor Yellow
         }
+    }
+    Write-Host ""
+    if($wait){
+        Start-Sleep 30
     }else{
-        Write-Host "View $viewName not found" -ForegroundColor Yellow
+        break
     }
 }
-""
