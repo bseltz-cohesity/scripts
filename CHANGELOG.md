@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-05-28`] [restorePhysicalFiles.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restorePhysicalFiles) [`New`] simplified restore files for physical servers
 * [`2025-05-23`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] updated to export external target stats for debugging
 * [`2025-05-22`] [replicateViews.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/viewDR) [`Update`] updated to double test for protection groups to run
 * [`2025-05-22`] [physicalBackupPathsHistoryReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/physicalBackupPathsHistoryReport) [`Update`] added helios connection resliency
