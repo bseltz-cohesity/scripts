@@ -119,3 +119,25 @@ For RHEL 8 and other platforms running Python 3.6.x:
 ```bash
 pip3 install requests-2.27.1-py2.py3-none-any.whl -f ./ --no-index
 ```
+
+## Running Scripts
+
+Each script in this repository provides a README that explains the command line options and provides one or more examples.
+
+The python examples assume that you are running the script on a Linux, MacOS or other non-Windows system where the python scripts are directly executable, for example:
+
+```bash
+./myscript.py -v mycluster -u myuser
+```
+
+The above will only work if the commmand `/usr/bin/env python` launches python. If it does not, then simply add `python` or `python3` to the beginning of the command, like:
+
+```bash
+python3 ./myscript.py -v mycluster -u myuser
+```
+
+Or on a Windows system:
+
+```bash
+python3 myscript.py -v mycluster -u myuser
+```
