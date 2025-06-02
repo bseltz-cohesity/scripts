@@ -4,7 +4,7 @@
 
 For scripts that connect to a Cohesity cluster (or to helios.cohesity.com), the script must be able to:
 
-* Resolve the IP address used in the -v (--vip) pararamer
+* Resolve the IP address used in the -v (--vip) parameter
 * Reach the cluster via port 443/tcp (network routes and firewalls must not block this traffic)
 * Be allowed access by the Cohesity cluster firewall (see Settings -> Networking -> Firewall -> Management in the Cohesity UI)
 
@@ -22,11 +22,11 @@ Curl should output HTML code (returned from the cluster). If curl produces an er
 
 ## Python Version
 
-You can run my python scripts using any version of Python that is new enough to support TLSv1.2 encryption (2.7 or later, plus some later versions of 2.6.x). The only additional requirement that is widely used in my scripts is the python "requests" module.
+You can run these python scripts using any version of Python that is new enough to support TLSv1.2 encryption (2.7 or later, plus some later versions of 2.6.x). The only additional requirement that is widely used in these scripts is the python "requests" module.
 
 ## Requests Module
 
-The requests module is not a built-in module (it does not come with the default python installation). If you try to run one of my scripts and you see the below error, then the requests module is not installed and you need to install it:
+The requests module is not a built-in module (it does not come with the default python installation). If you try to run one of these scripts and you see the below error, then the requests module is not installed and you need to install it:
 
 ```text
 No module named 'requests'
