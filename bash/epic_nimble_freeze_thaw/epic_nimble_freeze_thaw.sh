@@ -39,7 +39,7 @@ for VOL_NAME in "${VOL_NAMES[@]}"; do
     LAST_STATUS=$?
     if [ $LAST_STATUS -ne 0 ]
     then
-        echo "!!! $(date '+%F %T') : FAILED TO DELETE $VOL_NAME. ABORTING SCRIPT"
+        echo "!!! $(date '+%F %T') : FAILED TO DELETE ${VOL_NAME}-CLONE. ABORTING SCRIPT"
         exit 1
     fi
 done
