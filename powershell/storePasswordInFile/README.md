@@ -35,3 +35,7 @@ Place both files in a folder together and run the main script like so:
 * -domain: (optional) domain of the Cohesity user (defaults to local)
 * -useApiKey: (optional) store an API key instead of a password
 * -password: (optional) password to store (will be prompted if omitted)
+* -mcm: (optional) connect to Helios On Prem
+* -mfaCode: (optional) multi-factor authentication code
+* -emailMfaCode: (optional) send mfaCode via email
+* -skipValidation: (optional) do not validate password
