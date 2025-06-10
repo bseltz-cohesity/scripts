@@ -1,4 +1,4 @@
-# version: 2025-05-23
+# version: 2025-06-10
 
 # process commandline arguments
 [CmdletBinding()]
@@ -24,7 +24,7 @@ param (
     [Parameter()][string]$outfileName
 )
 
-$scriptversion = '2025-05-23 (PowerShell)'
+$scriptversion = '2025-06-10 (PowerShell)'
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -65,7 +65,7 @@ foreach ($Parameter in $ParameterList) {
 }
 
 # headings
-"""Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Storage Domain ID"",""Storage Domain Name"",""Environment"",""Source Name"",""Object Name"",""Front End Allocated $unit"",""Front End Used $unit"",""$unit Stored (Before Reduction)"",""$unit Stored (After Reduction)"",""$unit Stored (After Reduction and Resiliency)"",""Reduction Ratio"",""$unit Change Last $growthDays Days (After Reduction and Resiliency)"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Newest DataLock Expiry"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description"",""VM Tags"",""Object ID""" | Out-File -FilePath $outfileName # -Encoding utf8
+"""Cluster Name"",""Origin"",""Stats Age (Days)"",""Protection Group"",""Tenant"",""Storage Domain ID"",""Storage Domain Name"",""Environment"",""Source Name"",""Object Name"",""Front End Allocated $unit"",""Front End Used $unit"",""$unit Stored (Before Reduction)"",""$unit Stored (After Reduction)"",""$unit Stored (After Reduction and Resiliency)"",""Reduction Ratio"",""$unit Change Last $growthDays Days (After Reduction and Resiliency)"",""Snapshots"",""Log Backups"",""Oldest Backup"",""Newest Backup"",""Newest DataLock Expiry"",""Archive Count"",""Oldest Archive"",""$unit Archived"",""$unit per Archive Target"",""Description"",""VM Tags"",""Object ID"",""AWS Tags""" | Out-File -FilePath $outfileName # -Encoding utf8
 """Cluster Name"",""Total Used $unit"",""BookKeeper Used $unit"",""Total Unaccounted Usage $unit"",""Total Unaccounted Percent"",""Garbage $unit"",""Garbage Percent"",""Other Unaccounted $unit"",""Other Unaccounted Percent"",""Reduction Ratio"",""All Objects Front End Size $unit"",""All Objects Stored (After Reduction) $unit"",""All Objects Stored (After Reduction and Resiliency) $unit"",""Storage Variance Factor"",""Script Version"",""Cluster Software Version""" | Out-File -FilePath $clusterStatsFileName
 
 if($secondFormat){
@@ -161,7 +161,7 @@ function reportStorage(){
         if($job.isActive -ne $True){
             $origin = 'replica'
         }
-        if($job.environment -in @('kVMware', 'kAD', 'kHyperV') -or ($job.environment -eq 'kPhysical' -and $job.physicalParams.protectionType -eq 'kVolume')){
+        if($job.environment -in @('kVMware', 'kAD', 'kHyperV', 'kAWS') -or ($job.environment -eq 'kPhysical' -and $job.physicalParams.protectionType -eq 'kVolume')){
             if($job.environment -eq 'kAD'){
                 $entityType = 'kPhysical'
             }else{
@@ -309,6 +309,7 @@ function reportStorage(){
                                 $objects[$objId]['numSnaps'] = 0
                                 $objects[$objId]['numLogs'] = 0
                                 $objects[$objId]['vmTags'] = ''
+                                $objects[$objId]['awsTags'] = ''
                                 if(! $snap){
                                     $objects[$objId]['newestBackup'] = $archivalInfo.startTimeUsecs
                                     $objects[$objId]['oldestBackup'] = $archivalInfo.startTimeUsecs
@@ -337,7 +338,7 @@ function reportStorage(){
                                     $objects[$objId]['alloc'] = $snap.snapshotInfo.stats.logicalSizeBytes
                                 }
                             }
-                            if($objId -in $objects.Keys -and $objects[$objId]['fetb'] -eq 0 -and ($job.environment -in @('kVMware', 'kAD', 'kHyperV') -or ($job.environment -eq 'kPhysical' -and $job.physicalParams.protectionType -eq 'kVolume'))){
+                            if($objId -in $objects.Keys -and $objects[$objId]['fetb'] -eq 0 -and ($job.environment -in @('kVMware', 'kAD', 'kHyperV', 'kAWS') -or ($job.environment -eq 'kPhysical' -and $job.physicalParams.protectionType -eq 'kVolume'))){
                                 if($dbg){
                                     Write-Host "    getting fetb"
                                 }
@@ -348,6 +349,8 @@ function reportStorage(){
                                         $vmbytes = $vms[0].vmDocument.objectId.entity.vmwareEntity.frontEndSizeInfo.sizeBytes
                                     }elseif($job.environment -eq 'kHyperV'){
                                         $vmbytes = $vms[0].vmDocument.objectId.entity.hypervEntity.vmInfo.physicalSizeInBytes
+                                    }elseif($job.environment -eq 'kAWS'){
+                                        $vmbytes = $vms[0].vmDocument.objectId.entity.awsEntity.frontEndSizeInfo.sizeBytes
                                     }else{
                                         $vmbytes = $vms[0].vmDocument.objectId.entity.sizeInfo.value.sourceDataSizeBytes
                                     }
@@ -361,6 +364,12 @@ function reportStorage(){
                                             $objects[$objId]['vmTags'] = $tagAttrs.xValue -join ';'
                                         }
                                     }
+                                    if($job.environment -eq 'kAWS'){
+                                        if($vms[0].vmDocument.objectId.entity.awsEntity.PSObject.Properties['tagAttributesVec'] -and $vms[0].vmDocument.objectId.entity.awsEntity.tagAttributesVec -ne $null){
+                                            $tags = @($vms[0].vmDocument.objectId.entity.awsEntity.tagAttributesVec.name | Sort-Object) -join '; ' -replace '#~#', ': '
+                                             $objects[$objId]['awsTags'] = $tags
+                                        }
+                                    }                                                        
                                 }
                             }
                             if($snap -and $objId -in $objects.Keys -and $snap.snapshotInfo.stats.PSObject.Properties['logicalSizeBytes'] -and $snap.snapshotInfo.stats.logicalSizeBytes -gt $objects[$objId]['logical']){
@@ -596,7 +605,7 @@ function reportStorage(){
                     $alloc = $objFESize
                 }
 
-                """$($cluster.name)"",""$origin"",""$statsAge"",""$($job.name)"",""$tenant"",""$($job.storageDomainId)"",""$sdName"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$alloc"",""$objFESize"",""$(toUnits $objDataIn)"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$($thisObject['numSnaps'])"",""$($thisObject['numLogs'])"",""$(usecsToDate $thisObject['oldestBackup'])"",""$(usecsToDate $thisObject['newestBackup'])"",""$($thisObject['lastDataLock'])"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)"",""$($thisObject['vmTags'])"",""$($cluster.id):$($cluster.incarnationId):$($objId)""" | Out-File -FilePath $outfileName -Append
+                """$($cluster.name)"",""$origin"",""$statsAge"",""$($job.name)"",""$tenant"",""$($job.storageDomainId)"",""$sdName"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$alloc"",""$objFESize"",""$(toUnits $objDataIn)"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$($thisObject['numSnaps'])"",""$($thisObject['numLogs'])"",""$(usecsToDate $thisObject['oldestBackup'])"",""$(usecsToDate $thisObject['newestBackup'])"",""$($thisObject['lastDataLock'])"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)"",""$($thisObject['vmTags'])"",""$($cluster.id):$($cluster.incarnationId):$($objId)"",""$($thisObject['awsTags'])""" | Out-File -FilePath $outfileName -Append
                 if($secondFormat){
                     """$($cluster.name)"",""$monthString"",""$fqObjectName"",""$($job.description)"",""$(toUnits $objWrittenWithResiliency)""" | Out-File -FilePath $outfile2 -Append
                 }
@@ -816,7 +825,7 @@ function reportStorage(){
         $sumObjectsUsed += $viewStats.totalLogicalUsageBytes
         $sumObjectsWritten += $jobWritten
         $sumObjectsWrittenWithResiliency += $consumption
-        """$($cluster.name)"",""$origin"",""$statsAge"",""$($jobName)"",""$($view.tenantId -replace ".$")"",""$($view.storageDomainId)"",""$($view.storageDomainName)"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$objFESize"",""$(toUnits $dataIn)"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$numSnaps"",""$numLogs"",""$oldestBackup"",""$newestBackup"",""$lastDataLock"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($view.description)"","""",""$($cluster.id):$($cluster.incarnationId):$($view.viewId)""" | Out-File -FilePath $outfileName -Append
+        """$($cluster.name)"",""$origin"",""$statsAge"",""$($jobName)"",""$($view.tenantId -replace ".$")"",""$($view.storageDomainId)"",""$($view.storageDomainName)"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$objFESize"",""$(toUnits $dataIn)"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$numSnaps"",""$numLogs"",""$oldestBackup"",""$newestBackup"",""$lastDataLock"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($view.description)"","""",""$($cluster.id):$($cluster.incarnationId):$($view.viewId)"",""""" | Out-File -FilePath $outfileName -Append
         if($secondFormat){
             """$($cluster.name)"",""$monthString"",""$viewName"",""$($view.description)"",""$(toUnits $consumption)""" | Out-File -FilePath $outfile2 -Append
         }
