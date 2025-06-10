@@ -101,3 +101,4 @@ Z | GiB per Archive Target | amount of deduped/compressed data, for this object,
 AA | Description | description of protection group or view
 AB | VMWare Tags | VMWare Tags assigned to VM
 AC | Object ID | protection source ID of object
+AD | AWS Tags | AWS Tags assigned to VM
