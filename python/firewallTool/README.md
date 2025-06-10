@@ -72,4 +72,4 @@ To remove an entry from the allow list for the SNMP profile:
 * -l, --iplist: (optional) text file of CIDRs to add or remove (one per line)
 * -a, --addentry: (optional) add CIDRs to allow list
 * -r, --removeentry: (optional) remove CIDRs from allow list
-* -p, --profile: name of profile to modify. Valid profile names are 'Management', 'SNMP', 'S3', 'Data Protection', 'Replication', 'SSH', 'SMB', 'NFS'
+* -p, --profile: (optional) name of profile to modify. Valid profile names are 'Management', 'SNMP', 'S3', 'Data Protection', 'Replication', 'SSH', 'SMB', 'NFS'

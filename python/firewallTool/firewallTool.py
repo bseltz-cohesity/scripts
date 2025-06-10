@@ -17,7 +17,7 @@ parser.add_argument('-ip', '--ip', action='append', type=str)
 parser.add_argument('-l', '--iplist', type=str, default=None)
 parser.add_argument('-a', '--addentry', action='store_true')
 parser.add_argument('-r', '--removeentry', action='store_true')
-parser.add_argument('-p', '--profile', type=str, choices=['Management', 'SNMP', 'S3', 'Data Protection', 'Replication', 'SSH', 'SMB', 'NFS', ''], default='')
+parser.add_argument('-p', '--profile', type=str, choices=['Management', 'SNMP', 'S3', 'Data Protection', 'Replication', 'SSH', 'SMB', 'NFS', 'Reporting database', ''], default='')
 
 args = parser.parse_args()
 
@@ -36,30 +36,26 @@ addentry = args.addentry
 removeentry = args.removeentry
 profile = args.profile
 
-if profile == '':
-    print('no profile specified')
+# authentication =========================================================
+# demand clustername if connecting to helios or mcm
+if (mcm or vip.lower() == 'helios.cohesity.com') and clustername is None:
+    print('-c, --clustername is required when connecting to Helios or MCM')
     exit(1)
 
 # authenticate
-if mcm:
-    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=True)
-else:
-    if emailmfacode:
-        apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, emailMfaCode=True)
-    else:
-        apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, mfaCode=mfacode)
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, mfaCode=mfacode, emailMfaCode=emailmfacode)
 
-# if connected to helios or mcm, select to access cluster
-if mcm or vip.lower() == 'helios.cohesity.com':
-    if clustername is not None:
-        heliosCluster(clustername)
-    else:
-        print('-clustername is required when connecting to Helios or MCM')
-        exit(1)
-
+# exit if not authenticated
 if apiconnected() is False:
     print('authentication failed')
     exit(1)
+
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    heliosCluster(clustername)
+    if LAST_API_ERROR() != 'OK':
+        exit(1)
+# end authentication =====================================================
 
 
 # gather list function
@@ -92,6 +88,12 @@ if action != 'list' and len(entries) == 0:
     print('No entries specified')
     exit(1)
 
+if profile == '' and action != 'list':
+    print('no profile specified')
+    exit(1)
+
+profiles = ['Management', 'SNMP', 'S3', 'Data Protection', 'Replication', 'SSH', 'SMB', 'NFS', 'Reporting database']
+
 # get existing firewall rules
 rules = api('get', '/nexus/v1/firewall/list')
 
@@ -116,12 +118,14 @@ if action != 'list':
     result = api('put', '/nexus/v1/firewall/update', rules)
     if 'error' in result:
         exit(1)
-print('\n%s allow list:' % profile)
-for attachment in rules['entry']['attachments']:
-    if attachment['profile'] == profile:
-        if attachment['subnets'] is None or len(attachment['subnets']) == 0:
-            print('    All IP Addresses(*)')
-        else:
-            for cidr in attachment['subnets']:
-                print('    %s' % cidr)
+for pname in sorted(profiles):
+    if profile == '' or pname.lower() == profile.lower():
+        print('\n%s:' % pname)
+        for attachment in rules['entry']['attachments']:
+            if attachment['profile'] == pname:
+                if attachment['subnets'] is None or len(attachment['subnets']) == 0:
+                    print('    All IP Addresses(*) (%s)' % attachment['action'])
+                else:
+                    for cidr in attachment['subnets']:
+                        print('    %s (%s)' % (cidr, attachment['action']))
 print('')
