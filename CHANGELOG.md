@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-06-10`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] added column for AWS Tags
 * [`2025-06-10`] [storagePerObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerObjectReport) [`Update`] added column for AWS Tags
 * [`2025-06-10`] [firewallTool.py](https://github.com/cohesity/community-automation-samples/tree/main/python/firewallTool) [`Update`] improved list function
 * [`2025-06-10`] [firewallTool.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/firewallTool) [`Update`] improved list function
