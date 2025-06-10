@@ -84,10 +84,6 @@ elif removeentry is True:
 else:
     action = 'list'
 
-if action != 'list' and len(entries) == 0:
-    print('No entries specified')
-    exit(1)
-
 if profile == '' and action != 'list':
     print('no profile specified')
     exit(1)
@@ -114,18 +110,29 @@ for cidr in entries:
                     print('    %s: removing %s' % (profile, cidr))
                 rules['updateAttachment'] = True
 
+if action != 'list' and len(entries) == 0:
+    for attachment in rules['entry']['attachments']:
+        if attachment['profile'] == profile:
+            if action == 'add':
+                attachment['subnets'] = None
+                print('    %s: adding *' % profile)
+            else:
+                print('    %s: removing *' % profile)
+            rules['updateAttachment'] = True
+
 if action != 'list':
     result = api('put', '/nexus/v1/firewall/update', rules)
     if 'error' in result:
         exit(1)
-for pname in sorted(profiles):
-    if profile == '' or pname.lower() == profile.lower():
-        print('\n%s:' % pname)
-        for attachment in rules['entry']['attachments']:
-            if attachment['profile'] == pname:
-                if attachment['subnets'] is None or len(attachment['subnets']) == 0:
-                    print('    All IP Addresses(*) (%s)' % attachment['action'])
-                else:
-                    for cidr in attachment['subnets']:
-                        print('    %s (%s)' % (cidr, attachment['action']))
+else:
+    for pname in sorted(profiles):
+        if profile == '' or pname.lower() == profile.lower():
+            print('\n%s:' % pname)
+            for attachment in rules['entry']['attachments']:
+                if attachment['profile'] == pname:
+                    if attachment['subnets'] is None or len(attachment['subnets']) == 0:
+                        print('    All IP Addresses(*) (%s)' % attachment['action'])
+                    else:
+                        for cidr in attachment['subnets']:
+                            print('    %s (%s)' % (cidr, attachment['action']))
 print('')
