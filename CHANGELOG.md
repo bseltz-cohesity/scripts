@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-06-10`] [firewallTool.py](https://github.com/cohesity/community-automation-samples/tree/main/python/firewallTool) [`Update`] improved list function
+* [`2025-06-10`] [firewallTool.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/firewallTool) [`Update`] improved list function
 * [`2025-06-08`] [storePasswordInFile.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/storePasswordInFile) [`Update`] added password validation
 * [`2025-06-03`] [epic_nimble_freeze_thaw.sh](https://github.com/cohesity/community-automation-samples/tree/main/bash/epic_nimble_freeze_thaw) [`New`] Example Epic freeze thaw script
 * [`2025-05-28`] [restorePhysicalFiles.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restorePhysicalFiles) [`New`] simplified restore files for physical servers
