@@ -14,13 +14,10 @@ param (
     [Parameter()][string]$ipList,
     [Parameter()][switch]$addEntry,
     [Parameter()][switch]$removeEntry,
-    [Parameter()][ValidateSet('Management', 'SNMP', 'S3', 'Data Protection', 'Replication', 'SSH', 'SMB', 'NFS', '')][string]$profileName = ''
+    [Parameter()][ValidateSet('Management', 'SNMP', 'S3', 'Data Protection', 'Replication', 'SSH', 'SMB', 'NFS', 'Reporting database', '')][string]$profileName = ''
 )
 
-if($profileName -eq ''){
-    Write-Host "No profileName specified" -ForegroundColor Yellow
-    exit 1
-}
+$profileNames = @('Management', 'SNMP', 'S3', 'Data Protection', 'Replication', 'SSH', 'SMB', 'NFS', 'Reporting database')
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -76,6 +73,11 @@ if($addentry){
     $action = 'list'
 }
 
+if($profileName -eq '' -and $action -ne 'list'){
+    Write-Host "No profileName specified" -ForegroundColor Yellow
+    exit 1
+}
+
 if($action -ne 'list' -and $entries.Count -eq 0){
     Write-Host "No entries specified" -ForegroundColor Yellow
     exit 1
@@ -111,20 +113,25 @@ foreach($cidr in $entries){
 }
 
 if($action -ne 'list'){
+    # $rules | ConvertTo-JSON -Depth 99 | Out-file firewallExample.json
     $result = api put /nexus/v1/firewall/update $rules
     if(!$result){
         exit 1
     }
 }
 
-Write-Host "`n$($profileName): allow list:"
-foreach($attachment in $rules.entry.attachments){
-    if($attachment.profile -eq $profileName){
-        if(! $attachment.subnets -or $attachment.subnets.Count -eq 0){
-            Write-host "    All IP Addresses(*)"
-        }else{
-            foreach($cidr in $attachment.subnets){
-                Write-Host "    $cidr"
+foreach($pName in $profileNames | Sort-Object){
+    if($profileName -eq '' -or $pname -eq $profileName){
+        Write-Host "`n$($pName):"
+        foreach($attachment in $rules.entry.attachments){
+            if($attachment.profile -eq $pName){
+                if(! $attachment.subnets -or $attachment.subnets.Count -eq 0){
+                    Write-host "    All IP Addresses(*) ($($attachment.action))"
+                }else{
+                    foreach($cidr in $attachment.subnets){
+                        Write-Host "    $cidr ($($attachment.action))"
+                    }
+                }
             }
         }
     }
