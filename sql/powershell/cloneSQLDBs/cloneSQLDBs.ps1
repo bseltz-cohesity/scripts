@@ -1,4 +1,4 @@
-# 2023-02-01
+# 2025-06-11
 
 ### usage: ./cloneSQL.ps1 -vip 192.168.1.198 -username admin [ -domain local ] -sourceServer 'SQL2012' -sourceDB 'CohesityDB' [ -targetServer 'SQLDEV01' ] [ -targetDB 'CohesityDB-Dev' ] [ -targetInstance 'MSSQLSERVER' ] [ -wait ]
 
@@ -96,6 +96,15 @@ foreach($dbName in $dbNames){
         write-host "Database $dbName Not Found" -foregroundcolor yellow
         continue
     }
+    $dbVersions = @()
+    foreach($dbresult in $dbresults){
+        foreach($version in $dbresult.vmDocument.versions){
+            setApiProperty -object $version -name vmDocument -value $dbresult.vmDocument
+            setApiProperty -object $version -name registeredSource -value $dbresult.registeredSource
+            $dbVersions = @($dbVersions + $version)
+        }
+    }
+    $dbVersions = $dbVersions | Sort-Object -Property {$_.instanceId.jobStartTimeUsecs} -Descending
 
     ### if there are multiple results (e.g. old/new jobs?) select the one with the newest snapshot 
     $latestdb = ($dbresults | sort-object -property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False})[0]
@@ -104,6 +113,8 @@ foreach($dbName in $dbNames){
         write-host "Database $dbName Not Found" -foregroundcolor yellow
         continue
     }
+
+    $latestdbDoc = $dbVersions[0].vmDocument
 
     ### identify physical or vm
     $entityType = $latestdb.registeredSource.type
@@ -119,71 +130,165 @@ foreach($dbName in $dbNames){
     }
 
     ### handle log replay
+    $ownerId = $latestdbDoc.objectId.entity.sqlEntity.ownerId
+    $dbId = $latestdbDoc.objectId.entity.id
+
+    # handle log replay
     $versionNum = 0
     $validLogTime = $False
+    $useLogTime = $False
+    $latestUsecs = 0
+    $oldestUsecs = 0
 
-    if ($logTime -or $latest) {
+    if ($logTime -or $latest -or $noStop){
         if($logTime){
             $logUsecs = dateToUsecs $logTime
+            $logUsecsDayStart = $dbVersions[-1].instanceId.jobStartTimeUsecs
+            $logUsecsDayEnd = [int64] (dateToUsecs (get-date $logTime).Date.AddDays(1).AddSeconds(-1))
+        }elseif($latest -or $noStop){
+            $logUsecsDayEnd = [int64]( dateToUsecs (get-date))
         }
-        $dbVersions = $latestdb.vmDocument.versions
-
+        if($logTime){
+            $dbVersions = $dbVersions | Where-Object {$_.snapshotTimestampUsecs -lt ($logUsecs + 60000000)}
+        }
         foreach ($version in $dbVersions) {
-            ### find db date before log time
-            $GetRestoreAppTimeRangesArg = @{
-                'type'                = 3;
-                'restoreAppObjectVec' = @(
+            if($latest -or $noStop){
+                $logUsecsDayStart = [int64] $version.snapshotTimestampUsecs
+            }
+            # usecsToDate $version.snapshotTimestampUsecs
+            $snapshotTimestampUsecs = $version.snapshotTimestampUsecs
+            $oldestUsecs = $snapshotTimestampUsecs
+            $timeRangeQuery = @{
+                "endTimeUsecs"       = $logUsecsDayEnd;
+                "protectionSourceId" = $dbId;
+                "environment"        = "kSQL";
+                "jobUids"            = @(
                     @{
-                        'appEntity'     = $latestdb.vmDocument.objectId.entity;
-                        'restoreParams' = @{
-                            'sqlRestoreParams'    = @{
-                                'captureTailLogs'                 = $false;
-                                'newDatabaseName'                 = $dbName;
-                                'alternateLocationParams'         = @{};
-                                'secondaryDataFileDestinationVec' = @(@{})
-                            };
-                            'oracleRestoreParams' = @{
-                                'alternateLocationParams' = @{}
-                            }
-                        }
+                        "clusterId"            = $version.vmDocument.objectId.jobUid.clusterId;
+                        "clusterIncarnationId" = $version.vmDocument.objectId.jobUid.clusterIncarnationId;
+                        "id"                   = $version.vmDocument.objectId.jobUid.objectId
                     }
                 );
-                'ownerObjectVec'      = @(
-                    @{
-                        'attemptNum' = $version.instanceId.attemptNum;
-                        'jobUid'         = $latestdb.vmDocument.objectId.jobUid;
-                        'jobId'          = $latestdb.vmDocument.objectId.jobId;
-                        'jobInstanceId'  = $version.instanceId.jobInstanceId;
-                        'startTimeUsecs' = $version.instanceId.jobStartTimeUsecs;
-                        "entity" = @{
-                            "id" = $ownerId
-                        };
-                    }
-                )
+                "startTimeUsecs"     = $logUsecsDayStart
             }
-            $logTimeRange = api post /restoreApp/timeRanges $GetRestoreAppTimeRangesArg
-            if($latest){
-                if(! $logTimeRange.ownerObjectTimeRangeInfoVec[0].PSobject.Properties['timeRangeVec']){
-                    $logTime = $null
-                    $latest = $null
-                    break
+            $pointsForTimeRange = api post restore/pointsForTimeRange $timeRangeQuery
+            if($pointsForTimeRange.PSobject.Properties['timeRanges']){
+                # log backups available
+                foreach($timeRange in $pointsForTimeRange.timeRanges){
+                    $logStart = $timeRange.startTimeUsecs
+                    $logEnd = $timeRange.endTimeUsecs
+                    if($latestUsecs -eq 0){
+                        $latestUsecs = $logEnd - 1000000
+                    }
+                    if($latest -or $noStop){
+                        $logUsecs = $logEnd - 1000000
+                    }
+                    if((($logUsecs - 1000000) -le $snapshotTimestampUsecs -or $snapshotTimestampUsecs -ge ($logUsecs + 1000000)) -and !$resume){
+                        $validLogTime = $True
+                        $useLogTime = $False
+                        break
+                    }elseif($logStart -le $logUsecs -and $logUsecs -le $logEnd -and $logUsecs -ge ($snapshotTimestampUsecs - 1000000)) {
+                        $validLogTime = $True
+                        $useLogTime = $True
+                        break
+                    }
+                }
+            }else{
+                # no log backups available
+                foreach($snapshot in $pointsForTimeRange.fullSnapshotInfo){
+                    if($latestUsecs -eq 0){
+                        $latestUsecs = $snapshot.restoreInfo.startTimeUsecs
+                    }
+                    if($logTime){
+                        if($snapshot.restoreInfo.startTimeUsecs -le ($logUsecs + 60000000)){
+                            $validLogTime = $True
+                            $useLogTime = $False
+                            break
+                        }
+                    }elseif($latest -or $noStop) {
+                        $validLogTime = $True
+                        $useLogTime = $False
+                        break
+                    }
                 }
             }
-            $logStart = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].startTimeUsecs
-            $logEnd = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].endTimeUsecs
-            if($latest){
-                $logUsecs = $logEnd - 1000000
-                $validLogTime = $True
-                break
+            if($latestUsecs -eq 0){
+                $latestUsecs = $oldestUsecs
             }
-            if ($logStart -le $logUsecs -and $logUsecs -le $logEnd) {
-                $validLogTime = $True
+            if($validLogTime){
                 break
             }
             $versionNum += 1
         }
+        if(! $validLogTime){
+            Write-Host "log time is out of range" -ForegroundColor Yellow        
+            Write-Host "Valid range is $(usecsToDate $oldestUsecs) to $(usecsToDate $latestUsecs)"
+            exit(1)
+        }
     }
 
+    # if ($logTime -or $latest) {
+    #     if($logTime){
+    #         $logUsecs = dateToUsecs $logTime
+    #     }
+    #     $dbVersions = $latestdb.vmDocument.versions
+
+    #     foreach ($version in $dbVersions) {
+    #         ### find db date before log time
+    #         $GetRestoreAppTimeRangesArg = @{
+    #             'type'                = 3;
+    #             'restoreAppObjectVec' = @(
+    #                 @{
+    #                     'appEntity'     = $latestdb.vmDocument.objectId.entity;
+    #                     'restoreParams' = @{
+    #                         'sqlRestoreParams'    = @{
+    #                             'captureTailLogs'                 = $false;
+    #                             'newDatabaseName'                 = $dbName;
+    #                             'alternateLocationParams'         = @{};
+    #                             'secondaryDataFileDestinationVec' = @(@{})
+    #                         };
+    #                         'oracleRestoreParams' = @{
+    #                             'alternateLocationParams' = @{}
+    #                         }
+    #                     }
+    #                 }
+    #             );
+    #             'ownerObjectVec'      = @(
+    #                 @{
+    #                     'attemptNum' = $version.instanceId.attemptNum;
+    #                     'jobUid'         = $latestdb.vmDocument.objectId.jobUid;
+    #                     'jobId'          = $latestdb.vmDocument.objectId.jobId;
+    #                     'jobInstanceId'  = $version.instanceId.jobInstanceId;
+    #                     'startTimeUsecs' = $version.instanceId.jobStartTimeUsecs;
+    #                     "entity" = @{
+    #                         "id" = $ownerId
+    #                     };
+    #                 }
+    #             )
+    #         }
+    #         $logTimeRange = api post /restoreApp/timeRanges $GetRestoreAppTimeRangesArg
+    #         if($latest){
+    #             if(! $logTimeRange.ownerObjectTimeRangeInfoVec[0].PSobject.Properties['timeRangeVec']){
+    #                 $logTime = $null
+    #                 $latest = $null
+    #                 break
+    #             }
+    #         }
+    #         $logStart = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].startTimeUsecs
+    #         $logEnd = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].endTimeUsecs
+    #         if($latest){
+    #             $logUsecs = $logEnd - 1000000
+    #             $validLogTime = $True
+    #             break
+    #         }
+    #         if ($logStart -le $logUsecs -and $logUsecs -le $logEnd) {
+    #             $validLogTime = $True
+    #             break
+    #         }
+    #         $versionNum += 1
+    #     }
+    # }
+    
     if($validLogTime -eq $False){
         $versionNum = 0
     }
@@ -198,11 +303,11 @@ foreach($dbName in $dbNames){
             "type" = 3;
             "ownerRestoreInfo" = @{
                 "ownerObject" = @{
-                    "attemptNum" = $latestdb.vmDocument.versions[$versionNum].instanceId.attemptNum;
-                    "jobUid" = $latestdb.vmDocument.objectId.jobUid;
-                    "jobId" = $latestdb.vmDocument.objectId.jobId;
-                    "jobInstanceId" = $latestdb.vmDocument.versions[$versionNum].instanceId.jobInstanceId;
-                    "startTimeUsecs" = $latestdb.vmDocument.versions[$versionNum].instanceId.jobStartTimeUsecs;
+                    "attemptNum" = $dbversions[$versionNum].instanceId.attemptNum;
+                    "jobUid" =$dbversions[$versionNum].vmDocument.objectId.jobUid;
+                    "jobId" = $dbversions[$versionNum].vmDocument.objectId.jobId;
+                    "jobInstanceId" = $dbversions[$versionNum].instanceId.jobInstanceId;
+                    "startTimeUsecs" = $dbversions[$versionNum].instanceId.jobStartTimeUsecs;
                     "entity" = @{
                         "id" = $ownerId
                     }
@@ -215,7 +320,7 @@ foreach($dbName in $dbNames){
             }
             "restoreAppObjectVec" = @(
                 @{
-                    "appEntity" = $latestdb.vmDocument.objectId.entity;
+                    "appEntity" = $dbversions[$versionNum].vmDocument.objectId.entity;
                     "restoreParams" = @{
                         "sqlRestoreParams" = @{
                             "captureTailLogs" = $false;
@@ -234,7 +339,7 @@ foreach($dbName in $dbNames){
 
     ### apply log replay time
     if($validLogTime -eq $True){
-        if(! $noLogs){
+        if(! $noLogs -and $useLogTime -eq $True){
             $cloneTask.restoreAppParams.restoreAppObjectVec[0].restoreParams.sqlRestoreParams['restoreTimeSecs'] = $([int64]($logUsecs/1000000))
         }
     }else{
