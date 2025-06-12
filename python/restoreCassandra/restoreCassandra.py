@@ -75,7 +75,7 @@ if mcm or vip.lower() == 'helios.cohesity.com':
 
 if targetserver is not None:
     rootNodes = api('get', 'protectionSources/rootNodes?environments=kCassandra')
-    targetNode = [r for r in rootNodes if r['protectionSource']['name'].lower() == targetserver.lower()]
+    targetNode = [r for r in rootNodes if r['protectionSource']['name'].lower() == targetserver.lower() or r['protectionSource']['customName'].lower() == targetserver.lower()]
     if targetNode is None or len(targetNode) == 0:
         print("targetserver %s not found" % targetserver)
         exit(1)
