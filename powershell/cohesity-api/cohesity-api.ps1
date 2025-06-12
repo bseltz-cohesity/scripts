@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2025.05.01 - Brian Seltzer
+#  Version 2025.06.12 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024-02-18 - fix - toJson function - handle null input
@@ -23,10 +23,11 @@
 # 2025-04-05 - minor authentication flow fixes
 # 2025-04-24 - more authentication flow fixes
 # 2025-05-01 - more authentication flow fixes
+# 2025-06-12 - more authentication flow fixes (impersonation)
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2025.05.01'
+$versionCohesityAPI = '2025.06.12'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -296,6 +297,9 @@ function apiauth([string] $vip='helios.cohesity.com',
                     }
                     __connected -quiet:$quiet
                     $retryCounter = 11
+                    if($tenant){
+                        impersonate $tenant
+                    }
                     # 2023-04-05
                     return $null
                 }catch{
@@ -495,6 +499,9 @@ function apiauth([string] $vip='helios.cohesity.com',
                 $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
             }
             __connected -quiet:$quiet
+            if($tenant){
+                impersonate $tenant
+            }
             # 2023-04-05
             return $null
         }catch{
@@ -515,6 +522,9 @@ function apiauth([string] $vip='helios.cohesity.com',
                         $cohesity_api.header['authorization'] = $auth.tokenType + ' ' + $auth.accessToken
                         __connected -quiet:$quiet
                         $retryCounter = 11
+                        if($tenant){
+                            impersonate $tenant
+                        }
                         # 2023-04-05
                         return $null
                     }catch{
@@ -560,6 +570,9 @@ function apiauth([string] $vip='helios.cohesity.com',
                                     $cohesity_api.header['session-id'] = $auth.sessionId
                                     __connected -quiet:$quiet
                                     $retryCounter = 11
+                                    if($tenant){
+                                        impersonate $tenant
+                                    }
                                     # 2023-04-05
                                     return $null
                                 }catch{
