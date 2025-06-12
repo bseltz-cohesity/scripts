@@ -113,11 +113,14 @@ for cidr in entries:
 if action != 'list' and len(entries) == 0:
     for attachment in rules['entry']['attachments']:
         if attachment['profile'] == profile:
+            # display(attachment)
             if action == 'add':
                 attachment['subnets'] = None
+                attachment['action'] = 'allow'
                 print('    %s: adding *' % profile)
             else:
                 print('    %s: removing *' % profile)
+                attachment['action'] = 'deny'
             rules['updateAttachment'] = True
 
 if action != 'list':
