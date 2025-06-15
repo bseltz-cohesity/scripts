@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """replicate old snapshots"""
 
-# version 2022.09.06
+# version 2025.06.15
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -24,8 +24,12 @@ parser.add_argument('-l', '--joblist', type=str, required=False)   # text file o
 parser.add_argument('-e', '--excludelogs', action='store_true')   # exclude log backups
 parser.add_argument('-x', '--numruns', type=int, default=1000)
 parser.add_argument('-ri', '--runid', type=int, default=None)
-parser.add_argument('-n', '--newerthan', type=int, default=0)     # number of days back to search for snapshots to archive
-parser.add_argument('-o', '--olderthan', type=int, default=0)     # number of days back to search for snapshots to archive
+parser.add_argument('-n', '--newerthan', type=int, default=0)     # number of days back to search for snapshots to replicate
+parser.add_argument('-o', '--olderthan', type=int, default=0)     # number of days back to search for snapshots to replicate
+parser.add_argument('-b', '--ifexpiringbefore', type=int, default=0)     # if expiring before X days
+parser.add_argument('-a', '--ifexpiringafter', type=int, default=0)     # if expiring after X days
+parser.add_argument('-rl', '--retentionlessthan', type=int, default=0)     # if retention less than X days
+parser.add_argument('-rg', '--retentiongreaterthan', type=int, default=0)     # if retention greater than X days
 
 args = parser.parse_args()
 
@@ -45,7 +49,10 @@ numruns = args.numruns
 runid = args.runid
 newerthan = args.newerthan
 olderthan = args.olderthan
-
+ifexpiringbefore = args.ifexpiringbefore
+ifexpiringafter = args.ifexpiringafter
+retentionlessthan = args.retentionlessthan
+retentiongreaterthan = args.retentiongreaterthan
 
 # gather server list
 def gatherList(param=None, filename=None, name='items', required=True):
@@ -73,6 +80,10 @@ clusterId = api('get', 'cluster')['id']
 
 newerthanUsecs = timeAgo(newerthan, 'days')
 olderthanUsecs = timeAgo(olderthan, 'days')
+expiringbeforeusecs = timeAgo(-ifexpiringbefore, 'days')
+expiringafterusecs = timeAgo(-ifexpiringafter, 'days')
+retentiongreaterthanusecs = retentiongreaterthan * (86400000000)
+retentionlessthanusecs = retentionlessthan * (86400000000)
 
 # get replication target info
 remote = [r for r in api('get', 'remoteClusters') if r['name'].lower() == remotecluster.lower()]
@@ -150,6 +161,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                 runs = [r for r in runs if ('localBackupInfo' in r and r['localBackupInfo']['runType'] != 'kLog') or ('originalBackupInfo') in r and r['originalBackupInfo']['runType'] != 'kLog']
             if runs is not None and len(runs) > 0:
                 for run in sorted(runs, key=lambda run: run['id']):
+                    thisrun = None
                     if runid is not None and run['protectionGroupInstanceId'] != runid:
                         continue
                     daysToKeep = keepfor
@@ -157,6 +169,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                     startdate = usecsToDate(startdateusecs)
                     if newerthan > 0 and startdateusecs < newerthanUsecs:
                         continue
+                       
                     # check for replication
                     replicated = False
                     if 'replicationInfo' in run:
@@ -167,19 +180,30 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                                     if resync and replicationTargetResult['clusterName'].lower() == remotecluster.lower() and replicationTargetResult['status'] == 'Succeeded':
                                         replicated = False
 
+                    if ifexpiringbefore > 0 or ifexpiringafter > 0 or retentiongreaterthan > 0 or retentionlessthan > 0:
+                        thisrun = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&excludeTasks=true&id=%s' % (startdateusecs, jobuid['id']))
+                        expireTimeUsecs = thisrun[0]['backupJobRuns']['protectionRuns'][0]['copyRun']['finishedTasks'][0]['expiryTimeUsecs']
+
+                        if ifexpiringbefore > 0 and expireTimeUsecs >= expiringbeforeusecs:
+                            continue
+                        if ifexpiringafter > 0 and expireTimeUsecs <= expiringafterusecs:
+                            continue
+                        if retentiongreaterthan > 0 and (expireTimeUsecs - startdateusecs) <= retentiongreaterthanusecs:
+                            continue
+                        if retentionlessthan > 0 and (expireTimeUsecs - startdateusecs) >= retentionlessthanusecs:
+                            continue
+
                     if replicated is False:
                         startTimeUsecs = startdateusecs
-
                         if keepfor > 0:
                             expireTimeUsecs = startTimeUsecs + (int(keepfor * 86400000000))
                         else:
-                            thisrun = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&excludeTasks=true&id=%s' % (startdateusecs, jobuid['id']))
-                            expireTimeUsecs = thisrun[0]['backupJobRuns']['protectionRuns'][0]['copyRun']['finishedTasks'][0]['expiryTimeUsecs']
-
+                            if thisrun is None:
+                                thisrun = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&excludeTasks=true&id=%s' % (startdateusecs, jobuid['id']))
+                                expireTimeUsecs = thisrun[0]['backupJobRuns']['protectionRuns'][0]['copyRun']['finishedTasks'][0]['expiryTimeUsecs']
                         daysToKeep = int(round((expireTimeUsecs - nowUsecs) / 86400000000, 0)) + 1
                         if daysToKeep == 0:
                             daysToKeep = 1
-
                         if commit:
                             # create replication task definition
                             replicationTask = {

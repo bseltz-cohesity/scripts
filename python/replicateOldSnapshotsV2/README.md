@@ -73,3 +73,7 @@ By default, the script will only show what it would do. To actually execute the 
 * -ri, --runid: (optional) specify run ID to replicate
 * -n, --newerthan: (optional) replicate runs newer than X days ago
 * -o, --olderthan: (optional) replicate runs older than X days ago
+* -b, --ifexpiringbefore: (optional) replicate runs that expire less than X days from now
+* -a, --ifexpiringafter: (optional) replicate runs that expire more than X days from now
+* -rl, --retentionlessthan: (optional) replicate runs with retention less than X days (from backup date)
+* -rg, --retentiongreaterthan: (optional) replicate runs with retention greater than X days (from backup date)
