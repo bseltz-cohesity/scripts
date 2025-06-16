@@ -59,6 +59,7 @@ Place both files in a folder together and run the main script like so:
 * -vp, --vmpwd: (optional) will be prompted if required and omitted
 * -x, --noindex: (optional) use if VM is not indexed, file paths must be exact case
 * -k, --taskname: (optional) set name of recovery task
+* -j, --jobname: (optional) filter on protection group name
 
 ## File Names and Paths
 

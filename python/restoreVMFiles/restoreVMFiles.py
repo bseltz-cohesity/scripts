@@ -34,6 +34,8 @@ parser.add_argument('-vu', '--vmuser', type=str, default=None)    # destination 
 parser.add_argument('-vp', '--vmpwd', type=str, default=None)    # destination path
 parser.add_argument('-x', '--noindex', action='store_true')
 parser.add_argument('-k', '--taskname', type=str, default=None)       # recoverytask name
+parser.add_argument('-j', '--jobname', type=str, default=None)
+
 args = parser.parse_args()
 
 vip = args.vip
@@ -57,6 +59,7 @@ daysago = args.daysago
 restoremethod = args.restoremethod
 noindex = args.noindex
 taskname = args.taskname
+jobname = args.jobname
 
 if sys.version_info > (3,):
     long = int
@@ -109,6 +112,11 @@ obj = obj[0]
 
 # get snapshots
 objectId = obj['id']
+if jobname:
+    obj['latestSnapshotsInfo'] = [s for s in obj['latestSnapshotsInfo'] if s['protectionGroupName'].lower() == jobname.lower()]
+    if len(obj['latestSnapshotsInfo']) == 0:
+        print("No backups for VM %s in protection group %s" % (sourcevm, jobname))
+        exit(1)
 groupId = obj['latestSnapshotsInfo'][0]['protectionGroupId']
 snapshots = api('get', "data-protect/objects/%s/snapshots?protectionGroupIds=%s" % (objectId, groupId), v=2)
 if showversions:
@@ -117,6 +125,7 @@ if showversions:
     for snapshot in snapshots['snapshots']:
         print('%10d  %s' % (snapshot['runInstanceId'], usecsToDate(snapshot['runStartTimeUsecs'])))
     exit(0)
+
 
 # version selection
 today = datetime.now()
