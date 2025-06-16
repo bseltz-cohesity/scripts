@@ -30,7 +30,8 @@ param (
     [Parameter()][switch]$localOnly,
     [Parameter()][switch]$overwrite,
     [Parameter()][string]$taskString = '',
-    [Parameter()][int]$vlan = 0
+    [Parameter()][int]$vlan = 0,
+    [Parameter()][string]$jobName
 )
 
 if($overWrite){
@@ -46,12 +47,30 @@ if($taskString -eq ''){
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-# authenticate
-if($useApiKey){
-    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
-}else{
-    apiauth -vip $vip -username $username -domain $domain -password $password
+# authentication =============================================
+# demand clusterName for Helios/MCM
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios/MCM" -ForegroundColor Yellow
+    exit 1
 }
+
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -tenant $tenant -noPromptForPassword $noPrompt
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
+        exit 1
+    }
+}
+# end authentication =========================================
 
 $restoreMethods = @{
     'ExistingAgent' = 'UseExistingAgent';
@@ -85,7 +104,20 @@ if(!$object){
     Write-Host "VM $sourceVM not found" -ForegroundColor Yellow
     exit 1
 }
+
+# filter by job name
+if($jobName){
+    $object.latestSnapshotsInfo = $object.latestSnapshotsInfo | Where-Object {$_.protectionGroupName -eq $jobName}
+}
+
+if($object.latestSnapshotsInfo -eq $null -or @($object.latestSnapshotsInfo).Count -lt 1){
+    Write-Host "No backups for VM $sourceVM in Protection Group $jobName" -ForegroundColor Yellow
+    exit 1 
+}
+
 $object = ($object | Sort-Object -Property @{Expression={$_.latestSnapshotsInfo[0].protectionRunStartTimeUsecs}; Ascending = $False})[0]
+
+
 
 # get snapshots
 $objectId = $object.id

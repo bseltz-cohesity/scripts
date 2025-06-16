@@ -68,6 +68,7 @@ Place both files in a folder together and run the main script like so:
 * -overwrite: (optional) overwrite existing files
 * -taskString: (optional) custom string in recovery task name (default is RestoreFiles_sourcevm_date)
 * -vlan: (optional) vlan ID to use for restore (e.g. 60)
+* -jobName: (optional) filter by protection group name
 
 ## File Names and Paths
 
