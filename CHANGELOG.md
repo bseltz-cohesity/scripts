@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-06-16`] [restoreVMFiles.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/restoreVMFiles) [`Update`] added job name filter
+* [`2025-06-16`] [restoreVMFiles.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restoreVMFiles) [`Update`] added job name filter
 * [`2025-06-15`] [replicateOldSnapshotsV2.py](https://github.com/cohesity/community-automation-samples/tree/main/python/replicateOldSnapshotsV2) [`Update`] added filter options
 * [`2025-06-15`] [replicateOldSnapshots.py](https://github.com/cohesity/community-automation-samples/tree/main/python/replicateOldSnapshots) [`Update`] added filter options
 * [`2025-06-12`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] authentication flow fixes
