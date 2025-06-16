@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-06-16`] [pgInfo.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pgInfo) [`New`] didplay Postgres connection info
 * [`2025-06-16`] [restoreVMFiles.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/restoreVMFiles) [`Update`] added job name filter
 * [`2025-06-16`] [restoreVMFiles.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restoreVMFiles) [`Update`] added job name filter
 * [`2025-06-15`] [replicateOldSnapshotsV2.py](https://github.com/cohesity/community-automation-samples/tree/main/python/replicateOldSnapshotsV2) [`Update`] added filter options
