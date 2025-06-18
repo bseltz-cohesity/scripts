@@ -251,7 +251,7 @@ foreach($v in $vip){
                                 foreach ($restoreAppObject in $restoreAppObjects){
                                     $objectName = $restoreAppObject.appEntity.displayName
                                     $thisChildStatus = $thisstatus
-                                    if($v2Recoveries){
+                                    if($v2Recoveries -and $v2Recoveries.recoveries -ne $null){
                                         $v2Recovery = $v2Recoveries.recoveries | Where-Object {$_.mssqlParams.recoverAppParams[0].objectInfo.name -eq $objectName}
                                         if($v2Recovery){
                                             $thisChildStatus = $v2Recovery.status
@@ -293,7 +293,7 @@ foreach($v in $vip){
                                             <td>$duration</td>
                                             <td>$($restore.restoreTask.performRestoreTaskState.base.user)</td>
                                             </tr>"
-                                            "$cluster`t$startTime`t$taskName`t$objectName`t$totalSize`t$targetObject`t$thisChildStatus`t$duration`t$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
+                                            "$cluster`t$startTime`t$taskName`t$sourceServer/$objectName`t$totalSize`t$targetObject`t$thisChildStatus`t$duration`t$($restore.restoreTask.performRestoreTaskState.base.user)" | out-file $csvFile -Append
                                             $restoresCount += 1 
                                         }
                                     }
