@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-06-20`] [recoverAHVVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverAHVVMs) [`Update`] added -recoveryType option
+* [`2025-06-20`] [recoverAHVVMs-throttled.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverAHVVMs-throttled) [`Update`] added -recoveryType option
 * [`2025-06-20`] [refreshSourceCcs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/refreshSourceCcs) [`New`] refresh registered sources in CCS
 * [`2025-06-18`] [sqlRestoreReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/sqlRestoreReport) [`Update`] minor bug fix
 * [`2025-06-17`] [protectCcsWindows.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsWindows) [`New`] protect physical Windows servers in CCS
