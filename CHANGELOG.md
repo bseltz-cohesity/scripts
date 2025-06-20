@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-06-20`] [refreshSourceCcs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/refreshSourceCcs) [`New`] refresh registered sources in CCS
+* [`2025-06-18`] [sqlRestoreReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/sqlRestoreReport) [`Update`] minor bug fix
 * [`2025-06-17`] [protectCcsWindows.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsWindows) [`New`] protect physical Windows servers in CCS
 * [`2025-06-16`] [pgInfo.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pgInfo) [`New`] didplay Postgres connection info
 * [`2025-06-16`] [restoreVMFiles.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/restoreVMFiles) [`Update`] added job name filter
