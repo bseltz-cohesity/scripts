@@ -24,7 +24,8 @@ param (
     [Parameter()][switch]$detachNetwork,
     [Parameter()][switch]$poweron, # leave powered off by default
     [Parameter()][switch]$wait, # wait for restore tasks to complete
-    [Parameter()][switch]$noPrompt
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][ValidateSet('InstantRecovery','CopyRecovery')][string]$recoveryType = 'InstantRecovery'
 )
 
 # gather list from command line params and file
@@ -88,6 +89,7 @@ $restoreParams = @{
             "targetEnvironment" = "kAcropolis";
             "recoverProtectionGroupRunsParams" = @();
             "acropolisTargetParams" = @{
+                "recoveryProcessType" = $recoveryType;
                 "recoveryTargetConfig" = @{
                     "recoverToNewSource" = $false;
                     "originalSourceConfig" = @{

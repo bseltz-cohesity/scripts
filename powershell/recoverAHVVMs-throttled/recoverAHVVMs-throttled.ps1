@@ -25,7 +25,8 @@ param (
     [Parameter()][switch]$poweron, # leave powered off by default
     [Parameter()][switch]$wait, # wait for restore tasks to complete
     [Parameter()][switch]$noPrompt,
-    [Parameter()][int]$maxConcurrentVMRestores = 10
+    [Parameter()][int]$maxConcurrentVMRestores = 10,
+    [Parameter()][ValidateSet('InstantRecovery','CopyRecovery')][string]$recoveryType = 'InstantRecovery'
 )
 
 # gather list from command line params and file
@@ -94,6 +95,7 @@ $restoreParams = @{
             "targetEnvironment" = "kAcropolis";
             "recoverProtectionGroupRunsParams" = @();
             "acropolisTargetParams" = @{
+                "recoveryProcessType" = $recoveryType;
                 "recoveryTargetConfig" = @{
                     "recoverToNewSource" = $false;
                     "originalSourceConfig" = @{

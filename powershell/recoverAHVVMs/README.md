@@ -58,3 +58,4 @@ Place the files in a folder together and run the main script like so:
 * -detachNetwork: (optional) leave VM network disconnected (default is false)
 * -vlan: (optional) vlan ID to choose for restore (cluster interface)
 * -noPrompt: (optional) Don't prompt to confirm
+* -recoveryType: (optional) InstantRecovery or CopyRecovery (default is InstantRecovery)

@@ -59,3 +59,4 @@ Place the files in a folder together and run the main script like so:
 * -vlan: (optional) vlan ID to choose for restore (cluster interface)
 * -noPrompt: (optional) Don't prompt to confirm
 * -maxConcurrentVMRestores: (optional) default is 10
+* -recoveryType: (optional) InstantRecovery or CopyRecovery (default is InstantRecovery)
