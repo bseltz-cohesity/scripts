@@ -46,7 +46,7 @@ $dateString = $now.ToString('yyyy-MM-dd')
 $outfileName = "agentVersions-$clusterName-$dateString.csv"
 
 # headings
-$headings = """Cluster Name"",""Source Name"",""Agent Version"",""OS Type"",""OS Name"""
+$headings = """Cluster Name"",""Source Name"",""Agent Version"",""OS Type"",""OS Name"",""File CBT"",""Vol CBT"""
 $headings | Out-File -FilePath $outfileName # -Encoding utf8
 
 ### list agent info
@@ -73,10 +73,12 @@ foreach ($node in $nodes.rootNodes){
     $apps = ''
     if($node.rootNode.$psproperty.PSObject.Properties['agents'] -and $node.rootNode.$psproperty.agents.Count -gt 0){
         $version = $node.rootNode.$psproperty.agents[0].version
+        $fileCBT = $node.rootNode.$psproperty.agents[0].fileCbtInfo.isInstalled
+        $volCBT = $node.rootNode.$psproperty.agents[0].volCbtInfo.isInstalled
         $hostType = $node.rootNode.$psproperty.hostType.subString(1)
         $osName = $node.rootNode.$psproperty.osName
         $apps = $node.registrationInfo['environments']
-        """$clusterName"",""$name"",""$version"",""$hostType"",""$osName""" | Out-File -FilePath $outfileName -Append
+        """$clusterName"",""$name"",""$version"",""$hostType"",""$osName"",""$fileCBT"",""$volCBT""" | Out-File -FilePath $outfileName -Append
     }
 }
 
