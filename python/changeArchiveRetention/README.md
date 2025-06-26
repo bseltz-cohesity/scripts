@@ -48,6 +48,7 @@ If you're happy with the output you can commit the change by adding -x (--commit
 ## Other Parameters
 
 * -k, --keepfor: number of days (from original backup date) to retain the archives
+* -e, --externaltargetname: (optional) name of external target
 * -b, --backupType: (optional) kLog, kRegular, kFull, kSystem or kAll (default is kAll)
 * -log, --includelogs: (optional) update retention for log backups (will skip logs by default)
 * -a, --allowreduction: (optional) allow retention to be reduced
