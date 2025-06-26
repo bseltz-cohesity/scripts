@@ -100,7 +100,8 @@ To resume the same jobs:
 
 ## Other Parameters
 
-* -j, --jobName: name of protection job to run (repeat for multiple jobs)
-* -l, --jobList: text file containing job names to run (one job per line)
-* -p, --pause: pause jobs
-* -r, --resume: resume jobs
+* -j, --jobName: (optional) name of protection job to run (repeat for multiple jobs)
+* -l, --jobList: (optional) text file containing job names to run (one job per line)
+* -p, --pause: (optional) pause jobs
+* -r, --resume: (optional) resume jobs
+* -of, --outputfolder: (optional) folder path to write output file (default is '.')

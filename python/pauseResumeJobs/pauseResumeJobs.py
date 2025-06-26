@@ -4,6 +4,7 @@
 ### import pyhesity wrapper module
 from pyhesity import *
 import codecs
+import os
 
 ### command line arguments
 import argparse
@@ -23,6 +24,7 @@ parser.add_argument('-j', '--jobName', action='append', type=str)
 parser.add_argument('-l', '--jobList', type=str)
 parser.add_argument('-r', '--resume', action='store_true')
 parser.add_argument('-p', '--pause', action='store_true')
+parser.add_argument('-of', '--outfolder', type=str, default='.')
 
 args = parser.parse_args()
 
@@ -41,6 +43,7 @@ jobNames = args.jobName
 jobList = args.jobList
 pause = args.pause
 resume = args.resume
+outfolder = args.outfolder
 
 # authentication =========================================================
 # demand clustername if connecting to helios or mcm
@@ -103,9 +106,8 @@ jobIds = []
 cluster = api('get', 'cluster')
 
 if action == 'kPause':
-    outfile = 'jobsPaused-%s.txt' % cluster['name']
+    outfile = os.path.join(outfolder, 'jobsPaused-%s.txt' % cluster['name'])
     f = codecs.open(outfile, 'w')
-
 
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
     if len(jobnames) == 0 or job['name'].lower() in [j.lower() for j in jobnames]:
