@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-06-26`] [pauseResumeJobs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pauseResumeJobs) [`Update`] added output folder parameter
+* [`2025-06-26`] [changeArchiveRetention.py](https://github.com/cohesity/community-automation-samples/tree/main/python/changeArchiveRetention) [`Update`] added external target name parameter
+* [`2025-06-24`] [agentVersions.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/agentVersions) [`Update`] added CBT status columns
 * [`2025-06-20`] [recoverAHVVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverAHVVMs) [`Update`] added -recoveryType option
 * [`2025-06-20`] [recoverAHVVMs-throttled.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverAHVVMs-throttled) [`Update`] added -recoveryType option
 * [`2025-06-20`] [refreshSourceCcs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/refreshSourceCcs) [`New`] refresh registered sources in CCS
