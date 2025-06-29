@@ -89,3 +89,4 @@ To protect OneDrives:
 * -maxObjectsPerJob: (optional) default is 2000
 * -createFirstJob: (optional) if no jobs match prefix, allow creation of first job
 * -firstJobNum: (optional) default is '001'
+* -maxToProtect: (optional) default is 500

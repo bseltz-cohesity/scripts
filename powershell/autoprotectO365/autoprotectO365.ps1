@@ -23,7 +23,8 @@ param (
     [Parameter()][string]$firstJobNum = '001',
     [Parameter()][int]$maxObjectsPerJob = 2000,
     [Parameter(Mandatory = $True)][string]$sourceName,
-    [Parameter()][ValidateSet('mailbox','onedrive','sites','teams','publicfolders')][string]$objectType = 'mailbox'
+    [Parameter()][ValidateSet('mailbox','onedrive','sites','teams','publicfolders')][string]$objectType = 'mailbox',
+    [Parameter()][int]$maxToProtect = 500
 )
 
 $queryParam = ''
@@ -77,7 +78,7 @@ if($USING_HELIOS){
 
 if(!$cohesity_api.authorized){
     Write-Host "Not authenticated"
-    exit
+    exit 1
 }
 
 $logFile = "$($jobPrefix)-log.txt"
@@ -85,14 +86,14 @@ $today = Get-Date -UFormat '%Y-%m-%d %H:%M:%S'
 
 # get the protectionJobs
 $jobs = (api get -v2 "data-protect/protection-groups?environments=kO365&isActive=true&isDeleted=false").protectionGroups | Where-Object {$_.office365Params.protectionTypes -eq $objectKtype}
-$jobs = $jobs | Sort-Object -Property name | Where-Object {$_.name -match $jobPrefix}
-if($jobs){
+$thesejobs = $jobs | Sort-Object -Property name | Where-Object {$_.name -match $jobPrefix}
+if($thesejobs){
     "`n==================================`nScript started $today`n==================================`n" | Out-File -FilePath $logFile -Append
 }
-if(!$jobs -and !$createFirstJob){
+if(!$thesejobs -and !$createFirstJob){
     Write-Host "No jobs with specified prefix found" -ForegroundColor Yellow
     Write-Host "Please use -createFirstJob -firstJob 1 (or 01 or 001)" -ForegroundColor Yellow
-    exit
+    exit 1
 }
 
 $cluster = api get cluster
@@ -110,14 +111,14 @@ if($cluster.clusterSoftwareVersion -lt '6.6'){
 $rootSource = api get "protectionSources/rootNodes?environments=kO365" | Where-Object {$_.protectionSource.name -eq $sourceName}
 if(! $rootSource){
     Write-Host "protection source $sourceName not found" -ForegroundColor Yellow
-    exit
+    exit 1
 }
 
 $source = api get "protectionSources?id=$($rootSource.protectionSource.id)&excludeOffice365Types=$entityTypes&allUnderHierarchy=false"
 $objectsNode = $source.nodes | Where-Object {$_.protectionSource.name -eq $nodeString}
 if(!$objectsNode){
     Write-Host "Source $sourceName is not configured for O365 $objectString" -ForegroundColor Yellow
-    exit
+    exit 1
 }
 
 Write-Host "Discovering $objectString..."
@@ -129,7 +130,7 @@ $protectedIndex = @()
 $nodeIdIndex = @()
 $lastCursor = 0
 
-$jobs = (api get -v2 "data-protect/protection-groups?environments=kO365&isActive=true&isDeleted=false").protectionGroups | Where-Object {$_.office365Params.protectionTypes -eq $objectKtype}
+# $jobs = (api get -v2 "data-protect/protection-groups?environments=kO365&isActive=true&isDeleted=false").protectionGroups | Where-Object {$_.office365Params.protectionTypes -eq $objectKtype}
 
 $protectedIndex = @($jobs.office365Params.objects.id | Where-Object {$_ -ne $null})
 $unprotectedIndex = @()
@@ -195,6 +196,10 @@ $protectedCount = $protectedIndex.Count
 $unprotectedCount = $unprotectedIndex.Count
 
 Write-Host "$($nodeIdIndex.Count) $objectString discovered ($($protectedIndex.Count) protected, $($unprotectedIndex.Count) unprotected)"
+if(!$createFirstJob -and $protectedCount -lt 1){
+    Write-Host "Failed to retrieve protected objects, exiting" -ForegroundColor Yellow
+    exit 1
+}
 
 $allObjectsAdded = 0
 
@@ -202,7 +207,7 @@ while($unprotectedCount -gt 0){
 
     # get the protectionJob
     $jobs = (api get -v2 "data-protect/protection-groups?environments=kO365&isActive=true&isDeleted=false").protectionGroups | Where-Object {$_.office365Params.protectionTypes -eq $objectKtype}
-
+    $protectedIndex = @($jobs.office365Params.objects.id | Where-Object {$_ -ne $null})
     $jobs = $jobs | Sort-Object -Property name | Where-Object {$_.name -match $jobPrefix}
     if($jobs){
         $job = $jobs[-1]
@@ -338,6 +343,9 @@ while($unprotectedCount -gt 0){
     }
 
     foreach($objectId in $unprotectedIndex){
+        if($objectId -in $protectedIndex){
+            continue
+        }
         if($job.office365Params.objects.Count -lt $maxObjectsPerJob){
             $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $objectId})
             "    + $($unprotectedName["$($objectId)"])" | Out-File -FilePath $logFile -Append
@@ -346,6 +354,9 @@ while($unprotectedCount -gt 0){
             $allObjectsAdded += 1
             $protectedCount += 1
             $unprotectedCount -= 1
+        }
+        if($allObjectsAdded -ge $maxToProtect){
+            break
         }
     }
     if($objectsAdded -eq 0 -and $job.office365Params.objects.Count -ge $maxObjectsPerJob){
@@ -364,6 +375,9 @@ while($unprotectedCount -gt 0){
     }
 
     $unprotectedIndex = @($unprotectedIndex | Where-Object {$_ -notin $protectedIndex})
+    if($allObjectsAdded -ge $maxToProtect){
+        break
+    }
 }
 if($allObjectsAdded -gt 0){
     "    $allObjectsAdded $objectString added`n" | Out-File -FilePath $logFile -Append
