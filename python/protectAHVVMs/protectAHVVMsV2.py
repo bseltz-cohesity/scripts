@@ -106,9 +106,8 @@ def getObjectId(objectName):
                 else:
                     exit
 
-    for source in sources:
-        if d['_object_id'] is None:
-            get_nodes(source)
+    if d['_object_id'] is None:
+        get_nodes(source)
 
     return d['_object_id']
 
@@ -143,7 +142,7 @@ if jobs is not None and 'protectionGroups' in jobs and jobs['protectionGroups'] 
 if job is not None:
     newJob = False
     source = [v for v in sources if v['protectionSource']['id'] == job['acropolisParams']['sourceId']][0]
-
+    source = api('get','protectionSources?id=%s' % source['protectionSource']['id'])[0]
 else:
     # new job
     newJob = True
@@ -159,7 +158,7 @@ else:
             exit(1)
         else:
             source = source[0]
-
+    source = api('get','protectionSources?id=%s' % source[0]['protectionSource']['id'])[0]
     # get policy
     if policyname is None:
         print('Policy name required')
@@ -268,13 +267,13 @@ for thisvmname in vmnames:
                 "name": vm['name'],
                 "isAutoprotected": False
             }
-            if len(excludedisks) > 0:
+            if excludedisks is not None and len(excludedisks) > 0:
                 newobject['excludeDisks'] = []
                 for x in excludedisks:
                     (controllerType, unitNumber) = x.split(':')
                     newobject['excludeDisks'].append({
                         "controllerType": controllerType,
-                        "unitNumer": int(unitNumber)
+                        "unitNumber": int(unitNumber)
                     })
             job['acropolisParams']['objects'].append(newobject)
         print('    protecting %s' % thisvmname)
