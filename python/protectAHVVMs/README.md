@@ -32,13 +32,21 @@ Place both files in a folder together and run the main script like so:
                    -l vmlist.txt
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -v, --vip: DNS or IP of the Cohesity cluster to connect to
-* -u, --username: username to authenticate to Cohesity cluster
-* -d, --domain: (optional) domain of username, defaults to local
-* -k, --useApiKey: (optional) use API key for authentication
+* -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
+* -d, --domain: (optional) domain of username (defaults to local)
+* -i, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password or API key
+* -np, --noprompt: (optional) do not prompt for password
+* -mcm, --mcm: (optional) connect through MCM
+* -c, --clustername: (optional) helios/mcm cluster to connect to
+* -m, --mfacode: (optional) MFA code for authentication
+* -e, --emailmfacode: (optional) send MFA code via email
+
+## Other Parameters
+
 * -j, --jobname: name of the job to add the vms to
 * -s, --sourcename: name of registered AHV source
 * -n, --vmname: (optional) name of VM to protect (repeat for multiple)
@@ -49,3 +57,6 @@ Place both files in a folder together and run the main script like so:
 * -st, --starttime: (optional) start time for new job (default is 21:00)
 * -is, --incrementalsla: (optional) incremental SLA minutes (default is 60)
 * -fs, --fullsla: (optional) full SLA minutes (default is 120)
+* -z, --pause: (optional) pause protection group
+* -ei, --enableindexing: (optional) enable indexing
+* -ed, --excludedisk: (optional) exclude disk by controller type and unit number, e.g. ide:1 (repeat for multiple)

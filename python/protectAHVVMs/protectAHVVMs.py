@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Protect AHV VMs Using Python"""
+"""protect VMware VMs Using Python"""
 
 ### import pyhesity wrapper module
 from pyhesity import *
@@ -7,97 +7,177 @@ from pyhesity import *
 ### command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)
-parser.add_argument('-u', '--username', type=str, required=True)
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
-parser.add_argument('-k', '--useApiKey', action='store_true')
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
-parser.add_argument('-s', '--sourcename', type=str, required=True)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-m', '--mfacode', type=str, default=None)
+parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-j', '--jobname', type=str, required=True)
 parser.add_argument('-n', '--vmname', action='append', type=str)
 parser.add_argument('-l', '--vmlist', type=str)
+parser.add_argument('-sn', '--sourcename', type=str, default=None)
 parser.add_argument('-sd', '--storagedomain', type=str, default='DefaultStorageDomain')
 parser.add_argument('-p', '--policyname', type=str, default=None)
 parser.add_argument('-tz', '--timezone', type=str, default='US/Eastern')
 parser.add_argument('-st', '--starttime', type=str, default='21:00')
-parser.add_argument('-is', '--incrementalsla', type=int, default=60)
-parser.add_argument('-fs', '--fullsla', type=int, default=120)
-
+parser.add_argument('-is', '--incrementalsla', type=int, default=60)    # incremental SLA minutes
+parser.add_argument('-fs', '--fullsla', type=int, default=120)          # full SLA minutes
+parser.add_argument('-z', '--pause', action='store_true')
+parser.add_argument('-ei', '--enableindexing', action='store_true')
+parser.add_argument('-ed', '--excludedisk', action='append', type=str)
 args = parser.parse_args()
 
-vip = args.vip                        # cluster name/ip
-username = args.username              # username to connect to cluster
-domain = args.domain                  # domain of username (e.g. local, or AD domain)
-password = args.password              # password or API key
-useApiKey = args.useApiKey            # use API key for authentication
-sourcename = args.sourcename          # name of vcd source to protect
-jobname = args.jobname                # name of protection job to add server to
-vmnames = args.vmname                 # name of vm to add (repeat for multiple)
-vmlist = args.vmlist                  # text file of vms to add (one per line)
-storagedomain = args.storagedomain    # storage domain for new job
-policyname = args.policyname          # policy name for new job
-starttime = args.starttime            # start time for new job
-timezone = args.timezone              # time zone for new job
-incrementalsla = args.incrementalsla  # incremental SLA for new job
-fullsla = args.fullsla                # full SLA for new job
+vip = args.vip
+username = args.username
+domain = args.domain
+clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
+emailmfacode = args.emailmfacode
+jobname = args.jobname
+vmname = args.vmname
+vmlist = args.vmlist
+sourcename = args.sourcename
+storagedomain = args.storagedomain
+policyname = args.policyname
+starttime = args.starttime
+timezone = args.timezone
+incrementalsla = args.incrementalsla
+fullsla = args.fullsla
+pause = args.pause
+enableindexing = args.enableindexing
+excludedisks = args.excludedisk
 
-# authenticate to Cohesity
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
+# gather server list
+def gatherList(param=None, filename=None, name='items', required=True):
+    items = []
+    if param is not None:
+        for item in param:
+            items.append(item)
+    if filename is not None:
+        f = open(filename, 'r')
+        items += [s.strip() for s in f.readlines() if s.strip() != '']
+        f.close()
+    if required is True and len(items) == 0:
+        print('no %s specified' % name)
+        exit()
+    return items
 
-# gather vm list
-if vmnames is None:
-    vmnames = []
-if vmlist is not None:
-    f = open(vmlist, 'r')
-    vmnames += [s.strip() for s in f.readlines() if s.strip() != '']
-    f.close()
 
-if len(vmnames) == 0:
-    print('no vm specified')
-    exit()
+vmnames = gatherList(vmname, vmlist, name='VMs', required=True)
 
-# get AHV registered source
-sources = [s for s in api('get', 'protectionSources?environments=kAcropolis') if s['protectionSource']['name'].lower() == sourcename.lower()]
-if not sources or len(sources) == 0:
-    print('AHV source %s not registered' % sourcename)
-    exit(1)
+if pause:
+    isPaused = True
 else:
-    source = sources[0]
+    isPaused = False
 
-# get sourceIds of VMs to protect
-sourceIds = []
-for vmname in vmnames:
-    vm = [s for s in source['nodes'] if s['protectionSource']['name'].lower() == vmname.lower()]
-    if not vm or len(vm) == 0:
-        print('VM %s not found' % vmname)
+if enableindexing:
+    indexingEnabled = True
+else:
+    indexingEnabled = False
+
+
+# get object ID
+def getObjectId(objectName):
+
+    d = {'_object_id': None}
+
+    def get_nodes(node):
+        if 'name' in node:
+            if node['name'].lower() == objectName.lower():
+                d['_object_id'] = node
+                exit
+        if 'protectionSource' in node:
+            if node['protectionSource']['name'].lower() == objectName.lower():
+                d['_object_id'] = node['protectionSource']
+                exit
+        if 'nodes' in node:
+            for node in node['nodes']:
+                if d['_object_id'] is None:
+                    get_nodes(node)
+                else:
+                    exit
+
+    if d['_object_id'] is None:
+        get_nodes(source)
+
+    return d['_object_id']
+
+
+# authenticate
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), emailMfaCode=emailmfacode, mfaCode=mfacode)
+
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    if clustername is not None:
+        heliosCluster(clustername)
     else:
-        print('protecting vm %s' % vmname)
-        sourceIds.append(vm[0]['protectionSource']['id'])
+        print('-clustername is required when connecting to Helios or MCM')
+        exit()
 
-# get job info
-newJob = False
-job = [j for j in api('get', 'protectionJobs?environment=kAcropolis') if j['name'].lower() == jobname.lower()]
+# exit if not authenticated
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
 
-if not job or len(job) == 0:
-    # create new job
+# get AHV protection source
+sources = api('get', 'protectionSources/rootNodes?environments=kAcropolis')
+
+# find existing job
+job = None
+jobs = api('get', 'data-protect/protection-groups?environments=kAcropolis&isDeleted=false&isActive=true', v=2)
+if jobs is not None and 'protectionGroups' in jobs and jobs['protectionGroups'] is not None and len(jobs['protectionGroups']) > 0:
+    jobs = [j for j in jobs['protectionGroups'] if j['name'].lower() == jobname.lower()]
+    if jobs is not None and len(jobs) > 0:
+        job = jobs[0]
+
+if job is not None:
+    newJob = False
+    source = [v for v in sources if v['protectionSource']['id'] == job['acropolisParams']['sourceId']][0]
+    source = api('get','protectionSources?id=%s' % source['protectionSource']['id'])[0]
+else:
+    # new job
     newJob = True
 
-    # find protectionPolicy
+    # get AHV source
+    if sourcename is None:
+        print('sourcename required')
+        exit(1)
+    else:
+        source = [v for v in sources if v['protectionSource']['name'].lower() == sourcename.lower()]
+        if not source or len(source) == 0:
+            print('AHV source %s not registered' % sourcename)
+            exit(1)
+        else:
+            source = source[0]
+    source = api('get','protectionSources?id=%s' % source['protectionSource']['id'])[0]
+    # get policy
     if policyname is None:
-        print('Policy name required for new job')
+        print('Policy name required')
         exit(1)
-    policy = [p for p in api('get', 'protectionPolicies') if p['name'].lower() == policyname.lower()]
-    if len(policy) < 1:
-        print("Policy '%s' not found!" % policyname)
-        exit(1)
-    policyid = policy[0]['id']
+    else:
+        policy = [p for p in (api('get', 'data-protect/policies', v=2))['policies'] if p['name'].lower() == policyname.lower()]
+        if policy is None or len(policy) == 0:
+            print('Policy %s not found' % policyname)
+            exit(1)
+        else:
+            policy = policy[0]
 
-    # find storage domain
-    sd = [sd for sd in api('get', 'viewBoxes') if sd['name'].lower() == storagedomain.lower()]
-    if len(sd) < 1:
-        print("Storage domain %s not found!" % storagedomain)
+    # get storageDomain
+    viewBox = [v for v in api('get', 'viewBoxes') if v['name'].lower() == storagedomain.lower()]
+    if viewBox is None or len(viewBox) == 0:
+        print('Storage Domain %s not found' % storagedomain)
         exit(1)
-    sdid = sd[0]['id']
+    else:
+        viewBox = viewBox[0]
 
     # parse starttime
     try:
@@ -111,59 +191,99 @@ if not job or len(job) == 0:
         print('starttime is invalid!')
         exit(1)
 
-    print("Creating new Job '%s'" % jobname)
-
+    # new job params
     job = {
-        "policyId": policyid,
-        "environment": "kAcropolis",
-        "parentSourceId": source['protectionSource']['id'],
-        "LeverageSanTransport": None,
-        "timezone": timezone,
-        "viewBoxId": sdid,
-        "priority": "kLow",
         "name": jobname,
-        "indexingPolicy": {
-            "allowPrefixes": [
-                "/"
-            ],
-            "disableIndexing": False,
-            "denyPrefixes": [
-                "/$Recycle.Bin",
-                "/Windows",
-                "/Program Files",
-                "/Program Files (x86)",
-                "/ProgramData",
-                "/System Volume Information",
-                "/Users/*/AppData",
-                "/Recovery",
-                "/var",
-                "/usr",
-                "/sys",
-                "/proc",
-                "/lib",
-                "/grub",
-                "/grub2"
-            ]
-        },
-        "sourceIds": sourceIds,
+        "environment": "kAcropolis",
+        "isPaused": isPaused,
+        "policyId": policy['id'],
+        "priority": "kMedium",
+        "storageDomainId": viewBox['id'],
+        "description": "",
         "startTime": {
+            "hour": hour,
             "minute": minute,
-            "hour": hour
+            "timeZone": timezone
+        },
+        "abortInBlackouts": False,
+        "alertPolicy": {
+            "backupRunStatus": [
+                "kFailure"
+            ],
+            "alertTargets": []
+        },
+        "sla": [
+            {
+                "backupRunType": "kFull",
+                "slaMinutes": fullsla
+            },
+            {
+                "backupRunType": "kIncremental",
+                "slaMinutes": incrementalsla
+            }
+        ],
+        "qosPolicy": "kBackupHDD",
+        "acropolisParams": {
+            "appConsistentSnapshot": False,
+            "continueOnQuiesceFailure": True,
+            "sourceId": source['protectionSource']['id'],
+            "objects": [],
+            "excludeObjectIds": [],
+            "indexingPolicy": {
+                "enableIndexing": indexingEnabled,
+                "includePaths": [
+                    "/"
+                ],
+                "excludePaths": [
+                    "/$Recycle.Bin",
+                    "/Windows",
+                    "/Program Files",
+                    "/Program Files (x86)",
+                    "/ProgramData",
+                    "/System Volume Information",
+                    "/Users/*/AppData",
+                    "/Recovery",
+                    "/var",
+                    "/usr",
+                    "/sys",
+                    "/proc",
+                    "/lib",
+                    "/grub",
+                    "/grub2",
+                    "/opt/splunk",
+                    "/splunk"
+                ]
+            }
         }
     }
-else:
-    # update existing job
-    job = job[0]
 
-    if job['parentSourceId'] != source['protectionSource']['id']:
-        print('Job %s protects a different AHV cluster' % jobname)
-        exit(1)
+for thisvmname in vmnames:
+    vm = getObjectId(thisvmname)
+    if vm is not None:
+        if vm['id'] not in [o['id'] for o in job['acropolisParams']['objects']]:
+            newobject = {
+                "excludeDisks": None,
+                "id": vm['id'],
+                "name": vm['name'],
+                "isAutoprotected": False
+            }
+            if excludedisks is not None and len(excludedisks) > 0:
+                newobject['excludeDisks'] = []
+                for x in excludedisks:
+                    (controllerType, unitNumber) = x.split(':')
+                    newobject['excludeDisks'].append({
+                        "controllerType": controllerType,
+                        "unitNumber": int(unitNumber)
+                    })
+            job['acropolisParams']['objects'].append(newobject)
+        print('    protecting %s' % thisvmname)
+    else:
+        print('    warning: %s not found' % thisvmname)
 
-    print("Updating Job '%s'" % jobname)
-    job['sourceIds'] += sourceIds
-
+# create or update job
 if newJob is True:
-    result = api('post', 'protectionJobs', job)
+    print('Creating protection job %s' % jobname)
+    result = api('post', 'data-protect/protection-groups', job, v=2)
 else:
-    job['sourceIds'] = list(set(job['sourceIds']))
-    result = api('put', 'protectionJobs/%s' % job['id'], job)
+    print('Updating protection job %s' % jobname)
+    result = api('put', 'data-protect/protection-groups/%s' % job['id'], job, v=2)
