@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-06-30`] [protectAHVVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectAHVVMs) [`Update`] updated to v2 API and added disk exclusions
 * [`2025-06-30`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added report cohesity-api version to log
 * [`2025-06-29`] [autoprotectO365.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/autoprotectO365) [`Update`] added guardrails
 * [`2025-06-26`] [pauseResumeJobs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pauseResumeJobs) [`Update`] added output folder parameter
