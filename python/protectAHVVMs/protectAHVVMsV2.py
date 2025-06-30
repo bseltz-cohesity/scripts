@@ -133,7 +133,7 @@ sources = api('get', 'protectionSources/rootNodes?environments=kAcropolis')
 
 # find existing job
 job = None
-jobs = api('get', 'data-protect/protection-groups?environments=kVMware&isDeleted=false&isActive=true', v=2)
+jobs = api('get', 'data-protect/protection-groups?environments=kAcropolis&isDeleted=false&isActive=true', v=2)
 if jobs is not None and 'protectionGroups' in jobs and jobs['protectionGroups'] is not None and len(jobs['protectionGroups']) > 0:
     jobs = [j for j in jobs['protectionGroups'] if j['name'].lower() == jobname.lower()]
     if jobs is not None and len(jobs) > 0:
@@ -158,7 +158,7 @@ else:
             exit(1)
         else:
             source = source[0]
-    source = api('get','protectionSources?id=%s' % source[0]['protectionSource']['id'])[0]
+    source = api('get','protectionSources?id=%s' % source['protectionSource']['id'])[0]
     # get policy
     if policyname is None:
         print('Policy name required')
