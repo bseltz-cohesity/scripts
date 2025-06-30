@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2025.06.12 - Brian Seltzer
+#  Version 2025.06.30 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024-02-18 - fix - toJson function - handle null input
@@ -24,10 +24,11 @@
 # 2025-04-24 - more authentication flow fixes
 # 2025-05-01 - more authentication flow fixes
 # 2025-06-12 - more authentication flow fixes (impersonation)
+# 2025-06-30 - added report cohesity-api version to log
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2025.06.12'
+$versionCohesityAPI = '2025.06.30'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -1729,6 +1730,8 @@ function getViews([switch]$includeInactive){
     }
     return $myViews
 }
+
+reportError "Using cohesity-api version $versionCohesityAPI" -quiet
 
 # . . . . . . . . . . . . . . . . . . .
 #  Previous Updates
