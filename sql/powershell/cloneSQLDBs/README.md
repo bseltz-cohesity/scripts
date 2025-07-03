@@ -25,14 +25,15 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./cloneSQLDBs.ps1 -vip mycluster -username admin -sourceServer SQL2012PROD `
-    -sourceDB CohesityDB -targetServer SQL2012DEV -targetDB CohesityDB-Dev `
-    -logTime '2019-06-30 04:30:55' -wait
-
-Connected!
-
-Cloning CohesityDB to SQL2012DEV as CohesityDB-Dev (task name: dbClone-1562532529000000)
-Clone task completed with status: kSuccess
+./cloneSQLDBs.ps1 -vip mycluster `
+                  -username myuser `
+                  -domain mydomain.net `
+                  -sourceServer sqlprod.mydomain.net `
+                  -sourceDB CohesityDB `
+                  -targetServer sqldev.mydomain.net `
+                  -suffix '-Dev' `
+                  -logTime '2019-06-30 04:30:55' `
+                  -wait
 ```
 
 ## Authentication Parameters
