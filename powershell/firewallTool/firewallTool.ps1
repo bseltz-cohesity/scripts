@@ -88,9 +88,9 @@ $rules = api get /nexus/v1/firewall/list
 
 foreach($cidr in $entries){
     $net, $mask = $cidr -split '/'
-    if(! $mask){
-        $cidr = "$net/32"
-    }
+    # if(! $mask){
+    #     $cidr = "$net/32"
+    # }
     foreach($attachment in $rules.entry.attachments){
         if($attachment.profile -eq $profileName){
             if($action -ne 'list'){
