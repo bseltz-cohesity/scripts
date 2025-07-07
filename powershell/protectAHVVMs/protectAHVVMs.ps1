@@ -194,7 +194,7 @@ if(! $job){
         "abortInBlackouts" = $false;
         "isActive" = $True;
         "isPaused" = $isPaused;
-        "environment" = "kAcropolis;
+        "environment" = "kAcropolis";
         "missingEntities" = $null;
         "acropolisParams" = @{
             "objects" = @();
