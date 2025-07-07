@@ -234,7 +234,8 @@ if(! $job){
     }
 }else{
     $newJob = $false
-    $source = $sources | Where-Object {$_.protectionSource.id -eq $job.acropolisParams.sourceId}
+    $sourceId = $job.acropolisParams.sourceId
+    $source = $sources | Where-Object {$_.protectionSource.id -eq $sourceId}
     if(!$source){
         Write-Host "The protection group's source is not found on this cluster" -ForegroundColor Yellow
         exit 1
@@ -246,6 +247,7 @@ if($newJob -eq $True){
 }else{
     Write-Host "`nUpdating protection job '$jobName'...`n"
 }
+$source = api get protectionSources?id=$sourceId
 
 foreach($vm in $vmnames){
     $vmid = getObjectId $vm $source
