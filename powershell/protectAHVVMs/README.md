@@ -28,8 +28,8 @@ Place both files in a folder together and run the main script like so:
 ./protectAHVVMs.ps1 -vip mycluster `
                     -username myusername `
                     -domain mydomain.net `
-                    -jobName myHyperVjob `
-                    -sourceName myscvmm1.mydomain.net `
+                    -jobName myAHVjob `
+                    -sourceName acropolis.mydomain.net `
                     -policyName mypolicy `
                     -vmName vm1, vm2
 ```
@@ -40,8 +40,8 @@ or provide a text file with a list of VMs to protect:
 ./protectAHVVMs.ps1 -vip mycluster `
                     -username myusername `
                     -domain mydomain.net `
-                    -jobName myHyperVjob `
-                    -sourceName myscvmm1.mydomain.net `
+                    -jobName myAHVjob `
+                    -sourceName acropolis.mydomain.net `
                     -policyName mypolicy `
                     -vmList .\vmlist.txt
 ```
