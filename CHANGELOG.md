@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-07-09`] [legalHoldCCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/legalHoldCCS) [`New`] add/remove legal hold on M365 mailboxes, onedrives in CCS
 * [`2025-07-08`] [downloadLatestWarnings.py](https://github.com/cohesity/community-automation-samples/tree/main/python/downloadLatestWarnings) [`New`] download backup error logs
 * [`2025-07-07`] [protectAHVVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectAHVVMs) [`New`] Protect AHV VMs
 * [`2025-06-30`] [protectAHVVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectAHVVMs) [`Update`] updated to v2 API and added disk exclusions
