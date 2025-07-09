@@ -26,6 +26,8 @@ if(! $startDate -or $startDate -eq 0){
 }
 $endDate = $startDate + 86400000000
 
+"Operating on Object Type: $objectType Date: $date" | Tee-Object -FilePath legalHoldLog.txt
+
 $queryParams = @{
     "statsParams" = @{
         "attributes" = @(
@@ -83,7 +85,7 @@ foreach($activity in $activities.activity | Sort-Object -Property {$_.object.nam
             "environment" = "kO365";
             "legalHold" = "Enable"
         }
-        Write-Host "Adding legal hold to $($activity.object.name) ($(usecsToDate $startTimeUsecs))"
+        "Adding legal hold to $($activity.object.name) ($(usecsToDate $startTimeUsecs))" | Tee-Object -FilePath legalHoldLog.txt -Append
         $result = api put -mcmv2 "data-protect/objects/runs/metadata?regionIds=$($activity.regionId)" $holdParams
     }elseif($removeHold -and $activity.archivalRunParams.onLegalHold -eq $True){
         $holdParams =  @{
@@ -96,7 +98,7 @@ foreach($activity in $activities.activity | Sort-Object -Property {$_.object.nam
             "environment" = "kO365";
             "legalHold" = "Release"
         }
-        Write-Host "Removing legal hold from $($activity.object.name) ($(usecsToDate $startTimeUsecs))"
+        "Removing legal hold from $($activity.object.name) ($(usecsToDate $startTimeUsecs))" | Tee-Object -FilePath legalHoldLog.txt -Append
         $result = api put -mcmv2 "data-protect/objects/runs/metadata?regionIds=$($activity.regionId)" $holdParams
     }elseif($showTrue -or $showFalse){
         $showMe = $True
@@ -107,7 +109,7 @@ foreach($activity in $activities.activity | Sort-Object -Property {$_.object.nam
             $showMe = $False
         }
         if($showMe -eq $True){
-            Write-Host "$($activity.object.name) ($(usecsToDate $startTimeUsecs)) on hold = $($activity.archivalRunParams.onLegalHold)"
+            "$($activity.object.name) ($(usecsToDate $startTimeUsecs)) on hold = $($activity.archivalRunParams.onLegalHold)" | Tee-Object -FilePath legalHoldLog.txt -Append
         }       
     }
 }
