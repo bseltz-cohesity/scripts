@@ -98,7 +98,7 @@ foreach($activity in $activities.activity | Sort-Object -Property {$_.object.nam
         }
         Write-Host "Removing legal hold from $($activity.object.name) ($(usecsToDate $startTimeUsecs))"
         $result = api put -mcmv2 "data-protect/objects/runs/metadata?regionIds=$($activity.regionId)" $holdParams
-    }else{
+    }elseif($showTrue -or $showFalse){
         $showMe = $True
         if($showFalse -and $activity.archivalRunParams.onLegalHold -eq $True){
             $showMe = $False
