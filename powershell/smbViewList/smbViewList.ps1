@@ -77,7 +77,7 @@ foreach($view in ($views.views | Where-Object {'SMB' -in $_.protocolAccess.type}
         "`n    Child Shares:" | Tee-Object -FilePath $outFile -Append
     }
     foreach($childShare in $childShares){
-        "`n        {0} - {1} - Share Permissions:" -f $childShare.shareName, "/$($view.name)/$($childShare.path)"
+        "`n        {0} - {1} - Share Permissions:" -f $childShare.shareName, "/$($view.name)/$($childShare.path)" | Tee-Object -FilePath $outFile -Append
         foreach($permission in $childShare.sharePermissions){
             $principalName = principalName $permission.sid
             "            {0}: {1} {2}" -f $principalName, $permission.type.subString(1), $permission.access.subString(1) | Tee-Object -FilePath $outFile -Append
