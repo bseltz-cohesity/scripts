@@ -1,7 +1,7 @@
 # version: 2024-07-03
 
 # process commandline arguments
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding=$false)]
 param (
     [Parameter()][array]$vip,
     [Parameter()][string]$username = 'helios',
@@ -27,7 +27,7 @@ if(!$outfileName){
 }
 
 # headings
-"""Cluster Name"",""Host"",""OS Type"",""Health"",""Cluster Version"",""Agent Version"",""Upgradability"",""Last Upgrade Status"",""Certificate Issuer"",""Certificate Status"",""Certificate Expiry""" | Out-File -FilePath $outfileName
+"""Cluster Name"",""Host"",""OS Type"",""Health"",""Cluster Version"",""Agent Version"",""Upgradability"",""Last Upgrade Status"",""Certificate Issuer"",""Certificate Status"",""Certificate Expiry"",""Port""" | Out-File -FilePath $outfileName
 
 function getReport(){
     $cluster = api get cluster
@@ -35,7 +35,7 @@ function getReport(){
     $report = api get reports/agents
     foreach($agent in $report | Sort-Object -Property hostIp){
         Write-Host "    $($agent.hostIp)"
-        """$($cluster.name.toUpper())"",""$($agent.hostIp)"",""$($agent.hostOsType)"",""$($agent.healthStatus)"",""$($cluster.clusterSoftwareVersion)"",""$($agent.version)"",""$($agent.upgradability)"",""$($agent.lastUpgradeStatus)"",""$($agent.certificateIssuer)"",""$($agent.certificateStatus)"",""$(usecsToDate $agent.certificateExpiryTimeUsecs)""" | Out-File -FilePath $outfileName -Append
+        """$($cluster.name.toUpper())"",""$($agent.hostIp)"",""$($agent.hostOsType)"",""$($agent.healthStatus)"",""$($cluster.clusterSoftwareVersion)"",""$($agent.version)"",""$($agent.upgradability)"",""$($agent.lastUpgradeStatus)"",""$($agent.certificateIssuer)"",""$($agent.certificateStatus)"",""$(usecsToDate $agent.certificateExpiryTimeUsecs)"",""$($agent.agentPort)""" | Out-File -FilePath $outfileName -Append
     }
 }
 
