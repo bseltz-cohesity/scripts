@@ -4,7 +4,7 @@ param (
     [Parameter()][string]$username = 'ccs',
     [Parameter()][string]$password,
     [Parameter()][switch]$noPrompt,
-    [Parameter()][ValidateSet('mailbox','onedrive')][string]$objectType = 'mailbox',
+    [Parameter()][ValidateSet('mailbox','onedrive','sharepoint')][string]$objectType = 'mailbox',
     [Parameter()][string]$date,
     [Parameter()][switch]$addHold,
     [Parameter()][switch]$removeHold,
@@ -26,7 +26,7 @@ if(! $startDate -or $startDate -eq 0){
 }
 $endDate = $startDate + 86400000000
 
-"Operating on Object Type: $objectType Date: $date" | Tee-Object -FilePath legalHoldLog.txt
+"`nOperating on Object Type: $objectType Date: $date`n" | Tee-Object -FilePath legalHoldLog.txt
 
 $queryParams = @{
     "statsParams" = @{
@@ -64,6 +64,11 @@ if($objectType -eq 'onedrive'){
     $queryParams.backupRunParams.protectionEnvironmentTypes = @("kO365OneDrive","kO365OneDriveCSM")
 }
 
+if($objectType -eq 'sharepoint'){
+    $queryParams.archivalRunParams.protectionEnvironmentTypes = @("kO365Sharepoint","kO365SharepointCSM")
+    $queryParams.backupRunParams.protectionEnvironmentTypes = @("kO365Sharepoint","kO365SharepointCSM")
+}
+
 $sessionUser = api get sessionUser
 $tenantId = $sessionUser.profiles[0].tenantId
 $regions = api get -mcmv2 dms/tenants/regions?tenantId=$tenantId
@@ -71,9 +76,10 @@ $regionList = $regions.tenantRegionInfoList.regionId -join ','
 
 $activities = api post -mcmv2 "data-protect/objects/activity?regionIds=$($regionList)" $queryParams
 
-foreach($activity in $activities.activity | Sort-Object -Property {$_.object.name}){
+foreach($activity in $activities.activity | Sort-Object -Property {$_.object.name} | Where-Object {$_.archivalRunParams.status -ne 'Failed'}){
     $objectId = $activity.object.id
-    $startTimeUsecs = $activity.timestampUsecs
+    # $activity | toJson
+    $startTimeUsecs = $activity.archivalRunParams.runStartTimeUsecs
     if($addHold -and $activity.archivalRunParams.onLegalHold -eq $False){
         $holdParams =  @{
             "targetObjectRuns" = @(
@@ -87,6 +93,9 @@ foreach($activity in $activities.activity | Sort-Object -Property {$_.object.nam
         }
         "Adding legal hold to $($activity.object.name) ($(usecsToDate $startTimeUsecs))" | Tee-Object -FilePath legalHoldLog.txt -Append
         $result = api put -mcmv2 "data-protect/objects/runs/metadata?regionIds=$($activity.regionId)" $holdParams
+        if($result.objectRunList[0].PSObject.Properties['errorMessage']){
+            Write-Host "$($result.objectRunList[0].errorMessage)" -ForegroundColor Yellow
+        }
     }elseif($removeHold -and $activity.archivalRunParams.onLegalHold -eq $True){
         $holdParams =  @{
             "targetObjectRuns" = @(
@@ -100,6 +109,9 @@ foreach($activity in $activities.activity | Sort-Object -Property {$_.object.nam
         }
         "Removing legal hold from $($activity.object.name) ($(usecsToDate $startTimeUsecs))" | Tee-Object -FilePath legalHoldLog.txt -Append
         $result = api put -mcmv2 "data-protect/objects/runs/metadata?regionIds=$($activity.regionId)" $holdParams
+        if($result.objectRunList[0].PSObject.Properties['errorMessage']){
+            Write-Host "$($result.objectRunList[0].errorMessage)" -ForegroundColor Yellow
+        }
     }elseif($showTrue -or $showFalse){
         $showMe = $True
         if($showFalse -and $activity.archivalRunParams.onLegalHold -eq $True){
