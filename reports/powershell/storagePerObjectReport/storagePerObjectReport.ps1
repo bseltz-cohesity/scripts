@@ -1,4 +1,4 @@
-# version: 2025-06-10
+# version: 2025-07-15
 
 # process commandline arguments
 [CmdletBinding()]
@@ -24,7 +24,7 @@ param (
     [Parameter()][string]$outfileName
 )
 
-$scriptversion = '2025-06-10 (PowerShell)'
+$scriptversion = '2025-07-15 (PowerShell)'
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -84,7 +84,7 @@ function getCloudStats(){
             $cloudStatURL += "&vaultIds=$($vault.id)"
         }
         output "  getting external target stats..."
-        $cloudStats = api get $cloudStatURL
+        $cloudStats = api get $cloudStatURL -timeout 600
     }
     return $cloudStats
 }
