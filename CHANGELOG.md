@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-07-11`] [smbViewList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/smbViewList) [`Update`] fixed output format
+* [`2025-07-11`] [agentSummaryReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/agentSummaryReport) [`Update`] added agent port column
 * [`2025-07-09`] [legalHoldCCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/legalHoldCCS) [`New`] add/remove legal hold on M365 mailboxes, onedrives in CCS
 * [`2025-07-08`] [downloadLatestWarnings.py](https://github.com/cohesity/community-automation-samples/tree/main/python/downloadLatestWarnings) [`New`] download backup error logs
 * [`2025-07-07`] [protectAHVVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectAHVVMs) [`New`] Protect AHV VMs
