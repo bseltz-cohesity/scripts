@@ -37,7 +37,7 @@ The script can perform several steps, which can be run individually or together.
 
 * -registerSQL: This step registers the protection source as a SQL server. This step requires the server to be registered as a protection source first.
 
-* -serviceAccount: This step sets the Cohesity agent to logon with a specific account (the script will prompt for the password). The script will also grant the account the SEServiceLogon right.
+* -serviceAccount: This step sets the Cohesity agent to logon with a specific account (the script will prompt for the password). The script will also grant the account the SEServiceLogon right. Service account must be entered as `DOMAINNAME\username` or `.\localusername`
 
 It would be common to use all steps together as shown below if you are deploying to stand-alone SQL servers or SQL AAG nodes. For SQL Failover Clusters, just use -installAgent and -sqlAccount, then register the SQL cluster manually in the UI (I may add code in the future to handle clusters).
 
