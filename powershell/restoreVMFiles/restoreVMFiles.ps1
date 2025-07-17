@@ -278,7 +278,7 @@ if($targetVM){
             exit 1
         }
         $source = api get "protectionSources?id=$($source.protectionSource.id)"
-        $vmid = getObjectId $vm $source
+        $vmid = getObjectId $targetVM $source
         if(!$vmid){
             Write-Host "VM $targetVM not found" -ForegroundColor Yellow
             exit 1
