@@ -1,5 +1,10 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-07-17`] [backedUpFileListJSON.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backedUpFileListJSON) [`New`] variant of backedUpFileList that outputs JSON to stdout
+* [`2025-07-17`] [restoreVMFiles.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/restoreVMFiles) [`Update`] added support for AHV
+* [`2025-07-17`] [downloadLatestWarnings.py](https://github.com/cohesity/community-automation-samples/tree/main/python/downloadLatestWarnings) [`Update`] removed spaces from output file name
+* [`2025-07-15`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] fixed error reporting issue
+* [`2025-07-15`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] increased timeout for external target stats
 * [`2025-07-11`] [smbViewList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/smbViewList) [`Update`] fixed output format
 * [`2025-07-11`] [agentSummaryReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/agentSummaryReport) [`Update`] added agent port column
 * [`2025-07-09`] [legalHoldCCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/legalHoldCCS) [`New`] add/remove legal hold on M365 mailboxes, onedrives in CCS
