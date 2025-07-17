@@ -43,6 +43,16 @@ if($USING_HELIOS){
     }
 }
 
+$environments = @('kUnknown', 'kVMware', 'kHyperV', 'kSQL', 'kView', 'kPuppeteer', 'kPhysical',
+                  'kPure', 'kAzure', 'kNetapp', 'kAgent', 'kGenericNas', 'kAcropolis', 'kPhysicalFiles',
+                  'kIsilon', 'kKVM', 'kAWS', 'kExchange', 'kHyperVVSS', 'kOracle', 'kGCP', 'kFlashBlade',
+                  'kAWSNative', 'kVCD', 'kO365', 'kO365Outlook', 'kHyperFlex', 'kGCPNative', 'kAzureNative',
+                  'kAD', 'kAWSSnapshotManager', 'kGPFS', 'kRDSSnapshotManager', 'kUnknown', 'kKubernetes',
+                  'kNimble', 'kAzureSnapshotManager', 'kElastifile', 'kCassandra', 'kMongoDB', 'kHBase',
+                  'kHive', 'kHdfs', 'kCouchbase', 'kAuroraSnapshotManager', 'kO365PublicFolders', 'kUDA',
+                  'kO365Teams', 'kO365Group', 'kO365Exchange', 'kO365OneDrive', 'kO365Sharepoint', 'kSfdc',
+                  'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown', 'kUnknown')
+
 $outfileName = "objectRunHistory.csv"
 
 # headings
@@ -67,10 +77,17 @@ $headings | Out-File -FilePath $outfileName -Encoding utf8
 $search = api get -v2 "data-protect/search/objects?searchString=$objectName&includeTenants=true&count=100"
 $search.objects = $search.objects | Where-Object {$_.name -eq $objectName}
 
-if(!$search.objects -or @($search.objects).Count -eq 0){
-    Write-Host "Object $objectName not found" -ForegroundColor Yellow
-    exit 1
+# if(!$search.objects -or @($search.objects).Count -eq 0){
+#     Write-Host "Object $objectName not found" -ForegroundColor Yellow
+#     exit 1
+# }
+
+$snaps = api get /searchvms?vmName=$objectName
+if($snaps -and $snaps.PSObject.Properties['vms']){
+    $snaps.vms = $snaps.vms | Where-Object {$_.vmDocument.objectName -eq $objectName}
 }
+
+$runsFound = @()
 
 foreach($object in $search.objects){
     if(!$object.objectProtectionInfos.protectionGroups){
@@ -84,6 +101,7 @@ foreach($object in $search.objects){
             $runs = Get-Runs -jobId $pg.id -includeObjectDetails
             foreach($run in $runs){
                 $runStartTimeUsecs = ($run.id -split ":")[1]
+                $runsFound = @($runsFound + $runStartTimeUsecs)
                 foreach($object in $run.objects){
                     if($object.object.name -eq $objectName){
                         $localStatus = 'N/A'
@@ -136,17 +154,38 @@ foreach($object in $search.objects){
         }
     }
 }
-# "Protection Group
-# Environment
-# Run Type
-# Run Start Time
-# Local Snapshot Status
-# Local Snapshot Start Time
-# Local Snapshot End Time
-# Local Snapshot Expiry
-# Archive Status
-# Archive Start Time
-# Archive End Time
-# Archive Expiry"
 
+foreach($vm in $snaps.vms){
+    $jobName = $vm.vmDocument.jobName
+    $environment = $environments[$vm.vmDocument.objectId.entity.type]
+    foreach($version in $vm.vmDocument.versions){
+        $runStartTimeUsecs = $version.instanceId.jobStartTimeUsecs
+        if($runStartTimeUsecs -notin $runsFound){
+            $runsFound = @($runsFound + $runStartTimeUsecs)
+            foreach($replica in $version.replicaInfo.replicaVec){
+                if($replica.target.type -eq 1){
+                    $localExpiry = (usecsToDate $replica.expiryTimeUsecs).ToString('MM/dd/yyyy HH:mm')
+                }else{
+                    $archiveExpiry = (usecsToDate $replica.expiryTimeUsecs).ToString('MM/dd/yyyy HH:mm')
+                }
+            }
+            "{0} [{1}]" -f ($jobName, (usecsToDate $runStartTimeUsecs).ToString('MM/dd/yyyy HH:mm'))
+            """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}"",""{7}"",""{8}"",""{9}"",""{10}"",""{11}""" -f ($jobName, 
+                                                                                                                    $environment,
+                                                                                                                    '',
+                                                                                                                    (usecsToDate $runStartTimeUsecs).ToString('MM/dd/yyyy HH:mm'),
+                                                                                                                    '',
+                                                                                                                    '',
+                                                                                                                    '',
+                                                                                                                    $localExpiry,
+                                                                                                                    '',
+                                                                                                                    '',
+                                                                                                                    '',
+                                                                                                                    $archiveExpiry) | Out-File -FilePath $outfileName -Append
+        }
+    }
+}
+if(@($runsFound).Count -eq 0){
+    Write-Host "Object $objectName not found" -ForegroundColor Yellow
+}
 "`nOutput saved to $outfilename`n"
