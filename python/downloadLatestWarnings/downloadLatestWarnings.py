@@ -96,6 +96,8 @@ if len(jobnames) > 0:
     jobs['protectionGroups'] = [j for j in jobs['protectionGroups'] if j['name'].lower() in [n.lower() for n in jobnames]]
 
 for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower()):
+    if 'lastRun' not in job:
+        continue
     print('%s' % job['name'])
     run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=true&includeTenants=true' % (job['id'], job['lastRun']['id']), v=2) 
     if run is not None:
@@ -103,7 +105,7 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
             objName = obj['object']['name']
             objId = obj['object']['id']
             if 'warnings' in obj['localSnapshotInfo']['snapshotInfo'] and obj['localSnapshotInfo']['snapshotInfo']['warnings'] is not None and len(obj['localSnapshotInfo']['snapshotInfo']['warnings']) > 0:
-                thisFile = '%s-%s-%s' % (job['name'], objName.replace("\\","-").replace("/","-").replace(":","-").replace(" ","-"), "warnings.csv")
+                thisFile = '%s-%s-%s' % (job['name'].replace(" ","-"), objName.replace("\\","-").replace("/","-").replace(":","-").replace(" ","-"), "warnings.csv")
                 print("    %s -> %s" % (objName, thisFile))
                 result = fileDownload(uri="data-protect/protection-groups/%s/runs/%s/objects/%s/downloadMessages" % (job['id'], job['lastRun']['id'], objId) ,fileName=thisFile, v=2)
                 f = codecs.open(thisFile, 'a')
