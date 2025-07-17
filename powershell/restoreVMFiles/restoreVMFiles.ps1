@@ -15,6 +15,7 @@ param (
     [Parameter()][string]$clusterName = $null,           # helios cluster to access
     [Parameter(Mandatory = $True)][string]$sourceVM, # name of source VM
     [Parameter()][string]$targetVM, # name of target VM
+    [Parameter()][string]$ahvSource,
     [Parameter()][array]$fileNames, # one or more file paths
     [Parameter()][string]$fileList, # text file of file paths
     [Parameter()][string]$vmUser, # user name for vmtools 
@@ -72,6 +73,26 @@ if($USING_HELIOS){
 }
 # end authentication =========================================
 
+function getObjectId($objectName, $source){
+    $global:_object_id = $null
+
+    function get_nodes($obj){
+        if($obj.protectionSource.name -eq $objectName){
+            $global:_object_id = $obj.protectionSource.id
+            break
+        }
+        if($obj.PSObject.Properties['nodes']){
+            foreach($node in $obj.nodes){
+                if($null -eq $global:_object_id){
+                    get_nodes $node
+                }
+            }
+        }
+    }
+    get_nodes $source
+    return $global:_object_id
+}
+
 $restoreMethods = @{
     'ExistingAgent' = 'UseExistingAgent';
     'AutoDeploy' = 'AutoDeploy';
@@ -98,7 +119,7 @@ if($files.Length -eq 0){
 $files = [string[]]$files | ForEach-Object {("/" + $_.Replace('\','/').replace(':','')).Replace('//','/')}
 
 # find source object
-$objects = api get "data-protect/search/protected-objects?snapshotActions=RecoverFiles&searchString=$sourceVM&environments=kVMware" -v2
+$objects = api get "data-protect/search/protected-objects?snapshotActions=RecoverFiles&searchString=$sourceVM&environments=kVMware,kAcropolis" -v2
 $object = $objects.objects | Where-Object name -eq $sourceVM
 if(!$object){
     Write-Host "VM $sourceVM not found" -ForegroundColor Yellow
@@ -117,7 +138,14 @@ if($object.latestSnapshotsInfo -eq $null -or @($object.latestSnapshotsInfo).Coun
 
 $object = ($object | Sort-Object -Property @{Expression={$_.latestSnapshotsInfo[0].protectionRunStartTimeUsecs}; Ascending = $False})[0]
 
-
+# get object type
+$objectEnvironment = $object.environment
+$paramName = "vmwareParams"
+$targetParamName = "vmwareTargetParams"
+if($objectEnvironment -eq 'kAcropolis'){
+    $paramName = "acropolisParams"
+    $targetParamName = "acropolisTargetParams"
+}
 
 # get snapshots
 $objectId = $object.id
@@ -171,9 +199,9 @@ $snapshotId = $snapshot.id
 $dateString = get-date -UFormat '%Y-%m-%d_%H-%M-%S'
 
 $restoreParams = @{
-    "snapshotEnvironment" = "kVMware";
+    "snapshotEnvironment" = "$objectEnvironment";
     "name"                = "RestoreFiles_$($taskString)_$($dateString)";
-    "vmwareParams"        = @{
+    "$paramName"        = @{
         "objects"                    = @(
             @{
                 "snapshotId" = $snapshotId
@@ -182,8 +210,8 @@ $restoreParams = @{
         "recoveryAction"             = "RecoverFiles";
         "recoverFileAndFolderParams" = @{
             "filesAndFolders"    = @();
-            "targetEnvironment"  = "kVMware";
-            "vmwareTargetParams" = @{
+            "targetEnvironment"  = "$objectEnvironment";
+            "$targetParamName" = @{
                 "recoverToOriginalTarget" = $true;
                 "overwriteExisting"       = $override;
                 "preserveAttributes"      = $true;
@@ -198,7 +226,7 @@ $restoreParams = @{
 if($vlan -gt 0){
     $vlanObj = api get vlans | Where-Object id -eq $vlan
     if($vlanObj){
-        $restoreParams.vmwareParams.recoverFileAndFolderParams.vmwareTargetParams['vlanConfig'] = @{
+        $restoreParams.$paramName.recoverFileAndFolderParams.$targetParamName['vlanConfig'] = @{
             "id" = $vlanObj.id;
             "interfaceName" = $vlanObj.ifaceGroupName.split('.')[0]
         }
@@ -209,7 +237,7 @@ if($vlan -gt 0){
 }
 
 # set VM credentials
-if($restoreMethod -ne 'ExistingAgent'){
+if($objectEnvironment -eq 'kVMware' -and $restoreMethod -ne 'ExistingAgent'){
     if(!$vmUser){
         Write-Host "VM credentials required for 'AutoDeploy' and 'VMTools' restore methods" -ForegroundColor Yellow
         exit 1
@@ -230,36 +258,56 @@ if($targetVM){
         Write-Host "restorePath required when restoring to alternate target VM" -ForegroundColor Yellow
         exit 1
     }
-    $vms = api get protectionSources/virtualMachines
-    $targetObject = $vms | where-object name -eq $targetVM
-    if(!$targetObject){
-        Write-Host "VM $targetVM not found" -ForegroundColor Yellow
-        exit 1
+    if($objectEnvironment -eq 'kVMware'){
+        $vms = api get protectionSources/virtualMachines
+        $targetObject = $vms | where-object name -eq $targetVM
+        if(!$targetObject){
+            Write-Host "VM $targetVM not found" -ForegroundColor Yellow
+            exit 1
+        }
+        $vmid = $targetObject[0].id
     }
-    $restoreParams.vmwareParams.recoverFileAndFolderParams.vmwareTargetParams.recoverToOriginalTarget = $false
-    $restoreParams.vmwareParams.recoverFileAndFolderParams.vmwareTargetParams['newTargetConfig']= @{
+    if($objectEnvironment -eq 'kAcropolis'){
+        if(!$ahvSource){
+            Write-Host "-ahvSource is required when restoring to alternate target VM" -ForegroundColor Yellow
+            exit 1
+        }
+        $sources = api get "protectionSources/rootNodes?environments=kAcropolis" | Where-Object {$_.protectionSource.name -eq $ahvSource}
+        if(!$sources){
+            Write-Host "AHV source $ahvSource not found" -ForegroundColor Yellow
+            exit 1
+        }
+        $source = api get "protectionSources?id=$($source.protectionSource.id)"
+        $vmid = getObjectId $vm $source
+        if(!$vmid){
+            Write-Host "VM $targetVM not found" -ForegroundColor Yellow
+            exit 1
+        }
+    }
+    $restoreParams.$paramName.recoverFileAndFolderParams.$targetParamName.recoverToOriginalTarget = $false
+    $restoreParams.$paramName.recoverFileAndFolderParams.$targetParamName['newTargetConfig']= @{
         "targetVm" = @{
-          "id" = $targetObject[0].id
+          "id" = $vmid
         };
         "recoverMethod" = $restoreMethods[$restoreMethod];
         "absolutePath" = $restorePath;
     }
-    if($restoreMethod -ne 'ExistingAgent'){
-        $restoreParams.vmwareParams.recoverFileAndFolderParams.vmwareTargetParams.newTargetConfig["targetVmCredentials"] = $vmCredentials
+    if($objectEnvironment -eq 'kVMware' -and $restoreMethod -ne 'ExistingAgent'){
+        $restoreParams.$paramName.recoverFileAndFolderParams.$targetParamName.newTargetConfig["targetVmCredentials"] = $vmCredentials
     }
 }else{
     # original target config
-    $restoreParams.vmwareParams.recoverFileAndFolderParams.vmwareTargetParams["originalTargetConfig"] = @{
+    $restoreParams.$paramName.recoverFileAndFolderParams.$targetParamName["originalTargetConfig"] = @{
         "recoverMethod"         = $restoreMethods[$restoreMethod];
     }
     if($restorePath){
-        $restoreParams.vmwareParams.recoverFileAndFolderParams.vmwareTargetParams.originalTargetConfig.recoverToOriginalPath = $false
-        $restoreParams.vmwareParams.recoverFileAndFolderParams.vmwareTargetParams.originalTargetConfig["alternatePath"] = $restorePath
+        $restoreParams.$paramName.recoverFileAndFolderParams.$targetParamName.originalTargetConfig.recoverToOriginalPath = $false
+        $restoreParams.$paramName.recoverFileAndFolderParams.$targetParamName.originalTargetConfig["alternatePath"] = $restorePath
     }else{
-        $restoreParams.vmwareParams.recoverFileAndFolderParams.vmwareTargetParams.originalTargetConfig["recoverToOriginalPath"] = $true
+        $restoreParams.$paramName.recoverFileAndFolderParams.$targetParamName.originalTargetConfig["recoverToOriginalPath"] = $true
     }
-    if($restoreMethod -ne 'ExistingAgent'){
-        $restoreParams.vmwareParams.recoverFileAndFolderParams.vmwareTargetParams.originalTargetConfig["targetVmCredentials"] = $vmCredentials
+    if($objectEnvironment -eq 'kVMware' -and $restoreMethod -ne 'ExistingAgent'){
+        $restoreParams.$paramName.recoverFileAndFolderParams.$targetParamName.originalTargetConfig["targetVmCredentials"] = $vmCredentials
     }
 }
 
@@ -271,7 +319,7 @@ foreach($file in $files){
         }else{
             $isDirectory = $false
         }
-        $restoreParams.vmwareParams.recoverFileAndFolderParams.filesAndFolders += @{
+        $restoreParams.$paramName.recoverFileAndFolderParams.filesAndFolders += @{
             "absolutePath" = $file;
             "isDirectory" = $isDirectory
         }
@@ -300,7 +348,7 @@ foreach($file in $files){
                 $isDirectory = $false
                 $absolutePath = "{0}/{1}" -f $thisFile[0].path, $thisFile[0].name
             }
-            $restoreParams.vmwareParams.recoverFileAndFolderParams.filesAndFolders += @{
+            $restoreParams.$paramName.recoverFileAndFolderParams.filesAndFolders += @{
                 "absolutePath" = $absolutePath;
                 "isDirectory" = $isDirectory
             }
@@ -309,7 +357,7 @@ foreach($file in $files){
 }
 
 # perform restore
-if($restoreParams.vmwareParams.recoverFileAndFolderParams.filesAndFolders.Count -gt 0){
+if($restoreParams.$paramName.recoverFileAndFolderParams.filesAndFolders.Count -gt 0){
     $restoreTask = api post 'data-protect/recoveries' $restoreParams -v2
     $restoreTaskId = $restoreTask.id
     Write-Host "Restoring Files..."
