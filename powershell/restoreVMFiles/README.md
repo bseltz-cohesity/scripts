@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This powershell script restores files from a VMware VM backup.
+This powershell script restores files from a VMware or AHV VM backup.
 
 ## Download the script
 
@@ -52,11 +52,12 @@ Place both files in a folder together and run the main script like so:
 
 * -sourceVM: VM that was backed up
 * -targetVM: (optional) VM to restore to (defaults to sourceVM)
+* -ahvSource: (optional) AHV protection source (required when restoring to alternate AHV VM)
 * -fileNames: (optional) file /path/names to restore (comma separated)
 * -fileList: (optional) text file of file path/names to restore (one per line)
 * -restorePath: (optional) path to restore files on targetServer
 * -restoreMethod: (optional) ExistingAgent, AutoDeploy, or VMTools (default is AutoDeploy)
-* -vmUser: (optional) required for AutoDeploy and VMTools restore methods, e.g. mydomain.net\myuser
+* -vmUser: (optional) required for VMware AutoDeploy and VMTools restore methods, e.g. mydomain.net\myuser
 * -vmPwd: (optional) will be prompted if required and omitted
 * -showVersions: (optional) show available backups (run ID and run date) and exit
 * -olderThan: (optional) restore from last version prior to this date, e.g. '2021-01-31', '2021-01-30 23:00'
