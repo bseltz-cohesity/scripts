@@ -295,6 +295,10 @@ if($targetVM){
     if($objectEnvironment -eq 'kVMware' -and $restoreMethod -ne 'ExistingAgent'){
         $restoreParams.$paramName.recoverFileAndFolderParams.$targetParamName.newTargetConfig["targetVmCredentials"] = $vmCredentials
     }
+    if($objectEnvironment -eq 'kAcropolis'){
+        $restoreParams.$paramName.recoverFileAndFolderParams.$targetParamName.newTargetConfig["targetVmCredentials"] = @{"username" = ""; "password" = ""}
+        $restoreParams.$paramName.recoverFileAndFolderParams.$targetParamName.newTargetConfig["recoverMethod"] = $False
+    }
 }else{
     # original target config
     $restoreParams.$paramName.recoverFileAndFolderParams.$targetParamName["originalTargetConfig"] = @{
