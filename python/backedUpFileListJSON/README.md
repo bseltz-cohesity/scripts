@@ -85,3 +85,4 @@ To choose the backup at or after the specified file date:
 * -x, --forceindex: (optional) force use the index (otherwise index usage will be automatic)
 * -nt, --newerthan: (optional) show files added/modified in the last X days
 * -ext, --extension: (optional) only show files that end with the specified extension
+* -f2, --format2: (optional) alternate JSON output format
