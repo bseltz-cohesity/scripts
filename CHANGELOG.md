@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-07-21`] [shareList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/shareList) [`New`] list views and shares
+* [`2025-07-18`] [ipmiPassword.py](https://github.com/cohesity/community-automation-samples/tree/main/python/ipmiPassword) [`New`] set IPMI password
 * [`2025-07-17`] [objectRunHistory.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/objectRunHistory) [`New`] Query the run history of an object
 * [`2025-07-17`] [backedUpFileListJSON.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backedUpFileListJSON) [`New`] variant of backedUpFileList that outputs JSON to stdout
 * [`2025-07-17`] [restoreVMFiles.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/restoreVMFiles) [`Update`] added support for AHV
