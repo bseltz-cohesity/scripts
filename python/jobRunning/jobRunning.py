@@ -3,6 +3,7 @@
 
 # import pyhesity wrapper module
 from pyhesity import *
+from sys import exit
 
 # command line arguments
 import argparse
@@ -69,7 +70,10 @@ runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=1&includeTenan
 if runs is None or 'runs' not in runs or len(runs['runs']) == 0:
     exit(0)
 else:
-    status = runs['runs'][0]['localBackupInfo']['status']
+    if 'localBackupInfo' in runs['runs'][0]:
+        status = runs['runs'][0]['localBackupInfo']['status']
+    else:
+        status = runs['runs'][0]['archivalInfo']['archivalTargetResults'][0]['status']
     if status in finishedStates:
         print('*** %s is not running' % jobname)
         exit(0)
