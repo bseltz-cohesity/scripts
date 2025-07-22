@@ -139,12 +139,19 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
         else :
             runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&startTimeUsecs=%s&endTimeUsecs=%s&includeTenants=true&includeObjectDetails=true' % (job['id'], numruns, daysAgo, endUsecs), v=2)
         if len(runs['runs']) > 0:
-            endUsecs = runs['runs'][-1]['localBackupInfo']['startTimeUsecs'] - 1
+            if 'localBackupInfo' in runs['runs'][-1]:
+                endUsecs = runs['runs'][-1]['localBackupInfo']['startTimeUsecs'] - 1
+            else:
+                endUsecs = runs['runs'][-1]['archivalInfo']['archivalTargetResults'][0]['startTimeUsecs'] - 1
         else:
             break
         for run in runs['runs']:
-            runStartTime = usecsToDate(run['localBackupInfo']['startTimeUsecs'])
-            runtype = run['localBackupInfo']['runType'][1:]
+            if 'localBackupInfo' in run:
+                runStartTime = usecsToDate(run['localBackupInfo']['startTimeUsecs'])
+                runtype = run['localBackupInfo']['runType'][1:]
+            else:
+                runStartTime = usecsToDate(run['archivalInfo']['archivalTargetResults'][0]['startTimeUsecs'])
+                runtype = run['archivalInfo']['archivalTargetResults'][0]['runType'][1:]
             if runtype == 'Regular':
                 runtype = 'Incremental'
             if runtype != 'Log' or includelogs:
@@ -165,8 +172,14 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
                                 printDBRunSummary(None, job['name'], 'NA', dbname, uuid, runtype, 'NA', dgRole, 'NA')
                                 continue
                             latestPulseUpdate='NA'
-                            if 'progressTaskId' in run['localBackupInfo'] and 'progressTaskId' in object['localSnapshotInfo']['snapshotInfo']:
-                                progress = api('get', 'data-protect/runs/%s/progress?runTaskPath=%s&objects=%s&objectTaskPaths=%s&includeEventLogs=true' % (job['id'], run['localBackupInfo']['progressTaskId'], objectid, object['localSnapshotInfo']['snapshotInfo']['progressTaskId']), v=2)
+                            if 'localBackupInfo' in run:
+                                runInfo = run['localBackupInfo']
+                                snapInfo = 'localSnapshotInfo'
+                            else:
+                                runInfo = run['archivalInfo']['archivalTargetResults'][0]
+                                snapInfo = 'archivalSnapshotInfo'
+                            if 'progressTaskId' in runInfo and 'progressTaskId' in object[snapInfo]['snapshotInfo']:
+                                progress = api('get', 'data-protect/runs/%s/progress?runTaskPath=%s&objects=%s&objectTaskPaths=%s&includeEventLogs=true' % (job['id'], runInfo['progressTaskId'], objectid, object[snapInfo]['snapshotInfo']['progressTaskId']), v=2)
                                 #print(progress)
                                 latestPulseUpdate=''
                                 if 'localRun' in progress:
