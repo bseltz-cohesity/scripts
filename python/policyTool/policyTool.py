@@ -27,7 +27,7 @@ parser.add_argument('-r', '--retention', type=int, default=None)
 parser.add_argument('-ld', '--lockduration', type=int, default=None)
 parser.add_argument('-lu', '--lockunit', type=str, choices=['days', 'weeks', 'months', 'years'], default='days')
 parser.add_argument('-ru', '--retentionunit', type=str, choices=['days', 'weeks', 'months', 'years'], default='days')
-parser.add_argument('-a', '--action', type=str, choices=['list', 'create', 'edit', 'delete', 'addextension', 'deleteextension', 'logbackup', 'addreplica', 'deletereplica', 'addarchive', 'deletearchive', 'editretries', 'addcdp', 'deletecdp'], default='list')
+parser.add_argument('-a', '--action', type=str, choices=['list', 'create', 'edit', 'delete', 'addextension', 'deleteextension', 'logbackup', 'addreplica', 'deletereplica', 'addarchive', 'deletearchive', 'editretries', 'addcdp', 'deletecdp', 'addfull', 'deletefull'], default='list')
 parser.add_argument('-n', '--targetname', type=str, default=None)
 parser.add_argument('-all', '--all', action='store_true')
 parser.add_argument('-t', '--retries', type=int, default=3)
@@ -35,6 +35,9 @@ parser.add_argument('-m', '--retryminutes', type=int, default=5)
 parser.add_argument('-cu', '--cdpunit', type=str, choices=['minutes', 'hours', 'days'], default='hours')
 parser.add_argument('-aq', '--addquiettime', action='append', type=str)
 parser.add_argument('-rq', '--removequiettime', action='append', type=str)
+parser.add_argument('-dow', '--dayofweek', type=str, action='append', choices=['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'])
+parser.add_argument('-wom', '--weekofmonth', type=str, choices=['First', 'Second', 'Third', 'Fourth', 'Last'], default='First')
+
 args = parser.parse_args()
 
 vip = args.vip
@@ -63,6 +66,11 @@ retryminutes = args.retryminutes      # number of minutes to wait between retrie
 addquiettime = args.addquiettime      # add quiet time
 removequiettime = args.removequiettime  # remove quiettime
 cdpunit = args.cdpunit
+dayofweek = args.dayofweek
+weekofmonth = args.weekofmonth
+
+if dayofweek is None or len(dayofweek) == 0:
+    dayofweek = ['Sunday']
 
 if frequencyunit != 'runs' and frequency is None:
     frequency = 1
@@ -311,6 +319,50 @@ if action == 'addextension':
                     "unit": lockunit.title(),
                     "duration": lockduration
                 }
+    result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
+    if 'error' in result:
+        exit(1)
+
+# addfull
+if action == 'addfull':
+    if frequencyunit not in ['days', 'weeks', 'months']:
+        print('frequency unit must be days, weeks or minutes or months')
+        exit()
+    if frequencyunit == 'months':
+        policy['backupPolicy']['regular']['full'] = {
+            "schedule": {
+                "unit": "Months",
+                "monthSchedule": {
+                    "dayOfWeek": dayofweek,
+                    "weekOfMonth": weekofmonth
+                }
+            }
+        }
+    if frequencyunit == 'weeks':
+        policy['backupPolicy']['regular']['full'] = {
+            "schedule": {
+                "unit": "Weeks",
+                "weekSchedule": {
+                    "dayOfWeek": dayofweek
+                }
+            }
+        }
+    if frequencyunit == 'days':
+        policy['backupPolicy']['regular']['full'] = {
+            "schedule": {
+                "unit": "Days",
+                "daySchedule": {
+                    "frequency": 1
+                }
+            }
+        }
+    result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
+    if 'error' in result:
+        exit(1)
+
+# deletefull
+if action == 'deletefull':
+    del policy['backupPolicy']['regular']['full']
     result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
     if 'error' in result:
         exit(1)
