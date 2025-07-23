@@ -44,9 +44,29 @@ if($USING_HELIOS){
 }
 # end authentication =========================================
 
+$principals = @{'S-1-1-0' = 'Everyone'}
+
+function principalName($sid){
+    if($principals[$sid]){
+        $principalName = $principals[$sid]
+    }else{
+        $principal = api get principals/searchPrincipals?sids=$($sid)
+        $principalName = $principal.principalName
+        if($principal.PSObject.Properties['domain']){
+            $principalName = "$($principal.domain)\$principalName"
+        }
+        if(!$principalName){
+            $principalName = $sid
+        }
+        $principals[$sid] = $principalName
+    }
+    return $principalName
+}
+
 # outfile
 $cluster = api get cluster
 $outfileName = "shareList-$($cluster.name).csv"
+$smbPermissions = "smbPermissions-$($cluster.name).txt"
 
 # headings
 $headings = "View Name
@@ -61,6 +81,7 @@ Logical Size ($unit)"
 $headings = $headings -split "`n" -join ""","""
 $headings = """$headings"""
 $headings | Out-File -FilePath $outfileName -Encoding utf8
+'' | Out-File -FilePath $smbPermissions -Encoding utf8
 
 # convert to units
 $conversion = @{'KiB' = 1024; 'MiB' = 1024 * 1024; 'GiB' = 1024 * 1024 * 1024; 'TiB' = 1024 * 1024 * 1024 * 1024}
@@ -105,6 +126,13 @@ foreach($view in $allViews | Sort-Object -Property name){
     }
     $logicalSize = toUnits $view.logicalUsageBytes
     """$($view.name)"",""$($view.name)"",""False"",""/"",""$smbPath"",""$nfsPath"",""$s3Path"",""$logicalSize""" | Out-File -FilePath $outfileName -Append
+    if($view.PSObject.Properties['sharePermissions']){
+        "`n====================`n$($view.name)`n====================`n" | Out-File -FilePath $smbPermissions -Append
+        foreach($permission in $view.sharePermissions){
+            $thisPrincipal = principalName $permission.sid
+            "$($permission.access): $($thisPrincipal) ($($permission.type))" | Out-File -FilePath $smbPermissions -Append
+        }
+    }
     $theseShares = $allShares | Where-Object {$_.viewName -eq $view.name -and $_.shareName -ne $_.viewName}
     foreach($share in $theseShares | Sort-Object -Property shareName){
         $smbPath = ''
@@ -120,7 +148,15 @@ foreach($view in $allViews | Sort-Object -Property name){
             $s3Path = $share.s3AccessPath
         }
         """$($share.viewName)"",""$($share.shareName)"",""True"",""$($share.path)"",""$smbPath"",""$nfsPath"",""$s3Path"",""""" | Out-File -FilePath $outfileName -Append
+        if($share.PSObject.Properties['sharePermissions']){
+            "`n====================`n$($share.shareName)`n====================`n" | Out-File -FilePath $smbPermissions -Append
+            foreach($permission in $share.sharePermissions){
+                $thisPrincipal = principalName $permission.sid
+                "$($permission.access): $($thisPrincipal) ($($permission.type))" | Out-File -FilePath $smbPermissions -Append
+            }
+        }
     }
 }
 
-"`nOutput saved to $outfilename`n"
+"`nOutput saved to $outfilename"
+"SMB Permissions saved to $smbPermissions`n"
