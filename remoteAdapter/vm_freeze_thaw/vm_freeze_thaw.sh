@@ -14,7 +14,7 @@ MATCH_STRING="created successfully"
 echo "*** PROTECTION GROUP NAME: $PROTECTION_GROUP_NAME"
 echo "*** CHECKING FOR EXISTING RUN"
 
-$SCRIPT_ROOT/jobRunning -v $CLUSTER_ENDPOINT -u $CLUSTER_USER -i -pwd $CLUSTER_API_KEY -j "$PROTECTION_GROUP_NAME"
+python $SCRIPT_ROOT/jobRunning.py -v $CLUSTER_ENDPOINT -u $CLUSTER_USER -i -pwd $CLUSTER_API_KEY -j "$PROTECTION_GROUP_NAME"
 LAST_RUN_STATUS=$?
 
 if [ $LAST_RUN_STATUS -eq 0 ]
@@ -26,7 +26,7 @@ then
     then
         echo "*** FREEZE SUCCESSFUL"
         echo "*** STARTING PROTECTION RUN" 
-        $SCRIPT_ROOT/backupNow -v $CLUSTER_ENDPOINT -u $CLUSTER_USER -i -p $CLUSTER_API_KEY -j "$PROTECTION_GROUP_NAME" -t kFull -q -s 10 -es "$MATCH_STRING"
+        python $SCRIPT_ROOT/backupNow.py -v $CLUSTER_ENDPOINT -u $CLUSTER_USER -i -p $CLUSTER_API_KEY -j "$PROTECTION_GROUP_NAME" -t kFull -q -s 10 -es "$MATCH_STRING"
         RUN_STATUS=$?
         if [ $RUN_STATUS -eq 0 ]
         then

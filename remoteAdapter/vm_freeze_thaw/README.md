@@ -9,11 +9,12 @@ This bash script can be used as a pre-script in a remote adapter job to freeze a
 ```bash
 # Begin download commands
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/remoteAdapter/vm_freeze_thaw/vm_freeze_thaw.sh
-curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/linux/jobRunning/jobRunning
-curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/linux/backupNow/backupNow
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/jobRunning/jobRunning.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/backupNow/backupNow.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py
 chmod +x vm_freeze_thaw.sh
-chmod +x jobRunning
-chmod +x backupNow
+chmod +x jobRunning.py
+chmod +x backupNow.py
 # End download commands
 ```
 
