@@ -126,17 +126,21 @@ if(!$object){
     exit 1
 }
 
+$object = $object | Where-Object {$_.PSObject.Properties['latestSnapshotsInfo']}
+
 # filter by job name
 if($jobName){
-    $object.latestSnapshotsInfo = $object.latestSnapshotsInfo | Where-Object {$_.protectionGroupName -eq $jobName}
+    foreach($o in $object){
+        $o.latestSnapshotsInfo = $o.latestSnapshotsInfo | Where-Object {$_.protectionGroupName -eq $jobName}
+    }
 }
+
+$object = ($object | Sort-Object -Property @{Expression={$_.latestSnapshotsInfo[0].protectionRunStartTimeUsecs}; Ascending = $False})[0]
 
 if($object.latestSnapshotsInfo -eq $null -or @($object.latestSnapshotsInfo).Count -lt 1){
     Write-Host "No backups for VM $sourceVM in Protection Group $jobName" -ForegroundColor Yellow
     exit 1 
 }
-
-$object = ($object | Sort-Object -Property @{Expression={$_.latestSnapshotsInfo[0].protectionRunStartTimeUsecs}; Ascending = $False})[0]
 
 # get object type
 $objectEnvironment = $object.environment
