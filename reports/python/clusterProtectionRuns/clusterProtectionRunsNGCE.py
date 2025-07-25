@@ -91,10 +91,10 @@ nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 # output file
 if outputfile is None:
     dateString = now.strftime("%Y-%m-%d")
-    outputfile = 'protectionRunsReport-%s.tsv' % dateString
+    outputfile = 'protectionRunsReport-%s.csv' % dateString
 outfile = os.path.join(outputpath, outputfile)
 f = codecs.open(outfile, 'w')
-f.write('Start Time\tEnd Time\tDuration\tstatus\tslaStatus\tsnapshotStatus\tobjectName\tsourceName\tgroupName\tpolicyName\tObject Type\tbackupType\tSystem Name\tLogical Size %s\tData Read %s\tData Written %s\tTotal File Count\tBacked Up File Count\tOrganization Name\tTag\n' % (unit, unit, unit))
+f.write('"Start Time","End Time","Duration","status","slaStatus","snapshotStatus","objectName","sourceName","groupName","policyName","Object Type","backupType","System Name","Logical Size %s","Data Read %s","Data Written %s","Total File Count","Backed Up File Count","Organization Name","Tag"\n' % (unit, unit, unit))
 
 def getCluster():
 
@@ -179,7 +179,7 @@ def getCluster():
                                             objectTotalCount = object['archivalInfo']['archivalTargetResults'][0].get('totalFileCount', 0)
                                             objectBackedUpCount = object['archivalInfo']['archivalTargetResults'][0].get('backupFileCount', 0)
                                             print('        %s' % objectName)
-                                            f.write('%s\t%s\t%s\t%s\t%s\tActive\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (objectStartTime, objectEndTime, objectDurationSeconds, objectStatus, slaStatus, objectName, registeredSourceName, job['name'], policyName, environment, runType, cluster['name'], objectLogicalSizeBytes, objectBytesRead, objectBytesWritten, objectTotalCount, objectBackedUpCount, tenant, tag))
+                                            f.write('"%s","%s","%s","%s","%s","Active","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (objectStartTime, objectEndTime, objectDurationSeconds, objectStatus, slaStatus, objectName, registeredSourceName, job['name'], policyName, environment, runType, cluster['name'], objectLogicalSizeBytes, objectBytesRead, objectBytesWritten, objectTotalCount, objectBackedUpCount, tenant, tag))
                     except Exception:
                         pass
 
