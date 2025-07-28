@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2025.03.27"""
+"""Cohesity Python REST API Wrapper Module - 2025.07.27"""
 
 ##########################################################################################
 # Change Log
@@ -24,6 +24,7 @@
 # 2025-02-23 - added retry logic for too many requests and magneto timeouts
 # 2025-03-16 - fixed retry logic for gflag setting
 # 2025-03-27 - fixed null return on error
+# 2025-07-27 - fixed bad password prompt
 #
 ##########################################################################################
 # Install Notes
@@ -481,7 +482,7 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                         if quiet is None:
                             print(COHESITY_API['LAST_ERROR'])
                         if (response.status_code == 400 or response.status_code == 401) and 'invalid username' in response.json()['message'].lower():
-                            if noretry is False and prompt is not False and setpasswd is None:
+                            if noretry is False and prompt is not False: # and setpasswd is None:
                                 apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
                 retrycounter = 11
             except requests.exceptions.RequestException as e:
