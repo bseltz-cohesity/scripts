@@ -2,7 +2,7 @@
 
 * [`2025-08-04`] [protectedObjectInventory.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/protectedObjectInventory) [`Update`] bug fixes
 * [`2025-07-27`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] fixed reaction to bad password
-* [`2025-07-25`] [clusterProtectionRunsNGCE.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/clusterProtectionRuns) [`New`] report variant for NGCE 
+* [`2025-07-25`] [clusterProtectionRunsNGCE.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/clusterProtectionRuns) [`New`] report variant for NGCE
 * [`2025-07-25`] [oracleBackupReport.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/oracleBackupReport) [`Update`] added support for NGCE
 * [`2025-07-21`] [shareList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/shareList) [`New`] list views and shares
 * [`2025-07-18`] [ipmiPassword.py](https://github.com/cohesity/community-automation-samples/tree/main/python/ipmiPassword) [`New`] set IPMI password
