@@ -54,6 +54,7 @@ parser.add_argument('-dbg', '--dbg', action='store_true')  # debug output
 parser.add_argument('-w', '--wait', action='store_true')  # wait for completion
 parser.add_argument('-pr', '--progress', action='store_true')  # display progress
 parser.add_argument('-inst', '--instant', action='store_true')  # instant recovery
+parser.add_argument('-man', '--manual', action='store_true')  # manual migration
 parser.add_argument('-cpf', '--clearpfileparameters', action='store_true')  # clear existing pfile parameters
 parser.add_argument('-pi', '--printinfo', action='store_true')  # clear existing pfile parameters
 
@@ -76,6 +77,7 @@ pdbnames = args.pdbnames
 progress = args.progress
 instant = args.instant
 printinfo = args.printinfo
+manual = args.manual
 
 if args.targetserver is None:
     targetserver = sourceserver
@@ -406,6 +408,14 @@ else:
                 oracledata
             ]
         }
+        if manual is True:
+            sourceConfig['recoverDatabaseParams']['oracleUpdateRestoreOptions'] = {
+                "delaySecs": -1,
+                "targetPathVec": [
+                    None
+                ]
+            }
+
     if granularRestore is True:
         # restore to alternate cdb
         sourceConfig['recoverDatabaseParams']['granularRestoreInfo'] = {
@@ -435,18 +445,30 @@ if sameDB is True:
 else:
     restoreParams['oracleParams']['recoverAppParams']['oracleTargetParams']['newSourceConfig'] = sourceConfig
     restoreParams['oracleParams']['recoverAppParams']['oracleTargetParams']['recoverToNewSource'] = True
-    metaParams = {
-        "environment": "kOracle",
-        "oracleParams": {
-            "baseDir": oraclebase,
-            "dbFileDestination": oracledata,
-            "dbName": targetdb,
-            "homeDir": oraclehome,
-            "isClone": False,
-            "isGranularRestore": False,
-            "isRecoveryValidation": False
+    
+    if oraclebase is not None and oracledata is not None:
+        metaParams = {
+            "environment": "kOracle",
+            "oracleParams": {
+                "baseDir": oraclebase,
+                "dbFileDestination": oracledata,
+                "dbName": targetdb,
+                "homeDir": oraclehome,
+                "isClone": False,
+                "isGranularRestore": False,
+                "isRecoveryValidation": False
+            }
         }
-    }
+    else:
+        metaParams = {
+            "environment": "kOracle",
+            "oracleParams": {
+                "isClone": False,
+                "isGranularRestore": False,
+                "isRecoveryValidation": False,
+                "isDisasterRecovery": True
+            }
+        }
     # get pfile parameters
     if not clearpfileparameters:
         metaInfo = api('post', 'data-protect/snapshots/%s/metaInfo' % latestSnapshot['id'], metaParams, v=2)

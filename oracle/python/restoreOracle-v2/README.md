@@ -133,6 +133,7 @@ Restoring an Oracle RAC DB:
 * -w, --wait: (optional) wait for restore to finish and report result
 * -pr, --progress: (optional) display percent complete
 * -inst, --instant: (optional) perform instant recovery
+* -man, --manual: (optional) use manual migration when using instant recovery
 
 ## Container/Pluggable DB Parameters
 
