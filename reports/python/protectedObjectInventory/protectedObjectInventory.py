@@ -124,6 +124,26 @@ for policy in policies:
                 fullSchedule += 'Monthly on %s %s keep for %s %s%s; ' % (backupSchedule[unitPath]['weekOfMonth'], backupSchedule[unitPath]['dayOfWeek'][0], baseRetention['duration'], baseRetention['unit'], dataLock)
             if unit == 'ProtectOnce':
                 fullSchedule += 'Once keep for %s %s%s; ' % (baseRetention['duration'], baseRetention['unit'], dataLock)
+    # full backup
+    if 'fullBackups' in policy['backupPolicy']['regular'] and policy['backupPolicy']['regular']['fullBackups'] is not None and len(policy['backupPolicy']['regular']['fullBackups']) > 0:
+        backupSchedule = policy['backupPolicy']['regular']['fullBackups'][0]['schedule']
+        unit = backupSchedule['unit']
+        unitPath = '%sSchedule' % unit.lower()[:-1]
+        thisRetention = policy['backupPolicy']['regular']['fullBackups'][0]['retention']
+        if unit in frequentSchedules:
+            frequency = backupSchedule[unitPath]['frequency']
+            fullSchedule = 'Every %s %s keep for %s %s%s; ' % (frequency, unit, thisRetention['duration'], policy['backupPolicy']['regular']['fullBackups'][0]['retention']['unit'], dataLock)
+        else:
+            if unit == 'Weeks':
+                fullSchedule += 'weekly on %s keep for %s %s%s; ' % ((':'.join(backupSchedule[unitPath]['dayOfWeek'])), thisRetention['duration'], thisRetention['unit'], dataLock)
+            if unit == 'Months':
+                if 'dayOfMonth' in backupSchedule[unitPath]:
+                    fullSchedule = 'Monthly on the %s day keep for %s %s%s; ' % (backupSchedule[unitPath]['dayOfMonth'], thisRetention['duration'], thisRetention['unit'], dataLock)
+                else:
+                    fullSchedule += 'Monthly on %s %s keep for %s %s%s; ' % (backupSchedule[unitPath]['weekOfMonth'], backupSchedule[unitPath]['dayOfWeek'][0], thisRetention['duration'], thisRetention['unit'], dataLock)
+            if unit == 'ProtectOnce':
+                fullSchedule += 'Once keep for %s %s%s; ' % (thisRetention['duration'], thisRetention['unit'], dataLock)
+
     # extended retention
     if 'extendedRetention' in policy and policy['extendedRetention'] is not None and len(policy['extendedRetention']) > 0:
         for extendedRetention in policy['extendedRetention']:
@@ -217,11 +237,6 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
             fullSla = ''
             incrementalSla = ''
 
-        # cloud archive direct
-        cloudArchiveDirect = False
-        if 'directCloudArchive' in environmentParams and environmentParams['directCloudArchive'] is True:
-            cloudArchiveDirect = True
-
         # policy
         policy = [p for p in policies if p['id'] == job['policyId']]
         if policy is not None and len(policy) > 0:
@@ -230,6 +245,17 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
         else:
             continue
         policyDetail = policyDetails[policy['name']]
+        incrementalSchedule = policyDetail['incrementalSchedule']
+        archiveSchedule = policyDetail['archiveSchedule']
+        # cloud archive direct
+        cloudArchiveDirect = False
+        if 'directCloudArchive' in environmentParams and environmentParams['directCloudArchive'] is True:
+            cloudArchiveDirect = True
+        if 'primaryBackupTarget' in policy['backupPolicy']['regular'] and policy['backupPolicy']['regular']['primaryBackupTarget']['targetType'] == 'Archival':
+            cloudArchiveDirect = True
+        if cloudArchiveDirect is True:
+            incrementalSchedule = ''
+            archiveSchedule = policyDetail['incrementalSchedule']
 
         # indexing
         if 'indexingPolicy' in environmentParams and environmentParams['indexingPolicy']['enableIndexing'] is True:
@@ -256,12 +282,18 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
         # runs
         runs = api('get', 'data-protect/protection-groups/%s/runs?includeObjectDetails=true&numRuns=7' % job['id'], v=2)
         if len(runs['runs']) > 0:
-            runDates = [r['localBackupInfo']['startTimeUsecs'] for r in runs['runs'] if r['localBackupInfo']['runType'] == 'kLog']
-            if len(runDates) == 0:
-                runDates = [r['localBackupInfo']['startTimeUsecs'] for r in runs['runs']]
-
+            try:
+                runDates = [r['localBackupInfo']['startTimeUsecs'] for r in runs['runs'] if r['localBackupInfo']['runType'] == 'kLog']
+                if len(runDates) == 0:
+                    runDates = [r['localBackupInfo']['startTimeUsecs'] for r in runs['runs']]
+            except Exception:
+                runDates = [r['archivalInfo']['archivalTargetResults'][0]['startTimeUsecs'] for r in runs['runs']]
+            
             # status
-            lastStatus = runs['runs'][0]['localBackupInfo']['status']
+            try:
+                lastStatus = runs['runs'][0]['localBackupInfo']['status']
+            except Exception:
+                lastStatus = runs['runs'][0]['archivalInfo']['archivalTargetResults'][0]['status']
 
             # QoS Policy
             qosPolicy = '-'
@@ -269,55 +301,64 @@ for job in sorted(jobs['protectionGroups'], key=lambda j: j['name']):
                 qosPolicy = job['qosPolicy'][1:]
 
             for run in runs['runs']:
+                if 'localBackupInfo' in run:
+                    runInfo = run['localBackupInfo']
+                else:
+                    runInfo = run['archivalInfo']['archivalTargetResults'][0]
+                
                 for item in run['objects']:
                     object = item['object']
-                    try:
-                        lastStatus = item['localSnapshotInfo']['snapshotInfo']['status'][1:]
-                        # logical size
-                        if 'logicalSizeBytes' in item['localSnapshotInfo']['snapshotInfo']['stats']:
-                            objectMiB = int(item['localSnapshotInfo']['snapshotInfo']['stats']['logicalSizeBytes'] / (1024 * 1024))
-                        else:
-                            objectMiB = 0
+                    # try:
+                    if 'localSnapshotInfo' in item:
+                        itemInfo = item['localSnapshotInfo']['snapshotInfo']
+                        lastStatus = itemInfo['status'][1:]
+                    else:
+                        itemInfo = item['archivalInfo']['archivalTargetResults'][0]
+                        lastStatus = itemInfo['status']
+                    # logical size
+                    if 'logicalSizeBytes' in itemInfo['stats']:
+                        objectMiB = int(itemInfo['stats']['logicalSizeBytes'] / (1024 * 1024))
+                    else:
+                        objectMiB = 0
 
-                        if object['id'] not in objects.keys():
-                            objects[object['id']] = {
-                                'name': object['name'],
-                                'id': object['id'],
-                                'objectType': object['objectType'],
-                                'objectMiB': objectMiB,
-                                'environment': object['environment'],
-                                'cloudArchiveDirect': cloudArchiveDirect,
-                                'jobName': job['name'],
-                                'policyName': policy['name'],
-                                'jobEnvironment': job['environment'],
-                                'runDates': runDates,
-                                'sourceId': '',
-                                'parent': '',
-                                'lastStatus': lastStatus,
-                                'lastRunType': run['localBackupInfo']['runType'][1:],
-                                'jobPaused': job['isPaused'],
-                                'indexing': indexing,
-                                'startTime': startTime,
-                                'timeZone': timeZone,
-                                'qosPolicy': qosPolicy,
-                                'priority': jobPriority,
-                                'fullSla': fullSla,
-                                'incrementalSla': incrementalSla,
-                                "incrementalSchedule": policyDetail['incrementalSchedule'],
-                                "fullSchedule": policyDetail['fullSchedule'],
-                                "logSchedule": policyDetail['logSchedule'],
-                                "retries": policyDetail['retries'],
-                                "replicationSchedule": policyDetail['replicationSchedule'],
-                                "archiveSchedule": policyDetail['archiveSchedule']
-
-                            }
-                        else:
-                            if objects[object['id']]['objectMiB'] == 0:
-                                objects[object['id']]['objectMiB'] = objectMiB
-                        if 'sourceId' in object:
-                            objects[object['id']]['sourceId'] = object['sourceId']
-                    except Exception:
-                        pass
+                    if object['id'] not in objects.keys():
+                        objects[object['id']] = {
+                            'name': object['name'],
+                            'id': object['id'],
+                            'objectType': object['objectType'],
+                            'objectMiB': objectMiB,
+                            'environment': object['environment'],
+                            'cloudArchiveDirect': cloudArchiveDirect,
+                            'jobName': job['name'],
+                            'policyName': policy['name'],
+                            'jobEnvironment': job['environment'],
+                            'runDates': runDates,
+                            'sourceId': '',
+                            'parent': '',
+                            'lastStatus': lastStatus,
+                            'lastRunType': runInfo['runType'][1:],
+                            'jobPaused': job['isPaused'],
+                            'indexing': indexing,
+                            'startTime': startTime,
+                            'timeZone': timeZone,
+                            'qosPolicy': qosPolicy,
+                            'priority': jobPriority,
+                            'fullSla': fullSla,
+                            'incrementalSla': incrementalSla,
+                            "incrementalSchedule": incrementalSchedule,
+                            "fullSchedule": policyDetail['fullSchedule'],
+                            "logSchedule": policyDetail['logSchedule'],
+                            "retries": policyDetail['retries'],
+                            "replicationSchedule": policyDetail['replicationSchedule'],
+                            "archiveSchedule": archiveSchedule
+                        }
+                    else:
+                        if objects[object['id']]['objectMiB'] == 0:
+                            objects[object['id']]['objectMiB'] = objectMiB
+                    if 'sourceId' in object:
+                        objects[object['id']]['sourceId'] = object['sourceId']
+                    # except Exception:
+                    #     pass
 
     for id in objects.keys():
         object = objects[id]
