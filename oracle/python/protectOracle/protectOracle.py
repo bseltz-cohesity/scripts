@@ -3,6 +3,7 @@
 
 ### import pyhesity wrapper module
 from pyhesity import *
+import getpass
 
 ### command line arguments
 import argparse
@@ -37,6 +38,8 @@ parser.add_argument('-l', '--deletelogdays', type=int)
 parser.add_argument('-lh', '--deleteloghours', type=int)
 parser.add_argument('-pm', '--persistmounts', action='store_true')
 parser.add_argument('-na', '--noalert', action='store_true')
+parser.add_argument('-du', '--dbuser', type=str, default=None)
+parser.add_argument('-dp', '--dbpassword', type=str, default=None)
 
 args = parser.parse_args()
 
@@ -70,6 +73,8 @@ persistmounts = args.persistmounts
 deletelogdays = args.deletelogdays
 deleteloghours = args.deleteloghours
 noalert = args.noalert
+dbuser = args.dbuser
+dbpassword = args.dbpassword
 
 if channels is not None and channelnodes is None:
     print('channel node required if setting channels')
@@ -119,6 +124,15 @@ if mcm or vip.lower() == 'helios.cohesity.com':
     if LAST_API_ERROR() != 'OK':
         exit(1)
 # end authentication =====================================================
+
+if dbuser is not None and dbpassword is None:
+    while(True):
+        dbpassword = getpass.getpass("\n  Enter database password: ")
+        confirmpassword = getpass.getpass("Confirm database password: ")
+        if dbpassword == confirmpassword:
+            break
+        else:
+            print('\nPasswords do not match\n')
 
 # get job info
 newJob = False
@@ -230,6 +244,7 @@ for server in servernames:
             thisObject = thisObject[0]
         foundDBs = []
         for dbNode in serverSource['applicationNodes']:
+            print(dbNode['protectionSource']['name'])
             if len(dbnames) == 0 or dbNode['protectionSource']['name'].lower() in dbnames:
                 foundDBs.append(dbNode['protectionSource']['name'].lower())
                 print("Adding %s to %s" % (dbNode['protectionSource']['name'], jobname))
@@ -251,6 +266,12 @@ for server in servernames:
                             "rmanBackupType": "kImageCopy"
                         }
                     ]
+                    
+                    if dbuser is not None:
+                        thisDB['dbChannels'][0]['credentials'] = {
+                            "password": dbpassword,
+                            "username": dbuser
+                        }
                     if deletelogdays is not None:
                         thisDB['dbChannels'][0]['archiveLogRetentionDays'] = deletelogdays
                     elif deleteloghours is not None:
@@ -309,6 +330,7 @@ for server in servernames:
             exit(1)
         job['oracleParams']['objects'].append(thisObject)
 
+# display(job)
 if newJob is True:
     print("Creating Job '%s'" % jobname)
     result = api('post', 'data-protect/protection-groups', job, v=2)

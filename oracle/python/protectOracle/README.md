@@ -102,6 +102,8 @@ Place both files in a folder together and run the main script like so:
 * -ch, --channels: (optional)  number of channels (default is auto)
 * -cn, --channelnode: (optional) RAC node to protect (repeat for multiple)
 * -cp, --channelport: (optional) channel port (default is 1521)
+* -du, --dbuser: (optional) username for database authentication
+* -dp, --dbpassword: (optional) will be prompted if omitted and --dbuser is not None
 
 ## New Job Parameters
 
