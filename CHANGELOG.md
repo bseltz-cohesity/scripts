@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-08-05`] [protectOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/protectOracle) [`Update`] added db credentials parameters
 * [`2025-08-04`] [protectedObjectInventory.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/protectedObjectInventory) [`Update`] bug fixes
 * [`2025-07-27`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] fixed reaction to bad password
 * [`2025-07-25`] [clusterProtectionRunsNGCE.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/clusterProtectionRuns) [`New`] report variant for NGCE
