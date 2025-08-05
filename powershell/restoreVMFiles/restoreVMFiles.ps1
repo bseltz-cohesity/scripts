@@ -126,7 +126,7 @@ if(!$object){
     exit 1
 }
 
-$object = $object | Where-Object {$_.PSObject.Properties['latestSnapshotsInfo']}
+$object = $object | Where-Object {$_.PSObject.Properties['latestSnapshotsInfo'] -and $_.latestSnapshotsInfo -ne $null -and $_.latestSnapshotsInfo.Count -gt 0}
 
 # filter by job name
 if($jobName){
