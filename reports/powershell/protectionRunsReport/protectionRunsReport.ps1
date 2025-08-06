@@ -70,7 +70,7 @@ foreach($v in $vip){
         while($True){
             $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=$incObjects"
             foreach($run in $runs.runs){
-                if(! $includeObjectDetails -or ! $run.PSObject.Properties['isLocalSnapshotsDeleted'] -or $run.isLocalSnapshotsDeleted -ne $True){
+                if($True){ # if(! $includeObjectDetails){ # -or ! $run.PSObject.Properties['isLocalSnapshotsDeleted'] -or $run.isLocalSnapshotsDeleted -ne $True){
                     # run level stats
                     if($run.PSObject.Properties['localBackupInfo']){
                         $runType = $run.localBackupInfo.runType.subString(1)
@@ -108,7 +108,7 @@ foreach($v in $vip){
                             break
                         }
                         # object level stats
-                        if($includeObjectDetails -and (! $run.PSObject.Properties['isLocalSnapshotsDeleted'] -or $run.isLocalSnapshotsDeleted -ne $True)){
+                        if($includeObjectDetails){ # -and (! $run.PSObject.Properties['isLocalSnapshotsDeleted'] -or $run.isLocalSnapshotsDeleted -ne $True)){
                             foreach($object in $run.objects){
                                 # $object | toJson
                                 $objectName = $object.object.name
