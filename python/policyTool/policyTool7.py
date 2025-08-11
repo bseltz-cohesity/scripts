@@ -479,7 +479,7 @@ if action == 'addarchive':
         policy['remoteTargetPolicy'] = {}
     if 'archivalTargets' not in policy['remoteTargetPolicy']:
         policy['remoteTargetPolicy']['archivalTargets'] = []
-    existingTarget = [t for t in policy['remoteTargetPolicy']['archivalTargets'] if t['targetId'] == thisVault['id'] and t['schedule']['unit'] == frequencyunit.title() and t['schedule']['requency'] == frequency]
+    existingTarget = [t for t in policy['remoteTargetPolicy']['archivalTargets'] if t['targetId'] == thisVault['id'] and t['schedule']['unit'] == frequencyunit.title() and t['schedule']['frequency'] == frequency]
     if existingTarget is None or len(existingTarget) == 0:
         newTarget = {
             "schedule": {
