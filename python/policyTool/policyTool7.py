@@ -479,7 +479,7 @@ if action == 'addarchive':
         policy['remoteTargetPolicy'] = {}
     if 'archivalTargets' not in policy['remoteTargetPolicy']:
         policy['remoteTargetPolicy']['archivalTargets'] = []
-    existingTarget = [t for t in policy['remoteTargetPolicy']['archivalTargets'] if t['targetId'] == thisVault['id']]
+    existingTarget = [t for t in policy['remoteTargetPolicy']['archivalTargets'] if t['targetId'] == thisVault['id'] and t['schedule']['unit'] == frequencyunit.title() and t['schedule']['requency'] == frequency]
     if existingTarget is None or len(existingTarget) == 0:
         newTarget = {
             "schedule": {
@@ -510,7 +510,7 @@ if action == 'deletearchive':
         changedArchivalTargets = False
         for archiveTarget in policy['remoteTargetPolicy']['archivalTargets']:
             includeThisArchive = True
-            if archiveTarget['targetName'].lower() == targetname.lower():
+            if archiveTarget['targetName'].lower() == targetname.lower() and archiveTarget['schedule']['unit'] == frequencyunit.title() and archiveTarget['schedule']['frequency'] == frequency:
                 includeThisArchive = False
             if includeThisArchive is True:
                 newArchivalTargets.append(archiveTarget)
