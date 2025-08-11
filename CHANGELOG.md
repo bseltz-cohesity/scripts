@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-08-11`] [policyTool7.py](https://github.com/cohesity/community-automation-samples/tree/main/python/policyTool) [`Fix`] fixed issue adding multiple archival frequencies
 * [`2025-08-11`] [latestSQLRecoveryPoint.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/latestSQLRecoveryPoint) [`Update`] modernized authentication
 * [`2025-08-11`] [sqlRecoveryPoints.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/sqlRecoveryPoints) [`Update`] modernized authentication
 * [`2025-08-05`] [protectOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/protectOracle) [`Update`] added db credentials parameters
