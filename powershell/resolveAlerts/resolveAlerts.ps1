@@ -180,9 +180,9 @@ $alertsList = @()
 
 if($usingHelios){
     if($sortByDescription){
-        $alerts | Sort-Object -Property {$_.alertDocument.alertDescription} | Format-Table -Property clusterName, @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}, id
+        $alerts | Sort-Object -Property {$_.alertDocument.alertDescription} | Format-Table -Property id, clusterName, @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}, id
     }else{
-        $alerts | Sort-Object -Property {$_.latestTimestampUsecs} | Format-Table -Property clusterName, @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}, id
+        $alerts | Sort-Object -Property {$_.latestTimestampUsecs} | Format-Table -Property id, clusterName, @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}, id
     }
     Write-Host "$($alerts.Count) alerts"
     $alerts | Sort-Object -Property latestTimestampUsecs -Descending | Foreach-Object {
@@ -197,9 +197,9 @@ if($usingHelios){
     }
 }else{
     if($sortByDescription){
-        $alerts | Sort-Object -Property {$_.alertDocument.alertDescription} | Format-Table -Property @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}, id
+        $alerts | Sort-Object -Property {$_.alertDocument.alertDescription} | Format-Table -Property id, @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}
     }else{
-        $alerts | Sort-Object -Property latestTimestampUsecs | Format-Table -Property @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}, id
+        $alerts | Sort-Object -Property latestTimestampUsecs | Format-Table -Property id, @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}
     }
     Write-Host "$($alerts.Count) alerts"
     $alerts | Sort-Object -Property latestTimestampUsecs -Descending | Foreach-Object {
