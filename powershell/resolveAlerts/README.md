@@ -76,6 +76,7 @@ add -resolution to any of the above to mark them resolved:
 
 * -systemName: (optional) filter by cluster name
 * -severity: (optional) filter on severity (kInfo, kCritical, etc.)
+* -alertId: (optional) filter in specific alert ID
 * -alertType: (optional) filter on alert type (1007, 1024, etc.)
 * -alertCode: (optional) filter on alert code (CE00610022, etc.)
 * -resolution: (optional) text to use for resolution (just report if omitted)

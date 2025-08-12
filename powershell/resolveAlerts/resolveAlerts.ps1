@@ -14,6 +14,7 @@ param (
     [Parameter()][string]$resolution,
     [Parameter()][string]$alertType,
     [Parameter()][string]$alertCode,
+    [Parameter()][string]$alertId,
     [Parameter()][string]$severity,
     [Parameter()][string]$systemName,
     [Parameter()][string]$matchString,
@@ -105,21 +106,8 @@ function filterAlerts($alerts, $filterOnCluster=$False){
     if($alertCode){
         $alerts = $alerts | Where-Object {$_.alertCode -eq $alertCode}
     }
-    return $alerts
-}
-
-function filterAlerts2($alerts, $filterOnCluster=$False){
-    if($severity){
-        $alerts = $alerts | Where-Object severity -eq $severity
-    }
-    if($usingHelios -and $clusterName -and $filterOnCluster -eq $True){
-        $alerts = $alerts | Where-Object clusterName -eq $clusterName
-    }
-    if($matchString){
-        $alerts = $alerts | Where-Object {$_.alertDocument.alertDescription -match $matchString}
-    }
-    if($alertCode){
-        $alerts = $alerts | Where-Object {$_.alertCode -eq $alertCode}
+    if($alertId){
+        $alerts = $alerts | Where-Object {$_.id -eq $alertId}
     }
     return $alerts
 }
@@ -192,9 +180,9 @@ $alertsList = @()
 
 if($usingHelios){
     if($sortByDescription){
-        $alerts | Sort-Object -Property {$_.alertDocument.alertDescription} | Format-Table -Property clusterName, @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}
+        $alerts | Sort-Object -Property {$_.alertDocument.alertDescription} | Format-Table -Property clusterName, @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}, id
     }else{
-        $alerts | Sort-Object -Property {$_.latestTimestampUsecs} | Format-Table -Property clusterName, @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}
+        $alerts | Sort-Object -Property {$_.latestTimestampUsecs} | Format-Table -Property clusterName, @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}, id
     }
     Write-Host "$($alerts.Count) alerts"
     $alerts | Sort-Object -Property latestTimestampUsecs -Descending | Foreach-Object {
@@ -203,14 +191,15 @@ if($usingHelios){
             'Latest Occurence' = usecsToDate ($_.latestTimestampUsecs);
             'Alert Type' = $_.alertType;
             'Severity' = $_.severity;
-            'Description' = $_.alertDocument.alertDescription
+            'Description' = $_.alertDocument.alertDescription;
+            'Id' = $_.id
         }
     }
 }else{
     if($sortByDescription){
-        $alerts | Sort-Object -Property {$_.alertDocument.alertDescription} | Format-Table -Property @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}
+        $alerts | Sort-Object -Property {$_.alertDocument.alertDescription} | Format-Table -Property @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}, id
     }else{
-        $alerts | Sort-Object -Property latestTimestampUsecs | Format-Table -Property @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}
+        $alerts | Sort-Object -Property latestTimestampUsecs | Format-Table -Property @{l='Latest Occurrence'; e={usecsToDate ($_.latestTimestampUsecs)}}, alertType, severity, @{l='Description'; e={$_.alertDocument.alertDescription}}, id
     }
     Write-Host "$($alerts.Count) alerts"
     $alerts | Sort-Object -Property latestTimestampUsecs -Descending | Foreach-Object {
@@ -218,7 +207,8 @@ if($usingHelios){
             'Latest Occurence' = usecsToDate ($_.latestTimestampUsecs);
             'Alert Type' = $_.alertType;
             'Severity' = $_.severity;
-            'Description' = $_.alertDocument.alertDescription
+            'Description' = $_.alertDocument.alertDescription;
+            'Id' = $_.id
         }
     }
 }
