@@ -21,7 +21,8 @@ param (
     [Parameter()][switch]$consolidateDBs,
     [Parameter()][switch]$dbg,
     [Parameter()][switch]$includeArchives,
-    [Parameter()][string]$outfileName
+    [Parameter()][string]$outfileName,
+    [Parameter()][array]$environments = $null
 )
 
 $scriptversion = '2025-08-13 (PowerShell)'
@@ -608,10 +609,11 @@ function reportStorage(){
                 if($alloc -eq 0){
                     $alloc = $objFESize
                 }
-
-                """$($cluster.name)"",""$origin"",""$statsAge"",""$($job.name)"",""$tenant"",""$($job.storageDomainId)"",""$sdName"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$alloc"",""$objFESize"",""$(toUnits $objDataIn)"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$($thisObject['numSnaps'])"",""$($thisObject['numLogs'])"",""$(usecsToDate $thisObject['oldestBackup'])"",""$(usecsToDate $thisObject['newestBackup'])"",""$($thisObject['lastDataLock'])"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)"",""$($thisObject['vmTags'])"",""$($cluster.id):$($cluster.incarnationId):$($objId)"",""$($thisObject['awsTags'])""" | Out-File -FilePath $outfileName -Append
-                if($secondFormat){
-                    """$($cluster.name)"",""$monthString"",""$fqObjectName"",""$($job.description)"",""$(toUnits $objWrittenWithResiliency)""" | Out-File -FilePath $outfile2 -Append
+                if(!$environments -or $job.environment -in $environments){
+                    """$($cluster.name)"",""$origin"",""$statsAge"",""$($job.name)"",""$tenant"",""$($job.storageDomainId)"",""$sdName"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$alloc"",""$objFESize"",""$(toUnits $objDataIn)"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$($thisObject['numSnaps'])"",""$($thisObject['numLogs'])"",""$(usecsToDate $thisObject['oldestBackup'])"",""$(usecsToDate $thisObject['newestBackup'])"",""$($thisObject['lastDataLock'])"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)"",""$($thisObject['vmTags'])"",""$($cluster.id):$($cluster.incarnationId):$($objId)"",""$($thisObject['awsTags'])""" | Out-File -FilePath $outfileName -Append
+                    if($secondFormat){
+                        """$($cluster.name)"",""$monthString"",""$fqObjectName"",""$($job.description)"",""$(toUnits $objWrittenWithResiliency)""" | Out-File -FilePath $outfile2 -Append
+                    }
                 }
             }
         }elseif($job.environment -in @('kView')){
@@ -829,9 +831,11 @@ function reportStorage(){
         $sumObjectsUsed += $viewStats.totalLogicalUsageBytes
         $sumObjectsWritten += $jobWritten
         $sumObjectsWrittenWithResiliency += $consumption
-        """$($cluster.name)"",""$origin"",""$statsAge"",""$($jobName)"",""$($view.tenantId -replace ".$")"",""$($view.storageDomainId)"",""$($view.storageDomainName)"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$objFESize"",""$(toUnits $dataIn)"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$numSnaps"",""$numLogs"",""$oldestBackup"",""$newestBackup"",""$lastDataLock"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($view.description)"","""",""$($cluster.id):$($cluster.incarnationId):$($view.viewId)"",""""" | Out-File -FilePath $outfileName -Append
-        if($secondFormat){
-            """$($cluster.name)"",""$monthString"",""$viewName"",""$($view.description)"",""$(toUnits $consumption)""" | Out-File -FilePath $outfile2 -Append
+        if(!$environments -or 'kView' -in $environments){
+            """$($cluster.name)"",""$origin"",""$statsAge"",""$($jobName)"",""$($view.tenantId -replace ".$")"",""$($view.storageDomainId)"",""$($view.storageDomainName)"",""kView"",""$sourceName"",""$viewName"",""$objFESize"",""$objFESize"",""$(toUnits $dataIn)"",""$(toUnits $jobWritten)"",""$(toUnits $consumption)"",""$jobReduction"",""$objGrowth"",""$numSnaps"",""$numLogs"",""$oldestBackup"",""$newestBackup"",""$lastDataLock"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($view.description)"","""",""$($cluster.id):$($cluster.incarnationId):$($view.viewId)"",""""" | Out-File -FilePath $outfileName -Append
+            if($secondFormat){
+                """$($cluster.name)"",""$monthString"",""$viewName"",""$($view.description)"",""$(toUnits $consumption)""" | Out-File -FilePath $outfile2 -Append
+            }
         }
     }
     $garbageStart = (dateToUsecs (Get-Date -Hour 0 -Minute 0 -Second 0)) / 1000

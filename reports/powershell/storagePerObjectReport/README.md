@@ -66,6 +66,7 @@ To connect through Helios:
 * -outfileName: (optional) specify name for output csv file
 * -consolidateDBs: (optional) hide Oracle and SQL databases and only show the parent host
 * -includeArchives: (optional) get per object stats for external targets
+* -environments: (optional) one or more environment types to include (comma separated) e.g. kSQL, kVMware
 
 ## Column Descriptions
 
