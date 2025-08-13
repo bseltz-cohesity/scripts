@@ -1,4 +1,4 @@
-# version: 2025-07-15
+# version: 2025-08-13
 
 # process commandline arguments
 [CmdletBinding()]
@@ -24,7 +24,7 @@ param (
     [Parameter()][string]$outfileName
 )
 
-$scriptversion = '2025-07-15 (PowerShell)'
+$scriptversion = '2025-08-13 (PowerShell)'
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -295,9 +295,10 @@ function reportStorage(){
                                     $archivalInfo = $object.archivalInfo.archivalTargetResults[0]
                                 }
                             }
-                            if($objId -notin $objects.Keys -and !($job.environment -eq 'kAD' -and $object.object.environment -eq 'kAD') -and !($job.environment -in @('kSQL', 'kOracle', 'kExchange') -and $object.object.objectType -eq 'kHost')){
+                            if($objId -notin $objects.Keys -and !($job.environment -eq 'kAD' -and $object.object.environment -eq 'kAD') -and !($job.environment -in @('kSQL', 'kOracle', 'kExchange') -and $object.object.objectType -in @('kHost', 'kVMware'))){
                                 $objects[$objId] = @{}
                                 $objects[$objId]['name'] = $object.object.name
+                                $objects[$objId]['environment'] = $object.object.environment
                                 $objects[$objId]['parentObject'] = $false
                                 $objects[$objId]['alloc'] = 0
                                 $objects[$objId]['logical'] = 0
@@ -433,7 +434,8 @@ function reportStorage(){
             if($consolidateDBs){
                 foreach($objId in $objects.Keys){
                     $thisObject = $objects[$objId]
-                    if($job.environment -in @('kOracle', 'kSQL') -and $thisObject['parentObject'] -eq $false){
+                    # Write-Host $thisObject['name']
+                    if($job.environment -in @('kOracle', 'kSQL') -and $thisObject['parentObject'] -eq $false -and $thisObject['environment'] -eq $job.environment){
                         $sourceName = ''
                         if('sourceId' -in $thisObject.Keys){
                             if("$($thisObject['sourceId'])" -in $sourceNames.Keys){
@@ -446,6 +448,7 @@ function reportStorage(){
                                 if($source -and $source.PSObject.Properties['rootNodes'] -and $source.rootNodes.Count -gt 0){
                                     $source = $source.rootNodes[0]
                                     $sourceName = $source.rootNode.name
+                                    # Write-Host $source.rootNode.environment
                                     $sourceNames["$($thisObject['sourceId'])"] = $sourceName
                                 }
                                 # $source = api get "protectionSources?id=$($thisObject['sourceId'])&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true" -quiet
@@ -454,6 +457,7 @@ function reportStorage(){
                                 #     $sourceNames["$($thisObject['sourceId'])"] = $sourceName
                                 # }
                             }
+                            # Write-Host "Source name: $sourceName"
                             if($thisObject['sourceId'] -notin $parentObjects.Keys){
                                 
                                 $parentObjects[$thisObject['sourceId']] = @{}
