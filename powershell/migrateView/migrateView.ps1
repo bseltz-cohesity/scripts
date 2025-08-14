@@ -15,7 +15,8 @@ param (
     [Parameter()][string]$viewList,
     [Parameter(Mandatory=$True)][string]$suffix,
     [Parameter()][string]$newStorageDomainName = 'DefaultStorageDomain',
-    [Parameter()][switch]$finalize
+    [Parameter()][switch]$finalize,
+    [Parameter()][int64]$pageCount = 1000
 )
 
 # gather list from command line params and file
@@ -148,6 +149,46 @@ foreach($viewName in $viewNames){
             continue
         }
         $newViewId = $newView.viewId
+
+        # copy directory quotas
+        $cookie = $null
+        while($True){
+            if($cookie){
+                $quotas = api get "viewDirectoryQuotas?viewName=$originalViewName&pageCount=$pageCount&cookie=$cookie"
+            }else{
+                $quotas = api get "viewDirectoryQuotas?viewName=$originalViewName&pageCount=$pageCount"
+            }
+            if(! $quotas.quotas){
+                Write-Host "No quotas found"
+            }
+
+            foreach($quota in $quotas.quotas){
+                if(!$quota.policy.PSObject.Properties['alertLimitBytes'] -or $quota.policy.alertLimitBytes -eq $null){
+                    $alertLimitBytes = $quota.policy.hardLimitBytes * 0.9
+                }else{
+                    $alertLimitBytes = $quota.policy.alertLimitBytes
+                }
+                $quotaParams = @{
+                    "viewName" = $newViewName;
+                    "quota"    = @{
+                        "dirPath" = $quota.dirPath;
+                        "policy"  = @{
+                            "hardLimitBytes"  = $quota.policy.hardLimitBytes;
+                            "alertLimitBytes" = $alertLimitBytes
+                        }
+                    }
+                }
+                # put new quota
+                Write-Host "- Setting directory quota on $($newViewName)$($quota.dirpath)..."
+                $null = api put viewDirectoryQuotas $quotaParams
+            }
+
+            if($quotas.PSObject.Properties['cookie']){
+                $cookie = $quotas.cookie
+            }else{
+                break
+            }
+        }
 
         # rename original view
         Write-Host "- Renaming view $($view.name) to $($view.name)-orig-$suffix"

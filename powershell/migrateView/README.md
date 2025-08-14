@@ -68,6 +68,8 @@ Once the file copy is complete, we can finalize the migration. This step will re
 * -viewNames: (optional) one or more view names to process (comma separated)
 * -viewList: (optional) text file of view names to process (one per line)
 * -newStorageDomainName: (optional) name of storage domain to create the new views
+* -finalize: (optional) perform final view renames
+* -pageCount: (optional) page size for directory quotas (default is 1000)
 
 ## Authenticating to Helios
 
