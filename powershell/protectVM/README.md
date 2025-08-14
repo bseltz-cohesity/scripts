@@ -50,6 +50,7 @@ Place both files in a folder together and run the main script like so:
 * -jobName: name of protection job
 * -vmName: (optional) one or more VMs to add to the proctection job (comma separated)
 * -vmList: (optional) file containing list of VMs to add (one per line)
+* -vmMatch: (optional) add VMs that match the specified string
 * -includeFirstDiskOnly: (optional) exclude all but the first disk
 * -includeDisk: (optional) one or more disks to include (comma separated), e.g. 0:1, 0:2
 * -excludeDisk: (optional) one of more disks to exclude (comma separated), e.g. 0:1, 0:2

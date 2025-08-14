@@ -15,6 +15,7 @@ param (
     [Parameter()][string]$clusterName,
     [Parameter()][array]$vmName,  # name of VM to protect
     [Parameter()][string]$vmList = '',  # text file of vm names
+    [Parameter()][string]$vmMatch,
     [Parameter(Mandatory = $True)][string]$jobName,  # name of the job to add VM to
     [Parameter()][string]$vCenterName,  # vcenter source name
     [Parameter()][array]$excludeDisk,
@@ -32,26 +33,49 @@ param (
     [Parameter()][switch]$clear
 )
 
-# gather list of servers to add to job
-$vmsToAdd = @()
-foreach($v in $vmName){
-    $vmsToAdd += $v
-}
-if ('' -ne $vmList){
-    if(Test-Path -Path $vmList -PathType Leaf){
-        $servers = Get-Content $vmList
-        foreach($server in $servers){
-            $vmsToAdd += [string]$server
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
         }
-    }else{
-        Write-Host "VM list $vmList not found!" -ForegroundColor Yellow
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
         exit
     }
+    return ($items | Sort-Object -Unique)
 }
-if($vmsToAdd.Count -eq 0){
-    Write-Host "No VMs to add" -ForegroundColor Yellow
-    exit
-}
+
+$vmsToAdd = @(gatherList -Param $vmName -FilePath $vmList -Name 'jobs' -Required $false)
+
+# gather list of servers to add to job
+# $vmsToAdd = @()
+# foreach($v in $vmName){
+#     $vmsToAdd += $v
+# }
+# if ('' -ne $vmList){
+#     if(Test-Path -Path $vmList -PathType Leaf){
+#         $servers = Get-Content $vmList
+#         foreach($server in $servers){
+#             $vmsToAdd += [string]$server
+#         }
+#     }else{
+#         Write-Host "VM list $vmList not found!" -ForegroundColor Yellow
+#         exit
+#     }
+# }
+# if($vmsToAdd.Count -eq 0){
+#     Write-Host "No VMs to add" -ForegroundColor Yellow
+#     exit
+# }
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -233,8 +257,24 @@ if($job){
     }     
 }
 
+$vms = api get protectionSources/virtualMachines?vCenterId=$($job.vmwareParams.sourceId)
+
+if($vmMatch){
+    $matchVMs = @($vms | Where-Object {$_.name -match $vmMatch})
+    if($matchVMs.Count -eq 0){
+        Write-Host "No VMs match $vmMatch" -ForegroundColor Yellow
+    }else{
+        $vmsToAdd = $($vmsToAdd; $matchVMs.name) | Sort-Object -Unique
+    }
+}
+
+if($vmsToAdd.Count -eq 0){
+    Write-Host "No VMs to add" -ForegroundColor Yellow
+    exit 0
+}
+
 foreach($vmName in $vmsToAdd){
-    $vm = api get protectionSources/virtualMachines?vCenterId=$($job.vmwareParams.sourceId) | Where-Object {$_.name -ieq $vmName}
+    $vm = $vms | Where-Object {$_.name -ieq $vmName}
     if(!$vm){
         Write-Host "VM $vmName not found!" -ForegroundColor Yellow
     }else{
