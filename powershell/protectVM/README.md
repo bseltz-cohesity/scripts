@@ -55,6 +55,7 @@ Place both files in a folder together and run the main script like so:
 * -includeDisk: (optional) one or more disks to include (comma separated), e.g. 0:1, 0:2
 * -excludeDisk: (optional) one of more disks to exclude (comma separated), e.g. 0:1, 0:2
 * -clear: (optional) clear existing vm selections before adding new VMs.
+* -whatIf: (optional) test mode, exit without making any changes
 
 ## New Job Parameters
 

@@ -30,7 +30,8 @@ param (
     [Parameter()][switch]$paused,  # pause future runs (new job only)
     [Parameter()][ValidateSet('kBackupHDD', 'kBackupSSD', 'kBackupAll')][string]$qosPolicy = 'kBackupHDD',
     [Parameter()][switch]$disableIndexing,
-    [Parameter()][switch]$clear
+    [Parameter()][switch]$clear,
+    [Parameter()][switch]$whatIf
 )
 
 # gather list from command line params and file
@@ -306,6 +307,11 @@ foreach($vmName in $vmsToAdd){
         }
         $job.vmwareParams.objects = @(@($job.vmwareParams.objects | Where-Object {$_.id -ne $vm.id}) + $newVMobject)
     }
+}
+
+if($whatIf){
+    Write-Host "-whatIf was specified. Canceling changes" -ForegroundColor Yellow
+    exit
 }
 
 if($newJob){
