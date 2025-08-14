@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-08-14`] [onboardADUser.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/onboardADUser) [`New`] Onboard Active Directory Users and Groups using PowerShell
 * [`2025-08-14`] [protectVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectVM) [`Update`] added -vmMatch parameter
 * [`2025-08-14`] [migrateDirectoryQuotas.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/migrateDirectoryQuotas) [`New`] migrate directory quotas from one view to another
 * [`2025-08-14`] [migrateView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/migrateView) [`Update`] added migration of directory quotas
