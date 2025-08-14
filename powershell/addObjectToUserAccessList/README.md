@@ -30,7 +30,8 @@ Place the files in a folder together and run the main script like so:
                                 -username myuser `
                                 -domain mydomain.net `
                                 -principalName mydomain.net/myuser `
-                                -objectName vm1, server1.mydomain.net `
+                                -sourceName, myvcenter.mydomain.net `
+                                -objectName vm1, vm2 `
                                 -viewName view1, view2
 # End example
 ```
@@ -51,6 +52,7 @@ Place the files in a folder together and run the main script like so:
 
 * -principalName: (optional) users or groups to modify (comma separated) e.g. mydomain.net\myuser, mylocaluser `
 * -principalList: (optional) text file of users or groups to modify (one per line)
+* -sourceName: (optional) name of protection source that owns the objects (e.g. VMs) to be added
 * -objectName: (optional) registered objects to add/remove from access list (comma separated)
 * -objectList: (optional) text file of registered objects to add/remove from access list (one per line)
 * -environment: (optional) find object of type (e.g. kPhysical, kVMware)
