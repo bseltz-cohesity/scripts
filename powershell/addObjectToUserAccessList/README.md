@@ -30,7 +30,7 @@ Place the files in a folder together and run the main script like so:
                                 -username myuser `
                                 -domain mydomain.net `
                                 -principalName mydomain.net/myuser `
-                                -sourceName, myvcenter.mydomain.net `
+                                -sourceName myvcenter.mydomain.net `
                                 -objectName vm1, vm2 `
                                 -viewName view1, view2
 # End example
