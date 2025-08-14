@@ -31,7 +31,22 @@ Place the files in a folder together and run the main script like so:
                                 -domain mydomain.net `
                                 -principalName mydomain.net/myuser `
                                 -sourceName myvcenter.mydomain.net `
-                                -objectName vm1, vm2 `
+                                -objectName vm1, vm2
+# End example
+
+# Command line example
+./addObjectToUserAccessList.ps1 -vip mycluster `
+                                -username myuser `
+                                -domain mydomain.net `
+                                -principalName mydomain.net/myuser `
+                                -sourceName mysqlserver.mydomain.net
+# End example
+
+# Command line example
+./addObjectToUserAccessList.ps1 -vip mycluster `
+                                -username myuser `
+                                -domain mydomain.net `
+                                -principalName mydomain.net/myuser `
                                 -viewName view1, view2
 # End example
 ```
