@@ -56,27 +56,6 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 
 $vmsToAdd = @(gatherList -Param $vmName -FilePath $vmList -Name 'jobs' -Required $false)
 
-# gather list of servers to add to job
-# $vmsToAdd = @()
-# foreach($v in $vmName){
-#     $vmsToAdd += $v
-# }
-# if ('' -ne $vmList){
-#     if(Test-Path -Path $vmList -PathType Leaf){
-#         $servers = Get-Content $vmList
-#         foreach($server in $servers){
-#             $vmsToAdd += [string]$server
-#         }
-#     }else{
-#         Write-Host "VM list $vmList not found!" -ForegroundColor Yellow
-#         exit
-#     }
-# }
-# if($vmsToAdd.Count -eq 0){
-#     Write-Host "No VMs to add" -ForegroundColor Yellow
-#     exit
-# }
-
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
