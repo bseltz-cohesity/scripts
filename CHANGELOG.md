@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-08-14`] [migrateDirectoryQuotas.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/migrateDirectoryQuotas) [`New`] migrate directory quotas from one view to another
+* [`2025-08-14`] [migrateView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/migrateView) [`Update`] added migration of directory quotas
 * [`2025-08-12`] [resolveAlerts.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/resolveAlerts) [`Update`] added -alertId parameter
 * [`2025-08-11`] [policyTool7.py](https://github.com/cohesity/community-automation-samples/tree/main/python/policyTool) [`Fix`] fixed issue adding multiple archival frequencies
 * [`2025-08-11`] [latestSQLRecoveryPoint.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/latestSQLRecoveryPoint) [`Update`] modernized authentication
