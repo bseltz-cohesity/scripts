@@ -85,11 +85,12 @@ foreach($roleName in $role){
 
 # get active directories
 $ads = api get activeDirectory
-$ad = $ads | Where-Object {$_.domainName -eq $adDomain}
+$ad = $ads | Where-Object {$_.domainName -eq $adDomain -or $adDomain -in $_.trustedDomains}
 if(! $ad){
     Write-Host "AD Domain $adDomain not found" -ForegroundColor Yellow
     exit 1
 }
+
 $users = api get "users"
 $groups = api get "groups"
 
@@ -103,7 +104,7 @@ foreach($thisPrincipal in $principalNames){
                 Write-Host "At least one role is required" -ForegroundColor Yellow
                 exit 1
             }
-            $search = api get "activeDirectory/principals?domain=$($ad.domainName)&includeComputers=true&search=$thisPrincipal"
+            $search = api get "activeDirectory/principals?domain=$($adDomain)&includeComputers=true&search=$thisPrincipal"
             $principal = $search | Where-Object {$_.principalName -eq $thisPrincipal}
             if(! $principal){
                 Write-Host "AD principal $thisPrincipal not found in AD domain $adDomain" -ForegroundColor Yellow
@@ -116,10 +117,10 @@ foreach($thisPrincipal in $principalNames){
                 "domain" = $principal.domain;
                 "restricted" = $false
             })
-            Write-Host "Adding $($ad.domainName)/$($principal.principalName)"
+            Write-Host "Adding $($adDomain)/$($principal.principalName)"
             $existingUser = api post "activeDirectory/principals" $newPrincipalParams
         }else{
-            Write-Host "$($ad.domainName)/$($thisPrincipal) already exists"
+            Write-Host "$($adDomain)/$($thisPrincipal) already exists"
         }
         if($generateApiKey){
             if($existingUser){
@@ -134,7 +135,7 @@ foreach($thisPrincipal in $principalNames){
                     'name' = "$($keyName)-$((dateToUsecs) / 1000000)"
                 }
                 $newKey = api post "users/$($existingUser.sid)/apiKeys/" $newKeyParams
-                Write-Host "$($ad.domainName)/$($thisPrincipal) new API key: $($newKey.key)"
+                Write-Host "$($adDomain)/$($thisPrincipal) new API key: $($newKey.key)"
             }elseif($existingGroup){
                 Write-Host "It's not possible to create an API key for a group" -ForegroundColor Yellow
                 continue
@@ -142,25 +143,25 @@ foreach($thisPrincipal in $principalNames){
         }
     }else{
         if($existingUser){
-            Write-Host "Removing $($ad.domainName)/$thisPrincipal"
+            Write-Host "Removing $($adDomain)/$thisPrincipal"
             $deleteParams = @{
-                "domain" = $ad.domainName;
+                "domain" = $adDomain;
                 "users" = @(
                     $existingUser.username
                 )
             }
             $null = api delete users $deleteParams
         }elseif($existingGroup){
-            Write-Host "Removing $($ad.domainName)/$thisPrincipal"
+            Write-Host "Removing $($adDomain)/$thisPrincipal"
             $deleteParams = @{
-                "domain" = $ad.domainName;
+                "domain" = $adDomain;
                 "names" = @(
                     $existingGroup.name
                 )
             }
             $null = api delete groups $deleteParams
         }else{
-            Write-Host "$($ad.domainName)/$thisPrincipal not found"
+            Write-Host "$($adDomain)/$thisPrincipal not found"
         }
     }
 }
