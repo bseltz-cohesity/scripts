@@ -46,7 +46,7 @@ $dateString = $now.ToString('yyyy-MM-dd')
 $outfileName = "snapshotExpirationReport-$($cluster.name)-$dateString.tsv"
 
 # headings
-$headings = "Cluster Name`tTenant`tJob Name`tEnvironment`tRun Type`tRun Start Time`tExpiration"
+$headings = "Cluster Name`tTenant`tJob Name`tEnvironment`tRun Type`tRun Start Time`tExpiration`tJob ID`tEpoch Start Time"
 $headings | Out-File -FilePath $outfileName # -Encoding utf8
 
 
@@ -102,7 +102,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                     if($expireTimeUsecs -gt $nowUsecs){
                         "    {0} ({1})" -f $runStartTime, $runType
                         $expiration = usecsToDate $expireTimeUsecs
-                        "{0}`t{1}`t{2}`t{3}`t{4}`t{5}`t{6}" -f $cluster.name, $tenant, $job.name, $environment, $runType, $runStartTime, $expiration | Out-File -FilePath $outfileName -Append
+                        "{0}`t{1}`t{2}`t{3}`t{4}`t{5}`t{6}`t{7}`t{8}" -f $cluster.name, $tenant, $job.name, $environment, $runType, $runStartTime, $expiration, $job.id, $run.backupRun.base.startTimeUsecs | Out-File -FilePath $outfileName -Append
                     }
                 }
             }
