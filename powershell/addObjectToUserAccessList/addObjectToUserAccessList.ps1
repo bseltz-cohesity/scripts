@@ -1,5 +1,5 @@
 ### process commandline arguments
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding=$false)]
 param (
     [Parameter()][string]$vip='helios.cohesity.com',
     [Parameter()][string]$username = 'helios',
@@ -48,12 +48,12 @@ $principals = @(gatherList -Param $principalName -FilePath $principalList -Name 
 $objects = @(gatherList -Param $objectName -FilePath $objectList -Name 'objects' -Required $False)
 $viewNames = @(gatherList -Param $viewName -FilePath $viewList -Name 'views' -Required $False)
 
-if($objects.Count -gt 0){
-    if(!$sourceName){
-        Write-Host "-sourceName is required" -ForegroundColor Yellow
-        exit 1
-    }
-}
+# if($objects.Count -gt 0){
+#     if(!$sourceName){
+#         Write-Host "-sourceName is required" -ForegroundColor Yellow
+#         exit 1
+#     }
+# }
 
 if($objects.Count -eq 0 -and $viewNames.Count -eq 0){
     if($sourceName){
@@ -94,9 +94,8 @@ if($USING_HELIOS){
 
 $users = api get users?_includeTenantInfo=true
 $groups = api get groups?_includeTenantInfo=true
-
 $registeredSources = api get "protectionSources/registrationInfo"
-$registeredSources.rootNodes | ft
+
 if($sourceName){
     $registeredSource = $registeredSources.rootNodes | Where-Object {$_.rootNode.name -eq $sourceName}
     if(! $registeredSource){
@@ -177,7 +176,16 @@ foreach($p in $principals){
         )
     }
     foreach($o in $objects){
-        $objectId = getObjectId $o
+        if($sourceName){
+            $objectId = getObjectId $o
+        }else{
+            $thisObject = $null
+            $thisObject = $registeredSources.rootNodes | Where-Object {$_.rootNode.name -eq $o}
+            if($thisObject){
+                $objectId = $thisObject.rootNode.id
+            }
+        }
+        
         if(!$objectId){
             Write-Host "    Object $o not found!" -ForegroundColor Yellow
             continue
@@ -213,6 +221,5 @@ foreach($p in $principals){
     }else{
         $null = api put groups $thisPrincipal
     }
-    $newAccess | toJson
     $null = api put principals/protectionSources $newAccess
 }
