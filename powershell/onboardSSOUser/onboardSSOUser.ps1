@@ -107,7 +107,7 @@ foreach($thisPrincipal in $principalNames){
             if($group){
                 $newPrincipalParams[0]['objectClass'] = 'kGroup'
             }
-            Write-Host "Adding $($ssoDomain)/$($principal.principalName)"
+            Write-Host "Adding $($ssoDomain)/$($thisPrincipal)"
             $existingUser = api post "idps/principals" $newPrincipalParams
         }else{
             Write-Host "$($ssoDomain)/$($thisPrincipal) already exists"
