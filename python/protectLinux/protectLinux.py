@@ -44,7 +44,8 @@ parser.add_argument('-postargs', '--postscriptargs', type=str, default=None)
 parser.add_argument('-posttimeout', '--postscripttimeout', type=int, default=900)
 parser.add_argument('-al', '--alerton', action='append', type=str, default=[])
 parser.add_argument('-ar', '--recipient', action='append', type=str, default=[])
-
+parser.add_argument('-eco', '--enablecacheoptimization', action='store_true')
+parser.add_argument('-dco', '--disablecacheoptimization', action='store_true')
 args = parser.parse_args()
 
 vip = args.vip
@@ -84,6 +85,8 @@ postscriptargs = args.postscriptargs      # post script args
 postscripttimeout = args.postscripttimeout  # post script timeout
 alerton = args.alerton
 recipients = args.recipient
+enablecacheoptimization = args.enablecacheoptimization
+disablecacheoptimization = args.disablecacheoptimization
 
 # validate alert policy
 if len(alerton) == 0:
@@ -274,6 +277,11 @@ else:
     if 'physicalParams' not in job or job['physicalParams']['protectionType'] != 'kFile':
         print("Job '%s' is not a file-based physical protection job" % jobname)
         exit(1)
+
+if enablecacheoptimization is True:
+    job['physicalParams']['fileProtectionTypeParams']['performBrickBasedDeduplication'] = True
+elif disablecacheoptimization is True:
+    job['physicalParams']['fileProtectionTypeParams']['performBrickBasedDeduplication'] = False
 
 # get registered physical servers
 physicalServersRoot = api('get', 'protectionSources/rootNodes?allUnderHierarchy=false&environments=kPhysicalFiles&environments=kPhysical&environments=kPhysical')
