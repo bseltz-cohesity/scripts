@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NFS_PATH='ve4:/raExample'
+NFS_PATH='mycluster:/raExample'
 MOUNT_PATH='/mnt/raExample/'
 
 # Mount the Cohesity View
