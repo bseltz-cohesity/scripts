@@ -279,8 +279,10 @@ else:
         exit(1)
 
 if enablecacheoptimization is True:
+    print('enabling Cache optimization')
     job['physicalParams']['fileProtectionTypeParams']['performBrickBasedDeduplication'] = True
 elif disablecacheoptimization is True:
+    print('disabling Cache optimization')
     job['physicalParams']['fileProtectionTypeParams']['performBrickBasedDeduplication'] = False
 
 # get registered physical servers

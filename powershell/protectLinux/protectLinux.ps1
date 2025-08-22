@@ -40,7 +40,9 @@ param (
     [Parameter()][string]$postScriptArgs = '',
     [Parameter()][int]$postScriptTimeout = 900,
     [Parameter()][switch]$paused,
-    [Parameter()][switch]$allLocalDrives
+    [Parameter()][switch]$allLocalDrives,
+    [Parameter()][switch]$enableCacheOptimization,
+    [Parameter()][switch]$disableCacheOptimization
 )
 
 $continueOnError = $True
@@ -269,6 +271,14 @@ if($job.physicalParams.protectionType -ne 'kFile'){
     exit
 }
 
+if($enableCacheOptimization){
+    Write-Host "enabling Cache optimization"
+    $job.physicalParams.fileProtectionTypeParams.performBrickBasedDeduplication = $True
+}elseif($disableCacheOptimization){
+    Write-Host "disabling Cache optimization"
+    $job.physicalParams.fileProtectionTypeParams.performBrickBasedDeduplication = $false
+}
+
 # get physical protection sources
 $sources = api get protectionSources?environments=kPhysical
 
@@ -352,7 +362,7 @@ foreach($sourceId in @([array]$sourceIds + [array]$newSourceIds) | Sort-Object -
         $job.physicalParams.fileProtectionTypeParams.objects = @($job.physicalParams.fileProtectionTypeParams.objects | Where-Object id -ne $sourceId) + $params
     }
 }
-
+# $job | toJson
 if($True -eq $newJob){
     $null = api post -v2 "data-protect/protection-groups" $job
 }else{

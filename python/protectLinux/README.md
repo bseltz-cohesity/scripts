@@ -85,8 +85,8 @@ Place both files in a folder together and run the main script like so:
 * -posttimeout, --postscripttimeout: (optional) timeout for post script (default is 900 seconds)
 * -al, --alerton: (optional) None, kFailure, kSuccess or kSlaViolation (repeat for multiple)
 * -ar, --recipient: (optional) email address to send alerts to (repeat for multiple)
-* -eco, --enablecacheoptimization: (optional) enable cache optimization
-* -dco, --disablecacheoptimization: (optional) enable cache optimization
+* -eco, --enablecacheoptimization: (optional) enable Cache optimization
+* -dco, --disablecacheoptimization: (optional) disable Cache optimization
 
 ## Notes
 

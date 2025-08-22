@@ -117,3 +117,5 @@ Processing servers...
 * -postScript: (optional) name of post script
 * -postScriptArgs: (optional) arguments for post script
 * -postScriptTimeout: (optional) timeout for post script (default is 900 seconds)
+* -enableCacheOptimization: (optional) enable Cache optimization
+* -disableCacheOptimization: (optional) disable Cache optimization
