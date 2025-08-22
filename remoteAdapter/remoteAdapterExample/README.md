@@ -29,7 +29,7 @@ Update the script to perform your specific backup commands. The example given is
 
 ```bash
 # Perform backup commands
-cp /home/seltzerb/*.sh $MOUNT_PATH
+cp /home/myuser/*.sh $MOUNT_PATH
 ```
 
 Replace this with your command(s)

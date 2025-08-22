@@ -13,7 +13,7 @@ then
 fi
 
 # Perform backup commands
-cp /home/seltzerb/*.sh $MOUNT_PATH
+cp /home/myuser/*.sh $MOUNT_PATH
 
 LAST_ERROR=$?
 if [ $LAST_ERROR -ne 0 ]
