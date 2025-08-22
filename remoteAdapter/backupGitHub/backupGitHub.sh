@@ -3,7 +3,7 @@
 # Initial Setup (comment out after first run)
 # ===========================================
 # sudo mkdir -p /mnt/GitHub-Scripts
-# sudo chown seltzerb:seltzerb /mnt/GitHub-Scripts/
+# sudo chown cohesity-script:cohesity-script /mnt/GitHub-Scripts/
 # sudo chmod 755 /mnt/GitHub-Scripts/
 # sudo yum install -y git
 
