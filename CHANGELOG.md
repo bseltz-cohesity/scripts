@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-08-22`] [protectLinux.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectLinux) [`Update`] added parameters to enable/disable Cache optimization
+* [`2025-08-22`] [protectLinux.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectLinux) [`Update`] added parameters to enable/disable Cache optimization
+* [`2025-08-20`] [onboardSSOUser.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/onboardSSOUser) [`New`] add SSO users to Cohesity access management
 * [`2025-08-14`] [onboardADUser.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/onboardADUser) [`New`] Onboard Active Directory Users and Groups using PowerShell
 * [`2025-08-14`] [protectVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectVM) [`Update`] added -vmMatch parameter
 * [`2025-08-14`] [migrateDirectoryQuotas.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/migrateDirectoryQuotas) [`New`] migrate directory quotas from one view to another
