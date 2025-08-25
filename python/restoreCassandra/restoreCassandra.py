@@ -104,7 +104,7 @@ if targetserver is not None:
     recoverParams['cassandraParams']['recoverCassandraParams']['recoverTo'] = targetNode['protectionSource']['id']
 
 if suffix is not None:
-    suffix = '-%s' % suffix
+    # suffix = '%s' % suffix
     recoverParams['cassandraParams']['recoverCassandraParams']['suffix'] = suffix
 
 if overwrite is True:
