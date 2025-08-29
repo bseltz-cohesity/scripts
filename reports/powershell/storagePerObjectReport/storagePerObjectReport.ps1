@@ -1,4 +1,4 @@
-# version: 2025-08-13
+# version: 2025-08-29
 
 # process commandline arguments
 [CmdletBinding()]
@@ -25,7 +25,7 @@ param (
     [Parameter()][array]$environments = $null
 )
 
-$scriptversion = '2025-08-13 (PowerShell)'
+$scriptversion = '2025-08-29 (PowerShell)'
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -136,7 +136,7 @@ function reportStorage(){
         $jobs = api get -v2 "data-protect/protection-groups?includeTenants=true&useCachedData=true"
     }
     
-    $storageDomains = api get viewBoxes
+    $storageDomains = api get "viewBoxes?allUnderHierarchy=true"
     
     $sourceNames = @{}
     
@@ -175,6 +175,8 @@ function reportStorage(){
             $tenant = $job.permissions.name
             # get resiliency factor
             $resiliencyFactor = 1
+            $sdName = ''
+
             if($job.PSObject.Properties['storageDomainId']){
                 $sd = $storageDomains | Where-Object id -eq $job.storageDomainId
                 if($sd){
