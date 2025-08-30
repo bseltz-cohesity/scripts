@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-08-30`] [downloadCcsM365MailboxPST.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/downloadCcsM365MailboxPST) [`New`] Download M365 Mailboxes as PST (from CCS)
 * [`2025-08-22`] [remoteAdapterExample.sh](https://github.com/cohesity/community-automation-samples/tree/main/remoteAdapter/remoteAdapterExample) [`New`] basic remote adapter example
 * [`2025-08-22`] [protectLinux.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectLinux) [`Update`] added parameters to enable/disable Cache optimization
 * [`2025-08-22`] [protectLinux.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectLinux) [`Update`] added parameters to enable/disable Cache optimization
