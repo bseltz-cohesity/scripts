@@ -99,7 +99,7 @@ Place both files in a folder together and run the main script like so:
 * -pm, --persistmounts: (optional) persist mount points
 * -l, --deletelogdays: (optional) delete logs after X days (default is none)
 * -lh --deleteloghours: (optional) delete logs after X hours (default is none)
-* -ch, --channels: (optional)  number of channels (default is auto)
+* -ch, --channels: (optional) number of channels (repeat for multiple)
 * -cn, --channelnode: (optional) RAC node to protect (repeat for multiple)
 * -cp, --channelport: (optional) channel port (default is 1521)
 * -du, --dbuser: (optional) username for database authentication

@@ -31,7 +31,7 @@ parser.add_argument('-st', '--starttime', type=str, default='21:00')
 parser.add_argument('-is', '--incrementalsla', type=int, default=60)
 parser.add_argument('-fs', '--fullsla', type=int, default=120)
 parser.add_argument('-z', '--paused', action='store_true')
-parser.add_argument('-ch', '--channels', type=int, default=None)
+parser.add_argument('-ch', '--channels', action='append', type=int)
 parser.add_argument('-cn', '--channelnode', action='append', type=str)
 parser.add_argument('-cp', '--channelport', type=int, default=1521)
 parser.add_argument('-l', '--deletelogdays', type=int)
@@ -76,11 +76,11 @@ noalert = args.noalert
 dbuser = args.dbuser
 dbpassword = args.dbpassword
 
-if channels is not None and channelnodes is None:
+if channels is not None and len(channels) > 0 and channelnodes is None:
     print('channel node required if setting channels')
     exit()
 
-if channelnodes is not None and channels is None:
+if channelnodes is not None and (channels is None or len(channels) == 0):
     print('channels required if setting channel node')
     exit()
 
@@ -257,7 +257,7 @@ for server in servernames:
                     }
                 else:
                     thisDB = thisDB[0]
-                if (channels is not None and channelnodes is not None) or deletelogdays is not None or deleteloghours is not None:
+                if (channels is not None and len(channels) > 0 and channelnodes is not None) or deletelogdays is not None or deleteloghours is not None:
                     thisDB['dbChannels'] = [
                         {
                             "databaseUuid": dbNode['protectionSource']['oracleProtectionSource']['uuid'],
@@ -276,11 +276,11 @@ for server in servernames:
                         thisDB['dbChannels'][0]['archiveLogRetentionDays'] = deletelogdays
                     elif deleteloghours is not None:
                         thisDB['dbChannels'][0]['archiveLogRetentionHours'] = deleteloghours
-                    if (channels is not None and channelnodes is not None):
+                    if (channels is not None and len(channels) > 0 and channelnodes is not None):
                         physicalSource = serverSource['protectionSource']['physicalProtectionSource']
                         if 'networkingInfo' in physicalSource:
                             serverResources = [r for r in physicalSource['networkingInfo']['resourceVec'] if r['type'] == 'kServer']
-                        
+                        x = 0
                         for channelnode in channelnodes:
                             channelNodeObject = None
                             if 'networkingInfo' in physicalSource:
@@ -311,11 +311,16 @@ for server in servernames:
                                 print("Channel node %s not found" % channelnode)
                                 exit(1)
                             else:
+                                if len(channels) == 1:
+                                    thisChannels = channels[0]
+                                else:
+                                    thisChannels = channels[x]
+                                    x = x + 1
                                 channelNodeId = channelNodeObject['id']
                                 thisDB['dbChannels'][0]['databaseNodeList'].append(
                                     {
                                         "hostId": str(channelNodeId),
-                                        "channelCount": channels,
+                                        "channelCount": thisChannels,
                                         "port": channelport
                                     }
                                 )
