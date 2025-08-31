@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-08-31`] [protectLinuxVolumes.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectLinuxVolumes) [`New`] protect physical linux servers (block-based)
+* [`2025-08-31`] [protectOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/protectOracle) [`Update`] added support for different number of channels per RAC node
 * [`2025-08-30`] [downloadCcsM365MailboxPST.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/downloadCcsM365MailboxPST) [`New`] Download M365 Mailboxes as PST (from CCS)
 * [`2025-08-22`] [remoteAdapterExample.sh](https://github.com/cohesity/community-automation-samples/tree/main/remoteAdapter/remoteAdapterExample) [`New`] basic remote adapter example
 * [`2025-08-22`] [protectLinux.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectLinux) [`Update`] added parameters to enable/disable Cache optimization
