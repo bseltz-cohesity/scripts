@@ -43,15 +43,20 @@ function output($msg, [switch]$warn){
 $version = ($cluster.clusterSoftwareVersion -split '_')[0]
 
 $status = api get /nexus/cluster/status
-$config = $status.clusterConfig.proto
+# $config = $status.clusterConfig.proto
 $nodeStatus = $status.nodeStatus
 
-if($config){
-    $chassisList = $config.chassisVec
-    $hostName = $status.clusterConfig.proto.clusterPartitionVec[0].hostName
-}else{
-    $chassisList = (api get -v2 chassis).chassis
-    $hostName = (api get clusterPartitions)[0].hostName
+# if($config){
+#     $chassisList = $config.chassisVec
+#     $hostName = $status.clusterConfig.proto.clusterPartitionVec[0].hostName
+# }else{
+#     $chassisList = (api get -v2 chassis).chassis
+#     $hostName = (api get clusterPartitions)[0].hostName
+# }
+
+$chassisList = api get -v2 chassis
+if($chassisList.PSObject.Properties['chassis']){
+    $chassisList = $chassisList.chassis
 }
 
 $nodes = api get nodes
