@@ -79,7 +79,9 @@ status = api('get', '/nexus/cluster/status')
 nodeStatus = status['nodeStatus']
 nodes = api('get', 'nodes')
 
-chassisList = (api('get', 'chassis', v=2))['chassis']
+chassisList = api('get', 'chassis', v=2)
+if 'chassis' in chassisList:
+    chassisList = chassisList['chassis']
 partition = api('get', 'clusterPartitions')
 hostName = partition[0]['hostName']
 
