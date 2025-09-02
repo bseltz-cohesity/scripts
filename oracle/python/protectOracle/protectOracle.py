@@ -244,7 +244,7 @@ for server in servernames:
             thisObject = thisObject[0]
         foundDBs = []
         for dbNode in serverSource['applicationNodes']:
-            print(dbNode['protectionSource']['name'])
+            # print(dbNode['protectionSource']['name'])
             if len(dbnames) == 0 or dbNode['protectionSource']['name'].lower() in dbnames:
                 foundDBs.append(dbNode['protectionSource']['name'].lower())
                 print("Adding %s to %s" % (dbNode['protectionSource']['name'], jobname))
@@ -314,7 +314,10 @@ for server in servernames:
                                 if len(channels) == 1:
                                     thisChannels = channels[0]
                                 else:
-                                    thisChannels = channels[x]
+                                    if x >= len(channels):
+                                        thisChannels = channels[-1]
+                                    else:
+                                        thisChannels = channels[x]
                                     x = x + 1
                                 channelNodeId = channelNodeObject['id']
                                 thisDB['dbChannels'][0]['databaseNodeList'].append(
