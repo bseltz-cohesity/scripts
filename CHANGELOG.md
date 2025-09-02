@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-09-02`] [clusterInfo.py](https://github.com/cohesity/community-automation-samples/tree/main/python/clusterInfo) [`Update`] [`Update`] added support for 7.x
+* [`2025-09-02`] [clusterInfo.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/clusterInfo) [`Update`] added support for 7.x
 * [`2025-08-31`] [protectLinuxVolumes.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectLinuxVolumes) [`New`] protect physical linux servers (block-based)
 * [`2025-08-31`] [protectOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/protectOracle) [`Update`] added support for different number of channels per RAC node
 * [`2025-08-30`] [downloadCcsM365MailboxPST.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/downloadCcsM365MailboxPST) [`New`] Download M365 Mailboxes as PST (from CCS)
