@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2025.07.15 - Brian Seltzer
+#  Version 2025.09.03 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024-02-18 - fix - toJson function - handle null input
@@ -26,10 +26,11 @@
 # 2025-06-12 - more authentication flow fixes (impersonation)
 # 2025-06-30 - added report cohesity-api version to log
 # 2025-07-15 - fixed reported error issue
+# 2025-09-03 - added support for orgs in Helios
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2025.07.15'
+$versionCohesityAPI = '2025.09.03'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -339,6 +340,9 @@ function apiauth([string] $vip='helios.cohesity.com',
                 $cohesity_api.heliosConnectedClusters = $heliosAllClusters | Where-Object {$_.connectedToCluster -eq $true}
                 if($setpasswd){
                     $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
+                }
+                if($tenant){
+                    impersonate $tenant
                 }
                 __connected -quiet:$quiet
             }catch{
@@ -746,7 +750,7 @@ function heliosCluster($clusterName){
         if($cluster){
             $cohesity_api.header.accessClusterId = $cluster.clusterId
             $cohesity_api.header.clusterId = $cluster.clusterId
-            $cohesity_api.clusterReadOnly = (api get /mcm/config).mcmReadOnly
+            # $cohesity_api.clusterReadOnly = (api get /mcm/config).mcmReadOnly
             return "Connected to $clusterName"
         }else{
             Write-Host "Cluster $clusterName not connected to Helios" -ForegroundColor Yellow
@@ -798,9 +802,14 @@ function apidrop([switch] $quiet){
 
 function impersonate($tenant){
     if($cohesity_api.authorized){ 
-        $thisTenant = api get tenants | Where-Object {$_.name -eq $tenant}
+        if($Global:USING_HELIOS -eq $True){
+            $thisTenant = (api get -mcmv2 users/tenant-access).tenantAccesses | Where-Object {$_.tenantName -eq $tenant}
+        }else{
+            $thisTenant = api get tenants | Where-Object {$_.name -eq $tenant}
+        }
         if($thisTenant){
             $cohesity_api.header['x-impersonate-tenant-id'] = $thisTenant.tenantId
+            $cohesity_api.last_api_error = 'OK'
         }else{
             Write-Host "Tenant $tenant not found" -ForegroundColor Yellow
         }
