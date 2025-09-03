@@ -106,7 +106,7 @@ vcenters = api('get', 'protectionSources/rootNodes?environments=kVMware')
 # find existing job
 job = None
 jobs = api('get', 'data-protect/protection-groups?environments=kVMware&isDeleted=false&isActive=true', v=2)
-if jobs is not None and len(jobs) > 0 and 'protectionGroups' in jobs:
+if jobs is not None and 'protectionGroups' in jobs and jobs['protectionGroups'] is not None and len(jobs['protectionGroups']) > 0:
     jobs = [j for j in jobs['protectionGroups'] if j['name'].lower() == jobname.lower()]
     if jobs is not None and len(jobs) > 0:
         job = jobs[0]
@@ -240,16 +240,18 @@ vms = api('get', 'protectionSources/virtualMachines?id=%s' % vcenter['protection
 for thisvmname in vmnames:
     thisvm = [v for v in vms if v['name'].lower() == thisvmname.lower()]
     if thisvm is not None and len(thisvm) > 0:
-        thisvm = thisvm[0]
-        if thisvm['id'] not in [o['id'] for o in job['vmwareParams']['objects']]:
-            newobject = {
-                "excludeDisks": None,
-                "id": thisvm['id'],
-                "name": thisvm['name'],
-                "isAutoprotected": False
-            }
-            job['vmwareParams']['objects'].append(newobject)
-        print('    protecting %s' % thisvmname)
+        if len(thisvm) > 1:
+            print('*** found duplicate VM names, protecing all...')
+        for vm in thisvm:
+            if vm['id'] not in [o['id'] for o in job['vmwareParams']['objects']]:
+                newobject = {
+                    "excludeDisks": None,
+                    "id": vm['id'],
+                    "name": vm['name'],
+                    "isAutoprotected": False
+                }
+                job['vmwareParams']['objects'].append(newobject)
+            print('    protecting %s' % thisvmname)
     else:
         print('    warning: %s not found' % thisvmname)
 
