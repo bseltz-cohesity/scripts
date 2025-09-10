@@ -10,7 +10,8 @@ param (
     [Parameter()][switch]$promptForPSTPassword,
     [Parameter()][string]$outputPath = '.',
     [Parameter()][switch]$useMBS,
-    [Parameter()][int]$sleepTimeSeconds = 30
+    [Parameter()][int]$sleepTimeSeconds = 30,
+    [Parameter()][string]$region
 )
 
 if($promptForPSTPassword){
@@ -62,10 +63,15 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
-$sessionUser = api get sessionUser
-$tenantId = $sessionUser.profiles[0].tenantId
-$regions = api get -mcmv2 dms/tenants/regions?tenantId=$tenantId
-$regionList = $regions.tenantRegionInfoList.regionId -join ','
+if(!$region){
+    $sessionUser = api get sessionUser
+    $tenantId = $sessionUser.profiles[0].tenantId
+    $regions = api get -mcmv2 dms/tenants/regions?tenantId=$tenantId
+    $regionList = $regions.tenantRegionInfoList.regionId -join ','
+}else{
+    $regionList = $region
+}
+
 $selectedRegion = $null
 $selectedRegionObject = $null
 $targetMailboxName = $null

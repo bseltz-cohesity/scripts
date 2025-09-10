@@ -43,6 +43,7 @@ Place both files in a folder together and run the main script like so:
 * -pageSize: (optional) limit number of objects returned pr page (default is 1000)
 * -sleepTimeSeconds: (optional) sleep X seconds between status queries (default is 30)
 * -useMBS: (optional) restore mailboxes from MBS storage
+* -region: (optional) filter search to specific region
 
 ## Authenticating to Ccs
 
