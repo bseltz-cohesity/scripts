@@ -30,13 +30,20 @@ Place both files in a folder together and run the main script like so:
                   -domain mydomain.net
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: Cohesity cluster to connect to
-* -username: Cohesity username (e.g. admin)
-* -domain: (optional) Active Directory domain (defaults to 'local')
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
 * -useApiKey: (optional) use API key for authentication
-* -password: (optional) will use stored password or be prompted if omitted
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
 * -mfaCode: (optional) TOTP MFA code
 * -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -outFolder: (optional) folder for output file (defaults to current folder)

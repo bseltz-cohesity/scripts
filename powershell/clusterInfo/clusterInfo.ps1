@@ -1,26 +1,47 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,
-    [Parameter(Mandatory = $True)][string]$username,
-    [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
     [Parameter()][switch]$useApiKey,
-    [Parameter()][string]$password = $null,
-    [Parameter()][string]$mfaCode = $null,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
     [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter()][string]$outFolder = '.'        # output folder
 )
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode
-
-if(!$cohesity_api.authorized){
-    Write-Host "Not authenticated"
-    exit
+# authentication =============================================
+# demand clusterName for Helios/MCM
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios/MCM" -ForegroundColor Yellow
+    exit 1
 }
+
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
+        exit 1
+    }
+}
+# end authentication =========================================
 
 $cluster = api get cluster?fetchStats=true
 $dateString = (get-date).ToString('yyyy-MM-dd')
@@ -103,30 +124,40 @@ foreach($chassis in $chassisList | Sort-Object -Property id){
     }
     $nodeIds = $chassis.nodeIds
     foreach($node in $nodes | Where-Object {$_.chassisInfo.chassisId -eq $chassis.id} | Sort-Object -Property slotNumber){
+        # node info
         $nodeIp = ($node.ip -split ':')[-1]
         $nodeipmi = $ipmi.nodesIpmiInfo | Where-Object nodeIp -eq ($node.ip -split ':')[-1]
         if($nodeipmi){
             $nodeIpmiIp = $nodeipmi[0].nodeIpmiIp
         }else{
-            $nodeIpmiIp = ''
+            $nodeIpmiIp = 'n/a'
         }
-        # node info
-        copySessionCookie $node.ip
-        $cohesity_api.apiRoot = "https://$($nodeIp)/irisservices/api/v1"
-        $nodeInfo = api get /nexus/node/hardware_info
-        $nwInfo = api get /nexus/node/list_network_interfaces?cache=true
-
+        if($node.PSObject.Properties['cohesityNodeSerial']){
+            $nodeSerial = $node.cohesityNodeSerial
+        }else{
+            $nodeSerial = 'Unknown'
+        }
+        if($node.PSObject.Properties['productModel']){
+            $productModel = $node.productModel
+        }else{
+            $productModel = 'Unknown'
+        }
+        if($node.PSObject.Properties['slotNumber']){
+            $slotNumber = $node.slotNumber
+        }else{
+            $slotNumber = 0
+        }
         if($needSerial){
             output ("   Chassis Serial: {0}" -f $nodeInfo.cohesityChassisSerial)
             $needSerial = $false
         }
         output ("`n                  Node ID: {0}" -f $node.id)
-        output ("              Virtual IPs: {0}" -f (($nwInfo.networkInterfaces.virtualIp | Where-Object {$_ -ne ''} | Sort-Object) -join ', '))
+        # output ("              Virtual IPs: {0}" -f (($nwInfo.networkInterfaces.virtualIp | Where-Object {$_ -ne ''} | Sort-Object) -join ', '))
         output ("                  Node IP: {0}" -f $nodeIp)
         output ("                  IPMI IP: {0}" -f $nodeIpmiIp)
-        output ("                  Slot No: {0}" -f $node.slotNumber)
-        output ("                Serial No: {0}" -f $nodeInfo.cohesityNodeSerial)
-        output ("            Product Model: {0}" -f $nodeInfo.productModel)
+        output ("                  Slot No: {0}" -f $slotNumber)
+        output ("                Serial No: {0}" -f $nodeSerial)
+        output ("            Product Model: {0}" -f $productModel)
         output ("          Product Version: {0}" -f $node.nodeSoftwareVersion)
         foreach($stat in $nodeStatus){
             if($stat.nodeId -eq $node.id){
