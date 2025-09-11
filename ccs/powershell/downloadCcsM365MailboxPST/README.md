@@ -44,6 +44,7 @@ Place both files in a folder together and run the main script like so:
 * -sleepTimeSeconds: (optional) sleep X seconds between status queries (default is 30)
 * -useMBS: (optional) restore mailboxes from MBS storage
 * -region: (optional) filter search to specific region
+* -sourceName: (optional) filter search to specific protection source
 
 ## Authenticating to Ccs
 

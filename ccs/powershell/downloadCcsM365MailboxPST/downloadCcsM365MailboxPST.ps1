@@ -11,7 +11,8 @@ param (
     [Parameter()][string]$outputPath = '.',
     [Parameter()][switch]$useMBS,
     [Parameter()][int]$sleepTimeSeconds = 30,
-    [Parameter()][string]$region
+    [Parameter()][string]$region,
+    [Parameter()][string]$sourceName
 )
 
 if($promptForPSTPassword){
@@ -72,6 +73,15 @@ if(!$region){
     $regionList = $region
 }
 
+if($sourceName){
+    # find O365 source
+    $rootSource = (api get -mcmv2 "data-protect/sources?environments=kO365&regionIds=$regionList").sources | Where-Object name -eq $sourceName
+    if(!$rootSource){
+        Write-Host "O365 Source $sourceName not found" -ForegroundColor Yellow
+        exit
+    }
+}
+
 $selectedRegion = $null
 $selectedRegionObject = $null
 $targetMailboxName = $null
@@ -101,7 +111,12 @@ $recoveryParams = @{
 }
 
 foreach($objName in $objectNames){
-    $search = api get -v2 "data-protect/search/objects?searchString=$objName&regionIds=$regionList&o365ObjectTypes=kO365Exchange,kUser&isProtected=true&environments=kO365&includeTenants=true&count=$pageSize"
+    if($sourceName){
+        $search = api get -v2 "data-protect/search/objects?searchString=$objName&regionIds=$regionList&o365ObjectTypes=kO365Exchange,kUser&isProtected=true&environments=kO365&includeTenants=true&count=$pageSize&sourceUuids=$($rootSource[0].id)"
+    }else{
+        $search = api get -v2 "data-protect/search/objects?searchString=$objName&regionIds=$regionList&o365ObjectTypes=kO365Exchange,kUser&isProtected=true&environments=kO365&includeTenants=true&count=$pageSize"
+    }
+    
     $exactMatch = $search.objects | Where-Object name -eq $objName
     if(! $exactMatch){
         Write-Host "$objName not found" -ForegroundColor Yellow
@@ -110,7 +125,6 @@ foreach($objName in $objectNames){
         foreach($result in $exactMatch | Where-Object {$_.name -eq $objName}){
             $x += 1
             foreach($objectProtectionInfo in $result.objectProtectionInfos){
-                
                 $objectId = $objectProtectionInfo.objectId
                 $objectRegionId = $objectProtectionInfo.regionId
                 if($selectedRegion -eq $null){
