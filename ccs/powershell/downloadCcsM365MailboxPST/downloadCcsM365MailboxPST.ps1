@@ -127,15 +127,14 @@ foreach($objName in $objectNames){
             foreach($objectProtectionInfo in $result.objectProtectionInfos){
                 $objectId = $objectProtectionInfo.objectId
                 $objectRegionId = $objectProtectionInfo.regionId
-                if($selectedRegion -eq $null){
-                    $selectedRegion = $objectRegionId
-                    $selectedRegionObject = $objName
-                }else{
+
+                if($selectedRegion -ne $null){
                     if($objectRegionId -ne $selectedRegion){
                         Write-Host "$objName is in a different region than $selectedRegionObject and must be restored separately" -ForegroundColor Yellow
                         continue
                     }
                 }
+
                 if($useMBS){
                     $snapshots = api get -v2 "data-protect/objects/$objectId/snapshots?snapshotActions=RecoverMailboxCSM&objectActionKeys=kO365ExchangeCSM&regionId=$objectRegionId"
                 }else{
@@ -152,13 +151,18 @@ foreach($objName in $objectNames){
                             $snapshot = $snapshots[0]
                             $snapshotId = $snapshot.id
                         }else{
-                            Write-Host "No snapshots available for $objName"
+                            Write-Host "No snapshots available for $objName" -ForegroundColor Yellow
+                            continue
                         }
                     }else{
                         $snapshot = $snapshots[0]
                         $snapshotId = $snapshot.id
                     }
                     
+                    if($selectedRegion -eq $null){
+                        $selectedRegion = $objectRegionId
+                        $selectedRegionObject = $objName
+                    }
 
                     $recoveryParams.office365Params.recoverMailboxParams.objects = @($recoveryParams.office365Params.recoverMailboxParams.objects + @{
                         "mailboxParams" = @{
