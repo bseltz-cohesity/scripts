@@ -82,33 +82,9 @@ if($sourceName){
     }
 }
 
-$selectedRegion = $null
-$selectedRegionObject = $null
-$targetMailboxName = $null
-$targetMailboxId = $null
-$targetParentId = $null
-
 $dateString = Get-Date -UFormat '%b_%d_%Y_%H-%M%p'
 
-$recoveryParams = @{
-    "name" = "Recover_Mailboxes_$dateString";
-    "snapshotEnvironment" = "kO365";
-    "office365Params" = @{
-        "recoveryAction" = "ConvertToPst";
-        "recoverMailboxParams" = @{
-            "continueOnError" = $true;
-            "skipRecoverArchiveMailbox" = $true;
-            "skipRecoverRecoverableItems" = $true;
-            "skipRecoverArchiveRecoverableItems" = $true;
-            "skipRecoverPrimaryMailbox" = $false;
-            "objects" = @();
-            "pstParams" = @{
-                "password" = $pstPassword;
-                "separateDownloadFiles" = $true
-            }
-        }
-    }
-}
+$recoveries = @()
 
 foreach($objName in $objectNames){
     if($sourceName){
@@ -123,16 +99,13 @@ foreach($objName in $objectNames){
     }else{
         $x = 0
         foreach($result in $exactMatch | Where-Object {$_.name -eq $objName}){
-            $x += 1
+            
             foreach($objectProtectionInfo in $result.objectProtectionInfos){
                 $objectId = $objectProtectionInfo.objectId
                 $objectRegionId = $objectProtectionInfo.regionId
 
-                if($selectedRegion -ne $null){
-                    if($objectRegionId -ne $selectedRegion){
-                        Write-Host "$objName is in a different region than $selectedRegionObject and must be restored separately" -ForegroundColor Yellow
-                        continue
-                    }
+                if($region -and ($objectRegionId -ne $region)){
+                    continue
                 }
 
                 if($useMBS){
@@ -158,10 +131,25 @@ foreach($objName in $objectNames){
                         $snapshot = $snapshots[0]
                         $snapshotId = $snapshot.id
                     }
-                    
-                    if($selectedRegion -eq $null){
-                        $selectedRegion = $objectRegionId
-                        $selectedRegionObject = $objName
+
+                    $recoveryParams = @{
+                        "name" = "Recover_Mailboxes_$dateString";
+                        "snapshotEnvironment" = "kO365";
+                        "office365Params" = @{
+                            "recoveryAction" = "ConvertToPst";
+                            "recoverMailboxParams" = @{
+                                "continueOnError" = $true;
+                                "skipRecoverArchiveMailbox" = $true;
+                                "skipRecoverRecoverableItems" = $true;
+                                "skipRecoverArchiveRecoverableItems" = $true;
+                                "skipRecoverPrimaryMailbox" = $false;
+                                "objects" = @();
+                                "pstParams" = @{
+                                    "password" = $pstPassword;
+                                    "separateDownloadFiles" = $true
+                                }
+                            }
+                        }
                     }
 
                     $recoveryParams.office365Params.recoverMailboxParams.objects = @($recoveryParams.office365Params.recoverMailboxParams.objects + @{
@@ -173,10 +161,13 @@ foreach($objName in $objectNames){
                             "snapshotId" = $snapshotId
                         }
                     })
-
+                    $x += 1
                     Write-Host "==> Processing $objName"
+                    $recovery = api post -v2 "data-protect/recoveries?regionId=$objectRegionId" $recoveryParams
+                    $recoveries = @($recoveries + @{'id' = $recovery.id; 'region' = $objectRegionId})
+                    break
                 }else{
-                    Write-Host "No snapshots available for $objName"
+                    continue
                 }
             }
         }
@@ -186,31 +177,38 @@ foreach($objName in $objectNames){
     }
 }
 
-if(@($recoveryParams.office365Params.recoverMailboxParams.objects).Count -gt 0){
-    $recovery = api post -v2 "data-protect/recoveries?regionId=$objectRegionId" $recoveryParams
+if(@($recoveries).Count -gt 0){   
     "==> Waiting for PST conversions to complete..."
     $finishedStates = @('Canceled', 'Succeeded', 'Failed')
-    $pass = 0
-    do{
+    $waiting = $True
+    $newRecoveries = $recoveries
+    while($waiting -eq $True){
+        $recoveries = $newRecoveries
         Start-Sleep $sleepTimeSeconds
-        $recoveryTask = api get -v2 "data-protect/recoveries/$($recovery.id)?regionId=$objectRegionId"
-        $status = $recoveryTask.status
-    } until ($status -in $finishedStates)
-    $downloadIdParts = $recovery.id -split ':'
-    $x = 0
-    if($status -eq 'Succeeded'){
-        foreach($childTask in $recoveryTask.childTasks){
-            $downloadId = "$($downloadIdParts[0]):$($downloadIdParts[1]):$($childTask.taskId)"
-            $downloadURL = "https://helios.cohesity.com/v2/data-protect/recoveries/$($downloadId)/downloadFiles?regionId=$($objectRegionId)&includeTenants=true"
-            $objInfoName = $recoveryTask.office365Params.objects[$x].objectInfo.name
-            $filePart = $objInfoName -replace '\.', '-'
-            $fileName = $(Join-Path -Path $outputPath -ChildPath "$($filePart)-pst.zip")
-            $x = $x + 1
-            Write-Host "==> Downloading $fileName"
-            fileDownload -uri $downloadURL -filename $fileName
+        $waiting = $false
+        foreach($recovery in $recoveries){
+            $recoveryTask = api get -v2 "data-protect/recoveries/$($recovery.id)?regionId=$($recovery.region)"
+            $status = $recoveryTask.status
+            if($status -notin $finishedStates){
+                $waiting = $True
+            }else{
+                $downloadIdParts = $recovery.id -split ':'
+                if($status -eq 'Succeeded'){
+                    foreach($childTask in $recoveryTask.childTasks){
+                        $downloadId = "$($downloadIdParts[0]):$($downloadIdParts[1]):$($childTask.taskId)"
+                        $downloadURL = "https://helios.cohesity.com/v2/data-protect/recoveries/$($downloadId)/downloadFiles?regionId=$($objectRegionId)&includeTenants=true"
+                        $objInfoName = $recoveryTask.office365Params.objects[0].objectInfo.name
+                        $filePart = $objInfoName -replace '\.', '-'
+                        $fileName = $(Join-Path -Path $outputPath -ChildPath "$($filePart)-pst.zip")
+                        Write-Host "==> Downloading $fileName"
+                        fileDownload -uri $downloadURL -filename $fileName
+                        $newRecoveries = $recoveries | Where-Object {$_.id -ne $recovery.id}
+                    }
+                }else{
+                    Write-Host "*** PST conversion finished with status: $status ***"
+                }
+            }
         }
-    }else{
-        Write-Host "*** PST conversion finished with status: $status ***"
     }
 }else{
     Write-Host "No restores processed"
