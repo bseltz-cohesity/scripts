@@ -335,7 +335,7 @@ foreach ($entity in $jobNames.Keys | Sort-Object -Property {$jobNames[$_]}, {$_}
     $totalSize += $size
     $totalCost += $chargeback
     $size = [math]::Round($size, 2)
-    "$entity,$size,$chargeback" | Out-File $csvFileName -Append ascii
+    "$entity,$($entityEnvironments[$entity].subString(1)),$size,$chargeback" | Out-File $csvFileName -Append ascii
     $html += "<tr>
         <td>$entity</td>
         <td>$($entityEnvironments[$entity].subString(1))</td>
@@ -347,7 +347,7 @@ foreach ($entity in $jobNames.Keys | Sort-Object -Property {$jobNames[$_]}, {$_}
 
 # finalize files
 $totalSize = [math]::Round($totalSize, 2)
-"Total,$totalSize,$totalCost" | Out-File $csvFileName -Append ascii
+"Total,,$totalSize,$totalCost" | Out-File $csvFileName -Append ascii
 
 $html += "<tr>
     <td>Total</td>
