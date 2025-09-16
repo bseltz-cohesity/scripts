@@ -12,7 +12,8 @@ param (
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName,
     [Parameter(Mandatory = $True)][string]$certFile,
-    [Parameter(Mandatory = $True)][string]$keyFile
+    [Parameter(Mandatory = $True)][string]$keyFile,
+    [Parameter()][switch]$restartBridge
 )
 
 if(Test-Path -Path $certFile -PathType Leaf){
@@ -73,5 +74,11 @@ $restartParams = @{
     "services" = @("iris")
 }
 
-Write-Host "Restarting IRIS service..."
+if($restartBridge){
+    $restartParams.services = @("iris", "bridge")
+    Write-Host "Restarting Iris and Bridge services..."
+}else{
+    Write-Host "Restarting Iris service..."
+}
+
 $null = api post /nexus/cluster/restart $restartParams

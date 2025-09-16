@@ -49,3 +49,4 @@ Place both files in a folder together and run the main script like so:
 
 * -certFile: path to certificate PEM file
 * -keyFile: path to private key PEM file
+* -restartBridge: (optional) restart bridge service
