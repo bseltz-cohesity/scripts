@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-09-16`] [heliosSlaMonitor.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/heliosSlaMonitor) [`Update`] added max run time option
+* [`2025-09-15`] [uploadSSLCert.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/uploadSSLCert) [`Update`] added bridge restart option
+* [`2025-09-15`] [chargebackReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/chargebackReport) [`Update`] fixed missing data column
+* [`2025-09-10`] [clusterInfo.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/clusterInfo) [`Update`] fix for 7.x
 * [`2025-09-04`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] added org suppport for Helios
 * [`2025-09-03`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added org suppport for Helios
 * [`2025-09-03`] [protectVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectVMs) [`Update`] added support for VMs with non-unique names
