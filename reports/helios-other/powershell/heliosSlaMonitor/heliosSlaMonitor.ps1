@@ -6,6 +6,7 @@ param (
    [Parameter()][string]$domain = 'local', #local or AD domain
    [Parameter()][array]$include, # cluster names to include
    [Parameter()][array]$exclude, # cluster names to exclude
+   [Parameter()][int]$maxMinutes,
    [Parameter()][string]$smtpServer, #outbound smtp server '192.168.1.95'
    [Parameter()][string]$smtpPort = 25, #outbound smtp port
    [Parameter()][array]$sendTo, #send to address
@@ -55,6 +56,9 @@ foreach($cluster in heliosClusters){
                     $slaPass = "Miss"
                 }
                 $runTimeMinutes = [math]::Round(($runTimeUsecs / 60000000),0)
+                if($maxMinutes -and $runTimeMinutes -gt $maxMinutes){
+                    $slaPass = "Miss"
+                }
                 if($slaPass -eq "Miss"){
                     $missesRecorded = $True
                     if($run.backupRun.status -in $finishedStates){

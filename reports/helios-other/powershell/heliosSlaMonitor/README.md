@@ -55,6 +55,7 @@ COHESITY-ENASH
 * -domain: (optional) domain of username to store helios API key (default is local)
 * -include: (optional) comma separated list of clusters to include in the report
 * -exclude: (optional) comma separated list of clusters to exclude from the report
+* -maxMinutes: (optional) report SLA miss if job run duration greater than X minutes (e.g. 1440)
 * -smtpServer: (optional) SMTP gateway to forward email through
 * -smtpPort: (optional) defaults to 25
 * -sendfrom: (optional) email address to show in the from field
