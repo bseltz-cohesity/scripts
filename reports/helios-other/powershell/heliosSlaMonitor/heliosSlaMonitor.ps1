@@ -32,7 +32,7 @@ $title = "Missed SLAs"
 
 foreach($cluster in heliosClusters){
     if(($include.Count -eq 0 -or $cluster.name -in $include) -and $cluster.name -notin $exclude){
-        heliosCluster $cluster
+        $thisCluster = heliosCluster $cluster
         "`n$($cluster.name.ToUpper())`n"
         $clusterReported = $false
 
@@ -96,3 +96,5 @@ if($missesRecorded -eq $false){
         }
     }
 }
+
+Write-Host "`nOutput saved to $outFile`n"
