@@ -1,21 +1,45 @@
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,
-    [Parameter(Mandatory = $True)][string]$username,
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
     [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
     [Parameter()][switch]$useApiKey,
-    [Parameter()][string]$password = $null
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$mcm,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName
 )
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-# authenticate
-if($useApiKey){
-    apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
-}else{
-    apiauth -vip $vip -username $username -domain $domain -password $password
+# authentication =============================================
+# demand clusterName for Helios/MCM
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios/MCM" -ForegroundColor Yellow
+    exit 1
 }
+
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
+
+# select helios/mcm managed cluster
+if($USING_HELIOS){
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
+        exit 1
+    }
+}
+# end authentication =========================================
 
 $today = Get-Date
 $dateString = (get-date).ToString('yyyy-MM-dd')
@@ -179,7 +203,7 @@ $Global:html += '</span>
 
 Write-Host "`nRetrieving report data..."
 
-$sources = api get protectionSources
+$sources = api get protectionSources/registrationInfo
 
 $backupType = @('Incremental', 'Full', 'Log', 'BMR', 'Unknown', 'Unknown', 'Unknown')
 
@@ -194,21 +218,33 @@ $entityType = @('Unknown', 'VMware', 'HyperV', 'SQL', 'View', 'Puppeteer',
               'Unknown', 'Unknown', 'Unknown')
 
 $report = api get /reports/backupjobs/schedule
+
+$sourceCache = @{}
+
 foreach($job in $report){
     $source = $job.backupJob.parentSource.displayName
-    $sourceObj = $sources | Where-Object {$_.protectionSource.id -eq $job.backupJob.parentSource.id}
     $jobName = $job.backupJob.name
+    Write-Host $jobName
     $orgName = ''
     if($job.backupJob.PSObject.Properties['tenantId']){
         $orgName = $job.backupJob.tenantId
     }
     foreach($object in $job.leafSources){
         $objectName = $object.source.displayName
-        if($object.source.parentId -and $object.source.parentId -ne $job.backupJob.parentSource.id){
-            $source = ($sourceObj.nodes | Where-Object {$_.protectionSource.id -eq $object.source.parentId})[0].protectionSource.name
+        if($source -in @('Physical Servers', 'NAS Mount Points')){
+            $source = $objectName
         }
-        $nextStart = usecsToDate $object.nextStartTimeUsecs
-        $nextRunType = $backupType[$object.nextBackupType]
+        if($object.source.parentId -and $object.source.parentId -ne $job.backupJob.parentSource.id){
+            $source = ($sources.rootNodes | Where-Object {$_.rootNode.id -eq $object.source.parentId})[0].rootNode.name
+        }        
+        if($object.PSObject.Properties['nextBackupType']){
+            $nextStart = usecsToDate $object.nextStartTimeUsecs
+            $nextRunType = $backupType[$object.nextBackupType]
+        }else{
+            $nextStart = 'Paused'
+            $nextRunType = 'Paused'
+        }        
+        
         $objectType = $entityType[$object.source.Type]
         """{0}"",""{1}"",""{2}"",""{3}"",""{4}"",""{5}"",""{6}""" -f $objectName, $nextStart, $nextRunType, $jobName, $source, $objectType, $orgName | Out-File -FilePath $csvFileName -Append
         $Global:html += '<tr style="border: 1px solid {7} background-color: {7}">
