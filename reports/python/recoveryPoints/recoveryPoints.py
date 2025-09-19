@@ -119,6 +119,8 @@ for job in jobs:
                     runId = version['instanceId']['jobInstanceId']
                     startTime = usecsToDate(version['instanceId']['jobStartTimeUsecs'])
                     print("\t%s" % startTime)
+                    if 'replicaInfo' not in version or version['replicaInfo'] is None or 'replicaVec' not in version['replicaInfo'] or version['replicaInfo']['replicaVec'] is None or len(version['replicaInfo']['replicaVec']) == 0:
+                        continue
                     for replica in version['replicaInfo']['replicaVec']:
                         localExpiry = '-'
                         archiveTarget = '-'
