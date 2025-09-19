@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-09-19`] [protectionGroupScheduleReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/protectionGroupScheduleReport) [`Update`] modernized authentication
+* [`2025-09-19`] [recoveryPoints.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/recoveryPoints) [`Update`] fixed crash on unfinished protection run
 * [`2025-09-16`] [heliosSlaMonitor.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/heliosSlaMonitor) [`Update`] added max run time option
 * [`2025-09-15`] [uploadSSLCert.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/uploadSSLCert) [`Update`] added bridge restart option
 * [`2025-09-15`] [chargebackReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/chargebackReport) [`Update`] fixed missing data column
