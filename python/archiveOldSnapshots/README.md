@@ -51,10 +51,12 @@ By default, the script will only show what it would do. To actually execute the 
 * -l, --localonly: (optional) only archive local jobs
 * -r, --replicasonly: (optional) only archive replica jobs
 * -e, --excludelogs: (optional) do not archive database log backups
-* -f, --force: (optional) perform archives (show only if omitted)
-* -o, --outfolder: (optional) location of output log file (default is current directory)
+* -c, --commit: (optional) perform archives (show only if omitted)
+* -f, --outfolder: (optional) location of output log file (default is current directory)
 * -s, --retentionstring: (optional) substring of job name containing retention days (repeat for multiple)
 * -m, --onlymatches: (optional) only include jobs that match one of the retention strings
+* -n, --newerthan: (optional) only archive snapshots that are newer than X days old
+* -o, --olderthan: (optional) only archive snapshots that are older than X days old
 
 ## Retention String Example
 
@@ -69,7 +71,7 @@ Consider the following example:
                          -t myS3target \
                          -s _90D_ \
                          -s _365D_ \
-                         -f
+                         -c
 ```
 
 In this example, `-r` means that only jobs that have replicated to this cluster will be archive. `-k 10` means that job runs will be retained in the archive for 10 days, with the following exceptions: `-s _90D_` means that any jobs with '_90D_' in the name will be retained for 90 days, and any jobs with '_365_' in the name will be retained for 365 days.
