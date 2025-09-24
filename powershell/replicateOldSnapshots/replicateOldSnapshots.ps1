@@ -129,7 +129,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                                     foreach($represult in $run.replicationInfo.replicationTargetResults){
                                         if($represult.clusterName -eq $replicateTo -and $represult.status -eq 'Succeeded'){
                                             $replicated=$True
-                                            if($resync){
+                                            if($resync_WARNING_READ_THE_README_YOU_PROBABLY_DONT_WANT_TO_DO_THIS){
                                                 $replicated = $False
                                             }
                                         }
