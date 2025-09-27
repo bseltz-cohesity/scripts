@@ -47,7 +47,7 @@ if ($delete) {
     log "--------------------------"
 }
 
-$archiveType = @{'0' = "kCloud"; '1' = "kTape" }
+$archiveType = @{'0' = "kCloud"; '1' = "kTape"; '2' = "kNAS" }
 
 $clusters = @()
 $instanceList = @()
