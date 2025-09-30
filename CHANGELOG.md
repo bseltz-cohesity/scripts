@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-09-30`] [objectProtectionStatus.py](https://github.com/cohesity/community-automation-samples/tree/main/python/objectProtectionStatus) [`Update`] modernized authentication and optimized API calls
 * [`2025-09-30`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] fixed updatepw behavior
 * [`2025-09-26`] [expungeDataSpillage.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/expungeDataSpillage) [`Update`] added support for NAS external targets
 * [`2025-09-24`] [replicateOldSnapshots.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/replicateOldSnapshots) [`Update`] fixed resync bug
