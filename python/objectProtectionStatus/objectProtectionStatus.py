@@ -14,10 +14,19 @@ from datetime import datetime
 ### command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)
-parser.add_argument('-u', '--username', type=str, required=True)
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
-parser.add_argument('-o', '--object', type=str, required=True)
+parser.add_argument('-t', '--tenant', type=str, default=None)
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-m', '--mfacode', type=str, default=None)
+parser.add_argument('-e', '--emailmfacode', action='store_true')
+parser.add_argument('-s', '--sourcename', type=str, default=None)
+parser.add_argument('-o', '--object', type=str, default=None)
 parser.add_argument('-n', '--dbname', type=str, default=None)
 
 args = parser.parse_args()
@@ -25,90 +34,110 @@ args = parser.parse_args()
 vip = args.vip
 username = args.username
 domain = args.domain
+tenant = args.tenant
+clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
+emailmfacode = args.emailmfacode
+sourcename = args.sourcename
 objectname = args.object
 dbname = args.dbname
 
-### authenticate
-apiauth(vip, username, domain)
+if sourcename is None and objectname is not None:
+    sourcename = objectname
 
-sources = api('get', 'protectionSources/registrationInfo?includeApplicationsTreeInfo=false&allUnderHierarchy=true')
+if sourcename is None and objectname is None:
+    print('-s (--sourcename) or -o (--objectname) required!')
+    exit()
 
-dbenvironments = ['kSQL', 'kOracle']
+# authentication =========================================================
+# demand clustername if connecting to helios or mcm
+if (mcm or vip.lower() == 'helios.cohesity.com') and clustername is None:
+    print('-c, --clustername is required when connecting to Helios or MCM')
+    exit(1)
+
+# authenticate
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, emailMfaCode=emailmfacode, tenantId=tenant)
+
+# exit if not authenticated
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
+
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    heliosCluster(clustername)
+    if LAST_API_ERROR() != 'OK':
+        exit(1)
+# end authentication =====================================================
 
 foundObject = False
 jobs = []
 jobnames = []
 objectId = None
 
+dbenvironments = ['kSQL', 'kOracle']
+
+if objectname is None:
+    objectname = sourcename
+
 print('searching for %s' % objectname)
 
-for rootNode in sources['rootNodes']:
-    parentId = rootNode['rootNode']['id']
-    parentName = rootNode['rootNode']['name']
-    if parentName.lower() == objectname.lower():
-        foundObject = True
-        objectId = parentId
-    # gather environments (e.g. physical and SQL)
-    environments = []
-    environments.append(rootNode['rootNode']['environment'])
-    if 'environments' in rootNode['registrationInfo']:
-        for environment in rootNode['registrationInfo']['environments']:
-            environments.append(environment)
-    # find protected objects for each environment
-    for environment in environments:
-        protectedSources = api('get', 'protectionSources/protectedObjects?id=%s&environment=%s' % (parentId, environment))
-        for protectedSource in protectedSources:
-            childName = protectedSource['protectionSource']['name']
-            childId = protectedSource['protectionSource']['id']
-            if childName.lower() == objectname.lower():
-                foundObject = True
-                objectId = childId
-            for job in protectedSource['protectionJobs']:
-                jobName = job['name']
-                jobId = job['id']
-                if foundObject is True:
-                    if jobName not in jobnames:
-                        jobs.append(job)
-                        jobnames.append(jobName)
-            if foundObject is True and protectedSource['protectionSource']['environment'] not in dbenvironments:
-                break
-    if foundObject is True:
-        break
+sources = api('get', 'protectionSources/registrationInfo?includeApplicationsTreeInfo=false&allUnderHierarchy=true')
+source = [s for s in sources['rootNodes'] if s['rootNode']['name'].lower() == sourcename.lower()]
+if source is None or len(source) == 0:
+    print('registered source %s not found' % sourcename)
+    exit(1)
+rootNode = source[0]
 
+parentId = rootNode['rootNode']['id']
+parentName = rootNode['rootNode']['name']
+if sourcename == objectname:
+    foundObject = True
+    objectId = parentId
 
-### get object ID
-def getObjectId(objectname):
+protectedObjectCache = {}
 
-    d = {'_object_id': None}
+def getProtectedObjects(environment, id):
+    if '%s%s' % (environment, id) not in protectedObjectCache:
+        # print('get %s %s' % (environment, id))
+        protectedObjects = api('get', 'protectionSources/protectedObjects?environment=%s&id=%s' % (environment, parentId))
+        protectedObjectCache['%s%s' % (environment, id)] = protectedObjects
+    else:
+        protectedObjects =  protectedObjectCache['%s%s' % (environment, id)]
+    return protectedObjects
 
-    def get_nodes(node):
-        if 'name' in node:
-            if node['name'].lower() == objectname.lower():
-                d['_object_id'] = node['id']
-        if 'protectionSource' in node:
-            if node['protectionSource']['name'].lower() == objectname.lower():
-                d['_object_id'] = node['protectionSource']['id']
-        if 'nodes' in node:
-            for node in node['nodes']:
-                if d['_object_id'] is None:
-                    get_nodes(node)
-                else:
-                    break
+environments = []
+environments.append(rootNode['rootNode']['environment'])
+if 'environments' in rootNode['registrationInfo']:
+    for environment in rootNode['registrationInfo']['environments']:
+        environments.append(environment)
 
-    for source in sources:
-        if d['_object_id'] is None:
-            get_nodes(source)
+for environment in environments:
+    protectedSources = getProtectedObjects(environment, parentId)
+    for protectedSource in protectedSources:
+        childName = protectedSource['protectionSource']['name']
+        childId = protectedSource['protectionSource']['id']
+        if childName.lower() == objectname.lower():
+            foundObject = True
+            objectId = childId
+        for job in protectedSource['protectionJobs']:
+            jobName = job['name']
+            jobId = job['id']
+            if foundObject is True:
+                if jobName not in jobnames:
+                    jobs.append(job)
+                    jobnames.append(jobName)
+        if foundObject is True and protectedSource['protectionSource']['environment'] not in dbenvironments:
+            break
 
-    return d['_object_id']
-
-
-# jobs = [job for job in api('get', 'protectionJobs') if 'isDeleted' not in job and ('isActive' not in job or job['isActive'] is not False)]
-# sources = api('get', 'protectionSources')
-sqlSources = api('get', 'protectionSources?environments=kSQL')
-oracleSources = api('get', 'protectionSources?environments=kOracle')
+if 'kSQL' in environments or 'kOracle' in environments:
+    appSources = api('get', 'protectionSources?id=%s' % parentId)
 jobReports = []
 
-# objectId = getObjectId(objectname)
 if objectId is None:
     print("None::Not Found")
     exit(1)
@@ -116,24 +145,20 @@ else:
     foundProtectedObject = False
     objectJobIDs = []
     for job in jobs:
-        environment = job['environment']
-        parentId = job['parentSourceId']
-
-        sourceIds = job.get('sourceIds', [])
-
+        environment = job['environment']        
         if environment != 'kOracle' and environment != 'kSQL':
-            protectedObjects = api('get', 'protectionSources/protectedObjects?environment=%s&id=%s' % (environment, parentId))
+            parentId = job['parentSourceId']
+            protectedObjects = getProtectedObjects(environment, parentId)
             protectedObjects = [o for o in protectedObjects if o['protectionSource']['id'] == objectId]
             for protectedObject in protectedObjects:
                 for protectionJob in protectedObject['protectionJobs']:
                     objectJobIDs.append(protectionJob['id'])
         else:
-            for sourceId in sourceIds:
-                protectedObjects = api('get', 'protectionSources/protectedObjects?environment=%s&id=%s' % (environment, sourceId))
-                protectedObjects = [o for o in protectedObjects if o['protectionSource']['parentId'] == objectId]
-                for protectedObject in protectedObjects:
-                    for protectionJob in protectedObject['protectionJobs']:
-                        objectJobIDs.append(protectionJob['id'])
+            protectedObjects = getProtectedObjects(environment, parentId)
+            protectedObjects = [o for o in protectedObjects if o['protectionSource']['parentId'] == objectId]
+            for protectedObject in protectedObjects:
+                for protectionJob in protectedObject['protectionJobs']:
+                    objectJobIDs.append(protectionJob['id'])
 
     if len(objectJobIDs) == 0:
         print("None::Not Protected")
@@ -150,18 +175,15 @@ else:
                 dbList = []
                 protectedDbIds = []
                 if job['environment'] == 'kSQL':
-                    for node in sqlSources[0]['nodes']:
-                        for applicationNode in node['applicationNodes']:
-                            for node in applicationNode['nodes']:
-                                if node['protectionSource']['parentId'] == objectId:
-                                    dbList.append(node)
-                    protectedDbList = api('get', 'protectionSources/protectedObjects?environment=kSQL&id=%s' % objectId)
+                    for applicationNode in appSources[0]['applicationNodes']:
+                        for node in applicationNode['nodes']:
+                            if node['protectionSource']['parentId'] == objectId:
+                                dbList.append(node)
+                    protectedDbList = getProtectedObjects('kSQL', objectId)
                 else:
-                    for node in oracleSources[0]['nodes']:
-                        if node['protectionSource']['id'] == objectId:
-                            for applicationNode in node['applicationNodes']:
-                                dbList.append(applicationNode)
-                    protectedDbList = api('get', 'protectionSources/protectedObjects?environment=kOracle&id=%s' % objectId)
+                    for applicationNode in appSources[0]['applicationNodes']:
+                        dbList.append(applicationNode)
+                    protectedDbList = getProtectedObjects('kOracle', objectId)
                 for protectedDb in protectedDbList:
                     protectedDbIds.append(protectedDb['protectionSource']['id'])
 
@@ -200,7 +222,6 @@ else:
 
             # get latest run
             runs = api('get', 'protectionRuns?jobId=%s&excludeTasks=true&numRuns=1' % job['id'])
-            # runs = sorted(api('get', 'protectionRuns?jobId=%s&excludeTasks=true&startTimeUsecs=%s' % (job['id'], yesterday)), key=lambda run: run['backupRun']['stats']['startTimeUsecs'])
             foundRun = False
             for run in runs:
                 runStart = run['backupRun']['stats']['startTimeUsecs']
