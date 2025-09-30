@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2025.09.04"""
+"""Cohesity Python REST API Wrapper Module - 2025.09.30"""
 
 ##########################################################################################
 # Change Log
@@ -26,6 +26,7 @@
 # 2025-03-27 - fixed null return on error
 # 2025-07-27 - fixed bad password prompt
 # 2025-09-04 - added org support for helios
+# 2025-09-30 - adjusted updatepw behavior
 #
 ##########################################################################################
 # Install Notes
@@ -88,7 +89,7 @@ __all__ = ['api_version',
            'readCache',
            'writeCache']
 
-api_version = '2025.09.04'
+api_version = '2025.09.30'
 
 COHESITY_API = {
     'APIROOT': '',
@@ -901,10 +902,12 @@ def __getpassword(vip, username, password, domain, useApiKey=False, helios=False
             __writelog('error storing password')
             print('error storing password')
             return pwd
-    if updatepw is not None:
-        if os.path.isfile(pwpath) is True:
-            os.remove(pwpath)
+    # if updatepw is not None:
+    #     if os.path.isfile(pwpath) is True:
+    #         os.remove(pwpath)
     try:
+        if updatepw is not None:
+            createException = 10 / 0
         pwdfile = open(pwpath, 'r')
         opwd = pwdfile.read()
         pwd = base64.b64decode(opwd.encode('utf-8')).decode('utf-8')
