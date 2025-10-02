@@ -145,10 +145,10 @@ else:
     foundProtectedObject = False
     objectJobIDs = []
     for job in jobs:
-        environment = job['environment']        
+        environment = job['environment']    
         if environment != 'kOracle' and environment != 'kSQL':
-            parentId = job['parentSourceId']
-            protectedObjects = getProtectedObjects(environment, parentId)
+            thisParentId = job['parentSourceId']
+            protectedObjects = getProtectedObjects(environment, thisParentId)
             protectedObjects = [o for o in protectedObjects if o['protectionSource']['id'] == objectId]
             for protectedObject in protectedObjects:
                 for protectionJob in protectedObject['protectionJobs']:
