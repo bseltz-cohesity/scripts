@@ -54,3 +54,6 @@ To close an open file:
 
 * -viewName: name of new view where paths are located
 * -filePath: (optional) path within view to close
+* -smbUsername: (optional) close only files opened by this user (e.g. "mydomain.net\myuser")
+* -matchPath: (optional) close only files where the file path matches this substring
+* -pageCount: (optional) API max items per page (default is 1000)

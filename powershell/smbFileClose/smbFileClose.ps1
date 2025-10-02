@@ -13,7 +13,10 @@ param (
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName,
     [Parameter(Mandatory = $True)][string]$viewName,
-    [Parameter()][string]$FilePath
+    [Parameter()][string]$FilePath,
+    [Parameter()][string]$smbUsername,
+    [Parameter()][string]$matchPath,
+    [Parameter()][int]$pageCount = 1000
 )
 
 # source the cohesity-api helper code
@@ -38,23 +41,49 @@ if(!$cohesity_api.authorized){
 }
 
 if($filePath){
-    $fileOpens = api get "smbFileOpens?viewName=$viewName&filePath=$filePath"
+    $fileOpens = api get "smbFileOpens?viewName=$viewName&filePath=$filePath&pageCount=$pageCount"
 }else{
-    $fileOpens = api get "smbFileOpens?viewName=$viewName"
+    $fileOpens = api get "smbFileOpens?viewName=$viewName&pageCount=$pageCount"
 }
 
 if(! $fileOpens.PSObject.Properties['activeFilePaths']){
     Write-Host "No file opens"
-}else{
+    exit
+}
+
+$fileCount = 0
+while($True){
     foreach($activeFilePath in $fileOpens.activeFilePaths){
+        # $activeFilePath | toJson
         $filePath = $activeFilePath.filePath
-        Write-Host "Closing $filePath"
-        foreach($openId in $activeFilePath.activeSessions.activeOpens.openId){
-            $null = api post smbFileOpens @{
-                "filePath" = $filePath;
-                "openId" = $openId;
-                "viewName" = $viewName
+        if(!$matchPath -or ($filePath -match $matchPath)){
+            foreach($session in $activeFilePath.activeSessions){
+                $thisUser = "$($session.domain)\$($session.username)"
+                if(!$smbUsername -or ($thisUser -eq $smbUsername)){
+                    Write-Host "Closing $filePath ($thisUser)"
+                    foreach($openId in $session.activeOpens.openId){
+                        $null = api post smbFileOpens @{
+                            "filePath" = $filePath;
+                            "openId" = $openId;
+                            "viewName" = $viewName
+                        }
+                        $fileCount += 1
+                    }
+                }
             }
         }
     }
+    if($fileOpens.PSObject.Properties['cookie']){
+        if($viewNames.Count -eq 1){
+            $fileOpens = api get "smbFileOpens?viewName=$viewName&filePath=$filePath&pageCount=$pageCount&cookie=$($fileOpens.cookie)"
+        }else{
+            $fileOpens = api get "smbFileOpens?viewName=$viewName&pageCount=$pageCount&cookie=$($fileOpens.cookie)"
+        }
+    }else{
+        break
+    }
+}
+
+if($fileCount -eq 0){
+    Write-Host "No matching file opens"
 }
