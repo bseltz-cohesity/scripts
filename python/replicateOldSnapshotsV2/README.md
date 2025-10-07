@@ -23,7 +23,7 @@ chmod +x replicateOldSnapshotsV2.py
 
 Place both files in a folder together and run the main script like so:
 
-This command will replicate all unexipired snapshots (from all jobs) that have run in the past 31 days (that haven't already been replicated already) and keep them in the replicate for 90 days. First run the command without the -c (--commit) switch, to see what it would do:
+This command will replicate all unexipired snapshots (from all jobs) that have run in the past 31 days (that haven't already been replicated already) and keep them in the replicate for 90 days. First run the command without the -x (--commit) switch, to see what it would do:
 
 ```bash
 ./replicateOldSnapshotsV2.py -v mycluster \
@@ -33,7 +33,7 @@ This command will replicate all unexipired snapshots (from all jobs) that have r
                              -j 'some job'
 ```
 
-Then if you are happy with what it will do, add the -c (--commit) switch:
+Then if you are happy with what it will do, add the -x (--commit) switch:
 
 ```bash
 ./replicateOldSnapshotsV2.py -v mycluster \
@@ -44,7 +44,7 @@ Then if you are happy with what it will do, add the -c (--commit) switch:
                              -x
 ```
 
-By default, the script will only show what it would do. To actually execute the replication, include the -c switch.
+By default, the script will only show what it would do. To actually execute the replication, include the -x switch.
 
 ## Authentication Parameters
 
