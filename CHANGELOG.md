@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-10-08`] [legalHoldObject.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/legalHoldObject) [`Update`] implemented wildcards
 * [`2025-10-08`] [restoreCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restoreCassandra) [`Update`] added new -dc (--datacenters) option
 * [`2025-10-07`] [migrateOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/migrateOracle) [`New`] migrate an instantly restored Oracle database that was not migrated yet
 * [`2025-10-04`] [objectProtectionStatus.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/objectProtectionStatus) [`Update`] modernized authentication and optimized API calls
