@@ -34,7 +34,7 @@ Place both files in a folder together, then we can run the script.
                       -objectName 'myVM' `
                       -addHold
 
-## Parameters
+## Authentication Parameters
 
 * -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
 * -username: (optional) name of user to connect to Cohesity (defaults to helios)
@@ -45,8 +45,11 @@ Place both files in a folder together, then we can run the script.
 * -mfaCode: (optional) TOTP MFA code
 * -emailMfaCode: (optional) send MFA code via email
 * -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -jobName: (optional) name of the protection job
-* -objectName: name of object to place on legal hold
+* -objectName: name of object to place on legal hold (can use * as wildcard)
 * -latest: (optional) use latest run
 * -startDate: (optional) use range of dates starting with (e.g. '2020-10-22')
 * -endDate: (optional) use range of dates ending with (e.g. '2020-10-27')

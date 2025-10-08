@@ -64,8 +64,11 @@ if($jobName){
 
 $search = api get -v2 "data-protect/search/objects?searchString=$objectName"
 if($search.PSObject.Properties['objects'] -and $search.objects.Count -gt 0){
-    $objects = $search.objects | Where-Object name -eq $objectName
-    foreach($obj in $objects){
+    $objects = $search.objects
+    if($objectName -notmatch '\*'){
+        $objects = $search.objects | Where-Object name -eq $objectName
+    }
+    foreach($obj in $objects | Sort-Object -Property name){
         if($obj.PSObject.Properties['objectProtectionInfos'] -and $obj.objectProtectionInfos.Count -gt 0){
             $objectId = $obj.objectProtectionInfos[0].objectId
         }
@@ -75,17 +78,17 @@ if($search.PSObject.Properties['objects'] -and $search.objects.Count -gt 0){
                 if($snap.runStartTimeUsecs -gt $startTimeUsecs -and $snap.runStartTimeUsecs -le $endTimeUsecs){
                     if($addHold){
                         $hold = $True
-                        "Adding hold to $objectName ($($snap.protectionGroupName): $(usecsToDate $snap.runStartTimeUsecs))"
+                        "Adding hold to $($obj.name) ($($snap.protectionGroupName): $(usecsToDate $snap.runStartTimeUsecs))"
                         $result = api put -v2 "data-protect/objects/$($objectId)/snapshots/$($snap.id)" @{'setLegalHold' = $hold}
                     }elseif($removeHold){
                         $hold = $False
-                        "Removing hold from $objectName ($($snap.protectionGroupName): $(usecsToDate $snap.runStartTimeUsecs))"
+                        "Removing hold from $($obj.name) ($($snap.protectionGroupName): $(usecsToDate $snap.runStartTimeUsecs))"
                         $result = api put -v2 "data-protect/objects/$($objectId)/snapshots/$($snap.id)" @{'setLegalHold' = $hold}
                     }else{
                         $run = api get -v2 "data-protect/protection-groups/$($snap.protectionGroupId)/runs/$($snap.protectionGroupRunId)?includeObjectDetails=true"
                         $thisObject = $run.objects | Where-Object {$_.object.id -eq $snap.objectId}
                         $thisObjectOnHold = $thisObject.onLegalHold
-                        "$objectName ($($snap.protectionGroupName): $(usecsToDate $snap.runStartTimeUsecs)) On Legal Hold = $thisObjectOnHold"
+                        "$($obj.name) ($($snap.protectionGroupName): $(usecsToDate $snap.runStartTimeUsecs)) On Legal Hold = $thisObjectOnHold"
                     }
                 }
                 if($latest){
