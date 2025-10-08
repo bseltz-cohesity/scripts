@@ -27,6 +27,7 @@ parser.add_argument('-cc', '--concurrency', type=int, default=None)
 parser.add_argument('-bw', '--bandwidth', type=int, default=None)
 parser.add_argument('-o', '--overwrite', action='store_true')
 parser.add_argument('-w', '--wait', action='store_true')
+parser.add_argument('-dc', '--datacenter', action='append', type=str)
 
 args = parser.parse_args()
 
@@ -51,6 +52,7 @@ concurrency = args.concurrency
 bandwidth = args.bandwidth
 overwrite = args.overwrite
 wait = args.wait
+datacenters = args.datacenter
 
 # authentication =========================================================
 # demand clustername if connecting to helios or mcm
@@ -99,6 +101,9 @@ recoverParams = {
         }
     }
 }
+
+if datacenters is not None and len(datacenters) > 0:
+    recoverParams['cassandraParams']['recoverCassandraParams']['selectedDataCenters'] = datacenters
 
 if targetserver is not None:
     recoverParams['cassandraParams']['recoverCassandraParams']['recoverTo'] = targetNode['protectionSource']['id']

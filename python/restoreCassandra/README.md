@@ -73,6 +73,7 @@ To protect specific tables:
 * -t, --targetserver: (optional) target server to restore to (defaults to source server)
 * -r, --newname: (optional) rename keyspace/table
 * -x, --suffix: (optional) suffix to apply to recovered object name (e.g. 'restore')
+* -dc, --datacenter: (optional) data center for recovery (repeat for multiple)
 * -dt, --recoverdate: (optional) recover from snapshot on or before this date (e.g. '2022-09-21 23:00:00')
 * -cc, --concurrency: (optional) number of recovery streams
 * -bw, --bandwidth: (optional) limit bandwidth to X MB/s
