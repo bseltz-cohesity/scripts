@@ -106,7 +106,7 @@ $olderThanUsecs = dateToUsecs (get-date).AddDays(-$olderThan)
 $jobs = api get protectionJobs
 
 foreach($serverName in $vms){
-    $search = api get /searchvms?vmName=$serverName
+    $search = api get "/searchvms?vmName=$serverName&toTimeUsecs=$(timeAgo $olderThan days)"
     $objects = $search.vms | Where-Object { $_.vmDocument.objectName -eq $serverName }
     foreach($object in $objects){
         $sourceId = $object.vmDocument.objectId.entity.id
@@ -117,29 +117,29 @@ foreach($serverName in $vms){
             foreach($version in $object.vmDocument.versions){
                 $runStartTimeUsecs = $version.instanceId.jobStartTimeUsecs
                 if($runStartTimeUsecs -lt $olderThanUsecs -and '1' -in $version.replicaInfo.replicaVec.target.type){
-                    $run = api get "/backupjobruns?id=$($job.id)&ExactMatchStartTimeUsecs=$runStartTimeUsecs"
-                    $deleteObjectParams = @{
-                        "jobRuns" = @(
-                            @{
-                                "copyRunTargets" = @(
-                                    @{
-                                        "daysToKeep" = 0;
-                                        "type" = "kLocal"
-                                    }
-                                );
-                                "jobUid" = @{
-                                    "clusterId" = $object.vmDocument.objectId.jobUid.clusterId;
-                                    "clusterIncarnationId" = $object.vmDocument.objectId.jobUid.clusterIncarnationId;
-                                    "id" = $object.vmDocument.objectId.jobUid.objectId
-                                };
-                                "runStartTimeUsecs" = $runStartTimeUsecs;
-                                "sourceIds" = @(
-                                    $sourceId
-                                )
-                            }
-                        )
-                    }
                     if($delete){
+                        $run = api get "/backupjobruns?id=$($job.id)&ExactMatchStartTimeUsecs=$runStartTimeUsecs"
+                        $deleteObjectParams = @{
+                            "jobRuns" = @(
+                                @{
+                                    "copyRunTargets" = @(
+                                        @{
+                                            "daysToKeep" = 0;
+                                            "type" = "kLocal"
+                                        }
+                                    );
+                                    "jobUid" = @{
+                                        "clusterId" = $object.vmDocument.objectId.jobUid.clusterId;
+                                        "clusterIncarnationId" = $object.vmDocument.objectId.jobUid.clusterIncarnationId;
+                                        "id" = $object.vmDocument.objectId.jobUid.objectId
+                                    };
+                                    "runStartTimeUsecs" = $runStartTimeUsecs;
+                                    "sourceIds" = @(
+                                        $sourceId
+                                    )
+                                }
+                            )
+                        }
                         log "Deleting $serverName from $protectionGroupName ($(usecsToDate $runStartTimeUsecs))"
                         $null = api put protectionRuns $deleteObjectParams
                     }else{
