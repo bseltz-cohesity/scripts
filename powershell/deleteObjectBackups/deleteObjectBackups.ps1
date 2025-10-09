@@ -114,11 +114,11 @@ foreach($serverName in $vms){
     foreach($object in $objects){
         $snaps =  api get -v2 "data-protect/objects/$($object.id)/snapshots?toTimeUsecs=$(timeAgo $olderThan days)"
         foreach($snap in $snaps.snapshots){
-            $runStartTimeUsecs = $snap.runStartTimeUsecs
             if($jobName -and $jobName -ne $snap.protectionGroupName){
                 continue
             }
             if($snap.snapshotTargetType -eq 'Local'){
+                $runStartTimeUsecs = $snap.runStartTimeUsecs
                 if($delete){
                     $pgId = $snap.protectionGroupId
                     $jobId = @($snap.protectionGroupId -split ':')[2]
