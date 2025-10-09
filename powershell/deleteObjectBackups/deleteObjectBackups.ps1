@@ -48,33 +48,41 @@ if($USING_HELIOS){
 }
 # end authentication =========================================
 
-# gather list of vms to expunge
-
-$vms = @()
-foreach($v in $objectName){
-    $vms += $v
-}
-if ('' -ne $objectList){
-    if(Test-Path -Path $objectList -PathType Leaf){
-        $vmfile = Get-Content $objectList
-        foreach($v in $vmfile){
-            $vms += [string]$v
+# gather list from command line params and file
+function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+    $items = @()
+    if($Param){
+        $Param | ForEach-Object {$items += $_}
+    }
+    if($FilePath){
+        if(Test-Path -Path $FilePath -PathType Leaf){
+            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
+        }else{
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
+            exit
         }
-    }else{
-        Write-Warning "VM list $objectList not found!"
+    }
+    if($Required -eq $True -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow
         exit
     }
+    return ($items | Sort-Object -Unique)
 }
+$vms = @(gatherList -Param $objectName -FilePath $objectList -Name 'objects' -Required $False)
 
 if($objectMatch){
-    $search = api get "/searchvms?vmName=*$($objectMatch)*"
-    if($search){
-        $vms = @($vms + $search.vms.vmDocument.objectName)
+    $search = api get -v2 "data-protect/search/protected-objects?searchString=*$($objectMatch)*"
+    if($search.numResults -gt 0){
+        $vms = @($vms + $search.objects.name)
     }
 }
 
-# logging 
+if(@($vms).Count -eq 0){
+    Write-Host "No servers specified" -ForegroundColor Yellow
+    exit
+}
 
+# logging
 $runDate = get-date -UFormat %Y-%m-%d_%H-%M-%S
 $logfile = Join-Path -Path $PSScriptRoot -ChildPath "expungeVMLog-$runDate.txt"
 
@@ -85,16 +93,14 @@ function log($text){
 log "- Started at $(get-date) -------`n"
 
 # display run mode
-
-if ($delete) {
+if($delete){
     log "----------------------------------"
     log "  *PERMANENT DELETE MODE*         "
     log "  - selection will be deleted!!!"
     log "  - logging to $logfile"
     log "  - press CTRL-C to exit"
     log "----------------------------------`n"
-}
-else {
+}else {
     log "--------------------------"
     log "  *TEST RUN MODE*"
     log "  - not deleting"
@@ -106,48 +112,50 @@ $olderThanUsecs = dateToUsecs (get-date).AddDays(-$olderThan)
 $jobs = api get protectionJobs
 
 foreach($serverName in $vms){
-    $search = api get "/searchvms?vmName=$serverName&toTimeUsecs=$(timeAgo $olderThan days)"
-    $objects = $search.vms | Where-Object { $_.vmDocument.objectName -eq $serverName }
+    $search = api get -v2 "data-protect/search/protected-objects?searchString=$serverName&filterSnapshotToUsecs=$(timeAgo $olderThan days)"
+    $objects = $search.objects | Where-Object { $_.name -eq $serverName }
     foreach($object in $objects){
-        $sourceId = $object.vmDocument.objectId.entity.id
-        $protectionGroupName = $object.vmDocument.jobName
-        $protectionGroupId = $object.vmDocument.objectId.jobId
-        if(!$jobName -or $jobName -eq $protectionGroupName){
-            $job = $jobs | Where-Object id -eq $protectionGroupId
-            foreach($version in $object.vmDocument.versions){
-                $runStartTimeUsecs = $version.instanceId.jobStartTimeUsecs
-                if($runStartTimeUsecs -lt $olderThanUsecs -and '1' -in $version.replicaInfo.replicaVec.target.type){
-                    if($delete){
-                        $run = api get "/backupjobruns?id=$($job.id)&ExactMatchStartTimeUsecs=$runStartTimeUsecs"
-                        $deleteObjectParams = @{
-                            "jobRuns" = @(
-                                @{
-                                    "copyRunTargets" = @(
-                                        @{
-                                            "daysToKeep" = 0;
-                                            "type" = "kLocal"
-                                        }
-                                    );
-                                    "jobUid" = @{
-                                        "clusterId" = $object.vmDocument.objectId.jobUid.clusterId;
-                                        "clusterIncarnationId" = $object.vmDocument.objectId.jobUid.clusterIncarnationId;
-                                        "id" = $object.vmDocument.objectId.jobUid.objectId
-                                    };
-                                    "runStartTimeUsecs" = $runStartTimeUsecs;
-                                    "sourceIds" = @(
-                                        $sourceId
-                                    )
-                                }
-                            )
-                        }
-                        log "Deleting $serverName from $protectionGroupName ($(usecsToDate $runStartTimeUsecs))"
-                        $null = api put protectionRuns $deleteObjectParams
-                    }else{
-                        log "Would delete $serverName from $protectionGroupName ($(usecsToDate $runStartTimeUsecs))"
+        $snaps =  api get -v2 "data-protect/objects/$($object.id)/snapshots?toTimeUsecs=$(timeAgo $olderThan days)"
+        foreach($snap in $snaps.snapshots){
+            $runStartTimeUsecs = $snap.runStartTimeUsecs
+            if($jobName -and $jobName -ne $snap.protectionGroupName){
+                continue
+            }
+            if($snap.snapshotTargetType -eq 'Local'){
+                if($delete){
+                    $pgId = $snap.protectionGroupId
+                    $jobId = @($snap.protectionGroupId -split ':')[2]
+                    if($snap.PSObject.Properties['sourceGroupId']){
+                        $pgId = $snap.sourceGroupId
                     }
+                    $p = @($pgId -split ':')
+                    $deleteObjectParams = @{
+                        "jobRuns" = @(
+                            @{
+                                "copyRunTargets" = @(
+                                    @{
+                                        "daysToKeep" = 0;
+                                        "type" = "kLocal"
+                                    }
+                                );
+                                "jobUid" = @{
+                                    "clusterId" = [int64]$p[0];
+                                    "clusterIncarnationId" = [int64]$p[1];
+                                    "id" = [int64]$p[2]
+                                };
+                                "runStartTimeUsecs" = $runStartTimeUsecs;
+                                "sourceIds" = @(
+                                    $object.id
+                                )
+                            }
+                        )
+                    }
+                    log "Deleting $serverName from $($snap.protectionGroupName) ($(usecsToDate $runStartTimeUsecs))"
+                    $null = api put protectionRuns $deleteObjectParams
+                }else{
+                    log "Would delete $serverName from $($snap.protectionGroupName) ($(usecsToDate $runStartTimeUsecs))"
                 }
             }
         }
     }
 }
-
