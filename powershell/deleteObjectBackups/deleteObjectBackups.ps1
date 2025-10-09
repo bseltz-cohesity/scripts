@@ -108,9 +108,6 @@ if($delete){
     log "--------------------------`n"
 }
 
-$olderThanUsecs = dateToUsecs (get-date).AddDays(-$olderThan)
-$jobs = api get protectionJobs
-
 foreach($serverName in $vms){
     $search = api get -v2 "data-protect/search/protected-objects?searchString=$serverName&filterSnapshotToUsecs=$(timeAgo $olderThan days)"
     $objects = $search.objects | Where-Object { $_.name -eq $serverName }
