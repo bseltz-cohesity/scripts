@@ -268,9 +268,10 @@ if policy is not None:
     if action not in ['create', 'list'] or len(addquiettime) > 0 or len(removequiettime) > 0:
         updatePolicy = True
     policy['isCBSEnabled'] = True
-    if lockduration is None and 'dataLockConfig' in policy['backupPolicy']['regular']['retention']:
-        lockduration = policy['backupPolicy']['regular']['retention']['dataLockConfig']['duration']
-        lockunit = policy['backupPolicy']['regular']['retention']['dataLockConfig']['unit']
+    if action in ['edit', 'addextension', 'addfull', 'logbackup']:
+        if lockduration is None and 'dataLockConfig' in policy['backupPolicy']['regular']['retention']:
+            lockduration = policy['backupPolicy']['regular']['retention']['dataLockConfig']['duration']
+            lockunit = policy['backupPolicy']['regular']['retention']['dataLockConfig']['unit']
 
 # edit policy
 if action == 'edit':
@@ -355,8 +356,10 @@ if action == 'addextension':
         existingRetention = [r for r in policy['extendedRetention'] if r['schedule']['unit'].lower() == frequencyunit and r['schedule']['frequency'] == frequency]
     if existingRetention is None or len(existingRetention) == 0:
         newRetention = {
-            "schedule": makeSchedule(False)
+            "schedule": makeSchedule(False),
+            "retention": makeRetention()
         }
+
         policy['extendedRetention'].append(newRetention)
     else:
         existingRetention[0]['retention'] = makeRetention()
@@ -515,8 +518,8 @@ if action == 'deletearchive':
             if includeThisArchive is True:
                 newArchivalTargets.append(archiveTarget)
             else:
-                changedArchiveTargets = True
-        if changedArchiveTargets is True:
+                changedArchivalTargets = True
+        if changedArchivalTargets is True:
             policy['remoteTargetPolicy']['archivalTargets'] = newArchivalTargets
 
 # add quiet time
@@ -584,6 +587,7 @@ for quiettime in removequiettime:
         updatedQuietTimes = True
 
 if updatePolicy is True:
+    display(policy)
     result = api('put', 'data-protect/policies/%s' % policy['id'], policy, v=2)
     if 'error' in result:
         exit(1)
