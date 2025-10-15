@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-10-15`] [clusterDiskReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterDiskReport) [`New`] generate a cluster disk report
 * [`2025-10-08`] [legalHoldObject.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/legalHoldObject) [`Update`] implemented wildcards
 * [`2025-10-08`] [restoreCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restoreCassandra) [`Update`] added new -dc (--datacenters) option
 * [`2025-10-07`] [migrateOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/migrateOracle) [`New`] migrate an instantly restored Oracle database that was not migrated yet
