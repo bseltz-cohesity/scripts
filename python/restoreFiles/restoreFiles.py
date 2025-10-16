@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """restore files using python"""
 
-# version 2025.02.05
+# version 2025.10.16
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -116,7 +116,7 @@ if apiconnected() is False:
     exit(1)
 
 # find target server
-physicalEntities = api('get', '/entitiesOfType?environmentTypes=kFlashblade&environmentTypes=kGenericNas&environmentTypes=kGPFS&environmentTypes=kIsilon&environmentTypes=kNetapp&environmentTypes=kPhysical&flashbladeEntityTypes=kFileSystem&genericNasEntityTypes=kHost&gpfsEntityTypes=kFileset&isilonEntityTypes=kMountPoint&netappEntityTypes=kVolume&physicalEntityTypes=kHost&physicalEntityTypes=kWindowsCluster')
+physicalEntities = api('get', '/entitiesOfType?environmentTypes=kFlashblade&environmentTypes=kGenericNas&environmentTypes=kGPFS&environmentTypes=kIsilon&environmentTypes=kNetapp&environmentTypes=kPhysical&environmentTypes=kPhysicalFiles&flashbladeEntityTypes=kFileSystem&genericNasEntityTypes=kHost&gpfsEntityTypes=kFileset&isilonEntityTypes=kMountPoint&netappEntityTypes=kVolume&physicalEntityTypes=kHost&physicalEntityTypes=kWindowsCluster')
 targetEntity = [e for e in physicalEntities if e['displayName'].lower() == targetserver.lower()]
 
 if registeredtarget is not None:
@@ -137,15 +137,19 @@ if len(targetEntity) == 0:
     exit(1)
 
 # find backups for source server
-searchResults = api('get', '/searchvms?entityTypes==kFlashblade&environmentTypes=kGenericNas&environmentTypes=kGPFS&environmentTypes=kIsilon&environmentTypes=kNetapp&environmentTypes=kPhysical&flashbladeEntityTypes=kFileSystem&genericNasEntityTypes=kHost&gpfsEntityTypes=kFileset&isilonEntityTypes=kMountPoint&netappEntityTypes=kVolume&physicalEntityTypes=kHost&physicalEntityTypes=kWindowsCluster')
-if searchResults:
-    searchResults = [v for v in searchResults['vms'] if v['vmDocument']['objectName'].lower() in [s.lower() for s in sourceservers]]
-    if jobname is not None:
-        altJobName = 'old name: %s' % jobname.lower()
-        altJobName2 = '%s (old name' % jobname.lower()
-        searchResults = [vm for vm in searchResults if vm['vmDocument']['jobName'].lower() == jobname.lower() or altJobName in vm['vmDocument']['jobName'].lower() or altJobName2 in vm['vmDocument']['jobName'].lower()]
-    if registeredsource is not None:
-        searchResults = [vm for vm in searchResults if vm['registeredSource']['displayName'].lower() == registeredsource.lower()]
+searchResults = []
+for s in sourceservers:
+    search = api('get', '/searchvms?entityTypes=kFlashblade&environmentTypes=kGenericNas&environmentTypes=kGPFS&environmentTypes=kIsilon&environmentTypes=kNetapp&environmentTypes=kPhysical&environmentTypes=kPhysicalFiles&flashbladeEntityTypes=kFileSystem&genericNasEntityTypes=kHost&gpfsEntityTypes=kFileset&isilonEntityTypes=kMountPoint&netappEntityTypes=kVolume&physicalEntityTypes=kHost&physicalEntityTypes=kWindowsCluster&vmName=%s' % s)
+    if search:
+        search = [v for v in search['vms'] if v['vmDocument']['objectName'].lower() == s.lower()]
+        if jobname is not None:
+            altJobName = 'old name: %s' % jobname.lower()
+            altJobName2 = '%s (old name' % jobname.lower()
+            search = [vm for vm in search if vm['vmDocument']['jobName'].lower() == jobname.lower() or altJobName in vm['vmDocument']['jobName'].lower() or altJobName2 in vm['vmDocument']['jobName'].lower()]
+        if registeredsource is not None:
+            search = [vm for vm in search if vm['registeredSource']['displayName'].lower() == registeredsource.lower()]
+        for item in search:
+            searchResults.append(item)
 
 if len(searchResults) == 0:
     if jobname is not None:
