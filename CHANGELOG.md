@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-10-17`] [smbFileOpens.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/smbFileOpens) [`Update`] added -smbUsername and -matchPath parameters
 * [`2025-10-16`] [restoreFiles.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restoreFiles) [`Update`] optimized search query
 * [`2025-10-15`] [clusterDiskReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterDiskReport) [`New`] generate a cluster disk report
 * [`2025-10-08`] [legalHoldObject.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/legalHoldObject) [`Update`] implemented wildcards
