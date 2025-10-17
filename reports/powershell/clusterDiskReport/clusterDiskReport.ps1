@@ -1,4 +1,4 @@
-# version: 2024-07-03
+# version: 2025-10-17
 
 # process commandline arguments
 [CmdletBinding(PositionalBinding=$false)]
@@ -16,7 +16,7 @@ param (
     [Parameter()][string]$outfileName
 )
 
-$scriptversion = '2024-08-09'
+$scriptversion = '2025-10-17'
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -27,7 +27,7 @@ if(!$outfileName){
 }
 
 # headings
-"""Cluster Name"",""Node IP"",""Node ID"",""Storage Tier"",""Size TiB"",""Serial Number"",""Aviod Access"",""Removal State""" | Out-File -FilePath $outfileName
+"""Cluster Name"",""Node IP"",""Node ID"",""Storage Tier"",""Size TiB"",""Serial Number"",""Avoid Access"",""Removal State""" | Out-File -FilePath $outfileName
 
 function getReport(){
     $cluster = api get cluster
