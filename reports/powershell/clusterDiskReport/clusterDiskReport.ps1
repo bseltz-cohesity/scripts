@@ -88,4 +88,5 @@ foreach($v in $vip){
     }
 }
 
+(Get-Content $outfileName) | Set-Content $outfileName
 Write-Host "`nOutput saved to: $outfileName`n"
