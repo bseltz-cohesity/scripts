@@ -48,5 +48,6 @@ Place both files in a folder together and run the main script like so:
 
 * -viewName: (optional) one or more view names to include (comma separated)
 * -viewList: (optional) text file of view names to include (one per line)
-* -path: (optional) show opens that match the specified path string
+* -smbUsername: (optional) list only files opened by this user (e.g. "mydomain.net\myuser")
+* -matchPath: (optional) list only files where the file path matches this substring (e.g. 'mydir/subdir/')
 * -pageCount: (optional) retrieve X number of opens per API query (default is 1000)

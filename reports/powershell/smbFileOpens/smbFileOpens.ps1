@@ -14,7 +14,8 @@ param (
     [Parameter()][string]$clusterName,
     [Parameter()][array]$viewName,
     [Parameter()][string]$viewList,
-    [Parameter()][string]$path,
+    [Parameter()][string]$matchPath,
+    [Parameter()][string]$smbUsername,
     [Parameter()][int]$pageCount = 1000
 )
 
@@ -85,8 +86,11 @@ while($True){
     foreach($filePath in $fileOpens.activeFilePaths){
         if($viewNames.Count -eq 0 -or $filePath.viewName -in $viewNames){
             foreach($session in $filePath.activeSessions){
-                if(! $path -or $filePath.filePath -match $path){
-                    """{0}"",""{1}"",""{2}\{3}"",""{4}""" -f $filePath.viewName, $session.clientIP, $session.domain, $session.username, $filePath.filePath | Tee-Object -FilePath $outfileName -Append
+                if(! $matchPath -or $filePath.filePath -match $matchPath){
+                    $thisUser = "$($session.domain)\$($session.username)"
+                    if(!$smbUsername -or ($thisUser -eq $smbUsername)){
+                        """{0}"",""{1}"",""{2}\{3}"",""{4}""" -f $filePath.viewName, $session.clientIP, $session.domain, $session.username, $filePath.filePath | Tee-Object -FilePath $outfileName -Append
+                    }
                 }            
             }
         }
