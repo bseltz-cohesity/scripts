@@ -72,6 +72,9 @@ foreach($v in $vip){
         Write-Host "`n$($v): authentication failed" -ForegroundColor Yellow
         continue
     }
+    if(! $USING_HELIOS -and $useApiKey -and $password){
+        $password = $null
+    }
     if($USING_HELIOS){
         if(! $clusterName){
             $clusterName = @((heliosClusters).name)
