@@ -66,17 +66,14 @@ To clone a group to another group using a different vCenter `
 
 * -useHelios: (optional) connect to helios
 * -heliosURL: (optional) specify DNS name or IP of on-prem Helios (MCM)
-
 * -sourceCluster: name of source cluster to connect to
 * -sourceUser: username for source cluster
 * -sourceDomain: (optional) domain for source cluster user (defaults to local)
 * -sourcePassword: (optional) password for source user
-
 * -targetCluster: (optional) name of target cluster to connect to (defaults to same as sourceCluster)
 * -targetUser: (optional) username for target cluster (defaults to sourceUser)
 * -targetDomain: (optional) domain for target cluster user (defaults to sourceDomain)
 * -targetPassword: (optional) password for target user
-
 * -jobName: name of job to clone
 * -pauseOldJob
 
@@ -85,7 +82,6 @@ To clone a group to another group using a different vCenter `
 * -prefix: (optional) add prefix to target job name
 * -suffix: (optional) add suffic to target job name (defaults to 'clone' when using same cluster)
 * -newJobName: (optional) new name for target job (defaults to jobName)
-
 * -newPolicyName: (optional) new policy name (defaults to same policy name as source job)
 * -newStorageDomainName: (optional) new storage domain name (defaults to same storage domain name as source job)
 * -pauseNewJob: (optional) pause new job
