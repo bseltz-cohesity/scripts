@@ -132,7 +132,9 @@ def reportCluster():
             frontEndSize = 0
             if objectId not in logicalSizes.keys():
                 ownername = ''
-                search = api('get','/searchvms?entityIds=%s' % objectId)
+                search = api('get','/searchvms?entityIds=%s&allUnderHierarchy=true' % objectId)
+                # print(objectId)
+                # display(search)
                 if search is not None and 'vms' in search and len(search['vms']) > 0:
                     if 'attributeMap' in search['vms'][0]['vmDocument']:
                         ownername = [m['xValue'] for m in search['vms'][0]['vmDocument']['attributeMap'] if m['xKey'] == 'owner_name']
