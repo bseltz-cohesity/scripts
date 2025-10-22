@@ -1,4 +1,4 @@
-# version 2023-11-21
+# version 2025-10-22
 # process commandline arguments
 [CmdletBinding()]
 param (
@@ -288,37 +288,38 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         $search.objects = @(($search.objects | Sort-Object -Property {$_.latestSnapshotsInfo.protectionRunStartTimeUsecs})[-1])
     }else{
         # find object with correct time range
-        if($search.objects.Count -gt 1){
-            foreach($o in $search.objects | Sort-Object -Property {$_.latestSnapshotsInfo.protectionRunStartTimeUsecs} -Descending){
-                $thisSourceServer = $o.mssqlParams.hostInfo.name
-                $latestSnapshotInfo = ($o.latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
-                $clusterId, $clusterIncarnationId, $jobId = $latestSnapshotInfo.protectionGroupId -split ':'
+        foreach($o in $search.objects | Sort-Object -Property {$_.latestSnapshotsInfo.protectionRunStartTimeUsecs} -Descending){
+            $thisSourceServer = $o.mssqlParams.hostInfo.name
+            $o.latestSnapshotsInfo = $o.latestSnapshotsInfo | Where-Object {$_.protectionRunStartTimeUsecs -le $logTimeUsecs} 
+            $latestSnapshotInfo = ($o.latestSnapshotsInfo | Where-Object {$_.protectionRunStartTimeUsecs -le $logTimeUsecs} | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
+            "hello"
+            $clusterId, $clusterIncarnationId, $jobId = $latestSnapshotInfo.protectionGroupId -split ':'
             
-                # PIT lookup
-                $pitQuery = @{
-                    "jobUids" = @(
-                        @{
-                            "clusterId" = [int64]$clusterId;
-                            "clusterIncarnationId" = [int64]$clusterIncarnationId;
-                            "id" = [int64]$jobId
-                        }
-                    );
-                    "environment" = "kSQL";
-                    "protectionSourceId" = $o.id;
-                    "startTimeUsecs" = $logTimeUsecs - ($logRangeDays * 86400000000);
-                    "endTimeUsecs" = $logTimeUsecs
-                }
-                $logs = api post restore/pointsForTimeRange $pitQuery
-                $fullSnapshotInfo = $logs.fullSnapshotInfo | Where-Object {$_.restoreInfo.startTimeUsecs -le $logTimeUsecs}
-                if($fullSnapshotInfo){
-                    $search.objects = $o
-                    break
-                }
+            # PIT lookup
+            $pitQuery = @{
+                "jobUids" = @(
+                    @{
+                        "clusterId" = [int64]$clusterId;
+                        "clusterIncarnationId" = [int64]$clusterIncarnationId;
+                        "id" = [int64]$jobId
+                    }
+                );
+                "environment" = "kSQL";
+                "protectionSourceId" = $o.id;
+                "startTimeUsecs" = $logTimeUsecs - ($logRangeDays * 86400000000);
+                "endTimeUsecs" = $logTimeUsecs
+            }
+            $logs = api post restore/pointsForTimeRange $pitQuery
+            $fullSnapshotInfo = $logs.fullSnapshotInfo | Where-Object {$_.restoreInfo.startTimeUsecs -le $logTimeUsecs}
+            if($fullSnapshotInfo){
+                $search.objects = $o
+                break
             }
         }
     }
     Write-Host "`n$($search.objects[0].name)"
     $thisSourceServer = $search.objects[0].mssqlParams.hostInfo.name
+    
     $latestSnapshotInfo = ($search.objects[0].latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
     $clusterId, $clusterIncarnationId, $jobId = $latestSnapshotInfo.protectionGroupId -split ':'
 
@@ -394,8 +395,8 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
             }
             $selectedPIT = $runStartTimeUsecs = $fullSnapshot.restoreInfo.startTimeUsecs
         }else{
-            $selectedPIT = $runStartTimeUsecs = $search.objects[0].latestSnapshotsInfo[0].protectionRunStartTimeUsecs
-        }       
+            $selectedPIT = $runStartTimeUsecs = ($search.objects[0].latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1].protectionRunStartTimeUsecs
+        }
     }
     if(! $showPaths){
         Write-Host "    Selected Snapshot $(usecsToDate $runStartTimeUsecs)"
@@ -490,14 +491,11 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
 
         if($logsAvailable -and ! $noLogs){
             if($noStop){
-                $targetConfig['restoreTimeUsecs'] = $selectedPIT  # (3600 + (datetousecs (Get-Date)) / 1000000)
+                $targetConfig['restoreTimeUsecs'] = $selectedPIT
             }else{
                 $targetConfig['restoreTimeUsecs'] = $selectedPIT
             }
         }
-        # if($overWrite){
-        #     $targetConfig['overwritingPolicy'] = 'Overwrite'
-        # }
     }else{
         if($renameDB -eq $false){
             if(! $overWrite -and ! $showPaths){
