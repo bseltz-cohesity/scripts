@@ -103,7 +103,10 @@ recoverParams = {
 }
 
 if datacenters is not None and len(datacenters) > 0:
-    recoverParams['cassandraParams']['recoverCassandraParams']['selectedDataCenters'] = datacenters
+    if targetserver is None:
+        recoverParams['cassandraParams']['recoverCassandraParams']['selectedDataCenters'] = datacenters
+    else:
+        print('warning: -dc (--datacenter) ignored when -t (--targetserver) is specified')
 
 if targetserver is not None:
     recoverParams['cassandraParams']['recoverCassandraParams']['recoverTo'] = targetNode['protectionSource']['id']
