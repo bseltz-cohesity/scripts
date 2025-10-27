@@ -49,12 +49,18 @@ Show onedrives with legal hold enabled:
 * -username: (optional) used for password storage only (default is 'ccs')
 * -password: (optional) enter API key (will be prompted if omitted and not already stored)
 * -noPrompt: (optional) do not prompt for password
-* -date: date of backups e.g. '2025-07-08'
+* -date: (optional) date of backups e.g. '2025-07-08' (opeate on backups that occurred on this date)
+* -startDate: (optional) operate on backups that ran on or after this date
+* -endDate: (optional) operate on backups that ran on or before this date
 * -addHold: (optional) add legal hold
 * -removeHold: (optional) remove legal hold
 * -showTrue: (optional) show objects that are on legal hold
 * -showFalse: (optional) show objects that are not on legal hold
 * -objectType: (optional) mailbox, onedrive, sharepoint (default is mailbox)
+
+## Date Selection
+
+You can specify -date which will include backups that occurred from that date to 24 hours after that date, or you can specify a -startDate and -endDate which will include the backups that occurred between those dates.
 
 ## Authenticating to Ccs
 

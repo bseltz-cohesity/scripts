@@ -9,7 +9,9 @@ param (
     [Parameter()][switch]$addHold,
     [Parameter()][switch]$removeHold,
     [Parameter()][switch]$showTrue,
-    [Parameter()][switch]$showFalse
+    [Parameter()][switch]$showFalse,
+    [Parameter()][string]$startDate,
+    [Parameter()][string]$endDate
 )
 
 # source the cohesity-api helper code
@@ -18,15 +20,23 @@ param (
 # authenticate
 apiauth -username $username -passwd $password -noPromptForPassword $noPrompt # -regionid $region 
 
-$startDate = dateToUsecs $date
+if(!$startDate){
+    $startDate = dateToUsecs $date
+}else{
+    $startDate = dateToUsecs $startDate
+}
 
 if(! $startDate -or $startDate -eq 0){
     Write-Host "Invalid date specified. Should be in format '2025-07-09'" -ForegroundColor Yellow
     exit 1
 }
-$endDate = $startDate + 86400000000
+if(!$endDate){
+    $endDate = $startDate + 86400000000
+}else{
+    $endDate = dateToUsecs $endDate
+}
 
-"`nOperating on Object Type: $objectType Date: $date`n" | Tee-Object -FilePath legalHoldLog.txt
+"`nOperating on Object Type: $objectType Date: $(usecsToDate $startDate) to $(usecsToDate $endDate)`n" | Tee-Object -FilePath legalHoldLog.txt
 
 $queryParams = @{
     "statsParams" = @{
@@ -35,8 +45,8 @@ $queryParams = @{
             "ActivityType"
         )
     };
-    "fromTimeUsecs" = $startDate;
-    "toTimeUsecs" = $endDate;
+    "fromTimeUsecs" = [Int64]$startDate;
+    "toTimeUsecs" = [Int64]$endDate;
     "environments" = @(
         "kO365"
     );
