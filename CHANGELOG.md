@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-10-27`] [legalHoldCCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/legalHoldCCS) [`Update`] added -startDate and -endDate parameters
+* [`2025-10-22`] [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] fixed issue with multiple protection groups
+* [`2025-10-21`] [recoveryStatsReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/recoveryStatsReport) [`Update`] added multi-tenancy support
+* [`2025-10-20`] [cloneVMProtectionGroup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneVMProtectionGroup) [`Update`] re-published script
 * [`2025-10-17`] [smbFileOpens.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/smbFileOpens) [`Update`] added -smbUsername and -matchPath parameters
 * [`2025-10-16`] [restoreFiles.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restoreFiles) [`Update`] optimized search query
 * [`2025-10-15`] [clusterDiskReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterDiskReport) [`New`] generate a cluster disk report
