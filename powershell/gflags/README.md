@@ -38,7 +38,6 @@ To set a gflag:
 ./gflags.ps1 -vip mycluster `
              -username myusername `
              -domain mydomain.net `
-             -set `
              -servicename myservice `
              -flagname myflag `
              -flagvalue 1 `
