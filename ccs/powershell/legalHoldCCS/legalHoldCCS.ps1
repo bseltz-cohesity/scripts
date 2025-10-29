@@ -31,7 +31,7 @@ if(! $startDate -or $startDate -eq 0){
     exit 1
 }
 if(!$endDate){
-    $endDate = $startDate + 86400000000
+    $endDate = [int64]$startDate + 86400000000
 }else{
     $endDate = dateToUsecs $endDate
 }
@@ -135,3 +135,5 @@ foreach($activity in $activities.activity | Sort-Object -Property {$_.object.nam
         }       
     }
 }
+
+Write-Host "Activity Count: $($activities.activity.Count)"
