@@ -16,7 +16,7 @@ param (
     [Parameter()][switch]$dbg
 )
 
-$version = '2025-10-30-16-28'
+$version = '2025-10-30-17-49'
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
