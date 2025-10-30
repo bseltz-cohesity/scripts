@@ -58,6 +58,7 @@ Show onedrives with legal hold enabled:
 * -showFalse: (optional) show objects that are not on legal hold
 * -objectType: (optional) mailbox, onedrive, sharepoint (default is mailbox)
 * -range: (optional) adjust API query range (days) for performance (default is 4)
+* -dbg : (optional) output debug information to text file (debug-legalHoldCCS.txt)
 
 ## Date Selection
 

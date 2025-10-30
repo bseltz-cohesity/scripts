@@ -12,8 +12,11 @@ param (
     [Parameter()][switch]$showFalse,
     [Parameter()][string]$startDate,
     [Parameter()][string]$endDate,
-    [Parameter()][int]$range = 4
+    [Parameter()][int]$range = 4,
+    [Parameter()][switch]$dbg
 )
+
+$version = '2025-10-30-16-28'
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -92,12 +95,21 @@ $regionList = $regions.tenantRegionInfoList.regionId -join ','
 $totalCount = 0
 $trackDupe = @()
 
+if($dbg){
+    "Script version: $version" | Out-File -FilePath 'debug-legalHoldCCS.txt'
+}
+
 while($True){
     $activities = api post -mcmv2 "data-protect/objects/activity?regionIds=$($regionList)" $queryParams
     $activities.activity = $activities.activity | Where-Object {$_.id -notin $trackDupe}
     $trackDupe = @()
+    if($dbg){
+        $activities | toJson | Out-File -FilePath 'debug-legalHoldCCS.txt' -Append
+    }
     foreach($activity in $activities.activity | Where-Object {$_.archivalRunParams.status -ne 'Failed'}){ # Sort-Object -Property {$_.object.name}
         $totalCount += 1
+        # $activity | toJson
+        # exit
         $objectId = $activity.object.id
         $trackDupe = @($trackDupe + $activity.id)
         # $startTimeUsecs = $activity.archivalRunParams.runStartTimeUsecs
