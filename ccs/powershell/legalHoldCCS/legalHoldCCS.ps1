@@ -87,6 +87,10 @@ if($objectType -eq 'sharepoint'){
     $queryParams.backupRunParams.protectionEnvironmentTypes = @("kO365Sharepoint","kO365SharepointCSM")
 }
 
+if($showTrue){
+    $queryParams['statuses'] = @('LegalHold')
+}
+
 $sessionUser = api get sessionUser
 $tenantId = $sessionUser.profiles[0].tenantId
 $regions = api get -mcmv2 dms/tenants/regions?tenantId=$tenantId
@@ -101,70 +105,71 @@ if($dbg){
 
 while($True){
     $activities = api post -mcmv2 "data-protect/objects/activity?regionIds=$($regionList)" $queryParams
-    $activities.activity = $activities.activity | Where-Object {$_.id -notin $trackDupe}
-    $trackDupe = @()
+    $activities.activity = @($activities.activity | Where-Object {$_.id -notin $trackDupe})
     if($dbg){
         $activities | toJson | Out-File -FilePath 'debug-legalHoldCCS.txt' -Append
     }
-    foreach($activity in $activities.activity | Where-Object {$_.archivalRunParams.status -ne 'Failed'}){ # Sort-Object -Property {$_.object.name}
-        $totalCount += 1
-        # $activity | toJson
-        # exit
-        $objectId = $activity.object.id
-        $trackDupe = @($trackDupe + $activity.id)
-        # $startTimeUsecs = $activity.archivalRunParams.runStartTimeUsecs
-        $startTimeUsecs = $activity.timeStampUsecs
-        if($addHold -and $activity.archivalRunParams.onLegalHold -eq $False){
-            $holdParams =  @{
-                "targetObjectRuns" = @(
-                    @{
-                        "id" = "$objectId";
-                        "runStartTimeUsecs" = $startTimeUsecs
-                    }
-                );
-                "environment" = "kO365";
-                "legalHold" = "Enable"
+    if($activities.activity -ne $null){
+        foreach($activity in $activities.activity | Where-Object {$_.archivalRunParams.status -ne 'Failed'}){ # Sort-Object -Property {$_.object.name}
+            $totalCount += 1
+            $objectId = $activity.object.id
+            $trackDupe = @($trackDupe + $activity.id)
+            $startTimeUsecs = $activity.timeStampUsecs
+            if($addHold -and $activity.archivalRunParams.onLegalHold -eq $False){
+                $holdParams =  @{
+                    "targetObjectRuns" = @(
+                        @{
+                            "id" = "$objectId";
+                            "runStartTimeUsecs" = $startTimeUsecs
+                        }
+                    );
+                    "environment" = "kO365";
+                    "legalHold" = "Enable"
+                }
+                "Adding legal hold to $($activity.object.name) ($(usecsToDate $startTimeUsecs))" | Tee-Object -FilePath legalHoldLog.txt -Append
+                $result = api put -mcmv2 "data-protect/objects/runs/metadata?regionIds=$($activity.regionId)" $holdParams
+                if($result.objectRunList[0].PSObject.Properties['errorMessage']){
+                    Write-Host "$($result.objectRunList[0].errorMessage)" -ForegroundColor Yellow
+                }
+            }elseif($removeHold -and $activity.archivalRunParams.onLegalHold -eq $True){
+                $holdParams =  @{
+                    "targetObjectRuns" = @(
+                        @{
+                            "id" = "$objectId";
+                            "runStartTimeUsecs" = $startTimeUsecs
+                        }
+                    );
+                    "environment" = "kO365";
+                    "legalHold" = "Release"
+                }
+                "Removing legal hold from $($activity.object.name) ($(usecsToDate $startTimeUsecs))" | Tee-Object -FilePath legalHoldLog.txt -Append
+                $result = api put -mcmv2 "data-protect/objects/runs/metadata?regionIds=$($activity.regionId)" $holdParams
+                if($result.objectRunList[0].PSObject.Properties['errorMessage']){
+                    Write-Host "$($result.objectRunList[0].errorMessage)" -ForegroundColor Yellow
+                }
+            }elseif($showTrue -or $showFalse){
+                $showMe = $True
+                if($showFalse -and $activity.archivalRunParams.onLegalHold -eq $True){
+                    $showMe = $False
+                }
+                if($showTrue -and $activity.archivalRunParams.onLegalHold -eq $False){
+                    $showMe = $False
+                }
+                if($showMe -eq $True){
+                    "$($activity.object.name) ($(usecsToDate $startTimeUsecs)) on hold = $($activity.archivalRunParams.onLegalHold)" | Tee-Object -FilePath legalHoldLog.txt -Append
+                }       
             }
-            "Adding legal hold to $($activity.object.name) ($(usecsToDate $startTimeUsecs))" | Tee-Object -FilePath legalHoldLog.txt -Append
-            $result = api put -mcmv2 "data-protect/objects/runs/metadata?regionIds=$($activity.regionId)" $holdParams
-            if($result.objectRunList[0].PSObject.Properties['errorMessage']){
-                Write-Host "$($result.objectRunList[0].errorMessage)" -ForegroundColor Yellow
-            }
-        }elseif($removeHold -and $activity.archivalRunParams.onLegalHold -eq $True){
-            $holdParams =  @{
-                "targetObjectRuns" = @(
-                    @{
-                        "id" = "$objectId";
-                        "runStartTimeUsecs" = $startTimeUsecs
-                    }
-                );
-                "environment" = "kO365";
-                "legalHold" = "Release"
-            }
-            "Removing legal hold from $($activity.object.name) ($(usecsToDate $startTimeUsecs))" | Tee-Object -FilePath legalHoldLog.txt -Append
-            $result = api put -mcmv2 "data-protect/objects/runs/metadata?regionIds=$($activity.regionId)" $holdParams
-            if($result.objectRunList[0].PSObject.Properties['errorMessage']){
-                Write-Host "$($result.objectRunList[0].errorMessage)" -ForegroundColor Yellow
-            }
-        }elseif($showTrue -or $showFalse){
-            $showMe = $True
-            if($showFalse -and $activity.archivalRunParams.onLegalHold -eq $True){
-                $showMe = $False
-            }
-            if($showTrue -and $activity.archivalRunParams.onLegalHold -eq $False){
-                $showMe = $False
-            }
-            if($showMe -eq $True){
-                "$($activity.object.name) ($(usecsToDate $startTimeUsecs)) on hold = $($activity.archivalRunParams.onLegalHold)" | Tee-Object -FilePath legalHoldLog.txt -Append
-            }       
         }
     }
+
     if(@($activities.activity).Count -gt 0 -and $queryParams.fromTimeUsecs -gt $startDate){
         $queryParams.fromTimeUsecs = $queryParams.fromTimeUsecs - ($range * 86400000000)
         if($queryParams.fromTimeUsecs -lt $startDate){
             $queryParams.fromTimeUsecs = [int64]$startDate
         }
-        $queryParams.toTimeUsecs = $activities.activity[-1].timeStampUsecs
+        if($activities.activity -ne $null){
+            $queryParams.toTimeUsecs = $activities.activity[-1].timeStampUsecs
+        } 
     }else{
         if(@($activities.activity).Count -lt 1000){
             break
@@ -174,4 +179,4 @@ while($True){
     }
 }
 
-Write-Host "Activity Count: $totalCount"
+# Write-Host "Activity Count: $totalCount"
