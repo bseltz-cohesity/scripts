@@ -57,6 +57,7 @@ Show onedrives with legal hold enabled:
 * -showTrue: (optional) show objects that are on legal hold
 * -showFalse: (optional) show objects that are not on legal hold
 * -objectType: (optional) mailbox, onedrive, sharepoint (default is mailbox)
+* -range: (optional) adjust API query range (days) for performance (default is 4)
 
 ## Date Selection
 
