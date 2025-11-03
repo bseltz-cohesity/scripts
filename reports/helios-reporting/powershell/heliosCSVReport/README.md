@@ -47,6 +47,7 @@ Place all files in a folder together, then run the main script like so:
 * -excludeLogs: (optional) skip backup type kLog
 * -environment: (optional) one or more (comma separated) environments to include (e.g. kSQL, kO365)
 * -excludeEnvironment: (optional) one or more (comma separated) environments to exclude (e.g. kSQL, kO365)
+* -objectUuid: (optional) filter report to a specific object UUID
 * -replicationOnly: (optional) filter protection activities report to show replication tasks only
 * -timeoutSeconds: (optional) time to wait for API response before timeout (default is 600)
 * -showRecord: (optional) show first record format and exit

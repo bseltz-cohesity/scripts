@@ -19,6 +19,7 @@ param (
     [Parameter()][array]$excludeEnvironment,
     [Parameter()][switch]$replicationOnly,
     [Parameter()][int]$timeoutSeconds = 600,
+    [Parameter()][string]$objectUuid,
     [Parameter()][switch]$dbg,
     [Parameter()][array]$filters,
     [Parameter()][string]$filterList,
@@ -163,6 +164,17 @@ $replicationFilter = @{
     }
 }
 
+$objectUuidFilter = @{
+    "attribute" = "objectUuid";
+    "filterType" = "In";
+    "inFilterParams" = @{
+        "attributeDataType" = "String";
+        "stringFilterValues" = @(
+            $objectUuid
+        )
+    }
+}
+
 # get list of available reports
 $reports = api get -reportingV2 reports
 $report = $reports.reports | Where-Object {$_.title -eq $reportName}
@@ -234,6 +246,9 @@ foreach($cluster in $selectedClusters | Sort-Object -Property clusterName){
         }
         if($replicationOnly){
             $reportParams.filters = @($reportParams.filters + $replicationFilter)
+        }
+        if($objectUuid){
+            $reportParams.filters = @($reportParams.filters + $objectUuidFilter)
         }
         if($dbg){
             $reportParams | toJson
