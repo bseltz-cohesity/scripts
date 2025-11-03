@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-11-03`] [heliosCSVReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/powershell/heliosCSVReport) [`Update`] added -objectName and -objectUuid filter parameters
+* [`2025-11-03`] [heliosObjectUuid.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/heliosObjectUuid) [`New`] Lookup global Uuid of an object in Helios
 * [`2025-10-27`] [legalHoldCCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/legalHoldCCS) [`Update`] added -startDate and -endDate parameters
 * [`2025-10-22`] [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] fixed issue with multiple protection groups
 * [`2025-10-21`] [recoveryStatsReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/recoveryStatsReport) [`Update`] added multi-tenancy support
