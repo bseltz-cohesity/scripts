@@ -19,7 +19,8 @@ param (
     [Parameter()][array]$excludeEnvironment,
     [Parameter()][switch]$replicationOnly,
     [Parameter()][int]$timeoutSeconds = 600,
-    [Parameter()][string]$objectUuid,
+    [Parameter()][array]$objectUuid,
+    [Parameter()][array]$objectName,
     [Parameter()][switch]$dbg,
     [Parameter()][array]$filters,
     [Parameter()][string]$filterList,
@@ -161,6 +162,20 @@ $replicationFilter = @{
         "attributeLabels" = @(
             "Replication"
         )
+    }
+}
+
+if($objectName){
+    $foundObjects = 0
+    foreach($oName in $objectName){
+        $deletedSearch = api get -v2 "data-protect/search/objects?searchString=$oName&isDeleted=true"
+        $search = api get -v2 "data-protect/search/objects?searchString=$oName"
+        $allObjects = @(($search.objects + $deletedSearch.objects) | Where-Object {$_.name -eq $oName})
+        if(@($allObjects).Count -eq 0){
+            Write-Host "Object $oName not found" -ForegroundColor Yellow
+            exit 1
+        }
+        $objectUuid = @($objectUuid + $allObjects.globalId | Sort-Object -Unique)
     }
 }
 
