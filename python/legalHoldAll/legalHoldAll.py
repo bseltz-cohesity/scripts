@@ -126,47 +126,48 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
             for run in runs:
                 held = False
                 copyRunsFound = False
-                for copyRun in run['copyRun']:
-                    if pushtoreplicas is True or copyRun['target']['type'] in ['kLocal', 'kArchival']:
-                        if 'expiryTimeUsecs' in copyRun and copyRun['expiryTimeUsecs'] > dateToUsecs():
-                            copyRunsFound = True
-                        if 'holdForLegalPurpose' in copyRun and copyRun['holdForLegalPurpose'] is True:
-                            held = True
-                if copyRunsFound is True or held is True:
-                    if (addhold and copyRunsFound is True and held is False) or (removehold and held is True):
-                        runParams = {
-                            "jobRuns": [
-                                {
-                                    "copyRunTargets": [],
-                                    "runStartTimeUsecs": run['backupRun']['stats']['startTimeUsecs']
-                                }
-                            ]
-                        }
-                        update = False
-                        for copyRun in run['copyRun']:
-                            if pushtoreplicas is True or copyRun['target']['type'] in ['kLocal', 'kArchival']:
-                                if (addhold and 'expiryTimeUsecs' in copyRun and copyRun['expiryTimeUsecs'] > dateToUsecs()) or (removehold and held is True):
-                                    update = True
-                                    copyRunTarget = copyRun['target']
-                                    copyRunTarget['holdForLegalPurpose'] = holdValue
-                                    runParams['jobRuns'][0]['copyRunTargets'].append(copyRunTarget)
-                        if update is True:
-                            thisRun = api('get', '/backupjobruns?id=%s&exactMatchStartTimeUsecs=%s' % (run['jobId'], run['backupRun']['stats']['startTimeUsecs']))
-                            jobUid = {
-                                "clusterId": thisRun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']['clusterId'],
-                                "clusterIncarnationId": thisRun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']['clusterIncarnationId'],
-                                "id": thisRun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']['objectId']
+                if 'copyRun' in run and run['copyRun'] is not None and len(run['copyRun']) > 0:
+                    for copyRun in run['copyRun']:
+                        if pushtoreplicas is True or copyRun['target']['type'] in ['kLocal', 'kArchival']:
+                            if 'expiryTimeUsecs' in copyRun and copyRun['expiryTimeUsecs'] > dateToUsecs():
+                                copyRunsFound = True
+                            if 'holdForLegalPurpose' in copyRun and copyRun['holdForLegalPurpose'] is True:
+                                held = True
+                    if copyRunsFound is True or held is True:
+                        if (addhold and copyRunsFound is True and held is False) or (removehold and held is True):
+                            runParams = {
+                                "jobRuns": [
+                                    {
+                                        "copyRunTargets": [],
+                                        "runStartTimeUsecs": run['backupRun']['stats']['startTimeUsecs']
+                                    }
+                                ]
                             }
-                            runParams['jobRuns'][0]['jobUid'] = jobUid
-                            print('    %s - %s' % (usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), actionString))
-                            f.write('%s,%s,%s\n' % (job['name'], usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), actionString))
-                            result = api('put', 'protectionRuns', runParams)
-                    else:
-                        if (showtrue and held is True) or (addhold and held is True):
-                            print('    %s - %s' % (usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), 'on hold'))
-                            f.write('%s,%s,%s\n' % (job['name'], usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), 'on hold'))
-                        if (showfalse and held is False) or (removehold and held is False):
-                            print('    %s - %s' % (usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), 'not on hold'))
-                            f.write('%s,%s,%s\n' % (job['name'], usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), 'not on hold'))
+                            update = False
+                            for copyRun in run['copyRun']:
+                                if pushtoreplicas is True or copyRun['target']['type'] in ['kLocal', 'kArchival']:
+                                    if (addhold and 'expiryTimeUsecs' in copyRun and copyRun['expiryTimeUsecs'] > dateToUsecs()) or (removehold and held is True):
+                                        update = True
+                                        copyRunTarget = copyRun['target']
+                                        copyRunTarget['holdForLegalPurpose'] = holdValue
+                                        runParams['jobRuns'][0]['copyRunTargets'].append(copyRunTarget)
+                            if update is True:
+                                thisRun = api('get', '/backupjobruns?id=%s&exactMatchStartTimeUsecs=%s' % (run['jobId'], run['backupRun']['stats']['startTimeUsecs']))
+                                jobUid = {
+                                    "clusterId": thisRun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']['clusterId'],
+                                    "clusterIncarnationId": thisRun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']['clusterIncarnationId'],
+                                    "id": thisRun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']['objectId']
+                                }
+                                runParams['jobRuns'][0]['jobUid'] = jobUid
+                                print('    %s - %s' % (usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), actionString))
+                                f.write('%s,%s,%s\n' % (job['name'], usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), actionString))
+                                result = api('put', 'protectionRuns', runParams)
+                        else:
+                            if (showtrue and held is True) or (addhold and held is True):
+                                print('    %s - %s' % (usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), 'on hold'))
+                                f.write('%s,%s,%s\n' % (job['name'], usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), 'on hold'))
+                            if (showfalse and held is False) or (removehold and held is False):
+                                print('    %s - %s' % (usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), 'not on hold'))
+                                f.write('%s,%s,%s\n' % (job['name'], usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M'), 'not on hold'))
 f.close()
 print('\nOutput saved to %s\n' % outfile)
