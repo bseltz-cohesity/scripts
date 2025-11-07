@@ -356,8 +356,9 @@ if validLogTime is True:
 else:
     if logtime is not None:
         print('LogTime of %s is out of range' % logtime)
-        print('Available range is %s to %s' % (usecsToDate(logStart), usecsToDate(logEnd)))
-        exit(1)
+        print('Cloning from snapshot date: %s' % usecsToDate(version['instanceId']['jobStartTimeUsecs']))
+        # print('Available range is %s to %s' % (usecsToDate(logStart), usecsToDate(logEnd)))
+        # exit(1)
 
 # get existing pfileparams
 if 'oracleDbConfig' not in cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
