@@ -10,7 +10,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-$scriptName = 'chargebackReportV2'
+$scriptName = 'chargebackReport'
 $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/reports/powershell/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
@@ -19,14 +19,14 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 
 ## Components
 
-* [chargebackReportV2.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/powershell/chargebackReportV2/chargebackReportV2.ps1): the main powershell script
+* [chargebackReport.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/powershell/chargebackReport/chargebackReport.ps1): the main powershell script
 * [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 
 ```powershell
 # example command
-./chargebackReportV2.ps1 -vip mycluster `
+./chargebackReport.ps1 -vip mycluster `
                          -username myusername `
                          -domain mydomain.net `
                          -prefix demo,test `
