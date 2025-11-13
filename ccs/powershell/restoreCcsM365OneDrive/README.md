@@ -38,6 +38,7 @@ Place both files in a folder together and run the main script like so:
 
 ## Alternate Location Parameters
 
+* -source: (optional) registered M365 protection source of onedrive to resstore
 * -targetSource: (optional) registered M365 protection source to restore to
 * -targetOneDrive: (optional) oneDrive name to restore to
 * -recoverDate: (optional) restore latest snashot on or before this date (default is latest backup)

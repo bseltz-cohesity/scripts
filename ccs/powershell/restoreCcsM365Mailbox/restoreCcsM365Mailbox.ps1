@@ -6,6 +6,7 @@ param (
     [Parameter()][string]$mailboxList = '',  # optional textfile of mailboxes to protect
     [Parameter()][datetime]$recoverDate,
     [Parameter()][string]$targetSource,
+    [Parameter()][string]$source,
     [Parameter()][string]$targetMailbox,
     [Parameter()][string]$folderPrefix = 'restore',
     [Parameter()][int]$pageSize = 1000,
@@ -61,6 +62,9 @@ $targetParentId = $null
 foreach($objName in $objectNames){
     $search = api get -v2 "data-protect/search/objects?searchString=$objName&regionIds=$regionList&o365ObjectTypes=kO365Exchange,kUser&isProtected=true&environments=kO365&includeTenants=true&count=$pageSize"
     $exactMatch = $search.objects | Where-Object name -eq $objName
+    if($source){
+        $exactMatch = $exactMatch | Where-Object {$_.sourceInfo.name -eq $source}
+    }
     if(! $exactMatch){
         Write-Host "$objName not found" -ForegroundColor Yellow
     }else{
@@ -85,8 +89,8 @@ foreach($objName in $objectNames){
                             exit
                         }
                         $targetParentId = $rootSource[0].protectionSource.id
-                        $source = api get "protectionSources?id=$($rootSource[0].protectionSource.id)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false" -region $objectRegionId
-                        $usersNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
+                        $tsource = api get "protectionSources?id=$($rootSource[0].protectionSource.id)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false" -region $objectRegionId
+                        $usersNode = $tsource.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
                         $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false" -region $objectRegionId
                         while(1){
                             foreach($node in $users.nodes){

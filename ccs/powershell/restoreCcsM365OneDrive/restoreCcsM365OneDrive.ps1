@@ -6,6 +6,7 @@ param (
     [Parameter()][string]$oneDriveList = '',  # optional textfile of OneDrivees to protect
     [Parameter()][datetime]$recoverDate,
     [Parameter()][string]$targetSource,
+    [Parameter()][string]$source,
     [Parameter()][string]$targetOneDrive,
     [Parameter()][string]$folderPrefix = 'restore',
     [Parameter()][int]$pageSize = 1000,
@@ -61,6 +62,9 @@ $targetParentId = $null
 foreach($objName in $objectNames){
     $search = api get -v2 "data-protect/search/objects?searchString=$objName&regionIds=$regionList&o365ObjectTypes=kO365OneDrive,kUser&isProtected=true&environments=kO365&includeTenants=true&count=$pageSize"
     $exactMatch = $search.objects | Where-Object name -eq $objName
+    if($source){
+        $exactMatch = $exactMatch | Where-Object {$_.sourceInfo.name -eq $source}
+    }
     if(! $exactMatch){
         Write-Host "$objName not found" -ForegroundColor Yellow
     }else{
@@ -78,14 +82,15 @@ foreach($objName in $objectNames){
                             Write-Host "-targetOneDrive is required" -ForegroundColor Yellow
                             exit
                         }
+                        # api get "protectionSources/rootNodes?allUnderHierarchy=false&environments=kO365&includeExternalMetadata=true" -region $objectRegionId | toJson
                         $rootSource = api get "protectionSources/rootNodes?environments=kO365" -region $objectRegionId | Where-Object {$_.protectionSource.name -eq $targetSource}
                         if(!$rootSource){
                             Write-Host "$targetSource not found" -ForegroundColor Yellow
                             exit
                         }
                         $targetParentId = $rootSource[0].protectionSource.id
-                        $source = api get "protectionSources?id=$($rootSource[0].protectionSource.id)&excludeOffice365Types=kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false" -region $objectRegionId
-                        $usersNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
+                        $tsource = api get "protectionSources?id=$($rootSource[0].protectionSource.id)&excludeOffice365Types=kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false" -region $objectRegionId
+                        $usersNode = $tsource.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
                         $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidOneDrive=true&allUnderHierarchy=false" -region $objectRegionId
                         while(1){
                             foreach($node in $users.nodes){
