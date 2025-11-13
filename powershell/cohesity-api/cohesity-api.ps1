@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2025.09.03 - Brian Seltzer
+#  Version 2025.11.13 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024-02-18 - fix - toJson function - handle null input
@@ -27,10 +27,11 @@
 # 2025-06-30 - added report cohesity-api version to log
 # 2025-07-15 - fixed reported error issue
 # 2025-09-03 - added support for orgs in Helios
+# 2025-11-13 - fixed CCS region bug
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2025.09.03'
+$versionCohesityAPI = '2025.11.13'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -236,7 +237,8 @@ function apiauth([string] $vip='helios.cohesity.com',
     $cohesity_api.apiRootReportingV2 = "https://$vip/heliosreporting/api/v1/public/"
 
     if($regionid){
-        $cohesity_api.header['regionid'] = $regionid
+        $cohesity_api.header['RegionId'] = $regionid
+        $cohesity_api.session.Headers['RegionId'] = $regionid
     }
     # Entra ID (OIDC) authentication
     if($EntraId -and ($vip -in $heliosEndpoints)){
@@ -886,11 +888,11 @@ function api($method,
         $data = $null
     }
 
-    $header = $cohesity_api.header.Clone()
+    # $header = $cohesity_api.header.Clone()
+    $header = [hashtable]$cohesity_api.session.Headers
     if($region){
-        $header['regionid'] = $region
+        $header['RegionId'] = $region
     }
-
     if(-not $cohesity_api.authorized){
         $cohesity_api.last_api_error = 'not authorized'
         if($cohesity_api.reportApiErrors){
@@ -929,7 +931,7 @@ function api($method,
                 if($data){
                     $body = ConvertTo-Json -Compress -Depth 99 $data
                 }
-                $result = __apicall -method $method -url $url -body $body -timeout $timeout 
+                $result = __apicall -method $method -url $url -body $body -timeout $timeout -header $header
                 $cohesity_api.last_api_error = 'OK'
                 $retryCounter = 11
                 return $result
