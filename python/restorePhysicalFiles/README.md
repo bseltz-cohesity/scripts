@@ -6,16 +6,16 @@ This python script restores files from a Cohesity physical server backup.
 
 ## Components
 
-* [restorePhysicalFilespy](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/restoreFiles/restorePhysicalFilespy): the main python script
+* [restorePhysicalFiles.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/restorePhysicalFiles/restorePhysicalFiles.py): the main python script
 * [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 
 You can download the scripts using the following commands:
 
 ```bash
 # download commands
-curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/restoreFiles/restorePhysicalFilespy
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/restorePhysicalFiles/restorePhysicalFiles.py
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
-chmod +x restorePhysicalFilespy
+chmod +x restorePhysicalFiles.py
 # end download commands
 ```
 
@@ -23,7 +23,7 @@ Place both files in a folder together and run the main script like so:
 
 ```bash
 # example
-./restorePhysicalFilespy -v mycluster \
+./restorePhysicalFiles.py -v mycluster \
                          -u myusername \
                          -d mydomain .net \
                          -s server1.mydomain.net \
@@ -89,7 +89,7 @@ You can restore an entire folder, like so:
 
 ```bash
 # example
-./restorePhysicalFilespy -v mycluster \
+./restorePhysicalFiles.py -v mycluster \
                   -u myusername \
                   -d mydomain .net \
                   -s server1.mydomain.net \
