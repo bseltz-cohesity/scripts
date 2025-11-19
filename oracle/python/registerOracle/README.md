@@ -43,3 +43,4 @@ Place both files in a folder together and run the main script like so:
 * -c, --clustername: (optional) helios/mcm cluster to connect to
 * -s, --servername: (optional) name of server to register. Repeat parameter to register multiple servers
 * -l, --serverlist: (optional) text file of server names to register (one per line)
+* -o, --oraclecluster: (optional) use this switch when registering an Oracle cluster

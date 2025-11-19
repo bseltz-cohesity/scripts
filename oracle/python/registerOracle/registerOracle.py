@@ -14,7 +14,7 @@ parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-s', '--servername', action='append', type=str)  # server name to register
 parser.add_argument('-l', '--serverlist', type=str, default=None)     # text list of servers to register
-
+parser.add_argument('-o', '--oraclecluster', action='store_true')
 args = parser.parse_args()
 
 vip = args.vip
@@ -26,6 +26,7 @@ useApiKey = args.useApiKey
 password = args.password
 servernames = args.servername
 serverlist = args.serverlist
+oraclecluster = args.oraclecluster
 
 # authenticate
 if mcm:
@@ -77,6 +78,8 @@ for server in servernames:
             },
             'forceRegister': True
         }
+        if oraclecluster is True:
+            newSource['entity']['physcalEntity']['type'] = 6
         print('Registering %s as a physical protection source...' % server)
         result = api('post', '/backupsources', newSource)
         
