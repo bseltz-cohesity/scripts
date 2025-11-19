@@ -120,7 +120,7 @@ while(1){
         break
     }
 }
-Write-Host $script:unprotectedIndex.Count
+# Write-Host $script:unprotectedIndex.Count
 
 if($objectsToAdd.Count -eq 0){
     $useIds = $True

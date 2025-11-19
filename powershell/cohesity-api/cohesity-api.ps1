@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2025.11.13 - Brian Seltzer
+#  Version 2025.11.19 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024-02-18 - fix - toJson function - handle null input
@@ -28,10 +28,11 @@
 # 2025-07-15 - fixed reported error issue
 # 2025-09-03 - added support for orgs in Helios
 # 2025-11-13 - fixed CCS region bug
+# 2025-11-19 - fixed CCS region bug #2
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2025.11.13'
+$versionCohesityAPI = '2025.11.19'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -238,7 +239,7 @@ function apiauth([string] $vip='helios.cohesity.com',
 
     if($regionid){
         $cohesity_api.header['RegionId'] = $regionid
-        $cohesity_api.session.Headers['RegionId'] = $regionid
+        # $cohesity_api.session.Headers['RegionId'] = $regionid
     }
     # Entra ID (OIDC) authentication
     if($EntraId -and ($vip -in $heliosEndpoints)){
@@ -684,6 +685,10 @@ function apiauth([string] $vip='helios.cohesity.com',
     }
     if($tenant){
         impersonate $tenant
+    }
+    if($regionid){
+        $cohesity_api.header['RegionId'] = $regionid
+        $cohesity_api.session.Headers['RegionId'] = $regionid
     }
     $Global:AUTHORIZED = $cohesity_api.authorized
     $Global:AUTHORIZED | Out-Null
