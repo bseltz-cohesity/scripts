@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2025.09.20 - Brian Seltzer
+#  Version 2025.11.20 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024-02-18 - fix - toJson function - handle null input
@@ -29,11 +29,11 @@
 # 2025-09-03 - added support for orgs in Helios
 # 2025-11-13 - fixed CCS region bug
 # 2025-11-19 - fixed CCS region bug #2
-# 2025-09-20 - fix header functions
+# 2025-11-20 - fix header functions
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2025.09.20'
+$versionCohesityAPI = '2025.11.20'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
