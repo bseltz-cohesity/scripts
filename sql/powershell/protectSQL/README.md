@@ -98,3 +98,4 @@ Or to update an existing job:
 * -logNumStreams: (optional) default is 3 (requires Cohesity 6.8.1 or later)
 * -logWithClause: (optional) e.g. 'WITH MAXTRANSFERSIZE = 4194304, BUFFERCOUNT = 64, COMPRESSION' (requires Cohesity 6.8.1 or later)
 * -sourceSideDeduplication: (optional) use source side deduplication
+* -aagBackupPreference: (optional) 'kPrimaryReplicaOnly', 'kSecondaryReplicaOnly', 'kPreferSecondaryReplica', 'kAnyReplica', or 'kUseServerPreference' (default is 'kUseServerPreference')

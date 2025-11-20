@@ -35,7 +35,8 @@ param (
     [Parameter()][switch]$unprotectedDBs,
     [Parameter()][switch]$sourceSideDeduplication,
     [Parameter()][switch]$allDBs,
-    [Parameter()][switch]$replace
+    [Parameter()][switch]$replace,
+    [Parameter()][ValidateSet('kPrimaryReplicaOnly', 'kSecondaryReplicaOnly', 'kPreferSecondaryReplica', 'kAnyReplica', 'kUseServerPreference')][string]$aagBackupPreference = 'kUseServerPreference'
 )
 
 # gather list from command line params and file
@@ -255,6 +256,10 @@ if(! $job){
             "excludeFilters" = $null
         }
         $params = $job.mssqlParams.volumeProtectionTypeParams
+    }
+    if($aagBackupPreference -ne 'kUseServerPreference'){
+        $params['useAagPreferencesFromServer'] = $false
+        $params['aagBackupPreferenceType'] = $aagBackupPreference
     }
 }else{
     Write-Host "Updating job $jobname..."
