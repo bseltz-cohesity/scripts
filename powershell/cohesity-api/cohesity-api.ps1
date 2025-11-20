@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2025.11.19 - Brian Seltzer
+#  Version 2025.09.20 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024-02-18 - fix - toJson function - handle null input
@@ -29,10 +29,11 @@
 # 2025-09-03 - added support for orgs in Helios
 # 2025-11-13 - fixed CCS region bug
 # 2025-11-19 - fixed CCS region bug #2
+# 2025-09-20 - fix header functions
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2025.11.19'
+$versionCohesityAPI = '2025.09.20'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -238,8 +239,8 @@ function apiauth([string] $vip='helios.cohesity.com',
     $cohesity_api.apiRootReportingV2 = "https://$vip/heliosreporting/api/v1/public/"
 
     if($regionid){
+        $cohesity_api.header['regionid'] = $regionid
         $cohesity_api.header['RegionId'] = $regionid
-        # $cohesity_api.session.Headers['RegionId'] = $regionid
     }
     # Entra ID (OIDC) authentication
     if($EntraId -and ($vip -in $heliosEndpoints)){
@@ -686,10 +687,6 @@ function apiauth([string] $vip='helios.cohesity.com',
     if($tenant){
         impersonate $tenant
     }
-    if($regionid){
-        $cohesity_api.header['RegionId'] = $regionid
-        $cohesity_api.session.Headers['RegionId'] = $regionid
-    }
     $Global:AUTHORIZED = $cohesity_api.authorized
     $Global:AUTHORIZED | Out-Null
 }
@@ -827,6 +824,7 @@ function impersonate($tenant){
 
 function switchback(){
     $cohesity_api.header.Remove('x-impersonate-tenant-id')
+    $null = $cohesity_api.session.Headers.Remove('x-impersonate-tenant-id')
 }
 
 function getContext(){
@@ -893,11 +891,12 @@ function api($method,
         $data = $null
     }
 
-    # $header = $cohesity_api.header.Clone()
-    $header = [hashtable]$cohesity_api.session.Headers
+    $header = $cohesity_api.header.Clone()
     if($region){
+        $header['regionid'] = $region
         $header['RegionId'] = $region
     }
+
     if(-not $cohesity_api.authorized){
         $cohesity_api.last_api_error = 'not authorized'
         if($cohesity_api.reportApiErrors){
