@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-11-20`] [protectSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/protectSQL) [`Update`] added -aagBackupPreference option
+* [`2025-11-20`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] fixed CCS region ID bug
+* [`2025-11-19`] [registerOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/registerOracle) [`Update`] added -o, --oraclecluster option
 * [`2025-11-07`] [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Update`] fix for expired log backups
 * [`2025-11-06`] [legalHoldAll.py](https://github.com/cohesity/community-automation-samples/tree/main/python/legalHoldAll) [`Update`] fix for no copyRuns
 * [`2025-11-03`] [heliosCSVReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/powershell/heliosCSVReport) [`Update`] added -objectName and -objectUuid filter parameters
