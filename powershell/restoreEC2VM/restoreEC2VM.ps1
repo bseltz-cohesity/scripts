@@ -32,7 +32,11 @@ if($powerOn){
 $search = api get "data-protect/search/protected-objects?snapshotActions=RecoverVMs,RecoverVApps,RecoverVAppTemplates&searchString=$instanceName&environments=kAWS" -v2
 
 # latest snapshot
-$snapshotId = $search.objects[0].latestSnapshotsInfo[0].localSnapshotInfo.snapshotId
+if($search.objects[0].latestSnapshotsInfo[0].PSObject.Properties['localSnapshotInfo']){
+    $snapshotId = $search.objects[0].latestSnapshotsInfo[0].localSnapshotInfo.snapshotId
+}else{
+    $snapshotId = $search.objects[0].latestSnapshotsInfo[0].archivalSnapshotsInfo[0].snapshotId
+}
 
 if($originalLocation){
     # original location restore
