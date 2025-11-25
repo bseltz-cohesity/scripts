@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-11-25`] [restoreEC2VM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/restoreEC2VM) [`Update`] added support for NGCE
 * [`2025-11-20`] [protectSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/protectSQL) [`Update`] added -aagBackupPreference option
 * [`2025-11-20`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] fixed CCS region ID bug
 * [`2025-11-19`] [registerOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/registerOracle) [`Update`] added -o, --oraclecluster option
