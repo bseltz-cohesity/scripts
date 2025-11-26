@@ -56,7 +56,7 @@ To filter on specific object types:
 * -objectType: (optional) filter on specific object type (e.g. kGroup)
 * -unprotect: (optional) unprotect objects (otherwise just list them)
 * -deleteSnapshots: (optional) delete existing snapshots when unprotecting
-* -pageSize: (optional) limit number of objects returned pr page (default is 100)
+* -pageSize: (optional) limit number of objects returned (default is 100)
 
 ## Authenticating to Ccs
 
