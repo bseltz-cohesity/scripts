@@ -50,7 +50,7 @@ To filter on specific object types:
 
 ## Parameters
 
-* -username: (optional) used for password storage only (default is 'Ccs')
+* -username: (optional) used for password storage only (default is 'ccs')
 * -sourceName: name of protection source
 * -region: (optional) specify region ID (e.g. us-east-2)
 * -objectType: (optional) filter on specific object type (e.g. kGroup)
