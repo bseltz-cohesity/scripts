@@ -57,6 +57,7 @@ To update the password, provide the current password
 
 ## Other Parameters
 
+* -linuxUser: (optional) default is 'support'
 * -currentPassword: (optional) required when updating password
 * -newPassword: (optional) will be prompted if omitted
 * -enableSudoAccess: (optional) enable sudo access

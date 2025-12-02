@@ -14,7 +14,8 @@ param (
     [Parameter()][string]$clusterName,
     [Parameter()][string]$currentPassword,
     [Parameter()][string]$newPassword,
-    [Parameter()][switch]$enableSudoAccess
+    [Parameter()][switch]$enableSudoAccess,
+    [Parameter()][string]$linuxUser = 'support'
 )
 
 # source the cohesity-api helper code
@@ -49,8 +50,8 @@ if(! $newPassword){
     $newPassword = '1'
     $newPassword2 = '2'
     while($newPassword -ne $newPassword2){
-        $secureString = Read-Host -Prompt "   Enter new support password" -AsSecureString
-        $secureString2 = Read-Host -Prompt "Confirm new support password" -AsSecureString
+        $secureString = Read-Host -Prompt "   Enter new $linuxUser password" -AsSecureString
+        $secureString2 = Read-Host -Prompt "Confirm new $linuxUser password" -AsSecureString
         $newPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureString))
         $newPassword2 = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureString2))
         if($newPassword -ne $newPassword2){
@@ -64,9 +65,9 @@ if(! $currentPassword){
 }
 
 # support account
-Write-Host "Setting support password..."
+Write-Host "Setting $linuxUser password..."
 $supportCreds = @{
-    "linuxUsername" = "support";
+    "linuxUsername" = "$linuxUser";
     "linuxPassword" = "$newPassword";
     "linuxCurrentPassword" = "$currentPassword"
 }

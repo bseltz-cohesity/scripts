@@ -159,10 +159,7 @@ if($runningTasks.Keys.Count -gt 0){
                         $usecsToKeep = $daysToKeep * 1000000 * 86400
                         $expiry = $startTimeUsecs + $usecsToKeep
                         $timePassed = $nowUsecs - $runStartTimeUsecs
-                        if($daysToKeep -gt 0 -and $timePassed > $usecsToKeep){
-                            $noLongerNeeded = "NO LONGER NEEDED"
-                        }
-                        if($timePassed -gt $usecsToKeep){
+                        if($daysToKeep -gt 0 -and $timePassed -gt $usecsToKeep){
                             $noLongerNeeded = "NO LONGER NEEDED"
                         }
                         "                       Replication Task ID: {0}  {1}" -f $task.taskUid.objectId, $noLongerNeeded
