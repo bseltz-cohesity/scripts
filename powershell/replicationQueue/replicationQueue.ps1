@@ -74,6 +74,8 @@ if(!$cohesity_api.authorized){
 $cluster = api get cluster
 $outfileName = "replicationQueue-$($cluster.name).csv"
 """Start Time"",""Job Name"",""Status""" | Out-File -FilePath $outfileName
+$outfileName2 = "replicationQueue-$($cluster.name)-activeObjects.csv"
+"""Start Time"",""Job Name"",""Status"",""Object"",""Percent Complete""" | Out-File -FilePath $outfileName2
 
 if(!$commit -and ($cancelAll -or $cancelOutdated)){
     Write-Host "Running in test mode. Use the -commit switch to actually perform cancelations" -ForegroundColor Yellow
@@ -171,6 +173,7 @@ if($runningTasks.Keys.Count -gt 0){
                                     $pct = 0
                                 }
                                 "                       {0} ({1})`t{2}" -f $subTask.publicStatus, $pct, $subTask.entity.displayName
+                                """{0}"",""{1}"",""{2}"",""{3}"",""{4}""" -f (usecsToDate $t.startTimeUsecs), $t.jobName, $subTask.publicStatus, $subTask.entity.displayName, $pct | Out-File -FilePath $outfileName2 -Append
                             }
                         }
                         if($cancelAll -or ($cancelOutdated -and ($noLongerNeeded -eq "NO LONGER NEEDED"))){
@@ -198,4 +201,5 @@ if($runningTasks.Keys.Count -gt 0){
     "`nNo active replication tasks found"
 }
 
-Write-Host "`nOutput saved to $outfileName`n"
+Write-Host "`nOutput saved to $outfileName`nand $outfileName2`n"
+
