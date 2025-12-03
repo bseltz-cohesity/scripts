@@ -1,7 +1,7 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][string]$username = 'Ccs',
+    [Parameter()][string]$username = 'DMaaS',
     [Parameter(Mandatory = $True)][string]$region,
     [Parameter(Mandatory = $True)][string]$policyName = '',  # protection policy name
     [Parameter(Mandatory = $True)][string]$sourceName,  # name of registered O365 source
@@ -91,6 +91,7 @@ if(!$objectsNode){
 }
 
 $nameIndex = @{}
+$smtpIndex = @{}
 $idIndex = @{}
 $unprotectedIndex = @()
 $objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false" # -region $regionId
@@ -98,6 +99,7 @@ while(1){
     foreach($node in $objects.nodes){
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
         $idIndex["$($node.protectionSource.id)"] = $node.protectionSource.name
+        $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
         if(($node.unprotectedSourcesSummary | Where-Object environment -eq 'kO365Group').leavesCount -eq 1){
             $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
         }
@@ -131,6 +133,8 @@ foreach($objName in $objectsToAdd){
     }else{
         if($objName -ne $null -and $nameIndex.ContainsKey($objName)){
             $objId = $nameIndex[$objName]
+        }elseif($objName -ne $null -and $smtpIndex.ContainsKey($objName)){
+            $objId = $smtpIndex[$objName]
         }
     }
     if($objId -and $objId -in $unprotectedIndex){
