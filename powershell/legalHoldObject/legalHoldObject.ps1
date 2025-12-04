@@ -62,7 +62,7 @@ if($jobName){
     }
 }
 
-$search = api get -v2 "data-protect/search/objects?searchString=$objectName"
+$search = api get -v2 "data-protect/search/objects?searchString=$objectName&includeDeletedObjects=true"
 if($search.PSObject.Properties['objects'] -and $search.objects.Count -gt 0){
     $objects = $search.objects
     if($objectName -notmatch '\*'){
