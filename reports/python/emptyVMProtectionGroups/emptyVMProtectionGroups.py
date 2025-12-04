@@ -108,3 +108,4 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
         if reportall is True:
              f.write('"%s","%s",""\n' % (job['name'], totalobjects))
 f.close()
+print('\nOutput saved to %s\n' % outfile)
