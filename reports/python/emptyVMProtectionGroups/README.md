@@ -11,10 +11,8 @@ You can download the scripts using the following commands:
 ```bash
 # download commands
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/python/emptyVMProtectionGroups/emptyVMProtectionGroups.py
-curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/python/emptyVMProtectionGroups/emptyVMProtectionGroupsNGCE.py
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x emptyVMProtectionGroups.py
-chmod +x emptyVMProtectionGroupsNGCE.py
 # end download commands
 ```
 
