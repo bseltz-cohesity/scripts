@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-12-03`] [protectCcsM365Groups.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365Groups) [`Update`] added ability to protect groups by SMTP address
+* [`2025-12-03`] [supportUserPassword.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/supportUserPassword) [`Update`] added ability to manage other users
 * [`2025-11-26`] [registerSQLVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/registerSQLVM) [`Update`] modernized authentication
 * [`2025-11-26`] [missingCcsObjects.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/missingCcsObjects) [`New`] Unprotect missing CCS objects
 * [`2025-11-25`] [restoreEC2VM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/restoreEC2VM) [`Update`] added support for NGCE
