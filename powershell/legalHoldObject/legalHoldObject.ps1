@@ -62,16 +62,14 @@ if($jobName){
     }
 }
 
-$search = api get -v2 "data-protect/search/objects?searchString=$objectName&includeDeletedObjects=true"
+$search = api get -v2 "data-protect/search/protected-objects?searchString=$objectName&includeDeletedObjects=true"
 if($search.PSObject.Properties['objects'] -and $search.objects.Count -gt 0){
     $objects = $search.objects
     if($objectName -notmatch '\*'){
         $objects = $search.objects | Where-Object name -eq $objectName
     }
     foreach($obj in $objects | Sort-Object -Property name){
-        if($obj.PSObject.Properties['objectProtectionInfos'] -and $obj.objectProtectionInfos.Count -gt 0){
-            $objectId = $obj.objectProtectionInfos[0].objectId
-        }
+        $objectId = $obj.id
         $snaps = api get -v2 "data-protect/objects/$($objectId)/snapshots"
         foreach($snap in ($snaps.snapshots | Where-Object snapshotTargetType -eq 'Local' | Sort-Object -Property runStartTimeUsecs -Descending)){
             if(!$jobName -or $snap.protectionGroupId -eq $jobId){
