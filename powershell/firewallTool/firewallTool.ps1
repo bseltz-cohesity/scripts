@@ -78,10 +78,10 @@ if($profileName -eq '' -and $action -ne 'list'){
     exit 1
 }
 
-if($action -ne 'list' -and $entries.Count -eq 0){
-    Write-Host "No entries specified" -ForegroundColor Yellow
-    exit 1
-}
+# if($action -ne 'list' -and $entries.Count -eq 0){
+#     Write-Host "No entries specified" -ForegroundColor Yellow
+#     exit 1
+# }
 
 # get existing firewall rules
 $rules = api get /nexus/v1/firewall/list
@@ -98,6 +98,7 @@ foreach($cidr in $entries){
                     $attachment.subnets = @($attachment.subnets | Where-Object {$_ -ne $cidr})
                 }
                 if($action -eq 'add'){
+                    $attachment.action = 'allow'
                     if(! $attachment.subnets){
                         $attachment.subnets = @()
                     }
@@ -112,6 +113,22 @@ foreach($cidr in $entries){
     }
 }
 
+if($action -ne 'list' -and $entries.Count -lt 1){
+    foreach($attachment in $rules.entry.attachments){
+        if($attachment.profile -eq $profileName){
+            if($action -eq 'add'){
+                $attachment.subnets = $null
+                $attachment.action = 'allow'
+                Write-Host "    $($profileName): adding *"
+            }else{
+                Write-Host "  $($profileName): removing *"
+                $attachment.action = 'deny'
+            }
+            setApiProperty -object $rules -name updateAttachment -value $True
+        }
+    }
+}
+# $rules | toJson
 if($action -ne 'list'){
     # $rules | ConvertTo-JSON -Depth 99 | Out-file firewallExample.json
     $result = api put /nexus/v1/firewall/update $rules
