@@ -268,9 +268,9 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
             $sourceDbName = "MSSQLSERVER/$sourceDbName"
         }
     }
-    $thisSourceInstance, $shortDbName = $sourceDbName -split '/'    
-    $search = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverApps&searchString=$sourceDbName&environments=kSQL"
-    $search.objects = $search.objects | Where-Object name -eq $sourceDbName
+    $thisSourceInstance, $shortDbName = $sourceDbName -split '/'
+    $search = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverApps&searchString=$shortDbName&environments=kSQL"
+    $search.objects = $search.objects | Where-Object {$_.name -eq $sourceDbName -or ('/' -notin $_.name -and $_.name -eq $shortDbName)}
     $search.objects = $search.objects | Where-Object {$_.mssqlParams.hostInfo.name -eq $sourceServer -or $_.mssqlParams.aagInfo.name -eq $sourceServer}
     if($newerThan){
         $search.objects = $search.objects | Where-Object {$_.latestSnapshotsInfo.protectionRunStartTimeUsecs -ge $newerThanUsecs}
@@ -407,9 +407,9 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         }
         Write-Host "    Selected PIT $(usecsToDate $selectedPIT)"
     }
-    $search2 = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverApps&searchString=$sourceDbName&protectionGroupIds=$($latestSnapshotInfo.protectionGroupId)&filterSnapshotToUsecs=$runStartTimeUsecs&filterSnapshotFromUsecs=$runStartTimeUsecs&environments=kSQL"
+    $search2 = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverApps&searchString=$shortDbName&protectionGroupIds=$($latestSnapshotInfo.protectionGroupId)&filterSnapshotToUsecs=$runStartTimeUsecs&filterSnapshotFromUsecs=$runStartTimeUsecs&environments=kSQL"
     $search2.objects = $search2.objects | Where-Object {$_.mssqlParams.hostInfo.name -eq $thisSourceServer}
-    $search2.objects = $search2.objects | Where-Object {$_.name -eq $sourceDbName}
+    $search2.objects = $search2.objects | Where-Object {$_.name -eq $sourceDbName -or ('/' -notin $_.name -and $_.name -eq $shortDbName)}
     if($search2.objects.Count -eq 0){
         Write-Host "$sourceDbName on server $sourceServer not found in $($latestSnapshotInfo.protectionGroupName) (2nd search)" -ForegroundColor Yellow
         continue
