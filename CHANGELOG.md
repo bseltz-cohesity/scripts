@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-12-05`] [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] added support for 7.3 AAG
 * [`2025-12-05`] [registerAzureSource.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/registerAzureSource) [`New`] register Azure sources
 * [`2025-12-04`] [emptyVMProtectionGroups.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/emptyVMProtectionGroups) [`New`] Report VM PRotection Groups that backed up zero VMs
 * [`2025-12-03`] [protectCcsM365Groups.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365Groups) [`Update`] added ability to protect groups by SMTP address
