@@ -286,13 +286,14 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
     if(! $logTime){
         $latest = $True
         $search.objects = @(($search.objects | Sort-Object -Property {$_.latestSnapshotsInfo.protectionRunStartTimeUsecs})[-1])
+        # $latestSnapshotInfo = ($search.objects[0].latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
+    
     }else{
         # find object with correct time range
         foreach($o in $search.objects | Sort-Object -Property {$_.latestSnapshotsInfo.protectionRunStartTimeUsecs} -Descending){
             $thisSourceServer = $o.mssqlParams.hostInfo.name
             $o.latestSnapshotsInfo = $o.latestSnapshotsInfo | Where-Object {$_.protectionRunStartTimeUsecs -le $logTimeUsecs} 
             $latestSnapshotInfo = ($o.latestSnapshotsInfo | Where-Object {$_.protectionRunStartTimeUsecs -le $logTimeUsecs} | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
-            "hello"
             $clusterId, $clusterIncarnationId, $jobId = $latestSnapshotInfo.protectionGroupId -split ':'
             
             # PIT lookup
@@ -407,8 +408,12 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         }
         Write-Host "    Selected PIT $(usecsToDate $selectedPIT)"
     }
-    $search2 = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverApps&searchString=$shortDbName&protectionGroupIds=$($latestSnapshotInfo.protectionGroupId)&filterSnapshotToUsecs=$runStartTimeUsecs&filterSnapshotFromUsecs=$runStartTimeUsecs&environments=kSQL"
-    $search2.objects = $search2.objects | Where-Object {$_.mssqlParams.hostInfo.name -eq $thisSourceServer}
+    # $latestSnapshotInfo | toJson
+
+    $search2 = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverApps&searchString=$($search.objects[0].name)&protectionGroupIds=$($latestSnapshotInfo.protectionGroupId)&environments=kSQL"
+    # $search2 = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverApps&searchString=$shortDbName&protectionGroupIds=$($latestSnapshotInfo.protectionGroupId)&filterSnapshotToUsecs=$runStartTimeUsecs&filterSnapshotFromUsecs=$runStartTimeUsecs&environments=kSQL"
+    # $search2 | toJson
+    $search2.objects = $search2.objects | Where-Object {$_.mssqlParams.hostInfo.name -eq $sourceServer -or $_.mssqlParams.aagInfo.name -eq $sourceServer} # {$_.mssqlParams.hostInfo.name -eq $thisSourceServer}
     $search2.objects = $search2.objects | Where-Object {$_.name -eq $sourceDbName -or ('/' -notin $_.name -and $_.name -eq $shortDbName)}
     if($search2.objects.Count -eq 0){
         Write-Host "$sourceDbName on server $sourceServer not found in $($latestSnapshotInfo.protectionGroupName) (2nd search)" -ForegroundColor Yellow
