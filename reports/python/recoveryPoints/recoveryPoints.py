@@ -70,7 +70,7 @@ nowstring = now.strftime("%Y-%m-%d")
 outfileName = '%s/RecoverPoints-%s-%s.csv' % (folder, cluster['name'], nowstring)
 
 f = codecs.open(outfileName, 'w', 'utf-8')
-f.write("Job Name,Object Type,Object Name,Start Time,Local Expiry,Archive Target,Archive Expiry\n")
+f.write("Job Name,Object Type,Registered Source,Object Name,Start Time,Local Expiry,Archive Target,Archive Expiry\n")
 
 environments = ['Unknown', 'VMware', 'HyperV', 'SQL', 'View', 'Puppeteer', 'Physical',
                 'Pure', 'Azure', 'Netapp', 'Agent', 'GenericNas', 'Acropolis', 'PhysicalFiles',
@@ -101,20 +101,14 @@ for job in jobs:
                 jobName = doc['jobName']
                 objName = doc['objectName']
                 objType = environments[doc['registeredSource']['type']]
-                objSource = doc['registeredSource']['displayName']
-                objAlias = ''
+                objSource = objName
                 if 'objectAliases' in doc:
                     objAlias = doc['objectAliases'][0]
-                    if objAlias == objName + '.vmx':
-                        objAlias = ''
-                    if objType == 'VMware':
-                        objAlias = ''
-                if objType == 'View':
-                    objSource = ''
-
-                if objAlias != '':
-                    objName = objName + " on " + objAlias
-                print("%s (%s) %s" % (jobName, objType, objName))
+                    if 'vmx' in objAlias or 'vmtx' in objAlias:
+                        objSource = doc['registeredSource']['displayName']
+                    else:
+                        objSource = objAlias
+                print("%s (%s) %s on %s" % (jobName, objType, objName, objSource))
                 for version in doc['versions']:
                     runId = version['instanceId']['jobInstanceId']
                     startTime = usecsToDate(version['instanceId']['jobStartTimeUsecs'])
@@ -137,7 +131,7 @@ for job in jobs:
                                 archiveTarget = replica['target']['archivalTarget']['name']
                                 localExpiry = '-'
                                 archiveExpiry = usecsToDate(archive)
-                        f.write("%s,%s,%s,%s,%s,%s,%s\n" % (jobName, objType, objName, startTime, localExpiry, archiveTarget, archiveExpiry))
+                        f.write("%s,%s,%s,%s,%s,%s,%s,%s\n" % (jobName, objType, objSource, objName, startTime, localExpiry, archiveTarget, archiveExpiry))
             if ro['count'] > (pagesize + startfrom):
                 startfrom += pagesize
                 ro = api('get', '/searchvms?jobIds=%s&size=%s&from=%s' % (job['id'], pagesize, startfrom))
