@@ -43,7 +43,7 @@ $clusterId = $cluster.id
 $clusterName = $cluster.name
 
 $outfileName = $(Join-Path -Path $outputPath -ChildPath "recoveryPoints-$clusterName.csv")
-"Job Name,Job Type,Protected Object,Recovery Date,Local Expiry,Archive Expiry,Archive Target" | Out-File -FilePath $outfileName
+"Job Name,Job Type,Registered Source,Protected Object,Recovery Date,Local Expiry,Archive Expiry,Archive Target" | Out-File -FilePath $outfileName
 
 if($days){
     $daysBackUsecs = timeAgo $days days
@@ -96,17 +96,16 @@ foreach($job in $jobs){
                 $jobName = $doc.jobName
                 $objName = $doc.objectName
                 $objType = $environments[$doc.registeredSource.type]
-                $objAlias = ''
+                $sourceName = $objName
                 if('objectAliases' -in $doc.PSobject.Properties.Name){
                     $objAlias = $doc.objectAliases[0]
-                    if($objAlias -eq "$objName.vmx" -or $objType -eq 'VMware'){
-                        $objAlias = ''
+                    if($objAlias -match "vmx" -or $objAlias -match "vmtx"){
+                        $sourceName = $doc.registeredSource.displayName
+                    }else{
+                        $sourceName = $objAlias
                     }
                 }
-                if($objAlias -ne ''){
-                    $objName = "$objName on $objAlias"
-                }
-                write-host ("`n{0} ({1}) {2}" -f $jobName, $objType, $objName) -ForegroundColor Green 
+                write-host ("`n{0} ({1}) {2} on {3}" -f $jobName, $objType, $objName, $sourceName) -ForegroundColor Green 
                 $versionList = @()
                 foreach($version in $doc.versions){
                     $runId = $version.instanceId.jobInstanceId
@@ -142,7 +141,7 @@ foreach($job in $jobs){
                     }
                     $runDate = usecsToDate $version['RunDate']
                     "`t{0,20}  {1,20}  {2,20}" -f $runDate, $local, $archive
-                    "$jobName,$objType,$objName,$runDate,$local,$archive,$($version['archiveTarget'])" | Out-File -FilePath $outfileName -Append
+                    "$jobName,$objType,$sourceName,$objName,$runDate,$local,$archive,$($version['archiveTarget'])" | Out-File -FilePath $outfileName -Append
                 }
             }
             if($ro.count -gt ($pageSize + $from)){
