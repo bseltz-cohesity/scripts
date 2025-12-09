@@ -1,4 +1,4 @@
-# version 2025-12-05
+# version 2025-12-09
 # process commandline arguments
 [CmdletBinding()]
 param (
@@ -283,6 +283,9 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         Write-Host "$sourceDbName not found on server $sourceServer" -ForegroundColor Yellow
         continue
     }
+    if($dbg){
+        $search | toJson | Out-File -FilePath debig-search1.json
+    }
     if(! $logTime){
         $latest = $True
         $search.objects = @(($search.objects | Sort-Object -Property {$_.latestSnapshotsInfo.protectionRunStartTimeUsecs})[-1])
@@ -320,8 +323,8 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
     }
     Write-Host "`n$($search.objects[0].name)"
     $thisSourceServer = $search.objects[0].mssqlParams.hostInfo.name
-    
-    $latestSnapshotInfo = ($search.objects[0].latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
+    $latestSnapshotInfo = ($search.objects.latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
+    # $latestSnapshotInfo = ($search.objects[0].latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
     $clusterId, $clusterIncarnationId, $jobId = $latestSnapshotInfo.protectionGroupId -split ':'
 
     # PIT lookup
@@ -396,7 +399,8 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
             }
             $selectedPIT = $runStartTimeUsecs = $fullSnapshot.restoreInfo.startTimeUsecs
         }else{
-            $selectedPIT = $runStartTimeUsecs = ($search.objects[0].latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1].protectionRunStartTimeUsecs
+            $selectedPIT = $runStartTimeUsecs = ($latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1].protectionRunStartTimeUsecs
+            # $selectedPIT = $runStartTimeUsecs = ($search.objects[0].latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1].protectionRunStartTimeUsecs
         }
     }
     if(! $showPaths){
@@ -626,8 +630,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
 }
 
 if($dbg){
-    $recoveryParams | toJson | Out-File -FilePath debug.json
-    exit
+    $recoveryParams | toJson | Out-File -FilePath debug-recoveryParams.json
 }
 
 # perform last recovery group (if any)
