@@ -284,46 +284,52 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         continue
     }
     if($dbg){
-        $search | toJson | Out-File -FilePath debig-search1.json
+        $search | toJson | Out-File -FilePath debug-search1.json
     }
     if(! $logTime){
         $latest = $True
         $search.objects = @(($search.objects | Sort-Object -Property {$_.latestSnapshotsInfo.protectionRunStartTimeUsecs})[-1])
-        # $latestSnapshotInfo = ($search.objects[0].latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
+        $latestSnapshotInfo = ($search.objects[0].latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
     
     }else{
         # find object with correct time range
         foreach($o in $search.objects | Sort-Object -Property {$_.latestSnapshotsInfo.protectionRunStartTimeUsecs} -Descending){
             $thisSourceServer = $o.mssqlParams.hostInfo.name
-            $o.latestSnapshotsInfo = $o.latestSnapshotsInfo | Where-Object {$_.protectionRunStartTimeUsecs -le $logTimeUsecs} 
-            $latestSnapshotInfo = ($o.latestSnapshotsInfo | Where-Object {$_.protectionRunStartTimeUsecs -le $logTimeUsecs} | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
-            $clusterId, $clusterIncarnationId, $jobId = $latestSnapshotInfo.protectionGroupId -split ':'
+            foreach($latestSnapshotInfo in $o.latestSnapshotsInfo){
+                $clusterId, $clusterIncarnationId, $jobId = $latestSnapshotInfo.protectionGroupId -split ':'
+                
+                # PIT lookup
+                $pitQuery = @{
+                    "jobUids" = @(
+                        @{
+                            "clusterId" = [int64]$clusterId;
+                            "clusterIncarnationId" = [int64]$clusterIncarnationId;
+                            "id" = [int64]$jobId
+                        }
+                    );
+                    "environment" = "kSQL";
+                    "protectionSourceId" = $o.id;
+                    "startTimeUsecs" = $logTimeUsecs - ($logRangeDays * 86400000000);
+                    "endTimeUsecs" = $logTimeUsecs
+                }
+                $logs = api post restore/pointsForTimeRange $pitQuery
+                $fullSnapshotInfo = $logs.fullSnapshotInfo | Where-Object {$_.restoreInfo.startTimeUsecs -le $logTimeUsecs}
+                if($fullSnapshotInfo){
+                    $search.objects = $o
+                    break
+                }
+            }
+            # $o.latestSnapshotsInfo = $o.latestSnapshotsInfo | Where-Object {$_.protectionRunStartTimeUsecs -le $logTimeUsecs}
+            # if($null -eq $o.latestSnapshotsInfo){
+            #     continue
+            # }
+            # $latestSnapshotInfo = ($o.latestSnapshotsInfo | Where-Object {$_.protectionRunStartTimeUsecs -le $logTimeUsecs} | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
             
-            # PIT lookup
-            $pitQuery = @{
-                "jobUids" = @(
-                    @{
-                        "clusterId" = [int64]$clusterId;
-                        "clusterIncarnationId" = [int64]$clusterIncarnationId;
-                        "id" = [int64]$jobId
-                    }
-                );
-                "environment" = "kSQL";
-                "protectionSourceId" = $o.id;
-                "startTimeUsecs" = $logTimeUsecs - ($logRangeDays * 86400000000);
-                "endTimeUsecs" = $logTimeUsecs
-            }
-            $logs = api post restore/pointsForTimeRange $pitQuery
-            $fullSnapshotInfo = $logs.fullSnapshotInfo | Where-Object {$_.restoreInfo.startTimeUsecs -le $logTimeUsecs}
-            if($fullSnapshotInfo){
-                $search.objects = $o
-                break
-            }
         }
     }
     Write-Host "`n$($search.objects[0].name)"
     $thisSourceServer = $search.objects[0].mssqlParams.hostInfo.name
-    $latestSnapshotInfo = ($search.objects.latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
+    # $latestSnapshotInfo = ($search.objects.latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
     # $latestSnapshotInfo = ($search.objects[0].latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
     $clusterId, $clusterIncarnationId, $jobId = $latestSnapshotInfo.protectionGroupId -split ':'
 
@@ -399,7 +405,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
             }
             $selectedPIT = $runStartTimeUsecs = $fullSnapshot.restoreInfo.startTimeUsecs
         }else{
-            $selectedPIT = $runStartTimeUsecs = ($latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1].protectionRunStartTimeUsecs
+            $selectedPIT = $runStartTimeUsecs = $latestSnapshotInfo.protectionRunStartTimeUsecs # ($latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1].protectionRunStartTimeUsecs
             # $selectedPIT = $runStartTimeUsecs = ($search.objects[0].latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1].protectionRunStartTimeUsecs
         }
     }
@@ -412,11 +418,9 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         }
         Write-Host "    Selected PIT $(usecsToDate $selectedPIT)"
     }
-    # $latestSnapshotInfo | toJson
 
     $search2 = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverApps&searchString=$($search.objects[0].name)&protectionGroupIds=$($latestSnapshotInfo.protectionGroupId)&environments=kSQL"
     # $search2 = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverApps&searchString=$shortDbName&protectionGroupIds=$($latestSnapshotInfo.protectionGroupId)&filterSnapshotToUsecs=$runStartTimeUsecs&filterSnapshotFromUsecs=$runStartTimeUsecs&environments=kSQL"
-    # $search2 | toJson
     $search2.objects = $search2.objects | Where-Object {$_.mssqlParams.hostInfo.name -eq $sourceServer -or $_.mssqlParams.aagInfo.name -eq $sourceServer} # {$_.mssqlParams.hostInfo.name -eq $thisSourceServer}
     $search2.objects = $search2.objects | Where-Object {$_.name -eq $sourceDbName -or ('/' -notin $_.name -and $_.name -eq $shortDbName)}
     if($search2.objects.Count -eq 0){
