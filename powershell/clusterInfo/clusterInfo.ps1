@@ -48,6 +48,7 @@ $dateString = (get-date).ToString('yyyy-MM-dd')
 $GiB = 1024 * 1024 * 1024
 
 $outfile = $(Join-Path -Path $outFolder -ChildPath "$($cluster.name)-clusterInfo-$dateString.txt")
+$csvfile = $(Join-Path -Path $outFolder -ChildPath "$($cluster.name)-clusterInfo-$dateString.csv")
 
 $dateString | Out-File -FilePath $outfile
 
@@ -64,16 +65,7 @@ function output($msg, [switch]$warn){
 $version = ($cluster.clusterSoftwareVersion -split '_')[0]
 
 $status = api get /nexus/cluster/status
-# $config = $status.clusterConfig.proto
 $nodeStatus = $status.nodeStatus
-
-# if($config){
-#     $chassisList = $config.chassisVec
-#     $hostName = $status.clusterConfig.proto.clusterPartitionVec[0].hostName
-# }else{
-#     $chassisList = (api get -v2 chassis).chassis
-#     $hostName = (api get clusterPartitions)[0].hostName
-# }
 
 $chassisList = api get -v2 chassis
 if($chassisList.PSObject.Properties['chassis']){
@@ -99,6 +91,8 @@ output ("    Used Capacity: {0} GiB" -f $usedCapacity)
 output ("     Used Percent: {0}%" -f $usedPct)
 output ("  Number of nodes: {0}" -f @($nodes).Length)
 output ("-------------------------------------------------------")
+
+"""Chassis ID"",""Chassis Name"",""Chassis Serial"",""Chassis Hardware"",""Node ID"",""Node IP"",""IPMI IP"",""Slot Number"",""Node Serial"",""Hardware Model"",""Cohesity Version"",""Uptime""" | Out-File -FilePath $csvfile
 
 $ipmi = api get /nexus/ipmi/cluster_get_lan_info -quiet
 foreach($chassis in $chassisList | Sort-Object -Property id){
@@ -152,7 +146,6 @@ foreach($chassis in $chassisList | Sort-Object -Property id){
             $needSerial = $false
         }
         output ("`n                  Node ID: {0}" -f $node.id)
-        # output ("              Virtual IPs: {0}" -f (($nwInfo.networkInterfaces.virtualIp | Where-Object {$_ -ne ''} | Sort-Object) -join ', '))
         output ("                  Node IP: {0}" -f $nodeIp)
         output ("                  IPMI IP: {0}" -f $nodeIpmiIp)
         output ("                  Slot No: {0}" -f $slotNumber)
@@ -161,10 +154,12 @@ foreach($chassis in $chassisList | Sort-Object -Property id){
         output ("          Product Version: {0}" -f $node.nodeSoftwareVersion)
         foreach($stat in $nodeStatus){
             if($stat.nodeId -eq $node.id){
+                $uptime = $stat.uptime
                 output ("                   Uptime: {0}" -f $stat.uptime)
             }     
         }
+        """$($chassis.id)"",""$chassisname"",""$($chassis.serialNumber)"",""$hwmodel"",""$($node.id)"",""$($nodeIp)"",""$nodeIpmiIp"",""$slotNumber"",""$nodeSerial"",""$productModel"",""$($node.nodeSoftwareVersion)"",""$uptime""" | Out-File -FilePath $csvfile -Append
     }
 }
 
-"`nOutput saved to $outfile`n"
+"`nOutput saved to $outfile`n            and $csvfile`n"
