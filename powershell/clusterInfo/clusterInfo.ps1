@@ -92,7 +92,7 @@ output ("     Used Percent: {0}%" -f $usedPct)
 output ("  Number of nodes: {0}" -f @($nodes).Length)
 output ("-------------------------------------------------------")
 
-"""Chassis ID"",""Chassis Name"",""Chassis Serial"",""Chassis Hardware"",""Node ID"",""Node IP"",""IPMI IP"",""Slot Number"",""Node Serial"",""Hardware Model"",""Cohesity Version"",""Uptime""" | Out-File -FilePath $csvfile
+"""Chassis ID"",""Chassis Name"",""Chassis Serial"",""Chassis Hardware"",""Slot Number"",""Node ID"",""Node IP"",""IPMI IP"",""Node Serial"",""Hardware Model"",""Cohesity Version"",""Uptime""" | Out-File -FilePath $csvfile
 
 $ipmi = api get /nexus/ipmi/cluster_get_lan_info -quiet
 foreach($chassis in $chassisList | Sort-Object -Property id){
@@ -158,7 +158,7 @@ foreach($chassis in $chassisList | Sort-Object -Property id){
                 output ("                   Uptime: {0}" -f $stat.uptime)
             }     
         }
-        """$($chassis.id)"",""$chassisname"",""$($chassis.serialNumber)"",""$hwmodel"",""$($node.id)"",""$($nodeIp)"",""$nodeIpmiIp"",""$slotNumber"",""$nodeSerial"",""$productModel"",""$($node.nodeSoftwareVersion)"",""$uptime""" | Out-File -FilePath $csvfile -Append
+        """$($chassis.id)"",""$chassisname"",""$($chassis.serialNumber)"",""$hwmodel"",""$slotNumber"",""$($node.id)"",""$($nodeIp)"",""$nodeIpmiIp"",""$nodeSerial"",""$productModel"",""$($node.nodeSoftwareVersion)"",""$uptime""" | Out-File -FilePath $csvfile -Append
     }
 }
 
