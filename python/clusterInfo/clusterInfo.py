@@ -74,6 +74,9 @@ version = cluster['clusterSoftwareVersion'].split('_')[0]
 dateString = datetime.datetime.now().strftime("%Y-%m-%d")
 outfileName = '%s/%s-%s-clusterInfo.txt' % (folder, dateString, cluster['name'])
 f = codecs.open(outfileName, 'w', 'utf-8')
+csvfileName = '%s/%s-%s-clusterInfo.csv' % (folder, dateString, cluster['name'])
+c = codecs.open(csvfileName, 'w', 'utf-8')
+c.write('"Chassis ID","Chassis Name","Chassis Serial","Chassis Hardware","Slot Number","Node ID","Node IP","IPMI IP","Node Serial","Hardware Model","Cohesity Version","Uptime"\n')
 
 status = api('get', '/nexus/cluster/status')
 nodeStatus = status['nodeStatus']
@@ -142,9 +145,12 @@ for chassis in chassisList:
         output('          Serial No: %s' % node.get('cohesityNodeSerial', 'Unknown'))
         output('      Product Model: %s' % node.get('productModel', 'Unknown'))                
         output('         SW Version: %s' % node['nodeSoftwareVersion'])
+        uptime = ''
         for stat in nodeStatus:
             if stat['nodeId'] == node['id']:
                 output('             Uptime: %s' % stat['uptime'])
+                uptime = stat['uptime']
+        c.write('"%s","%s","%s","%s","%s","%s","%s","%s",%s","%s","%s","%s"\n' % (chassis['id'], chassisname, serial, chassis.get('hardwareModel', 'VirtualEdition'), node.get('slotNumber', 0), node['id'], node['ip'].split(':')[-1], nodeipmi[0].get('nodeIpmiIp', 'n/a'), node.get('cohesityNodeSerial', 'Unknown'), node.get('productModel', 'Unknown'), node['nodeSoftwareVersion'], uptime))
 
 if listgflags:
     gflagfileName = '%s/%s-gflags.csv' % (folder, dateString)
@@ -171,3 +177,7 @@ if listgflags:
 
 output('')
 f.close()
+c.close()
+
+print('\nOutput saved to %s\n            and %s\n' % (outfileName, csvfileName))
+
