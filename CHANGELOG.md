@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-12-10`] [clusterInfo.py](https://github.com/cohesity/community-automation-samples/tree/main/python/clusterInfo) [`Update`] added CSV output
 * [`2025-12-10`] [clusterInfo.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/clusterInfo) [`Update`] added CSV output
 * [`2025-12-08`] [recoveryPoints.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/recoveryPoints) [`Update`] added registered source column
 * [`2025-12-08`] [recoveryPoints.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/recoveryPoints) [`Update`] added registered source column
