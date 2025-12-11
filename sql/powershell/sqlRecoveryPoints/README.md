@@ -45,3 +45,4 @@ Place both files in a folder together and run the main script like so:
 ## Other Parameters
 
 * -pageSize: (optional) number of results to retrieve at a time (default is 100)
+* -searchString: (optional) default is '*' but you can enter a full or partial database, instance, server or AAG name

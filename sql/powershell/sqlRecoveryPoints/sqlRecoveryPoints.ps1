@@ -11,6 +11,7 @@ param (
     [Parameter()][string]$mfaCode,
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName,
+    [Parameter()][string]$searchString = '*',
     [Parameter()][int64]$pageSize = 100
 )
 
@@ -50,7 +51,7 @@ $outfileName = "$($cluster.name)-SQLRecoveryPoints-$dateString.csv"
 
 ### find recoverable objects
 $from = 0
-$ro = api get "/searchvms?environment=SQL&size=$pageSize&from=$from"
+$ro = api get "/searchvms?vmName=$searchString&environment=SQL&size=$pageSize&from=$from"
 
 if($ro.count -gt 0){
 
@@ -143,7 +144,7 @@ if($ro.count -gt 0){
         }
         if($ro.count -gt ($pageSize + $from)){
             $from += $pageSize
-            $ro = api get "/searchvms?environment=SQL&size=$pageSize&from=$from"
+            $ro = api get "/searchvms?vmName=$searchString&environment=SQL&size=$pageSize&from=$from"
         }else{
             break
         }
