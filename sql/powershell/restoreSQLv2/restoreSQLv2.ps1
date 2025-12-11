@@ -1,4 +1,4 @@
-# version 2025-12-10
+# version 2025-12-11
 # process commandline arguments
 [CmdletBinding()]
 param (
@@ -363,6 +363,13 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         if(! $fullSnapshotInfo){
             Write-Host "    No snapshots for $logTime, skipping" -ForegroundColor Yellow
             continue
+        }
+    }
+    if($logsAvailable -and ! $noLogs){
+        if(($timeRanges | Sort-Object -Property endTimeUsecs -Descending)[0].endTimeUsecs -lt $latestSnapshotInfo.protectionRunStartTimeUsecs){
+            if($latestSnapshotInfo.protectionRunStartTimeUsecs -lt $queryTime){
+                $logsAvailable = $False
+            }
         }
     }
     if($logsAvailable -and ! $noLogs){
