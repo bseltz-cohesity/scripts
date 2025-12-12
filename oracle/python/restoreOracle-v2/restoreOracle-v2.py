@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Restore an Oracle DB Using python"""
 
-# version: 2024-02-27
+# version: 2025-12-12
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -528,7 +528,7 @@ if channelnode is not None and 'networkingInfo' in targetSource[0]['protectionSo
         print('%s not found' % channelnode)
         exit(1)
     endPoint = [e for e in channelNodes[0]['endpoints'] if 'ipv4Addr' in e and e['ipv4Addr'] is not None][0]
-    agent = [a for a in targetSource[0]['protectionSource']['physicalProtectionSource']['agents'] if a['name'] == endPoint['fqdn']][0]
+    agent = [a for a in targetSource[0]['protectionSource']['physicalProtectionSource']['agents'] if a['name'] == endPoint['fqdn'] or ('ipv4Addr' in endPoint and a['name'] == endPoint['ipv4Addr'])][0]
     channelConfig = {
         "databaseUniqueName": latestSnapshotObject['name'],
         "databaseUuid": latestSnapshotObject['uuid'],
