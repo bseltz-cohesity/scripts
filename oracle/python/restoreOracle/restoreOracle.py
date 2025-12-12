@@ -157,9 +157,17 @@ if len(searchResults) == 0:
     print("SourceDB %s on Server %s not found" % (sourcedb, sourceserver))
     exit()
 
+allVersions = []
+for result in searchResults:
+    for version in result['vmDocument']['versions']:
+        version['doc'] = result['vmDocument']
+        allVersions.append(version)
+allVersions = sorted(allVersions, key=lambda version: version['instanceId']['jobStartTimeUsecs'], reverse=True)
+
 # find latest snapshot
-latestdb = sorted(searchResults, key=lambda result: result['vmDocument']['versions'][0]['snapshotTimestampUsecs'], reverse=True)[0]
-version = latestdb['vmDocument']['versions'][0]
+# latestdb = sorted(searchResults, key=lambda result: result['vmDocument']['versions'][0]['snapshotTimestampUsecs'], reverse=True)[0]
+# version = latestdb['vmDocument']['versions'][0]
+version = allVersions[0]
 
 # find target host
 targetEntity = None
@@ -172,8 +180,8 @@ if targetEntity is None:
     exit()
 
 # version
-version = latestdb['vmDocument']['versions'][0]
-ownerId = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['ownerId']
+# version = latestdb['vmDocument']['versions'][0]
+# ownerId = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['ownerId']
 
 # handle log replay
 versionNum = 0
@@ -182,15 +190,15 @@ validLogTime = False
 if logtime is not None or latest is True:
     if logtime is not None:
         logusecs = dateToUsecs(logtime)
-    dbversions = latestdb['vmDocument']['versions']
+    # dbversions = latestdb['vmDocument']['versions']
 
-    for version in dbversions:
+    for version in allVersions:
         # find db date before log time
         GetRestoreAppTimeRangesArg = {
             "type": 19,
             "restoreAppObjectVec": [
                 {
-                    "appEntity": latestdb['vmDocument']['objectId']['entity'],
+                    "appEntity": version['doc']['objectId']['entity'],
                     "restoreParams": {
                         "sqlRestoreParams": {
                             "captureTailLogs": True
@@ -218,12 +226,12 @@ if logtime is not None or latest is True:
             ],
             "ownerObjectVec": [
                 {
-                    "jobUid": latestdb['vmDocument']['objectId']['jobUid'],
-                    "jobId": latestdb['vmDocument']['objectId']['jobId'],
+                    "jobUid": version['doc']['objectId']['jobUid'],
+                    "jobId": version['doc']['objectId']['jobId'],
                     "jobInstanceId": version['instanceId']['jobInstanceId'],
                     "startTimeUsecs": version['instanceId']['jobStartTimeUsecs'],
                     "entity": {
-                        "id": ownerId
+                        "id": version['doc']['objectId']['entity']['oracleEntity']['ownerId']
                     },
                     "attemptNum": version['instanceId']['attemptNum']
                 }
@@ -252,11 +260,11 @@ if logtime is not None or latest is True:
             if logEnd < logusecs:
                 logusecs = logEnd - 1000000
                 validLogTime = True
-                print('Using latest log backup: %s' % usecsToDate(logEnd))
+                print('Using log backup: %s' % usecsToDate(logEnd))
                 break
 
         if logtime is not None and version['instanceId']['jobStartTimeUsecs'] < logusecs:
-            print('Using latest DB backup: %s' % usecsToDate(version['instanceId']['jobStartTimeUsecs']))
+            print('Using DB backup: %s' % usecsToDate(version['instanceId']['jobStartTimeUsecs']))
             logtime = None
             latest = None
             break
@@ -273,12 +281,12 @@ restoreParams = {
         "ownerRestoreInfo": {
             "ownerObject": {
                 "attemptNum": version['instanceId']['attemptNum'],
-                "jobUid": latestdb['vmDocument']['objectId']['jobUid'],
-                "jobId": latestdb['vmDocument']['objectId']['jobId'],
+                "jobUid": version['doc']['objectId']['jobUid'],
+                "jobId": version['doc']['objectId']['jobId'],
                 "jobInstanceId": version['instanceId']['jobInstanceId'],
                 "startTimeUsecs": version['instanceId']['jobStartTimeUsecs'],
                 "entity": {
-                    "id": latestdb['vmDocument']['objectId']['entity']['parentId']
+                    "id": version['doc']['objectId']['entity']['parentId']
                 }
             },
             "ownerRestoreParams": {
@@ -289,7 +297,7 @@ restoreParams = {
         },
         "restoreAppObjectVec": [
             {
-                "appEntity": latestdb['vmDocument']['objectId']['entity'],
+                "appEntity": version['doc']['objectId']['entity'],
                 "restoreParams": {
                     "oracleRestoreParams": {
                         "captureTailLogs": False,
@@ -316,7 +324,7 @@ if channels is not None:
     if 'networkingInfo' not in targetEntity['appEntity']['entity']['physicalEntity']:
         channelnode = None
     if channelnode is not None:
-        uuid = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
+        uuid = version['doc']['objectId']['entity']['oracleEntity']['uuid']
         endpoints = [e for e in targetEntity['appEntity']['entity']['physicalEntity']['networkingInfo']['resourceVec'] if e['type'] == 0]
         channelNodeObj = None
         for endpoint in endpoints:
@@ -336,11 +344,11 @@ if channels is not None:
     else:
         hostNum = targetEntity['appEntity']['entity']['physicalEntity']['agentStatusVec'][0]['id']
         # channelNodeId = targetserver
-        uuid = latestdb['vmDocument']['objectId']['entity']['oracleEntity']['uuid']
+        uuid = version['doc']['objectId']['entity']['oracleEntity']['uuid']
     restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['oracleTargetParams'] = {
         "additionalOracleDbParamsVec": [
             {
-                "appEntityId": latestdb['vmDocument']['objectId']['entity']['id'],
+                "appEntityId": version['doc']['objectId']['entity']['id'],
                 "dbInfoChannelVec": [
                     {
                         "hostInfoVec": [
@@ -408,7 +416,7 @@ if targetserver != sourceserver or targetdb != sourcedb:
         restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig'] = {}
     restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']['oracleDBConfig']['pfileParameterMap'] = []
     if not clearpfileparameters:
-        snapshots = api('get', 'data-protect/objects/%s/snapshots?runInstanceIds=%s' % (latestdb['vmDocument']['objectId']['entity']['id'], version['instanceId']['jobInstanceId']), v=2)
+        snapshots = api('get', 'data-protect/objects/%s/snapshots?runInstanceIds=%s' % (version['doc']['objectId']['entity']['id'], version['instanceId']['jobInstanceId']), v=2)
         metaParams = {
             "environment": "kOracle",
             "oracleParams": {
@@ -455,6 +463,7 @@ if validLogTime is True:
     restoreParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['restoreTimeSecs'] = int(logusecs / 1000000)
 else:
     if logtime is not None:
+        print(logtime)
         print('LogTime of %s is out of range' % logtime)
         print('Available range is %s to %s' % (usecsToDate(logStart), usecsToDate(logEnd)))
         exit(1)

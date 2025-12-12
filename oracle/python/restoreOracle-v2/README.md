@@ -4,8 +4,6 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This script performs an restore of an Oracle database. The script can restore the database to the original server, or a different server.
 
-Note: this is a major rewrite of the previous restoreOracle.py script and may need significant testing to shake out any flaws. Please provide feedback if you try it out and find any issues.
-
 ## Components
 
 * [restoreOracle-v2.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/oracle/python/restoreOracle-v2/restoreOracle-v2.py): the main python script
