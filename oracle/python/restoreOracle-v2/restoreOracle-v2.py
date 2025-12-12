@@ -527,8 +527,10 @@ if channelnode is not None and 'networkingInfo' in targetSource[0]['protectionSo
     if channelNodes is None or len(channelNodes) == 0:
         print('%s not found' % channelnode)
         exit(1)
-    endPoint = [e for e in channelNodes[0]['endpoints'] if 'ipv4Addr' in e and e['ipv4Addr'] is not None][0]
-    agent = [a for a in targetSource[0]['protectionSource']['physicalProtectionSource']['agents'] if a['name'] == endPoint['fqdn'] or ('ipv4Addr' in endPoint and a['name'] == endPoint['ipv4Addr'])][0]
+    endPoints = [e for e in channelNodes[0]['endpoints'] if 'ipv4Addr' in e and e['ipv4Addr'] is not None]
+    agent = [a for a in targetSource[0]['protectionSource']['physicalProtectionSource']['agents'] if a['name'] in [e['fqdn'] for e in endPoints] or a['name'] in [e['ipv4Addr'] for e in endPoints]][0]
+    endPoint = [e for e in endPoints if e['fqdn'] == agent['name'] or e['ipv4Addr'] == agent['name']][0]
+    # agent = [a for a in targetSource[0]['protectionSource']['physicalProtectionSource']['agents'] if a['name'] == endPoint['fqdn'] or ('ipv4Addr' in endPoint and a['name'] == endPoint['ipv4Addr'])][0]
     channelConfig = {
         "databaseUniqueName": latestSnapshotObject['name'],
         "databaseUuid": latestSnapshotObject['uuid'],
