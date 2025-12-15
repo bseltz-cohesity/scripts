@@ -244,8 +244,7 @@ $restoreDate = Get-Date -UFormat '%Y-%m-%d_%H:%M:%S'
 
 $desiredPIT = dateToUsecs
 if($logTime){
-    $logTimeUsecs = dateToUsecs $logTime
-    $desiredPIT = $logTimeUsecs
+    $desiredPIT = dateToUsecs $logTime
 }
 
 # recovery params
@@ -307,7 +306,11 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         Write-Host "    No snapshots for $logTime, skipping" -ForegroundColor Yellow
         continue
     }
-
+    $logRangeLimitUsecs = $desiredPIT - ($logRangeDays * 86400000000)
+    $logRangeStart = $range.pit
+    if($logRangeLimitUsecs -gt $logRangeStart){
+        $logRangeStart = $logRangeLimitUsecs
+    }
     if(!$noLogs){
         $clusterId, $clusterIncarnationId, $jobId = $range.protection.protectionGroupId -split ':'
 
@@ -322,7 +325,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
             );
             "environment" = "kSQL";
             "protectionSourceId" = $range.object.id;
-            "startTimeUsecs" = $range.pit;
+            "startTimeUsecs" = $logRangeStart;
             "endTimeUsecs" = $desiredPIT
         }
         $logs = api post restore/pointsForTimeRange $pitQuery
@@ -343,9 +346,9 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
 
     if(! $showPaths){
         Write-Host "    Selected Snapshot $(usecsToDate $range.snapshot.runStartTimeUsecs)"
-        if($logTimeUsecs -and $logTimeUsecs -gt $range.pit){
+        if($desiredPIT -and $desiredPIT -gt $range.pit){
             Write-Host "    Best available PIT is $(usecsToDate $range.pit)" -ForegroundColor Yellow
-        }elseif($logTimeUsecs -and $logTimeUsecs -lt $range.pit){
+        }elseif($desiredPIT -and $desiredPIT -lt $range.pit){
             Write-Host "    Best available PIT is $(usecsToDate $range.pit)" -ForegroundColor Yellow
         }
         Write-Host "    Selected PIT $(usecsToDate $range.pit)"
