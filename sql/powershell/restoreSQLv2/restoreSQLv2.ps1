@@ -306,13 +306,15 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         Write-Host "    No snapshots for $logTime, skipping" -ForegroundColor Yellow
         continue
     }
-    $logRangeLimitUsecs = $desiredPIT - ($logRangeDays * 86400000000)
-    $logRangeStart = $range.pit
-    if($logRangeLimitUsecs -gt $logRangeStart){
-        $logRangeStart = $logRangeLimitUsecs
-    }
+
     if(!$noLogs){
         $clusterId, $clusterIncarnationId, $jobId = $range.protection.protectionGroupId -split ':'
+
+        $logRangeLimitUsecs = $desiredPIT - ($logRangeDays * 86400000000)
+        $logRangeStart = $range.pit
+        if($logRangeLimitUsecs -gt $logRangeStart){
+            $logRangeStart = $logRangeLimitUsecs
+        }
 
         # PIT lookup
         $pitQuery = @{
