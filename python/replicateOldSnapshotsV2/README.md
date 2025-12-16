@@ -69,8 +69,8 @@ By default, the script will only show what it would do. To actually execute the 
 * -resync, --resync: (optional) re-replicate to same cluster (skip previously replicated if omitted)
 * -numruns, --numruns: (optional) number of runs per API query (default is 1000)
 * -ri, --runid: (optional) specify run ID to replicate
-* -nt, --newerthan: (optional) replicate runs newer than X days ago
-* -ot, --olderthan: (optional) replicate runs older than X days ago
+* -n, --newerthan: (optional) replicate runs newer than X days ago
+* -o, --olderthan: (optional) replicate runs older than X days ago
 * -b, --ifexpiringbefore: (optional) replicate runs that expire less than X days from now
 * -a, --ifexpiringafter: (optional) replicate runs that expire more than X days from now
 * -rl, --retentionlessthan: (optional) replicate runs with retention less than X days (from backup date)

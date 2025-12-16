@@ -32,8 +32,8 @@ parser.add_argument('-ol', '--objectlist', type=str, required=False)   # text fi
 parser.add_argument('-e', '--excludelogs', action='store_true')   # exclude log backups
 parser.add_argument('-numruns', '--numruns', type=int, default=1000)
 parser.add_argument('-ri', '--runid', type=int, default=None)
-parser.add_argument('-nt', '--newerthan', type=int, default=0)     # number of days back to search for snapshots to archive
-parser.add_argument('-ot', '--olderthan', type=int, default=0)     # number of days back to search for snapshots to archive
+parser.add_argument('-n', '--newerthan', type=int, default=0)     # number of days back to search for snapshots to archive
+parser.add_argument('-o', '--olderthan', type=int, default=0)     # number of days back to search for snapshots to archive
 parser.add_argument('-b', '--ifexpiringbefore', type=int, default=0)     # if expiring before X days
 parser.add_argument('-a', '--ifexpiringafter', type=int, default=0)     # if expiring after X days
 parser.add_argument('-rl', '--retentionlessthan', type=int, default=0)     # if retention less than X days
