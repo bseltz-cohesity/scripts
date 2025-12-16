@@ -27,8 +27,8 @@ parser.add_argument('-resync', '--resync', action='store_true')        # perform
 parser.add_argument('-r', '--remotecluster', type=str, required=True)  # cluster to replicate to
 parser.add_argument('-j', '--jobname', action='append', type=str)  # one or more job names
 parser.add_argument('-l', '--joblist', type=str, required=False)   # text file of job names
-parser.add_argument('-on', '--objectname', action='append', type=str)  # one or more job names
-parser.add_argument('-ol', '--objectlist', type=str, required=False)   # text file of job names
+parser.add_argument('-on', '--objectname', action='append', type=str)  # one or more object names to replicate
+parser.add_argument('-ol', '--objectlist', type=str, required=False)   # text file of object names to replicate
 parser.add_argument('-e', '--excludelogs', action='store_true')   # exclude log backups
 parser.add_argument('-numruns', '--numruns', type=int, default=1000)
 parser.add_argument('-ri', '--runid', type=int, default=None)
