@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """replicate old snapshots v2"""
 
-# version 2025-06-15
+# version 2025-12-16
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -27,6 +27,8 @@ parser.add_argument('-resync', '--resync', action='store_true')        # perform
 parser.add_argument('-r', '--remotecluster', type=str, required=True)  # cluster to replicate to
 parser.add_argument('-j', '--jobname', action='append', type=str)  # one or more job names
 parser.add_argument('-l', '--joblist', type=str, required=False)   # text file of job names
+parser.add_argument('-on', '--objectname', action='append', type=str)  # one or more job names
+parser.add_argument('-ol', '--objectlist', type=str, required=False)   # text file of job names
 parser.add_argument('-e', '--excludelogs', action='store_true')   # exclude log backups
 parser.add_argument('-numruns', '--numruns', type=int, default=1000)
 parser.add_argument('-ri', '--runid', type=int, default=None)
@@ -65,6 +67,8 @@ ifexpiringbefore = args.ifexpiringbefore
 ifexpiringafter = args.ifexpiringafter
 retentionlessthan = args.retentionlessthan
 retentiongreaterthan = args.retentiongreaterthan
+objectnames = args.objectname
+objectlist = args.objectlist
 
 # gather server list
 def gatherList(param=None, filename=None, name='items', required=True):
@@ -83,6 +87,7 @@ def gatherList(param=None, filename=None, name='items', required=True):
 
 
 jobnames = gatherList(jobnames, joblist, name='jobs', required=False)
+objectnames = gatherList(objectnames, objectlist, name='objects', required=False)
 
 # authentication =========================================================
 # demand clustername if connecting to helios or mcm
@@ -139,6 +144,10 @@ if len(notfoundjobs) > 0:
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 
+tail = ''
+if objectnames is not None and len(objectnames) > 0:
+    tail = '&includeObjectDetails=true'
+
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
     if len(jobnames) == 0 or job['name'].lower() in [j.lower() for j in jobnames]:
         print('%s' % job['name'])
@@ -181,7 +190,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
         if olderthan > 0:
             endUsecs = olderthanUsecs
         while 1:
-            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&endTimeUsecs=%s&includeTenants=true' % (job['id'], numruns, endUsecs), v=2)
+            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&endTimeUsecs=%s%s' % (job['id'], numruns, endUsecs, tail), v=2)
             if len(runs['runs']) > 0:
                 endUsecs = int(runs['runs'][-1]['id'].split(':')[1]) - 1
             else:
@@ -203,6 +212,17 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                         continue
                     replicated = False
                     needsResync = False
+                    needsAnObjectReplication = False
+                    if objectnames is not None and len(objectnames) > 0:
+                        for object in run['objects']:
+                            if object['object']['name'].lower() in [o.lower() for o in objectnames]:
+                                needsObjectReplication = True
+                                if 'replicationInfo' in object and object['replicationInfo'] is not None and 'replicationTargetResults' in object['replicationInfo'] and object['replicationInfo']['replicationTargetResults'] is not None and len(object['replicationInfo']['replicationTargetResults']) > 0:
+                                    for replicationTargetResult in object['replicationInfo']['replicationTargetResults']:
+                                        if 'clusterId' in replicationTargetResult and replicationTargetResult['clusterId'] ==  remote['clusterId'] and replicationTargetResult['status'] in ['Succeeded', 'Running', 'Accepted', 'Canceling']:
+                                            needsObjectReplication = False
+                                if needsObjectReplication is True:
+                                    needsAnObjectReplication = True
                     if 'replicationInfo' in run:
                         if 'replicationTargetResults' in run['replicationInfo'] and len(run['replicationInfo']['replicationTargetResults']) > 0:
                             for replicationTargetResult in run['replicationInfo']['replicationTargetResults']:
@@ -211,7 +231,8 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                                     if resync and replicationTargetResult['clusterId'] == remote['clusterId'] and replicationTargetResult['status'] == 'Succeeded':
                                         replicated = False
                                         needsResync = True
-
+                    if needsAnObjectReplication is True:
+                        replicated = False
                     if ifexpiringbefore > 0 or ifexpiringafter > 0 or retentiongreaterthan > 0 or retentionlessthan > 0:
                         thisrun = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&excludeTasks=true&id=%s' % (startdateusecs, jobuid['id']))
                         expireTimeUsecs = thisrun[0]['backupJobRuns']['protectionRuns'][0]['copyRun']['finishedTasks'][0]['expiryTimeUsecs']
@@ -227,6 +248,11 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
 
                     if replicated is False:
                         if commit:
+                            objectIds = []
+                            if objectnames is not None and len(objectnames) > 0:
+                                for object in run['objects']:
+                                    if object['object']['name'].lower() in [o.lower() for o in objectnames]:
+                                        objectIds.append(object['object']['entityId']['stringIds']['latestId']['id'])
                             if needsResync is False:
                                 startTimeUsecs = startdateusecs
                                 if keepfor > 0:
@@ -258,6 +284,8 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                                         }
                                     ]
                                 }
+                                if objectnames is not None and len(objectnames) > 0:
+                                    replicationTask['updateProtectionGroupRunParams'][0]['replicationSnapshotConfig']['newSnapshotConfig'][0]['objectIds'] = objectIds
                             else:
                                 if keepfor == 0:
                                     daysToKeep = 0
@@ -286,6 +314,8 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                                         }
                                     ]
                                 }
+                                if objectnames is not None and len(objectnames) > 0:
+                                    replicationTask['updateProtectionGroupRunParams'][0]['replicationSnapshotConfig']['updateExistingSnapshotConfig'][0]['objectIds'] = objectIds
                             print('  Replicating  %s' % startdate)
                             runstoreplicate[startdateusecs] = replicationTask
                         else:

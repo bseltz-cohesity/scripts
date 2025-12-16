@@ -4,8 +4,6 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This python script replicates old existing snapshots.
 
-Note: there's a new experimental V2 version of the script that uses the V2 API. Feedback is welcome.
-
 ## Components
 
 * [replicateOldSnapshotsV2.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/replicateOldSnapshotsV2/replicateOldSnapshotsV2.py): the main python script
@@ -77,3 +75,10 @@ By default, the script will only show what it would do. To actually execute the 
 * -a, --ifexpiringafter: (optional) replicate runs that expire more than X days from now
 * -rl, --retentionlessthan: (optional) replicate runs with retention less than X days (from backup date)
 * -rg, --retentiongreaterthan: (optional) replicate runs with retention greater than X days (from backup date)
+
+## Object Replication
+
+The following parameters allow you to specify objects to replicate. Object-level replication requires Cohesity version 7.3 or later.
+
+* -on, --objectname: (optional) name of object to replicate (repeat for multiple)
+* -ol, --objectlist: (optional) text file of object names to replicate (one per line)
