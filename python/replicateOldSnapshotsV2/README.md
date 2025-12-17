@@ -82,3 +82,4 @@ The following parameters allow you to specify objects to replicate. Object-level
 
 * -on, --objectname: (optional) name of object to replicate (repeat for multiple)
 * -ol, --objectlist: (optional) text file of object names to replicate (one per line)
+* -mo, --missingobjects: (optional) replicate unreplicated objects

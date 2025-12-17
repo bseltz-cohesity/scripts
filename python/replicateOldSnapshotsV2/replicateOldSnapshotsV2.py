@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """replicate old snapshots v2"""
 
-# version 2025-12-16
+# version 2025-12-17
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -29,6 +29,7 @@ parser.add_argument('-j', '--jobname', action='append', type=str)  # one or more
 parser.add_argument('-l', '--joblist', type=str, required=False)   # text file of job names
 parser.add_argument('-on', '--objectname', action='append', type=str)  # one or more object names to replicate
 parser.add_argument('-ol', '--objectlist', type=str, required=False)   # text file of object names to replicate
+parser.add_argument('-mo', '--missingobjects', action='store_true')
 parser.add_argument('-e', '--excludelogs', action='store_true')   # exclude log backups
 parser.add_argument('-numruns', '--numruns', type=int, default=1000)
 parser.add_argument('-ri', '--runid', type=int, default=None)
@@ -69,6 +70,7 @@ retentionlessthan = args.retentionlessthan
 retentiongreaterthan = args.retentiongreaterthan
 objectnames = args.objectname
 objectlist = args.objectlist
+missingobjects = args.missingobjects
 
 # gather server list
 def gatherList(param=None, filename=None, name='items', required=True):
@@ -84,7 +86,6 @@ def gatherList(param=None, filename=None, name='items', required=True):
         print('no %s specified' % name)
         exit()
     return items
-
 
 jobnames = gatherList(jobnames, joblist, name='jobs', required=False)
 objectnames = gatherList(objectnames, objectlist, name='objects', required=False)
@@ -144,9 +145,16 @@ if len(notfoundjobs) > 0:
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 
+# object-level replication
+objectlevelreplication = False
+objectsfound = {}
 tail = ''
-if objectnames is not None and len(objectnames) > 0:
+if missingobjects is True or (objectnames is not None and len(objectnames) > 0):
+    objectlevelreplication = True
     tail = '&includeObjectDetails=true'
+    if objectnames is not None and len(objectnames) > 0:
+        for o in objectnames:
+            objectsfound[o.lower()] = 0
 
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
     if len(jobnames) == 0 or job['name'].lower() in [j.lower() for j in jobnames]:
@@ -213,9 +221,11 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                     replicated = False
                     needsResync = False
                     needsAnObjectReplication = False
-                    if objectnames is not None and len(objectnames) > 0:
+                    if objectlevelreplication is True:
+                        objectstoreplicate = []
                         for object in run['objects']:
-                            if object['object']['name'].lower() in [o.lower() for o in objectnames]:
+                            if missingobjects is True or object['object']['name'].lower() in [o.lower() for o in objectnames]:
+                                objectsfound[object['object']['name'].lower()] = 1
                                 needsObjectReplication = True
                                 if 'replicationInfo' in object and object['replicationInfo'] is not None and 'replicationTargetResults' in object['replicationInfo'] and object['replicationInfo']['replicationTargetResults'] is not None and len(object['replicationInfo']['replicationTargetResults']) > 0:
                                     for replicationTargetResult in object['replicationInfo']['replicationTargetResults']:
@@ -223,6 +233,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                                             needsObjectReplication = False
                                 if needsObjectReplication is True:
                                     needsAnObjectReplication = True
+                                    objectstoreplicate.append(object['object']['name'])
                     if 'replicationInfo' in run:
                         if 'replicationTargetResults' in run['replicationInfo'] and len(run['replicationInfo']['replicationTargetResults']) > 0:
                             for replicationTargetResult in run['replicationInfo']['replicationTargetResults']:
@@ -249,7 +260,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                     if replicated is False:
                         if commit:
                             objectIds = []
-                            if objectnames is not None and len(objectnames) > 0:
+                            if objectlevelreplication is True:
                                 for object in run['objects']:
                                     if object['object']['name'].lower() in [o.lower() for o in objectnames]:
                                         objectIds.append(object['object']['entityId']['stringIds']['latestId']['id'])
@@ -284,7 +295,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                                         }
                                     ]
                                 }
-                                if objectnames is not None and len(objectnames) > 0:
+                                if objectlevelreplication is True:
                                     replicationTask['updateProtectionGroupRunParams'][0]['replicationSnapshotConfig']['newSnapshotConfig'][0]['objectIds'] = objectIds
                             else:
                                 if keepfor == 0:
@@ -314,14 +325,28 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                                         }
                                     ]
                                 }
-                                if objectnames is not None and len(objectnames) > 0:
+                                if objectlevelreplication is True:
                                     replicationTask['updateProtectionGroupRunParams'][0]['replicationSnapshotConfig']['updateExistingSnapshotConfig'][0]['objectIds'] = objectIds
                             print('  Replicating  %s' % startdate)
-                            runstoreplicate[startdateusecs] = replicationTask
+                            if objectlevelreplication is True and len(objectstoreplicate) > 0:
+                                for o in objectstoreplicate:
+                                    print('                      %s' % o)
+                            if objectlevelreplication is True and len(objectstoreplicate) == 0:
+                                print('                   ** No objects to replicate **')
+                            else:
+                                runstoreplicate[startdateusecs] = replicationTask
                         else:
                             print('  Would replicate  %s (%s)' % (startdate, run['protectionGroupInstanceId']))
+                            if objectlevelreplication is True and len(objectstoreplicate) > 0:
+                                for o in objectstoreplicate:
+                                    print('                      %s' % o)
+                            if objectlevelreplication is True and len(objectstoreplicate) == 0:
+                                print('                      ** No objects to replicate **')
                     else:
                         print('  Already replicated  %s' % startdate)
+        for o in objectnames:
+            if objectsfound[o.lower()] == 0:
+                print("  ** %s not found in any runs **" % o)
         if len(runstoreplicate.keys()) > 0:
             print('  Committing replications...')
         for rundate in sorted(runstoreplicate.keys()):
