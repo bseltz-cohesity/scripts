@@ -5,7 +5,7 @@
 * [`2025-12-12`] [restoreOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/restoreOracle) [`Update`] fixed channel node logic
 * [`2025-12-12`] [restoreOracle-v2.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/restoreOracle-v2) [`Update`] fixed channel node logic
 * [`2025-12-11`] [sqlRecoveryPoints.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/sqlRecoveryPoints) [`Update`] added filtering
-* [`2025-12-10`] [heliosReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/python/heliosReport) [`Update`] updated defailt maxrecords to 100000
+* [`2025-12-10`] [heliosReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/python/heliosReport) [`Update`] updated default maxrecords to 100000
 * [`2025-12-10`] [clusterInfo.py](https://github.com/cohesity/community-automation-samples/tree/main/python/clusterInfo) [`Update`] added CSV output
 * [`2025-12-10`] [clusterInfo.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/clusterInfo) [`Update`] added CSV output
 * [`2025-12-08`] [recoveryPoints.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/recoveryPoints) [`Update`] added registered source column
