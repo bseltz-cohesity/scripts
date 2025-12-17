@@ -21,24 +21,24 @@ parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-em', '--emailmfacode', action='store_true')
-parser.add_argument('-k', '--keepfor', type=int, default=0)   # number of days to retain
-parser.add_argument('-x', '--commit', action='store_true')        # perform replication
-parser.add_argument('-resync', '--resync', action='store_true')        # perform replication
+parser.add_argument('-k', '--keepfor', type=int, default=0)  # number of days to retain
+parser.add_argument('-x', '--commit', action='store_true')   # perform replication
+parser.add_argument('-resync', '--resync', action='store_true')  # resync
 parser.add_argument('-r', '--remotecluster', type=str, required=True)  # cluster to replicate to
 parser.add_argument('-j', '--jobname', action='append', type=str)  # one or more job names
 parser.add_argument('-l', '--joblist', type=str, required=False)   # text file of job names
 parser.add_argument('-on', '--objectname', action='append', type=str)  # one or more object names to replicate
 parser.add_argument('-ol', '--objectlist', type=str, required=False)   # text file of object names to replicate
-parser.add_argument('-mo', '--missingobjects', action='store_true')
-parser.add_argument('-e', '--excludelogs', action='store_true')   # exclude log backups
-parser.add_argument('-numruns', '--numruns', type=int, default=1000)
-parser.add_argument('-ri', '--runid', type=int, default=None)
-parser.add_argument('-n', '--newerthan', type=int, default=0)     # number of days back to search for snapshots to archive
-parser.add_argument('-o', '--olderthan', type=int, default=0)     # number of days back to search for snapshots to archive
-parser.add_argument('-b', '--ifexpiringbefore', type=int, default=0)     # if expiring before X days
-parser.add_argument('-a', '--ifexpiringafter', type=int, default=0)     # if expiring after X days
-parser.add_argument('-rl', '--retentionlessthan', type=int, default=0)     # if retention less than X days
-parser.add_argument('-rg', '--retentiongreaterthan', type=int, default=0)     # if retention greater than X days
+parser.add_argument('-mo', '--missingobjects', action='store_true')  # replicate unreplicted objects
+parser.add_argument('-e', '--excludelogs', action='store_true')  # exclude log backups
+parser.add_argument('-numruns', '--numruns', type=int, default=1000)  # number of runs per API query
+parser.add_argument('-ri', '--runid', type=int, default=None)  # replicate specific run ID
+parser.add_argument('-n', '--newerthan', type=int, default=0)  # number of days back to search for snapshots to replicate
+parser.add_argument('-o', '--olderthan', type=int, default=0)  # number of days back to search for snapshots to replicate
+parser.add_argument('-b', '--ifexpiringbefore', type=int, default=0)       # replicate only if expiring before X days
+parser.add_argument('-a', '--ifexpiringafter', type=int, default=0)        # replicate only if expiring after X days
+parser.add_argument('-rl', '--retentionlessthan', type=int, default=0)     # replicate only if retention less than X days
+parser.add_argument('-rg', '--retentiongreaterthan', type=int, default=0)  # replicate only if retention greater than X days
 
 args = parser.parse_args()
 
@@ -329,7 +329,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                                     replicationTask['updateProtectionGroupRunParams'][0]['replicationSnapshotConfig']['updateExistingSnapshotConfig'][0]['objectIds'] = objectIds
                             print('  Replicating  %s' % startdate)
                             if objectlevelreplication is True and len(objectstoreplicate) > 0:
-                                for o in objectstoreplicate:
+                                for o in sorted(objectstoreplicate):
                                     print('                      %s' % o)
                             if objectlevelreplication is True and len(objectstoreplicate) == 0:
                                 print('                   ** No objects to replicate **')
@@ -338,7 +338,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                         else:
                             print('  Would replicate  %s (%s)' % (startdate, run['protectionGroupInstanceId']))
                             if objectlevelreplication is True and len(objectstoreplicate) > 0:
-                                for o in objectstoreplicate:
+                                for o in sorted(objectstoreplicate):
                                     print('                      %s' % o)
                             if objectlevelreplication is True and len(objectstoreplicate) == 0:
                                 print('                      ** No objects to replicate **')
