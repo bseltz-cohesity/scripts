@@ -11,7 +11,7 @@
 * [`2025-12-08`] [recoveryPoints.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/recoveryPoints) [`Update`] added registered source column
 * [`2025-12-08`] [recoveryPoints.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/recoveryPoints) [`Update`] added registered source column
 * [`2025-12-05`] [firewallTool.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/firewallTool) [`Update`] added allow/deny mode behavior
-* [`2025-12-05`] [legalHoldObject.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/legalHoldObject) [`Update`] fixed missing ressults issue
+* [`2025-12-05`] [legalHoldObject.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/legalHoldObject) [`Update`] fixed missing results issue
 * [`2025-12-05`] [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] added support for 7.3 AAG
 * [`2025-12-05`] [registerAzureSource.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/registerAzureSource) [`New`] register Azure sources
 * [`2025-12-04`] [emptyVMProtectionGroups.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/emptyVMProtectionGroups) [`New`] Report VM PRotection Groups that backed up zero VMs
