@@ -58,3 +58,8 @@ or find all files with the extention .gif:
 * -localOnly: (optional) only show rsults from local jobs
 * -throttle: (optional) pause for X seconds between paged results
 * -pageSize: (optional) 1000 or less (default is 1000)
+
+## Search Tips
+
+Notice in the examples I use .\* this is regex for "any number of any characters". Simply using a \* as a wildcard does not work, since the search is regex-based, not OS globbing style.
+
