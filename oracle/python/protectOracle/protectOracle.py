@@ -219,20 +219,23 @@ else:
     job = job[0]
 
 # get registered sql servers
-sources = api('get', 'protectionSources?environments=kOracle')
+sources = api('get', 'protectionSources/registrationInfo?environments=kOracle')
+if 'rootNodes' not in sources or sources['rootNodes'] is None or len(sources['rootNodes']) == 0:
+    print("No Oracle sources registered!")
+    exit(1)
 
 if len(dbnames) > 0:
     dbnames = [d.lower() for d in dbnames]
 
 # server source
 for server in servernames:
-    serverSource = [n for n in sources[0]['nodes'] if n['protectionSource']['name'].lower() == server.lower()]
+    serverSource = [n['rootNode'] for n in sources['rootNodes'] if n['rootNode']['name'].lower() == server.lower()]
     if serverSource is None or len(serverSource) == 0:
         print("Server %s not found!" % server)
         exit(1)
     else:
         serverSource = serverSource[0]
-        serverId = serverSource['protectionSource']['id']
+        serverId = serverSource['id']
         thisObject = [o for o in job['oracleParams']['objects'] if o['sourceId'] == serverId]
         job['oracleParams']['objects'] = [o for o in job['oracleParams']['objects'] if o['sourceId'] != serverId]
         if thisObject is None or len(thisObject) == 0:
@@ -243,7 +246,8 @@ for server in servernames:
         else:
             thisObject = thisObject[0]
         foundDBs = []
-        for dbNode in serverSource['applicationNodes']:
+        source = api('get','protectionSources?id=%s' % serverId)
+        for dbNode in source[0]['applicationNodes']:
             # print(dbNode['protectionSource']['name'])
             if len(dbnames) == 0 or dbNode['protectionSource']['name'].lower() in dbnames:
                 foundDBs.append(dbNode['protectionSource']['name'].lower())
@@ -277,7 +281,7 @@ for server in servernames:
                     elif deleteloghours is not None:
                         thisDB['dbChannels'][0]['archiveLogRetentionHours'] = deleteloghours
                     if (channels is not None and len(channels) > 0 and channelnodes is not None):
-                        physicalSource = serverSource['protectionSource']['physicalProtectionSource']
+                        physicalSource = source[0]['protectionSource']['physicalProtectionSource']
                         if 'networkingInfo' in physicalSource:
                             serverResources = [r for r in physicalSource['networkingInfo']['resourceVec'] if r['type'] == 'kServer']
                         x = 0
@@ -328,17 +332,18 @@ for server in servernames:
                                     }
                                 )
                 thisObject['dbParams'].append(thisDB)
-            if len(dbnames) > 0:
-                for dbname in dbnames:
-                    if dbname.lower() not in foundDBs:
-                        print('Database %s not found on server %s' % (dbname, server))
-                        exit(1)
+        if len(dbnames) > 0:
+            for dbname in dbnames:
+                if dbname.lower() not in foundDBs:
+                    print('Database %s not found on server %s' % (dbname, server))
+                    exit(1)
         if 'dbParams' not in thisObject or len(thisObject['dbParams']) == 0:
             print('No databases protected for server %s not found' % server)
             exit(1)
         job['oracleParams']['objects'].append(thisObject)
 
 # display(job)
+
 if newJob is True:
     print("Creating Job '%s'" % jobname)
     result = api('post', 'data-protect/protection-groups', job, v=2)
