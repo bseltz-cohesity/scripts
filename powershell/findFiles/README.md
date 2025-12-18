@@ -25,7 +25,13 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./findFiles.ps1 -vip mycluster -username myusername -domain mydomain.net -searchString gif -extensionOnly
+./findFiles.ps1 -vip mycluster -username myusername -domain mydomain.net -searchString ".*myfile.*" -extensionOnly
+```
+
+or find all files with the extention .gif:
+
+```powershell
+./findFiles.ps1 -vip mycluster -username myusername -domain mydomain.net -searchString ".*gif" -extensionOnly
 ```
 
 ## Authentication Parameters
