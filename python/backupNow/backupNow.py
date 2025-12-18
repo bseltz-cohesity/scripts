@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2025.05.20
+# version 2025.12.18
 
 # version history
 # ===============
@@ -35,6 +35,7 @@
 # 2025.02.16 - improved VM API query
 # 2025.02.18 - fixed CAD errors, magneto error handling in 'wait for new run to appear' loop
 # 2025.05.20 - catch new existing run error "there is an outstanding run-now request"
+# 2025-12-18 - added support for 7.3 SQL AAG
 #
 # extended error codes
 # ====================
@@ -441,11 +442,15 @@ if objectnames is not None:
                             backupJobSourceParams = None
                         serverSource = [c for c in backupSources['entityHierarchy']['children'] if c['entity']['id'] == serverObjectId][0]
                         if environment == 'kSQL':
-                            instanceSource = [i for i in serverSource['auxChildren'] if i['entity']['displayName'].lower() == instance.lower()][0]
-                            if db is None:
-                                dbSource = [c for c in instanceSource['children']]
+                            if 'children' in serverSource:
+                                # 7.3 AAG
+                                dbSource = [c for c in serverSource['children'] if c['entity']['displayName'].lower() == instance.lower()]
                             else:
-                                dbSource = [c for c in instanceSource['children'] if c['entity']['displayName'].lower() == '%s/%s' % (instance.lower(), db.lower())]
+                                instanceSource = [i for i in serverSource['auxChildren'] if i['entity']['displayName'].lower() == instance.lower()][0]
+                                if db is None:
+                                    dbSource = [c for c in instanceSource['children']]
+                                else:
+                                    dbSource = [c for c in instanceSource['children'] if c['entity']['displayName'].lower() == '%s/%s' % (instance.lower(), db.lower())]
                             if dbSource is not None and len(dbSource) > 0:
                                 for db in dbSource:
                                     if backupJobSourceParams is None or db['entity']['id'] in backupJobSourceParams['appEntityIdVec'] or instanceSource['entity']['id'] in backupJobSourceParams['appEntityIdVec']:
