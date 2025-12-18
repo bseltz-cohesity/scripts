@@ -1,4 +1,4 @@
-# version 2025.05.20
+# version 2025.12.18
 
 # version history
 # ===============
@@ -29,6 +29,7 @@
 # 2025.02.16 - improved VM API query
 # 2025.02.18 - fixed CAD errors
 # 2025.05.20 - catch new existing run error "there is an outstanding run-now request"
+# 2025.12.18 - added support for 7.3 SQL AAG
 #
 # extended error codes
 # ====================
@@ -363,8 +364,14 @@ if($objects){
                             $serverSource = $backupSources.entityHierarchy.children | Where-Object {$_.entity.id -eq $serverObjectId}
                             if($environment -eq 'kSQL'){
                                 # SQL
-                                $instanceSource = $serverSource.auxChildren | Where-Object {$_.entity.displayName -eq $instance}
-                                $dbSource = $instanceSource.children | Where-Object {$_.entity.displayName -eq "$instance/$db"}
+                                if($serverSource.PSObject.Properties['children']){
+                                    # 7.3 AAG
+                                    $dbSource = $serverSource.children | Where-Object {$_.entity.displayName -eq "$instance"}
+                                }else{
+                                    $instanceSource = $serverSource.auxChildren | Where-Object {$_.entity.displayName -eq $instance}
+                                    $dbSource = $instanceSource.children | Where-Object {$_.entity.displayName -eq "$instance/$db"}
+                                }
+                                
                                 if($dbSource -and ( $null -eq $backupJobSourceParams -or $dbSource.entity.id -in $backupJobSourceParams.appEntityIdVec -or $instanceSource.entity.id -in $backupJobSourceParams.appEntityIdVec)){
                                     $runNowParameter.databaseIds = @($runNowParameter.databaseIds + $dbSource.entity.id)
                                 }else{
