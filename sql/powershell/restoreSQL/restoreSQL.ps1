@@ -124,8 +124,11 @@ $searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&entityType
 
 # narrow the search results to the correct source server
 $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer } | `
-                                  Where-Object {$_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB } | `
-                                  Where-Object {$_.vmDocument.objectName -in $sourceDBObjectNames}
+                                  Where-Object {$_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB }
+
+# $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer } | `
+#                                   Where-Object {$_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDB } | `
+#                                   Where-Object {$_.vmDocument.objectName -in $sourceDBObjectNames}
 
 # narrow by source AAG nodes
 if($sourceNodes){
