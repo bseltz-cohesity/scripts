@@ -362,7 +362,12 @@ foreach($servername in $serversToAdd){
             if(isSelected $serverSource){
                 break
             }
-            $instanceSource = $serverSource.applicationNodes | Where-Object {$_.protectionSource.name -eq $instance}
+            if($serverSource.PSObject.Properties['nodes']){
+                # 7.3 AAG
+                $instanceSource = $serverSource.nodes | Where-Object {$_.protectionSource.name -eq $instance}
+            }else{
+                $instanceSource = $serverSource.applicationNodes | Where-Object {$_.protectionSource.name -eq $instance}
+            }
             if(! $instanceSource){
                 Write-Host "Instance $instance not found on server $servername"
                 exit
