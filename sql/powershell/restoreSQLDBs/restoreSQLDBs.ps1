@@ -208,14 +208,15 @@ if(! $dbresults){
 # alert on missing DBs
 $selectedDBs = @()
 foreach($db in $dbs){
+    $instdb = $db
     if(! $db.Contains('/')){
         if($sourceInstance){
-            $db = "$sourceInstance/$db"
+            $instdb = "$sourceInstance/$db"
         }else{
-            $db = "MSSQLSERVER/$db"
+            $instdb = "MSSQLSERVER/$db"
         }
     }
-    $dbresult = $dbresults | Where-Object {$_.vmDocument.objectName -eq $db}
+    $dbresult = $dbresults | Where-Object {$_.vmDocument.objectName -eq $db -or $_.vmDocument.objectName -eq $instdb}
     if(! $dbresult){
         Write-Host "Database $db not found!" -ForegroundColor Yellow
     }else{
@@ -525,7 +526,11 @@ function restoreDB($db){
     $response = api post /recoverApplication $restoreTask
 
     if($response){
-        "Restoring $sourceInstance/$sourceDBname to $targetServer/$targetInstance/$targetDBname (Point in time: $restoreTime)"
+        if(! $sourceDBname){
+            "Restoring $sourceInstance to $targetServer/$targetInstance/$targetDBname (Point in time: $restoreTime)"
+        }else{
+            "Restoring $sourceInstance/$sourceDBname to $targetServer/$targetInstance/$targetDBname (Point in time: $restoreTime)"
+        }
     }
 
     if($wait -or $progress){
