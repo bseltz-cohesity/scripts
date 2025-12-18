@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-12-18`] [backupNow.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backupNow) [`Update`] added support for 7.3 SQL AAG
+* [`2025-12-18`] [backupNow.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/backupNow) [`Update`] added support for 7.3 SQL AAG
+* [`2025-12-18`] [protectOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/protectOracle) [`Update`] bug fix for DB not found
 * [`2025-12-16`] [replicateOldSnapshotsV2.py](https://github.com/cohesity/community-automation-samples/tree/main/python/replicateOldSnapshotsV2) [`Update`] added object level replication
 * [`2025-12-15`] [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] updated PIT logic
 * [`2025-12-12`] [restoreOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/restoreOracle) [`Update`] fixed channel node logic
