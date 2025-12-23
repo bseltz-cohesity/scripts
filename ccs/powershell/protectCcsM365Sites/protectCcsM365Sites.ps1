@@ -109,8 +109,12 @@ if($objectsToAdd.Count -eq 0){
     }
     $paginationCookie = 0
     Write-Host "Indexing Sites"
+    $tail = ''
+    if($autoselect -gt 0){
+        $tail = '&isProtected=false'
+    }
     while(1){
-        $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&count=$pageSize&paginationCookie=$paginationCookie"
+        $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&count=$pageSize&paginationCookie=$($paginationCookie)$($tail)"
         foreach($obj in $search.objects){
             indexObject($obj)
         }
