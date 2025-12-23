@@ -53,39 +53,6 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 
 $vmsToAdd = @(gatherList -Param $vmName -FilePath $vmList -Name 'VMs' -Required $True)
 
-function getObject($objectName, $sources, $objectType=$null){
-    $global:_object = $null
-
-    function get_nodes($obj){
-        if($obj.protectionSource.name -eq $objectName){
-            if(! $objectType -or $obj.protectionSource.azureProtectionSourcetype -eq $objectType){
-                $global:_object = $obj
-                break
-            }
-        }
-        if($obj.name -eq $objectName){
-            if(! $objectType -or $obj.protectionSource.azureProtectionSourcetype -eq $objectType){
-                $global:_object = $obj
-                break
-            }
-        }        
-        if($obj.PSObject.Properties['nodes']){
-            foreach($node in $obj.nodes){
-                if($null -eq $global:_object){
-                    get_nodes $node
-                }
-            }
-        }
-    }
-    
-    foreach($source in $sources){
-        if($null -eq $global:_object){
-            get_nodes $source
-        }
-    }
-    return $global:_object
-}
-
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
@@ -114,11 +81,13 @@ if($USING_HELIOS){
 }
 # end authentication =========================================
 
-$azureSource = api get protectionSources?environments=kAzure | Where-Object {$_.protectionSource.name -eq $azureSourceName}
+$sources = api get protectionSources/registrationInfo?environments=kAzure
+$azureSource = $sources.rootNodes | Where-Object {$_.rootNode.name -eq $azureSourceName}
 if(!$azureSource){
     Write-Host "azure source $azureSourceName not found!" -ForegroundColor Yellow
     exit
 }
+$sourceId = $azureSource.rootNode.id
 
 # get the protectionJob
 $job = (api get -v2 "data-protect/protection-groups").protectionGroups | Where-Object {$_.name -eq $jobName}
@@ -144,8 +113,6 @@ if($job){
     }else{
         $enableIndexing = $True
     }
-
-    
 
     # get policy
     if(!$policyName){
@@ -248,13 +215,14 @@ if($job){
 }
 
 foreach($vmName in $vmsToAdd){
-    $vm = getObject $vmName $azureSource
+    $search = api get -v2 "data-protect/search/objects?environments=kAzure&azureObjectTypes=kVirtualMachine&sourceIds=$sourceId&searchString=$vmName"
+    $vm = $search.objects | Where-Object name -eq $vmName
     if(!$vm){
         Write-Host "VM $vmName not found!" -ForegroundColor Yellow
     }else{
         write-host "    adding $vmName"
-        $newVMobject = @{'id' = $vm.protectionSource.id}
-        $job.azureParams.$azureParamName.objects = @(@($job.azureParams.$azureParamName.objects | Where-Object {$_.id -ne $vm.protectionSource.id}) + $newVMobject)
+        $newVMobject = @{'id' = $vm.objectProtectionInfos[0].objectId}
+        $job.azureParams.$azureParamName.objects = @(@($job.azureParams.$azureParamName.objects | Where-Object {$_.id -ne $vm.objectProtectionInfos[0].objectId}) + $newVMobject)
     }
 }
 
