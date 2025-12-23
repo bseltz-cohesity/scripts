@@ -13,7 +13,7 @@ param (
     [Parameter()][string]$timeZone = 'America/New_York', # e.g. 'America/New_York'
     [Parameter()][int]$incrementalSlaMinutes = 1440,  # incremental SLA minutes
     [Parameter()][int]$fullSlaMinutes = 1440,  # full SLA minutes
-    [Parameter()][int]$pageSize = 50000,
+    [Parameter()][int]$pageSize = 10000,
     [Parameter()][switch]$useMBS
 )
 
@@ -64,6 +64,7 @@ if(! $useMBS){
         Write-Host "-policyName required" -ForegroundColor Yellow
         exit
     }
+    Write-Host "Finding Policy"
     $policy = (api get -mcmv2 data-protect/policies?types=DMaaSPolicy).policies | Where-Object name -eq $policyName
     if(!$policy){
         write-host "Policy $policyName not found" -ForegroundColor Yellow
@@ -72,6 +73,7 @@ if(! $useMBS){
 }
 
 # find O365 source
+Write-Host "Finding M365 Protection Source"
 $rootSource = (api get -mcmv2 "data-protect/sources?environments=kO365").sources | Where-Object name -eq $sourceName
 
 if(!$rootSource){
@@ -81,49 +83,45 @@ if(!$rootSource){
 
 $rootSourceId = $rootSource[0].sourceInfoList[0].sourceId
 
-$source = api get "protectionSources?id=$($rootSourceId)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false" # -region $regionId
-
-$objectsNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Sites'}
-if(!$objectsNode){
-    Write-Host "Source $sourceName is not configured for O365 Sites" -ForegroundColor Yellow
-    exit
-}
-
 $script:nameIndex = @{}
 $script:webUrlIndex = @{}
 $script:idIndex = @{}
 $script:unprotectedIndex = @()
 $script:protectedCount = 0
-function getNodes($node){
-    if($node.PSObject.Properties['nodes']){
-        foreach($subnode in $node.nodes){
-            getNodes($subnode)
-        }
-    }
-    $script:nameIndex[$node.protectionSource.name] = $node.protectionSource.id
-    $script:idIndex["$($node.protectionSource.id)"] = $node.protectionSource.name
-    $script:webUrlIndex[$node.protectionSource.office365ProtectionSource.webUrl] = $node.protectionSource.id
-    if(($node.unprotectedSourcesSummary | Where-Object environment -eq 'kO365Sharepoint').leavesCount -eq 1){
-        $script:unprotectedIndex = @($script:unprotectedIndex + $node.protectionSource.id)
+
+function indexObject($obj){
+    $script:nameIndex[$obj.name] = $obj.objectProtectionInfos[0].objectId
+    $script:idIndex["$($obj.objectProtectionInfos[0].objectId)"] = $obj.name
+    $script:webUrlIndex[$obj.sharepointParams.siteWebUrl] = $obj.objectProtectionInfos[0].objectId
+    if(!$obj.objectProtectionInfos.objectBackupConfiguration){
+        $script:unprotectedIndex = @($script:unprotectedIndex + $obj.objectProtectionInfos[0].objectId)
     }else{
         $script:protectedCount += 1
     }
 }
-$objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false" # -region $regionId
-while(1){
-    foreach($node in $objects.nodes){
-        getNodes($node)
-    }
-    $cursor = $objects.nodes[-1].protectionSource.id
-    $objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false&afterCursorEntityId=$cursor" # -region $regionId
-    if(!$objects.PSObject.Properties['nodes'] -or $objects.nodes.Count -eq 1){
-        break
-    }
-}
-# Write-Host $script:unprotectedIndex.Count
+
+$objectSearch = $False
 
 if($objectsToAdd.Count -eq 0){
     $useIds = $True
+    if($autoselect -gt 0 -and $pageSize -gt $autoselect){
+        $pageSize = $autoselect
+    }
+    $paginationCookie = 0
+    Write-Host "Indexing Sites"
+    while(1){
+        $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&count=$pageSize&paginationCookie=$paginationCookie"
+        foreach($obj in $search.objects){
+            indexObject($obj)
+        }
+        $paginationCookie = $search.paginationCookie
+        if($search.paginationCookie -ge $search.count){
+            break
+        }
+        if($autoselect -gt 0 -and $script:unprotectedIndex.Count -gt $autoselect){
+            break
+        }
+    }
     if($objectMatch){
         $script:webUrlIndex.Keys | Where-Object {$_ -match $objectMatch -and $script:webUrlIndex[$_] -in $script:unprotectedIndex} | ForEach-Object{
             $objectsToAdd = @($objectsToAdd + $script:webUrlIndex[$_])
@@ -140,9 +138,27 @@ if($objectsToAdd.Count -eq 0){
             $objectsToAdd = @($objectsToAdd + $script:unprotectedIndex[$_])
         }
     }
+}else{
+    $objectSearch = $True
 }
 
 foreach($objName in $objectsToAdd){
+    if($objectSearch -eq $True){
+        if($useIds -eq $True){
+            $objId = $objName
+            $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&objectIds=$objId"
+        }else{
+            $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&searchString=$objName"
+            $search.objects = $search.objects | Where-Object name -eq $objName
+        }
+        if($search.count -eq 0){
+            Write-Host "Site $objName not found" -ForegroundColor Yellow
+            continue
+        }
+        foreach($obj in $search.objects){
+            indexObject($obj)
+        }
+    }
     $objId = $null
     if($useIds -eq $True){
         $objId = $objName
