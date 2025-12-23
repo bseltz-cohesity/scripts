@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-12-23`] [protectCcsM365Sites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365Sites) [`Update`] updated search APIs
+* [`2025-12-23`] [protectAzureVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectAzureVM) [`Update`] updated search APIs
 * [`2025-12-18`] [restoreSQLDBs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLDBs) [`Update`] added support for 7.3 SQL AAG
 * [`2025-12-18`] [restoreSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQL) [`Update`] added support for 7.3 SQL AAG
 * [`2025-12-18`] [protectSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/protectSQL) [`Update`] added support for 7.3 SQL AAG
