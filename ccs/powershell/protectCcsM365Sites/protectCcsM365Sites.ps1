@@ -57,7 +57,7 @@ if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]:
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -username $username -regionid $region
+apiauth -username $username # -regionid $region
 
 if(! $useMBS){
     if($policyName -eq ''){
@@ -65,7 +65,7 @@ if(! $useMBS){
         exit
     }
     Write-Host "Finding Policy"
-    $policy = (api get -mcmv2 data-protect/policies?types=DMaaSPolicy).policies | Where-Object name -eq $policyName
+    $policy = (api get -mcmv2 "data-protect/policies?types=DMaaSPolicy&regionIds=$region").policies | Where-Object name -eq $policyName
     if(!$policy){
         write-host "Policy $policyName not found" -ForegroundColor Yellow
         exit
@@ -74,7 +74,7 @@ if(! $useMBS){
 
 # find O365 source
 Write-Host "Finding M365 Protection Source"
-$rootSource = (api get -mcmv2 "data-protect/sources?environments=kO365").sources | Where-Object name -eq $sourceName
+$rootSource = (api get -mcmv2 "data-protect/sources?environments=kO365&excludeProtectionStats=true&regionIds=$region").sources | Where-Object name -eq $sourceName
 
 if(!$rootSource){
     Write-Host "O365 Source $sourceName not found" -ForegroundColor Yellow
@@ -114,7 +114,7 @@ if($objectsToAdd.Count -eq 0){
         $tail = '&isProtected=false'
     }
     while(1){
-        $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&count=$pageSize&paginationCookie=$($paginationCookie)$($tail)"
+        $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&regionIds=$region&count=$pageSize&paginationCookie=$($paginationCookie)$($tail)"
         foreach($obj in $search.objects){
             indexObject($obj)
         }
@@ -150,9 +150,9 @@ foreach($objName in $objectsToAdd){
     if($objectSearch -eq $True){
         if($useIds -eq $True){
             $objId = $objName
-            $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&objectIds=$objId"
+            $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&objectIds=$objId&regionIds=$region"
         }else{
-            $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&searchString=$objName"
+            $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&searchString=$objName&regionIds=$region"
             $search.objects = $search.objects | Where-Object name -eq $objName
         }
         if($search.count -eq 0){
@@ -225,7 +225,7 @@ foreach($objName in $objectsToAdd){
             $protectionParams.policyId = $policy.id
         }
         Write-Host "Protecting $objName"
-        $null = api post -v2 data-protect/protected-objects $protectionParams
+        $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
     }elseif($objId -and $objId -notin $script:unprotectedIndex){
         Write-Host "Site $objName already protected" -ForegroundColor Magenta
     }else{
