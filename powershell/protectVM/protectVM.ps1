@@ -147,16 +147,32 @@ if($job){
     }
     
     # get storageDomain
-    $viewBoxes = api get viewBoxes
-    if($viewBoxes -is [array]){
-            $viewBox = $viewBoxes | Where-Object { $_.name -ieq $storageDomainName }
-            if (!$viewBox) { 
-                write-host "Storage domain $storageDomainName not Found" -ForegroundColor Yellow
-                exit
-            }
-    }else{
-        $viewBox = $viewBoxes[0]
+    $viewBoxId = $null
+    if($policy.backupPolicy.regular.primaryBackupTarget.targetType -ne 'Archival'){
+        $viewBoxes = api get viewBoxes
+        if($viewBoxes -is [array]){
+                $viewBox = $viewBoxes | Where-Object { $_.name -ieq $storageDomainName }
+                if (!$viewBox) { 
+                    write-host "Storage domain $storageDomainName not Found" -ForegroundColor Yellow
+                    exit
+                }
+        }else{
+            $viewBox = $viewBoxes[0]
+        }
+        $viewBoxId = $viewBox.id
     }
+
+    # get storageDomain
+    # $viewBoxes = api get viewBoxes
+    # if($viewBoxes -is [array]){
+    #         $viewBox = $viewBoxes | Where-Object { $_.name -ieq $storageDomainName }
+    #         if (!$viewBox) { 
+    #             write-host "Storage domain $storageDomainName not Found" -ForegroundColor Yellow
+    #             exit
+    #         }
+    # }else{
+    #     $viewBox = $viewBoxes[0]
+    # }
 
     # parse startTime
     $hour, $minute = $startTime.split(':')
@@ -172,7 +188,7 @@ if($job){
         "isPaused"         = $isPaused;
         "policyId"         = $policy.id;
         "priority"         = "kMedium";
-        "storageDomainId"  = $viewBox.id;
+        "storageDomainId"  = $viewBoxId;
         "description"      = "";
         "startTime"        = @{
             "hour"     = [int]$hour;
