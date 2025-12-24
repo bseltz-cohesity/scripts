@@ -152,8 +152,9 @@ foreach($objName in $objectsToAdd){
             $objId = $objName
             $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&objectIds=$objId&regionIds=$region"
         }else{
-            $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&searchString=$objName&regionIds=$region"
-            $search.objects = $search.objects | Where-Object name -eq $objName
+            $searchString = ($objName  -split '/')[-1]
+            $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&searchString=$searchString&regionIds=$region"
+            $search.objects = $search.objects | Where-Object {$_.name -eq $objName -or $_.sharepointParams.siteWebUrl -eq $objName}
         }
         if($search.count -eq 0){
             Write-Host "Site $objName not found" -ForegroundColor Yellow
