@@ -178,7 +178,7 @@ foreach($objName in $objectsToAdd){
                 $objId = $script:nameIndex[$objName]
             }else{
                 $searchString = ($objName  -split '/')[-1]
-                $search = search "&searchString=$searchString"
+                $search = search "&searchString=$searchString" $objName
                 if($search -eq $False){
                     Write-Host "Site $objName not found" -ForegroundColor Yellow
                     continue
