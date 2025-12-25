@@ -13,7 +13,7 @@ param (
     [Parameter()][string]$timeZone = 'America/New_York', # e.g. 'America/New_York'
     [Parameter()][int]$incrementalSlaMinutes = 1440,  # incremental SLA minutes
     [Parameter()][int]$fullSlaMinutes = 1440,  # full SLA minutes
-    [Parameter()][int]$pageSize = 10000,
+    [Parameter()][int]$pageSize = 1000,
     [Parameter()][switch]$useMBS
 )
 
@@ -57,7 +57,7 @@ if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]:
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -username $username # -regionid $region
+apiauth -username $username
 
 if(! $useMBS){
     if($policyName -eq ''){
@@ -100,6 +100,34 @@ function indexObject($obj){
     }
 }
 
+function search($tail, $objName){
+    $foundObject = $False
+    while(1){
+        $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&regionIds=$region&count=$pageSize&paginationCookie=$($paginationCookie)$($tail)"
+        foreach($obj in $search.objects){
+            indexObject($obj)
+        }
+        if($objName){
+            $search.objects = $search.objects | Where-Object {$_.name -eq $objName -or $_.sharepointParams.siteWebUrl -eq $objName}
+            if($search.count -gt 0){
+                $foundObject = $True
+                return $True
+            }
+        }
+        $paginationCookie = $search.paginationCookie
+        if($search.paginationCookie -ge $search.count){
+            break
+        }
+        if($autoselect -gt 0 -and $script:unprotectedIndex.Count -gt $autoselect){
+            break
+        }
+    }
+    if($objName -and $foundObject -eq $False){
+        return $False
+    }
+    return $True
+}
+
 $objectSearch = $False
 
 if($objectsToAdd.Count -eq 0){
@@ -113,19 +141,7 @@ if($objectsToAdd.Count -eq 0){
     if($autoselect -gt 0){
         $tail = '&isProtected=false'
     }
-    while(1){
-        $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&regionIds=$region&count=$pageSize&paginationCookie=$($paginationCookie)$($tail)"
-        foreach($obj in $search.objects){
-            indexObject($obj)
-        }
-        $paginationCookie = $search.paginationCookie
-        if($search.paginationCookie -ge $search.count){
-            break
-        }
-        if($autoselect -gt 0 -and $script:unprotectedIndex.Count -gt $autoselect){
-            break
-        }
-    }
+    $search = search $tail
     if($objectMatch){
         $script:webUrlIndex.Keys | Where-Object {$_ -match $objectMatch -and $script:webUrlIndex[$_] -in $script:unprotectedIndex} | ForEach-Object{
             $objectsToAdd = @($objectsToAdd + $script:webUrlIndex[$_])
@@ -151,17 +167,23 @@ foreach($objName in $objectsToAdd){
         if($useIds -eq $True){
             $objId = $objName
             $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&objectIds=$objId&regionIds=$region"
+            if($search -eq $False){
+                Write-Host "Site $objName not found" -ForegroundColor Yellow
+                continue
+            }
         }else{
-            $searchString = ($objName  -split '/')[-1]
-            $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&searchString=$searchString&regionIds=$region"
-            $search.objects = $search.objects | Where-Object {$_.name -eq $objName -or $_.sharepointParams.siteWebUrl -eq $objName}
-        }
-        if($search.count -eq 0){
-            Write-Host "Site $objName not found" -ForegroundColor Yellow
-            continue
-        }
-        foreach($obj in $search.objects){
-            indexObject($obj)
+            if($script:webUrlIndex.ContainsKey($objName)){
+                $objId = $script:webUrlIndex[$objName]
+            }elseif($script:nameIndex.ContainsKey($objName)){
+                $objId = $script:nameIndex[$objName]
+            }else{
+                $searchString = ($objName  -split '/')[-1]
+                $search = search "&searchString=$searchString"
+                if($search -eq $False){
+                    Write-Host "Site $objName not found" -ForegroundColor Yellow
+                    continue
+                }
+            }   
         }
     }
     $objId = $null
