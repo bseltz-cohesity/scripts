@@ -105,7 +105,7 @@ vcenters = api('get', 'protectionSources/rootNodes?environments=kVMware')
 
 # find existing job
 job = None
-jobs = api('get', 'data-protect/protection-groups?environments=kVMware&isDeleted=false&isActive=true', v=2)
+jobs = api('get', 'data-protect/protection-groups?environments=kVMware&pruneSourceIds=true&pruneExcludedSourceIds=true&isActive=true&isDeleted=false&useCachedData=true', v=2)
 if jobs is not None and 'protectionGroups' in jobs and jobs['protectionGroups'] is not None and len(jobs['protectionGroups']) > 0:
     jobs = [j for j in jobs['protectionGroups'] if j['name'].lower() == jobname.lower()]
     if jobs is not None and len(jobs) > 0:
@@ -144,12 +144,15 @@ else:
             policy = policy[0]
 
     # get storageDomain
-    viewBox = [v for v in api('get', 'viewBoxes') if v['name'].lower() == storagedomain.lower()]
-    if viewBox is None or len(viewBox) == 0:
-        print('Storage Domain %s not found' % storagedomain)
-        exit(1)
-    else:
-        viewBox = viewBox[0]
+    viewBoxId = None
+    if 'primaryBackupTarget' not in policy['backupPolicy']['regular'] or policy['backupPolicy']['regular']['primaryBackupTarget']['targetType'] != 'Archival':
+        viewBox = [v for v in api('get', 'viewBoxes') if v['name'].lower() == storagedomain.lower()]
+        if viewBox is None or len(viewBox) == 0:
+            print('Storage Domain %s not found' % storagedomain)
+            exit(1)
+        else:
+            viewBox = viewBox[0]
+            viewBoxId = viewBox['id']
 
     # parse starttime
     try:
@@ -170,7 +173,7 @@ else:
         "isPaused": isPaused,
         "policyId": policy['id'],
         "priority": "kMedium",
-        "storageDomainId": viewBox['id'],
+        "storageDomainId": viewBoxId,
         "description": "",
         "startTime": {
             "hour": hour,
