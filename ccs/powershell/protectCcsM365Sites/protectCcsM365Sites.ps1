@@ -256,7 +256,7 @@ foreach($objName in $objectsToAdd){
             $protectionParams.policyId = $policy.id
         }
         Write-Host "Protecting $objName"
-        # $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
+        $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
     }elseif($objId -and $objId -notin $script:unprotectedIndex){
         Write-Host "Site $objName already protected" -ForegroundColor Magenta
     }else{
