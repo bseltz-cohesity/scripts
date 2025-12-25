@@ -97,7 +97,7 @@ foreach($disk in $includeDisk){
 $controllerType = @{'SCSI' = 'kScsi'; 'IDE' = 'kIde'; 'SATA' = 'kSata'}
 
 # get the protectionJob
-$job = (api get -v2 "data-protect/protection-groups?environments=kVMware").protectionGroups | Where-Object {$_.name -eq $jobName}
+$job = (api get -v2 "data-protect/protection-groups?environments=kVMware&pruneSourceIds=true&pruneExcludedSourceIds=true&isActive=true&isDeleted=false&useCachedData=true").protectionGroups | Where-Object {$_.name -eq $jobName}
 
 if($job){
 
@@ -161,18 +161,6 @@ if($job){
         }
         $viewBoxId = $viewBox.id
     }
-
-    # get storageDomain
-    # $viewBoxes = api get viewBoxes
-    # if($viewBoxes -is [array]){
-    #         $viewBox = $viewBoxes | Where-Object { $_.name -ieq $storageDomainName }
-    #         if (!$viewBox) { 
-    #             write-host "Storage domain $storageDomainName not Found" -ForegroundColor Yellow
-    #             exit
-    #         }
-    # }else{
-    #     $viewBox = $viewBoxes[0]
-    # }
 
     # parse startTime
     $hour, $minute = $startTime.split(':')
