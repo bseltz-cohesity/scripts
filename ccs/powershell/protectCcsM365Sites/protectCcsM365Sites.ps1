@@ -102,10 +102,15 @@ function indexObject($obj){
 
 function search($tail, $objName){
     $foundObject = $False
+    $searchCount = 0
     while(1){
         $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&regionIds=$region&count=$pageSize&paginationCookie=$($paginationCookie)$($tail)"
         foreach($obj in $search.objects){
             indexObject($obj)
+            $searchCount += 1
+            if($autoselect -and $searchCount -ge $autoselect){
+                return $True
+            }
         }
         if($objName){
             $search.objects = $search.objects | Where-Object {$_.name -eq $objName -or $_.sharepointParams.siteWebUrl -eq $objName}
@@ -140,6 +145,9 @@ if($objectsToAdd.Count -eq 0){
     $tail = ''
     if($autoselect -gt 0){
         $tail = '&isProtected=false'
+    }
+    if($objectMatch){
+        $tail = "$tail&searchString=$objectMatch"
     }
     $search = search $tail
     if($objectMatch){
@@ -248,7 +256,7 @@ foreach($objName in $objectsToAdd){
             $protectionParams.policyId = $policy.id
         }
         Write-Host "Protecting $objName"
-        $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
+        # $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
     }elseif($objId -and $objId -notin $script:unprotectedIndex){
         Write-Host "Site $objName already protected" -ForegroundColor Magenta
     }else{
