@@ -133,67 +133,39 @@ function search($tail, $objName){
     return $True
 }
 
-$objectSearch = $False
-
-if($objectsToAdd.Count -eq 0){
+if($autoselect -gt 0 -and $pageSize -gt $autoselect){
+    $pageSize = $autoselect
+}
+$paginationCookie = 0
+Write-Host "Indexing Sites"
+$tail = ''
+if($autoselect -gt 0){
+    $tail = '&isProtected=false'
+}
+if($objectMatch){
+    $tail = "$tail&searchString=$objectMatch"
+}
+$search = search $tail
+if($objectMatch){
     $useIds = $True
-    if($autoselect -gt 0 -and $pageSize -gt $autoselect){
-        $pageSize = $autoselect
+    $script:webUrlIndex.Keys | Where-Object {$_ -match $objectMatch -and $script:webUrlIndex[$_] -in $script:unprotectedIndex} | ForEach-Object{
+        $objectsToAdd = @($objectsToAdd + $script:webUrlIndex[$_])
     }
-    $paginationCookie = 0
-    Write-Host "Indexing Sites"
-    $tail = ''
-    if($autoselect -gt 0){
-        $tail = '&isProtected=false'
+    $script:nameIndex.Keys | Where-Object {$_ -match $objectMatch -and $script:webUrlIndex[$_] -in $script:unprotectedIndex} | ForEach-Object{
+        $objectsToAdd = @($objectsToAdd + $script:nameIndex[$_])
     }
-    if($objectMatch){
-        $tail = "$tail&searchString=$objectMatch"
+    $objectsToAdd = @($objectsToAdd | Sort-Object -Unique)
+}elseif($autoselect -gt 0){
+    $useIds = $True
+    if($autoselect -gt $script:unprotectedIndex.Count){
+        $autoselect = $script:unprotectedIndex.Count
     }
-    $search = search $tail
-    if($objectMatch){
-        $script:webUrlIndex.Keys | Where-Object {$_ -match $objectMatch -and $script:webUrlIndex[$_] -in $script:unprotectedIndex} | ForEach-Object{
-            $objectsToAdd = @($objectsToAdd + $script:webUrlIndex[$_])
-        }
-        $script:nameIndex.Keys | Where-Object {$_ -match $objectMatch -and $script:webUrlIndex[$_] -in $script:unprotectedIndex} | ForEach-Object{
-            $objectsToAdd = @($objectsToAdd + $script:nameIndex[$_])
-        }
-        $objectsToAdd = @($objectsToAdd | Sort-Object -Unique)
-    }else{
-        if($autoselect -gt $script:unprotectedIndex.Count){
-            $autoselect = $script:unprotectedIndex.Count
-        }
-        0..($autoselect - 1) | ForEach-Object {
-            $objectsToAdd = @($objectsToAdd + $script:unprotectedIndex[$_])
-        }
+    0..($autoselect - 1) | ForEach-Object {
+        $objectsToAdd = @($objectsToAdd + $script:unprotectedIndex[$_])
     }
-}else{
-    $objectSearch = $True
 }
 
 foreach($objName in $objectsToAdd){
-    if($objectSearch -eq $True){
-        if($useIds -eq $True){
-            $objId = $objName
-            $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&sourceIds=$rootSourceId&objectIds=$objId&regionIds=$region"
-            if($search -eq $False){
-                Write-Host "Site $objName not found" -ForegroundColor Yellow
-                continue
-            }
-        }else{
-            if($script:webUrlIndex.ContainsKey($objName)){
-                $objId = $script:webUrlIndex[$objName]
-            }elseif($script:nameIndex.ContainsKey($objName)){
-                $objId = $script:nameIndex[$objName]
-            }else{
-                $searchString = ($objName  -split '/')[-1]
-                $search = search "&searchString=$searchString" $objName
-                if($search -eq $False){
-                    Write-Host "Site $objName not found" -ForegroundColor Yellow
-                    continue
-                }
-            }   
-        }
-    }
     $objId = $null
     if($useIds -eq $True){
         $objId = $objName
