@@ -14,7 +14,8 @@ param (
     [Parameter()][int]$incrementalSlaMinutes = 1440,  # incremental SLA minutes
     [Parameter()][int]$fullSlaMinutes = 1440,  # full SLA minutes
     [Parameter()][int]$pageSize = 1000,
-    [Parameter()][switch]$useMBS
+    [Parameter()][switch]$useMBS,
+    [Parameter()][switch]$dbg
 )
 
 # gather list from command line params and file
@@ -163,6 +164,12 @@ if($objectMatch){
     0..($autoselect - 1) | ForEach-Object {
         $objectsToAdd = @($objectsToAdd + $script:unprotectedIndex[$_])
     }
+}
+
+if($dbg){
+    $script:webUrlIndex | toJson | Out-File webUrlIndex.json
+    $script:nameIndex | toJson | Out-File nameIndex.json
+    $script:idIndex | toJson | Out-File idIndex.json
 }
 
 foreach($objName in $objectsToAdd){
