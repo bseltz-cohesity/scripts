@@ -1,6 +1,5 @@
 # Change Log for cohesity/community-automation-samples
 
-* [`2025-12-26`] [backupNow.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/backupNow) [`Update`] replaced protectionSources API with v2 data-protect objects API
 * [`2025-12-25`] [protectVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectVMs) [`Update`] added support for CAD/NGCE
 * [`2025-12-24`] [protectVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectVM) [`Update`] added support for CAD/NGCE
 * [`2025-12-24`] [protectAzureVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectAzureVM) [`Update`] added suport for CAD/NGCE
