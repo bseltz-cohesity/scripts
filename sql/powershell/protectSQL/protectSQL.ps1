@@ -87,7 +87,8 @@ if(!$cohesity_api.authorized){
 $systemDBs = @('master', 'model', 'msdb')
 
 # root SQL source
-$sources = api get protectionSources?environments=kSQL
+$sources = api get "protectionSources/registrationInfo?environments=kSQL&includeApplicationsTreeInfo=false"
+# $sources = api get protectionSources?environments=kSQL
 
 # get the protectionJob
 $job = (api get -v2 data-protect/protection-groups).protectionGroups | Where-Object name -eq $jobName
@@ -99,7 +100,6 @@ if(! $job){
         Write-Host "No servers to add" -ForegroundColor Yellow
         exit
     }
-    Write-Host "Creating job $jobName..."
     $newJob = $True
 
     if($paused){
@@ -262,7 +262,6 @@ if(! $job){
         $params['aagBackupPreferenceType'] = $aagBackupPreference
     }
 }else{
-    Write-Host "Updating job $jobname..."
     if($job.mssqlParams.protectionType -eq 'kFile'){
         $params = $job.mssqlParams.fileProtectionTypeParams
         setApiProperty -object $params -name 'logBackupNumStreams' -value $logNumStreams
@@ -341,11 +340,13 @@ function isSelected($thisSource){
 
 # server source
 foreach($servername in $serversToAdd){
-    $serverSource = $sources[0].nodes | Where-Object {$_.protectionSource.name -eq $servername}
-    if(! $serverSource){
+    $serverSourceRootNode = $sources.rootNodes | Where-Object {$_.rootNode.name -eq $servername}
+    # $serverSource = $sources[0].nodes | Where-Object {$_.protectionSource.name -eq $servername}
+    if(! $serverSourceRootNode){
         Write-Host "Server $servername not found!" -ForegroundColor Yellow
         continue
     }
+    $serverSource = api get "protectionSources?id=$($serverSourceRootNode.rootNode.id)"
     if($replace){
         clearSelection $serverSource
     }
@@ -452,10 +453,13 @@ foreach($servername in $serversToAdd){
 }
 
 if($params.objects.Count -eq 0){
-    Write-Host "Nothing protected"
+    Write-Host "Nothing protected. Exiting without committing changes." -ForegroundColor Yellow
+    exit 1
 }
 if($newJob -eq $True){
+    Write-Host "Creating job $jobName..."
     $createdJob = api post -v2 data-protect/protection-groups $job
 }else{
+    Write-Host "Updating job $jobname..."
     $null = api put -v2 data-protect/protection-groups/$($job.id) $job 
 }
