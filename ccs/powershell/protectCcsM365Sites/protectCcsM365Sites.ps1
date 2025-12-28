@@ -57,7 +57,7 @@ if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]:
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -username $username -regionid $region
+apiauth -username $username # -regionid $region
 
 if(! $useMBS){
     if($policyName -eq ''){
@@ -65,7 +65,7 @@ if(! $useMBS){
         exit
     }
     Write-Host "Finding Policy"
-    $policy = (api get -mcmv2 data-protect/policies?types=DMaaSPolicy).policies | Where-Object name -eq $policyName
+    $policy = (api get -mcmv2 "data-protect/policies?types=DMaaSPolicy&regionIds=$region").policies | Where-Object name -eq $policyName
     if(!$policy){
         write-host "Policy $policyName not found" -ForegroundColor Yellow
         exit
@@ -74,8 +74,8 @@ if(! $useMBS){
 
 # find O365 source
 Write-Host "Finding M365 Protection Source"
-$rootSource = (api get -mcmv2 "data-protect/sources?environments=kO365&excludeProtectionStats=true").sources | Where-Object name -eq $sourceName
-$rootSource | toJson
+$rootSource = (api get -mcmv2 "data-protect/sources?environments=kO365&excludeProtectionStats=true&regionIds=$region").sources | Where-Object name -eq $sourceName
+
 if(!$rootSource){
     Write-Host "O365 Source $sourceName not found" -ForegroundColor Yellow
     exit
@@ -83,8 +83,7 @@ if(!$rootSource){
 
 $rootSourceId = $rootSource[0].sourceInfoList[0].sourceId
 
-$source = api get "protectionSources?id=$($rootSourceId)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false" # -region $regionId
-
+$source = api get "protectionSources?id=$($rootSourceId)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false&regionId=$region" # -region $regionId
 $objectsNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Sites'}
 if(!$objectsNode){
     Write-Host "Source $sourceName is not configured for O365 Sites" -ForegroundColor Yellow
@@ -112,13 +111,13 @@ function getNodes($node){
     }
 }
 Write-Host "Indexing Sites"
-$objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false" # -region $regionId
+$objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false&regionId=$region" # -region $regionId
 while(1){
     foreach($node in $objects.nodes){
         getNodes($node)
     }
     $cursor = $objects.nodes[-1].protectionSource.id
-    $objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false&afterCursorEntityId=$cursor" # -region $regionId
+    $objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false&afterCursorEntityId=$cursor&regionId=$region" # -region $regionId
     if(!$objects.PSObject.Properties['nodes'] -or $objects.nodes.Count -eq 1){
         break
     }
@@ -208,7 +207,7 @@ foreach($objName in $objectsToAdd){
             $protectionParams.policyId = $policy.id
         }
         Write-Host "Protecting $objName"
-        $null = api post -v2 data-protect/protected-objects $protectionParams
+        $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
     }elseif($objId -and $objId -notin $script:unprotectedIndex){
         Write-Host "Site $objName already protected" -ForegroundColor Magenta
     }else{
