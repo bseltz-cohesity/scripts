@@ -432,7 +432,7 @@ if objectnames is not None:
                                 else:
                                     bail(1)
                         else:
-                            # kOracle
+                            # Oracle
                             dbSource = [o for o in search['objects'] if o['name'].lower() == instance.lower()]
                             if dbSource is not None and len(dbSource) > 0:
                                 dbSource = [o for o in dbSource if o['protectionGroupConfigurations'][0]['protectionGroupId'] == v2JobId]
