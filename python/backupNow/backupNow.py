@@ -474,7 +474,12 @@ if objectnames is not None:
             search = api('get', 'data-protect/search/objects?environments=%s&searchString=%s' % (environment, objectname), v=2)
             thisObject = [o for o in search['objects'] if o['name'].lower() == objectname.lower()]
             if thisObject is not None and len(thisObject) > 0:
-                protectionGroupIds = [p[0]['id'] for p in [o['protectionGroups'] for o in thisObject[0]['objectProtectionInfos']]]
+                protectionGroupIds = []
+                for o in thisObject[0]['objectProtectionInfos']:
+                    if 'protectionGroups' in o and o['protectionGroups'] is not None:
+                        for p in o['protectionGroups']:
+                            protectionGroupIds.append(p['id'])
+                # protectionGroupIds = [p[0]['id'] for p in [o['protectionGroups'] for o in thisObject[0]['objectProtectionInfos']]]
                 if v2JobId not in protectionGroupIds:
                     out('Object %s not protected by %s' % (objectname, jobName))
                     if extendederrorcodes is True:
