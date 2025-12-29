@@ -432,11 +432,12 @@ if objectnames is not None:
                                 else:
                                     bail(1)
                         else:
-                            dbSource = [o for o in search['objects'] if o['name'].lower() == db.lower()]
+                            # kOracle
+                            dbSource = [o for o in search['objects'] if o['name'].lower() == instance.lower()]
                             if dbSource is not None and len(dbSource) > 0:
                                 dbSource = [o for o in dbSource if o['protectionGroupConfigurations'][0]['protectionGroupId'] == v2JobId]
                             else:
-                                out('%s not protected by %s' % (objectname, jobName))
+                                out('%s not protected by %s' % (instance, jobName))
                                 if extendederrorcodes is True:
                                     bail(3)
                                 else:
