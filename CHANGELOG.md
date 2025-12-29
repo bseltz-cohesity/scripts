@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2025-12-29`] [backupNow.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backupNow) [`Update`] improved API query performance
 * [`2025-12-29`] [backupNow.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/backupNow) [`Update`] improved API query performance
 * [`2025-12-25`] [protectVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectVMs) [`Update`] added support for CAD/NGCE
 * [`2025-12-24`] [protectVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectVM) [`Update`] added support for CAD/NGCE
