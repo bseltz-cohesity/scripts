@@ -273,9 +273,9 @@ if($job){
             exit 1
         }
     }
-    if($objects -and ($environment -eq 'kSQL' -or $environment -eq 'kOracle')){
-        $v1Job = api get "protectionJobs/$($v1JobId)?onlyReturnBasicSummary=true&useCachedData=$cacheSetting" -timeout $timeoutSec
-    }
+    # if($objects -and ($environment -eq 'kSQL' -or $environment -eq 'kOracle')){
+    #     $v1Job = api get "protectionJobs/$($v1JobId)?onlyReturnBasicSummary=true&useCachedData=$cacheSetting" -timeout $timeoutSec
+    # }
 }else{
     output "Job $jobName not found!" -warn
     if($extendedErrorCodes){
@@ -307,10 +307,10 @@ if($objects){
             }else{
                 $search = $serverSearchCache["$server"]
             }
-            
             $serverObject = $search.objects | Where-Object name -eq $server
             if($serverObject){
-                $serverObjectId = $search.objects[0].objectProtectionInfos[0].objectId
+                $serverObjectId = $search.objects[0].id
+                # $serverObjectId = $search.objects[0].objectProtectionInfos[0].objectId
             }else{
                 if($environment -eq 'kSQL'){
                     $search.objects = $search.objects | Where-Object {$_.mssqlParams.hostInfo.name -eq $server}
@@ -326,7 +326,7 @@ if($objects){
                 }
             }
             if($serverObjectId){
-                if($serverObjectId -in $v1Job.sourceIds){
+                # if($serverObjectId -in $v1Job.sourceIds){
                     if(! ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId})){
                         $runNowParameters += @{
                             "sourceId" = $serverObjectId;
@@ -390,14 +390,14 @@ if($objects){
                             }
                         }
                     }
-                }else{
-                    output "Server $server not protected by job $jobName" -warn
-                    if($extendedErrorCodes){
-                        exit 3
-                    }else{
-                        exit 1
-                    }
-                }
+                # }else{
+                #     output "Server $server not protected by job $jobName" -warn
+                #     if($extendedErrorCodes){
+                #         exit 3
+                #     }else{
+                #         exit 1
+                #     }
+                # }
             }else{
                 output "Server $server not found" -warn
                 if($extendedErrorCodes){
