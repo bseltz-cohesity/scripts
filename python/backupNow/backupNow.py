@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2025.12.18
+# version 2025.12.29
 
 # version history
 # ===============
@@ -36,6 +36,7 @@
 # 2025.02.18 - fixed CAD errors, magneto error handling in 'wait for new run to appear' loop
 # 2025.05.20 - catch new existing run error "there is an outstanding run-now request"
 # 2025-12-18 - added support for 7.3 SQL AAG
+# 2025.12.29 - replaced protectionSources API with v2 data-protect objects API
 #
 # extended error codes
 # ====================
@@ -272,36 +273,6 @@ if cachewaittime > 0:
         print(':DEBUG: waiting for read replica cache...')
     sleep(cachewaittime)
 
-sources = {}
-
-
-# get object ID
-def getObjectId(objectName):
-
-    d = {'_object_id': None}
-
-    def get_nodes(node):
-        if 'name' in node:
-            if node['name'].lower() == objectName.lower():
-                d['_object_id'] = node['id']
-                exit
-        if 'protectionSource' in node:
-            if node['protectionSource']['name'].lower() == objectName.lower():
-                d['_object_id'] = node['protectionSource']['id']
-                exit
-        if 'nodes' in node:
-            for node in node['nodes']:
-                if d['_object_id'] is None:
-                    get_nodes(node)
-                else:
-                    exit
-
-    for source in sources:
-        if d['_object_id'] is None:
-            get_nodes(source)
-
-    return d['_object_id']
-
 
 def cancelRunningJob(job, durationMinutes, v1JobId):
     if durationMinutes > 0:
@@ -364,17 +335,6 @@ else:
             bail(3)
         else:
             bail(1)
-    if objectnames is not None:
-        v1Job = api('get', 'protectionJobs/%s?onlyReturnBasicSummary=true&useCachedData=%s' % (v1JobId, cacheSetting), timeout=timeoutsec)
-        if environment in ['kOracle', 'kSQL']:
-            backupJob = api('get', '/backupjobs/%s?useCachedData=%s' % (v1JobId, cacheSetting), timeout=timeoutsec)
-            backupSources = api('get', '/backupsources?allUnderHierarchy=false&entityId=%s&excludeTypes=5&useCachedData=%s' % (backupJob[0]['backupJob']['parentSource']['id'], cacheSetting), timeout=timeoutsec)
-        elif environment == 'kVMware':
-            sources = api('get', 'protectionSources/virtualMachines?vCenterId=%s&protected=true&pruneNonCriticalInfo=true&useCachedData=%s' % (v1Job['parentSourceId'], cacheSetting), timeout=timeoutsec)
-        elif 'kAWS' in environment:
-            sources = api('get', 'protectionSources?environments=kAWS&useCachedData=%s&id=%s' % (cacheSetting, v1Job['parentSourceId']), timeout=timeoutsec)
-        else:
-            sources = api('get', 'protectionSources?environments=%s&useCachedData=%s&id=%s' % (environment, cacheSetting, v1Job['parentSourceId']), timeout=timeoutsec)
 
 # purge oracle logs
 if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
@@ -386,6 +346,9 @@ objectIds = {}
 sourceIds = []
 selectedSources = []
 runNowParameters = []
+serverSearchCache = {}
+searchCache = {}
+pgCache = {}
 if objectnames is not None:
     for objectname in objectnames:
         if environment == 'kSQL' or environment == 'kOracle':
@@ -408,16 +371,25 @@ if objectnames is not None:
                     instance = None
                     db = None
             serverObjectId = None
-            serverObject = [o for o in backupSources['entityHierarchy']['children'] if o['entity']['displayName'].lower() == server.lower()]
+            if server.lower() not in serverSearchCache:
+                search = api('get', 'data-protect/search/protected-objects?searchString=%s&enviroments=%s' % (server, environment), v=2)
+                serverSearchCache[server.lower()] = search
+            else:
+                search = serverSearchCache[server.lower()]
+            serverObject = [s for s in search['objects'] if s['name'].lower() == server.lower()]
             if serverObject is not None and len(serverObject) > 0:
-                serverObjectId = serverObject[0]['entity']['id']
-            if serverObjectId is not None:
-                if serverObjectId not in v1Job['sourceIds']:
-                    out("%s not protected by %s" % (server, jobName))
-                    if extendederrorcodes is True:
-                        bail(3)
+                serverObjectId = serverObject[0]['id']
+            else:
+                if environment == 'kSQL':
+                    search['objects'] = [o for o in search['objects'] if o['mssqlParams']['hostInfo']['name'].lower() == server.lower()]
+                else:
+                    search['objects'] = [o for o in search['objects'] if o['oracleParams']['hostInfo']['name'].lower() == server.lower()]
+                if len(search['objects']) > 0:
+                    if environment == 'kSQL':
+                        serverObjectId = int(search['objects'][0]['mssqlParams']['hostInfo']['id'])
                     else:
-                        bail(1)
+                        serverObjectId = int(search['objects'][0]['oracleParams']['hostInfo']['id'])
+            if serverObjectId is not None:
                 if len([obj for obj in runNowParameters if obj['sourceId'] == serverObjectId]) == 0:
                     objectIds[server.lower()] = serverObjectId
                     runNowParameters.append(
@@ -432,35 +404,27 @@ if objectnames is not None:
                             if runNowParameter['sourceId'] == serverObjectId:
                                 if 'databaseIds' not in runNowParameter:
                                     runNowParameter['databaseIds'] = []
-                        if 'backupSourceParams' in backupJob[0]['backupJob']:
-                            backupJobSourceParams = [p for p in backupJob[0]['backupJob']['backupSourceParams'] if p['sourceId'] == serverObjectId]
-                            if backupJobSourceParams is not None and len(backupJobSourceParams) > 0:
-                                backupJobSourceParams = backupJobSourceParams[0]
+                            if str(serverObjectId) not in searchCache:
+                                search = api('get', 'data-protect/objects?parentId=%s&environments=%s&onlyProtectedObjects=true' % (serverObjectId, environment), v=2)
+                                searchCache[str(serverObjectId)] = search
                             else:
-                                backupJobSourceParams = None
-                        else:
-                            backupJobSourceParams = None
-                        serverSource = [c for c in backupSources['entityHierarchy']['children'] if c['entity']['id'] == serverObjectId][0]
+                                search = searchCache[str(serverObjectId)]
                         if environment == 'kSQL':
-                            if 'children' in serverSource:
-                                # 7.3 AAG
-                                dbSource = [c for c in serverSource['children'] if c['entity']['displayName'].lower() == instance.lower()]
+                            # SQL
+                            if db is None:
+                                dbSource = [o for o in search['objects'] if o['name'].lower() == instance.lower()]
                             else:
-                                instanceSource = [i for i in serverSource['auxChildren'] if i['entity']['displayName'].lower() == instance.lower()][0]
-                                if db is None:
-                                    dbSource = [c for c in instanceSource['children']]
-                                else:
-                                    dbSource = [c for c in instanceSource['children'] if c['entity']['displayName'].lower() == '%s/%s' % (instance.lower(), db.lower())]
+                                dbSource = [o for o in search['objects'] if o['name'].lower() == '%s/%s' % (instance.lower(), db.lower())]
                             if dbSource is not None and len(dbSource) > 0:
-                                for db in dbSource:
-                                    if backupJobSourceParams is None or db['entity']['id'] in backupJobSourceParams['appEntityIdVec'] or instanceSource['entity']['id'] in backupJobSourceParams['appEntityIdVec']:
-                                        runNowParameter['databaseIds'].append(db['entity']['id'])
-                                    else:
-                                        out('%s not protected by %s' % (objectname, jobName))
-                                        if extendederrorcodes is True:
-                                            bail(3)
-                                        else:
-                                            bail(1)
+                                dbSource = [o for o in dbSource if o['protectionGroupConfigurations'][0]['protectionGroupId'] == v2JobId]
+                            else:
+                                out('%s not protected by %s' % (objectname, jobName))
+                                if extendederrorcodes is True:
+                                    bail(3)
+                                else:
+                                    bail(1)
+                            if dbSource is not None and len(dbSource) > 0:
+                                runNowParameter['databaseIds'].append(dbSource[0]['id'])
                             else:
                                 out('%s not protected by %s' % (objectname, jobName))
                                 if extendederrorcodes is True:
@@ -468,17 +432,16 @@ if objectnames is not None:
                                 else:
                                     bail(1)
                         else:
-                            dbSource = [c for c in serverSource['auxChildren'] if c['entity']['displayName'].lower() == instance.lower()]
+                            dbSource = [o for o in search['objects'] if o['name'].lower() == db.lower()]
                             if dbSource is not None and len(dbSource) > 0:
-                                for db in dbSource:
-                                    if backupJobSourceParams is None or db['entity']['id'] in backupJobSourceParams['appEntityIdVec']:
-                                        runNowParameter['databaseIds'].append(db['entity']['id'])
+                                dbSource = [o for o in dbSource if o['protectionGroupConfigurations'][0]['protectionGroupId'] == v2JobId]
                             else:
                                 out('%s not protected by %s' % (objectname, jobName))
                                 if extendederrorcodes is True:
                                     bail(3)
                                 else:
                                     bail(1)
+                            runNowParameter['databaseIds'].append(dbSource[0]['id'])
                     else:
                         out("Job is Volume based. Can not selectively backup instances/databases")
                         if extendederrorcodes is True:
@@ -493,7 +456,8 @@ if objectnames is not None:
                     bail(1)
         elif environment == 'kVMware':
             sourceId = None
-            thisSource = [s for s in sources if s['name'].lower() == objectname.lower()]
+            search = api('get', 'data-protect/search/protected-objects?environments=kVMware&protectionGroupIds=%s&searchString=%s' % (v2JobId, objectname), v=2)
+            thisSource = [o for o in search['objects'] if o['name'].lower() == objectname.lower()]
             if thisSource is not None and len(thisSource) > 0:
                 sourceId = thisSource[0]['id']
                 sourceIds.append(sourceId)
@@ -505,7 +469,18 @@ if objectnames is not None:
                 else:
                     bail(1)
         else:
-            sourceId = getObjectId(objectname)
+            sourceId = None
+            search = api('get', 'data-protect/search/objects?environments=%s&searchString=%s' % (environment, objectname), v=2)
+            thisObject = [o for o in search['objects'] if o['name'].lower() == objectname.lower()]
+            if thisObject is not None and len(thisObject) > 0:
+                protectionGroupIds = [p[0]['id'] for p in [o['protectionGroups'] for o in thisObject[0]['objectProtectionInfos']]]
+                if v2JobId not in protectionGroupIds:
+                    out('Object %s not protected by %s' % (objectname, jobName))
+                    if extendederrorcodes is True:
+                        bail(3)
+                    else:
+                        bail(1)
+                sourceId = thisObject[0]['objectProtectionInfos'][0]['objectId']
             if sourceId is not None:
                 sourceIds.append(sourceId)
                 selectedSources.append(sourceId)
