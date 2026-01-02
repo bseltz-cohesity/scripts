@@ -133,26 +133,30 @@ foreach ($job in $jobs | Sort-Object -Property name) {
                 if($skipNoArchives -eq $False -and $skipNoReplicas -eq $False){
                     # if -commit switch is set, expire the local snapshot
                     if ($commit) {
-                        $exactRun = api get /backupjobruns?exactMatchStartTimeUsecs=$startdateusecs`&id=$jobId
-                        $jobUid = $exactRun[0].backupJobRuns.protectionRuns[0].backupRun.base.jobUid
-                        Write-Host "    Expiring $($job.name) Snapshot from $startdate"
-                        $expireRun = @{'jobRuns' = @(
-                                @{'expiryTimeUsecs'     = 0;
-                                    'jobUid'            = @{
-                                        'clusterId' = $jobUid.clusterId;
-                                        'clusterIncarnationId' = $jobUid.clusterIncarnationId;
-                                        'id' = $jobUid.objectId;
-                                    }
-                                    'runStartTimeUsecs' = $startdateusecs;
-                                    'copyRunTargets'    = @(
-                                        @{'daysToKeep' = 0;
-                                            'type'     = 'kLocal';
+                        $exactRun = api get "/backupjobruns?exactMatchStartTimeUsecs=$startdateusecs&id=$jobId&excludeTasks=true"
+                        try{
+                            $jobUid = $exactRun[0].backupJobRuns.protectionRuns[0].backupRun.base.jobUid
+                            Write-Host "    Expiring $($job.name) Snapshot from $startdate"
+                            $expireRun = @{'jobRuns' = @(
+                                    @{'expiryTimeUsecs'     = 0;
+                                        'jobUid'            = @{
+                                            'clusterId' = $jobUid.clusterId;
+                                            'clusterIncarnationId' = $jobUid.clusterIncarnationId;
+                                            'id' = $jobUid.objectId;
                                         }
-                                    )
-                                }
-                            )
+                                        'runStartTimeUsecs' = $startdateusecs;
+                                        'copyRunTargets'    = @(
+                                            @{'daysToKeep' = 0;
+                                                'type'     = 'kLocal';
+                                            }
+                                        )
+                                    }
+                                )
+                            }
+                            $null = api put protectionRuns $expireRun
+                        }catch{
+                            Write-Host "    Error While Expiring $($job.name) Snapshot from $startdate" -ForegroundColor Yellow
                         }
-                        $null = api put protectionRuns $expireRun
                     }else{
                         # just print old snapshots if we're not expiring
                         Write-Host "    Would expire $($job.name) $($startdate)"
@@ -165,7 +169,7 @@ foreach ($job in $jobs | Sort-Object -Property name) {
                     $reduceByDays = [int64][math]::floor(($run.copyRun[0].expiryTimeUsecs - $newExpiryUsecs) / 86400000000)
                     # if -commit switch is set, reduce the retention
                     if ($commit -and $reduceByDays -ge 1) {
-                        $exactRun = api get /backupjobruns?exactMatchStartTimeUsecs=$startdateusecs`&id=$jobId
+                        $exactRun = api get "/backupjobruns?exactMatchStartTimeUsecs=$startdateusecs&id=$jobId&excludeTasks=true"
                         $jobUid = $exactRun[0].backupJobRuns.protectionRuns[0].backupRun.base.jobUid
                         Write-Host "    Reducing retention for $($job.name) Snapshot from $startdate"
                         $editRun = @{'jobRuns' = @(
