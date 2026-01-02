@@ -301,7 +301,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
 
     Write-Host "`n$($search.objects[0].name)"
     if(@($ranges).Count -gt 0){
-        $range = $ranges[0]
+        $range = $ranges | Sort-Object -Property @{ Expression = { $_.snapshot.runStartTimeUsecs } } -Descending | Select-Object -First 1
     }else{
         Write-Host "    No snapshots for $logTime, skipping" -ForegroundColor Yellow
         continue
