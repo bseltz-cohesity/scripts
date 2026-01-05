@@ -51,6 +51,7 @@ parser.add_argument('-prescriptargs', '--prescriptargs', type=str, default='')  
 parser.add_argument('-postscriptargs', '--postscriptargs', type=str, default='')  # post script arguments
 parser.add_argument('-t', '--scripttimeout', type=int, default=900)  # pre post script timeout
 parser.add_argument('-dbg', '--dbg', action='store_true')
+parser.add_argument('-ds', '--dontskipclonenid', action='store_true')
 
 args = parser.parse_args()
 
@@ -93,6 +94,7 @@ prescriptargs = args.prescriptargs
 postscriptargs = args.postscriptargs
 scripttimeout = args.scripttimeout
 dbg = args.dbg
+dontskipclonenid = args.dontskipclonenid
 
 # gather server list
 def gatherList(param=None, filename=None, name='items', required=True):
@@ -281,7 +283,8 @@ cloneParams = {
                         "captureTailLogs": False,
                         "secondaryDataFileDestinationVec": [
                             {}
-                        ]
+                        ],
+                        "skipCloneNid": True
                     },
                     "targetHost": targetEntity['appEntity']['entity'],
                     "targetHostParentSource": {
@@ -292,6 +295,9 @@ cloneParams = {
         ]
     }
 }
+
+if dontskipclonenid is True:
+    cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['skipCloneNid'] = False
 
 if channels is not None:
     if 'networkingInfo' not in targetEntity['appEntity']['entity']['physicalEntity']:
