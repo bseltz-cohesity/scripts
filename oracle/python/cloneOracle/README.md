@@ -66,6 +66,7 @@ The script takes the following parameters:
 * -nl, --nologs: (optional) do not replay logs
 * -w, --wait: (optional) wait for completion
 * -dbg, --dbg: (optional) display api payload and exit (without restoring)
+* -ds, --dontskipclonenid: (optional) don't skip clone Nid step
 
 ## Point in Time Recovery
 
