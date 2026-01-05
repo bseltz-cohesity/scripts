@@ -13,7 +13,7 @@ param (
     [Parameter()][string]$timeZone = 'America/New_York', # e.g. 'America/New_York'
     [Parameter()][int]$incrementalSlaMinutes = 1440,  # incremental SLA minutes
     [Parameter()][int]$fullSlaMinutes = 1440,  # full SLA minutes
-    [Parameter()][int]$pageSize = 10000,
+    [Parameter()][int]$pageSize = 25000,
     [Parameter()][switch]$useMBS
 )
 
@@ -111,6 +111,7 @@ function getNodes($node){
     }
 }
 Write-Host "Indexing Sites"
+$x = 0
 $objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($objectsNode.protectionSource.id)&id=$($objectsNode.protectionSource.id)&allUnderHierarchy=false&regionId=$region" # -region $regionId
 while(1){
     foreach($node in $objects.nodes){
@@ -121,6 +122,8 @@ while(1){
     if(!$objects.PSObject.Properties['nodes'] -or $objects.nodes.Count -eq 1){
         break
     }
+    $x += $pageSize
+    Write-Host "$x"
 }
 # Write-Host $script:unprotectedIndex.Count
 
