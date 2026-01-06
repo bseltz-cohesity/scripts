@@ -34,8 +34,19 @@ $tenantId = Read-Host -Prompt "Enter Tenant ID"
 # Log the login action
 log_info "Logging in with service principal"
 
+# Create credential object
+$cred = New-Object System.Management.Automation.PSCredential ($appId, $servicePrincipalKey)
+
+
 # Login with service principal
-Connect-AzAccount -ServicePrincipal -ApplicationId $appId -TenantId $tenantId -Credential $servicePrincipalKey
+try {
+    Connect-AzAccount -ServicePrincipal -TenantId $tenantId -Credential $cred -ErrorAction Stop
+    log_info "Azure login successful"
+}
+catch {
+    log_error "Azure login failed: $($_.Exception.Message)"
+    exit 1
+}
 
 # Prompt the user for the number of days
 $n = Read-Host -Prompt "Enter the number of days for snapshots to be older than"
@@ -91,7 +102,15 @@ if ($snapshotsToDelete.Count -gt 0) {
             log_info "$snapshotId"
         }
         # Delete the snapshots
-        Remove-AzSnapshot -ResourceId $snapshotsToDelete
+        foreach ($snapshotId in $snapshotsToDelete) {
+          try {
+            Remove-AzSnapshot -ResourceId $snapshotId -Force -ErrorAction Stop
+            log_info "Deleted snapshot $snapshotId"
+          }
+          catch {
+            log_error "Failed to delete $snapshotId : $($_.Exception.Message)"
+          }
+        }
         log_info "All Snapshots deleted successfully."
     } else {
         log_info "Deletion cancelled. No snapshots were deleted."
