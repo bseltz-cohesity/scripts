@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-01-06`] [powershell_compatible_cleanup_script.ps1](https://github.com/cohesity/community-automation-samples/tree/main/cloud/cleanupSnapshots) [`Update`] updated code from author
+* [`2026-01-05`] [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Update`] added -ds, --dontskipclonenid option
+* [`2026-01-02`] [expireOldSnapshots.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/expireOldSnapshots) [`Update`] updated error catching
+* [`2026-01-02`] [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] fixed range selection issue
 * [`2025-12-29`] [backupNow.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backupNow) [`Update`] improved API query performance
 * [`2025-12-29`] [backupNow.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/backupNow) [`Update`] improved API query performance
 * [`2025-12-25`] [protectVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectVMs) [`Update`] added support for CAD/NGCE
