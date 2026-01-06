@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This powershell script protects Ccs M365 Sharepoint sites.
+This powershell script protects Ccs M365 Sharepoint sites from a CSV.
 
 ## Download the script
 
@@ -10,7 +10,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-$scriptName = 'protectCcsM365Sites'
+$scriptName = 'protectCcsM365SitesCSV'
 $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/ccs/powershell/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
@@ -19,16 +19,23 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 
 ## Components
 
-* [protectCcsM365Sites.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/ccs/powershell/protectCcsM365Sites/protectCcsM365Sites.ps1): the main powershell script
+* [protectCcsM365SitesCSV.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/ccs/powershell/protectCcsM365Sites/protectCcsM365SitesCSV.ps1): the main powershell script
 * [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
+
+Create a CSV file (or export from M365) containing the sites to protect. The two CSV columns that are required for this script are name and webUrl. So for example, our CSV file might look like this:
+
+```text
+name,webUrl
+Apps,https://cohesityse.sharepoint.com/sites/appcatalog
+cht-az-o365-15-ComSite,https://myorg.sharepoint.com/sites/myuser-01-site
+```
 
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./protectCcsM365Sites.ps1 -policyName Gold `
-                            -sourceName mydomain.onmicrosoft.com `
-                            -objectNames my-site-1, https://mydomain.onmicrosoft.com/sites/my-site-1 `
-                            -objectList ./mysites.txt
+./protectCcsM365SitesCSV.ps1 -policyName Gold `
+                             -sourceName mydomain.onmicrosoft.com `
+                             -csvFile ./sites.csv
 ```
 
 ## Parameters
@@ -37,10 +44,7 @@ Place both files in a folder together and run the main script like so:
 * -region: specify region (e.g. us-east-2)
 * -sourceName: name of registered M365 protection source
 * -policyName: name of protection policy to use
-* -objectNames: (optional) one or more site names or web URLs (comma separated)
-* -objectList: (optional) text file of site names or web URLs (one per line)
-* -objectMatch: (optional) regex pattern match sites to protect e.g. '.*-Team-Site'
-* -autoselect: (optional) protect first X unprotected sites (unspecified)
+* -csvFile: name of CSV file to impport
 * -startTime: (optional) e.g. '18:30' (defaults to 8PM)
 * -timeZone: (optional) e.g. 'America/New_York' (default is 'America/New_York')
 * -incrementalSlaMinutes: (optional) default 60
