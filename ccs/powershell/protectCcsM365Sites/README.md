@@ -13,6 +13,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 $scriptName = 'protectCcsM365Sites'
 $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/ccs/powershell/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/ccs/powershell/$scriptName/$($scriptName)CSV.ps1").content | Out-File "$($scriptName)CSV.ps1"; (Get-Content "$($scriptName)CSV.ps1") | Set-Content "$($scriptName)CSV.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
