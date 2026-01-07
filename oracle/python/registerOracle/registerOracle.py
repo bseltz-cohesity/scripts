@@ -79,7 +79,7 @@ for server in servernames:
             'forceRegister': True
         }
         if oraclecluster is True:
-            newSource['entity']['physcalEntity']['type'] = 6
+            newSource['entity']['physicalEntity']['type'] = 6
         print('Registering %s as a physical protection source...' % server)
         result = api('post', '/backupsources', newSource)
         
