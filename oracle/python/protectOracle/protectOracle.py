@@ -40,6 +40,7 @@ parser.add_argument('-pm', '--persistmounts', action='store_true')
 parser.add_argument('-na', '--noalert', action='store_true')
 parser.add_argument('-du', '--dbuser', type=str, default=None)
 parser.add_argument('-dp', '--dbpassword', type=str, default=None)
+parser.add_argument('-dbg', '--dbg', action='store_true')
 
 args = parser.parse_args()
 
@@ -75,6 +76,7 @@ deleteloghours = args.deleteloghours
 noalert = args.noalert
 dbuser = args.dbuser
 dbpassword = args.dbpassword
+dbg = args.dbg
 
 if channels is not None and len(channels) > 0 and channelnodes is None:
     print('channel node required if setting channels')
@@ -247,6 +249,8 @@ for server in servernames:
             thisObject = thisObject[0]
         foundDBs = []
         source = api('get','protectionSources?id=%s' % serverId)
+        if dbg is True:
+            display(source)
         for dbNode in source[0]['applicationNodes']:
             # print(dbNode['protectionSource']['name'])
             if len(dbnames) == 0 or dbNode['protectionSource']['name'].lower() in dbnames:
