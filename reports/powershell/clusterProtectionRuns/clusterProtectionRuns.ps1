@@ -19,7 +19,8 @@ param (
     [Parameter()][ValidateSet('KiB','MiB','GiB','TiB')][string]$unit = 'GiB',
     [Parameter()][string]$outputPath = '.',
     [Parameter()][int]$numRuns = 1000,
-    [Parameter()][switch]$amPmFormat
+    [Parameter()][switch]$amPmFormat,
+    [Parameter()][switch]$onHoldOnly
 )
 
 # source the cohesity-api helper code
@@ -173,7 +174,9 @@ function reportRuns(){
                                     $objectBytesWritten = toUnits $snapshotInfo.stats.bytesWritten
                                     $objectBytesRead = toUnits $snapshotInfo.stats.bytesRead
                                     # "        {0}" -f $objectName
-                                    $(dateToString $objectStartTime), $(dateToString $objectEndTime), $objectDurationSeconds, $objectStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $cluster.name, $objectLogicalSizeBytes, $objectBytesRead, $objectBytesWritten, $tenant, $lockUntil, $onLegalHold -join "," | Out-File -FilePath $outfileName -Append
+                                    if(!$onHoldOnly -or $onLegalHold -eq $True){
+                                        $(dateToString $objectStartTime), $(dateToString $objectEndTime), $objectDurationSeconds, $objectStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $cluster.name, $objectLogicalSizeBytes, $objectBytesRead, $objectBytesWritten, $tenant, $lockUntil, $onLegalHold -join "," | Out-File -FilePath $outfileName -Append
+                                    }                                    
                                 }
                             }
                         }
@@ -186,18 +189,6 @@ function reportRuns(){
                 }else{
                     $endUsecs = $runs.runs[-1].archivalInfo.archivalTargetResults[0].endTimeUsecs
                 }
-                # if($runs.runs.Count -eq $numRuns){
-                #     if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
-                #         $endUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs - 1
-                #     }else{
-                #         $endUsecs = $runs.runs[-1].originalBackupInfo.endTimeUsecs - 1
-                #     }
-                #     if($endUsecs -lt 0 -or $endUsecs -lt $daysBackUsecs){
-                #         break
-                #     }
-                # }else{
-                #     break
-                # }
             }
         }
     }

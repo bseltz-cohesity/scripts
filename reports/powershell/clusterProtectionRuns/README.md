@@ -52,3 +52,4 @@ Place both files in a folder together and run the main script.
 * -outputPath: (optional) path to write output file (default is '.')
 * -numRuns: (optional) page size per API call (default is 500)
 * -amPmFormat: (optional) output times in 12 hour format with AM/PM notation
+* -onHoldOnly: (optional) only write to output file if object is on legal hold
