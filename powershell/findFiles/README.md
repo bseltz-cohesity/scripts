@@ -58,6 +58,7 @@ or find all files with the extention .gif:
 * -localOnly: (optional) only show rsults from local jobs
 * -throttle: (optional) pause for X seconds between paged results
 * -pageSize: (optional) 1000 or less (default is 1000)
+* -lastBackupOnly: (optional) only list files from latest backup
 
 ## Search Tips
 

@@ -20,7 +20,8 @@ param (
     [Parameter()][switch]$localOnly,
     [Parameter()][switch]$getMtime,
     [Parameter()][int]$throttle = 0,
-    [Parameter()][int]$pageSize = 1000
+    [Parameter()][int]$pageSize = 1000,
+    [Parameter()][switch]$lastBackupOnly
 )
 
 # source the cohesity-api helper code
@@ -52,7 +53,7 @@ if($USING_HELIOS){
 # end authentication =========================================
 
 $rootNodes = api get protectionSources/rootNodes
-$jobs = api get protectionJobs?onlyReturnBasicSummary=true
+$jobs = api get "protectionJobs?includeLastRunAndStats=true&onlyReturnBasicSummary=true"
 $cluster = api get cluster
 
 function getResults($thisQuery, $thisString=$null){
@@ -79,14 +80,15 @@ function getResults($thisQuery, $thisString=$null){
                     if(!$localOnly -or $clusterId -eq $cluster.id){
                         $clusterIncarnationId = $result.jobUid.clusterIncarnationId
                         $sourceId = $result.protectionSource.id
-                        $jobName = ($jobs | Where-Object id -eq $jobId).name
+                        $job = $jobs | Where-Object id -eq $jobId
+                        $jobName = $job.name
                         if($parentId){
                             $parent = $rootNodes | Where-Object {$_.protectionSource.id -eq $parentId}
                             if($parent){
                                 $parentName = $parent.protectionSource.name
                             }
                         }
-                        if($getMtime){
+                        if($getMtime -or $lastBackupOnly){
                             $mtime = ''
                             $thisFileName = [System.Web.HttpUtility]::UrlEncode($result.fileName)  # [System.Web.HttpUtility]::UrlEncode($result.fileName).Replace('%2f%2f','%2F')
                             $snapshots = api get -v2 "data-protect/objects/$sourceId/protection-groups/$clusterId`:$clusterIncarnationId`:$jobId/indexed-objects/snapshots?indexedObjectName=$thisFileName&includeIndexedSnapshotsOnly=true"
@@ -95,7 +97,10 @@ function getResults($thisQuery, $thisString=$null){
                                 if($mtimeUsecs){
                                     $mtime = usecsToDate $mtimeUsecs
                                 }
-                            }
+                                if($lastBackupOnly -and ($snapshots.snapshots[0].snapshotTimestampUsecs -ne $job.lastRun.backupRun.stats.startTimeUsecs)){
+                                    continue
+                                }
+                            }                            
                         }
                         $matches = $false
                         if($null -eq $thisString -or $fileName -match "/$thisString"+'$'){
