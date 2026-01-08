@@ -91,7 +91,6 @@ function getResults($thisQuery, $thisString=$null){
                             $thisFileName = [System.Web.HttpUtility]::UrlEncode($result.fileName)  # [System.Web.HttpUtility]::UrlEncode($result.fileName).Replace('%2f%2f','%2F')
                             $snapshots = api get -v2 "data-protect/objects/$sourceId/protection-groups/$clusterId`:$clusterIncarnationId`:$jobId/indexed-objects/snapshots?indexedObjectName=$thisFileName&includeIndexedSnapshotsOnly=true"
                             if($snapshots.snapshots.Count -gt 0){
-                                $snapshots.snapshots[0] | ConvertTo-Json -Depth 99
                                 $mtimeUsecs = $snapshots.snapshots[0].lastModifiedTimeUsecs
                                 if($mtimeUsecs){
                                     $mtime = usecsToDate $mtimeUsecs
