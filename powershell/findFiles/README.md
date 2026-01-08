@@ -63,4 +63,3 @@ or find all files with the extention .gif:
 ## Search Tips
 
 Notice in the examples I use .\* this is regex for "any number of any characters". Simply using a \* as a wildcard does not work, since the search is regex-based, not OS globbing style.
-
