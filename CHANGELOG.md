@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-01-09`] [netappImportShares.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/netappImportShares) [`Update`] updated to support BUILTIN principals
+* [`2026-01-08`] [findFiles.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/findFiles) [`Update`] added -lastBackupOnly switch
+* [`2026-01-07`] [clusterProtectionRuns.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterProtectionRuns) [`Update`] added -onHoldOnly switch to report objects that are on legalHold
+* [`2026-01-06`] [protectCcsM365SitesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365Sites) [`New`] new script variant to take input from CSV file
 * [`2026-01-06`] [powershell_compatible_cleanup_script.ps1](https://github.com/cohesity/community-automation-samples/tree/main/cloud/cleanupSnapshots) [`Update`] updated code from author
 * [`2026-01-05`] [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Update`] added -ds, --dontskipclonenid option
 * [`2026-01-02`] [expireOldSnapshots.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/expireOldSnapshots) [`Update`] updated error catching
