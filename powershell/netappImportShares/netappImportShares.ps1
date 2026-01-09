@@ -56,36 +56,7 @@ if(!$cohesity_api.authorized){
 }
 
 function addPermission($user, $perms){
-    if($user -eq 'Everyone'){
-        $sid = 'S-1-1-0'
-    }elseif($user.contains('\')){
-        $workgroup, $user = $user.split('\')
-        # find domain
-        $adDomain = $ads | Where-Object { $_.workgroup -eq $workgroup -or $_.domainName -eq $workgroup}
-        if(!$adDomain){
-            write-host "domain $workgroup not found!" -ForegroundColor Yellow
-            exit 1
-        }else{
-            # find domain princlipal/sid
-            $domainName = $adDomain.domainName
-            $principal = api get "activeDirectory/principals?domain=$($domainName)&includeComputers=true&search=$($user)"
-            if(!$principal){
-                write-host "user $($user) not found!" -ForegroundColor Yellow
-            }else{
-                $sid = $principal[0].sid
-                $sids[$user] = $sid
-            }
-        }
-    }else{
-        # find local or wellknown sid
-        $principal = api get "activeDirectory/principals?includeComputers=true&search=$($user)"
-        if(!$principal){
-            write-host "user $($user) not found!" -ForegroundColor Yellow
-        }else{
-            $sid = $principal[0].sid
-            $sids[$user] = $sid
-        }
-    }
+    $sid = getSid $user
     #"visible" = $True;
     if($sid){
         $permission = @{       
@@ -149,6 +120,8 @@ $volumesToRecover = $volumesToRecover | Sort-Object -Unique
 $ads = api get activeDirectory
 $sids = @{}
 $views = api get views
+$users = api get users?domain=LOCAL
+$groups = api get groups?domain=LOCAL
 
 # resolve sid function
 function getSid($principalName){
@@ -162,32 +135,46 @@ function getSid($principalName){
             $sids[$principalName] = $sid
         }elseif($principalName.contains('\')){
             $workgroup, $user = $principalName.split('\')
-            # find domain
-            $adDomain = $ads | Where-Object { $_.workgroup -eq $workgroup -or $_.domainName -eq $workgroup}
-            if(!$adDomain){
-                write-host "domain $workgroup not found!" -ForegroundColor Yellow
-            }else{
-                # find domain princlipal/sid
-                $domainName = $adDomain.domainName
-                $principal = api get "activeDirectory/principals?domain=$($domainName)&includeComputers=true&search=$($user)"
-                if(!$principal){
-                    write-host "user $($permission.account) not found!" -ForegroundColor Yellow
-                }else{
-                    $sid = $principal[0].sid
+            if($workgroup -eq 'BUILTIN'){
+                if($user -in @($groups.name)){
+                    $sid = ($groups | Where-Object {$_.name -eq $user}).sid
                     $sids[$principalName] = $sid
+                }elseif($user -in @($users.username)){
+                    $sid = ($users | Where-Object {$_.username -eq $user}).sid
+                    $sids[$principalName] = $sid
+                }
+            }else{
+                # find domain
+                $adDomain = $ads | Where-Object { $_.workgroup -eq $workgroup -or $_.domainName -eq $workgroup}
+                if(!$adDomain){
+                    write-host "domain $workgroup not found!" -ForegroundColor Yellow
+                }else{
+                    # find domain princlipal/sid
+                    $domainName = $adDomain.domainName
+                    $principal = api get "activeDirectory/principals?domain=$($domainName)&includeComputers=true&search=$($user)"
+                    if(!$principal){
+                        write-host "user $($permission.account) not found!" -ForegroundColor Yellow
+                    }else{
+                        $sid = $principal[0].sid
+                        $sids[$principalName] = $sid
+                    }
                 }
             }
         }else{
             # find local or wellknown sid
             $principal = api get "activeDirectory/principals?domain=$($ads[0].domainName)&includeComputers=true&search=$principalName"
             if(!$principal){
-                write-host "user $($principalName) not found!" -ForegroundColor Yellow
+                # write-host "user $($principalName) not found!" -ForegroundColor Yellow
                 $sids[$principalName] = $null
             }else{
                 $sid = $principal[0].sid
                 $sids[$principalName] = $sid
             }
         }
+    }
+    if($principalName -notin $sids.Keys -or $sids[$principalName] -eq $null){
+        Write-Host "User $($principalName) not found!" -ForegroundColor Yellow
+        return $null
     }
     return  $sids[$principalName]
 }
@@ -313,6 +300,7 @@ foreach($netappShare in $netappShares | Where-Object {$_.ShareName -ne "/$($_.Pa
                         $principalName = $principalName.Trim()
                         $permission = $permission.Trim()
                         $sid = getSid $principalName
+                        # Write-Host "    $principalName ($sid)"
                         if($sid){
                             $shareParams["sharePermissions"] += @{
                                 "visible" = $true;
