@@ -86,7 +86,7 @@ if ($volumeList){
             $volumes += $v
         }
     }else{
-        Write-Warning "Volume list $volumeList not found!"
+        Write-Host "Volume list $volumeList not found!" -ForegroundColor Yellow
         exit 1
     }
 }
@@ -99,7 +99,7 @@ if($importFile -and (Test-Path -Path $importFile -PathType Leaf)){
     $netappShares = Get-Content -Path $importFile | ConvertFrom-Json
 }else{
     Write-Host "Import file $importFile not found!" -ForegroundColor Yellow
-    exit
+    exit 1
 }
 
 # enumerate netappVolumes
@@ -128,47 +128,59 @@ function getSid($principalName){
     $sid = $null
     # already have this sid in the cache
     if($sids.ContainsKey($principalName)){
-        $sid = $sids[$principalName]
+        return $sids[$principalName]
     }else{
         if($principalName -eq 'Everyone'){
             $sid = 'S-1-1-0'
             $sids[$principalName] = $sid
+            return $sids[$principalName]
         }elseif($principalName.contains('\')){
             $workgroup, $user = $principalName.split('\')
             if($workgroup -eq 'BUILTIN'){
                 if($user -in @($groups.name)){
                     $sid = ($groups | Where-Object {$_.name -eq $user}).sid
                     $sids[$principalName] = $sid
+                    return $sids[$principalName]
                 }elseif($user -in @($users.username)){
                     $sid = ($users | Where-Object {$_.username -eq $user}).sid
                     $sids[$principalName] = $sid
+                    return $sids[$principalName]
                 }
             }else{
                 # find domain
                 $adDomain = $ads | Where-Object { $_.workgroup -eq $workgroup -or $_.domainName -eq $workgroup}
                 if(!$adDomain){
-                    write-host "domain $workgroup not found!" -ForegroundColor Yellow
+                    Write-Host "domain $workgroup not found!" -ForegroundColor Yellow
+                    return $null
                 }else{
                     # find domain princlipal/sid
                     $domainName = $adDomain.domainName
                     $principal = api get "activeDirectory/principals?domain=$($domainName)&includeComputers=true&search=$($user)"
                     if(!$principal){
-                        write-host "user $($permission.account) not found!" -ForegroundColor Yellow
+                        Write-Host "AD User $($principalName) not found!" -ForegroundColor Yellow
+                        return $null
                     }else{
                         $sid = $principal[0].sid
                         $sids[$principalName] = $sid
+                        return $sids[$principalName]
                     }
                 }
             }
         }else{
+            if($principalName -match "S-1"){
+                $sids[$principalName] = $principalName
+                return $sids[$principalName]
+            }
             # find local or wellknown sid
             $principal = api get "activeDirectory/principals?domain=$($ads[0].domainName)&includeComputers=true&search=$principalName"
             if(!$principal){
                 # write-host "user $($principalName) not found!" -ForegroundColor Yellow
                 $sids[$principalName] = $null
+                return $null
             }else{
                 $sid = $principal[0].sid
                 $sids[$principalName] = $sid
+                rerturn $sids[$principalName]
             }
         }
     }
@@ -305,11 +317,15 @@ foreach($netappShare in $netappShares | Where-Object {$_.ShareName -ne "/$($_.Pa
                             $shareParams["sharePermissions"] += @{
                                 "visible" = $true;
                                 "sid"    = $sid;
-                                "access" = $permission.replace('Full Control', 'kFullControl').replace('Read', 'kReadOnly').replace('Change', 'kModify');
+                                "access" = $permission.replace('Full Control', 'kFullControl').replace('Read', 'kReadOnly').replace('Change', 'kModify').replace('full_control', 'kFullControl');
                                 "type"   = "kAllow";
                                 "mode" = "kFolderSubFoldersAndFiles"
                             }
                         }
+                    }
+                    if(@($shareParams["sharePermissions"]).Count -eq 0){
+                        Write-Host "No valid share permissions found, skipping share: $shareName" -ForegroundColor Yellow
+                        continue
                     }
                 }
         
