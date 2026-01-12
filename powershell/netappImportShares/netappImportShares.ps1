@@ -31,7 +31,8 @@ param (
     [Parameter()][string]$sharePrefix = '', # prefix to apply to shares within views
     [Parameter()][array]$exclude, # skip creating shares that match these substrings
     [Parameter()][switch]$copySharePermissions,
-    [Parameter()][switch]$smbOnly
+    [Parameter()][switch]$smbOnly,
+    [Parameter()][switch]$dbg
 )
 
 # source the cohesity-api helper code
@@ -311,6 +312,7 @@ foreach($netappShare in $netappShares | Where-Object {$_.ShareName -ne "/$($_.Pa
                         $principalName, $permission = $ace.split('/')
                         $principalName = $principalName.Trim()
                         $permission = $permission.Trim()
+                        $sid = $null
                         $sid = getSid $principalName
                         # Write-Host "    $principalName ($sid)"
                         if($sid){
@@ -330,6 +332,9 @@ foreach($netappShare in $netappShares | Where-Object {$_.ShareName -ne "/$($_.Pa
                 }
         
                 "Sharing {0}{1} as {2}" -f $newViewName, $relativePath, $shareName
+                if($dbg){
+                    Write-Host $shareParams
+                }
                 $null = api post viewAliases $shareParams
             }
         }
