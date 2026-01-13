@@ -319,7 +319,7 @@ foreach($netappShare in $netappShares | Where-Object {$_.ShareName -ne "/$($_.Pa
                             $shareParams["sharePermissions"] += @{
                                 "visible" = $true;
                                 "sid"    = $sid;
-                                "access" = $permission.replace('Full Control', 'kFullControl').replace('Read', 'kReadOnly').replace('Change', 'kModify').replace('full_control', 'kFullControl');
+                                "access" = $permission.replace('Full Control', 'kFullControl').replace('Read', 'kReadOnly').replace('Change', 'kModify').replace('full_control', 'kFullControl').replace('read', 'kReadOnly').replace('change', 'kModify');
                                 "type"   = "kAllow";
                                 "mode" = "kFolderSubFoldersAndFiles"
                             }
