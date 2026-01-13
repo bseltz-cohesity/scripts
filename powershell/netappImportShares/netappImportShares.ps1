@@ -333,7 +333,7 @@ foreach($netappShare in $netappShares | Where-Object {$_.ShareName -ne "/$($_.Pa
         
                 "Sharing {0}{1} as {2}" -f $newViewName, $relativePath, $shareName
                 if($dbg){
-                    Write-Host $shareParams
+                    Write-Host "$($shareParams | toJson)"
                 }
                 $null = api post viewAliases $shareParams
             }
