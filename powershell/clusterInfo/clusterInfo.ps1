@@ -73,7 +73,7 @@ if($chassisList.PSObject.Properties['chassis']){
 }
 
 $nodes = api get nodes
-
+$interfaces = api get interface
 $physicalCapacity = [math]::round($cluster.stats.usagePerfStats.physicalCapacityBytes / $GiB, 1)
 $usedCapacity = [math]::round($cluster.stats.usagePerfStats.totalPhysicalUsageBytes / $GiB, 1)
 $usedPct = [int][math]::round(100 * $usedCapacity / $physicalCapacity, 0)
@@ -92,7 +92,7 @@ output ("     Used Percent: {0}%" -f $usedPct)
 output ("  Number of nodes: {0}" -f @($nodes).Length)
 output ("-------------------------------------------------------")
 
-"""Chassis ID"",""Chassis Name"",""Chassis Serial"",""Chassis Hardware"",""Slot Number"",""Node ID"",""Node IP"",""IPMI IP"",""Node Serial"",""Hardware Model"",""Cohesity Version"",""Uptime""" | Out-File -FilePath $csvfile
+"""Chassis ID"",""Chassis Name"",""Chassis Serial"",""Chassis Hardware"",""Slot Number"",""Node ID"",""Node IP"",""IPMI IP"",""Node Serial"",""Hardware Model"",""Cohesity Version"",""Uptime"",""Interfaces""" | Out-File -FilePath $csvfile
 
 $ipmi = api get /nexus/ipmi/cluster_get_lan_info -quiet
 foreach($chassis in $chassisList | Sort-Object -Property id){
@@ -145,6 +145,9 @@ foreach($chassis in $chassisList | Sort-Object -Property id){
             output ("   Chassis Serial: {0}" -f $nodeInfo.cohesityChassisSerial)
             $needSerial = $false
         }
+        $if = $interfaces | Where-Object nodeId -eq $node.id
+        $ints = $if.interfaces | Where-Object {$_.isConnected -eq $True -and $_.PSObject.Properties['speed']}
+
         output ("`n                  Node ID: {0}" -f $node.id)
         output ("                  Node IP: {0}" -f $nodeIp)
         output ("                  IPMI IP: {0}" -f $nodeIpmiIp)
@@ -158,7 +161,12 @@ foreach($chassis in $chassisList | Sort-Object -Property id){
                 output ("                   Uptime: {0}" -f $stat.uptime)
             }     
         }
-        """$($chassis.id)"",""$chassisname"",""$($chassis.serialNumber)"",""$hwmodel"",""$slotNumber"",""$($node.id)"",""$($nodeIp)"",""$nodeIpmiIp"",""$nodeSerial"",""$productModel"",""$($node.nodeSoftwareVersion)"",""$uptime""" | Out-File -FilePath $csvfile -Append
+        $infs = @()
+        foreach($int in $ints){
+            output ("                Interface: {0} ({1})" -f $int.name, $int.speed)
+            $infs = @($infs + "$($int.name)($($int.speed))")
+        }
+        """$($chassis.id)"",""$chassisname"",""$($chassis.serialNumber)"",""$hwmodel"",""$slotNumber"",""$($node.id)"",""$($nodeIp)"",""$nodeIpmiIp"",""$nodeSerial"",""$productModel"",""$($node.nodeSoftwareVersion)"",""$uptime"",""$($infs -join ';')""" | Out-File -FilePath $csvfile -Append
     }
 }
 
