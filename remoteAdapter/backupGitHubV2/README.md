@@ -37,7 +37,7 @@ Modify all commands to suite your environment and perform the initial setup step
 
 The top of the script has configuration parameters to set specific for your environment.
 
-```
+```bash
 # Configuration variables to set specific to your environment
 COHESITY_MOUNT_PATH="cohesity-cluster:/view-name"
 LOCAL_MOUNT_POINT="/mnt/GitHub-Repos"
