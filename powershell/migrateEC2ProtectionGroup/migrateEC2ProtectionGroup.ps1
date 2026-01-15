@@ -16,12 +16,14 @@ param (
     [Parameter()][string]$oldJobSuffix = $null,
     [Parameter()][string]$newJobName = $jobName,
     [Parameter()][string]$newPolicyName,
+    [Parameter()][string]$newStorageDomainName,
     [Parameter()][switch]$pauseNewJob,
     [Parameter()][switch]$deleteOldJob,
     [Parameter()][switch]$deleteOldJobAndExit,
     [Parameter()][switch]$deleteOldSnapshots,
     [Parameter()][switch]$deleteReplica,
-    [Parameter()][switch]$renameOldJob
+    [Parameter()][switch]$renameOldJob,
+    [Parameter()][switch]$targetNGCE
 )
 
 function getObjectId($fqn, $source){
@@ -82,13 +84,35 @@ if($suffix){
     $newJobName = "$newJobName-$suffix"
 }
 
-$job = (api get -v2 'data-protect/protection-groups?environments=kAWS&isActive=true').protectionGroups | Where-Object {$_.name -eq $jobName -and $_.awsParams.protectionType -eq 'kSnapshotManager'}
+$job = (api get -v2 'data-protect/protection-groups?environments=kAWS&isActive=true').protectionGroups | Where-Object {$_.name -eq $jobName} # -and $_.awsParams.protectionType -eq 'kSnapshotManager'}
 
 if($job){
 
     $oldPolicy = (api get -v2 data-protect/policies).policies | Where-Object id -eq $job.policyId
-    $oldStorageDomain = api get viewBoxes | Where-Object id -eq $job.storageDomainId
+    
+    $oldStorageDomain = $null
+    if($job.storageDomainId -ne $null){
+        $oldStorageDomain = api get viewBoxes | Where-Object id -eq $job.storageDomainId
+    }
+    $newStorageDomain = $null
+    if($job.awsParams.protectionType -ne 'kNative' -and !$targetNGCE){
+        # check for target storage domain
+        if($newStorageDomainName){
+            $oldStorageDomain.name = $newStorageDomainName
+        }
+        
+        $newStorageDomain = $null
+        if($oldStorageDomain -ne $null){
+            $newStorageDomain = api get viewBoxes | Where-Object name -eq $oldStorageDomain.name
+            if(!$newStorageDomain){
+                Write-Host "Storage Domain $($oldStorageDomain.name) not found" -ForegroundColor Yellow
+                exit
+            }
+        }
+    }
 
+    $oldStorageDomain = api get viewBoxes | Where-Object id -eq $job.storageDomainId
+    
     # connect to target cluster for sanity check
     if(!$deleteOldJobAndExit){
         "Connecting to target cluster..."
@@ -105,11 +129,21 @@ if($job){
                 exit
             }
         }
-
+        $paramsName = 'snapshotManagerProtectionTypeParams'
+        if($job.awsParams.protectionType -eq 'kNative'){
+            $paramsName = 'nativeProtectionTypeParams'
+        } 
         # check for vCenter
-        $newAWSSource = api get "protectionSources?environments=kAWS" | Where-Object {$_.protectionSource.name -eq $job.awsParams.snapshotManagerProtectionTypeParams.sourceName}
+        # $newAWSSource = api get "protectionSources?environments=kAWS" | Where-Object {$_.protectionSource.name -eq $job.awsParams.$paramsName.sourceName}
+        $newAWSSourceReg = (api get protectionSources/registrationInfo?environments=kAWS).rootNodes | Where-Object { $_.rootNode.name -eq $job.awsParams.$paramsName.sourceName}
+        $newAWSSourceReg | toJson
+        if($newAWSSourceReg){
+            $newAWSSourceId = $newAWSSourceReg.rootNode.id
+            $newAWSSource = api get protectionSources?id=$newAWSSourceId
+        }
+
         if(!$newAWSSource){
-            write-host "AWS protection source $($job.awsParams.snapshotManagerProtectionTypeParams.sourceName) is not registered" -ForegroundColor Yellow
+            write-host "AWS protection source $($job.awsParams.$paramsName.sourceName) is not registered" -ForegroundColor Yellow
             exit
         }
 
@@ -129,7 +163,7 @@ if($job){
     # gather old job details
     if(!$deleteOldJobAndExit){
         "Migrating ""$jobName"" from $sourceCluster to $targetCluster..."
-        $oldAWSSource = api get "protectionSources?id=$($job.awsParams.snapshotManagerProtectionTypeParams.sourceId)&environments=kAWS"
+        $oldAWSSource = api get "protectionSources?id=$($job.awsParams.$paramsName.sourceId)&environments=kAWS"
     }
 
     # clean up source cluster
@@ -175,7 +209,12 @@ if($job){
 
     $job.storageDomainId = $newStorageDomain.id
     $job.policyId = $newPolicy.id
-    $job.awsParams.snapshotManagerProtectionTypeParams.sourceId = $newAWSSource.protectionSource.id
+    if($newStorageDomain -eq $null){
+        $job.storageDomainId = $null
+    }else{
+        $job.storageDomainId = $newStorageDomain.id
+    }
+    $job.awsParams.$paramsName.sourceId = $newAWSSource.protectionSource.id
 
     # pause new job
     if($pauseNewJob){
@@ -185,7 +224,7 @@ if($job){
     }
 
     # include objects
-    foreach($vm in $job.awsParams.snapshotManagerProtectionTypeParams.objects){
+    foreach($vm in $job.awsParams.$paramsName.objects){
         $oldObject = getObjectById $vm.id $oldAWSSource
         # $oldObject | ConvertTo-Json -Depth 99
         $newObjectId = getObjectId $oldObject.fqn $newAWSSource
@@ -197,9 +236,9 @@ if($job){
     }
 
     # exclude objects
-    if($job.awsParams.snapshotManagerProtectionTypeParams.PSObject.Properties['excludeObjectIds']){
+    if($job.awsParams.$paramsName.PSObject.Properties['excludeObjectIds']){
         $newExcludeIds = @()
-        foreach($excludeId in $jobawsParams.snapshotManagerProtectionTypeParams.excludeObjectIds){
+        foreach($excludeId in $jobawsParams.$paramsName.excludeObjectIds){
             $oldObject = getObjectById $excludeId $oldAWSSource
             $newObjectId = getObjectId $oldObject.fqn $newAWSSource
             $newExcludeIds = @($newExcludeIds + $newObjectId)
@@ -208,13 +247,13 @@ if($job){
                 exit
             }
         }
-        $job.awsParams.snapshotManagerProtectionTypeParams.excludeObjectIds = $newExcludeIds
+        $job.awsParams.$paramsName.excludeObjectIds = $newExcludeIds
     }
 
     # include tags
-    if($job.awsParams.snapshotManagerProtectionTypeParams.PSObject.Properties['vmTagIds']){
+    if($job.awsParams.$paramsName.PSObject.Properties['vmTagIds']){
         $newTagIds = @()
-        foreach($tag in $job.awsParams.snapshotManagerProtectionTypeParams.vmTagIds){
+        foreach($tag in $job.awsParams.$paramsName.vmTagIds){
             $newTag = @()
             foreach($tagId in $tag){
                 $oldObject = getObjectById $tagId $oldAWSSource
@@ -227,13 +266,13 @@ if($job){
             }
             $newTagIds = @($newTagIds + ,$newTag)
         }
-        $job.awsParams.snapshotManagerProtectionTypeParams.vmTagIds = @($newTagIds)
+        $job.awsParams.$paramsName.vmTagIds = @($newTagIds)
     }
 
     # exclude tags
-    if($job.awsParams.snapshotManagerProtectionTypeParams.PSObject.Properties['excludeVmTagIds']){
+    if($job.awsParams.$paramsName.PSObject.Properties['excludeVmTagIds']){
         $newTagIds = @()
-        foreach($tag in $job.awsParams.snapshotManagerProtectionTypeParams.excludeVmTagIds){
+        foreach($tag in $job.awsParams.$paramsName.excludeVmTagIds){
             $newTag = @()
             foreach($tagId in $tag){
                 $oldObject = getObjectById $tagId $oldAWSSource
@@ -246,7 +285,7 @@ if($job){
             }
             $newTagIds = @($newTagIds + ,$newTag)
         }
-        $job.awsParams.snapshotManagerProtectionTypeParams.excludeVmTagIds = @($newTagIds)
+        $job.awsParams.$paramsName.excludeVmTagIds = @($newTagIds)
     }
 
     # create new job
@@ -255,5 +294,5 @@ if($job){
     $newjob = api post -v2 data-protect/protection-groups $job
     "`nMigration Complete`n"
 }else{
-    Write-Host "AWS CSM protection group $jobName not found" -ForegroundColor Yellow
+    Write-Host "AWS protection group $jobName not found" -ForegroundColor Yellow
 }
