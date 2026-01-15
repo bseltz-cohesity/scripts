@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Storage Per Object Report version 2025.06.10 for Python"""
+"""Storage Per Object Report version 2026.01.15 for Python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -44,7 +44,7 @@ skipdeleted = args.skipdeleted
 debug = args.debug
 includearchives = args.includearchives
 
-scriptVersion = '2025-06-10 (Python)'
+scriptVersion = '2026-01-15 (Python)'
 
 if vips is None or len(vips) == 0:
     vips = ['helios.cohesity.com']
@@ -295,8 +295,9 @@ def reportStorage():
                                             objects[objId]['archiveLogical'] = archivalInfo['stats']['logicalSizeBytes']
                                         if objects[objId]['fetb'] == 0 and (job['environment'] in ['kVMware', 'kAD', 'kHyperV', 'kAWS'] or (job['environment'] == 'kPhysical' and job['physicalParams']['protectionType'] == 'kVolume')):
                                             if vmsearch is not None and 'vms' in vmsearch and vmsearch['vms'] is not None and len(vmsearch['vms']) > 0:
-                                                vms = [vm for vm in vmsearch['vms'] if vm['vmDocument']['objectName'].lower() == object['object']['name'].lower()]
+                                                vms = [vm for vm in vmsearch['vms'] if vm['vmDocument']['objectId']['entity']['id'] == objId]
                                                 if len(vms) > 0:
+                                                    vms = sorted(vms, key=lambda result: result['vmDocument']['versions'][0]['snapshotTimestampUsecs'], reverse=True)
                                                     if job['environment'] == 'kVMware':
                                                         vmbytes = vms[0]['vmDocument']['objectId']['entity']['vmwareEntity']['frontEndSizeInfo']['sizeBytes']
                                                         tagAttrs = [a for a in vms[0]['vmDocument']['attributeMap'] if 'VMware_tag' in a['xKey']]
@@ -307,11 +308,7 @@ def reportStorage():
                                                     elif job['environment'] == 'kAWS':
                                                         if 'tagAttributesVec' in vms[0]['vmDocument']['objectId']['entity']['awsEntity'] and  vms[0]['vmDocument']['objectId']['entity']['awsEntity']['tagAttributesVec'] is not None and len( vms[0]['vmDocument']['objectId']['entity']['awsEntity']['tagAttributesVec']) > 0:
                                                             tags = '; '.join(sorted([t['name'].replace('#~#', ': ') for t in vms[0]['vmDocument']['objectId']['entity']['awsEntity']['tagAttributesVec']]))
-                                                            # tagvec = vms[0]['vmDocument']['objectId']['entity']['awsEntity']['tagAttributesVec']
-                                                            # tags = [t['name'] for t in tagvec]
-                                                            # objects[objId]['awsTags'] = '; '.join(tags)
                                                             objects[objId]['awsTags'] = tags
-                                                        # print(objects[objId]['awsTags'])
                                                     else:
                                                         vmbytes = vms[0]['vmDocument']['objectId']['entity']['sizeInfo'][0]['value']['sourceDataSizeBytes']
                                                     objects[objId]['logical'] = vmbytes
