@@ -1,4 +1,4 @@
-# version: 2025-08-29
+# version: 2026-01-15
 
 # process commandline arguments
 [CmdletBinding()]
@@ -25,7 +25,7 @@ param (
     [Parameter()][array]$environments = $null
 )
 
-$scriptversion = '2025-08-29 (PowerShell)'
+$scriptversion = '2026-01-15 (PowerShell)'
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -346,9 +346,10 @@ function reportStorage(){
                                 if($dbg){
                                     Write-Host "    getting fetb"
                                 }
-                                $vms = $vmsearch.vms | Where-Object {$_.vmDocument.objectName -eq $object.object.name}
+                                $vms = $vmsearch.vms | Where-Object {$_.vmDocument.objectId.entity.id -eq $objId}
                                 
                                 if($vms){
+                                    $vms = $vms | Sort-Object -Property @{Expression={$_.vmDocument.versions[0].snapshotTimestampUsecs}; Ascending = $False}
                                     if($job.environment -eq 'kVMware'){
                                         $vmbytes = $vms[0].vmDocument.objectId.entity.vmwareEntity.frontEndSizeInfo.sizeBytes
                                     }elseif($job.environment -eq 'kHyperV'){
