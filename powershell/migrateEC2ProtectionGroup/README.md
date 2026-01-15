@@ -24,7 +24,7 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 
 Place all files in a folder together and run the script like so:
 
-To update all VMware protection jobs:
+To migrate an EC2 protection group:
 
 ```powershell
 ./migrateEC2ProtectionGroup.ps1 -sourceCluster myOldCluster `
