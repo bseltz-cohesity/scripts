@@ -15,7 +15,8 @@ param (
     [Parameter()][hashtable]$newTargetNames = @{},
     [Parameter()][switch]$skipLocalReplica,
     [Parameter()][switch]$skipAllReplicas,
-    [Parameter()][switch]$skipAllArchives
+    [Parameter()][switch]$skipAllArchives,
+    [Parameter()][string]$storageDomainName = 'DefaultStorageDomain'
 )
 
 # source the cohesity-api helper code
@@ -69,6 +70,20 @@ if($policy){
     }
     $newVaults = api get vaults
     $newRemotes = api get remoteClusters
+    $newStorageDomains = api get -v2 storage-domains
+    $newStorageDomain = $newStorageDomains.storageDomains | Where-Object name -eq $storageDomainName
+    if($newStorageDomain){
+        if($newStorageDomain.PSObject.Properties['vaultId']){
+            $newVault = $newVaults | Where-Object id -eq $newStorageDomain.vaultId
+            setApiProperty -object $policy.backupPolicy.regular -name 'primaryBackupTarget' -value @{
+                "targetType" = "Archival";
+                "archivalTargetSettings" = @{
+                    "targetId" = $newVault.id;
+                    "targetName" = $newVault.name
+                }
+            }
+        }
+    }
     $policy.name = $newPolicyName
     if($policy.PSObject.Properties['remoteTargetPolicy']){
         # replicas
