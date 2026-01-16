@@ -62,6 +62,7 @@ To update all VMware protection jobs:
 * -skipAllReplicas: (optional) remove all replication elements from policy
 * -skipAllArchives: (optional) remove all archhival elements from policy
 * -newTargetNames: (optional) dictionary of old target names -> new target names (see below)
+* -storageDomainName: (optional) specify storage domain (for NGCE clusters)
 
 ## Mapping Archive Target Names
 
