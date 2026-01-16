@@ -48,6 +48,7 @@ To migrate an EC2 protection group:
 * -targetPassword: (optional) password for target user
 * -tenant: (optional) organization to impersonate
 * -jobName: name of job to migrate
+* -pageSize: (optional) API query page size (default is 10000)
 
 ## Target Job Parameters
 
