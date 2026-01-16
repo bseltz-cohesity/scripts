@@ -226,68 +226,6 @@ foreach($dbName in $dbNames){
             exit(1)
         }
     }
-
-    # if ($logTime -or $latest) {
-    #     if($logTime){
-    #         $logUsecs = dateToUsecs $logTime
-    #     }
-    #     $dbVersions = $latestdb.vmDocument.versions
-
-    #     foreach ($version in $dbVersions) {
-    #         ### find db date before log time
-    #         $GetRestoreAppTimeRangesArg = @{
-    #             'type'                = 3;
-    #             'restoreAppObjectVec' = @(
-    #                 @{
-    #                     'appEntity'     = $latestdb.vmDocument.objectId.entity;
-    #                     'restoreParams' = @{
-    #                         'sqlRestoreParams'    = @{
-    #                             'captureTailLogs'                 = $false;
-    #                             'newDatabaseName'                 = $dbName;
-    #                             'alternateLocationParams'         = @{};
-    #                             'secondaryDataFileDestinationVec' = @(@{})
-    #                         };
-    #                         'oracleRestoreParams' = @{
-    #                             'alternateLocationParams' = @{}
-    #                         }
-    #                     }
-    #                 }
-    #             );
-    #             'ownerObjectVec'      = @(
-    #                 @{
-    #                     'attemptNum' = $version.instanceId.attemptNum;
-    #                     'jobUid'         = $latestdb.vmDocument.objectId.jobUid;
-    #                     'jobId'          = $latestdb.vmDocument.objectId.jobId;
-    #                     'jobInstanceId'  = $version.instanceId.jobInstanceId;
-    #                     'startTimeUsecs' = $version.instanceId.jobStartTimeUsecs;
-    #                     "entity" = @{
-    #                         "id" = $ownerId
-    #                     };
-    #                 }
-    #             )
-    #         }
-    #         $logTimeRange = api post /restoreApp/timeRanges $GetRestoreAppTimeRangesArg
-    #         if($latest){
-    #             if(! $logTimeRange.ownerObjectTimeRangeInfoVec[0].PSobject.Properties['timeRangeVec']){
-    #                 $logTime = $null
-    #                 $latest = $null
-    #                 break
-    #             }
-    #         }
-    #         $logStart = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].startTimeUsecs
-    #         $logEnd = $logTimeRange.ownerObjectTimeRangeInfoVec[0].timeRangeVec[0].endTimeUsecs
-    #         if($latest){
-    #             $logUsecs = $logEnd - 1000000
-    #             $validLogTime = $True
-    #             break
-    #         }
-    #         if ($logStart -le $logUsecs -and $logUsecs -le $logEnd) {
-    #             $validLogTime = $True
-    #             break
-    #         }
-    #         $versionNum += 1
-    #     }
-    # }
     
     if($validLogTime -eq $False){
         $versionNum = 0
