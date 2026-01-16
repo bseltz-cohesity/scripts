@@ -23,51 +23,42 @@ param (
     [Parameter()][switch]$deleteOldSnapshots,
     [Parameter()][switch]$deleteReplica,
     [Parameter()][switch]$renameOldJob,
-    [Parameter()][switch]$targetNGCE
+    [Parameter()][switch]$targetNGCE,
+    [Parameter()][int]$pageSize = 10000
 )
 
-function getObjectId($fqn, $source){
-    $global:_object_id = $null
+$script:idIndex = @{}
+$script:nameIndex = @{}
 
-    function get_nodes($obj, $thisFQN){
-        if($thisFQN -eq $fqn){
-            $global:_object_id = $obj.protectionSource.id
-            break
-        }
-        if($obj.PSObject.Properties['nodes']){
-            foreach($node in $obj.nodes){
-                if($null -eq $global:_object_id){
-                    get_nodes $node "$thisFQN/$($node.protectionSource.name)/"
-                }
-            }
-        }
-    }
-    get_nodes $source
-    return $global:_object_id
-}
-
-function getObjectById($objectId, $source){
+function indexSource($sourceId, $new){
     $fqn = '/'
-    $global:_object = $null
-
     function get_nodes($obj, $fqn){
-        if($obj.protectionSource.id -eq $objectId){
-            setApiProperty -object $obj -name fqn -value $fqn
-            $global:_object = $obj
-            break
-        }     
+        if($new){
+            $script:nameIndex["$fqn"] = $obj.protectionSource.id
+        }else{
+            $script:idIndex["$($obj.protectionSource.id)"] = $fqn
+        }
         if($obj.PSObject.Properties['nodes']){
             foreach($node in $obj.nodes){
-                if($null -eq $global:_object){
-                    get_nodes $node "$fqn/$($node.protectionSource.name)/"
-                }
+                get_nodes $node "$fqn/$($node.protectionSource.name)/"
             }
         }
-    }    
-    if($null -eq $global:_object){
-        get_nodes $source
     }
-    return $global:_object
+    $source = api get "protectionSources?pageSize=$pageSize&nodeId=$sourceId&id=$sourceId&environments=kAWS&includeVMFolders=true&includeSystemVApps=true&includeEntityPermissionInfo=false&excludeTypes=kResourcePool&excludeAwsTypes=kAuroraCluster,kRDSInstance,kS3Bucket,kS3Tag&allUnderHierarchy=false"
+    $cursor = $source.entityPaginationParameters.beforeCursorEntityId
+    while(1){
+        get_nodes $source "$fqn"
+        if($cursor){
+            $lastCursor = $cursor
+            $source = api get "protectionSources?pageSize=$pageSize&nodeId=$sourceId&id=$sourceId&environments=kAWS&includeVMFolders=true&includeSystemVApps=true&includeEntityPermissionInfo=false&excludeTypes=kResourcePool&excludeAwsTypes=kAuroraCluster,kRDSInstance,kS3Bucket,kS3Tag&allUnderHierarchy=false&afterCursorEntityId=$cursor"
+            $cursor = $source.entityPaginationParameters.beforeCursorEntityId
+            if($cursor -eq $lastCursor){
+                break
+            }
+        }else{
+            break
+        }
+    }
 }
 
 # source the cohesity-api helper code
@@ -132,17 +123,14 @@ if($job){
         $paramsName = 'snapshotManagerProtectionTypeParams'
         if($job.awsParams.protectionType -eq 'kNative'){
             $paramsName = 'nativeProtectionTypeParams'
-        } 
-        # check for vCenter
-        # $newAWSSource = api get "protectionSources?environments=kAWS" | Where-Object {$_.protectionSource.name -eq $job.awsParams.$paramsName.sourceName}
-        $newAWSSourceReg = (api get protectionSources/registrationInfo?environments=kAWS).rootNodes | Where-Object { $_.rootNode.name -eq $job.awsParams.$paramsName.sourceName}
-        $newAWSSourceReg | toJson
-        if($newAWSSourceReg){
-            $newAWSSourceId = $newAWSSourceReg.rootNode.id
-            $newAWSSource = api get protectionSources?id=$newAWSSourceId
         }
 
-        if(!$newAWSSource){
+        $newAWSSourceReg = (api get protectionSources/registrationInfo?environments=kAWS).rootNodes | Where-Object { $_.rootNode.name -eq $job.awsParams.$paramsName.sourceName}
+        if($newAWSSourceReg){
+            $newAWSSourceId = $newAWSSourceReg.rootNode.id
+            Write-Host "Indexing target objects"
+            indexSource $newAWSSourceId $True
+        }else{
             write-host "AWS protection source $($job.awsParams.$paramsName.sourceName) is not registered" -ForegroundColor Yellow
             exit
         }
@@ -162,8 +150,8 @@ if($job){
 
     # gather old job details
     if(!$deleteOldJobAndExit){
-        "Migrating ""$jobName"" from $sourceCluster to $targetCluster..."
-        $oldAWSSource = api get "protectionSources?id=$($job.awsParams.$paramsName.sourceId)&environments=kAWS"
+        Write-Host "Indexing source objects"
+        indexSource $job.awsParams.$paramsName.sourceId
     }
 
     # clean up source cluster
@@ -225,9 +213,9 @@ if($job){
 
     # include objects
     foreach($vm in $job.awsParams.$paramsName.objects){
-        $oldObject = getObjectById $vm.id $oldAWSSource
-        # $oldObject | ConvertTo-Json -Depth 99
-        $newObjectId = getObjectId $oldObject.fqn $newAWSSource
+        $fqn = $script:idIndex["$($vm.id)"]
+        $newObjectId = $null
+        $newObjectId = $script:nameIndex["$fqn"]
         $vm.id = $newObjectId
         if($newObjectId -eq $null){
             Write-Host "`nSelected objects are missing, please edit and save selections in the old job before migrating" -foregroundcolor Yellow
@@ -238,9 +226,10 @@ if($job){
     # exclude objects
     if($job.awsParams.$paramsName.PSObject.Properties['excludeObjectIds']){
         $newExcludeIds = @()
-        foreach($excludeId in $jobawsParams.$paramsName.excludeObjectIds){
-            $oldObject = getObjectById $excludeId $oldAWSSource
-            $newObjectId = getObjectId $oldObject.fqn $newAWSSource
+        foreach($excludeId in $job.awsParams.$paramsName.excludeObjectIds){
+            $fqn = $script:idIndex["$($excludeId)"]
+            $newObjectId = $null
+            $newObjectId = $script:nameIndex["$fqn"]
             $newExcludeIds = @($newExcludeIds + $newObjectId)
             if($newObjectId -eq $null){
                 Write-Host "`nExcluded objects are missing, please edit and save selections in the old job before migrating" -foregroundcolor Yellow
@@ -256,8 +245,9 @@ if($job){
         foreach($tag in $job.awsParams.$paramsName.vmTagIds){
             $newTag = @()
             foreach($tagId in $tag){
-                $oldObject = getObjectById $tagId $oldAWSSource
-                $newObjectId = getObjectId $oldObject.fqn $newAWSSource
+                $fqn = $script:idIndex["$($tagId)"]
+                $newObjectId = $null
+                $newObjectId = $script:nameIndex["$fqn"]
                 $newTag = @($newTag + $newObjectId)
                 if($newObjectId -eq $null){
                     Write-Host "`nTag objects are missing, please edit and save selections in the old job before migrating" -foregroundcolor Yellow
@@ -275,8 +265,9 @@ if($job){
         foreach($tag in $job.awsParams.$paramsName.excludeVmTagIds){
             $newTag = @()
             foreach($tagId in $tag){
-                $oldObject = getObjectById $tagId $oldAWSSource
-                $newObjectId = getObjectId $oldObject.fqn $newAWSSource
+                $fqn = $script:idIndex["$($tagId)"]
+                $newObjectId = $null
+                $newObjectId = $script:nameIndex["$fqn"]
                 $newTag = @($newTag + $newObjectId)
                 if($newObjectId -eq $null){
                     Write-Host "`nExcluded tag objects are missing, please edit and save selections in the old job before migrating" -foregroundcolor Yellow
