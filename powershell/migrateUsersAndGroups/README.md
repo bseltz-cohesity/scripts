@@ -32,7 +32,7 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 * [migrateUsersAndGroups.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/migrateUsersAndGroups/migrateUsersAndGroups.ps1): the main PowerShell script
 * [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
-At the beginning of the migration, we should use `-makeCache` to store a copy of the source state for future use later in the migration.
+Place both files in a folder together, then we can run the script.
 
 ```powershell
 ./migrateUsersAndGroups.ps1 -sourceCluster myOldCluster `
@@ -40,21 +40,10 @@ At the beginning of the migration, we should use `-makeCache` to store a copy of
                             -sourceDomain myOldDomain.net `
                             -targetCluster myNewCluster `
                             -targetUser myNewUsername `
-                            -targetDomain myNewDomain.net `
-                            -makeCache
+                            -targetDomain myNewDomain.net
 ```
 
-We can re-run the script later, after some protection groups and sources have been migrated over, to update the user and group object restrictions. We can use `-useCache` to reference the old state of the source cluster.
-
-```powershell
-./migrateUsersAndGroups.ps1 -sourceCluster myOldCluster `
-                            -sourceUser myOldUsername `
-                            -sourceDomain myOldDomain.net `
-                            -targetCluster myNewCluster `
-                            -targetUser myNewUsername `
-                            -targetDomain myNewDomain.net `
-                            -useCache
-```
+We can re-run the script later, after some protection groups and sources have been migrated over, to update the user and group object restrictions.
 
 ## Parameters
 
@@ -66,6 +55,5 @@ We can re-run the script later, after some protection groups and sources have be
 * -targetUser: (optional) username for target cluster (defaults to sourceUser)
 * -targetDomain: (optional) domain for target cluster user (defaults to sourceDomain)
 * -targetPassword: (optional) password for target user
-* -makeCache: (optional) make cache of source cluster state
-* -useCache: (optional) use cache of source cluster state
+* -makeSourceCache: (optional) update cache of source cluster state
 * -defaultPassword: (optional) default password for local users (default is 'Pa$$w0rd')

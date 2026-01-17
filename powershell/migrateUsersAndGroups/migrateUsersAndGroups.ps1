@@ -9,40 +9,48 @@ param (
     [Parameter()][string]$targetUser = $sourceUser,
     [Parameter()][string]$targetDomain = $sourceDomain,
     [Parameter()][string]$targetPassword = $null,
-    [Parameter()][switch]$makeCache,
-    [Parameter()][switch]$useCache,
+    [Parameter()][switch]$makeSourceCache,
     [Parameter()][string]$defaultPassword = 'Pa$$w0rd'
 )
 
-function indexObjects($sources, $objectName){
-    $global:indexByName = @{}
-    $global:indexById = @{}
+$script:idIndex = @{}
+$script:nameIndex = @{}
 
-    function get_nodes($obj){
-        $global:indexById[[string]$obj.protectionSource.id] = $obj.protectionSource
-        if($obj.protectionSource.name -notin $global:indexByName.Keys){
-            $global:indexByName[$obj.protectionSource.name] = @($obj.protectionSource)
+function indexSource($rootNode, $new){
+    $fqn = "/$($rootNode.environment):$($rootNode.name)"
+    function get_nodes($obj, $fqn){
+        if($new){
+            $script:nameIndex["$fqn"] = $obj.protectionSource.id
         }else{
-            if($obj.protectionSource.id -notin $global:indexByName[$obj.protectionSource.name].id){
-                $global:indexByName[$obj.protectionSource.name] = @($global:indexByName[$obj.protectionSource.name] + $obj.protectionSource)
-            }
-        }     
+            $script:idIndex["$($obj.protectionSource.id)"] = $fqn
+        }
         if($obj.PSObject.Properties['nodes']){
             foreach($node in $obj.nodes){
-                get_nodes $node
+                get_nodes $node "$fqn/$($node.protectionSource.name)/"
             }
         }
         if($obj.PSObject.Properties['applicationNodes']){
             foreach($node in $obj.applicationNodes){
-                get_nodes $node
+                get_nodes $node "$fqn/$($node.protectionSource.name)/"
             }
         }
     }
-    
-    foreach($source in $sources){
-            get_nodes $source
+    $sourceId = $rootNode.id
+    $source = api get "protectionSources?pageSize=$pageSize&nodeId=$sourceId&id=$sourceId&includeVMFolders=true&includeSystemVApps=true&includeEntityPermissionInfo=false&allUnderHierarchy=false"
+    $cursor = $source.entityPaginationParameters.beforeCursorEntityId
+    while(1){
+        get_nodes $source "$fqn"
+        if($cursor){
+            $lastCursor = $cursor
+            $source = api get "protectionSources?pageSize=$pageSize&nodeId=$sourceId&id=$sourceId&includeVMFolders=true&includeSystemVApps=true&includeEntityPermissionInfo=false&allUnderHierarchy=false&afterCursorEntityId=$cursor"
+            $cursor = $source.entityPaginationParameters.beforeCursorEntityId
+            if($cursor -eq $lastCursor){
+                break
+            }
+        }else{
+            break
+        }
     }
-    return $global:indexByName, $global:indexById
 }
 
 # source the cohesity-api helper code
@@ -51,11 +59,33 @@ function indexObjects($sources, $objectName){
 $groupRestrictions = @()
 $userRestrictions = @()
 
-if(!$useCache -or $makeCache){
+if(!$makeSourceCache){
 
-    "`nConnecting to source cluster..."
+    Write-Host "`nLoading source from cache..."
+    # load data from cache
+    if((Test-Path -Path "cacheRoles-$sourceCluster.json" -PathType Leaf) -and
+       (Test-Path -Path "cacheUsers-$sourceCluster.json" -PathType Leaf) -and
+       (Test-Path -Path "cacheGroups-$sourceCluster.json" -PathType Leaf) -and
+       (Test-Path -Path "cacheIdIndex-$sourceCluster.json" -PathType Leaf) -and
+       (Test-Path -Path "cacheGroupRestrictions-$sourceCluster.json" -PathType Leaf) -and
+       (Test-Path -Path "cacheUserRestrictions-$sourceCluster.json" -PathType Leaf)){
+        $sourceRoles = Get-Content -Path "cacheRoles-$sourceCluster.json" | ConvertFrom-Json
+        $sourceUsers = Get-Content -Path "cacheUsers-$sourceCluster.json" | ConvertFrom-Json
+        $sourceGroups = Get-Content -Path "cacheGroups-$sourceCluster.json" | ConvertFrom-Json
+        $script:idIndex = Get-Content -Path "cacheIdIndex-$sourceCluster.json" | ConvertFrom-Json
+        $groupRestrictions = Get-Content -Path "cacheGroupRestrictions-$sourceCluster.json" | ConvertFrom-Json
+        $userRestrictions = Get-Content -Path "cacheUserRestrictions-$sourceCluster.json" | ConvertFrom-Json
+    }else{
+        $makeSourceCache = $True
+    }
+}
+
+if($makeSourceCache){
+
+    Write-Host "`nConnecting to source cluster..."
     apiauth -vip $sourceCluster -username $sourceUser -domain $sourceDomain -passwd $sourcePassword -quiet
     
+    Write-Host "Indexing source info..."
     # collect info from source cluster
     $sourceRoles = api get roles
     $sourceUsers = api get users
@@ -72,47 +102,34 @@ if(!$useCache -or $makeCache){
         $restrictions = api get principals/protectionSources?sids=$($user.sid)
         $userRestrictions = @($userRestrictions + $restrictions)
     }
-    if($makeCache){
-        # save data to cache
-        $sourceRoles | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheRoles-$sourceCluster.json"
-        $sourceUsers | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheUsers-$sourceCluster.json"
-        $sourceGroups | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheGroups-$sourceCluster.json"
-        $sourceProtectionSources | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheProtectionSources-$sourceCluster.json"
-        $groupRestrictions | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheGroupRestrictions-$sourceCluster.json"
-        $userRestrictions | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheUserRestrictions-$sourceCluster.json"
+
+    $sources = api get protectionSources/registrationInfo
+    foreach($rootNode in $sources.rootNodes){
+        indexSource $rootNode.rootNode
     }
-}else{
-    # load data from cache
-    if((Test-Path -Path "cacheRoles-$sourceCluster.json" -PathType Leaf) -and
-       (Test-Path -Path "cacheUsers-$sourceCluster.json" -PathType Leaf) -and
-       (Test-Path -Path "cacheGroups-$sourceCluster.json" -PathType Leaf) -and
-       (Test-Path -Path "cacheProtectionSources-$sourceCluster.json" -PathType Leaf) -and
-       (Test-Path -Path "cacheGroupRestrictions-$sourceCluster.json" -PathType Leaf) -and
-       (Test-Path -Path "cacheUserRestrictions-$sourceCluster.json" -PathType Leaf)){
-        $sourceRoles = Get-Content -Path "cacheRoles-$sourceCluster.json" | ConvertFrom-Json
-        $sourceUsers = Get-Content -Path "cacheUsers-$sourceCluster.json" | ConvertFrom-Json
-        $sourceGroups = Get-Content -Path "cacheGroups-$sourceCluster.json" | ConvertFrom-Json
-        $sourceProtectionSources = Get-Content -Path "cacheProtectionSources-$sourceCluster.json" | ConvertFrom-Json
-        $groupRestrictions = Get-Content -Path "cacheGroupRestrictions-$sourceCluster.json" | ConvertFrom-Json
-        $userRestrictions = Get-Content -Path "cacheUserRestrictions-$sourceCluster.json" | ConvertFrom-Json
-    }else{
-        Write-Host "Cache not found, please use -makeCache to create one" -ForegroundColor Yellow
-        exit
-    }
+
+    # save data to cache
+    $sourceRoles | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheRoles-$sourceCluster.json"
+    $sourceUsers | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheUsers-$sourceCluster.json"
+    $sourceGroups | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheGroups-$sourceCluster.json"
+    $script:idIndex | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheIdIndex-$sourceCluster.json"
+    $groupRestrictions | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheGroupRestrictions-$sourceCluster.json"
+    $userRestrictions | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheUserRestrictions-$sourceCluster.json"
+    $script:idIndex = $script:idIndex | ConvertTo-Json -Depth 99 | ConvertFrom-Json
 }
 
-$sourceNameIndex, $sourceIdIndex = indexObjects $sourceProtectionSources
-
-"Connecting to target cluster..."
+Write-Host "Connecting to target cluster..."
 apiauth -vip $targetCluster -username $targetUser -domain $targetDomain -passwd $targetPassword -quiet
 
+Write-Host "Indexing target info..."
 $targetRoles = api get roles
 $targetUsers = api get users
 $targetGroups = api get groups
-$targetProtectionSources = api get protectionSources
 $targetViews = api get views
-
-$targetNameIndex, $targetIdIndex = indexObjects $targetProtectionSources
+$sources = api get protectionSources/registrationInfo
+foreach($rootNode in $sources.rootNodes){
+    indexSource $rootNode.rootNode $True
+}
 
 # migrate roles
 Write-Host "`nMigrating roles..."
@@ -184,19 +201,10 @@ function processRestriction($sid, $restriction){
         $parentSource = $null
         $targetParentSource = $null
         $targetParentSourceId = $null
-        if($protectionSource.PSObject.Properties['parentId']){
-            $parentSource = $sourceIdIndex[[string]($protectionSource.parentId)]
-            $targetParentSource = $targetNameIndex[$parentSource.name][0]
-            $targetParentSourceId = $targetParentSource.id
-            $targetSource = $targetNameIndex[$protectionSource.name] | Where-Object parentId -eq $targetParentSourceId
-            if($targetSource){
-                $newAccess.sourcesForPrincipals[0].protectionSourceIds = @($newAccess.sourcesForPrincipals[0].protectionSourceIds + $targetSource.id)
-            }
-        }else{
-            $targetSource = $targetNameIndex[$protectionSource.name]
-            if($targetSource){
-                $newAccess.sourcesForPrincipals[0].protectionSourceIds = @($newAccess.sourcesForPrincipals[0].protectionSourceIds + $targetSource.id)
-            }
+        $targetSourceName = $script:idIndex."$($protectionSource.id)"
+        $targetSourceId = $script:nameIndex["$targetSourceName"]
+        if($targetSourceId){
+            $newAccess.sourcesForPrincipals[0].protectionSourceIds = @($newAccess.sourcesForPrincipals[0].protectionSourceIds + $targetSourceId)
         }
     }
     foreach($view in $restriction.views){
