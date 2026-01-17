@@ -57,3 +57,4 @@ We can re-run the script later, after some protection groups and sources have be
 * -targetPassword: (optional) password for target user
 * -makeSourceCache: (optional) update cache of source cluster state
 * -defaultPassword: (optional) default password for local users (default is 'Pa$$w0rd')
+* -pageSize: (optional) page size for API queries (default is 10000)

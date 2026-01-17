@@ -10,7 +10,8 @@ param (
     [Parameter()][string]$targetDomain = $sourceDomain,
     [Parameter()][string]$targetPassword = $null,
     [Parameter()][switch]$makeSourceCache,
-    [Parameter()][string]$defaultPassword = 'Pa$$w0rd'
+    [Parameter()][string]$defaultPassword = 'Pa$$w0rd',
+    [Parameter()][int]$pageSize = 10000
 )
 
 $script:idIndex = @{}
