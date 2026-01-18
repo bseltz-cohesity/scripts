@@ -24,7 +24,8 @@ param (
     [Parameter()][switch]$deleteReplica,
     [Parameter()][switch]$forceRegister,
     [Parameter()][switch]$dualRegister,
-    [Parameter()][switch]$renameOldJob
+    [Parameter()][switch]$renameOldJob,
+    [Parameter()][switch]$targetNGCE
 )
 
 if($forceRegister){
@@ -77,12 +78,31 @@ if($suffix){
     $newJobName = "$newJobName-$suffix"
 }
 
-$job = (api get -v2 'data-protect/protection-groups').protectionGroups | Where-Object name -eq $jobName
+$job = (api get -v2 'data-protect/protection-groups?environments=kSQL').protectionGroups | Where-Object name -eq $jobName
 
 if($job){
 
     $oldPolicy = (api get -v2 data-protect/policies).policies | Where-Object id -eq $job.policyId
-    $oldStorageDomain = api get viewBoxes | Where-Object id -eq $job.storageDomainId
+    $oldStorageDomain = $null
+    if($job.storageDomainId -ne $null){
+        $oldStorageDomain = api get viewBoxes | Where-Object id -eq $job.storageDomainId
+    }
+    $newStorageDomain = $null
+    if(!$targetNGCE){
+        # check for target storage domain
+        if($newStorageDomainName){
+            $oldStorageDomain.name = $newStorageDomainName
+        }
+        
+        $newStorageDomain = $null
+        if($oldStorageDomain -ne $null){
+            $newStorageDomain = api get viewBoxes | Where-Object name -eq $oldStorageDomain.name
+            if(!$newStorageDomain){
+                Write-Host "Storage Domain $($oldStorageDomain.name) not found" -ForegroundColor Yellow
+                exit
+            }
+        }
+    }
 
     # connect to target cluster for sanity check
     if(!$cleanupSourceObjectsAndExit){
@@ -102,14 +122,15 @@ if($job){
         }
 
         # check for storage domain
-        if($newStorageDomainName){
-            $oldStorageDomain.name = $newStorageDomainName
-        }
-        $newStorageDomain = api get viewBoxes | Where-Object name -eq $oldStorageDomain.name
-        if(!$newStorageDomain){
-            Write-Host "Storage Domain $($oldStorageDomain.name) not found" -ForegroundColor Yellow
-            exit
-        }
+        # $newStorageDomain = $null
+        # if($newStorageDomainName){
+        #     $oldStorageDomain.name = $newStorageDomainName
+        # }
+        # $newStorageDomain = api get viewBoxes | Where-Object name -eq $oldStorageDomain.name
+        # if(!$newStorageDomain){
+        #     Write-Host "Storage Domain $($oldStorageDomain.name) not found" -ForegroundColor Yellow
+        #     exit
+        # }
 
         # check for policy
         if($newPolicyName){
@@ -247,10 +268,9 @@ if($job){
             'throttlingPolicy' = @{
                 'isThrottlingEnabled' = $false
             };
-            'forceRegister' = $force
+            'forceRegister' = $False
         }
         $null = api post /backupsources $newSource
-
         $entityId = waitForRefresh $server
 
         $regSQL = @{"ownerEntity" = @{"id" = $entityId}; "appEnvVec" = @(3)}
@@ -294,7 +314,11 @@ if($job){
         $job.mssqlParams.nativeProtectionTypeParams.objects  = $newObjectList
     }
 
-    $job.storageDomainId = $newStorageDomain.id
+    if($newStorageDomain -eq $null){
+        $job.storageDomainId = $null
+    }else{
+        $job.storageDomainId = $newStorageDomain.id
+    }
     $job.policyId = $newPolicy.id
 
     # pause new job

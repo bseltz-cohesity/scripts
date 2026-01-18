@@ -24,7 +24,8 @@ param (
     [Parameter()][switch]$deleteReplica,
     [Parameter()][switch]$renameOldJob,
     [Parameter()][switch]$targetNGCE,
-    [Parameter()][int]$pageSize = 10000
+    [Parameter()][int]$pageSize = 10000,
+    [Parameter()][switch]$ignoreMissingObjects
 )
 
 $script:idIndex = @{}
@@ -102,7 +103,7 @@ if($job){
         }
     }
 
-    $oldStorageDomain = api get viewBoxes | Where-Object id -eq $job.storageDomainId
+    # $oldStorageDomain = api get viewBoxes | Where-Object id -eq $job.storageDomainId
     
     # connect to target cluster for sanity check
     if(!$deleteOldJobAndExit){
@@ -195,7 +196,7 @@ if($job){
     # connect to target cluster
     apiauth -vip $targetCluster -username $targetUser -domain $targetDomain -passwd $targetPassword -tenant $tenant -quiet
 
-    $job.storageDomainId = $newStorageDomain.id
+    # $job.storageDomainId = $newStorageDomain.id
     $job.policyId = $newPolicy.id
     if($newStorageDomain -eq $null){
         $job.storageDomainId = $null
@@ -216,10 +217,12 @@ if($job){
         $fqn = $script:idIndex["$($vm.id)"]
         $newObjectId = $null
         $newObjectId = $script:nameIndex["$fqn"]
-        $vm.id = $newObjectId
-        if($newObjectId -eq $null){
+        if($newObjectId -eq $null -and !$ignoreMissingObjects){
             Write-Host "`nSelected objects are missing, please edit and save selections in the old job before migrating" -foregroundcolor Yellow
             exit
+        }
+        if($newObjectId -ne $null){
+            $vm.id = $newObjectId
         }
     }
 
@@ -230,10 +233,12 @@ if($job){
             $fqn = $script:idIndex["$($excludeId)"]
             $newObjectId = $null
             $newObjectId = $script:nameIndex["$fqn"]
-            $newExcludeIds = @($newExcludeIds + $newObjectId)
-            if($newObjectId -eq $null){
+            if($newObjectId -eq $null -and !$ignoreMissingObjects){
                 Write-Host "`nExcluded objects are missing, please edit and save selections in the old job before migrating" -foregroundcolor Yellow
                 exit
+            }
+            if($newObjectId -ne $null){
+                $newExcludeIds = @($newExcludeIds + $newObjectId)
             }
         }
         $job.awsParams.$paramsName.excludeObjectIds = $newExcludeIds
@@ -246,15 +251,21 @@ if($job){
             $newTag = @()
             foreach($tagId in $tag){
                 $fqn = $script:idIndex["$($tagId)"]
+                Write-Host $fqn
                 $newObjectId = $null
                 $newObjectId = $script:nameIndex["$fqn"]
-                $newTag = @($newTag + $newObjectId)
-                if($newObjectId -eq $null){
+                Write-Host $newObjectId
+                if($newObjectId -eq $null -and !$ignoreMissingObjects){
                     Write-Host "`nTag objects are missing, please edit and save selections in the old job before migrating" -foregroundcolor Yellow
                     exit
                 }
+                if($newObjectId -ne $null){
+                    $newTag = @($newTag + $newObjectId)
+                }
             }
-            $newTagIds = @($newTagIds + ,$newTag)
+            if(@($newTag).Count -gt 0){
+                $newTagIds = @($newTagIds + ,$newTag)
+            }
         }
         $job.awsParams.$paramsName.vmTagIds = @($newTagIds)
     }
@@ -268,20 +279,27 @@ if($job){
                 $fqn = $script:idIndex["$($tagId)"]
                 $newObjectId = $null
                 $newObjectId = $script:nameIndex["$fqn"]
-                $newTag = @($newTag + $newObjectId)
-                if($newObjectId -eq $null){
+                # $newTag = @($newTag + $newObjectId)
+                if($newObjectId -eq $null -and !$ignoreMissingObjects){
                     Write-Host "`nExcluded tag objects are missing, please edit and save selections in the old job before migrating" -foregroundcolor Yellow
                     exit
                 }
+                if($newObjectId -ne $null){
+                    $newTag = @($newTag + $newObjectId)
+                }
             }
-            $newTagIds = @($newTagIds + ,$newTag)
+            if(@($newTag).Count -gt 0){
+                $newTagIds = @($newTagIds + ,$newTag)
+            }   
         }
+        
         $job.awsParams.$paramsName.excludeVmTagIds = @($newTagIds)
     }
 
     # create new job
     $job.name = $newJobName
     "Creating job ""$newJobName"" on $targetCluster..."
+    $job | toJson
     $newjob = api post -v2 data-protect/protection-groups $job
     "`nMigration Complete`n"
 }else{
