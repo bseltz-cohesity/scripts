@@ -34,13 +34,16 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 
 Place both files in a folder together, then we can run the script.
 
+Note: if you have users and groups with object level restrictions, use the `-migratePermissions` option. This will cause the script to index protectionSource objects on the source and target clusters, which can be time consuming. If you are confident that you don't use object level restrictions, then this option can be omitted.
+
 ```powershell
 ./migrateUsersAndGroups.ps1 -sourceCluster myOldCluster `
                             -sourceUser myOldUsername `
                             -sourceDomain myOldDomain.net `
                             -targetCluster myNewCluster `
                             -targetUser myNewUsername `
-                            -targetDomain myNewDomain.net
+                            -targetDomain myNewDomain.net `
+                            -migratePermissions
 ```
 
 We can re-run the script later, after some protection groups and sources have been migrated over, to update the user and group object restrictions.
@@ -55,6 +58,7 @@ We can re-run the script later, after some protection groups and sources have be
 * -targetUser: (optional) username for target cluster (defaults to sourceUser)
 * -targetDomain: (optional) domain for target cluster user (defaults to sourceDomain)
 * -targetPassword: (optional) password for target user
+* -migratePermissions: (optional) migrate object level restrictions (can be time consuming)
 * -makeSourceCache: (optional) update cache of source cluster state
 * -defaultPassword: (optional) default password for local users (default is 'Pa$$w0rd')
 * -pageSize: (optional) page size for API queries (default is 10000)
