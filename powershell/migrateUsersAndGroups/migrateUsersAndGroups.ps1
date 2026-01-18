@@ -97,6 +97,8 @@ if($makeSourceCache){
     $sourceRoles = api get roles
     $sourceUsers = api get users
     $sourceGroups = api get groups
+    $groupRestrictions = @()
+    $userRestrictions = @()
 
     foreach($group in $sourceGroups | Where-Object restricted -eq $True){
         $restrictions = api get principals/protectionSources?sids=$($group.sid)
