@@ -94,6 +94,7 @@ Note that if you want to delete existing snapshots when cleaning up, use the `-d
 
 ## Target Job Parameters
 
+* -targetNGCE: (optional) use when target cluster is NGCE
 * -prefix: (optional) add prefix to target job name
 * -suffix: (optional) add suffic to target job name
 * -newJobName: (optional) new name for target job (defaults to jobName)
