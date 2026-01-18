@@ -10,6 +10,7 @@ param (
     [Parameter()][string]$targetDomain = $sourceDomain,
     [Parameter()][string]$targetPassword = $null,
     [Parameter()][switch]$makeSourceCache,
+    [Parameter()][switch]$migratePermissions,
     [Parameter()][string]$defaultPassword = 'Pa$$w0rd',
     [Parameter()][int]$pageSize = 10000
 )
@@ -67,17 +68,22 @@ if(!$makeSourceCache){
     if((Test-Path -Path "cacheRoles-$sourceCluster.json" -PathType Leaf) -and
        (Test-Path -Path "cacheUsers-$sourceCluster.json" -PathType Leaf) -and
        (Test-Path -Path "cacheGroups-$sourceCluster.json" -PathType Leaf) -and
-       (Test-Path -Path "cacheIdIndex-$sourceCluster.json" -PathType Leaf) -and
        (Test-Path -Path "cacheGroupRestrictions-$sourceCluster.json" -PathType Leaf) -and
        (Test-Path -Path "cacheUserRestrictions-$sourceCluster.json" -PathType Leaf)){
         $sourceRoles = Get-Content -Path "cacheRoles-$sourceCluster.json" | ConvertFrom-Json
         $sourceUsers = Get-Content -Path "cacheUsers-$sourceCluster.json" | ConvertFrom-Json
         $sourceGroups = Get-Content -Path "cacheGroups-$sourceCluster.json" | ConvertFrom-Json
-        $script:idIndex = Get-Content -Path "cacheIdIndex-$sourceCluster.json" | ConvertFrom-Json
         $groupRestrictions = Get-Content -Path "cacheGroupRestrictions-$sourceCluster.json" | ConvertFrom-Json
         $userRestrictions = Get-Content -Path "cacheUserRestrictions-$sourceCluster.json" | ConvertFrom-Json
     }else{
         $makeSourceCache = $True
+    }
+    if($migratePermissions){
+        if((Test-Path -Path "cacheIdIndex-$sourceCluster.json" -PathType Leaf)){
+            $script:idIndex = Get-Content -Path "cacheIdIndex-$sourceCluster.json" | ConvertFrom-Json
+        }else{
+            $makeSourceCache = $True
+        }
     }
 }
 
@@ -92,9 +98,6 @@ if($makeSourceCache){
     $sourceUsers = api get users
     $sourceGroups = api get groups
 
-    # load data from source cluster
-    $sourceProtectionSources = api get protectionSources
-
     foreach($group in $sourceGroups | Where-Object restricted -eq $True){
         $restrictions = api get principals/protectionSources?sids=$($group.sid)
         $groupRestrictions = @($groupRestrictions + $restrictions)
@@ -104,19 +107,23 @@ if($makeSourceCache){
         $userRestrictions = @($userRestrictions + $restrictions)
     }
 
-    $sources = api get protectionSources/registrationInfo
-    foreach($rootNode in $sources.rootNodes){
-        indexSource $rootNode.rootNode
+    if($migratePermissions){
+        $sources = api get protectionSources/registrationInfo
+        foreach($rootNode in $sources.rootNodes){
+            indexSource $rootNode.rootNode
+        }
     }
 
     # save data to cache
     $sourceRoles | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheRoles-$sourceCluster.json"
     $sourceUsers | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheUsers-$sourceCluster.json"
     $sourceGroups | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheGroups-$sourceCluster.json"
-    $script:idIndex | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheIdIndex-$sourceCluster.json"
     $groupRestrictions | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheGroupRestrictions-$sourceCluster.json"
     $userRestrictions | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheUserRestrictions-$sourceCluster.json"
-    $script:idIndex = $script:idIndex | ConvertTo-Json -Depth 99 | ConvertFrom-Json
+    if($migratePermissions){
+        $script:idIndex | ConvertTo-Json -Depth 99 | Out-File -FilePath "cacheIdIndex-$sourceCluster.json"
+        $script:idIndex = $script:idIndex | ConvertTo-Json -Depth 99 | ConvertFrom-Json
+    }
 }
 
 Write-Host "Connecting to target cluster..."
@@ -127,9 +134,12 @@ $targetRoles = api get roles
 $targetUsers = api get users
 $targetGroups = api get groups
 $targetViews = api get views
-$sources = api get protectionSources/registrationInfo
-foreach($rootNode in $sources.rootNodes){
-    indexSource $rootNode.rootNode $True
+
+if($migratePermissions){
+    $sources = api get protectionSources/registrationInfo
+    foreach($rootNode in $sources.rootNodes){
+        indexSource $rootNode.rootNode $True
+    }
 }
 
 # migrate roles
@@ -154,6 +164,9 @@ foreach($user in $sourceUsers){
             }
             setApiProperty -object $user -name password -value $defaultPassword
         }
+        if(!$migratePermissions){
+            $user.restricted = $False
+        }
         $null = api post users $user
     }
 }
@@ -172,6 +185,9 @@ foreach($group in $sourceGroups){
                     $group.users = @($group.users + $user.sid)
                 }
             }
+        }
+        if(!$migratePermissions){
+            $group.restricted = $False
         }
         Write-Host "    $($group.name)"
         $null = api post groups $group
@@ -217,27 +233,29 @@ function processRestriction($sid, $restriction){
     $null = api put principals/protectionSources $newAccess
 }
 
-# migrate object restrictions
-Write-Host "Migrating object restrictions..."
+if($migratePermissions){
+    # migrate object restrictions
+    Write-Host "Migrating object restrictions..."
 
-# group restrictions
-foreach($sid in $groupRestrictions.sid){
-    $restriction = $groupRestrictions | Where-Object {$_.sid -eq $sid}
-    $sourceGroup = $sourceGroups | Where-Object {$_.sid -eq $sid}
-    $targetGroup = $targetGroups | Where-Object {$_.name -eq $sourceGroup.name -and $_.domain -eq $sourceGroup.domain}
-    if($targetGroup){
-        Write-Host "    $($targetGroup.name)"
-        $null = processRestriction $targetGroup.sid $restriction
+    # group restrictions
+    foreach($sid in $groupRestrictions.sid){
+        $restriction = $groupRestrictions | Where-Object {$_.sid -eq $sid}
+        $sourceGroup = $sourceGroups | Where-Object {$_.sid -eq $sid}
+        $targetGroup = $targetGroups | Where-Object {$_.name -eq $sourceGroup.name -and $_.domain -eq $sourceGroup.domain}
+        if($targetGroup){
+            Write-Host "    $($targetGroup.name)"
+            $null = processRestriction $targetGroup.sid $restriction
+        }
     }
-}
 
-# user restrictions
-foreach($sid in $userRestrictions.sid){
-    $restriction = $userRestrictions | Where-Object {$_.sid -eq $sid}
-    $sourceUserObj = $sourceUsers | Where-Object {$_.sid -eq $sid}
-    $targetUserObj = $targetUsers | Where-Object {$_.username -eq $sourceUserObj.username -and $_.domain -eq $sourceUserObj.domain}
-    if($targetUserObj){
-        Write-Host "    $($targetUserObj.username)"
-        $null = processRestriction $targetUserObj.sid $restriction
+    # user restrictions
+    foreach($sid in $userRestrictions.sid){
+        $restriction = $userRestrictions | Where-Object {$_.sid -eq $sid}
+        $sourceUserObj = $sourceUsers | Where-Object {$_.sid -eq $sid}
+        $targetUserObj = $targetUsers | Where-Object {$_.username -eq $sourceUserObj.username -and $_.domain -eq $sourceUserObj.domain}
+        if($targetUserObj){
+            Write-Host "    $($targetUserObj.username)"
+            $null = processRestriction $targetUserObj.sid $restriction
+        }
     }
 }
