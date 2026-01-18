@@ -242,6 +242,10 @@ if($migratePermissions){
         $restriction = $groupRestrictions | Where-Object {$_.sid -eq $sid}
         $sourceGroup = $sourceGroups | Where-Object {$_.sid -eq $sid}
         $targetGroup = $targetGroups | Where-Object {$_.name -eq $sourceGroup.name -and $_.domain -eq $sourceGroup.domain}
+        if($targetGroup.restricted -ne $True){
+            $targetGroup.restricted = $True
+            $null = api put groups $targetGroup
+        }
         if($targetGroup){
             Write-Host "    $($targetGroup.name)"
             $null = processRestriction $targetGroup.sid $restriction
@@ -253,6 +257,10 @@ if($migratePermissions){
         $restriction = $userRestrictions | Where-Object {$_.sid -eq $sid}
         $sourceUserObj = $sourceUsers | Where-Object {$_.sid -eq $sid}
         $targetUserObj = $targetUsers | Where-Object {$_.username -eq $sourceUserObj.username -and $_.domain -eq $sourceUserObj.domain}
+        if($targetUserObj.restricted -eq $False){
+            $targetUserObj.restricted = $True
+            $null = api put users $targetUserObj 
+        }
         if($targetUserObj){
             Write-Host "    $($targetUserObj.username)"
             $null = processRestriction $targetUserObj.sid $restriction
