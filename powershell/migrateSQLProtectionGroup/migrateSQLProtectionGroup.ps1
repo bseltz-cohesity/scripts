@@ -121,17 +121,6 @@ if($job){
             }
         }
 
-        # check for storage domain
-        # $newStorageDomain = $null
-        # if($newStorageDomainName){
-        #     $oldStorageDomain.name = $newStorageDomainName
-        # }
-        # $newStorageDomain = api get viewBoxes | Where-Object name -eq $oldStorageDomain.name
-        # if(!$newStorageDomain){
-        #     Write-Host "Storage Domain $($oldStorageDomain.name) not found" -ForegroundColor Yellow
-        #     exit
-        # }
-
         # check for policy
         if($newPolicyName){
             $oldPolicy.name = $newPolicyName
