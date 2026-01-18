@@ -22,7 +22,8 @@ param (
     [Parameter()][switch]$cleanupSourceObjectsAndExit,
     [Parameter()][switch]$deleteOldSnapshots,
     [Parameter()][switch]$deleteReplica,
-    [Parameter()][switch]$renameOldJob
+    [Parameter()][switch]$renameOldJob,
+    [Parameter()][switch]$targetNGCE
 )
 
 # source the cohesity-api helper code
@@ -79,17 +80,34 @@ if($job){
         }
 
         # check for target storage domain
-        if($newStorageDomainName){
-            $oldStorageDomain.name = $newStorageDomainName
-        }
         $newStorageDomain = $null
-        if($oldStorageDomain -ne $null){
-            $newStorageDomain = api get viewBoxes | Where-Object name -eq $oldStorageDomain.name
-            if(!$newStorageDomain){
-                Write-Host "Storage Domain $($oldStorageDomain.name) not found" -ForegroundColor Yellow
-                exit
+        if(!$targetNGCE){
+            # check for target storage domain
+            if($newStorageDomainName){
+                $oldStorageDomain.name = $newStorageDomainName
+            }
+            
+            $newStorageDomain = $null
+            if($oldStorageDomain -ne $null){
+                $newStorageDomain = api get viewBoxes | Where-Object name -eq $oldStorageDomain.name
+                if(!$newStorageDomain){
+                    Write-Host "Storage Domain $($oldStorageDomain.name) not found" -ForegroundColor Yellow
+                    exit
+                }
             }
         }
+
+        # if($newStorageDomainName){
+        #     $oldStorageDomain.name = $newStorageDomainName
+        # }
+        # $newStorageDomain = $null
+        # if($oldStorageDomain -ne $null){
+        #     $newStorageDomain = api get viewBoxes | Where-Object name -eq $oldStorageDomain.name
+        #     if(!$newStorageDomain){
+        #         Write-Host "Storage Domain $($oldStorageDomain.name) not found" -ForegroundColor Yellow
+        #         exit
+        #     }
+        # }
 
         # check for target policy
         if($newPolicyName){
