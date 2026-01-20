@@ -23,7 +23,9 @@ param (
     [Parameter()][switch]$deleteOldSnapshots,
     [Parameter()][switch]$deleteReplica,
     [Parameter()][switch]$renameOldJob,
-    [Parameter()][switch]$targetNGCE
+    [Parameter()][switch]$targetNGCE,
+    [Parameter()][string]$smbUsername,
+    [Parameter()][string]$smbPassword
 )
 
 # source the cohesity-api helper code
@@ -49,6 +51,8 @@ if($prefix){
 if($suffix){
     $newJobName = "$newJobName-$suffix"
 }
+
+$smbPasswords = @{}
 
 $job = (api get -v2 'data-protect/protection-groups?environments=kGenericNas').protectionGroups | Where-Object name -eq $jobName
 
@@ -97,18 +101,6 @@ if($job){
             }
         }
 
-        # if($newStorageDomainName){
-        #     $oldStorageDomain.name = $newStorageDomainName
-        # }
-        # $newStorageDomain = $null
-        # if($oldStorageDomain -ne $null){
-        #     $newStorageDomain = api get viewBoxes | Where-Object name -eq $oldStorageDomain.name
-        #     if(!$newStorageDomain){
-        #         Write-Host "Storage Domain $($oldStorageDomain.name) not found" -ForegroundColor Yellow
-        #         exit
-        #     }
-        # }
-
         # check for target policy
         if($newPolicyName){
             $oldPolicy.name = $newPolicyName
@@ -136,7 +128,7 @@ if($job){
     foreach($mountPoint in $oldSources.nodes){
         $mountPointName = $mountPoint.protectionSource.name
         if($mountPoint.protectionSource.id -in $objectList.id){
-            $objectsToMigrate[$mountPoint.protectionSource.id] = @{'name' = "$mountPointName"; 'type' = 'server'}
+            $objectsToMigrate[$mountPoint.protectionSource.id] = $mountPoint
             $mountPointsToMigrate = @($mountPointsToMigrate + $mountPointName | Sort-Object -Unique)
         }
     }
@@ -188,45 +180,61 @@ if($job){
     # connect to target cluster
     apiauth -vip $targetCluster -username $targetUser -domain $targetDomain -passwd $targetPassword -tenant $tenant -quiet
 
-    # # register servers
-    # foreach($mountPoint in $mountPointsToMigrate){
-    #     "    Registering $mountPoint on $targetCluster..."
-    #     $newSource = @{
-    #         'entity' = @{
-    #             'type' = 6;
-    #             'physicalEntity' = @{
-    #                 'name' = $mountPoint;
-    #                 'type' = 1;
-    #                 'hostType' = 1
-    #             }
-    #         };
-    #         'entityInfo' = @{
-    #             'endpoint' = $mountPoint;
-    #             'type' = 6;
-    #             'hostType' = 1
-    #         };
-    #         'sourceSideDedupEnabled' = $true;
-    #         'throttlingPolicy' = @{
-    #             'isThrottlingEnabled' = $false
-    #         };
-    #         'forceRegister' = $force
-    #     }
-    #     $null = api post /backupsources $newSource
-
-    #     $entityId = waitForRefresh $mountPoint
-    # }
-
     # update object IDs
     $newSources = api get protectionSources?environments=kGenericNas
     $newObjectList = @()
     foreach($objectItem in $objectList){
+        $foundSource = $False
         $newItem = $objectItem
         $oldInfo = $objectsToMigrate[$($objectItem.id)]
         foreach($mountPoint in $newSources.nodes){
             $mountPointName = $mountPoint.protectionSource.name
-            if($oldInfo.type -eq 'server' -and $oldInfo.name -eq $mountPointName){
+            if($oldInfo.protectionSource.name -eq $mountPointName){
                 $newItem.id = $mountPoint.protectionSource.id
+                $foundSource = $True
             }
+        }
+        if(!$foundSource){
+            $newSource = @{
+                "environment" = "kGenericNas";
+                "genericNasParams" = @{
+                    "description" = $oldInfo.protectionSource.nasProtectionSource.description;
+                    "mode" = $oldInfo.protectionSource.nasProtectionSource.protocol;
+                    "mountPoint" = $oldInfo.protectionSource.nasProtectionSource.mountPath;
+                    "skipValidation" = $true
+                }
+            }
+            if($oldInfo.protectionSource.nasProtectionSource.protocol -eq 'kCifs1'){
+                $newSource.genericNasParams['smbMountCredentials'] = @{
+                    "username" = "$($oldInfo.registrationInfo.nasMountCredentials.domain)\$($oldInfo.registrationInfo.nasMountCredentials.username)";
+                    "password" = ""
+                }
+                if($smbUsername){
+                    $newSource.genericNasParams.smbMountCredentials.username = $smbUsername
+                }
+                if($smbPassword){
+                    $newSource.genericNasParams.smbMountCredentials.password = $smbPassword
+                }else{
+                    if($newSource.genericNasParams.smbMountCredentials.username -in $smbPasswords.Keys){
+                        $newSource.genericNasParams.smbMountCredentials.password = $smbPasswords[$newSource.genericNasParams.smbMountCredentials.username]
+                    }else{
+                        # prompt for SMB password
+                        $pass1 = '1'
+                        $pass2 = '2'
+                        while($pass1 -ne $pass2){
+                            $secureString = Read-Host -Prompt "    Enter password for $($newSource.genericNasParams.smbMountCredentials.username)" -AsSecureString
+                            $pass1 = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
+                            $secureString = Read-Host -Prompt "    Confirm password for $($newSource.genericNasParams.smbMountCredentials.username)" -AsSecureString
+                            $pass2 = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
+                        }
+                        $newSource.genericNasParams.smbMountCredentials.password = $pass1
+                        $smbPasswords[$newSource.genericNasParams.smbMountCredentials.username] = $pass1                        
+                    }
+                }
+            }
+            Write-Host "    Registering $($oldInfo.protectionSource.nasProtectionSource.mountPath)"
+            $newSourceObj = api post -v2 data-protect/sources/registrations $newSource
+            $newItem.id = $newSourceObj.id
         }
         $newObjectList = @($newObjectList + $newItem)
     }

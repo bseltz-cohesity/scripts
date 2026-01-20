@@ -105,6 +105,8 @@ Note that if you want to delete existing snapshots when cleaning up, use the `-d
 * -newStorageDomainName: (optional) new storage domain name (defaults to same storage domain name as source job)
 * -pauseNewJob: (optional) pause new job
 * -deleteReplica: (optional) delete old replica of protection group on target cluster (will not delete the snapshots)
+* -smbUsername: (optional) SMB username for generic NAS source registrations (will use existing username if omitted)
+* -smbPassword: (optional) SMB password (will be prompted for password if omitted)
 
 ## Cleanup And Source Job Parameters
 
