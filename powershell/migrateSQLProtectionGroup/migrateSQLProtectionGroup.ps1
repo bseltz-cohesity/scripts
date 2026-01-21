@@ -22,24 +22,11 @@ param (
     [Parameter()][switch]$cleanupSourceObjectsAndExit,
     [Parameter()][switch]$deleteOldSnapshots,
     [Parameter()][switch]$deleteReplica,
-    [Parameter()][switch]$forceRegister,
-    [Parameter()][switch]$dualRegister,
     [Parameter()][switch]$renameOldJob,
-    [Parameter()][switch]$targetNGCE
+    [Parameter()][switch]$targetNGCE,
+    [Parameter()][switch]$exportServerList,
+    [Parameter()][switch]$detachServers
 )
-
-if($forceRegister){
-    $force = $True
-}elseif($dualRegister){
-    $force = $false
-}else{
-    Write-Host "`nOne of the following is required: -forceRegister or -dualRegister" -ForegroundColor Yellow
-    Write-Host "`n-forceRegister: forces the protection sources over to the target cluster"
-    Write-Host "                (the source will be broken on the source cluster)"
-    Write-Host "`n -dualRegister: allows the source to be registered with both clusters"
-    Write-Host "                (requires custom gFlags and agent settings)`n"
-    exit
-}
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -65,6 +52,32 @@ function waitForAppRefresh($server){
         }
     }
     return $rootNode.rootNode.id
+}
+
+function Restart-Service([string]$CompName,[string]$ServiceName){
+    $filter = 'Name=' + "'" + $ServiceName + "'" + ''
+    $service = Get-WMIObject -ComputerName $CompName -Authentication PacketPrivacy -namespace "root\cimv2" -class Win32_Service -Filter $filter
+    $service.StopService()
+    while ($service.Started){
+      Start-Sleep 2
+      $service = Get-WMIObject -ComputerName $CompName -Authentication PacketPrivacy -namespace "root\cimv2" -class Win32_Service -Filter $filter
+    }
+    $service.StartService()
+    Start-Sleep 2
+}
+
+function Detach-Agent([string]$server){
+    Write-Host "    $server : Detaching Cohesity Agent from $sourceCluster"
+    $null = Invoke-Command -Computername $server -ScriptBlock {
+        $null = Remove-ItemProperty -Path "HKLM:\SOFTWARE\Cohesity\Agent" -Name 'cluster_vec_registry' -ErrorAction SilentlyContinue
+        $null = Remove-ItemProperty -Path "HKLM:\SOFTWARE\Cohesity\Agent" -Name 'agent_id' -ErrorAction SilentlyContinue
+        $null = Remove-ItemProperty -Path "HKLM:\SOFTWARE\Cohesity\Agent" -Name 'agent_incarnation_id' -ErrorAction SilentlyContinue
+        $null = Remove-ItemProperty -Path "HKLM:\SOFTWARE\Cohesity\Agent" -Name 'agent_uid' -ErrorAction SilentlyContinue
+        $null = Remove-ItemProperty -Path "HKLM:\SOFTWARE\Cohesity\Agent" -Name 'allow_multiple_cohesity_clusters' -ErrorAction SilentlyContinue
+        $null = Remove-Item -Path "C:\ProgramData\Cohesity\Cert\server_cert" -ErrorAction SilentlyContinue
+    }
+    Write-Host "    Restarting Cohesity Agent"
+    $null = Restart-Service $server 'CohesityAgent'
 }
 
 "`nConnecting to source cluster..."
@@ -105,7 +118,7 @@ if($job){
     }
 
     # connect to target cluster for sanity check
-    if(!$cleanupSourceObjectsAndExit){
+    if(!$cleanupSourceObjectsAndExit -and !$exportServerList){
         "Connecting to target cluster..."
         apiauth -vip $targetCluster -username $targetUser -domain $targetDomain -passwd $targetPassword -tenant $tenant -quiet
 
@@ -185,6 +198,19 @@ if($job){
                     $serversToMigrate = @($serversToMigrate + $serverName | Sort-Object -Unique)
                 }
             }
+        }
+    }
+
+    # export or detach servers
+    if($exportServerList){
+        $serversToMigrate | Out-File -FilePath physicalServers.txt
+        Write-Host "`nServer list exported to physicalServers.txt`n"
+        exit
+    }
+
+    if($detachServers){
+        foreach($server in $serversToMigrate){
+            Detach-Agent $server
         }
     }
 

@@ -6,7 +6,7 @@ This PowerShell script migrates a physical protection group from one Cohesity cl
 
 ## Notes and Warnings
 
-This script will force-register physical servers to the target cluster, thus rendering the source registrations on the source cluster broken, so there's no easy way to undo this.
+This script will register physical servers to the target cluster, thus rendering the source registrations on the source cluster broken, so there's no easy way to undo this.
 
 If you omit the `-cleanupSourceObjects` and `-cleanupSourceObjectsAndExit` switches, the job and (broken) source registrations will be paused but left behind on the source cluster, and this is recommended in case the script fails to migrate the job to the target cluster for some reason. If a failure occurs, the script can be run again after the issue has been figured out.
 
@@ -36,7 +36,7 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 * [migratePhysicalProtectionGroup.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/migratePhysicalProtectionGroup/migratePhysicalProtectionGroup.ps1): the main PowerShell script
 * [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
-The safest way to migrate a protection group is to avoid destroying the protection group and sources on the source cluster. This is the default behavior of the script. Note that during migration, the sources are force registered onto the target cluster, so they will be broken on the source, but by leaving the protection group behind, we will have the opportunity to retry the migration if it fails for some reason.
+The safest way to migrate a protection group is to avoid destroying the protection group and sources on the source cluster. This is the default behavior of the script. Note that during migration, the sources are registered onto the target cluster, so they will be broken on the source, but by leaving the protection group behind, we will have the opportunity to retry the migration if it fails for some reason.
 
 ```powershell
 ./migratePhysicalProtectionGroup.ps1 -sourceCluster myOldCluster `
@@ -45,8 +45,7 @@ The safest way to migrate a protection group is to avoid destroying the protecti
                                      -targetCluster myNewCluster `
                                      -targetUser myNewUsername `
                                      -sourceDomain myNewDomain.net `
-                                     -jobName myjob `
-                                     -forceRegister
+                                     -jobName myjob
 ```
 
 After the migration, we can rerun the command with the `-cleanupSourceObjectsAndExit` switch to remove the old group and sources.
@@ -59,7 +58,6 @@ After the migration, we can rerun the command with the `-cleanupSourceObjectsAnd
                                      -targetUser myNewUsername `
                                      -sourceDomain myNewDomain.net `
                                      -jobName myjob `
-                                     -forceRegister `
                                      -cleanupSourceObjectsAndExit
 ```
 
@@ -73,7 +71,6 @@ Or, if you're comfortable that the script works as expected, you can perform mig
                                      -targetUser myNewUsername `
                                      -sourceDomain myNewDomain.net `
                                      -jobName myjob `
-                                     -forceRegister `
                                      -cleanupSourceObjects
 ```
 
