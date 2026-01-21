@@ -60,6 +60,7 @@ function Detach-Agent([string]$server){
         $null = Remove-ItemProperty -Path "HKLM:\SOFTWARE\Cohesity\Agent" -Name 'agent_id' -ErrorAction SilentlyContinue
         $null = Remove-ItemProperty -Path "HKLM:\SOFTWARE\Cohesity\Agent" -Name 'agent_incarnation_id' -ErrorAction SilentlyContinue
         $null = Remove-ItemProperty -Path "HKLM:\SOFTWARE\Cohesity\Agent" -Name 'agent_uid' -ErrorAction SilentlyContinue
+        $null = Remove-ItemProperty -Path "HKLM:\SOFTWARE\Cohesity\Agent" -Name 'allow_multiple_cohesity_clusters' -ErrorAction SilentlyContinue
         $null = Remove-Item -Path "C:\ProgramData\Cohesity\Cert\server_cert" -ErrorAction SilentlyContinue
     }
     Write-Host "    Restarting Cohesity Agent"
