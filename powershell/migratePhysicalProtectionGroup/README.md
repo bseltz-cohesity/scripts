@@ -102,8 +102,8 @@ Note that if you want to delete existing snapshots when cleaning up, use the `-d
 * -newStorageDomainName: (optional) new storage domain name (defaults to same storage domain name as source job)
 * -pauseNewJob: (optional) pause new job
 * -deleteReplica: (optional) delete old replica of protection group on target cluster (will not delete the snapshots)
-* -forceRegister: (optional) force register sources onto target cluster (breaks sources on source cluster)
-* -dualRegister: (optional) allow sources to be registered to both clusters (requires custom gFlags)
+* -exportServerList: (optional) export list of servers in protection group (for running agent detach out of band)
+* -detachServers: (optional) detach agents from source cluster
 
 ## Cleanup And Source Job Parameters
 
