@@ -11,7 +11,7 @@ param (
     [Parameter()][switch]$mcm,
     [Parameter()][string]$mfaCode = $null,
     [Parameter()][array]$clusterName = $null,
-    [Parameter()][int]$days = 31,
+    [Parameter()][int]$days,
     [Parameter()][switch]$includeLogs,
     [Parameter()][switch]$fullOnly,
     [Parameter()][switch]$localOnly,
