@@ -69,7 +69,7 @@ function dateToString($dt, $format='yyyy-MM-dd HH:mm:ss'){
 function reportRuns(){
 
     $cluster = api get cluster
-    $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false$query&includeTenants=true"
+    $jobs = api get -v2 "data-protect/protection-groups?includeTenants=true$query"
     $sources = api get "protectionSources/registrationInfo?includeApplicationsTreeInfo=false"
     $policies = api get -v2 data-protect/policies
 
