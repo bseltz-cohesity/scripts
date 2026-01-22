@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-01-22`] [ccsActivityReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/ccsActivityReport) [`New`] generate a CCS activity report
 * [`2026-01-18`] [migrateGenericNasProtectionGroup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/migrateGenericNasProtectionGroup) [`Update`] added support for NGCE
 * [`2026-01-18`] [migrateSQLProtectionGroup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/migrateSQLProtectionGroup) [`Update`] added support for NGCE
 * [`2026-01-18`] [migratePhysicalProtectionGroup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/migratePhysicalProtectionGroup) [`Update`] added support for NGCE
