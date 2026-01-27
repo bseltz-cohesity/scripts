@@ -41,16 +41,19 @@ function waitForRefresh($server){
     return $rootNode.rootNode.id
 }
 
-function Restart-Service([string]$CompName,[string]$ServiceName){
-    $filter = 'Name=' + "'" + $ServiceName + "'" + ''
-    $service = Get-WMIObject -ComputerName $CompName -Authentication PacketPrivacy -namespace "root\cimv2" -class Win32_Service -Filter $filter
-    $service.StopService()
+function Restart-Service([string]$compName,[string]$serviceName){
+    $filter = 'Name=' + "'" + $serviceName + "'" + ''
+    $service = Get-CimInstance -ComputerName $compName -ClassName Win32_Service -Filter $filter
+    $null = Invoke-CimMethod -InputObject $service -MethodName StopService
     while ($service.Started){
       Start-Sleep 2
-      $service = Get-WMIObject -ComputerName $CompName -Authentication PacketPrivacy -namespace "root\cimv2" -class Win32_Service -Filter $filter
+      $service = Get-CimInstance -ComputerName $compName -ClassName Win32_Service -Filter $filter
     }
-    $service.StartService()
-    Start-Sleep 2
+    Invoke-CimMethod -InputObject $service -MethodName StartService
+    while (! $service.Started){
+      Start-Sleep 2
+      $service = Get-CimInstance -ComputerName $compName -ClassName Win32_Service -Filter $filter
+    }
 }
 
 function Detach-Agent([string]$server){
