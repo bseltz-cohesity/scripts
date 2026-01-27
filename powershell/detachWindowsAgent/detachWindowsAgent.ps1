@@ -28,15 +28,19 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 
 $servers = @(gatherList -Param $serverName -FilePath $serverList -Name 'servers' -Required $True)
 
-Function Restart-Service([string]$strCompName,[string]$strServiceName){
-    $filter = 'Name=' + "'" + $strServiceName + "'" + ''
-    $service = Get-WMIObject -ComputerName $strCompName -Authentication PacketPrivacy -namespace "root\cimv2" -class Win32_Service -Filter $filter
-    $service.StopService()
+function Restart-Service([string]$compName,[string]$serviceName){
+    $filter = 'Name=' + "'" + $serviceName + "'" + ''
+    $service = Get-CimInstance -ComputerName $compName -ClassName Win32_Service -Filter $filter
+    $null = Invoke-CimMethod -InputObject $service -MethodName StopService
     while ($service.Started){
       Start-Sleep 2
-      $service = Get-WMIObject -ComputerName $strCompName -Authentication PacketPrivacy -namespace "root\cimv2" -class Win32_Service -Filter $filter
+      $service = Get-CimInstance -ComputerName $compName -ClassName Win32_Service -Filter $filter
     }
-    $service.StartService()
+    Invoke-CimMethod -InputObject $service -MethodName StartService
+    while (! $service.Started){
+      Start-Sleep 2
+      $service = Get-CimInstance -ComputerName $compName -ClassName Win32_Service -Filter $filter
+    }
 }
 
 foreach ($server in $servers){
