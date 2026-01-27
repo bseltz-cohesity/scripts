@@ -317,14 +317,6 @@ else
 		snap_status=5
   	fi
 
-    #### Thaw database
-	echo "Thawing Database"
-	echo "$(date) : $COHESITY_BACKUP_ENTITY : Thawing Database" >> /tmp/cohesity_snap.log
-
-    if [[ $TESTING -ne 1 ]]; then
-        ${THAW_CMD}
-    fi
-
     #### Thaw AIX file systems
     if [[ -n $VOL_GROUPS ]] && [[ $TESTING -eq 0 ]] && [[ $OS -eq "AIX" ]]; then
         for vgs in $volgrps
@@ -336,6 +328,14 @@ else
                 chfs -a freeze=off $ii
             done
         done
+    fi
+
+    #### Thaw database
+	echo "Thawing Database"
+	echo "$(date) : $COHESITY_BACKUP_ENTITY : Thawing Database" >> /tmp/cohesity_snap.log
+
+    if [[ $TESTING -ne 1 ]]; then
+        ${THAW_CMD}
     fi
 
     # Snapshot was successful
