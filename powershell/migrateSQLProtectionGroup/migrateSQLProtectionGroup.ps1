@@ -100,22 +100,6 @@ if($job){
     if($job.storageDomainId -ne $null){
         $oldStorageDomain = api get viewBoxes | Where-Object id -eq $job.storageDomainId
     }
-    $newStorageDomain = $null
-    if(!$targetNGCE){
-        # check for target storage domain
-        if($newStorageDomainName){
-            $oldStorageDomain.name = $newStorageDomainName
-        }
-        
-        $newStorageDomain = $null
-        if($oldStorageDomain -ne $null){
-            $newStorageDomain = api get viewBoxes | Where-Object name -eq $oldStorageDomain.name
-            if(!$newStorageDomain){
-                Write-Host "Storage Domain $($oldStorageDomain.name) not found" -ForegroundColor Yellow
-                exit
-            }
-        }
-    }
 
     # connect to target cluster for sanity check
     if(!$cleanupSourceObjectsAndExit -and !$exportServerList){
@@ -142,6 +126,23 @@ if($job){
         if(!$newPolicy){
             Write-Host "Policy $($oldPolicy.name) not found" -ForegroundColor Yellow
             exit
+        }
+
+        $newStorageDomain = $null
+        if($targetNGCE -ne $True){
+            # check for target storage domain
+            if($newStorageDomainName){
+                $oldStorageDomain.name = $newStorageDomainName
+            }
+            
+            $newStorageDomain = $null
+            if($oldStorageDomain -ne $null){
+                $newStorageDomain = api get viewBoxes | Where-Object name -eq $oldStorageDomain.name
+                if(!$newStorageDomain){
+                    Write-Host "Storage Domain $($oldStorageDomain.name) not found" -ForegroundColor Yellow
+                    exit
+                }
+            }
         }
         apiauth -vip $sourceCluster -username $sourceUser -domain $sourceDomain -passwd $sourcePassword -tenant $tenant -quiet
     }
