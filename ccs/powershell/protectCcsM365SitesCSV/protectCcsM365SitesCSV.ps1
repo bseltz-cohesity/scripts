@@ -72,7 +72,11 @@ function indexObject($obj){
     if(!$obj.objectProtectionInfos.objectBackupConfiguration){
         $script:unprotectedIndex = @($script:unprotectedIndex + $obj.objectProtectionInfos[0].objectId)
     }else{
-        $script:protectedCount += 1
+        if(@($obj.objectProtectionInfos.objectBackupConfiguration).Count -gt 0){
+            $script:protectedCount += 1
+        }else{
+            $script:unprotectedIndex = @($script:unprotectedIndex + $obj.objectProtectionInfos[0].objectId)
+        }
     }
 }
 
