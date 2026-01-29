@@ -15,7 +15,6 @@ param (
     [Parameter()][array]$policyName,
     [Parameter()][string]$policyList,
     [Parameter()][int64]$lockDuration = 5,
-    [Parameter()][switch]$asAdmin,
     [Parameter()][switch]$disable
 )
 
@@ -85,44 +84,6 @@ if($policyNames.Count -gt 0){
     }
 }
 
-if($asAdmin){
-    # create temp DS User
-    $nowMsecs = [int64]((dateToUsecs $now) / 1000)
-    $dsUsername = "ds-$($nowMsecs)"
-
-    $tempUserParams = @{
-        "domain" = "LOCAL";
-        "effectiveTimeMsecs" = $nowNsecs;
-        "roles" = @(
-            "COHESITY_DATA_SECURITY"
-        );
-        "restricted" = $false;
-        "type" = "user";
-        "_isDeletable" = $true;
-        "_principalType" = "local_user";
-        "username" = $dsUsername;
-        "password" = 'Gaj1$iteeHoka!2xz';
-        "emailAddress" = "$dsUsername@$($cluster.domainNames[0])";
-        "passwordConfirm" = 'Gaj1$iteeHoka!2xz';
-        "additionalGroupNames" = @()
-    }
-
-    $tempUser = api post users $tempUserParams
-
-    # create temp API key
-    $newKeyParams = @{
-        "isActive" = $true;
-        "user" = $tempUser;
-        "name" = "$($tempUser.username)-key";
-        "expiringTimeMsecs" = $null
-    }
-
-    $newKey = api post users/$($tempUser.sid)/apiKeys/ $newKeyParams 
-    $apiKey = $newKey.key
-
-    apiauth -vip $vip -username $($tempUser.username) -domain 'local' -useApiKey -password $apiKey -quiet
-}
-
 "`nProcessing policies...`n" | Tee-Object -FilePath $outfileName
 
 foreach($policy in ($policies.policies | Sort-Object -Property name)){
@@ -136,19 +97,21 @@ foreach($policy in ($policies.policies | Sort-Object -Property name)){
                 "unit" = "Days";
                 "duration" = $lockDuration
             }
-        }elseif($disable){
+        }
+        if($disable){
             $policyChanged = $True
             delApiProperty -object $policy.backupPolicy.regular.retention -name 'dataLockConfig'
         }
         if($policy.backupPolicy.PSObject.Properties['log']){
-            if(! $policy.backupPolicy.log.retention.PSObject['dataLockConfig']){
+            if(! $policy.backupPolicy.log.retention.PSObject.Properties['dataLockConfig']){
                 $policyChanged = $True
                 setApiProperty -object $policy.backupPolicy.log.retention -name 'dataLockConfig' -value @{
                     "mode" = "Compliance";
                     "unit" = "Days";
                     "duration" = $lockDuration
                 }
-            }elseif($disable){
+            }
+            if($disable){
                 $policyChanged = $True
                 delApiProperty -object $policy.backupPolicy.log.retention -name 'dataLockConfig'
             }
@@ -161,7 +124,8 @@ foreach($policy in ($policies.policies | Sort-Object -Property name)){
                     "unit" = "Days";
                     "duration" = $lockDuration
                 }
-            }elseif($disable){
+            }
+            if($disable){
                 $policyChanged = $True
                 delApiProperty -object $extendedRetention.retention -name 'dataLockConfig'
             }
@@ -176,7 +140,8 @@ foreach($policy in ($policies.policies | Sort-Object -Property name)){
                             "unit" = "Days";
                             "duration" = $lockDuration
                         }
-                    }elseif($disable){
+                    }
+                    if($disable){
                         $policyChanged = $True
                         delApiProperty -object $replicationTarget.retention -name 'dataLockConfig'
                     }
@@ -188,7 +153,8 @@ foreach($policy in ($policies.policies | Sort-Object -Property name)){
                                 "unit" = "Days";
                                 "duration" = $lockDuration
                             }
-                        }elseif($disable){
+                        }
+                        if($disable){
                             $policyChanged = $True
                             delApiProperty -object $replicationTarget.logRetention -name 'dataLockConfig'
                         }
@@ -204,13 +170,15 @@ foreach($policy in ($policies.policies | Sort-Object -Property name)){
                             "unit" = "Days";
                             "duration" = $lockDuration
                         }
-                    }elseif($disable){
+                    }
+                    if($disable){
                         $policyChanged = $True
                         delApiProperty -object $archivalTarget.retention -name 'dataLockConfig'
                     }
                 }
             }
         }
+
         if($True -eq $policyChanged){
             if($disable){
                 "    removing datalock" | Tee-Object -FilePath $outfileName -Append
@@ -231,24 +199,6 @@ foreach($policy in ($policies.policies | Sort-Object -Property name)){
             }
         }
     }
-}
-
-if($asAdmin){
-    # authenticate
-    if($useApiKey){
-        apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password -quiet
-    }else{
-        apiauth -vip $vip -username $username -domain $domain -password $password -quiet
-    }
-
-    $deleteUserParams = @{
-        "domain" = "LOCAL";
-        "users" = @(
-            "$($tempUser.username)"
-        )
-    }
-
-    $null = api delete users $deleteUserParams
 }
 
 "`nOutput saved to $outfilename`n"
