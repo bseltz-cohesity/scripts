@@ -318,7 +318,7 @@ else
   	fi
 
     #### Thaw AIX file systems
-    if [[ -n $VOL_GROUPS ]] && [[ $TESTING -eq 0 ]] && [[ $OS -eq "AIX" ]]; then
+    if [[ -n $VOL_GROUPS ]] && [[ $TESTING -eq 0 ]] && [[ $OS == "AIX" ]]; then
         for vgs in $volgrps
         do
             for ii in $(lsvgfs $vgs)
