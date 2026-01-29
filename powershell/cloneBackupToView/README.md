@@ -125,7 +125,7 @@ To refresh a view (on a schedule):
 * -daysToKeep: (optional) clone the past X days (and delete older files from view)
 * -listRuns: (optional) list available job run IDs and dates
 * -lastRunOnly: (optional) only clone latest run
-* -numRuns: (opyional) max number of runs to clone (default is 100)
+* -numRuns: (optional) max number of runs to clone (default is 10000)
 * -firstRunId: (optional) earliest run to clone (defaults to all)
 * -lastRunId: (optional) most recent run to clone (defaultds to all)
 
