@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-01-30`] [policyTool.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/policyTool) [`Update`] fix for calendar based scheduling
 * [`2026-01-29`] [enableDatalock.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/enableDatalock) [`Update`] fix for calendar based scheduling
 * [`2026-01-29`] [epic_pure_freeze_thaw.sh](https://github.com/cohesity/community-automation-samples/tree/main/bash/epic_pure_freeze_thaw) [`Update`] fix for AIX syntax error
 * [`2026-01-22`] [ccsActivityReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/ccsActivityReport) [`New`] generate a CCS activity report
