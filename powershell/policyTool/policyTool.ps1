@@ -83,6 +83,7 @@ if($policyname){
             Write-Host "Policy $policyName already exists!" -ForegroundColor Yellow
             exit
         }
+        setApiProperty -object $policy -name 'isCBSEnabled' -value $True
     }
 }else{
     if($action -ne 'list'){
@@ -127,7 +128,8 @@ if($action -eq 'create'){
         "retryOptions" = @{
             "retries" = $retries;
             "retryIntervalMins" = $retryMinutes
-        }
+        };
+        "isCBSEnabled" = $True
     }
 
     if($frequencyUnit -eq 'days'){
@@ -464,6 +466,9 @@ if($action -eq 'logbackup'){
     if(!$retention){
         Write-Host "-retention is required" -ForegroundColor Yellow
         exit
+    }
+    if(!$retentionUnit){
+        $retentionUnit = 'days'
     }
     if(!$frequency){
         $frequency = 1
