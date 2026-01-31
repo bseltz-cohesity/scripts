@@ -87,14 +87,12 @@ foreach($obj in $objectsToAdd){
     if($script:webUrlIndex.ContainsKey($objWebUrl)){
         $objId = $script:webUrlIndex[$objWebUrl]
     }else{
-        # Write-Host "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&count=999&searchString=$objName"
         $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&regionIds=$region&sourceIds=$rootSourceId&count=999&searchString=$objName" # &regionIds=$region &sourceIds=$rootSourceId
-        # $search | toJson
         foreach($obj in $search.objects){
             indexObject($obj)
         }
         $search.objects = $search.objects | Where-Object {$_.sharepointParams.siteWebUrl -eq $objWebUrl}
-        if(@($search.objects).Count -eq 0){
+        if($search.count -eq 0){
             Write-Host "Site $objName not found" -ForegroundColor Yellow
             continue
         }else{
