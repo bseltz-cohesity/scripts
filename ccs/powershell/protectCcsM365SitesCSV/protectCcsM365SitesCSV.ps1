@@ -66,16 +66,14 @@ $script:unprotectedIndex = @()
 $script:protectedCount = 0
 
 function indexObject($obj){
-    $script:nameIndex[$obj.name] = $obj.objectProtectionInfos[0].objectId
-    $script:idIndex["$($obj.objectProtectionInfos[0].objectId)"] = $obj.name
-    $script:webUrlIndex[$obj.sharepointParams.siteWebUrl] = $obj.objectProtectionInfos[0].objectId
-    if(!$obj.objectProtectionInfos.objectBackupConfiguration){
-        $script:unprotectedIndex = @($script:unprotectedIndex + $obj.objectProtectionInfos[0].objectId)
-    }else{
-        if(@($obj.objectProtectionInfos.objectBackupConfiguration).Count -gt 0){
+    foreach($objectProtectionInfo in $obj.objectProtectionInfos | Where-Object {$_.regionId -eq $region -and $_.sourceId -eq $rootSourceId}){
+        $script:nameIndex[$obj.name] = $objectProtectionInfo.objectId
+        $script:idIndex["$($objectProtectionInfo.objectId)"] = $obj.name
+        $script:webUrlIndex[$obj.sharepointParams.siteWebUrl] = $objectProtectionInfo.objectId
+        if($objectProtectionInfo.objectBackupConfiguration -and $objectProtectionInfo.objectBackupConfiguration -ne $null){
             $script:protectedCount += 1
         }else{
-            $script:unprotectedIndex = @($script:unprotectedIndex + $obj.objectProtectionInfos[0].objectId)
+            $script:unprotectedIndex = @($script:unprotectedIndex + $objectProtectionInfo.objectId)
         }
     }
 }
@@ -87,16 +85,16 @@ foreach($obj in $objectsToAdd){
     if($script:webUrlIndex.ContainsKey($objWebUrl)){
         $objId = $script:webUrlIndex[$objWebUrl]
     }else{
-        $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&regionIds=$region&sourceIds=$rootSourceId&count=999&searchString=$objName" # &regionIds=$region &sourceIds=$rootSourceId
+        $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&regionIds=$region&sourceIds=$rootSourceId&count=999&searchString=$objName"
+        $search.objects = $search.objects | Where-Object {$_.sharepointParams.siteWebUrl -eq $objWebUrl}
         foreach($obj in $search.objects){
             indexObject($obj)
         }
-        $search.objects = $search.objects | Where-Object {$_.sharepointParams.siteWebUrl -eq $objWebUrl}
         if(@($search.objects).Count -lt 1 -or $search.objects -eq $null){
             Write-Host "Site $objName not found" -ForegroundColor Yellow
             continue
         }else{
-            $objId = $search.objects[0].objectProtectionInfos[0].objectId
+            $objId = $script:webUrlIndex[$objWebUrl]
         }
     }
     if($objId -and $objId -in $script:unprotectedIndex){
