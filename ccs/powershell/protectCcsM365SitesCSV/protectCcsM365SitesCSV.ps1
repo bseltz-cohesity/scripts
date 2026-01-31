@@ -92,7 +92,7 @@ foreach($obj in $objectsToAdd){
             indexObject($obj)
         }
         $search.objects = $search.objects | Where-Object {$_.sharepointParams.siteWebUrl -eq $objWebUrl}
-        if($search.count -eq 0){
+        if(@($search.objects).Count -lt 1 -or $search.objects -eq $null){
             Write-Host "Site $objName not found" -ForegroundColor Yellow
             continue
         }else{
