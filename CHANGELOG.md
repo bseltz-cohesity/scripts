@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-02-01`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added enableCohesityAPIDebugger function (output cohesity-har-file.txt)
+* [`2026-02-01`] [protectCcsM365SitesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365SitesCSV) [`Update`] added -dbg switch (enableCohesityAPIDebugger)
 * [`2026-01-30`] [policyTool.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/policyTool) [`Update`] fix for calendar based scheduling
 * [`2026-01-29`] [enableDatalock.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/enableDatalock) [`Update`] fix for calendar based scheduling
 * [`2026-01-29`] [epic_pure_freeze_thaw.sh](https://github.com/cohesity/community-automation-samples/tree/main/bash/epic_pure_freeze_thaw) [`Update`] fix for AIX syntax error
