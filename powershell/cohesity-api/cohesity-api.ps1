@@ -942,10 +942,10 @@ function api($method,
                 $retryCounter = 11
                 if($cohesity_api.debug -eq $True){
                     "==================================================" | Out-File -FilePath 'cohesity-har-file.txt' -Append
-                    (Get-Date) | Out-File -FilePath 'cohesity-har-file.txt' -Append
+                    "$(Get-Date)" | Out-File -FilePath 'cohesity-har-file.txt' -Append
+                    "Method: $($method.ToUpper())" | Out-File -FilePath 'cohesity-har-file.txt' -Append
                     "Url: $url" | Out-File -FilePath 'cohesity-har-file.txt' -Append
-                    "Payload: $body" | Out-File -FilePath 'cohesity-har-file.txt' -Append
-                    "Method: $method" | Out-File -FilePath 'cohesity-har-file.txt' -Append
+                    "Payload: $($data | toJson)" | Out-File -FilePath 'cohesity-har-file.txt' -Append
                     "Response:" | Out-File -FilePath 'cohesity-har-file.txt' -Append
                     "$($result | toJson)" | Out-File -FilePath 'cohesity-har-file.txt' -Append
                 }
