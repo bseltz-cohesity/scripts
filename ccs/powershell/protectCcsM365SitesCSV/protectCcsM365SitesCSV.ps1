@@ -32,6 +32,10 @@ if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]:
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
+if($dbg){
+    enableCohesityAPIDebugger
+}
+
 # authenticate
 apiauth -username $username
 

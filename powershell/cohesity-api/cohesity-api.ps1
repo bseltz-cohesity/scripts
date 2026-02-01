@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2025.11.20 - Brian Seltzer
+#  Version 2026.02.01 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024-02-18 - fix - toJson function - handle null input
@@ -30,10 +30,11 @@
 # 2025-11-13 - fixed CCS region bug
 # 2025-11-19 - fixed CCS region bug #2
 # 2025-11-20 - fix header functions
+# 2026-02-01 - added enableCohesityAPIDebugger function (cohesity-har-file.txt output)
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2025.11.20'
+$versionCohesityAPI = '2026.02.01'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -58,6 +59,7 @@ $cohesity_api = @{
     'last_api_error' = 'OK';
     'session' = $null;
     'userAgent' = "cohesity-api/$versionCohesityAPI";
+    'debug' = $False;
 }
 
 $pwfile = $(Join-Path -Path $PSScriptRoot -ChildPath YWRtaW4)
@@ -938,6 +940,15 @@ function api($method,
                 $result = __apicall -method $method -url $url -body $body -timeout $timeout -header $header
                 $cohesity_api.last_api_error = 'OK'
                 $retryCounter = 11
+                if($cohesity_api.debug -eq $True){
+                    "==================================================" | Out-File -FilePath 'cohesity-har-file.txt' -Append
+                    (Get-Date) | Out-File -FilePath 'cohesity-har-file.txt' -Append
+                    "Url: $url" | Out-File -FilePath 'cohesity-har-file.txt' -Append
+                    "Payload: $body" | Out-File -FilePath 'cohesity-har-file.txt' -Append
+                    "Method: $method" | Out-File -FilePath 'cohesity-har-file.txt' -Append
+                    "Response:" | Out-File -FilePath 'cohesity-har-file.txt' -Append
+                    "$($result | toJson)" | Out-File -FilePath 'cohesity-har-file.txt' -Append
+                }
                 return $result
             }catch{
                 $errorObject = $_
@@ -956,6 +967,12 @@ function api($method,
             $retryCounter += 1
         }
     }
+}
+
+# Debugger
+function enableCohesityAPIDebugger(){
+    "Debbuger enabled: $(Get-Date)" | Out-File -FilePath 'cohesity-har-file.txt'
+    $cohesity_api.debug = $True
 }
 
 # Get-Runs function =============================================================================
