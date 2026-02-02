@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2025.09.30"""
+"""Cohesity Python REST API Wrapper Module - 2026.02.02"""
 
 ##########################################################################################
 # Change Log
@@ -27,6 +27,7 @@
 # 2025-07-27 - fixed bad password prompt
 # 2025-09-04 - added org support for helios
 # 2025-09-30 - adjusted updatepw behavior
+# 2026-02-02 - added enableCohesityAPIDebugger
 #
 ##########################################################################################
 # Install Notes
@@ -87,9 +88,10 @@ __all__ = ['api_version',
            'switchback',
            'getRuns',
            'readCache',
-           'writeCache']
+           'writeCache',
+           'enableCohesityAPIDebugger']
 
-api_version = '2025.09.30'
+api_version = '2026.02.02'
 
 COHESITY_API = {
     'APIROOT': '',
@@ -98,7 +100,8 @@ COHESITY_API = {
     'AUTHENTICATED': False,
     'LAST_ERROR': 'OK',
     'USING_HELIOS': False,
-    'SESSION': requests.Session()
+    'SESSION': requests.Session(),
+    'DEBUG': False
 }
 
 COHESITY_API['SESSION'].headers.update({'User-Agent': 'pyhesity/%s' % api_version})
@@ -109,6 +112,14 @@ SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
 PWFILE = os.path.join(SCRIPTDIR, 'YWRtaW4')
 LOGFILE = os.path.join(SCRIPTDIR, 'pyhesity-debug.log')
 HELIOSENDPOINTS = ['helios.cohesity.com', 'helios.gov-cohesity.com']
+
+
+### debugger
+def enableCohesityAPIDebugger():
+    COHESITY_API['DEBUG'] = True
+    d = open('cohesity-har-file.txt', 'w')
+    d.write("Debbuger enabled: %s" % usecsToDate(dateToUsecs()))
+    d.close()
 
 
 ### get last error
@@ -632,6 +643,16 @@ def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1, reporting
                 if method == 'delete':
                     response = COHESITY_API['SESSION'].delete(url, headers=THISCONTEXT['HEADER'], json=data, verify=False, timeout=timeout)
                 COHESITY_API['LAST_ERROR'] = 'OK'
+                if COHESITY_API['DEBUG'] is True:
+                    d = open('cohesity-har-file.txt', 'a')
+                    d.write('\n\n==================================================\n')
+                    d.write('%s\n' % (usecsToDate(dateToUsecs())))
+                    d.write('Method %s\n' % method.upper())
+                    d.write('Url: %s\n' % url)
+                    d.write('Payload:\n')
+                    json.dump(data, d, indent=4)
+                    d.write('\nResponse:\n')
+                    d.close()
             except requests.exceptions.RequestException as e:
                 __writelog(e)
                 COHESITY_API['LAST_ERROR'] = '%s' % e
@@ -677,7 +698,10 @@ def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1, reporting
                 if isinstance(responsejson, bool):
                     return ''
                 if responsejson is not None:
-                    
+                    if COHESITY_API['DEBUG'] is True:
+                        d = open('cohesity-har-file.txt', 'a')
+                        json.dump(responsejson, d, indent=4)
+                        d.close()
                     if 'errorCode' in responsejson:
                         if 'message' in responsejson:
                             COHESITY_API['LAST_ERROR'] = responsejson['errorCode'][1:] + ': ' + responsejson['message']
