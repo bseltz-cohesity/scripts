@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2026.02.01 - Brian Seltzer
+#  Version 2026.02.03 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024-02-18 - fix - toJson function - handle null input
@@ -31,10 +31,11 @@
 # 2025-11-19 - fixed CCS region bug #2
 # 2025-11-20 - fix header functions
 # 2026-02-01 - added enableCohesityAPIDebugger function (cohesity-har-file.txt output)
+# 2026-02-03 - added pauseCohesityAPIDebugger and resumeCohesityAPIDebugger functions
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2026.02.01'
+$versionCohesityAPI = '2026.02.03'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -969,9 +970,20 @@ function api($method,
     }
 }
 
-# Debugger
+# Debugger ======================================================================================
+
 function enableCohesityAPIDebugger(){
-    "Debbuger enabled: $(Get-Date)" | Out-File -FilePath 'cohesity-har-file.txt'
+    "Debugger enabled: $(Get-Date)" | Out-File -FilePath 'cohesity-har-file.txt'
+    $cohesity_api.debug = $True
+}
+
+function pauseCohesityAPIDebugger(){
+    "Debugger paused: $(Get-Date)" | Out-File -FilePath 'cohesity-har-file.txt' -Append
+    $cohesity_api.debug = $False
+}
+
+function resumeCohesityAPIDebugger(){
+    "Debugger resumed: $(Get-Date)" | Out-File -FilePath 'cohesity-har-file.txt' -Append
     $cohesity_api.debug = $True
 }
 
