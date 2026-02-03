@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2026.02.02"""
+"""Cohesity Python REST API Wrapper Module - 2026.02.03"""
 
 ##########################################################################################
 # Change Log
@@ -28,6 +28,7 @@
 # 2025-09-04 - added org support for helios
 # 2025-09-30 - adjusted updatepw behavior
 # 2026-02-02 - added enableCohesityAPIDebugger
+# 2026-02-03 - added pauseCohesityAPIDebugger and resumeCohesityAPIDebugger functions
 #
 ##########################################################################################
 # Install Notes
@@ -89,9 +90,11 @@ __all__ = ['api_version',
            'getRuns',
            'readCache',
            'writeCache',
-           'enableCohesityAPIDebugger']
+           'enableCohesityAPIDebugger',
+           'pauseCohesityAPIDebugger',
+           'resumeCohesityAPIDebugger']
 
-api_version = '2026.02.02'
+api_version = '2026.02.03'
 
 COHESITY_API = {
     'APIROOT': '',
@@ -121,6 +124,17 @@ def enableCohesityAPIDebugger():
     d.write("Debbuger enabled: %s" % usecsToDate(dateToUsecs()))
     d.close()
 
+def pauseCohesityAPIDebugger():
+    COHESITY_API['DEBUG'] = False
+    d = open('cohesity-har-file.txt', 'a')
+    d.write("Debbuger paused: %s" % usecsToDate(dateToUsecs()))
+    d.close()
+
+def resumeCohesityAPIDebugger():
+    COHESITY_API['DEBUG'] = True
+    d = open('cohesity-har-file.txt', 'a')
+    d.write("Debbuger resumed: %s" % usecsToDate(dateToUsecs()))
+    d.close()
 
 ### get last error
 def LAST_API_ERROR():
