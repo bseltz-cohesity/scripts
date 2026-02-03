@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-02-03`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] added pauseCohesityAPIDebugger and resumeCohesityAPIDebugger functions
 * [`2026-02-03`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added pauseCohesityAPIDebugger and resumeCohesityAPIDebugger functions
 * [`2026-02-02`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] added enableCohesityAPIDebugger function (output cohesity-har-file.txt)
 * [`2026-02-01`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added enableCohesityAPIDebugger function (output cohesity-har-file.txt)
