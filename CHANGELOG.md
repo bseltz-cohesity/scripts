@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-02-05`] [cloneVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneVM) [`Update`] remove debug statements
 * [`2026-02-05`] [ccsSlaMonitor.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/ccsSlaMonitor) [`New`] Monitor SLA violations in CCS
 * [`2026-02-03`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] added pauseCohesityAPIDebugger and resumeCohesityAPIDebugger functions
 * [`2026-02-03`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added pauseCohesityAPIDebugger and resumeCohesityAPIDebugger functions
