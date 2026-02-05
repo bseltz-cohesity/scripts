@@ -91,7 +91,7 @@ while($True){
             }
 
             $startTime = usecsToDate $startTimeUsecs
-            "$($objectName) ($($startTime)) [$($status)]"
+            "$($objectName) ($($startTime)) [$($status)] $($isSlaViolated)"
             """$($objectName)"",""$($sourceName)"",""$($regionId)"",""$($protectionEnvironmentType)"",""$($startTime)"",""$($status)"",""$($runType)"",""$($isSlaViolated)""" | Out-File -FilePath $outfileName -Append
         }
         if(@($activities.activity).Count -lt 100){
