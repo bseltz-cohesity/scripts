@@ -5,7 +5,8 @@ param (
     [Parameter()][string]$password,
     [Parameter()][switch]$noPrompt,
     [Parameter()][int]$days = 2,
-    [Parameter()][int]$pageSize = 500
+    [Parameter()][int]$pageSize = 500,
+    [Parameter()][int]$logWarningMinutes = 60
 )
 
 $version = '2026-02-05'
@@ -79,9 +80,13 @@ while($True){
             $runId = $params.runId
 
             if($status -notin $finishedStates){
-                $objects = api get -v2 "data-protect/objects?ids=$objectId&includeLastRunInfo=false&regionId=$($regionId)"
-                $sla = $objects.objects[0].objectBackupConfiguration.sla | Where-Object backupRunType -eq $runType
-                $slaMinutes = $sla.slaMinutes
+                if($runType -eq 'kLog'){
+                    $slaMinutes = $logwarningminutes
+                }else{
+                    $objects = api get -v2 "data-protect/objects?ids=$objectId&includeLastRunInfo=false&regionId=$($regionId)"
+                    $sla = $objects.objects[0].objectBackupConfiguration.sla | Where-Object backupRunType -eq $runType
+                    $slaMinutes = $sla.slaMinutes
+                }
                 $nowUsecs = dateToUsecs
                 $slaWindow = $startTimeUsecs + ($slaMinutes * 60000000)
                 $isSlaViolated = $false

@@ -35,6 +35,7 @@ Place both files in a folder together and run the main script like so:
 * -noPrompt: (optional) do not prompt for API key
 * -days: (optional) number of days back to search (default is 2)
 * -pageSize: (optional) API query page size (default is 500)
+* -logWarningMinutes: (optional) show SLA violation if log backup is running for more than X minutes (default is 60)
 
 ## Authenticating to Ccs
 
