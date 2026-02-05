@@ -84,8 +84,8 @@ $vmnames = @(gatherList -Param $vmName -FilePath $vmList -Name 'VMs' -Required $
 function walkVMFolders($node, $parent=$null, $fullPath=''){
     $fullPath = "{0}/{1}" -f $fullPath, $node.protectionSource.name
     $relativePath = ($fullPath -split 'vm/', 2)[1]
-    Write-Host "full: $fullPath"
-    Write-Host " rel: $relativePath"
+    # Write-Host "full: $fullPath"
+    # Write-Host " rel: $relativePath"
     if($relativePath -and $node.protectionSource.vmWareProtectionSource.type -eq 'kFolder'){
         $vmFolderId[$fullPath] = $node.protectionSource.id
         $vmFolderId[$relativePath] = $node.protectionSource.id
