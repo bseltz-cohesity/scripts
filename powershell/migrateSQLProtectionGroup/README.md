@@ -33,9 +33,9 @@ If the clusters and agents are already setup for multi-cluster registration, the
 
 When running the migrateSQLProtectionGroup.ps1 script, you can use the `-detachServers` switch to cause the script to detach the agents. For the detach to be successful, the following are required:
 
-* The script to be run on a Windows system
-* The script operator must be logged into Windows using an Active Directory user that has admin privileges to the SQL servers
+* The script must be run from a Windows system
 * The SQL servers must have Windows Remote Management (WinRM) enabled
+* The script operator must be logged into Windows using an Active Directory user that has admin privileges to the SQL servers
 
 If the script operator does not have admin privileges, you can use the `-exportServerList` switch to export the list of SQL servers to a text file (physicalServers.txt). The text file can be shared with another user who does have admin privileges, and they can use the text file with the [detachWindowsAgents.ps1 script](https://github.com/cohesity/community-automation-samples/tree/main/powershell/detachWindowsAgent) to detach the agents, e.g.
 
