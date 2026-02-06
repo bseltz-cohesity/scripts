@@ -20,7 +20,7 @@ Also note that if a physical server is protected by multiple protection groups, 
 
 ## Migrating Cohesity Agents
 
-This script will attempt to register the physical servers on the target cluster, but because the Cohesity agent on the servers are already registered to the source cluster, the target registrations will only be successful if:
+The migratePhysicalProtectionGroup.ps1 script will attempt to register the physical servers on the target cluster, but because the Cohesity agent on the servers are already registered to the source cluster, the target registrations will only be successful if:
 
 * The agents are first detached from the source cluster, or
 * The agents and clusters are configured for multi-cluster registration
