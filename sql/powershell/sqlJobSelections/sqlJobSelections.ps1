@@ -69,7 +69,8 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     setApiProperty -object $job -name selections -value @($job.mssqlParams.$paramName.objects.id)
 }
 
-$sources = api get protectionSources?environments=kSQL
+$rootSources = api get "protectionSources/registrationInfo?environments=kSQL"
+# $sources = api get protectionSources?environments=kSQL
 
 function getJobName($id){
     if($id -in $jobs.protectionGroups.selections){
@@ -86,7 +87,8 @@ $outfile = "sqlJobSelections-$($cluster.name).csv"
 
 "`nReviewing SQL selections...`n"
 
-foreach($server in $sources.nodes | Sort-Object -Property {$_.protectionSource.name}){
+foreach($rootSource in $rootSources.rootNodes | Sort-Object -Property {$_.rootNode.name}){
+    $server = api get "protectionSources?id=$($rootSource.rootNode.id)"
     $unprotectedDB = $False
     $selections = @()
     "$($server.protectionSource.name)"
@@ -193,7 +195,9 @@ foreach($server in $sources.nodes | Sort-Object -Property {$_.protectionSource.n
     }
     foreach($s in $selections){
         if($s.entityType -notin @('Instance', 'Database') -or $showInstances -or $showDatabases){
-            "{0},{1},{2},{3},{4},{5},{6}" -f $s.entityType, $s.serverName, $s.instanceName, $s.dbName, $s.jobName, $job.mssqlParams.protectionType, $s.selection | Out-File -FilePath $outfile -Append
+            $job = $jobs.protectionGroups | Where-Object name -eq $s.jobName
+            $pType = $job.mssqlParams.protectionType
+            "{0},{1},{2},{3},{4},{5}" -f $s.entityType, $s.serverName, $s.instanceName, $s.dbName, $s.jobName, $pType, $s.selection | Out-File -FilePath $outfile -Append
         }       
     }
 }
