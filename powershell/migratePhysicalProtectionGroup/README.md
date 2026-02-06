@@ -18,6 +18,49 @@ Alternatively, if you're comfortable that the script works fine and migrations a
 
 Also note that if a physical server is protected by multiple protection groups, you must migrate *ALL* of the groups that protect that server. Any groups left behind on the source cluster will fail to backup that server since source registration will now be broken at the source cluster.
 
+## Migrating Cohesity Agents
+
+This script will attempt to register the physical servers on the target cluster, but because the Cohesity agent on the servers are already registered to the source cluster, the target registrations will only be successful if:
+
+* The agents are first detached from the source cluster, or
+* The agents and clusters are configured for multi-cluster registration
+
+### Multi-Cluster Registration
+
+If the clusters and agents are already setup for multi-cluster registration, then you can run the migratePhysicalProtectionGroup.ps1 script without the `-detachServers` switch, and the script will successfully register the agents on the target cluster. Otherwise, we need to detach the agents from the source cluster.
+
+### Detaching Windows Agents
+
+When running the migratePhysicalProtectionGroup.ps1 script, you can use the `-detachServers` switch to cause the script to detach Windows agents (for non-Windows see below). For the detach to be successful, the following are required:
+
+* The script must be run from a Windows system
+* The servers must have Windows Remote Management (WinRM) enabled
+* The script operator must be logged into Windows using an Active Directory user that has admin privileges to the servers
+
+If the script operator does not have admin privileges, you can use the `-exportServerList` switch to export the list of servers to a text file (physicalServers.txt). The text file can be shared with another user who does have admin privileges, and they can use the text file with the [detachWindowsAgents.ps1 script](https://github.com/cohesity/community-automation-samples/tree/main/powershell/detachWindowsAgent) to detach the agents, e.g.
+
+```powershell
+./detachWindowsAgents.ps1 -serverList ./physicalServers.txt
+```
+
+After the agents are detached, the migratePhysicalProtectionGroup.ps1 can be run (without the `-detachServers` switch) and the agents will be registered on the target cluster successfully.
+
+### Detaching Non-Windows Agents
+
+You can use run the migratePhysicalProtecrtionGroup.ps1 script with the `-exportServerList` switch to export the list of servers to a text file (physicalServers.txt). If the servers are Linux, you can use the text file with the [detachLinuxAgent.py script](https://github.com/cohesity/community-automation-samples/tree/main/python/detachLinuxAgent) to detach the agents. e.g.
+
+```bash
+python3 ./detachLinuxAgent.py -l ./physicalServers.txt -u myusername
+```
+
+For other non-Windows operating systems (like AIX), there is currently no script for detaching the agents. The high-level process for detaching the agent is as follows:
+
+* Edit the aix_agent_config.cfg and remove the lines associated with agent identity and cluster association (leave any agent gflags intact)
+* Delete the agent certificate file
+* Restart the agent
+
+After the agents are detached, the migratePhysicalProtectionGroup.ps1 can be run (without the `-detachServers` switch) and the agents will be registered on the target cluster successfully.
+
 ## Download the script
 
 Run these commands from PowerShell to download the script(s) into your current directory
