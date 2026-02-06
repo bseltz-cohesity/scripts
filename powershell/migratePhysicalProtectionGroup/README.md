@@ -47,7 +47,7 @@ After the agents are detached, the migratePhysicalProtectionGroup.ps1 can be run
 
 ### Detaching Non-Windows Agents
 
-You can use run the migratePhysicalProtecrtionGroup.ps1 script with the `-exportServerList` switch to export the list of servers to a text file (physicalServers.txt). If the servers are Linux, you can use the text file with the [detachLinuxAgent.py script](https://github.com/cohesity/community-automation-samples/tree/main/python/detachLinuxAgent) to detach the agents. e.g.
+You can run the migratePhysicalProtecrtionGroup.ps1 script with the `-exportServerList` switch to export the list of servers to a text file (physicalServers.txt). If the servers are Linux, you can use the text file with the [detachLinuxAgent.py script](https://github.com/cohesity/community-automation-samples/tree/main/python/detachLinuxAgent) to detach the agents. e.g.
 
 ```bash
 python3 ./detachLinuxAgent.py -l ./physicalServers.txt -u myusername
