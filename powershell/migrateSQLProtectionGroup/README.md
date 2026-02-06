@@ -20,9 +20,9 @@ Also note that if a SQL server is protected by multiple protection groups, you m
 
 ## Migrating Cohesity Agents
 
-This script will attempt to register the SQL servers on the target cluster, but because the Cohesity agent on the SQL servers are already registered to the source cluster, the target registrations will only be successful if either:
+This script will attempt to register the SQL servers on the target cluster, but because the Cohesity agent on the SQL servers are already registered to the source cluster, the target registrations will only be successful if:
 
-* The agents are detached from the source cluster
+* The agents are detached from the source cluster, or
 * The agents and clusters are configured for multi-cluster registration
 
 ### Multi-Cluster Registration
