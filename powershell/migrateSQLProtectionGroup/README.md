@@ -18,6 +18,33 @@ Alternatively, if you're comfortable that the script works fine and migrations a
 
 Also note that if a SQL server is protected by multiple protection groups, you must migrate *ALL* of the groups that protect that server. Any groups left behind on the source cluster will fail to backup that server since source registration will now be broken at the source cluster.
 
+## Migrating Cohesity Agents
+
+This script will attempt to register the SQL servers on the target cluster, but because the Cohesity agent on the SQL servers are already registered to the source cluster, the target registrations will only be successful if either:
+
+* The agents are detached from the source cluster
+* The agents and clusters are configured for multi-cluster registration
+
+### Multi-Cluster Registration
+
+If the clusters and agents are already setup for multi-cluster registration, then you can run the migrateSQLProtectionGroup.ps1 script without the `-detachServers` switch, and the script will attempt to register the agents on the target cluster, and this should be successful. Otherwise, we need to detach the agents from the source cluster.
+
+### Detaching the Agents
+
+When running the migrateSQLProtectionGroup.ps1 script, you can use the `-detachServers` switch to cause the script to detach the agents. For the detach to be successful, the following are required:
+
+* The script to be run on a Windows system
+* The script operator must be logged into Windows using an Active Directory user that has admin privileges to the SQL servers
+* The SQL servers must have Windows Remote Management (WinRM) enabled
+
+If the script operator does not have admin privileges, you can use the `-exportServerList` switch to export the list of SQL servers to a text file (physicalServers.txt). The text file can be shared with another user who does have admin privileges, and they can use the text file with the [detachWindowsAgents.ps1 script](https://github.com/cohesity/community-automation-samples/tree/main/powershell/detachWindowsAgent) to detach the agents, e.g.
+
+```powershell
+./detachWindowsAgents.ps1 -serverList ./physicalServers.txt
+```
+
+After the agents are detached, the migrateSQLProtectionGroup.ps1 can be run (without the `-detachServers` switch) and the agents will be registered on the target cluster successfully.
+
 ## Download the script
 
 Run these commands from PowerShell to download the script(s) into your current directory
