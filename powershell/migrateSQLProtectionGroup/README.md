@@ -27,7 +27,7 @@ This script will attempt to register the SQL servers on the target cluster, but 
 
 ### Multi-Cluster Registration
 
-If the clusters and agents are already setup for multi-cluster registration, then you can run the migrateSQLProtectionGroup.ps1 script without the `-detachServers` switch, and the script will attempt to register the agents on the target cluster, and this should be successful. Otherwise, we need to detach the agents from the source cluster.
+If the clusters and agents are already setup for multi-cluster registration, then you can run the migrateSQLProtectionGroup.ps1 script without the `-detachServers` switch, and the script will successfully register the agents on the target cluster. Otherwise, we need to detach the agents from the source cluster.
 
 ### Detaching the Agents
 
