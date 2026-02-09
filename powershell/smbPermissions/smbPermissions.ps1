@@ -47,6 +47,8 @@ if(!$cohesity_api.authorized){
 $ads = api get activeDirectory
 $sids = @{}
 $cluster = api get cluster
+$users = api get users?domain=LOCAL
+$groups = api get groups?domain=LOCAL
 
 function getSid($user){
     if($user -eq 'Everyone'){
@@ -88,6 +90,10 @@ function getSid($user){
 
 function newPermission($user, $perms, $shareName, $isView){
     $domain, $domainuser = $user.split('\')
+    if(!$domainuser){
+        $domain = 'LOCAL'
+        $domainuser = $user
+    }
     if($perms -eq 'remove'){
         Write-Host "Removing '$user' from '$shareName'"
     }else{
@@ -95,6 +101,17 @@ function newPermission($user, $perms, $shareName, $isView){
     }
     if($user -eq 'everyone'){
         $principal = @{'sid' = 'S-1-1-0'}
+    }elseif($domain -eq 'local'){
+        $principal = $null
+        $localuser = $users | Where-Object username -eq $domainuser
+        if($localuser){
+            $principal = $localuser
+        }else{
+            $localgroup = $groups | Where-Object name -eq $domainuser
+            if($localgroup){
+                $principal = $localgroup
+            }
+        }
     }else{
         $principal = api get "activeDirectory/principals?domain=$domain&includeComputers=true&search=$domainuser" | Where-Object fullName -eq $domainuser
     }
