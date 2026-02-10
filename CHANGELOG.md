@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-02-10`] [legalHold.py](https://github.com/cohesity/community-automation-samples/tree/main/python/legalHold) [`Update`] fixed TypeError: 'int' object is not iterable
+* [`2026-02-09`] [smbPermissions.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/smbPermissions) [`Update`] added support for local users and groups
+* [`2026-02-06`] [sqlJobSelections.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/sqlJobSelections) [`Update`] added protection type column to output
 * [`2026-02-05`] [cloneVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneVM) [`Update`] remove debug statements
 * [`2026-02-05`] [ccsSlaMonitor.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/ccsSlaMonitor) [`New`] Monitor SLA violations in CCS
 * [`2026-02-03`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] added pauseCohesityAPIDebugger and resumeCohesityAPIDebugger functions
