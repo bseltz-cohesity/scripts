@@ -98,7 +98,7 @@ for objectname in objectnames:
                                 if 'objectBackupConfiguration' in protectedObject and protectedObject['objectBackupConfiguration'] is not None:
                                     if finalbackup and policyname is not None:
                                         protectedObject['objectBackupConfiguration']['policyId'] = policy[0]['id']
-                                        print(':)  %s: updating policy' % objectname)
+                                        print(':)  %s (%s): updating policy' % (objectname, protection['regionId']))
                                         updatedObject = api('put', 'data-protect/protected-objects/%s?regionId=%s' % (protection['objectId'], protection['regionId']), protectedObject['objectBackupConfiguration'], v=2)
                                     if finalbackup:
                                         runParams = {
@@ -106,7 +106,7 @@ for objectname in objectnames:
                                             "runNowParams": {
                                                 "objects": [
                                                     {
-                                                        "id": protection['objectId'],
+                                                        "id": protectedObject['id'],
                                                         "takeLocalSnapshotOnly": False
                                                     }
                                                 ]
@@ -125,7 +125,7 @@ for objectname in objectnames:
                                                         if protectionType == 'kSnapshotManager':
                                                             protectionType = 'kAWSSnapshotManager'
                                                     runParams['snapshotBackendTypes'].append(protectionType)
-                                        print(':)  %s: starting backup' % objectname)
+                                        print(':)  %s (%s): starting backup' % (objectname, protection['regionId']))
                                         runnow = api('post', 'data-protect/protected-objects/actions?regionId=%s' % protection['regionId'], runParams, v=2)
                                     if unprotect:
                                         activityParams = {
@@ -152,7 +152,7 @@ for objectname in objectnames:
                                         if result is not None and 'activity' in result and result['activity'] is not None and len(result['activity']) > 0:
                                             if 'archivalRunParams' in result['activity'][0] and result['activity'][0]['archivalRunParams'] is not None and 'status' in result['activity'][0]['archivalRunParams']:
                                                 if result['activity'][0]['archivalRunParams'] in badStates:
-                                                    print('X   %s: backup status: %s' % (objectname, result['activity'][0]['archivalRunParams']['status']))
+                                                    print('X   %s (%s): backup status: %s' % (objectname, protection['regionId'], result['activity'][0]['archivalRunParams']['status']))
                                                 if result['activity'][0]['archivalRunParams']['status'] in finishedStates:
                                                     backupCompleted = True
                                         if backupCompleted or nobackuprequired:
@@ -168,14 +168,14 @@ for objectname in objectnames:
                                                     ]
                                                 }
                                             }
-                                            print(':)  %s: unprotecting' % objectname)
+                                            print(':)  %s (%s): unprotecting' % (objectname, protection['regionId']))
                                             unprotect = api('post', 'data-protect/protected-objects/actions?regionId=%s' % protection['regionId'], unprotectParams, v=2)
                                         else:
-                                            print('X   %s: waiting for backup to complete' % objectname)
+                                            print('X   %s (%s): waiting for backup to complete' % (objectname, protection['regionId']))
                                 else:
-                                    print('    %s: not protected' % objectname)
+                                    print('    %s (%s): not protected' % (objectname, protection['regionId']))
                         else:
-                            print('    %s: not protected' % objectname)
+                            print('    %s (%s): not protected' % (objectname, protection['regionId']))
                 else:
                     print('    %s: not protected' % objectname)
         else:
