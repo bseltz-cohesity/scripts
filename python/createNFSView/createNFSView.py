@@ -136,15 +136,18 @@ if existingview is None:
 
     # find qos policy
     if qosPolicy is None:
-        qosPolicy = vt['viewParams']['qos']['principalName']
+        if 'principalName' in vt['viewParams']['qos']:
+            qosPolicy = vt['viewParams']['qos']['principalName']
+        else:
+            qosPolicy = vt['viewParams']['qos']['name']
     qosPolicies = api('get', 'qosPolicies')
-    qp = [qp for qp in qosPolicies if qp['name'].lower() == qosPolicy.lower()]
-
+    qp = [qp for qp in qosPolicies if qp['name'].lower() == qosPolicy.lower() or qp['name'].lower().replace(' ','') == qosPolicy.lower()]
     if len(qp) != 1:
         print("QOS policy %s not found!" % qosPolicy)
         print('Available QOS policies are:')
         [print('  %s' % t['name']) for t in sorted(qosPolicies, key=lambda t: t['name'])]
         exit()
+    qosPolicy = qp[0]['name']
 
     # find storage domain
     sd = [sd for sd in api('get', 'viewBoxes') if sd['name'].lower() == storageDomain.lower()]
@@ -211,10 +214,10 @@ else:
         exit(0)
 
 if qosPolicy is not None:
-    qp = [qp for qp in api('get', 'qosPolicies') if qp['name'].lower() == qosPolicy.lower()]
+    qp = [qp for qp in qosPolicies if qp['name'].lower() == qosPolicy.lower() or qp['name'].lower().replace(' ','') == qosPolicy.lower()]
 
     if len(qp) != 1:
-        print("QOS policy %s not found!" % storageDomain)
+        print("QOS policy %s not found!" % qosPolicy)
         exit()
 
     newView['qos'] = {
