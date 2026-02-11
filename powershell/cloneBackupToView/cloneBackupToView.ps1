@@ -211,7 +211,7 @@ $finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning', '3', '4', '
 if($waitForRun){
     "Waiting for Run Completion"
     while($True){
-        $runs = (api get "protectionRuns?jobId=$($job.id)&excludeNonRestoreableRuns=true&$runTail")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false}
+        $runs = (api get "protectionRuns?jobId=$($job.id)&excludeNonRestoreableRuns=true&$runTail") | Where-Object{ $_.backupRun.snapshotsDeleted -ne $True}
         if($runs -and $runs.Count -gt 0){
             if($runs[0].backupRun.status -in $finishedStates){
                 break
@@ -220,7 +220,7 @@ if($waitForRun){
         Start-Sleep 15
     }
 }else{
-    $runs = (api get "protectionRuns?jobId=$($job.id)&excludeNonRestoreableRuns=true&$runTail")  | Where-Object{ $_.backupRun.snapshotsDeleted -eq $false }
+    $runs = (api get "protectionRuns?jobId=$($job.id)&excludeNonRestoreableRuns=true&$runTail") | Where-Object{ $_.backupRun.snapshotsDeleted -ne $True }
 }
 
 if($lastRunOnly -and $runs.Count -gt 0){
