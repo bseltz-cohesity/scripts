@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script gathers ransomware anomalies and outputs to a CSV file.
+This script generates an HTML-formatted heatmap report for each Helios-connected cluster.
 
 ## Download the script
 
@@ -25,7 +25,7 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./heliosHeatMapReport.ps1 -username myuser@mydomain.net
+./heliosHeatMapReport.ps1
 ```
 
 ## Parameters
