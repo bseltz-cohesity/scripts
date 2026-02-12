@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-02-12`] [registerMongoDBOpsManager.py](https://github.com/cohesity/community-automation-samples/tree/main/python/registerMongoDBOpsManager) [`New`] register a MongoDB Ops Manager protection source
+* [`2026-02-11`] [createNFSView.py](https://github.com/cohesity/community-automation-samples/tree/main/python/createNFSView) [`Update`] fix QOS name 7.3.1
 * [`2026-02-11`] [cloneBackupToView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneBackupToView) [`Update`] update for runs list
 * [`2026-02-10`] [unprotectCcsObjects.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/unprotectCcsObjects) [`Update`] fix objectId issue
 * [`2026-02-10`] [overwriteView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/overwriteView) [`New`] overwrite a view
