@@ -69,6 +69,7 @@ To protect specific objects:
 * -el, --excludelist: (optional) text file of objects to exclude (one per line)
 * -r, --backuprole: (optional) 'SecondaryPreferred', 'PrimaryPreferred' or 'SecondaryOnly' (default is 'SecondaryPreferred')
 * -f, --incrementalonfailure: (optional) convert to full on node failure if omitted
+* -pn, --preferredbackupnode: (optional) preferred backup node (repeat for multiple)
 
 ## New Job Parameters
 

@@ -30,6 +30,7 @@ parser.add_argument('-fs', '--fullsla', type=int, default=120)          # full S
 parser.add_argument('-q', '--qospolicy', type=str, choices=['kBackupHDD', 'kBackupSSD', 'kBackupAll'], default='kBackupHDD')
 parser.add_argument('-r', '--backuprole', type=str, choices=['SecondaryPreferred', 'PrimaryPreferred', 'SecondaryOnly'], default='SecondaryPreferred')
 parser.add_argument('-f', '--incrementalonfailure', action='store_true')
+parser.add_argument('-pn','--preferredbackupnode',action='append', type=str) # preferredBackupNodes
 args = parser.parse_args()
 
 vip = args.vip
@@ -58,6 +59,7 @@ pause = args.pause
 qospolicy = args.qospolicy
 backuprole = args.backuprole
 incrementalonfailure = args.incrementalonfailure
+preferredbackupnodes = args.preferredbackupnode
 
 if noprompt is True:
     prompt = False
@@ -212,6 +214,8 @@ if not job or len(job) < 1:
             "preferredBackupNodes": None
         }
     }
+    if preferredbackupnodes is not None and len(preferredbackupnodes) > 0:
+        job['mongodbOpsParams']['preferredBackupNodes'] = ','.join(preferredbackupnodes)
 else:
     job = job[0]
 
