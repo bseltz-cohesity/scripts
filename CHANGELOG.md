@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-02-13`] [protectCcsM365GroupsCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365GroupsCSV) [`New`] new script variant to take input from CSV file
+* [`2026-02-13`] [protectCcsM365TeamsCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365TeamsCSV) [`New`] new script variant to take input from CSV file
 * [`2026-02-12`] [registerMongoDBOpsManager.py](https://github.com/cohesity/community-automation-samples/tree/main/python/registerMongoDBOpsManager) [`New`] register a MongoDB Ops Manager protection source
 * [`2026-02-11`] [createNFSView.py](https://github.com/cohesity/community-automation-samples/tree/main/python/createNFSView) [`Update`] fix QOS name 7.3.1
 * [`2026-02-11`] [cloneBackupToView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneBackupToView) [`Update`] update for runs list
