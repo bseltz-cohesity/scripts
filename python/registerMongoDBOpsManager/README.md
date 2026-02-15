@@ -52,11 +52,9 @@ Place both files in a folder together and run the main script like so:
 * -n, --hostname: name of source and primary host to register
 * -p, --port: TCP port number
 * -certfile, --certificatefile: (optional) path to file containing SSL certificate
-* -pubfile, --publickeyfile: (optional) path to file containing public key
-* -privfile, --privatekeyfile: (optional) path to file containing private key
 * -certificate, --certificate: (optional) certificate (string)
-* -pubkey, --publickey: (optional) public key (string)
-* -privkey, --privatekey: (optional) private key (string)
+* -pubkey, --publickey: public key (string)
+* -privkey, --privatekey: (optional) private key (string, will be prompted if omitted)
 
 ## Notes
 

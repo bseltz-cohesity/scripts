@@ -19,10 +19,8 @@ parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-n', '--hostname', required=True, type=str)
 parser.add_argument('-p', '--port', required=True, type=int)
 parser.add_argument('-certfile', '--certificatefile', type=str, default=None)
-parser.add_argument('-pubfile', '--publickeyfile', type=str, default=None)
-parser.add_argument('-privfile', '--privatekeyfile', type=str, default=None)
 parser.add_argument('-certificate', '--certificate', type=str, default=None)
-parser.add_argument('-pubkey', '--publickey', type=str, default=None)
+parser.add_argument('-pubkey', '--publickey',required=True, type=str)
 parser.add_argument('-privkey', '--privatekey', type=str, default=None)
 
 args = parser.parse_args()
@@ -43,8 +41,6 @@ hostname = args.hostname
 port = args.port
 
 certificatefile = args.certificatefile
-publickeyfile = args.publickeyfile
-privatekeyfile = args.privatekeyfile
 certificate = args.certificate
 publickey = args.publickey
 privatekey = args.privatekey
@@ -78,24 +74,8 @@ if certificate is not None or certificatefile is not None:
         certificate = c.read()
         c.close()
 
-if publickey is not None or publickeyfile is not None:
-    if publickeyfile is not None:
-        p = open(publickeyfile, 'r')
-        publickey = p.read()
-        p.close()
-
-if privatekey is not None or privatekeyfile is not None:
-    if privatekeyfile is not None:
-        k = open(privatekeyfile, 'r')
-        privatekey = k.read()
-        k.close()
-
 if privatekey is None:
-    print('private key required')
-    exit(1)
-if publickey is None:
-    print('publick key required')
-    exit(1)
+    privatekey = getpass("Please enter the private key: ")
 
 sourcename = '%s:%s' % (hostname, port)
 registeredSource = None
