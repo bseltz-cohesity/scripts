@@ -29,8 +29,7 @@ Place both files in a folder together and run the main script like so:
                                -d mydomain.net \
                                -n myopsmanager.mydomain.net \
                                -p 8080 \
-                               -pubfile mypublickey.pem \
-                               -privfile myprivatekey.pem
+                               -pubkey abcdefgh
 ```
 
 ## Authentication Parameters
@@ -58,6 +57,4 @@ Place both files in a folder together and run the main script like so:
 
 ## Notes
 
-You must provide the public and private keys using one of the command line parameters (for each key, there is a parameter to use a string or a file).
-
-To enable SSL, provide a certificate using one of the command line parameters (there is a parameter to use a string or a file).
+To enable SSL, provide a certificate using one of the command line parameters (-certfile or -certificate).
