@@ -43,7 +43,7 @@ To restore a cluster to a new location:
                               -d mydomain.net \
                               -s myopsmanager1.mydomain.net \
                               -n mycluster1 \
-                              -to 'myopsmanager2.mydomain.net/organization 0/project 0/mycluster1'
+                              -to 'myopsmanager2.mydomain.net/organization 0/project 0/mycluster1' \
                               -l \
                               -w
 ```
