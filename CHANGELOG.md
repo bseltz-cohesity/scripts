@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-02-16`] [restoreMongoDBOpsManager.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restoreMongoDBOpsManager) [`New`] restore MongoDB Ops Manager
+* [`2026-02-16`] [powershell_compatible_cleanup_script.ps1](https://github.com/cohesity/community-automation-samples/tree/main/cloud/cleanupSnapshots) [`Update`] code update
 * [`2026-02-13`] [protectMongoDBOpsManager.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectMongoDBOpsManager) [`New`] protect MongoDB Ops Manager
 * [`2026-02-13`] [protectCcsM365GroupsCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365GroupsCSV) [`New`] new script variant to take input from CSV file
 * [`2026-02-13`] [protectCcsM365TeamsCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365TeamsCSV) [`New`] new script variant to take input from CSV file
