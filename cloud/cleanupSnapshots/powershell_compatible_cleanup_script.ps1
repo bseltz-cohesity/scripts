@@ -49,7 +49,7 @@ catch {
 }
 
 # Prompt the user for the number of days
-$n = Read-Host -Prompt "Enter the number of days for snapshots to be older than"
+[int]$n = Read-Host -Prompt "Enter the number of days for snapshots to be older than"
 
 # Prompt the user for the Job ID (optional)
 $jobId = Read-Host -Prompt "Enter Job ID (optional)"
@@ -104,7 +104,7 @@ if ($snapshotsToDelete.Count -gt 0) {
         # Delete the snapshots
         foreach ($snapshotId in $snapshotsToDelete) {
           try {
-            Remove-AzSnapshot -ResourceId $snapshotId -Force -ErrorAction Stop
+            Remove-AzResource -ResourceId $snapshotId -Force -ErrorAction Stop
             log_info "Deleted snapshot $snapshotId"
           }
           catch {
