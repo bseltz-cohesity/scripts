@@ -66,7 +66,7 @@ log_info "Threshold date calculated as $([DateTimeOffset]::FromUnixTimeSeconds($
 if (-not [string]::IsNullOrEmpty($jobId)) {
     log_info "Fetching snapshots with 'cohesity-tag' and Job ID: $jobId"
     $snapshots = Get-AzSnapshot | Where-Object {
-        $_.Tags['cohesity-tag'] -ne $null -and $_.TimeCreated -ne $null -and $_.Tags['cohesity-tag'] -like "*_${jobId}_*"
+        $_.Tags['cohesity-tag'] -ne $null -and $_.TimeCreated -ne $null -and $_.Tags['cohesity-tag'] -like "*${jobId}*"
     } | Select-Object -Property Id, TimeCreated
 } else {
     log_info "Fetching all snapshots with 'cohesity-tag'"
