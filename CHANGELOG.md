@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-02-18`] [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Update`] updated -dbg to functionality
 * [`2026-02-16`] [restoreMongoDBOpsManager.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restoreMongoDBOpsManager) [`New`] restore MongoDB Ops Manager
 * [`2026-02-16`] [powershell_compatible_cleanup_script.ps1](https://github.com/cohesity/community-automation-samples/tree/main/cloud/cleanupSnapshots) [`Update`] code update
 * [`2026-02-13`] [protectMongoDBOpsManager.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectMongoDBOpsManager) [`New`] protect MongoDB Ops Manager
