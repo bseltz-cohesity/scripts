@@ -96,6 +96,9 @@ scripttimeout = args.scripttimeout
 dbg = args.dbg
 dontskipclonenid = args.dontskipclonenid
 
+if dbg:
+    enableCohesityAPIDebugger()
+
 # gather server list
 def gatherList(param=None, filename=None, name='items', required=True):
     items = []
@@ -433,13 +436,13 @@ if prescript is not None or postscript is not None:
         }
 
 # debug output API payload
-if dbg:
-    display(cloneParams)
-    dbgoutput = codecs.open('./ora-clone.json', 'w')
-    json.dump(cloneParams, dbgoutput)
-    dbgoutput.close()
-    print('\nWould clone %s/%s to %s/%s' % (sourceserver, sourcedb, targetserver, targetdb))
-    exit(0)
+# if dbg:
+#     display(cloneParams)
+#     dbgoutput = codecs.open('./ora-clone.json', 'w')
+#     json.dump(cloneParams, dbgoutput)
+#     dbgoutput.close()
+#     print('\nWould clone %s/%s to %s/%s' % (sourceserver, sourcedb, targetserver, targetdb))
+#     exit(0)
 
 ### execute the clone task
 response = api('post', '/cloneApplication', cloneParams)
