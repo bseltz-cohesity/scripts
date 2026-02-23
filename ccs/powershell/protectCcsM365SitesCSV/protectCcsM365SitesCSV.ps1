@@ -15,7 +15,6 @@ param (
 )
 
 $objectsToAdd = Import-Csv -Path $csvFile # -Encoding utf8
-
 if($objectsToAdd.Count -eq 0){
     Write-Host "No sites specified" -ForegroundColor Yellow
     exit
@@ -79,7 +78,76 @@ function indexObject($obj){
         }else{
             $script:unprotectedIndex = @($script:unprotectedIndex + $objectProtectionInfo.objectId)
         }
+        $source = api get "protectionSources?id=$($objectProtectionInfo.objectId)&regionId=$region"
+        if($source -ne $null -and $source.PSObject.Properties['nodes']){
+            foreach($node in $source.nodes){
+                $objectsToAdd = @($objectsToAdd + @{'name' = $node.protectionSource.office365ProtectionSource.name; 'webUrl' = $node.protectionSource.office365ProtectionSource.webUrl})
+                $script:nameIndex[$node.protectionSource.office365ProtectionSource.name] = $node.protectionSource.id
+                $script:idIndex["$($node.protectionSource.id)"] = $node.protectionSource.office365ProtectionSource.name
+                $script:webUrlIndex[$node.protectionSource.office365ProtectionSource.webUrl] = $node.protectionSource.id
+                if($node.unprotectedSourcesSummary[0].leavesCount -gt 0){
+                    $script:unprotectedIndex = @($script:unprotectedIndex + $node.protectionSource.id)
+                    protectObject $node.protectionSource.office365ProtectionSource.webUrl $node.protectionSource.id
+                }else{
+                    $script:protectedCount += 1
+                }
+            }
+        }
     }
+}
+
+function protectObject($objWebUrl, $objId){
+    $protectionParams = @{
+        "policyId"         = "";
+        "startTime"        = @{
+            "hour"     = [int64]$hour;
+            "minute"   = [int64]$minute;
+            "timeZone" = $timeZone
+        };
+        "priority"         = "kMedium";
+        "sla"              = @(
+            @{
+                "backupRunType" = "kFull";
+                "slaMinutes"    = $fullSlaMinutes
+            };
+            @{
+                "backupRunType" = "kIncremental";
+                "slaMinutes"    = $incrementalSlaMinutes
+            }
+        );
+        "qosPolicy"        = "kBackupSSD";
+        "abortInBlackouts" = $false;
+        "objects"          = @(
+            @{
+                "environment" = "kO365Sharepoint";
+                "office365Params" = @{
+                    "objectProtectionType"              = "kSharePoint";
+                    "sharepointSiteObjectProtectionParams" = @{
+                        "objects"        = @(
+                            @{
+                                "id" = $objId;
+                                "shouldAutoProtectObject" = $false
+                            }
+                        );
+                        "indexingPolicy" = @{
+                            "enableIndexing" = $true;
+                            "includePaths"   = @(
+                                "/"
+                            );
+                            "excludePaths"   = @()
+                        }
+                    }
+                }
+            }
+        )
+    }
+    if($useMBS){
+        $protectionParams.objects[0].environment = "kO365SharepointCSM"
+    }else{
+        $protectionParams.policyId = $policy.id
+    }
+    Write-Host "Protecting $objWebUrl"
+    $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
 }
 
 foreach($obj in $objectsToAdd){
@@ -102,57 +170,7 @@ foreach($obj in $objectsToAdd){
         }
     }
     if($objId -and $objId -in $script:unprotectedIndex){
-        $protectionParams = @{
-            "policyId"         = "";
-            "startTime"        = @{
-                "hour"     = [int64]$hour;
-                "minute"   = [int64]$minute;
-                "timeZone" = $timeZone
-            };
-            "priority"         = "kMedium";
-            "sla"              = @(
-                @{
-                    "backupRunType" = "kFull";
-                    "slaMinutes"    = $fullSlaMinutes
-                };
-                @{
-                    "backupRunType" = "kIncremental";
-                    "slaMinutes"    = $incrementalSlaMinutes
-                }
-            );
-            "qosPolicy"        = "kBackupSSD";
-            "abortInBlackouts" = $false;
-            "objects"          = @(
-                @{
-                    "environment" = "kO365Sharepoint";
-                    "office365Params" = @{
-                        "objectProtectionType"              = "kSharePoint";
-                        "sharepointSiteObjectProtectionParams" = @{
-                            "objects"        = @(
-                                @{
-                                    "id" = $objId;
-                                    "shouldAutoProtectObject" = $false
-                                }
-                            );
-                            "indexingPolicy" = @{
-                                "enableIndexing" = $true;
-                                "includePaths"   = @(
-                                    "/"
-                                );
-                                "excludePaths"   = @()
-                            }
-                        }
-                    }
-                }
-            )
-        }
-        if($useMBS){
-            $protectionParams.objects[0].environment = "kO365SharepointCSM"
-        }else{
-            $protectionParams.policyId = $policy.id
-        }
-        Write-Host "Protecting $objWebUrl"
-        $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
+        protectObject $objWebUrl $objId
     }elseif($objId -and $objId -notin $script:unprotectedIndex){
         Write-Host "Site $objWebUrl already protected" -ForegroundColor Magenta
     }else{
