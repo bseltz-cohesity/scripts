@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-02-23`] [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Update`] fixed snapshot selection
+* [`2026-02-20`] [backupGitHub-mirror.sh](https://github.com/cohesity/community-automation-samples/tree/main/remoteAdapter/backupGitHub) [`New`] Backup GitHub using --mirror option
 * [`2026-02-18`] [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Update`] updated -dbg to functionality
 * [`2026-02-16`] [restoreMongoDBOpsManager.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restoreMongoDBOpsManager) [`New`] restore MongoDB Ops Manager
 * [`2026-02-16`] [powershell_compatible_cleanup_script.ps1](https://github.com/cohesity/community-automation-samples/tree/main/cloud/cleanupSnapshots) [`Update`] code update
