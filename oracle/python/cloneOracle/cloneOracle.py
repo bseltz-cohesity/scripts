@@ -168,11 +168,13 @@ if targetEntity is None:
 versionNum = 0
 validLogTime = False
 
+dbversions = sorted(dbversions, key=lambda version: version['snapshotTimestampUsecs'], reverse=True)
+
 if logtime is not None or latest is True:
     if logtime is not None:
         logusecs = dateToUsecs(logtime)
 
-    for version in sorted(dbversions, key=lambda version: version['snapshotTimestampUsecs'], reverse=True):
+    for version in dbversions: #sorted(dbversions, key=lambda version: version['snapshotTimestampUsecs'], reverse=True):
         doc = version['doc']
         ownerId = doc['objectId']['entity']['oracleEntity']['ownerId']
         # find db date before log time
@@ -366,8 +368,6 @@ else:
     if logtime is not None:
         print('LogTime of %s is out of range' % logtime)
         print('Cloning from snapshot date: %s' % usecsToDate(version['instanceId']['jobStartTimeUsecs']))
-        # print('Available range is %s to %s' % (usecsToDate(logStart), usecsToDate(logEnd)))
-        # exit(1)
 
 # get existing pfileparams
 if 'oracleDbConfig' not in cloneParams['restoreAppParams']['restoreAppObjectVec'][0]['restoreParams']['oracleRestoreParams']['alternateLocationParams']:
@@ -434,15 +434,6 @@ if prescript is not None or postscript is not None:
                 "timeoutSecs": scripttimeout
             }
         }
-
-# debug output API payload
-# if dbg:
-#     display(cloneParams)
-#     dbgoutput = codecs.open('./ora-clone.json', 'w')
-#     json.dump(cloneParams, dbgoutput)
-#     dbgoutput.close()
-#     print('\nWould clone %s/%s to %s/%s' % (sourceserver, sourcedb, targetserver, targetdb))
-#     exit(0)
 
 ### execute the clone task
 response = api('post', '/cloneApplication', cloneParams)
