@@ -68,6 +68,24 @@ $script:idIndex = @{}
 $script:unprotectedIndex = @()
 $script:protectedCount = 0
 
+function protectNodes($source){
+    if($source -ne $null -and $source.PSObject.Properties['nodes']){
+        foreach($node in $source.nodes){
+            $script:nameIndex[$node.protectionSource.office365ProtectionSource.name] = $node.protectionSource.id
+            $script:idIndex["$($node.protectionSource.id)"] = $node.protectionSource.office365ProtectionSource.name
+            $script:webUrlIndex[$node.protectionSource.office365ProtectionSource.webUrl] = $node.protectionSource.id
+            if($node.unprotectedSourcesSummary[0].leavesCount -gt 0){
+                $script:unprotectedIndex = @($script:unprotectedIndex + $node.protectionSource.id)
+                protectObject $node.protectionSource.office365ProtectionSource.webUrl $node.protectionSource.id
+            }else{
+                $script:protectedCount += 1
+                Write-Host "Site $($node.protectionSource.office365ProtectionSource.webUrl) already protected" -ForegroundColor Magenta
+            }
+            protectNodes $node
+        }
+    }
+}
+
 function indexObject($obj){
     foreach($objectProtectionInfo in $obj.objectProtectionInfos | Where-Object {$_.regionId -eq $region -and $_.sourceId -eq $rootSourceId}){
         $script:nameIndex[$obj.name] = $objectProtectionInfo.objectId
@@ -79,20 +97,7 @@ function indexObject($obj){
             $script:unprotectedIndex = @($script:unprotectedIndex + $objectProtectionInfo.objectId)
         }
         $source = api get "protectionSources?id=$($objectProtectionInfo.objectId)&regionId=$region"
-        if($source -ne $null -and $source.PSObject.Properties['nodes']){
-            foreach($node in $source.nodes){
-                $script:nameIndex[$node.protectionSource.office365ProtectionSource.name] = $node.protectionSource.id
-                $script:idIndex["$($node.protectionSource.id)"] = $node.protectionSource.office365ProtectionSource.name
-                $script:webUrlIndex[$node.protectionSource.office365ProtectionSource.webUrl] = $node.protectionSource.id
-                if($node.unprotectedSourcesSummary[0].leavesCount -gt 0){
-                    $script:unprotectedIndex = @($script:unprotectedIndex + $node.protectionSource.id)
-                    protectObject $node.protectionSource.office365ProtectionSource.webUrl $node.protectionSource.id
-                }else{
-                    $script:protectedCount += 1
-                    Write-Host "Site $($node.protectionSource.office365ProtectionSource.webUrl) already protected" -ForegroundColor Magenta
-                }
-            }
-        }
+        protectNodes $source
     }
 }
 
