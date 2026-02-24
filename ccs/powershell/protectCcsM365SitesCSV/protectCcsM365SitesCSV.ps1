@@ -81,7 +81,6 @@ function indexObject($obj){
         $source = api get "protectionSources?id=$($objectProtectionInfo.objectId)&regionId=$region"
         if($source -ne $null -and $source.PSObject.Properties['nodes']){
             foreach($node in $source.nodes){
-                $objectsToAdd = @($objectsToAdd + @{'name' = $node.protectionSource.office365ProtectionSource.name; 'webUrl' = $node.protectionSource.office365ProtectionSource.webUrl})
                 $script:nameIndex[$node.protectionSource.office365ProtectionSource.name] = $node.protectionSource.id
                 $script:idIndex["$($node.protectionSource.id)"] = $node.protectionSource.office365ProtectionSource.name
                 $script:webUrlIndex[$node.protectionSource.office365ProtectionSource.webUrl] = $node.protectionSource.id
@@ -90,6 +89,7 @@ function indexObject($obj){
                     protectObject $node.protectionSource.office365ProtectionSource.webUrl $node.protectionSource.id
                 }else{
                     $script:protectedCount += 1
+                    Write-Host "Site $($node.protectionSource.office365ProtectionSource.webUrl) already protected" -ForegroundColor Magenta
                 }
             }
         }
