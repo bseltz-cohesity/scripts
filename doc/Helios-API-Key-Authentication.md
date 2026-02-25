@@ -4,7 +4,7 @@ When connecting to Helios, we use API Key authentication. Here's how to create a
 
 ## Create an API Key
 
-Log into Helios with your web broswer, then:
+Log into Helios with your web browser, then:
 
 1. Go to Settings -> Access Management -> API Keys
 2. Click Add API Key
