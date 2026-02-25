@@ -260,22 +260,24 @@ else:
 for thisvmname in vmnames:
     vm = getObjectId(thisvmname)
     if vm is not None:
-        if vm['id'] not in [o['id'] for o in job['acropolisParams']['objects']]:
-            newobject = {
-                "excludeDisks": None,
-                "id": vm['id'],
-                "name": vm['name'],
-                "isAutoprotected": False
-            }
-            if excludedisks is not None and len(excludedisks) > 0:
-                newobject['excludeDisks'] = []
-                for x in excludedisks:
-                    (controllerType, unitNumber) = x.split(':')
-                    newobject['excludeDisks'].append({
-                        "controllerType": controllerType,
-                        "unitNumber": int(unitNumber)
-                    })
-            job['acropolisParams']['objects'].append(newobject)
+        # if vm['id'] not in [o['id'] for o in job['acropolisParams']['objects']]:
+        newobject = {
+            "excludeDisks": None,
+            "id": vm['id'],
+            "name": vm['name'],
+            "isAutoprotected": False
+        }
+        if excludedisks is not None and len(excludedisks) > 0:
+            newobject['excludeDisks'] = []
+            for x in excludedisks:
+                (controllerType, unitNumber) = x.split(':')
+                newobject['excludeDisks'].append({
+                    "controllerType": controllerType,
+                    "unitNumber": int(unitNumber)
+                })
+        job['acropolisParams']['objects'] = [o for o in job['acropolisParams']['objects'] if o['id'] != vm['id']]
+        job['acropolisParams']['objects'].append(newobject)
+
         print('    protecting %s' % thisvmname)
     else:
         print('    warning: %s not found' % thisvmname)
