@@ -11,7 +11,7 @@ Log into Helios with your web browser, then:
 3. Enter an arbitrary name for your new API Key
 4. Click Save
 
-You will have one chance to copy or download the new API key (it will not be visible again once you navigate away from the page). Once you have created your API key, you can use the API Key for authentication. For example:
+Copy the API Key (token) from the resulting web page. You will have one chance to copy or download the new API key (it will not be visible again once you navigate away from the page). Once you have created your API key, you can use the API Key for authentication. For example:
 
 ## Using an API Key for Authentication
 
