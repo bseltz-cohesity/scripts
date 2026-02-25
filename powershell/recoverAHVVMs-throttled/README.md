@@ -56,6 +56,7 @@ Place the files in a folder together and run the main script like so:
 * -storageContainer: (optional) storage container to recover the VM to
 * -poweron: (optional) power on the VMs during restore (default is false)
 * -detachNetwork: (optional) leave VM network disconnected (default is false)
+* -preserveMacAddress: (optional) reserve Mac address when recovering to new location
 * -vlan: (optional) vlan ID to choose for restore (cluster interface)
 * -noPrompt: (optional) Don't prompt to confirm
 * -maxConcurrentVMRestores: (optional) default is 10
