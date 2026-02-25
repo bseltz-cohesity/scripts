@@ -38,7 +38,7 @@ param (
     [Parameter()][switch]$lastRunOnly,
     [Parameter()][Int64]$daysToKeep = 0,
     [Parameter()][switch]$waitForRun, 
-    [Parameter()][Int64]$numRuns = 10000,
+    [Parameter()][Int64]$numRuns = 1000,
     [Parameter()][array]$ips,                         # optional cidrs to add (comma separated)
     [Parameter()][string]$ipList = '',                # optional textfile of cidrs to add
     [Parameter()][switch]$rootSquash,                 # whether whitelist entries should use root squash
@@ -190,7 +190,7 @@ if($refreshView){
 }
 
 # find job
-$job = api get protectionJobs&environments=kSQL | Where-Object name -eq $jobName
+$job = api get protectionJobs | Where-Object name -eq $jobName
 if(!$job){
     Write-Host "Job $jobName not found" -ForegroundColor Yellow
     exit 1
@@ -200,6 +200,7 @@ $job = ($job | Sort-Object id)[-1]
 $storageDomainId = $job.viewBoxId
 
 # get runs
+$daysToKeepUsecs = 0
 If($daysToKeep -gt 0){
     $daysToKeepUsecs = timeAgo $daysToKeep days
     $runTail = "numRuns=$numRuns&startTimeUsecs=$daysToKeepUsecs"
@@ -220,7 +221,8 @@ if($waitForRun){
         Start-Sleep 15
     }
 }else{
-    $runs = (api get "protectionRuns?jobId=$($job.id)&excludeNonRestoreableRuns=true&$runTail") | Where-Object{! $_.PSObject.Properties['isLocalSnapshotsDeleted'] -or $_.isLocalSnapshotsDeleted -ne $True}
+    Write-Host "Gathering runs..."
+    $runs = Get-Runs -jobId $job.id -numRuns $numRuns -startTimeUsecs $daysToKeepUsecs
 }
 
 if($lastRunOnly -and $runs.Count -gt 0){
@@ -236,9 +238,10 @@ if($lastRunId){
 }
 
 if($listRuns){
-    $runs | Select-Object -Property @{label='runId'; expression={$_.backupRun.jobRunId}}, 
+    $runs | Select-Object -Property @{label='runId'; expression={$_.backupRun.jobRunId}},
                                     @{label='runDate'; expression={usecsToDate $_.backupRun.stats.startTimeUsecs}},
-                                    @{label='runType'; expression={$_.backupRun.runType.substring(1)}}                                    
+                                    @{label='runType'; expression={$_.backupRun.runType.substring(1)}}
+    "`n$($runs.Count) runs found"
     exit 0
 }
 
