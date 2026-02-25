@@ -1,5 +1,10 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-02-25`] [protectAHVVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectAHVVMs) [`Update`] update disk exclusions for already protected VMs
+* [`2026-02-25`] [protectAHVVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectAHVVMs) [`Update`] update disk exclusions for already protected VMs
+* [`2026-02-24`] [cloneBackupToView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneBackupToView) [`Update`] updated runs query
+* [`2026-02-24`] [clusterProtectionRuns.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterProtectionRuns) [`Update`] added snapshot expiration date
+* [`2026-02-24`] [protectCcsM365SitesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365SitesCSV) [`Update`] protect sub-sites
 * [`2026-02-23`] [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Update`] fixed snapshot selection
 * [`2026-02-20`] [backupGitHub-mirror.sh](https://github.com/cohesity/community-automation-samples/tree/main/remoteAdapter/backupGitHub) [`New`] Backup GitHub using --mirror option
 * [`2026-02-18`] [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Update`] updated -dbg to functionality
