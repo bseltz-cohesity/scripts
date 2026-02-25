@@ -23,7 +23,8 @@ param (
     [Parameter()][string]$storageDomainName = 'DefaultStorageDomain',
     [Parameter()][string]$policyName,
     [Parameter()][switch]$paused,
-    [Parameter()][ValidateSet('kBackupHDD', 'kBackupSSD')][string]$qosPolicy = 'kBackupHDD'
+    [Parameter()][ValidateSet('kBackupHDD', 'kBackupSSD')][string]$qosPolicy = 'kBackupHDD',
+    [Parameter()][array]$excludeDisk
 )
 
 # source the cohesity-api helper code
@@ -97,17 +98,7 @@ if($USING_HELIOS){
 # end authentication =========================================
 
 # get registered AWS source
-$sources = api get "protectionSources/rootNodes?environments=kAcropolis" # | Where-Object {$_.protectionSource.name -eq $sourceName}
-# if(!$source){
-#     Write-Host "Hyper-V protection source '$sourceName' not found" -ForegroundColor Yellow
-#     exit
-# }
-
-# $sourceId = $source.protectionSource.id
-# $sourceName = $source.protectionSource.name
-
-# get the protectionJob
-# Write-Host "`nLooking for existing protection job..."
+$sources = api get "protectionSources/rootNodes?environments=kAcropolis"
 $job = (api get -v2 "data-protect/protection-groups?environments=kAcropolis").protectionGroups | Where-Object {$_.name -eq $jobName}
 
 if(! $job){
@@ -253,10 +244,24 @@ foreach($vm in $vmnames){
     $vmid = getObjectId $vm $source
     if($vmid){
         Write-Host "    Protecting '$vm'"
-        $existingObject = $job.acropolisParams.objects | Where-Object {$_.id -eq $vmid}
-        if(! $existingObject){
-            $job.acropolisParams.objects = @($job.acropolisParams.objects + @{"id" = $vmid; "name" = $vm})
+        $newObject = @{
+            "id" = $vmid;
+            "name" = $vm;
+            "isAutoprotected" = $False;
+            "excludeDisks" = $null
         }
+        if(@($excludeDisk).Count -gt 0){
+            $newObject.excludeDisks = @()
+            foreach($disk in $excludeDisk){
+                $controllerType, $unitNumber = $disk -split ':'
+                $newObject.excludeDisks = @($newObject.excludeDisks + @{
+                    "controllerType" = $controllerType;
+                    "unitNumber" = [int]$unitNumber
+                })
+            }
+        }
+        $job.acropolisParams.objects = @($job.acropolisParams.objects | Where-Object {$_.id -ne $vmid})
+        $job.acropolisParams.objects = @($job.acropolisParams.objects + $newObject)
     }else{
         Write-Host "    VM '$vm' not found" -ForegroundColor Yellow
     }
