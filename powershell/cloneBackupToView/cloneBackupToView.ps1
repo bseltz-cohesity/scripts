@@ -21,6 +21,7 @@ param (
     [Parameter()][string]$clusterName,
     [Parameter()][array]$access,
     [Parameter()][string]$objectName,
+    [Parameter()][string]$environment,
     [Parameter()][string]$jobName,
     [Parameter()][string]$dirPath = '/',
     [Parameter()][string]$viewName,
@@ -82,6 +83,21 @@ if($USING_HELIOS){
 }
 # end authentication =========================================
 
+if($objectName -and !$jobName){
+    if($environment){
+        $search = api get -v2 "data-protect/search/protected-objects?searchString=$objectName&environments=$environment"
+    }else{
+        $search = api get -v2 "data-protect/search/protected-objects?searchString=$objectName"
+    }    
+    $search.objects = @($search.objects | Where-Object name -eq $objectName)
+    if(@($search.objects).Count -eq 0){
+        Write-Host "$objectName not found" -ForegroundColor Yellow
+        exit 1
+    }else{
+        $latestSnapshot = @($search.objects[0].latestSnapshotsInfo | Sort-Object -Property runInstanceId)[-1]
+        $jobName = $latestSnapshot.protectionGroupName
+    }
+}
 
 # gather list from command line params and file
 function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
@@ -222,7 +238,7 @@ if($waitForRun){
     }
 }else{
     Write-Host "Gathering runs..."
-    $runs = Get-Runs -jobId $job.id -numRuns $numRuns -startTimeUsecs $daysToKeepUsecs
+    $runs = Get-Runs -jobId $job.id -numRuns $numRuns -startTimeUsecs $daysToKeepUsecs -includeObjectDetails
 }
 
 if($lastRunOnly -and $runs.Count -gt 0){
