@@ -97,6 +97,9 @@ if($objectName -and !$jobName){
         $latestSnapshot = @($search.objects[0].latestSnapshotsInfo | Sort-Object -Property runInstanceId)[-1]
         $jobName = $latestSnapshot.protectionGroupName
     }
+    if(!$viewName){
+        $viewName = "$objectName".Replace(' ','-').Replace('.','-')
+    }
 }
 
 # gather list from command line params and file
