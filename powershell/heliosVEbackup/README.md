@@ -29,7 +29,7 @@ $scriptName = 'backupNow'
 
 ## Configuring the Scripts
 
-Place both files in a folder together. Then edit the top sections of heliosVEbackup.ps1 to match your environment:
+Place all three script files in a folder together. Then edit the top sections of heliosVEbackup.ps1 to match your environment:
 
 ```powershell
 # vSphere parameters
