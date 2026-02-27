@@ -22,7 +22,6 @@ param (
     [Parameter()][string]$prefix = '',
     [Parameter()][int]$vlan,
     [Parameter()][switch]$detachNetwork,
-    [Parameter()][switch]$preserveMacAddress,
     [Parameter()][switch]$poweron, # leave powered off by default
     [Parameter()][switch]$wait, # wait for restore tasks to complete
     [Parameter()][switch]$noPrompt,
@@ -167,10 +166,6 @@ if($ahvSourceName){
                 "id" = $network[0].id
             };
             "detatchNetwork"     = $False;
-            "preserveMacAddress" = $False
-        }
-        if($preserveMacAddress){
-            $restoreParams.acropolisParams.recoverVmParams.acropolisTargetParams.recoveryTargetConfig.newSourceConfig.networkConfig.preserveMacAddress = $True
         }
     }
 }else{
