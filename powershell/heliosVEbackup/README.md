@@ -126,3 +126,16 @@ For example, create a Windows Task Scheduler task that starts a program every ni
 * Start In: c:\scripts\powershell
 
 `Note:` vCenter credential XML is encrypted by the currenty logged on Windows user that created it, so the same Windows user must run the scheduled task (a different Windows user will not be ble to decrypt the password). Also, the API key and cohesity password that were stored (for later unattended use) when we tested the script - were stored in the current Windows user's registry. If we use a `different user` to run the scheduled task, then that user will not have these secrets stored in their registry, so the script will prompt for input in the background and will appear to be hung.
+
+## Restoring Helios Self-Managed
+
+To perform a restore, make sure the existing Helios VMs are shut down. Then we can restore `ALL` of the Helios VMs from a previous backup, using the Cohesity UI.
+
+`Data Loss:` restoring Helios from a previous backup means that anything that occurred after the selected backup will be lost (e.g. reporting entries, access management and other operational configuration changes).
+
+`Preserve MAC Addresses:` The restored VMs must use the same MAC addresses as the original Helios VMs, otherwise the network connections will fail. You can do one of the following:
+
+* Use the "restore to alternate location" in the Cohesity UI, which lets you specify "preserve MAC address"
+* If you "restore to original location" you may end up with new MAC addresses. In this case, you can refer to the backup log file which recorded the original MAC addresses, and use these to reconfigure the restored VMs.
+
+`Copy Recovery vs Instant Recovery`: Copy Recovery is recommended, since these are large VMs, so the restore speed will benefit from the parallel restore tasks of Copy Recovery.
