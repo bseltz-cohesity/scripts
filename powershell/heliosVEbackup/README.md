@@ -135,7 +135,8 @@ To perform a restore, make sure the existing Helios VMs are shut down. Then we c
 
 `Preserve MAC Addresses:` The restored VMs must use the same MAC addresses as the original Helios VMs, otherwise the network connections will fail. You can do one of the following:
 
-* Use the "restore to alternate location" in the Cohesity UI, which lets you specify "preserve MAC address"
-* If you "restore to original location" you may end up with new MAC addresses. In this case, you can refer to the backup log file which recorded the original MAC addresses, and use these to reconfigure the restored VMs.
+* If you "restore to alternate location" (i.e. disaster recovery), specify "preserve MAC address".
+* If you "restore to original location" and the original Helios VMs are still present, use "differential recovery" which will be faster than full recovery, and the MAC addresses will be preserved.
+* If you "restore to original location" and you don't use differential recovery, you may end up with new MAC addresses. In this case, you can refer to the backup log file which recorded the original MAC addresses, and use these to reconfigure the restored VMs.
 
 `Copy Recovery vs Instant Recovery`: Copy Recovery is recommended, since these are large VMs, so the restore speed will benefit from the parallel restore tasks of Copy Recovery.
