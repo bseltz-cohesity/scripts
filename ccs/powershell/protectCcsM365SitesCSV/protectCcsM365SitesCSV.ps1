@@ -162,11 +162,11 @@ function protectObject($objWebUrl, $objId){
     }else{
         $protectionParams.policyId = $policy.id
     }
-    if($objId -notin $script:notClassic){
+    if($objId -in $script:notClassic){
+        Write-Host "Skipping $objWebUrl (Team/Group Site)" -ForegroundColor Magenta
+    }else{
         Write-Host "Protecting $objWebUrl"
         $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
-    }else{
-        Write-Host "Skipping $objWebUrl (Team/Group Site)" -ForegroundColor Magenta
     }
 }
 
