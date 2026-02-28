@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-02-28`] [protectCcsM365SitesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365SitesCSV) [`Update`] skip group/team sites
+* [`2026-02-27`] [recoverAHVVMs-throttledV2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverAHVVMs-throttled) [`Update`] 7.3.2 update to support preserve MAC address
+* [`2026-02-27`] [recoverAHVVMsV2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverAHVVMs) [`Update`] 7.3.2 update to support preserve MAC address
+* [`2026-02-27`] [heliosVEbackup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/heliosVEbackup) [`New`] backup Helios virtual edition VMs
 * [`2026-02-25`] [recoverAHVVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverAHVVMs) [`Update`] added preserve Mac address option
 * [`2026-02-25`] [recoverAHVVMs-throttled.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverAHVVMs-throttled) [`Update`] added preserve Mac address option
 * [`2026-02-25`] [cloneBackupToView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneBackupToView) [`Update`] added object search
