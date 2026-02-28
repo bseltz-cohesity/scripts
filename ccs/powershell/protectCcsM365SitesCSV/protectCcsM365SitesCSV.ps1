@@ -66,6 +66,7 @@ $script:nameIndex = @{}
 $script:webUrlIndex = @{}
 $script:idIndex = @{}
 $script:unprotectedIndex = @()
+$script:notClassic = @()
 $script:protectedCount = 0
 
 function protectNodes($source){
@@ -74,6 +75,11 @@ function protectNodes($source){
             $script:nameIndex[$node.protectionSource.office365ProtectionSource.name] = $node.protectionSource.id
             $script:idIndex["$($node.protectionSource.id)"] = $node.protectionSource.office365ProtectionSource.name
             $script:webUrlIndex[$node.protectionSource.office365ProtectionSource.webUrl] = $node.protectionSource.id
+            if($node.protectionSource.office365ProtectionSource.PSObject.Properties['siteInfo']){
+                if($node.protectionSource.office365ProtectionSource.siteInfo.isGroupSite -eq $True -or $node.protectionSource.office365ProtectionSource.siteInfo.isTeamSite -eq $True){
+                    $script:notClassic = @($script:notClassic + $node.protectionSource.id)
+                }
+            }
             if($node.unprotectedSourcesSummary[0].leavesCount -gt 0){
                 $script:unprotectedIndex = @($script:unprotectedIndex + $node.protectionSource.id)
                 protectObject $node.protectionSource.office365ProtectionSource.webUrl $node.protectionSource.id
@@ -95,6 +101,11 @@ function indexObject($obj){
             $script:protectedCount += 1
         }else{
             $script:unprotectedIndex = @($script:unprotectedIndex + $objectProtectionInfo.objectId)
+        }
+        if($obj.sharepointParams.PSObject.Properties['isGroupSite'] -and $obj.sharepointParams.isGroupSite -eq $True){
+            $script:notClassic = @($script:notClassic + $objectProtectionInfo.objectId)
+        }elseif($obj.sharepointParams.PSObject.Properties['isTeamSite'] -and $obj.sharepointParams.isTeamSite -eq $True){
+            $script:notClassic = @($script:notClassic + $objectProtectionInfo.objectId)
         }
         $source = api get "protectionSources?id=$($objectProtectionInfo.objectId)&regionId=$region"
         protectNodes $source
@@ -151,8 +162,12 @@ function protectObject($objWebUrl, $objId){
     }else{
         $protectionParams.policyId = $policy.id
     }
-    Write-Host "Protecting $objWebUrl"
-    $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
+    if($objId -notin $script:notClassic){
+        Write-Host "Protecting $objWebUrl"
+        $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
+    }else{
+        Write-Host "Skipping $objWebUrl (Team/Group Site)" -ForegroundColor Magenta
+    }
 }
 
 foreach($obj in $objectsToAdd){
