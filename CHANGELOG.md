@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-03-01`] [heliosVEBackup.sh](https://github.com/cohesity/community-automation-samples/tree/main/bash/heliosVEBackup) [`New`] backup Helios virtual edition VMs
 * [`2026-03-01`] [heliosMonitor.py](https://github.com/cohesity/community-automation-samples/tree/main/python/heliosMonitor) [`New`] monitor Helios self-managed startup
 * [`2026-03-01`] [vmMacAddresses.py](https://github.com/cohesity/community-automation-samples/tree/main/vmware/python/vmMacAddresses) [`New`] report VVMware VM MAC addresses
 * [`2026-03-01`] [shutdownVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/vmware/python/shutdownVMs) [`New`] shutdown VMware VMs
