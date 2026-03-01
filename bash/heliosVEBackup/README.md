@@ -8,19 +8,19 @@ This bash script shuts down Helios VMs, performs a backup and starts the VMs aga
 
 ```bash
 # Begin download commands
-curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/bash/heliosVEbackup/heliosVEbackup.sh
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/bash/heliosVEBackup/heliosVEBackup.sh
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/vmware/python/powerOnVMs/powerOnVMs.py
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/vmware/python/shutdownVMs/shutdownVMs.py
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/vmware/python/vmMacAddresses/vmMacAddresses.py
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/heliosMonitor/heliosMonitor.py
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
-chmod +x heliosVEbackup.sh
+chmod +x heliosVEBackup.sh
 # End download commands
 ```
 
 ## Configuring the Scripts
 
-Place all of the script files in a folder together. Then edit the top sections of `heliosVEbackup.sh` to match your environment:
+Place all of the script files in a folder together. Then edit the top sections of `heliosVEBackup.sh` to match your environment:
 
 ```bash
 cd ~/scripts/python
@@ -48,12 +48,12 @@ logfile='log-heliosVEBackup.txt'
 When ready to test the script, cd into the folder where the scripts are located, then type
 
 ```bash
-./heliosVEbackup.sh
+./heliosVEBackup.sh
 ```
 
 The script will do the following:
 
-* Starts a log file (e.g. log-heliosVEbackup.txt)
+* Starts a log file (e.g. log-heliosVEBackup.txt)
 * Records the MAC addresses of the VMs to the log file
 * Shutdown the Helios VMs
 * Wait for shutdowns to complete
@@ -75,6 +75,6 @@ Let's say that you want the script to run every morning at 4am.
 
 ```bash
 # crontab example
-0 4 * * * /scripts/heliosVEbackup.sh
+0 4 * * * /scripts/heliosVEBackup.sh
 # end crontab example
 ```
