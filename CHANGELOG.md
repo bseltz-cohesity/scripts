@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-03-01`] [heliosMonitor.py](https://github.com/cohesity/community-automation-samples/tree/main/python/heliosMonitor) [`New`] monitor Helios self-managed startup
+* [`2026-03-01`] [vmMacAddresses.py](https://github.com/cohesity/community-automation-samples/tree/main/vmware/python/vmMacAddresses) [`New`] report VVMware VM MAC addresses
+* [`2026-03-01`] [shutdownVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/vmware/python/shutdownVMs) [`New`] shutdown VMware VMs
+* [`2026-03-01`] [powerOnVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/vmware/python/powerOnVMs) [`New`] power on VMware VMs
 * [`2026-02-28`] [protectCcsM365SitesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365SitesCSV) [`Update`] skip group/team sites
 * [`2026-02-27`] [recoverAHVVMs-throttledV2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverAHVVMs-throttled) [`Update`] 7.3.2 update to support preserve MAC address
 * [`2026-02-27`] [recoverAHVVMsV2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverAHVVMs) [`Update`] 7.3.2 update to support preserve MAC address
