@@ -9,9 +9,9 @@ This bash script shuts down Helios VMs, performs a backup and starts the VMs aga
 ```bash
 # Begin download commands
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/bash/heliosVEbackup/heliosVEbackup.sh
-curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/vmware/powerOnVMs/powerOnVMs.py
-curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/vmware/shutdownVMs/shutdownVMs.py
-curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/vmware/vmMacAddresses/vmMacAddresses.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/vmware/python/powerOnVMs/powerOnVMs.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/vmware/python/shutdownVMs/shutdownVMs.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/vmware/python/vmMacAddresses/vmMacAddresses.py
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/heliosMonitor/heliosMonitor.py
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x heliosVEbackup.sh
