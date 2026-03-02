@@ -13,6 +13,7 @@ curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/vmware/python/shutdownVMs/shutdownVMs.py
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/vmware/python/vmMacAddresses/vmMacAddresses.py
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/heliosMonitor/heliosMonitor.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/backupNow/backupNow.py
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x heliosVEBackup.sh
 # End download commands
