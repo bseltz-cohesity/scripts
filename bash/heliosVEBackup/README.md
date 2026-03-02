@@ -76,6 +76,6 @@ Let's say that you want the script to run every morning at 4am.
 
 ```bash
 # crontab example
-0 4 * * * /scripts/heliosVEBackup.sh
+0 4 * * * /scripts/heliosVEBackup.sh  > /scripts/cronlog.txt 2>&1
 # end crontab example
 ```
