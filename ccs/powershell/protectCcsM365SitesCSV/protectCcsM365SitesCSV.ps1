@@ -174,6 +174,9 @@ foreach($obj in $objectsToAdd){
     $objName = $obj.name
     $objWebUrl = $obj.webUrl
     $objId = $null
+    if($objWebUrl -eq $null -or $objWebUrl -eq ''){
+        continue
+    }
     if($script:webUrlIndex.ContainsKey($objWebUrl)){
         $objId = $script:webUrlIndex[$objWebUrl]
     }else{
