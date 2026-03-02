@@ -67,6 +67,7 @@ $script:nameIndex = @{}
 $script:smtpIndex = @{}
 $script:idIndex = @{}
 $script:unprotectedIndex = @()
+$script:notClassic = @()
 $script:protectedCount = 0
 
 function indexObject($obj){
@@ -74,6 +75,9 @@ function indexObject($obj){
         $script:nameIndex[$obj.name] = $objectProtectionInfo.objectId
         $script:idIndex["$($objectProtectionInfo.objectId)"] = $obj.name
         $script:smtpIndex[$obj.o365Params.primarySMTPAddress] = $objectProtectionInfo.objectId
+        if($obj.groupParams.PSObject.Properties['isTeamsGroup'] -and $obj.groupParams.isTeamsGroup -eq $True){
+            $script:notClassic = @($script:notClassic + $objectProtectionInfo.objectId)
+        }
         if($objectProtectionInfo.objectBackupConfiguration -and $objectProtectionInfo.objectBackupConfiguration -ne $null){
             $script:protectedCount += 1
         }else{
@@ -143,8 +147,12 @@ foreach($obj in $objectsToAdd){
         }else{
             $protectionParams.policyId = $policy.id
         }
-        Write-Host "Protecting $objSMTP"
-        $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
+        if($objId -in $script:notClassic){
+            Write-Host "Skipping $objSMTP (Team Group)" -ForegroundColor Magenta
+        }else{
+            Write-Host "Protecting $objSMTP"
+            $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
+        }
     }elseif($objId -and $objId -notin $script:unprotectedIndex){
         Write-Host "Group $objSMTP already protected" -ForegroundColor Magenta
     }else{
