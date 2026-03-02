@@ -55,8 +55,10 @@ for vm in myvms:
         thispowerstate = thisvm[0].runtime.powerState
         if thispowerstate == 'poweredOn':
             print('shutting down %s' % thisvm[0].name)
-            thisvm[0].ShutdownGuest()
-
+            try:
+                thisvm[0].ShutdownGuest()
+            except Exception:
+                pass
 
 powerstate = 'allPoweredOn'
 while(powerstate != 'allPoweredOff'):
