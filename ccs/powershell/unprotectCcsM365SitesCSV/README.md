@@ -19,7 +19,7 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 
 ## Components
 
-* [unprotectCcsM365SitesCSV.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/ccs/powershell/protectCcsM365Sites/unprotectCcsM365SitesCSV.ps1): the main powershell script
+* [unprotectCcsM365SitesCSV.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/ccs/powershell/unprotectCcsM365Sites/unprotectCcsM365SitesCSV.ps1): the main powershell script
 * [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Create a CSV file (or export from M365) containing the sites to protect. The two CSV columns that are required for this script are name and webUrl. So for example, our CSV file might look like this:
