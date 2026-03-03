@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-03-03`] [unprotectCcsM365MailboxesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/unprotectCcsM365MailboxesCSV) [`New`] unprotect M365 mailboxes from CSV file
+* [`2026-03-03`] [protectCcsM365OneDriveCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365OneDriveCSV) [`New`] protect M365 OneDrives from CSV file
+* [`2026-03-03`] [protectCcsM365MailboxesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365MailboxesCSV) [`New`] protect M365 mailboxes from CSV file
 * [`2026-03-02`] [unprotectCcsM365SitesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/unprotectccsM365SitesCSV) [`New`] unprotect M365 sites from CSV file
 * [`2026-03-02`] [protectCcsM365GroupsCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365GroupsCSV) [`Update`] skip team groups
 * [`2026-03-01`] [heliosVEBackup.sh](https://github.com/cohesity/community-automation-samples/tree/main/bash/heliosVEBackup) [`New`] backup Helios virtual edition VMs
