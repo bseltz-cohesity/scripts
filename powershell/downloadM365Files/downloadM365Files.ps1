@@ -179,7 +179,8 @@ foreach($snapshot in $allSnapshots | Sort-Object -Property runStartTimeUsecs -De
             "object" = @{
                 "snapshotId" = $snapshot.id
             };
-            "filesAndFolders" = @($global:filesToDownload)
+            "filesAndFolders" = @($global:filesToDownload);
+            "ContinueOnError" = $True
         }
         $restoreParams = @($restoreParams + $downloadParams)
     }
