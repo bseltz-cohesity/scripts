@@ -38,13 +38,22 @@ Place both files in a folder together and run the main script like so:
                                  -csvFile ./mailboxes.csv
 ```
 
+Or if you want to automatically select a bunch of mailboxes to protect:
+
+```powershell
+./protectCcsM365MailboxesCSV.ps1 -policyName Gold `
+                                 -sourceName mydomain.onmicrosoft.com `
+                                 -autoprotectCount 500
+```
+
 ## Parameters
 
 * -username: (optional) used for password storage only (default is 'Ccs')
 * -region: specify region (e.g. us-east-2)
 * -sourceName: name of registered M365 protection source
 * -policyName: name of protection policy to use
-* -csvFile: name of CSV file to impport
+* -csvFile: (optional) name of CSV file to import
+* -autoprotectCount: (optional) number of mailboxes to auto select for protection
 * -startTime: (optional) e.g. '18:30' (defaults to 8PM)
 * -timeZone: (optional) e.g. 'America/New_York' (default is 'America/New_York')
 * -incrementalSlaMinutes: (optional) default 60
