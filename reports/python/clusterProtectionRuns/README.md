@@ -13,7 +13,6 @@ You can download the scripts using the following commands:
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/python/clusterProtectionRuns/clusterProtectionRuns.py
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
 chmod +x clusterProtectionRuns.py
-chmod +x clusterProtectionRunsNGCE.py
 # end download commands
 ```
 
