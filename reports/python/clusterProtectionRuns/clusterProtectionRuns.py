@@ -28,6 +28,7 @@ parser.add_argument('-o', '--outputpath', type=str, default='.')
 parser.add_argument('-f', '--outputfile', type=str, default=None)
 parser.add_argument('-on', '--objectname', action='append', type=str)
 parser.add_argument('-ol', '--objectlist', type=str)
+parser.add_argument('-lro', '--lastrunonly', action='store_true')
 
 args = parser.parse_args()
 
@@ -49,7 +50,7 @@ outputpath = args.outputpath
 outputfile = args.outputfile
 objectnames = args.objectname
 objectlist = args.objectlist
-
+lastrunonly = args.lastrunonly
 
 # gather server list
 def gatherList(param=None, filename=None, name='items', required=True):
@@ -66,13 +67,15 @@ def gatherList(param=None, filename=None, name='items', required=True):
         exit()
     return items
 
-
 objectnames = gatherList(objectnames, objectlist, name='servers', required=False)
 
 if vips is None or len(vips) == 0:
     vips = ['helios.cohesity.com']
 
 tail = ''
+if lastrunonly is True:
+    days = 1
+
 if days is not None:
     daysBackUsecs = timeAgo(days, 'days')
     tail = '&startTimeUsecs=%s' % daysBackUsecs
@@ -192,6 +195,8 @@ def getCluster():
                                             objectBackedUpCount = object[snapshotInfo]['snapshotInfo'].get('backupFileCount', 0)
                                             print('        %s' % objectName)
                                             f.write('%s\t%s\t%s\t%s\t%s\tActive\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (objectStartTime, objectEndTime, objectDurationSeconds, objectStatus, slaStatus, objectName, registeredSourceName, job['name'], policyName, environment, runType, cluster['name'], objectLogicalSizeBytes, objectBytesRead, objectBytesWritten, objectTotalCount, objectBackedUpCount, tenant, tag))
+                                if lastrunonly is True:
+                                    break
                     except Exception:
                         pass
 

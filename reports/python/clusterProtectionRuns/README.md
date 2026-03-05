@@ -58,6 +58,7 @@ Or via Helios
 * -t, --objecttype: (optional) filter by type (e.g. kSQL)
 * -l, --includelogs: (optional) include log runs
 * -n, --numruns: (optional) number of runs per API query (default is 500)
+* -lro, --lastrunonly: (optional) only display last run per protection group
 * -o, --outputpath: (optional) default is '.'
 * -f, --outputfile: (optional) default is protectionRunsReport-date.tsv
 * -on, --objectname: (optional) name of server/view to include in report (repeat for multiple)
