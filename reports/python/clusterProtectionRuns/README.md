@@ -33,7 +33,7 @@ Or via Helios
 
 ```bash
 # example
-./clusterProtectionRuns.py -u myusername
+./clusterProtectionRuns.py -u myusername -c mycluster
 # end example
 ```
 
