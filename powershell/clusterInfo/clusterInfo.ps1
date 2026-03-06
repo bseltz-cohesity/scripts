@@ -92,7 +92,7 @@ output ("     Used Percent: {0}%" -f $usedPct)
 output ("  Number of nodes: {0}" -f @($nodes).Length)
 output ("-------------------------------------------------------")
 
-"""Chassis ID"",""Chassis Name"",""Chassis Serial"",""Chassis Hardware"",""Slot Number"",""Node ID"",""Node IP"",""IPMI IP"",""Node Serial"",""Hardware Model"",""Cohesity Version"",""Uptime"",""Interfaces""" | Out-File -FilePath $csvfile
+"""Chassis ID"",""Chassis Name"",""Chassis Serial"",""Chassis Hardware"",""Slot Number"",""Node ID"",""Virtual IPs"",""Node IP"",""IPMI IP"",""Node Serial"",""Hardware Model"",""Cohesity Version"",""Uptime"",""Interfaces""" | Out-File -FilePath $csvfile
 
 $ipmi = api get /nexus/ipmi/cluster_get_lan_info -quiet
 foreach($chassis in $chassisList | Sort-Object -Property id){
@@ -147,9 +147,9 @@ foreach($chassis in $chassisList | Sort-Object -Property id){
         }
         $if = $interfaces | Where-Object nodeId -eq $node.id
         $ints = $if.interfaces | Where-Object {$_.isConnected -eq $True -and $_.PSObject.Properties['speed']}
-
+        $vips = ($if.interfaces.virtualIp | Where-Object {$_}) -join ', '
         output ("`n                  Node ID: {0}" -f $node.id)
-        output ("              Virtual IPs: {0}" -f (($if.interfaces.virtualIp | Where-Object {$_}) -join ', '))
+        output ("              Virtual IPs: {0}" -f $vips)
         output ("                  Node IP: {0}" -f $nodeIp)
         output ("                  IPMI IP: {0}" -f $nodeIpmiIp)
         output ("                  Slot No: {0}" -f $slotNumber)
@@ -167,7 +167,7 @@ foreach($chassis in $chassisList | Sort-Object -Property id){
             output ("                Interface: {0} ({1})" -f $int.name, $int.speed)
             $infs = @($infs + "$($int.name)($($int.speed))")
         }
-        """$($chassis.id)"",""$chassisname"",""$($chassis.serialNumber)"",""$hwmodel"",""$slotNumber"",""$($node.id)"",""$($nodeIp)"",""$nodeIpmiIp"",""$nodeSerial"",""$productModel"",""$($node.nodeSoftwareVersion)"",""$uptime"",""$($infs -join ';')""" | Out-File -FilePath $csvfile -Append
+        """$($chassis.id)"",""$chassisname"",""$($chassis.serialNumber)"",""$hwmodel"",""$slotNumber"",""$($node.id)"",""$vips"",""$($nodeIp)"",""$nodeIpmiIp"",""$nodeSerial"",""$productModel"",""$($node.nodeSoftwareVersion)"",""$uptime"",""$($infs -join ';')""" | Out-File -FilePath $csvfile -Append
     }
 }
 
