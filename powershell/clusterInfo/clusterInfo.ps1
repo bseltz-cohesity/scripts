@@ -149,6 +149,7 @@ foreach($chassis in $chassisList | Sort-Object -Property id){
         $ints = $if.interfaces | Where-Object {$_.isConnected -eq $True -and $_.PSObject.Properties['speed']}
 
         output ("`n                  Node ID: {0}" -f $node.id)
+        output ("              Virtual IPs: {0}" -f (($if.interfaces.virtualIp | Where-Object {$_}) -join ', '))
         output ("                  Node IP: {0}" -f $nodeIp)
         output ("                  IPMI IP: {0}" -f $nodeIpmiIp)
         output ("                  Slot No: {0}" -f $slotNumber)
