@@ -44,7 +44,8 @@ param (
     [Parameter()][string]$ipList = '',                # optional textfile of cidrs to add
     [Parameter()][switch]$rootSquash,                 # whether whitelist entries should use root squash
     [Parameter()][switch]$allSquash,                  # whether whitelist entries should use all squash
-    [Parameter()][switch]$readOnly                    # grant only read access
+    [Parameter()][switch]$readOnly,                    # grant only read access
+    [Parameter()][switch]$dbg
 )
 
 if($objectView){
@@ -82,6 +83,10 @@ if($USING_HELIOS){
     }
 }
 # end authentication =========================================
+
+if($dbg){
+    enableCohesityAPIDebugger  
+}
 
 if($objectName -and !$jobName){
     if($environment){
@@ -405,14 +410,12 @@ foreach($run in $runs){
                             $CloneDirectoryParams['sourceDirectoryPath'] = "{0}{1}" -f $CloneDirectoryParams['sourceDirectoryPath'], $dirPath
                         }
                         $folderPath = "\\$vip\$viewName\$destinationPath"
+                        Write-Host "Cloning $thisObjectName backup files to $folderPath"
                         
-                            Write-Host "Cloning $thisObjectName backup files to $folderPath"
-                            $null = api post views/cloneDirectory $CloneDirectoryParams  # -quiet
+                        $null = api post views/cloneDirectory $CloneDirectoryParams  # -quiet
                         
-                        # Write-Host "Cloning $thisObjectName backup files to $folderPath"
-                        # $null = api post views/cloneDirectory $CloneDirectoryParams  # -quiet
                         if($cohesity_api.last_api_error -match 'kPermissionDenied'){
-                            Write-Host "`nAccess Denied. Cluster config must be modified. Add:`n`n    bridge_enable_secure_view_access: false`n" -ForegroundColor Yellow
+                            Write-Host "`nAccess Denied. Cluster config must be modified. Add:`n`n    iris_api_backup_data_acl: KAllowClone`n" -ForegroundColor Yellow
                             exit
                         }
                         $paths += @{'path' = $folderPath; 'runDate' = $runDate; 'runType' = $run.backupRun.runType; 'sourceName' = $sourceInfo.source.name}
