@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-03-06`] [clusterInfo.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/clusterInfo) [`Update`] added VIPs
+* [`2026-03-05`] [clusterProtectionRuns.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/clusterProtectionRuns) [`Update`] added --lastrunonly option
+* [`2026-03-04`] [jobReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/jobReport) [`New`] report last run info per protection group
+* [`2026-03-04`] [protectCcsM365MailboxesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365MailboxesCSV) [`Update`] added -autoprotectCount option
 * [`2026-03-03`] [unprotectCcsM365MailboxesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/unprotectCcsM365MailboxesCSV) [`New`] unprotect M365 mailboxes from CSV file
 * [`2026-03-03`] [protectCcsM365OneDriveCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365OneDriveCSV) [`New`] protect M365 OneDrives from CSV file
 * [`2026-03-03`] [protectCcsM365MailboxesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365MailboxesCSV) [`New`] protect M365 mailboxes from CSV file
