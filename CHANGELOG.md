@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-03-09`] [unprotectCcsM365OneDriveCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/unprotectCcsM365OneDriveCSV) [`New`] unprotect M365 OneDrives from CSV file
 * [`2026-03-06`] [clusterInfo.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/clusterInfo) [`Update`] added VIPs
 * [`2026-03-05`] [clusterProtectionRuns.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/clusterProtectionRuns) [`Update`] added --lastrunonly option
 * [`2026-03-04`] [jobReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/jobReport) [`New`] report last run info per protection group
