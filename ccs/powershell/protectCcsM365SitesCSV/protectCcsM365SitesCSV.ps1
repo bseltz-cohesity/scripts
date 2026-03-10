@@ -5,17 +5,21 @@ param (
     [Parameter(Mandatory = $True)][string]$region,
     [Parameter()][string]$policyName = '',  # protection policy name
     [Parameter(Mandatory = $True)][string]$sourceName,  # name of registered O365 source
-    [Parameter(Mandatory = $True)][string]$csvFile,
+    [Parameter()][string]$csvFile,
     [Parameter()][string]$startTime = '20:00',  # e.g. 23:30 for 11:30 PM
     [Parameter()][string]$timeZone = 'America/New_York', # e.g. 'America/New_York'
     [Parameter()][int]$incrementalSlaMinutes = 1440,  # incremental SLA minutes
     [Parameter()][int]$fullSlaMinutes = 1440,  # full SLA minutes
     [Parameter()][switch]$useMBS,
-    [Parameter()][switch]$dbg
+    [Parameter()][switch]$dbg,
+    [Parameter()][int]$autoprotectCount = 0
 )
 
-$objectsToAdd = Import-Csv -Path $csvFile # -Encoding utf8
-if($objectsToAdd.Count -eq 0){
+$objectsToAdd = @()
+if($csvFile){
+    $objectsToAdd = Import-Csv -Path $csvFile # -Encoding utf8
+}
+if($objectsToAdd.Count -eq 0 -and $autoprotectCount -eq 0){
     Write-Host "No sites specified" -ForegroundColor Yellow
     exit
 }
@@ -167,6 +171,29 @@ function protectObject($objWebUrl, $objId){
     }else{
         Write-Host "Protecting $objWebUrl"
         $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
+    }
+}
+
+if(!$csvFile -and $autoprotectCount -gt 0){
+    Write-Host "Finding sites to autoprotect"
+    $foundObjects = 0
+    $searchCount = $autoprotectCount
+    if($searchCount -gt 500){
+        $searchCount = 500
+    }
+    while($foundObjects -lt $autoprotectCount){
+        $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&regionIds=$region&sourceIds=$rootSourceId&count=$searchCount&isProtected=false&searchString=*"
+        foreach($obj in $search.objects){
+            $foundObjects += 1
+            $objectsToAdd = @($objectsToAdd + @{'name' = $obj.name; 'webUrl' = $obj.sharepointParams.siteWebUrl})
+            indexObject($obj)
+        }
+        if(@($search.objects).Count -lt $searchCount){
+            break
+        }
+    }   
+    if($foundObjects -lt $autoprotectCount){
+        Write-Host "*** $foundObjects sites to autoprotect"
     }
 }
 
