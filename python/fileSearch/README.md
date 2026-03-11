@@ -58,3 +58,4 @@ The script will return a numbered list of search results. To see the avaiable ve
 * -j, --jobname: (optional) filter on job name
 * -x, --showversions: (optional) show available versions for a specific result
 * -t, --jobtype: (optional) filter on server type (Physical or VMware)
+* -r, --runid: (optional) limit results to specific run ID

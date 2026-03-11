@@ -28,11 +28,12 @@ parser.add_argument('-u', '--username', type=str, default='helios')   # username
 parser.add_argument('-d', '--domain', type=str, default='local')      # domain - defaults to local
 parser.add_argument('-i', '--useApiKey', action='store_true')         # use API key authentication
 parser.add_argument('-pwd', '--password', type=str, default=None)     # optional password
-parser.add_argument('-p', '--filepath', type=str, required=True)     # optional password
+parser.add_argument('-p', '--filepath', type=str, required=True)     # path to search
 parser.add_argument('-s', '--sourceserver', type=str, default=None)  # name of source server
 parser.add_argument('-j', '--jobname', type=str, default=None)       # narrow search by job name
 parser.add_argument('-t', '--jobtype', type=str, choices=['VMware', 'Physical', None], default=None)
-parser.add_argument('-x', '--showversions', type=int, default=None)       # narrow search by job name
+parser.add_argument('-x', '--showversions', type=int, default=None)
+parser.add_argument('-r', '--runid', type=int, default=None)
 
 args = parser.parse_args()
 
@@ -46,6 +47,7 @@ sourceserver = args.sourceserver
 jobname = args.jobname
 jobtype = args.jobtype
 showversions = args.showversions
+runid = args.runid
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey)
@@ -76,8 +78,18 @@ if search is not None and 'files' in search and len(search['files']) > 0:
         job = [j for j in jobs if j['id'] == file['fileDocument']['objectId']['jobId']]
         if len(job) > 0:
             if sourceserver is None or file['fileDocument']['objectId']['entity']['displayName'].lower() == sourceserver.lower():
+                if runid is not None:
+                    clusterId = file['fileDocument']['objectId']['jobUid']['clusterId']
+                    clusterIncarnationId = file['fileDocument']['objectId']['jobUid']['clusterIncarnationId']
+                    entityId = file['fileDocument']['objectId']['entity']['id']
+                    jobId = file['fileDocument']['objectId']['jobId']
+                    versions = api('get', '/file/versions?clusterId=%s&clusterIncarnationId=%s&entityId=%s&filename=%s&fromObjectSnapshotsOnly=false&jobId=%s' % (clusterId, clusterIncarnationId, entityId, encodedFile, jobId))
+                    if versions is not None and 'versions' in versions and len(versions['versions']) > 0:
+                        if runid not in [version['instanceId']['jobInstanceId'] for version in versions['versions']]:
+                            continue
                 x += 1
-                print('%s: %s / %s -> %s' % (x, job[0]['name'], file['fileDocument']['objectId']['entity']['displayName'], file['fileDocument']['filename']))
+                if showversions is None:
+                    print('%s: %s / %s -> %s' % (x, job[0]['name'], file['fileDocument']['objectId']['entity']['displayName'], file['fileDocument']['filename']))
                 if showversions == x:
                     clusterId = file['fileDocument']['objectId']['jobUid']['clusterId']
                     clusterIncarnationId = file['fileDocument']['objectId']['jobUid']['clusterIncarnationId']
@@ -89,6 +101,8 @@ if search is not None and 'files' in search and len(search['files']) > 0:
                         print('%10s  %s' % ('-----', '-------'))
                         for version in versions['versions']:
                             print('%10d  %s' % (version['instanceId']['jobInstanceId'], usecsToDate(version['instanceId']['jobStartTimeUsecs'])))
+                    print('')
+                    exit()
 
 if showversions is None:
     print('\n%s files found' % x)
