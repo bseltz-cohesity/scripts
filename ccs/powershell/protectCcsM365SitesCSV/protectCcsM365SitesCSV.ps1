@@ -72,6 +72,7 @@ $script:idIndex = @{}
 $script:unprotectedIndex = @()
 $script:notClassic = @()
 $script:protectedCount = 0
+$script:autoprotectedCount = 0
 
 function protectNodes($source){
     if($source -ne $null -and $source.PSObject.Properties['nodes']){
@@ -169,6 +170,7 @@ function protectObject($objWebUrl, $objId){
     if($objId -in $script:notClassic){
         Write-Host "Skipping $objWebUrl (Team/Group Site)" -ForegroundColor Magenta
     }else{
+        $script:autoprotectedCount += 1
         Write-Host "Protecting $objWebUrl"
         $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
     }
@@ -184,6 +186,11 @@ if(!$csvFile -and $autoprotectCount -gt 0){
     while($foundObjects -lt $autoprotectCount){
         $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&regionIds=$region&sourceIds=$rootSourceId&count=$searchCount&isProtected=false&searchString=*"
         foreach($obj in $search.objects){
+            if($obj.sharepointParams.PSObject.Properties['isGroupSite'] -and $obj.sharepointParams.isGroupSite -eq $True){
+                continue
+            }elseif($obj.sharepointParams.PSObject.Properties['isTeamSite'] -and $obj.sharepointParams.isTeamSite -eq $True){
+                continue
+            }
             $foundObjects += 1
             $objectsToAdd = @($objectsToAdd + @{'name' = $obj.name; 'webUrl' = $obj.sharepointParams.siteWebUrl})
             indexObject($obj)
@@ -220,6 +227,9 @@ foreach($obj in $objectsToAdd){
         }
     }
     if($objId -and $objId -in $script:unprotectedIndex){
+        if($autoprotectCount -gt 0 -and $script:autoprotectedCount -ge $autoprotectCount){
+            break
+        }
         protectObject $objWebUrl $objId
     }elseif($objId -and $objId -notin $script:unprotectedIndex){
         Write-Host "Site $objWebUrl already protected" -ForegroundColor Magenta
