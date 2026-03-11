@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-03-11`] [protectCcsM365SitesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365SitesCSV) [`Update`] added -autoprotectCount option
+* [`2026-03-11`] [protectCcsM365GroupsCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365GroupsCSV) [`Update`] added -autoprotectCount option
+* [`2026-03-11`] [protectCcsM365TeamsCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365TeamsCSV) [`Update`] added -autoprotectCount option
+* [`2026-03-11`] [protectCcsM365OneDriveCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365OneDriveCSV) [`Update`] added -autoprotectCount option
 * [`2026-03-09`] [unprotectCcsM365OneDriveCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/unprotectCcsM365OneDriveCSV) [`New`] unprotect M365 OneDrives from CSV file
 * [`2026-03-06`] [clusterInfo.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/clusterInfo) [`Update`] added VIPs
 * [`2026-03-05`] [clusterProtectionRuns.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/clusterProtectionRuns) [`Update`] added --lastrunonly option
