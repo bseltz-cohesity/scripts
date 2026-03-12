@@ -66,5 +66,5 @@ Place all files in a folder together, then run the main script like so:
 * -storageDomainName: (optional) default is 'DefaultStorageDomain'
 * -paused: (optional) pause future runs (new job only)
 * -disableIndexing: (optional) disable indexing (indexing is enabled by default)
-* -maxObjectsPerJob: (optional) default is 2000
-* -maxToProtect: (optional) default is 500
+* -maxObjectsPerJob: (optional) default is 4000
+* -maxToProtect: (optional) default is 1000

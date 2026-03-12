@@ -21,9 +21,9 @@ param (
     [Parameter()][int]$incrementalSlaMinutes = 60,
     [Parameter()][int]$fullSlaMinutes = 120,
     [Parameter()][switch]$disableIndexing,
-    [Parameter()][int]$maxObjectsPerJob = 2000,
+    [Parameter()][int]$maxObjectsPerJob = 4000,
     [Parameter(Mandatory = $True)][string]$sourceName,
-    [Parameter()][int]$maxToProtect = 500
+    [Parameter()][int]$maxToProtect = 1000
 )
 
 # source the cohesity-api helper code
