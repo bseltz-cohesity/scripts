@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-03-12`] [unprotectCcsM365GroupsCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/unprotectCcsM365GroupsCSV) [`New`] unprotect M365 Groups from CSV file
+* [`2026-03-11`] [fileSearch.py](https://github.com/cohesity/community-automation-samples/tree/main/python/fileSearch) [`Update`] added -runid option
 * [`2026-03-11`] [protectCcsM365SitesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365SitesCSV) [`Update`] added -autoprotectCount option
 * [`2026-03-11`] [protectCcsM365GroupsCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365GroupsCSV) [`Update`] added -autoprotectCount option
 * [`2026-03-11`] [protectCcsM365TeamsCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365TeamsCSV) [`Update`] added -autoprotectCount option
