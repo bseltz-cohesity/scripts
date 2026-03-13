@@ -23,7 +23,9 @@ param (
     [Parameter()][switch]$disableIndexing,
     [Parameter()][int]$maxObjectsPerJob = 4000,
     [Parameter(Mandatory = $True)][string]$sourceName,
-    [Parameter()][int]$maxToProtect = 1000
+    [Parameter()][int]$maxToProtect = 1000,
+    [Parameter()][switch]$updateExistingJobs,
+    [Parameter()][array]$excludeFolders
 )
 
 # source the cohesity-api helper code
@@ -56,27 +58,24 @@ if($USING_HELIOS){
 
 $logFile = "$($jobPrefix)-log.txt"
 $today = Get-Date -UFormat '%Y-%m-%d %H:%M:%S'
-"`n==================================`nScript started $today`n==================================`n" | Out-File -FilePath $logFile -Append
+"`n==================================`nScript started $today`n==================================" | Out-File -FilePath $logFile -Append
 
-# get the protectionJobs
-$alljobs = (api get -v2 "data-protect/protection-groups?environments=kO365Exchange&isActive=true&isDeleted=false").protectionGroups | Where-Object {$_.office365Params.protectionTypes -eq 'kMailbox'}
-$script:thesejobs = $alljobs | Sort-Object -Property name | Where-Object {$_.name -match $jobPrefix}
-
+# find protection source
 $rootSource = api get "protectionSources/rootNodes?environments=kO365" | Where-Object {$_.protectionSource.name -eq $sourceName}
 if(! $rootSource){
     Write-Host "protection source $sourceName not found" -ForegroundColor Yellow
     exit 1
 }
-
 $rootSourceId = $rootSource[0].protectionSource.id
 
+# find policy
 $policy = (api get -v2 "data-protect/policies").policies | Where-Object name -eq $policyName
 if(!$policy){
     Write-Host "Policy $policyName not found" -ForegroundColor Yellow
     exit 1
 }
 
-# get storageDomain
+# find storageDomain
 $viewBoxes = api get viewBoxes
 if($viewBoxes -is [array]){
         $viewBox = $viewBoxes | Where-Object { $_.name -ieq $storageDomainName }
@@ -96,18 +95,21 @@ if(! (($hour -and $minute) -or ([int]::TryParse($hour,[ref]$tempInt) -and [int]:
     exit 1
 }
 
+# pause future runs
 if($paused){
     $isPaused = $True
 }else{
     $isPaused = $false
 }
 
+# configure indexing
 if($disableIndexing){
     $enableIndexing = $false
 }else{
     $enableIndexing = $True
 }
 
+# new protection group template
 $newjob = @{
     "policyId" = $policy.id;
     "isPaused" = $isPaused;
@@ -159,31 +161,31 @@ $newjob = @{
         "sourceName" = $rootSource.protectionSource.name
     }
 }
-
 $newjob = $newjob | ConvertTo-JSON -Depth 99 | ConvertFrom-JSON
 
-$script:nameIndex = @{}
-$script:smtpIndex = @{}
-$script:idIndex = @{}
-$script:unprotectedIndex = @()
-$script:protectedCount = 0
-$script:unprotectedCount = 0
 $script:protectedIndex = @()
 $updateJobs = @{}
 $newJobs = @{}
+$unchangedJobs = @{}
 
-if($script:thesejobs){
+# get the protection groups
+$alljobs = (api get -v2 "data-protect/protection-groups?environments=kO365Exchange&isActive=true&isDeleted=false").protectionGroups | Where-Object {$_.office365Params.protectionTypes -eq 'kMailbox'}
+$jobGroup = $alljobs | Sort-Object -Property name | Where-Object {$_.name -match $jobPrefix}
+
+# index protected mailboxes
+if($alljobs){
     $script:protectedIndex = @($alljobs.office365Params.objects.id)
 }
 
-if(!$script:thesejobs){
+# create first protection group
+if(!$jobGroup){
     $thisNewJob = $newjob | ConvertTo-JSON -Depth 99 | ConvertFrom-JSON
-    $script:thesejobs = @($thisNewJob)
+    $jobGroup = @($thisNewJob)
     $newJobs[$thisNewJob.name] = $thisNewJob 
 }
 
-Write-Host "Finding mailboxes to autoprotect"
-
+# find unprotected mailboxes
+"`nFinding mailboxes to protect"
 $foundObjects = 0
 while($foundObjects -lt $maxToProtect){
     $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kUser&sourceIds=$rootSourceId&count=500&searchString=*"
@@ -208,17 +210,20 @@ while($foundObjects -lt $maxToProtect){
     if(@($search.objects).Count -lt 500){
         break
     }
-}   
+}
+"`nFound $foundObjects mailboxes to protect`n" | Tee-Object -FilePath $logFile -Append
 
-Write-Host "*** $foundObjects mailboxes to autoprotect"
-
+# add unprotected mailboxes to protection groups
 foreach($obj in $objectsToAdd){
     $objName = $obj.name
     $objId = $obj.id
     $added = $false
-    foreach($job in $script:thesejobs){
+    foreach($job in $jobGroup){
         $protectedCount = @($job.office365Params.objects).Count
         if($protectedCount -ge $maxObjectsPerJob){
+            if($job.name -notin $newJobs.Keys -and $job.name -notin $updateJobs.Keys){
+                $unchangedJobs[$job.name] = $job
+            }
             continue
         }else{
             $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $objId})
@@ -230,29 +235,76 @@ foreach($obj in $objectsToAdd){
         }
     }
     if($added -eq $false){
-        $lastJobName = $script:thesejobs[-1].name
+        $lastJobName = $jobGroup[-1].name
         $lastJobNum = $lastJobName.Substring($lastJobName.Length - 3)
         $newJobNum = [int]$lastJobNum + 1
         $newJobNum = "{0:D3}" -f $newJobNum
         $thisNewJob = $newjob | ConvertTo-JSON -Depth 99 | ConvertFrom-JSON
         $thisNewJob.name = "$($jobPrefix)$($newJobNum)"
         $newJobs[$thisNewJob.name] = $thisNewJob
-        $script:thesejobs = @($thisNewJob)
+        $jobGroup = @($thisNewJob)
         $thisNewJob.office365Params.objects
         $thisNewJob.office365Params.objects = @($thisNewJob.office365Params.objects + @{'id' = $objId})
         "$($thisNewJob.name) <- $objName" | Tee-Object -FilePath $logFile -Append
     }
 }
 
+# update existing protection groups
 foreach($job in $updateJobs.Values){
+    # unprotect missing objects
     foreach($obj in $job.office365Params.objects){
         $search = $search = api get -v2 "data-protect/search/objects?objectIds=$($obj.id)"
         if($search.objects.Count -eq 0){
+            "$($job.name) -- $($obj.id) (deleted)" | Tee-Object -FilePath $logFile -Append
             $job.office365Params.objects = @($job.office365Params.objects | Where-Object {$_.id -ne $obj.id})
+        }
+    }
+    if($excludeFolders){
+        setApiProperty -object $job.office365Params -name 'outlookProtectionTypeParams' -value @{
+            "excludeFolders" = @(
+                $excludeFolders
+            );
+            "includeFolders" = $null
         }
     }
     $null = api put -v2 data-protect/protection-groups/$($job.id) $job
 }
+
+foreach($job in $unchangedJobs.Values){
+    $updateThisJob = $False
+    if($updateExistingJobs){
+        if($excludeFolders){
+            setApiProperty -object $job.office365Params -name 'outlookProtectionTypeParams' -value @{
+                "excludeFolders" = @(
+                    $excludeFolders
+                );
+                "includeFolders" = $null
+            }
+            $updateThisJob = $True
+        }
+        foreach($obj in $job.office365Params.objects){
+            $search = $search = api get -v2 "data-protect/search/objects?objectIds=$($obj.id)"
+            if($search.objects.Count -eq 0){
+                "$($job.name) -- $($obj.id) (deleted)" | Tee-Object -FilePath $logFile -Append
+                $job.office365Params.objects = @($job.office365Params.objects | Where-Object {$_.id -ne $obj.id})
+                $updateThisJob = $True
+            }
+        }
+    }
+    if($updateThisJob -eq $True){
+        $null = api put -v2 data-protect/protection-groups/$($job.id) $job
+    }
+}
+
+# create new protection groups
 foreach($job in $newJobs.Values){
+    if($excludeFolders){
+        setApiProperty -object $job.office365Params -name 'outlookProtectionTypeParams' -value @{
+            "excludeFolders" = @(
+                $excludeFolders
+            );
+            "includeFolders" = $null
+        }
+    }
     $null = api post -v2 data-protect/protection-groups/ $job
 }

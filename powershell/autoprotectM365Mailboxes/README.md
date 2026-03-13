@@ -68,3 +68,5 @@ Place all files in a folder together, then run the main script like so:
 * -disableIndexing: (optional) disable indexing (indexing is enabled by default)
 * -maxObjectsPerJob: (optional) default is 4000
 * -maxToProtect: (optional) default is 1000
+* -updateExistingJobs: (optional) set excluded folders and remove missing mailboxes from existing protection groups
+* -excludeFolders: (optional) one or more email folders to exclude from backup, comma separated (e.g. 'In-Place archive', 'Junk Email')
