@@ -4,6 +4,10 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script deploys Helios Self-Managed OVAs to VMware and builds a Helios cluster.
 
+## Requirements
+
+This script requires vSphere PowerCLI to deploy, configure and power on VMs.
+
 ## Download the script
 
 Run these commands from PowerShell to download the script(s) into your current directory
