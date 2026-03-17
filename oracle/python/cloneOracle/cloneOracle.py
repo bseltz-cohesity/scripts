@@ -32,6 +32,7 @@ parser.add_argument('-ss', '--sourceserver', type=str, required=True)  # name of
 parser.add_argument('-sd', '--sourcedb', type=str, required=True)  # name of source oracle DB
 parser.add_argument('-ts', '--targetserver', type=str, default=None)  # name of target oracle server
 parser.add_argument('-td', '--targetdb', type=str, default=None)  # name of target oracle DB
+parser.add_argument('-j', '--jobname', type=str, default=None)  # filter by protection group
 parser.add_argument('-oh', '--oraclehome', type=str, required=True)  # oracle home path on target
 parser.add_argument('-ob', '--oraclebase', type=str, required=True)  # oracle base path on target
 parser.add_argument('-ch', '--channels', type=int, default=1)  # number of restore channels
@@ -75,6 +76,7 @@ if args.targetdb is None:
 else:
     targetdb = args.targetdb
 
+jobname = args.jobname
 oraclehome = args.oraclehome
 oraclebase = args.oraclebase
 channels = args.channels
@@ -137,6 +139,7 @@ if mcm or vip.lower() == 'helios.cohesity.com':
 
 ### search for view to clone
 searchResults = api('get', '/searchvms?entityTypes=kOracle&vmName=%s' % sourcedb)
+
 if len(searchResults) == 0:
     print("SourceDB %s not found" % sourcedb)
     exit()
@@ -146,6 +149,12 @@ searchResults = [searchResult for searchResult in searchResults['vms'] if search
 if len(searchResults) == 0:
     print("SourceDB %s on Server %s not found" % (sourcedb, sourceserver))
     exit()
+
+if jobname is not None:
+    searchResults = [searchResult for searchResult in searchResults if searchResult['vmDocument']['jobName'].lower() == jobname.lower()]
+    if len(searchResults) == 0:
+        print("SourceDB %s on Server %s not found in job '%s'" % (sourcedb, sourceserver, jobname))
+        exit()
 
 ### find latest snapshot
 dbversions = []

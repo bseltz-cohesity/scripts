@@ -47,6 +47,7 @@ The script takes the following parameters:
 * -sd, --sourcedb: name of source oracle DB
 * -ts, --targetserver: (optional) name of target oracle server
 * -td, --targetdb: (optional) name of target oracle DB
+* -j, --jobname: (optional) filter by protection group name
 * -oh, --oraclehome: oracle home path on target
 * -ob, --oraclebase: oracle base path on target
 * -ch, --channels: (optional) number of restore channels (default is 2)
