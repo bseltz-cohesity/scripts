@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-03-17`] [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Update`] added -j, --jobname parameter
+* [`2026-03-16`] [deployHSM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/deployHSM) [`New`] deploy Helios Self-Managed virtual edition
 * [`2026-03-16`] [heliosSMBackups.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/python/heliosSMBackups) [`New`] report Helios Self-Managed backups
 * [`2026-03-16`] [heliosSMBackups.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/heliosSMBackups) [`New`] report Helios Self-Managed backups
 * [`2026-03-12`] [autoprotectM365Mailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/autoprotectM365Mailboxes) [`New`] protect M365 Mailboxes (customer-managed)
