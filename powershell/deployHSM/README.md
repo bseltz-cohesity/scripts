@@ -56,7 +56,7 @@ Place the files in a folder together and run the main script like so:
 
 * -deployOVA: run the deploy OVA section of the script
 * -buildCluster: run the build cluster section of the script
-* -restore: run the restore section of the script in conjunction with -buildCluster)
+* -restore: run the restore section of the script (in conjunction with -buildCluster)
 
 ## vSphere Parameters
 
