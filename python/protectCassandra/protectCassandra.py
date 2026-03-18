@@ -35,6 +35,7 @@ parser.add_argument('-z', '--pause', action='store_true')
 parser.add_argument('-cc', '--concurrency', type=int, default=None)
 parser.add_argument('-bw', '--bandwidth', type=int, default=None)
 parser.add_argument('-dc', '--datacenter', action='append', type=str)
+parser.add_argument('-cr', '--clearalertrecipents', action='store_true')
 parser.add_argument('-ar', '--alertrecipient', action='append', type=str)
 parser.add_argument('-av', '--alertslaviolation', action='store_true')
 parser.add_argument('-as', '--alertsuccess', action='store_true')
@@ -72,6 +73,7 @@ timezone = args.timezone
 incrementalsla = args.incrementalsla
 fullsla = args.fullsla
 pause = args.pause
+clearalertrecipents = args.clearalertrecipents
 alertrecipients = args.alertrecipient
 alertslaviolation = args.alertslaviolation
 alertsuccess = args.alertsuccess
@@ -228,14 +230,21 @@ if qospolicy is None and job['qosPolicy'] is None:
 if qospolicy is not None:
     job['qosPolicy'] = qospolicy
 
+if clearalertrecipents is True and (alertrecipients is None or len(alertrecipients) == 0):
+    job['alertPolicy']['alertTargets'] = []
+
 if alertrecipients is not None and len(alertrecipients) > 0:    
     for r in alertrecipients:
         job['alertPolicy']['alertTargets'] = [t for t in job['alertPolicy']['alertTargets'] if t['emailAddress'].lower() != r.lower()]
-        job['alertPolicy']['alertTargets'].append({
-            "emailAddress": r,
-            "language": "en-us",
-            "recipientType": "kTo"
-        })
+        if clearalertrecipents is not True:
+            if ',' in r:
+                print('Invalid alert recipient: %s' % r)
+                exit(1)
+            job['alertPolicy']['alertTargets'].append({
+                "emailAddress": r,
+                "language": "en-us",
+                "recipientType": "kTo"
+            })
 if alertslaviolation is True:
     job['alertPolicy']['backupRunStatus'].append('kSlaViolation')
     job['alertPolicy']['backupRunStatus'] = list(set(job['alertPolicy']['backupRunStatus']))
