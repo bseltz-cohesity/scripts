@@ -29,6 +29,7 @@ param (
     [Parameter()][switch]$deleteView,
     [Parameter()][Int64]$firstRunId,
     [Parameter()][Int64]$lastRunId,
+    [Parameter()][Int64]$runId,
     [Parameter()][switch]$refreshView,
     [Parameter()][switch]$force,
     [Parameter()][switch]$consolidate,
@@ -233,6 +234,17 @@ If($daysToKeep -gt 0){
 }
 
 $finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning', '3', '4', '5', '6')
+
+if($listRuns){
+    Write-Host "Gathering runs..."
+    Get-Runs -jobId $job.id -numRuns 100000 -startTimeUsecs $daysToKeepUsecs `
+        | Select-Object -Property @{label='runId'; expression={$_.backupRun.jobRunId}},
+                @{label='runDate'; expression={usecsToDate $_.backupRun.stats.startTimeUsecs}},
+                @{label='runType'; expression={$_.backupRun.runType.substring(1)}}
+    # "`n$($runs.Count) runs found"
+    exit 0
+}
+
 if($waitForRun){
     "Waiting for Run Completion"
     while($True){
@@ -261,12 +273,8 @@ if($lastRunId){
     $runs = $runs | Where-Object {$_.backupRun.jobRunId -le $lastRunId}
 }
 
-if($listRuns){
-    $runs | Select-Object -Property @{label='runId'; expression={$_.backupRun.jobRunId}},
-                                    @{label='runDate'; expression={usecsToDate $_.backupRun.stats.startTimeUsecs}},
-                                    @{label='runType'; expression={$_.backupRun.runType.substring(1)}}
-    "`n$($runs.Count) runs found"
-    exit 0
+if($runId){
+    $runs = $runs | Where-Object {$_.backupRun.jobRunId -eq $runId}
 }
 
 if(!$view){
