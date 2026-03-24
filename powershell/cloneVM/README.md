@@ -61,7 +61,7 @@ Place the files in a folder together and run the main script like so:
 * -datacenterName: name of vSphere data center to clone to
 * -computeResource: name of vSphere cluster or stand-alone host to clone to
 * -resourcePoolName: (optional) name of resource pool
-* -folderName: name of vSphere folder to clone to
+* -folderName: (optional) name of vSphere folder to clone to (default is /)
 * -networkName: (optional) VM Network to attach the VM
 * -poweron: (optional) power on the VMs during cloning (default is false)
 * -detachNetwork: (optional) leave VM network disconnected (default is false)
@@ -93,3 +93,4 @@ You can specify a folder to clone to using any of the following formats:
 * /MyFolder/MySubFolder
 * MyFolder/MySubFolder
 * MyFolder
+* /

@@ -18,7 +18,7 @@ param (
     [Parameter(Mandatory = $True)][string]$dataCenterName,
     [Parameter(Mandatory = $True)][string]$computeResource,
     [Parameter()][string]$resourcePoolName='Resources',
-    [Parameter(Mandatory = $True)][string]$folderName,
+    [Parameter()][string]$folderName = '/',
     [Parameter()][string]$networkName,
     [Parameter()][string]$viewName = 'cloneVMs',
     [Parameter()][string]$prefix = 'clone-',
@@ -85,6 +85,9 @@ function walkVMFolders($node, $parent=$null, $fullPath=''){
     $fullPath = "{0}/{1}" -f $fullPath, $node.protectionSource.name
     $relativePath = ($fullPath -split 'vm/', 2)[1]
     # Write-Host "full: $fullPath"
+    if($relativePath -eq $null){
+        $relativePath = '/'
+    }
     # Write-Host " rel: $relativePath"
     if($relativePath -and $node.protectionSource.vmWareProtectionSource.type -eq 'kFolder'){
         $vmFolderId[$fullPath] = $node.protectionSource.id
