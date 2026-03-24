@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-03-24`] [cloneVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneVM) [`Update`] made folder name optional
+* [`2026-03-23`] [cloneBackupToView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneBackupToView) [`Update`] fixed missing old backups
+* [`2026-03-18`] [protectCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectCassandra) [`Update`] added alert recipient validation and removal
+* [`2026-03-17`] [heliosClusterConfigBackups.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/heliosClusterConfigBackups) [`New`] report cluster backups in Helios
 * [`2026-03-17`] [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Update`] added -j, --jobname parameter
 * [`2026-03-16`] [deployHSM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/deployHSM) [`New`] deploy Helios Self-Managed virtual edition
 * [`2026-03-16`] [heliosSMBackups.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/python/heliosSMBackups) [`New`] report Helios Self-Managed backups
