@@ -76,7 +76,7 @@ if($objectName){
     }
     $regionId = $source.sourceInfoList[0].regionId
     $protectedObjects = api get -v2 "data-protect/objects?parentId=$($source.sourceInfoList[0].sourceId)&onlyProtectedObjects=true&onlyAutoProtectedObjects=false&regionId=$regionId"
-    $protectedObjects = $protectedObjects.objects | Where-Object {$_.name -eq $sourceName}
+    $protectedObjects = $protectedObjects.objects | Where-Object {$_.sourceId -eq $source.sourceInfoList[0].sourceId}
     if($protectedObjects.Count -eq 0){
         Write-Host "$sourceName is not protected"
         exit
@@ -88,7 +88,6 @@ if($objectName){
             "backupType" = $backupType
         })
         $object = api get -v2 "data-protect/objects?ids=$($obj.id)&regionId=$regionId"
-        break
     }
 }else{
     Write-Host "-objectName or -sourceName required" -ForegroundColor Yellow

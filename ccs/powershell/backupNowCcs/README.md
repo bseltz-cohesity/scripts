@@ -41,7 +41,7 @@ Start the backup of a SQL Server (all databases):
 Start the backup of a SQL Database:
 
 ```powershell
-./backupNowCcs.ps1 -region us-east-2 -sourceName sqlserver1.mydomain.net -objectName MSSQLSERVER\mydb
+./backupNowCcs.ps1 -region us-east-2 -sourceName sqlserver1.mydomain.net -objectName MSSQLSERVER/mydb
 ```
 
 ## Parameters
