@@ -32,17 +32,22 @@ Place both files in a folder together and run the main script like so:
                   -policyName 'my policy'
 ```
 
-## Parameters
+## Authentication Parameters
 
 * -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
 * -username: (optional) name of user to connect to Cohesity (defaults to helios)
 * -domain: (optional) your AD domain (defaults to local)
 * -useApiKey: (optional) use API key for authentication
 * -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
 * -mcm: (optional) connect through MCM
 * -mfaCode: (optional) TOTP MFA code
 * -emailMfaCode: (optional) send MFA code via email
 * -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -viewName: (optional) one or more Views to add to the proctection job (comma separated)
 * -viewList: (optional) text file containing list of views to add (one per line)
 * -jobName: name of protection job

@@ -3,15 +3,17 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][string]$vip = 'helios.cohesity.com',
+    [Parameter()][string]$vip='helios.cohesity.com',
     [Parameter()][string]$username = 'helios',
-    [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
     [Parameter()][switch]$useApiKey,
-    [Parameter()][string]$password = $null,
-    [Parameter()][switch]$mcm,
-    [Parameter()][string]$mfaCode = $null,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$helios,
+    [Parameter()][string]$mfaCode,
     [Parameter()][switch]$emailMfaCode,
-    [Parameter()][string]$clusterName = $null,
+    [Parameter()][string]$clusterName,
     [Parameter()][array]$viewName,  # names of Views to protect
     [Parameter()][string]$viewList = '',  # text file of view names to protect
     [Parameter(Mandatory = $True)][string]$jobName,  # name of the job to add VM to
@@ -49,29 +51,36 @@ $viewsToAdd = @(gatherList -Param $viewName -FilePath $viewList -Name 'views' -R
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region
+# authentication =============================================
+# demand clusterName for Helios
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios" -ForegroundColor Yellow
+    exit 1
+}
 
-### select helios/mcm managed cluster
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $helios -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
+
+# select helios managed cluster
 if($USING_HELIOS){
-    if($clusterName){
-        $thisCluster = heliosCluster $clusterName
-    }else{
-        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
         exit 1
     }
 }
+# end authentication =========================================
 
-if(!$cohesity_api.authorized){
-    Write-Host "Not authenticated"
-    exit
-}
-
-$cluster = api get cluster
-if($cluster.clusterSoftwareVersion -lt '6.6' -and $viewsToAdd.Count -gt 1){
-    Write-Host "Cohesity versions prior to 6.6 can only protect one view per job" -ForegroundColor Yellow
-    exit 1
-}
+# $cluster = api get cluster
+# if($cluster.clusterSoftwareVersion -lt '6.6' -and $viewsToAdd.Count -gt 1){
+#     Write-Host "Cohesity versions prior to 6.6 can only protect one view per job" -ForegroundColor Yellow
+#     exit 1
+# }
 
 $views = api get -v2 file-services/views
 
@@ -86,10 +95,10 @@ if($job){
         Write-host "Job $jobName exists but is not a view protection job" -ForegroundColor Yellow
         exit 1
     }
-    if($cluster.clusterSoftwareVersion -lt '6.6'){
-        Write-Host "Job $jobName already exists. Only one view allowed per job" -ForegroundColor Yellow
-        exit 1
-    }
+    # if($cluster.clusterSoftwareVersion -lt '6.6'){
+    #     Write-Host "Job $jobName already exists. Only one view allowed per job" -ForegroundColor Yellow
+    #     exit 1
+    # }
 
 }else{
 
