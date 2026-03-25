@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2026.02.03 - Brian Seltzer
+#  Version 2026.03.25 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024-02-18 - fix - toJson function - handle null input
@@ -32,10 +32,11 @@
 # 2025-11-20 - fix header functions
 # 2026-02-01 - added enableCohesityAPIDebugger function (cohesity-har-file.txt output)
 # 2026-02-03 - added pauseCohesityAPIDebugger and resumeCohesityAPIDebugger functions
+# 2026-03-25 - fixed support for orgs in Helios
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2026.02.03'
+$versionCohesityAPI = '2026.03.25'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -810,12 +811,17 @@ function apidrop([switch] $quiet){
 function impersonate($tenant){
     if($cohesity_api.authorized){ 
         if($Global:USING_HELIOS -eq $True){
-            $thisTenant = (api get -mcmv2 users/tenant-access).tenantAccesses | Where-Object {$_.tenantName -eq $tenant}
+            $thisTenant = (api get -mcmv2 tenants).tenants | Where-Object name -eq $tenant
+            # $thisTenant = (api get -mcmv2 users/tenant-access).tenantAccesses | Where-Object {$_.tenantName -eq $tenant}
         }else{
             $thisTenant = api get tenants | Where-Object {$_.name -eq $tenant}
         }
         if($thisTenant){
-            $cohesity_api.header['x-impersonate-tenant-id'] = $thisTenant.tenantId
+            if($Global:USING_HELIOS -eq $True){
+                $cohesity_api.header['x-impersonate-tenant-id'] = $thisTenant.id
+            }else{
+                $cohesity_api.header['x-impersonate-tenant-id'] = $thisTenant.tenantId
+            }
             $cohesity_api.last_api_error = 'OK'
         }else{
             Write-Host "Tenant $tenant not found" -ForegroundColor Yellow
