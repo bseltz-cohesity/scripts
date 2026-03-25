@@ -76,12 +76,6 @@ if($USING_HELIOS){
 }
 # end authentication =========================================
 
-# $cluster = api get cluster
-# if($cluster.clusterSoftwareVersion -lt '6.6' -and $viewsToAdd.Count -gt 1){
-#     Write-Host "Cohesity versions prior to 6.6 can only protect one view per job" -ForegroundColor Yellow
-#     exit 1
-# }
-
 $views = api get -v2 file-services/views
 
 # get the protectionJob
@@ -95,10 +89,6 @@ if($job){
         Write-host "Job $jobName exists but is not a view protection job" -ForegroundColor Yellow
         exit 1
     }
-    # if($cluster.clusterSoftwareVersion -lt '6.6'){
-    #     Write-Host "Job $jobName already exists. Only one view allowed per job" -ForegroundColor Yellow
-    #     exit 1
-    # }
 
 }else{
 
@@ -177,12 +167,8 @@ if($job){
         }
     }
     if($policy.PSObject.Properties['remoteTargetPolicy'] -and $policy.remoteTargetPolicy.PSObject.Properties['replicationTargets']){
-        if($cluster.clusterSoftwareVersion -lt '6.6'){
-            $job.viewParams['replicationParams'] = @{}
-        }else{
-            $job.viewParams['replicationParams'] = @{
-                "viewNameConfigList" = @()
-            }
+        $job.viewParams['replicationParams'] = @{
+            "viewNameConfigList" = @()
         }
     }
     $job = $job | ConvertTo-JSON -Depth 99 | ConvertFrom-JSON
@@ -209,18 +195,11 @@ foreach($thisViewName in $viewsToAdd){
                 $drViewName = "$drViewName-$drSuffix"
                 $useSameViewName = $false
             }
-            if($cluster.clusterSoftwareVersion -lt '6.6'){
-                $job.viewParams.replicationParams = @{
-                    "createView" = $True;
-                    "viewName" = $drViewName
-                }
-            }else{
-                $job.viewParams.replicationParams.viewNameConfigList = @(@($job.viewParams.replicationParams.viewNameConfigList | Where-Object {$_.viewName -ne $drViewName}) + @{
-                    "sourceViewId" = $thisView.viewId;
-                    "useSameViewName" = $useSameViewName;
-                    "viewName" = $drViewName
-                })
-            }
+            $job.viewParams.replicationParams.viewNameConfigList = @(@($job.viewParams.replicationParams.viewNameConfigList | Where-Object {$_.viewName -ne $drViewName}) + @{
+                "sourceViewId" = $thisView.viewId;
+                "useSameViewName" = $useSameViewName;
+                "viewName" = $drViewName
+            })
         }
     }
 }
