@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-03-25`] [protectView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectView) [`Update`] modernized authentication
+* [`2026-03-25`] [createS3View.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/createS3View) [`Update`] updated to v2 API, added support for helios
 * [`2026-03-24`] [cloneVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneVM) [`Update`] made folder name optional
 * [`2026-03-23`] [cloneBackupToView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneBackupToView) [`Update`] fixed missing old backups
 * [`2026-03-18`] [protectCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectCassandra) [`Update`] added alert recipient validation and removal
