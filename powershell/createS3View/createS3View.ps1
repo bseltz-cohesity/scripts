@@ -3,16 +3,18 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,
-    [Parameter(Mandatory = $True)][string]$username,
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
     [Parameter()][string]$domain = 'local',
-    [Parameter()][string]$tenant = $null,
+    [Parameter()][string]$tenant,
     [Parameter()][switch]$useApiKey,
-    [Parameter()][string]$password = $null,
+    [Parameter()][string]$password,
     [Parameter()][switch]$noPrompt,
-    [Parameter()][switch]$mcm,
-    [Parameter()][string]$mfaCode = $null,
+    [Parameter()][switch]$helios,
+    [Parameter()][string]$mfaCode,
     [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
+    [Parameter()][string]$owner,
     [Parameter(Mandatory = $True)][string]$viewName,  # name of view to create
     [Parameter()][string]$storageDomain = 'DefaultStorageDomain',  # name of storage domain in which to create view
     [Parameter()][array]$allowList,                   # one or more CIDR address e.g. 192.168.2.0/24, 192.168.2.11/32
@@ -20,21 +22,49 @@ param (
     [Parameter()][switch]$showKeys,                   # show access keys
     [Parameter()][int64]$quotaLimitGB = 0,            # quota Limit in GiB
     [Parameter()][int64]$quotaAlertGB = 0,            # quota alert threshold in GiB
-    [Parameter()][ValidateSet('Backup Target Low','Backup Target High','TestAndDev High','TestAndDev Low')][string]$qosPolicy = 'TestAndDev High'
+    [Parameter()][ValidateSet('BackupTargetLow','BackupTargetHigh','TestAndDevHigh','TestAndDevLow')][string]$qosPolicy = 'TestAndDevHigh'
 )
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authentication =============================================
-apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+# demand clusterName for Helios
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios" -ForegroundColor Yellow
+    exit 1
+}
+
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $helios -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
 
 # exit on failed authentication
 if(!$cohesity_api.authorized){
     Write-Host "Not authenticated" -ForegroundColor Yellow
     exit 1
 }
+
+# select helios managed cluster
+if($USING_HELIOS){
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
+        exit 1
+    }
+}
 # end authentication =========================================
+
+if($USING_HELIOS){
+    if(!$owner){
+        Write-Host "Owner is required when connection through Helios" -ForegroundColor Yellow
+        exit 1
+    }
+    $users = api get -v2 users
+    $thisOwner = $users.users | Where-Object {$_.s3AccountParams.s3AccountId -eq $owner}
+    if(!$thisOwner){
+        Write-Host "Owner $owner not found" -ForegroundColor Yellow
+        exit 1
+    }
+}
 
 # convert CIDR to DDN
 function netbitsToDDN($netBits){
@@ -49,44 +79,148 @@ function netbitsToDDN($netBits){
 # Create allowlist entry
 function newAllowListEntry($cidr){
     $ip, $netbits = $cidr -split '/'
-    $maskDDN = netbitsToDDN $netbits
     $allowlistEntry = @{
         "nfsAccess" = "kReadWrite";
-        "smbAccess"     = "kReadWrite";
-        "nfsRootSquash" = $false;
-        "ip"            = $ip;
-        "netmaskIp4"    = $maskDDN
+        "smbAccess" = "kReadWrite";
+        "s3Access" = "kReadWrite"
+        "nfsRootSquash" = "kNone";
+        "ip" = $ip;
+        "netmaskBits" = [int]$netbits
     }
     return $allowlistEntry
 }
 
 # find storage domain
 $sd = api get viewBoxes | Where-Object name -eq $storageDomain
-if($sd){
-    $sdId = $sd[0].id
-}else{
+if(!$sd){
     Write-Warning "Storage domain $storageDomain not found"
     exit 1
 }
 
 # define new view
 $newView = @{
-    "caseInsensitiveNamesEnabled"     = $true;
-    "enableNfsViewDiscovery"          = $true;
-    "enableSmbAccessBasedEnumeration" = $false;
-    "enableSmbViewDiscovery"          = $true;
-    "fileExtensionFilter"             = @{
-        "isEnabled"          = $false;
-        "mode"               = "kBlacklist";
+    "enableNfsWcc" = $null;
+    "qos" = @{
+        "name" = $qosPolicy
+    };
+    "caseInsensitiveNamesEnabled" = $true;
+    "enableSmbViewDiscovery" = $null;
+    "securityMode" = "NativeMode";
+    "selfServiceSnapshotConfig" = $null;
+    "sharePermissions" = @{
+        "permissions" = @(
+            @{
+                "sid" = "S-1-1-0";
+                "access" = "FullControl";
+                "mode" = "FolderSubFoldersAndFiles";
+                "type" = "Allow"
+            }
+        );
+        "superUserSids" = $null
+    };
+    "smbPermissionsInfo" = @{
+        "ownerSid" = "S-1-5-32-544";
+        "permissions" = @(
+            @{
+                "sid" = "S-1-1-0";
+                "access" = "FullControl";
+                "mode" = "FolderSubFoldersAndFiles";
+                "type" = "Allow"
+            }
+        )
+    };
+    "storageDomainId" = $sd[0].id;
+    "category" = "ObjectServices";
+    "protocolAccess" = @(
+        @{
+            "type" = "S3";
+            "mode" = "ReadWrite"
+        }
+    );
+    "isExternallyTriggeredBackupTarget" = $false;
+    "name" = $viewName;
+    "dataLockExpiryUsecs" = $null;
+    "objectServicesMappingConfig" = "ObjectId";
+    "mostSecureSettings" = $false;
+    "intent" = @{
+        "templateId" = 3113;
+        "templateName" = "General Object Services"
+    };
+    "accessSids" = $null;
+    "aclConfig" = $null;
+    "antivirusScanConfig" = @{
+        "isEnabled" = $false;
+        "blockAccessOnScanFailure" = $false;
+        "maximumScanFileSize" = 26214400;
+        "scanFilter" = @{
+            "isEnabled" = $false;
+            "mode" = $null;
+            "fileExtensionsList" = @()
+        };
+        "prefixScanFilter" = @{
+            "isEnabled" = $false;
+            "mode" = $null;
+            "fileExtensionsList" = @()
+        };
+        "s3TaggingFilter" = @{
+            "isEnabled" = $false;
+            "mode" = $null;
+            "tagSet" = @()
+        };
+        "scanOnAccess" = $false;
+        "scanOnClose" = $true;
+        "scanOnPut" = $false;
+        "scanTimeoutUsecs" = 180000000
+    };
+    "description" = $null;
+    "enableFastDurableHandle" = $false;
+    "enableFilerAuditLogging" = $null;
+    "enableOfflineCaching" = $null;
+    "enableSmbAccessBasedEnumeration" = $null;
+    "enableSmbEncryption" = $null;
+    "enableSmbLeases" = $null;
+    "enableSmbOplock" = $null;
+    "enforceSmbEncryption" = $null;
+    "fileExtensionFilter" = @{
+        "isEnabled" = $false;
+        "mode" = "Blacklist";
         "fileExtensionsList" = @()
     };
-    "protocolAccess"                  = "kS3Only";
-    "securityMode"                    = "kNativeMode";
-    "qos"                             = @{
-        "principalName" = $qosPolicy
+    "fileLockConfig" = $null;
+    "filerLifecycleManagement" = $null;
+    "logicalQuota" = $null;
+    "netgroupWhitelist" = @{
+        "nisNetgroups" = $null
     };
-    "name"                            = $viewName;
-    "viewBoxId"                       = $sdId;
+    "nfsAllSquash" = $null;
+    "nfsRootSquash" = $null;
+    "overrideGlobalNetgroupWhitelist" = $null;
+    "overrideGlobalSubnetWhitelist" = $true;
+    "ownerInfo" = $null;
+    "s3FolderSupportEnabled" = $false;
+    "storagePolicyOverride" = $null;
+    "subnetWhitelist" = $null;
+    "viewPinningConfig" = @{
+        "enabled" = $false;
+        "pinnedTimeSecs" = -1;
+        "lastUpdatedTimestampSecs" = $null
+    };
+    "viewProtectionConfig" = $null;
+    "enableAppAwarePrefetching" = $null;
+    "enableAppAwareUptiering" = $null;
+    "enableNfsViewDiscovery" = $null;
+    "enableNfsUnixAuthentication" = $null;
+    "enableNfsKerberosAuthentication" = $null;
+    "enableNfsKerberosIntegrity" = $null;
+    "enableNfsKerberosPrivacy" = $null;
+    "nfsRootPermissions" = $null;
+    "enableAbac" = $null;
+    "lifecycleManagement" = $null;
+    "versioning" = "UnVersioned"
+}
+
+if($USING_HELIOS){
+    $newView['ownerInfo'] = @{"userId" = $thisOwner.s3AccountParams.s3AccountId}
 }
 
 # case sensitivity
@@ -117,11 +251,15 @@ if($subnetAllowList.Count -gt 0){
 
 # create the view
 "Creating view $viewName..."
-$null = api post views $newView
+$null = api post -v2 file-services/views $newView
 
 # return S3 keys
 if($showKeys){
-    $user = api get users | Where-Object {$_.username -eq $username -and $_.domain -eq $domain}
+    if($USING_HELIOS){
+        $user = $thisOwner
+    }else{
+        $user = api get users | Where-Object {$_.username -eq $username -and $_.domain -eq $domain}
+    }
     "s3AccessKeyId: {0}" -f $user.s3AccessKeyId
     "  s3SecretKey: {0}" -f $user.s3SecretKey
 }

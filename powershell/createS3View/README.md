@@ -41,8 +41,8 @@ Place both files in a folder together and run the main script like so:
 
 ## Authentication Parameters
 
-* -vip: (optional) name or IP of Cohesity cluster
-* -username: (optional) name of user to connect to Cohesity
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
 * -domain: (optional) your AD domain (defaults to local)
 * -useApiKey: (optional) use API key for authentication
 * -password: (optional) will use cached password or will be prompted
@@ -51,14 +51,16 @@ Place both files in a folder together and run the main script like so:
 * -mcm: (optional) connect through MCM
 * -mfaCode: (optional) TOTP MFA code
 * -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
 
 ## Other Parameters
 
 * -viewName: name of new view to create
-* -qosPolicy: (optional) defaults to 'Backup Target Low' or choose 'Backup Target High', 'TestAndDev High' or 'TestAndDev Low' (default is 'TestAndDev High')
+* -qosPolicy: (optional) defaults to 'BackupTargetLow' or choose 'BackupTargetHigh', 'TestAndDevHigh' or 'TestAndDevLow' (default is 'TestAndDevHigh')
 * -storageDomain: (optional) name of storage domain to place view data. Defaults to DefaultStorageDomain
 * -quotaLimitGB: (optional) logical quota in GiB
 * -quotaAlertGB: (optional) alert threshold in GiB
 * -allowList: (optional) one or more CIDR addresses (comma separated) e.g. 192.168.2.0/24, 192.168.2.11/32
 * -caseSensitive: (optional) make file names case sensitive
+* -owner: (optional) bucket owner (e.g. admin@local@ - required when connecting through Helios)
 * -showKeys: (optional) display S3 access key and secret key
