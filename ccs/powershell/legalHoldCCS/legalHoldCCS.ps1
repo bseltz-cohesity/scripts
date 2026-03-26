@@ -114,7 +114,7 @@ while($True){
             $totalCount += 1
             $objectId = $activity.object.id
             $trackDupe = @($trackDupe + $activity.id)
-            $startTimeUsecs = $activity.timeStampUsecs
+            $startTimeUsecs = $activity.archivalRunParams.runStartTimeUsecs
             if($addHold -and $activity.archivalRunParams.onLegalHold -eq $False){
                 $holdParams =  @{
                     "targetObjectRuns" = @(
