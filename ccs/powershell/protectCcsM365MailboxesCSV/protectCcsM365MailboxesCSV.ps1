@@ -184,6 +184,7 @@ foreach($obj in $objectsToAdd){
             $protectionParams.policyId = $policy.id
         }
         Write-Host "Protecting $objSMTP"
+        Start-Sleep 0.1
         $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
     }elseif($objId -and $objId -notin $script:unprotectedIndex){
         Write-Host "Mailbox $objSMTP already protected" -ForegroundColor Magenta
