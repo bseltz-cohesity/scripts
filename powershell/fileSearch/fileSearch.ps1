@@ -78,7 +78,7 @@ foreach($file in $search.files){
             $clusterIncarnationId = $file.fileDocument.objectId.jobUid.clusterIncarnationId
             $entityId = $file.fileDocument.objectId.entity.id
             $jobId = $file.fileDocument.objectId.jobId
-            if($runId -or ($showVersions -eq $x)){
+            if($runId){
                 $versions = api get "/file/versions?clusterId=$clusterId&clusterIncarnationId=$clusterIncarnationId&entityId=$entityId&filename=$encodedFile&fromObjectSnapshotsOnly=false&jobId=$jobId"
             }
             if($runId -and ($runId -notin $versions.versions.instanceId.jobInstanceId)){
@@ -86,6 +86,9 @@ foreach($file in $search.files){
             }
             $x += 1
             if($showVersions -eq $x){
+                if(!$runId){
+                    $versions = api get "/file/versions?clusterId=$clusterId&clusterIncarnationId=$clusterIncarnationId&entityId=$entityId&filename=$encodedFile&fromObjectSnapshotsOnly=false&jobId=$jobId"
+                }
                 $versions.versions | Format-Table -Property @{label="runId"; expression={$_.instanceId.jobInstanceId}}, @{label="startDate"; expression={usecsToDate $_.instanceId.jobStartTimeUsecs}}
                 exit
             }else{
