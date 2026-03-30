@@ -96,8 +96,10 @@ for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower())
         pstatus = backupInfo['status']
         if cad is True:
             archivalStatus = backupInfo['status']
-            status = ''                
-        isSlaViolated = backupInfo['isSlaViolated']
+            status = ''          
+        isSlaViolated = False
+        if 'isSlaViolated' in backupInfo:
+            isSlaViolated = backupInfo['isSlaViolated']
         durationSecs = '-'
         if 'endTimeUsecs' in backupInfo:
             durationSecs = round((backupInfo['endTimeUsecs'] - backupInfo['startTimeUsecs']) / 1000000, 0)
