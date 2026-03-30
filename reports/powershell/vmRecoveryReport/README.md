@@ -40,7 +40,7 @@ To connect through Helios:
 
 ## Authentication Parameters
 
-* -vip: (optional) one or more names or IPs of Cohesity clusters, comma separated (defaults to helios.cohesity.com)
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
 * -username: (optional) name of user to connect to Cohesity (defaults to helios)
 * -domain: (optional) your AD domain (defaults to local)
 * -useApiKey: (optional) use API key for authentication
@@ -48,7 +48,7 @@ To connect through Helios:
 * -noPrompt: (optional) do not prompt for password
 * -mfaCode: (optional) TOTP MFA code
 * -emailMfaCode: (optional) send MFA code via email
-* -clusterName: (optional) one or more clusters to connect to when connecting through Helios or MCM (comma separated)
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
 
 ## Other Parameters
 
