@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2026.02.03"""
+"""Cohesity Python REST API Wrapper Module - 2026.03.30"""
 
 ##########################################################################################
 # Change Log
@@ -29,6 +29,7 @@
 # 2025-09-30 - adjusted updatepw behavior
 # 2026-02-02 - added enableCohesityAPIDebugger
 # 2026-02-03 - added pauseCohesityAPIDebugger and resumeCohesityAPIDebugger functions
+# 2026-03-20 - updated helios auth exception handling
 #
 ##########################################################################################
 # Install Notes
@@ -94,7 +95,7 @@ __all__ = ['api_version',
            'pauseCohesityAPIDebugger',
            'resumeCohesityAPIDebugger']
 
-api_version = '2026.02.03'
+api_version = '2026.03.30'
 
 COHESITY_API = {
     'APIROOT': '',
@@ -253,8 +254,8 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                 pwd = __getpassword(vip=vip, username=username, password=setpasswd, domain=domain, useApiKey=useApiKey, helios=helios, updatepw=updatepw, prompt=prompt)
             COHESITY_API['COOKIES'] = COHESITY_API['SESSION'].cookies.get_dict()
         except requests.exceptions.RequestException as e:
-            reportAuthError(e, quiet=quiet)
-            if 'Authentication failed' in e and noretry is False and prompt is not False and setpasswd is None:
+            reportAuthError(str(e), quiet=quiet)
+            if 'Authentication failed' in str(e) and noretry is False and prompt is not False and setpasswd is None:
                 apiauth(vip=vip, username=username, domain=domain, updatepw=True, prompt=prompt, helios=helios, useApiKey=useApiKey)
     elif useApiKey is True:
         COHESITY_API['USING_HELIOS'] = False
