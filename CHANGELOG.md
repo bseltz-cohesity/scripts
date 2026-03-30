@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-03-30`] [fileSearch.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/fileSearch) [`New`] File search for PowerShell
+* [`2026-03-27`] [protectCcsM365MailboxesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365MailboxesCSV) [`Update`]
+* [`2026-03-27`] [legalHoldCCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/legalHoldCCS) [`Update`] fixed timestamp issue
+* [`2026-03-25`] [backupNowCcs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/backupNowCcs) [`Update`] README fix
 * [`2026-03-25`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] fixed org support for Helios
 * [`2026-03-25`] [protectView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectView) [`Update`] modernized authentication
 * [`2026-03-25`] [createS3View.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/createS3View) [`Update`] updated to v2 API, added support for helios
