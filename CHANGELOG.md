@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-03-30`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] Updated Helios auth exception handling
 * [`2026-03-30`] [fileSearch.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/fileSearch) [`New`] File search for PowerShell
 * [`2026-03-27`] [protectCcsM365MailboxesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365MailboxesCSV) [`Update`]
 * [`2026-03-27`] [legalHoldCCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/legalHoldCCS) [`Update`] fixed timestamp issue
