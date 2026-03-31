@@ -29,19 +29,19 @@ Place both files in a folder together and run the main script like so:
 Add legal hold to M365 mailboxes backed up on 2025-07-08:
 
 ```powershell
-./legalHoldCCS.ps1 -date '2025-07-08' -addHold
+./legalHoldCCS.ps1 -date '2025-07-08' -sourcename mydomain.onmicrosoft.com -region us-east-2 -addHold
 ```
 
 Add legal hold to M365 onedrives backed up on 2025-07-08:
 
 ```powershell
-./legalHoldCCS.ps1 -date '2025-07-08' -addHold -objectType onedrive
+./legalHoldCCS.ps1 -date '2025-07-08' -sourcename mydomain.onmicrosoft.com -region us-east-2 -addHold -objectType onedrive
 ```
 
 Show onedrives with legal hold enabled:
 
 ```powershell
-./legalHoldCCS.ps1 -date '2025-07-08' -objectType onedrive -showTrue
+./legalHoldCCS.ps1 -date '2025-07-08' -sourcename mydomain.onmicrosoft.com -region us-east-2 -objectType onedrive -showTrue
 ```
 
 ## Parameters
