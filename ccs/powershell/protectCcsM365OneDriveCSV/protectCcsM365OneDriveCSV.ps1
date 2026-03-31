@@ -12,7 +12,9 @@ param (
     [Parameter()][int]$fullSlaMinutes = 1440,  # full SLA minutes
     [Parameter()][switch]$useMBS,
     [Parameter()][switch]$dbg,
-    [Parameter()][int]$autoprotectCount = 0
+    [Parameter()][int]$autoprotectCount = 0,
+    [Parameter()][switch]$pause,
+    [Parameter()][switch]$resume
 )
 
 $objectsToAdd = @()
@@ -42,7 +44,7 @@ if($dbg){
 # authenticate
 apiauth -username $username
 
-if(! $useMBS){
+if(! $useMBS -and ! $pause -and ! $resume){
     if($policyName -eq ''){
         Write-Host "-policyName required" -ForegroundColor Yellow
         exit
@@ -179,7 +181,38 @@ foreach($obj in $objectsToAdd){
         Write-Host "Protecting $objSMTP"
         $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
     }elseif($objId -and $objId -notin $script:unprotectedIndex){
-        Write-Host "OneDrive $objSMTP already protected" -ForegroundColor Magenta
+        if($pause){
+            $action = @{
+                "action" = "Pause";
+                "objectActionKey" = "kO365OneDrive";
+                "pauseParams" = @{
+                    "objects" = @(
+                        @{
+                            "id" = $objId
+                        }
+                    )
+                }
+            }
+            Write-Host "Pausing $objSMTP"
+            $null = api post -v2 "data-protect/protected-objects/actions?regionIds=$region" $action
+        }elseif($resume){
+            $action = @{
+                "action" = "Resume";
+                "objectActionKey" = "kO365OneDrive";
+                "resumeParams" = @{
+                    "objects" = @(
+                        @{
+                            "id" = $objId
+                        }
+                    )
+                }
+            }
+            Write-Host "Resuming $objSMTP"
+            $null = api post -v2 "data-protect/protected-objects/actions?regionIds=$region" $action
+        }else{
+            Write-Host "OneDrive $objSMTP already protected" -ForegroundColor Magenta
+        }
+        
     }else{
         Write-Host "OneDrive $objSMTP not found" -ForegroundColor Yellow
     }

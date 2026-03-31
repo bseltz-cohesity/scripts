@@ -52,6 +52,8 @@ Place both files in a folder together and run the main script like so:
 * -fullSlaMinutes: (optional) default is 120
 * -pageSize: (optional) limit number of objects returned pr page (default is 50000)
 * -useMBS: (optional) use Microsoft 365 Backup Storage
+* -pause: (optional) pause protection (only for already protected one drives)
+* -resume: (optional) resume protection (only for already protected one drives)
 
 ## Authenticating to Ccs
 
