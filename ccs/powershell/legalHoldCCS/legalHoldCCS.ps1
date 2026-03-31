@@ -219,7 +219,7 @@ while(1){
     $cursor = $users.nodes[-1].protectionSource.id
     $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false&afterCursorEntityId=$cursor&regionId=$region"
     if(!$users.PSObject.Properties['nodes'] -or $users.nodes.Count -eq 1){
-        if(@($script:objectIds).Count -le $objectsPerQuery){
+        if(@($script:objectIds).Count -gt 0){
             query
         }
         break
