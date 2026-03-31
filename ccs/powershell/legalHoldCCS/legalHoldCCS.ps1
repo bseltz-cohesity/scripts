@@ -138,13 +138,13 @@ function query(){
             $activities | toJson | Out-File -FilePath 'debug-legalHoldCCS.txt' -Append
         }
         if($activities.activity -ne $null){
-            foreach($activity in $activities.activity | Where-Object {$_.archivalRunParams.status -ne 'Failed'}){
+            foreach($activity in $activities.activity | Where-Object {$_.archivalRunParams.status -ne 'Failed'} | Sort-Object -Property {$_.object.name}){
                 $totalCount += 1
                 $objectId = $activity.object.id
                 $trackDupe = @($trackDupe + $activity.id)
                 $startTimeUsecs = $activity.archivalRunParams.runStartTimeUsecs
                 if($addHold -and $activity.archivalRunParams.onLegalHold -eq $False){
-                    $script:addHolds = @($script.runs + @{
+                    $script:addHolds = @($script:addHolds + @{
                         "id" = "$objectId";
                         "runStartTimeUsecs" = $startTimeUsecs
                     })
@@ -205,7 +205,7 @@ function query(){
 $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false&regionId=$region"
 
 while(1){
-    foreach($node in $users.nodes){
+    foreach($node in $users.nodes | Sort-Object -Property {$_.protectionSource.name}){
         $objId = $node.protectionSource.id
         # $smtp = $node.protectionSource.office365ProtectionSource.primarySMTPAddress
         if(($node.protectedSourcesSummary | Where-Object {$_.environment -in $objEnvironment[$objectType]}).leavesCount -eq 1){
