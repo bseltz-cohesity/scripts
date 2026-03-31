@@ -40,6 +40,11 @@ $objEnvironment = @{
     'onedrive' = @('kO365OneDrive', 'kO365OneDriveCSM')
 }
 
+$objTest = @{
+    'mailbox' = 'hasValidMailbox';
+    'onedrive' = 'hasValidOnedrive'
+}
+
 # authenticate
 apiauth -username $username
 
@@ -202,7 +207,7 @@ function query(){
     }
 }
 
-$users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false&regionId=$region"
+$users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&$($objTest[$objectType])=true&allUnderHierarchy=false&regionId=$region"
 
 while(1){
     foreach($node in $users.nodes | Sort-Object -Property {$_.protectionSource.name}){
@@ -217,7 +222,7 @@ while(1){
         }
     }
     $cursor = $users.nodes[-1].protectionSource.id
-    $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&hasValidMailbox=true&allUnderHierarchy=false&afterCursorEntityId=$cursor&regionId=$region"
+    $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&$($objTest[$objectType])=true&allUnderHierarchy=false&afterCursorEntityId=$cursor&regionId=$region"
     if(!$users.PSObject.Properties['nodes'] -or $users.nodes.Count -eq 1){
         if(@($script:objectIds).Count -gt 0){
             query
