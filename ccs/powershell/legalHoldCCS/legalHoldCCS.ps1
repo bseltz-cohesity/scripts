@@ -139,9 +139,6 @@ function query(){
     while($True){
         $activities = api post -mcmv2 "data-protect/objects/activity?regionIds=$region" $queryParams
         $activities.activity = @($activities.activity | Where-Object {$_.id -notin $trackDupe})
-        if($dbg){
-            $activities | toJson | Out-File -FilePath 'debug-legalHoldCCS.txt' -Append
-        }
         if($activities.activity -ne $null){
             foreach($activity in $activities.activity | Where-Object {$_.archivalRunParams.status -ne 'Failed'} | Sort-Object -Property {$_.object.name}){
                 $totalCount += 1
