@@ -47,8 +47,9 @@ Show onedrives with legal hold enabled:
 ## Parameters
 
 * -username: (optional) used for password storage only (default is 'ccs')
+* -sourceName: name of registered source
+* -region: region where source is registered
 * -password: (optional) enter API key (will be prompted if omitted and not already stored)
-* -noPrompt: (optional) do not prompt for password
 * -date: (optional) date of backups e.g. '2025-07-08' (opeate on backups that occurred on this date)
 * -startDate: (optional) operate on backups that ran on or after this date
 * -endDate: (optional) operate on backups that ran on or before this date
@@ -56,9 +57,9 @@ Show onedrives with legal hold enabled:
 * -removeHold: (optional) remove legal hold
 * -showTrue: (optional) show objects that are on legal hold
 * -showFalse: (optional) show objects that are not on legal hold
-* -objectType: (optional) mailbox, onedrive, sharepoint (default is mailbox)
-* -range: (optional) adjust API query range (days) for performance (default is 4)
-* -dbg : (optional) output debug information to text file (debug-legalHoldCCS.txt)
+* -objectType: (optional) mailbox, onedrive (default is mailbox)
+* -pageSize: (optional) API query page size (default is 1000)
+* -objectsPerQuery: (optional) number of objects to operate on (default is 20)
 
 ## Date Selection
 
