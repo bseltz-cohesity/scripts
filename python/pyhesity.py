@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2026.03.30"""
+"""Cohesity Python REST API Wrapper Module - 2026.04.03"""
 
 ##########################################################################################
 # Change Log
 # ==========
 #
-# 2023-09-24 - web session authentication, added support for password reset. email MFA
-# 2023-10-03 - fixed 'forcePasswordChange' error on AD authentication
-# 2023-10-09 - set last error on cluster not connected to helios
-# 2023-10-13 - fixed password prompt for AD user
+# 2023.09.24 - web session authentication, added support for password reset. email MFA
+# 2023.10.03 - fixed 'forcePasswordChange' error on AD authentication
+# 2023.10.09 - set last error on cluster not connected to helios
+# 2023.10.13 - fixed password prompt for AD user
 # 2023.11.07 - updated password storage after validation
 # 2023.11.27 - fix useApiKey for helios/mcm
 # 2023.12.29 - added testProp function
@@ -20,16 +20,17 @@
 # 2024.08.10 - added text output mode
 # 2025.01.08 - added getRuns function
 # 2025.01.27 - added region parameter to api function
-# 2025-02-11 - added readCache and writeCache functions
-# 2025-02-23 - added retry logic for too many requests and magneto timeouts
-# 2025-03-16 - fixed retry logic for gflag setting
-# 2025-03-27 - fixed null return on error
-# 2025-07-27 - fixed bad password prompt
-# 2025-09-04 - added org support for helios
-# 2025-09-30 - adjusted updatepw behavior
-# 2026-02-02 - added enableCohesityAPIDebugger
-# 2026-02-03 - added pauseCohesityAPIDebugger and resumeCohesityAPIDebugger functions
-# 2026-03-20 - updated helios auth exception handling
+# 2025.02.11 - added readCache and writeCache functions
+# 2025.02.23 - added retry logic for too many requests and magneto timeouts
+# 2025.03.16 - fixed retry logic for gflag setting
+# 2025.03.27 - fixed null return on error
+# 2025.07.27 - fixed bad password prompt
+# 2025.09.04 - added org support for helios
+# 2025.09.30 - adjusted updatepw behavior
+# 2026.02.02 - added enableCohesityAPIDebugger
+# 2026.02.03 - added pauseCohesityAPIDebugger and resumeCohesityAPIDebugger functions
+# 2026.03.20 - updated helios auth exception handling
+# 2026.04.03 - added environment variable secret check
 #
 ##########################################################################################
 # Install Notes
@@ -95,7 +96,7 @@ __all__ = ['api_version',
            'pauseCohesityAPIDebugger',
            'resumeCohesityAPIDebugger']
 
-api_version = '2026.03.30'
+api_version = '2026.04.03'
 
 COHESITY_API = {
     'APIROOT': '',
@@ -910,6 +911,16 @@ def __getpassword(vip, username, password, domain, useApiKey=False, helios=False
     if domain.lower() != 'local' and helios is False and vip.lower() not in HELIOSENDPOINTS and useApiKey is False:
         originalUsername = "%s\\%s" % (domain, username)
         vip = '--'  # wildcard vip
+    # check for secret in environment variables
+    envname = 'COH_%s_%s_%s_%s' % (vip, domain, username, str(useApiKey))
+    envname = envname.replace('.','_').replace('-','_').upper()
+    envsecret = os.getenv(envname)
+    if envsecret is not None:
+        return envsecret
+    envsecret = os.getenv('COH_SECRET')
+    if envsecret is not None:
+        return envsecret
+    # end environment variable check ==========
     if os.path.exists(PWFILE):
         f = open(PWFILE, 'r')
         pwdlist = [e.strip() for e in f.readlines() if e.strip() != '']
