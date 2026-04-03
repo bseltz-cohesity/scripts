@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-04-03`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] find secrets in environment variables
+* [`2026-04-03`] [envname.py](https://github.com/cohesity/community-automation-samples/tree/main/python/envname) [`Update`] report which environment variables to use with pyhesity
+* [`2026-03-31`] [restoreFiles.exe](https://github.com/cohesity/community-automation-samples/tree/main/windows/restoreFiles) [`Update`] update to latest code from restoreFiles.py
 * [`2026-03-31`] [legalHoldCCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/legalHoldCCS) [`Update`] rewrite for scalability
 * [`2026-03-31`] [protectCcsM365OneDriveCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365OneDriveCSV) [`Update`] added -pause -resume options
 * [`2026-03-30`] [jobReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/jobReport) [`Update`] fix for running jobs
