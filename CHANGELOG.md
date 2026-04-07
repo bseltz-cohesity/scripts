@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-04-07`] [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] added -flatFilePath option to restore databases as flat files
 * [`2026-04-03`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] find secrets in environment variables
 * [`2026-04-03`] [envname.py](https://github.com/cohesity/community-automation-samples/tree/main/python/envname) [`Update`] report which environment variables to use with pyhesity
 * [`2026-03-31`] [restoreFiles.exe](https://github.com/cohesity/community-automation-samples/tree/main/windows/restoreFiles) [`Update`] update to latest code from restoreFiles.py
