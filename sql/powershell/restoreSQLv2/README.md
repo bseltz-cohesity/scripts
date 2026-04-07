@@ -98,6 +98,7 @@ To restore all databases (except system databases) to an alternate server:
 * -mdfFolder: (optional) Location to place the primary data file (e.g. C:\SQLData)
 * -ldfFolder: (optional) Location to place the log files (defaults to same as mdfFolder)
 * -ndfFolders: (optional) Locations to place various ndf files (see below)
+* -flatFilePath: (optional) restore as flat files to this path (e.g. C:\restorefiles)
 
 ## Point in Time Parameters
 

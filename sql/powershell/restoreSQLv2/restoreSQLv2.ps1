@@ -26,6 +26,7 @@ param (
     [Parameter()][string]$suffix,
     [Parameter()][string]$mdfFolder,
     [Parameter()][string]$ldfFolder = $mdfFolder,
+    [Parameter()][string]$flatFilePath,
     [Parameter()][hashtable]$ndfFolders,
     [Parameter()][switch]$noRecovery,
     [Parameter()][switch]$noStop,
@@ -48,8 +49,8 @@ param (
     [Parameter()][switch]$dbg
 )
 
-if($sleepTime -lt 30){
-    $sleepTime = 30
+if($sleepTime -lt 20){
+    $sleepTime = 20
 }
 
 if(! $commit -and ! $exportPaths -and ! $showPaths){
@@ -122,6 +123,12 @@ if($USING_HELIOS){
     }
 }
 # end authentication =========================================
+
+$paramName = "recoverAppParams"
+if($flatFilePath){
+    $paramName = "recoverAppFilesParams"
+    $flatFilePath = (Get-Culture).TextInfo.ToTitleCase($flatFilePath)
+}
 
 if(! $showPaths -and ! $exportPaths){
     $cluster = api get cluster
@@ -252,12 +259,24 @@ $skippedDBs = @()
 $recoveryParamNum = 1
 $dbsSelected = 0
 $recoveryIds = @()
+
 $recoveryParams = @{
     "name" = "Recover_MS_SQL_$($sourceServer)_$($restoreDate)_$($recoveryParamNum)";
     "snapshotEnvironment" = "kSQL";
     "mssqlParams" = @{
         "recoveryAction" = "RecoverApps";
         "recoverAppParams" = @()
+    }
+}
+
+if($flatFilePath){
+    $recoveryParams = @{
+        "name" = "Recover_MS_SQL_$($sourceServer)_$($restoreDate)_$($recoveryParamNum)";
+        "snapshotEnvironment" = "kSQL";
+        "mssqlParams" = @{
+            "recoveryAction" = "RecoverAppFiles";
+            "recoverAppFilesParams" = @()
+        }
     }
 }
 
@@ -345,6 +364,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
     }
 
     $thisSourceServer = $search.objects[0].mssqlParams.hostInfo.name
+    $targetHostId = $search.objects[0].mssqlParams.hostInfo.id
 
     if(! $showPaths){
         Write-Host "    Selected Snapshot $(usecsToDate $range.snapshot.runStartTimeUsecs)"
@@ -356,18 +376,41 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         Write-Host "    Selected PIT $(usecsToDate $range.pit)"
     }
 
-    $thisParam  = @{
-        "snapshotId" = $range.snapshot.id;
-        "targetEnvironment" = "kSQL";
-        "sqlTargetParams" = @{
-            "recoverToNewSource" = $false;
-            "originalSourceConfig" = @{
-                "keepCdc" = $false;
-                "withNoRecovery" = $false;
-                "captureTailLogs" = $false
+    if($flatFilePath){
+        $thisParam = @{
+            "snapshotId" = $range.snapshot.id;
+            "targetEnvironment" = "kSQL";
+            "sqlTargetParams" = @{
+                "flatFileDirectoryLocation" = $flatFilePath;
+                "overwriteExistingFiles" = $False;
+                "host" = @{
+                    "id" = [int64]$targetHostId
+                }
+                "originalSourceConfig" = @{
+                    "keepCdc" = $false;
+                    "withNoRecovery" = $false;
+                    "captureTailLogs" = $false
+                }
+            }
+        }
+        if($overwrite){
+            $thisParam.sqlTargetParams.overwriteExistingFiles = $True
+        }
+    }else{
+        $thisParam  = @{
+            "snapshotId" = $range.snapshot.id;
+            "targetEnvironment" = "kSQL";
+            "sqlTargetParams" = @{
+                "recoverToNewSource" = $false;
+                "originalSourceConfig" = @{
+                    "keepCdc" = $false;
+                    "withNoRecovery" = $false;
+                    "captureTailLogs" = $false
+                }
             }
         }
     }
+
 
     if(! $nologs){
         if($range.pit -ne $range.snapshot.runStartTimeUsecs){
@@ -410,27 +453,30 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
             Write-Host "    Target instance $($targetEntity.rootNode.name)/$($targetInstance) not found" -ForegroundColor Yellow
             exit 1
         }
-        $thisParam.sqlTargetParams = @{
-            "recoverToNewSource" = $true;
-            "newSourceConfig" = @{
-                "host" = @{
-                    "id" = $targetEntity.rootNode.id
-                };
-                "instanceName" = $targetInstanceObj.protectionSource.name;
-                "keepCdc" = $false;
-                "withNoRecovery" = $false;
-                "databaseName" = $newDbName
+        if($flatFilePath){
+            $thisParam.sqlTargetParams.host.id = [int64]$targetEntity.rootNode.id
+        }else{
+            $thisParam.sqlTargetParams = @{
+                "recoverToNewSource" = $true;
+                "newSourceConfig" = @{
+                    "host" = @{
+                        "id" = $targetEntity.rootNode.id
+                    };
+                    "instanceName" = $targetInstanceObj.protectionSource.name;
+                    "keepCdc" = $false;
+                    "withNoRecovery" = $false;
+                    "databaseName" = $newDbName
+                }
             }
-        }
-
-        $targetConfig = $thisParam.sqlTargetParams.newSourceConfig
-        if(! $noLogs){
-            if($range.pit -ne $range.snapshot.runStartTimeUsecs){
-                $targetConfig['restoreTimeUsecs'] = $range.pit
+            $targetConfig = $thisParam.sqlTargetParams.newSourceConfig
+            if(! $noLogs){
+                if($range.pit -ne $range.snapshot.runStartTimeUsecs){
+                    $targetConfig['restoreTimeUsecs'] = $range.pit
+                }
             }
         }
     }else{
-        if($renameDB -eq $false){
+        if($renameDB -eq $false -and !$flatFilePath){
             if(! $overWrite -and ! $showPaths){
                 Write-Host "Please use -overwrite to overwrite original database(s)" -ForegroundColor Yellow
                 exit 1
@@ -439,7 +485,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
     }
 
     # file destinations
-    if($alternateInstance -eq $True -or $renameDB -eq $True -or $showPaths){
+    if(!$flatFilePath -and ($alternateInstance -eq $True -or $renameDB -eq $True -or $showPaths)){
         # use source paths
         $secondaryFileLocation = $null
         if(! $mdfFolder){
@@ -511,23 +557,30 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
     }
 
     # overwrite
-    if($overWrite){
-        $targetConfig['overwritingPolicy'] = 'Overwrite'
-    }
+    if(!$flatFilePath){
+        if($overWrite){
+            $targetConfig['overwritingPolicy'] = 'Overwrite'
+        }
 
-    # no recovery
-    if($noRecovery){
-        $targetConfig['withNoRecovery'] = $True
-    }
+        # no recovery
+        if($noRecovery){
+            $targetConfig['withNoRecovery'] = $True
+        }
 
-    # keep CDC
-    if($keepCdc){
-        $targetConfig['keepCdc'] = $True
+        # keep CDC
+        if($keepCdc){
+            $targetConfig['keepCdc'] = $True
+        }
     }
 
     # add this param to recovery params
     if(! $showPaths -and $commit){
-        $recoveryParams.mssqlParams.recoverAppParams = @($recoveryParams.mssqlParams.recoverAppParams + $thisParam)
+        $recoveryParams.mssqlParams.$($paramName) = @($recoveryParams.mssqlParams.$($paramName) + $thisParam)
+        # if($flatFilePath){
+        #     $recoveryParams.mssqlParams.recoverAppFilesParams = @($recoveryParams.mssqlParams.recoverAppFilesParams + $thisParam)
+        # }else{
+        #     $recoveryParams.mssqlParams.recoverAppParams = @($recoveryParams.mssqlParams.recoverAppParams + $thisParam)
+        # }
         $dbsSelected += 1
     }
 
@@ -550,6 +603,16 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
                 "recoverAppParams" = @()
             }
         }
+        if($flatFilePath){
+            $recoveryParams = @{
+                "name" = "Recover_MS_SQL_$($sourceServer)_$($restoreDate)_$($recoveryParamNum)";
+                "snapshotEnvironment" = "kSQL";
+                "mssqlParams" = @{
+                    "recoveryAction" = "RecoverAppFiles";
+                    "recoverAppFilesParams" = @()
+                }
+            }
+        }
     }
 }
 
@@ -558,7 +621,7 @@ if($dbg){
 }
 
 # perform last recovery group (if any)
-if($recoveryParams.mssqlParams.recoverAppParams.Count -gt 0){
+if($recoveryParams.mssqlParams.$paramName.Count -gt 0){
     $recovery = api post -v2 data-protect/recoveries $recoveryParams
     if(! $recovery.id){
         exit 1
@@ -581,8 +644,9 @@ if(($wait -or $progress) -and $recoveryIds.Count -gt 0){
                 while($dbStatus -notin $finishedStates){
                     $dbStatus = 'Succeeded'
                     $childRecoveries = api get -v2 "data-protect/recoveries?returnOnlyChildRecoveries=true&ids=$recoveryId"
-                    foreach($childRecovery in $childRecoveries.recoveries | Sort-Object -Property {$_.mssqlParams.recoverAppParams[0].objectInfo.name}){
-                        $dbName = $childRecovery.mssqlParams.recoverAppParams[0].objectInfo.name
+
+                    foreach($childRecovery in $childRecoveries.recoveries | Sort-Object -Property {$_.mssqlParams.$($paramName)[0].objectInfo.name}){
+                        $dbName = $childRecovery.mssqlParams.$($paramName)[0].objectInfo.name
                         $status = $childRecovery.status
                         if(! $status){
                             $dbStatus = 'unknown'
@@ -614,8 +678,8 @@ if(($wait -or $progress) -and $recoveryIds.Count -gt 0){
             $thisRecovery = api get -v2 "data-protect/recoveries/$recoveryId"
         }
         $childRecoveries = api get -v2 "data-protect/recoveries?returnOnlyChildRecoveries=true&ids=$recoveryId"
-        foreach($childRecovery in $childRecoveries.recoveries | Sort-Object -Property {$_.mssqlParams.recoverAppParams[0].objectInfo.name}){
-            $dbName = $childRecovery.mssqlParams.recoverAppParams[0].objectInfo.name
+        foreach($childRecovery in $childRecoveries.recoveries | Sort-Object -Property {$_.mssqlParams.$($paramName)[0].objectInfo.name}){
+            $dbName = $childRecovery.mssqlParams.$paramName[0].objectInfo.name
             $status = $childRecovery.status
             Write-Host "$dbName completed with status: $status"
             if($childRecovery.messages){
