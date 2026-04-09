@@ -38,6 +38,10 @@ Place both files in a folder together and run the main script like so:
 * -objectList: (optional) text file of object names to backup (one per line)
 * -fullBackup: (optional) perform full backup (default is incremental backup)
 * -debugmode: (optional) display JSON output for troubleshooting
+* -password: (optional) enter API key (will be prompted if omitted and not already stored)
+* -noPrompt: (optional) do not prompt for password
+* -wait: (optional) wait for completion and report status
+* -sleepTime: (optional) number of seconds to wait between status queries (default is 60)
 
 ## Authenticating to Ccs
 

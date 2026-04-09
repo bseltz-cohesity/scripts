@@ -8,7 +8,9 @@ param (
     [Parameter()][array]$objectName,
     [Parameter()][string]$objectList,
     [Parameter()][switch]$fullBackup,
-    [Parameter()][switch]$debugmode
+    [Parameter()][switch]$debugmode,
+    [Parameter()][switch]$wait,
+    [Parameter()][int]$sleepTime = 60
 )
 
 # gather list from command line params and file
@@ -102,4 +104,81 @@ $result = api post -v2 data-protect/protected-objects/actions $runParams
 
 if($debugmode){
     $result | ConvertTo-Json -Depth 99
+}
+
+$activityParams = @{
+    "statsParams" = @{
+        "attributes" = @(
+            "Status";
+            "ActivityType"
+        )
+    };
+    "activityTypes" = @(
+        "ArchivalRun";
+        "BackupRun"
+    );
+    "fromTimeUsecs" = $weekAgoUsecs;
+    "toTimeUsecs" = $tomorrowUsecs
+}
+
+$finishedStates = @('Succeeded', 'Canceled', 'Failed', 'Warning', 'SucceededWithWarning')
+$reportedObjects = @()
+
+if($result -and $result.PSObject.Properties['objects'] -and $result.objects.Count -gt 0){
+    if($result.objects[0].PSObject.Properties['runNowStatus'] -and $result.objects[0].runNowStatus.PSObject.Properties['error']){
+        $error = $result.objects[0].runNowStatus.error
+        if($error.PSObject.Properties['message']){
+            Write-Host $error.message -ForegroundColor Yellow
+        }
+    }else{
+        if($wait){
+            Start-Sleep $sleepTime
+            $activityParams.fromTimeUsecs = $nowUsecs
+            $status = 'unknown'
+            $allFinished = $false
+            $worstStatus = 'Succeeded'
+            while($allFinished -eq $false){
+                $allFinished = $True
+                $result = api post -mcmv2 "data-protect/objects/activity?regionId=$regionId" $activityParams
+                if($result.PSObject.Properties['activity'] -and $result.activity -ne $null -and $result.activity.Count -gt 0){
+                    foreach($protectedObject in $runParams['runNowParams']['objects']){
+                        $protectedObjectId = $protectedObject.id
+                        $activities = $result.activity | Where-Object {$_.object.id -eq $protectedObjectId -or $_.sourceInfo.id -eq $protectedObjectId}
+                        foreach($act in $activities){
+                            if($act.PSObject.Properties['archivalRunParams'] -and $act.archivalRunParams.PSObject.Properties['status']){
+                                $status = $act.archivalRunParams.status
+                                # "$($act.object.name): $status"
+                                if($status -eq 'Failed'){
+                                    $worstStatus = 'Failed'
+                                }
+                                if($worstStatus -ne 'Failed' -and $status -eq 'Canceled'){
+                                    $worstStatus = 'Cenceled'
+                                }
+                                if($worstStatus -ne 'Failed' -and $worstStatus -ne 'Canceled' -and $status -eq 'SucceededWithWarning'){
+                                    $worstStatus = 'SucceededWithWarning'
+                                }
+                                if($status -notin $finishedStates){
+                                    $allFinished = $false
+                                }
+                            }
+                        }
+                        if($allFinished -eq $True){
+                            if($act.object.name -notin $reportedObjects){
+                                Write-Host "$($act.object.name) backup finished with status: $worstStatus"
+                                $reportedObjects = @($reportedObjects + $($act.object.name))
+                            }
+                        }
+                    }
+                    if($allFinished -eq $True){
+                        break
+                    }
+                    Start-Sleep $sleepTime
+                }else{
+                    $allFinished = $false
+                }
+            }
+        }
+    }
+}else{
+    Write-Host "An unknown error occured" -ForegroundColor Yellow
 }
