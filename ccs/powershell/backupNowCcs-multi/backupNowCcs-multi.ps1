@@ -1,8 +1,10 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][string]$username = 'Ccs',
-    [Parameter(Mandatory = $True)][string]$region,  # Ccs region
+    [Parameter()][string]$username = 'DMaaS',
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter(Mandatory = $True)][string]$region,  # DMaaS region
     [Parameter()][array]$objectName,
     [Parameter()][string]$objectList,
     [Parameter()][switch]$fullBackup,
@@ -36,7 +38,7 @@ $objectNames = @(gatherList -Param $objectName -FilePath $objectList -Name 'obje
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 # authenticate
-apiauth -username $username -regionid $region
+apiauth -username $username -passwd $password -noPromptForPassword $noPrompt -regionid $region
 
 $nowUsecs = dateToUsecs
 $tomorrowUsecs = $nowUsecs + 86400000000
