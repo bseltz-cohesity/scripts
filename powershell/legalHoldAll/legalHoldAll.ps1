@@ -20,7 +20,9 @@ param (
     [Parameter()][switch]$addHold,
     [Parameter()][switch]$showTrue,
     [Parameter()][switch]$showFalse,
-    [Parameter()][switch]$pushToReplica
+    [Parameter()][switch]$pushToReplica,
+    [Parameter()][string]$startDate = '',   # Only process runs on or after this date (e.g. '2024-01-01')
+    [Parameter()][string]$endDate = ''      # Only process runs on or before this date (e.g. '2024-03-31')
 )
 
 # source the cohesity-api helper code
@@ -41,6 +43,32 @@ if($USING_HELIOS -and !$region){
 
 if(!$cohesity_api.authorized){
     Write-Host "Not authenticated"
+    exit 1
+}
+
+# parse and validate optional date range parameters
+$filterStartUsecs = $null
+$filterEndUsecs   = $null
+
+if($startDate -ne ''){
+    try {
+        $filterStartUsecs = dateToUsecs ([datetime]::Parse($startDate))
+    } catch {
+        Write-Host "Invalid -startDate '$startDate'. Use format yyyy-MM-dd." -ForegroundColor Yellow
+        exit 1
+    }
+}
+if($endDate -ne ''){
+    try {
+        # include the full end day by advancing to 23:59:59
+        $filterEndUsecs = dateToUsecs ([datetime]::Parse($endDate)) # .AddDays(1).AddSeconds(-1))
+    } catch {
+        Write-Host "Invalid -endDate '$endDate'. Use format yyyy-MM-dd." -ForegroundColor Yellow
+        exit 1
+    }
+}
+if($filterStartUsecs -and $filterEndUsecs -and $filterStartUsecs -gt $filterEndUsecs){
+    Write-Host "-startDate must be earlier than -endDate." -ForegroundColor Yellow
     exit 1
 }
 
@@ -95,7 +123,10 @@ if($jobNames.Count -gt 0){
 }
 
 $cluster = api get cluster
-
+$clusterCreatedUsecs = $cluster.createdTimeMsecs * 1000
+if(! $filterStartUsecs){
+    $filterStartUsecs = $clusterCreatedUsecs
+}
 $nowUsecs = dateToUsecs
 $dateString = (Get-Date).ToString('yyyy-MM-dd')
 $outfile = "legalHolds-$($cluster.name)-$dateString.csv"
@@ -109,11 +140,19 @@ if($removeHold){
 
 foreach($job in $jobs | Sort-Object -Property name){
     $endUsecs = dateToUsecs (Get-Date)
+    if($filterEndUsecs){
+        $endUsecs = $filterEndUsecs
+    }
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         "{0}" -f $job.name
         while($True){
-            $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&endTimeUsecs=$endUsecs&excludeTasks=true&excludeNonRestoreableRuns=true"
+            $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&startTimeUsecs=$filterStartUsecs&endTimeUsecs=$endUsecs&excludeTasks=true&excludeNonRestoreableRuns=true"
             foreach($run in $runs){
+                # apply date range filter
+                $runStartUsecs = $run.backupRun.stats.startTimeUsecs
+                if($filterStartUsecs -and $runStartUsecs -lt $filterStartUsecs){ continue }
+                if($filterEndUsecs   -and $runStartUsecs -gt $filterEndUsecs)  { continue }
+
                 if($addHold -or $removeHold){
                     $runParams = @{
                         "jobRuns" = @(
@@ -183,6 +222,9 @@ foreach($job in $jobs | Sort-Object -Property name){
             }
             if($runs.Count -eq $numRuns){
                 $endUsecs = $runs[-1].backupRun.stats.endTimeUsecs - 1
+                if($endUsecs -le $filterStartUsecs){
+                    break
+                }
             }else{
                 break
             }

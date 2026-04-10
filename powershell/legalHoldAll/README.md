@@ -85,3 +85,5 @@ Or remove legal hold from all backups:
 * -showTrue: (optional) display backups where legal hold is True
 * -showFalse: (optional) display backups where legal hold is False
 * -pushToReplica: (optional) push legal hold adds/removes to replicas
+* -startDate: (optional) only process runs on or after this date (e.g. '2024-01-01')
+* -endDate: (optional) only process runs on or before this date (e.g. '2024-03-31')
