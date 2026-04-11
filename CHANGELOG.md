@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-04-11`] [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`Update`] added custom rules option
+* [`2026-04-11`] [backupNowCcs-multi.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/backupNowCcs-multi) [`Update`] added -sourceName parameter
+* [`2026-04-10`] [legalHoldAll.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/legalHoldAll) [`Update`] added date range filters
 * [`2026-04-07`] [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] added -flatFilePath option to restore databases as flat files
 * [`2026-04-03`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] find secrets in environment variables
 * [`2026-04-03`] [envname.py](https://github.com/cohesity/community-automation-samples/tree/main/python/envname) [`Update`] report which environment variables to use with pyhesity
