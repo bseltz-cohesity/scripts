@@ -5,6 +5,7 @@ import os
 import gzip
 import shutil
 import re
+import json
 import codecs
 import tarfile
 from concurrent.futures import ProcessPoolExecutor
@@ -92,8 +93,9 @@ match_paths = [
     '/tracez?component'
 ]
 
+crlist = None
 
-def obfuscatefile(root, filepath):
+def obfuscatefile(root, filepath, crlist):
     filename = os.path.basename(filepath)
     if filename.startswith('xxx-'):
         return
@@ -101,6 +103,17 @@ def obfuscatefile(root, filepath):
     with codecs.open(filepath, 'r', 'latin-1') as f_in:
         with codecs.open(outfile, 'w', 'latin-1') as f_out:
             for line in f_in:
+                # custom rules
+                if crlist is not None:
+                    for regex in crlist:
+                        matches = re.findall(regex, line)
+                        for match in matches:
+                            if isinstance(match, tuple):
+                                for submatch in match:
+                                    if submatch != '' and submatch is not None:
+                                        line = line.replace(submatch, 'xxx')
+                            else:
+                                line = line.replace(match, 'xxx')
                 skipline = False
                 for match_path in match_paths:
                     if match_path in line:
@@ -186,7 +199,7 @@ def targzdirectory(path, name):
                 relname = fullname.replace(path, '')
                 tarhandle.add(os.path.join(root, f), arcname=relname)
 
-def process_file(root, filename, parallel=True):
+def process_file(root, filename, crlist, parallel=True):
     filepath = os.path.join(root, filename)
     filename_short, file_extension = os.path.splitext(filename)
     if file_extension.lower() == '.gz':
@@ -204,31 +217,31 @@ def process_file(root, filename, parallel=True):
             tar.extractall(untarred_folder)
             tar.close()
             os.remove(unzippedfile)
-            walkdir(untarred_folder, parallel=parallel, max_workers=None)
+            walkdir(untarred_folder, crlist, parallel=parallel, max_workers=None)
             # re-tar and re-zip
             targzdirectory(untarred_folder, filepath)
             shutil.rmtree(untarred_folder)
         else:
-            obfuscatefile(root, unzippedfile)
+            obfuscatefile(root, unzippedfile, crlist)
             # re-zip
             gzfile(unzippedfile)
             os.remove(unzippedfile)
     else:
-        obfuscatefile(root, filepath)
+        obfuscatefile(root, filepath, crlist)
 
-def walkdir(thispath, parallel=False, max_workers=None):
+def walkdir(thispath, crlist, parallel=False, max_workers=None):
     tasks = []
     if parallel:
         with ProcessPoolExecutor(max_workers=max_workers) as executor:
             for root, dirs, files in os.walk(thispath):
                 for filename in sorted(files):
-                    future = executor.submit(process_file, root, filename)
+                    future = executor.submit(process_file, root, filename, crlist)
                     future.add_done_callback(task_done)
                     tasks.append(future)
     else:
         for root, dirs, files in os.walk(thispath):
             for filename in sorted(files):
-                process_file(root, filename, parallel=False)
+                process_file(root, filename, crlist, parallel=False)
 
 def task_done(future):
     try:
@@ -248,18 +261,31 @@ def get_size(start_path = '.'):
     return total_size
 
 if __name__ == '__main__':
+
     # command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', '--logpath', type=str, required=True)
     parser.add_argument('-w', '--workers', type=int, default=None, help='Number of worker processes')
     parser.add_argument('-p', '--parallel', action='store_true', help='Run in parallel using ProcessPoolExecutor')
     parser.add_argument('-f', '--freespacemultiplier', type=int, default=3, help='require free space multiple')
+    parser.add_argument('-cr', '--customrules', type=str, default=None, help='custom rules file')
     args = parser.parse_args()
     
     logpath = args.logpath
     freespacemultiplier = args.freespacemultiplier
+    customrules = args.customrules
 
     GiB = 1024 * 1024 * 1024
+
+    if customrules is not None:
+        if os.path.exists(customrules):
+            crjson = open(customrules, 'r')
+            crs = json.load(crjson)
+            crlist = []
+            for rule in crs:
+                pattern = rule['pattern']
+                regex = re.compile(pattern)
+                crlist.append(regex)
 
     if os.path.isdir(logpath) is False:
         print('logpath %s is not found' % logpath)
@@ -272,7 +298,7 @@ if __name__ == '__main__':
         print('at least %s GiB free space is recommended to proceed' % round(logfoldersize * freespacemultiplier / GiB, 2))
         exit()
     start_time = time.time()
-    walkdir(logpath, parallel=args.parallel, max_workers=args.workers)
+    walkdir(logpath, crlist, parallel=args.parallel, max_workers=args.workers)
     end_time = time.time()
     
     # Calculate and print the execution time

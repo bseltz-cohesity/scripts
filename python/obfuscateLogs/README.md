@@ -35,9 +35,41 @@ To run parallelly:
 ./obfuscateLogs.py -l ~/mylogs/ -p
 ```
 
+To include custom rules:
+
+```bash
+./obfuscateLogs.py -l ~/mylogs/ -p -cr ./myrules.json
+```
+
 ## Parameters
 
 * -l, --logpath: path of folder containing logs (Required)
+* -cr, --customrules: (optional) path to custom rules JSON file (see below)
 * -f, --freespacemultiplier: (optional) multiple of free space required for logpath (defailt is 3)
 * -p, --parallel: (optional) Launch parallel tasks for concurrent file processing
 * -w, --workers: (optional) No. of concurrent processes to run if parallel processing is selected. If it is not provided with '-p' argument then it will default to the number of processors on the machine
+
+## Custom Rules
+
+You can provide custom rules (regex patterns) to search for. Create a JSON file with the custom rules like the below, then you can use the `-cr ./myfile.json` parameter to include the patterns to obfuscate.
+
+```JSON
+[
+    {
+        "pattern": "(?i)https://([\\w\\-\\.]+)|http://([\\w\\-\\.]+)",
+        "description": "Generic web urls"
+    },
+    {
+        "pattern": "\\b(?:(?:25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)\\b",
+        "description": "ip address"
+    },
+    {
+        "pattern": "(?i)\\d{1,3}(?:\\.\\d{1,3}){3}\\s+[a-z0-9.-]+(?:\\s+[a-z0-9.-]+)*",
+        "description": "etc hosts file"
+    },
+    {
+        "pattern": "(?i)\\b(?:[0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5}|(?:[0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2}|[0-9A-Fa-f]{4}\\.[0-9A-Fa-f]{4}\\.[0-9A-Fa-f]{4})\\b",
+        "description": "General MAC address and Cisco-style"
+    }
+]
+```
