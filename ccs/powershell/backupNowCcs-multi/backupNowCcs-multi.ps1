@@ -6,6 +6,7 @@ param (
     [Parameter()][switch]$noPrompt,
     [Parameter(Mandatory = $True)][string]$region,  # DMaaS region
     [Parameter()][array]$objectName,
+    [Parameter()][string]$sourceName,
     [Parameter()][string]$objectList,
     [Parameter()][switch]$fullBackup,
     [Parameter()][switch]$debugmode,
@@ -52,6 +53,9 @@ foreach($objectName in $objectNames){
     $objectName = [string]$objectName
     $objects = api get -v2 "data-protect/search/objects?searchString=$objectName&includeTenants=true"
     $objects = $objects.objects | Where-Object name -eq $objectName
+    if($sourceName){
+        $objects = $objects | Where-Object {$_.sourceInfo.name -eq $sourceName}
+    }
     if($objects.Count -eq 0){
         Write-Host "$objectName not found" -ForegroundColor Yellow
         continue
@@ -73,7 +77,11 @@ foreach($objectName in $objectNames){
         $thisSelectedObject['backupType'] = 'kFull'
     }
     $selectedObjects = @($selectedObjects + $thisSelectedObject)
-    Write-Host "Backing up $objectName"
+    if($sourceName){
+        Write-Host "Backing up $sourceName/$objectName"
+    }else{
+        Write-Host "Backing up $objectName"
+    }
 }
 
 $runParams = @{
@@ -164,7 +172,11 @@ if($result -and $result.PSObject.Properties['objects'] -and $result.objects.Coun
                         }
                         if($allFinished -eq $True){
                             if($act.object.name -notin $reportedObjects){
-                                Write-Host "$($act.object.name) backup finished with status: $worstStatus"
+                                if($sourceName){
+                                    Write-Host "$sourceName/$($act.object.name) backup finished with status: $worstStatus"
+                                }else{
+                                    Write-Host "$($act.object.name) backup finished with status: $worstStatus"
+                                }
                                 $reportedObjects = @($reportedObjects + $($act.object.name))
                             }
                         }

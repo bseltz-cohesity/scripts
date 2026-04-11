@@ -36,6 +36,7 @@ Place both files in a folder together and run the main script like so:
 * -region: Ccs region to use
 * -objectName: (optional) one or more names of protected objects to backup (comma separated)
 * -objectList: (optional) text file of object names to backup (one per line)
+* -sourceName: (optional) name of registered source (e.g. name of SQL Server)
 * -fullBackup: (optional) perform full backup (default is incremental backup)
 * -debugmode: (optional) display JSON output for troubleshooting
 * -password: (optional) enter API key (will be prompted if omitted and not already stored)
