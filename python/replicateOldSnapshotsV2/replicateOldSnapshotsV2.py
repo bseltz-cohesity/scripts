@@ -32,7 +32,7 @@ parser.add_argument('-ol', '--objectlist', type=str, required=False)   # text fi
 parser.add_argument('-mo', '--missingobjects', action='store_true')  # replicate unreplicted objects
 parser.add_argument('-e', '--excludelogs', action='store_true')  # exclude log backups
 parser.add_argument('-numruns', '--numruns', type=int, default=1000)  # number of runs per API query
-parser.add_argument('-ri', '--runid', type=int, default=None)  # replicate specific run ID
+parser.add_argument('-ri', '--runid', action='append', type=int)  # replicate specific run ID
 parser.add_argument('-n', '--newerthan', type=int, default=0)  # number of days back to search for snapshots to replicate
 parser.add_argument('-o', '--olderthan', type=int, default=0)  # number of days back to search for snapshots to replicate
 parser.add_argument('-b', '--ifexpiringbefore', type=int, default=0)       # replicate only if expiring before X days
@@ -211,7 +211,7 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
             if runs is not None and len(runs) > 0:
                 for run in sorted(runs, key=lambda run: run['id']):
                     thisrun = None
-                    if runid is not None and run['protectionGroupInstanceId'] != runid:
+                    if runid is not None and run['protectionGroupInstanceId'] not in runid:
                         continue
                     daysToKeep = keepfor
                     startdateusecs = int(run['id'].split(':')[1])
