@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-04-13`] [replicateOldSnapshotsV2.py](https://github.com/cohesity/community-automation-samples/tree/main/python/replicateOldSnapshotsV2) [`Update`] added support for multiple run IDs
 * [`2026-04-11`] [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`Update`] added custom rules option
 * [`2026-04-11`] [backupNowCcs-multi.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/backupNowCcs-multi) [`Update`] added -sourceName parameter
 * [`2026-04-10`] [legalHoldAll.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/legalHoldAll) [`Update`] added date range filters
