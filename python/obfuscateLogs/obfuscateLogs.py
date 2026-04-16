@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""obfuscate logs - version 2024-11-02a"""
+"""obfuscate logs - version 2026-04-16"""
 
 import os
 import gzip
@@ -99,21 +99,30 @@ def obfuscatefile(root, filepath, crlist):
     filename = os.path.basename(filepath)
     if filename.startswith('xxx-'):
         return
+    print(filepath)
     outfile = os.path.join(root, 'xxx-%s' % filename)
     with codecs.open(filepath, 'r', 'latin-1') as f_in:
         with codecs.open(outfile, 'w', 'latin-1') as f_out:
             for line in f_in:
                 # custom rules
                 if crlist is not None:
-                    for regex in crlist:
-                        matches = re.findall(regex, line)
+                    for rule in crlist:
+                        matches = re.findall(rule['regex'], line)
                         for match in matches:
                             if isinstance(match, tuple):
                                 for submatch in match:
                                     if submatch != '' and submatch is not None:
-                                        line = line.replace(submatch, 'xxx')
+                                        if 'type' in rule:
+                                            redact = '%s_xxx' % rule['type']
+                                            line = line.replace(submatch, redact)
+                                        else:
+                                            line = line.replace(submatch, 'redacted_rule_xxx')
                             else:
-                                line = line.replace(match, 'xxx')
+                                if 'type' in rule:
+                                    redact = '%s_xxx' % rule['type']
+                                    line = line.replace(match, redact)
+                                else:
+                                    line = line.replace(match, 'redacted_rule_xxx')
                 skipline = False
                 for match_path in match_paths:
                     if match_path in line:
@@ -127,14 +136,14 @@ def obfuscatefile(root, filepath, crlist):
                             lineparts2 = lineparts[1].split(',')
                             if len(lineparts2) > 0:
                                 securefile = f'entity={lineparts2[0]}'
-                                line = line.replace(securefile, 'entity=xxx')
+                                line = line.replace(securefile, 'entity=redacted_entity_xxx')
                     if 'update_documents_function_arg: "' in line:
                         lineparts = line.split('update_documents_function_arg: "')
                         if len(lineparts) > 0:
                             lineparts2 = lineparts[1].split('"')
                             if len(lineparts2) > 0:
                                 securefile = f'update_documents_function_arg: "{lineparts2[0]}"'
-                                line = line.replace(securefile, 'update_documents_function_arg: "xxx"')
+                                line = line.replace(securefile, 'update_documents_function_arg: "redacted_arg_xxx"')
                     # rules for paths
                     if ('/' in line or '\\' in line):
                         if 'path=' in line:
@@ -143,27 +152,27 @@ def obfuscatefile(root, filepath, crlist):
                                 lineparts2 = lineparts[1].split(',')
                                 if len(lineparts2) > 0:
                                     securefile = f'path={lineparts2[0]},'
-                                    line = line.replace(securefile, 'path=xxx,')
+                                    line = line.replace(securefile, 'path=redacted_path_xxx,')
                         if 'entry=' in line:
                             lineparts = line.split('entry=')
                             if len(lineparts) > 0:
                                 lineparts2 = lineparts[1].split(' in dir')
                                 if len(lineparts2) > 0:
                                     securefile = f'entry={lineparts2[0]}'
-                                    line = line.replace(securefile, 'entry=xxx')
+                                    line = line.replace(securefile, 'entry=redacted_entry_xxx')
                         if 'dir_sync_tx2_op.cc' in line:
                             lineparts = line.split('Looking up ')
                             if len(lineparts) > 1:
                                 lineparts2 = lineparts[1].split(' in dir')
                                 if len(lineparts2) > 1:
                                     securefile = f'Looking up {lineparts2[0]}'  
-                                    line = line.replace(securefile, 'Looking up xxx')
+                                    line = line.replace(securefile, 'Looking up redacted_path_xxx')
                             lineparts = line.split('for entry=')
                             if len(lineparts) > 1:
                                 lineparts2 = lineparts[1].split(' in dir=')
                                 if len(lineparts2) > 1:
                                     securefile = f'entry={lineparts2[0]}'
-                                    line = line.replace(securefile, 'entry=xxx')
+                                    line = line.replace(securefile, 'entry=redacted_entry_xxx')
                         tags = ''.join(re.findall(r'(<.*?[\w:|\.|-|"|=]+>)', line))
                         lineparts = re.split('=|\"|\[|\>|\<', line)
                         for linepart in lineparts:
@@ -171,14 +180,14 @@ def obfuscatefile(root, filepath, crlist):
                             paths = [p for p in windowspaths if p not in tags and p not in [i for i in ignore_paths]]
                             # print(paths)
                             for path in paths:
-                                line = line.replace(path, '\\xxx')
+                                line = line.replace(path, '\\redacted_path_xxx')
                         lineparts = re.split('=|\"|\[|\>|\<', line)
                         for linepart in lineparts:        
                             linuxpaths = re.findall(r'(\/.+[\w:|\.|-]+)', linepart)
                             paths = [p for p in linuxpaths if p not in tags and p not in [i for i in ignore_paths]]
                             # print(paths)
                             for path in paths:
-                                line = line.replace(path, '/xxx')
+                                line = line.replace(path, '/redacted_path_xxx')
                 f_out.write('%s' % line)
             f_out.close()
             f_in.close()
@@ -199,7 +208,7 @@ def targzdirectory(path, name):
                 relname = fullname.replace(path, '')
                 tarhandle.add(os.path.join(root, f), arcname=relname)
 
-def process_file(root, filename, crlist, parallel=True):
+def process_file(root, filename, crlist, parallel=True, max_workers=None):
     filepath = os.path.join(root, filename)
     filename_short, file_extension = os.path.splitext(filename)
     if file_extension.lower() == '.gz':
@@ -217,15 +226,15 @@ def process_file(root, filename, crlist, parallel=True):
             tar.extractall(untarred_folder)
             tar.close()
             os.remove(unzippedfile)
-            walkdir(untarred_folder, crlist, parallel=parallel, max_workers=None)
+            walkdir(untarred_folder, crlist, parallel=parallel, max_workers=max_workers)
             # re-tar and re-zip
-            targzdirectory(untarred_folder, filepath)
-            shutil.rmtree(untarred_folder)
+            # targzdirectory(untarred_folder, filepath)
+            # shutil.rmtree(untarred_folder)
         else:
             obfuscatefile(root, unzippedfile, crlist)
             # re-zip
-            gzfile(unzippedfile)
-            os.remove(unzippedfile)
+            # gzfile(unzippedfile)
+            # os.remove(unzippedfile)
     else:
         obfuscatefile(root, filepath, crlist)
 
@@ -241,7 +250,7 @@ def walkdir(thispath, crlist, parallel=False, max_workers=None):
     else:
         for root, dirs, files in os.walk(thispath):
             for filename in sorted(files):
-                process_file(root, filename, crlist, parallel=False)
+                process_file(root, filename, crlist, parallel=False, max_workers=max_workers)
 
 def task_done(future):
     try:
@@ -269,11 +278,15 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--parallel', action='store_true', help='Run in parallel using ProcessPoolExecutor')
     parser.add_argument('-f', '--freespacemultiplier', type=int, default=3, help='require free space multiple')
     parser.add_argument('-cr', '--customrules', type=str, default=None, help='custom rules file')
+    parser.add_argument('-o', '--outpath', type=str, default=None)
     args = parser.parse_args()
     
     logpath = args.logpath
     freespacemultiplier = args.freespacemultiplier
     customrules = args.customrules
+    outpath = args.outpath
+    if outpath is None:
+        outpath = logpath
 
     GiB = 1024 * 1024 * 1024
 
@@ -285,7 +298,8 @@ if __name__ == '__main__':
             for rule in crs:
                 pattern = rule['pattern']
                 regex = re.compile(pattern)
-                crlist.append(regex)
+                rule['regex'] = regex
+                crlist.append(rule)
 
     if os.path.isdir(logpath) is False:
         print('logpath %s is not found' % logpath)
@@ -299,6 +313,7 @@ if __name__ == '__main__':
         exit()
     start_time = time.time()
     walkdir(logpath, crlist, parallel=args.parallel, max_workers=args.workers)
+    # shutil.make_archive(os.path.join(outpath, 'redacted'), "gztar", logpath)
     end_time = time.time()
     
     # Calculate and print the execution time
