@@ -80,7 +80,7 @@ $usedPct = [int][math]::round(100 * $usedCapacity / $physicalCapacity, 0)
 
 # cluster info
 output "`n-------------------------------------------------------"
-output ("     Cluster Name: {0}" -f $hostName)
+output ("     Cluster Name: {0}" -f $cluster.name)
 output ("  Product Version: {0}" -f $cluster.clusterSoftwareVersion)
 output ("       Cluster ID: {0}" -f $cluster.id)
 output ("   Healing Status: {0}" -f $status.healingStatus)
