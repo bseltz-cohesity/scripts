@@ -57,19 +57,23 @@ You can provide custom rules (regex patterns) to search for. Create a JSON file 
 [
     {
         "pattern": "(?i)https://([\\w\\-\\.]+)|http://([\\w\\-\\.]+)",
-        "description": "Generic web urls"
+        "description": "Generic web urls",
+        "type": "redacted_url"
     },
     {
         "pattern": "\\b(?:(?:25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)\\b",
-        "description": "ip address"
+        "description": "ip address",
+        "type": "redacted_ip"
     },
     {
         "pattern": "(?i)\\d{1,3}(?:\\.\\d{1,3}){3}\\s+[a-z0-9.-]+(?:\\s+[a-z0-9.-]+)*",
-        "description": "etc hosts file"
+        "description": "etc hosts file",
+        "type": "redacted_host"
     },
     {
         "pattern": "(?i)\\b(?:[0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5}|(?:[0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2}|[0-9A-Fa-f]{4}\\.[0-9A-Fa-f]{4}\\.[0-9A-Fa-f]{4})\\b",
-        "description": "General MAC address and Cisco-style"
+        "description": "General MAC address and Cisco-style",
+        "type": "redacted_mac"
     }
 ]
 ```
