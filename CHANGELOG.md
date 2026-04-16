@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-04-16`] [gflags.py](https://github.com/cohesity/community-automation-samples/tree/main/python/gflags) [`Update`] updated service restart code
+* [`2026-04-16`] [gflags.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/gflags) [`Update`] updated service restart code
+* [`2026-04-14`] [epic_pure_ppg_thaw.sh](https://github.com/cohesity/community-automation-samples/tree/main/bash/epic_pure_ppg_freeze_thaw) [`New`] thaw script for Epic Pure PPG backups
+* [`2026-04-14`] [epic_pure_ppg_freeze.sh](https://github.com/cohesity/community-automation-samples/tree/main/bash/epic_pure_ppg_freeze_thaw) [`New`] freeze script for Epic Pure PPG backups
 * [`2026-04-13`] [replicateOldSnapshotsV2.py](https://github.com/cohesity/community-automation-samples/tree/main/python/replicateOldSnapshotsV2) [`Update`] added support for multiple run IDs
 * [`2026-04-11`] [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`Update`] added custom rules option
 * [`2026-04-11`] [backupNowCcs-multi.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/backupNowCcs-multi) [`Update`] added -sourceName parameter
