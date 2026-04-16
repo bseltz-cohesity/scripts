@@ -50,7 +50,6 @@ if($USING_HELIOS){
 
 $cluster = api get cluster
 
-
 function setGflag($servicename, $flagname, $reason, $flagvalue=$null){
     if($clear){
         write-host "clearing  $($servicename):  $flagname"
@@ -96,7 +95,7 @@ if($flagname){
     }
     if($clear -or ($flagvalue -and $reason)){
         setGflag -servicename $servicename -flagname $flagname -flagvalue $flagvalue -reason $reason
-        $restartServices += $servicename.Substring(1).ToLower()
+        $restartServices += $servicename
     }else{
         Write-Host "-servicename, -flagname, -flagvalue and -reason are all required to set a gflag" -ForegroundColor Yellow
         exit
@@ -123,7 +122,7 @@ if($import -ne ''){
 
             if($servicename -and $flagname -and $flagvalue -and $reason){
                 setGflag -servicename $servicename -flagname $flagname -flagvalue $flagvalue -reason $reason
-                $restartServices += $servicename.Substring(1).ToLower()
+                $restartServices += $servicename
             }else{
                 Write-Host "-servicename, -flagname, -flagvalue and -reason are all required to set a gflag" -ForegroundColor Yellow
                 exit
@@ -138,13 +137,13 @@ $gflaglist = @()
 
 $gflags = api get /clusters/gflag
 
-foreach($service in $gflags){
+foreach($service in $gflags | Sort-Object -Property serviceName){
     $svcName = $service.serviceName
     $serviceGflags = $service.gflags
 
     Write-Host "`n$($svcName):"
 
-    foreach($serviceGflag in $serviceGflags){
+    foreach($serviceGflag in $serviceGflags | Sort-Object -Property name){
         $timeStamp = ''
         if($serviceGflag.timestamp -ne 0){
             $timeStamp = $(usecsToDate ($serviceGflag.timestamp * 1000000)).ToString('yyyy-MM-dd')
@@ -161,9 +160,5 @@ Write-Host "`n$($cluster.name) gflags saved to gflags-$($cluster.name).csv`n"
 
 if($restart){
     Write-Host "Restarting required services..."
-    $restartParams = @{
-        "clusterId" = $cluster.id;
-        "services" = @($restartServices)
-    }
-    $null = api post /nexus/cluster/restart $restartParams
+    $null = api post clusters/services/states @{'action' = 'kRestart'; 'services' = @($restartServices)}
 }
