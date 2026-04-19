@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""obfuscate logs - version 2026-04-16"""
+"""obfuscate logs - version 2026-04-19"""
 
 import os
 import gzip
@@ -235,8 +235,20 @@ def process_file(root, filename, crlist, parallel=True, max_workers=None):
             # re-zip
             # gzfile(unzippedfile)
             # os.remove(unzippedfile)
+    elif file_extension.lower() == '.tar':
+        print('*** handling odd tar file that was not gzipped *** %s' % filepath)
+        # untar tar file
+        untarred_folder = filepath[0:-4]
+        tar = tarfile.open(filepath, 'r')
+        tar.extractall(untarred_folder)
+        tar.close()
+        os.remove(filepath)
+        walkdir(untarred_folder, crlist, parallel=parallel, max_workers=max_workers)
     else:
-        obfuscatefile(root, filepath, crlist)
+        if file_extension.lower() == 'zip':
+            print('*** unhandled zip file *** %s' % filepath)
+        else:
+            obfuscatefile(root, filepath, crlist)
 
 def walkdir(thispath, crlist, parallel=False, max_workers=None):
     tasks = []
