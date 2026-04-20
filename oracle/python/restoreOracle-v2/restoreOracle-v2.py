@@ -30,6 +30,7 @@ parser.add_argument('-ts', '--targetserver', type=str, default=None)  # name of 
 parser.add_argument('-td', '--targetdb', type=str, default=None)  # name of target oracle DB
 parser.add_argument('-tc', '--targetcdb', type=str, default=None)  # name of target oracle DB
 parser.add_argument('-pn', '--pdbnames', type=str, action='append')
+parser.add_argument('-ap', '--allpdbs', action='store_true')
 parser.add_argument('-oh', '--oraclehome', type=str, default=None)  # oracle home path on target
 parser.add_argument('-ob', '--oraclebase', type=str, default=None)  # oracle base path on target
 parser.add_argument('-od', '--oracledata', type=str, default=None)  # oracle data path on target
@@ -74,6 +75,7 @@ sourceserver = args.sourceserver
 sourcedb = args.sourcedb
 targetcdb = args.targetcdb
 pdbnames = args.pdbnames
+allpdbs = args.allpdbs
 progress = args.progress
 instant = args.instant
 printinfo = args.printinfo
@@ -238,6 +240,8 @@ for object in objects:
             isCDB = True
             # granularRestore = True
             pdblist = object['oracleParams']['databaseEntityInfo']['containerDatabaseInfo']['pluggableDatabaseList']
+            if allpdbs is True:
+                granularRestore = True
             if pdbnames is not None and len(pdbnames) > 0 and sameDB is False:
                 granularRestore = True
                 pdblist = [p for p in pdblist if p['databaseName'].lower() in [n.lower() for n in pdbnames]]

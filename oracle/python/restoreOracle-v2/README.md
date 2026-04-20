@@ -135,7 +135,8 @@ Restoring an Oracle RAC DB:
 
 ## Container/Pluggable DB Parameters
 
-* -pn, --pdbnames: (optional) PDBs to restore when restoring a CDB (default is all PDBs)
+* -pn, --pdbnames: (optional) PDBs to restore when restoring a CDB (default is all PDBs when restoring to the same location, empty CDB when restoring to an alternate location)
+* -ap, --allpdbs: (optional) restpre all PDBs when restoring a CDB to an alternate location
 * -tc, --targetcdb: (optional) CDB to restore to when restoring a PDB
 
 ## Point in Time Parameters
