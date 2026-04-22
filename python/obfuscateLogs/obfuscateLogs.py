@@ -97,10 +97,10 @@ crlist = None
 
 def obfuscatefile(root, filepath, crlist):
     filename = os.path.basename(filepath)
-    if filename.startswith('xxx-'):
+    print(filepath, flush=True)
+    if filename.startswith('redacted_'):
         return
-    print(filepath)
-    outfile = os.path.join(root, 'xxx-%s' % filename)
+    outfile = os.path.join(root, 'redacted_%s' % filename)
     with codecs.open(filepath, 'r', 'latin-1') as f_in:
         with codecs.open(outfile, 'w', 'latin-1') as f_out:
             for line in f_in:
@@ -228,15 +228,14 @@ def process_file(root, filename, crlist, parallel=True, max_workers=None):
             os.remove(unzippedfile)
             walkdir(untarred_folder, crlist, parallel=parallel, max_workers=max_workers)
             # re-tar and re-zip
-            # targzdirectory(untarred_folder, filepath)
-            # shutil.rmtree(untarred_folder)
+            targzdirectory(untarred_folder, filepath)
+            shutil.rmtree(untarred_folder)
         else:
             obfuscatefile(root, unzippedfile, crlist)
             # re-zip
-            # gzfile(unzippedfile)
-            # os.remove(unzippedfile)
+            gzfile(unzippedfile)
+            os.remove(unzippedfile)
     elif file_extension.lower() == '.tar':
-        print('*** handling odd tar file that was not gzipped *** %s' % filepath)
         # untar tar file
         untarred_folder = filepath[0:-4]
         tar = tarfile.open(filepath, 'r')
@@ -244,6 +243,8 @@ def process_file(root, filename, crlist, parallel=True, max_workers=None):
         tar.close()
         os.remove(filepath)
         walkdir(untarred_folder, crlist, parallel=parallel, max_workers=max_workers)
+        targzdirectory(untarred_folder, '%s.gz' % filepath)
+        shutil.rmtree(untarred_folder)
     else:
         if file_extension.lower() == 'zip':
             print('*** unhandled zip file *** %s' % filepath)
@@ -286,7 +287,7 @@ if __name__ == '__main__':
     # command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', '--logpath', type=str, required=True)
-    parser.add_argument('-w', '--workers', type=int, default=None, help='Number of worker processes')
+    parser.add_argument('-w', '--workers', type=int, default=2, help='Number of worker processes')
     parser.add_argument('-p', '--parallel', action='store_true', help='Run in parallel using ProcessPoolExecutor')
     parser.add_argument('-f', '--freespacemultiplier', type=int, default=3, help='require free space multiple')
     parser.add_argument('-cr', '--customrules', type=str, default=None, help='custom rules file')
@@ -324,10 +325,10 @@ if __name__ == '__main__':
         print('at least %s GiB free space is recommended to proceed' % round(logfoldersize * freespacemultiplier / GiB, 2))
         exit()
     start_time = time.time()
-    walkdir(logpath, crlist, parallel=args.parallel, max_workers=args.workers)
+    walkdir(logpath, crlist, parallel=True, max_workers=args.workers)
     # shutil.make_archive(os.path.join(outpath, 'redacted'), "gztar", logpath)
     end_time = time.time()
     
     # Calculate and print the execution time
     execution_time = end_time - start_time
-    print(f"Execution time: {execution_time} seconds")
+    print(f"\nExecution time: {execution_time} seconds\n")
