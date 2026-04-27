@@ -4,4 +4,4 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This script has been superceded by a newer script, please use this one: <https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2>
 
-If you really need to use the old script, you can find it in the DEPRECATED folder: <https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/deprecated/restoreSQL>
+If you really need to use the old script, you can find it in the DEPRECATED folder: <https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/deprecated/restoreSQLDBs>
