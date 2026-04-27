@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-04-27`] [jobObjectHistory.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/jobObjectHistory) [`Update`] modernized authentication
+* [`2026-04-27`] [migrateView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/migrateView) [`Update`] added file datalock options
 * [`2026-04-20`] [restoreOracle-v2.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/restoreOracle-v2) [`Update`] added `-ap`, `--allpdbs` parameter
 * [`2026-04-20`] [clusterInfo.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/clusterInfo) [`Update`] added disk counts
 * [`2026-04-16`] [clusterInfo.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/clusterInfo) [`Update`] fixed missing cluster name
