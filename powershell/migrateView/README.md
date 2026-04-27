@@ -35,6 +35,21 @@ First, run the script like so. This will create new, empty views with the specif
                   -newStorageDomainName OtherStorageDomain
 ```
 
+If you want to enable file datalock on the new view (when the old view does not have file datalock), include lock parameters, for example:
+
+```powershell
+./migrateView.ps1 -vip mycluster `
+                  -username myuser `
+                  -domain mydomain.net `
+                  -viewName view1, view2 `
+                  -suffix migrate `
+                  -newStorageDomainName OtherStorageDomain `
+                  -autoLockMinutes 3 `
+                  -defaultLockPeriod 60 `
+                  -lockUnit minute `
+                  -lockMode enterprise
+```
+
 **Note**: the script does not copy any data. You must mount the source and target views from a host and perform the copy of files.
 
 Once the file copy is complete, we can finalize the migration. This step will rename the old views, and the new views will be renamed to the original view names.
